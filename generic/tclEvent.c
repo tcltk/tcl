@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.9 2004/12/09 23:00:33 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.10 2005/01/12 21:36:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1101,6 +1101,8 @@ Tcl_VwaitObjCmd(clientData, interp, objc, objv)
     while (!done && foundEvent) {
 	foundEvent = Tcl_DoOneEvent(TCL_ALL_EVENTS);
 	if (Tcl_LimitExceeded(interp)) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "limit exceeded", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -1190,6 +1192,8 @@ Tcl_UpdateObjCmd(clientData, interp, objc, objv)
     
     while (Tcl_DoOneEvent(flags) != 0) {
 	if (Tcl_LimitExceeded(interp)) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "limit exceeded", NULL);
 	    return TCL_ERROR;
 	}
     }

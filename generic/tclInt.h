@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.18 2004/12/09 23:00:38 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.19 2005/01/12 21:36:24 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -28,11 +28,11 @@
  * needed by stdlib.h in some configurations.
  */
 
-#ifndef _TCL
-#include "tcl.h"
-#endif
 #ifdef HAVE_TCL_CONFIG_H
 #include "tclConfig.h"
+#endif
+#ifndef _TCL
+#include "tcl.h"
 #endif
 
 #include <stdio.h>
@@ -510,6 +510,7 @@ typedef struct Var {
 #define VAR_ARGUMENT		0x100
 #define VAR_TEMPORARY		0x200
 #define VAR_RESOLVED		0x400	
+#define VAR_IS_ARGS             0x800
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -774,13 +775,13 @@ typedef struct AssocData {
 typedef struct CallFrame {
     Namespace *nsPtr;		/* Points to the namespace used to resolve
 				 * commands and global variables. */
-    int isProcCallFrame;	/* If nonzero, the frame was pushed to
-				 * execute a Tcl procedure and may have
-				 * local vars. If 0, the frame was pushed
-				 * to execute a namespace command and var
-				 * references are treated as references to
-				 * namespace vars; varTablePtr and
-				 * compiledLocals are ignored. */
+    int isProcCallFrame;	/* If 0, the frame was pushed to execute a
+				 * namespace command and var references are
+				 * treated as references to namespace vars;
+				 * varTablePtr and compiledLocals are ignored.
+				 * If FRAME_IS_PROC is set, the frame was
+				 * pushed to execute a Tcl procedure and may
+				 * have local vars. */
     int objc;			/* This and objv below describe the
 				 * arguments for this procedure call. */
     Tcl_Obj *CONST *objv;	/* Array of argument objects. */
@@ -816,6 +817,8 @@ typedef struct CallFrame {
 				 * emits code that refers to these variables
 				 * using an index into this array. */
 } CallFrame;
+
+#define FRAME_IS_PROC 0x1
 
 /*
  *----------------------------------------------------------------
@@ -970,6 +973,11 @@ typedef struct LiteralEntry {
 					 * entry can be freed when refCount
 					 * drops to 0. If in a local literal
 					 * table, -1. */
+    Namespace *nsPtr;                    /* Namespace in which this literal is
+					 * used. We try to avoid sharing
+					 * literal non-FQ command names among
+					 * different namespaces to reduce
+					 * shimmering.*/ 
 } LiteralEntry;
 
 typedef struct LiteralTable {
@@ -1405,6 +1413,8 @@ typedef struct Interp {
 				     * is reached. */
 	int timeGranularity;	/* Mod factor used to determine how often
 				 * to evaluate the limit check. */
+	Tcl_TimerToken timeEvent; /* Handle for a timer callback that will
+				   * occur when the time-limit is exceeded. */
 
 	Tcl_HashTable callbacks; /* Mapping from (interp,type) pair to data
 				  * used to install a limit handler callback
@@ -1917,6 +1927,10 @@ MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
+MODULE_SCOPE int        TclGetNamespaceFromObj _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    Tcl_Namespace **nsPtrPtr));
+
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue _ANSI_ARGS_ ((
 			    ProcessGlobalValue *pgvPtr));
 MODULE_SCOPE Tcl_Token *TclGetTokensFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
@@ -2099,7 +2113,41 @@ MODULE_SCOPE int	TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 MODULE_SCOPE int	TclpUtime _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    struct utimbuf *tval));
+/*
+ * These declarations ought to be exposed in a TIP (i.e. gain a '_' in
+ * their names and move to tcl.decls).
+ */
 MODULE_SCOPE int	TclIsEnsemble _ANSI_ARGS_((Command *cmdPtr));
+MODULE_SCOPE Tcl_Command TclMakeEnsembleCmd _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *name,
+			    Tcl_Namespace *namespacePtr, int flags));
+MODULE_SCOPE Tcl_Command TclFindEnsemble _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *cmdNameObj, int flags));
+MODULE_SCOPE int	TclSetEnsembleSubcommandList _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Obj *subcmdList));
+MODULE_SCOPE int	TclSetEnsembleMappingDict _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Obj *mapDict));
+MODULE_SCOPE int	TclSetEnsembleUnknownHandler _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Obj *unknownList));
+MODULE_SCOPE int	TclSetEnsembleFlags _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Command token, int flags));
+MODULE_SCOPE int	TclGetEnsembleSubcommandList _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Obj **subcmdList));
+MODULE_SCOPE int	TclGetEnsembleMappingDict _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Obj **mapDict));
+MODULE_SCOPE int	TclGetEnsembleUnknownHandler _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Obj **unknownList));
+MODULE_SCOPE int	TclGetEnsembleFlags _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Command token, int *flags));
+MODULE_SCOPE int	TclGetEnsembleNamespace _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Command token,
+			    Tcl_Namespace **namespacePtrPtr));
 
 /*
  *----------------------------------------------------------------
@@ -2164,6 +2212,9 @@ MODULE_SCOPE int	Tcl_ConcatObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_ContinueObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler _ANSI_ARGS_((
+			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
+			    ClientData clientData));
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));

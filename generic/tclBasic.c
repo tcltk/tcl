@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.18 2004/12/09 23:00:30 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.19 2005/01/12 21:35:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4204,22 +4204,22 @@ TclObjInvokeNamespace(interp, objc, objv, nsPtr, flags)
 				 * TCL_INVOKE_NO_UNKNOWN, or
 				 * TCL_INVOKE_NO_TRACEBACK. */
 {
-    Tcl_CallFrame frame;
     int result;
+    Tcl_CallFrame *framePtr;
 
     /*
      * Make the specified namespace the current namespace and invoke
      * the command.
      */
 
-    result = Tcl_PushCallFrame(interp, &frame, nsPtr, /*isProcCallFrame*/ 0);
+    result = TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
         return TCL_ERROR;
     }
 
     result = TclObjInvoke(interp, objc, objv, flags);
 
-    Tcl_PopCallFrame(interp);
+    TclPopStackFrame(interp);
     return result;
 }
 

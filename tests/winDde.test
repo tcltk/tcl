@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.16.2.6 2004/12/09 23:01:11 dgp Exp $
+# RCS: @(#) $Id: winDde.test,v 1.16.2.7 2005/01/12 21:36:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -219,7 +219,7 @@ test winDde-5.4 {DDE eval bad arguments} -constraints {win dde} -body {
 
 test winDde-6.1 {DDE servername bad arguments} -constraints {win dde} -body {
     dde servername -z -z -z
-} -returnCodes error -result {unknown option "-z": should be -force, -handler or --}
+} -returnCodes error -result {bad option "-z": must be -force, -handler, or --}
 test winDde-6.2 {DDE servername set name} -constraints {win dde} -body {
     dde servername -- winDde-6.2
 } -result {winDde-6.2}

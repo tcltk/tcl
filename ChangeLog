@@ -1,3 +1,210 @@
+2005-01-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tcl.m4 (SC_PATH_{TCL,TK}CONFIG): Added code to detect the
+	case when the --with-tcl/--with-tk arguments point to the config
+	scripts themselves and not their directory. If this is the case,
+	they now complain but keep working. [FRQ 951247]
+	* unix/configure:	autoconf-2.57
+
+2005-01-10  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/Makefile.in, unix/configure.in, unix/tcl.m4,
+	* unix/tclConfig.sh.in, unix/dltest/Makefile.in:
+	Remove ${DBGX}, ${TCL_DBGX} from Tcl build system [Patch 1081595].
+	* unix/configure: regenerated
+
+2005-01-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixFCmd.c (TclUnixCopyFile): Convert u_int to unsigned
+	to make clashes with types in standard C headers less of a
+	problem. [Bug 1098829]
+
+2005-01-09  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclUnixThrd.c, unix/tclUnixPort.h: Remove readdir_r()
+	and related #ifdeffery (see #1095909).
+	* unix/tcl.m4, unix/tclConfig.h.in: Don't check for HAVE_READDIR_R.
+	* unix/configure: Regenerated.
+
+2005-01-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* library/http/http.tcl (http::mapReply): Significant performance
+	enhancement by using [string map] instead of [regsub]/[subst], and
+	update version requirement to Tcl8.4. [Bug 1020491]
+
+2005-01-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n, doc/re_syntax.n: Convert to other form of emacs
+	mode control comment to prevent problems with old versions of
+	man. [Bug 1085127]
+
+2005-01-05  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/winDde.test: Fixed broken test result.
+
+2005-01-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInt.h, generic/tclPort.h: Move the #include of
+	tclConfig.h *first* before any reference to tcl.h so that the
+	build configuration is loaded before the first reference to any
+	system headers. Issue reported by Art Haas on tcl-core.
+
+2005-01-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/fCmd.test (fCmd-18.10):	Added notNetworkFilesystem constraint.
+	[Bug 456665]
+
+2004-12-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4, win/configure: update MSVC CFLAGS_OPT to -O2, remove
+	-Gs (included in -O2) and -GD (outdated).  Use "link -lib" instead
+	of "lib" binary and remove -YX for MSVC7 portability.  Add
+	-fomit-frame-pointer for gcc OPT compiles. [Bug 1092952, 1091967]
+	Align LIBS_GUI with Tk head needs.
+
+2004-12-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclDate.c: Regen
+	* generic/tclGetDate.y (TclDatelex):
+		Fixed a problem where a four-digit group with >=2 
+		leading zeroes appeared to be a	two-digit group, leading to
+		misinterpreting the time 0012 as 1200.	[Bug # 1090413]
+	* library/clock.tcl: Added code to interpret correctly months
+	                     outside the range 01-12 as reduced modulo 12
+			     with a corresponding adjustment to the year.
+			     [Bug 1092789]
+	* tests/clock.test: Added regression test cases for the above two
+		            bugs.
+	* unix/Makefile.in: Added --no-lines to the 'bison' command line 
+	* win/Makefile.in:  to help constrain the number of diffs in a cvs
+	                    checkin.
+	
+2004-12-24  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclLiteral.c:
+	* generic/tclProc.c:
+	Avoid sharing cmdName literals accross namespaces, and generalise
+	usage of the TclRegisterNewLiteral macro [Patch 1090905]
+
+2004-12-20  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: moved TclInitCompiledLocals to tclProc.c 
+	* generic/tclProc.c: new static InitCompiledLocals to allow for a
+	single pass over the proc's arguments at proc load time (instead of
+	two as previously). TclObjInterpProc() now allocates the
+	compiledLocals on the tcl execution stack, using the new
+	TclStackAlloc/Free functions.
+
+2004-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (Tcl_LimitSetTime, TimeLimitCallback):
+	(TclLimitRemoveAllHandlers, TclInitLimitSupport): Set a timer
+	event to trigger when the time limit runs out. All the time limit
+	actually does is check to see if the time limit has been exceeded,
+	but this is enough to fix [Bug 1085023].
+	* generic/tclInt.h (struct Interp): Added a field to hold the token
+	for the timer event handler associated with the current time limit.
+	* generic/tclEvent.c (Tcl_UpdateObjCmd, Tcl_VwaitObjCmd): Add
+	error message when limit exceeded.
+	* tests/interp.test (interp-34.[89]): Check that time limits
+	handle the two cases reported in [Bug 1085023]
+
+	* generic/tclTimer.c (TclCreateAbsoluteTimerHandler): New internal
+	function that allows setting a timer handler that will be
+	triggered at (or after) a specific time instead of at some number
+	of milliseconds in the future. This is a candidate for future
+	exposure via a TIP.
+
+2004-12-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
+	* generic/tclStubInit.c:
+	* generic/tclTest.c: Added two new functions to allocate memory
+	from the execution stack (TclStackAlloc, TclStackFree). Added
+	functions TclPushStackFrame and TclPopStackFrame that do the work
+	of Tcl_PushCallFrame and Tcl_PopCallFrame, but using frames
+	allocated in the execution stack - i.e., heap instead of
+	C-stack. The core uses these two new functions exclusively; the
+	old ones remain for backwards compat, as at least two popular
+	extensions (itcl, xotcl) are known to use them.
+	
+2004-12-14  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdIL.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* generic/tclVar.c: changing the isProcCallFrame field of the
+	CallFrame struct from a 0/1 field to flags. Should be perfectly
+	backwards compatible.
+
+2004-12-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Added special processing to remove "$U"
+	from libraries in the LIBOBJS value.  This is an auto-make-ism
+	we need to avoid.  [Bug 1081541]
+
+	* unix/configure:	autoconf-2.57
+
+2004-12-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Restored extern "C" guards so that C++ code
+	sees function pointer typedef linkage consistent with earlier Tcl
+	releases. [Bug 1082349].
+
+	* generic/tclEncoding.c:	Plugged some memory leaks.  Thanks to
+	* generic/tclUtil.c:	 Rolf Ade for reports and testing [Bug 1083082]
+
+2004-12-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Clarify that the [clock scan] command does not
+	accept the full range of ISO8601 point-in-time formats
+	[Bug 1075433].
+	
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclArrayObjCmd - ARRAY_NAMES): leaking an
+	object [Bug 1084111] - thanks to Rolf Ade.
+
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclObj.c (TclSetCmdNameObj): special handling for fully
+	qualified command names (as in fix [Patch 456668]).
+
+2004-12-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c: converting the static function
+	GetNamespaceFromObj() to MODULE_SCOPE TclGetNamespaceFromObj().  
+
+2004-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/tcl.wse.in, unix/tcl.spec, win/README.binary, README: 
+	* win/configure.in, unix/configure.in, generic/tcl.h: 
+	Bumped version number to 8.5a3 to distinguish HEAD of CVS
+	development from the recent 8.5a2 release.
+
+2004-12-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclInitCompiledLocals):
+	* generic/tclCompile.h:
+	* generic/tclInt.h:
+	* generic/tclProc.c (TclObjInterpProc, TclCreateProc): optimised
+	loops that initialise a proc's arguments and compiled local
+	variables, removing tests from inner loops.
+
+2004-12-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h: Move ensemble API decls here from tclNamesp.c
+
 2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (TclMakeEnsembleCmd, TclSetEnsemble*)

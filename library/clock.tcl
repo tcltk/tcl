@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.5 2004/12/09 23:00:58 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.6 2005/01/12 21:36:38 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -4419,6 +4419,14 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
 	    set year [dict get $date year]
 	}
     }
+
+    # If month is out of range, reduce modulo 12 and adjust year accordingly.
+
+    set month [expr { [dict get $date month] - 1 }]
+    incr year [expr { $month / 12 }]
+    set month [expr { ( $month % 12 ) + 1 }]
+    dict set date era CE; dict set date year $year; dict set date month $month
+
     set ym1 [expr { $year - 1 }]
 
     # Try the Gregorian calendar first.
@@ -4428,9 +4436,9 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
 		   + [dict get $date dayOfMonth]
 		   + ( [IsGregorianLeapYear $date] ?
 		       [lindex $DaysInPriorMonthsInLeapYear \
-			    [expr { [dict get $date month] - 1}]]
+			    [expr { $month - 1}]]
 		       : [lindex $DaysInPriorMonthsInCommonYear \
-			      [expr { [dict get $date month] - 1}]] )
+			      [expr { $month - 1}]] )
 		   + ( 365 * $ym1 )
 		   + ( $ym1 / 4 )
 		   - ( $ym1 / 100 )
@@ -4445,9 +4453,9 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
 		       + [dict get $date dayOfMonth]
 		       + ( ( $year % 4 == 0 ) ?
 		       [lindex $DaysInPriorMonthsInLeapYear \
-			    [expr { [dict get $date month] - 1}]]
+			    [expr { $month - 1}]]
 		       : [lindex $DaysInPriorMonthsInCommonYear \
-			      [expr { [dict get $date month] - 1}]] )
+			      [expr { $month - 1}]] )
 		       + ( 365 * $ym1 )
 		       + ( $ym1 / 4 ) }]
     }
@@ -4482,9 +4490,6 @@ proc ::tcl::clock::GetJulianDayFromEraYearMonthDay { date } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::GetJulianDayFromEraYearDay { date } {
-
-    variable DaysInPriorMonthsInCommonYear
-    variable DaysInPriorMonthsInLeapYear
 
     # Get absolute year number from the civil year
 

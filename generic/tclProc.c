@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.10 2004/12/09 23:00:41 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.11 2005/01/12 21:36:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -26,6 +26,10 @@ static int	ProcessProcResultCode _ANSI_ARGS_((Tcl_Interp *interp,
 		    char *procName, int nameLen, int returnCode));
 static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+
+static void     InitCompiledLocals _ANSI_ARGS_((Tcl_Interp *interp,
+		    ByteCode *codePtr, CompiledLocal *localPtr,
+		    Var *varPtr, Namespace *nsPtr)); 
 
 /*
  * The ProcBodyObjType type
@@ -341,6 +345,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	procPtr->numArgs = numArgs;
 	procPtr->numCompiledLocals = numArgs;
     }
+
     for (i = 0; i < numArgs; i++) {
 	int fieldCount, nameLength, valueLength;
 	CONST char **fieldValues;
@@ -445,6 +450,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
+		if ((i == numArgs - 1)
+			&& (localPtr->nameLength == 4)
+			&& (localPtr->name[0] == 'a')
+			&& (strcmp(localPtr->name, "args") == 0)) {
+		    localPtr->flags |= VAR_IS_ARGS;
+		}
 	    }
 
 	    localPtr = localPtr->nextPtr;
@@ -477,6 +488,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 		localPtr->defValuePtr = NULL;
 	    }
 	    strcpy(localPtr->name, fieldValues[0]);
+	    if ((i == numArgs - 1)
+		    && (localPtr->nameLength == 4)
+		    && (localPtr->name[0] == 'a')
+		    && (strcmp(localPtr->name, "args") == 0)) {
+		localPtr->flags |= VAR_IS_ARGS;
+	    }
 	}
 
 	ckfree((char *) fieldValues);
@@ -879,6 +896,171 @@ TclIsProc(cmdPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * InitCompiledLocals --
+ *
+ *	This routine is invoked in order to initialize the compiled
+ *	locals table for a new call frame.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May invoke various name resolvers in order to determine which
+ *	variables are being referenced at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    ByteCode *codePtr;
+    CompiledLocal *localPtr;
+    Var *varPtr;
+    Namespace *nsPtr;		/* Pointer to current namespace. */
+{
+    Interp *iPtr = (Interp*) interp;
+    int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
+    CompiledLocal *firstLocalPtr;
+    
+    if (codePtr->flags & TCL_BYTECODE_RESOLVE_VARS) {
+	/*
+	 * This is the first run after a recompile, or else the resolver epoch
+	 * has changed: update the resolver cache.
+	 */
+
+	firstLocalPtr = localPtr;
+	for (; localPtr != NULL; localPtr = localPtr->nextPtr) {
+	    
+	    if (localPtr->resolveInfo) {
+		if (localPtr->resolveInfo->deleteProc) {
+		    localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
+		} else {
+		    ckfree((char*)localPtr->resolveInfo);
+		}
+		localPtr->resolveInfo = NULL;
+	    }
+	    localPtr->flags &= ~VAR_RESOLVED;
+	    
+	    if (haveResolvers &&
+		    !(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
+		ResolverScheme *resPtr = iPtr->resolverPtr;
+		Tcl_ResolvedVarInfo *vinfo;
+		int result;
+		
+		if (nsPtr->compiledVarResProc) {
+		    result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
+			    localPtr->name, localPtr->nameLength,
+			    (Tcl_Namespace *) nsPtr, &vinfo);
+		} else {
+		    result = TCL_CONTINUE;
+		}
+		
+		while ((result == TCL_CONTINUE) && resPtr) {
+		    if (resPtr->compiledVarResProc) {
+			result = (*resPtr->compiledVarResProc)(nsPtr->interp,
+				localPtr->name, localPtr->nameLength,
+				(Tcl_Namespace *) nsPtr, &vinfo);
+		    }
+		    resPtr = resPtr->nextPtr;
+		}
+		if (result == TCL_OK) {
+		    localPtr->resolveInfo = vinfo;
+		    localPtr->flags |= VAR_RESOLVED;
+		}		    
+	    }	    
+	}
+	localPtr = firstLocalPtr;
+	codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
+    }
+
+    /*
+     * Initialize the array of local variables stored in the call frame.
+     * Some variables may have special resolution rules.  In that case,
+     * we call their "resolver" procs to get our hands on the variable,
+     * and we make the compiled local a link to the real variable.
+     */
+
+    if (haveResolvers) {
+	Tcl_ResolvedVarInfo *resVarInfo;
+	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	    varPtr->value.objPtr = NULL;
+	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+	    varPtr->nsPtr = NULL;
+	    varPtr->hPtr = NULL;
+	    varPtr->refCount = 0;
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
+	    varPtr->flags = localPtr->flags;
+    
+	    /*
+	     * Now invoke the resolvers to determine the exact variables that
+	     * should be used.
+	     */
+	    
+	    resVarInfo = localPtr->resolveInfo;
+	    if (resVarInfo && resVarInfo->fetchProc) {
+		Var *resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
+			resVarInfo);
+		if (resolvedVarPtr) {
+		    resolvedVarPtr->refCount++;
+		    varPtr->value.linkPtr = resolvedVarPtr;
+		    varPtr->flags = VAR_LINK;
+		}
+	    }
+	}
+    } else {
+	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	    varPtr->value.objPtr = NULL;
+	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+	    varPtr->nsPtr = NULL;
+	    varPtr->hPtr = NULL;
+	    varPtr->refCount = 0;
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
+	    varPtr->flags = localPtr->flags;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitCompiledLocals --
+ *
+ *	This routine is invoked in order to initialize the compiled
+ *	locals table for a new call frame.
+ *
+ * DEPRECATED: functionality has been inlined elsewhere; this function remains
+ * to insure binary compatibility with Itcl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May invoke various name resolvers in order to determine which
+ *	variables are being referenced at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclInitCompiledLocals(interp, framePtr, nsPtr)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    CallFrame *framePtr;	/* Call frame to initialize. */
+    Namespace *nsPtr;		/* Pointer to current namespace. */
+{
+    Var *varPtr = framePtr->compiledLocals;
+    ByteCode *codePtr = (ByteCode *)
+	    framePtr->procPtr->bodyPtr->internalRep.otherValuePtr;
+    CompiledLocal *localPtr = framePtr->procPtr->firstLocalPtr;
+
+    InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclObjInterpProc --
  *
  *	When a Tcl procedure gets invoked during bytecode evaluation, this 
@@ -905,22 +1087,12 @@ TclObjInterpProc(clientData, interp, objc, objv)
 {
     register Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
-    CallFrame frame;
-    register CallFrame *framePtr = &frame;
+    CallFrame *framePtr, **framePtrPtr;
     register Var *varPtr;
     register CompiledLocal *localPtr;
     char *procName;
-    int nameLen, localCt, numArgs, argCt, i, result;
-
-    /*
-     * This procedure generates an array "compiledLocals" that holds the
-     * storage for local variables. It starts out with stack-allocated space
-     * but uses dynamically-allocated storage if needed.
-     */
-
-#define NUM_LOCALS 20
-    Var localStorage[NUM_LOCALS];
-    Var *compiledLocals = localStorage;
+    int nameLen, localCt, numArgs, argCt, i, imax, result;
+    Var *compiledLocals;
 
     /*
      * Get the procedure's name.
@@ -943,16 +1115,6 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	return result;
     }
 
-    /*
-     * Create the "compiledLocals" array. Make sure it is large enough to
-     * hold all the procedure's compiled local variables, including its
-     * formal parameters.
-     */
-
-    localCt = procPtr->numCompiledLocals;
-    if (localCt > NUM_LOCALS) {
-	compiledLocals = (Var *) ckalloc((unsigned) localCt * sizeof(Var));
-    }
 
     /*
      * Set up and push a new call frame for the new procedure invocation.
@@ -962,25 +1124,29 @@ TclObjInterpProc(clientData, interp, objc, objv)
      * from one namespace to another.
      */
 
-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
-	    (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 1);
+    framePtrPtr = &framePtr;
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC);
 
     if (result != TCL_OK) {
 	return result;
     }
 
+
     framePtr->objc = objc;
     framePtr->objv = objv;  /* ref counts for args are incremented below */
+    framePtr->procPtr = procPtr;
 
     /*
-     * Initialize and resolve compiled variable references.
+     * Create the "compiledLocals" array. Make sure it is large enough to
+     * hold all the procedure's compiled local variables, including its
+     * formal parameters.
      */
 
-    framePtr->procPtr = procPtr;
+    localCt = procPtr->numCompiledLocals;
+    compiledLocals = (Var *) TclStackAlloc(interp, localCt*sizeof(Var));
     framePtr->numCompiledLocals = localCt;
     framePtr->compiledLocals = compiledLocals;
-
-    TclInitCompiledLocals(interp, framePtr, nsPtr);
 
     /*
      * Match and assign the call's actual parameters to the procedure's
@@ -990,57 +1156,88 @@ TclObjInterpProc(clientData, interp, objc, objv)
      */
 
     numArgs = procPtr->numArgs;
+    argCt = objc-1; /* set it to the number of args to the proc */
     varPtr = framePtr->compiledLocals;
     localPtr = procPtr->firstLocalPtr;
-    argCt = objc;
-    for (i = 1, argCt -= 1; i <= numArgs; i++, argCt--) {
-	if (!TclIsVarArgument(localPtr)) {
-	    Tcl_Panic("TclObjInterpProc: local variable %s is not argument but should be",
-		  localPtr->name);
-	    return TCL_ERROR;
-	}
-	if (TclIsVarTemporary(localPtr)) {
-	    Tcl_Panic("TclObjInterpProc: local variable %d is temporary but should be an argument", i);
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Handle the special case of the last formal being "args".  When
-	 * it occurs, assign it a list consisting of all the remaining
-	 * actual arguments.
-	 */
-
-	if ((i == numArgs) && ((localPtr->name[0] == 'a')
-		&& (strcmp(localPtr->name, "args") == 0))) {
-	    Tcl_Obj *listPtr = Tcl_NewListObj(argCt, &(objv[i]));
-	    varPtr->value.objPtr = listPtr;
-	    Tcl_IncrRefCount(listPtr); /* local var is a reference */
-	    TclClearVarUndefined(varPtr);
-	    argCt = 0;
-	    break;		/* done processing args */
-	} else if (argCt > 0) {
-	    Tcl_Obj *objPtr = objv[i];
-	    varPtr->value.objPtr = objPtr;
-	    TclClearVarUndefined(varPtr);
-	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
-					* another reference to object. */
-	} else if (localPtr->defValuePtr != NULL) {
-	    Tcl_Obj *objPtr = localPtr->defValuePtr;
-	    varPtr->value.objPtr = objPtr;
-	    TclClearVarUndefined(varPtr);
-	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
-					* another reference to object. */
-	} else {
+    if (numArgs == 0) {
+	if (argCt) {
 	    goto incorrectArgs;
+	} else {
+	    goto runProc;
 	}
+    }    
+    imax = ((argCt < numArgs - 1)? argCt : (numArgs - 1)); 
+    for (i = 1; i <= imax; i++) {
+	/*
+	 * "Normal" arguments; last formal is special, depends on
+	 * it being 'args'.
+	 */	
+	Tcl_Obj *objPtr = objv[i];
+	varPtr->value.objPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
+	varPtr->name = localPtr->name;
+	varPtr->nsPtr = NULL;
+	varPtr->hPtr = NULL;
+	varPtr->refCount = 0;
+	varPtr->tracePtr = NULL;
+	varPtr->searchPtr = NULL;
+	varPtr->flags = localPtr->flags;
 	varPtr++;
 	localPtr = localPtr->nextPtr;
     }
-    if (argCt > 0) {
-	Tcl_Obj **desiredObjs, *argObj;
+    for (; i < numArgs; i++) {
+	/*
+	 * This loop is entered if argCt < (numArgs-1).
+	 * Set default values; last formal is special.
+	 */
+	if (localPtr->defValuePtr != NULL) {
+	    Tcl_Obj *objPtr = localPtr->defValuePtr;
+	    varPtr->value.objPtr = objPtr;
+	    Tcl_IncrRefCount(objPtr);  /* local var is a reference */
+	    varPtr->name = localPtr->name;
+	    varPtr->nsPtr = NULL;
+	    varPtr->hPtr = NULL;
+	    varPtr->refCount = 0;
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
+	    varPtr->flags = localPtr->flags;
+	    varPtr++;
+	    localPtr = localPtr->nextPtr;
+	} else {
+	    goto incorrectArgs;
+	}
+    }
 
+    /*
+     * When we get here, the last formal argument remains
+     * to be defined: localPtr and varPtr point to the last
+     * argument to be initialized.
+     */
+
+    if (localPtr->flags & VAR_IS_ARGS) {
+	Tcl_Obj *listPtr = Tcl_NewListObj(objc-numArgs, &(objv[numArgs]));
+	varPtr->value.objPtr = listPtr;
+	Tcl_IncrRefCount(listPtr); /* local var is a reference */
+    } else if (argCt == numArgs) {
+	Tcl_Obj *objPtr = objv[numArgs];
+	varPtr->value.objPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
+    } else if ((argCt < numArgs) && (localPtr->defValuePtr != NULL)) {
+	Tcl_Obj *objPtr = localPtr->defValuePtr;
+	varPtr->value.objPtr = objPtr;
+	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
+    } else {
+	Tcl_Obj **desiredObjs, *argObj;	
+	ByteCode *codePtr;		
     incorrectArgs:
 	/*
+	 * Do initialise all compiled locals, to avoid problems at
+	 * DeleteLocalVars. 
+	 */
+	codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;
+	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
+
+        /*
 	 * Build up desired argument list for Tcl_WrongNumArgs
 	 */
 
@@ -1083,6 +1280,28 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	goto procDone;
     }
 
+    varPtr->name = localPtr->name;
+    varPtr->nsPtr = NULL;
+    varPtr->hPtr = NULL;
+    varPtr->refCount = 0;
+    varPtr->tracePtr = NULL;
+    varPtr->searchPtr = NULL;
+    varPtr->flags = localPtr->flags;
+
+    localPtr = localPtr->nextPtr;
+    varPtr++;
+
+  runProc:
+    /*
+     * Initialise and resolve the remaining compiledLocals.
+     */
+
+    if (localPtr) {
+	ByteCode *codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;		
+	InitCompiledLocals(interp, codePtr,
+		localPtr, varPtr, nsPtr);
+    }
+
     /*
      * Invoke the commands in the procedure's body.
      */
@@ -1116,10 +1335,17 @@ TclObjInterpProc(clientData, interp, objc, objv)
      */
 
     procDone:
-    Tcl_PopCallFrame(interp);
-    if (compiledLocals != localStorage) {
-	ckfree((char *) compiledLocals);
-    }
+    /*
+     * Free the stack-allocated compiled locals and CallFrame. It is important
+     * to pop the call frame without freeing it first: the compiledLocals
+     * cannot be freed before the frame is popped, as the local variables must
+     * be deleted. But the compiledLocals must be freed first, as they were
+     * allocated later on the stack.
+     */
+    
+    Tcl_PopCallFrame(interp); /* pop but do not free */
+    TclStackFree(interp);     /* free compiledLocals */
+    TclStackFree(interp);     /* free CallFrame      */
     return result;
 #undef NUM_LOCALS
 }
@@ -1158,7 +1384,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 {
     Interp *iPtr = (Interp*)interp;
     int result;
-    Tcl_CallFrame frame;
+    Tcl_CallFrame *framePtr;
     Proc *saveProcPtr;
     ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
 
@@ -1224,12 +1450,12 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	saveProcPtr = iPtr->compiledProcPtr;
  	iPtr->compiledProcPtr = procPtr;
 
- 	result = Tcl_PushCallFrame(interp, &frame,
+ 	result = TclPushStackFrame(interp, &framePtr,
 		(Tcl_Namespace*)nsPtr, /* isProcCallFrame */ 0);
 
  	if (result == TCL_OK) {
 	    result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
-	    Tcl_PopCallFrame(interp);
+	    TclPopStackFrame(interp);
 	}
 
  	iPtr->compiledProcPtr = saveProcPtr;
@@ -1252,25 +1478,12 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	    return result;
  	}
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
-	register CompiledLocal *localPtr;
-
 	/*
 	 * The resolver epoch has changed, but we only need to invalidate
 	 * the resolver cache.
 	 */
 
-	for (localPtr = procPtr->firstLocalPtr; localPtr != NULL;
-		localPtr = localPtr->nextPtr) {
-	    localPtr->flags &= ~(VAR_RESOLVED);
-	    if (localPtr->resolveInfo) {
-		if (localPtr->resolveInfo->deleteProc) {
-		    localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
-		} else {
-		    ckfree((char*)localPtr->resolveInfo);
-		}
-		localPtr->resolveInfo = NULL;
-	    }
-	}
+	codePtr->flags |= TCL_BYTECODE_RESOLVE_VARS;
     }
     return TCL_OK;
 }
@@ -1624,6 +1837,6 @@ TclCompileNoOp(interp, parsePtr, envPtr)
 	} 
     }
     envPtr->currStackDepth = savedStackDepth;
-    TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
+    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     return TCL_OK;
 }

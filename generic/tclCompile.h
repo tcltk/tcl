@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.10 2004/12/09 23:00:31 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.11 2005/01/12 21:36:02 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -272,6 +272,14 @@ typedef struct CompileEnv {
  * image rather than implicitly compiled from source
  */
 #define TCL_BYTECODE_PRECOMPILED		0x0001
+
+
+/*
+ * When a bytecode is compiled, interp or namespace resolvers have not been
+ * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
+ */
+
+#define TCL_BYTECODE_RESOLVE_VARS               0x0002
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -836,7 +844,7 @@ MODULE_SCOPE void	TclPrintSource _ANSI_ARGS_((FILE *outFile,
 			    CONST char *string, int maxChars));
 MODULE_SCOPE void	TclRegisterAuxDataType _ANSI_ARGS_((AuxDataType *typePtr));
 MODULE_SCOPE int	TclRegisterLiteral _ANSI_ARGS_((CompileEnv *envPtr,
-			    char *bytes, int length, int onHeap));
+			    char *bytes, int length, int flags));
 MODULE_SCOPE void	TclReleaseLiteral _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 MODULE_SCOPE void	TclSetCmdNameObj _ANSI_ARGS_((Tcl_Interp *interp,
@@ -854,11 +862,13 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 /*
  *----------------------------------------------------------------
- * Macros used by Tcl bytecode compilation and execution modules
- * inside the Tcl core but not used outside.
+ * Macros and flag values used by Tcl bytecode compilation and execution
+ * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
 
+#define LITERAL_ON_HEAP    0x01
+#define LITERAL_NS_SCOPE   0x02
 /*
  * Form of TclRegisterLiteral with onHeap == 0.
  * In that case, it is safe to cast away CONSTness, and it
@@ -866,7 +876,19 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  */
 
 #define TclRegisterNewLiteral(envPtr, bytes, length) \
-	TclRegisterLiteral(envPtr, (char *)(bytes), length, /*onHeap*/ 0)
+	TclRegisterLiteral(envPtr, (char *)(bytes), length, \
+                /*flags*/ 0)
+
+/*
+ * Form of TclRegisterNSLiteral with onHeap == 0.
+ * In that case, it is safe to cast away CONSTness, and it
+ * is cleanest to do that here, all in one place.
+ */
+
+#define TclRegisterNewNSLiteral(envPtr, bytes, length) \
+	TclRegisterLiteral(envPtr, (char *)(bytes), length, \
+                /*flags*/ LITERAL_NS_SCOPE)
+
 
 /*
  * Macro used to manually adjust the stack requirements; used

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.4 2004/09/08 23:02:46 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.5 2005/01/12 21:36:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -238,17 +238,17 @@ TclDeleteLiteralTable(interp, tablePtr)
  *	in the global table. We then add a reference to the shared
  *	literal in the CompileEnv's literal array. 
  *
- *	If onHeap is 1, this procedure is given ownership of the string: if
- *	an object is created then its string representation is set directly
- *	from string, otherwise the string is freed. Typically, a caller sets
- *	onHeap 1 if "string" is an already heap-allocated buffer holding the
- *	result of backslash substitutions.
+ *	If LITERAL_ON_HEAP is set in flags, this procedure is given ownership
+ *	of the string: if an object is created then its string representation
+ *	is set directly from string, otherwise the string is freed. Typically,
+ *	a caller sets LITERAL_ON_HEAP if "string" is an already heap-allocated
+ *	buffer holding the result of backslash substitutions.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclRegisterLiteral(envPtr, bytes, length, onHeap)
+TclRegisterLiteral(envPtr, bytes, length, flags)
     CompileEnv *envPtr;		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     register char *bytes;	/* Points to string for which to find or
@@ -257,9 +257,11 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     int length;			/* Number of bytes in the string. If < 0,
 				 * the string consists of all bytes up to
 				 * the first null character. */
-    int onHeap;			/* If 1 then the caller already malloc'd
-				 * bytes and ownership is passed to this
-				 * procedure. */
+    int flags;			/* If LITERAL_ON_HEAP then the caller already
+				 * malloc'd bytes and ownership is passed to
+				 * this procedure. If LITERAL_NS_SCOPE then
+				 * the literal shouldnot be shared accross
+				 * namespaces. */
 {
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
@@ -270,6 +272,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     int localHash, globalHash, objIndex;
     long n;
     char buf[TCL_INTEGER_SPACE];
+    Namespace *nsPtr;
 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
@@ -289,7 +292,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 		|| ((objPtr->bytes[0] == bytes[0])
 			&& (memcmp(objPtr->bytes, bytes, (unsigned) length)
 				== 0)))) {
-	    if (onHeap) {
+	    if (flags & LITERAL_ON_HEAP) {
 		ckfree(bytes);
 	    }
 	    objIndex = (localPtr - envPtr->literalArrayPtr);
@@ -302,15 +305,28 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     }
 
     /*
-     * The literal is new to this CompileEnv. Is it in the interpreter's
-     * global literal table?
+     * The literal is new to this CompileEnv. Should it be shared accross
+     * namespaces? If it is a fully qualified name, the namespace
+     * specification is not needed to avoid sharing.
+     */
+
+    if ((flags & LITERAL_NS_SCOPE) && iPtr->varFramePtr
+	    && ((length <2) || (bytes[0] != ':') || (bytes[1] != ':'))) {
+	nsPtr = iPtr->varFramePtr->nsPtr;
+    } else {
+	nsPtr = NULL;
+    }
+
+    /*
+     * Is it in the interpreter's global literal table?
      */
 
     globalHash = (hash & globalTablePtr->mask);
     for (globalPtr = globalTablePtr->buckets[globalHash];
 	 globalPtr != NULL;  globalPtr = globalPtr->nextPtr) {
 	objPtr = globalPtr->objPtr;
-	if ((objPtr->length == length) && ((length == 0)
+	if ((globalPtr->nsPtr == nsPtr)
+		&& (objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
 			&& (memcmp(objPtr->bytes, bytes, (unsigned) length)
 				== 0)))) {
@@ -319,7 +335,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 	     * local literal array.
 	     */
 	    
-	    if (onHeap) {
+	    if (flags & LITERAL_ON_HEAP) {
 		ckfree(bytes);
 	    }
 	    objIndex = AddLocalLiteralEntry(envPtr, globalPtr, localHash);
@@ -343,7 +359,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
-    if (onHeap) {
+    if (flags & LITERAL_ON_HEAP) {
 	objPtr->bytes = bytes;
 	objPtr->length = length;
     } else {
@@ -373,6 +389,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     globalPtr = (LiteralEntry *) ckalloc((unsigned) sizeof(LiteralEntry));
     globalPtr->objPtr = objPtr;
     globalPtr->refCount = 0;
+    globalPtr->nsPtr = nsPtr;
     globalPtr->nextPtr = globalTablePtr->buckets[globalHash];
     globalTablePtr->buckets[globalHash] = globalPtr;
     globalTablePtr->numEntries++;

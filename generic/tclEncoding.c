@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.7 2004/12/09 23:00:33 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.8 2005/01/12 21:36:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1360,6 +1360,7 @@ scan:
     Tcl_AppendToObj(nameObj, ".enc", -1);
     path = Tcl_FSJoinToPath(directory, 1, &nameObj);
     Tcl_DecrRefCount(directory);
+    Tcl_DecrRefCount(nameObj);
     Tcl_IncrRefCount(path);
     chan = Tcl_FSOpenFileChannel(NULL, path, "r", 0);
     Tcl_DecrRefCount(path);
@@ -3084,7 +3085,7 @@ InitializeEncodingSearchPath(valuePtr, lengthPtr, encodingPtr)
 	if ((0 == Tcl_FSStat(path, &stat)) && S_ISDIR(stat.st_mode)) {
 	    Tcl_ListObjAppendElement(NULL, searchPath, path);
 	}
-	Tcl_IncrRefCount(path);
+	Tcl_DecrRefCount(path);
     }
     Tcl_DecrRefCount(libPath);
     Tcl_DecrRefCount(encodingObj);

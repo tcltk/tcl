@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.11 2004/12/09 23:00:42 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.12 2005/01/12 21:36:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -403,7 +403,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     if (typePtr == &tclLocalVarNameType) {
 	int localIndex = (int) part1Ptr->internalRep.longValue;
 
-	if ((varFramePtr != NULL) && varFramePtr->isProcCallFrame
+	if ((varFramePtr != NULL)
+		&& (varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 	        && !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {
 	    /*
@@ -428,11 +429,12 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	    && ((flags & TCL_GLOBAL_ONLY) 
 		|| ((*part1 == ':') && (*(part1+1) == ':'))
 		|| (varFramePtr == NULL) 
-		|| (!varFramePtr->isProcCallFrame 
+		|| (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 		    && (nsPtr == iPtr->globalNsPtr)));
 	useReference = useGlobal || ((cachedNsPtr == nsPtr) 
 	        && ((flags & TCL_NAMESPACE_ONLY) 
-		    || (varFramePtr && !varFramePtr->isProcCallFrame 
+		    || (varFramePtr
+			&& !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 			&& !(flags & TCL_GLOBAL_ONLY)
 			/* careful: an undefined ns variable could
 			 * be hiding a valid global reference. */
@@ -699,7 +701,6 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
     if ((cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL) 
 	    && !(flags & LOOKUP_FOR_UPVAR)) {
         resPtr = iPtr->resolverPtr;
-
         if (cxtNsPtr->varResProc) {
             result = (*cxtNsPtr->varResProc)(interp, varName,
 		    (Tcl_Namespace *) cxtNsPtr, flags, &var);
@@ -742,7 +743,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 
     if (((flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY)) != 0)
 	    || (varFramePtr == NULL)
-	    || !varFramePtr->isProcCallFrame
+	    || !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 	    || (strstr(varName, "::") != NULL)) {
 	CONST char *tail;
 	int lookGlobal;
@@ -2954,6 +2955,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		namePtr = Tcl_NewStringObj(name, -1);
 		result = Tcl_ListObjAppendElement(interp, resultPtr, namePtr);
 		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(resultPtr); 
 		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
 		    return result;
 		}
@@ -3357,7 +3359,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
     }
 
     if (index >= 0) {
-	if (!varFramePtr->isProcCallFrame) {
+	if (!(varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
@@ -3372,7 +3374,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL) 
 	    && ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		|| (varFramePtr == NULL)
-		|| !varFramePtr->isProcCallFrame
+		|| !(varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 		|| (strstr(myName, "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
 		    myName, "\": upvar won't create namespace variable that ",
@@ -3642,7 +3644,7 @@ Tcl_GlobalObjCmd(dummy, interp, objc, objv)
      */
     
     if ((iPtr->varFramePtr == NULL)
-	    || !iPtr->varFramePtr->isProcCallFrame) {
+	    || !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	return TCL_OK;
     }
 
@@ -3796,7 +3798,7 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 	 */
 
 	if ((iPtr->varFramePtr != NULL)
-	        && iPtr->varFramePtr->isProcCallFrame) {
+	        && (iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	    /*
 	     * varName might have a scope qualifier, but the name for the
 	     * local "link" variable must be the simple name at the tail.

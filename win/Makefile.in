@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.8 2004/12/09 23:01:36 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.9 2005/01/12 21:37:23 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -468,6 +468,7 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
 	--name-prefix=TclDate \
+	--no-lines \
 	$(GENERIC_DIR)/tclGetDate.y
 
 install: all install-binaries install-libraries install-doc
@@ -559,8 +560,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.5.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.0.tm;
+	@echo "Installing package http 2.5.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.1.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \

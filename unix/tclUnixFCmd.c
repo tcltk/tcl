@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.9 2004/12/09 23:01:34 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.10 2005/01/12 21:37:22 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -477,8 +477,8 @@ TclUnixCopyFile(src, dst, statBufPtr, dontCopyAtts)
 {
     int srcFd;
     int dstFd;
-    u_int blockSize;   /* Optimal I/O blocksize for filesystem */
-    char *buffer;      /* Data buffer for copy */
+    unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
+    char *buffer;		/* Data buffer for copy */
     size_t nread;
 
 #ifdef DJGPP

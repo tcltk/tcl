@@ -20,10 +20,6 @@
 
 typedef struct ThreadSpecificData {
     char	    	nabuf[16];
-    struct {
-	Tcl_DirEntry ent;
-	char name[MAXNAMLEN+1];
-    } rdbuf;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -65,7 +61,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 /*
  *----------------------------------------------------------------------
  *
- * TclpThreadCreaet --
+ * TclpThreadCreate --
  *
  *	This procedure creates a new thread.
  *
@@ -867,56 +863,18 @@ TclpFinalizeCondition(condPtr)
  * Side effects:
  *	See documentation of C functions.
  *
+ * Notes:
+ * 	TclpReaddir is no longer used by the core (see 1095909),
+ * 	but it appears in the internal stubs table (see #589526).
  *----------------------------------------------------------------------
  */
-
-#if defined(TCL_THREADS) && !defined(HAVE_READDIR_R)
-TCL_DECLARE_MUTEX( rdMutex )
-#undef readdir
-#endif
 
 Tcl_DirEntry *
 TclpReaddir(DIR * dir)
 {
-    Tcl_DirEntry *ent;
-#ifdef TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-#ifdef HAVE_READDIR_R
-    ent = &tsdPtr->rdbuf.ent;
-# ifdef HAVE_TWO_ARG_READDIR_R
-    if (TclOSreaddir_r(dir, ent) != 0) {
-# else /* HAVE_THREE_ARG_READDIR_R */
-    if (TclOSreaddir_r(dir, ent, &ent) != 0) {
-# endif /* HAVE_TWO_ARG_READDIR_R */
-	ent = NULL;
-    }
-
-#else /* !HAVE_READDIR_R */
-
-    Tcl_MutexLock(&rdMutex);
-#   ifdef HAVE_STRUCT_DIRENT64
-    ent = readdir64(dir);
-#   else /* !HAVE_STRUCT_DIRENT64 */
-    ent = readdir(dir);
-#   endif /* HAVE_STRUCT_DIRENT64 */
-    if (ent != NULL) {
-	memcpy((VOID *) &tsdPtr->rdbuf.ent, (VOID *) ent,
-		sizeof(tsdPtr->rdbuf));
-	ent = &tsdPtr->rdbuf.ent;
-    }
-    Tcl_MutexUnlock(&rdMutex);
-
-#endif /* HAVE_READDIR_R */
-#else
-#   ifdef HAVE_STRUCT_DIRENT64
-    ent = readdir64(dir);
-#   else /* !HAVE_STRUCT_DIRENT64 */
-    ent = readdir(dir);
-#   endif /* HAVE_STRUCT_DIRENT64 */
-#endif
-    return ent;
+    return TclOSreaddir(dir);
 }
+
 char *
 TclpInetNtoa(struct in_addr addr)
 {

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.9 2004/12/09 23:00:42 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.10 2005/01/12 21:36:33 dgp Exp $
  */
 
 #define TCL_TEST
@@ -4191,7 +4191,7 @@ TestgetvarfullnameCmd(dummy, interp, objc, objv)
     char *name, *arg;
     int flags = 0;
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame frame;
+    Tcl_CallFrame *framePtr;
     Tcl_Var variable;
     int result;
 
@@ -4222,7 +4222,7 @@ TestgetvarfullnameCmd(dummy, interp, objc, objv)
 	if (namespacePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	result = Tcl_PushCallFrame(interp, &frame, namespacePtr,
+	result = TclPushStackFrame(interp, &framePtr, namespacePtr,
                 /*isProcCallFrame*/ 0);
 	if (result != TCL_OK) {
 	    return result;
@@ -4233,7 +4233,7 @@ TestgetvarfullnameCmd(dummy, interp, objc, objv)
 	    (flags | TCL_LEAVE_ERR_MSG));
 
     if (flags == TCL_NAMESPACE_ONLY) {
-	Tcl_PopCallFrame(interp);
+	TclPopStackFrame(interp);
     }
     if (variable == (Tcl_Var) NULL) {
 	return TCL_ERROR;

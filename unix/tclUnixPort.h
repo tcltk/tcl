@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.9 2004/12/09 23:01:35 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.10 2005/01/12 21:37:23 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -56,11 +56,9 @@
 #ifdef HAVE_STRUCT_DIRENT64
 typedef struct dirent64	Tcl_DirEntry;
 #   define TclOSreaddir		readdir64
-#   define TclOSreaddir_r	readdir64_r
 #else
 typedef struct dirent	Tcl_DirEntry;
 #   define TclOSreaddir		readdir
-#   define TclOSreaddir_r	readdir_r
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
@@ -558,17 +556,13 @@ typedef pthread_mutex_t TclpMutex;
 EXTERN void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
-EXTERN Tcl_DirEntry * 	TclpReaddir(DIR *);
 EXTERN struct tm *     	TclpLocaltime(CONST time_t *);
 EXTERN struct tm *     	TclpGmtime(CONST time_t *);
 EXTERN char *          	TclpInetNtoa(struct in_addr);
-#   define readdir(x)	TclpReaddir(x)
 /* #define localtime(x)	TclpLocaltime(x)
  * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa
 #   define inet_ntoa(x)	TclpInetNtoa(x)
-#   undef TclOSreaddir
-#   define TclOSreaddir(x) TclpReaddir(x)
 #   ifdef MAC_OSX_TCL
 /* 
  * On Mac OS X, realpath is currently not

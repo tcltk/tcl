@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.3 2004/09/30 00:51:40 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.4 2005/01/12 21:36:23 dgp Exp $
  */
 
 %{
@@ -77,6 +77,8 @@ typedef struct DateInfo {
     char     *dateInput;
     time_t   *dateRelPointer;
 
+    int	     dateDigitCount;
+
 } DateInfo;
 
 #define YYPARSE_PARAM info
@@ -105,6 +107,7 @@ typedef struct DateInfo {
 #define yyRelSeconds (((DateInfo*)info)->dateRelSeconds)
 #define yyRelPointer (((DateInfo*)info)->dateRelPointer)
 #define yyInput (((DateInfo*)info)->dateInput)
+#define yyDigitCount (((DateInfo*)info)->dateDigitCount)
 
 #define EPOCH           1970
 #define START_OF_TIME   1902
@@ -407,7 +410,7 @@ number  : tUNUMBER
 	    yyYear = $1;
 	} else {
 	    yyHaveTime++;
-	    if ($1 < 100) {
+	    if (yyDigitCount <= 2) {
 		yyHour = $1;
 		yyMinutes = 0;
 	    } else {
@@ -801,6 +804,7 @@ TclDatelex( void* info )
 		Count++;
 	    }
             yyInput--;
+	    yyDigitCount = Count;
 	    /* A number with 6 or more digits is considered an ISO 8601 base */
 	    if (Count >= 6) {
 		return tISOBASE;

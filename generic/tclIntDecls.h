@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.11 2004/12/09 23:00:38 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.12 2005/01/12 21:36:26 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1113,6 +1113,30 @@ EXTERN Tcl_Obj *	TclGetObjNameOfExecutable _ANSI_ARGS_((void));
 EXTERN void		TclSetObjNameOfExecutable _ANSI_ARGS_((
 				Tcl_Obj * name, Tcl_Encoding encoding));
 #endif
+#ifndef TclStackAlloc_TCL_DECLARED
+#define TclStackAlloc_TCL_DECLARED
+/* 215 */
+EXTERN char *		TclStackAlloc _ANSI_ARGS_((Tcl_Interp * interp, 
+				int numBytes));
+#endif
+#ifndef TclStackFree_TCL_DECLARED
+#define TclStackFree_TCL_DECLARED
+/* 216 */
+EXTERN void		TclStackFree _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef TclPushStackFrame_TCL_DECLARED
+#define TclPushStackFrame_TCL_DECLARED
+/* 217 */
+EXTERN int		TclPushStackFrame _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_CallFrame ** framePtrPtr, 
+				Tcl_Namespace * namespacePtr, 
+				int isProcCallFrame));
+#endif
+#ifndef TclPopStackFrame_TCL_DECLARED
+#define TclPopStackFrame_TCL_DECLARED
+/* 218 */
+EXTERN void		TclPopStackFrame _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1348,6 +1372,10 @@ typedef struct TclIntStubs {
     void (*tclpFindExecutable) _ANSI_ARGS_((CONST char * argv0)); /* 212 */
     Tcl_Obj * (*tclGetObjNameOfExecutable) _ANSI_ARGS_((void)); /* 213 */
     void (*tclSetObjNameOfExecutable) _ANSI_ARGS_((Tcl_Obj * name, Tcl_Encoding encoding)); /* 214 */
+    char * (*tclStackAlloc) _ANSI_ARGS_((Tcl_Interp * interp, int numBytes)); /* 215 */
+    void (*tclStackFree) _ANSI_ARGS_((Tcl_Interp * interp)); /* 216 */
+    int (*tclPushStackFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_CallFrame ** framePtrPtr, Tcl_Namespace * namespacePtr, int isProcCallFrame)); /* 217 */
+    void (*tclPopStackFrame) _ANSI_ARGS_((Tcl_Interp * interp)); /* 218 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2091,6 +2119,22 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclSetObjNameOfExecutable
 #define TclSetObjNameOfExecutable \
 	(tclIntStubsPtr->tclSetObjNameOfExecutable) /* 214 */
+#endif
+#ifndef TclStackAlloc
+#define TclStackAlloc \
+	(tclIntStubsPtr->tclStackAlloc) /* 215 */
+#endif
+#ifndef TclStackFree
+#define TclStackFree \
+	(tclIntStubsPtr->tclStackFree) /* 216 */
+#endif
+#ifndef TclPushStackFrame
+#define TclPushStackFrame \
+	(tclIntStubsPtr->tclPushStackFrame) /* 217 */
+#endif
+#ifndef TclPopStackFrame
+#define TclPopStackFrame \
+	(tclIntStubsPtr->tclPopStackFrame) /* 218 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
