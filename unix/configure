@@ -6164,6 +6164,9 @@ else
     TCL_SHLIB_CFLAGS=""
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
     MAKE_LIB="\${STLIB_LD} \$@ \${OBJS}"
+    if test "x$DL_OBJS" = "xtclLoadDyld.o"; then
+	MAKE_LIB="${MAKE_LIB} ; \${RANLIB} \$@"
+    fi
 fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed

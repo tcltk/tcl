@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.57.2.10 2002/03/26 02:27:58 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.57.2.11 2002/07/24 13:54:47 das Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -405,6 +405,9 @@ else
     TCL_SHLIB_CFLAGS=""
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
     MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
+    if test "x$DL_OBJS" = "xtclLoadDyld.o"; then
+	MAKE_LIB="${MAKE_LIB} ; \${RANLIB} \$@"
+    fi
 fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed

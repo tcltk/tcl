@@ -1,3 +1,9 @@
+2002-07-24  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in: backport of corrected fix for [Bug 529801]:
+	ranlib needed for static builds on Mac OS X.
+	* unix/configure: Regen.
+
 2002-07-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest1.0/tcltest.tcl:  Corrected reaction to existing
