@@ -1,3 +1,12 @@
+2003-05-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (tclCmdNameType):  Converted internal rep
+	management of the cmdName Tcl_ObjType the opposite way, to always
+	use the twoPtrValue instead of always using the otherValuePtr.
+	Previous fix on 2003-05-12 broke several extensions that wanted
+	to poke around with the twoPtrValue.ptr2 value of a cmdName
+	Tcl_Obj, like TclBlend and e4graph.  [Bug 726018]
+
 2003-05-22  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.3 TAGGED FOR RELEASE ***
