@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.63 2000/02/08 10:05:40 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.64 2000/04/04 20:28:41 kupries Exp $
  */
 
 #ifndef _TCL
@@ -163,8 +163,10 @@ extern "C" {
 #ifndef TCL_THREADS
 #define Tcl_MutexLock(mutexPtr)
 #define Tcl_MutexUnlock(mutexPtr)
+#define Tcl_MutexFinalize(mutexPtr)
 #define Tcl_ConditionNotify(condPtr)
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
 
 /* 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.31 2000/02/08 10:05:40 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.32 2000/04/04 20:28:40 kupries Exp $
 
 library tcl
 
@@ -1347,7 +1347,12 @@ declare 390 generic {
     int Tcl_ProcObjCmd(ClientData clientData, Tcl_Interp *interp, \
 	    int objc, Tcl_Obj *CONST objv[])
 }
-
+declare 391 generic {
+    void Tcl_ConditionFinalize (Tcl_Condition *condPtr)
+}
+declare 392 generic {
+    void Tcl_MutexFinalize (Tcl_Mutex *mutex)
+}
 
 ##############################################################################
 

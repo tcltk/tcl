@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.7 2000/01/21 02:26:25 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.8 2000/04/04 20:28:43 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -272,7 +272,7 @@ Tcl_FinalizeNotifier(clientData)
      * Clean up any synchronization objects in the thread local storage.
      */
 
-    TclFinalizeCondition(&(tsdPtr->waitCV));
+    Tcl_ConditionFinalize(&(tsdPtr->waitCV));
 
     Tcl_MutexUnlock(&notifierMutex);
 #endif

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.6 1999/07/02 21:50:04 redman Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.7 2000/04/04 20:28:42 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -150,7 +150,7 @@ TclFinalizeNotifier()
     Tcl_MutexLock(&listLock);
 
     Tcl_FinalizeNotifier(tsdPtr->clientData);
-    TclFinalizeMutex(&(tsdPtr->queueMutex));
+    Tcl_MutexFinalize(&(tsdPtr->queueMutex));
     for (prevPtrPtr = &firstNotifierPtr; *prevPtrPtr != NULL;
 	 prevPtrPtr = &((*prevPtrPtr)->nextPtr)) {
 	if (*prevPtrPtr == tsdPtr) {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.31 2000/02/08 10:05:41 hobbs Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.32 2000/04/04 20:28:41 kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1218,6 +1218,11 @@ EXTERN int		Tcl_GetChannelNamesEx _ANSI_ARGS_((
 EXTERN int		Tcl_ProcObjCmd _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Interp * interp, int objc, 
 				Tcl_Obj *CONST objv[]));
+/* 391 */
+EXTERN void		Tcl_FinalizeCondition _ANSI_ARGS_((
+				Tcl_Condition * condPtr));
+/* 392 */
+EXTERN void		Tcl_FinalizeMutex _ANSI_ARGS_((Tcl_Mutex * mutex));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1676,6 +1681,8 @@ typedef struct TclStubs {
     int (*tcl_GetChannelNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 388 */
     int (*tcl_GetChannelNamesEx) _ANSI_ARGS_((Tcl_Interp * interp, char * pattern)); /* 389 */
     int (*tcl_ProcObjCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[])); /* 390 */
+    void (*tcl_FinalizeCondition) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 391 */
+    void (*tcl_FinalizeMutex) _ANSI_ARGS_((Tcl_Mutex * mutex)); /* 392 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3284,6 +3291,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ProcObjCmd
 #define Tcl_ProcObjCmd \
 	(tclStubsPtr->tcl_ProcObjCmd) /* 390 */
+#endif
+#ifndef Tcl_FinalizeCondition
+#define Tcl_FinalizeCondition \
+	(tclStubsPtr->tcl_FinalizeCondition) /* 391 */
+#endif
+#ifndef Tcl_FinalizeMutex
+#define Tcl_FinalizeMutex \
+	(tclStubsPtr->tcl_FinalizeMutex) /* 392 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

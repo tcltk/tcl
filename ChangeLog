@@ -1,3 +1,32 @@
+
+2000-04-03  Andreas Kupries <a.kupries@westend.com>
+
+	* Overall change: Definition of public API's for the finalization
+	of conditions and mutexes. [Bug: 4199].
+
+	* generic/tclInt.h: Removed definitions of TclFinalizeMutex and
+	TclFinalizeCondition.
+
+	* generic/tcl.decls: Added declarations of Tcl_MutexFinalize and
+	Tcl_ConditionFinalize.
+
+	* generic/tclThread.c: Renamed TclFinalizeMutex to
+	Tcl_MutexFinalize. Renamed TclFinalizeCondition to
+	Tcl_ConditionFinalize.
+
+	* generic/tclNotify.c: Changed usage of TclFinalizeMutex to
+	Tcl_MutexFinalize.
+
+	* unix/tclUnixNotfy.c: 
+	* generic/tclThreadTest.c: Changed usages of TclFinalizeCondition to
+	Tcl_ConditionFinalize.
+
+	* generic/tcl.h: Added empty macros for Tcl_MutexFinalize and
+	Tcl_ConditionFinalize, to be used when the core is compiled
+	without threads. 
+
+	* doc/Thread.3:	Added description the new API's.
+
 2000-04-03  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclCmdIL.c (InfoVarsCmd): checked for non-NULL procPtr

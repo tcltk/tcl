@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.6 2000/01/12 11:12:53 hobbs Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.7 2000/04/04 20:28:43 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -372,7 +372,7 @@ TclCreateThread(interp, script)
 
     Tcl_ConditionWait(&ctrl.condWait, &threadMutex, NULL);
     Tcl_MutexUnlock(&threadMutex);
-    TclFinalizeCondition(&ctrl.condWait);
+    Tcl_ConditionFinalize(&ctrl.condWait);
     Tcl_SetObjResult(interp, Tcl_NewLongObj((long)id));
     return TCL_OK;
 }
@@ -764,7 +764,7 @@ TclThreadSend(interp, id, script, wait)
 	}
     }
     Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
-    TclFinalizeCondition(&resultPtr->done);
+    Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
     ckfree((char *) resultPtr);

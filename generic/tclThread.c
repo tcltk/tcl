@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.3 1999/08/10 17:35:19 redman Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.4 2000/04/04 20:28:43 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -271,7 +271,7 @@ TclRememberMutex(mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclFinalizeMutex
+ * Tcl_MutexFinalize
  *
  *      Finalize a single mutex and remove it from the
  *	list of remembered objects.
@@ -286,7 +286,7 @@ TclRememberMutex(mutexPtr)
  */
 
 void
-TclFinalizeMutex(mutexPtr)
+Tcl_MutexFinalize(mutexPtr)
     Tcl_Mutex *mutexPtr;
 {
 #ifdef TCL_THREADS
@@ -344,7 +344,7 @@ TclRememberCondition(condPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclFinalizeCondition
+ * Tcl_ConditionFinalize
  *
  *      Finalize a single condition variable and remove it from the
  *	list of remembered objects.
@@ -359,7 +359,7 @@ TclRememberCondition(condPtr)
  */
 
 void
-TclFinalizeCondition(condPtr)
+Tcl_ConditionFinalize(condPtr)
     Tcl_Condition *condPtr;
 {
 #ifdef TCL_THREADS
@@ -411,7 +411,7 @@ TclFinalizeThreadData()
 /*
  *----------------------------------------------------------------------
  *
- * TclFinalizeSyncronization --
+ * TclFinalizeSynchronization --
  *
  *      This procedure cleans up all synchronization objects:
  *      mutexes, condition variables, and thread-local storage.
