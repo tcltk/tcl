@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.16 2004/05/27 13:18:53 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.17 2004/07/11 23:01:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1024,7 +1024,7 @@ Tcl_DictObjDone(searchPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DictObjRemoveKeyList --
+ * Tcl_DictObjPutKeyList --
  *
  *	Add a key...key,value pair to a dictionary tree.  The main
  *	dictionary value must not be shared, though sub-dictionaries may
@@ -1122,6 +1122,8 @@ Tcl_DictObjRemoveKeyList(interp, dictPtr, keyc, keyv)
     dict = (Dict *) dictPtr->internalRep.otherValuePtr;
     hPtr = Tcl_FindHashEntry(&dict->table, (char *)keyv[keyc-1]);
     if (hPtr != NULL) {
+	Tcl_Obj *oldValuePtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	Tcl_DecrRefCount(oldValuePtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     InvalidateDictChain(dictPtr);
