@@ -1,3 +1,21 @@
+2002-07-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclInt.h:
+	* generic/tclIOUtil.c:
+	* generic/tclLoadNone.c:
+	* unix/tclLoadAout.c:
+	* unix/tclLoadDl.c:
+	* unix/tclLoadDld.c:
+	* unix/tclLoadDyld.c:
+	* unix/tclLoadNext.c:
+	* unix/tclLoadOSF.c:
+	* unix/tclLoadShl.c:
+	* mac/tclMacLoad.c:
+	* win/tclWinLoad.c: modified to move more functionality
+	to the generic code and avoid duplication.  Partial replacement
+	of internal uses of clientData with opaque TclLoadHandle.  A
+	little further work still needed, but significant changes are done.
+
 2002-07-17  D. Richard Hipp    <drh@hwaci.com>
 
 	* library/msgcat/msgcat.tcl: fix a comment that was causing

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.101 2002/07/17 10:36:23 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.102 2002/07/17 20:00:45 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1563,7 +1563,8 @@ typedef struct TclFile_ *TclFile;
  * Opaque names for platform specific types.
  */
 
-typedef struct TclpTime_t_ *TclpTime_t;
+typedef struct TclpTime_t_    *TclpTime_t;
+typedef struct TclLoadHandle_ *TclLoadHandle;
 
 /*
  * The "globParameters" argument of the function TclGlob is an
@@ -1829,8 +1830,14 @@ EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 			    int result, Tcl_Interp *targetInterp));
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
                             _ANSI_ARGS_((ClientData clientData));
-EXTERN Tcl_Obj*	TclpFilesystemPathType
+EXTERN Tcl_Obj*	        TclpFilesystemPathType
 					_ANSI_ARGS_((Tcl_Obj* pathObjPtr));
+EXTERN Tcl_PackageInitProc* TclpFindSymbol _ANSI_ARGS_((Tcl_Interp *interp,
+			    TclLoadHandle loadHandle, CONST char *symbol));
+EXTERN int              TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp, 
+			    Tcl_Obj *pathPtr, 
+	                    TclLoadHandle *loadHandle, 
+		            Tcl_FSUnloadFileProc **unloadProcPtr));
 
 /*
  *----------------------------------------------------------------
