@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.8 2001/12/04 15:36:29 dkf Exp $
+# RCS: @(#) $Id: for.test,v 1.9 2001/12/06 10:59:18 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -668,7 +668,7 @@ test for-6.6 {Tcl_ForObjCmd: error in initial command} {
 test for-6.7 {Tcl_ForObjCmd: error in test expression} {
     set z for
     list [catch {$z {set i 0} {i < 5} {incr i} {body}} msg] $msg $errorInfo
-} {1 {syntax error in expression "i < 5": expected a parenthesis enclosing function arguments} {syntax error in expression "i < 5": expected a parenthesis enclosing function arguments
+} {1 {syntax error in expression "i < 5": variable references require preceding $} {syntax error in expression "i < 5": variable references require preceding $
     while executing
 "$z {set i 0} {i < 5} {incr i} {body}"}}
 test for-6.8 {Tcl_ForObjCmd: test expression is enclosed in quotes} {
