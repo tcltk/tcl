@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.19 2001/03/24 01:14:27 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.20 2001/04/07 02:09:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2641,10 +2641,10 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
  *	Here "arg" can be a list. "namespace code arg" produces a result
  *	equivalent to that produced by the command
  *
- *	    list namespace inscope [namespace current] $arg
+ *	    list ::namespace inscope [namespace current] $arg
  *
  *	However, if "arg" is itself a scoped value starting with
- *	"namespace inscope", then the result is just "arg".
+ *	"::namespace inscope", then the result is just "arg".
  *
  * Results:
  *	Returns TCL_OK if successful, and TCL_ERROR if anything goes wrong.
@@ -2678,6 +2678,10 @@ NamespaceCodeCmd(dummy, interp, objc, objv)
      */
 
     arg = Tcl_GetStringFromObj(objv[2], &length);
+    while (*arg == ':') { 
+	arg++; 
+	length--; 
+    } 
     if ((*arg == 'n') && (length > 17)
 	    && (strncmp(arg, "namespace", 9) == 0)) {
 	for (p = (arg + 9);  (*p == ' ');  p++) {
@@ -2700,7 +2704,7 @@ NamespaceCodeCmd(dummy, interp, objc, objv)
 
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
     Tcl_ListObjAppendElement(interp, listPtr,
-            Tcl_NewStringObj("namespace", -1));
+            Tcl_NewStringObj("::namespace", -1));
     Tcl_ListObjAppendElement(interp, listPtr,
 	    Tcl_NewStringObj("inscope", -1));
 
