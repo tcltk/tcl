@@ -1,6 +1,12 @@
 2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
+	optimisation of variables (INST_STORE, INST_INCR) and commands
+	(INST_INVOKE); faster check for the existence of a catch.
+
+2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
 	optimisation of comparisons.
 
 2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
