@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.77 2004/08/25 01:11:03 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.78 2004/09/27 14:31:17 kennykb Exp $
 
 library tcl
 
@@ -124,10 +124,11 @@ declare 25 generic {
 #  declare 26 generic {
 #      char *TclGetCwd(Tcl_Interp *interp)
 #  }
-declare 27 generic {
-    int TclGetDate(char *p, unsigned long now, long zone,
-	    unsigned long *timePtr)
-}
+# Removed in 8.5
+#declare 27 generic {
+#    int TclGetDate(char *p, unsigned long now, long zone,
+#	    unsigned long *timePtr)
+#}
 declare 28 generic {
     Tcl_Channel TclpGetDefaultStdChannel(int type)
 }
@@ -526,10 +527,11 @@ declare 132 generic {
 declare 133 generic {
     struct tm *TclpGetDate(CONST time_t *time, int useGMT)
 }
-declare 134 generic {
-    size_t TclpStrftime(char *s, size_t maxsize, CONST char *format,
-	    CONST struct tm *t, int useGMT)
-}
+# Removed in 8.5
+#declare 134 generic {
+#    size_t TclpStrftime(char *s, size_t maxsize, CONST char *format,
+#	    CONST struct tm *t, int useGMT)
+#}
 #declare 135 generic {
 #    int TclpCheckStackSpace(void)
 #}
