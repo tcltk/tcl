@@ -1,5 +1,10 @@
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/io.test: Doh! Undo accidental commenting
+	out of a couple of tests.
+
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/io.test: Define a fileevent constraint and add
 	it to the constraint list of any test that depends
 	on the fileevent command. This is only useful to
