@@ -2,13 +2,12 @@
  * tclInitScript.h --
  *
  *	This file contains Unix & Windows common init script
- *      It is not used on the Mac. (the mac init script is in tclMacInit.c)
  *
  * Copyright (c) 1998 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclInitScript.h,v 1.14 2004/03/09 12:59:05 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInitScript.h,v 1.15 2004/03/17 18:14:13 das Exp $
  */
 
 /*

@@ -652,10 +652,6 @@ SOURCE=..\doc\lsort.n
 # End Source File
 # Begin Source File
 
-SOURCE=..\doc\Macintosh.3
-# End Source File
-# Begin Source File
-
 SOURCE=..\doc\man.macros
 # End Source File
 # Begin Source File
@@ -777,10 +773,6 @@ SOURCE=..\doc\regsub.n
 # Begin Source File
 
 SOURCE=..\doc\rename.n
-# End Source File
-# Begin Source File
-
-SOURCE=..\doc\resource.n
 # End Source File
 # Begin Source File
 

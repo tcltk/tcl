@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.39 2004/03/09 12:59:04 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.40 2004/03/17 18:14:12 das Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -237,7 +237,7 @@ The elements to join to the given base path.
 There are several reasons for calling the \fBTcl_FS...\fR functions
 rather than calling system level functions like \fBaccess\fR and
 \fBstat\fR directly.  First, they will work cross-platform, so an
-extension which calls them should work unmodified on Unix, MacOS and
+extension which calls them should work unmodified on Unix and
 Windows.  Second, the Windows implementation of some of these functions
 fixes some bugs in the system level calls.  Third, these function calls
 deal with any 'Utf to platform-native' path conversions which may be
@@ -599,12 +599,12 @@ efficient way of creating the appropriate path object type.
 The resulting object is a pure 'path' object, which will only receive 
 a Utf-8 string representation if that is required by some Tcl code.
 .PP
-\fBTcl_FSGetNativePath\fR is for use by the Win/Unix/MacOS native
+\fBTcl_FSGetNativePath\fR is for use by the Win/Unix native
 filesystems, so that they can easily retrieve the native (char* or
 TCHAR*) representation of a path.  This function is a convenience
 wrapper around \fBTcl_FSGetInternalRep\fR, and assumes the native
 representation is string-based.  It may be desirable in the future to
-have non-string-based native representations (for example, on MacOS, a
+have non-string-based native representations (for example, on MacOSX, a
 representation using a fileSpec of FSRef structure would probably be
 more efficient).  On Windows a full Unicode representation would allow
 for paths of unlimited length.  Currently the representation is simply a

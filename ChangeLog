@@ -1,3 +1,147 @@
+2004-03-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	Removed support for Mac OS Classic platform [Patch 918142]
+
+	* README:
+	* compat/string.h:
+	* doc/Encoding.3:
+	* doc/FileSystem.3:
+	* doc/Init.3:
+	* doc/Macintosh.3 (removed):
+	* doc/OpenFileChnl.3:
+	* doc/OpenTcp.3:
+	* doc/SourceRCFile.3:
+	* doc/Thread.3:
+	* doc/clock.n:
+	* doc/exec.n:
+	* doc/fconfigure.n:
+	* doc/file.n:
+	* doc/filename.n:
+	* doc/glob.n:
+	* doc/open.n:
+	* doc/puts.n:
+	* doc/resource.n (removed):
+	* doc/safe.n:
+	* doc/source.n:
+	* doc/tclvars.n:
+	* doc/unload.n:
+	* generic/README:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclAlloc.c:
+	* generic/tclBasic.c:
+	* generic/tclCmdAH.c:
+	* generic/tclDate.c:
+	* generic/tclDecls.h:
+	* generic/tclFCmd.c:
+	* generic/tclFileName.c:
+	* generic/tclGetDate.y:
+	* generic/tclIOCmd.c:
+	* generic/tclIOUtil.c:
+	* generic/tclInitScript.h:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclMain.c:
+	* generic/tclMath.h:
+	* generic/tclNotify.c:
+	* generic/tclPathObj.c:
+	* generic/tclPlatDecls.h:
+	* generic/tclPort.h:
+	* generic/tclStubInit.c:
+	* generic/tclTest.c:
+	* generic/tclThreadJoin.c:
+	* library/auto.tcl:
+	* library/init.tcl:
+	* library/package.tcl:
+	* library/safe.tcl:
+	* library/tclIndex:
+	* library/tcltest/tcltest.tcl:
+	* mac/AppleScript.html (removed):
+	* mac/Background.doc (removed):
+	* mac/MW_TclAppleScriptHeader.h (removed):
+	* mac/MW_TclAppleScriptHeader.pch (removed):
+	* mac/MW_TclBuildLibHeader.h (removed):
+	* mac/MW_TclBuildLibHeader.pch (removed):
+	* mac/MW_TclHeader.h (removed):
+	* mac/MW_TclHeader.pch (removed):
+	* mac/MW_TclHeaderCommon.h (removed):
+	* mac/MW_TclStaticHeader.h (removed):
+	* mac/MW_TclStaticHeader.pch (removed):
+	* mac/MW_TclTestHeader.h (removed):
+	* mac/MW_TclTestHeader.pch (removed):
+	* mac/README (removed):
+	* mac/bugs.doc (removed):
+	* mac/libmoto.doc (removed):
+	* mac/morefiles.doc (removed):
+	* mac/porting.notes (removed):
+	* mac/tclMac.h (removed):
+	* mac/tclMacAETE.r (removed):
+	* mac/tclMacAlloc.c (removed):
+	* mac/tclMacAppInit.c (removed):
+	* mac/tclMacApplication.r (removed):
+	* mac/tclMacBOAAppInit.c (removed):
+	* mac/tclMacBOAMain.c (removed):
+	* mac/tclMacChan.c (removed):
+	* mac/tclMacCommonPch.h (removed):
+	* mac/tclMacDNR.c (removed):
+	* mac/tclMacEnv.c (removed):
+	* mac/tclMacExit.c (removed):
+	* mac/tclMacFCmd.c (removed):
+	* mac/tclMacFile.c (removed):
+	* mac/tclMacInit.c (removed):
+	* mac/tclMacInt.h (removed):
+	* mac/tclMacInterupt.c (removed):
+	* mac/tclMacLibrary.c (removed):
+	* mac/tclMacLibrary.r (removed):
+	* mac/tclMacLoad.c (removed):
+	* mac/tclMacMath.h (removed):
+	* mac/tclMacNotify.c (removed):
+	* mac/tclMacOSA.c (removed):
+	* mac/tclMacOSA.r (removed):
+	* mac/tclMacPanic.c (removed):
+	* mac/tclMacPkgConfig.c (removed):
+	* mac/tclMacPort.h (removed):
+	* mac/tclMacProjects.sea.hqx (removed):
+	* mac/tclMacResource.c (removed):
+	* mac/tclMacResource.r (removed):
+	* mac/tclMacSock.c (removed):
+	* mac/tclMacTclCode.r (removed):
+	* mac/tclMacTest.c (removed):
+	* mac/tclMacThrd.c (removed):
+	* mac/tclMacThrd.h (removed):
+	* mac/tclMacTime.c (removed):
+	* mac/tclMacUnix.c (removed):
+	* mac/tclMacUtil.c (removed):
+	* mac/tcltkMacBuildSupport.sea.hqx (removed):
+	* tests/all.tcl:
+	* tests/binary.test:
+	* tests/cmdAH.test:
+	* tests/cmdMZ.test:
+	* tests/fCmd.test:
+	* tests/fileName.test:
+	* tests/fileSystem.test:
+	* tests/interp.test:
+	* tests/io.test:
+	* tests/ioCmd.test:
+	* tests/load.test:
+	* tests/macFCmd.test (removed):
+	* tests/osa.test (removed):
+	* tests/resource.test (removed):
+	* tests/socket.test:
+	* tests/source.test:
+	* tests/tcltest.test:
+	* tests/unload.test:
+	* tools/cvtEOL.tcl (removed):
+	* tools/genStubs.tcl:
+	* unix/Makefile.in:
+	* unix/README:
+	* unix/mkLinks:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/tcl.dsp:
+
 2004-03-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/lsearch.n: Improved examples on the advanced capabilities of
