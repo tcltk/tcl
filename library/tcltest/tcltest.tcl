@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.58 2002/06/26 03:25:06 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.59 2002/06/27 17:31:05 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1227,8 +1227,7 @@ proc tcltest::DefineConstraintInitializers {} {
 }
 #####################################################################
 
-# Handle command line arguments (from argv) and default arg settings
-# (in TCLTEST_OPTIONS).
+# Usage and command line arguments processing.
 
 # tcltest::PrintUsageInfo
 #
@@ -1292,7 +1291,6 @@ proc tcltest::Usage { {option ""} } {
     }
 }
 
-
 # tcltest::ProcessFlags --
 #
 #	process command line arguments supplied in the flagArray - this
@@ -1326,9 +1324,15 @@ proc tcltest::ProcessFlags {flagArray} {
 	    # Check whether the problem is "unknown option"
 	    if {[regexp {^unknown option (\S+):} $msg -> option]} {
 		# Could be this is an option the Hook knows about
-		if {[lsearch -exact \
-			[processCmdLineArgsAddFlagHook] $option] == -1} {
-		    # Nope.  Report the error, but keep going
+		set moreOptions [processCmdLineArgsAddFlagHook]
+		if {[lsearch -exact $moreOptions $option] == -1} {
+		    # Nope.  Report the error, including additional options,
+		    # but keep going
+		    if {[llength $moreOptions]} {
+			append msg ", "
+			append msg [join [lrange $moreOptions 0 end -1] ", "]
+			append msg "or [lindex $moreOptions end]"
+		    }
 		    puts [errorChannel] "WARNING: $msg"
 		}
 	    } else {
@@ -1355,14 +1359,11 @@ proc tcltest::ProcessFlags {flagArray} {
 
 # tcltest::ProcessCmdLineArgs --
 #
-#	Use command line args to set tcltest namespace variables.
+#       This procedure must be run after constraint initialization is
+#	set up (by [DefineConstraintInitializers]) because some constraints
+#	can be overridden.
 #
-#       This procedure must be run after constraints are initialized,
-#	because some constraints can be overridden.
-#
-#       Set variables based on the contents of the environment variable
-#       TCLTEST_OPTIONS first, then override with command-line options,
-#	if specified.
+#       Perform configuration according to the command-line options.
 #
 # Arguments:
 #	none
@@ -1375,28 +1376,15 @@ proc tcltest::ProcessFlags {flagArray} {
 #
 
 proc tcltest::ProcessCmdLineArgs {} {
-    global argv
     variable originalEnv
     variable testConstraints
 
-    # If the TCLTEST_OPTIONS environment variable exists, parse it
-    # first, then the argv list.  The command line argument parsing will
-    # be a two-pass affair from now on, so that TCLTEST_OPTIONS contain
-    # the default options.  These can be overridden by the command line
-    # flags.
-
-    if {[info exists ::env(TCLTEST_OPTIONS)]} {
-	ProcessFlags $::env(TCLTEST_OPTIONS)
-    }
-
     # The "argv" var doesn't exist in some cases, so use {}.
-    if {(![info exists argv]) || ([llength $argv] < 1)} {
-	set flagArray {}
+    if {![info exists ::argv]} {
+	ProcessFlags {}
     } else {
-	set flagArray $argv
+	ProcessFlags $::argv
     }
-
-    ProcessFlags $flagArray
 
     # Spit out everything you know if we're at a debug level 2 or
     # greater
@@ -1418,7 +1406,6 @@ proc tcltest::ProcessCmdLineArgs {} {
     DebugPArray  2 originalEnv
     DebugPuts    2 "Constraints:"
     DebugPArray  2 testConstraints
-    return
 }
 
 #####################################################################
@@ -3233,13 +3220,34 @@ namespace eval tcltest {
     customMatch glob	[list string match]
     customMatch regexp	[list regexp --]
 
-    proc LoadTimeConfigurationRequired {} {
-	set required false
-	if {[info exists ::env(TCLTEST_OPTIONS)]} {
-	    # Respect the environment variable at package load time,
-	    # so that it effectively establishes new defaults.
-	    set required true
+    # If the TCLTEST_OPTIONS environment variable exists, configure
+    # tcltest according to the option values it specifies.  This has
+    # the effect of resetting tcltest's default configuration.
+    proc ConfigureFromEnvironment {} {
+	upvar #0 env(TCLTEST_OPTIONS) options
+	if {[catch {llength $options} msg]} {
+	    puts [errorChannel] "WARNING: invalid\
+		    TCLTEST_OPTIONS \"$options\":\n  invalid Tcl list: $msg"
+	    return
 	}
+	if {[llength $::env(TCLTEST_OPTIONS)] < 2} {
+	    puts [errorChannel] "WARNING: invalid\
+		    TCLTEST_OPTIONS: \"$options\":\n  should be\
+		    -option value ?-option value ...?"
+	    return
+	}
+	if {[catch {eval Configure $::env(TCLTEST_OPTIONS)} msg]} {
+	    puts [errorChannel] "WARNING: invalid\
+		    TCLTEST_OPTIONS: \"$options\":\n  $msg"
+	    return
+	}
+    }
+    if {[info exists ::env(TCLTEST_OPTIONS)]} {
+	ConfigureFromEnvironment
+    }
+
+    proc LoadTimeCmdLineArgParsingRequired {} {
+	set required false
 	if {[info exists ::argv] && [lsearch -exact $::argv -help]} {
 	    # The command line asks for -help, so give it (and exit)
 	    # right now.  ([configure] does not process -help)
@@ -3260,10 +3268,10 @@ namespace eval tcltest {
     # Only initialize configurable options from the command line arguments
     # at package load time if necessary for backward compatibility.  This
     # lets the tcltest user call [configure] for themselves if they wish.
-    # Traves are established for auto-configuration from the command line
+    # Traces are established for auto-configuration from the command line
     # if any configurable options are accessed before the user calls
     # [configure].
-    if {[LoadTimeConfigurationRequired]} {
+    if {[LoadTimeCmdLineArgParsingRequired]} {
 	ProcessCmdLineArgs
     } else {
 	EstablishAutoConfigureTraces
