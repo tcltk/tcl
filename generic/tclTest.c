@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.17.2.3.2.1 2002/11/26 19:48:58 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.17.2.3.2.2 2002/12/06 02:47:51 hobbs Exp $
  */
 
 #define TCL_TEST
@@ -282,9 +282,9 @@ static int		TestChannelCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestChannelEventCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 
-static int		TestCloneCmd _ANSI_ARGS_((
+static int		TestCloneObjCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
-			    int argc, char **argv));
+			    int objc, Tcl_Obj *CONST objv[]));
 
 /*
  * External (platform specific) initialization routine, these declarations
@@ -435,7 +435,7 @@ Tcltest_Init(interp)
     Tcl_CreateCommand(interp, "teststatproc", TeststatprocCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
 
-    Tcl_CreateCommand(interp, "testclone", TestCloneCmd, (ClientData) 0,
+    Tcl_CreateObjCommand(interp, "testclone", TestCloneObjCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
 
 
@@ -4835,36 +4835,45 @@ TestChannelEventCmd(dummy, interp, argc, argv)
 
 
 static int
-TestCloneCmd (clientData, interp, argc, argv)
-     ClientData clientData;
-     Tcl_Interp *interp;
-     int argc;
-     char **argv;
+TestCloneObjCmd(clientData, interp, objc, objv)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    int objc;
+    Tcl_Obj *CONST objv[];
 {
-  static Tcl_Interp* clone; /* The clone to use.
-			     */
-  /* Syntax:
-   * testclone create
-   * testclone eval script
-   * testclone destroy
-   */
+    static Tcl_Interp* clone = NULL; /* The clone to use.  */
+    /* Syntax:
+     * testclone create
+     * testclone eval script
+     * testclone destroy
+     */
 
-  char* cmd = argv [1];
-  unsigned int length = strlen(cmd);
+    char *cmd;
+    int length, result = TCL_OK;
 
-  if (cmd [0] == 'c' && 0 == strncmp (argv [1], "create", length)) {
-      clone = Tcl_CloneInterp (interp);
-      return TCL_OK;
-  } else if (cmd [0] == 'd' && 0 == strncmp (argv [1], "destroy", length)) {
-      Tcl_DeleteInterp (clone);
-      clone = NULL;
-      return TCL_OK;
-  } else if (cmd [0] == 'e' && 0 == strncmp (argv [1], "eval", length)) {
-    int res = Tcl_Eval (clone, argv [2]);
-    TclTransferResult(clone, res, interp);
-    return res;
-  }
-  Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of ",
-            "create, eval, or destroy", (char *) NULL);
-  return TCL_ERROR;
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "create|destroy|eval");
+	return TCL_ERROR;
+    }
+    cmd = Tcl_GetStringFromObj(objv[1], &length);
+
+    if (*cmd == 'c' && strncmp(cmd, "create", (size_t) length) == 0) {
+	if (clone != NULL) {
+	    Tcl_DeleteInterp(clone);
+	}
+	clone = Tcl_CloneInterp(interp);
+    } else if (*cmd == 'd' && strncmp(cmd, "destroy", (size_t) length) == 0) {
+	if (clone != NULL) {
+	    Tcl_DeleteInterp(clone);
+	    clone = NULL;
+	}
+    } else if (*cmd == 'e' && strncmp(cmd, "eval", (size_t) length) == 0) {
+	if (objc < 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "script");
+	    return TCL_ERROR;
+	}
+	result = Tcl_EvalObjEx(clone, objv[2], TCL_EVAL_GLOBAL);
+	TclTransferResult(clone, result, interp);
+    }
+    return result;
 }
