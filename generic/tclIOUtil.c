@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.48 2002/06/12 09:28:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.49 2002/06/13 09:40:00 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2708,15 +2708,16 @@ FSUnloadTempFile(clientData)
  */
 
 Tcl_Obj *
-Tcl_FSLink(pathPtr, toPtr)
+Tcl_FSLink(pathPtr, toPtr, linkType)
     Tcl_Obj *pathPtr;		/* Path of file to readlink or link */
     Tcl_Obj *toPtr;		/* NULL or path to be linked to */
+    int linkType;               /* Type of link to create */
 {
     Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
 	Tcl_FSLinkProc *proc = fsPtr->linkProc;
 	if (proc != NULL) {
-	    return (*proc)(pathPtr, toPtr);
+	    return (*proc)(pathPtr, toPtr, linkType);
 	}
     }
     /*

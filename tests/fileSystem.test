@@ -12,57 +12,78 @@
 package require tcltest
 namespace eval ::tcl::test::fileSystem {
 
-    namespace import ::tcltest::cleanupTests
-    namespace import ::tcltest::makeDirectory
-    namespace import ::tcltest::makeFile
-    namespace import ::tcltest::removeDirectory
-    namespace import ::tcltest::removeFile
-    namespace import ::tcltest::test
+    catch {
+	namespace import ::tcltest::cleanupTests
+	namespace import ::tcltest::makeDirectory
+	namespace import ::tcltest::makeFile
+	namespace import ::tcltest::removeDirectory
+	namespace import ::tcltest::removeFile
+	namespace import ::tcltest::test
+    }
+    
+    catch {
+	file delete -force link.file
+	file delete -force dir.link
+	file delete -force [file join dir.file linkinside.file]
+    }
 
 makeFile "test file" gorp.file
 makeDirectory dir.file
 makeFile "test file in directory" [file join dir.file inside.file]
 
-# It would be good to be able to make these work on MacOS too.
-# If we added 'file link from to' we could easily do that.
-catch {exec ln -s gorp.file link.file}
-catch {exec ln -s inside.file dir.file/linkinside.file}
-catch {exec ln -s dir.file dir.link}
+if {[catch {
+    testfilelink link.file gorp.file 
+    testfilelink \
+      [file join dir.file linkinside.file] \
+      [file join dir.file inside.file]
+    testfilelink dir.link dir.file
+}]} {
+    tcltest::testConstraint links 0
+} else {
+    tcltest::testConstraint links 1
+}
 
-test filesystem-1.0 {link normalisation} {unixOnly} {
+test filesystem-1.0 {link normalisation} {links} {
    string equal [file normalize gorp.file] [file normalize link.file]
 } {0}
 
-test filesystem-1.1 {link normalisation} {unixOnly} {
+test filesystem-1.1 {link normalisation} {links} {
    string equal [file normalize dir.file] [file normalize dir.link]
 } {0}
 
-test filesystem-1.2 {link normalisation} {unixOnly} {
-   string equal [file normalize gorp.file/foo] [file normalize link.file/foo]
+test filesystem-1.2 {link normalisation} {links macOrUnix} {
+   string equal [file normalize [file join gorp.file foo]] \
+     [file normalize [file join link.file foo]]
 } {1}
 
-test filesystem-1.3 {link normalisation} {unixOnly} {
-   string equal [file normalize dir.file/foo] [file normalize dir.link/foo]
+test filesystem-1.3 {link normalisation} {links} {
+   string equal [file normalize [file join dir.file foo]] \
+     [file normalize [file join dir.link foo]]
 } {1}
 
-test filesystem-1.4 {link normalisation} {unixOnly} {
-   string equal [file normalize dir.file/inside.file] [file normalize dir.link/inside.file]
+test filesystem-1.4 {link normalisation} {links} {
+   string equal [file normalize [file join dir.file inside.file]] \
+     [file normalize [file join dir.link inside.file]]
 } {1}
 
-test filesystem-1.5 {link normalisation} {unixOnly} {
-   string equal [file normalize dir.file/linkinside.file] [file normalize dir.file/linkinside.file]
+test filesystem-1.5 {link normalisation} {links} {
+   string equal [file normalize [file join dir.file linkinside.file]] \
+     [file normalize [file join dir.file linkinside.file]]
 } {1}
 
-test filesystem-1.6 {link normalisation} {unixOnly} {
-   string equal [file normalize dir.file/linkinside.file] [file normalize dir.link/inside.file]
+test filesystem-1.6 {link normalisation} {links} {
+   string equal [file normalize [file join dir.file linkinside.file]] \
+     [file normalize [file join dir.link inside.file]]
 } {0}
 
-test filesystem-1.7 {link normalisation} {unixOnly} {
-   string equal [file normalize dir.link/linkinside.file/foo] [file normalize dir.file/inside.file/foo]
+test filesystem-1.7 {link normalisation} {links macOrUnix} {
+   string equal [file normalize [file join dir.link linkinside.file foo]] \
+     [file normalize [file join dir.file inside.file foo]]
 } {1}
 
-test filesystem-1.8 {link normalisation} {unixOnly} {
-   string equal [file normalize dir.file/linkinside.filefoo] [file normalize dir.link/inside.filefoo]
+test filesystem-1.8 {link normalisation} {links} {
+   string equal [file normalize [file join dir.file linkinside.filefoo]] \
+     [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
 file delete -force link.file dir.link

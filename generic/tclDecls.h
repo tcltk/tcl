@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.88 2002/06/12 09:28:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.89 2002/06/13 09:40:00 vincentdarley Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1416,7 +1416,7 @@ EXTERN int		Tcl_FSMatchInDirectory _ANSI_ARGS_((
 				Tcl_GlobTypeData * types));
 /* 446 */
 EXTERN Tcl_Obj *	Tcl_FSLink _ANSI_ARGS_((Tcl_Obj * pathPtr, 
-				Tcl_Obj * toPtr));
+				Tcl_Obj * toPtr, int linkType));
 /* 447 */
 EXTERN int		Tcl_FSRemoveDirectory _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				int recursive, Tcl_Obj ** errorPtr));
@@ -2061,7 +2061,7 @@ typedef struct TclStubs {
     int (*tcl_FSDeleteFile) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 443 */
     int (*tcl_FSLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, CONST char * sym1, CONST char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr, Tcl_FSUnloadFileProc ** unloadProcPtr)); /* 444 */
     int (*tcl_FSMatchInDirectory) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * result, Tcl_Obj * pathPtr, CONST char * pattern, Tcl_GlobTypeData * types)); /* 445 */
-    Tcl_Obj * (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr)); /* 446 */
+    Tcl_Obj * (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr, int linkType)); /* 446 */
     int (*tcl_FSRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 447 */
     int (*tcl_FSRenameFile) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr)); /* 448 */
     int (*tcl_FSLstat) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_StatBuf * buf)); /* 449 */

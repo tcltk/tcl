@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.22 2002/06/12 15:05:20 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.23 2002/06/13 09:40:01 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -724,9 +724,10 @@ TclpObjStat(pathPtr, bufPtr)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr)
+TclpObjLink(pathPtr, toPtr, linkType)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
+    int linkType;
 {
     extern Tcl_Filesystem nativeFilesystem;
 
@@ -737,11 +738,14 @@ TclpObjLink(pathPtr, toPtr)
 	if (src == NULL || target == NULL) {
 	    return NULL;
 	}
-	if (symlink(src, target) != 0) {
-	    return NULL;
+	/* We don't recognise these codes */
+	if (linkType < 0 || linkType > 2) return NULL;
+	if (linkType == 2) {
+	    if (link(src, target) != 0) return NULL;
 	} else {
-	    return toPtr;
+	    if (symlink(src, target) != 0) return NULL;
 	}
+	return toPtr;
     } else {
 	Tcl_Obj* linkPtr = NULL;
 
