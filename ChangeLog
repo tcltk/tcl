@@ -1,5 +1,11 @@
 2002-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/Makefile.in:
+	* win/Makefile.in: Add a more descriptive warning
+	in the event `make genstubs` needs to be rerun.
+
+2002-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/Makefile.in: Use dltest.marker file
 	to keep track of when the dltest package
 	is up to date. This fixes [Tcl bug 575768]
