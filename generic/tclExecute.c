@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.81 2002/07/22 10:04:17 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.82 2002/07/24 15:40:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -81,6 +81,12 @@ TCL_DECLARE_MUTEX(execMutex)
  */
 
 int tclTraceExec = 0;
+
+/*
+ * Execution tracing temporarily disabled: WORK IN PROGRESS.
+ */
+#undef TCL_COMPILE_DEBUG
+
 #endif
 
 /*
