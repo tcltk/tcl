@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.23.6.1 2001/12/03 18:23:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.23.6.2 2001/12/05 18:22:26 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -350,12 +350,14 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
                             && (fieldCount == 2))
                     || ((localPtr->defValuePtr != NULL)
                             && (fieldCount != 2))) {
-                char buf[80 + TCL_INTEGER_SPACE];
+	        STRING (80 + TCL_INTEGER_SPACE, buf);
+	        NEWSTR (80 + TCL_INTEGER_SPACE, buf);
                 sprintf(buf, "\": formal parameter %d is inconsistent with precompiled body",
                         i);
                 Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                         "procedure \"", procName,
                         buf, (char *) NULL);
+		RELTEMP (buf);
                 ckfree((char *) fieldValues);
                 goto procError;
             }
@@ -836,10 +838,12 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 {
     Interp *iPtr = (Interp*)interp;
     int result;
-    Tcl_CallFrame frame;
+    TEMP (Tcl_CallFrame) frame;
     Proc *saveProcPtr;
     ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
  
+    NEWTEMP (Tcl_CallFrame, frame);
+
     /*
      * If necessary, compile the procedure's body. The compiler will
      * allocate frame slots for the procedure's non-argument local
@@ -862,6 +866,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
                 if ((Interp *) *codePtr->interpHandle != iPtr) {
                     Tcl_AppendResult(interp,
                             "a precompiled script jumped interps", NULL);
+		    RELTEMP (frame);
                     return TCL_ERROR;
                 }
 	        codePtr->compileEpoch = iPtr->compileEpoch;
@@ -906,7 +911,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	saveProcPtr = iPtr->compiledProcPtr;
  	iPtr->compiledProcPtr = procPtr;
  
- 	result = Tcl_PushCallFrame(interp, &frame,
+ 	result = Tcl_PushCallFrame(interp, REF (frame),
 		(Tcl_Namespace*)nsPtr, /* isProcCallFrame */ 0);
  
  	if (result == TCL_OK) {
@@ -918,7 +923,8 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	
  	if (result != TCL_OK) {
  	    if (result == TCL_ERROR) {
-		char buf[100 + TCL_INTEGER_SPACE];
+		STRING (100 + TCL_INTEGER_SPACE, buf);
+		NEWSTR (100 + TCL_INTEGER_SPACE, buf);
 
 		numChars = strlen(procName);
  		ellipsis = "";
@@ -930,7 +936,9 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  			description, numChars, procName, ellipsis,
  			interp->errorLine);
  		Tcl_AddObjErrorInfo(interp, buf, -1);
+		RELTEMP (buf);
  	    }
+	    RELTEMP (frame);
  	    return result;
  	}
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
@@ -954,6 +962,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 	    }
 	}
     }
+    RELTEMP (frame);
     return TCL_OK;
 }
 

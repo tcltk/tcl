@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.5.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.5.2.2 2001/12/05 18:22:25 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2770,12 +2770,13 @@ TraceVarProc(clientData, interp, name1, name2, flags)
     int flags;			/* OR-ed bits giving operation and other
 				 * information. */
 {
-    Tcl_SavedResult state;
+    TEMP (Tcl_SavedResult) state;
     TraceVarInfo *tvarPtr = (TraceVarInfo *) clientData;
     char *result;
     int code;
     Tcl_DString cmd;
 
+    NEWTEMP (Tcl_SavedResult, state);
     result = NULL;
     if (tvarPtr->errMsg != NULL) {
 	ckfree(tvarPtr->errMsg);
@@ -2810,7 +2811,7 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	 * the command. We discard any object result the command returns.
 	 */
 
-	Tcl_SaveResult(interp, &state);
+	Tcl_SaveResult(interp, REF (state));
 
 	code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
 	if (code != TCL_OK) {	     /* copy error msg to result */
@@ -2823,7 +2824,7 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	    result = tvarPtr->errMsg;
 	}
 
-	Tcl_RestoreResult(interp, &state);
+	Tcl_RestoreResult(interp, REF (state));
 
 	Tcl_DStringFree(&cmd);
     }
@@ -2834,6 +2835,7 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	}
 	ckfree((char *) tvarPtr);
     }
+    RELTEMP (state);
     return result;
 }
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.17.2.1.2.2 2001/12/03 18:23:14 andreas_kupries Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.17.2.1.2.3 2001/12/05 18:22:26 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -193,7 +193,8 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 		     */
 		    
 		    if (interp != NULL) {
-			char buf[100];
+			STRING (100, buf);
+			NEWSTR (100, buf);
 			
 			p2 = p;
 			while ((p2 < limit)
@@ -205,6 +206,7 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 				"list element in braces followed by \"%.*s\" instead of space",
 				(int) (p2-p), p);
 			Tcl_SetResult(interp, buf, TCL_VOLATILE);
+			RELTEMP (buf);
 		    }
 		    return TCL_ERROR;
 		}
@@ -256,7 +258,8 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 		     */
 		    
 		    if (interp != NULL) {
-			char buf[100];
+			STRING (100, buf);
+			NEWSTR (100, buf);
 			
 			p2 = p;
 			while ((p2 < limit)
@@ -268,6 +271,7 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
 				"list element in quotes followed by \"%.*s\" %s",
 				(int) (p2-p), p, "instead of space");
 			Tcl_SetResult(interp, buf, TCL_VOLATILE);
+			RELTEMP (buf);
 		    }
 		    return TCL_ERROR;
 		}

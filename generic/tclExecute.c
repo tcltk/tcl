@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.2 2001/12/04 21:52:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.3 2001/12/05 18:22:25 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -5564,10 +5564,12 @@ ProcessUnexpectedResult(interp, returnCode)
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		"invoked \"continue\" outside of a loop", -1);
     } else {
-        char buf[30 + TCL_INTEGER_SPACE];
+        STRING (30 + TCL_INTEGER_SPACE, buf);
+	NEWSTR (30 + TCL_INTEGER_SPACE, buf);
 
 	sprintf(buf, "command returned bad code: %d", returnCode);
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	RELTEMP (buf);
     }
 }
 
@@ -5598,9 +5600,11 @@ RecordTracebackInfo(interp, objPtr, numSrcBytes)
     int numSrcBytes;		/* Number of bytes compiled in script. */
 {
     Interp *iPtr = (Interp *) interp;
-    char buf[200];
+    STRING (200, buf);
     char *ellipsis, *bytes;
     int length;
+
+    NEWSTR (200, buf);
 
     /*
      * Decide how much of the command to print in the error message
@@ -5624,6 +5628,7 @@ RecordTracebackInfo(interp, objPtr, numSrcBytes)
 		length, bytes, ellipsis);
     }
     Tcl_AddObjErrorInfo(interp, buf, -1);
+    RELTEMP (buf);
 }
 
 /*

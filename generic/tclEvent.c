@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.8.2.5.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.8.2.5.2.2 2001/12/05 18:22:25 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -270,12 +270,14 @@ HandleBgErrors(clientData)
              */
 
             if (Tcl_IsSafe(interp)) {
-		Tcl_SavedResult save;
+		TEMP (Tcl_SavedResult) save;
+		NEWTEMP (Tcl_SavedResult, save);
 		
-		Tcl_SaveResult(interp, &save);
+		Tcl_SaveResult(interp, REF (save));
                 TclGlobalInvoke(interp, 2, argv, TCL_INVOKE_HIDDEN);
-		Tcl_RestoreResult(interp, &save);
+		Tcl_RestoreResult(interp, REF (save));
 
+		RELTEMP (save);
                 goto doneWithInterp;
             } 
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.5.6.2 2001/12/04 21:52:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.5.6.3 2001/12/05 18:22:25 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1330,9 +1330,10 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     char *name, *elName, *p;
     int nameChars, elNameChars, haveImmValue, immValue, localIndex, i, code;
     int maxDepth = 0;
-    char buffer[160];
+    STRING (160, buffer);
 
     NEWTEMP (Tcl_Parse,elemParse);
+    NEWSTR (160, buffer);
 
     envPtr->maxStackDepth = 0;
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
@@ -1547,6 +1548,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
         Tcl_FreeParse(REF (elemParse));
     }
     RELTEMP (elemParse);
+    RELTEMP (buffer);
     envPtr->maxStackDepth = maxDepth;
     return code;
 }
@@ -1748,11 +1750,14 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	    *(elName+elNameChars) = ')';
 	    gotElemParse = 1;
 	    if ((code != TCL_OK) || (ITEM (elemParse,numWords) > 1)) {
-		char buffer[160];
+	        STRING (160, buffer);
+		NEWSTR (160, buffer);
+
 		sprintf(buffer, "\n    (parsing index for array \"%.*s\")",
 		        TclMin(nameChars, 100), name);
 		Tcl_AddObjErrorInfo(interp, buffer, -1);
 		code = TCL_ERROR;
+		RELTEMP (buffer);
 		goto done;
 	    } else if (ITEM (elemParse,numWords) == 1) {
 		code = TclCompileTokens(interp, ITEM (elemParse,tokenPtr)+1,

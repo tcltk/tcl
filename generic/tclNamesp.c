@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.17.2.1 2001/04/03 22:54:37 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.17.2.1.2.1 2001/12/05 18:22:25 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1775,15 +1775,16 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             if (entryPtr != NULL) {
                 nsPtr = (Namespace *) Tcl_GetHashValue(entryPtr);
             } else if (flags & CREATE_NS_IF_UNKNOWN) {
-		Tcl_CallFrame frame;
+		TEMP(Tcl_CallFrame) frame;
+		NEWTEMP(Tcl_CallFrame, frame);
 		
-		(void) Tcl_PushCallFrame(interp, &frame,
+		(void) Tcl_PushCallFrame(interp, REF (frame),
 		        (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
 
                 nsPtr = (Namespace *) Tcl_CreateNamespace(interp, nsName,
 		        (ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL);
                 Tcl_PopCallFrame(interp);
-
+		RELTEMP(frame);
                 if (nsPtr == NULL) {
                     panic("Could not create namespace '%s'", nsName);
                 }
@@ -2879,13 +2880,16 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame frame;
+    TEMP (Tcl_CallFrame) frame;
     Tcl_Obj *objPtr;
     char *name;
     int length, result;
 
+    NEWTEMP (Tcl_CallFrame, frame);
+
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 2, objv, "name arg ?arg...?");
+	RELTEMP (frame);
         return TCL_ERROR;
     }
 
@@ -2896,6 +2900,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
 
     result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
     if (result != TCL_OK) {
+	RELTEMP (frame);
         return result;
     }
 
@@ -2908,6 +2913,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
 	namespacePtr = Tcl_CreateNamespace(interp, name, (ClientData) NULL, 
                 (Tcl_NamespaceDeleteProc *) NULL);
 	if (namespacePtr == NULL) {
+	    RELTEMP (frame);
 	    return TCL_ERROR;
 	}
     }
@@ -2917,9 +2923,10 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      * the command(s).
      */
 
-    result = Tcl_PushCallFrame(interp, &frame, namespacePtr,
+    result = Tcl_PushCallFrame(interp, REF (frame), namespacePtr,
 	    /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
+	RELTEMP (frame);
         return TCL_ERROR;
     }
 
@@ -2935,11 +2942,13 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
         result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-        char msg[256 + TCL_INTEGER_SPACE];
+        STRING (256 + TCL_INTEGER_SPACE, msg);
+	NEWSTR (256 + TCL_INTEGER_SPACE, msg);
 	
         sprintf(msg, "\n    (in namespace eval \"%.200s\" script line %d)",
             namespacePtr->fullName, interp->errorLine);
         Tcl_AddObjErrorInfo(interp, msg, -1);
+	RELTEMP (msg);
     }
 
     /*
@@ -2947,6 +2956,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      */
     
     Tcl_PopCallFrame(interp);
+    RELTEMP (frame);
     return result;
 }
 
@@ -3237,11 +3247,15 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame frame;
     int i, result;
+    TEMP(Tcl_CallFrame) frame;
+
+    NEWTEMP (Tcl_CallFrame, frame);
+
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "name arg ?arg...?");
+	RELTEMP(frame);
         return TCL_ERROR;
     }
 
@@ -3251,12 +3265,14 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
 
     result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
     if (result != TCL_OK) {
+	RELTEMP(frame);
         return result;
     }
     if (namespacePtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 	        "unknown namespace \"", Tcl_GetString(objv[2]),
 		"\" in inscope namespace command", (char *) NULL);
+	RELTEMP(frame);
         return TCL_ERROR;
     }
 
@@ -3264,9 +3280,10 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      * Make the specified namespace the current namespace.
      */
 
-    result = Tcl_PushCallFrame(interp, &frame, namespacePtr,
+    result = Tcl_PushCallFrame(interp, REF (frame), namespacePtr,
 	    /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
+	RELTEMP(frame);
         return result;
     }
 
@@ -3288,6 +3305,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
 	    result = Tcl_ListObjAppendElement(interp, listPtr, objv[i]);
             if (result != TCL_OK) {
                 Tcl_DecrRefCount(listPtr); /* free unneeded obj */
+		RELTEMP(frame);
                 return result;
             }
         }
@@ -3299,12 +3317,14 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
 	Tcl_DecrRefCount(listPtr);    /* we're done with the list object */
     }
     if (result == TCL_ERROR) {
-        char msg[256 + TCL_INTEGER_SPACE];
+        STRING (256 + TCL_INTEGER_SPACE, msg);
+	NEWSTR (256 + TCL_INTEGER_SPACE, msg);
 	
         sprintf(msg,
 	    "\n    (in namespace inscope \"%.200s\" script line %d)",
             namespacePtr->fullName, interp->errorLine);
         Tcl_AddObjErrorInfo(interp, msg, -1);
+	RELTEMP (msg);
     }
 
     /*
@@ -3312,6 +3332,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      */
 
     Tcl_PopCallFrame(interp);
+    RELTEMP(frame);
     return result;
 }
 

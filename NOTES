@@ -1,4 +1,81 @@
 
+------------------------------------------------------------------------
+Description of the new macros to control feature exclusion and
+stack handling
+------------------------------------------------------------------------
+
+All the macros reside in "generic/tclInt.h" and can be set in the
+build environment. Especially the macros controlling usage of stack
+are setup in such a way that a value defined in the build environment
+takes priority over the value defined in the header.
+
+Feature exclusion. Simply define any of the macros below to exclude
+the associated feature of the core.
+
+	TCL_NO_SOCKETS         /* Disable "tcp"  channel driver */
+	TCL_NO_TTY             /* Disable "tty"  channel driver */
+	TCL_NO_PIPES           /* Disable "pipe" channel driver */
+	TCL_NO_PIDCMD          /* Disable "pid" command */
+	TCL_NO_NONSTDCHAN      /* Disable creation of channels beyond std* */
+	TCL_NO_CHANNELCOPY     /* Disable channel copying, C/Tcl [fcopy] */
+	TCL_NO_CHANNEL_READ    /* Disable Tcl_ReadChars, [read] */
+	TCL_NO_CHANNEL_EOF     /* Disable [eof] */
+	TCL_NO_CHANNEL_CONFIG  /* Disable [fconfigure] and Tcl_GetChannelOption */
+	TCL_NO_CHANNEL_BLOCKED /* Disable [fblocked] */
+	TCL_NO_FILEEVENTS      /* Disable [fileevent] and underlying APIs */
+	TCL_NO_FILESYSTEM      /* Disable everything related to the filesystem */
+	TCL_NO_LOADCMD         /* Disable [load] and machinery below */
+	TCL_NO_SLAVEINTERP     /* No slave interp's */
+	TCL_NO_CMDALIASES      /* No command aliases */
+	
+	MODULAR_TCL            /* All of the above */
+
+Controlling the stack. Define TCL_STRUCT_ON_HEAP to switch a number a
+of structures to allocation off the heap. The other macros are numeric
+and define how many variables of a kind are placed on the stack by the
+functions using the macros.
+
+	TCL_STRUCT_ON_HEAP     /* Allocate temp. big structures off the heap */
+
+*	TCL_FMT_STATIC_FLOATBUFFER_SZ    320	/* size of various information placed */
+	TCL_FMT_STATIC_VALIDATE_LIST      16    /* on the stack                       */
+*	TCL_FOREACH_STATIC_ARGS            9
+*	TCL_FOREACH_STATIC_LIST_SZ         4
+	TCL_FOREACH_STATIC_VARLIST_SZ      5
+*	TCL_RESULT_APPEND_STATIC_LIST_SZ  16
+	TCL_MERGE_STATIC_LIST_SZ          20
+*	TCL_PROC_STATIC_CLOCALS           20
+	TCL_PROC_STATIC_ARGS              20
+	TCL_INVOKE_STATIC_ARGS            20
+	TCL_EVAL_STATIC_VARCHARS          30
+	TCL_STATS_COUNTERS                10
+	TCL_LSORT_STATIC_MERGE_BUCKETS    30
+
+*	TCL_DSTRING_STATIC_SIZE 	 200   /* Exception: Resides in "tcl.h" */
+
+Only the macros marked by '*' have been tested so far (-Dxxx=1). This
+means that usage of the other macros may result in a crash
+(FLOATBUFFER... for example did for while).
+
+It is advisable to use "-O" when compiling the core so that the
+compiler optimizes the allocation of local variables on the stack,
+i.e. collapsing variables with non-overlapping lifetimes into one
+memory location.
+
+
+
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+	Scratchpad
+	Everything below may change at will.
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
 Pre-notes
 
 	The cutting of the channel system is not as clean as I would like
@@ -257,3 +334,25 @@ TclObjInterpProc
 
 TclInvokeStringCommand
 	TCL_INVOKE_STATIC_ARGS => 20 x char* = 80
+
+TclExecuteByte
+	Uses	868 btes of stack. where ? ....
+	compiler places all local variables immediately on stack,
+	independent of where defined (i.e. even variables declared in sub
+	scopes are placed immediately.)
+	868 -> /4 about 217 variables ... Yes, that it is on the order of
+	variables declared in this behemoth
+
+	Why variables with non-intersecting lieftimes collapsed into
+	one memory location ? ... Ok, compilation was just -g, without
+	any optimizations ...
+
+	Compile -g -O	=>	480 bytes stack
+	compile -g -O2	=>	460 bytes stack
+
+	! Ok compiling the whole instrumented core with -g -O to
+	  get standard stack usage numbers.
+
+	=> Have to comile baseline with that as well.
+
+Also look for variable decl. hidden in intenrl blocks. ...

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.2 2001/12/04 21:52:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.3 2001/12/05 18:22:25 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1628,17 +1628,19 @@ LogCompilationInfo(interp, script, command, length)
     int length;			/* Number of bytes in command (-1 means
 				 * use all bytes up to first null byte). */
 {
-    char buffer[200];
+    STRING (200, buffer);
     register char *p;
     char *ellipsis = "";
     Interp *iPtr = (Interp *) interp;
 
+    NEWSTR (200, buffer);
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
 	 * Someone else has already logged error information for this
 	 * command; we shouldn't add anything more.
 	 */
 
+        RELTEMP (buffer);
 	return;
     }
 
@@ -1668,6 +1670,7 @@ LogCompilationInfo(interp, script, command, length)
     sprintf(buffer, "\n    while compiling\n\"%.*s%s\"",
 	    length, command, ellipsis);
     Tcl_AddObjErrorInfo(interp, buffer, -1);
+    RELTEMP (buffer);
 }
 
 /*

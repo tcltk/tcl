@@ -1,3 +1,19 @@
+2001-12-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* NOTES: Updated to explain the usage of the various macros
+	  upfront. The original contents remain and are declared to be the
+	  scratchpad.
+
+	* tclCmdMZ.c:
+	* tclCompCmds.c:
+	* tclCompile.c:
+	* tclEvent.c:
+	* tclExecute.c:
+	* tclNamesp.c:
+	* tclParse.c:
+	* tclProc.c:
+	* tclUtil.c: More places using TCL_STRUCT_ON_HEAP.
+
 2001-12-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* NOTES:
@@ -17,8 +33,8 @@
 	* tclParseExpr.c:
 	* tclScan.c:
 	* tclUnixChan.c: Adapted to changed macro names, added some more
-	  places their structures go on the heap instead of the stacke
-	  stack.  Fixed a problem with TCL_FMT_STATIC_FLOATBUFFER_SZ which
+	  places there structures go on the heap instead of the stack.
+	  Fixed a problem with TCL_FMT_STATIC_FLOATBUFFER_SZ which
 	  caused the interp to crash when actually used to reduce the
 	  usage of the stack.
 
