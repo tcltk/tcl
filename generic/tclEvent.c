@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.51 2004/11/13 00:19:09 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.52 2004/11/18 20:15:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -206,7 +206,7 @@ HandleBgErrors(clientData)
     /*
      * Not bothering to save/restore the interp state.  Assume that
      * any code that has interp state it needs to keep will make
-     * its own Tcl_SaveResult call before calling something like
+     * its own Tcl_SaveInterpState call before calling something like
      * Tcl_DoOneEvent() that could lead us here.
      */
 
@@ -243,9 +243,14 @@ HandleBgErrors(clientData)
 	     * Break means cancel any remaining error reports for this
 	     * interpreter.
 	     */
-	    break;
-	}
-	if ((code == TCL_ERROR) && !Tcl_IsSafe(interp)) {
+	    while (assocPtr->firstBgPtr != NULL) {
+		errPtr = assocPtr->firstBgPtr;
+		assocPtr->firstBgPtr = errPtr->nextPtr;
+		Tcl_DecrRefCount(errPtr->errorMsg);
+		Tcl_DecrRefCount(errPtr->returnOpts);
+		ckfree((char *) errPtr);
+	    }
+	} else if ((code == TCL_ERROR) && !Tcl_IsSafe(interp)) {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel != (Tcl_Channel) NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
@@ -268,15 +273,6 @@ HandleBgErrors(clientData)
 	    }
 	}
     }
-    /* Cleanup any error reports we didn't do (due to a TCL_BREAK) */
-    while (assocPtr->firstBgPtr != NULL) {
-	errPtr = assocPtr->firstBgPtr;
-	assocPtr->firstBgPtr = errPtr->nextPtr;
-	Tcl_DecrRefCount(errPtr->errorMsg);
-	Tcl_DecrRefCount(errPtr->returnOpts);
-	ckfree((char *) errPtr);
-    }
-
     assocPtr->lastBgPtr = NULL;
     Tcl_Release((ClientData) interp);
     Tcl_Release((ClientData) assocPtr);
