@@ -1,5 +1,13 @@
 2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/io.test:
+	* tests/ioCmd.test: Define a fcopy constraint and add
+	it to the constraint list of any test that depends
+	on the fcopy command. This is only useful to
+	Jacl which does not support fcopy.
+
+2003-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/encoding.test: Name temp files *.tcltestout
 	instead of *.out so that when they are removed later,
 	we don't accidently toast any files named *.out that
