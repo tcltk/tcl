@@ -1,6 +1,6 @@
 Tcl/Tk 8.3 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.14 2000/01/14 00:20:54 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.15 2000/01/21 02:26:32 hobbs Exp $ 
 
 1. Introduction
 --------------- 
@@ -26,19 +26,19 @@ The official home for Tcl and Tk on the Web is at:
 	http://www.scriptics.com
 
 The home page for the Tcl/Tk 8.3 release is
-    http://www.scriptics.com/software/8.3.html
+	http://www.scriptics.com/software/8.3.html
 
 Information about new features in Tcl/Tk 8.3 can be found at
-    http://www.scriptics.com/software/whatsnew83.html
+	http://www.scriptics.com/software/whatsnew83.html
 
 Detailed release notes can be found at
-    http://www.scriptics.com/software/relnotes/tcl8.3b2
+	http://www.scriptics.com/software/relnotes/tcl8.3b2
 
 Information about Tcl itself can be found at
-    http://www.scriptics.com/scripting/
+	http://www.scriptics.com/scripting/
 
 There are many Tcl books on the market.  Most are listed at
-    http://www.scriptics.com/resource/doc/books/
+	http://www.scriptics.com/resource/doc/books/
 
 There are notes about compiling Tcl at
 	http://www.scriptics.com/support/howto/compile.html
