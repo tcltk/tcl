@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.5 2000/01/21 02:25:26 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.6 2000/05/23 22:10:50 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -1543,6 +1543,111 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileReturnCmd --
+ *
+ *	Procedure called to compile the "return" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if the
+ *	compilation was successful.  If the particular return command is
+ *	too complex for this function (ie, return with any flags like "-code"
+ *	or "-errorinfo"), TCL_OUT_LINE_COMPILE is returned, indicating that
+ *	the command should be compiled "out of line" (eg, not byte compiled).
+ *	If an error occurs then the interpreter's result contains a standard
+ *	error message.
+ *
+ *	envPtr->maxStackDepth is updated with the maximum number of stack
+ *	elements needed to execute the command.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "return" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileReturnCmd(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    Tcl_Token *varTokenPtr;
+    int code;
+    
+    /*
+     * If we're not in a procedure, don't compile.
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    switch (parsePtr->numWords) {
+	case 1: {
+	    /*
+	     * Simple case:  [return]
+	     * Just push the literal string "".
+	     */
+	    TclEmitPush(TclRegisterLiteral(envPtr, "", 0, 0), envPtr);
+	    envPtr->maxStackDepth = 1;
+	    break;
+	}
+	case 2: {
+	    /*
+	     * More complex cases:
+	     * [return "foo"]
+	     * [return $value]
+	     * [return [otherCmd]]
+	     */
+	    varTokenPtr = parsePtr->tokenPtr
+		+ (parsePtr->tokenPtr->numComponents + 1);
+	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		/*
+		 * [return "foo"] case:  the parse token is a simple word,
+		 * so just push it.
+		 */
+		TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
+			varTokenPtr[1].size, /*onHeap*/ 0), envPtr);
+		envPtr->maxStackDepth = 1;
+	    } else {
+		/*
+		 * Parse token is more complex, so compile it; this handles the
+		 * variable reference and nested command cases.  If the
+		 * parse token can be byte-compiled, then this instance of
+		 * "return" will be byte-compiled; otherwise it will be
+		 * out line compiled.
+		 */
+		code = TclCompileTokens(interp, varTokenPtr+1,
+			varTokenPtr->numComponents, envPtr);
+		if (code != TCL_OK) {
+		    return code;
+		}
+	    }
+	    break;
+	}
+	default: {
+	    /*
+	     * Most complex return cases: everything else, including
+	     * [return -code error], etc.
+	     */
+	    return TCL_OUT_LINE_COMPILE;
+	}
+    }
+
+    /*
+     * The INST_DONE opcode actually causes the branching out of the
+     * subroutine, and takes the top stack item as the return result
+     * (which is why we pushed the value above).
+     */
+    TclEmitOpcode(INST_DONE, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileSetCmd --
  *
  *	Procedure called to compile the "set" command.
@@ -1835,6 +1940,180 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     }
     envPtr->maxStackDepth = maxDepth;
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileStringCmd --
+ *
+ *	Procedure called to compile the "string" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if the
+ *	compilation was successful.  If the command cannot be byte-compiled,
+ *	TCL_OUT_LINE_COMPILE is returned.  If an error occurs then the
+ *	interpreter's result contains an error message, and TCL_ERROR is
+ *	returned.
+ *
+ *	envPtr->maxStackDepth is updated with the maximum number of stack
+ *	elements needed to execute the command.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileStringCmd(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    Tcl_Token *opTokenPtr, *varTokenPtr;
+    Tcl_Obj *opObj;
+    int index;
+    int code;
+    
+    static char *options[] = {
+	"bytelength",	"compare",	"equal",	"first",
+	"index",	"is",		"last",		"length",
+	"map",		"match",	"range",	"repeat",
+	"replace",	"tolower",	"toupper",	"totitle",
+	"trim",		"trimleft",	"trimright",
+	"wordend",	"wordstart",	(char *) NULL
+    };
+    enum options {
+	STR_BYTELENGTH,	STR_COMPARE,	STR_EQUAL,	STR_FIRST,
+	STR_INDEX,	STR_IS,		STR_LAST,	STR_LENGTH,
+	STR_MAP,	STR_MATCH,	STR_RANGE,	STR_REPEAT,
+	STR_REPLACE,	STR_TOLOWER,	STR_TOUPPER,	STR_TOTITLE,
+	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
+	STR_WORDEND,	STR_WORDSTART
+    };	  
+
+    /*
+     * If we're not in a procedure, don't compile.
+     */
+    if (envPtr->procPtr == NULL) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    if (parsePtr->numWords < 2) {
+	Tcl_SetResult(interp, "wrong # args: should be \"string option "
+		"arg ?arg?\"", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    opTokenPtr = parsePtr->tokenPtr
+	+ (parsePtr->tokenPtr->numComponents + 1);
+
+    opObj = Tcl_NewStringObj(opTokenPtr->start, opTokenPtr->size);
+
+    if (Tcl_GetIndexFromObj(interp, opObj, options, "option", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    varTokenPtr = opTokenPtr + (opTokenPtr->numComponents + 1);
+    
+    switch ((enum options) index) {
+	case STR_BYTELENGTH:
+	case STR_COMPARE: 
+	    break;
+	case STR_EQUAL: {
+	    int i;
+	    int depth;
+	    /*
+	     * If there are any flags to the command, we can't byte compile it
+	     * because the INST_STREQ bytecode doesn't support flags.
+	     */
+
+	    if (parsePtr->numWords != 4) {
+		return TCL_OUT_LINE_COMPILE;
+	    }
+
+	    depth = 0;
+
+	    /*
+	     * Push the two operands onto the stack.
+	     */
+
+	    for (i = 0; i < 2; i++) {
+		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		    TclEmitPush(TclRegisterLiteral(envPtr,
+			    varTokenPtr[1].start, varTokenPtr[1].size,
+			    0), envPtr);
+		    depth++;
+		} else {
+		    code = TclCompileTokens(interp, varTokenPtr+1,
+			    varTokenPtr->numComponents, envPtr);
+		    if (code != TCL_OK) {
+			return code;
+		    }
+		    depth += envPtr->maxStackDepth;
+		}
+		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+	    }
+
+	    envPtr->maxStackDepth = depth;
+	    TclEmitOpcode(INST_STREQ, envPtr);
+	    return TCL_OK;
+	    break;
+	}
+	case STR_FIRST:
+	case STR_INDEX:
+	case STR_IS:
+	case STR_LAST:
+	    break;
+	case STR_LENGTH: {
+	    if (parsePtr->numWords != 3) {
+		Tcl_SetResult(interp, "wrong # args: should be "
+			"\"string length string\"", TCL_STATIC);
+		return TCL_ERROR;
+	    }
+	    
+	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
+			varTokenPtr[1].size, 0), envPtr);
+		envPtr->maxStackDepth = 1;
+		TclEmitOpcode(INST_STRLEN, envPtr);
+		return TCL_OK;
+	    } else {
+		code = TclCompileTokens(interp, varTokenPtr+1,
+			varTokenPtr->numComponents, envPtr);
+		if (code != TCL_OK) {
+		    return code;
+		}
+		TclEmitOpcode(INST_STRLEN, envPtr);
+		return TCL_OK;
+	    }
+	    break;
+	}
+	case STR_MAP:
+	case STR_MATCH:
+	case STR_RANGE:
+	case STR_REPEAT:
+	case STR_REPLACE:
+	case STR_TOLOWER:
+	case STR_TOUPPER:
+	case STR_TOTITLE:
+	case STR_TRIM:
+	case STR_TRIMLEFT:
+	case STR_TRIMRIGHT:
+	case STR_WORDEND:
+	case STR_WORDSTART:
+	    break;
+    }
+    
+    /*
+     * All other cases: compile out of line.
+     */
+    return TCL_OUT_LINE_COMPILE;
+
+    return TCL_OK;
 }
 
 /*

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27 2000/04/15 17:34:09 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.28 2000/05/23 22:10:49 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -142,7 +142,7 @@ static CmdInfo builtInCmds[] = {
     {"rename",		(Tcl_CmdProc *) NULL,	Tcl_RenameObjCmd,
         (CompileProc *) NULL,		1},
     {"return",		(Tcl_CmdProc *) NULL,	Tcl_ReturnObjCmd,	
-        (CompileProc *) NULL,		1},
+        TclCompileReturnCmd,		1},
     {"scan",		(Tcl_CmdProc *) NULL,	Tcl_ScanObjCmd,
         (CompileProc *) NULL,		1},
     {"set",		(Tcl_CmdProc *) NULL,	Tcl_SetObjCmd,
@@ -150,7 +150,7 @@ static CmdInfo builtInCmds[] = {
     {"split",		(Tcl_CmdProc *) NULL,	Tcl_SplitObjCmd,
         (CompileProc *) NULL,		1},
     {"string",		(Tcl_CmdProc *) NULL,	Tcl_StringObjCmd,
-        (CompileProc *) NULL,		1},
+        TclCompileStringCmd,		1},
     {"subst",		(Tcl_CmdProc *) NULL,	Tcl_SubstObjCmd,
         (CompileProc *) NULL,		1},
     {"switch",		(Tcl_CmdProc *) NULL,	Tcl_SwitchObjCmd,	

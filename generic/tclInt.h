@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.43 2000/05/02 22:02:34 kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.44 2000/05/23 22:10:52 ericm Exp $
  */
 
 #ifndef _TCLINT
@@ -2035,7 +2035,11 @@ EXTERN int	TclCompileIfCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileIncrCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileReturnCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileSetCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileStringCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));

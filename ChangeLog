@@ -1,3 +1,27 @@
+2000-05-23  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclInt.h: Added function prototypes for
+	TclCompileStringCmd and TclCompileReturnCmd.
+
+	* generic/tclCompile.h: Added definition of INST_STRLEN opcode and
+	updated LAST_INST_OPCODE value.
+
+	* generic/tclBasic.c: Added information about TclCompileStringCmd
+	and TclCompileReturnCmd to BuiltInCmds table.
+
+	* generic/tclExecute.c (TclExecuteByteCode): Added support for the
+	INST_STRLEN opcode.
+
+	* generic/tclCompCmds.c 
+	(TclCompileStringCmd): Basic implementation of byte-compiled
+	[string] command.  Not all subcommands are implemented; those
+	that are not an out-line compiled.
+	
+	(TclCompileReturnCmd): Byte-compiled implementation of [return]
+	command.  Only "simple" returns are byte-compiled; in particular,
+	if the -code, -errorinfo or -errorcode flags are used, the command
+	is not byte-compiled.
+
 2000-05-22  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/scan.n: 
