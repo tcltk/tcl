@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.39 2002/03/25 19:20:03 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.40 2002/03/25 20:55:16 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -35,54 +35,36 @@ namespace eval tcltest {
 	namespace export $proc
     }
 
-    # tcltest::verbose defaults to {body}
-    if {![info exists verbose]} {
-	variable verbose {body}
+    proc Default {varName value} {
+	variable $varName
+	if {![info exists $varName]} {
+	    variable $varName $value
+	}
     }
+
+    # tcltest::verbose defaults to {body}
+    Default verbose body
 
     # Match and skip patterns default to the empty list, except for
     # matchFiles, which defaults to all .test files in the testsDirectory and
     # matchDirectories, which defaults to all directories.
-
-    if {![info exists match]} {
-	variable match {}
-    }
-    if {![info exists skip]} {
-	variable skip {}
-    }
-    if {![info exists matchFiles]} {
-	variable matchFiles {*.test}
-    }
-    if {![info exists skipFiles]} {
-	variable skipFiles {}
-    }
-    if {![info exists matchDirectories]} {
-	variable matchDirectories {*}
-    }
-    if {![info exists skipDirectories]} {
-	variable skipDirectories {}
-    }
+    Default match {}
+    Default skip {}
+    Default matchFiles {*.test}
+    Default skipFiles {}
+    Default matchDirectories {*}
+    Default skipDirectories {}
 
     # By default, don't save core files
-    if {![info exists preserveCore]} {
-	variable preserveCore 0
-    }
+    Default preserveCore 0
 
     # output goes to stdout by default
-    if {![info exists outputChannel]} {
-	variable outputChannel stdout
-    }
-    if {![info exists outputFile]} {
-	variable outputFile stdout
-    }
+    Default outputChannel stdout
+    Default outputFile stdout
 
     # errors go to stderr by default
-    if {![info exists errorChannel]} {
-	variable errorChannel stderr
-    }
-    if {![info exists errorFile]} {
-	variable errorFile stderr
-    }
+    Default errorChannel stderr
+    Default errorFile stderr
 
     # debug output doesn't get printed by default; debug level 1 spits
     # up only the tests that were skipped because they didn't match or were 
@@ -90,15 +72,11 @@ namespace eval tcltest {
     # variables and flags provided; a debug level of 3 causes some additional
     # output regarding operations of the test harness.  The tcltest package
     # currently implements only up to debug level 3.
-    if {![info exists debug]} {
-	variable debug 0
-    }
+    Default debug 0
 
     # Save any arguments that we might want to pass through to other programs. 
     # This is used by the -args flag.
-    if {![info exists parameters]} {
-	variable parameters {}
-    }
+    Default parameters {}
 
     # Count the number of files tested (0 if runAllTests wasn't called).
     # runAllTests will set testSingleFile to false, so stats will
@@ -106,37 +84,23 @@ namespace eval tcltest {
     # The currentFailure var stores the boolean value of whether the
     # current test file has had any failures.  The failFiles list
     # stores the names of test files that had failures.
-
-    if {![info exists numTestFiles]} {
-	variable numTestFiles 0
-    }
-    if {![info exists testSingleFile]} {
-	variable testSingleFile true
-    }
-    if {![info exists currentFailure]} {
-	variable currentFailure false
-    }
-    if {![info exists failFiles]} {
-	variable failFiles {}
-    }
+    Default numTestFiles 0
+    Default testSingleFile true
+    Default currentFailure false
+    Default failFiles {}
 
     # Tests should remove all files they create.  The test suite will
     # check the current working dir for files created by the tests.
     # tcltest::filesMade keeps track of such files created using the
     # tcltest::makeFile and tcltest::makeDirectory procedures.
     # tcltest::filesExisted stores the names of pre-existing files.
-
-    if {![info exists filesMade]} {
-	variable filesMade {}
-    }
-    if {![info exists filesExisted]} {
-	variable filesExisted {}
-    }
+    Default filesMade {}
+    Default filesExisted {}
 
     # tcltest::numTests will store test files as indices and the list
     # of files (that should not have been) left behind by the test files.
 
-    if {![info exists createdNewFiles]} {
+    if {![info exists [namespace current]::createdNewFiles]} {
 	variable createdNewFiles
 	array set tcltest::createdNewFiles {}
     }
@@ -144,7 +108,7 @@ namespace eval tcltest {
     # initialize tcltest::numTests array to keep track fo the number of
     # tests that pass, fail, and are skipped.
 
-    if {![info exists numTests]} {
+    if {![info exists [namespace current]::numTests]} {
 	variable numTests
 	array set tcltest::numTests \
 		[list Total 0 Passed 0 Skipped 0 Failed	0] 
@@ -158,7 +122,7 @@ namespace eval tcltest {
     # both of these constraints are counted only if tcltest::debug is set to
     # true. 
 
-    if {![info exists skippedBecause]} {
+    if {![info exists [namespace current]::skippedBecause]} {
 	variable skippedBecause
 	array set tcltest::skippedBecause {}
     }
@@ -167,36 +131,25 @@ namespace eval tcltest {
     # predefined constraints (see the explanation for the
     # tcltest::initConstraints proc for more details).
 
-    if {![info exists testConstraints]} {
+    if {![info exists [namespace current]::testConstraints]} {
 	variable testConstraints
 	array set tcltest::testConstraints {}
     }
-
-    if {![info exists constraintsSpecified]} {
-	variable constraintsSpecified {}
-    }
+    Default constraintsSpecified {}
 
     # Don't run only the constrained tests by default
-
-    if {![info exists limitConstraints]} {
-	variable limitConstraints false
-    }
+    Default limitConstraints false
 
     # A test application has to know how to load the tested commands into
     # the interpreter.
-
-    if {![info exists loadScript]} {
-	variable loadScript {}
-    }
+    Default loadScript {}
 
     # and the filename of the script file, if it exists
-    if {![info exists loadFile]} {
-	variable loadFile {}
-    }
+    Default loadFile {}
 
     # tests that use threads need to know which is the main thread
 
-    if {![info exists mainThread]} {
+    if {![info exists [namespace current]::mainThread]} {
 	variable mainThread 1
 	if {[info commands thread::id] != {}} {
 	    set mainThread [thread::id]
@@ -207,7 +160,7 @@ namespace eval tcltest {
 
     # save the original environment so that it can be restored later
     
-    if {![info exists originalEnv]} {
+    if {![info exists [namespace current]::originalEnv]} {
 	variable originalEnv
 	array set tcltest::originalEnv [array get ::env]
     }
@@ -215,18 +168,14 @@ namespace eval tcltest {
     # Set tcltest::workingDirectory to [pwd]. The default output directory
     # for Tcl tests is the working directory.
 
-    if {![info exists workingDirectory]} {
-	variable workingDirectory [pwd]
-    }
-    if {![info exists temporaryDirectory]} {
-	variable temporaryDirectory $workingDirectory
-    }
+    Default workingDirectory [pwd]
+    Default temporaryDirectory $workingDirectory
 
     # Tests should not rely on the current working directory.
     # Files that are part of the test suite should be accessed relative to 
     # tcltest::testsDirectory.
 
-    if {![info exists testsDirectory]} {
+    if {![info exists [namespace current]::testsDirectory]} {
 	set oldpwd [pwd]
 	catch {cd [file join [file dirname [info script]] .. .. tests]}
 	variable testsDirectory [pwd]
@@ -235,15 +184,11 @@ namespace eval tcltest {
     }
 
     # Default is to run each test file in a separate process
-    if {![info exists singleProcess]} {
-	variable singleProcess 0
-    }
+    Default singleProcess 0
 
     # the variables and procs that existed when tcltest::saveState was
     # called are stored in a variable of the same name
-    if {![info exists saveState]} {
-	variable saveState {}
-    }
+    Default saveState {}
 
     # Internationalization support -- used in tcltest::set_iso8859_1_locale
     # and tcltest::restore_locale. Those commands are used in cmdIL.test.
@@ -286,14 +231,10 @@ namespace eval tcltest {
     }
 
     # Set the location of the execuatble
-    if {![info exists tcltest]} {
-	variable tcltest [info nameofexecutable]
-    }	
+    Default tcltest [info nameofexecutable]
 
     # save the platform information so it can be restored later
-    if {![info exists originalTclPlatform]} {
-	variable originalTclPlatform [array get tcl_platform]
-    }
+    Default originalTclPlatform [array get tcl_platform]
 
     # If a core file exists, save its modification time.
     if {![info exists coreModificationTime]} {
@@ -304,12 +245,8 @@ namespace eval tcltest {
     }
 
     # stdout and stderr buffers for use when we want to store them
-    if {![info exists outData]} {
-	variable outData {}
-    }
-    if {![info exists errData]} {
-	variable errData {}
-    }
+    Default outData {}
+    Default errData {}
 
     # keep track of test level for nested test commands
     variable testLevel 0
