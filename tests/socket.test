@@ -981,18 +981,6 @@ test socket-9.3 {testing EOF stickyness} {
 	    }
 	}
     }
-test socket-10.1 {testing socket accept callback error handling} {
-    set goterror 0
-    proc bgerror args {global goterror; set goterror 1}
-    set s [socket -server accept 2898]
-    proc accept {s a p} {close $s; error}
-    set c [socket localhost 2898]
-    vwait goterror
-    close $s
-    close $c
-    set goterror
-} 1
-
     proc timerproc {} {
 	global done count c
 	set done true
@@ -1018,6 +1006,18 @@ test socket-10.1 {testing socket accept callback error handling} {
     close $s
     set count
 } {eof is sticky}
+
+test socket-10.1 {testing socket accept callback error handling} {
+    set goterror 0
+    proc bgerror args {global goterror; set goterror 1}
+    set s [socket -server accept 2898]
+    proc accept {s a p} {close $s; error}
+    set c [socket localhost 2898]
+    vwait goterror
+    close $s
+    close $c
+    set goterror
+} 1
 
 removeFile script
 
