@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCompile.h,v 1.4 1998/07/06 14:54:36 welch Exp $ 
+ * SCCS: %Z% $Id: tclCompile.h,v 1.5 1998/07/28 09:08:40 escoffon Exp $ 
  */
 
 #ifndef _TCLCOMPILATION
@@ -351,9 +351,9 @@ typedef struct ByteCode {
 				 * plus 1 for each execution of the code
 				 * currently active. This structure can be
 				 * freed when refCount becomes zero. */
-    unsigned int flags;	/* flags describing state for the codebyte.
-                         * this variable holds ORed values from the
-                         * TCL_BYTECODE_ masks defined above */
+    unsigned int flags;		/* flags describing state for the codebyte.
+                                 * this variable holds ORed values from the
+                                 * TCL_BYTECODE_ masks defined above */
     char *source;		/* The source string from which this
 				 * ByteCode was compiled. Note that this
 				 * pointer is not owned by the ByteCode and
