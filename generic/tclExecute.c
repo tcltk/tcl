@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.90 2002/11/12 02:25:48 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.91 2003/01/08 21:29:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5717,7 +5717,7 @@ TclExprFloatError(interp, value)
     char *s;
 
     Tcl_ResetResult(interp);
-    if ((errno == EDOM) || (value != value)) {
+    if ((errno == EDOM) || IS_NAN(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
