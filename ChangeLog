@@ -1,5 +1,12 @@
 2004-11-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* unix/configure.in: Simplify the code to check for correctness of
+	strstr, strtoul and strtod.
+	* unix/tcl.m4 (SC_TCL_CHECK_BROKEN_FUNC): Split a complex stanza
+	out of configure.in into its own function. Also force it to do the
+	right thing with cacheing of results of AC_TRY_RUN to deal with
+	issue raised in [Patch 1073524]
+
 	* doc/foreach.n: Added simple example. [FRQ 1073334]
 
 2004-11-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
