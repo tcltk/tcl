@@ -11,6 +11,13 @@
 
 2001-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/configure: 
+	* unix/configure.in: 
+	* win/configure: 
+	* win/configure.in: 
+	* win/tcl.m4: reworked to be a little cleaner in comparison to
+	each other, and to AC_SUBST even empty vars for win/tclConfig.sh
+
 	* generic/tclFileName.c: minor code cleanup
 
 	* generic/tcl.h: moved #define of WIN32 to tcl.h where __WIN32__
