@@ -1,3 +1,10 @@
+2003-10-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdIL.c (SortInfo,etc): Reorganized so that SortInfo
+	carries an array of integer indices instead of a Tcl list.  This
+	nips shimmering problems in the bud and simplifies SelectObjFromSublist
+	at the cost of making setup slightly more complex. [Bug 823768]
+
 2003-10-14  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclAppInit.c (sigHandler): Punt gracefully if exitToken
