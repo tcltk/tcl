@@ -12,10 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.2 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.3 1999/03/11 00:19:23 stanton Exp $
  */
 
 #include "tclInt.h"
+#include "tclPort.h"
 
 /*
  * One of the following structures exists for each asynchronous
@@ -125,6 +126,7 @@ Tcl_AsyncMark(async)
 {
     ((AsyncHandler *) async)->ready = 1;
     if (!asyncActive) {
+	TclpAsyncMark(async);
 	asyncReady = 1;
     }
 }

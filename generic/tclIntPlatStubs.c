@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3 1999/03/10 05:52:49 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.4 1999/03/11 00:19:23 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -299,6 +299,23 @@ TclpOpenFile(fname, mode)
     int mode;
 {
     return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
+}
+
+/* Slot 20 */
+void
+TclWinAddProcess(hProcess, id)
+    HANDLE hProcess;
+    DWORD id;
+{
+    (tclIntPlatStubsPtr->tclWinAddProcess)(hProcess, id);
+}
+
+/* Slot 21 */
+void
+TclpAsyncMark(async)
+    Tcl_AsyncHandler async;
+{
+    (tclIntPlatStubsPtr->tclpAsyncMark)(async);
 }
 
 #endif /* __WIN32__ */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.12 1999/02/02 18:36:31 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.13 1999/03/11 00:19:24 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -81,6 +81,12 @@ static char* processors[NUMPROCESSORS] = {
  */
 
 #include "tclInitScript.h"
+
+/*
+ * Thread id used for asynchronous notification from signal handlers.
+ */
+
+static DWORD threadId;
 
 
 /*
@@ -279,6 +285,13 @@ TclPlatformInit(interp)
     }
 
     Tcl_DStringFree(&ds);
+
+    /*
+     * Save the current thread id so an async signal handler can poke
+     * the right thread using TclpAyncMark.
+     */
+
+    threadId = GetCurrentThreadId();
 }
 
 /*
@@ -395,4 +408,32 @@ Tcl_SourceRCFile(interp)
 	}
         Tcl_DStringFree(&temp);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpAsyncMark --
+ *
+ *	Wake up the main thread from a signal handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sends a message to the main thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpAsyncMark(async)
+    Tcl_AsyncHandler async;		/* Token for handler. */
+{
+    /*
+     * Need a way to kick the Windows event loop and tell it to go look at
+     * asynchronous events.
+     */
+
+    PostThreadMessage(threadId, WM_USER, 0, 0);
 }

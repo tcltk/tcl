@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.3 1999/03/10 05:52:48 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.4 1999/03/11 00:19:23 stanton Exp $
 
 library tcl
 
@@ -680,6 +680,12 @@ declare 18 win {
 }
 declare 19 win {
     TclFile TclpOpenFile(char *fname, int mode)
+}
+declare 20 win {
+    void TclWinAddProcess(HANDLE hProcess, DWORD id)
+}
+declare 21 win {
+    void TclpAsyncMark(Tcl_AsyncHandler async)
 }
 
 #########################

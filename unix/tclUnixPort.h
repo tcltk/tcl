@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.9 1999/03/10 05:52:52 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.10 1999/03/11 00:19:24 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -452,10 +452,11 @@ extern double strtod();
 #define TclpReleaseFile(file)	
 
 /*
- * TclpFinalize is a noop on Unix systems.
+ * The following defines stub out functions that aren't needed on Unix.
  */
 
 #define TclpFinalize()
+#define TclpAsyncMark(async)
 
 #include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"

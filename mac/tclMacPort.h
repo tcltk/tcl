@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.6 1999/03/10 05:52:51 stanton Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.7 1999/03/11 00:19:24 stanton Exp $
  */
 
 #ifndef _MACPORT
@@ -207,6 +207,7 @@ EXTERN int	strncasecmp _ANSI_ARGS_((CONST char *s1,
  */
 #define TclCreateCommandChannel(out, in, err, num, pidPtr)	NULL
 #define TclClosePipeFile(x)
+#define TclpAsyncMark(async)
 
 /*
  * These definitions force putenv & company to use the version

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.5 1999/03/10 23:45:50 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.6 1999/03/11 00:19:23 stanton Exp $
 
 library tcl
 
@@ -962,18 +962,18 @@ declare 279 generic {
 	    Tcl_ReleaseType *type)
 }
 # Reserved for future use (8.0.x vs. 8.1)
-declare 280 generic {
-}
-declare 281 generic {
-}
-declare 282 generic {
-}
-declare 283 generic {
-}
-declare 284 generic {
-}
-declare 285 generic {
-}
+#  declare 280 generic {
+#  }
+#  declare 281 generic {
+#  }
+#  declare 282 generic {
+#  }
+#  declare 283 generic {
+#  }
+#  declare 284 generic {
+#  }
+#  declare 285 generic {
+#  }
 
 ##############################################################################
 

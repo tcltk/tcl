@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3 1999/03/10 05:52:48 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.4 1999/03/11 00:19:23 stanton Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -115,6 +115,11 @@ EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
 				int direction));
 /* 19 */
 EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((char * fname, int mode));
+/* 20 */
+EXTERN void		TclWinAddProcess _ANSI_ARGS_((HANDLE hProcess, 
+				DWORD id));
+/* 21 */
+EXTERN void		TclpAsyncMark _ANSI_ARGS_((Tcl_AsyncHandler async));
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
 /* 0 */
@@ -222,6 +227,8 @@ typedef struct TclIntPlatStubs {
     char * (*tclpGetTZName) _ANSI_ARGS_((void)); /* 17 */
     TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 18 */
     TclFile (*tclpOpenFile) _ANSI_ARGS_((char * fname, int mode)); /* 19 */
+    void (*tclWinAddProcess) _ANSI_ARGS_((HANDLE hProcess, DWORD id)); /* 20 */
+    void (*tclpAsyncMark) _ANSI_ARGS_((Tcl_AsyncHandler async)); /* 21 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     VOID * (*tclpSysAlloc) _ANSI_ARGS_((long size, int isBin)); /* 0 */
@@ -379,6 +386,14 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclpOpenFile
 #define TclpOpenFile(fname, mode) \
 	(tclIntPlatStubsPtr->tclpOpenFile)(fname, mode) /* 19 */
+#endif
+#ifndef TclWinAddProcess
+#define TclWinAddProcess(hProcess, id) \
+	(tclIntPlatStubsPtr->tclWinAddProcess)(hProcess, id) /* 20 */
+#endif
+#ifndef TclpAsyncMark
+#define TclpAsyncMark(async) \
+	(tclIntPlatStubsPtr->tclpAsyncMark)(async) /* 21 */
 #endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL

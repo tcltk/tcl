@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.5 1999/03/10 23:45:51 redman Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.6 1999/03/11 00:19:23 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -532,6 +532,8 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpGetTZName, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
+    TclWinAddProcess, /* 20 */
+    TclpAsyncMark, /* 21 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     TclpSysAlloc, /* 0 */
