@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.12 2000/09/28 06:38:23 hobbs Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.13 2000/10/06 23:46:06 davidg Exp $
  */
 
 #include "tclWinInt.h"
@@ -879,15 +879,20 @@ Tcl_MakeFileChannel(rawHandle, mode)
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_Channel channel = NULL;
     HANDLE handle = (HANDLE) rawHandle;
+    HANDLE dupedHandle;
     DCB dcb;
-    DWORD consoleParams;
-    DWORD type;
+    DWORD consoleParams, type;
     TclFile readFile = NULL;
     TclFile writeFile = NULL;
+    BOOL result;
 
     if (mode == 0) {
 	return NULL;
     }
+
+    /*
+     * GetFileType() returns FILE_TYPE_UNKNOWN for invalid handles.
+     */
 
     type = GetFileType(handle);
 
@@ -930,19 +935,58 @@ Tcl_MakeFileChannel(rawHandle, mode)
 
     case FILE_TYPE_DISK:
     case FILE_TYPE_CHAR:
-    case FILE_TYPE_UNKNOWN:
 	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
 	break;
 	
+    case FILE_TYPE_UNKNOWN:
     default:
 	/*
-	 * The handle is of an unknown type, probably /dev/nul equivalent
-	 * or possibly a closed handle.
+	 * The handle is of an unknown type.  Test the validity of this OS
+	 * handle by duplicating it, then closing the dupe.  The Win32 API
+	 * doesn't provide an IsValidHandle() function, so we have to emulate
+	 * it here.  This test will not work on a console handle reliably,
+	 * which is why we can't test every handle that comes into this
+	 * function in this way.
 	 */
-	
-	channel = NULL;
-	break;
 
+	result = DuplicateHandle(GetCurrentProcess(), handle,
+		GetCurrentProcess(), &dupedHandle, 0, FALSE,
+		DUPLICATE_SAME_ACCESS);
+
+	if (result != 0) {
+	    /* 
+	     * Unable to make a duplicate. It's definately invalid at this
+	     * point.
+	     */
+
+	    return NULL;
+	}
+
+	/*
+	 * Use structured exception handling (Win32 SEH) to protect the close
+	 * of this duped handle which might throw EXCEPTION_INVALID_HANDLE.
+	 */
+
+	__try {
+	    CloseHandle(dupedHandle);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+	    /*
+	     * Definately an invalid handle.  So, therefore, the original
+	     * is invalid also.
+	     */
+
+	    return NULL;
+	}
+
+	/* Fall through, the handle is valid. */
+
+	/*
+	 * Create the undefined channel, anyways, because we know the handle
+	 * is valid to something.
+	 */
+
+	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
     }
 
     return channel;
@@ -974,8 +1018,6 @@ TclpGetDefaultStdChannel(type)
     int mode;
     char *bufMode;
     DWORD handleId;		/* Standard handle to retrieve. */
-    char dummyBuff[1];		/* Buffer for the WriteFile test */
-    DWORD dummyWritten;		/* Required parameter for WriteFile */
 
 
     switch (type) {
@@ -1008,17 +1050,6 @@ TclpGetDefaultStdChannel(type)
      */
 
     if ((handle == INVALID_HANDLE_VALUE) || (handle == 0)) {
-	return (Tcl_Channel) NULL;
-    }
-
-    /*
-     * Win2K BUG: GetStdHandle(STD_OUTPUT_HANDLE) can return what appears
-     * to be a valid handle.  Do an extra test with WriteFile() "touching"
-     * the handle.
-     */
-
-    if ((type == TCL_STDOUT)
-	    && !WriteFile(handle, dummyBuff, 0, &dummyWritten, NULL)) {
 	return (Tcl_Channel) NULL;
     }
 
