@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.50 2004/05/27 13:18:54 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.51 2004/10/06 13:55:40 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3322,13 +3322,14 @@ TclpCutFileChannel(chan)
     FileState **nextPtrPtr;
     int removed = 0;
 
-    if (chanPtr->typePtr != &fileChannelType)
+    if (chanPtr->typePtr != &fileChannelType) {
         return;
+    }
 
     fsPtr = (FileState *) chanPtr->instanceData;
 
     for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-	 nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+	    nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	if ((*nextPtrPtr) == fsPtr) {
 	    (*nextPtrPtr) = fsPtr->nextPtr;
 	    removed = 1;
@@ -3377,8 +3378,9 @@ TclpSpliceFileChannel(chan)
     Channel *chanPtr = (Channel *) chan;
     FileState *fsPtr;
 
-    if (chanPtr->typePtr != &fileChannelType)
+    if (chanPtr->typePtr != &fileChannelType) {
         return;
+    }
 
     fsPtr = (FileState *) chanPtr->instanceData;
 
