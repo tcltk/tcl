@@ -1,6 +1,10 @@
-2004-02-25  Don Porter	<dgp@users.sourceforge.net>
+2004-02-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.6 TAGGED FOR RELEASE ***
+
+	* macosx/Makefile: fixed copyright year in Tcl.framework Info.plist
+
+2004-02-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/basic.test:	Made several tests more robust to the
 	* tests/cmdMZ.test:	list-quoting of path names that might
