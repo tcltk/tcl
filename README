@@ -1,11 +1,11 @@
 README:  Tcl
     This is the Tcl 8.3.1 source distribution.
     You can get any release of Tcl from:
-        http://www.scriptics.com/registration/<version>.tml
+        http://dev.scriptics.com/registration/<version>.tml
     Tcl/Tk is also available through NetCVS:
-	http://www.scriptics.com/products/tcltk/netcvs.html
+	http://dev.scriptics.com/software/tcltk/netcvs.html
 
-RCS: @(#) $Id: README,v 1.29 2000/04/19 08:32:43 hobbs Exp $
+RCS: @(#) $Id: README,v 1.30 2000/04/26 17:05:01 welch Exp $
 
 Contents
 --------
@@ -34,7 +34,7 @@ Tcl is maintained, enhanced, and distributed freely as a
 service to the Tcl community by Scriptics Corporation.
 The official home for Tcl/Tk is on the Scriptics Web site:
 
-	http://www.scriptics.com
+	http://dev.scriptics.com
 
 Tcl is a freely available open source package.  You can do virtually
 anything you like with it, such as modifying it, redistributing it,
@@ -46,19 +46,19 @@ and selling it either in whole or in part.  See the file
 
 Extensive documentation is available at our website.
 The home page for this release is
-	http://www.scriptics.com/software/8.3.html
+	http://dev.scriptics.com/software/8.3.html
 
 Information about new features in 8.3 can be found at
-	http://www.scriptics.com/software/whatsnew83.html
+	http://dev.scriptics.com/software/whatsnew83.html
 
 Detailed release notes can be found at
-	http://www.scriptics.com/software/relnotes/tcl8.3.1
+	http://dev.scriptics.com/software/relnotes/tcl8.3.1
 
 Information about Tcl itself can be found at
-	http://www.scriptics.com/scripting/
+	http://dev.scriptics.com/scripting/
 
 There are many Tcl books on the market.  Most are listed at
-	http://www.scriptics.com/resource/doc/books/
+	http://dev.scriptics.com/resource/doc/books/
 
 2a. Unix Documentation
 ----------------------
@@ -96,7 +96,7 @@ shortcut to the Windows help Tcl documentation will appear in the
 There are brief notes in the unix/README, win/README, and mac/README
 about compiling on these different platforms.  There is additional
 information about building Tcl from sources at
-    http://www.scriptics.com/support/howto/compile.html
+    http://dev.scriptics.com/support/howto/compile.html
 
 
 4. TclPro Development tools
@@ -107,7 +107,7 @@ accelerate your Tcl application development.  Scriptics' TclPro
 product provides a debugger, static code checker, packaging utility,
 and bytecode compiler.  Visit the Scriptics Web site at:
 
-	http://www.scriptics.com/tclpro
+	http://dev.scriptics.com/tclpro
 
 for more information on TclPro and for a free evaluation download.
 
@@ -133,7 +133,7 @@ that are commonly encountered by TCL newcomers.
 7. Tcl Resource Center
 ----------------------
 
-Visit http://www.scriptics.com/resource/ to see an annotated index of
+Visit http://dev.scriptics.com/resource/ to see an annotated index of
 many Tcl resources available on the World Wide Web.  This includes
 papers, books, and FAQs, as well as development tools, extensions,
 applications, binary releases, and patches.  You can also recommend
@@ -170,7 +170,7 @@ suggestions for improvements.  We prefer that you send this
 information to us via the bug form on the Scriptics Web site, rather
 than emailing us directly.  The bug form is at:
 
-	http://www.scriptics.com/support/bugForm.html
+	http://dev.scriptics.com/ticket/
 
 The bug form was designed to give uniform structure to bug reports as
 well as to solicit enough information to minimize followup questions.
@@ -193,12 +193,12 @@ answer esoteric questions for which no-one else is likely to know the
 answer.  In addition, Tcl/Tk support and training are available
 commercially from Scriptics at:
 
-	http://www.scriptics.com/training
+	http://dev.scriptics.com/training
 
 Also see the following Web site for links to other organizations that
 offer Tcl/Tk training:
 
-	http://www.scriptics.com/resource/commercial/training
+	http://www.scriptics.com/resource/community/commercial/training
 
 10. Thank You
 -------------
