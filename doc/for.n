@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: for.n,v 1.3 2000/09/07 14:27:48 poenitz Exp $
+'\" RCS: @(#) $Id: for.n,v 1.4 2004/05/05 22:08:10 dkf Exp $
 '\" 
 .so man.macros
 .TH for n "" Tcl "Tcl Built-In Commands"
@@ -48,11 +48,32 @@ This is likely to result in an infinite loop.  If \fItest\fR is
 enclosed in braces, variable substitutions are delayed until the
 expression is evaluated (before
 each loop iteration), so changes in the variables will be visible.
-For an example, try the following script with and without the braces
-around \fB$x<10\fR:
+See below for an example:
+.SH EXAMPLES
+Print a line for each of the integers from 0 to 10:
 .CS
 for {set x 0} {$x<10} {incr x} {
-	puts "x is $x"
+   puts "x is $x"
+}
+.CE
+
+Either loop infinitely or not at all because the expression being
+evaluated is actually the constant, or even generate an error!  The
+actual behaviour will depend on whether the variable \fIx\fR exists
+before the \fBfor\fR command is run and whether its value is a value
+that is less than or greater than/equal to ten, and this is because
+the expression will be substituted before the \fBfor\fR command is
+executed.
+.CS
+for {set x 0} $x<10 {incr x} {
+   puts "x is $x"
+}
+.CE
+
+Print out the powers of two from 1 to 1024:
+.CS
+for {set x 1} {$x<=1024} {set x [expr {$x * 2}]} {
+   puts "x is $x"
 }
 .CE
 
