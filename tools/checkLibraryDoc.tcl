@@ -19,7 +19,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.6 1999/07/22 21:50:55 redman Exp $
+# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.7 2002/01/15 17:55:30 dgp Exp $
 
 
 lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
@@ -38,7 +38,6 @@ set StructList {
     Tcl_Encoding \
     Tcl_EncodingState \
     Tcl_EncodingType \
-    Tcl_EolTranslation \
     Tcl_HashEntry \
     Tcl_HashSearch \
     Tcl_HashTable \
