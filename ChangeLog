@@ -1,5 +1,9 @@
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/info.test (info-3.1): Corrected test result back to what
+	it used to be in Tcl 7.* now that command counts are being
+	correctly kept.
+
 	* generic/tclExecute.c (TEBC:INST_START_CMD): Make sure that the
 	command-count is always advanced.  Allows TIP#143 limits to tell
 	that work is being done.
