@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.8 2004/10/22 14:27:39 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.9 2004/10/25 17:24:39 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1036,7 +1036,7 @@ proc ::tcl::clock::format { args } {
 
 	set retval
 
-    } result]
+    } result opts]
 
     # Restore the locale
 
@@ -1045,12 +1045,10 @@ proc ::tcl::clock::format { args } {
     }
 
     if { $status == 1 } {
-	if { [lindex $::errorCode 0] eq {clock} } {
+	if { [lindex [dict get $opts -errorcode] 0] eq {clock} } {
 	    return -code error $result
 	} else {
-	    return -code error \
-		-errorcode $::errorCode -errorinfo $::errorInfo \
-		$result
+	    return -options $opts $result
 	}
     } else {
 	return $result
@@ -1153,15 +1151,7 @@ proc ::tcl::clock::scan { args } {
 		"legacy \[clock scan\] does not support -locale"
 
 	}
-	if { [catch {
-	    FreeScan $string $base $timezone $locale
-	} retval] } {
-	    return -code error \
-		-errorcode $::errorCode -errorinfo $::errorInfo \
-		$retval
-	} else {
-	    return $retval
-	}
+	return [FreeScan $string $base $timezone $locale]
     }
 
     # Change locale if a fresh locale has been given on the command line.
@@ -1176,7 +1166,7 @@ proc ::tcl::clock::scan { args } {
 	set scanner [ParseClockScanFormat $format]
 	$scanner $string $base $timezone
 
-    } result]
+    } result opts]
 
     # Restore the locale
 
@@ -1185,12 +1175,10 @@ proc ::tcl::clock::scan { args } {
     }
 
     if { $status == 1 } {
-	if { [lindex $::errorCode 0] eq {clock} } {
+	if { [lindex [dict get $opts -errorcode] 0] eq {clock} } {
 	    return -code error $result
 	} else {
-	    return -code error \
-		-errorcode $::errorCode -errorinfo $::errorInfo \
-		$result
+	    return -options $opts $result
 	}
     } else {
 	return $result
@@ -2998,8 +2986,9 @@ proc ::tcl::clock::ConvertLocalToUTC { date } {
 
 	if { [catch { 
 	    ConvertLocalToUTCViaC [dict get $date localSeconds]
-	} result] } {
-	    return -code error -errorcode $::errorCode $result
+	} result opts] } {
+	    dict unset opts -errorinfo
+	    return -options $opts $result
 	}
 	dict set date seconds $result
 	return $date
@@ -3008,8 +2997,9 @@ proc ::tcl::clock::ConvertLocalToUTC { date } {
 
 	# Get the time zone data
 
-	if { [catch { SetupTimeZone $timezone } retval] } {
-	    return -code error -errorcode $::errorCode $retval
+	if { [catch { SetupTimeZone $timezone } retval opts] } {
+	    dict unset opts -errorinfo
+	    return -options $opts $retval
 	}
 	
 	# Initially assume that local == UTC, and locate the last time
@@ -3103,8 +3093,9 @@ proc ::tcl::clock::ConvertUTCToLocal { date timezone } {
 
     # Get the data for time changes in the given zone
 
-    if { [catch { SetupTimeZone $timezone } retval] } {
-	return -code error -errorcode $::errorCode $retval
+    if { [catch { SetupTimeZone $timezone } retval opts] } {
+	dict unset opts -errorinfo
+	return -options $opts $retval
     }
 
     if { $timezone eq {:localtime} } {
@@ -3113,8 +3104,9 @@ proc ::tcl::clock::ConvertUTCToLocal { date timezone } {
 	
 	if { [catch {
 	    ConvertUTCToLocalViaC $date
-	} retval] } {
-	    return -code error -errorcode $::errorCode $retval
+	} retval opts] } {
+	    dict unset opts -errorinfo
+	    return -options $opts $retval
 	}
 	return $retval
     }
@@ -3278,12 +3270,11 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    
 	    # This looks like a POSIX time zone - try to process it
 
-	    if { [catch {ProcessPosixTimeZone $tzfields} data] } {
-		if { [lindex $::errorCode 0] eq {CLOCK} } {
-		    return -code error -errorcode $::errorCode $data
-		} else {
-		    error $tzfields $::errorInfo $::errorCode
+	    if { [catch {ProcessPosixTimeZone $tzfields} data opts] } {
+		if { [lindex [dict get $opts -errorcode] 0] eq {CLOCK} } {
+		    dict unset opts -errorinfo
 		}
+		return -options $opts $data
 	    } else {
 		set TZData($timezone) $data
 	    }
@@ -3294,9 +3285,9 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    # again with a time zone file - this time without a colon
 
 	    if { [catch { LoadTimeZoneFile $timezone }]
-		 && [catch { LoadZoneinfoFile $timezone }] } {
-		return -code error -errorcode $::errorCode \
-		    "time zone $timezone not found"
+		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
+		dict unset opts -errorinfo
+		return -options $opts "time zone $timezone not found"
 	    }
 	    set TZData($timezone) $TZData(:$timezone)
 	}
@@ -4831,7 +4822,7 @@ proc ::tcl::clock::add { clockval args } {
 		}
 	    }
 	}
-    } result]
+    } result opts]
 
     # Restore the locale
 
@@ -4840,11 +4831,10 @@ proc ::tcl::clock::add { clockval args } {
     }
 
     if { $status == 1 } {
-	if { [lindex $::errorCode 0] eq {CLOCK} } {
-	    return -code error -errorcode $::errorCode $result
-	} else {
-	    error $result $::errorInfo $::errorCode
+	if { [lindex [dict get $opts -errorcode] 0] eq {CLOCK} } {
+	    dict unset opts -errorinfo
 	}
+	return -options $opts $result
     } else {
 	return $clockval
     }
