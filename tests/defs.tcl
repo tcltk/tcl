@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.6 1999/03/24 23:53:44 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.7 1999/03/25 17:20:00 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -413,7 +413,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 
 	foreach file $::tcltest::filesMade {
 	    if {[file exists $file]} {
-		#catch {file delete -force $file}
+		catch {file delete -force $file}
 	    }
 	}
 	set currentFiles {}
