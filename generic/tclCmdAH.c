@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.23 2002/02/27 06:39:26 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.24 2002/04/23 02:54:13 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1158,7 +1158,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    Tcl_SetObjResult(interp, separatorObj);
 		} else {
 		    Tcl_SetObjResult(interp, 
-				     Tcl_NewStringObj("Unrecognised path",-1));
+			    Tcl_NewStringObj("Unrecognised path",-1));
 		    return TCL_ERROR;
 		}
 	    }
@@ -1173,7 +1173,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), buf.st_size);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp),
+		    (Tcl_WideInt) buf.st_size);
 	    return TCL_OK;
 	}
 	case FILE_SPLIT: {
