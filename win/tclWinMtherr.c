@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinMtherr.c,v 1.4 2002/02/15 14:28:51 dkf Exp $
+ * RCS: @(#) $Id: tclWinMtherr.c,v 1.5 2002/05/31 22:20:22 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -40,9 +40,6 @@ int
 _matherr(xPtr)
     struct exception *xPtr;	/* Describes error that occurred. */
 {
-    if (!TclMathInProgress()) {
-	return 0;
-    }
     if ((xPtr->type == DOMAIN)
 #ifdef __BORLANDC__
 	    || (xPtr->type == TLOSS)

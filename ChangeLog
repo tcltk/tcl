@@ -1,3 +1,20 @@
+2002-05-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclMathInProgress,TclExecuteByteCode
+		ExprCallMathFunc):
+	* generic/tclInt.h (TclMathInProgress):
+	* unix/Makefile.in (tclMtherr.*):
+	* unix/configure.in (NEED_MATHERR):
+	* unix/tclAppInit.c (matherr):
+	* unix/tclMtherr.c (removed file):
+	* win/tclWinMtherr.c (_matherr): Removed internal routine
+	TclMathInProgress and Unix implementation of matherr().  These
+	are now obsolete, dealing with very old versions of the C math
+	library.  Windows version is retained in case Borland compilers
+	require it, but it is inactive.  Thanks to Joe English.
+	[Bug 474335, Patch 555635].
+	* unix/configure: regen
+
 2002-05-30  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:

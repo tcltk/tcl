@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.86 2002/05/30 03:27:09 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.87 2002/05/31 22:20:22 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -290,23 +290,6 @@ WIFEXITED(x);		/* Generates compiler error if WIFEXITED
 AC_MSG_RESULT($tcl_cv_union_wait)
 if test $tcl_cv_union_wait = no; then
     AC_DEFINE(NO_UNION_WAIT)
-fi
-
-#--------------------------------------------------------------------
-#	Check to see whether the system supports the matherr function
-#	and its associated type "struct exception".
-#--------------------------------------------------------------------
-
-AC_MSG_CHECKING([matherr support])
-AC_CACHE_VAL(tcl_cv_func_matherr,
-    AC_TRY_COMPILE([#include <math.h>], [
-	struct exception x;
-	x.type = DOMAIN;
-	x.type = SING;
-    ], tcl_cv_func_matherr=yes, tcl_cv_func_matherr=no))
-AC_MSG_RESULT($tcl_cv_func_matherr)
-if test $tcl_cv_func_matherr = yes; then
-    AC_DEFINE(NEED_MATHERR)
 fi
 
 #--------------------------------------------------------------------
