@@ -1,3 +1,8 @@
+2001-08-24  Don Porter <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (unixInit-2.9): Corrected expected result
+	to match Tcl's quirky construction of its init library path.
+
 2001-08-23  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* win/tclWinPipe.c (BuildCommandLine): Fixed tcl Bug
