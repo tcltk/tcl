@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.93 2004/12/04 00:57:55 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.94 2004/12/06 22:41:10 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6296,9 +6296,6 @@ consistent on Windows with Unix (gravereaux)
 
 2004-11-11 (bug fix)[1034337] recursive file delete, MacOSX (steffen)
 
-2004-11-12 (feature)[TIP 34] make use of a configuration header file (fellows)
-	*** POTENTIAL INCOMPATIBILITY ***
-
 2004-11-12 (new feature)[TIP 221] [interp bgerror] (porter)
 
 2004-11-12 (new feature)[TIP 226] Tcl_(Save|Restore|Discard)InterpState
@@ -6341,6 +6338,8 @@ search path uniqification added in 8.4.8 (porter)
 library, encoding search initialization, and Tcl_FindExecutable structure.
 [tclInit] no longer driven by the value of $::tcl_libPath (TCLLIBPATH).
 (porter)
+	*** POTENTIAL INCOMPATIBILITY : makes encoding names case sensitive
+	    on Windows, where they have been case insensitive ***
 
 2004-12-02 (bug fix)[1074671] Ensure tilde paths are not returned specially
 by 'glob' (darley)
