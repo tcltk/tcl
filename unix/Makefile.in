@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.73 2001/04/06 23:29:17 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.74 2001/04/25 19:54:55 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -133,7 +133,7 @@ MEM_DEBUG_FLAGS		=
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
 # To enable support for stubs in Tcl.
-STUB_LIB_FILE		= @STUB_LIB_FILE@
+STUB_LIB_FILE		= @TCL_STUB_LIB_FILE@
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 #TCL_STUB_LIB_FILE	= libtclstub.a

@@ -1,3 +1,10 @@
+2000-04-25  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Use TCL_STUB_LIB_FILE instead of STUB_LIB_FILE.
+	* unix/configure: Regen.
+	* unix/configure.in: Don't subst STUB_LIB_FILE, use TCL_STUB_LIB_FILE
+	instead.
+
 2001-04-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tools/encoding/iso8859-15.txt:
