@@ -1,3 +1,9 @@
+2005-03-07  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: new peephole optimisation for INST_PUSH1;
+	fixed the peephole opt in INST_POP so that it is not used when
+	TCL_COMPILE_DEBUG is defined.
+
 2005-03-01  David N. Welton  <davidw@dedasys.com>
 
 	* doc/CrtSlave.3: Changed to Tcl_Object to Tcl_Obj in the man
