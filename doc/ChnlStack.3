@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlStack.3,v 1.3 2000/09/28 06:34:56 hobbs Exp $
+'\" RCS: @(#) $Id: ChnlStack.3,v 1.4 2002/01/23 21:22:06 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_StackChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_StackChannel, Tcl_UnstackChannel, Tcl_GetStackedChannel \- stack an I/O channel on top of another, and undo it
+Tcl_StackChannel, Tcl_UnstackChannel, Tcl_GetStackedChannel, Tcl_GetTopChannel \- stack an I/O channel on top of another, and undo it
 .SH SYNOPSIS
 .nf
 .nf
@@ -24,6 +24,9 @@ int
 .sp
 Tcl_Channel
 \fBTcl_GetStackedChannel\fR(\fIchannel\fR)
+.sp
+Tcl_Channel
+\fBTcl_GetTopChannel\fR(\fIchannel\fR)
 .sp
 .SH ARGUMENTS
 .AS Tcl_ChannelType
@@ -82,6 +85,12 @@ associated with the channel name, and the processing module added by
 \fBTcl_UnstackChannel\fP is equivalent to \fBTcl_Close\fP.  If an error
 occurs unstacking the channel, \fBTCL_ERROR\fR is returned, otherwise
 \fBTCL_OK\fR is returned.
+.PP
+\fBTcl_GetTopChannel\fR returns the top channel in the stack of
+channels the supplied channel is part of.
+.PP
+\fBTcl_GetStackedChannel\fR returns the channel in the stack of
+channels which is just below the supplied channel.
 
 .SH "SEE ALSO"
 Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n).
