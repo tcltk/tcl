@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.42 2004/01/20 15:49:54 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.43 2004/03/30 16:22:21 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -543,8 +543,10 @@ typedef struct ByteCode {
 #define INST_LIST_INDEX_IMM		102
 #define INST_LIST_RANGE_IMM		103
 
+#define INST_START_CMD                  104
+
 /* The last opcode */
-#define LAST_INST_OPCODE		103
+#define LAST_INST_OPCODE		104
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for

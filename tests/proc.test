@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.12 2003/11/14 20:44:47 dgp Exp $
+# RCS: @(#) $Id: proc.test,v 1.13 2004/03/30 16:22:22 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -324,6 +324,15 @@ test proc-6.1 {ProcessProcResultCode: Bug 647307 (negative return code)} {
     rename b {}
     set result
 } -5
+
+test proc-7.1 {Redefining a compiled cmd: Bug 729692} {
+    proc bar args {}
+    proc foo {} {
+	proc bar args {return bar}
+	bar
+    }
+    foo
+} bar
 
 # cleanup
 catch {rename p ""}

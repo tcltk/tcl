@@ -1,3 +1,13 @@
+2004-03-30  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:     New instruction code INST_START_CMD
+	* generic/tclCompile.h:     that allows checking the bytecode's  
+	* generic/tclExecute.c:     validity [Bug 729692] and the interp's  
+	* tests/interp.test (18.9): readyness [Bug 495830] before running 
+	* tests/proc.test (7.1):    the command. It also changes the 
+	* tests/rename.test (6.1):  mechanics of the async tests in TEBC, 		   	 
+	doing it now at command start instead of every 16 instructions.
+
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
         * generic/tclFileName.c:  Fix to Windows glob where the pattern is
