@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.50.2.1 2001/05/31 23:45:44 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.50.2.2 2001/06/08 23:21:30 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -35,7 +35,7 @@ EXTERN CONST char *	Tcl_PkgRequireEx _ANSI_ARGS_((Tcl_Interp * interp,
 				CONST char * name, CONST char * version, 
 				int exact, ClientData * clientDataPtr));
 /* 2 */
-EXTERN void		Tcl_Panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
+EXTERN void		Tcl_Panic _ANSI_ARGS_(TCL_VARARGS(CONST char *,format));
 /* 3 */
 EXTERN char *		Tcl_Alloc _ANSI_ARGS_((unsigned int size));
 /* 4 */
@@ -898,16 +898,9 @@ EXTERN int		Tcl_VarEvalVA _ANSI_ARGS_((Tcl_Interp * interp,
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, 
 				int options));
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 278 */
-EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format, 
+EXTERN void		Tcl_PanicVA _ANSI_ARGS_((CONST char * format, 
 				va_list argList));
-#endif /* UNIX */
-#ifdef __WIN32__
-/* 278 */
-EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format, 
-				va_list argList));
-#endif /* __WIN32__ */
 /* 279 */
 EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
 				int * patchLevel, int * type));
@@ -1392,7 +1385,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) _ANSI_ARGS_((Tcl_Interp* interp, CONST char* name, CONST char* version, ClientData clientData)); /* 0 */
     CONST char * (*tcl_PkgRequireEx) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr)); /* 1 */
-    void (*tcl_Panic) _ANSI_ARGS_(TCL_VARARGS(char *,format)); /* 2 */
+    void (*tcl_Panic) _ANSI_ARGS_(TCL_VARARGS(CONST char *,format)); /* 2 */
     char * (*tcl_Alloc) _ANSI_ARGS_((unsigned int size)); /* 3 */
     void (*tcl_Free) _ANSI_ARGS_((char * ptr)); /* 4 */
     char * (*tcl_Realloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 5 */
@@ -1716,15 +1709,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorCodeVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 275 */
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    void *reserved278;
-#endif /* MAC_TCL */
+    void (*tcl_PanicVA) _ANSI_ARGS_((CONST char * format, va_list argList)); /* 278 */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
     void (*tcl_InitMemory) _ANSI_ARGS_((Tcl_Interp * interp)); /* 280 */
     Tcl_Channel (*tcl_StackChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan)); /* 281 */
@@ -3039,18 +3024,10 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_WaitPid \
 	(tclStubsPtr->tcl_WaitPid) /* 277 */
 #endif
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_PanicVA
 #define Tcl_PanicVA \
 	(tclStubsPtr->tcl_PanicVA) /* 278 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__
-#ifndef Tcl_PanicVA
-#define Tcl_PanicVA \
-	(tclStubsPtr->tcl_PanicVA) /* 278 */
-#endif
-#endif /* __WIN32__ */
 #ifndef Tcl_GetVersion
 #define Tcl_GetVersion \
 	(tclStubsPtr->tcl_GetVersion) /* 279 */

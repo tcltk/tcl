@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.9 2000/07/26 01:30:59 davidg Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.9.6.1 2001/06/08 23:22:44 kennykb Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -194,6 +194,8 @@ EXTERN FILE *		TclMacFOpenHack _ANSI_ARGS_((CONST char * path,
 /* Slot 24 is reserved */
 /* 25 */
 EXTERN int		TclMacChmod _ANSI_ARGS_((char * path, int mode));
+/* 26 */
+EXTERN void		TclMacSetPanic _ANSI_ARGS_((void));
 #endif /* MAC_TCL */
 
 typedef struct TclIntPlatStubs {
@@ -268,6 +270,7 @@ typedef struct TclIntPlatStubs {
     FILE * (*tclMacFOpenHack) _ANSI_ARGS_((CONST char * path, CONST char * mode)); /* 23 */
     void *reserved24;
     int (*tclMacChmod) _ANSI_ARGS_((char * path, int mode)); /* 25 */
+    void (*tclMacSetPanic) _ANSI_ARGS_((void)); /* 26 */
 #endif /* MAC_TCL */
 } TclIntPlatStubs;
 
@@ -520,6 +523,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclMacChmod
 #define TclMacChmod \
 	(tclIntPlatStubsPtr->tclMacChmod) /* 25 */
+#endif
+#ifndef TclMacSetPanic
+#define TclMacSetPanic \
+	(tclIntPlatStubsPtr->tclMacSetPanic) /* 26 */
 #endif
 #endif /* MAC_TCL */
 

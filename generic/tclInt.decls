@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.26 2001/05/17 02:13:03 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.26.2.1 2001/06/08 23:22:44 kennykb Exp $
 
 library tcl
 
@@ -724,6 +724,9 @@ declare 23 mac {
 #  }
 declare 25 mac {
     int TclMacChmod(char *path, int mode)
+}
+declare 26 mac {
+    void TclMacSetPanic(void)
 }
 
 ############################
