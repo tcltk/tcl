@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.67 2004/10/07 14:50:24 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.68 2004/10/30 21:36:48 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -22,6 +22,14 @@
 #include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
+
+/*
+ * The number of 100-ns intervals between the Windows system epoch 
+ * (1601-01-01 on the proleptic Gregorian calendar) and the
+ * Posix epoch (1970-01-01).
+ */
+
+#define POSIX_EPOCH_AS_FILETIME 116444736000000000
 
 /*
  * Declarations for 'link' related information.  This information
@@ -1976,56 +1984,30 @@ NativeStatMode(DWORD attr, int checkLinks, int isExec)
     return (unsigned short)mode;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * ToCTime --
+ *
+ *	Converts a Windows FILETIME to a time_t in UTC.
+ *
+ * Results:
+ *	Returns the count of seconds from the Posix epoch.
+ *
+ *------------------------------------------------------------------------
+ */
+
 static time_t
-ToCTime(
-    FILETIME fileTime)		/* UTC Time to convert to local time_t. */
+ToCTime( FILETIME fileTime )	/* UTC Time to convert to local time_t. */
 {
-    FILETIME localFileTime;
-    SYSTEMTIME systemTime;
-    struct tm tm;
 
-    if (FileTimeToLocalFileTime(&fileTime, &localFileTime) == 0) {
-	return 0;
-    }
-    if (FileTimeToSystemTime(&localFileTime, &systemTime) == 0) {
-	return 0;
-    }
-    tm.tm_sec = systemTime.wSecond;
-    tm.tm_min = systemTime.wMinute;
-    tm.tm_hour = systemTime.wHour;
-    tm.tm_mday = systemTime.wDay;
-    tm.tm_mon = systemTime.wMonth - 1;
-    tm.tm_year = systemTime.wYear - 1900;
-    tm.tm_wday = 0;
-    tm.tm_yday = 0;
-    tm.tm_isdst = -1;
-
-    return mktime(&tm);
+    LARGE_INTEGER convertedTime;
+    convertedTime.LowPart = fileTime.dwLowDateTime;
+    convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
+    return (time_t) ( (convertedTime.QuadPart
+		       - (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME)
+		      / (Tcl_WideInt) 10000000);
 }
-
-#if 0
-
-    /*
-     * Borland's stat doesn't take into account localtime.
-     */
-
-    if ((result == 0) && (buf->st_mtime != 0)) {
-	TIME_ZONE_INFORMATION tz;
-	int time, bias;
-
-	time = GetTimeZoneInformation(&tz);
-	bias = tz.Bias;
-	if (time == TIME_ZONE_ID_DAYLIGHT) {
-	    bias += tz.DaylightBias;
-	}
-	bias *= 60;
-	buf->st_atime -= bias;
-	buf->st_ctime -= bias;
-	buf->st_mtime -= bias;
-    }
-
-#endif
-
 
 #if 0
 /*
