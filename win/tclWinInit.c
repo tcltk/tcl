@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.37 2003/01/10 15:03:55 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.38 2003/02/04 17:06:53 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -465,7 +465,7 @@ ToUtf(
 /*
  *---------------------------------------------------------------------------
  *
- * TclWinFilesystemAndEncodingsCleanup --
+ * TclWinEncodingsCleanup --
  *
  *	Reset information to its original state in finalization to
  *	allow for reinitialization to be possible.  This must not
@@ -482,9 +482,9 @@ ToUtf(
  */
 
 void
-TclWinFilesystemAndEncodingsCleanup()
+TclWinEncodingsCleanup()
 {
-    TclWinResetInterfaces();
+    TclWinResetInterfaceEncodings();
     libraryPathEncodingFixed = 0;
     if (binaryEncoding != NULL) {
 	Tcl_FreeEncoding(binaryEncoding);

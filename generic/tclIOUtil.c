@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.70 2003/01/28 14:52:47 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.71 2003/02/04 17:06:50 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -584,18 +584,14 @@ FsReleaseIterator(void) {
  *	Clean up the filesystem.  After this, calls to all Tcl_FS...
  *	functions will fail.
  *	
- *	Note that, since 'TclFinalizeLoad' may unload extensions
- *	which implement other filesystems, and which may therefore
- *	contain a 'freeProc' for those filesystems, at this stage
- *	we _must_ have freed all objects of "path" type, or we may
- *	end up with segfaults if we try to free them later.
- *
+ *	We will later call TclResetFilesystem to restore the FS
+ *	to a pristine state.
+ *	
  * Results:
  *	None.
  *
  * Side effects:
- *	Frees any memory allocated by the filesystem.  Unloads any
- *	extensions which have been loaded.
+ *	Frees any memory allocated by the filesystem.
  *
  *----------------------------------------------------------------------
  */
@@ -612,56 +608,76 @@ TclFinalizeFilesystem() {
 	cwdPathPtr = NULL;
     }
 
-    /*
-     * We defer unloading of packages until very late 
-     * to avoid memory access issues.  Both exit callbacks and
-     * synchronization variables may be stored in packages.
-     * 
-     * Note that TclFinalizeLoad unloads packages in the reverse
-     * of the order they were loaded in (i.e. last to be loaded
-     * is the first to be unloaded).  This can be important for
-     * correct unloading when dependencies exist.
+    /* 
+     * Remove all filesystems, freeing any allocated memory
+     * that is no longer needed
      */
-
-    TclFinalizeLoad();
-    
-    /* Remove all filesystems, freeing any allocated memory */
     while (filesystemList != NULL) {
 	FilesystemRecord *tmpFsRecPtr = filesystemList->nextPtr;
-	if (filesystemList->fileRefCount > 1) {
+	if (filesystemList->fileRefCount > 0) {
 	    /* 
-	     * We are freeing a filesystem which actually has
-	     * path objects still around which belong to it.
-	     * This is probably bad, but since we are exiting,
-	     * we don't do anything about it.
+	     * This filesystem must have some path objects still
+	     * around which will be freed later (e.g. when unloading
+	     * any shared libraries).  If not, then someone is
+	     * causing us to leak memory.
 	     */
-	}
-	/* The native filesystem is static, so we don't free it */
-	if (filesystemList != &nativeFilesystemRecord) {
-	    ckfree((char *)filesystemList);
+	} else {
+	    /* The native filesystem is static, so we don't free it */
+	    if (filesystemList != &nativeFilesystemRecord) {
+		ckfree((char *)filesystemList);
+	    }
 	}
 	filesystemList = tmpFsRecPtr;
     }
     /*
-     * Now filesystemList is NULL.  Reset statics to original state.
+     * Now filesystemList is NULL.  This means that any attempt
+     * to use the filesystem is likely to fail.
      */
     statProcList = NULL;
     accessProcList = NULL;
     openFileChannelProcList = NULL;
+#ifdef __WIN32__
+    TclWinEncodingsCleanup();
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclResetFilesystem --
+ *
+ *	Restore the filesystem to a pristine state.
+ *	
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclResetFilesystem() {
     filesystemList = &nativeFilesystemRecord;
+    /* 
+     * Note, at this point, I believe nativeFilesystemRecord ->
+     * fileRefCount should equal 1 and if not, we should try to track
+     * down the cause.
+     */
+    
     filesystemIteratorsInProgress = 0;
     filesystemWantToModify = 0;
 #ifdef TCL_THREADS
     filesystemOkToModify = NULL;
 #endif
-    /* 
-     * Cleans up the win32 API filesystem proc lookup table and
-     * any special encodings which have been loaded.  This must
-     * happen after the filesystem has been closed down, or crashes
-     * can result (especially with vfs).
-     */
 #ifdef __WIN32__
-    TclWinFilesystemAndEncodingsCleanup();
+    /* 
+     * Cleans up the win32 API filesystem proc lookup table. This must
+     * happen very late in finalization so that deleting of copied
+     * dlls can occur.
+     */
+    TclWinResetInterfaces();
 #endif
 }
 
@@ -2634,8 +2650,16 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		 */
 		if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
 		    Tcl_DecrRefCount(copyToPtr);
-		    (*handlePtr) = NULL;
-		    (*unloadProcPtr) = NULL;
+		    /* 
+		     * We tell our caller about the real shared
+		     * library which was loaded.  Note that this
+		     * does mean that the package list maintained
+		     * by 'load' will store the original (vfs)
+		     * path alongside the temporary load handle
+		     * and unload proc ptr.
+		     */
+		    (*handlePtr) = newLoadHandle;
+		    (*unloadProcPtr) = newUnloadProcPtr;
 		    return TCL_OK;
 		}
 		/* 
@@ -2652,24 +2676,37 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		 */
 		tvdlPtr->loadHandle = newLoadHandle;
 		tvdlPtr->unloadProcPtr = newUnloadProcPtr;
-		/* copyToPtr is already incremented for this reference */
-		tvdlPtr->divertedFile = copyToPtr;
-		/* 
-		 * This is the filesystem we loaded it into.  It is
-		 * almost certainly the tclNativeFilesystem, but we don't
-		 * want to make that assumption.  Since we have a
-		 * reference to 'copyToPtr', we already have a refCount
-		 * on this filesystem, so we don't need to worry about it
-		 * disappearing on us.
-		 */
-		tvdlPtr->divertedFilesystem = copyFsPtr;
-		/* Get the native representation of the file path */
-		tvdlPtr->divertedFileNativeRep = Tcl_FSGetInternalRep(copyToPtr,
-								      copyFsPtr);
+
+		if (copyFsPtr != &tclNativeFilesystem) {
+		    /* copyToPtr is already incremented for this reference */
+		    tvdlPtr->divertedFile = copyToPtr;
+
+		    /* 
+		     * This is the filesystem we loaded it into.  Since
+		     * we have a reference to 'copyToPtr', we already
+		     * have a refCount on this filesystem, so we don't
+		     * need to worry about it disappearing on us.
+		     */
+		    tvdlPtr->divertedFilesystem = copyFsPtr;
+		    tvdlPtr->divertedFileNativeRep = NULL;
+		} else {
+		    /* We need the native rep */
+		    tvdlPtr->divertedFileNativeRep = 
+		      NativeDupInternalRep(Tcl_FSGetInternalRep(copyToPtr, 
+								copyFsPtr));
+		    /* 
+		     * We don't need or want references to the copied
+		     * Tcl_Obj or the filesystem if it is the native
+		     * one.
+		     */
+		    tvdlPtr->divertedFile = NULL;
+		    tvdlPtr->divertedFilesystem = NULL;
+		    Tcl_DecrRefCount(copyToPtr);
+		}
+
 		copyToPtr = NULL;
 		(*handlePtr) = (Tcl_LoadHandle) tvdlPtr;
 		(*unloadProcPtr) = &FSUnloadTempFile;
-		
 		return retVal;
 	    } else {
 		/* Cross-platform copy failed */
@@ -2769,39 +2806,47 @@ FSUnloadTempFile(loadHandle)
 	(*tvdlPtr->unloadProcPtr)(tvdlPtr->loadHandle);
     }
     
-    /* Remove the temporary file we created. */
-    if (Tcl_FSDeleteFile(tvdlPtr->divertedFile) != TCL_OK) {
+    if (tvdlPtr->divertedFilesystem == NULL) {
 	/* 
-	 * The above may have failed because the filesystem, or something
-	 * it depends upon (e.g. encodings) are being taken down because
-	 * Tcl is exiting.
-	 * 
-	 * Therefore we try to call the filesystem's 'delete file proc' 
-	 * directly.  Note that this call may still cause problems, because
-	 * it will ask for the native representation of the divertedFile,
-	 * and that may need to be _recalculated_, in which case this
-	 * call isn't very different to the above.  What we could do
-	 * instead is generate a new Tcl_Obj (pure native) by calling:
-	 * 
-	 * Tcl_Obj *tmp = Tcl_FSNewNativePath(tvdlPtr->divertedFile, 
-	 *                     tvdlPtr->divertedFileNativeRep);
-	 * Tcl_IncrRefCount(tmp);                   
-	 * tvdlPtr->divertedFilesystem->deleteFileProc(tmp);
-	 * Tcl_DecrRefCount(tmp);
-	 *                     
-	 * and then use that in this call.  This approach would potentially
-	 * work even if the encodings and everything else have been 
-	 * deconstructed.  For the moment, however, we simply assume
-	 * Tcl_FSDeleteFile has worked correctly.
+	 * It was the native filesystem, and we have a special
+	 * function available just for this purpose, which we 
+	 * know works even at this late stage.
 	 */
+	TclpDeleteFile(tvdlPtr->divertedFileNativeRep);
+	NativeFreeInternalRep(tvdlPtr->divertedFileNativeRep);
+    } else {
+	/* 
+	 * Remove the temporary file we created.  Note, we may crash
+	 * here because encodings have been taken down already.
+	 */
+	if (tvdlPtr->divertedFilesystem->deleteFileProc(tvdlPtr->divertedFile)
+	    != TCL_OK) {
+	    /* 
+	     * The above may have failed because the filesystem, or something
+	     * it depends upon (e.g. encodings) have been taken down because
+	     * Tcl is exiting.
+	     * 
+	     * We may need to work out how to delete this file more
+	     * robustly (or give the filesystem the information it needs
+	     * to delete the file more robustly).
+	     * 
+	     * In particular, one problem might be that the filesystem
+	     * cannot extract the information it needs from the above
+	     * path object because Tcl's entire filesystem apparatus
+	     * (the code in this file) has been finalized, and it
+	     * refuses to pass the internal representation to the
+	     * filesystem.
+	     */
+	}
+	
+	/* 
+	 * And free up the allocations.  This will also of course remove
+	 * a refCount from the Tcl_Filesystem to which this file belongs,
+	 * which could then free up the filesystem if we are exiting.
+	 */
+	Tcl_DecrRefCount(tvdlPtr->divertedFile);
     }
-    
-    /* 
-     * And free up the allocations.  This will also of course remove
-     * a refCount from the Tcl_Filesystem to which this file belongs,
-     * which could then free up the filesystem if we are exiting.
-     */
-    Tcl_DecrRefCount(tvdlPtr->divertedFile);
+
     ckfree((char*)tvdlPtr);
 }
 
@@ -3495,7 +3540,7 @@ TclCrossFilesystemCopy(interp, source, target)
 	    Tcl_Close(interp, out);
 	    
 	    /* Set modification date of copied file */
-	    if (Tcl_FSLstat(source, &sourceStatBuf) != 0) {
+	    if (Tcl_FSLstat(source, &sourceStatBuf) == 0) {
 		tval.actime = sourceStatBuf.st_atime;
 		tval.modtime = sourceStatBuf.st_mtime;
 		Tcl_FSUtime(target, &tval);
