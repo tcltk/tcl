@@ -91,7 +91,7 @@
 
 /* 
  * Defines used by access function.  This function is provided
- * by Mac Tcl as the function TclMacAccess.
+ * by Mac Tcl as the function TclpAccess.
  */
  
 #   define	F_OK		0	/* test for existence of file */
@@ -200,15 +200,12 @@ EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
 #define TclpGetPid(pid)	    ((unsigned long) (pid))
 
 /*
- * The following prototypes and defines replace the Macintosh version
- * of the POSIX functions "stat" and "access".  The various compilier 
- * vendors don't implement this function well nor consistantly.
+ * The following defines replace the Macintosh version of the POSIX
+ * functions "stat" and "access".  The various compilier vendors
+ * don't implement this function well nor consistantly.
  */
-EXTERN int TclMacStat _ANSI_ARGS_((char *path, struct stat *buf));
-#define stat(path, bufPtr) TclMacStat(path, bufPtr)
-#define lstat(path, bufPtr) TclMacStat(path, bufPtr)
-EXTERN int TclMacAccess _ANSI_ARGS_((const char *filename, int mode));
-#define access(path, mode) TclMacAccess(path, mode)
+#define lstat(path, bufPtr) TclStat(path, bufPtr)
+
 EXTERN FILE * TclMacFOpenHack _ANSI_ARGS_((const char *path,
 	const char *mode));
 #define fopen(path, mode) TclMacFOpenHack(path, mode)
