@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInitScript.h,v 1.5 1998/08/06 15:22:54 welch Exp $ 
+ * SCCS: %Z% $Id: tclInitScript.h,v 1.6 1998/08/07 11:02:49 welch Exp $ 
  */
 
 /*
@@ -78,8 +78,8 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	lappend dirs $tclDefaultLibrary\n\
 	unset tclDefaultLibrary\n\
 	set parentDir [file dirname [file dirname [info nameofexecutable]]]\n\
-	lappend dirs [file join $parentDir lib/tcl$tcl_version]\n\
-	lappend dirs [file join [file dirname $parentDir] lib/tcl$tcl_version]\n\
+	lappend dirs [file join $parentDir lib tcl$tcl_version]\n\
+	lappend dirs [file join [file dirname $parentDir] lib tcl$tcl_version]\n\
 	lappend dirs [file join $parentDir library]\n\
 	lappend dirs [file join [file dirname $parentDir] library]\n\
 	if {[string match {*[ab]*} $tcl_patchLevel]} {\n\
@@ -87,8 +87,8 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	} else {\n\
 	    set ver $tcl_version\n\
 	}\n\
-	lappend dirs [file join [file dirname $parentDir] tcl$ver/library]\n\
-	lappend dirs [file join [file dirname [file dirname $parentDir]] tcl$ver/library]\n\
+	lappend dirs [file join [file dirname $parentDir] tcl$ver library]\n\
+	lappend dirs [file join [file dirname [file dirname $parentDir]] tcl$ver library]\n\
     }\n\
     foreach i $dirs {\n\
 	set tcl_library $i\n\
