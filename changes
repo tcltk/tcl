@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.56.2.5 2001/10/18 20:17:01 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.56.2.6 2002/02/15 23:21:38 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5072,4 +5072,37 @@ bundles to standard .dylib dynamic libraries like on other unices.
 relative months and years during swing hours. (lavana)
 
 --- Released 8.3.4, October 19, 2001 --- See ChangeLog for details ---
+
+2001-11-06 (bug fix)[478856] loss of fileevents due to short reads (kupries)
+
+2001-11-09 (bug fix)[480176] [global] mishandled varnames matching :* (porter)
+
+2001-11-19 (bug fix)[478847] overflows in [time] of >2**31 microseconds (kenny)
+
+2001-11-29 (bug fix)[231259] failure to re-compile after cmd shadowing (sofer)
+
+2001-12-10 (bug fix)[490514] doc fixes (porter,english)
+
+2001-12-21 (new feature) MaxOSX / Darwin support (steffen)
+
+2001-12-28 (bug fix) proper case in [auto_execok] use of $env(COMPSPEC) (hobbs)
+
+2002-01-17 (bug fix)[504642] Tcl_Obj refCounts in [gets] (griffen,kupries)
+
+2002-01-21 (bug fix)[506297] infinite loop writing in iso2022-jap encoding
+(forssen,kupries)
+
+2002-01-24 (HTTP server bug workaround)[504508] leave the default port out
+of the Host: header value
+=> http 2.4.1 (hobbs)
+
+2002-01-25 (new feature)[496733] socket options -eofchar and -translation
+return read-only values (dejong)
+
+2002-02-05 (bug fix) [http::error] called when [::error] intended
+=> http 2.4.2 (porter)
+
+2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs (talcott,kupries)
+
+2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value (hobbs)
 
