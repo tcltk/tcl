@@ -8,10 +8,27 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.1.2.2 1998/10/03 01:56:42 stanton Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.1.2.3 1998/10/16 01:16:57 stanton Exp $
  */
 
 #include "tclInt.h"
+#include "TclUtf.h"
+
+/*
+ * The following macros are used for fast character category tests.  The
+ * x_BITS values are shifted right by the category value to determine whether
+ * the given category is included in the set.
+ */ 
+
+#define ALPHA_BITS ((1 << UPPERCASE_LETTER) | (1 << LOWERCASE_LETTER) \
+    | (1 << TITLECASE_LETTER) | (1 << MODIFIER_LETTER) | (1 << OTHER_LETTER))
+
+#define DIGIT_BITS (1 << DECIMAL_DIGIT_NUMBER)
+
+#define SPACE_BITS ((1 << SPACE_SEPARATOR) | (1 << LINE_SEPARATOR) \
+    | (1 << PARAGRAPH_SEPARATOR))
+
+#define CONNECTOR_BITS (1 << CONNECTOR_PUNCTUATION)
 
 /*
  * Unicode characters less than this value are represented by themselves 
@@ -813,10 +830,6 @@ Tcl_UtfBackslash(src, readPtr, dst)
  *	Convert lowercase characters to uppercase characters in a UTF
  *	string in place.  The conversion may shrink the UTF string.
  *
- *	INTL: This implementation only handles iso8859-1 characters
- *	in the current locale.  This should be changed to use the
- *	Unicode character tables.
- *
  * Results:
  *	Returns the number of bytes in the resulting string
  *	excluding the trailing null.
@@ -841,16 +854,7 @@ Tcl_UtfToUpper(str)
     src = dst = str;
     while (*src) {
 	src += Tcl_UtfToUniChar(src, &ch);
-
-	/*
-	 * INTL: This conversion should be replaced with a table lookup for the
-	 * full Unicode translation.
-	 */
-
-	if ((ch < 0x100) && islower(ch)) { /* INTL: ISO only */
-	    ch = (Tcl_UniChar) UCHAR(toupper(ch)); /* INTL: ISO only */
-	}
-	dst += Tcl_UniCharToUtf(ch, dst);
+	dst += Tcl_UniCharToUtf(Tcl_UniCharToUpper(ch), dst);
     }
     *dst = '\0';
     return (dst - str);
@@ -863,10 +867,6 @@ Tcl_UtfToUpper(str)
  *
  *	Convert uppercase characters to lowercase characters in a UTF
  *	string in place.  The conversion may shrink the UTF string.
- *
- *	INTL: This implementation only handles iso8859-1 characters
- *	in the current locale.  This should be changed to use the
- *	Unicode character tables.
  *
  * Results:
  *	Returns the number of bytes in the resulting string
@@ -892,16 +892,7 @@ Tcl_UtfToLower(str)
     src = dst = str;
     while (*src) {
 	src += Tcl_UtfToUniChar(src, &ch);
-
-	/*
-	 * INTL: This conversion should be replaced with a table lookup for the
-	 * full Unicode translation.
-	 */
-
-	if ((ch < 0x100) && isupper(ch)) { /* INTL: ISO only */
-	    ch = (Tcl_UniChar) UCHAR(tolower(ch)); /* INTL: ISO only */
-	}
-	dst += Tcl_UniCharToUtf(ch, dst);
+	dst += Tcl_UniCharToUtf(Tcl_UniCharToLower(ch), dst);
     }
     *dst = '\0';
     return (dst - str);
@@ -915,10 +906,6 @@ Tcl_UtfToLower(str)
  *	Changes the first character of a UTF string to title case or
  *	uppercase and the rest of the string to lowercase.  The
  *	conversion happens in place and may shrink the UTF string.
- *
- *	INTL: This implementation only handles iso8859-1 characters
- *	in the current locale.  This should be changed to use the
- *	Unicode character tables.
  *
  * Results:
  *	Returns the number of bytes in the resulting string
@@ -946,17 +933,11 @@ Tcl_UtfToTitle(str)
 
     if (*src) {
 	src += Tcl_UtfToUniChar(src, &ch);
-	if ((ch < 0x100) && islower(ch)) { /* INTL: ISO only */
-	    ch = (Tcl_UniChar) UCHAR(toupper(ch)); /* INTL: ISO only */
-	}
-	dst += Tcl_UniCharToUtf(ch, dst);
+	dst += Tcl_UniCharToUtf(Tcl_UniCharToTitle(ch), dst);
     }
     while (*src) {
 	src += Tcl_UtfToUniChar(src, &ch);
-	if ((ch < 0x100) && isupper(ch)) { /* INTL: ISO only */
-	    ch = (Tcl_UniChar) UCHAR(tolower(ch)); /* INTL: ISO only */
-	}
-	dst += Tcl_UniCharToUtf(ch, dst);
+	dst += Tcl_UniCharToUtf(Tcl_UniCharToLower(ch), dst);
     }
     *dst = '\0';
     return (dst - str);
@@ -968,8 +949,6 @@ Tcl_UtfToTitle(str)
  * Tcl_UniCharToUpper --
  *
  *	Compute the uppercase equivalent of the given Unicode character.
- *
- *	INTL: this implementation only works on ISO characters.
  *
  * Results:
  *	Returns the uppercase Unicode character.
@@ -984,9 +963,13 @@ Tcl_UniChar
 Tcl_UniCharToUpper(ch)
     int ch;			/* Unicode character to convert. */
 {
-    return (Tcl_UniChar) ((ch < 0x100)
-	    ? UCHAR(toupper(ch))	/* INTL: ISO only */
-	    : ch);
+    int info = GetUniCharInfo(ch);
+
+    if (GetCaseType(info) & 0x04) {
+	return (Tcl_UniChar) (ch - GetDelta(info));
+    } else {
+	return ch;
+    }
 }
 
 /*
@@ -995,8 +978,6 @@ Tcl_UniCharToUpper(ch)
  * Tcl_UniCharToLower --
  *
  *	Compute the lowercase equivalent of the given Unicode character.
- *
- *	INTL: this implementation only works on ISO characters.
  *
  * Results:
  *	Returns the lowercase Unicode character.
@@ -1011,9 +992,13 @@ Tcl_UniChar
 Tcl_UniCharToLower(ch)
     int ch;			/* Unicode character to convert. */
 {
-    return (Tcl_UniChar) ((ch < 0x100)
-	    ? UCHAR(tolower(ch))	/* INTL: ISO only */
-	    : ch);
+    int info = GetUniCharInfo(ch);
+
+    if (GetCaseType(info) & 0x02) {
+	return (Tcl_UniChar) (ch + GetDelta(info));
+    } else {
+	return ch;
+    }
 }
 
 /*
@@ -1022,8 +1007,6 @@ Tcl_UniCharToLower(ch)
  * Tcl_UniCharToTitle --
  *
  *	Compute the titlecase equivalent of the given Unicode character.
- *
- *	INTL: this implementation only works on ISO characters.
  *
  * Results:
  *	Returns the titlecase Unicode character.
@@ -1038,9 +1021,20 @@ Tcl_UniChar
 Tcl_UniCharToTitle(ch)
     int ch;			/* Unicode character to convert. */
 {
-    return (Tcl_UniChar) ((ch < 0x100)
-	    ? UCHAR(toupper(ch))	/* INTL: ISO only */
-	    : ch);
+    int info = GetUniCharInfo(ch);
+    int mode = GetCaseType(info);
+
+    if (mode & 0x1) {
+	/*
+	 * Subtract or add one depending on the original case.
+	 */
+
+	return (Tcl_UniChar) (ch + ((mode & 0x4) ? -1 : 1));
+    } else if (mode == 0x4) {
+	return (Tcl_UniChar) (ch - GetDelta(info));
+    } else {
+	return ch;
+    }
 }
 
 /*
@@ -1114,8 +1108,6 @@ TclUniCharNcmp(cs, ct, n)
  *
  *	Test if a character is an alphanumeric Unicode character.
  *
- *	INTL: this implementation only works on ISO characters.
- *
  * Results:
  *	Returns 1 if character is alphanumeric.
  *
@@ -1129,7 +1121,9 @@ int
 TclUniCharIsAlnum(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((ch < 0x100) ? isalnum(ch) : 0); /* INTL: ISO only */
+    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+
+    return (((ALPHA_BITS | DIGIT_BITS) >> category) & 1);
 }
 
 /*
@@ -1138,8 +1132,6 @@ TclUniCharIsAlnum(ch)
  * TclUniCharIsAlpha --
  *
  *	Test if a character is an alphabetic Unicode character.
- *
- *	INTL: this implementation only works on ISO characters.
  *
  * Results:
  *	Returns 1 if character is alphabetic.
@@ -1154,7 +1146,8 @@ int
 TclUniCharIsAlpha(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((ch < 0x100) ? isalpha(ch) : 0); /* INTL: ISO only */
+    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+    return ((ALPHA_BITS >> category) & 1);
 }
 
 /*
@@ -1164,10 +1157,8 @@ TclUniCharIsAlpha(ch)
  *
  *	Test if a character is a numeric Unicode character.
  *
- *	INTL: this implementation only works on ISO characters.
- *
  * Results:
- *	Returns 1 if character is a digit.
+ *	Returns non-zero if character is a digit.
  *
  * Side effects:
  *	None.
@@ -1179,7 +1170,8 @@ int
 TclUniCharIsDigit(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((ch < 0x100) ? isdigit(ch) : 0); /* INTL: ISO only */
+    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK)
+	    == DECIMAL_DIGIT_NUMBER);
 }
 
 /*
@@ -1189,10 +1181,8 @@ TclUniCharIsDigit(ch)
  *
  *	Test if a character is a lowercase Unicode character.
  *
- *	INTL: this implementation only works on ISO characters.
- *
  * Results:
- *	Returns 1 if character is lowercase.
+ *	Returns non-zero if character is lowercase.
  *
  * Side effects:
  *	None.
@@ -1204,7 +1194,7 @@ int
 TclUniCharIsLower(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((ch < 0x100) ? islower(ch) : 0); /* INTL: ISO only */
+    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == LOWERCASE_LETTER);
 }
 
 /*
@@ -1214,10 +1204,8 @@ TclUniCharIsLower(ch)
  *
  *	Test if a character is a whitespace Unicode character.
  *
- *	INTL: this implementation only works on ISO characters.
- *
  * Results:
- *	Returns 1 if character is a space.
+ *	Returns non-zero if character is a space.
  *
  * Side effects:
  *	None.
@@ -1229,7 +1217,19 @@ int
 TclUniCharIsSpace(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((ch < 0x100) ? isspace(ch) : 0); /* INTL: ISO only */
+    register int category;
+
+    /*
+     * If the character is within the first 127 characters, just use the
+     * standard C function, otherwise consult the Unicode table.
+     */
+
+    if (ch < 0x80) {
+	return isspace(UCHAR(ch)); /* INTL: ISO space */
+    } else {
+	category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+	return ((SPACE_BITS >> category) & 1);
+    }
 }
 
 /*
@@ -1239,10 +1239,8 @@ TclUniCharIsSpace(ch)
  *
  *	Test if a character is a uppercase Unicode character.
  *
- *	INTL: this implementation only works on ISO characters.
- *
  * Results:
- *	Returns 1 if character is uppercase.
+ *	Returns non-zero if character is uppercase.
  *
  * Side effects:
  *	None.
@@ -1254,5 +1252,31 @@ int
 TclUniCharIsUpper(ch)
     int ch;			/* Unicode character to test. */
 {
-    return ((ch < 0x100) ? isupper(ch) : 0); /* INTL: ISO only */
+    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == UPPERCASE_LETTER);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclUniCharIsWordChar --
+ *
+ *	Test if a character is alphanumeric or a connector punctuation
+ *	mark.
+ *
+ * Results:
+ *	Returns 1 if character is a word character.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclUniCharIsWordChar(ch)
+    int ch;			/* Unicode character to test. */
+{
+    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+
+    return (((ALPHA_BITS | DIGIT_BITS | CONNECTOR_BITS) >> category) & 1);
 }

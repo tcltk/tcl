@@ -156,7 +156,7 @@ test cmdMZ-5.1 {Tcl_StringObjCmd: error conditions} {
 } {1 {wrong # args: should be "string option arg ?arg ...?"}}
 test cmdMZ-5.2 {Tcl_StringObjCmd: error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {bad option "gorp": must be compare, first, index, last, length, match, range, tolower, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "gorp": must be compare, first, index, last, length, match, range, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 
 test cmdMZ-6.1 {Tcl_StringObjCmd: string compare} {
     list [catch {string compare a} msg] $msg
@@ -372,11 +372,8 @@ test cmdMZ-13.4 {Tcl_StringObjCmd: string tolower} {
 test cmdMZ-13.5 {Tcl_StringObjCmd: string tolower} {
     string tolower {123#$&*()}
 } {123#$&*()}
-test cmdMZ-13.6 {Tcl_StringObjCmd: string tolower, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string tolower ABCabc\xc7\xe7]
-    restore_locale
-    set result
+test cmdMZ-13.6 {Tcl_StringObjCmd: string tolower, unicode} {
+     string tolower ABCabc\xc7\xe7
 } "abcabc\xe7\xe7"
 
 test cmdMZ-14.1 {Tcl_StringObjCmd: string toupper} {
@@ -394,159 +391,166 @@ test cmdMZ-14.4 {Tcl_StringObjCmd: string toupper} {
 test cmdMZ-14.5 {Tcl_StringObjCmd: string toupper} {
     string toupper {123#$&*()}
 } {123#$&*()}
-test cmdMZ-14.6 {Tcl_StringObjCmd: string toupper, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string toupper ABCabc\xc7\xe7]
-    restore_locale
-    set result
+test cmdMZ-14.6 {Tcl_StringObjCmd: string toupper, unicode} {
+    string toupper ABCabc\xc7\xe7
 } "ABCABC\xc7\xc7"
 
-test cmdMZ-15.1 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-15.1 {Tcl_StringObjCmd: string totitle} {
+    list [catch {string totitle} msg] $msg
+} {1 {wrong # args: should be "string totitle string"}}
+test cmdMZ-15.2 {Tcl_StringObjCmd: string totitle} {
+    list [catch {string totitle a b} msg] $msg
+} {1 {wrong # args: should be "string totitle string"}}
+test cmdMZ-15.3 {Tcl_StringObjCmd: string totitle} {
+    string totitle abCDEf
+} {Abcdef}
+test cmdMZ-15.4 {Tcl_StringObjCmd: string totitle} {
+    string totitle "abc xYz"
+} {Abc xyz}
+test cmdMZ-15.5 {Tcl_StringObjCmd: string totitle} {
+    string totitle {123#$&*()}
+} {123#$&*()}
+test cmdMZ-15.6 {Tcl_StringObjCmd: string totitle, unicode} {
+    string totitle ABCabc\xc7\xe7
+} "Abcabc\xe7\xe7"
+test cmdMZ-15.7 {Tcl_StringObjCmd: string totitle, unicode} {
+    string totitle \u01f3BCabc\xc7\xe7
+} "\u01f2bcabc\xe7\xe7"
+
+test cmdMZ-16.1 {Tcl_StringObjCmd: string trim} {
     list [catch {string trim} msg] $msg
 } {1 {wrong # args: should be "string trim string ?chars?"}}
-test cmdMZ-15.2 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.2 {Tcl_StringObjCmd: string trim} {
     list [catch {string trim a b c} msg] $msg
 } {1 {wrong # args: should be "string trim string ?chars?"}}
-test cmdMZ-15.3 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.3 {Tcl_StringObjCmd: string trim} {
     string trim "    XYZ      "
 } {XYZ}
-test cmdMZ-15.4 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.4 {Tcl_StringObjCmd: string trim} {
     string trim "\t\nXYZ\t\n\r\n"
 } {XYZ}
-test cmdMZ-15.5 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.5 {Tcl_StringObjCmd: string trim} {
     string trim "  A XYZ A    "
 } {A XYZ A}
-test cmdMZ-15.6 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.6 {Tcl_StringObjCmd: string trim} {
     string trim "XXYYZZABC XXYYZZ" ZYX
 } {ABC }
-test cmdMZ-15.7 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.7 {Tcl_StringObjCmd: string trim} {
     string trim "    \t\r      "
 } {}
-test cmdMZ-15.8 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.8 {Tcl_StringObjCmd: string trim} {
     string trim {abcdefg} {}
 } {abcdefg}
-test cmdMZ-15.9 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.9 {Tcl_StringObjCmd: string trim} {
     string trim {}
 } {}
-test cmdMZ-15.10 {Tcl_StringObjCmd: string trim} {
+test cmdMZ-16.10 {Tcl_StringObjCmd: string trim} {
     string trim ABC DEF
 } {ABC}
-test cmdMZ-15.11 {Tcl_StringObjCmd: string trim, unicode} {
+test cmdMZ-16.11 {Tcl_StringObjCmd: string trim, unicode} {
     string trim "\xe7\xe8 AB\xe7C \xe8\xe7" \xe7\xe8
 } " AB\xe7C "
 
-test cmdMZ-16.1 {Tcl_StringObjCmd: string trimleft} {
+test cmdMZ-17.1 {Tcl_StringObjCmd: string trimleft} {
     string trimleft "    XYZ      "
 } {XYZ      }
-test cmdMZ-16.2 {Tcl_StringObjCmd: string trimleft} {
+test cmdMZ-17.2 {Tcl_StringObjCmd: string trimleft} {
     list [catch {string trimleft} msg] $msg
 } {1 {wrong # args: should be "string trimleft string ?chars?"}}
-test cmdMZ-16.3 {Tcl_StringObjCmd: string trimleft} {
+test cmdMZ-17.3 {Tcl_StringObjCmd: string trimleft} {
     string length [string trimleft " "]
 } {0}
 
-test cmdMZ-17.1 {Tcl_StringObjCmd: string trimright} {
+test cmdMZ-18.1 {Tcl_StringObjCmd: string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
-test cmdMZ-17.2 {Tcl_StringObjCmd: string trimright} {
+test cmdMZ-18.2 {Tcl_StringObjCmd: string trimright} {
     string trimright "   "
 } {}
-test cmdMZ-17.3 {Tcl_StringObjCmd: string trimright} {
+test cmdMZ-18.3 {Tcl_StringObjCmd: string trimright} {
     string trimright ""
 } {}
-test cmdMZ-17.4 {Tcl_StringObjCmd: string trimright errors} {
+test cmdMZ-18.4 {Tcl_StringObjCmd: string trimright errors} {
     list [catch {string trimright} msg] $msg
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
-test cmdMZ-17.5 {Tcl_StringObjCmd: string trimright errors} {
+test cmdMZ-18.5 {Tcl_StringObjCmd: string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {bad option "trimg": must be compare, first, index, last, length, match, range, tolower, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "trimg": must be compare, first, index, last, length, match, range, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 
-test cmdMZ-18.1 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.1 {Tcl_StringObjCmd: string wordend} {
     list [catch {string wordend a} msg] $msg
 } {1 {wrong # args: should be "string wordend string index"}}
-test cmdMZ-18.2 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.2 {Tcl_StringObjCmd: string wordend} {
     list [catch {string wordend a b c} msg] $msg
 } {1 {wrong # args: should be "string wordend string index"}}
-test cmdMZ-18.3 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.3 {Tcl_StringObjCmd: string wordend} {
     list [catch {string wordend a gorp} msg] $msg
 } {1 {expected integer but got "gorp"}}
-test cmdMZ-18.4 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.4 {Tcl_StringObjCmd: string wordend} {
     string wordend abc. -1
 } 3
-test cmdMZ-18.5 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.5 {Tcl_StringObjCmd: string wordend} {
     string wordend abc. 100
 } 4
-test cmdMZ-18.6 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.6 {Tcl_StringObjCmd: string wordend} {
     string wordend "word_one two three" 2
 } 8
-test cmdMZ-18.7 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.7 {Tcl_StringObjCmd: string wordend} {
     string wordend "one .&# three" 5
 } 6
-test cmdMZ-18.8 {Tcl_StringObjCmd: string wordend} {
+test cmdMZ-19.8 {Tcl_StringObjCmd: string wordend} {
     string worde "x.y" 0
 } 1
-test cmdMZ-18.9 {Tcl_StringObjCmd: string wordend, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string wordend "xyz\u00c7de fg" 0]
-    restore_locale
-    set result
+test cmdMZ-19.9 {Tcl_StringObjCmd: string wordend, unicode} {
+    string wordend "xyz\u00c7de fg" 0
 } 6
-test cmdMZ-18.10 {Tcl_StringObjCmd: string wordend, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string wordend "xyz\uc700de fg" 0]
-    restore_locale
-    set result
+test cmdMZ-19.10 {Tcl_StringObjCmd: string wordend, unicode} {
+    string wordend "xyz\uc700de fg" 0
+} 6
+test cmdMZ-19.11 {Tcl_StringObjCmd: string wordend, unicode} {
+    string wordend "xyz\u203fde fg" 0
+} 6
+test cmdMZ-19.12 {Tcl_StringObjCmd: string wordend, unicode} {
+    string wordend "xyz\u2045de fg" 0
 } 3
-test cmdMZ-18.11 {Tcl_StringObjCmd: string wordend, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string wordend "xyz\uc700de fg" 0]
-    restore_locale
-    set result
-} 3
-test cmdMZ-18.12 {Tcl_StringObjCmd: string wordend, unicode} {
+test cmdMZ-19.13 {Tcl_StringObjCmd: string wordend, unicode} {
     string wordend "\uc700\uc700 abc" 8
 } 6
 
-test cmdMZ-19.1 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.1 {Tcl_StringObjCmd: string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {ambiguous option "word": must be compare, first, index, last, length, match, range, tolower, toupper, trim, trimleft, trimright, wordend, or wordstart}}
-test cmdMZ-19.2 {Tcl_StringObjCmd: string wordstart} {
+} {1 {ambiguous option "word": must be compare, first, index, last, length, match, range, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+test cmdMZ-20.2 {Tcl_StringObjCmd: string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
-test cmdMZ-19.3 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.3 {Tcl_StringObjCmd: string wordstart} {
     list [catch {string wordstart a b c} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
-test cmdMZ-19.4 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.4 {Tcl_StringObjCmd: string wordstart} {
     list [catch {string wordstart a gorp} msg] $msg
 } {1 {expected integer but got "gorp"}}
-test cmdMZ-19.5 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.5 {Tcl_StringObjCmd: string wordstart} {
     string wordstart "one two three_words" 400
 } 8
-test cmdMZ-19.6 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.6 {Tcl_StringObjCmd: string wordstart} {
     string wordstart "one two three_words" 2
 } 0
-test cmdMZ-19.7 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.7 {Tcl_StringObjCmd: string wordstart} {
     string wordstart "one two three_words" -2
 } 0
-test cmdMZ-19.8 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.8 {Tcl_StringObjCmd: string wordstart} {
     string wordstart "one .*&^ three" 6
 } 6
-test cmdMZ-19.9 {Tcl_StringObjCmd: string wordstart} {
+test cmdMZ-20.9 {Tcl_StringObjCmd: string wordstart} {
     string wordstart "one two three" 4
 } 4
-test cmdMZ-19.10 {Tcl_StringObjCmd: string wordstart, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string wordstart "one tw\u00c7o three" 7]
-    restore_locale
-    set result
+test cmdMZ-20.10 {Tcl_StringObjCmd: string wordstart, unicode} {
+    string wordstart "one tw\u00c7o three" 7
 } 4
-test cmdMZ-19.11 {Tcl_StringObjCmd: string wordstart, unicode} {hasIsoLocale} {
-    set_iso8859_1_locale
-    set result [string wordstart "ab\uc700\uc700 cdef ghi" 12]
-    restore_locale
-    set result
+test cmdMZ-20.11 {Tcl_StringObjCmd: string wordstart, unicode} {
+    string wordstart "ab\uc700\uc700 cdef ghi" 12
 } 10
-test cmdMZ-19.12 {Tcl_StringObjCmd: string wordstart, unicode} {
+test cmdMZ-20.12 {Tcl_StringObjCmd: string wordstart, unicode} {
     string wordstart "\uc700\uc700 abc" 8
 } 3
 
@@ -557,3 +561,4 @@ test cmdMZ-19.12 {Tcl_StringObjCmd: string wordstart, unicode} {
 # The tests for Tcl_WhileObjCmd are in while.test
 
 return
+

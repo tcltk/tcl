@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.5 1998/10/06 20:39:31 rjohnson Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.6 1998/10/16 01:16:57 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -2106,6 +2106,7 @@ EXTERN int		TclUniCharIsDigit _ANSI_ARGS_((int ch));
 EXTERN int		TclUniCharIsLower _ANSI_ARGS_((int ch));
 EXTERN int		TclUniCharIsSpace _ANSI_ARGS_((int ch));
 EXTERN int		TclUniCharIsUpper _ANSI_ARGS_((int ch));
+EXTERN int		TclUniCharIsWordChar _ANSI_ARGS_((int ch));
 EXTERN int		TclUniCharLen _ANSI_ARGS_((Tcl_UniChar *str));
 EXTERN int		TclUniCharNcmp _ANSI_ARGS_((const Tcl_UniChar *cs,
 	const Tcl_UniChar *ct, size_t n));

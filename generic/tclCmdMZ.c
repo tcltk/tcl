@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.2 1998/09/24 23:58:43 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.3 1998/10/16 01:16:57 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1118,14 +1118,14 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     static char *options[] = {
 	"compare",	"first",	"index",	"last",
 	"length",	"match",	"range",	"tolower",
-	"toupper",	"trim",		"trimleft",	"trimright",
-	"wordend",	"wordstart",	(char *) NULL
+	"toupper",	"totitle",	"trim",		"trimleft",
+	"trimright",	"wordend",	"wordstart",	(char *) NULL
     };
     enum options {
 	STR_COMPARE,	STR_FIRST,	STR_INDEX,	STR_LAST,
 	STR_LENGTH,	STR_MATCH,	STR_RANGE,	STR_TOLOWER,
-	STR_TOUPPER,	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
-	STR_WORDEND,	STR_WORDSTART
+	STR_TOUPPER,	STR_TOTITLE,	STR_TRIM,	STR_TRIMLEFT,
+	STR_TRIMRIGHT,	STR_WORDEND,	STR_WORDSTART
     };	  
 	    
     if (objc < 2) {
@@ -1329,7 +1329,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    break;
 	}
-	case STR_TOLOWER: {
+	case STR_TOLOWER:
+	case STR_TOUPPER:
+	case STR_TOTITLE:
 	    if (objc != 3) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "string");
 		return TCL_ERROR;
@@ -1341,36 +1343,20 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	     * Since the result object is not a shared object, it is
 	     * safe to copy the string into the result and do the
 	     * conversion in place.  The conversion may change the length
-	     * of the string, so reset the length after converstion.
-	     * the starting size, so reset the length after conversion.
+	     * of the string, so reset the length after conversion.
 	     */
 
 	    Tcl_SetStringObj(resultPtr, string1, length1);
-	    length1 = Tcl_UtfToLower(Tcl_GetStringFromObj(resultPtr, NULL));
-	    Tcl_SetObjLength(resultPtr, length1);
-	    break;
-	}
-	case STR_TOUPPER: {
-	    if (objc != 3) {
-	        Tcl_WrongNumArgs(interp, 2, objv, "string");
-		return TCL_ERROR;
+	    if ((enum options) index == STR_TOLOWER) {
+		length1 = Tcl_UtfToLower(Tcl_GetStringFromObj(resultPtr, NULL));
+	    } else if ((enum options) index == STR_TOUPPER) {
+		length1 = Tcl_UtfToUpper(Tcl_GetStringFromObj(resultPtr, NULL));
+	    } else {
+		length1 = Tcl_UtfToTitle(Tcl_GetStringFromObj(resultPtr, NULL));
 	    }
-
-	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-
-	    /*
-	     * Since the result object is not a shared object, it is
-	     * safe to copy the string into the result and do the
-	     * conversion in place.  The conversion may change the length
-	     * of the string, so reset the length after converstion.
-	     * the starting size, so reset the length after conversion.
-	     */
-
-	    Tcl_SetStringObj(resultPtr, string1, length1);
-	    length1 = Tcl_UtfToUpper(Tcl_GetStringFromObj(resultPtr, NULL));
 	    Tcl_SetObjLength(resultPtr, length1);
 	    break;
-	}
+
 	case STR_TRIM: {
 	    Tcl_UniChar ch, trim;
 	    register char *p, *end;
@@ -1460,7 +1446,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    goto dotrim;
 	}
 	case STR_WORDEND: {
-	    int cur, c;
+	    int cur;
 	    Tcl_UniChar ch;
 	    char *p, *end;
 	    int numChars;
@@ -1483,11 +1469,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		end = string1+length1;
 		for (cur = index; p < end; cur++) {
 		    p += Tcl_UtfToUniChar(p, &ch);
-		    if (ch > 0xff) {
-			break;
-		    }
-		    c = UCHAR(ch);
-		    if (!isalnum(c) && (c != '_')) { /* INTL: ISO only */
+		    if (!TclUniCharIsWordChar(ch)) {
 			break;
 		    }
 		}
@@ -1501,7 +1483,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case STR_WORDSTART: {
-	    int cur, c;
+	    int cur;
 	    Tcl_UniChar ch;
 	    char *p;
 	    int numChars;
@@ -1524,8 +1506,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		p = Tcl_UtfAtIndex(string1, index);
 	        for (cur = index; cur >= 0; cur--) {
 		    Tcl_UtfToUniChar(p, &ch);
-		    c = UCHAR(ch);
-		    if (!isalnum(c) && (c != '_')) { /* INTL: ISO only */
+		    if (!TclUniCharIsWordChar(ch)) {
 			break;
 		    }
 		    p = Tcl_UtfPrev(p, string1);
