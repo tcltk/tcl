@@ -1,3 +1,8 @@
+2000-07-25  Eric Melski  <ericm@ajubasolutions.com>
+
+	* win/tclWinPipe.c (BuildCommandLine): Added Tcl_DStringFree call
+	to prevent potential memory leaks [Bug: 6041].
+
 2000-07-24  Eric Melski  <ericm@ajubasolutions.com>
 
 	* doc/msgcat.n: Added documentation about the selection of the
