@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.10 2004/02/17 04:54:51 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.11 2004/03/01 17:33:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4305,7 +4305,7 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	return(traceCode);
     }
     
-    curLevel = ((iPtr->varFramePtr == NULL) ? 0 : iPtr->varFramePtr->level);
+    curLevel = iPtr->numLevels;
     
     active.nextPtr = iPtr->activeInterpTracePtr;
     iPtr->activeInterpTracePtr = &active;
