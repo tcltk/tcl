@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.3 1998/10/06 02:59:06 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.4 1998/10/21 20:40:12 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -241,7 +241,7 @@ TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 XTTEST_OBJS = tclTest.o tclTestObj.o tclUnixTest.o tclXtNotify.o \
 	tclXtTest.o xtTestInit.o
 
-GENERIC_OBJS = compile.o exec.o panic.o \
+GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o panic.o \
 	tclAsync.o tclBasic.o tclBinary.o \
 	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompExpr.o tclCompile.o tclDate.o tclEncoding.o \
@@ -264,8 +264,10 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h
 
 GENERIC_SRCS = \
-	$(GENERIC_DIR)/compile.c \
-	$(GENERIC_DIR)/exec.c \
+	$(GENERIC_DIR)/regcomp.c \
+	$(GENERIC_DIR)/regexec.c \
+	$(GENERIC_DIR)/regfree.c \
+	$(GENERIC_DIR)/regerror.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
 	$(GENERIC_DIR)/tclBinary.c \
@@ -609,11 +611,21 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c
 panic.o: $(GENERIC_DIR)/panic.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/panic.c
 
-compile.o: $(GENERIC_DIR)/compile.c $(GENERIC_DIR)/lex.c $(GENERIC_DIR)/color.c $(GENERIC_DIR)/locale.c $(GENERIC_DIR)/nfa.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/compile.c
+REGHDRS=$(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
+		$(GENERIC_DIR)/regcustom.h
+regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
+		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
+		$(GENERIC_DIR)/regc_nfa.c $(GENERIC_DIR)/regc_cvec.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regcomp.c
 
-exec.o: $(GENERIC_DIR)/exec.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/exec.c
+regexec.o: $(REGHDRS) $(GENERIC_DIR)/regexec.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regexec.c
+
+regfree.o: $(REGHDRS) $(GENERIC_DIR)/regfree.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regfree.c
+
+regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regerror.c
 
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c

@@ -1,85 +1,25 @@
 /*
- * color.c  --
+ * colorings of characters
+ * This file is #included by regcomp.c.
  *
- *	Regexp package file:  colorings of characters.
- *	Note that there are some incestuous relationships between this code and
- *	NFA arc maintenance, which perhaps ought to be cleaned up sometime.
- *
- * Copyright (c) 1998 Henry Spencer.  All rights reserved.
- * 
- * Development of this software was funded, in part, by Cray Research Inc.,
- * UUNET Communications Services Inc., and Sun Microsystems Inc., none of
- * whom are responsible for the results.  The author thanks all of them.
- * 
- * Redistribution and use in source and binary forms -- with or without
- * modification -- are permitted for any purpose, provided that
- * redistributions in source form retain this entire copyright notice and
- * indicate the origin and nature of any modifications. 
- * 
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: color.c,v 1.1.2.2 1998/10/03 01:56:40 stanton Exp $
+ * Note that there are some incestuous relationships between this code and
+ * NFA arc maintenance, which perhaps ought to be cleaned up sometime.
  */
+
+
 
 /*
- * The innards.
+ * If this declaration draws a complaint about a negative array size,
+ * then CHRBITS is defined incorrectly for the chr type.
  */
-struct colors {
-	color ccolor[BYTTAB];
-};
-struct ptrs {
-	union tree *pptr[BYTTAB];
-};
-union tree {
-	struct colors colors;
-	struct ptrs ptrs;
-};
-#define	tcolor	colors.ccolor
-#define	tptr	ptrs.pptr
-/*
- * Some of the function prototypes need this.
- ^ union tree;
- */
+static char isCHRBITSright[NEGIFNOT(sizeof(chr)*CHAR_BIT == CHRBITS)];
 
-struct colordesc {
-	uchr nchrs;		/* number of chars of this color */
-	color sub;		/* open subcolor of this one, or NOSUB */
-#		define	NOSUB	COLORLESS
-	struct arc *arcs;	/* color chain */
-#	define	UNUSEDCOLOR(cd)	((cd)->nchrs == 0 && (cd)->sub == NOSUB)
-	int flags;
-#		define	PSEUDO	1	/* pseudocolor, no real chars */
-};
 
-struct colormap {
-	int magic;
-#		define	CMMAGIC	0x876
-	struct vars *v;			/* for error reporting */
-	color rest;
-	int filled;			/* has it been filled? */
-	int ncds;			/* number of colordescs */
-	struct colordesc *cd;
-#	define	CDEND(cm)	(&(cm)->cd[(cm)->ncds])
-#		define	NINLINECDS	10
-	struct colordesc cds[NINLINECDS];
-	union tree tree[NBYTS];		/* tree top, plus fill blocks */
-};
 
-#ifdef COMPILE
+#define	CISERR()	VISERR(cm->v)
+#define	CERR(e)		VERR(cm->v, (e))
+
+
 
 /*
  - newcm - get new colormap
@@ -96,7 +36,7 @@ struct vars *v;
 	union tree *nextt;
 	struct colordesc *cd;
 
-	cm = (struct colormap *)ckalloc(sizeof(struct colormap));
+	cm = (struct colormap *)MALLOC(sizeof(struct colormap));
 	if (cm == NULL) {
 		ERR(REG_ESPACE);
 		return NULL;
@@ -114,15 +54,13 @@ struct vars *v;
 		cd->arcs = NULL;
 		cd->flags = 0;
 	}
-	cm->cd[WHITE].nchrs = WCHAR_MAX - WCHAR_MIN;
+	cm->cd[WHITE].nchrs = CHR_MAX - CHR_MIN + 1;
 
 	/* treetop starts as NULLs if there are lower levels */
 	t = cm->tree;
-	if (NBYTS > 1) {
-	    for (i = BYTTAB-1; i >= 0; i--)
-		    t->tptr[i] = NULL;
-	}
-
+	if (NBYTS > 1)
+		for (i = BYTTAB-1; i >= 0; i--)
+			t->tptr[i] = NULL;
 	/* if no lower levels, treetop and last fill block are the same */
 
 	/* fill blocks point to next fill block... */
@@ -149,13 +87,11 @@ freecm(cm)
 struct colormap *cm;
 {
 	cm->magic = 0;
-	if (NBYTS > 1) {
-	    cmtreefree(cm, cm->tree, 0);
-	}
-	if (cm->cd != cm->cds) {
-		ckfree((char *)cm->cd);
-	}
-	ckfree((char *) cm);	/* mem leak (CCS). */
+	if (NBYTS > 1)
+		cmtreefree(cm, cm->tree, 0);
+	if (cm->cd != cm->cds)
+		FREE(cm->cd);
+	FREE(cm);
 }
 
 /*
@@ -176,10 +112,9 @@ int level;			/* level number (top == 0) of this block */
 	for (i = BYTTAB-1; i >= 0; i--) {
 		t = tree->tptr[i];
 		if (t != NULL && t != fillt) {
-			if ((int) level < (int) NBYTS-2) {	/* more pointer blocks below */
+			if (level < NBYTS-2)	/* more pointer blocks below */
 				cmtreefree(cm, t, level+1);
-			}
-			ckfree((char *) t);
+			FREE(t);
 		}
 	}
 }
@@ -221,16 +156,12 @@ int level;			/* level number (top == 0) of this block */
 		t = tree->tptr[i];
 		if (t == fillt)			/* oops */
 			{}
-		else if (t == NULL) {
+		else if (t == NULL)
 			tree->tptr[i] = fillt;
-		}
-		else if ((int) level < (int) NBYTS-2)	{/* more pointer blocks below */
+		else if (level < NBYTS-2)	/* more pointer blocks below */
 			cmtreefill(cm, t, level+1);
-		}
 	}
 }
-
-#endif				/* ifdef COMPILE */
 
 /*
  - getcolor - get the color of a character from a colormap
@@ -261,8 +192,6 @@ pchr c;
 	return cm->rest;
 }
 
-#ifdef COMPILE
-
 /*
  - setcolor - set the color of a character in a colormap
  ^ static color setcolor(struct colormap *, pchr, pcolor);
@@ -283,7 +212,7 @@ pcolor co;
 	color prev;
 
 	assert(cm->magic == CMMAGIC);
-	if (VISERR(cm->v) || co == COLORLESS)
+	if (CISERR() || co == COLORLESS)
 		return COLORLESS;
 
 	t = cm->tree;
@@ -293,10 +222,10 @@ pcolor co;
 		t = t->tptr[b];
 		if (t == NULL) {	/* fell off an incomplete part */
 			bottom = (shift <= BYTBITS) ? 1 : 0;
-			t = (union tree *)ckalloc((bottom) ?
+			t = (union tree *)MALLOC((bottom) ?
 				sizeof(struct colors) : sizeof(struct ptrs));
 			if (t == NULL) {
-				VERR(cm->v, REG_ESPACE);
+				CERR(REG_ESPACE);
 				return COLORLESS;
 			}
 			if (bottom)
@@ -312,7 +241,7 @@ pcolor co;
 
 	b = uc & BYTMASK;
 	prev = t->tcolor[b];
-	t->tcolor[b] = (color) co;
+	t->tcolor[b] = (color)co;
 	return prev;
 }
 
@@ -328,7 +257,7 @@ struct colormap *cm;
 	struct colordesc *end;
 	struct colordesc *lastused;
 
-	if (VISERR(cm->v))
+	if (CISERR())
 		return COLORLESS;
 
 	lastused = NULL;
@@ -337,7 +266,7 @@ struct colormap *cm;
 		if (!UNUSEDCOLOR(cd))
 			lastused = cd;
 	assert(lastused != NULL);
-	return (color) (lastused - cm->cd);
+	return (color)(lastused - cm->cd);
 }
 
 /*
@@ -352,31 +281,31 @@ struct colormap *cm;
 	struct colordesc *cd;
 	struct colordesc *end;
 	struct colordesc *firstnew;
-	int n;
+	size_t n;
 
-	if (VISERR(cm->v))
+	if (CISERR())
 		return COLORLESS;
 
 	end = CDEND(cm);
 	for (cd = cm->cd; cd < end; cd++)
 		if (UNUSEDCOLOR(cd)) {
 			assert(cd->arcs == NULL);
-			return (color) (cd - cm->cd);
+			return (color)(cd - cm->cd);
 		}
 
 	/* oops, must allocate more */
 	n = cm->ncds * 2;
 	if (cm->cd == cm->cds) {
-		cd = (struct colordesc *)ckalloc(sizeof(struct colordesc) * n);
+		cd = (struct colordesc *)MALLOC(sizeof(struct colordesc) * n);
 		if (cd != NULL)
-			memcpy((VOID *)cd, (VOID *)cm->cds, cm->ncds *
+			memcpy(VS(cd), VS(cm->cds), cm->ncds *
 						sizeof(struct colordesc));
 	} else {
-		cd = (struct colordesc *)ckrealloc((VOID *)cm->cd,
-						sizeof(struct colordesc) * n);
+		cd = (struct colordesc *)REALLOC(cm->cd,
+						n * sizeof(struct colordesc));
 	}
 	if (cd == NULL) {
-		VERR(cm->v, REG_ESPACE);
+		CERR(REG_ESPACE);
 		return COLORLESS;
 	}
 	cm->cd = cd;
@@ -390,7 +319,7 @@ struct colormap *cm;
 		cd->flags = 0;
 	}
 	assert(firstnew < CDEND(cm) && UNUSEDCOLOR(firstnew));
-	return (color) (firstnew - cm->cd);
+	return (color)(firstnew - cm->cd);
 }
 
 /*
@@ -404,7 +333,7 @@ struct colormap *cm;
 	color co;
 
 	co = newcolor(cm);
-	if (VISERR(cm->v))
+	if (CISERR())
 		return COLORLESS;
 	cm->cd[co].nchrs = 1;
 	cm->cd[co].flags = PSEUDO;
@@ -459,22 +388,22 @@ struct colormap *cm;
 	color co;
 	color sco;
 
- 	for (cd = cm->cd, co = 0; cd < end; cd++, co++) {
-  		sco = cd->sub;
- 		if (sco == NOSUB) {
- 			/* has no subcolor, no further action */
- 		} else if (sco == co) {
- 			/* is subcolor, let parent deal with it */
-  		} else if (cd->nchrs == 0) {
-  			/* parent empty, its arcs change color to subcolor */
- 			cd->sub = NOSUB;
-  			scd = &cm->cd[sco];
-  			assert(scd->nchrs > 0);
-  			assert(scd->sub == sco);
- 			scd->sub = NOSUB;
-  			while ((a = cd->arcs) != NULL) {
-  				assert(a->co == co);
-  				/* uncolorchain(cm, a); */
+	for (cd = cm->cd, co = 0; cd < end; cd++, co++) {
+		sco = cd->sub;
+		if (sco == NOSUB) {
+			/* has no subcolor, no further action */
+		} else if (sco == co) {
+			/* is subcolor, let parent deal with it */
+		} else if (cd->nchrs == 0) {
+			/* parent empty, its arcs change color to subcolor */
+			cd->sub = NOSUB;
+			scd = &cm->cd[sco];
+			assert(scd->nchrs > 0);
+			assert(scd->sub == sco);
+			scd->sub = NOSUB;
+			while ((a = cd->arcs) != NULL) {
+				assert(a->co == co);
+				/* uncolorchain(cm, a); */
 				cd->arcs = a->colorchain;
 				a->co = sco;
 				/* colorchain(cm, a); */
@@ -483,11 +412,11 @@ struct colormap *cm;
 			}
 		} else {
 			/* parent's arcs must gain parallel subcolor arcs */
- 			cd->sub = NOSUB;
- 			scd = &cm->cd[sco];
- 			assert(scd->nchrs > 0);
- 			assert(scd->sub == sco);
- 			scd->sub = NOSUB;
+			cd->sub = NOSUB;
+			scd = &cm->cd[sco];
+			assert(scd->nchrs > 0);
+			assert(scd->sub == sco);
+			scd->sub = NOSUB;
 			for (a = cd->arcs; a != NULL; a = a->colorchain) {
 				assert(a->co == co);
 				newarc(nfa, a->type, sco, a->from, a->to);
@@ -558,11 +487,11 @@ pchr c;
  ^ 	struct state *, struct state *);
  */
 static VOID
-rainbow(nfa, cm, type, exc, from, to)
+rainbow(nfa, cm, type, but, from, to)
 struct nfa *nfa;
 struct colormap *cm;
 int type;
-pcolor exc;			/* COLORLESS if no exceptions */
+pcolor but;			/* COLORLESS if no exceptions */
 struct state *from;
 struct state *to;
 {
@@ -570,8 +499,8 @@ struct state *to;
 	struct colordesc *end = CDEND(cm);
 	color co;
 
-	for (cd = cm->cd, co = 0; cd < end && !VISERR(nfa->v); cd++, co++)
-		if (!UNUSEDCOLOR(cd) && cd->sub != co && co != exc &&
+	for (cd = cm->cd, co = 0; cd < end && !CISERR(); cd++, co++)
+		if (!UNUSEDCOLOR(cd) && cd->sub != co && co != but &&
 							!(cd->flags&PSEUDO))
 			newarc(nfa, type, co, from, to);
 }
@@ -596,10 +525,95 @@ struct state *to;
 	color co;
 
 	assert(of != from);
-	for (cd = cm->cd, co = 0; cd < end && !VISERR(nfa->v); cd++, co++)
+	for (cd = cm->cd, co = 0; cd < end && !CISERR(); cd++, co++)
 		if (!UNUSEDCOLOR(cd) && !(cd->flags&PSEUDO))
 			if (findarc(of, PLAIN, co) == NULL)
 				newarc(nfa, type, co, from, to);
 }
 
-#endif				/* ifdef COMPILE */
+
+
+#ifdef REG_DEBUG
+
+/*
+ - dumpcolors - debugging output
+ ^ static VOID dumpcolors(struct colormap *, FILE *);
+ */
+static VOID
+dumpcolors(cm, f)
+struct colormap *cm;
+FILE *f;
+{
+	struct colordesc *cd;
+	struct colordesc *end;
+	color co;
+	chr c;
+
+	if (cm->filled) {
+		fprintf(f, "filled\n");
+		if (NBYTS > 1)
+			fillcheck(cm, cm->tree, 0, f);
+	}
+	end = CDEND(cm);
+	for (cd = cm->cd + 1, co = 1; cd < end; cd++, co++)	/* skip 0 */
+		if (cd->nchrs > 0) {
+			if (cd->flags&PSEUDO)
+				fprintf(f, "#%2ld(ps): ", (long)co);
+			else
+				fprintf(f, "#%2ld(%2d): ", (long)co, cd->nchrs);
+			for (c = CHR_MIN; c < CHR_MAX; c++)
+				if (getcolor(cm, c) == co)
+					dumpchr(c, f);
+			assert(c == CHR_MAX);
+			if (getcolor(cm, c) == co)
+				dumpchr(c, f);
+			fprintf(f, "\n");
+		}
+}
+
+/*
+ - fillcheck - check proper filling of a tree
+ ^ static VOID fillcheck(struct colormap *, union tree *, int, FILE *);
+ */
+static VOID
+fillcheck(cm, tree, level, f)
+struct colormap *cm;
+union tree *tree;
+int level;			/* level number (top == 0) of this block */
+FILE *f;
+{
+	int i;
+	union tree *t;
+	union tree *fillt = &cm->tree[level+1];
+
+	assert(level < NBYTS-1);	/* this level has pointers */
+	for (i = BYTTAB-1; i >= 0; i--) {
+		t = tree->tptr[i];
+		if (t == NULL)
+			fprintf(f, "NULL found in filled tree!\n");
+		else if (t == fillt)
+			{}
+		else if (level < NBYTS-2)	/* more pointer blocks below */
+			fillcheck(cm, t, level+1, f);
+	}
+}
+
+/*
+ - dumpchr - print a chr
+ * Kind of char-centric but works well enough for debug use.
+ ^ static VOID dumpchr(pchr, FILE *);
+ */
+static VOID
+dumpchr(c, f)
+pchr c;
+FILE *f;
+{
+	if (c == '\\')
+		fprintf(f, "\\\\");
+	else if (c > ' ' && c <= '~')
+		putc((char)c, f);
+	else
+		fprintf(f, "\\0%lo", (long)c);
+}
+
+#endif				/* ifdef REG_DEBUG */

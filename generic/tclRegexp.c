@@ -4,12 +4,13 @@
  *	This file contains the public interfaces to the Tcl regular
  *	expression mechanism.
  *
+ * Copyright (c) 1998 by Scriptics Corporation.
  * Copyright (c) 1998 by Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.3 1998/10/21 20:40:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -337,6 +338,7 @@ TclRegExpExecUniChar(interp, re, wString, numChars, flags)
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
     status = re_uexec(&regexpPtr->re, wString, (size_t) numChars,
+	    (rm_detail_t *)NULL,
 	    regexpPtr->re.re_nsub + 1, regexpPtr->matches, flags);
 
     /*
@@ -528,6 +530,83 @@ TclRegCompObj(interp, objPtr, flags)
 /*
  *----------------------------------------------------------------------
  *
+ * TclRegAbout --
+ *
+ *	Return information about a compiled regular expression.
+ *
+ * Results:
+ *	The return value is -1 for failure, 0 for success, although at
+ *	the moment there's nothing that could fail.  On success, a list
+ *	is left in the interp's result:  first element is the subexpression
+ *	count, second is a list of re_info bit names.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclRegAbout(interp, re)
+    Tcl_Interp *interp;		/* For use in variable assignment. */
+    Tcl_RegExp re;		/* The compiled regular expression. */
+{
+    TclRegexp *regexpPtr = (TclRegexp *)re;
+    char buf[TCL_INTEGER_SPACE];
+    static struct infoname {
+	int bit;
+	char *text;
+    } infonames[] = {
+	REG_UBACKREF,		"REG_UBACKREF",
+	REG_ULOOKAHEAD,		"REG_ULOOKAHEAD",
+	REG_UBOUNDS,		"REG_UBOUNDS",
+	REG_UBRACES,		"REG_UBRACES",
+	REG_UBSALNUM,		"REG_UBSALNUM",
+	REG_UPBOTCH,		"REG_UPBOTCH",
+	REG_UBBS,		"REG_UBBS",
+	REG_UNONPOSIX,		"REG_UNONPOSIX",
+	REG_UUNSPEC,		"REG_UUNSPEC",
+	REG_UUNPORT,		"REG_UUNPORT",
+	REG_ULOCALE,		"REG_ULOCALE",
+	REG_UEMPTYMATCH,	"REG_UEMPTYMATCH",
+	0,			"",
+    };
+    struct infoname *inf;
+    int n;
+
+    Tcl_ResetResult(interp);
+
+    sprintf(buf, "%u", (unsigned)(regexpPtr->re.re_nsub));
+    Tcl_AppendElement(interp, buf);
+
+    /*
+     * Must count bits before generating list, because we must know
+     * whether {} are needed before we start appending names.
+     */
+    n = 0;
+    for (inf = infonames; inf->bit != 0; inf++) {
+	if (regexpPtr->re.re_info&inf->bit) {
+	    n++;
+	}
+    }
+    if (n != 1) {
+	Tcl_AppendResult(interp, " {", NULL);
+    }
+    for (inf = infonames; inf->bit != 0; inf++) {
+	if (regexpPtr->re.re_info&inf->bit) {
+	    Tcl_AppendElement(interp, inf->text);
+	}
+    }
+    if (n != 1) {
+	Tcl_AppendResult(interp, "}", NULL);
+    }
+
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclRegError --
  *
  *	Generate an error message based on the regexp status code.
@@ -536,7 +615,7 @@ TclRegCompObj(interp, objPtr, flags)
  *	Places an error in the interpreter.
  *
  * Side effects:
- *	None.
+ *	Sets errorCode as well.
  *
  *----------------------------------------------------------------------
  */
@@ -547,66 +626,19 @@ TclRegError(interp, msg, status)
     char *msg;			/* Message to prepend to error. */
     int status;			/* Status code to report. */
 {
-    char *errMsg;
+    char buf[100];		/* ample in practice */
+    char cbuf[100];		/* lots in practice */
+    size_t n;
+    char *p;
 
-    switch(status) {
-	case REG_BADPAT:
-	    errMsg = "invalid regular expression";
-	    break;
-	case REG_ECOLLATE:
-	    errMsg = "invalid collating element";
-	    break;
-	case REG_ECTYPE:
-	    errMsg = "invalid character class";
-	    break;
-	case REG_EESCAPE:
-	    errMsg = "invalid escape sequence";
-	    break;
-	case REG_ESUBREG:
-	    errMsg = "invalid backreference number";
-	    break;
-	case REG_EBRACK:
-	    errMsg = "unmatched []";
-	    break;
-	case REG_EPAREN:
-	    errMsg = "unmatched ()";
-	    break;
-	case REG_EBRACE:
-	    errMsg = "unmatched {}";
-	    break;
-	case REG_BADBR:
-	    errMsg = "invalid repetition count(s)";
-	    break;
-	case REG_ERANGE:
-	    errMsg = "invalid character range";
-	    break;
-	case REG_ESPACE:
-	    errMsg = "out of memory";
-	    break;
-	case REG_BADRPT:
-	    errMsg = "?+* follows nothing";
-	    break;
-	case REG_ASSERT:
-	    errMsg = "\"can't happen\" -- you found a bug";
-	    break;
-	case REG_INVARG:
-	    errMsg = "invalid argument to regex routine";
-	    break;
-	case REG_MIXED:
-	    errMsg = "char RE applied to wchar_t string (etc.)";
-	    break;
-	case REG_BADOPT:
-	    errMsg = "invalid embedded option";
-	    break;
-	case REG_IMPOSS:
-	    errMsg = "can never match";
-	    break;
-	default:
-	    errMsg = "\"can't happen\" -- you found an undefined error code";
-	    break;
-    }
     Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, msg, errMsg, NULL);
+    n = regerror(status, (regex_t *)NULL, buf, sizeof(buf));
+    p = (n > sizeof(buf)) ? "..." : "";
+    Tcl_AppendResult(interp, msg, buf, p, NULL);
+
+    sprintf(cbuf, "%d", status);
+    (VOID) regerror(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
+    Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
 
@@ -749,36 +781,15 @@ CompileRegexp(interp, string, length, flags)
 
     if (status != REG_OKAY) {
 	/*
-	 * Warning, the following is a hack to allow empty regexp.
-	 * The goal is to compile a non-empty regexp that will always
-	 * find one empty match.  If you use "(?:)" (an empty pair of
-	 * non-capturing parentheses) instead, that will avoid both the
-	 * overhead and the subexpression report.
-	 */
-	
-	if (status == REG_EMPTY) {
-	    static Tcl_UniChar uniEmpty[] = {'(', '?', ':', ')', '\0'};
-	    
-	    uniString = uniEmpty;
-	    numChars = 4;
-	    status = re_ucomp(&regexpPtr->re, uniString, (size_t) numChars,
-		    REG_ADVANCED);
-	}
-
-	/*
 	 * Clean up and report errors in the interpreter, if possible.
 	 */
-
-	if (status != REG_OKAY) {
-	    regfree(&regexpPtr->re);
-	    ckfree((char *)regexpPtr);
-	    if (interp) {
-		TclRegError(interp,
-			"couldn't compile regular expression pattern: ",
-			status);
-	    }
-	    return NULL;
+	ckfree((char *)regexpPtr);
+	if (interp) {
+	    TclRegError(interp,
+		    "couldn't compile regular expression pattern: ",
+		    status);
 	}
+	return NULL;
     }
 
     /*
@@ -791,4 +802,100 @@ CompileRegexp(interp, string, length, flags)
 
     return regexpPtr;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclRegXflags --
+ *
+ *	Parse a string of extended regexp flag letters, for testing.
+ *
+ * Results:
+ *	No return value (you're on your own for errors here).
+ *
+ * Side effects:
+ *	Modifies *cflagsPtr, a regcomp flags word, and *eflagsPtr, a
+ *	regexec flags word, as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
 
+VOID
+TclRegXflags(string, length, cflagsPtr, eflagsPtr)
+    char *string;		/* The string of flags. */
+    int length;			/* The length of the string in bytes. */
+    int *cflagsPtr;		/* compile flags word */
+    int *eflagsPtr;		/* exec flags word */
+{
+    int i;
+    int cflags;
+    int eflags;
+
+    cflags = *cflagsPtr;
+    eflags = *eflagsPtr;
+    for (i = 0; i < length; i++) {
+	switch (string[i]) {
+	    case 'a': {
+		cflags |= REG_ADVF;
+		break;
+	    }
+	    case 'b': {
+		cflags &= ~REG_ADVANCED;
+		break;
+	    }
+	    case 'e': {
+		cflags &= ~REG_ADVANCED;
+		cflags |= REG_EXTENDED;
+		break;
+	    }
+	    case 'q': {
+		cflags &= ~REG_ADVANCED;
+		cflags |= REG_QUOTE;
+		break;
+	    }
+	    case 'i': {
+		cflags |= REG_ICASE;
+		break;
+	    }
+	    case 'o': {			/* o for opaque */
+		cflags |= REG_NOSUB;
+		break;
+	    }
+	    case 'x': {
+		cflags |= REG_EXPANDED;
+		break;
+	    }
+	    case 'p': {
+		cflags |= REG_NLSTOP;
+		break;
+	    }
+	    case 'w': {
+		cflags |= REG_NLANCH;
+		break;
+	    }
+	    case 'n': {
+		cflags |= REG_NEWLINE;
+		break;
+	    }
+	    case '+': {
+		cflags |= REG_FAKEEC;
+		break;
+	    }
+	    case '^': {
+		eflags |= REG_NOTBOL;
+		break;
+	    }
+	    case '$': {
+		eflags |= REG_NOTEOL;
+		break;
+	    }
+	    case '%': {
+		eflags |= REG_SMALL;
+		break;
+	    }
+	}
+    }
+
+    *cflagsPtr = cflags;
+    *eflagsPtr = eflags;
+}

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.6 1998/10/16 01:16:57 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.7 1998/10/21 20:40:06 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -772,48 +772,6 @@ typedef struct MathFunc {
 				 * function when invoking it. NULL if
 				 * isBuiltinFunc is 1. */
 } MathFunc;
-
-/*
- *---------------------------------------------------------------------------
- * Definitions of flags used in regexp compilation and execution that need
- * to be visible to the rest of the Tcl core.  Definitions that are
- * entirely private to the regexp package live in tclRegexp.h.
- *---------------------------------------------------------------------------
- */
-
-/*
- *Compilation flags.
- */
-
-#define	REG_BASIC	000000	/* BREs (convenience) */
-#define	REG_EXTENDED	000001	/* EREs */
-#define	REG_ADVF	000002	/* advanced features in EREs */
-#define	REG_ADVANCED	000003	/* AREs (which are also EREs) */
-#define	REG_QUOTE	000004	/* no special characters, none */
-#define	REG_NOSPEC	REG_QUOTE	/* historical synonym */
-#define	REG_ICASE	000010	/* ignore case */
-#define	REG_NOSUB	000020	/* don't care about subexpressions */
-#define	REG_EXPANDED	000040	/* expanded format, white space & comments */
-#define	REG_NLSTOP	000100	/* \n doesn't match . or [^ ] */
-#define	REG_NLANCH	000200	/* ^ matches after \n, $ before */
-#define	REG_NEWLINE	000300	/* newlines are line terminators */
-
-/*
- * Execution flags.
- */
-
-#define	REG_NOTBOL	0001	/* BOS is not BOL */
-#define	REG_NOTEOL	0002	/* EOS is not EOL */
-
-EXTERN Tcl_RegExp	TclRegCompObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *patObj, int flags));
-EXTERN int		TclRegExpExecUniChar _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_RegExp re, CONST Tcl_UniChar *uniString,
-			    int numChars, int flags));
-EXTERN int		TclRegExpMatchObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, Tcl_Obj *patObj));
-EXTERN void		TclRegExpRangeUniChar _ANSI_ARGS_((Tcl_RegExp re,
-			    int index, int *startPtr, int *endPtr));
 
 /*
  * Threads support.
@@ -2160,6 +2118,8 @@ EXTERN int	Tcl_CloseObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_ConcatObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_ContinueObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	Tcl_EncodingObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_EofObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));

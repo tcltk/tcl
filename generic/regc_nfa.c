@@ -1,57 +1,29 @@
 /*
- * nfa.c --
+ * NFA utilities.
+ * This file is #included by regcomp.c.
  *
- *	Regexp package file:
- *	NFA utilities.  One or two things that technically ought to be 
- *	in here are actually in color.c, thanks to some incestuous 
- *	relationships in the color chains.
- *
- * Copyright (c) 1998 Henry Spencer.  All rights reserved.
- * 
- * Development of this software was funded, in part, by Cray Research Inc.,
- * UUNET Communications Services Inc., and Sun Microsystems Inc., none of
- * whom are responsible for the results.  The author thanks all of them.
- * 
- * Redistribution and use in source and binary forms -- with or without
- * modification -- are permitted for any purpose, provided that
- * redistributions in source form retain this entire copyright notice and
- * indicate the origin and nature of any modifications. 
- * 
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
- * Copyright (c) 1998 by Sun Microsystems, Inc.
- *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: nfa.c,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
+ * One or two things that technically ought to be in here
+ * are actually in color.c, thanks to some incestuous relationships in
+ * the color chains.
  */
 
 #define	NISERR()	VISERR(nfa->v)
+#define	NERR(e)		VERR(nfa->v, (e))
 
 
 /*
  - newnfa - set up an NFA
- * Caution:  colormap must be set up already.
- ^ static struct nfa *newnfa(struct vars *, struct nfa *);
+ ^ static struct nfa *newnfa(struct vars *, struct colormap *, struct nfa *);
  */
 static struct nfa *		/* the NFA, or NULL */
-newnfa(v, parent)
+newnfa(v, cm, parent)
 struct vars *v;
+struct colormap *cm;
 struct nfa *parent;		/* NULL if primary NFA */
 {
 	struct nfa *nfa;
 
-	nfa = (struct nfa *)ckalloc(sizeof(struct nfa));
+	nfa = (struct nfa *)MALLOC(sizeof(struct nfa));
 	if (nfa == NULL)
 		return NULL;
 
@@ -59,6 +31,7 @@ struct nfa *parent;		/* NULL if primary NFA */
 	nfa->slast = NULL;
 	nfa->free = NULL;
 	nfa->nstates = 0;
+	nfa->cm = cm;
 	nfa->v = v;
 	nfa->bos[0] = nfa->bos[1] = COLORLESS;
 	nfa->eos[0] = nfa->eos[1] = COLORLESS;
@@ -72,10 +45,10 @@ struct nfa *parent;		/* NULL if primary NFA */
 		freenfa(nfa);
 		return NULL;
 	}
-	rainbow(nfa, nfa->v->cm, PLAIN, COLORLESS, nfa->pre, nfa->init);
+	rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->pre, nfa->init);
 	newarc(nfa, '^', 1, nfa->pre, nfa->init);
 	newarc(nfa, '^', 0, nfa->pre, nfa->init);
-	rainbow(nfa, nfa->v->cm, PLAIN, COLORLESS, nfa->final, nfa->post);
+	rainbow(nfa, nfa->cm, PLAIN, COLORLESS, nfa->final, nfa->post);
 	newarc(nfa, '$', 1, nfa->final, nfa->post);
 	newarc(nfa, '$', 0, nfa->final, nfa->post);
 
@@ -109,7 +82,7 @@ struct nfa *nfa;
 	nfa->nstates = -1;
 	nfa->pre = NULL;
 	nfa->post = NULL;
-	ckfree((char *)nfa);
+	FREE(nfa);
 }
 
 /*
@@ -128,14 +101,11 @@ int flag;
 		s = nfa->free;
 		nfa->free = s->next;
 	} else {
-		s = (struct state *)ckalloc(sizeof(struct state));
+		s = (struct state *)MALLOC(sizeof(struct state));
 		if (s == NULL) {
-			VERR(nfa->v, REG_ESPACE);
+			NERR(REG_ESPACE);
 			return NULL;
 		}
-
-		/* memleak (CCS). */
-		
 		s->oas.next = NULL;
 		s->free = &s->oas.a[0];
 		for (i = 0; i < ABSIZE; i++) {
@@ -240,12 +210,12 @@ struct state *s;
 	assert(s->no == FREESTATE);
 	for (ab = s->oas.next; ab != NULL; ab = abnext) {
 		abnext = ab->next;
-		ckfree((char *)ab);
+		FREE(ab);
 	}
 	s->ins = NULL;
 	s->outs = NULL;
 	s->next = NULL;
-	ckfree((char *)s);
+	FREE(s);
 }
 
 /*
@@ -276,7 +246,7 @@ struct state *to;
 	assert(a != NULL);
 
 	a->type = t;
-	a->co = (color) co;
+	a->co = (color)co;
 	a->to = to;
 	a->from = from;
 
@@ -295,7 +265,7 @@ struct state *to;
 	to->nins++;
 
 	if (COLORED(a) && nfa->parent == NULL)
-		colorchain(nfa->v->cm, a);
+		colorchain(nfa->cm, a);
 
 	return;
 }
@@ -315,9 +285,9 @@ struct state *s;
 
 	/* if none at hand, get more */
 	if (s->free == NULL) {
-		new = (struct arcbatch *)ckalloc(sizeof(struct arcbatch));
+		new = (struct arcbatch *)MALLOC(sizeof(struct arcbatch));
 		if (new == NULL) {
-			VERR(nfa->v, REG_ESPACE);
+			NERR(REG_ESPACE);
 			return NULL;
 		}
 		new->next = s->oas.next;
@@ -354,7 +324,7 @@ struct arc *victim;
 
 	/* take it off color chain if necessary */
 	if (COLORED(victim) && nfa->parent == NULL)
-		uncolorchain(nfa->v->cm, victim);
+		uncolorchain(nfa->cm, victim);
 
 	/* take it off source's out-chain */
 	assert(from != NULL);
@@ -680,10 +650,10 @@ struct nfa *nfa;
 {
 	/* false colors for BOS, BOL, EOS, EOL */
 	if (nfa->parent == NULL) {
-		nfa->bos[0] = pseudocolor(nfa->v->cm);
-		nfa->bos[1] = pseudocolor(nfa->v->cm);
-		nfa->eos[0] = pseudocolor(nfa->v->cm);
-		nfa->eos[1] = pseudocolor(nfa->v->cm);
+		nfa->bos[0] = pseudocolor(nfa->cm);
+		nfa->bos[1] = pseudocolor(nfa->cm);
+		nfa->eos[0] = pseudocolor(nfa->cm);
+		nfa->eos[1] = pseudocolor(nfa->cm);
 	} else {
 		assert(nfa->parent->bos[0] != COLORLESS);
 		nfa->bos[0] = nfa->parent->bos[0];
@@ -698,42 +668,41 @@ struct nfa *nfa;
 
 /*
  - optimize - optimize an NFA
- ^ static VOID optimize(struct nfa *);
+ ^ static int optimize(struct nfa *, FILE *);
  */
-static VOID
-optimize(nfa)
+static int			/* re_info bits */
+optimize(nfa, f)
 struct nfa *nfa;
+FILE *f;			/* for debug output; NULL none */
 {
-	int verbose = (nfa->v->cflags&REG_PROGRESS) ? 1 : 0;
-	int info;
+	int verbose = (f != NULL) ? 1 : 0;
 
 	if (verbose)
-		printf("\ninitial cleanup:\n");
+		fprintf(f, "\ninitial cleanup:\n");
 	cleanup(nfa);		/* may simplify situation */
-	if (nfa->v->cflags&REG_PROGRESS)
-		dumpnfa(nfa, stdout);
 	if (verbose)
-		printf("\nempties:\n");
-	fixempties(nfa);	/* get rid of EMPTY arcs */
+		dumpnfa(nfa, f);
 	if (verbose)
-		printf("\nconstraints:\n");
-	pullback(nfa);		/* pull back constraints backward */
-	pushfwd(nfa);		/* push fwd constraints forward */
+		fprintf(f, "\nempties:\n");
+	fixempties(nfa, f);	/* get rid of EMPTY arcs */
 	if (verbose)
-		printf("\nfinal cleanup:\n");
+		fprintf(f, "\nconstraints:\n");
+	pullback(nfa, f);	/* pull back constraints backward */
+	pushfwd(nfa, f);	/* push fwd constraints forward */
+	if (verbose)
+		fprintf(f, "\nfinal cleanup:\n");
 	cleanup(nfa);		/* final tidying */
-	info = analyze(nfa->v, nfa);	/* and analysis */
-	if (nfa->parent == NULL)
-		nfa->v->re->re_info |= info;
+	return analyze(nfa);	/* and analysis */
 }
 
 /*
  - pullback - pull back constraints backward to (with luck) eliminate them
- ^ static VOID pullback(struct nfa *);
+ ^ static VOID pullback(struct nfa *, FILE *);
  */
 static VOID
-pullback(nfa)
+pullback(nfa, f)
 struct nfa *nfa;
+FILE *f;			/* for debug output; NULL none */
 {
 	struct state *s;
 	struct state *nexts;
@@ -754,8 +723,8 @@ struct nfa *nfa;
 				assert(nexta == NULL || s->no != FREESTATE);
 			}
 		}
-		if (progress && (nfa->v->cflags&REG_PROGRESS))
-			dumpnfa(nfa, stdout);
+		if (progress && f != NULL)
+			dumpnfa(nfa, f);
 	} while (progress && !NISERR());
 	if (NISERR())
 		return;
@@ -799,7 +768,7 @@ struct arc *con;
 		return 1;
 	}
 
-	/* first, clone from state if necessary to aVOID other outarcs */
+	/* first, clone from state if necessary to avoid other outarcs */
 	if (from->nouts > 1) {
 		s = newstate(nfa);
 		if (NISERR())
@@ -846,11 +815,12 @@ struct arc *con;
 
 /*
  - pushfwd - push forward constraints forward to (with luck) eliminate them
- ^ static VOID pushfwd(struct nfa *);
+ ^ static VOID pushfwd(struct nfa *, FILE *);
  */
 static VOID
-pushfwd(nfa)
+pushfwd(nfa, f)
 struct nfa *nfa;
+FILE *f;			/* for debug output; NULL none */
 {
 	struct state *s;
 	struct state *nexts;
@@ -871,8 +841,8 @@ struct nfa *nfa;
 				assert(nexta == NULL || s->no != FREESTATE);
 			}
 		}
-		if (progress && (nfa->v->cflags&REG_PROGRESS))
-			dumpnfa(nfa, stdout);
+		if (progress && f != NULL)
+			dumpnfa(nfa, f);
 	} while (progress && !NISERR());
 	if (NISERR())
 		return;
@@ -916,7 +886,7 @@ struct arc *con;
 		return 1;
 	}
 
-	/* first, clone to state if necessary to aVOID other inarcs */
+	/* first, clone to state if necessary to avoid other inarcs */
 	if (to->nins > 1) {
 		s = newstate(nfa);
 		if (NISERR())
@@ -978,11 +948,13 @@ struct arc *a;
 	case CA('^', PLAIN):		/* newlines are handled separately */
 	case CA('$', PLAIN):
 		return INCOMPATIBLE;
+		break;
 	case CA(AHEAD, PLAIN):		/* color constraints meet colors */
 	case CA(BEHIND, PLAIN):
 		if (con->co == a->co)
 			return SATISFIED;
 		return INCOMPATIBLE;
+		break;
 	case CA('^', '^'):		/* collision, similar constraints */
 	case CA('$', '$'):
 	case CA(AHEAD, AHEAD):
@@ -990,11 +962,13 @@ struct arc *a;
 		if (con->co == a->co)		/* true duplication */
 			return SATISFIED;
 		return INCOMPATIBLE;
+		break;
 	case CA('^', BEHIND):		/* collision, dissimilar constraints */
 	case CA(BEHIND, '^'):
 	case CA('$', AHEAD):
 	case CA(AHEAD, '$'):
 		return INCOMPATIBLE;
+		break;
 	case CA('^', '$'):		/* constraints passing each other */
 	case CA('^', AHEAD):
 	case CA(BEHIND, '$'):
@@ -1008,18 +982,20 @@ struct arc *a;
 	case CA('$', LACON):
 	case CA(AHEAD, LACON):
 		return COMPATIBLE;
+		break;
 	}
 	assert(NOTREACHED);
-	return INCOMPATIBLE;		/* keep compiler from complaining */
+	return INCOMPATIBLE;		/* for benefit of blind compilers */
 }
 
 /*
  - fixempties - get rid of EMPTY arcs
- ^ static VOID fixempties(struct nfa *);
+ ^ static VOID fixempties(struct nfa *, FILE *);
  */
 static VOID
-fixempties(nfa)
+fixempties(nfa, f)
 struct nfa *nfa;
+FILE *f;			/* for debug output; NULL none */
 {
 	struct state *s;
 	struct state *nexts;
@@ -1039,8 +1015,8 @@ struct nfa *nfa;
 				assert(nexta == NULL || s->no != FREESTATE);
 			}
 		}
-		if (progress && (nfa->v->cflags&REG_PROGRESS))
-			dumpnfa(nfa, stdout);
+		if (progress && f != NULL)
+			dumpnfa(nfa, f);
 	} while (progress && !NISERR());
 }
 
@@ -1176,11 +1152,10 @@ struct state *mark;		/* the value to mark with */
 
 /*
  - analyze - ascertain potentially-useful facts about an optimized NFA
- ^ static int analyze(struct vars *, struct nfa *);
+ ^ static int analyze(struct nfa *);
  */
 static int			/* re_info bits to be ORed in */
-analyze(v, nfa)
-struct vars *v;
+analyze(nfa)
 struct nfa *nfa;
 {
 	struct arc *a;
@@ -1219,11 +1194,10 @@ struct state *end;
 
 /*
  - compact - compact an NFA
- ^ static VOID compact(struct vars *, struct nfa *, struct cnfa *);
+ ^ static VOID compact(struct nfa *, struct cnfa *);
  */
 static VOID
-compact(v, nfa, cnfa)
-struct vars *v;
+compact(nfa, cnfa)
 struct nfa *nfa;
 struct cnfa *cnfa;
 {
@@ -1234,7 +1208,7 @@ struct cnfa *cnfa;
 	struct carc *ca;
 	struct carc *first;
 
-	assert (!ISERR());
+	assert (!NISERR());
 
 	nstates = 0;
 	narcs = 0;
@@ -1243,14 +1217,14 @@ struct cnfa *cnfa;
 		narcs += s->nouts + 1;
 	}
 
-	cnfa->states = (struct carc **)ckalloc(nstates * sizeof(struct carc *));
-	cnfa->arcs = (struct carc *)ckalloc(narcs * sizeof(struct carc));
+	cnfa->states = (struct carc **)MALLOC(nstates * sizeof(struct carc *));
+	cnfa->arcs = (struct carc *)MALLOC(narcs * sizeof(struct carc));
 	if (cnfa->states == NULL || cnfa->arcs == NULL) {
 		if (cnfa->states != NULL)
-			ckfree((char *)cnfa->states);
+			FREE(cnfa->states);
 		if (cnfa->arcs != NULL)
-			ckfree((char *)cnfa->arcs);
-		ERR(REG_ESPACE);
+			FREE(cnfa->arcs);
+		NERR(REG_ESPACE);
 		return;
 	}
 	cnfa->nstates = nstates;
@@ -1260,13 +1234,12 @@ struct cnfa *cnfa;
 	cnfa->bos[1] = nfa->bos[1];
 	cnfa->eos[0] = nfa->eos[0];
 	cnfa->eos[1] = nfa->eos[1];
-	cnfa->ncolors = maxcolor(v->cm) + 1;
-	cnfa->haslacons = 0;
- 	cnfa->leftanch = 1;		/* tentatively */
+	cnfa->ncolors = maxcolor(nfa->cm) + 1;
+	cnfa->flags = LEFTANCH;		/* tentatively */
 
 	ca = cnfa->arcs;
 	for (s = nfa->states; s != NULL; s = s->next) {
-		assert((size_t) s->no < nstates);
+		assert((size_t)s->no < nstates);
 		cnfa->states[s->no] = ca;
 		first = ca;
 		for (a = s->outs; a != NULL; a = a->outchain)
@@ -1278,10 +1251,10 @@ struct cnfa *cnfa;
 				break;
 			case LACON:
 				assert(s->no != cnfa->pre);
-				ca->co = (color) (a->co + cnfa->ncolors);
+				ca->co = (color)(cnfa->ncolors + a->co);
 				ca->to = a->to->no;
 				ca++;
-				cnfa->haslacons = 1;
+				cnfa->flags |= HASLACONS;
 				break;
 			default:
 				assert(NOTREACHED);
@@ -1297,9 +1270,9 @@ struct cnfa *cnfa;
 
 	for (a = nfa->pre->outs; a != NULL; a = a->outchain)
 		if (a->type == PLAIN && a->co != nfa->bos[0] &&
-			a->co != nfa->bos[1])
-		    cnfa->leftanch = 0;
- }
+							a->co != nfa->bos[1])
+			cnfa->flags &= ~LEFTANCH;
+}
 
 /*
  - carcsort - sort compacted-NFA arcs by color
@@ -1341,11 +1314,12 @@ int dynalloc;			/* is the cnfa struct itself dynamic? */
 {
 	assert(cnfa->nstates != 0);	/* not empty already */
 	cnfa->nstates = 0;
-	ckfree((char *)cnfa->states);
-	ckfree((char *)cnfa->arcs);
+	FREE(cnfa->states);
+	FREE(cnfa->arcs);
 	if (dynalloc)
-		ckfree((char *)cnfa);
+		FREE(cnfa);
 }
+
 /*
  - dumpnfa - dump an NFA in human-readable form
  ^ static VOID dumpnfa(struct nfa *, FILE *);
@@ -1355,7 +1329,159 @@ dumpnfa(nfa, f)
 struct nfa *nfa;
 FILE *f;
 {
+#ifdef REG_DEBUG
+	struct state *s;
+
+	fprintf(f, "pre %d, post %d", nfa->pre->no, nfa->post->no);
+	if (nfa->bos[0] != COLORLESS)
+		fprintf(f, ", bos [%ld]", (long)nfa->bos[0]);
+	if (nfa->bos[1] != COLORLESS)
+		fprintf(f, ", bol [%ld]", (long)nfa->bos[1]);
+	if (nfa->eos[0] != COLORLESS)
+		fprintf(f, ", eos [%ld]", (long)nfa->eos[0]);
+	if (nfa->eos[1] != COLORLESS)
+		fprintf(f, ", eol [%ld]", (long)nfa->eos[1]);
+	fprintf(f, "\n");
+	for (s = nfa->states; s != NULL; s = s->next)
+		dumpstate(s, f);
+	if (nfa->parent == NULL)
+		dumpcolors(nfa->cm, f);
+	fflush(f);
+#endif
 }
+
+#ifdef REG_DEBUG		/* subordinates of dumpnfa */
+
+/*
+ - dumpstate - dump an NFA state in human-readable form
+ ^ static VOID dumpstate(struct state *, FILE *);
+ */
+static VOID
+dumpstate(s, f)
+struct state *s;
+FILE *f;
+{
+	struct arc *a;
+
+	fprintf(f, "%d%s%c", s->no, (s->tmp != NULL) ? "T" : "",
+					(s->flag) ? s->flag : '.');
+	if (s->prev != NULL && s->prev->next != s)
+		fprintf(f, "\tstate chain bad\n");
+	if (s->nouts == 0)
+		fprintf(f, "\tno out arcs\n");
+	else
+		dumparcs(s, f);
+	fflush(f);
+	for (a = s->ins; a != NULL; a = a->inchain) {
+		if (a->to != s)
+			fprintf(f, "\tlink from %d to %d on %d's in-chain\n",
+					a->from->no, a->to->no, s->no);
+	}
+}
+
+/*
+ - dumparcs - dump out-arcs in human-readable form
+ ^ static VOID dumparcs(struct state *, FILE *);
+ */
+static VOID
+dumparcs(s, f)
+struct state *s;
+FILE *f;
+{
+	int pos;
+
+	assert(s->nouts > 0);
+	/* printing arcs in reverse order is usually clearer */
+	pos = dumprarcs(s->outs, s, f, 1);
+	if (pos != 1)
+		fprintf(f, "\n");
+}
+
+/*
+ - dumprarcs - dump remaining outarcs, recursively, in reverse order
+ ^ static int dumprarcs(struct arc *, struct state *, FILE *, int);
+ */
+static int			/* resulting print position */
+dumprarcs(a, s, f, pos)
+struct arc *a;
+struct state *s;
+FILE *f;
+int pos;			/* initial print position */
+{
+	if (a->outchain != NULL)
+		pos = dumprarcs(a->outchain, s, f, pos);
+	dumparc(a, s, f);
+	if (pos == 5) {
+		fprintf(f, "\n");
+		pos = 1;
+	} else
+		pos++;
+	return pos;
+}
+
+/*
+ - dumparc - dump one outarc in readable form, including prefixing tab
+ ^ static VOID dumparc(struct arc *, struct state *, FILE *);
+ */
+static VOID
+dumparc(a, s, f)
+struct arc *a;
+struct state *s;
+FILE *f;
+{
+	struct arc *aa;
+	struct arcbatch *ab;
+
+	fprintf(f, "\t");
+	switch (a->type) {
+	case PLAIN:
+		fprintf(f, "[%ld]", (long)a->co);
+		break;
+	case AHEAD:
+		fprintf(f, ">%ld>", (long)a->co);
+		break;
+	case BEHIND:
+		fprintf(f, "<%ld<", (long)a->co);
+		break;
+	case LACON:
+		fprintf(f, ":%ld:", (long)a->co);
+		break;
+	case '^':
+	case '$':
+		fprintf(f, "%c%d", a->type, (int)a->co);
+		break;
+	case EMPTY:
+		break;
+	default:
+		fprintf(f, "0x%x/0%lo", a->type, (long)a->co);
+		break;
+	}
+	if (a->from != s)
+		fprintf(f, "?%d?", a->from->no);
+	for (ab = &a->from->oas; ab != NULL; ab = ab->next) {
+		for (aa = &ab->a[0]; aa < &ab->a[ABSIZE]; aa++)
+			if (aa == a)
+				break;		/* NOTE BREAK OUT */
+		if (aa < &ab->a[ABSIZE])	/* propagate break */
+				break;		/* NOTE BREAK OUT */
+	}
+	if (ab == NULL)
+		fprintf(f, "?!?");	/* not in allocated space */
+	fprintf(f, "->");
+	if (a->to == NULL) {
+		fprintf(f, "NULL");
+		return;
+	}
+	fprintf(f, "%d", a->to->no);
+	for (aa = a->to->ins; aa != NULL; aa = aa->inchain)
+		if (aa == a)
+			break;		/* NOTE BREAK OUT */
+	if (aa == NULL)
+		fprintf(f, "?!?");	/* missing from in-chain */
+}
+
+#endif				/* ifdef REG_DEBUG */
+
 /*
  - dumpcnfa - dump a compacted NFA in human-readable form
  ^ static VOID dumpcnfa(struct cnfa *, FILE *);
@@ -1365,4 +1491,62 @@ dumpcnfa(cnfa, f)
 struct cnfa *cnfa;
 FILE *f;
 {
+#ifdef REG_DEBUG
+	int st;
+
+	fprintf(f, "pre %d, post %d", cnfa->pre, cnfa->post);
+	if (cnfa->bos[0] != COLORLESS)
+		fprintf(f, ", bos [%ld]", (long)cnfa->bos[0]);
+	if (cnfa->bos[1] != COLORLESS)
+		fprintf(f, ", bol [%ld]", (long)cnfa->bos[1]);
+	if (cnfa->eos[0] != COLORLESS)
+		fprintf(f, ", eos [%ld]", (long)cnfa->eos[0]);
+	if (cnfa->eos[1] != COLORLESS)
+		fprintf(f, ", eol [%ld]", (long)cnfa->eos[1]);
+	if (cnfa->flags&HASLACONS)
+		fprintf(f, ", haslacons");
+	if (cnfa->flags&LEFTANCH)
+		fprintf(f, ", leftanch");
+	fprintf(f, "\n");
+	for (st = 0; st < cnfa->nstates; st++)
+		dumpcstate(st, cnfa->states[st], cnfa, f);
+	fflush(f);
+#endif
 }
+
+#ifdef REG_DEBUG		/* subordinates of dumpcnfa */
+
+/*
+ - dumpcstate - dump a compacted-NFA state in human-readable form
+ ^ static VOID dumpcstate(int, struct carc *, struct cnfa *, FILE *);
+ */
+static VOID
+dumpcstate(st, ca, cnfa, f)
+int st;
+struct carc *ca;
+struct cnfa *cnfa;
+FILE *f;
+{
+	int i;
+	int pos;
+
+	fprintf(f, "%d.", st);
+	pos = 1;
+	for (i = 0; ca[i].co != COLORLESS; i++) {
+		if (ca[i].co < cnfa->ncolors)
+			fprintf(f, "\t[%ld]->%d", (long)ca[i].co, ca[i].to);
+		else
+			fprintf(f, "\t:%ld:->%d", (long)ca[i].co-cnfa->ncolors,
+								ca[i].to);
+		if (pos == 5) {
+			fprintf(f, "\n");
+			pos = 1;
+		} else
+			pos++;
+	}
+	if (i == 0 || pos != 1)
+		fprintf(f, "\n");
+	fflush(f);
+}
+
+#endif				/* ifdef REG_DEBUG */

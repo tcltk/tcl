@@ -12,14 +12,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.2 1998/09/24 23:59:02 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.3 1998/10/21 20:40:07 stanton Exp $
  */
 
 #define TCL_TEST
 
 #include "tclInt.h"
 #include "tclPort.h"
-#include "tclRegexp.h"		/* To test internals of regexp package. */
 #include <locale.h>
 
 /*
@@ -245,9 +244,6 @@ static int		TestparsevarObjCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestparsevarnameObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
-static int		TestregexpObjCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]));
 static int		TestsaveresultCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -397,8 +393,6 @@ Tcltest_Init(interp)
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -1317,19 +1311,15 @@ TestencodingObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Encoding encoding;
-    Tcl_DString ds;
     int index, length;
     char *string;
-    Tcl_Obj *resultPtr;
     TclEncoding *encodingPtr;
     static char *optionStrings[] = {
-	"create",	"delete",	"toutf",	"fromutf",
-	"names",	"system",	"path",
+	"create",	"delete",	"path",
 	NULL
     };
     enum options {
-	ENC_CREATE,	ENC_DELETE,	ENC_TOUTF,	ENC_FROMUTF,
-	ENC_NAMES,	ENC_SYSTEM,	ENC_PATH
+	ENC_CREATE,	ENC_DELETE,	ENC_PATH
     };
     
     if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
@@ -1374,79 +1364,6 @@ TestencodingObjCmd(dummy, interp, objc, objv)
 	    encoding = Tcl_GetEncoding(NULL, Tcl_GetString(objv[2]));
 	    Tcl_FreeEncoding(encoding);
 	    Tcl_FreeEncoding(encoding);
-	    break;
-	}
-	case ENC_TOUTF: {
-	    if (objc < 3) {
-		return TCL_ERROR;
-	    }
-	    if (objc == 3) {
-		string = "iso8859-1";
-	    } else {
-		string = Tcl_GetString(objv[3]);
-	    }
-	    encoding = Tcl_GetEncoding(NULL, string);
-
-	    string = (char *) Tcl_GetByteArrayFromObj(objv[2], &length);
-	    Tcl_ExternalToUtfDString(encoding, string, length, &ds);
-
-	    /*
-	     * If the encoding performs a Tcl_Eval() (which is the case for
-	     * encodings created by the "encoding create" command, the 
-	     * resultPtr from the interp will be invalidated and we need to 
-	     * get it again.
-	     */
-
-	    resultPtr = Tcl_GetObjResult(interp);
-	    Tcl_SetStringObj(resultPtr, Tcl_DStringValue(&ds),
-		    Tcl_DStringLength(&ds));
-	    Tcl_DStringFree(&ds);
-	    Tcl_FreeEncoding(encoding);
-	    break;
-	}
-	case ENC_FROMUTF: {
-	    if (objc < 3) {
-		return TCL_ERROR;
-	    }
-	    if (objc == 3) {
-		string = "iso8859-1";
-	    } else {
-		string = Tcl_GetString(objv[3]);
-	    }
-	    encoding = Tcl_GetEncoding(NULL, string);
-
-	    string = Tcl_GetStringFromObj(objv[2], &length);
-	    Tcl_UtfToExternalDString(encoding, string, length, &ds);
-
-	    /*
-	     * If the encoding performs a Tcl_Eval() (which is the case for
-	     * encodings created by the "encoding create" command, the 
-	     * resultPtr from the interp will be invalidated and we need to 
-	     * get it again.
-	     */
-
-	    resultPtr = Tcl_GetObjResult(interp);
-	    Tcl_SetByteArrayObj(resultPtr, 
-		    (unsigned char *) Tcl_DStringValue(&ds),
-		    Tcl_DStringLength(&ds));
-	    Tcl_DStringFree(&ds);
-	    Tcl_FreeEncoding(encoding);
-	    break;
-	}
-
-	case ENC_NAMES: {
-	    Tcl_GetEncodingNames(interp);
-	    break;
-	}
-	case ENC_SYSTEM: {
-	    if (objc == 2) {
-	        Tcl_SetResult(interp, Tcl_GetEncodingName(NULL), TCL_STATIC);
-	    } else {
-		char *str;
-		
-		str = Tcl_GetStringFromObj(objv[2], NULL);
-	        return Tcl_SetSystemEncoding(interp, str);
-	    }
 	    break;
 	}
 	case ENC_PATH: {
@@ -2579,251 +2496,6 @@ TestparsevarnameObjCmd(clientData, interp, objc, objv)
     PrintParse(interp, &parse);
     Tcl_FreeParse(&parse);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestregexpObjCmd --
- *
- *	This procedure implements the "testregexp" command. It is
- *	used to give a direct interface for regexp flags.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestregexpObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int objc;				/* Number of arguments. */
-    Tcl_Obj *CONST objv[];		/* Argument objects. */
-{
-    TclRegexp *regExpr;
-    char *string, *flagString, *start, *end;
-    int flags, match, i, j;
-    
-    if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"flags exp string ?subMatchVar subMatchVar ...?");
-        return TCL_ERROR;
-    }
-    flagString = Tcl_GetString(objv[1]);
-    string = Tcl_GetString(objv[3]);
-
-    flags = RegGetCompFlags(flagString);
-    regExpr = (TclRegexp *) TclRegCompObj(interp, objv[2], flags);
-    if (regExpr == NULL) {
-	return TCL_ERROR;
-    }
-
-    flags = RegGetExecFlags(flagString);
-    if (flags == -1) {
-	/*
-	 * Do not try to match the string.
-	 */
-	
-	match = 0;
-    } else {
-	Tcl_DString stringBuffer;
-	Tcl_UniChar *uniString;
-	int numChars;
-
-	/*
-	 * Remember the UTF-8 string so Tcl_RegExpRange() can convert the
-	 * matches from character to byte offsets.
-	 */
-
-	regExpr->string = string;
-
-	Tcl_DStringInit(&stringBuffer);
-	uniString = TclUtfToUniCharDString(string, -1, &stringBuffer);
-	numChars = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
-
-	match = TclRegExpExecUniChar(interp, (Tcl_RegExp) regExpr, uniString,
-		numChars, flags);
-	Tcl_DStringFree(&stringBuffer);
-
-	if (match < 0) {
-	    return TCL_ERROR;
-	}
-	if (flags & REG_NOSUB) {
-	    for (i = 0; i <= (int) regExpr->re.re_nsub; i++) {
-		regExpr->matches[i].rm_so = -1;
-		regExpr->matches[i].rm_eo = -1;
-	    } 
-	} 
-    }
-    if (!match) {
-	/*
-	 * Set the interpreter's object result to an integer object w/ value 0. 
-	 */
-	
-	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
-	return TCL_OK;
-    }
-
-    /*
-     * If additional variable names have been specified, return
-     * index information in those variables.
-     */
-
-    for (i = 0, j = 4; j < objc; i++, j++) {
-	char *result;
-	char *currentString = Tcl_GetString(objv[j]);
-
-	Tcl_RegExpRange((Tcl_RegExp) regExpr, i, &start, &end);
-	if (start == NULL) {
-	    result = Tcl_SetVar(interp, currentString, "", 0);
-	} else {
-	    char savedChar, *first, *last;
-	    char *tempString = Tcl_GetString(objv[3]);
-	    first = tempString + (start - string);
-	    last = tempString + (end - string);
-	    if (first == last) { /* don't modify argument */
-		result = Tcl_SetVar(interp, currentString, "", 0);
-	    } else {
-		savedChar = *last;
-		*last = 0;
-		result = Tcl_SetVar(interp, currentString, first, 0);
-		*last = savedChar;
-	    }
-	}
-	if (result == NULL) {
-	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    currentString, "\"", (char *) NULL);
-	    return TCL_ERROR;
-	}
-    }
-
-    /*
-     * Set the interpreter's object result to an integer object w/ value 1. 
-     */
-	
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * RegGetCompFlags --
- *
- *	Internal interface to regular expression compile flags.  
- *	Converts a string of chars to a single flag.
- *
- * Results:
- *	Returns a flags for regular expression compilation.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static int
-RegGetCompFlags(s)
-    char *s;
-{
-    char c;
-    register char *p;
-    int result = REG_ADVANCED;
-
-    for (p = s; (c = *p) != '\0'; p++)
-	switch (c) {
-	    case 'a':
-		result |= REG_ADVF;
-		break;
-	    case 'b':
-		result &= ~REG_ADVANCED;
-		break;
-	    case 'e':
-		result &= ~REG_ADVF;
-		result |= REG_EXTENDED;
-		break;
-	    case 'i':
-		result |= REG_ICASE;
-		break;
-	    case 'm':
-	    case 'n':
-		result |= REG_NEWLINE;
-		break;
-	    case 'p':
-		result |= REG_NLSTOP;
-		break;
-	    case 'q':
-		result &= ~REG_ADVANCED;
-		result |= REG_QUOTE;
-		break;
-	    case 's':
-		result |= REG_NOSUB;
-		break;
-	    case 'w':
-		result |= REG_NLANCH;
-		break;
-	    case 'x':
-		result |= REG_EXPANDED;
-		break;
-	    case '+':
-		result |= REG_FAKE;
-		break;
-	    case ',':
-		result |= REG_PROGRESS;
-		break;
-	}
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * RegGetExecFlags --
- *
- *	Internal interface to regular expression exec flags.  
- *	Converts a string of chars to a single flag.
- *
- * Results:
- *	Returns a flags for regular expression matching.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static int
-RegGetExecFlags(s)
-    char *s;
-{
-    char c;
-    register char *p;
-    int result = 0;
-    
-    for (p = s; (c = *p) != '\0'; p++)
-	switch (c) {
-	    case '^':
-		result |= REG_NOTBOL;
-		break;
-	    case '$':
-		result |= REG_NOTEOL;
-		break;
-	    case ';':
-		result |= REG_FTRACE;
-		break;
-	    case ':':
-		result |= REG_MTRACE;
-		break;
-	    case '.':
-		result |= REG_SMALL;
-		break;
-	    case '/':
-		return -1;
-	}
-    return result;
 }
 
 /*

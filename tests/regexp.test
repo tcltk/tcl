@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.1.2.2 1998/09/24 23:59:34 stanton Exp $
+# RCS: @(#) $Id: regexp.test,v 1.1.2.3 1998/10/21 20:40:08 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -183,13 +183,13 @@ test regexp-6.2 {regexp errors} {
 } {1 {wrong # args: should be "regexp ?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?"}}
 test regexp-6.3 {regexp errors} {
     list [catch {regexp -gorp a} msg] $msg
-} {1 {bad switch "-gorp": must be -indices, -nocase, or --}}
+} {1 {bad switch "-gorp": must be -indices, -nocase, -about, -expanded, or --}}
 test regexp-6.4 {regexp errors} {
     list [catch {regexp a( b} msg] $msg
-} {1 {couldn't compile regular expression pattern: unmatched ()}}
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
 test regexp-6.5 {regexp errors} {
     list [catch {regexp a( b} msg] $msg
-} {1 {couldn't compile regular expression pattern: unmatched ()}}
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
 test regexp-6.6 {regexp errors} {
     list [catch {regexp a a f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1} msg] $msg
 } {0 1}
@@ -328,7 +328,7 @@ test regexp-10.5 {regsub errors} {
 } {1 {bad switch "-gorp": must be -all, -nocase, or --}}
 test regexp-10.6 {regsub errors} {
     list [catch {regsub -nocase a( b c d} msg] $msg
-} {1 {couldn't compile regular expression pattern: unmatched ()}}
+} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
 test regexp-10.7 {regsub errors} {
     catch {unset f1}
     set f1 44

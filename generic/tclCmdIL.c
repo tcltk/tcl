@@ -13,12 +13,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.2 1998/09/24 23:58:42 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.3 1998/10/21 20:40:04 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclCompile.h"
+#include "tclRegexp.h"
 
 /*
  * During execution of the "lsort" command, structures of the following

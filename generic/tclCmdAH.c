@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.3 1998/09/28 20:24:18 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.4 1998/10/21 20:40:03 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -343,7 +343,7 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
  * Tcl_ConcatObjCmd --
  *
  *	This object-based procedure is invoked to process the "concat" Tcl
- *	command. See the user documentation for details on what it does/
+ *	command. See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl object result.
@@ -402,6 +402,123 @@ Tcl_ContinueObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     return TCL_CONTINUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EncodingObjCmd --
+ *
+ *	This command manipulates encodings.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_EncodingObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    int index, length;
+    Tcl_Encoding encoding;
+    char *string;
+    Tcl_DString ds;
+    Tcl_Obj *resultPtr;
+
+    static char *optionStrings[] = {
+	"convertfrom", "convertto", "names", "system",
+	NULL
+    };
+    enum options {
+	ENC_CONVERTFROM, ENC_CONVERTTO, ENC_NAMES, ENC_SYSTEM
+    };
+
+    if (objc < 2) {
+    	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+        return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch ((enum options) index) {
+	case ENC_CONVERTTO:
+	case ENC_CONVERTFROM: {
+	    char *name;
+	    Tcl_Obj *data;
+	    if (objc == 3) {
+		name = NULL;
+		data = objv[2];
+	    } else if (objc == 4) {
+		name = Tcl_GetString(objv[2]);
+		data = objv[3];
+	    } else {
+		Tcl_WrongNumArgs(interp, 2, objv, "?encoding? data");
+		return TCL_ERROR;
+	    }
+	    
+	    encoding = Tcl_GetEncoding(interp, name);
+	    if (!encoding) {
+		return TCL_ERROR;
+	    }
+
+	    if ((enum options) index == ENC_CONVERTFROM) {
+		/*
+		 * Treat the string as binary data.
+		 */
+
+		string = (char *) Tcl_GetByteArrayFromObj(data, &length);
+		Tcl_ExternalToUtfDString(encoding, string, length, &ds);
+		Tcl_DStringResult(interp, &ds);
+	    } else {
+		/*
+		 * Store the result as binary data.
+		 */
+
+		string = Tcl_GetStringFromObj(data, &length);
+		Tcl_UtfToExternalDString(encoding, string, length, &ds);
+		resultPtr = Tcl_GetObjResult(interp);
+		Tcl_SetByteArrayObj(resultPtr, 
+			(unsigned char *) Tcl_DStringValue(&ds),
+			Tcl_DStringLength(&ds));
+		Tcl_DStringFree(&ds);
+	    }
+
+	    Tcl_FreeEncoding(encoding);
+	    break;
+	}
+	case ENC_NAMES: {
+	    if (objc > 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, NULL);
+		return TCL_ERROR;
+	    }
+	    Tcl_GetEncodingNames(interp);
+	    break;
+	}
+	case ENC_SYSTEM: {
+	    if (objc > 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?encoding?");
+		return TCL_ERROR;
+	    }
+	    if (objc == 2) {
+	        Tcl_SetResult(interp, Tcl_GetEncodingName(NULL), TCL_STATIC);
+	    } else {
+	        return Tcl_SetSystemEncoding(interp,
+			Tcl_GetStringFromObj(objv[2], NULL));
+	    }
+	    break;
+	}
+    }
+    return TCL_OK;
 }
 
 /*

@@ -9,11 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.1.2.3 1998/10/06 00:36:56 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.1.2.4 1998/10/21 20:40:05 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include "tclRegexp.h"
 
 /*
  * This variable indicates whether the cleanup procedure has been

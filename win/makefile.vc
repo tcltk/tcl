@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.5 1998/10/06 02:59:06 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.6 1998/10/21 20:40:13 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -116,8 +116,10 @@ TCLTESTOBJS = \
 	$(TMPDIR)\testMain.obj
 
 TCLOBJS = \
-	$(TMPDIR)\compile.obj \
-	$(TMPDIR)\exec.obj \
+	$(TMPDIR)\regcomp.obj \
+	$(TMPDIR)\regexec.obj \
+	$(TMPDIR)\regfree.obj \
+	$(TMPDIR)\regerror.obj \
 	$(TMPDIR)\panic.obj \
 	$(TMPDIR)\strftime.obj \
 	$(TMPDIR)\tclAlloc.obj \

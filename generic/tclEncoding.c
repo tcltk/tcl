@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.3 1998/10/21 20:40:05 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -136,8 +136,8 @@ typedef struct EscapeEncodingData {
 #define ENCODING_ESCAPE		3
 
 /*
- * Hash table that keeps track of all loaded TextEncodings.  Keys are
- * the string names that represent the encoding, values are (TextEncoding *).
+ * Hash table that keeps track of all loaded Encodings.  Keys are
+ * the string names that represent the encoding, values are (Encoding *).
  */
  
 static Tcl_HashTable encodingTable;
@@ -276,6 +276,23 @@ TclInitEncodingSubsystem()
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeEncodingSubsystem --
+ *
+ *	Release the state associated with the encoding subsystem.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees all of the encodings.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 TclFinalizeEncodingSubsystem()
@@ -515,6 +532,11 @@ Tcl_GetEncodingNames(interp)
 	Tcl_DStringFree(&pwdString);
     }
 
+    /*
+     * Clear any values placed in the result by globbing.
+     */
+
+    Tcl_ResetResult(interp);
     resultPtr = Tcl_GetObjResult(interp);
 
     hPtr = Tcl_FirstHashEntry(&table, &search);
@@ -573,9 +595,9 @@ Tcl_SetSystemEncoding(interp, name)
 	    return TCL_ERROR;
 	}
     }
-    Tcl_FreeEncoding(systemEncoding);
 
     Tcl_MutexLock(&encodingMutex);
+    Tcl_FreeEncoding(systemEncoding);
     systemEncoding = encoding;
     Tcl_MutexUnlock(&encodingMutex);
 
@@ -1009,7 +1031,7 @@ LoadEncodingFile(interp, name)
 
     pathPtr = TclGetLibraryPath();
     if (pathPtr == NULL) {
-	return NULL;
+	goto unknown;
     }
     objc = 0;
     Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
@@ -1023,10 +1045,7 @@ LoadEncodingFile(interp, name)
     }
 
     if (chan == NULL) {
-	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
-	}
-	return NULL;
+	goto unknown;
     }
 
     Tcl_SetChannelOption(NULL, chan, "-encoding", "utf-8");
@@ -1070,7 +1089,30 @@ LoadEncodingFile(interp, name)
     }
     Tcl_Close(NULL, chan);
     return encoding;
+
+    unknown:
+    if (interp != NULL) {
+	Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
+    }
+    return NULL;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OpenEncodingFile --
+ *
+ *	Look for the file encoding/<name>.enc in the specified
+ *	directory.
+ *
+ * Results:
+ *	Returns an open file channel if the file exists.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static Tcl_Channel
 OpenEncodingFile(dir, name)
