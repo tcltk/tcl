@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.3.2.7 1999/03/19 04:01:23 stanton Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.3.2.8 1999/03/24 04:25:15 stanton Exp $
  */
 
 #include "tcl.h"
@@ -3245,6 +3245,22 @@ Tcl_SetDefaultEncodingDir(path)
     char * path;
 {
     (tclStubsPtr->tcl_SetDefaultEncodingDir)(path);
+}
+
+/* Slot 343 */
+void
+Tcl_AlertNotifier(clientData)
+    ClientData clientData;
+{
+    (tclStubsPtr->tcl_AlertNotifier)(clientData);
+}
+
+/* Slot 344 */
+void
+Tcl_ServiceModeHook(mode)
+    int mode;
+{
+    (tclStubsPtr->tcl_ServiceModeHook)(mode);
 }
 
 

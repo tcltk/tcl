@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.5 1999/03/11 01:50:34 stanton Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.6 1999/03/24 04:25:17 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,7 +25,7 @@ static int initialized = 0;
 #define INTERVAL_TIMER 1	/* Handle of interval timer. */
 
 #define WM_WAKEUP WM_USER	/* Message that is send by
-				 * TclpAlertNotifier. */
+				 * Tcl_AlertNotifier. */
 /*
  * The following static structure contains the state information for the
  * Windows implementation of the Tcl notifier.  One of these structures
@@ -34,6 +34,10 @@ static int initialized = 0;
 
 typedef struct ThreadSpecificData {
     CRITICAL_SECTION crit;	/* Monitor for this notifier. */
+    DWORD thread;		/* Identifier for thread associated with this
+				 * notifier. */
+    HANDLE event;		/* Event object used to wake up the notifier
+				 * thread. */
     int pending;		/* Alert message pending, this field is
 				 * locked by the notifierMutex. */
     HWND hwnd;			/* Messaging window. */
@@ -45,18 +49,13 @@ static Tcl_ThreadDataKey dataKey;
 
 /*
  * The following static indicates the number of threads that have
- * initialized notifiers.
+ * initialized notifiers.  It controls the lifetime of the TclNotifier
+ * window class.
  *
  * You must hold the notifierMutex lock before accessing this variable.
  */
 
 static int notifierCount = 0;
-
-/*
- * The notifierMutex locks access to all of the global notifier state,
- * as well as the pending flag for any specific notifier.
- */
-
 TCL_DECLARE_MUTEX(notifierMutex)
 
 /*
@@ -65,7 +64,6 @@ TCL_DECLARE_MUTEX(notifierMutex)
 
 static LRESULT CALLBACK	NotifierProc(HWND hwnd, UINT message,
 			    WPARAM wParam, LPARAM lParam);
-static void		UpdateTimer(ThreadSpecificData *tsdPtr, int timeout);
 
 
 /*
@@ -113,19 +111,17 @@ Tcl_InitNotifier()
 	}
     }
     notifierCount++;
+    Tcl_MutexUnlock(&notifierMutex);
 
     tsdPtr->pending = 0;
     tsdPtr->timerActive = 0;
 
-    /*
-     * Create a window for communication with the notifier.
-     */
+    InitializeCriticalSection(&tsdPtr->crit);
 
-    tsdPtr->hwnd = CreateWindowA("TclNotifier", "TclNotifier", WS_TILED,
-	    0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(), NULL);
-
-
-    Tcl_MutexUnlock(&notifierMutex);
+    tsdPtr->hwnd = NULL;
+    tsdPtr->thread = GetCurrentThreadId();
+    tsdPtr->event = CreateEvent(NULL, TRUE /* manual */,
+	    FALSE /* !signaled */, NULL);
 
     return (ClientData) tsdPtr;
 }
@@ -153,38 +149,43 @@ Tcl_FinalizeNotifier(clientData)
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
-    Tcl_MutexLock(&notifierMutex);
+    DeleteCriticalSection(&tsdPtr->crit);
+    CloseHandle(tsdPtr->event);
 
     /*
      * Clean up the timer and messaging window for this thread.
      */
 
-    KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
-    DestroyWindow(tsdPtr->hwnd);
+    if (tsdPtr->hwnd) {
+	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
+	DestroyWindow(tsdPtr->hwnd);
+    }
 
     /*
      * If this is the last thread to use the notifier, unregister
      * the notifier window class.
      */
 
+    Tcl_MutexLock(&notifierMutex);
     notifierCount--;
     if (notifierCount == 0) {
 	UnregisterClassA("TclNotifier", TclWinGetTclInstance());
     }
-
     Tcl_MutexUnlock(&notifierMutex);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpAlertNotifier --
+ * Tcl_AlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine
  *	is called by the platform independent notifier code whenever
  *	the Tcl_ThreadAlert routine is called.  This routine is
  *	guaranteed not to be called on a given notifier after
- *	Tcl_FinalizeNotifier is called for that notifier.
+ *	Tcl_FinalizeNotifier is called for that notifier.  This routine
+ *	is typically called from a thread other than the notifier's
+ *	thread.
  *
  * Results:
  *	None.
@@ -197,48 +198,30 @@ Tcl_FinalizeNotifier(clientData)
  */
 
 void
-TclpAlertNotifier(clientData)
+Tcl_AlertNotifier(clientData)
     ClientData clientData;	/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
 
-    Tcl_MutexLock(&notifierMutex);
-    if (!tsdPtr->pending) {
-	PostMessage(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
-	tsdPtr->pending = 1;
-    }
-    Tcl_MutexUnlock(&notifierMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateTimer --
- *
- *	This function starts or stops the notifier interval timer.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
+    /*
+     * Note that we do not need to lock around access to the hwnd
+     * because the race condition has no effect since any race condition
+     * implies that the notifier thread is already awake.
+     */
 
-void
-UpdateTimer(
-    ThreadSpecificData *tsdPtr,	/* Pointer to notifier state. */
-    int timeout)		/* ms timeout, 0 means cancel timer */
-{
-    tsdPtr->timeout = timeout;
-    if (timeout != 0) {
-	tsdPtr->timerActive = 1;
-	SetTimer(tsdPtr->hwnd, INTERVAL_TIMER,
-		    (unsigned long) tsdPtr->timeout, NULL);
+    if (tsdPtr->hwnd) {
+	/*
+	 * We do need to lock around access to the pending flag.
+	 */
+
+	EnterCriticalSection(&tsdPtr->crit);
+	if (!tsdPtr->pending) {
+	    PostMessage(tsdPtr->hwnd, WM_WAKEUP, 0, 0);
+	}
+	tsdPtr->pending = 1;
+	LeaveCriticalSection(&tsdPtr->crit);
     } else {
-	tsdPtr->timerActive = 0;
-	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
+	SetEvent(tsdPtr->event);
     }
 }
 
@@ -267,6 +250,17 @@ Tcl_SetTimer(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     UINT timeout;
 
+    /*
+     * We only need to set up an interval timer if we're being called
+     * from an external event loop.  If we don't have a window handle
+     * then we just return immediately and let Tcl_WaitForEvent handle
+     * timeouts.
+     */
+
+    if (!tsdPtr->hwnd) {
+	return;
+    }
+
     if (!timePtr) {
 	timeout = 0;
     } else {
@@ -274,12 +268,69 @@ Tcl_SetTimer(
 	 * Make sure we pass a non-zero value into the timeout argument.
 	 * Windows seems to get confused by zero length timers.
 	 */
+
 	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
 	if (timeout == 0) {
 	    timeout = 1;
 	}
     }
-    UpdateTimer(tsdPtr, timeout);
+    tsdPtr->timeout = timeout;
+    if (timeout != 0) {
+	tsdPtr->timerActive = 1;
+	SetTimer(tsdPtr->hwnd, INTERVAL_TIMER,
+		    (unsigned long) tsdPtr->timeout, NULL);
+    } else {
+	tsdPtr->timerActive = 0;
+	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ServiceModeHook --
+ *
+ *	This function is invoked whenever the service mode changes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If this is the first time the notifier is set into
+ *	TCL_SERVICE_ALL, then the communication window is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_ServiceModeHook(mode)
+    int mode;			/* Either TCL_SERVICE_ALL, or
+				 * TCL_SERVICE_NONE. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    /*
+     * If this is the first time that the notifier has been used from a
+     * modal loop, then create a communication window.  Note that after
+     * this point, the application needs to service events in a timely
+     * fashion or Windows will hang waiting for the window to respond
+     * to synchronous system messages.  At some point, we may want to
+     * consider destroying the window if we leave the modal loop, but
+     * for now we'll leave it around.
+     */
+
+    if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
+	tsdPtr->hwnd = CreateWindowA("TclNotifier", "TclNotifier", WS_TILED,
+		0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(), NULL);
+	/*
+	 * Send an initial message to the window to ensure that we wake up the
+	 * notifier once we get into the modal loop.  This will force the
+	 * notifier to recompute the timeout value and schedule a timer
+	 * if one is needed.
+	 */
+
+	Tcl_AlertNotifier((ClientData)tsdPtr);
+    }
 }
 
 /*
@@ -310,10 +361,10 @@ NotifierProc(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if (message == WM_USER) {
-	Tcl_MutexLock(&notifierMutex);
+    if (message == WM_WAKEUP) {
+	EnterCriticalSection(&tsdPtr->crit);
 	tsdPtr->pending = 0;
-	Tcl_MutexUnlock(&notifierMutex);
+	LeaveCriticalSection(&tsdPtr->crit);
     } else if (message != WM_TIMER) {
 	return DefWindowProc(hwnd, message, wParam, lParam);
     }
@@ -352,47 +403,71 @@ Tcl_WaitForEvent(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     MSG msg;
-    int timeout;
+    DWORD timeout, result;
+    int status;
 
     /*
-     * Only use the interval timer for non-zero timeouts.  This avoids
-     * generating useless messages when we really just want to poll.
+     * Compute the timeout in milliseconds.
      */
 
     if (timePtr) {
 	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
     } else {
-	timeout = 0;
+	timeout = INFINITE;
     }
-    UpdateTimer(tsdPtr, timeout);
-	
-    if (!timePtr || (timeout != 0)
-	    || PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-	if (!GetMessage(&msg, NULL, 0, 0)) {
 
+    /*
+     * Check to see if there are any messages in the queue before waiting
+     * because MsgWaitForMultipleObjects will not wake up if there are events
+     * currently sitting in the queue.
+     */
+
+    if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+	/*
+	 * Wait for something to happen (a signal from another thread, a
+	 * message, or timeout).
+	 */
+
+	result = MsgWaitForMultipleObjects(1, &tsdPtr->event, FALSE, timeout,
+		QS_ALLINPUT);
+    }
+
+    /*
+     * Check to see if there are any messages to process.
+     */
+
+    if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+	/*
+	 * Retrieve and dispatch the first message.
+	 */
+
+	result = GetMessage(&msg, NULL, 0, 0);
+	if (result == 0) {
 	    /*
-	     * The application is exiting, so repost the quit message
-	     * and start unwinding.
+	     * We received a request to exit this thread (WM_QUIT), so
+	     * propagate the quit message and start unwinding.
 	     */
 
 	    PostQuitMessage(msg.wParam);
-	    return -1;
+	    status = -1;
+	} else if (result == -1) {
+	    /*
+	     * We got an error from the system.  I have no idea why this would
+	     * happen, so we'll just unwind.
+	     */
+
+	    status = -1;
+	} else {
+	    TranslateMessage(&msg);
+	    DispatchMessage(&msg);
+	    status = 1;
 	}
-
-	/*
-	 * Handle timer expiration as a special case so we don't
-	 * claim to be doing work when we aren't.
-	 */
-
-	if (msg.message == WM_TIMER && msg.hwnd == tsdPtr->hwnd) {
-	    return 0;
-	}
-
-	TranslateMessage(&msg);
-	DispatchMessage(&msg);
-	return 1;
+    } else {
+	status = 0;
     }
-    return 0;
+
+    ResetEvent(tsdPtr->event);
+    return status;
 }
 
 /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.7 1999/03/19 04:01:18 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.8 1999/03/24 04:25:12 stanton Exp $
 
 library tcl
 
@@ -1165,6 +1165,12 @@ declare 341 generic {
 }
 declare 342 generic {
     void Tcl_SetDefaultEncodingDir(char *path)
+}
+declare 343 generic {
+    void Tcl_AlertNotifier(ClientData clientData)
+}
+declare 344 generic {
+    void Tcl_ServiceModeHook(int mode)
 }
 
 ##############################################################################

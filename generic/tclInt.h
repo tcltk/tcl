@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.14 1999/03/12 23:29:14 surles Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.15 1999/03/24 04:25:14 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1898,7 +1898,6 @@ EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 			    TclOpenFileChannelProc_ *proc));
 EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *filename,
 			    int mode));
-EXTERN void		TclpAlertNotifier _ANSI_ARGS_((ClientData clientData));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN int		TclpCloseFile _ANSI_ARGS_((TclFile file));

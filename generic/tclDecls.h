@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.8 1999/03/19 04:01:19 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.9 1999/03/24 04:25:12 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1047,6 +1047,10 @@ EXTERN char *		Tcl_GetString _ANSI_ARGS_((Tcl_Obj * objPtr));
 EXTERN char *		Tcl_GetDefaultEncodingDir _ANSI_ARGS_((void));
 /* 342 */
 EXTERN void		Tcl_SetDefaultEncodingDir _ANSI_ARGS_((char * path));
+/* 343 */
+EXTERN void		Tcl_AlertNotifier _ANSI_ARGS_((ClientData clientData));
+/* 344 */
+EXTERN void		Tcl_ServiceModeHook _ANSI_ARGS_((int mode));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1425,6 +1429,8 @@ typedef struct TclStubs {
     char * (*tcl_GetString) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 340 */
     char * (*tcl_GetDefaultEncodingDir) _ANSI_ARGS_((void)); /* 341 */
     void (*tcl_SetDefaultEncodingDir) _ANSI_ARGS_((char * path)); /* 342 */
+    void (*tcl_AlertNotifier) _ANSI_ARGS_((ClientData clientData)); /* 343 */
+    void (*tcl_ServiceModeHook) _ANSI_ARGS_((int mode)); /* 344 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2791,6 +2797,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_SetDefaultEncodingDir
 #define Tcl_SetDefaultEncodingDir(path) \
 	(tclStubsPtr->tcl_SetDefaultEncodingDir)(path) /* 342 */
+#endif
+#ifndef Tcl_AlertNotifier
+#define Tcl_AlertNotifier(clientData) \
+	(tclStubsPtr->tcl_AlertNotifier)(clientData) /* 343 */
+#endif
+#ifndef Tcl_ServiceModeHook
+#define Tcl_ServiceModeHook(mode) \
+	(tclStubsPtr->tcl_ServiceModeHook)(mode) /* 344 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

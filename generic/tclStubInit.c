@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.6 1999/03/14 18:56:11 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.7 1999/03/24 04:25:15 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -412,6 +412,8 @@ TclStubs tclStubs = {
     Tcl_GetString, /* 340 */
     Tcl_GetDefaultEncodingDir, /* 341 */
     Tcl_SetDefaultEncodingDir, /* 342 */
+    Tcl_AlertNotifier, /* 343 */
+    Tcl_ServiceModeHook, /* 344 */
 };
 
 TclStubs *tclStubsPtr = &tclStubs;

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.1.2.7 1999/03/11 01:50:31 stanton Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.1.2.8 1999/03/24 04:25:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -657,7 +657,7 @@ Tcl_GetServiceMode()
  *	Returns the previous service mode.
  *
  * Side effects:
- *	None.
+ *	Invokes the notifier service mode hook procedure.
  *
  *----------------------------------------------------------------------
  */
@@ -672,6 +672,7 @@ Tcl_SetServiceMode(mode)
 
     oldMode = tsdPtr->serviceMode;
     tsdPtr->serviceMode = mode;
+    Tcl_ServiceModeHook(mode);
     return oldMode;
 }
 
@@ -1030,14 +1031,14 @@ Tcl_ThreadAlert(threadId)
     /*
      * Find the notifier associated with the specified thread.
      * Note that we need to hold the listLock while calling
-     * TclpAlertNotifier to avoid a race condition where
+     * Tcl_AlertNotifier to avoid a race condition where
      * the specified thread might destroy its notifier.
      */
 
     Tcl_MutexLock(&listLock);
     for (tsdPtr = firstNotifierPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	if (tsdPtr->threadId == threadId) {
-	    TclpAlertNotifier(tsdPtr->clientData);
+	    Tcl_AlertNotifier(tsdPtr->clientData);
 	    break;
 	}
     }
