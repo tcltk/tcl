@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.17 2002/10/29 14:17:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.18 2002/12/06 23:22:59 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -507,6 +507,30 @@ TclWinSetInterfaces(
 	    }
 	}
     }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclWinResetInterfaces --
+ *
+ *	Called during finalization to reset us to a safe state for reuse.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+TclWinResetInterfaces()
+{
+    Tcl_FreeEncoding(tclWinTCharEncoding);
+    tclWinTCharEncoding = NULL;
+    tclWinProcs = &asciiProcs;
 }
 
 /*
