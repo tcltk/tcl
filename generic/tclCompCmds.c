@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.52 2003/12/24 04:18:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.53 2004/01/13 23:15:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2346,12 +2346,9 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
  *
  * Results:
  *	The return value is a standard Tcl result, which is TCL_OK if the
- *	compilation was successful.  If the particular return command is
- *	too complex for this function (ie, return with any flags like "-code"
- *	or "-errorinfo"), TCL_OUT_LINE_COMPILE is returned, indicating that
- *	the command should be compiled "out of line" (eg, not byte compiled).
- *	If an error occurs then the interpreter's result contains a standard
- *	error message.
+ *	compilation was successful.  If analysis concludes that the
+ *	command cannot be bytecompiled effectively, a return code of
+ *	TCL__OUT_LINE_COMPILE is returned.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "return" command
@@ -2367,65 +2364,114 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    Tcl_Token *varTokenPtr;
-    int code;
-
-    switch (parsePtr->numWords) {
-	case 1: {
-	    /*
-	     * Simple case:  [return]
-	     * Just push the literal string "".
-	     */
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
-	    break;
-	}
-	case 2: {
-	    /*
-	     * More complex cases:
-	     * [return "foo"]
-	     * [return $value]
-	     * [return [otherCmd]]
-	     */
-	    varTokenPtr = parsePtr->tokenPtr
+    /*
+     * General syntax: [return ?-option value ...? ?result?]
+     * An even number of words means an explicit result argument is present.
+     */
+    int level = 1, code = TCL_OK, status = TCL_OK;
+    int numWords = parsePtr->numWords;
+    int explicitResult = (0 == (numWords % 2));
+    int numOptionWords = numWords - 1 - explicitResult;
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *returnOpts = iPtr->defaultReturnOpts;
+    Tcl_Token *wordTokenPtr = parsePtr->tokenPtr
 		+ (parsePtr->tokenPtr->numComponents + 1);
-	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		/*
-		 * [return "foo"] case:  the parse token is a simple word,
-		 * so just push it.
-		 */
-		TclEmitPush(TclRegisterNewLiteral(envPtr, varTokenPtr[1].start,
-			varTokenPtr[1].size), envPtr);
-	    } else {
-		/*
-		 * Parse token is more complex, so compile it; this handles the
-		 * variable reference and nested command cases.  If the
-		 * parse token can be byte-compiled, then this instance of
-		 * "return" will be byte-compiled; otherwise it will be
-		 * out line compiled.
-		 */
-		code = TclCompileTokens(interp, varTokenPtr+1,
-			varTokenPtr->numComponents, envPtr);
-		if (code != TCL_OK) {
-		    return code;
-		}
+
+    if (numOptionWords > 0) {
+	/* 
+	 * Scan through the return options.  If any are unknown at compile
+	 * time, there is no value in bytecompiling.  Save the option values
+	 * known in an objv array for merging into a return options dictionary.
+	 */
+	int objc;
+	Tcl_Obj **objv = (Tcl_Obj **)
+		ckalloc(numOptionWords * sizeof(Tcl_Obj *));
+	for (objc = 0; objc < numOptionWords; objc++) {
+	    objv[objc] = Tcl_NewObj();
+	    Tcl_IncrRefCount(objv[objc]);
+	    if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
+		objc++;
+		status = TCL_ERROR;
+		goto cleanup;
 	    }
-	    break;
+	    wordTokenPtr += wordTokenPtr->numComponents + 1;
 	}
-	default: {
-	    /*
-	     * Most complex return cases: everything else, including
-	     * [return -code error], etc.
-	     */
+	status = TclMergeReturnOptions(interp, objc, objv,
+		&returnOpts, &code, &level);
+    cleanup:
+	while (--objc >= 0) {
+	    Tcl_DecrRefCount(objv[objc]);
+	}
+	ckfree((char *)objv);
+	if (TCL_ERROR == status) {
+	    /* Something was bogus in the return options.  Clear the
+	     * error message, and report back to the compiler that this
+	     * must be interpreted at runtime. */
+	    Tcl_ResetResult(interp);
 	    return TCL_OUT_LINE_COMPILE;
 	}
     }
 
-    /*
-     * The INST_RETURN opcode triggers the branching out of the
-     * subroutine, and takes the top stack item as the return result
-     * (which is why we pushed the value above).
+    /* All options are known at compile time, so we're going to
+     * bytecompile.   Emit instructions to push the result on
+     * the stack */
+
+    if (explicitResult) {
+	if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    /* Explicit result is a simple word, so we can compile quickly to
+	     * a simple push */
+	    TclEmitPush(TclRegisterNewLiteral(envPtr, wordTokenPtr[1].start,
+			wordTokenPtr[1].size), envPtr);
+	} else {
+	    /* More complex tokens get compiled */
+	    status = TclCompileTokens(interp, wordTokenPtr+1,
+		    wordTokenPtr->numComponents, envPtr);
+	    if (TCL_OK != status) {
+		return status;
+	    }
+	}
+    } else {
+	/* No explict result argument, so default result is empty string */
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+    }
+
+    /* 
+     * Check for optimization:  When [return] is in a proc, and there's
+     * no enclosing [catch], and the default return options are in effect,
+     * then the INST_DONE instruction is equivalent, and considerably more
+     * efficient.
      */
-    TclEmitOpcode(INST_RETURN, envPtr);
+    if (returnOpts == iPtr->defaultReturnOpts) {
+	/* We have default return options... */
+	if (envPtr->procPtr != NULL) {
+	    /* ... and we're in a proc ... */
+	    int index = envPtr->exceptArrayNext - 1;
+	    int enclosingCatch = 0;
+	    while (index >= 0) {
+		ExceptionRange range = envPtr->exceptArrayPtr[index];
+		if ((range.type == CATCH_EXCEPTION_RANGE)
+			&& (range.catchOffset == -1)) {
+		    enclosingCatch = 1;
+		    break;
+		}
+		index--;
+	    }
+	    if (!enclosingCatch) {
+		/* ... and there is no enclosing catch. */
+		TclEmitOpcode(INST_DONE, envPtr);
+		return TCL_OK;
+	    }
+	}
+    }
+
+    /*
+     * Could not use the optimization, so we push the return options
+     * dictionary, and emit the INST_RETURN instruction with code
+     * and level as operands.
+     */
+    TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
+    TclEmitInstInt4(INST_RETURN, code, envPtr);
+    TclEmitInt4(level, envPtr);
     return TCL_OK;
 }
 

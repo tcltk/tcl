@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.55 2003/12/24 04:18:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.56 2004/01/13 23:15:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -269,8 +269,9 @@ InstructionDesc tclInstructionTable[] = {
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  1,   -1,          0,   {OPERAND_NONE}},
-	/* return TCL_RETURN code. */
+    {"return",		  1,   -2,          2,   {OPERAND_INT4, OPERAND_UINT4}},
+	/* Compiled [return], code, level are operands; options and result
+	 * are on the stack. */
     {"expon",		  1,   -1,	    0,	 {OPERAND_NONE}},
 	/* Binary exponentiation operator: push (stknext ** stktop) */
     {"listverify",	  1,    0,	    0,   {OPERAND_NONE}},
@@ -776,6 +777,85 @@ TclFreeCompileEnv(envPtr)
     if (envPtr->mallocedAuxDataArray) {
 	ckfree((char *) envPtr->auxDataArrayPtr);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWordKnownAtCompileTime --
+ *
+ *	Test whether the value of a token is completely known at compile
+ *	time.
+ *
+ * Results:
+ *	Returns true if the tokenPtr argument points to a word value that
+ *	is completely known at compile time.  Generally, values that are
+ *	known at compile time can be compiled to their values, while values
+ *	that cannot be	known until substitution at runtime must be compiled
+ *	to bytecode instructions that perform that substitution.  For several
+ *	commands, whether or not arguments are known at compile time determine
+ *	whether it is worthwhile to compile at all.
+ *
+ * Side effects:
+ *	When returning true, appends the known value of the word to
+ *	the unshared Tcl_Obj (*valuePtr), unless valuePtr is NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclWordKnownAtCompileTime(tokenPtr, valuePtr)
+    Tcl_Token *tokenPtr;	/* Points to Tcl_Token we should check */
+    Tcl_Obj *valuePtr;		/* If not NULL, points to an unshared Tcl_Obj
+				 * to which we should append the known value
+				 * of the word. */
+{
+    int numComponents = tokenPtr->numComponents;
+    Tcl_Obj *tempPtr = NULL;
+
+    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	if (valuePtr != NULL) {
+	    Tcl_AppendToObj(valuePtr, tokenPtr->start, tokenPtr->size);
+	}
+	return 1;
+    }
+    if (tokenPtr->type != TCL_TOKEN_WORD) {
+	return 0;
+    }
+    tokenPtr++;
+    if (valuePtr != NULL) {
+	tempPtr = Tcl_NewObj();
+	Tcl_IncrRefCount(tempPtr);
+    }
+    while (numComponents--) {
+	switch (tokenPtr->type) {
+	    case TCL_TOKEN_TEXT:
+		if (tempPtr != NULL) {
+		    Tcl_AppendToObj(tempPtr, tokenPtr->start, tokenPtr->size);
+		}
+		continue;
+
+	    case TCL_TOKEN_BS:
+		if (tempPtr != NULL) {
+		    char utfBuf[TCL_UTF_MAX];
+		    int length = 
+			    Tcl_UtfBackslash(tokenPtr->start, NULL, utfBuf);
+		    Tcl_AppendToObj(tempPtr, utfBuf, length);
+		}
+		continue;
+	    
+	    default:
+		if (tempPtr != NULL) {
+		    Tcl_DecrRefCount(tempPtr);
+		}
+		return 0;
+	}
+    }
+    if (valuePtr != NULL) {
+	Tcl_AppendObjToObj(valuePtr, tempPtr);
+	Tcl_DecrRefCount(tempPtr);
+    }
+    return 1;
 }
 
 /*
