@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" RCS: @(#) $Id: resource.n,v 1.2 1998/09/14 18:39:54 stanton Exp $
+'\" RCS: @(#) $Id: resource.n,v 1.3 1998/12/29 22:55:12 surles Exp $
 '\" 
 .so man.macros
 .TH resource n 8.0 Tcl "Tcl Built-In Commands"
@@ -75,8 +75,8 @@ A Tcl list of either the resource name's or resource id's of the found
 resources will be returned.  See the RESOURCE IDS section below for
 more details about what a resource id is.
 .TP
-\fBresource open \fIfileName\fR ?\fIpermissions\fR?
-Open the resource for the file \fIfileName\fR.  Standard file
+\fBresource open \fIfileName\fR ?\fIaccess\fR?
+Open the resource for the file \fIfileName\fR.  Standard file access
 permissions may also be specified (see the manual entry for \fBopen\fR
 for details).  A resource reference (\fIresourceRef\fR) is returned
 that can be used by the other resource commands.  An error can occur
