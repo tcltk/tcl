@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.71 2004/03/19 18:43:15 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.72 2004/05/13 20:31:07 dkf Exp $
 
 library tcl
 
@@ -735,6 +735,7 @@ declare 181 generic {
     Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
 	    CONST char *file, int line)
 }
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are

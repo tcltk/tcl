@@ -5,11 +5,12 @@
  *	and manipulation of Tcl interpreters from within Tcl scripts.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 2004 Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.27 2004/05/13 12:59:23 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.28 2004/05/13 20:31:08 dkf Exp $
  */
 
 #include "tclInt.h"
