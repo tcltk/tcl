@@ -1,3 +1,15 @@
+2004-11-12  Reinhard Max  <max@suse.de>
+
+	* unix/config.h.in:
+	* unix/tclConfig.h.in:	renamed
+
+	* unix/Makefile.in:	Completed support for config header,
+	* unix/configure.in:	fixed building outside of the unix dir,
+	* unix/tclAppinit.c:	and reflected the name change of config.h.
+	* generic/tclInt.h:
+
+	* unix/configure:       generated
+	
 2004-11-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/config.h.in:	Allow configure to put all the C #defs into
