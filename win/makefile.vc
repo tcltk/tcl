@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.80 2002/02/20 12:33:32 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.81 2002/02/20 19:06:53 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -299,9 +299,10 @@ TCLOBJS = \
 
 TCLSTUBOBJS = $(TMP_DIR)\tclStubLib.obj
 
-WINDIR		= $(ROOT)\win
+COMPATDIR	= $(ROOT)\compat
 GENERICDIR	= $(ROOT)\generic
 TOOLSDIR	= $(ROOT)\tools
+WINDIR		= $(ROOT)\win
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
 TCL_DEFINES	= $(OPTDEFINES)
@@ -312,16 +313,29 @@ TCL_DEFINES	= $(OPTDEFINES)
 #---------------------------------------------------------------------
 
 !if !$(DEBUG)
+!if $(OPTIMIZING)
 # This cranks the optimization level to maximize speed
-cdebug = -O2 -Gs
-!else if "$(MACHINE)" == "IA64"
-cdebug = -Od -Zi
+cdebug	= -O2 -Op -Gs
 !else
-cdebug = -Z7 -Od -WX
+cdebug	=
+!endif
+!else if "$(MACHINE)" == "IA64"
+# Warnings are too many to support warnings into errors.
+cdebug	= -Z7 -Od
+!else
+cdebug	= -Z7 -WX -Od
 !endif
 
 # declarations common to all compiler options
-cflags = -nologo -c -W3 -YX -QI0f -QIfdiv -Fp$(TMP_DIR)^\
+cflags = -nologo -c -W3 -YX -Fp$(TMP_DIR)^\
+
+!if $(PENT_0F_ERRATA)
+cflags = $(cflags) -QI0f
+!endif
+
+!if $(ITAN_B_ERRATA)
+cflags = $(cflags) -QIA64_Bx
+!endif
 
 !if $(MSVCRT)
 crt = -MD$(DBGX)
@@ -329,9 +343,9 @@ crt = -MD$(DBGX)
 crt = -MT$(DBGX)
 !endif
 
-BASE_CLFAGS	= $(cdebug) $(cflags) $(crt) $(TCL_INCLUDES)
+BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES)
 TCL_CFLAGS	= $(BASE_CLFAGS) $(TCL_DEFINES)
-CON_CFLAGS	= $(cdebug) $(cflags) $(crt) -DCONSOLE
+CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 
 
 #---------------------------------------------------------------------
@@ -341,14 +355,22 @@ CON_CFLAGS	= $(cdebug) $(cflags) $(crt) -DCONSOLE
 !if $(DEBUG)
 ldebug	= -debug:full -debugtype:cv
 !else
-ldebug	= -release
+ldebug	= -release -opt:ref -opt:icf,3
 !endif
 
 # declarations common to all linker options
-lflags	= -nologo -machine:$(MACHINE)
+lflags	= -nologo -machine:$(MACHINE) $(ldebug)
 
 !if $(PROFILE)
 lflags	= $(lflags) -profile
+!endif
+
+!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
+# align sections for PE size savings.
+lflags	= $(lflags) -opt:nowin98
+!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
+# align sections for speed in loading by choosing the page size.
+lflags	= $(lflags) -align:4096
 !endif
 
 dlllflags = $(lflags) -dll
@@ -405,7 +427,7 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 !else
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $(winlibs) @<<
+	$(link32) $(dlllflags) -out:$@ $(winlibs) @<<
 $**
 <<
 	-@del $*.exp
@@ -416,20 +438,20 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
+	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
 $**
 <<
 
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
+	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
 $**
 <<
 
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
-	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj \
+	$(link32) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj \
 		$(baselibs)
 
 
@@ -438,7 +460,7 @@ $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
 !else
 $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
+	$(link32) $(dlllflags) -out:$@ $** $(baselibs)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -449,7 +471,7 @@ $(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
 !else
 $(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
+	$(link32) $(dlllflags) -out:$@ $** $(baselibs)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -573,9 +595,6 @@ $(TCLRTF): $(MAN2TCL).exe $(TCLSH)
 # Special case object file targets
 #---------------------------------------------------------------------
 
-$(TMP_DIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
-	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) -Fo$(TMP_DIR)\ $?
-
 $(TMP_DIR)\testMain.obj: $(WINDIR)\tclAppInit.c
 !if $(TCL_LINKWITHEXTENSIONS)
 	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -DTCL_LINKWITHEXTENSIONS -Fo$@ $?
@@ -653,17 +672,17 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 #---------------------------------------------------------------------
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
+    $(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-    $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
+    $(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
-{$(ROOT)\compat}.c{$(TMP_DIR)}.obj::
-    $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
+{$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
+    $(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
 $<
 <<
 

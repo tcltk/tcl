@@ -10,7 +10,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.4 2001/11/15 00:19:41 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.5 2002/02/20 19:06:54 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -29,11 +29,72 @@ INSTALLDIR	= C:\Progra~1\Tcl
 MACHINE		= IX86
 !endif
 
+!message ===============================================================================
+
+
+#----------------------------------------------------------
+# Test for compiler features
+#----------------------------------------------------------
+
+### Just display the compiler and linker versions to the output
+!if [$(cc32) 2>&1 | find "(R)"]
+!endif
+!if [$(link32) 2>&1 | find "(R)"]
+!endif
+
+### test for optimizations
+!if [$(cc32) -Ox -nologo -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" > nul]
+!message *** Compiler has 'Optimizations'
+OPTIMIZING	= 1
+!else
+!message *** Compiler doesn't have 'Optimizations'
+OPTIMIZING	= 0
+!endif
+
+### test for pentium errata
+!if "$(MACHINE)" == "IX86"
+!if [$(cc32) -QI0f -nologo -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" > nul]
+!message *** Compiler has 'Pentium 0x0f fix'
+PENT_0F_ERRATA	= 1
+!else
+!message *** Compiler doesn't have 'Pentium 0x0f fix'
+PENT_0F_ERRATA	= 0
+!endif
+!if [$(link32) -nologo -opt:nowin98 2>&1 | find "LNK1117" > nul]
+!message *** Linker has 'Win98 alignment problem'
+ALIGN98_HACK	= 1
+!else
+!message *** Linker doesn't have 'Win98 alignment problem'
+ALIGN98_HACK	= 0
+!endif
+!else
+PENT_0F_ERRATA	= 0
+ALIGN98_HACK	= 0
+!endif
+
+### test for Itanium errata
+!if "$(MACHINE)" == "IA64"
+!if [$(cc32) -QIA64_Bx -nologo -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" > nul]
+!message *** Compiler has 'B-stepping errata workarounds'
+ITAN_B_ERRATA	= 1
+!else
+!message *** Compiler doesn't have 'B-stepping errata workarounds'
+ITAN_B_ERRATA	= 0
+!endif
+!else
+ITAN_B_ERRATA	= 0
+!endif
+
+### Clean-up temp files after tests.
+!if [@for %d in (temp.idb temp.pdb) do @if exist %d del %d]
+!endif
+
 
 #----------------------------------------------------------
 # Decode the options requested.
 #----------------------------------------------------------
-!if "$(OPTS)" == "" || ![echo $(OPTS) | find /i "none" > nul]
+
+!if "$(OPTS)" == "" || ![echo "$(OPTS)" | find /i "none" > nul]
 STATIC_BUILD	= 0
 TCL_THREADS	= 0
 DEBUG		= 0
@@ -140,15 +201,12 @@ OUT_DIR	    = $(TMP_DIR)
 !endif
 !endif
 
-!message *** Intermediate directory will be '$(TMP_DIR)'
-!message *** Output directory will be '$(OUT_DIR)'
-!message *** Suffix for binaries will be '$(SUFX)'
-
 
 #----------------------------------------------------------
 # Decode the statistics requested.
 #----------------------------------------------------------
-!if "$(STATS)" == "" || ![echo $(STATS) | find /i "none" > nul]
+
+!if "$(STATS)" == "" || ![echo "$(STATS)" | find /i "none" > nul]
 TCL_MEM_DEBUG	    = 0
 TCL_COMPILE_DEBUG   = 0
 !else
@@ -166,6 +224,11 @@ TCL_COMPILE_DEBUG   = 0
 !endif
 !endif
 
+
+#----------------------------------------------------------
+# Set our defines armed with our options.
+#----------------------------------------------------------
+
 OPTDEFINES	=
 !if $(TCL_MEM_DEBUG)
 OPTDEFINES	= -DTCL_MEM_DEBUG
@@ -180,6 +243,15 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 !endif
 
+
+#----------------------------------------------------------
+# Display stats being used.
+#----------------------------------------------------------
+
+!message *** Intermediate directory will be '$(TMP_DIR)'
+!message *** Output directory will be '$(OUT_DIR)'
+!message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
+!message
 
 !endif
