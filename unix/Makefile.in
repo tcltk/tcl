@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.103 2002/06/26 13:05:27 rmax Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.104 2002/07/04 01:20:38 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1221,9 +1221,6 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
 		$(DISTDIR)/tests
-	mkdir $(DISTDIR)/tests/pkg
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests/pkg
-	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(DISTDIR)/tests/pkg
 	mkdir $(DISTDIR)/win
 	cp $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
 	cp $(TOP_DIR)/win/configure.in $(TOP_DIR)/win/configure \
