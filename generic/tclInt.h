@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.213 2005/01/21 22:25:18 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214 2005/01/27 00:23:26 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1977,10 +1977,6 @@ MODULE_SCOPE Tcl_Obj*	TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr,
 MODULE_SCOPE int	TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 MODULE_SCOPE Tcl_Obj *	TclPathPart _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *pathPtr, Tcl_PathPart portion));
-MODULE_SCOPE void	TclpCutFileChannel _ANSI_ARGS_((Tcl_Channel chan));
-MODULE_SCOPE void	TclpCutSockChannel _ANSI_ARGS_((Tcl_Channel chan));
-MODULE_SCOPE void	TclpSpliceFileChannel _ANSI_ARGS_((Tcl_Channel chan));
-MODULE_SCOPE void	TclpSpliceSockChannel _ANSI_ARGS_((Tcl_Channel chan));
 MODULE_SCOPE void	TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
 MODULE_SCOPE char *	TclpReadlink _ANSI_ARGS_((CONST char *fileName,
