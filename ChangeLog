@@ -1,3 +1,15 @@
+2002-08-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.decls:
+	* unix/tclUnixThrd.c: Added stubs and implementations for
+	non-threaded build for the tclUnixThrd.c procs TclpReaddir,
+	TclpLocaltime, TclpGmtime and TclpInetNtoa.
+	Fixes link errors in stubbed & threaded extensions that include
+	tclUnixPort.h and use any of the procs readdir, localtime, 
+	gmtime or inet_ntoa (e.g. TclX 8.4) [Bug 589526]
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c: Regen.
+
 2002-08-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	The setup and cleanup scripts are now
