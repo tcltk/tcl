@@ -1,3 +1,7 @@
+2004-03-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/file.n: *roff formatting fix. [Bug 917171]
+
 2004-03-15  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinNotify.c: Fixed a mistake where the return value of
