@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.1 2004/05/14 21:41:12 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.2 2004/05/17 14:26:50 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -149,7 +149,7 @@ TclpGetTimeZone (currentTime)
     /* Struct tm contains tm_tzadj - that value may be used. */
 
     time_t      curTime = (time_t) currentTime;
-    struct tm  *timeDataPtr = TclpLocaltime(&curTime);
+    struct tm  *timeDataPtr = TclpLocaltime((TclpTime_t) &curTime);
     int         timeZone;
 
     timeZone = timeDataPtr->tm_tzadj  / 60;
@@ -167,7 +167,7 @@ TclpGetTimeZone (currentTime)
     /* Struct tm contains tm_gmtoff - that value may be used. */
 
     time_t     curTime = (time_t) currentTime;
-    struct tm *timeDataPtr = TclpLocaltime(&curTime);
+    struct tm *timeDataPtr = TclpLocaltime((TclpTime_t) &curTime);
     int        timeZone;
 
     timeZone = -(timeDataPtr->tm_gmtoff / 60);
@@ -208,7 +208,7 @@ TclpGetTimeZone (currentTime)
     time_t tt;
     struct tm *stm;
     tt = 849268800L;      /*    1996-11-29 12:00:00  GMT */
-    stm = TclpLocaltime(&tt); /* eg 1996-11-29  6:00:00  CST6CDT */
+    stm = TclpLocaltime((TclpTime_t) &tt); /* eg 1996-11-29  6:00:00  CST6CDT */
     /* The calculation below assumes a max of +12 or -12 hours from GMT */
     timeZone = (12 - stm->tm_hour)*60 + (0 - stm->tm_min);
     if ( stm -> tm_isdst ) {
@@ -280,12 +280,10 @@ TclpGetDate(time, useGMT)
     TclpTime_t time;
     int useGMT;
 {
-    CONST time_t *tp = (CONST time_t *)time;
-
     if (useGMT) {
-	return TclpGmtime(tp);
+	return TclpGmtime(time);
     } else {
-	return TclpLocaltime(tp);
+	return TclpLocaltime(time);
     }
 }
 
@@ -345,11 +343,13 @@ TclpStrftime(s, maxsize, format, t, useGMT)
  */
 
 struct tm *
-TclpGmtime( timePtr )
-    CONST time_t *timePtr;	/* Pointer to the number of seconds
+TclpGmtime( tt )
+    TclpTime_t tt;
+{
+    CONST time_t *timePtr = (CONST time_t *) tt;
+				/* Pointer to the number of seconds
 				 * since the local system's epoch */
 
-{
     /*
      * Get a thread-local buffer to hold the returned time.
      */
@@ -371,7 +371,7 @@ TclpGmtime( timePtr )
  */
 struct tm*
 TclpGmtime_unix( timePtr )
-    CONST time_t* timePtr;
+    TclpTime_t timePtr;
 {
     return TclpGmtime( timePtr );
 }
@@ -394,11 +394,12 @@ TclpGmtime_unix( timePtr )
  */
 
 struct tm *
-TclpLocaltime(timePtr)
-    CONST time_t *timePtr;	/* Pointer to the number of seconds
-				 * since the local system's epoch */
-
+TclpLocaltime( tt )
+    TclpTime_t tt;
 {
+    CONST time_t *timePtr = (CONST time_t *) tt;
+				/* Pointer to the number of seconds
+				 * since the local system's epoch */
     /*
      * Get a thread-local buffer to hold the returned time.
      */
@@ -421,7 +422,7 @@ TclpLocaltime(timePtr)
  */
 struct tm*
 TclpLocaltime_unix( timePtr )
-    CONST time_t* timePtr;
+    TclpTime_t timePtr;
 {
     return TclpLocaltime( timePtr );
 }
