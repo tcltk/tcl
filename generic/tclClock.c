@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.20 2003/02/01 21:27:55 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.21 2003/04/12 19:08:54 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -61,18 +61,21 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     Tcl_Obj *CONST *objPtr;
     int useGMT = 0;
     char *format = "%a %b %d %X %Z %Y";
+    int clickType = 2;
     int dummy;
     unsigned long baseClock, clockVal;
     long zone;
     Tcl_Obj *baseObjPtr = NULL;
     char *scanStr;
-    int n;
+    Tcl_Time now;		/* Current time */
     
     static CONST char *switches[] =
 	{"clicks", "format", "scan", "seconds", (char *) NULL};
     enum command { COMMAND_CLICKS, COMMAND_FORMAT, COMMAND_SCAN,
 		       COMMAND_SECONDS
     };
+    static CONST char *clicksSwitches[] = {"-milliseconds", "-microseconds",
+					   (char*) NULL};
     static CONST char *formatSwitches[] = {"-format", "-gmt", (char *) NULL};
     static CONST char *scanSwitches[] = {"-base", "-gmt", (char *) NULL};
 
@@ -88,35 +91,36 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     }
     switch ((enum command) index) {
 	case COMMAND_CLICKS:	{		/* clicks */
-	    int forceMilli = 0;
 
 	    if (objc == 3) {
-		format = Tcl_GetStringFromObj(objv[2], &n);
-		if ( ( n >= 2 ) 
-		     && ( strncmp( format, "-milliseconds",
-				   (unsigned int) n) == 0 ) ) {
-		    forceMilli = 1;
-		} else {
-		    Tcl_AppendStringsToObj(resultPtr,
-			    "bad switch \"", format,
-			    "\": must be -milliseconds", (char *) NULL);
+		if ( Tcl_GetIndexFromObj( interp, objv[2], clicksSwitches,
+					  "option", 0, &clickType )
+		     != TCL_OK ) {
 		    return TCL_ERROR;
 		}
 	    } else if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-milliseconds?");
 		return TCL_ERROR;
 	    }
-	    if (forceMilli) {
-		/*
-		 * We can enforce at least millisecond granularity
-		 */
-		Tcl_Time time;
-		Tcl_GetTime(&time);
-		Tcl_SetLongObj(resultPtr,
-			(long) (time.sec*1000 + time.usec/1000));
-	    } else {
-		Tcl_SetLongObj(resultPtr, (long) TclpGetClicks());
+	    switch ( clickType ) {
+	    case 0: 		/* milliseconds */
+		Tcl_GetTime( &now );
+		Tcl_SetWideIntObj( resultPtr,
+				   ( (Tcl_WideInt) now.sec * 1000
+				     + now.usec / 1000 ) );
+		break;
+	    case 1:		/* microseconds */
+		Tcl_GetTime( &now );
+		Tcl_SetWideIntObj( resultPtr,
+				   ( (Tcl_WideInt) now.sec * 1000000
+				     + now.usec ) );
+		break;
+	    case 2:		/* native clicks */
+		Tcl_SetWideIntObj( resultPtr,
+				   TclpGetClicks() );
+		break;
 	    }
+
 	    return TCL_OK;
 	}
 
