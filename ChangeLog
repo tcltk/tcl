@@ -1,3 +1,8 @@
+2002-02-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* compat/strtoul.c, compat/strtol.c, compat/strtod.c: Added UCHAR,
+	CONST and #includes to clean up GCC output.
+
 2002-02-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* compat/strtoull.c (strtoull):
