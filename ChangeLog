@@ -1,3 +1,7 @@
+2004-06-29  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWin32Dll.c: fix to compilation with VC++ 5.2
+
 2004-06-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* library/safe.tcl: Make sure that the temporary variable is
