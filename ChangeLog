@@ -1,3 +1,21 @@
+2003-06-09  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tcl.decls:  Ported the changes from the
+	* generic/tcl.h:      'tip-59-implementation' branch into the CVS
+	* generic/tclBasic.c: head. Regenerated stub table. Regenerated
+	* generic/tclInt.h:   the configure's scripts, with help from Joe
+	* generic/tclDecls.h  English.
+	* generic/tclStubInit.c:
+	* generic/tclConfig.c:
+	* generic/tclPkgConfig.c:
+	* unix/Makefile.in:   
+	* unix/configure.in:  The changes in the windows section are not
+	* unix/tcl.m4:        yet committed, they await feedback from
+	* unix/mkLinks:       David Gravereaux.
+	* doc/RegConfig.3:
+	* mac/tclMacPkgConfig.c:
+	* tests/config.test:
+
 2003-06-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* string.test (string-4.15): Added test for [string first] bug
@@ -5166,6 +5184,13 @@
 	own realpath implementation, but this will at least quiet purify
 	for now.
 
+2002-04-05  Daniel Steffen <das@users.sourceforge.net>
+
+	* TIP 59 Merge ...
+
+	* mac/tclMacPkgConfig.c: Added Mac implementation of pkgconfig.
+	* tests/config.test: fixed failing tests.
+
 2002-04-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_SubstObj):
@@ -6074,6 +6099,31 @@
 	* tests/string.test: added 10.18 and 10.19 extra tests.
 
 	* generic/regc_locale.c (casecmp): slight performance improvement.
+
+2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* TIP 59 Merge ...
+
+	* tests/config.test: Added a testsuite for pkgconfig.
+
+	* unix/mkLinks: Regenerated.
+	* doc/RegConfig.3: Added documentation for the new public API
+	  function.
+
+	* This commit addresses the following topics from the comments at
+	  SF item 507083:
+
+	  @ Reformatted to 72 columns per line (mostly). Some character
+	    strings (Panic messages) are still longer.
+
+	  @ Better panic messages.
+
+	  @ Allocation of wrapper uses sizeof(Tcl_Obj*) instead of sizeof
+	    (char*).
+
+	  @ Terminate array with either "" or NULL.
+
+	  @ Changed to use ckalloc/ckfree instead of Tcl_Alloc/Tcl_Free.
 
 2002-02-05  Don Porter <dgp@users.sourceforge.net>
 
