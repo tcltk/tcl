@@ -9,11 +9,4 @@
 # full path name of this file's directory.
 
 if {![package vsatisfies [package provide Tcl] 8.2]} {return}
-package ifneeded tcltest 1.0.1 [list tclPkgSetup $dir tcltest 1.0.1 \
-	{{tcltest.tcl source {::tcltest::bytestring ::tcltest::cleanupTests \
-        ::tcltest::makeDirectory ::tcltest::makeFile ::tcltest::normalizeMsg \
-        ::tcltest::removeDirectory ::tcltest::removeFile \
-        ::tcltest::restoreState ::tcltest::saveState ::tcltest::test \
-        ::tcltest::threadReap ::tcltest::viewFile ::tcltest::grep \
-        ::tcltest::getMatchingFiles ::tcltest::loadTestedCommands \
-        ::tcltest::normalizePath }}}]
+package ifneeded tcltest 1.0.2 [list source [file join $dir tcltest.tcl]]

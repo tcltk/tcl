@@ -1,3 +1,10 @@
+2002-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/pkgIndex.tcl:
+        * library/tcltest/tcltest.tcl:  Allow non-proc commands to be used
+        as the customization hooks.  Bump to 1.0.2.  Converted from lazy to
+	direct loading.  [Bug 495662]
+
 2002-03-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclScan.c (Tcl_ScanObjCmd): prevented ckfree being

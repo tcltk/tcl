@@ -12,10 +12,10 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.24.2.1 2001/08/09 01:00:57 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.24.2.2 2002/03/24 18:31:08 dgp Exp $
 
 package require Tcl 8.2
-package provide tcltest 1.0.1
+package provide tcltest 1.0.2
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -421,7 +421,7 @@ proc ::tcltest::PrintError {errorMsg} {
     return
 }
 
-if {[namespace inscope ::tcltest info procs initConstraintsHook] == {}} {
+if {[llength [info commands ::tcltest::initConstraintsHook]] == 0} {
     proc ::tcltest::initConstraintsHook {} {}
 }
 
@@ -702,7 +702,7 @@ proc ::tcltest::initConstraints {} {
 #       Hook used for customization of display of usage information.
 #
 
-if {[namespace inscope ::tcltest info procs PrintUsageInfoHook] == {}} {
+if {[llength [info commands ::tcltest::PrintUsageInfoHook]] == 0} {
     proc ::tcltest::PrintUsageInfoHook {} {}
 }
 
@@ -857,7 +857,7 @@ proc ::tcltest::MakeAbsolutePath {pathVar {prefix {}}} {
 #       processed by ::tcltest::processCmdLineArgs. 
 #
 
-if {[namespace inscope ::tcltest info procs processCmdLineArgsAddFlagsHook] == {}} {
+if {[llength [info commands ::tcltest::processCmdLineArgsAddFlagsHook]] == 0} {
     proc ::tcltest::processCmdLineArgsAddFlagsHook {} {}
 }
 
@@ -870,7 +870,7 @@ if {[namespace inscope ::tcltest info procs processCmdLineArgsAddFlagsHook] == {
 #	flags      The flags that have been pulled out of argv
 #
 
-if {[namespace inscope ::tcltest info procs processCmdLineArgsHook] == {}} {
+if {[llength [info commands ::tcltest::processCmdLineArgsHook]] == 0} {
     proc ::tcltest::processCmdLineArgsHook {flag} {}
 }
 
@@ -1346,7 +1346,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 #       additional things that should be done at cleanup.
 #
 
-if {[namespace inscope ::tcltest info procs cleanupTestsHook] == {}} {
+if {[llength [info commands ::tcltest::cleanupTestsHook]] == 0} {
     proc ::tcltest::cleanupTestsHook {} {}
 }
 
