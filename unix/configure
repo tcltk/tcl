@@ -410,7 +410,7 @@ else
 fi
 
 
-# RCS: @(#) $Id: configure.in,v 1.72.6.1 2001/10/15 14:58:55 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.6.2 2001/10/17 09:28:16 dkf Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -1109,11 +1109,11 @@ else
 	    cat > conftest.$ac_ext <<EOF
 #line 1111 "configure"
 #include "confdefs.h"
+#include <sys/types.h>
 #include <sys/dirent.h>
 int main() { return 0; }
 int t() {
 struct dirent64 p;
-
 ; return 0; }
 EOF
 if eval $ac_compile; then

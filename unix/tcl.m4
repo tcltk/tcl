@@ -1959,8 +1959,8 @@ AC_DEFUN(SC_TCL_64BIT_FLAGS, [
 	# Now check for auxiliary declarations
 	AC_MSG_CHECKING([for struct dirent64])
 	AC_CACHE_VAL(tcl_cv_struct_dirent64,[
-	    AC_TRY_COMPILE([#include <sys/dirent.h>],[struct dirent64 p;
-],
+	    AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/dirent.h>],[struct dirent64 p;],
 		tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
 	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_STRUCT_DIRENT64)
