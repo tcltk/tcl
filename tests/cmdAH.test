@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.28 2002/07/10 10:48:20 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.29 2002/07/11 08:25:24 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1171,7 +1171,7 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
-file attributes $gorpfile -permissions 0765
+catch {file attributes $gorpfile -permissions 0765}
 
 # atime
 
@@ -1427,7 +1427,7 @@ test cmdAH-27.3 {Tcl_FileObjCmd: size} {
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
-file attributes $gorpfile -permissions 0765
+catch {file attributes $gorpfile -permissions 0765}
 
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} {
     list [catch {file stat _bogus_} msg] $msg $errorCode
@@ -1668,7 +1668,7 @@ catch {unset platform}
 
 # Tcl_ForObjCmd is tested in for.test
 
-file attributes $dirfile -permissions 0777
+catch {file attributes $dirfile -permissions 0777}
 removeDirectory $dirfile
 removeFile $gorpfile
 # No idea how well [removeFile] copes with links...
