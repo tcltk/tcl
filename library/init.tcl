@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.52 2002/06/21 19:44:16 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.53 2002/10/03 13:34:32 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -40,7 +40,7 @@ package require -exact Tcl 8.4
 #	On Macintosh it is "Tool Command Language" in the Extensions folder
 
 if {![info exists auto_path]} {
-    if {[info exist env(TCLLIBPATH)]} {
+    if {[info exists env(TCLLIBPATH)]} {
 	set auto_path $env(TCLLIBPATH)
     } else {
 	set auto_path ""
@@ -60,7 +60,7 @@ namespace eval tcl {
     if {[lsearch -exact $::auto_path $Dir] < 0} {
 	lappend ::auto_path $Dir
     }
-    if {[info exist ::tcl_pkgPath]} {
+    if {[info exists ::tcl_pkgPath]} {
 	foreach Dir $::tcl_pkgPath {
 	    if {[lsearch -exact $::auto_path $Dir] < 0} {
 		lappend ::auto_path $Dir

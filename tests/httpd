@@ -75,7 +75,7 @@ proc httpdRead { sock } {
 
 	# Read the query data
 
-	if {![info exist data(length_orig)]} {
+	if {![info exists data(length_orig)]} {
 	    set data(length_orig) $data(length)
 	}
 	set line [read $sock $data(length)]
@@ -103,7 +103,7 @@ proc httpdRead { sock } {
 	}
 	0,mime,POST	{
 	    # Empty line between headers and query data
-	    if {![info exist data(mime,content-length)]} {
+	    if {![info exists data(mime,content-length)]} {
 		httpd_log $sock Error "No Content-Length for POST"
 		httpdError $sock 400
 		httpdSockDone $sock

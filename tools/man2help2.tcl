@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.11 2002/05/08 23:48:13 davygrvy Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.12 2002/10/03 13:34:32 dkf Exp $
 # 
 
 # Global variables used by these scripts:
@@ -868,7 +868,7 @@ proc THmacro {argList} {
     tab
     text $curSect
     font R
-    if {[info exist bitmap]} {
+    if {[info exists bitmap]} {
 	# a right justified bitmap
 	puts $file "\\\{bmrt $bitmap\\\}"
     }
