@@ -1,3 +1,10 @@
+2004-01-13  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c (Tcl_GlobObjCmd):  Latest changes to
+	management of the interp result by Tcl_GetIndexFromObj() exposed
+	improper interp result management in the [glob] command procedure.
+	Corrected by adopting the Tcl_SetObjResult(Tcl_NewStringObj) pattern.
+
 2004-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct, Tcl_WrongNumArgs):
