@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pid.n,v 1.5 2004/08/31 15:19:36 dkf Exp $
+'\" RCS: @(#) $Id: pid.n,v 1.6 2004/10/27 14:24:37 dkf Exp $
 '\" 
 .so man.macros
 .TH pid n 7.0 Tcl "Tcl Built-In Commands"
@@ -32,7 +32,7 @@ All process identifiers are returned as decimal strings.
 .SH EXAMPLE
 Print process information about the processes in a pipeline using the
 SysV \fBps\fR program before reading the output of that pipeline:
-
+.PP
 .CS
 set pipeline [open "| zcat somefile.gz | grep foobar | sort -u"]
 # Print process information

@@ -55,7 +55,7 @@ Returns a translation of \fIsrc-string\fR according to the
 user's current locale.  If additional arguments past \fIsrc-string\fR
 are given, the \fBformat\fR command is used to substitute the
 additional arguments in the translation of \fIsrc-string\fR.
-
+.PP
 \fB::msgcat::mc\fR will search the messages defined
 in the current namespace for a translation of \fIsrc-string\fR; if
 none is found, it will search in the parent of the current namespace,
@@ -185,10 +185,12 @@ error.
 .PP
 For example, executing the code
 .CS
-mcset en hello "hello from ::"
-namespace eval foo {mcset en hello "hello from ::foo"}
-puts [mc hello]
-namespace eval foo {puts [mc hello]}
+\fB::msgcat::mcset\fR en hello "hello from ::"
+namespace eval foo {
+   \fB::msgcat::mcset\fR en hello "hello from ::foo"
+}
+puts [\fB::msgcat::mc\fR hello]
+namespace eval foo {puts [\fB::msgcat::mc\fR hello]}
 .CE
 will print
 .CS
@@ -204,19 +206,20 @@ to "inherit" messages from their parent namespace.
 .PP
 For example, executing (in the ``en'' locale) the code 
 .CS
-mcset en m1 ":: message1"
-mcset en m2 ":: message2"
-mcset en m3 ":: message3"
+\fB::msgcat::mcset\fR en m1 ":: message1"
+\fB::msgcat::mcset\fR en m2 ":: message2"
+\fB::msgcat::mcset\fR en m3 ":: message3"
 namespace eval ::foo {
-    mcset en m2 "::foo message2"
-    mcset en m3 "::foo message3"
+   \fB::msgcat::mcset\fR en m2 "::foo message2"
+   \fB::msgcat::mcset\fR en m3 "::foo message3"
 }
 namespace eval ::foo::bar {
-    mcset en m3 "::foo::bar message3"
+   \fB::msgcat::mcset\fR en m3 "::foo::bar message3"
 }
-puts "[mc m1]; [mc m2]; [mc m3]"
-namespace eval ::foo {puts "[mc m1]; [mc m2]; [mc m3]"}
-namespace eval ::foo::bar {puts "[mc m1]; [mc m2]; [mc m3]"}
+namespace import \fB::msgcat::mc\fR
+puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"
+namespace eval ::foo {puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"}
+namespace eval ::foo::bar {puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"}
 .CE
 will print
 .CS
@@ -251,7 +254,7 @@ so that all source strings are tied to the namespace of
 the package. For example, a short \fBes.msg\fR might contain:
 .CS
 namespace eval ::mypackage {
-    ::msgcat::mcset es "Free Beer!" "Cerveza Gracias!"
+   \fB::msgcat::mcset\fR es "Free Beer!" "Cerveza Gracias!"
 }
 .CE
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
@@ -269,7 +272,7 @@ Copy your *.msg files into that directory.
 initialization script:
 .CS
 # load language files, stored in msgs subdirectory
-::msgcat::mcload [file join [file dirname [info script]] msgs]
+\fB::msgcat::mcload\fR [file join [file dirname [info script]] msgs]
 .CE
 .SH "POSITIONAL CODES FOR FORMAT AND SCAN COMMANDS"
 .PP
@@ -292,7 +295,6 @@ format "In location %2\\$s we produced %1\\$d units" $num $city
 .PP
 Similarly, positional parameters can be used with \fBscan\fR to
 extract values from internationalized strings.
-
 .SH CREDITS
 .PP
 The message catalog code was developed by Mark Harrison.
