@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.17 2003/10/07 21:45:38 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.18 2004/02/25 23:56:59 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -420,7 +420,7 @@ test exec-11.4 {commands in background} {exec stdio} {
 } 3
 test exec-11.5 {commands in background} {exec} {
     set f [open $path(gorp.file) w]
-    puts $f [format { catch { exec [info nameofexecutable] {%s} foo & } } $path(echo)]
+    puts $f [list catch [list exec [info nameofexecutable] $path(echo) foo &]]
     close $f
     string compare "foo" [exec [interpreter] $path(gorp.file)]
 } 0
@@ -567,12 +567,13 @@ set path(script) [makeFile {} script]
 
 test exec-17.1 { inheriting standard I/O } {exec} {
     set f [open $path(script) w]
-    puts $f [format {close stdout
-	set f [open {%s} w]
-	catch {exec [info nameofexecutable] {%s} foobar &}
-	exec [info nameofexecutable] {%s} 2
-	close $f
-    } $path(gorp.file) $path(echo) $path(sleep)]
+    puts -nonewline $f {close stdout
+	set f [}
+    puts $f [list open $path(gorp.file) w]]
+    puts $f [list catch \
+	    [list exec [info nameofexecutable] $path(echo) foobar &]]
+    puts $f [list exec [info nameofexecutable] $path(sleep) 2]
+    puts $f {close $f}
     close $f
     catch {exec [interpreter] $path(script)} result
     set f [open $path(gorp.file) r]
