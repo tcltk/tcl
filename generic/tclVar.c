@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.19 2000/06/01 00:33:27 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.20 2000/07/25 22:41:05 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -4190,7 +4190,7 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags)
     result = NULL;
     active.nextPtr = iPtr->activeTracePtr;
     iPtr->activeTracePtr = &active;
-    if (arrayPtr != NULL) {
+    if (arrayPtr != NULL && !(arrayPtr->flags & VAR_TRACE_ACTIVE)) {
 	arrayPtr->refCount++;
 	active.varPtr = arrayPtr;
 	for (tracePtr = arrayPtr->tracePtr;  tracePtr != NULL;
