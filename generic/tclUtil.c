@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.26 2001/11/21 02:36:21 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.27 2002/01/02 13:52:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1227,6 +1227,10 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    if (p == '\0') {
 		return 1;
 	    }
+	    Tcl_UtfToUniChar(pattern, &ch2);
+	    if (nocase) {
+		ch2 = Tcl_UniCharToLower(ch2);
+	    }
 	    while (1) {
 		/*
 		 * Optimization for matching - cruise through the string
@@ -1235,16 +1239,25 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		 */
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
-			while (*string && (p != *string)) {
-			    ch2 = Tcl_UtfToUniChar(string, &ch1);
-			    if (p == Tcl_UniCharToLower(ch1)) {
+			while (*string) {
+			    int charLen = Tcl_UtfToUniChar(string, &ch1);
+			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
-			    string += ch2;
+			    string += charLen;
 			}
 		    } else {
-			while (*string && (p != *string)) {
-			    string += Tcl_UtfToUniChar(string, &ch1);
+			/*
+			 * There's no point in trying to make this code
+			 * shorter, as the number of bytes you want to
+			 * compare each time is non-constant.
+			 */
+			while (*string) {
+			    int charLen = Tcl_UtfToUniChar(string, &ch1);
+			    if (ch2 == ch1) {
+				break;
+			    }
+			    string += charLen;
 			}
 		    }
 		}
