@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.13 2004/10/07 15:15:36 dkf Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.14 2004/10/07 15:37:43 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -55,7 +55,7 @@ int
 int
 \fBTcl_HideCommand\fR(\fIinterp, cmdName, hiddenCmdName\fR)
 .SH ARGUMENTS
-.AS Tcl_InterpDeleteProc **targetInterpPtr out
+.AS "const char *const" **targetInterpPtr out
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
 .AP "const char" *slaveName in
