@@ -471,6 +471,12 @@ extern double strtod();
 #define TclpReleaseFile(file)	
 
 /*
+ * TclpFinalize is a noop on Unix systems.
+ */
+
+#define TclpFinalize()
+
+/*
  * The following routine is only exported for testing purposes.
  */
 

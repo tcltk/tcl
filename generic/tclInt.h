@@ -1411,6 +1411,7 @@ EXTERN int		TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((char *contents, 
 			    Tcl_DString *namePtr));
 EXTERN int              TclpDeleteFile _ANSI_ARGS_((char *path));
+EXTERN void		TclpFinalize _ANSI_ARGS_((void));
 EXTERN void		TclpFree _ANSI_ARGS_((char *ptr));
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
 EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
