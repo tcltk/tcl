@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.8 2001/10/16 21:38:08 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.9 2001/10/16 23:53:21 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -488,7 +488,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.8 2001/10/16 21:38:08 dgp Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.9 2001/10/16 23:53:21 dgp Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -525,7 +525,7 @@ install-strip:
 # possible (e.g. if installing as root).
 
 install-binaries: binaries
-	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
+	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) ; \
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
@@ -550,8 +550,8 @@ install-binaries: binaries
 	    fi
 	@echo "Installing tclsh as $(BIN_INSTALL_DIR)/tclsh$(VERSION)"
 	@$(INSTALL_PROGRAM) tclsh $(BIN_INSTALL_DIR)/tclsh$(VERSION)
-	@echo "Installing tclConfig.sh to $(SCRIPT_INSTALL_DIR)/"
-	@$(INSTALL_DATA) tclConfig.sh $(SCRIPT_INSTALL_DIR)/tclConfig.sh
+	@echo "Installing tclConfig.sh to $(LIB_INSTALL_DIR)/"
+	@$(INSTALL_DATA) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
 	@if test "$(TCL_STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(TCL_STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) \

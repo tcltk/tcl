@@ -1,3 +1,9 @@
+2001-10-16  Don Porter	<dgp@users.sourceforge.net>
+
+	* unix/Makefile.in: Restored install of tclConfig.sh file
+	to $TCL_EXEC_PREFIX/lib.  It contains platform-dependent
+	definitions, and must not be installed under $TCL_PREFIX.
+
 2001-10-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclLoadAout.c (TclGuessPackageName): removed unused vars
