@@ -267,7 +267,7 @@
 	end-of-file character \u001a embedded in a script file.
 	[Bug 685485]
 	
-2003-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
+2003-02-11  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/fileName.test:
 	* unix/tclUnixFile.c: fix for [Bug 685445] when using 'glob -l'
