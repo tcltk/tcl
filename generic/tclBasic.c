@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.95 2004/01/17 00:28:08 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.96 2004/01/18 16:19:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -115,7 +115,7 @@ static CmdInfo builtInCmds[] = {
     {"lappend",		(Tcl_CmdProc *) NULL,	Tcl_LappendObjCmd,
         TclCompileLappendCmd,		1},
     {"lassign",		(Tcl_CmdProc *) NULL,	Tcl_LassignObjCmd,
-        (CompileProc *) NULL,		1},
+        TclCompileLassignCmd,		1},
     {"lindex",		(Tcl_CmdProc *) NULL,	Tcl_LindexObjCmd,
         TclCompileLindexCmd,		1},
     {"linsert",		(Tcl_CmdProc *) NULL,	Tcl_LinsertObjCmd,
