@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest2.n,v 1.1 2000/09/20 23:09:49 jenn Exp $
+'\" RCS: @(#) $Id: tcltest2.n,v 1.2 2000/09/29 22:47:33 jenn Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -18,7 +18,8 @@ tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 \fBpackage require tcltest ?2.0?\fP
 .sp
-\fBtcltest::test \fIname {?attribute value? ...}\fR
+\fBtcltest::test \fIname desc ?option value? ?option value? ...\fR
+\fBtcltest::test \fIname desc {?option value? ?option value? ...}\fR
 .sp
 \fBtcltest::cleanupTests \fI?runningMultipleTests?\fR
 .sp
@@ -110,7 +111,9 @@ customized test harness implementation.  For more defails, see the
 section \fI"How to Customize the Test Harness"\fR.
 .SH COMMANDS
 .TP
-\fBtcltest::test\fP \fIname {?attribute value? ...}\fR
+\fBtcltest::test\fP \fIname desc ?option value? ?option value? ...\fR
+.TP
+\fBtcltest::test\fP \fIname desc {?option value? ?option value? ...}\fR
 The \fBtcltest::test\fR command runs the value supplied for attribute
 \fIscript\fR and compares its result to possible results.  
 It prints an error message if actual results and expected results do
@@ -237,47 +240,48 @@ if the script cannot determine where the \fItests\fR directory is
 located. This variable should be explicitly set if tests are being run
 from an all.tcl file. 
 .TP
-\fBtcltest::match\fR \fI?globPatternList\fR
+\fBtcltest::match\fR \fI?globPatternList?\fR
 Sets or returns the glob pattern list that determines which tests
 should be run.  Only tests which match one of the glob patterns in
 \fIglobPatternList\fR are run by the test harness.  The default value
 for \fIglobPatternList\fR is '*'.
 .TP
-\fBtcltest::matchFiles\fR \fI?globPatternList\fR
+\fBtcltest::matchFiles\fR \fI?globPatternList?\fR
 Sets or returns the glob pattern list that determines which test files
 should be run.  Only test files which match one of the glob patterns in
 \fIglobPatternList\fR are run by the test harness.  The default value
 for \fIglobPatternList\fR is '*.test'.
 .TP
-\fBtcltest::matchDirectories\fR \fI?globPatternList\fR
+\fBtcltest::matchDirectories\fR \fI?globPatternList?\fR
 Sets or returns the glob pattern list that determines which test
 subdirectories of the current test directory should be run.  Only test
 subdirectories which match one of the glob patterns in 
 \fIglobPatternList\fR are run by the test harness.  The default value
 for \fIglobPatternList\fR is '*'.
 .TP
-\fBtcltest::skip\fR \fI?globPatternList\fR
+\fBtcltest::skip\fR \fI?globPatternList?\fR
 Sets or returns the glob pattern list that determines which tests (of
 those matched by tcltest::match) should be skipped.  The default value
 for \fIglobPatternList\fR is {}.
 .TP
-\fBtcltest::skipFiles\fR \fI?globPatternList\fR
-Sets or returns the glob pattern list that determines which test files (of
-those matched by tcltest::matchFiles) should be skipped.  The default value
-for \fIglobPatternList\fR is {}.
+\fBtcltest::skipFiles\fR \fI?globPatternList?\fR
+Sets or returns the glob pattern list that determines which test files
+(of those matched by tcltest::matchFiles) should be skipped.  The
+default value for \fIglobPatternList\fR is {}.
 .TP
-\fBtcltest::skipDirectories\fR \fI?globPatternList\fR
-Sets or returns the glob pattern list that determines which test subdirectories (of
-those matched by tcltest::matchDirectories) should be skipped.  The default value
-for \fIglobPatternList\fR is {}.
+\fBtcltest::skipDirectories\fR \fI?globPatternList?\fR
+Sets or returns the glob pattern list that determines which test
+subdirectories (of those matched by tcltest::matchDirectories) should
+be skipped.  The default value for \fIglobPatternList\fR is {}.
 .TP
 \fBtcltest::loadTestedCommands\fP
 This command uses the script specified via the \fI-load\fR or
-\fI-loadfile\fR to load the commands checked by the test suite.
-Allowed to be empty, as the tested commands could have been compiled
-into the interpreter running the test suite.
+\fI-loadfile\fR options or the tcltest::loadScript or
+tcltest::loadFile procs to load the commands checked by the test suite.
+It is allowed to be empty, as the tested commands could have been
+compiled into the interpreter running the test suite.
 .TP
-\fBtcltest::loadScript\fR \fI?script\fR
+\fBtcltest::loadScript\fR \fI?script?\fR
 Sets or returns the script executed by \fBloadTestedCommands\fR.   
 .TP
 \fBtcltest::loadFile\fR \fI?filename?\fR
@@ -384,27 +388,44 @@ number of existing threads at completion.
 .SH TESTS
 The \fBtest\fR procedure runs a test script and prints an error
 message if the script's result does not match the expected result.
-The following is the spec for the \fBtest\fR command:
+Two syntaxes are provided for specifying the attributes of the tests.
+The first uses a separate argument for each of the attributes and
+values.  The second form places all of the attributes and values
+together into a single argument; the argument must have proper list
+structure, with teh elements of the list being the attributes and
+values.  The second form makes it easy to construct multi-line
+scripts, since the braces around the whole list make it unnecessary to
+include a backslash at the end of each line.  In the second form, no
+command or variable substitutions are performed on the attribute
+names.  This makes the behavior of the second form different from the
+first form in some cases.
+.PP
+The first form for the \fBtest\fR command:
 .DS
-test \fIname\fR {
-    description \fIdescription\fR
-    ?constraints \fIkeywordList|expression\fR
-    ?setup \fIsetupScript\fR?
-    ?script \fItestScript\fR?
-    ?cleanup \fIcleanupScript\fR?
-    ?expect \fIexpectedAnswer\fR? |
-        ?expect {-exact \fIexpectedAnswer\fR?}? |
-        ?expect {-regexp \fIexpectedAnswer\fR?}? |
-        ?expect {-glob \fIexpectedAnswer\fR?}? 
-    ?expect_out \fIexpectedOutput\fR? |
-        ?expect_out {-exact \fIexpectedOutput\fR?}? |
-        ?expect_out {-regexp \fIexpectedOutput\fR?}? |
-        ?expect_out {-glob \fIexpectedOutput\fR?}? 
-    ?expect_err \fIexpectedError\fR? |
-        ?expect_err {-exact \fIexpectedError\fR?}? |
-        ?expect_err {-regexp \fIexpectedError\fR?}? |
-        ?expect_err {-glob \fIexpectedError\fR?}? 
-    ?expect_codes \fIcodeList\fR
+test \fIname\fR \fIdescription\fR 
+    ?-constraints \fIkeywordList|expression\fR
+    ?-setup \fIsetupScript\fR?
+    ?-body \fItestScript\fR?
+    ?-cleanup \fIcleanupScript\fR?
+    ?-result \fIexpectedAnswer\fR?
+    ?-output \fIexpectedOutput\fR? 
+    ?-errorOutput \fIexpectedError\fR? 
+    ?-returnCodes \fIcodeList\fR?
+    ?-match \fIexact|glob|regexp\fR?
+.DE
+.PP
+The second form for the \fBtest\fR command:
+.DS
+test \fIname\fR \fIdescription\fR {
+    ?-constraints \fIkeywordList|expression\fR
+    ?-setup \fIsetupScript\fR?
+    ?-body \fItestScript\fR?
+    ?-cleanup \fIcleanupScript\fR?
+    ?-result \fIexpectedAnswer\fR? 
+    ?-output\fIexpectedOutput\fR? 
+    ?-errorOutput \fIexpectedError\fR? 
+    ?-returnCodes \fIcodeList\fR?
+    ?-match \fIexact|glob|regexp?
 }
 .DE
 The \fIname\fR argument should follow the pattern:
@@ -416,16 +437,16 @@ C function or Tcl procedure being tested.  For black-box tests, the
 target should be the name of the feature being tested.  Related tests
 should share a major number.
 .PP
+The \fIdescription\fR should be a short textual description of the
+test.  It is generally used to help humans 
+understand the purpose of the test.  The name of a Tcl or C function
+being tested should be included in the description for regression
+tests.  If the test case exists to reproduce a bug, include the bug ID
+in the description. 
+.PP
 Valid attributes and associated values are:
 .TP
-\fBdescription \fIdesc\fR\fP
-A value must be provided for the required \fIdescription\fR attribute.
-This should be a short textual description of the test used to help humans
-understand the purpose of the test.  The name of a Tcl or C function
-being tested should be included for regression tests.  If the test
-case exists to reproduce a bug, include the bug ID in the description.
-.TP
-\fBconstraints \fIkeywordList|expression\fR\fP
+\fB-constraints \fIkeywordList|expression\fR\fP
 The optional \fIconstraints\fR attribute can be list of one or more
 keywords or an expression.  If the \fIconstraints\fR value consists of
 keywords, each of these keywords being the name of a constraint
@@ -438,51 +459,61 @@ constraints should be added to any tests that should
 not always be run.  See the "Test Constraints" section for a list of built-in 
 constraints and information on how to add your own constraints.
 .TP
-\fBsetup \fIscript\fR\fP
+\fB-setup \fIscript\fR\fP
 The optional \fIsetup\fR attribute indicates a script that will be run
 before the script indicated by the \fIscript\fR attribute.  If setup
 fails, the test will fail.
 .TP
-\fBscript \fIscript\fR\fP
-The \fIscript\fR attribute indicates the script to run to carry out the 
+\fB-body \fIscript\fR\fP
+The \fIbody\fR attribute indicates the script to run to carry out the 
 test.  It must return a result that can be checked for correctness.
+If left unspecified, the script value will be {}.
 .TP
-\fBcleanup \fIscript\fR\fP
+\fB-cleanup \fIscript\fR\fP
 The optional \fIcleanup\fR attribute indicates a script that will be
 run after the script indicated by the \fIscript\fR attribute.  If
-cleanup fails, the test will fail.
+cleanup fails, the test will fail.  
 .TP
-\fBexpect \fI{?option? expectedValue}|expectedValue\fR\fP
-The \fIexpect\fR attribute supplies the comparison value with which
-the return value from script will be compared.  Valid options for the
-value supplied are "-regexp", "-glob", and "-exact".  The default
-comparison option is "-exact".
+\fB-match \fIregexp|glob|exact\fP
+The \fImatch\fR attribute determines how expected answers supplied in
+\fIresult\fR, \fIoutput\fR, and \fRerrorOutput\fR are compared.  Valid
+options for the value supplied are "regexp", "glob", and
+"exact". If \fImatch\fR is not specified, the comparisons will be
+done in "exact" mode by default.
 .TP
-\fBexpect_out \fI{?option? expectedValue}|expectedValue\fR\fP
-The \fIexpect_out\fR attribute supplies the comparison value with which
+\fB-result \fIexpectedValue\fR\fP
+The \fIresult\fR attribute supplies the comparison value with which
+the return value from script will be compared. 
+If left unspecified, the default
+\fIexpectedValue\fR will be the empty list.
+.TP
+\fB-output \fIexpectedValue\fR\fP
+The \fIoutput\fR attribute supplies the comparison value with which
 any output sent to stdout or tcltest::outputChannel during the script
-run will be compared.  Valid options for the
-value supplied are "-regexp", "-glob", and "-exact".  The default
-comparison option is "-exact". Note that only output printed using
-puts is used for comparison.
+run will be compared.  Note that only output printed using
+puts is used for comparison.  If \fIoutput\fR is not specified, output
+sent to stdout and tcltest::outputChannel is not processed for comparison.
 .TP
-\fBexpect_err \fI{?option? expectedValue}|expectedValue\fR\fP
-The \fIexpect_err\fR attribute supplies the comparison value with which
+\fB-errorOutut \fIexpectedValue\fR\fP
+The \fIerrorOutput\fR attribute supplies the comparison value with which
 any output sent to stderr or tcltest::errorChannel during the script
-run will be compared.  Valid options for the
-value supplied are "-regexp", "-glob", and "-exact".  The default
-comparison option is "-exact". Note that only output printed using
-puts is used for comparison.
+run will be compared. Note that only output printed using
+puts is used for comparison.  If \fIerrorOutut\fR is not specified, output
+sent to stderr and tcltest::errorChannel is not processed for comparison.
 .TP
-\fBexpect_codes \fIexpectedCodes\fR\fP
-The optional \fIexpect_code\fR attribute indicates which return codes
+\fB-returnCodes \fIexpectedCodeList\fR\fP
+The optional \fIreturnCodes\fR attribute indicates which return codes
 from the script supplied with the \fIscript\fR attribute are correct.
-Default values for \fIexpectedCodes\fR are 0 (normal return) and 2
-(return exception).  
+Default values for \fIexpectedCodeList\fR are 0 (normal return) and 2
+(return exception).  Symbolic values \fInormal\fR (0), \fIerror\fR
+(1), \fIreturn\fR (2), \fIbreak\fR (3), and \fIcontinue\fR (4) can be
+used in the \fIexpectedCodeList\fR list.
 .PP
-The <expectedAnswer> argument will be compared against the result of
-evaluating the <script> argument.  If they match, the test passes,
-otherwise the test fails.
+To pass, a test must successfully execute its setup, script, and
+cleanup code.  The return code of the test and its return values must
+match expected values, and if specified, output and error data from
+the test must match expected output and error values. If all of these
+conditions are not met, then the test fails.
 .SH "TEST CONSTRAINTS"
 Constraints are used to determine whether or not a test should be skipped.
 If a test is constrained by "unixOnly", then it will only be run if
@@ -610,9 +641,9 @@ in parenthesis):
 \fB-help\fR
 display usage information.
 .TP
-\fB-singleproc 0|1\fR
-if 0, run test files in multiple interpreters.  if 1, source test
-files into the current intpreter.
+\fB-singleproc <bool>\fR
+if <bool> is 0, run test files in separate interpreters.  if 1, source test
+files into the current intpreter. (tcltest::singleProcess)
 .TP
 \fB-verbose <level>\fR
 set the level of verbosity to a substring of "bpst".  See the "Test
@@ -686,7 +717,7 @@ script. See -loadfile below too. (tcltest::loadScript)
 \fB-loadfile <scriptfile>\fR
 will use the contents of the named file to load the commands under
 test (tcltest::loadTestedCommands). See -load above too. The default
-is the empty script. (tcltest::loadScript)
+is the empty script. (tcltest::loadFile)
 .TP
 \fB-tmpdir <directoryName>\fR
 put any temporary files (created with tcltest::makeFile and
@@ -708,11 +739,11 @@ tcltest package.  (tcltest::debug)
 \fB-outfile <filename>\fR 
 print output generated by the tcltest package to the named file.  This
 defaults to stdout.  Note that debug output always goes to stdout,
-regardless of this flag's setting.  (tcltest::outputChannel)
+regardless of this flag's setting.  (tcltest::outputFile)
 .TP
 \fB-errfile <filename>\fR
 print errors generated by the tcltest package to the named file.  This
-defaults to stderr.  (tcltest::errorChannel)
+defaults to stderr.  (tcltest::errorFile)
 .RE
 .PP
 You can specify any of the above options on the command line or by
@@ -734,14 +765,15 @@ A final way to run tests would be to specify which test files to run
 within an \fIall.tcl\fR (or otherwise named) file.  This is the
 approach used by the Tcl test suite.  This file loads the tcltest
 package, sets the location of
-the test directory (tcltest::testsDirectory), determines which test
-files to run, sources each of these files, calls
-tcltest::cleanupTests and then exits.
+the test directory (tcltest::testsDirectory), and then calls the
+\fItcltest::runAllTests\fR proc, which determines which test
+files to run, how to run them, and calls tcltest::cleanupTests to
+determine the summary status of the test suite.  
 .PP
 A more elaborate \fIall.tcl\fR file might do some pre- and
 post-processing before sourcing 
 each .test file, use separate interpreters for each file, or handle
-complex directory structures. 
+complex directory structures.  
 For an example of an all.tcl file,
 please see the "Examples" section of this document.
 .SH "TEST OUTPUT"
@@ -955,13 +987,7 @@ A simple test file (foo.test)
 package require tcltest
 namespace import -force ::tcltest::*
 
-test foo-1.1 {
-    description {save 1 in variable name foo}
-    script {
-        set foo 1
-    }
-    expect {1}
-}
+test foo-1.1 {save 1 in variable name foo} -body {set foo 1} -result 1
 
 tcltest::cleanupTests
 return
@@ -986,21 +1012,31 @@ tclsh foo.test
 Running multiple tests
 .DS
 tclsh all.tcl -file 'foo*.test' -notfile 'foo2.test'
-.IP [5] A test that uses the unixOnly constraint and should only be
+.DE
+.IP [5] 
+A test that uses the unixOnly constraint and should only be
 run on Unix
 .DS
-test getAttribute-1.1 {
-    description {testing file permissions}
-    constraints {unixOnly}
-    script {
+test getAttribute-1.1 {testing file permissions} {
+    -constraints {unixOnly}
+    -body {
         lindex [file attributes foo.tcl] 5
     }
-    expect {00644}
+    -result {00644}
 }
 .DE
-.IP [6] A constraint containing an expression that evaluates to true (a case where the test would be run) if it is being run on unix and if threads are not being tested
+.IP [6] 
+A test containing an constraint expression that evaluates to true (a case where the test would be run) if it is being run on unix and if threads are not being tested
 .DS
-    unixOnly && !testthread
+test testOnUnixWithoutThreads-1.1 {
+    this test runs only on unix and only if we're not testing
+    threads
+} {
+    -constraints {unixOnly && !testthread}
+    -body {
+        # some script goes here
+    }
+}
 .DE
 .SH "KNOWN ISSUES"
 There are two known issues related to nested test commands.  
@@ -1009,11 +1045,9 @@ executed.  Tests nested within other tests may be executed at the same
 stack level as the outermost test.  For example, in the following test
 code: 
 .DS
-test level-1.1 {
-    description {level 1}
-    script {
-        test level-2.1 {
-            description {level 2}
+test level-1.1 {level 1} {
+    -body {
+        test level-2.1 {level 2} {
         }
     }
 }
