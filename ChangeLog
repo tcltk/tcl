@@ -1,3 +1,6 @@
+1999-03-08    <stanton@GASPODE>
+	* Integrated stubs mechanism from Tcl 8.0.
+	
 1999-02-25    <redman@scriptics.com>
 
 	* win/makefile.vc: Added tclWinConsole.c and tclWinSerial.c
