@@ -1,3 +1,18 @@
+2003-05-09  Joe Mistachkin <joe@mistachkin.com>
+
+	* generic/tclThreadAlloc.c (TclFreeAllocCache): Fixed memory leak
+        caused by treating cachePtr as a TLS index [Bug 731754].
+
+	* win/tclAppInit.c (Tcl_AppInit): Fixed memory leaks caused by not
+        freeing the memory allocated by setargv and the async handler created
+        by Tcl_AppInit. An exit handler has been created that takes care of
+        both leaks. In addition, Tcl_AppInit now uses ckalloc instead of
+        Tcl_Alloc to allow for easier leak tracking and to be more consistent
+        with the rest of the Tcl core [Bugs 733156, 733221].
+
+	* tools/encoding/txt2enc.c (main): Fixed memory leak caused by failing
+        to free the memory used by the toUnicode array of strings [Bug 733221].
+
 2003-05-09  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileScript):
