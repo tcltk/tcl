@@ -1,3 +1,9 @@
+2004-04-30  Kevin B. Kenny   <kennykb@acm.org>
+
+	* generic/tclThreadAlloc.c: Added a temporary (or so I hope!)
+	inclusion of "tclWinInt.h" to avoid problems when compiling
+	on Win32-VC++ with --enable-threads.  [Bug 945447]
+	
 2004-04-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/puts.n: Added a few examples.
