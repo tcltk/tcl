@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.5 1999/07/22 00:06:09 redman Exp $
+'\" RCS: @(#) $Id: open.n,v 1.6 1999/11/10 02:51:42 hobbs Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -55,8 +55,9 @@ Open the file for reading and writing.  Truncate it if it exists.
 If it doesn't exist, create a new file.
 .TP 15
 \fBa\fR
-Open the file for writing only.  The file must already exist, and the file
-is positioned so that new data is appended to the file.
+Open the file for writing only.  If the file doesn't exist,
+create a new empty file.
+Set the initial access position  to the end of the file.
 .TP 15
 \fBa+\fR
 Open the file for reading and writing.  If the file doesn't exist,
