@@ -1,3 +1,8 @@
+2001-11-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/regsub.n, doc/regexp.n: Converted dangling references to
+	METASYNTAX section into references to the re_syntax manual page.
+
 2001-11-27  D. Richard Hipp   <drh@hwaci.com>
 
 	* win/tclWinFCmd.c: Fix a coredump in the filename normalizer
