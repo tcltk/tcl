@@ -1321,13 +1321,21 @@
 
 	* doc/FileSystem.3 (Tcl_FSLoadFile):
 	* generic/tcl.decls (Tcl_FSLoadFile):
-	* generic/tcl{Int}.h (Tcl_FSLoadFileProc,TclpLoadFile):
+	* generic/tcl.h (Tcl_FSLoadFileProc):
+	* generic/tclInt.h (TclpLoadFile):
 	* generic/tclIOUtil.c (Tcl_FSLoadFile):
 	* generic/tclLoadNone.c (TclpLoadFile):
 	* generic/tclTest.c (TestReportLoadFile):
 	* library/ldAout.tcl:
 	* mac/tclMacLoad.c (TclpLoadFile):
-	* unix/tclLoad*.c (TclpLoadFile):
+	* unix/tclLoadAix.c (TclpLoadFile):
+	* unix/tclLoadAout.c (TclpLoadFile):
+	* unix/tclLoadDl.c (TclpLoadFile):
+	* unix/tclLoadDld.c (TclpLoadFile):
+	* unix/tclLoadDyld.c (TclpLoadFile):
+	* unix/tclLoadNext.c (TclpLoadFile):
+	* unix/tclLoadOSF.c (TclpLoadFile):
+	* unix/tclLoadShl.c (TclpLoadFile):
 	* win/tclWinLoad.c (TclpLoadFile):
 	* win/tclWinFCmd.c (DoRemoveJustDirectory):  More CONST poisoning
 	fixes from the 2001-09-24 TIP 27 changes.  CONST-ified
@@ -1341,16 +1349,18 @@
 	* doc/TCL_MEM_DEBUG.3:  Updated out-of-date reference to
 	#define GUARD_SIZE.
 
-	* doc/UpVar.3 (Tcl_UpVar*):
-	* generic/tcl{Int}.decls (Tcl_UpVar*,TclFindProc,TclGetFrame):
-	* generic/tclInt.h
-	  (Tcl{FindProc,GetFrame,LookupVar,PrecTraceProc,ProcInterpProc}):
+	* doc/UpVar.3 (Tcl_UpVar,Tcl_UpVar2):
+	* generic/tcl.decls (Tcl_UpVar,Tcl_UpVar2):
+	* generic/tclInt.decls (TclFindProc,TclGetFrame):
+	* generic/tclInt.h (TclFindProc,TclGetFrame,TclLookupVar,
+	  TclPrecTraceProc,TclProcInterpProc}):
 	* generic/tclProc.c (TclGetFrame,TclFindProc):
-	* generic/tclVar.c (Tcl_UpVar*,MakeUpvar):  Updated APIs in
+	* generic/tclVar.c (Tcl_UpVar,Tcl_UpVar2,MakeUpvar):  Updated APIs in
 	generic/tclProc.c and generic/tclVar.c according to the guidelines
 	of TIP 27.  [Patch 465442]
 
-	* generic/tcl{Int}Decls.h: make genstubs
+	* generic/tclDecls.h:
+	* generic/tclIntDecls.h: make genstubs
 
 2001-09-26  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
@@ -1399,11 +1409,13 @@
 
 	* doc/GetInt.3:
 	* generic/tclInt.h (TclGetLong deleted):
-	* generic/tcl{,Int}.decls:
+	* generic/tcl.decls:
+	* generic/tclInt.decls:
 	* generic/tclGet.c:  Updated APIs in generic/tclGet.c
 	according to the guidelines of TIP 27.  [Patch 464674]
 
-	* generic/tcl{Int}Decls.h: make genstubs
+	* generic/tclDecls.h: 
+	* generic/tclIntDecls.h: make genstubs
 
 2001-09-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
@@ -1412,9 +1424,12 @@
 	
 2001-09-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* doc/{Concat,DString,SplitList}.3:
+	* doc/Concat.3:
+	* doc/DString.3:
+	* doc/SplitList.3:
 	* generic/tclInt.h (TclCheckBadOctal):
-	* generic/tcl{,Int}.decls:
+	* generic/tcl.decls:
+	* generic/tclInt.decls:
 	* generic/tclEncoding.c (OpenEncodingFile):
 	* generic/tclMain.c (Tcl_Main):
 	* generic/tclUtil.c:
@@ -1422,7 +1437,8 @@
 	generic/tclUtil.c according to the guidelines of TIP 27.
 	[Patch 464553]
 
-	* generic/tcl{Int}Decls.h: make genstubs
+	* generic/tclDecls.h: 
+	* generic/tclIntDecls.h: make genstubs
 
 2001-09-24  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
