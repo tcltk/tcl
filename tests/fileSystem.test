@@ -132,7 +132,6 @@ file delete -force dir2.link
 file delete -force link.file dir.link
 removeFile [file join dir.file inside.file]
 removeDirectory dir.file
-removeFile gorp.file
 
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
@@ -406,18 +405,20 @@ test filesystem-7.1 {load from vfs} {win} {
 
 test filesystem-7.2 {cross-filesystem copy from vfs maintains mtime} {
     set dir [pwd]
-    cd [file dirname [info script]]
-    set origtime [file mtime [info script]]
-    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    # We created this file several tests ago.
+    set origtime [file mtime gorp.file]
     testsimplefilesystem 1
     file delete -force theCopy
-    file copy simplefs:/[file tail [info script]] theCopy
+    file copy simplefs:/gorp.file theCopy
     testsimplefilesystem 0
     set newtime [file mtime theCopy]
     file delete theCopy
     cd $dir
     expr {$origtime == $newtime}
 } {1}
+
+removeFile gorp.file
 
 cleanupTests
 }
