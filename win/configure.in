@@ -1,28 +1,70 @@
-dnl	This file is an input file used by the GNU "autoconf" program to
-dnl	generate the file "configure", which is run during Tcl installation
-dnl	to configure the system for the local environment.
+# This file is an input file used by the GNU "autoconf" program to
+# generate the file "configure", which is run during Tcl installation
+# to configure the system for the local environment.
+#
+# RCS: @(#) $Id: configure.in,v 1.5 1999/06/11 01:53:04 surles Exp $
+
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.4 1999/06/10 21:47:28 wart Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=1
 TCL_PATCH_LEVEL=.2
-VERSION=${TCL_VERSION}
 
-# Check whether --enable-gcc or --disable-gcc was given.  Do this before 
-# AC_PROG_CC and AC_CYGWIN are called so the compiler can be fully tested
-# by built-in autoconf tools.
+#--------------------------------------------------------------------
+# Check whether --enable-gcc or --disable-gcc was given.  Do this 
+# before AC_PROG_CC and AC_CYGWIN are called so the compiler can 
+# be fully tested by built-in autoconf tools.
+#--------------------------------------------------------------------
  
 SC_ENABLE_GCC
 
+#--------------------------------------------------------------------
+# Checks to see if the make progeam sets the $MAKE variable.
+#--------------------------------------------------------------------
+
 AC_PROG_MAKE_SET
+
+#--------------------------------------------------------------------
+# These two macros perform additinal compiler test.
+#--------------------------------------------------------------------
+
 AC_PROG_CC
 AC_CYGWIN
+
+#--------------------------------------------------------------------
+# Determines the correct binary file extension (.o, .obj, .exe etc.)
+#--------------------------------------------------------------------
+
 AC_OBJEXT
 AC_EXEEXT
 
-# Set the default compiler switches based on the --enable-symbols option 
+#--------------------------------------------------------------------
+# Check whether --enable-threads or --disable-threads was given.
+#--------------------------------------------------------------------
+
+SC_ENABLE_THREADS
+
+#--------------------------------------------------------------------
+# The statements below define a collection of symbols related to
+# building libtcl as a shared library instead of a static library.
+#--------------------------------------------------------------------
+
+SC_ENABLE_SHARED
+
+#--------------------------------------------------------------------
+# The statements below define a collection of compile flags.  This 
+# macro depends on the value of SHARED_BUILD, and should be called
+# after SC_ENABLE_SHARED checks the configure switches.
+#--------------------------------------------------------------------
+
+SC_TCL_CONFIG_CFLAGS
+
+#--------------------------------------------------------------------
+# Set the default compiler switches based on the --enable-symbols 
+# option.  This macro depends on C flags, and should be called
+# after SC_TCL_CONFIG_CFLAGS macro is called.
+#--------------------------------------------------------------------
 
 SC_ENABLE_SYMBOLS
 
@@ -30,75 +72,11 @@ CFLAGS=${CFLAGS_DEFAULT}
 LD_FLAGS=${LDFLAGS_DEFAULT}
 TCL_DBGX=${DBGX}
 
-# Trick to replace DBGX with TCL_DBGX
-DBGX='${TCL_DBGX}'
+#--------------------------------------------------------------------
+# Perform final evaluations of variables with possible substitutions.
+#--------------------------------------------------------------------
+
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
-
-# Check whether --enable-threads or --disable-threads was given.
-
-SC_ENABLE_THREADS
-
-#--------------------------------------------------------------------
-#	The statements below define a collection of symbols related to
-#	building libtcl as a shared library instead of a static library.
-#--------------------------------------------------------------------
-
-SC_ENABLE_SHARED
-
-EXTRA_CFLAGS=""
-# set various compiler flags depending on whether we are using gcc or cl
-if test "${GCC}" = "yes" ; then
-    CFLAGS_DEBUG=-g
-    CFLAGS_OPTIMIZE=-O
-    CFLAGS_WARNING="-Wall -Wconversion"
-    LDFLAGS_DEBUG=-g
-    LDFLAGS_OPTIMIZE=-O
-    PATHTYPE=-u
-
-    # Specify the CC output file names based on the target name
-    CC_OBJNAME="-o \$@"
-    CC_EXENAME="-o \$@"
-else
-    SHLIB_LD="link -dll -nologo"
-    SHLIB_LD_LIBS="user32.lib advapi32.lib"
-    LIBS="user32.lib advapi32.lib"
-    AR="lib -nologo"
-    MAKE_LIB="\${AR} -out:\$@"
-    MAKE_EXE="\${CC} -Fe\$@"
-
-    if test "${TCL_SHARED_BUILD}" = "0" ; then
-	# static
-	echo "building static version"
-	runtime=-MT
-	MAKE_DLL="echo "
-	LIBSUFFIX="s\${TCL_DBGX}.lib"
-	LIBRARIES="\${STATIC_LIBRARIES}"
-	EXESUFFIX="s\${TCL_DBGX}.exe"
-	DLLSUFFIX=""
-    else
-	# dynamic
-	echo "building dynamic version"
-	runtime=-MD
-	MAKE_DLL="\${SHLIB_LD} \${SHLIB_LD_LIBS} -out:\$@"
-	LIBSUFFIX="\${TCL_DBGX}.lib"
-	DLLSUFFIX="\${TCL_DBGX}.dll"
-	EXESUFFIX="\${TCL_DBGX}.exe"
-	LIBRARIES="\${SHARED_LIBRARIES}"
-    fi
-
-    EXTRA_CFLAGS="-YX"
-    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
-    CFLAGS_OPTIMIZE="-nologo -O2 -Gs -GD ${runtime}"
-    CFLAGS_WARNING="-W3"
-    LDFLAGS_DEBUG="-debug"
-    LDFLAGS_OPTIMIZE="-release"
-    PATHTYPE=-w
-
-    # Specify the CC output file names based on the target name
-    CC_OBJNAME="-Fo\$@"
-    CC_EXENAME="-Fe\$@"
-fi
-
 eval "LD_FLAGS=${LD_FLAGS}"
 
 AC_SUBST(PATHTYPE)

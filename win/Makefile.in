@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.4 1999/06/08 02:59:31 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.5 1999/06/11 01:53:04 surles Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -25,73 +25,93 @@ VERSION = @TCL_VERSION@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 
+# The following definition can be set to non-null for special systems
+# like AFS with replication.  It allows the pathnames used for installation
+# to be different than those used for actually reference files at
+# run-time.  INSTALL_ROOT is prepended to $prefix and $exec_prefix
+# when installing files.
+INSTALL_ROOT	=
+
 # Directory from which applications will reference the library of Tcl
 # scripts (note: you can set the TCL_LIBRARY environment variable at
 # run-time to override this value):
-TCL_LIBRARY =	$(prefix)/lib/tcl$(VERSION)
+TCL_LIBRARY	= $(prefix)/lib/tcl$(VERSION)
 
-# Directory in which to install libtcl.so or libtcl.a:
-LIB_INSTALL_DIR		= @libdir@
+# Path to use at runtime to refer to LIB_INSTALL_DIR:
+LIB_RUNTIME_DIR = $(exec_prefix)/lib
 
 # Directory in which to install the program tclsh:
-BIN_INSTALL_DIR		= @bindir@
+BIN_INSTALL_DIR = $(INSTALL_ROOT)$(exec_prefix)/bin
 
-# Path name to use when installing script libraries:
-SCRIPT_INSTALL_DIR	= $(prefix)/lib
+# Directory in which to install libtcl.so or libtcl.a:
+LIB_INSTALL_DIR = $(INSTALL_ROOT)$(exec_prefix)/lib
+
+# Path name to use when installing library scripts:
+SCRIPT_INSTALL_DIR = $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Directory in which to install the include file tcl.h:
-INCLUDE_INSTALL_DIR	= @includedir@
+INCLUDE_INSTALL_DIR = $(INSTALL_ROOT)$(prefix)/include
 
 # Top-level directory in which to install manual entries:
-MAN_INSTALL_DIR		= @mandir@
+MAN_INSTALL_DIR = $(INSTALL_ROOT)$(prefix)/man
 
 # Directory in which to install manual entry for tclsh:
-MAN1_INSTALL_DIR	= $(MAN_INSTALL_DIR)/man1
+MAN1_INSTALL_DIR = $(MAN_INSTALL_DIR)/man1
 
 # Directory in which to install manual entries for Tcl's C library
 # procedures:
-MAN3_INSTALL_DIR	= $(MAN_INSTALL_DIR)/man3
+MAN3_INSTALL_DIR = $(MAN_INSTALL_DIR)/man3
 
 # Directory in which to install manual entries for the built-in
 # Tcl commands:
-MANN_INSTALL_DIR	= $(MAN_INSTALL_DIR)/mann
+MANN_INSTALL_DIR = $(MAN_INSTALL_DIR)/mann
 
-PATHTYPE	= @PATHTYPE@
+# Directory in which to install the include file tcl.h:
+INCLUDE_INSTALL_DIR = @includedir@
 
-#SRC_DIR		= $(shell cygpath $(PATHTYPE) '@srcdir@')
-#ROOT_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/..')
-#GENERIC_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/../generic')
-#WIN_DIR		= $(shell cygpath $(PATHTYPE) '@srcdir@')
-#COMPAT_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/../compat')
-#TOP_DIR	        = $(shell cygpath $(PATHTYPE) '@srcdir@/..')
+# Libraries built with optimization switches have this additional extension
+TCL_DBGX = @TCL_DBGX@
+
+# warning flags
+CFLAGS_WARNING = @CFLAGS_WARNING@
+
+# The default switches for optimization or debugging
+CFLAGS_DEBUG    = @CFLAGS_DEBUG@
+CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
+
+# To change the compiler switches, for example to change from optimization to
+# debugging symbols, change the following line:
+#CFLAGS = 		$(CFLAGS_DEBUG)
+#CFLAGS = 		$(CFLAGS_OPTIMIZE)
+#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+CFLAGS = 		@CFLAGS@
 
 SRC_DIR		= @srcdir@
 ROOT_DIR	= @srcdir@/..
 GENERIC_DIR	= @srcdir@/../generic
 WIN_DIR		= @srcdir@
 COMPAT_DIR	= @srcdir@/../compat
-TOP_DIR	        = @srcdir@/..
+
+PATHTYPE	= @PATHTYPE@
 
 GENERIC_DIR_NATIVE = $(shell cygpath $(PATHTYPE) '$(GENERIC_DIR)')
-WIN_DIR_NATIVE	= $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
-TOP_DIR_NATIVE	= $(shell cygpath $(PATHTYPE) '$(TOP_DIR)')
+WIN_DIR_NATIVE	   = $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
+ROOT_DIR_NATIVE	   = $(shell cygpath $(PATHTYPE) '$(ROOT_DIR)')
 
 DLLSUFFIX	= @DLLSUFFIX@
 LIBSUFFIX	= @LIBSUFFIX@
 EXESUFFIX	= @EXESUFFIX@
 
-STUB_LIB	= tclstub$(VER)${LIBSUFFIX}
-TCL_DLL		= tcl$(VER)${DLLSUFFIX}
-TCL_LIB		= tcl$(VER)${LIBSUFFIX}
-DDE_DLL		= tcldde$(VER)${DLLSUFFIX}
-DDE_LIB		= tcldde$(VER)${LIBSUFFIX}
-REG_DLL		= tclreg$(VER)${DLLSUFFIX}
-REG_LIB		= tclreg$(VER)${LIBSUFFIX}
-PIPE_DLL	= tclpip$(VER)${DLLSUFFIX}
-PIPE_LIB	= tclpip$(VER)${LIBSUFFIX}
+TCL_STUB_LIB_FILE	= tclstub$(VER)${LIBSUFFIX}
+TCL_DLL_FILE		= tcl$(VER)${DLLSUFFIX}
+TCL_LIB_FILE		= tcl$(VER)${LIBSUFFIX}
+DDE_DLL_FILE		= tcldde$(VER)${DLLSUFFIX}
+REG_DLL_FILE		= tclreg$(VER)${DLLSUFFIX}
+PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
 
-SHARED_LIBRARIES = $(TCL_DLL) $(STUB_LIB) $(DDE_DLL) $(REG_DLL) $(PIPE_DLL)
-STATIC_LIBRARIES = $(TCL_LIB)
+SHARED_LIBRARIES = $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) $(DDE_DLL_FILE) \
+	           $(REG_DLL_FILE) $(PIPE_DLL_FILE)
+STATIC_LIBRARIES = $(TCL_LIB_FILE)
 
 TCLSH		= tclsh$(VER)${EXESUFFIX}
 TCLTEST		= tcltest${EXEEXT}
@@ -112,10 +132,6 @@ VPATH = $(GENERIC_DIR);$(WIN_DIR);$(COMPAT_DIR)
 AR		= @AR@
 CC		= @CC@
 AC_FLAGS	= @EXTRA_CFLAGS@ @DEFS@
-CFLAGS_OPTIMIZE = @CFLAGS_OPTIMIZE@
-CFLAGS_DEBUG	= @CFLAGS_DEBUG@
-CFLAGS_WARNING	= @CFLAGS_WARNING@
-CFLAGS		= @CFLAGS@ 
 CPPFLAGS	= @CPPFLAGS@
 LDFLAGS		= @LDFLAGS@
 EXEEXT		= @EXEEXT@
@@ -124,7 +140,6 @@ SHLIB_LD	= @SHLIB_LD@
 SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@
 SHLIB_CFLAGS	= @SHLIB_CFLAGS@
 SHLIB_SUFFIX	= @SHLIB_SUFFIX@
-TCL_DBGX	= @TCL_DBGX@
 VER		= @TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@
 DOTVER		= @TCL_MAJOR_VERSION@.@TCL_MINOR_VERSION@
 LIBS		= @LIBS@
@@ -254,37 +269,37 @@ libraries:
 
 man:
 
-$(TCLSH): $(TCL_LIB) $(TCLSH_OBJS)
-	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB) $(LIBS) $(CC_EXENAME) 
+$(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
+	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
 
-$(TCLTEST): $(TCL_LIB) $(TCLTEST_OBJS)
-	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB) $(LIBS) $(CC_EXENAME) 
+$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS)
+	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
 
 # The following targets are configured by autoconf to generate either
 # a shared library or static library
 
-${STUB_LIB}: ${STUB_OBJS}
-	@$(RM) ${STUB_LIB}
+${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
+	@$(RM) ${TCL_STUB_LIB_FILE}
 	@MAKE_LIB@ ${STUB_OBJS}
 
-${TCL_DLL}: ${TCL_OBJS}
-	@$(RM) ${TCL_DLL}
+${TCL_DLL_FILE}: ${TCL_OBJS}
+	@$(RM) ${TCL_DLL_FILE}
 	@MAKE_DLL@ ${TCL_OBJS}
 
-${TCL_LIB}: ${TCL_OBJS}
-	@$(RM) ${TCL_LIB}
+${TCL_LIB_FILE}: ${TCL_OBJS}
+	@$(RM) ${TCL_LIB_FILE}
 	@MAKE_LIB@ ${TCL_OBJS}
 
-${DDE_DLL}: ${DDE_OBJS} ${STUB_LIB}
-	@$(RM) ${DDE_DLL}
-	@MAKE_DLL@ ${DDE_OBJS} ${STUB_LIB}
+${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
+	@$(RM) ${DDE_DLL_FILE}
+	@MAKE_DLL@ ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 
-${REG_DLL}: ${REG_OBJS} ${STUB_LIB}
-	@$(RM) ${REG_DLL}
-	@MAKE_DLL@ ${REG_OBJS} ${STUB_LIB}
+${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
+	@$(RM) ${REG_DLL_FILE}
+	@MAKE_DLL@ ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 
-${PIPE_DLL}: ${PIPE_OBJS}
-	@$(RM) ${PIPE_DLL}
+${PIPE_DLL_FILE}: ${PIPE_OBJS}
+	@$(RM) ${PIPE_DLL_FILE}
 	@MAKE_DLL@ ${PIPE_OBJS}
 
 # Add the object extension to the implicit rules.  By default .obj is not
@@ -345,28 +360,28 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in $(TCL_DLL) $(TCLSH) $(PIPE_DLL); \
+	@for i in $(TCL_DLL_FILE) $(TCLSH) $(PIPE_DLL_FILE); \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i"; \
 		$(COPY) $$i "$(BIN_INSTALL_DIR)"; \
 	    fi; \
 	    done
-	@for i in $(TCL_LIB) $(STUB_LIB); \
+	@for i in $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE); \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i"; \
 		$(COPY) $$i "$(LIB_INSTALL_DIR)"; \
 	    fi; \
 	    done
-	@if [ -f $(DDE_DLL) ]; then \
-	    echo installing $(DDE_DLL); \
-	    $(COPY) $(DDE_DLL) $(LIB_INSTALL_DIR)/dde1.0; \
+	@if [ -f $(DDE_DLL_FILE) ]; then \
+	    echo installing $(DDE_DLL_FILE); \
+	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde1.0; \
 	    $(COPY) $(ROOT_DIR)/library/dde1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/dde1.0; \
 	    fi
-	@if [ -f $(REG_DLL) ]; then \
-	    echo installing $(REG_DLL); \
-	    $(COPY) $(REG_DLL) $(LIB_INSTALL_DIR)/reg1.0; \
+	@if [ -f $(REG_DLL_FILE) ]; then \
+	    echo installing $(REG_DLL_FILE); \
+	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
 	    $(COPY) $(ROOT_DIR)/library/reg1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 
@@ -393,31 +408,31 @@ install-libraries: libraries
 	    echo "Installing $$i"; \
 	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
-	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex; \
+	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; \
 	    do \
 	    echo "Installing $$i"; \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/tcl$(VERSION)"; \
 	    done;
 	@for i in http2.0 http1.0 opt0.4 msgcat1.0; \
 	    do \
-	    for j in $(TOP_DIR)/library/$$i/*.tcl; \
+	    for j in $(ROOT_DIR)/library/$$i/*.tcl; \
 		do \
 		echo "Installing $$j"; \
 		$(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/$$i"; \
 		done; \
 	    done;
 	@echo "Installing encodings"
-	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
+	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
 
 test: binaries $(TCLTEST)
-	@TCL_LIBRARY="$(TOP_DIR_NATIVE)/library"; export TCL_LIBRARY; \
-	    ./tcltest "$(TOP_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS)
+	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	    ./tcltest "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
-	@TCL_LIBRARY="$(TOP_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
 	    ./tcltest
 
 depend:
