@@ -1,3 +1,8 @@
+2004-03-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (InitParse):	Factored the common code
+	for initializing a Tcl_Parse struct into one routine.
+
 2004-03-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/reg/pkgIndex.tcl:  Added TIP #100 support to the
