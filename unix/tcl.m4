@@ -219,12 +219,13 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     fi
 
     #
-    # The eval is required to do the TCL_DBGX substitution in the
-    # TCL_LIB_FILE variable
+    # eval is required to do the TCL_DBGX substitution
     #
 
     eval TCL_LIB_FILE=${TCL_LIB_FILE}
     eval TCL_LIB_FLAG=${TCL_LIB_FLAG}
+    eval TCL_STUB_LIB_FILE=${TCL_STUB_LIB_FILE}
+    eval TCL_STUB_LIB_FLAG=${TCL_STUB_LIB_FLAG}
 
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
