@@ -1,6 +1,12 @@
 2005-03-31 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:
+	* generic/tclCompile.h: restoring lost line in
+	TclPrintInstruction, fixing yet another sign-extension 
+
+2005-03-31 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
 	* generic/tclCompile.h:
 	* generic/tclExecute.c: removing pointer-to-pc instead of jump
 	offsets (most of yesterday's commit): all pain, no gain.

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.16 2005/03/31 17:00:50 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.17 2005/03/31 18:07:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2929,6 +2929,7 @@ TclPrintInstruction(codePtr, pc)
 	opnds[0] = opnd;
     }
     for (i = 0;  i < instDesc->numOperands;  i++) {
+	opnd = opnds[i];
 	switch (instDesc->opTypes[i]) {
         case OPERAND_OFFSET:
 	    if (opCode == INST_START_CMD) {
@@ -4002,11 +4003,11 @@ OptInitCounts(codePtr, auxCount)
 	    case INST_LOAD:
 	    case INST_STORE:
 	        {
-		    int index, flags;
+		    TclPSizedInt index, flags;
 		    
 		    HP_EXTRACT(opnd, flags, index);
 		    
-		    if ((index < HPUINT_MAX)
+		    if ((index < (TclPSizedInt) HPUINT_MAX)
 			    && ((flags & ~VM_VAR_OMIT_PUSH) == TCL_LEAVE_ERR_MSG)) {
 			/*
 			 * A local scalar, plain load/store instructions: use
