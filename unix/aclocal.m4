@@ -564,7 +564,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_EXP_FILE=""
     STLIB_LD="ar cr"
     case $system in
-	AIX-4.[[2-9]])
+	AIX-4.[[1-9]])
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
 	    SHLIB_LD_LIBS='${LIBS}'
