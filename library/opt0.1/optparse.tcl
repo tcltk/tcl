@@ -13,9 +13,9 @@
 #             written initially with Brent Welch, itself initially
 #             based on work with Steve Uhler. Thanks them !
 #
-# SCCS: @(#) optparse.tcl 1.13 97/08/21 11:50:42
+# SCCS: %Z% $Id: optparse.tcl,v 1.2 1998/06/29 15:30:44 welch Exp $ 
 
-package provide opt 0.2
+package provide opt 0.3
 
 namespace eval ::tcl {
 
@@ -416,9 +416,6 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    OptNextDesc descriptions;
 	    set state [OptCurState $descriptions];
         }
-        if  {![Lempty $arguments]} {
-            return -code error [OptTooManyArgs $descriptions $arguments];
-        }
     }
 
     # Process one step for the state machine,
@@ -431,8 +428,12 @@ proc ::tcl::OptProcArgGiven {argname} {
 	# the special state/instruction "args" eats all
 	# the remaining args (if any)
 	if {($state == "args")} {
-	    OptCurSetValue descriptions $arguments;
-	    set arguments {};
+	    if {![Lempty $arguments]} {
+		# If there is no additional arguments, leave the default value
+		# in.
+		OptCurSetValue descriptions $arguments;
+		set arguments {};
+	    }
 #            puts "breaking out ('args' state: consuming every reminding args)"
 	    return -code break;
 	}
@@ -489,8 +490,8 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    value {
 		set item [OptCurDesc $descriptions];
                 # Test the values against their required type
-		if [catch {OptCheckType $arg\
-			[OptType $item] [OptTypeArgs $item]} val] {
+		if {[catch {OptCheckType $arg\
+			[OptType $item] [OptTypeArgs $item]} val]} {
 		    return -code error [OptBadValue $item $arg $val]
 		}
                 # consume the value
@@ -509,8 +510,8 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    optValue {
 		set item [OptCurDesc $descriptions];
                 # Test the values against their required type
-		if ![catch {OptCheckType $arg\
-			[OptType $item] [OptTypeArgs $item]} val] {
+		if {![catch {OptCheckType $arg\
+			[OptType $item] [OptTypeArgs $item]} val]} {
 		    # right type, so :
 		    # consume the value
 		    OptNextArg arguments;
@@ -541,10 +542,14 @@ proc ::tcl::OptKeyParse {descKey arglist} {
     }
 
     OptDoAll desc arglist;
+
+    if {![Lempty $arglist]} {
+	return -code error [OptTooManyArgs $desc $arglist];
+    }
     
     # Analyse the result
     # Walk through the tree:
-    OptTreeVars $desc "#[expr [info level]-1]" ;
+    OptTreeVars $desc "#[expr {[info level]-1}]" ;
 }
 
     # determine string length for nice tabulated output
@@ -583,13 +588,13 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
     switch -exact -- $type {
         int {
-            if ![regexp {^(-+)?[0-9]+$} $arg] {
+            if {![regexp {^(-+)?[0-9]+$} $arg]} {
                 error "not an integer"
             }
 	    return $arg;
         }
         float {
-            return [expr double($arg)]
+            return [expr {double($arg)}]
         }
 	script -
         list {
@@ -602,7 +607,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	    return $arg;
         }
         boolean {
-	    if ![regexp -nocase {^(true|false|0|1)$} $arg] {
+	    if {![regexp -nocase {^(true|false|0|1)$} $arg]} {
 		error "non canonic boolean"
             }
 	    # convert true/false because expr/if is broken with "!,...
@@ -644,7 +649,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
 	set larg [string tolower $arg];
 	set len  [string length $larg];
-	set last [expr $len-1];
+	set last [expr {$len-1}];
 
         foreach item [lrange $desc 1 end] {
             set flag [OptName $item]
@@ -798,7 +803,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
                 # varname type value
                 # varname value comment
 		
-                if [regexp {^-(.+)$} $arg1 x type] {
+                if {[regexp {^-(.+)$} $arg1 x type]} {
 		    # flags/optValue as they are optional, need a "value",
 		    # on the contrary, for a variable (non optional),
 	            # default value is pointless, 'cept for choices :
@@ -813,7 +818,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
                 }
             }
             4 {
-                if [regexp {^-(.+)$} $arg1 x type] {
+                if {[regexp {^-(.+)$} $arg1 x type]} {
 		    return [OptNewInst $state $varname $type $arg2 $arg3];
                 } else {
                     return -code error [OptOptUsage $item];
@@ -827,13 +832,13 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
     # Auto magic lasy type determination
     proc OptGuessType {arg} {
-        if [regexp -nocase {^(true|false)$} $arg] {
+        if {[regexp -nocase {^(true|false)$} $arg]} {
             return boolean
         }
-        if [regexp {^(-+)?[0-9]+$} $arg] {
+        if {[regexp {^(-+)?[0-9]+$} $arg]} {
             return int
         }
-        if ![catch {expr double($arg)}] {
+        if {![catch {expr {double($arg)}}]} {
             return float
         }
         return string
@@ -1029,7 +1034,7 @@ proc ::tcl::Lvarincr {listName indexLst {howMuch 1}} {
 # Increments the value of one cell of a list
 proc ::tcl::Lvarincr1 {listName index {howMuch 1}} {
     upvar $listName list;
-    set newValue [expr [lindex $list $index]+$howMuch];
+    set newValue [expr {[lindex $list $index]+$howMuch}];
     set list [lreplace $list $index $index $newValue];
     return $newValue;
 }

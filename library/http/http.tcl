@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) http.tcl 1.8 97/10/28 16:23:30
+# SCCS: %Z% $Id: http.tcl,v 1.2 1998/06/29 15:30:16 welch Exp $ 
 
 package provide http 2.0	;# This uses Tcl namespaces
 
@@ -73,7 +73,7 @@ proc http::config {args} {
 	}
     } else {
 	foreach {flag value} $args {
-	    if [regexp -- $pat $flag] {
+	    if {[regexp -- $pat $flag]} {
 		set http($flag) $value
 	    } else {
 		return -code error "Unknown option $flag, must be: $usage"
@@ -140,7 +140,7 @@ proc http::reset { token {why reset} } {
 
 proc http::geturl { url args } {
     variable http
-    if ![info exists http(uid)] {
+    if {![info exists http(uid)]} {
 	set http(uid) 0
     }
     set token [namespace current]::[incr http(uid)]
@@ -166,7 +166,7 @@ proc http::geturl { url args } {
     regsub -all -- - $options {} options
     set pat ^-([join $options |])$
     foreach {flag value} $args {
-	if [regexp $pat $flag] {
+	if {[regexp $pat $flag]} {
 	    # Validate numbers
 	    if {[info exists state($flag)] && \
 		    [regexp {^[0-9]+$} $state($flag)] && \
@@ -285,7 +285,7 @@ proc http::size {token} {
     upvar 0 $token state
     set s $state(sock)
 
-    if [::eof $s] then {
+     if {[::eof $s]} {
 	Eof $token
 	return
     }
@@ -293,7 +293,7 @@ proc http::size {token} {
 	set n [gets $s line]
 	if {$n == 0} {
 	    set state(state) body
-	    if ![regexp -nocase ^text $state(type)] {
+	    if {![regexp -nocase ^text $state(type)]} {
 		# Turn off conversions for non-text data
 		fconfigure $s -translation binary
 		if {[info exists state(-channel)]} {
@@ -307,20 +307,20 @@ proc http::size {token} {
 		CopyStart $s $token
 	    }
 	} elseif {$n > 0} {
-	    if [regexp -nocase {^content-type:(.+)$} $line x type] {
+	    if {[regexp -nocase {^content-type:(.+)$} $line x type]} {
 		set state(type) [string trim $type]
 	    }
-	    if [regexp -nocase {^content-length:(.+)$} $line x length] {
+	    if {[regexp -nocase {^content-length:(.+)$} $line x length]} {
 		set state(totalsize) [string trim $length]
 	    }
-	    if [regexp -nocase {^([^:]+):(.+)$} $line x key value] {
+	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
 		lappend state(meta) $key $value
 	    } elseif {[regexp ^HTTP $line]} {
 		set state(http) $line
 	    }
 	}
     } else {
-	if [catch {
+	if {[catch {
 	    if {[info exists state(-handler)]} {
 		set n [eval $state(-handler) {$s $token}]
 	    } else {
@@ -333,10 +333,10 @@ proc http::size {token} {
 	    if {$n >= 0} {
 		incr state(currentsize) $n
 	    }
-	} err] {
+	} err]} {
 	    Finish $token $err
 	} else {
-	    if [info exists state(-progress)] {
+	    if {[info exists state(-progress)]} {
 		eval $state(-progress) {$token $state(totalsize) $state(currentsize)}
 	    }
 	}
@@ -345,10 +345,10 @@ proc http::size {token} {
  proc http::CopyStart {s token} {
     variable $token
     upvar 0 $token state
-    if [catch {
+    if {[catch {
 	fcopy $s $state(-channel) -size $state(-blocksize) -command \
 	    [list http::CopyDone $token]
-    } err] {
+    } err]} {
 	Finish $token $err
     }
 }
@@ -357,7 +357,7 @@ proc http::size {token} {
     upvar 0 $token state
     set s $state(sock)
     incr state(currentsize) $count
-    if [info exists state(-progress)] {
+    if {[info exists state(-progress)]} {
 	eval $state(-progress) {$token $state(totalsize) $state(currentsize)}
     }
     if {([string length $error] != 0)} {
