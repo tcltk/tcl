@@ -10,11 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.1 2003/11/10 22:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.2 2004/06/14 15:22:38 patthoyts Exp $
  */
 
 #include "tclPort.h"
+#include <dde.h>
 #include <ddeml.h>
+#include <tchar.h>
 
 /*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
@@ -91,6 +93,10 @@ static HDDEDATA CALLBACK    DdeServerProc _ANSI_ARGS_((UINT uType,
 				HSZ ddeItem, HDDEDATA hData, DWORD dwData1, 
 				DWORD dwData2));
 static void		    SetDdeError _ANSI_ARGS_((Tcl_Interp *interp));
+static int                  DdeGetServicesList _ANSI_ARGS_((
+				Tcl_Interp *interp,
+				char *serviceName,
+				char *topicName));
 int Tcl_DdeObjCmd(ClientData clientData,	/* Used only for deletion */
 	Tcl_Interp *interp,		/* The interp we are sending from */
 	int objc,			/* Number of arguments */
@@ -755,6 +761,157 @@ MakeDdeConnection(
 /*
  *--------------------------------------------------------------
  *
+ * DdeGetServicesList --
+ *
+ *	This procedure obtains the list of DDE services.
+ *
+ *	The functions between here and this procedure are all
+ *	involved with handling the DDE callbacks for this.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Sets the services list into the interp result.
+ *
+ *--------------------------------------------------------------
+ */
+
+typedef struct ddeEnumServices {
+    Tcl_Interp *interp;
+    int         result;
+    ATOM        service;
+    ATOM        topic;
+    HWND        hwnd;
+} ddeEnumServices;
+
+LRESULT CALLBACK
+DdeClientWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static LRESULT
+DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam);
+
+static int
+DdeCreateClient(ddeEnumServices *es)
+{
+    WNDCLASSEX wc;
+    static const char *szDdeClientClassName = "TclEval client class";
+    static const char *szDdeClientWindowName = "TclEval client window";
+
+    memset(&wc, 0, sizeof(wc));
+    wc.cbSize = sizeof(wc);
+    wc.lpfnWndProc = DdeClientWindowProc;
+    wc.lpszClassName = szDdeClientClassName;
+    wc.cbWndExtra = sizeof(ddeEnumServices*);
+
+    /* register and create the callback window */
+    RegisterClassEx(&wc);
+    es->hwnd = CreateWindowEx(0, szDdeClientClassName,
+			      szDdeClientWindowName,
+			      WS_POPUP, 0, 0, 0, 0, NULL, NULL, NULL,
+			      (LPVOID)es);
+    return TCL_OK;
+}
+
+LRESULT CALLBACK
+DdeClientWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    LONG lr = 0L;
+
+    switch (uMsg) {
+	case WM_CREATE: {
+	    LPCREATESTRUCT lpcs = (LPCREATESTRUCT)lParam;
+	    ddeEnumServices *es;
+	    es = (ddeEnumServices*)lpcs->lpCreateParams;
+	    SetWindowLong(hwnd, GWL_USERDATA, (long)es);
+	    break;
+	}
+	case WM_DDE_ACK:
+	    lr =  DdeServicesOnAck(hwnd, wParam, lParam);
+	    break;
+	default:
+	    lr = DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
+    return lr;
+}
+
+static LRESULT
+DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
+{
+    HWND hwndRemote = (HWND)wParam;
+    ATOM service = (ATOM)LOWORD(lParam);
+    ATOM topic = (ATOM)HIWORD(lParam);
+    ddeEnumServices *es;
+    TCHAR sz[255];
+    
+    es = (ddeEnumServices *)GetWindowLong(hwnd, GWL_USERDATA);
+
+    if ((es->service == (ATOM)NULL || es->service == service)
+	&& (es->topic == (ATOM)NULL || es->topic == topic)) {
+	Tcl_Obj *matchPtr = Tcl_NewListObj(0, NULL);
+
+	GlobalGetAtomName(service, sz, 255);
+	Tcl_ListObjAppendElement(es->interp, matchPtr,
+		Tcl_NewStringObj(sz, -1));
+	GlobalGetAtomName(topic, sz, 255);
+	Tcl_ListObjAppendElement(es->interp, matchPtr,
+		Tcl_NewStringObj(sz, -1));
+	/* Adding the hwnd as a third list element provides a unique
+	 * identifier in the case of multiple servers with the name
+	 * application and topic names.
+	 */
+	/* Needs a TIP though
+	 * Tcl_ListObjAppendElement(es->interp, matchPtr,
+	 *	Tcl_NewLongObj((long)hwndRemote));
+	 */
+	Tcl_ListObjAppendElement(es->interp,
+		Tcl_GetObjResult(es->interp), matchPtr);
+    }
+
+    /* tell the server we are no longer interested */
+    PostMessage(hwndRemote, WM_DDE_TERMINATE, (WPARAM)hwnd, 0L);
+    return 0L;
+}
+
+static BOOL CALLBACK
+DdeEnumWindowsCallback(HWND hwndTarget, LPARAM lParam)
+{
+    DWORD dwResult = 0;
+    ddeEnumServices *es = (ddeEnumServices *)lParam;
+    SendMessageTimeout(hwndTarget, WM_DDE_INITIATE,
+		       (WPARAM)es->hwnd,
+		       MAKELONG(es->service, es->topic),
+		       SMTO_ABORTIFHUNG, 1000, &dwResult);
+    return TRUE;
+}
+
+static int
+DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
+{
+    ddeEnumServices es;
+    int r = TCL_OK;
+    es.interp = interp;
+    es.result = TCL_OK;
+    es.service = (serviceName == NULL) 
+	? (ATOM)NULL : GlobalAddAtom(serviceName);
+    es.topic = (topicName == NULL) 
+	? (ATOM)NULL : GlobalAddAtom(topicName);
+    
+    Tcl_ResetResult(interp); /* our list is to be appended to result. */
+    DdeCreateClient(&es);
+    EnumWindows(DdeEnumWindowsCallback, (LPARAM)&es);
+    
+    if (IsWindow(es.hwnd))
+        DestroyWindow(es.hwnd);
+    if (es.service != (ATOM)NULL)
+	GlobalDeleteAtom(es.service);
+    if (es.topic != (ATOM)NULL)
+	GlobalDeleteAtom(es.topic);
+    return es.result;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
  * SetDdeError --
  *
  *	Sets the interp result to a cogent error message
@@ -1132,46 +1289,7 @@ Tcl_DdeObjCmd(
 	}
 
 	case DDE_SERVICES: {
-	    HCONVLIST hConvList;
-	    CONVINFO convInfo;
-	    Tcl_Obj *convListObjPtr, *elementObjPtr;
-	    Tcl_DString dString;
-	    char *name;
-	    
-	    convInfo.cb = sizeof(CONVINFO);
-	    hConvList = DdeConnectList(ddeInstance, ddeService, 
-                    ddeTopic, 0, NULL);
-	    DdeFreeStringHandle(ddeInstance,ddeService);
-	    DdeFreeStringHandle(ddeInstance, ddeTopic);
-	    hConv = 0;
-	    convListObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-	    Tcl_DStringInit(&dString);
-
-	    while (hConv = DdeQueryNextServer(hConvList, hConv), hConv != 0) {
-		elementObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-		DdeQueryConvInfo(hConv, QID_SYNC, &convInfo);
-		length = DdeQueryString(ddeInstance, 
-                        convInfo.hszSvcPartner, NULL, 0, CP_WINANSI);
-		Tcl_DStringSetLength(&dString, length);
-		name = Tcl_DStringValue(&dString);
-		DdeQueryString(ddeInstance, convInfo.hszSvcPartner, 
-                        name, (DWORD) length + 1, CP_WINANSI);
-		Tcl_ListObjAppendElement(interp, elementObjPtr,
-			Tcl_NewStringObj(name, length));
-		length = DdeQueryString(ddeInstance, convInfo.hszTopic,
-			NULL, 0, CP_WINANSI);
-		Tcl_DStringSetLength(&dString, length);
-		name = Tcl_DStringValue(&dString);
-		DdeQueryString(ddeInstance, convInfo.hszTopic, name,
-			(DWORD) length + 1, CP_WINANSI);
-		Tcl_ListObjAppendElement(interp, elementObjPtr,
-			Tcl_NewStringObj(name, length));
-		Tcl_ListObjAppendElement(interp, convListObjPtr,
-			elementObjPtr);
-	    }
-	    DdeDisconnectList(hConvList);
-	    Tcl_SetObjResult(interp, convListObjPtr);
-	    Tcl_DStringFree(&dString);
+	    result = DdeGetServicesList(interp, serviceName, topicName);
 	    break;
 	}
 	case DDE_EVAL: {
