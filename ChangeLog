@@ -1,5 +1,7 @@
 2003-11-20  Miguel Sofer <msofer@users.sf.net>
 
+	*** 8.4.5 TAGGED FOR RELEASE ***
+
 	* generic/tclVar.c: fix flag bit collision between
 	LOOKUP_FOR_UPVAR and TCL_PARSE_PART1 (deprecated) [Bug 835020] 
 	
@@ -10,8 +12,6 @@
 	on [cd] (Windows only bug).
 	
 2003-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	*** 8.4.5 TAGGED FOR RELEASE ***
 
 	* changes: updated for 8.4.5 release
 
