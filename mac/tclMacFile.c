@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.7 1999/05/11 07:12:09 jingham Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.8 1999/08/10 04:21:35 jingham Exp $
  */
 
 /*
@@ -129,7 +129,7 @@ TclpMatchFiles(
 				 * point to a location in pattern and must
 				 * not be static.*/
 {
-    char *dirName, *patternEnd = tail;
+    char *patternEnd = tail;
     char savedChar;
     int result = TCL_OK;
     int baseLength = Tcl_DStringLength(dirPtr);
@@ -147,8 +147,11 @@ TclpMatchFiles(
      * directory.
      */
 
-    dirName = dirPtr->string;
-    FSpLocationFromPath(strlen(dirName), dirName, &dirSpec);
+    Tcl_UtfToExternalDString(NULL, dirPtr->string, dirPtr->length, &fileString);
+    
+    FSpLocationFromPath(fileString.length, fileString.string, &dirSpec);
+    Tcl_DStringFree(&fileString);
+    
     err = FSpGetDirectoryID(&dirSpec, &dirID, &isDirectory);
     if ((err != noErr) || !isDirectory) {
 	return TCL_OK;
