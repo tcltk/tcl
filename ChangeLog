@@ -1,3 +1,9 @@
+2002-06-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* doc/CrtInterp.3:
+	* doc/StringObj.3: clarifications by Don Porter, bugs #493995 and
+	#500930. 
+	
 2002-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Corrected suppression of -verbose skip
