@@ -4,13 +4,17 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.1.2.4 1999/03/12 23:47:00 surles Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.1.2.5 1999/04/13 00:01:57 surles Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNames, Tcl_CreateEncoding \- procedures for creating and using encodings.
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings.
+
+
+
+
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -238,13 +242,13 @@ TCL_OK.
 \fBTcl_GetEncodingNames\fR sets the \fIinterp\fR result to a list
 consisting of the names of all the encodings that are currently defined
 or can be dynamically loaded, searching the encoding path specified by
-\fBTcl_SetEncodingPath\fR.  This procedure does not ensure that the
+\fBTcl_SetDefaultEncodingDir\fR.  This procedure does not ensure that the
 dynamically-loadable encoding files contain valid data, but merely that they
 exist.
 .PP
 \fBTcl_CreateEncoding\fR defines a new encoding and registers the C
 procedures that are called back to convert between the encoding and
-UTF-8.  Encodings created by \fBTcl_CreateEncodingType\fR are thereafter
+UTF-8.  Encodings created by \fBTcl_CreateEncoding\fR are thereafter
 visible in the database used by \fBTcl_GetEncoding\fR.  Just as with the
 \fBTcl_GetEncoding\fR procedure, the return value is a token that
 represents the encoding and can be used in subsequent calls to other

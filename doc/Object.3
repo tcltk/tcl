@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.1.2.2 1998/09/24 23:58:25 stanton Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.1.2.3 1999/04/13 00:01:58 surles Exp $
 '\" 
 .so man.macros
 .TH Tcl_Obj 3 8.0 Tcl "Tcl Library Procedures"
@@ -209,7 +209,7 @@ free any storage associated with the old string representation.
 Objects usually remain one type over their life,
 but occasionally an object must be converted from one type to another.
 For example, a C program might build up a string in an object
-with repeated calls to \fBTcl_StringObjAppend\fR,
+with repeated calls to \fBTcl_ObjAppend\fR,
 and then call \fBTcl_ListObjIndex\fR to extract a list element from
 the object.
 The same object holding the same string value
