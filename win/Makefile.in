@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.23 1999/12/07 00:18:32 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.24 1999/12/07 00:40:55 wart Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -282,7 +282,7 @@ TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
 TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} ${COMPAT_OBJS}
 
-TCL_DOCS = $(ROOT_DIR)/doc/*.[13n]
+TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
 all: binaries libraries doc
 
@@ -294,13 +294,13 @@ libraries:
 
 doc:
 
-winhelp: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL) $(TCL_DOCS)
+winhelp: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)"/tools/man2help.tcl tcl "$(VER)" $(TCL_DOCS)
 	hcw /c /e tcl.hpj
 
 $(MAN2TCL): $(ROOT_DIR)/tools/man2tcl.c
-	$(CC) $(CFLAGS) $(MAN2TCLFLAGS) -o $(MAN2TCL) "$(ROOT_DIR_NATIVE)"/tools/man2tcl.c
+	$(CC) $(CFLAGS_OPTIMIZE) $(MAN2TCLFLAGS) -o $(MAN2TCL) "$(ROOT_DIR_NATIVE)"/tools/man2tcl.c
 
 $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
