@@ -1117,6 +1117,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	        EXTRA_CFLAGS="${EXTRA_CFLAGS} -fno-inline"
 	    fi
 
+	    # XIM peeking works under XFree86.
+	    AC_DEFINE(PEEK_XCLOSEIM)
+
 	    ;;
 	GNU*)
 	    SHLIB_CFLAGS="-fPIC"
