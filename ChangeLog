@@ -1,3 +1,9 @@
+2002-02-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclMain.c (Tcl_Main,StdinProc):  Corrected some reference
+	count management errors on the interactive command Tcl_Obj found by
+	Purify.  Thanks to Jeff Hobbs for the report and assistance.
+
 2002-02-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclBasic.c (Tcl_EvalTokensStandard): corrected mem leak
