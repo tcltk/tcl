@@ -1,3 +1,12 @@
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdIL.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* generic/tclVar.c: changing the isProcCallFrame field of the
+	CallFrame struct from a 0/1 field to flags. Should be perfectly
+	backwards compatible.
+
 2004-12-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/configure.in:	Added special processing to remove "$U"

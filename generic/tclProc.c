@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.67 2004/12/10 13:09:15 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.68 2004/12/14 21:11:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -976,7 +976,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
      */
 
     result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
-	    (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 1);
+	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC);
 
     if (result != TCL_OK) {
 	return result;
