@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.21 2002/07/19 13:59:10 dkf Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.22 2002/11/07 02:13:37 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -632,11 +632,11 @@ SerialCloseProc(
 
     /*
      * Don't close the Win32 handle if the handle is a standard channel
-     * during the exit process.  Otherwise, one thread may kill the stdio
-     * of another.
+     * during the thread exit process.  Otherwise, one thread may kill
+     * the stdio of another.
      */
 
-    if (!TclInExit()
+    if (!TclInThreadExit()
         || ((GetStdHandle(STD_INPUT_HANDLE) != serialPtr->handle)
         && (GetStdHandle(STD_OUTPUT_HANDLE) != serialPtr->handle)
         && (GetStdHandle(STD_ERROR_HANDLE) != serialPtr->handle))) {

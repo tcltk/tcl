@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.47 2002/10/09 12:28:01 das Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.48 2002/11/07 02:13:36 mdejong Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -496,6 +496,8 @@ EXTERN int		TclCheckExecutionTraces _ANSI_ARGS_((
 				int numChars, Command * cmdPtr, int result, 
 				int traceFlags, int objc, 
 				Tcl_Obj *CONST objv[]));
+/* 172 */
+EXTERN int		TclInThreadExit _ANSI_ARGS_((void));
 
 typedef struct TclIntStubs {
     int magic;
@@ -697,6 +699,7 @@ typedef struct TclIntStubs {
     int (*tclpUtfNcmp2) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 169 */
     int (*tclCheckInterpTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 170 */
     int (*tclCheckExecutionTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 171 */
+    int (*tclInThreadExit) _ANSI_ARGS_((void)); /* 172 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1298,6 +1301,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclCheckExecutionTraces
 #define TclCheckExecutionTraces \
 	(tclIntStubsPtr->tclCheckExecutionTraces) /* 171 */
+#endif
+#ifndef TclInThreadExit
+#define TclInThreadExit \
+	(tclIntStubsPtr->tclInThreadExit) /* 172 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
