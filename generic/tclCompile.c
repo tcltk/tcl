@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.46 2003/03/19 22:24:14 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.47 2003/04/18 21:54:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1381,15 +1381,10 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 
     /*
      * If the expression is a single word that doesn't require
-     * substitutions, just compile it's string into inline instructions.
+     * substitutions, just compile its string into inline instructions.
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	/*
-	 * Temporarily overwrite the character just after the end of the
-	 * string with a 0 byte.
-	 */
-
 	script = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
 	code = TclCompileExpr(interp, script, numBytes, envPtr);
