@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.24 2002/01/23 20:46:01 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.25 2002/01/24 01:34:16 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1471,7 +1471,7 @@ Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
     Tcl_Interp *interp;			/* For error reporting - may be
                                          * NULL. */
     int port;				/* Port number to open. */
-    COSNT char *host;			/* Name of local host. */
+    CONST char *host;			/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc;	/* Callback for accepting connections
                                          * from new clients. */
     ClientData acceptProcData;		/* Data for the callback. */
