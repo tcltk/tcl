@@ -8,7 +8,7 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * RCS: @(#) $Id: strftime.c,v 1.6 2000/01/14 22:15:51 ericm Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.7 2000/01/15 01:50:43 hobbs Exp $
  */
 
 /*
@@ -45,7 +45,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.6 2000/01/14 22:15:51 ericm Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.7 2000/01/15 01:50:43 hobbs Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -55,6 +55,7 @@ static char *rcsid = "$Id: strftime.c,v 1.6 2000/01/14 22:15:51 ericm Exp $";
 #include "tclPort.h"
 
 #define TM_YEAR_BASE   1900
+#define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 
 typedef struct {
     const char *abday[7];
