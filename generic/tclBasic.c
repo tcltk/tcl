@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.24 2000/01/21 02:25:25 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.25 2000/03/31 08:52:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2025,8 +2025,8 @@ Tcl_SetCommandInfo(interp, cmdName, infoPtr)
     Tcl_Interp *interp;			/* Interpreter in which to look
 					 * for command. */
     char *cmdName;			/* Name of desired command. */
-    Tcl_CmdInfo *infoPtr;		/* Where to store information about
-					 * command. */
+    Tcl_CmdInfo *infoPtr;		/* Where to find store information
+					 * to store in the command. */
 {
     Tcl_Command cmd;
     Command *cmdPtr;
@@ -2315,6 +2315,16 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 	 * the "real" command that this imported command refers to.
 	 */
 	
+	/*
+	 * If you are getting a crash during the call to deleteProc and
+	 * cmdPtr->deleteProc is a pointer to the function free(), the
+	 * most likely cause is that your extension allocated memory
+	 * for the clientData argument to Tcl_CreateObjCommand() with
+	 * the ckalloc() macro and you are now trying to deallocate
+	 * this memory with free() instead of ckfree(). You should
+	 * pass a pointer to your own method that calls ckfree().
+	 */
+
 	(*cmdPtr->deleteProc)(cmdPtr->deleteData);
     }
 

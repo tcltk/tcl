@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.19 1999/12/12 22:46:42 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.20 2000/03/31 08:52:04 hobbs Exp $
 
 library tcl
 
@@ -751,9 +751,10 @@ declare 8 win {
 declare 9 win {
     int TclWinGetPlatformId(void)
 }
-declare 10 win {
-    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
-}
+# Removed in 8.3.1 (for Win32s only)
+#declare 10 win {
+#    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
+#}
 
 # Pipe channel functions
 

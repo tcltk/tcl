@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.31 2000/01/24 02:29:58 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.32 2000/03/31 08:52:06 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -264,7 +264,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinSetSockOpt, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
-    TclWinSynchSpawn, /* 10 */
+    NULL, /* 10 */
     TclGetAndDetachPids, /* 11 */
     TclpCloseFile, /* 12 */
     TclpCreateCommandChannel, /* 13 */

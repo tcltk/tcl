@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.7 1999/08/01 20:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8 2000/03/31 08:52:05 hobbs Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -85,9 +85,7 @@ EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
 EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
 /* 9 */
 EXTERN int		TclWinGetPlatformId _ANSI_ARGS_((void));
-/* 10 */
-EXTERN int		TclWinSynchSpawn _ANSI_ARGS_((void * args, int type, 
-				void ** trans, Tcl_Pid * pidPtr));
+/* Slot 10 is reserved */
 /* 11 */
 EXTERN void		TclGetAndDetachPids _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Channel chan));
@@ -226,7 +224,7 @@ typedef struct TclIntPlatStubs {
     int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, CONST char FAR * optval, int optlen)); /* 7 */
     unsigned long (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
-    int (*tclWinSynchSpawn) _ANSI_ARGS_((void * args, int type, void ** trans, Tcl_Pid * pidPtr)); /* 10 */
+    void *reserved10;
     void (*tclGetAndDetachPids) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 11 */
     int (*tclpCloseFile) _ANSI_ARGS_((TclFile file)); /* 12 */
     Tcl_Channel (*tclpCreateCommandChannel) _ANSI_ARGS_((TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid * pidPtr)); /* 13 */
@@ -365,10 +363,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinGetPlatformId \
 	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
 #endif
-#ifndef TclWinSynchSpawn
-#define TclWinSynchSpawn \
-	(tclIntPlatStubsPtr->tclWinSynchSpawn) /* 10 */
-#endif
+/* Slot 10 is reserved */
 #ifndef TclGetAndDetachPids
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 11 */
