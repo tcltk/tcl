@@ -7,13 +7,20 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.43 2003/11/10 20:34:17 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.44 2004/01/17 07:29:09 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
 #include <winnt.h>
 #include <winbase.h>
 #include <lmcons.h>
+
+/*
+ * GetUserName() is found in advapi32.dll
+ */
+#ifdef _MSC_VER
+#   pragma comment(lib, "advapi32.lib")
+#endif
 
 /*
  * The following declaration is a workaround for some Microsoft brain damage.
