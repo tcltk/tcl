@@ -2,9 +2,9 @@
 
 	* tests/winPipe.test: more pass-thru commandline verifications.
 	* win/tclWinPipe.c (BuildCommandLine): Special case quoting for
-	'{' not required by the c-runtimes's _setargv().
+	'{' not required by the c-runtimes's parse_cmdline().
 	* win/tclAppInit.c: Removed our custom setargv() in favor of
-	the one provided by the c-runtime. [Bug 672938]
+	the work provided by the c-runtime. [Bug 672938]
 
 	* win/nmakehlp.c: defensive techniques to avoid static buffer
 	overflows and a couple envars upsetting invokations of cl.exe
