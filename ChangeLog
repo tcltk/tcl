@@ -1,5 +1,12 @@
 2003-09-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	TIP#121 IMPLEMENTATION FROM JOE MISTACHKIN
+
+	* generic/tclEvent.c (Tcl_SetExitProc,Tcl_Exit): Implementation of
+	application exit handler scheme.
+	* generic/tcl.decls (Tcl_SetExitProc): Public declaration.
+	* doc/Exit.3: Documentation of new API function.
+
 	TIP#112 IMPLEMENTATION
 
 	* generic/tclNamesp.c: Core of implementation.

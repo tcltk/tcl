@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.133 2003/09/29 14:37:14 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.134 2003/09/29 21:38:49 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1094,6 +1094,14 @@ typedef struct Command {
 #define CMD_HAS_EXEC_TRACES	0x4
 
 /*
+ * Flag bits for saying what limits are enabled on an interpreter, as
+ * defined in TIP #143.
+ */
+
+#define LIMIT_COMMAND_COUNTS	0x1
+#define LIMIT_WALL_TIME		0x2
+
+/*
  *----------------------------------------------------------------
  * Data structures related to name resolution procedures.
  *----------------------------------------------------------------
@@ -1124,6 +1132,21 @@ typedef struct ResolverScheme {
     struct ResolverScheme *nextPtr;
 				/* Pointer to next record in linked list. */
 } ResolverScheme;
+
+/*
+ *----------------------------------------------------------------
+ * This structure defines a list of interpreter/handler script pairs
+ * that will be called when a particular limit is exceeded in some
+ * interpreter.
+ *----------------------------------------------------------------
+ */
+
+typedef struct LimitHandler {
+    Tcl_Interp *interp;		/* Which interpreter to execute the handler
+				 * in. */
+    Tcl_Obj *handlerObj;	/* The handler script itself. */
+    struct LimitHandler *next;	/* Pointer to next handler in linked list. */
+} LimitHandler;
 
 /*
  *----------------------------------------------------------------
@@ -1323,6 +1346,26 @@ typedef struct Interp {
     Tcl_Obj *returnErrorlineKey;	/* holds "-errorline" */
     Tcl_Obj *returnLevelKey;	/* holds "-level" */
     Tcl_Obj *returnOptionsKey;	/* holds "-options" */
+
+    /*
+     * Resource limit control fields (TIP #143)
+     */
+
+    long limitCheckCounter;	/* Counter used to constrain the frequency
+				 * of limit checks. */
+    int  limits;		/* Which limits are to be checked. */
+    long timeGranularity;	/* Modulus for the limit check counter to
+				 * determine when to apply the time limit
+				 * checks. */
+    long timeLimit;		/* When the time limit expires. */
+    LimitHandler *timeLimitHandlers;
+				/* Linked list of time limit handlers. */
+    long cmdcountGranularity;	/* As with timeLimitGranularity except
+				 * for being for command count limits. */
+    int  cmdcountLimit;		/* The maximum number of commands that this
+				 * interpreter may execute. */
+    LimitHandler *cmdcountLimitHandlers;
+				/* Linked list of cmdcount limit handlers. */
 
     /*
      * Statistical information about the bytecode compiler and interpreter's
