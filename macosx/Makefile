@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.9 2004/11/11 01:17:07 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.10 2004/11/19 06:29:23 das Exp $
 #
 ########################################################################################################
 
@@ -101,7 +101,6 @@ TCL_EXE			?= ${SYMROOT}/${TCLSH}
 
 DYLIB_INSTALL_PATH	?= ${INSTALL_PATH}
 
-TCL_LIBRARY		:= @TCL_IN_FRAMEWORK@
 LIBDIR			:= ${INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${PRODUCT_VERSION}
 DYLIB_INSTALL_DIR	:= ${DYLIB_INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${PRODUCT_VERSION}
 INCLUDEDIR		:= ${LIBDIR}/Headers
@@ -115,7 +114,7 @@ OBJ_DIR			= ${OBJROOT}/${BUILD_STYLE}
 
 ${PROJECT}:		override INSTALL_ROOT = ${OBJ_DIR}/
 
-MAKE_VARS		:= INSTALL_ROOT TCL_PACKAGE_PATH TCL_LIBRARY DYLIB_INSTALL_DIR
+MAKE_VARS		:= INSTALL_ROOT TCL_PACKAGE_PATH DYLIB_INSTALL_DIR
 MAKE_ARGS_V		= $(foreach v,${MAKE_VARS},$v=${$v})
 export CPPROG		:= cp -p
 
