@@ -1,3 +1,57 @@
+1999-10-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* library/init.tcl: removed [info nameof]/../bin from auto_path
+	* unix/configure.in:
+	* win/configure.in:
+	* README:
+	* mac/README:
+	* win/README.binary:
+	* tools/tcl.wse.in:
+	* generic/tcl.h: updated to patchlevel 2
+
+	* library/http2.1/http.tcl: protected gets with catch [Bug: 2665]
+	Fixed a bug in the handling of
+	the state(status) variable when the -timeout flag is specified.
+	Previously it was possible to leave the status undefined
+	instead of empty, which caused errors in http::status
+
+	* mac/tclMacLoad.c: Stupid bug - we converted the filename to
+	external, but used the unconverted version.
+	* mac/tclMacFCmd.c: Fix a merge error in the bug fix for [Bug: 2869]
+
+	* tests/string.test:
+	* generic/tclCmdMZ.c: fixed [string index] to return ByteArrayObj
+	when indexing into one (test case string-5.16) [Bug: 2871]
+
+	* tests/incr.test:
+	* tests/set.test:
+	* generic/tclCompCmds.c: fixed improper bytecode handling of
+	'eval {set array($unknownvar) 5}' (also for incr)
+
+	* unix/tclUnixNotfy.c: fixed event/io threading problems by
+	making triggerPipe non-blocking
+
+	* library/tcltest1.0/tcltest.tcl:
+	* generic/tclThreadTest.c: fixed mem leaks in threads
+
+	* generic/tclStringObj.c: fixed Tcl_AppendStringsToObjVA and
+	* generic/tclResult.c: fixed Tcl_AppendResultVA to only
+	iterates once over the va_list (avoiding a memcpy of it,
+	which is not portable).
+
+	* generic/tclCompile.c: removed savedChar trick that appeared to
+	be causing a segv when the literal table was released
+
+	* generic/tclEnv.c: fixed mem leak with putenv and DStrings
+	and fixed possible ABR error in environ array
+	* tests/encoding.test: fixed test case that change system
+	encoding to a double-byte one (this causes a bogus mem read
+	error for purify)
+	* unix/Makefile.in: purify has to use -best-effort to instrument
+	* unix/tclUnixPipe.c: fixed mem leak in TclpCreateProcess when
+	doing alloc between vfork and execvp.
+	* unix/tclUnixTest.c: fixed mem leak in findexecutable test command
+
 1999-10-19  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/pkgIndex.tcl: Removed nonexistent
