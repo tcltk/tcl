@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.9 2001/10/15 10:30:07 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.10 2001/11/10 02:34:57 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
@@ -243,7 +243,7 @@ Under some circumstances, the filesystem code may wish to retain a
 reference to the passed in object, and so one must not assume that
 after any of these calls return, the object still has a refCount of
 zero - it may have been incremented.  The practical lesson to learn
-from this is that \fbTcl_Obj *path = Tcl_NewStringObj(...) ;
+from this is that \fBTcl_Obj *path = Tcl_NewStringObj(...) ;
 Tcl_FS...(path) ; Tcl_DecrRefCount(path)\fR is wrong, and may
 segfault.  The 'path' must have its refCount incremented before
 passing it in, or decrementing it.
@@ -277,10 +277,10 @@ function.
 \fBTcl_FSRenameFile\fR attempts to rename the file or directory given by
 srcPathPtr to the path name given by destPathPtr.  If the two paths
 given lie in the same filesystem (according to
-\fBTcl_FSGetFileSystemForPath\fR) then that filesystem's 'rename file' function
-is called (if it is non-NULL).  Otherwise the function returns -1 and
-sets Tcl's errno to the 'EXDEV' posix error code (which signifies a
-'cross-domain link').
+\fBTcl_FSGetFileSystemForPath\fR) then that filesystem's 'rename file'
+function is called (if it is non-NULL).  Otherwise the function returns -1
+and sets Tcl\'s errno to the 'EXDEV' posix error code (which signifies
+a ``cross-domain link'').
 .PP
 \fBTcl_FSListVolumes\fR calls each filesystem which has a non-NULL 'list
 volumes' function and asks them to return their list of root volumes.  It
@@ -502,7 +502,7 @@ be left in the interpreter.
 path object, in the given filesystem.  If the path object belongs to a
 different filesystem, we return NULL. If the internal representation is
 currently NULL, we attempt to generate it, by calling the filesystem's
-'TclfsConvertToInternalProc_'.
+\fBTclfsConvertToInternalProc_\fR.
 .PP
 Returns NULL or a valid internal path representation.  This internal
 representation is cached, so that repeated calls to this function will
@@ -734,8 +734,8 @@ typedef ClientData Tcl_FSCreateInternalRepProc(
 .PP
 Function to normalize a path.  Should be implemented for all
 filesystems which can have multiple string representations for the same
-path object.  In Tcl, every 'path' must have a single unique
-'normalized' string representation.  Depending on the filesystem,
+path object.  In Tcl, every 'path' must have a single unique 'normalized'
+string representation.  Depending on the filesystem,
 there may be more than one unnormalized string representation which
 refers to that path (e.g. a relative path, a path with different
 character case if the filesystem is case insensitive, a path contain a
@@ -758,7 +758,7 @@ them are not implemented, then certain Tcl commands may fail when
 operating on paths within that filesystem.  However, in some instances
 this may be desirable (for example, a read-only filesystem should not
 implement the last four functions, and a filesystem which does not
-support symbolic links need not implement the 'readlink' function,
+support symbolic links need not implement the \fBreadlink\fR function,
 etc.  The Tcl core expects filesystems to behave in this way).
 .PP
 .SH FILESYSTEMPATHTYPEPROC
@@ -778,7 +778,7 @@ typedef Tcl_Obj* Tcl_FSFilesystemPathTypeProc(
 .SH FILESYSTEMSEPARATORPROC
 .PP
 Function to return the separator character(s) for this filesystem.
-Must be implemented, otherwise the 'file separator' command will not
+Must be implemented, otherwise the \fBfile separator\fR command will not
 function correctly.  The usual return value will be a Tcl_Obj
 containing the string "/".
 .PP
@@ -789,10 +789,10 @@ typedef Tcl_Obj* Tcl_FSFilesystemSeparatorProc(
 .PP
 .SH STATPROC 
 .PP
-Function to process a 'Tcl_FSStat()' call.  Must be implemented for any
+Function to process a \fBTcl_FSStat()\fR call.  Must be implemented for any
 reasonable filesystem, since many Tcl level commands depend crucially 
-upon it (e.g. 'file atime', 'file isdirectory', 'file size', 'glob').
-See the documentation of '
+upon it (e.g. \fBfile atime\fR, \fBfile isdirectory\fR, \fBfile size\fR,
+\fBglob\fR).
 .PP
 .CS
 typedef int Tcl_FSStatProc(
@@ -816,9 +816,9 @@ data.  Otherwise, -1 is returned, and no stat info is given.
 .PP
 .SH ACCESSPROC	    
 .PP
-Function to process a 'Tcl_FSAccess()' call.  Must be implemented for
+Function to process a \fBTcl_FSAccess()\fR call.  Must be implemented for
 any reasonable filesystem, since many Tcl level commands depend crucially 
-upon it (e.g. 'file exists', 'file readable').
+upon it (e.g. \fBfile exists\fR, \fBfile readable\fR).
 .PP
 .CS
 typedef int Tcl_FSAccessProc(
@@ -837,10 +837,10 @@ or some other  error occurred), -1 is returned.
 .PP
 .SH OPENFILECHANNELPROC 
 .PP
-Function to process a 'Tcl_FSOpenFileChannel()' call.  Must be
+Function to process a \fBTcl_FSOpenFileChannel()\fR call.  Must be
 implemented for any reasonable filesystem, since any operations
 which require open or accessing a file's contents will use it 
-(e.g. 'open', 'encoding', and many Tk commands).
+(e.g. \fBopen\fR, \fBencoding\fR, and many Tk commands).
 .PP
 .CS
 typedef Tcl_Channel Tcl_FSOpenFileChannelProc(
@@ -870,7 +870,7 @@ as a replacement for the standard channel.
 .PP
 .SH MATCHINDIRECTORYPROC  
 .PP
-Function to process a 'Tcl_FSMatchInDirectory()' call.  If not
+Function to process a \fBTcl_FSMatchInDirectory()\fR call.  If not
 implemented, then glob and recursive copy functionality will be lacking
 in the filesystem (and this may impact commands like 'encoding names' 
 which use glob functionality internally).
@@ -900,7 +900,7 @@ to \fIresult\fR should include any path prefix given in \fIpathPtr\fR
  .PP
 .SH UTIMEPROC       
 .PP
-Function to process a 'Tcl_FSUtime()' call.  Required to allow setting
+Function to process a \fBTcl_FSUtime()\fR call.  Required to allow setting
 (not reading) of times with 'file mtime', 'file atime' and the
 open-r/open-w/fcopy implementation of 'file copy'.
 .PP
@@ -918,7 +918,7 @@ occurred in the process.
 .PP
 .SH LINKPROC 
 .PP
-Function to process a 'Tcl_FSLink()' call.  Should be implemented
+Function to process a \fBTcl_FSLink()\fR call.  Should be implemented
 only if the filesystem supports links, and may otherwise be NULL.
 .PP
 .CS
@@ -963,10 +963,10 @@ Therefore, Tcl considers return values from this proc to be read-only.
 .SH FILEATTRSTRINGSPROC
 .PP
 Function to list all attributes strings which are valid for this
-filesystem.  If not implemented the filesystem will not support the
-'file attributes' command.  This allows arbitrary additional
+filesystem.  If not implemented the filesystem will not support
+the \fBfile attributes\fR command.  This allows arbitrary additional
 information to be attached to files in the filesystem.  If it is
-not implemented, there is no need to implement the 'get' and 'set'
+not implemented, there is no need to implement the \fBget\fR and \fBset\fR
 methods.
 .PP
 .CS
@@ -985,7 +985,7 @@ filesystem should ensure it retains a refCount on the object.
 .PP
 .SH FILEATTRSGETPROC
 .PP
-Function to process a 'Tcl_FSFileAttrsGet()' call, used by 'file
+Function to process a \fBTcl_FSFileAttrsGet()\fR call, used by 'file
 attributes'.
 .PP
 .CS
@@ -1005,7 +1005,7 @@ Incr/Decr its refCount to ensure it is properly freed.
 .PP
 .SH FILEATTRSSETPROC
 .PP
-Function to process a 'Tcl_FSFileAttrsSet()' call, used by 'file
+Function to process a \fBTcl_FSFileAttrsSet()\fR call, used by 'file
 attributes'.  If the filesystem is read-only, there is no need
 to implement this.
 .PP
@@ -1022,7 +1022,7 @@ the Tcl_FSFileAttrStringsProc should be set to the \fIobjPtr\fR given.
 .PP
 .SH CREATEDIRECTORYPROC	    
 .PP
-Function to process a 'Tcl_FSCreateDirectory()' call.  Should be
+Function to process a \fBTcl_FSCreateDirectory()\fR call.  Should be
 implemented unless the FS is read-only.
 .PP
 .CS
@@ -1057,7 +1057,7 @@ the file or directory which caused the error should be placed in
 .PP
 .SH DELETEFILEPROC	    
 .PP
-Function to process a 'Tcl_FSDeleteFile()' call.  Should be implemented
+Function to process a \fBTcl_FSDeleteFile()\fR call.  Should be implemented
 unless the FS is read-only.
 .PP
 .CS
@@ -1073,10 +1073,10 @@ occurred in the process.  If successful, the file specified by
 .PP
 .SH LSTATPROC	    
 .PP
-Function to process a 'Tcl_FSLstat()' call.  If not implemented, Tcl
-will attempt to use the 'statProc' defined above instead.  Therefore
+Function to process a \fBTcl_FSLstat()\fR call.  If not implemented, Tcl
+will attempt to use the \fIstatProc\fR defined above instead.  Therefore
 it need only be implemented if a filesystem can differentiate between
-'stat' and 'lstat' calls.
+\fBstat\fR and \fBlstat\fR calls.
 .PP
 .CS
 typedef int Tcl_FSLstatProc(
@@ -1091,7 +1091,7 @@ about the target file.
 .PP
 .SH COPYFILEPROC 
 .PP
-Function to process a 'Tcl_FSCopyFile()' call.  If not implemented Tcl
+Function to process a \fBTcl_FSCopyFile()\fR call.  If not implemented Tcl
 will fall back on open-r, open-w and fcopy as a copying mechanism.
 Therefore it need only be implemented if the filesystem can perform
 that action more efficiently.
@@ -1111,7 +1111,7 @@ copy' subcommand).
 .PP
 .SH RENAMEFILEPROC	    
 .PP
-Function to process a 'Tcl_FSRenameFile()' call.  If not implemented,
+Function to process a \fBTcl_FSRenameFile()\fR call.  If not implemented,
 Tcl will fall back on a copy and delete mechanism.  Therefore it need
 only be implemented if the filesystem can perform that action more
 efficiently.
@@ -1127,7 +1127,7 @@ occurred in the renaming process.
 .PP
 .SH COPYDIRECTORYPROC	    
 .PP
-Function to process a 'Tcl_FSCopyDirectory()' call.  If not
+Function to process a \fBTcl_FSCopyDirectory()\fR call.  If not
 implemented, Tcl will fall back on a recursive create-dir, file copy
 mechanism.  Therefore it need only be implemented if the filesystem can
 perform that action more efficiently.
@@ -1150,7 +1150,7 @@ than the Tcl level 'file copy' subcommand).
 .PP
 .SH LOADFILEPROC 
 .PP
-Function to process a 'Tcl_FSLoadFile()' call.  If not implemented, Tcl
+Function to process a \fBTcl_FSLoadFile()\fR call.  If not implemented, Tcl
 will fall back on a copy to native-temp followed by a Tcl_FSLoadFile on
 that temporary copy.  Therefore it need only be implemented if the
 filesystem can load code directly, or to disable load functionality
@@ -1191,7 +1191,7 @@ typedef void Tcl_FSUnloadFileProc(
 .PP
 .SH GETCWDPROC     
 .PP
-Function to process a 'Tcl_FSGetCwd()' call.  Most filesystems need not
+Function to process a \fBTcl_FSGetCwd()\fR call.  Most filesystems need not
 implement this.  It will usually only be called once, if 'getcwd' is
 called before 'chdir'.  May be NULL.
 .PP
@@ -1209,7 +1209,7 @@ error message is left in the interp's result.
 .PP
 .SH CHDIRPROC	    
 .PP
-Function to process a 'Tcl_FSChdir()' call.  If filesystems do not
+Function to process a \fBTcl_FSChdir()\fR call.  If filesystems do not
 implement this, it will be emulated by a series of directory access
 checks.  Otherwise, virtual filesystems which do implement it need only
 respond with a positive return result if the dirName is a valid
