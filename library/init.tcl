@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.55 2002/11/23 01:41:35 hobbs Exp $
+# RCS: @(#) $Id: init.tcl,v 1.55.2.1 2003/07/18 23:35:39 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -220,10 +220,12 @@ proc unknown args {
 		# construct the stack trace.
 		#
 		set cinfo $args
-		if {[string length $cinfo] > 150} {
-		    set cinfo "[string range $cinfo 0 149]..."
+		set ellipsis ""
+		while {[string bytelength $cinfo] > 150} {
+		    set cinfo [string range $cinfo 0 end-1]
+		    set ellipsis "..."
 		}
-		append cinfo "\"\n    (\"uplevel\" body line 1)"
+		append cinfo $ellipsis "\"\n    (\"uplevel\" body line 1)"
 		append cinfo "\n    invoked from within"
 		append cinfo "\n\"uplevel 1 \$args\""
 		#

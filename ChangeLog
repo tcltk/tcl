@@ -14,6 +14,12 @@
 
 2003-07-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	Corrected several instances of unsafe
+	* generic/tclCompile.c:	truncation of UTF-8 strings that might
+	* generic/tclProc.c:	break apart a multi-byte character.
+	* library/init.tcl:	[Bug 760872]
+	* tests/init.test:
+
 	* doc/tcltest.n:		Restored the [Eval] proc to replace
 	* library/tcltest/tcltest.tcl:	the [::puts] command when either the
 	-output or -error option for [test] is in use, in order to capture
