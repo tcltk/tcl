@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.80 2003/07/21 17:33:05 dgp Exp $
+RCS: @(#) $Id: changes,v 1.81 2003/07/22 03:00:54 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5852,14 +5852,14 @@ in the 8.4.3 release.
 
 2003-07-11 (bug fix) [pkg_mkIndex] indexes provided packages, not indexed ones.
 
-2003-07-15 (feature enhancment) MacOSX build system rewrite.
+2003-07-15 (feature enhancement) MacOSX build system rewrite.
 
 2003-07-15 (bug fix)[771613] corrected segfault in [if] (buffer overflow)
 
 2003-07-16 (bug fix)[756791] corrected assumption that Tcl_Free == free
 
-2003-07-16 (feature enhancment) -DTCL_UTF_MAX=6 compile option forces
-internal UCS-4 representation of Unicode.
+2003-07-16 (feature enhancement) -DTCL_UTF_MAX=6 compile option forces
+internal UCS-4 representation of Unicode (default is recommended UCS-2).
 
 2003-07-16 (bug fix)[767578] 64-bit corrections in thread notifier.
 
