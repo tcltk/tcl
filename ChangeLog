@@ -1,3 +1,9 @@
+2004-06-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/library.n:	Moved variables ::auto_oldpath and
+	* library/auto.tcl:	::unknown_pending into ::tcl namespace.
+	* library/init.tcl:	[Bugs 808319, 948794]
+
 2004-06-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/binary.n: Added some notes to the documentation of the 'a'
