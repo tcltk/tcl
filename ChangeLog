@@ -1,3 +1,7 @@
+2002-07-25  Joe English  <jenglish@users.sourceforge.net>
+	* generic/tclProc.c: fix for Tk Bug #219218 "error handling 
+	with bgerror in Tk"
+
 2002-07-24  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: restoring full TCL_COMPILE_DEBUG
