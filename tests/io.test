@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.17 2001/05/19 16:59:04 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.18 2001/05/23 23:22:43 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -6374,9 +6374,9 @@ makeFile {} kyrillic.txt
 makeFile {} utf8-fcopy.txt
 makeFile {} utf8-rp.txt
 
-# Create kyrillic file
+# Create kyrillic file, use lf translation to avoid os eol issues
 set out [open kyrillic.txt w]
-fconfigure $out -encoding koi8-r
+fconfigure $out -encoding koi8-r -translation lf
 puts       $out "\u0410\u0410"
 close      $out
 
@@ -6386,8 +6386,8 @@ test io-52.9 {TclCopyChannel & encodings} {
     set in  [open kyrillic.txt r]
     set out [open utf8-fcopy.txt w]
 
-    fconfigure $in  -encoding koi8-r
-    fconfigure $out -encoding utf-8
+    fconfigure $in  -encoding koi8-r -translation lf
+    fconfigure $out -encoding utf-8 -translation lf
 
     fcopy $in $out
     close $in
@@ -6398,16 +6398,15 @@ test io-52.9 {TclCopyChannel & encodings} {
     set in  [open kyrillic.txt r]
     set out [open utf8-rp.txt w]
 
-    fconfigure $in  -encoding koi8-r
-    fconfigure $out -encoding utf-8
+    fconfigure $in  -encoding koi8-r -translation lf
+    fconfigure $out -encoding utf-8 -translation lf
 
     puts -nonewline $out [read $in]
 
     close $in
     close $out
 
-    list \
-	    [file size kyrillic.txt]   \
+    list [file size kyrillic.txt] \
 	    [file size utf8-fcopy.txt] \
 	    [file size utf8-rp.txt]
 } {3 5 5}
@@ -6419,8 +6418,9 @@ test io-52.10 {TclCopyChannel & encodings} {
     set in  [open kyrillic.txt r]
     set out [open utf8-fcopy.txt w]
 
-    fconfigure $in  -encoding koi8-r
-    fconfigure $out -encoding binary
+    fconfigure $in  -encoding koi8-r -translation lf
+    # -translation binary is also -encoding binary
+    fconfigure $out -translation binary
 
     fcopy $in $out
     close $in
@@ -6436,8 +6436,9 @@ test io-52.11 {TclCopyChannel & encodings} {
     set in  [open utf8-fcopy.txt r]
     set out [open kyrillic.txt w]
 
-    fconfigure $in  -encoding binary
-    fconfigure $out -encoding koi8-r
+    # -translation binary is also -encoding binary
+    fconfigure $in  -translation binary
+    fconfigure $out -encoding koi8-r -translation lf
 
     fcopy $in $out
     close $in
