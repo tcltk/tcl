@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: word.tcl,v 1.6 2000/01/21 02:25:38 hobbs Exp $
+# RCS: @(#) $Id: word.tcl,v 1.7 2002/11/01 00:28:51 andreas_kupries Exp $
 
 # The following variables are used to determine which characters are
 # interpreted as white space.  
 
-if {[string equal $tcl_platform(platform) "windows"]} {
+if {[string equal $::tcl_platform(platform) "windows"]} {
     # Windows style - any but a unicode space char
     set tcl_wordchars "\\S"
     set tcl_nonwordchars "\\s"
