@@ -19,7 +19,7 @@
 
 /*
  * The following macro can be defined at compile time to specify
- * an alternate registry key for the default Tcl library path.
+ * the root of the Tcl registry keys.
  */
  
 #ifndef TCL_REGISTRY_KEY
@@ -105,7 +105,7 @@ void
 TclPlatformInit(interp)
     Tcl_Interp *interp;
 {
-    char *ptr;
+    char *p;
     char buffer[13];
     Tcl_DString ds;
     OSVERSIONINFO osInfo;
@@ -113,7 +113,7 @@ TclPlatformInit(interp)
     int isWin32s;		/* True if we are running under Win32s. */
     OemId *oemId;
     HKEY key;
-    DWORD size;
+    DWORD size, result, type;
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
@@ -143,39 +143,76 @@ TclPlatformInit(interp)
      * Initialize the tcl_library variable from the registry.
      */
 
+    Tcl_SetVar(interp, "tclDefaultLibrary", "", TCL_GLOBAL_ONLY);
     if (!isWin32s) {
-	if ((RegOpenKeyEx(HKEY_LOCAL_MACHINE, TCL_REGISTRY_KEY, 0,
-		KEY_READ, &key) == ERROR_SUCCESS)
-		&& (RegQueryValueEx(key, "", NULL, NULL, NULL, &size)
-			== ERROR_SUCCESS)) {
-	    Tcl_DStringSetLength(&ds, size);
-	    RegQueryValueEx(key, "", NULL, NULL,
-		    (LPBYTE)Tcl_DStringValue(&ds), &size);
-	}
+	result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TCL_REGISTRY_KEY, 0,
+		KEY_READ, &key);
     } else {
-	if ((RegOpenKeyEx(HKEY_CLASSES_ROOT, TCL_REGISTRY_KEY, 0,
-		KEY_READ, &key) == ERROR_SUCCESS)
-		&& (RegQueryValueEx(key, "", NULL, NULL, NULL, &size)
-			== ERROR_SUCCESS)) {
+	result = RegOpenKeyEx(HKEY_CLASSES_ROOT, TCL_REGISTRY_KEY, 0,
+		KEY_READ, &key);
+    }
+    if (result == ERROR_SUCCESS) {
+	if (RegQueryValueEx(key, "", NULL, NULL, NULL, &size)
+		== ERROR_SUCCESS) {
+	    char *argv[3];
 	    Tcl_DStringSetLength(&ds, size);
 	    RegQueryValueEx(key, "", NULL, NULL,
 		    (LPBYTE) Tcl_DStringValue(&ds), &size);
+	    Tcl_SetVar(interp, "tclDefaultLibrary", Tcl_DStringValue(&ds),
+		    TCL_GLOBAL_ONLY);
+	    argv[0] = Tcl_GetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
+	    argv[1] = "lib/tcl" TCL_VERSION;
+	    argv[2] = NULL;
+	    Tcl_DStringSetLength(&ds, 0);
+	    Tcl_SetVar(interp, "tclDefaultLibrary",
+		    Tcl_JoinPath(2, argv, &ds), TCL_GLOBAL_ONLY);
 	}
-    }
-    Tcl_SetVar(interp, "tclDefaultLibrary", Tcl_DStringValue(&ds),
-	    TCL_GLOBAL_ONLY);
-    if (Tcl_DStringLength(&ds) > 0) {
-	char *argv[3];
-	argv[0] = Tcl_GetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
-	argv[1] = "lib";
-	argv[2] = NULL;
-	Tcl_DStringSetLength(&ds, 0);
-	Tcl_SetVar(interp, "tcl_pkgPath", Tcl_JoinPath(2, argv, &ds),
-		TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT);
-	argv[1] = "lib/tcl" TCL_VERSION;
-	Tcl_DStringSetLength(&ds, 0);
-	Tcl_SetVar(interp, "tclDefaultLibrary", Tcl_JoinPath(2, argv, &ds), 
-		TCL_GLOBAL_ONLY);
+	if ((RegQueryValueEx(key, "PkgPath", NULL, &type, NULL, &size)
+		== ERROR_SUCCESS) && (type == REG_MULTI_SZ)) {
+	    char **argv;
+	    int argc;
+
+	    /*
+	     * PkgPath is stored as an array of null terminated strings
+	     * terminated by two null characters.  First count the number
+	     * of strings, then allocate an argv array so we can construct
+	     * a valid list.
+	     */
+
+	    Tcl_DStringSetLength(&ds, size);
+	    RegQueryValueEx(key, "PkgPath", NULL, NULL,
+		    (LPBYTE)Tcl_DStringValue(&ds), &size);
+	    argc = 0;
+	    for (p = Tcl_DStringValue(&ds); *p || *(p+1);
+		 p += strlen(p) + 1) {
+		argc++;
+	    }
+
+	    argv = (char **) ckalloc((sizeof(char *) * argc) + 1);
+	    argc = 0;
+	    for (p = Tcl_DStringValue(&ds); *p || *(p+1); p++) {
+		argv[argc++] = p;
+		while (*p) {
+		    if (*p == '\\') {
+			*p = '/';
+		    }
+		    p++;
+		}
+	    }
+
+	    p = Tcl_Merge(argc, argv);
+	    Tcl_SetVar(interp, "tcl_pkgPath", p, TCL_GLOBAL_ONLY);
+	    ckfree(p);
+	    ckfree((char*) argv);
+	} else {
+	    char *argv[3];
+	    argv[0] = Tcl_GetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
+	    argv[1] = "..";
+	    argv[2] = NULL;
+	    Tcl_DStringSetLength(&ds, 0);
+	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_JoinPath(2, argv, &ds),
+		    TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT);
+	}
     }
 
     /*
@@ -201,16 +238,16 @@ TclPlatformInit(interp)
      * environment variables, if necessary.
      */
 
-    ptr = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
-    if (ptr == NULL) {
+    p = Tcl_GetVar2(interp, "env", "HOME", TCL_GLOBAL_ONLY);
+    if (p == NULL) {
 	Tcl_DStringSetLength(&ds, 0);
-	ptr = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
-	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	p = Tcl_GetVar2(interp, "env", "HOMEDRIVE", TCL_GLOBAL_ONLY);
+	if (p != NULL) {
+	    Tcl_DStringAppend(&ds, p, -1);
 	}
-	ptr = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
-	if (ptr != NULL) {
-	    Tcl_DStringAppend(&ds, ptr, -1);
+	p = Tcl_GetVar2(interp, "env", "HOMEPATH", TCL_GLOBAL_ONLY);
+	if (p != NULL) {
+	    Tcl_DStringAppend(&ds, p, -1);
 	}
 	if (Tcl_DStringLength(&ds) > 0) {
 	    Tcl_SetVar2(interp, "env", "HOME", Tcl_DStringValue(&ds),
