@@ -1,5 +1,8 @@
 2000-02-05  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* tests/httpold.test: changed test script to source in the httpd
+	server procs from httpd instead of having its own set.
+
 	* tests/httpd: improved query support in test httpd to handle fix
 	in http.tcl. [Bug: 4089 change 2000-02-01]
 
