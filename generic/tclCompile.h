@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.4 2005/03/13 13:57:34 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.5 2005/03/14 17:51:10 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -243,7 +243,18 @@ typedef union TclVMWord {
 #define HP_EXTRACT(full, n, u)\
     (n) = ((full) >> HP_SHIFT);\
     (u) = ((full) &  HP_MASK)
-	
+
+
+/*
+ * Structure defining the entries in the runtime catch stack.
+ */
+
+typedef struct catchItem {
+    int stackTop;
+    TclVMWord *pc;
+} catchItem;
+#define CATCH_ITEM_SIZE 2
+
 /*
  * Structure defining the compilation environment. After compilation, fields
  * describing bytecode instructions are copied out into the more compact

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.3 2005/03/13 13:57:33 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.4 2005/03/14 17:51:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -211,7 +211,8 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     CONST char *name;
     int localIndex, nameChars, range, startOffset;
     int savedStackDepth = envPtr->currStackDepth;
-
+    int code;
+    
     /*
      * If syntax does not match what we expect for [catch], do not
      * compile.  Let runtime checks determine if syntax has changed.
@@ -254,6 +255,23 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	}
     }
 
+    /* 
+     * If the body is not a simple word, compile the instructions
+     * to generate it outside the catch range.
+     */
+    
+    if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	/*
+	 * REMARK: this will store an off-by-one stack depth in the
+	 * catchStack: we rely on INST_EVAL_STK to pop its argument before
+	 * going to checkForCatch. 
+	 */
+	
+	TclCompileTokens(interp, cmdTokenPtr+1,
+	        cmdTokenPtr->numComponents, envPtr);
+	envPtr->currStackDepth = savedStackDepth + 1;
+    }
+
     /*
      * We will compile the catch command. Emit a beginCatch instruction at
      * the start of the catch body: the subcommand it controls.
@@ -263,68 +281,34 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     envPtr->maxExceptDepth =
 	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInst1(INST_BEGIN_CATCH, range, envPtr);
 
+    
     /*
-     * If the body is a simple word, compile the instructions to
-     * eval it. Otherwise, compile instructions to substitute its
-     * text without catching, a catch instruction that resets the 
-     * stack to what it was before substituting the body, and then 
-     * an instruction to eval the body. Care has to be taken to 
-     * register the correct startOffset for the catch range so that
-     * errors in the substitution are not catched [Bug 219184]
+     * Emit the instructions to eval the body. The INST_BEGIN_CATCH
+     * operand will be the set later to the distance to the INST_END_CATCH. 
      */
-
+    
+    startOffset = (envPtr->codeNext - envPtr->codeStart);
+    TclEmitInst1(INST_BEGIN_CATCH, 0, envPtr);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	startOffset = (envPtr->codeNext - envPtr->codeStart);
 	TclCompileCmdWord(interp, cmdTokenPtr+1, 1, envPtr);
     } else {
-	TclCompileTokens(interp, cmdTokenPtr+1,
-	        cmdTokenPtr->numComponents, envPtr);
-	startOffset = (envPtr->codeNext - envPtr->codeStart);
 	TclEmitInst0(INST_EVAL_STK, envPtr);
     }
+    envPtr->currStackDepth = savedStackDepth + 1;    
     envPtr->exceptArrayPtr[range].codeOffset = startOffset;
     envPtr->exceptArrayPtr[range].numCodeWords =
 	    (envPtr->codeNext - envPtr->codeStart) - startOffset;
-
-    /*
-     * The "no errors" epilogue code: store the body's result into the
-     * variable (if any), push "0" (TCL_OK) as the catch's "no error"
-     * result, and jump around the "error case" code.
-     */
-
-    if (localIndex != -1) {
-	TclEmitInst1(INST_STORE_SCALAR, localIndex, envPtr);
-    }
-    TclEmitInst0(INST_POP, envPtr);
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
-    TclEmitForwardJump(envPtr, INST_JUMP, fixOffset);
-
-    /*
-     * The "error case" code: store the body's result into the variable (if
-     * any), then push the error result code. The initial PC offset here is
-     * the catch's error target.
-     */
-
-    envPtr->currStackDepth = savedStackDepth;
     envPtr->exceptArrayPtr[range].catchOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
-    if (localIndex != -1) {
-	TclEmitInst0(INST_PUSH_RESULT, envPtr);
-	TclEmitInst1(INST_STORE_SCALAR, localIndex, envPtr);
-	TclEmitInst0(INST_POP, envPtr);
-    }
-    TclEmitInst0(INST_PUSH_RETURN_CODE, envPtr);
-
+	    (envPtr->codeNext - envPtr->codeStart);    
 
     /*
-     * Update the target of the jump after the "no errors" code, then emit
-     * an endCatch instruction at the end of the catch command.
+     * Store the offset between INST_BEGIN_CATCH and INST_END_CATCH at the
+     * BEGIN instruction, then emit the END instruction.
      */
 
-    TclSetJumpTarget(envPtr, fixOffset);
-    TclEmitInst0(INST_END_CATCH, envPtr);
+    TclSetJumpTarget(envPtr, startOffset);
+    TclEmitInst1(INST_END_CATCH, localIndex, envPtr);
 
     envPtr->currStackDepth = savedStackDepth + 1;
     envPtr->exceptDepth--;
@@ -2202,6 +2186,11 @@ cleanup:
 	Tcl_ResetResult(interp);
 	return TCL_OUT_LINE_COMPILE;
     }
+    if ((HPINT_MIN > code) || (code > HPINT_MAX)
+            || (level > HPUINT_MAX)) {
+	Tcl_ResetResult(interp);
+	return TCL_OUT_LINE_COMPILE;
+    }
 
     /*
      * All options are known at compile time, so we're going to bytecompile.
@@ -2259,10 +2248,6 @@ cleanup:
      */
 
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
-    if ((HPINT_MIN > code) || (code > HPINT_MAX)
-            || (level > HPUINT_MAX)) {
-	return TCL_OUT_LINE_COMPILE;
-    }
     TclEmitInst2(INST_RETURN, code, level, envPtr);
     return TCL_OK;
 }

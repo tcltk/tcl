@@ -1,3 +1,18 @@
+2005-03-14 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: 
+	- fixed INST_RETURN's stack effect (-1 instead of -2).
+	- insured that the bytecodes are aligned
+	
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: New [catch] logic - completely
+	incompatible with the old one, big hurdle for older compiled
+	scripts. [catch] now compiles just two instructions, the catch
+	range is everything in between INST_BEGIN_CATCH and
+	INST_END_CATCH. Preparation for exception range reform (next
+	commit). 
+
 2005-03-13 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c:

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.3 2005/03/13 13:57:35 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.4 2005/03/14 17:51:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1080,7 +1080,7 @@ TclCompEvalObj(interp, objPtr)
  *
  *----------------------------------------------------------------------
  */
-
+#define ENABLE_PEEPHOLE 1
 #ifndef ENABLE_PEEPHOLE
 #define ENABLE_PEEPHOLE !defined(TCL_COMPILE_DEBUG)
 #endif
@@ -1103,7 +1103,7 @@ TclExecuteByteCode(interp, codePtr)
 
     ExecEnv *eePtr;             /* Points to the execution environment. */
     int initStackTop;           /* Stack top at start of execution. */
-    int initCatchTop;           /* Catch stack top at start of execution. */
+    int initCatch;           /* Catch stack top at start of execution. */
     Var *compiledLocals;
     Namespace *namespacePtr;
 
@@ -1112,7 +1112,7 @@ TclExecuteByteCode(interp, codePtr)
      * all times.
      */
     
-    int catchTop;
+    int catchItems;
     register Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
     register TclVMWord *pc = codePtr->codeStart;
 				/* The current program counter. */
@@ -1148,6 +1148,7 @@ TclExecuteByteCode(interp, codePtr)
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
+
     /*
      * The execution uses a unified stack: first the catch stack, immediately
      * above it the execution stack.
@@ -1158,14 +1159,17 @@ TclExecuteByteCode(interp, codePtr)
      * Make sure the execution stack is large enough to execute this ByteCode.
      */
 
+#define catchStackPtr ((catchItem *) &eePtr->stackPtr[initCatch])
+
     eePtr = iPtr->execEnvPtr;
-    initCatchTop = eePtr->tosPtr - eePtr->stackPtr;
-    catchTop = initCatchTop;
-    tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
+    initCatch = eePtr->tosPtr - eePtr->stackPtr;
+    catchItems = 0;
+    tosPtr = eePtr->tosPtr + CATCH_ITEM_SIZE*(codePtr->maxExceptDepth+1);
 
     while ((tosPtr + codePtr->maxStackDepth) > eePtr->endPtr) {
         GrowEvaluationStack(eePtr); 
-	tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
+	tosPtr = eePtr->tosPtr
+	        + CATCH_ITEM_SIZE*codePtr->maxExceptDepth;
     }
     initStackTop = tosPtr - eePtr->stackPtr;
 
@@ -1787,6 +1791,7 @@ TclExecuteByteCode(interp, codePtr)
 		    
 		NEXT_INST_V(opnd, -1);
 	    } else {
+		TRACE(("%u => ... after \"%.20s\": ", opnd, cmdNameBuf));
 		cleanup = opnd;
 		goto processExceptionReturn;
 	    }
@@ -1794,12 +1799,6 @@ TclExecuteByteCode(interp, codePtr)
 	
 
     case INST_EVAL_STK:
-	/*
-	 * Note to maintainers: it is important that INST_EVAL_STK
-	 * pop its argument from the stack before jumping to
-	 * checkForCatch! DO NOT OPTIMISE!
-	 */
-
         {
 	    Tcl_Obj *objPtr;
 	    
@@ -1833,7 +1832,16 @@ TclExecuteByteCode(interp, codePtr)
 		iPtr->objResultPtr = objPtr;
 		NEXT_INST_F(1, -1);
 	    } else {
-		cleanup = 1;
+		/*
+		 * Note to maintainers: it is important that INST_EVAL_STK 
+		 * pop its argument from the stack before jumping to
+		 * processExceptionReturn! DO NOT OPTIMISE!
+		 */
+
+		objPtr = POP_OBJECT();
+		TRACE(("\"%.30s\" => ", O2S(objPtr)));
+		Tcl_DecrRefCount(objPtr);
+		cleanup = 0;
 		goto processExceptionReturn;
 	    }
 	}
@@ -4572,21 +4580,72 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_BEGIN_CATCH:
 	/*
-	 * Record start of the catch command with exception range index
-	 * equal to the operand. Push the current stack depth onto the
-	 * special catch stack.
+	 * Record the current stacktop and pc; the operand stores the offset to
+	 * the corresponding INST_END_CATCH, and will be read if the catch
+	 * fires (see code at the 'processCatch:' label below).
 	 */
-	eePtr->stackPtr[++catchTop] = (Tcl_Obj *) (tosPtr - eePtr->stackPtr);
-	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-	       opnd, (catchTop - initCatchTop - 1), tosPtr - eePtr->stackPtr));
+
+	catchItems++;
+	catchStackPtr[catchItems].stackTop = (tosPtr - eePtr->stackPtr);
+	catchStackPtr[catchItems].pc = pc;
+	TRACE(("%u catch => catchItems=%d, stackTop=%d, endCatch at %u\n",
+	        (pc - codePtr->codeStart), catchItems, (tosPtr - eePtr->stackPtr),
+		(pc - codePtr->codeStart + opnd)));
 	NEXT_INST_F(0, 0);
 
     case INST_END_CATCH:
-	catchTop--;
-	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
-	NEXT_INST_F(0, 0);
+    endCatch:
+    { 
+	int realCode = result;
+
+	result = TCL_OK;		
+	catchItems--;
+	TRACE(("=> catchItems=%d\n", catchItems));
 	    
+	if (opnd >= 0) {
+	    /*
+	     * Store the interp's result in the local variable at index opnd.
+	     */
+	    
+	    Var *varPtr = &(iPtr->varFramePtr->compiledLocals[opnd]);
+	    char *part1 = varPtr->name;
+	    Tcl_Obj *valuePtr;
+
+	    valuePtr = *tosPtr;
+	    while (TclIsVarLink(varPtr)) {
+		varPtr = varPtr->value.linkPtr;
+	    }
+	    DECACHE_STACK_INFO();
+	    valuePtr = TclPtrSetVar(interp, varPtr, NULL,
+		    part1, NULL, *tosPtr,
+		    TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    if (valuePtr == NULL) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+
+#if ENABLE_PEEPHOLE
+	/*
+	 * Peep-hole optimisation: if you're about to jump, do jump
+	 * from here.
+	 */
+
+	TclGetInstAndOpAtPtr((pc+2), inst, opnd);	
+	switch (inst) {
+	case INST_JUMP_FALSE:
+	    pc += ((realCode)? 2 : opnd);
+	    NEXT_INST_F(1, 0);
+	case INST_JUMP_TRUE:
+	    pc += ((realCode)? opnd : 2);
+	    NEXT_INST_F(1, 0);
+	}
+#endif		
+	objResultPtr = Tcl_NewLongObj(realCode);
+	NEXT_INST_F(1, 1);
+    }
+
     case INST_PUSH_RESULT:
 	objResultPtr = Tcl_GetObjResult(interp);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
@@ -4663,15 +4722,7 @@ TclExecuteByteCode(interp, codePtr)
 #if TCL_COMPILE_DEBUG    
 	switch (inst) {
 	    case INST_INVOKE_STK:
-		TRACE(("%u => ... after \"%.20s\": ", opnd, cmdNameBuf));
-		break;
 	    case INST_EVAL_STK:
-		/*
-		 * Note that the object at stacktop has to be used
-		 * before doing the cleanup.
-		 */
-
-		TRACE(("\"%.30s\" => ", O2S(*tosPtr)));
 		break;
 	    default:
 		TRACE(("=> "));
@@ -4683,11 +4734,23 @@ TclExecuteByteCode(interp, codePtr)
 		TRACE_APPEND(("no encl. loop or catch, returning %s\n",
 				     StringForResultCode(result)));
 		goto abnormalReturn;
-	    } 
+	    }
+#if 0
 	    if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
 		TRACE_APPEND(("%s ...\n", StringForResultCode(result)));
 		goto processCatch;
 	    }
+#else
+	    if ((catchItems != 0) && ////
+		    (codePtr->codeStart + rangePtr->codeOffset 
+			    <= catchStackPtr[catchItems].pc)) {
+		/*
+		 * This is caught earlier by an active catch range!
+		 */
+		
+		goto processCatch; 
+	    }
+#endif
 	    while (cleanup--) {
 		valuePtr = POP_OBJECT();
 		TclDecrRefCount(valuePtr);
@@ -4748,8 +4811,8 @@ TclExecuteByteCode(interp, codePtr)
 	 * INST_BEGIN_CATCH. 
 	 */
 
-	while ((expandNestList != NULL) && ((catchTop == initCatchTop) ||
-		((ptrdiff_t) eePtr->stackPtr[catchTop] <=
+	while ((expandNestList) && ((catchItems == 0) || 
+		((ptrdiff_t) catchStackPtr[catchItems].stackTop <=
 			(ptrdiff_t) expandNestList->internalRep.twoPtrValue.ptr1))) {
 	    Tcl_Obj *objPtr = expandNestList->internalRep.twoPtrValue.ptr2;
 	    TclDecrRefCount(expandNestList);
@@ -4770,22 +4833,8 @@ TclExecuteByteCode(interp, codePtr)
 #endif
 	    goto abnormalReturn;
 	}
-	if (catchTop == initCatchTop) {
-#ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
-		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
-			StringForResultCode(result));
-	    }
-#endif
-	    goto abnormalReturn;
-	}
-	rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 1, codePtr);
-	if (rangePtr == NULL) {
-	    /*
-	     * This is only possible when compiling a [catch] that sends its
-	     * script to INST_EVAL. Cannot correct the compiler without 
-	     * breakingcompat with previous .tbc compiled scripts.
-	     */
+
+	if (catchItems == 0) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
@@ -4799,27 +4848,45 @@ TclExecuteByteCode(interp, codePtr)
 	 * A catch exception range (rangePtr) was found to handle an
 	 * "exception". It was found either by checkForCatch just above or
 	 * by an instruction during break, continue, or error processing.
-	 * Jump to its catchOffset after unwinding the operand stack to 
-	 * the depth it had when starting to execute the range's catch
+	 * Jump to its INST_END_CATCH location after unwinding the operand
+	 * stack to the depth it had when starting to execute the range's catch
 	 * command.
 	 */
 
 	processCatch:
-	while (tosPtr > ((ptrdiff_t) (eePtr->stackPtr[catchTop])) + eePtr->stackPtr) {
+	while (tosPtr > eePtr->stackPtr + catchStackPtr[catchItems].stackTop) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
-#ifdef TCL_COMPILE_DEBUG
-	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, unwound to %d, new pc %u\n",
-		    rangePtr->codeOffset, (catchTop - initCatchTop - 1), 
-		    (int) eePtr->stackPtr[catchTop],
-		    (unsigned int)(rangePtr->catchOffset));
-	}
-#endif	
-	pc = (codePtr->codeStart + rangePtr->catchOffset)-2;
-	NEXT_INST_F(0, 0); /* restart the execution loop at pc */
+
+	/*
+	 * Read the data of the INST_BEGIN_CATCH
+	 */
 	
+	pc = catchStackPtr[catchItems].pc;
+	TclGetInstAndOpAtPtr(pc, inst, opnd);	
+#ifdef TCL_COMPILE_DEBUG
+	if (inst != INST_BEGIN_CATCH) {
+	    Tcl_Panic("Should have found an INST_BEGIN_CATCH instruction!");
+	}
+	if (traceInstructions) {
+	    fprintf(stdout, "  ... found catch at %d, catchItems=%d, unwound to %d, new pc %u\n",
+		    (pc - codePtr->codeStart), catchItems, 
+		    (int) catchStackPtr[catchItems].stackTop,
+		    (pc + opnd + 2 - codePtr->codeStart));
+	}
+#endif
+	pc += opnd;
+	TclGetInstAndOpAtPtr(pc, inst, opnd);	
+#ifdef TCL_COMPILE_DEBUG
+	if (inst != INST_END_CATCH) {
+	    Tcl_Panic("Should have found an INST_END_CATCH instruction!");
+	}
+#endif
+	objResultPtr = Tcl_GetObjResult(interp);
+	PUSH_OBJECT(objResultPtr);
+	goto endCatch;
+
 	/* 
 	 * end of infinite loop dispatching on instructions.
 	 */
@@ -4843,7 +4910,8 @@ TclExecuteByteCode(interp, codePtr)
 			(unsigned int) initStackTop);
 		Tcl_Panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	    }
-	    eePtr->tosPtr = initTosPtr - codePtr->maxExceptDepth;
+
+	    eePtr->tosPtr = eePtr->stackPtr + initCatch;
 	}
     }
     return result;
@@ -4954,6 +5022,7 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound, checkStack)
     TclVMWord *codeEnd = (codePtr->codeStart + codePtr->numCodeWords);
     unsigned int opCode = (unsigned int) (*pc).i;
 
+fflush(stdout);
     if (( pc < codeStart) ||  (pc > codeEnd)) {
 	fprintf(stderr, "\nBad instruction pc %p in TclExecuteByteCode\n",
 		(VOID *) pc);

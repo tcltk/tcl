@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.3 2005/03/13 13:57:34 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.4 2005/03/14 17:51:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -239,7 +239,7 @@ InstructionDesc tclInstructionTable[] = {
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  -2,         2,    {OPERAND_INT, OPERAND_UINT}},
+    {"return",		  -1,         2,    {OPERAND_INT, OPERAND_UINT}},
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
     {"expon",		  -1,         0,    {OPERAND_NONE}},
@@ -1601,7 +1601,7 @@ TclInitByteCodeObj(objPtr, envPtr)
      * Compute the total number of bytes needed for this bytecode.
      */
 
-    structureSize = sizeof(ByteCode);
+    structureSize = TCL_ALIGN(sizeof(ByteCode));   /* align codeBytes */
     structureSize += TCL_ALIGN(codeBytes);        /* align object array */
     structureSize += TCL_ALIGN(objArrayBytes);    /* align exc range arr */
     structureSize += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
@@ -1639,7 +1639,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     codePtr->maxExceptDepth = envPtr->maxExceptDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
 
-    p += sizeof(ByteCode);
+    p += TCL_ALIGN(sizeof(ByteCode));  /* align codeBytes */
     codePtr->codeStart = (TclVMWord *) p;
     memcpy((VOID *) p, (VOID *) envPtr->codeStart, (size_t) codeBytes);
     
