@@ -1,3 +1,7 @@
+2002-06-04  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/README: Update msys+mingw URL.
+
 2002-06-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:
