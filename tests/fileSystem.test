@@ -130,11 +130,125 @@ test filesystem-1.14 {file normalisation} {winOnly} {
     file normalize c:/
 } {C:/}
 
+test filesystem-1.15 {file normalisation} {winOnly} {
+    file normalize c:/../
+} {C:/}
+
+test filesystem-1.16 {file normalisation} {winOnly} {
+    file normalize c:/.
+} {C:/}
+
+test filesystem-1.17 {file normalisation} {winOnly} {
+    file normalize c:/..
+} {C:/}
+
+test filesystem-1.17.1 {file normalisation} {winOnly} {
+    file normalize c:\\..
+} {C:/}
+
+test filesystem-1.18 {file normalisation} {winOnly} {
+    file normalize c:/./
+} {C:/}
+
+test filesystem-1.19 {file normalisation} {winOnly} {
+    file normalize w:/./../../..
+} {w:/}
+
+test filesystem-1.20 {file normalisation} {winOnly} {
+    file normalize //name/foo/../
+} {//name/foo}
+
+test filesystem-1.21 {file normalisation} {winOnly} {
+    file normalize C:///foo/./
+} {C:/foo}
+
+test filesystem-1.22 {file normalisation} {winOnly} {
+    file normalize //name/foo/.
+} {//name/foo}
+
+test filesystem-1.23 {file normalisation} {winOnly} {
+    file normalize c:/./foo
+} {C:/foo}
+
+test filesystem-1.24 {file normalisation} {winOnly} {
+    file normalize w:/./../../../a
+} {w:/a}
+
+test filesystem-1.25 {file normalisation} {winOnly} {
+    file normalize w:/./.././../../a
+} {w:/a}
+
+test filesystem-1.25.1 {file normalisation} {winOnly} {
+    file normalize w:/./.././..\\..\\a\\bb
+} {w:/a/bb}
+
+test filesystem-1.26 {link normalisation: link and ..} {hasLinks} {
+    file delete -force dir2.link
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    file link dir2.link [file join dir2 foo bar]
+    set res [list [file normalize [file join dir2 foo x]] \
+      [file normalize [file join dir2.link .. x]]]
+    if {![string equal [lindex $res 0] [lindex $res 1]]} {
+	set res "$res not equal"
+    } else {
+	set res "ok"
+    }
+} {ok}
+
+test filesystem-1.27 {file normalisation: up and down with ..} {
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set dir2 [file join dir2 .. dir2 foo .. foo bar]
+    set res [list [file normalize $dir] \
+      [file normalize $dir2]]
+    set res2 [list [file exists $dir] [file exists $dir2]]
+    if {![string equal [lindex $res 0] [lindex $res 1]]} {
+	set res "exists: $res2, $res not equal"
+    } else {
+	set res "ok: $res2"
+    }
+} {ok: 1 1}
+
+test filesystem-1.28 {link normalisation: link with .. and ..} {hasLinks} {
+    file delete -force dir2.link
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set to [file join dir2 .. dir2 foo .. foo bar]
+    file link dir2.link $to
+    set res [list [file normalize [file join dir2 foo x]] \
+      [file normalize [file join dir2.link .. x]]]
+    if {![string equal [lindex $res 0] [lindex $res 1]]} {
+	set res "$res not equal"
+    } else {
+	set res "ok"
+    }
+} {ok}
+
+test filesystem-1.29 {link normalisation: link with ..} {hasLinks} {
+    file delete -force dir2.link
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set to [file join dir2 .. dir2 foo .. foo bar]
+    file link dir2.link $to
+    set res [file normalize [file join dir2.link x yyy z]]
+    if {[string first ".." $res] != -1} {
+	set res "$res must not contain '..'"
+    } else {
+	set res "ok"
+    }
+} {ok}
+
 file delete -force dir2.file
 file delete -force dir2.link
 file delete -force link.file dir.link
+file delete -force dir2
 removeFile [file join dir.file inside.file]
 removeDirectory dir.file
+
+test filesystem-1.30 {normalisation of nonexistent user} {
+    list [catch {file normalize ~noonewiththisname} err] $err
+} {1 {user "noonewiththisname" doesn't exist}}
 
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
