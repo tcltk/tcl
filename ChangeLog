@@ -1,3 +1,9 @@
+2003-06-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclConfig.c (ASSOC_KEY): Changed the key to
+	  "tclPackageAboutDict" (tcl prefix) to make collisions with the
+	  keys of other packages more unlikely.
+
 2003-06-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
