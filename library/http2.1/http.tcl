@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.25 2000/03/22 21:18:25 sandeep Exp $
+# RCS: @(#) $Id: http.tcl,v 1.26 2000/03/22 22:49:57 sandeep Exp $
 
 package provide http 2.3	;# This uses Tcl namespaces
 
@@ -517,7 +517,8 @@ proc http::Write {token} {
 
 	if {[info exists state(-query)]} {
 	    set outStr [string range $state(-query) $state(queryoffset) \
-		[incr state(queryoffset) $state(-queryblocksize)]]
+		    [expr {$state(queryoffset) + $state(-queryblocksize) - 1}]]
+	    incr state(queryoffset) $state(-queryblocksize)
 	} else {
 	    # querychannel
 	    set outStr [read $state(-querychannel) $state(-queryblocksize)]
