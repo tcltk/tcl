@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.11 2003/11/06 13:11:00 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.12 2004/02/26 09:10:23 das Exp $
 #
 ########################################################################################################
 
@@ -92,6 +92,7 @@ PRODUCT_VERSION		:= $(shell eval $$(grep '^TCL_VERSION=' ${UNIX_DIR}/configure.i
 				echo "$${TCL_VERSION}")
 PRODUCT_LONGVERSION	:= $(shell eval $$(grep '^TCL_PATCH_LEVEL=' ${UNIX_DIR}/configure.in); \
 				echo "${PRODUCT_VERSION}$${TCL_PATCH_LEVEL}")
+YEAR                    := $(shell date +%Y)
 
 PRIVATE_HEADERS		:= tclInt.h tclIntDecls.h tclIntPlatDecls.h tclMath.h
 TARGETS			:= tclsh tcltest
@@ -210,7 +211,7 @@ endif
 		<key>CFBundleExecutable</key>\n\
 		<string>Tcl</string>\n\
 		<key>CFBundleGetInfoString</key>\n\
-		<string>Tcl Library ${PRODUCT_VERSION}, Copyright © 2003 Tcl Core Team.\n\
+		<string>Tcl Library ${PRODUCT_VERSION}, Copyright © ${YEAR} Tcl Core Team.\n\
 	MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright\
 	© 2001-2002, Apple Computer, Inc.</string>\n\
 		<key>CFBundleIdentifier</key>\n\
