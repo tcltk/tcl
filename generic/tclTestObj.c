@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.11 2002/02/15 23:42:12 kennykb Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12 2002/12/04 13:09:24 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -911,7 +911,8 @@ TeststringobjCmd(clientData, interp, objc, objv)
     TestString *strPtr;
     static CONST char *options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "ualloc", (char *) NULL
+	"set", "set2", "setlength", "ualloc", "getunicode", 
+	(char *) NULL
     };
 
     if (objc < 3) {
@@ -1072,6 +1073,12 @@ TeststringobjCmd(clientData, interp, objc, objv)
 		length = -1;
 	    }
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), length);
+	    break;
+	case 10:			/* getunicode */
+	    if (objc != 3) {
+		goto wrongNumArgs;
+	    }
+	    Tcl_GetUnicodeFromObj(varPtr[varIndex], NULL);
 	    break;
     }
 
