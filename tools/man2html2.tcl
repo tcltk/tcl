@@ -5,7 +5,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# SCCS: @(#) man2html2.tcl 1.2 96/03/21 10:48:30
+# $Id: man2html2.tcl,v 1.4 2004/07/06 09:21:30 dkf Exp $
 #
 
 # Global variables used by these scripts:
@@ -506,34 +506,50 @@ proc tab {} {
 proc setTabs {tabList} {
     global file breakPending tabString
 
-#	puts "setTabs: --$tabList--"
+    # puts "setTabs: --$tabList--"
     set last 0
     set tabString {}
     set charsPerInch 14.
     set numTabs [llength $tabList]
     foreach arg $tabList {
+	if {[string match +* $arg]} {
+	    set relative 1
+	    set arg [string range $arg 1 end]
+	} else {
+	    set relative 0
+	}
+	# Always operate in relative mode for "measurement" mode
+	if {[regexp {^\\w'.*'u$} $arg]} {
+	    append tabString " 1"
+	    set last [expr {$last + 2}]
+	    continue
+	}
 	if {[scan $arg "%f%s" distance units] != 2} {
 	    puts stderr "bad distance \"$arg\""
 	    return 0
     	}
 	switch -- $units {
 	    c	{
-		set distance [expr $distance * $charsPerInch / 2.54 ]
+		set distance [expr {$distance * $charsPerInch / 2.54}]
 	    }
 	    i	{
-		set distance [expr $distance * $charsPerInch]
+		set distance [expr {$distance * $charsPerInch}]
 	    }
 	    default {
 		puts stderr "bad units in distance \"$arg\""
 		continue
 	    }
     	}
-#		? distance
-    	lappend tabString [format "%*s1" [expr round($distance-$last-1)] " "]
-    	set last $distance
+	# ? distance
+	if {$relative} {
+	    append tabString [format "%*s1" [expr {round($distance-1)}] " "]
+	    set last [expr {$last + $distance}]
+	} else {
+	    append tabString [format "%*s1" [expr {round($distance-$last-1)}] " "]
+	    set last $distance
+	}
     }
-    set tabString [join $tabString {}]
-#	puts "setTabs: --$tabString--"
+    # puts "setTabs: --$tabString--"
 }
 
 
@@ -696,15 +712,20 @@ proc IPmacro argList {
     	nest para UL LI
 	return
     }
+    # Special case for alternative mechanism for declaring bullets
+    if {[lindex $argList 0] eq "\\(bu"} {
+	nest para UL LI
+	return
+    }
     if {$length == 1} {
     	nest para OL LI
-	    return
-	}
+	return
+    }
     if {$length > 1} {
     	nest para DL DT
-	    formattedText [lindex $argList 0]
-	    puts $file "\n<DD>"
-	    return
+	formattedText [lindex $argList 0]
+	puts $file "\n<DD>"
+	return
     }
     puts stderr "Bad .IP macro: .IP [join $argList " "]"
 }
@@ -874,6 +895,3 @@ proc do fileName {
     puts $file "</BODY></HTML>"
     close $file
 }
-
-
-
