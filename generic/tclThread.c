@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.4 2000/04/04 20:28:43 kupries Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.5 2000/04/05 00:42:20 welch Exp $
  */
 
 #include "tclInt.h"
@@ -42,6 +42,20 @@ static void		RememberSyncObject _ANSI_ARGS_((char *objPtr,
 			    SyncObjRecord *recPtr));
 static void		ForgetSyncObject _ANSI_ARGS_((char *objPtr,
 			    SyncObjRecord *recPtr));
+
+/* 
+ * Several functions are #defined to nothing in tcl.h if TCL_THREADS is not
+ * specified.  Here we undo that so the procedures are defined in the
+ * stubs table.
+ */
+#ifndef TCL_THREADS
+#undef Tcl_MutexLock
+#undef Tcl_MutexUnlock
+#undef Tcl_MutexFinalize
+#undef Tcl_ConditionNotify
+#undef Tcl_ConditionWait
+#undef Tcl_ConditionFinalize
+#endif
 
 
 /*
