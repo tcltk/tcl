@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.15 2002/07/10 11:56:44 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.16 2003/02/21 02:40:58 hobbs Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -413,6 +413,136 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
 } [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
 
 file delete [file join [temporaryDirectory] iso2022.txt]
+
+#
+# Begin jajp encoding round-trip conformity tests
+#
+proc foreach-jisx0208 {varName command} {
+    upvar 1 $varName code
+    foreach range {
+	{2121 217E}
+	{2221 222E}
+	{223A 2241}
+	{224A 2250}
+	{225C 226A}
+	{2272 2279}
+	{227E 227E}
+	{2330 2339}
+	{2421 2473}
+	{2521 2576}
+	{2821 2821}
+	{282C 282C}
+	{2837 2837}
+
+	{30 21 4E 7E}
+	{4F21 4F53}
+
+	{50 21 73 7E}
+	{7421 7426}
+    } {
+	if {[llength $range] == 2} {
+	    # for adhoc range. simple {first last}. inclusive.
+	    set first [scan [lindex $range 0] %x]
+	    set last [scan [lindex $range 1] %x]
+	    for {set i $first} {$i <= $last} {incr i} {
+		set code $i
+		uplevel 1 $command
+	    }
+	} elseif {[llength $range] == 4} {
+	    # for uniform range.
+	    set h0 [scan [lindex $range 0] %x]
+	    set l0 [scan [lindex $range 1] %x]
+	    set hend [scan [lindex $range 2] %x]
+	    set lend [scan [lindex $range 3] %x]
+	    for {set hi $h0} {$hi <= $hend} {incr hi} {
+		for {set lo $l0} {$lo <= $lend} {incr lo} {
+		    set code [expr {$hi << 8 | ($lo & 0xff)}]
+		    uplevel 1 $command
+		}
+	    }
+	} else {
+	    error "really?"
+	}
+    }
+}
+proc gen-jisx0208-euc-jp {code} {
+    binary format cc \
+	[expr {($code >> 8) | 0x80}] [expr {($code & 0xff) | 0x80}]
+}
+proc gen-jisx0208-iso2022-jp {code} {
+    binary format a3cca3 \
+	"\x1b\$B" [expr {$code >> 8}] [expr {$code & 0xff}] "\x1b(B"
+}
+proc gen-jisx0208-cp932 {code} {
+    set c1 [expr {($code >> 8) | 0x80}]
+    set c2 [expr {($code & 0xff)| 0x80}]
+    if {$c1 % 2} {
+	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x31 : 0x71)}]
+	incr c2 [expr {- (0x60 + ($c2 < 0xe0))}]
+    } else {
+	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x30 : 0x70)}]
+	incr c2 -2
+    }
+    binary format cc $c1 $c2
+}
+proc channel-diff {fa fb} {
+    set diff {}
+    while {[gets $fa la] >= 0 && [gets $fb lb] >= 0} {
+	if {[string compare $la $lb] == 0} continue
+	# lappend diff $la $lb
+
+	# For more readable (easy to analyze) output.
+	set code [lindex $la 0]
+	binary scan [lindex $la 1] H* expected
+	binary scan [lindex $lb 1] H* got
+	lappend diff [list $code $expected $got]
+    }
+    set diff
+}
+
+# Create char tables.
+cd [temporaryDirectory]
+foreach enc {cp932 euc-jp iso2022-jp} {
+    set f [open $enc.chars w]
+    fconfigure $f -encoding binary
+    foreach-jisx0208 code {
+	puts $f [format "%04X %s" $code [gen-jisx0208-$enc $code]]
+    }
+    close $f
+}
+# shiftjis == cp932 for jisx0208.
+file copy -force cp932.chars shiftjis.chars
+
+set NUM 0
+foreach from {cp932 shiftjis euc-jp iso2022-jp} {
+    foreach to {cp932 shiftjis euc-jp iso2022-jp} {
+	test encoding-25.[incr NUM] "jisx0208 $from => $to" {
+	    cd [temporaryDirectory]
+	    set f [open $from.chars]
+	    fconfigure $f -encoding $from
+	    set out [open $from.$to.out w]
+	    fconfigure $out -encoding $to
+	    puts -nonewline $out [read $f]
+	    close $out
+	    close $f
+	    
+	    # then compare $to.chars <=> $from.to.out as binary.
+	    set fa [open $to.chars]
+	    fconfigure $fa -encoding binary
+	    set fb [open $from.$to.out]
+	    fconfigure $fb -encoding binary
+	    set diff [channel-diff $fa $fb]
+	    close $fa
+	    close $fb
+	    
+	    # Difference should be empty.
+	    set diff
+	} {}
+    }
+}
+
+eval [list file delete] [glob -directory [temporaryDirectory] *.chars *.out]
+# ===> Cut here <===
 
 # EscapeFreeProc, GetTableEncoding, unilen
 # are fully tested by the rest of this file

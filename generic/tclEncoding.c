@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.15 2002/11/27 02:53:40 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16 2003/02/21 02:40:58 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1535,6 +1535,48 @@ LoadTableEncoding(interp, name, type, chan)
 	    dataPtr->fromUnicode[hi] = emptyPage;
 	}
     }
+    /*
+     * For trailing 'R'everse encoding, see [Patch #689341]
+     */
+    Tcl_DStringInit(&lineString);
+    do {
+	int len;
+	/* skip leading empty lines */
+	while ((len = Tcl_Gets(chan, &lineString)) == 0)
+	    ;
+	if (len < 0) {
+	    break;
+	}
+	line = Tcl_DStringValue(&lineString);
+	if (line[0] != 'R') {
+	    break;
+	}
+	for (Tcl_DStringSetLength(&lineString, 0);
+	     (len = Tcl_Gets(chan, &lineString)) >= 0;
+	     Tcl_DStringSetLength(&lineString, 0)) {
+	    unsigned char* p;
+	    int to, from;
+	    if (len < 5) {
+		continue;
+	    }
+	    p = (unsigned char*) Tcl_DStringValue(&lineString);
+	    to = (staticHex[p[0]] << 12) + (staticHex[p[1]] << 8)
+		+ (staticHex[p[2]] << 4) + staticHex[p[3]];
+	    if (to == 0) {
+	    	continue;
+	    }
+	    for (p += 5, len -= 5; len >= 0 && *p; p += 5, len -= 5) {
+		from = (staticHex[p[0]] << 12) + (staticHex[p[1]] << 8)
+			+ (staticHex[p[2]] << 4) + staticHex[p[3]];
+	    	if (from == 0) {
+		    continue;
+		}
+		dataPtr->fromUnicode[from >> 8][from & 0xff] = to;
+	    }
+	}
+    } while (0);
+    Tcl_DStringFree(&lineString);
+
     encType.encodingName    = name;
     encType.toUtfProc	    = TableToUtfProc;
     encType.fromUtfProc	    = TableFromUtfProc;
@@ -1614,6 +1656,9 @@ LoadEscapeEncoding(name, chan)
 
 		strncpy(est.name, argv[0], sizeof(est.name));
 		est.name[sizeof(est.name) - 1] = '\0';
+
+		/* To avoid infinite recursion in [encoding system iso2022-*]*/
+		Tcl_GetEncoding(NULL, est.name);
 
 		est.encodingPtr = NULL;
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
