@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.20.6.3 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.20.6.4 2001/09/27 14:14:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -73,7 +73,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
 static char *		DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *user, Tcl_DString *resultPtr));
 static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
-			    Tcl_DString *resultPtr, Tcl_Length offset, 
+			    Tcl_DString *resultPtr, int offset, 
 			    Tcl_PathType *typePtr));
 static int		SkipToChar _ANSI_ARGS_((char **stringPtr,
 			    char *match));
@@ -160,7 +160,7 @@ static CONST char *
 ExtractWinRoot(path, resultPtr, offset, typePtr)
     CONST char *path;		/* Path to parse. */
     Tcl_DString *resultPtr;	/* Buffer to hold result. */
-    Tcl_Length offset;		/* Offset in buffer where result should be
+    int offset;			/* Offset in buffer where result should be
 				 * stored. */
     Tcl_PathType *typePtr;	/* Where to store pathType result */
 {
@@ -311,7 +311,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
     Tcl_Obj **driveNameRef;
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
-    Tcl_Length pathLen;
+    int pathLen;
     char *path = Tcl_GetStringFromObj(pathObjPtr, &pathLen);
     
     if (path[0] == '~') {
@@ -413,7 +413,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 				    } else if ((gotColon > 1) && (*(c-1) == ':')) {
 					/* We have an extra colon */
 				        Tcl_SetObjLength(*driveNameRef, 
-						(Tcl_Length)(c - Tcl_GetString(*driveNameRef) - 1));
+						c - Tcl_GetString(*driveNameRef) - 1);
 				    }
 				}
 			    }
@@ -449,7 +449,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 		    *driveNameLengthPtr = rootEnd - path;
 		    if (driveNameRef != NULL) {
 			*driveNameRef = Tcl_NewStringObj(Tcl_DStringValue(&ds), 
-							 (int)Tcl_DStringLength(&ds));
+							 Tcl_DStringLength(&ds));
 			Tcl_IncrRefCount(*driveNameRef);
 		    }
 		}
@@ -488,7 +488,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 Tcl_Obj* 
 TclpNativeSplitPath(pathPtr, lenPtr)
     Tcl_Obj *pathPtr;		/* Path to split. */
-    Tcl_Length *lenPtr;		/* place to store number of path elements. */
+    int *lenPtr;		/* int to store number of path elements. */
 {
     Tcl_Obj *resultPtr = NULL;  /* Needed only to prevent gcc warnings. */
 
@@ -556,7 +556,7 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
 {
     Tcl_Obj *resultPtr = NULL;  /* Needed only to prevent gcc warnings. */
     Tcl_Obj *tmpPtr, *eltPtr;
-    Tcl_Length len, size, i, resultLength;
+    int i, size, len;
     char *p, *str;
 
     /*
@@ -565,15 +565,14 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
 
     tmpPtr = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(tmpPtr);
-    resultPtr = Tcl_FSSplitPath(tmpPtr, &resultLength);
-    *argcPtr = resultLength;
+    resultPtr = Tcl_FSSplitPath(tmpPtr, argcPtr);
     Tcl_DecrRefCount(tmpPtr);
 
     /* Calculate space required for the result */
     
     size = 1;
-    for (i = 0; i < resultLength; i++) {
-	Tcl_ListObjIndex(NULL, resultPtr, (int)i, &eltPtr);
+    for (i = 0; i < *argcPtr; i++) {
+	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	Tcl_GetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
@@ -584,16 +583,16 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
      */
 
     *argvPtr = (char **) ckalloc((unsigned)
-	    (((resultLength + 1) * sizeof(char *)) + size));
+	    ((((*argcPtr) + 1) * sizeof(char *)) + size));
 
     /*
      * Position p after the last argv pointer and copy the contents of
      * the list in, piece by piece.
      */
 
-    p = (char *) &(*argvPtr)[resultLength + 1];
-    for (i = 0; i < resultLength; i++) {
-	Tcl_ListObjIndex(NULL, resultPtr, (int)i, &eltPtr);
+    p = (char *) &(*argvPtr)[(*argcPtr) + 1];
+    for (i = 0; i < *argcPtr; i++) {
+	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = Tcl_GetStringFromObj(eltPtr, &len);
 	memcpy((VOID *) p, (VOID *) str, (size_t) len+1);
 	p += len+1;
@@ -603,9 +602,9 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
      * Now set up the argv pointers.
      */
 
-    p = (char *) &(*argvPtr)[resultLength + 1];
+    p = (char *) &(*argvPtr)[(*argcPtr) + 1];
 
-    for (i = 0; i < resultLength; i++) {
+    for (i = 0; i < *argcPtr; i++) {
 	(*argvPtr)[i] = p;
 	while ((*p++) != '\0') {}
     }
@@ -689,6 +688,7 @@ SplitUnixPath(path)
     }
     return result;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -726,8 +726,8 @@ SplitWinPath(path)
 
     if (p != path) {
 	Tcl_ListObjAppendElement(NULL, result, 
-		Tcl_NewStringObj(Tcl_DStringValue(&buf), 
-			(int)Tcl_DStringLength(&buf)));
+				 Tcl_NewStringObj(Tcl_DStringValue(&buf), 
+						  Tcl_DStringLength(&buf)));
     }
     Tcl_DStringFree(&buf);
     
@@ -1060,8 +1060,7 @@ TclpNativeJoinPath(prefix, joining)
     Tcl_Obj *prefix;
     char* joining;
 {
-    Tcl_Length length;
-    int needsSep;
+    int length, needsSep;
     char *dest, *p, *start;
     
     start = Tcl_GetStringFromObj(prefix, &length);
@@ -1271,8 +1270,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
     char **argv;
     Tcl_DString *resultPtr;	/* Pointer to previously initialized DString. */
 {
-    int i;
-    Tcl_Length len;
+    int i, len;
     Tcl_Obj *listObj = Tcl_NewObj();
     Tcl_Obj *resultObj;
     char *resultStr;
@@ -1290,7 +1288,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
     
     /* Store the result */
     resultStr = Tcl_GetStringFromObj(resultObj, &len);
-    Tcl_DStringAppend(resultPtr, resultStr, (int)len);
+    Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
     
     /* Return a pointer to the result */
@@ -1541,8 +1539,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int index, i, globFlags, join, dir, result;
-    Tcl_Length length;
+    int index, i, globFlags, length, join, dir, result;
     char *string, *separators;
     Tcl_Obj *typePtr, *resultPtr, *look;
     Tcl_Obj *pathOrDir = NULL;
@@ -1668,7 +1665,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    break;
     }
     if (dir == PATH_GENERAL) {
-	Tcl_Length pathlength;
+	int pathlength;
 	char *last;
 	char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
 
@@ -1729,9 +1726,9 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	globTypes->macType = NULL;
 	globTypes->macCreator = NULL;
 	while(--length >= 0) {
-	    Tcl_Length len;
+	    int len;
 	    char *str;
-	    Tcl_ListObjIndex(interp, typePtr, (int)length, &look);
+	    Tcl_ListObjIndex(interp, typePtr, length, &look);
 	    str = Tcl_GetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
 		globTypes->perm |= TCL_GLOB_PERM_RONLY;
@@ -1847,7 +1844,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	}
 	for (i = 0; i < objc; i++) {
 	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&prefix, string, (int)length);
+	    Tcl_DStringAppend(&prefix, string, length);
 	    if (i != objc -1) {
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
@@ -1864,10 +1861,10 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		Tcl_DStringInit(&str);
 		if (dir == PATH_GENERAL) {
 		    Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
-			    (int)Tcl_DStringLength(&prefix));
+			    Tcl_DStringLength(&prefix));
 		}
 		string = Tcl_GetStringFromObj(objv[i], &length);
-		Tcl_DStringAppend(&str, string, (int)length);
+		Tcl_DStringAppend(&str, string, length);
 		if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir,
 			globFlags, globTypes) != TCL_OK) {
 		    result = TCL_ERROR;
@@ -2098,14 +2095,14 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	 * the -tails flag is given), but much simpler to code.
 	 */
 	if (globFlags & TCL_GLOBMODE_TAILS) {
-	    Tcl_Length objc, i;
+	    int objc, i;
 	    Tcl_Obj **objv;
 	    Tcl_Obj *tailResult;
 	    Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), 
 				   &objc, &objv);
 	    tailResult = Tcl_NewListObj(0,NULL);
 	    for (i = 0; i< objc; i++) {
-		Tcl_Length len;
+		int len;
 		char *oldStr = Tcl_GetStringFromObj(objv[i],&len);
 		Tcl_Obj* str;
 		if (len == prefixLen) {
@@ -2117,7 +2114,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 		    }
 		} else {
 		    str = Tcl_NewStringObj(oldStr + prefixLen, 
-					   (int)len - prefixLen);
+						len - prefixLen);
 		}
 		Tcl_ListObjAppendElement(interp, tailResult, str);
 	    }
@@ -2219,12 +2216,12 @@ TclDoGlob(interp, separators, headPtr, tail, types)
     Tcl_GlobTypeData *types;	/* List object containing list of acceptable 
                             	 * types. May be NULL. */
 {
-    int quoted, count;
+    int baseLength, quoted, count;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar, savedChar;
     char lastChar = 0;
     
-    Tcl_Length baseLength, length = Tcl_DStringLength(headPtr);
+    int length = Tcl_DStringLength(headPtr);
 
     if (length > 0) {
 	lastChar = Tcl_DStringValue(headPtr)[length-1];
@@ -2441,7 +2438,7 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 					 head, tail, &dirOnly);
 	    *p = save;
 	    if (ret == TCL_OK) {
-		Tcl_Length resLength;
+		int resLength;
 		ret = Tcl_ListObjLength(interp, resultPtr, &resLength);
 		if (ret == TCL_OK) {
 		    int i;
@@ -2535,7 +2532,7 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	}
 	/* Common for all platforms */
 	name = Tcl_DStringValue(headPtr);
-	nameObj = Tcl_NewStringObj(name, (int)Tcl_DStringLength(headPtr));
+	nameObj = Tcl_NewStringObj(name, Tcl_DStringLength(headPtr));
 
 	Tcl_IncrRefCount(nameObj);
 	if (Tcl_FSLstat(nameObj, &buf) == 0) {
@@ -2552,6 +2549,7 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	return TCL_OK;
     }
 }
+
 
 /*
  *---------------------------------------------------------------------------
@@ -2577,7 +2575,7 @@ TclFileDirname(interp, pathPtr)
     Tcl_Interp *interp;		/* Used for error reporting */
     Tcl_Obj *pathPtr;           /* Path to take dirname of */
 {
-    Tcl_Length splitElements;
+    int splitElements;
     Tcl_Obj *splitPtr;
     Tcl_Obj *splitResultPtr = NULL;
 
@@ -2605,7 +2603,7 @@ TclFileDirname(interp, pathPtr)
      */
 
     if (splitElements > 1) {
-	splitResultPtr = Tcl_FSJoinPath(splitPtr, (int)splitElements - 1);
+	splitResultPtr = Tcl_FSJoinPath(splitPtr, splitElements - 1);
     } else if (splitElements == 0 || 
       (Tcl_FSGetPathType(pathPtr) == TCL_PATH_RELATIVE)) {
 	splitResultPtr = Tcl_NewStringObj(
@@ -2623,13 +2621,13 @@ TclFileDirname(interp, pathPtr)
  *
  * Tcl_AllocStatBuf
  *
- *	This procedure allocates a Tcl_StatBuf on the heap.  It exists
- *	so that extensions may be used unchanged on systems where
- *	largefile support is optional.
+ *     This procedure allocates a Tcl_StatBuf on the heap.  It exists
+ *     so that extensions may be used unchanged on systems where
+ *     largefile support is optional.
  *
  * Results:
- *	A pointer to a Tcl_StatBuf which may be deallocated by being
- *	passed to ckfree().
+ *     A pointer to a Tcl_StatBuf which may be deallocated by being
+ *     passed to ckfree().
  *
  * Side effects:
  *      None.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.10.2.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.10.2.3 2001/09/27 14:11:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -99,7 +99,7 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    char *arg;
-	    Tcl_Length length;
+	    int length;
 
 	    arg = Tcl_GetStringFromObj(objv[3], &length);
 	    if (strncmp(arg, "nonewline", (size_t) length) != 0) {
@@ -386,7 +386,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     
     if ((charactersRead > 0) && (newline != 0)) {
 	char *result;
-	Tcl_Length length;
+	int length;
 
 	result = Tcl_GetStringFromObj(resultPtr, &length);
 	if (result[length - 1] == '\n') {
@@ -454,7 +454,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
 	mode = modeArray[optionIndex];
     }
 
-    result = Tcl_Seek(chan, (Tcl_WideInt)offset, mode);
+    result = Tcl_Seek(chan, offset, mode);
     if (result == (Tcl_WideInt)-1) {
         Tcl_AppendResult(interp, "error during seek on \"", 
 		chanName, "\": ", Tcl_PosixError(interp), (char *) NULL);
@@ -562,7 +562,7 @@ Tcl_CloseObjCmd(clientData, interp, objc, objv)
 
 	Tcl_Obj *resultPtr;
 	char *string;
-	Tcl_Length len;
+	int len;
 	
 	resultPtr = Tcl_GetObjResult(interp);
 	string = Tcl_GetStringFromObj(resultPtr, &len);
@@ -732,12 +732,10 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
 #define NUM_ARGS 20
     Tcl_Obj *resultPtr;
-    char **argv;
-    char *string;
+    char **argv, *string;
     Tcl_Channel chan;
     char *argStorage[NUM_ARGS];
-    int argc, background, i, index, keepNewline, result, skip;
-    Tcl_Length length;
+    int argc, background, i, index, keepNewline, result, skip, length;
     static char *options[] = {
 	"-keepnewline",	"--",		NULL
     };
@@ -849,7 +847,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
     result = Tcl_Close(interp, chan);
     string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
-    Tcl_AppendToObj(resultPtr, string, (int)length);
+    Tcl_AppendToObj(resultPtr, string, length);
 
     /*
      * If the last character of the result is a newline, then remove
