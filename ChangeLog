@@ -1,5 +1,16 @@
 2002-02-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/GetIndex.3:
+	* generic/tcl.decls (Tcl_GetIndexFromObjStruct):
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct):  Revised the
+	prototype of the Tcl_GetIndexFromObjStruct to take its struct
+	table as a (CONST VOID *) argument, better describing what it is,
+	maintaining source compatibility, and adding CONST correctness
+	according to TIP 27.  Thanks to Joe English for an elegant
+	solution. [Bug 520304]
+
+	* generic/tclDecls.h: make genstubs
+
 	* generic/tclMain.c (Tcl_Main,StdinProc):  Corrected some reference
 	count management errors on the interactive command Tcl_Obj found by
 	Purify.  Thanks to Jeff Hobbs for the report and assistance.
