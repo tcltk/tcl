@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.46 2004/09/18 17:01:05 dkf Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.47 2004/09/27 09:00:33 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -324,7 +324,7 @@ function.
 given lie in the same filesystem (according to
 \fBTcl_FSGetFileSystemForPath\fR) then that filesystem's 'rename file'
 function is called (if it is non-NULL).  Otherwise the function returns -1
-and sets the \Berrno\fR global C variable to the 'EXDEV' POSIX error
+and sets the \fBerrno\fR global C variable to the 'EXDEV' POSIX error
 code (which signifies a 'cross-domain link').
 .PP
 \fBTcl_FSListVolumes\fR calls each filesystem which has a non-NULL 'list
