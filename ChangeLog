@@ -1,5 +1,26 @@
 2002-07-03  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/pkg/circ1.tcl: removed
+	* tests/pkg/circ2.tcl: removed
+	* tests/pkg/circ3.tcl: removed
+	* tests/pkg/global.tcl: removed
+	* tests/pkg/import.tcl: removed
+	* tests/pkg/pkg1.tcl: removed
+	* tests/pkg/pkg2_a.tcl: removed
+	* tests/pkg/pkg2_b.tcl: removed
+	* tests/pkg/pkg3.tcl: removed
+	* tests/pkg/pkg4.tcl: removed
+	* tests/pkg/pkg5.tcl: removed
+	* tests/pkg/pkga.tcl: removed
+	* tests/pkg/samename.tcl: removed
+	* tests/pkg/simple.tcl: removed
+	* tests/pkg/spacename.tcl: removed
+	* tests/pkg/std.tcl: removed
+	* tests/pkgMkIndex.test:  Fixed [Bug 575857] where this test file
+	expected to be able to write to [file join [testsDirectory] pkg].
+	Part of the fix was to import several auxilliary files into the
+	test file itself.
+
 	* tests/main.test:	Cheap fix for [Bugs 575851, 575858].  Avoid
 	* tests/tcltest.test:	non-writable . by [cd [temporaryDirectory]].
 
