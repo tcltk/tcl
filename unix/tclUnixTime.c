@@ -9,11 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.13 2002/05/29 00:19:39 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.14 2002/06/26 13:42:23 rmax Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include <locale.h>
 #define TM_YEAR_BASE 1900
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 
@@ -332,6 +333,7 @@ TclpStrftime(s, maxsize, format, t, useGMT)
 		(((t->tm_hour * 60) + t->tm_min)/144));
 	return(strlen(s));
     }
+    setlocale(LC_TIME, "");
     return strftime(s, maxsize, format, t);
 }
 

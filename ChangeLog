@@ -1,3 +1,8 @@
+2002-06-26  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixTime.c: Make [clock format] respect locale settings.
+	* tests/clock.test:   Bug #565880. ***POTENTIAL INCOMPATIBILITY***
+
 2002-06-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* doc/CrtInterp.3:
