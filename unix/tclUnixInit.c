@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.46 2004/06/23 00:24:41 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.47 2004/06/23 03:49:59 dgp Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -207,7 +207,7 @@ static CONST LocaleTable localeTable[] = {
 static int		GetStackSize _ANSI_ARGS_((size_t *stackSizePtr));
 #endif /* TCL_NO_STACK_CHECK */
 #ifdef HAVE_CFBUNDLE
-static int		MacOSXGetLibraryPath _ANSI_ARGS((
+static int		MacOSXGetLibraryPath _ANSI_ARGS_((
 			    Tcl_Interp *interp, int maxPathLen,
 			    char *tclLibPath));
 #endif /* HAVE_CFBUNDLE */
