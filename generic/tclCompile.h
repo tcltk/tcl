@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCompile.h 1.37 97/08/07 19:11:50
+ * SCCS: %Z% $Id: tclCompile.h,v 1.3 1998/07/01 17:57:17 escoffon Exp $ 
  */
 
 #ifndef _TCLCOMPILATION
@@ -166,22 +166,36 @@ typedef ClientData (AuxDataDupProc)  _ANSI_ARGS_((ClientData clientData));
 typedef void       (AuxDataFreeProc) _ANSI_ARGS_((ClientData clientData));
 
 /*
+ * We define a separate AuxDataType struct to hold type-related information
+ * for the AuxData structure. This separation makes it possible for clients
+ * outside of the TCL core to manipulate (in a limited fashion!) AuxData;
+ * for example, it makes it possible to pickle and unpickle AuxData structs.
+ */
+
+typedef struct AuxDataType {
+    char *name;					/* the name of the type. Types can be
+                                 * registered and found by name */
+    AuxDataDupProc *dupProc;	/* Callback procedure to invoke when the
+                                 * aux data is duplicated (e.g., when the
+                                 * ByteCode structure containing the aux
+                                 * data is duplicated). NULL means just
+                                 * copy the source clientData bits; no
+                                 * proc need be called. */
+    AuxDataFreeProc *freeProc;	/* Callback procedure to invoke when the
+                                 * aux data is freed. NULL means no
+                                 * proc need be called. */
+} AuxDataType;
+
+/*
  * The definition of the AuxData structure that holds information created
  * during compilation by CompileProcs and used by instructions during
  * execution.
  */
 
 typedef struct AuxData {
+    AuxDataType *type;		/* pointer to the AuxData type associated with
+                             * this ClientData. */
     ClientData clientData;	/* The compilation data itself. */
-    AuxDataDupProc *dupProc;	/* Callback procedure to invoke when the
-				 * aux data is duplicated (e.g., when the
-				 * ByteCode structure containing the aux
-				 * data is duplicated). NULL means just
-				 * copy the source clientData bits; no
-				 * proc need be called. */
-    AuxDataFreeProc *freeProc;	/* Callback procedure to invoke when the
-				 * aux data is freed. NULL means no
-				 * proc need be called. */
 } AuxData;
 
 /*
@@ -757,13 +771,13 @@ EXTERN int		TclCompileString _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		TclCompileDollarVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, char *lastChar, int flags,
 			    CompileEnv *envPtr));
-EXTERN int		TclCreateAuxData _ANSI_ARGS_((
-			    ClientData clientData, AuxDataDupProc *dupProc,
-			    AuxDataFreeProc *freeProc, CompileEnv *envPtr));
+EXTERN int		TclCreateAuxData _ANSI_ARGS_((ClientData clientData,
+                AuxDataType *typePtr, CompileEnv *envPtr));
 EXTERN ExecEnv *	TclCreateExecEnv _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		TclDeleteExecEnv _ANSI_ARGS_((ExecEnv *eePtr));
 EXTERN void		TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr));
+EXTERN AuxDataType *TclGetAuxDataType _ANSI_ARGS_((char *typeName));
 EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
 			    unsigned char *pc, int catchOnly,
 			    ByteCode* codePtr));
@@ -774,12 +788,14 @@ EXTERN void		TclExpandCodeArray _ANSI_ARGS_((
                             CompileEnv *envPtr));
 EXTERN void		TclExpandJumpFixupArray _ANSI_ARGS_((
                             JumpFixupArray *fixupArrayPtr));
+EXTERN void		TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
 EXTERN int		TclFixupForwardJump _ANSI_ARGS_((
 			    CompileEnv *envPtr, JumpFixup *jumpFixupPtr,
 			    int jumpDist, int distThreshold));
 EXTERN void		TclFreeCompileEnv _ANSI_ARGS_((CompileEnv *envPtr));
 EXTERN void		TclFreeJumpFixupArray _ANSI_ARGS_((
   			    JumpFixupArray *fixupArrayPtr));
+EXTERN void		TclInitAuxDataTypeTable _ANSI_ARGS_((void));
 EXTERN void		TclInitByteCodeObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    CompileEnv *envPtr));
 EXTERN void		TclInitCompileEnv _ANSI_ARGS_((Tcl_Interp *interp,
@@ -796,6 +812,7 @@ EXTERN int		TclPrintInstruction _ANSI_ARGS_((ByteCode* codePtr,
 			    unsigned char *pc));
 EXTERN void		TclPrintSource _ANSI_ARGS_((FILE *outFile,
 			    char *string, int maxChars));
+EXTERN void		TclRegisterAuxDataType _ANSI_ARGS_((AuxDataType *typePtr));
 
 /*
  *----------------------------------------------------------------
