@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.19 2004/09/29 22:17:31 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.20 2004/10/06 14:59:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -314,9 +314,9 @@ SetIndexFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "can't convert value to index except via Tcl_GetIndexFromObj API",
-	    -1);
+	    -1));
     return TCL_ERROR;
 }
 

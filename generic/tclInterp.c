@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.45 2004/09/14 17:45:36 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.46 2004/10/06 14:59:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -694,10 +694,8 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		if (slaveInterp == NULL) {
 		    return TCL_ERROR;
 		} else if (slaveInterp == interp) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "cannot delete the current interpreter",
-			    (char *) NULL);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "cannot delete the current interpreter", -1));
 		    return TCL_ERROR;
 		}
 		iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
@@ -732,7 +730,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		Tcl_ResetResult(interp);
 		exists = 0;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), exists);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
 	    return TCL_OK;
 	}
 	case OPT_EXPOSE: {
@@ -779,7 +777,8 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    if (slaveInterp == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), Tcl_IsSafe(slaveInterp));
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewBooleanObj(Tcl_IsSafe(slaveInterp)));
 	    return TCL_OK;
 	}
 	case OPT_INVOKEHID: {
@@ -897,13 +896,14 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
-	    resultPtr = Tcl_GetObjResult(interp);
+	    resultPtr = Tcl_NewObj();
 	    hPtr = Tcl_FirstHashEntry(&iiPtr->master.slaveTable, &hashSearch);
 	    for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
 		string = Tcl_GetHashKey(&iiPtr->master.slaveTable, hPtr);
 		Tcl_ListObjAppendElement(NULL, resultPtr,
 			Tcl_NewStringObj(string, -1));
 	    }
+	    Tcl_SetObjResult(interp, resultPtr);
 	    return TCL_OK;
 	}
 	case OPT_SHARE: {
@@ -954,18 +954,16 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
 	    hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
 	    if (hPtr == NULL) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"alias \"", aliasName, "\" in path \"",
-			Tcl_GetString(objv[2]), "\" not found",
-			(char *) NULL);
+		Tcl_AppendResult(interp, "alias \"", aliasName,
+			"\" in path \"", Tcl_GetString(objv[2]),
+			"\" not found", (char *) NULL);
 		return TCL_ERROR;
 	    }
 	    aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
 	    if (Tcl_GetInterpPath(interp, aliasPtr->targetInterp) != TCL_OK) {
 		Tcl_ResetResult(interp);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"target interpreter for alias \"", aliasName,
-			"\" in path \"", Tcl_GetString(objv[2]),
+		Tcl_AppendResult(interp, "target interpreter for alias \"",
+			aliasName, "\" in path \"", Tcl_GetString(objv[2]),
 			"\" is not my descendant", (char *) NULL);
 		return TCL_ERROR;
 	    }
@@ -1175,8 +1173,8 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
     iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
     if (hPtr == NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "alias \"", aliasName, "\" not found", (char *) NULL);
+        Tcl_AppendResult(interp, "alias \"", aliasName,
+		"\" not found", (char *) NULL);
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
@@ -1237,8 +1235,8 @@ Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
     iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
     hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
     if (hPtr == (Tcl_HashEntry *) NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "alias \"", aliasName, "\" not found", (char *) NULL);
+        Tcl_AppendResult(interp, "alias \"", aliasName,
+		"\" not found", (char *) NULL);
         return TCL_ERROR;
     }
     aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
@@ -1326,8 +1324,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
 	     * [Bug #641195]
 	     */
 
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "cannot define or rename alias \"",
+	    Tcl_AppendResult(interp, "cannot define or rename alias \"",
 		    Tcl_GetCommandName(cmdInterp, cmd),
 		    "\": interpreter deleted", (char *) NULL);
 	    return TCL_ERROR;
@@ -1342,8 +1339,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
         }
 	aliasCmdPtr = (Command *) aliasCmd;
         if (aliasCmdPtr == cmdPtr) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "cannot define or rename alias \"",
+            Tcl_AppendResult(interp, "cannot define or rename alias \"",
 		    Tcl_GetCommandName(cmdInterp, cmd),
 		    "\": would create a loop", (char *) NULL);
             return TCL_ERROR;
@@ -1564,7 +1560,7 @@ AliasDelete(interp, slaveInterp, namePtr)
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
     hPtr = Tcl_FindHashEntry(&slavePtr->aliasTable, Tcl_GetString(namePtr));
     if (hPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "alias \"",
+	Tcl_AppendResult(interp, "alias \"",
 		Tcl_GetString(namePtr), "\" not found", NULL);
         return TCL_ERROR;
     }
@@ -1643,18 +1639,18 @@ AliasList(interp, slaveInterp)
 {
     Tcl_HashEntry *entryPtr;
     Tcl_HashSearch hashSearch;
-    Tcl_Obj *resultPtr;	
+    Tcl_Obj *resultPtr = Tcl_NewObj();
     Alias *aliasPtr;
     Slave *slavePtr;
 
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
-    resultPtr = Tcl_GetObjResult(interp);
 
     entryPtr = Tcl_FirstHashEntry(&slavePtr->aliasTable, &hashSearch);
     for ( ; entryPtr != NULL; entryPtr = Tcl_NextHashEntry(&hashSearch)) {
         aliasPtr = (Alias *) Tcl_GetHashValue(entryPtr);
         Tcl_ListObjAppendElement(NULL, resultPtr, aliasPtr->token);
     }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -1982,8 +1978,7 @@ GetInterp(interp, pathPtr)
 	}
     }
     if (searchInterp == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"could not find interpreter \"",
+	Tcl_AppendResult(interp, "could not find interpreter \"",
                 Tcl_GetString(pathPtr), "\"", (char *) NULL);
     }
     return searchInterp;
@@ -2048,8 +2043,7 @@ SlaveCreate(interp, pathPtr, safe)
     masterInfoPtr = (InterpInfo *) ((Interp *) masterInterp)->interpInfo;
     hPtr = Tcl_CreateHashEntry(&masterInfoPtr->master.slaveTable, path, &new);
     if (new == 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "interpreter named \"", path,
+        Tcl_AppendResult(interp, "interpreter named \"", path,
 		"\" already exists, cannot create", (char *) NULL);
         return NULL;
     }
@@ -2223,7 +2217,8 @@ SlaveObjCmd(clientData, interp, objc, objv)
 		Tcl_WrongNumArgs(interp, 2, objv, (char *) NULL);
 		return TCL_ERROR;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), Tcl_IsSafe(slaveInterp));
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewBooleanObj(Tcl_IsSafe(slaveInterp)));
 	    return TCL_OK;
 	}
         case OPT_INVOKEHIDDEN: {
@@ -2430,9 +2425,9 @@ SlaveExpose(interp, slaveInterp, objc, objv)
     char *name;
     
     if (Tcl_IsSafe(interp)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"permission denied: safe interpreter cannot expose commands",
-		(char *) NULL);
+		-1));
 	return TCL_ERROR;
     }
 
@@ -2474,8 +2469,7 @@ SlaveRecursionLimit(interp, slaveInterp, objc, objv)
 
     if (objc) {
 	if (Tcl_IsSafe(interp)) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "permission denied: ",
+	    Tcl_AppendResult(interp, "permission denied: ",
 		    "safe interpreters cannot change recursion limit",
 		    (char *) NULL);
 	    return TCL_ERROR;
@@ -2531,9 +2525,9 @@ SlaveHide(interp, slaveInterp, objc, objv)
     char *name;
     
     if (Tcl_IsSafe(interp)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"permission denied: safe interpreter cannot hide commands",
-		(char *) NULL);
+		-1));
 	return TCL_ERROR;
     }
 
@@ -2568,12 +2562,11 @@ SlaveHidden(interp, slaveInterp)
     Tcl_Interp *interp;		/* Interp for data return. */
     Tcl_Interp *slaveInterp;	/* Interp whose hidden commands to query. */
 {
-    Tcl_Obj *listObjPtr;		/* Local object pointer. */
+    Tcl_Obj *listObjPtr = Tcl_NewObj();	/* Local object pointer. */
     Tcl_HashTable *hTblPtr;		/* For local searches. */
     Tcl_HashEntry *hPtr;		/* For local searches. */
     Tcl_HashSearch hSearch;		/* For local searches. */
     
-    listObjPtr = Tcl_GetObjResult(interp);
     hTblPtr = ((Interp *) slaveInterp)->hiddenCmdTablePtr;
     if (hTblPtr != (Tcl_HashTable *) NULL) {
 	for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
@@ -2584,6 +2577,7 @@ SlaveHidden(interp, slaveInterp)
 		    Tcl_NewStringObj(Tcl_GetHashKey(hTblPtr, hPtr), -1));
 	}
     }
+    Tcl_SetObjResult(interp, listObjPtr);
     return TCL_OK;
 }
 
@@ -2615,9 +2609,9 @@ SlaveInvokeHidden(interp, slaveInterp, namespaceName, objc, objv)
     int result;
     
     if (Tcl_IsSafe(interp)) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp),
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"not allowed to invoke hidden commands from safe interpreter",
-		-1);
+		-1));
 	return TCL_ERROR;
     }
 
@@ -2670,9 +2664,9 @@ SlaveMarkTrusted(interp, slaveInterp)
 				 * marked trusted. */
 {
     if (Tcl_IsSafe(interp)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"permission denied: safe interpreter cannot mark trusted",
-		(char *) NULL);
+		-1));
 	return TCL_ERROR;
     }
     ((Interp *) slaveInterp)->flags &= ~SAFE_INTERP;

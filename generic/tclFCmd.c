@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.27 2004/10/06 13:09:43 dkf Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.28 2004/10/06 14:59:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -936,9 +936,8 @@ TclFileAttrsCmd(interp, objc, objv)
 		 * There was an error, probably that the filePtr is
 		 * not accepted by any filesystem
 		 */
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-			"could not read \"", Tcl_GetString(filePtr), 
-			"\": ", Tcl_PosixError(interp), 
+		Tcl_AppendResult(interp, "could not read \"",
+			Tcl_GetString(filePtr), "\": ", Tcl_PosixError(interp), 
 			(char *) NULL);
 		return TCL_ERROR;
 	    }

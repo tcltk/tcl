@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.23 2004/06/18 20:38:01 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.24 2004/10/06 14:59:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -629,13 +629,7 @@ Tcl_GetEncodingNames(interp)
 	Tcl_DecrRefCount(encodingObj);
     }
 
-    /*
-     * Clear any values placed in the result by globbing.
-     */
-
-    Tcl_ResetResult(interp);
-    resultPtr = Tcl_GetObjResult(interp);
-
+    resultPtr = Tcl_NewObj();
     hPtr = Tcl_FirstHashEntry(&table, &search);
     while (hPtr != NULL) {
 	Tcl_Obj *strPtr;
@@ -645,6 +639,7 @@ Tcl_GetEncodingNames(interp)
 	hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&table);
+    Tcl_SetObjResult(interp, resultPtr);
 }
 
 /*
