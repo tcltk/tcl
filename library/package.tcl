@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.13 2000/03/06 19:17:11 ericm Exp $
+# RCS: @(#) $Id: package.tcl,v 1.14 2000/04/23 03:36:51 jingham Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -488,7 +488,7 @@ proc tclPkgUnknown {name version {exact {}}} {
 	if {(![interp issafe]) && \
 		[string equal $tcl_platform(platform) "macintosh"]} {
 	    set dir [lindex $use_path end]
-	    if {![info exists procdDirs($x)]} {
+	    if {![info exists procdDirs($dir)]} {
 		tclMacPkgSearch $dir
 		set procdDirs($dir) 1
 	    }
