@@ -1,3 +1,11 @@
+2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
+
+	* unix/tcl.m4: Added _REENTRANT to Solaris build so that thread
+	safe library routines are included.
+	* unix/configure: Re-ran 'autoconf' with changed tcl.m4
+	* tclUnixTime.c: Modified for thread safety of 'gmtime' and
+	'localtime' system calls [Bugs #219136 and #232558]
+	
 2001-04-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/expr.test (expr-21.*): Tests to check below fix.
