@@ -3,6 +3,8 @@
 	* generic/tclNamesp.c (Tcl_ForgetImport):	Corrected faulty
 	* tests/namespace.test:	logic that relied exclusively on string
 	matching and failed in the presence of [rename]s.  [Bug 560297]
+	Also corrected faulty prevention of [namespace import] cycles.
+	[Bug 1017299]
 
 2004-09-08  Don Porter  <dgp@users.sourceforge.net>
 
