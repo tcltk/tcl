@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.23 1999/12/12 02:26:41 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.24 2000/02/02 22:32:11 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -126,27 +126,29 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int i, indices, match, about, offset;
+    int i, indices, match, about, offset, all, doinline, numMatchesSaved;
     int cflags, eflags;
     Tcl_RegExp regExpr;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *resultPtr;
     Tcl_RegExpInfo info;
     static char *options[] = {
-	"-indices",	"-nocase",	"-about",	"-expanded",
-	"-line",	"-linestop",	"-lineanchor",	"-start",
-	"--",		(char *) NULL
+	"-all",		"-about",	"-indices",	"-inline",
+	"-expanded",	"-line",	"-linestop",	"-lineanchor",
+	"-nocase",	"-start",	"--",		(char *) NULL
     };
     enum options {
-	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
-	REGEXP_LINE,	REGEXP_LINESTOP, REGEXP_LINEANCHOR,	REGEXP_START,
-	REGEXP_LAST
+	REGEXP_ALL,	REGEXP_ABOUT,	REGEXP_INDICES,	REGEXP_INLINE,
+	REGEXP_EXPANDED,REGEXP_LINE,	REGEXP_LINESTOP,REGEXP_LINEANCHOR,
+	REGEXP_NOCASE,	REGEXP_START,	REGEXP_LAST
     };
 
-    indices = 0;
-    about = 0;
-    cflags = TCL_REG_ADVANCED;
-    eflags = 0;
-    offset = 0;
+    indices	= 0;
+    about	= 0;
+    cflags	= TCL_REG_ADVANCED;
+    eflags	= 0;
+    offset	= 0;
+    all		= 0;
+    doinline	= 0;
     
     for (i = 1; i < objc; i++) {
 	char *name;
@@ -161,8 +163,16 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	switch ((enum options) index) {
+	    case REGEXP_ALL: {
+		all = 1;
+		break;
+	    }
 	    case REGEXP_INDICES: {
 		indices = 1;
+		break;
+	    }
+	    case REGEXP_INLINE: {
+		doinline = 1;
 		break;
 	    }
 	    case REGEXP_NOCASE: {
@@ -209,13 +219,21 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     }
 
     endOfForLoop:
-    if (objc - i < 2 - about) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+    if ((objc - i) < (2 - about)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
 	return TCL_ERROR;
     }
     objc -= i;
     objv += i;
+
+    if (doinline && ((objc - 2) != 0)) {
+	/*
+	 * User requested -inline, but specified match variables - a no-no.
+	 */
+	Tcl_AppendResult(interp, "regexp match variables not allowed",
+		" when using -inline", (char *) NULL);
+	return TCL_ERROR;
+    }
 
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
@@ -238,84 +256,142 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	eflags |= TCL_REG_NOTBOL;
     }
 
-    match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset /* offset */,
-	    objc-2 /* nmatches */, eflags);
-
-    if (match < 0) {
-	return TCL_ERROR;
-    }
-
-    if (match == 0) {
-	/*
-	 * Set the interpreter's object result to an integer object w/
-	 * value 0.
-	 */
-	
-	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
-	return TCL_OK;
-    }
-
-    /*
-     * If additional variable names have been specified, return
-     * index information in those variables.
-     */
-
     objc -= 2;
     objv += 2;
+    resultPtr = Tcl_GetObjResult(interp);
 
-    Tcl_RegExpGetInfo(regExpr, &info);
-    for (i = 0; i < objc; i++) {
-	Tcl_Obj *varPtr, *valuePtr, *newPtr;
-	
-	varPtr = objv[i];
-	if (indices) {
-	    int start, end;
-	    Tcl_Obj *objs[2];
+    if (doinline) {
+	/*
+	 * Save all the subexpressions, as we will return them as a list
+	 */
+	numMatchesSaved = -1;
+    } else {
+	/*
+	 * Save only enough subexpressions for matches we want to keep,
+	 * expect in the case of -all, where we need to keep at least
+	 * one to know where to move the offset.
+	 */
+	numMatchesSaved = (objc == 0) ? all : objc;
+    }
 
-	    if (i <= info.nsubs) {
-		start = offset + info.matches[i].start;
-		end = offset + info.matches[i].end;
+    while (1) {
+	match = Tcl_RegExpExecObj(interp, regExpr, objPtr,
+		offset /* offset */, numMatchesSaved, eflags);
 
-		/*
-		 * Adjust index so it refers to the last character in the
-		 * match instead of the first character after the match.
-		 */
-
-		if (end >= offset) {
-		    end--;
-		}
-	    } else {
-		start = -1;
-		end = -1;
-	    }
-
-	    objs[0] = Tcl_NewLongObj(start);
-	    objs[1] = Tcl_NewLongObj(end);
-
-	    newPtr = Tcl_NewListObj(2, objs);
-	} else {
-	    if (i <= info.nsubs) {
-		newPtr = Tcl_GetRange(objPtr, offset + info.matches[i].start,
-			offset + info.matches[i].end - 1);
-	    } else {
-		newPtr = Tcl_NewObj();
-		
-	    }
-	}
-	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, 0);
-	if (valuePtr == NULL) {
-	    Tcl_DecrRefCount(newPtr);
-	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    Tcl_GetString(varPtr), "\"", (char *) NULL);
+	if (match < 0) {
 	    return TCL_ERROR;
 	}
+
+	if (match == 0) {
+	    /*
+	     * We want to set the value of the intepreter result only when
+	     * this is the first time through the loop.
+	     */
+	    if (all <= 1) {
+		/*
+		 * If inlining, set the interpreter's object result to an
+		 * empty list, otherwise set it to an integer object w/
+		 * value 0.
+		 */
+		if (doinline) {
+		    Tcl_SetListObj(resultPtr, 0, NULL);
+		} else {
+		    Tcl_SetIntObj(resultPtr, 0);
+		}
+		return TCL_OK;
+	    }
+	    break;
+	}
+
+	/*
+	 * If additional variable names have been specified, return
+	 * index information in those variables.
+	 */
+
+	Tcl_RegExpGetInfo(regExpr, &info);
+	if (doinline) {
+	    /*
+	     * It's the number of substitutions, plus one for the matchVar
+	     * at index 0
+	     */
+	    objc = info.nsubs + 1;
+	}
+	for (i = 0; i < objc; i++) {
+	    Tcl_Obj *newPtr;
+
+	    if (indices) {
+		int start, end;
+		Tcl_Obj *objs[2];
+
+		if (i <= info.nsubs) {
+		    start = offset + info.matches[i].start;
+		    end   = offset + info.matches[i].end;
+
+		    /*
+		     * Adjust index so it refers to the last character in the
+		     * match instead of the first character after the match.
+		     */
+
+		    if (end >= offset) {
+			end--;
+		    }
+		} else {
+		    start = -1;
+		    end   = -1;
+		}
+
+		objs[0] = Tcl_NewLongObj(start);
+		objs[1] = Tcl_NewLongObj(end);
+
+		newPtr = Tcl_NewListObj(2, objs);
+	    } else {
+		if (i <= info.nsubs) {
+		    newPtr = Tcl_GetRange(objPtr,
+			    offset + info.matches[i].start,
+			    offset + info.matches[i].end - 1);
+		} else {
+		    newPtr = Tcl_NewObj();
+		}
+	    }
+	    if (doinline) {
+		if (Tcl_ListObjAppendElement(interp, resultPtr, newPtr)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(newPtr);
+		    return TCL_ERROR;
+		}
+	    } else {
+		Tcl_Obj *valuePtr;
+		valuePtr = Tcl_ObjSetVar2(interp, objv[i], NULL, newPtr, 0);
+		if (valuePtr == NULL) {
+		    Tcl_DecrRefCount(newPtr);
+		    Tcl_AppendResult(interp, "couldn't set variable \"",
+			    Tcl_GetString(objv[i]), "\"", (char *) NULL);
+		    return TCL_ERROR;
+		}
+	    }
+	}
+
+	if (all == 0) {
+	    break;
+	}
+	/*
+	 * Adjust the offset to the character just after the last one
+	 * in the matchVar and increment all to count how many times
+	 * we are making a match
+	 */
+	offset += info.matches[0].end;
+	all++;
     }
 
     /*
-     * Set the interpreter's object result to an integer object w/ value 1. 
+     * Set the interpreter's object result to an integer object
+     * with value 1 if -all wasn't specified, otherwise it's all-1
+     * (the number of times through the while - 1).
      */
-	
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
+
+    if (!doinline) {
+	Tcl_SetIntObj(resultPtr, (all ? all-1 : 1));
+    }
     return TCL_OK;
 }
 

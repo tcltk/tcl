@@ -1,3 +1,10 @@
+2000-02-02  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/regexp.test: added tests for -all and -inline switches
+	* doc/regexp.n: added docs for -all and -inline switches
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): added extra comments for
+	new -all and -inline switches to regexp command
+
 2000-02-01  Eric Melski  <ericm@scriptics.com>
 
 	* library/init.tcl: Applied patch from rfe 1734 regarding
