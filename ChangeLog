@@ -1,3 +1,8 @@
+2003-09-24  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* trace.test: removed 'knownBug' from a test which doesn't
+	illustrate a bug, just a bad test.
+
 2003-09-23  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c:

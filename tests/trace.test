@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.30 2003/09/24 02:07:52 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.31 2003/09/24 12:56:17 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1982,9 +1982,10 @@ foo {if {[catch {bar}]} {
 	}} 2 error leavestep
 foo foo 0 error leave}}
 
-test trace-28.4 {exec traces in slave with 'return -code error'} {knownBug} {
+test trace-28.4 {exec traces in slave with 'return -code error'} {
     interp create slave
     interp alias slave traceExecute {} traceExecute
+    set info {}
     set res [interp eval slave {
 	set info {}
 	set res {}
@@ -2011,16 +2012,16 @@ test trace-28.4 {exec traces in slave with 'return -code error'} {knownBug} {
 	trace remove execution foo {enter enterstep leave leavestep} \
 	  [list traceExecute foo]
 	
-	list $res [join $info \n]
+	list $res
     }]
     interp delete slave
-    set res
+    lappend res [join $info \n]
 } {{error error} {foo foo enter
 foo {if {[catch {bar}]} {
-	    return "error"
-	} else {
-	    return "ok"
-	}} enterstep
+		return "error"
+	    } else {
+		return "ok"
+	    }} enterstep
 foo {catch bar} enterstep
 foo bar enterstep
 foo {return -code error msg} enterstep
@@ -2030,10 +2031,10 @@ foo {catch bar} 0 1 leavestep
 foo {return error} enterstep
 foo {return error} 2 error leavestep
 foo {if {[catch {bar}]} {
-	    return "error"
-	} else {
-	    return "ok"
-	}} 2 error leavestep
+		return "error"
+	    } else {
+		return "ok"
+	    }} 2 error leavestep
 foo foo 0 error leave}}
 
 test trace-28.5 {exec traces} {
