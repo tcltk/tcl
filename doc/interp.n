@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.19 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.20 2004/11/12 23:27:59 dkf Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -133,12 +133,22 @@ correspond to the values returned when
 the aliases were created (which may not be the same 
 as the current names of the commands).
 .TP
+\fBinterp bgerror \fIpath\fR ?\fIcmdPrefix\fR?
+.VS 8.5
+This command either gets or sets the current background error handler
+for the interpreter identified by \fIpath\fR. If \fIcmdPrefix\fR is
+absent, the current background error handler is returned, and if it is
+present, it is a list of words (of minimum length one) that describes
+what to set the interpreter's background error to. See the
+\fBBACKGROUND ERROR HANDLING\fR section for more details.
+.VE 8.5
+.TP
 \fBinterp\fR \fBcreate \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
 Creates a slave interpreter identified by \fIpath\fR and a new command,
 called a \fIslave command\fR. The name of the slave command is the last
 component of \fIpath\fR. The new slave interpreter and the slave command
 are created in the interpreter identified by the path obtained by removing
-the last component from \fIpath\fR. For example, if \fIpath is \fBa b
+the last component from \fIpath\fR. For example, if \fIpath\fR is \fBa b
 c\fR then a new slave interpreter and slave command named \fBc\fR are
 created in the interpreter identified by the path \fBa b\fR.
 The slave command may be used to manipulate the new interpreter as
@@ -337,6 +347,16 @@ See \fBALIAS INVOCATION\fR below for details.
 The command returns a token that uniquely identifies the command created
 \fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
 does not have to be equal to \fIsrcCmd\fR.
+.TP
+\fIslave \fBbgerror\fR ?\fIcmdPrefix\fR?
+.VS 8.5
+This command either gets or sets the current background error handler
+for the \fIslave\fR interpreter. If \fIcmdPrefix\fR is
+absent, the current background error handler is returned, and if it is
+present, it is a list of words (of minimum length one) that describes
+what to set the interpreter's background error to. See the
+\fBBACKGROUND ERROR HANDLING\fR section for more details.
+.VE 8.5
 .TP
 \fIslave \fBeval \fIarg \fR?\fIarg ..\fR?
 This command concatenates all of the \fIarg\fR arguments in
@@ -711,6 +731,25 @@ command in the child and then use aliases and the \fBinterp
 invokehidden\fR subcommand to provide such access as it chooses to the
 \fBinterp\fR command to the limited master as necessary.
 .VE 8.5
+.SH "BACKGROUND ERROR HANDLING"
+.VS 8.5
+When an error happens in a situation where it cannot be reported
+directly up the stack (e.g. when processing events in an \fBupdate\fR
+or \fBvwait\fR call) the error is instead reported through the
+background error handling mechanism. Every interpreter has a
+background error handler registered; the default error handler
+arranges for the \fBbgerror\fR command in the interpreter's global
+namespace to be called, but other error handlers may be installed and
+process background errors in substantially different ways.
+.PP
+A background error handler consists of a non-empty list of words to
+which will, at invokation time, be appended two further words. The
+first word will be the error message string, and the second will a
+dictionary of return options (this is also the sort of information
+that can be obtained by trapping a normal error using \fBcatch\fR of
+course.) The resulting list will then be executed in the interpreter's
+global namespace without further substitutions being performed.
+.VE 8.5
 .SH CREDITS
 This mechanism is based on the Safe-Tcl prototype implemented
 by Nathaniel Borenstein and Marshall Rose.
@@ -750,6 +789,6 @@ set i [\fBinterp create\fR]
 .VE 8.5
 
 .SH "SEE ALSO"
-load(n), safe(n), Tcl_CreateSlave(3)
+bgerror(n), load(n), safe(n), Tcl_CreateSlave(3)
 .SH KEYWORDS
 alias, master interpreter, safe interpreter, slave interpreter
