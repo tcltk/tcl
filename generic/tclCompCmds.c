@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.21 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.22 2002/01/29 02:40:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -107,8 +107,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
-    code = TclPushVarName(interp, varTokenPtr, envPtr,
-	    ((numWords > 2) ? TCL_CREATE_VAR : 0),
+    code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
@@ -2149,6 +2148,125 @@ TclCompileLsetCmd( interp, parsePtr, envPtr )
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileRegexpCmd --
+ *
+ *	Procedure called to compile the "regexp" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if
+ *	the compilation was successful.  If the "regexp" command is too
+ *	complex for this function, then TCL_OUT_LINE_COMPILE is returned,
+ *	indicating that the command should be compiled "out of line"
+ *	(that is, not byte-compiled).  If an error occurs, TCL_ERROR is
+ *	returned, and the interpreter result contains an error message.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "regexp" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileRegexpCmd(interp, parsePtr, envPtr)
+    Tcl_Interp* interp;		/* Tcl interpreter for error reporting */
+    Tcl_Parse* parsePtr;	/* Points to a parse structure for
+				 * the command */
+    CompileEnv* envPtr;		/* Holds the resulting instructions */
+{
+    Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing
+				 * the parse of the RE or string */
+    int length, code, exactMatch;
+    char c, *str;
+
+    if (parsePtr->numWords != 3) {
+	/* We are only interested in compiling simple regexp cases. */
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    varTokenPtr = parsePtr->tokenPtr + (parsePtr->tokenPtr->numComponents + 1);
+    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	/* Not a simple string - punt to runtime. */
+	return TCL_OUT_LINE_COMPILE;
+    }
+    str    = varTokenPtr[1].start;
+    length = varTokenPtr[1].size;
+    if (*str == '-') {
+	/*
+	 * Looks like it may be an option.  With 3 args, this is an
+	 * incorrect call, but we punt on it here.
+	 */
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * On the first (pattern) arg, check to see if any RE special characters
+     * are in the word.  If not, this is the same as 'string equal'.
+     * We can use strchr here because the glob chars are all in the ascii-7
+     * range.  If -nocase was specified, we can't do this because INST_STR_EQ
+     * has no support for nocase.
+     */
+    if ((length > 1) && (str[0] == '^') && (str[length-1] == '$')) {
+	/*
+	 * It appears and exact search was requested (ie ^foo$), so strip
+	 * off the special chars and signal exactMatch.
+	 */
+	str++; length -= 2;
+	exactMatch = 1;
+    } else {
+	exactMatch = 0;
+    }
+    c = str[length];
+    str[length] = '\0';
+    if (strpbrk(str, "*+?{}()[].\\|^$") != NULL) {
+	str[length] = c;
+	/* We don't do anything with REs with special chars yet. */
+	return TCL_OUT_LINE_COMPILE;
+    }
+    str[length] = c;
+    if (exactMatch) {
+	TclEmitPush(TclRegisterLiteral(envPtr, str, length, 0), envPtr);
+    } else {
+	/*
+	 * This needs to find the substring anywhere in the string, so
+	 * use string match and *foo*.
+	 */
+	char *newStr = ckalloc((unsigned) length + 3);
+	newStr[0]        = '*';
+	strncpy(newStr + 1, str, (size_t) length);
+	newStr[length+1]   = '*';
+	newStr[length+2] = '\0';
+	TclEmitPush(TclRegisterLiteral(envPtr, newStr, length+2, 0), envPtr);
+	ckfree((char *) newStr);
+    }
+
+    /*
+     * Push the string arg
+     */
+    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	TclEmitPush(TclRegisterLiteral(envPtr,
+		varTokenPtr[1].start, varTokenPtr[1].size, 0), envPtr);
+    } else {
+	code = TclCompileTokens(interp, varTokenPtr+1,
+		varTokenPtr->numComponents, envPtr);
+	if (code != TCL_OK) {
+	    return code;
+	}
+    }
+
+    if (exactMatch) {
+	TclEmitOpcode(INST_STR_EQ, envPtr);
+    } else {
+	TclEmitInstInt1(INST_STR_MATCH, 0 /* nocase */, envPtr);
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileReturnCmd --
  *
  *	Procedure called to compile the "return" command.
@@ -2420,9 +2538,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     };	  
 
     if (parsePtr->numWords < 2) {
-	Tcl_SetResult(interp, "wrong # args: should be \"string option "
-		"arg ?arg ...?\"", TCL_STATIC);
-	return TCL_ERROR;
+	/* Fail at run time, not in compilation */
+	return TCL_OUT_LINE_COMPILE;
     }
     opTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
@@ -2437,7 +2554,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     Tcl_DecrRefCount(opObj);
 
     varTokenPtr = opTokenPtr + (opTokenPtr->numComponents + 1);
-    
+
     switch ((enum options) index) {
 	case STR_BYTELENGTH:
 	case STR_FIRST:
@@ -2499,9 +2616,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    int i;
 
 	    if (parsePtr->numWords != 4) {
-		Tcl_SetResult(interp, "wrong # args: should be "
-			"\"string index string charIndex\"", TCL_STATIC);
-		return TCL_ERROR;
+		/* Fail at run time, not in compilation */
+		return TCL_OUT_LINE_COMPILE;
 	    }
 
 	    /*
@@ -2528,9 +2644,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	}
 	case STR_LENGTH: {
 	    if (parsePtr->numWords != 3) {
-		Tcl_SetResult(interp, "wrong # args: should be "
-			"\"string length string\"", TCL_STATIC);
-		return TCL_ERROR;
+		/* Fail at run time, not in compilation */
+		return TCL_OUT_LINE_COMPILE;
 	    }
 
 	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -2559,10 +2674,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    char c, *str;
 
 	    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
-		Tcl_SetResult(interp, "wrong # args: should be "
-			"\"string match ?-nocase? pattern string\"",
-			TCL_STATIC);
-		return TCL_ERROR;
+		/* Fail at run time, not in compilation */
+		return TCL_OUT_LINE_COMPILE;
 	    }
 
 	    if (parsePtr->numWords == 5) {
@@ -2581,7 +2694,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 			    "bad option \"", str, "\": must be -nocase",
 			    (char *) NULL);
 		    str[length] = c;
-		    return TCL_ERROR;
+		    /* Fail at run time, not in compilation */
+		    return TCL_OUT_LINE_COMPILE;
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
