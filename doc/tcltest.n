@@ -8,17 +8,17 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.36 2002/10/03 15:39:56 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.37 2003/01/24 14:07:39 dgp Exp $
 '\" 
 .so man.macros
-.TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
+.TH "tcltest" n 2.2 tcltest "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require tcltest ?2.1?\fR
+\fBpackage require tcltest ?2.2?\fR
 .sp
 \fBtcltest::test \fIname description ?option value ...?\fR
 \fBtcltest::test \fIname description ?constraints? body result\fR
