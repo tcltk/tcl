@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.25 2002/01/24 01:34:16 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.26 2002/02/15 14:28:51 dkf Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -467,6 +467,17 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+#ifdef TCL_WIDE_INT_TYPE
+EXTERN Tcl_WideInt	strtoll _ANSI_ARGS_((char *string,  char **endPtr,
+					     int base));
+EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((char *string,  char **endPtr,
+					      int base));
+#endif /* TCL_WIDE_INT_TYPE */
+
+#ifndef INVALID_SET_FILE_POINTER
+#define INVALID_SET_FILE_POINTER 0xFFFFFFFF
+#endif
 
 #include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"

@@ -9,12 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.10 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.11 2002/02/15 14:28:49 dkf Exp $
  */
 
-#include <stdio.h>
 #include "tclInt.h"
 #include "tclPort.h"
+#include <stdio.h>
 
 /*
  * Counter for how many aliases were created (global)

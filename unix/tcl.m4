@@ -1422,7 +1422,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 #
 #	Determine which interface to use to talk to the serial port.
 #	Note that #include lines must begin in leftmost column for
-#	some compilers to recognize them as preprocessor directives.
+#	some compilers to recognize them as preprocessor directives,
+#	and some build environments have stdin not pointing at a
+#	pseudo-terminal (usually /dev/null instead.)
 #
 # Arguments:
 #	none
@@ -1438,12 +1440,11 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 
 AC_DEFUN(SC_SERIAL_PORT, [
     AC_MSG_CHECKING([termios vs. termio vs. sgtty])
-
+    AC_CACHE_VAL(tcl_cv_api_serial, [
     AC_TRY_RUN([
 #include <termios.h>
 
-main()
-{
+int main() {
     struct termios t;
     if (tcgetattr(0, &t) == 0) {
 	cfsetospeed(&t, 0);
@@ -1451,32 +1452,25 @@ main()
 	return 0;
     }
     return 1;
-}], tk_ok=termios, tk_ok=no, tk_ok=no)
-
-    if test $tk_ok = termios; then
-	AC_DEFINE(USE_TERMIOS)
-    else
+}], tcl_cv_api_serial=termios, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+    if test $tcl_cv_api_serial = no ; then
 	AC_TRY_RUN([
 #include <termio.h>
 
-main()
-{
+int main() {
     struct termio t;
     if (ioctl(0, TCGETA, &t) == 0) {
 	t.c_cflag |= CBAUD | PARENB | PARODD | CSIZE | CSTOPB;
 	return 0;
     }
     return 1;
-    }], tk_ok=termio, tk_ok=no, tk_ok=no)
-
-    if test $tk_ok = termio; then
-	AC_DEFINE(USE_TERMIO)
-    else
+}], tcl_cv_api_serial=termio, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+    fi
+    if test $tcl_cv_api_serial = no ; then
 	AC_TRY_RUN([
 #include <sgtty.h>
 
-main()
-{
+int main() {
     struct sgttyb t;
     if (ioctl(0, TIOCGETP, &t) == 0) {
 	t.sg_ospeed = 0;
@@ -1484,17 +1478,14 @@ main()
 	return 0;
     }
     return 1;
-}], tk_ok=sgtty, tk_ok=none, tk_ok=none)
-
-    if test $tk_ok = sgtty; then
-	AC_DEFINE(USE_SGTTY)
-    else
+}], tcl_cv_api_serial=sgtty, tcl_cv_api_serial=none, tcl_cv_api_serial=none)
+    fi
+    if test $tcl_cv_api_serial = no ; then
 	AC_TRY_RUN([
 #include <termios.h>
 #include <errno.h>
 
-main()
-{
+int main() {
     struct termios t;
     if (tcgetattr(0, &t) == 0
 	|| errno == ENOTTY || errno == ENXIO || errno == EINVAL) {
@@ -1503,17 +1494,14 @@ main()
 	return 0;
     }
     return 1;
-}], tk_ok=termios, tk_ok=no, tk_ok=no)
-
-    if test $tk_ok = termios; then
-	AC_DEFINE(USE_TERMIOS)
-    else
+}], tcl_cv_api_serial=termios, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+    fi
+    if test $tcl_cv_api_serial = no; then
 	AC_TRY_RUN([
 #include <termio.h>
 #include <errno.h>
 
-main()
-{
+int main() {
     struct termio t;
     if (ioctl(0, TCGETA, &t) == 0
 	|| errno == ENOTTY || errno == ENXIO || errno == EINVAL) {
@@ -1521,17 +1509,14 @@ main()
 	return 0;
     }
     return 1;
-    }], tk_ok=termio, tk_ok=no, tk_ok=no)
-
-    if test $tk_ok = termio; then
-	AC_DEFINE(USE_TERMIO)
-    else
+    }], tcl_cv_api_serial=termio, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+    fi
+    if test $tcl_cv_api_serial = no; then
 	AC_TRY_RUN([
 #include <sgtty.h>
 #include <errno.h>
 
-main()
-{
+int main() {
     struct sgttyb t;
     if (ioctl(0, TIOCGETP, &t) == 0
 	|| errno == ENOTTY || errno == ENXIO || errno == EINVAL) {
@@ -1540,17 +1525,14 @@ main()
 	return 0;
     }
     return 1;
-}], tk_ok=sgtty, tk_ok=none, tk_ok=none)
-
-    if test $tk_ok = sgtty; then
-	AC_DEFINE(USE_SGTTY)
-    fi
-    fi
-    fi
-    fi
-    fi
-    fi
-    AC_MSG_RESULT($tk_ok)
+}], tcl_cv_api_serial=sgtty, tcl_cv_api_serial=none, tcl_cv_api_serial=none)
+    fi])
+    case $tcl_cv_api_serial in
+	termios) AC_DEFINE(USE_TERMIOS);;
+	termio)  AC_DEFINE(USE_TERMIO);;
+	sgtty)   AC_DEFINE(USE_SGTTY);;
+    esac
+    AC_MSG_RESULT($tcl_cv_api_serial)
 ])
 
 #--------------------------------------------------------------------
@@ -1824,46 +1806,53 @@ AC_DEFUN(SC_TIME_HANDLER, [
     AC_CHECK_FUNCS(gmtime_r localtime_r)
 
     AC_MSG_CHECKING([tm_tzadj in struct tm])
-    AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_tzadj;],
-	    [AC_DEFINE(HAVE_TM_TZADJ)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
+    AC_CACHE_VAL(tcl_cv_member_tm_tzadj,
+	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_tzadj;],
+	    tcl_cv_member_tm_tzadj=yes, tcl_cv_member_tm_tzadj=no))
+    AC_MSG_RESULT($tcl_cv_member_tm_tzadj)
+    if test $tcl_cv_member_tm_tzadj = yes ; then
+	AC_DEFINE(HAVE_TM_TZADJ)
+    fi
 
     AC_MSG_CHECKING([tm_gmtoff in struct tm])
-    AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
-	    [AC_DEFINE(HAVE_TM_GMTOFF)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
+    AC_CACHE_VAL(tcl_cv_member_tm_gmtoff,
+	AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
+	    tcl_cv_member_tm_gmtoff=yes, tcl_cv_member_tm_gmtoff=no))
+    AC_MSG_RESULT($tcl_cv_member_tm_gmtoff)
+    if test $tcl_cv_member_tm_gmtoff = yes ; then
+	AC_DEFINE(HAVE_TM_GMTOFF)
+    fi
 
     #
     # Its important to include time.h in this check, as some systems
     # (like convex) have timezone functions, etc.
     #
-    have_timezone=no
     AC_MSG_CHECKING([long timezone variable])
-    AC_TRY_COMPILE([#include <time.h>],
+    AC_CACHE_VAL(tcl_cv_var_timezone,
+	AC_TRY_COMPILE([#include <time.h>],
 	    [extern long timezone;
 	    timezone += 1;
 	    exit (0);],
-	    [have_timezone=yes
+	    tcl_cv_timezone_long=yes, tcl_cv_timezone_long=no))
+    AC_MSG_RESULT($tcl_cv_timezone_long)
+    if test $tcl_cv_timezone_long = yes ; then
+	AC_DEFINE(HAVE_TIMEZONE_VAR)
+    else
+	#
+	# On some systems (eg IRIX 6.2), timezone is a time_t and not a long.
+	#
+	AC_MSG_CHECKING([time_t timezone variable])
+	AC_CACHE_VAL(tcl_cv_timezone_time,
+	    AC_TRY_COMPILE([#include <time.h>],
+		[extern time_t timezone;
+		timezone += 1;
+		exit (0);],
+		tcl_cv_timezone_time=yes, tcl_cv_timezone_time=no))
+	AC_MSG_RESULT($tcl_cv_timezone_time)
+	if test $tcl_cv_timezone_time = yes ; then
 	    AC_DEFINE(HAVE_TIMEZONE_VAR)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
-
-    #
-    # On some systems (eg IRIX 6.2), timezone is a time_t and not a long.
-    #
-    if test "$have_timezone" = no; then
-    AC_MSG_CHECKING([time_t timezone variable])
-    AC_TRY_COMPILE([#include <time.h>],
-	    [extern time_t timezone;
-	    timezone += 1;
-	    exit (0);],
-	    [AC_DEFINE(HAVE_TIMEZONE_VAR)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
+	fi
     fi
-
 ])
 
 #--------------------------------------------------------------------
@@ -2002,3 +1991,110 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     AC_SUBST(TCL_LIBS)
     AC_SUBST(MATH_LIBS)
 ])
+
+#--------------------------------------------------------------------
+# SC_TCL_EARLY_FLAGS
+#
+#	Check for what flags are needed to be passed so the correct OS
+#	features are available.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		_ISOC99_SOURCE
+#		_LARGEFILE64_SOURCE
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_EARLY_FLAG,[
+    AC_CACHE_VAL([tcl_cv_flag_]translit($1,[A-Z],[a-z]),
+	AC_TRY_COMPILE([$2], $3, [tcl_cv_flag_]translit($1,[A-Z],[a-z])=no,
+	    AC_TRY_COMPILE([[#define ]$1[ 1
+]$2], $3,
+		[tcl_cv_flag_]translit($1,[A-Z],[a-z])=yes,
+		[tcl_cv_flag_]translit($1,[A-Z],[a-z])=no)))
+    if test ["x${tcl_cv_flag_]translit($1,[A-Z],[a-z])[}" = "xyes"] ; then
+	AC_DEFINE($1)
+	tcl_flags="$tcl_flags $1"
+    fi])
+
+AC_DEFUN(SC_TCL_EARLY_FLAGS,[
+    AC_MSG_CHECKING([for required early compiler flags])
+    tcl_flags=""
+    SC_TCL_EARLY_FLAG(_ISOC99_SOURCE,[#include <stdlib.h>],
+	[char *p = (char *)strtoll; char *q = (char *)strtoull;])
+    SC_TCL_EARLY_FLAG(_LARGEFILE64_SOURCE,[#include <sys/stat.h>],
+	[struct stat64 buf; int i = stat64("/", &buf);])
+    if test "x${tcl_flags}" = "x" ; then
+	AC_MSG_RESULT(none)
+    else
+	AC_MSG_RESULT(${tcl_flags})
+    fi])
+
+#--------------------------------------------------------------------
+# SC_TCL_64BIT_FLAGS
+#
+#	Check for what is defined in the way of 64-bit features.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		TCL_WIDE_INT_IS_LONG
+#		TCL_WIDE_INT_TYPE
+#		HAVE_STRUCT_DIRENT64
+#		HAVE_STRUCT_STAT64
+#		HAVE_TYPE_OFF64_T
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_64BIT_FLAGS, [
+    AC_MSG_CHECKING([for 64-bit integer type])
+    AC_CACHE_VAL(tcl_cv_type_64bit,[
+	AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
+           tcl_cv_type_64bit=__int64,tcl_cv_type_64bit=none
+           AC_TRY_RUN([#include <unistd.h>
+		int main() {exit(!(sizeof(long long) > sizeof(long)));}
+		], tcl_cv_type_64bit="long long"))])
+    if test "${tcl_cv_type_64bit}" = none ; then
+	AC_MSG_RESULT(using long)
+    else
+	AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit})
+	AC_MSG_RESULT(${tcl_cv_type_64bit})
+
+	# Now check for auxiliary declarations
+	AC_MSG_CHECKING([for struct dirent64])
+	AC_CACHE_VAL(tcl_cv_struct_dirent64,[
+	    AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/dirent.h>],[struct dirent64 p;],
+		tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
+	if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_STRUCT_DIRENT64)
+	fi
+	AC_MSG_RESULT(${tcl_cv_struct_dirent64})
+
+	AC_MSG_CHECKING([for struct stat64])
+	AC_CACHE_VAL(tcl_cv_struct_stat64,[
+	    AC_TRY_COMPILE([#include <sys/stat.h>],[struct stat64 p;
+],
+		tcl_cv_struct_stat64=yes,tcl_cv_struct_stat64=no)])
+	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
+	    AC_DEFINE(HAVE_STRUCT_STAT64)
+	fi
+	AC_MSG_RESULT(${tcl_cv_struct_stat64})
+
+	AC_MSG_CHECKING([for off64_t])
+	AC_CACHE_VAL(tcl_cv_type_off64_t,[
+	    AC_TRY_COMPILE([#include <sys/types.h>],[off64_t offset;
+],
+		tcl_cv_type_off64_t=yes,tcl_cv_type_off64_t=no)])
+	if test "x${tcl_cv_type_off64_t}" = "xyes" ; then
+	    AC_DEFINE(HAVE_TYPE_OFF64_T)
+	fi
+	AC_MSG_RESULT(${tcl_cv_type_off64_t})
+    fi])

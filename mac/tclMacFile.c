@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.16 2002/01/27 11:09:49 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.17 2002/02/15 14:28:49 dkf Exp $
  */
 
 /*
@@ -253,7 +253,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    typeOk = 0;
 		}
 	    } else {
-		struct stat buf;
+		Tcl_StatBuf buf;
 		
 		if (pb.hFileInfo.ioFlFndrInfo.fdFlags & kIsInvisible) {
 		    /* If invisible */
@@ -723,7 +723,7 @@ TclpReadlink(
 int 
 TclpObjLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;
-    struct stat *buf;
+    Tcl_StatBuf *buf;
 {
     /* This needs to be enhanced to deal with aliases */
     return TclpObjStat(pathPtr, buf);
@@ -748,7 +748,7 @@ TclpObjLstat(pathPtr, buf)
 int 
 TclpObjStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;
-    struct stat *bufPtr;
+    Tcl_StatBuf *bufPtr;
 {
     HFileInfo fpb;
     HVolumeParam vpb;

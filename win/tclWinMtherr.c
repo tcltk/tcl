@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinMtherr.c,v 1.3 1999/04/16 00:48:09 stanton Exp $
+ * RCS: @(#) $Id: tclWinMtherr.c,v 1.4 2002/02/15 14:28:51 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -43,7 +43,11 @@ _matherr(xPtr)
     if (!TclMathInProgress()) {
 	return 0;
     }
-    if ((xPtr->type == DOMAIN) || (xPtr->type == SING)) {
+    if ((xPtr->type == DOMAIN)
+#ifdef __BORLANDC__
+	    || (xPtr->type == TLOSS)
+#endif
+	    || (xPtr->type == SING)) {
 	errno = EDOM;
     } else {
 	errno = ERANGE;

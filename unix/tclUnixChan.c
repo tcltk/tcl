@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.28 2002/02/04 23:51:59 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.29 2002/02/15 14:28:50 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -191,8 +191,8 @@ static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 static int		FileOutputProc _ANSI_ARGS_((
 			    ClientData instanceData, CONST char *buf,
 			    int toWrite, int *errorCode));
-static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
-			    long offset, int mode, int *errorCode));
+static Tcl_WideInt	FileSeekProc _ANSI_ARGS_((ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static void		TcpAccept _ANSI_ARGS_((ClientData data, int mask));
@@ -522,10 +522,10 @@ FileCloseProc(instanceData, interp)
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
     ClientData instanceData;			/* File state. */
-    long offset;				/* Offset to seek to. */
+    Tcl_WideInt offset;				/* Offset to seek to. */
     int mode;					/* Relative to where
                                                  * should we seek? Can be
                                                  * one of SEEK_START,
@@ -533,9 +533,9 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     int *errorCodePtr;				/* To store error code. */
 {
     FileState *fsPtr = (FileState *) instanceData;
-    int newLoc;
+    Tcl_WideInt newLoc;
 
-    newLoc = lseek(fsPtr->fd, (off_t) offset, mode);
+    newLoc = Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
 
     *errorCodePtr = (newLoc == -1) ? errno : 0;
     return newLoc;
@@ -1350,7 +1350,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     if (native == NULL) {
 	return NULL;
     }
-    fd = open(native, mode, permissions);
+    fd = Tcl_PlatformOpen(native, mode, permissions);
 
     if (fd < 0) {
         if (interp != (Tcl_Interp *) NULL) {
@@ -1402,7 +1402,8 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 	    (ClientData) fsPtr, channelPermissions);
 
     if (seekFlag) {
-        if (Tcl_Seek(fsPtr->channel, 0, SEEK_END) < 0) {
+        if (Tcl_Seek(fsPtr->channel, (Tcl_WideInt)0,
+		SEEK_END) < (Tcl_WideInt)0) {
             if (interp != (Tcl_Interp *) NULL) {
                 Tcl_AppendResult(interp, "couldn't seek to end of file on \"",
                         channelName, "\": ", Tcl_PosixError(interp), NULL);
@@ -2521,8 +2522,8 @@ TclpGetDefaultStdChannel(type)
 
     switch (type) {
         case TCL_STDIN:
-            if ((lseek(0, (off_t) 0, SEEK_CUR) == -1) &&
-                    (errno == EBADF)) {
+            if ((Tcl_PlatformSeek(0, (Tcl_SeekOffset) 0,
+		    SEEK_CUR) == (Tcl_SeekOffset)-1) && (errno == EBADF)) {
                 return (Tcl_Channel) NULL;
             }
 	    fd = 0;
@@ -2530,8 +2531,8 @@ TclpGetDefaultStdChannel(type)
             bufMode = "line";
             break;
         case TCL_STDOUT:
-            if ((lseek(1, (off_t) 0, SEEK_CUR) == -1) &&
-                    (errno == EBADF)) {
+            if ((Tcl_PlatformSeek(1, (Tcl_SeekOffset) 0,
+		    SEEK_CUR) == (Tcl_SeekOffset)-1) && (errno == EBADF)) {
                 return (Tcl_Channel) NULL;
             }
 	    fd = 1;
@@ -2539,8 +2540,8 @@ TclpGetDefaultStdChannel(type)
             bufMode = "line";
             break;
         case TCL_STDERR:
-            if ((lseek(2, (off_t) 0, SEEK_CUR) == -1) &&
-                    (errno == EBADF)) {
+            if ((Tcl_PlatformSeek(2, (Tcl_SeekOffset) 0,
+		    SEEK_CUR) == (Tcl_SeekOffset)-1) && (errno == EBADF)) {
                 return (Tcl_Channel) NULL;
             }
 	    fd = 2;

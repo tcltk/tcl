@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.17 2001/05/30 08:57:06 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.18 2002/02/15 14:28:50 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -593,9 +593,9 @@ test info-19.5 {info vars with temporary variables} {
 
 # Check whether the extra testing functions are defined...
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
-    set functions {abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh}
+    set functions {abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh wide}
 } else {
-    set functions {T1 T2 T3 abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh}
+    set functions {T1 T2 T3 abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh wide}
 }
 test info-20.1 {info functions option} {info functions sin} sin
 test info-20.2 {info functions option} {lsort [info functions]} $functions

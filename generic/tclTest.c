@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.43 2002/02/10 20:36:34 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.44 2002/02/15 14:28:49 dkf Exp $
  */
 
 #define TCL_TEST
@@ -341,7 +341,7 @@ static void TestReport _ANSI_ARGS_((CONST char* cmd, Tcl_Obj* arg1, Tcl_Obj* arg
 static Tcl_Obj *TestReportGetNativePath(Tcl_Obj* pathObjPtr);
 
 static int		TestReportStat _ANSI_ARGS_ ((Tcl_Obj *path,
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 static int		TestReportAccess _ANSI_ARGS_ ((Tcl_Obj *path,
 			    int mode));
 static Tcl_Channel	TestReportOpenFileChannel _ANSI_ARGS_ ((
@@ -353,7 +353,7 @@ static int		TestReportMatchInDirectory _ANSI_ARGS_ ((
 			    Tcl_GlobTypeData *types));
 static int		TestReportChdir _ANSI_ARGS_ ((Tcl_Obj *dirName));
 static int		TestReportLstat _ANSI_ARGS_ ((Tcl_Obj *path,
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 static int		TestReportCopyFile _ANSI_ARGS_ ((Tcl_Obj *src,
 			    Tcl_Obj *dst));
 static int		TestReportDeleteFile _ANSI_ARGS_ ((Tcl_Obj *path));
@@ -2122,22 +2122,31 @@ TestlinkCmd(dummy, interp, argc, argv)
     static int intVar = 43;
     static int boolVar = 4;
     static double realVar = 1.23;
+    static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
     static char *stringVar = NULL;
     static int created = 0;
-    char buffer[TCL_DOUBLE_SPACE];
+    char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
+    Tcl_Obj *tmp;
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option ?arg arg arg?\"", (char *) NULL);
+		" option ?arg arg arg arg arg?\"", (char *) NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
+	if (argc != 7) {
+	    Tcl_AppendResult(interp, "wrong # args: should be \"",
+		argv[0], " ", argv[1],
+		" intRO realRO boolRO stringRO wideRO\"", (char *) NULL);
+	    return TCL_ERROR;
+	}
 	if (created) {
 	    Tcl_UnlinkVar(interp, "int");
 	    Tcl_UnlinkVar(interp, "real");
 	    Tcl_UnlinkVar(interp, "bool");
 	    Tcl_UnlinkVar(interp, "string");
+	    Tcl_UnlinkVar(interp, "wide");
 	}
 	created = 1;
 	if (Tcl_GetBoolean(interp, argv[2], &writable) != TCL_OK) {
@@ -2172,11 +2181,20 @@ TestlinkCmd(dummy, interp, argc, argv)
 		TCL_LINK_STRING | flag) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (Tcl_GetBoolean(interp, argv[6], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "wide", (char *) &wideVar,
+			TCL_LINK_WIDE_INT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_UnlinkVar(interp, "int");
 	Tcl_UnlinkVar(interp, "real");
 	Tcl_UnlinkVar(interp, "bool");
 	Tcl_UnlinkVar(interp, "string");
+	Tcl_UnlinkVar(interp, "wide");
 	created = 0;
     } else if (strcmp(argv[1], "get") == 0) {
 	TclFormatInt(buffer, intVar);
@@ -2186,11 +2204,18 @@ TestlinkCmd(dummy, interp, argc, argv)
 	TclFormatInt(buffer, boolVar);
 	Tcl_AppendElement(interp, buffer);
 	Tcl_AppendElement(interp, (stringVar == NULL) ? "-" : stringVar);
+	/*
+	 * Wide ints only have an object-based interface.
+	 */
+	tmp = Tcl_NewWideIntObj(wideVar);
+	Tcl_AppendElement(interp, Tcl_GetString(tmp));
+	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
-	if (argc != 6) {
+	if (argc != 7) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		argv[0], " ", argv[1],
-		"intValue realValue boolValue stringValue\"", (char *) NULL);
+		    argv[0], " ", argv[1],
+		    " intValue realValue boolValue stringValue wideValue\"",
+		    (char *) NULL);
 	    return TCL_ERROR;
 	}
 	if (argv[2][0] != 0) {
@@ -2219,11 +2244,20 @@ TestlinkCmd(dummy, interp, argc, argv)
 		strcpy(stringVar, argv[5]);
 	    }
 	}
+	if (argv[6][0] != 0) {
+	    tmp = Tcl_NewStringObj(argv[6], -1);
+	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
+		Tcl_DecrRefCount(tmp);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(tmp);
+	}
     } else if (strcmp(argv[1], "update") == 0) {
-	if (argc != 6) {
+	if (argc != 7) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		argv[0], " ", argv[1],
-		"intValue realValue boolValue stringValue\"", (char *) NULL);
+		    argv[0], " ", argv[1],
+		    "intValue realValue boolValue stringValue wideValue\"",
+		    (char *) NULL);
 	    return TCL_ERROR;
 	}
 	if (argv[2][0] != 0) {
@@ -2255,6 +2289,15 @@ TestlinkCmd(dummy, interp, argc, argv)
 		strcpy(stringVar, argv[5]);
 	    }
 	    Tcl_UpdateLinkedVar(interp, "string");
+	}
+	if (argv[6][0] != 0) {
+	    tmp = Tcl_NewStringObj(argv[6], -1);
+	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
+		Tcl_DecrRefCount(tmp);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(tmp);
+	    Tcl_UpdateLinkedVar(interp, "wide");
 	}
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
@@ -2404,8 +2447,16 @@ TestMathFunc2(clientData, interp, args, resultPtr)
 
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (args[1].type == TCL_WIDE_INT) {
+	    Tcl_WideInt w0 = Tcl_LongAsWide(i0);
+	    Tcl_WideInt w1 = args[1].wideValue;
+
+	    resultPtr->type = TCL_WIDE_INT;
+	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
+#endif
 	} else {
-	    Tcl_SetResult(interp, "T2: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_DOUBLE) {
@@ -2421,12 +2472,44 @@ TestMathFunc2(clientData, interp, args, resultPtr)
 
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (args[1].type == TCL_WIDE_INT) {
+	    double d1 = Tcl_WideAsDouble(args[1].wideValue);
+
+	    resultPtr->type = TCL_DOUBLE;
+	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+#endif
 	} else {
-	    Tcl_SetResult(interp, "T2: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (args[0].type == TCL_WIDE_INT) {
+	Tcl_WideInt w0 = args[0].wideValue;
+	
+	if (args[1].type == TCL_INT) {
+	    Tcl_WideInt w1 = Tcl_LongAsWide(args[1].intValue);
+	    
+	    resultPtr->type = TCL_WIDE_INT;
+	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
+	} else if (args[1].type == TCL_DOUBLE) {
+	    double d0 = Tcl_WideAsDouble(w0);
+	    double d1 = args[1].doubleValue;
+
+	    resultPtr->type = TCL_DOUBLE;
+	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+	} else if (args[1].type == TCL_WIDE_INT) {
+	    Tcl_WideInt w1 = args[1].wideValue;
+
+	    resultPtr->type = TCL_WIDE_INT;
+	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
+	} else {
+	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
+	    result = TCL_ERROR;
+	}
+#endif
     } else {
-	Tcl_SetResult(interp, "T2: wrong type for arg 1", TCL_STATIC);
+	Tcl_SetResult(interp, "T3: wrong type for arg 1", TCL_STATIC);
 	result = TCL_ERROR;
     }
     return result;
@@ -4240,10 +4323,62 @@ static int PretendTclpStat(path, buf)
 {
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
+#ifdef TCL_WIDE_INT_IS_LONG
     Tcl_IncrRefCount(pathPtr);
     ret = TclpObjStat(pathPtr, buf);
     Tcl_DecrRefCount(pathPtr);
     return ret;
+#else /* TCL_WIDE_INT_IS_LONG */
+    Tcl_StatBuf realBuf;
+    Tcl_IncrRefCount(pathPtr);
+    ret = TclpObjStat(pathPtr, &realBuf);
+    Tcl_DecrRefCount(pathPtr);
+    if (ret != -1) {
+#   define OUT_OF_RANGE(x) \
+	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
+	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
+#   define OUT_OF_URANGE(x) \
+	(((Tcl_WideUInt)(x)) > (Tcl_WideUInt)ULONG_MAX)
+
+	/*
+	 * Perform the result-buffer overflow check manually.
+	 *
+	 * Note that ino_t/ino64_t is unsigned...
+	 */
+
+        if (OUT_OF_URANGE(realBuf.st_ino) || OUT_OF_RANGE(realBuf.st_size)
+		|| OUT_OF_RANGE(realBuf.st_blocks)) {
+	    errno = EOVERFLOW;
+	    return -1;
+	}
+
+#   undef OUT_OF_RANGE
+#   undef OUT_OF_URANGE
+
+	/*
+	 * Copy across all supported fields, with possible type
+	 * coercions on those fields that change between the normal
+	 * and lf64 versions of the stat structure (on Solaris at
+	 * least.)  This is slow when the structure sizes coincide,
+	 * but that's what you get for mixing interfaces...
+	 */
+
+	buf->st_mode    = realBuf.st_mode;
+	buf->st_ino     = (ino_t) realBuf.st_ino;
+	buf->st_dev     = realBuf.st_dev;
+	buf->st_rdev    = realBuf.st_rdev;
+	buf->st_nlink   = realBuf.st_nlink;
+	buf->st_uid     = realBuf.st_uid;
+	buf->st_gid     = realBuf.st_gid;
+	buf->st_size    = (off_t) realBuf.st_size;
+	buf->st_atime   = realBuf.st_atime;
+	buf->st_mtime   = realBuf.st_mtime;
+	buf->st_ctime   = realBuf.st_ctime;
+	buf->st_blksize = realBuf.st_blksize;
+	buf->st_blocks  = (blkcnt_t) realBuf.st_blocks;
+    }
+    return ret;
+#endif /* TCL_WIDE_INT_IS_LONG */
 }
 
 /* Be careful in the compares in these tests, since the Macintosh puts a  
@@ -4867,7 +5002,7 @@ TestChannelCmd(clientData, interp, argc, argv)
         TclFormatInt(buf, IOQueued);
         Tcl_AppendElement(interp, buf);
         
-        TclFormatInt(buf, Tcl_Tell((Tcl_Channel) chanPtr));
+        TclFormatInt(buf, (int)Tcl_Tell((Tcl_Channel) chanPtr));
         Tcl_AppendElement(interp, buf);
 
         TclFormatInt(buf, statePtr->refCount);
@@ -5576,7 +5711,7 @@ TestReport(cmd, path, arg2)
 static int
 TestReportStat(path, buf)
     Tcl_Obj *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     TestReport("stat",path, NULL);
     return Tcl_FSStat(TestReportGetNativePath(path),buf);
@@ -5584,7 +5719,7 @@ TestReportStat(path, buf)
 static int
 TestReportLstat(path, buf)
     Tcl_Obj *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     TestReport("lstat",path, NULL);
     return Tcl_FSLstat(TestReportGetNativePath(path),buf);

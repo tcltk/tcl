@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.9 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.10 2002/02/15 14:28:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -268,7 +268,14 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 
   (void) brk (startAddress + relocatedSize);
 
-  /* Seek to the start of the module's text */
+  /*
+   * Seek to the start of the module's text.
+   *
+   * Note that this does not really work with large files (i.e. where
+   * lseek64 exists and is different to lseek), but anyone trying to
+   * dynamically load a binary that is larger than what can fit in
+   * addressable memory is in trouble anyway...
+   */
 
 #if defined(__mips) || defined(mips)
   status = lseek (relocatedFd,
