@@ -59,11 +59,10 @@ find them.  Tcl looks in one of three places for the library files:
 	   as specified in the registry:
 
 		For Windows NT & 95:
-		    HKEY_LOCAL_MACHINE\SOFTWARE\Sun\Tcl\8.0
-			Value Name is "Root"
+		    HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.0
 
 		For Win32s:
-		    HKEY_CLASSES_ROOT\SOFTWARE\Sun\Tcl\8.0\
+		    HKEY_CLASSES_ROOT\SOFTWARE\Scriptics\Tcl\8.0\
 
 	3) Relative to the directory containing the current .exe.
 	    Tcl will look for a directory "..\lib\tcl8.0" relative to the
