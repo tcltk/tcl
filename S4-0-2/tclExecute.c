@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.2 2001/05/22 15:54:35 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.3 2001/07/13 17:03:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -727,7 +727,6 @@ TclExecuteByteCode(interp, codePtr)
     unsigned int initTos = tosPtr - eePtr->stackPtr; /* Stack top at start of execution. */
     unsigned char *pc = codePtr->codeStart; /* The current program counter. */
     int result = TCL_OK;	            /* Return code returned after execution. */
-    int flags;                              /* Flags to allow better factoring */
 #define DECR_REF_STACK_SIZE 4
     Tcl_Obj *decrRefQ[DECR_REF_STACK_SIZE]; /* structure for objs to be decrRef'ed */
 #undef DECR_REF_STACK_SIZE
@@ -1205,9 +1204,10 @@ TclExecuteByteCode(interp, codePtr)
 		goto checkForCatch;
 	    } 
 	    TclDecrRefCount_Q(objPtr);
-	SET_TOS(valuePtr);
-	pc++;
-	NEXT_INSTR_Q;
+	    SET_TOS(valuePtr);
+	    pc++;
+	    NEXT_INSTR_Q;
+	}
     }
 
     _CASE(INST_LOAD_ARRAY4): /* tosPtr += 0 */
@@ -1296,18 +1296,41 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
-    _CASE(INST_STORE_ARRAY_STK): /* tosPtr -= 2 */
+    _CASE(INST_APPEND_ARRAY_STK):
     {
         Tcl_Obj *valuePtr;
 	Tcl_Obj *elemPtr;
+	int varFlags;
 
+	varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	goto doStoreArrayStk;
+
+    _CASE(INST_LAPPEND_ARRAY_STK):
+	varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+	goto doStoreArrayStk;
+
+    _CASE(INST_STORE_ARRAY_STK): /* tosPtr -= 2 */
+	varFlags = TCL_LEAVE_ERR_MSG;
+
+    doStoreArrayStk:
 	valuePtr = POP_OBJECT();
 	elemPtr = POP_OBJECT(); 
 	TclDecrRefCount_Q(elemPtr);	
 	goto doStoreStk;
 
+    _CASE(INST_APPEND_STK):
+        varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+        goto doStoreScalarStk;
+
+    _CASE(INST_LAPPEND_STK):
+	varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+	goto doStoreScalarStk;
+
     _CASE(INST_STORE_STK): 
     _CASE(INST_STORE_SCALAR_STK): 
+        varFlags = TCL_LEAVE_ERR_MSG;
+
+    doStoreScalarStk:
 	valuePtr = POP_OBJECT();
         elemPtr = NULL;
 
@@ -1316,8 +1339,7 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_Obj *objPtr = TOS;
 	    Tcl_Obj *value2Ptr;
 	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-				       TCL_LEAVE_ERR_MSG);
+	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr, varFlags);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
 		Tcl_DecrRefCount_Q(valuePtr);
@@ -1409,36 +1431,6 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
-    _CASE(INST_APPEND_STK):
-    _CASE(INST_APPEND_ARRAY_STK):
-    {
-	Tcl_Obj *elemPtr, *objPtr, *value2Ptr;
-	Tcl_Obj *valuePtr = POP_OBJECT(); /* value to append */
-
-	TclDecrRefCount_Q(valuePtr);
-
-	if (*pc == INST_APPEND_ARRAY_STK) {
-	    elemPtr = POP_OBJECT();
-	    TclDecrRefCount_Q(elemPtr);
-	} else {
-	    elemPtr = NULL;
-	}
-	objPtr = TOS; /* scalar name */
-
-	DECACHE_STACK_INFO();
-	value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-		    TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	CACHE_STACK_INFO();
-	if (value2Ptr == NULL) {
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	TclDecrRefCount_Q(objPtr);
-	SET_TOS(value2Ptr);
-	pc++;
-	NEXT_INSTR_Q;
-    }
-
     _CASE(INST_APPEND_ARRAY4):
     {
 	int opnd;
@@ -1511,61 +1503,6 @@ TclExecuteByteCode(interp, codePtr)
 	    SET_TOS(value2Ptr);
 	    NEXT_INSTR;
 	}
-    }
-
-    _CASE(INST_LAPPEND_STK):
-    _CASE(INST_LAPPEND_ARRAY_STK):
-    {
-	/*
-	 * This compile function for this should be refactored
-	 * to make better use of existing LOAD/STORE instructions.
-	 */
-	Tcl_Obj *valuePtr, *value2Ptr, *elemPtr, *newValuePtr, *objPtr;
-	int createdNewObj = 0;
-
-	value2Ptr = POP_OBJECT(); /* value to append */
-	TclDecrRefCount_Q(value2Ptr);
-	if (*pc == INST_LAPPEND_ARRAY_STK) {
-	    elemPtr = POP_OBJECT();
-	    TclDecrRefCount_Q(elemPtr);
-	} else {
-	    elemPtr = NULL;
-	}
-	objPtr = TOS; /* scalar name */
-	
-	DECACHE_STACK_INFO();
-	/* Currently value of the list */
-	valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr, 0);
-	CACHE_STACK_INFO();
-	if (valuePtr == NULL) {
-	    valuePtr = Tcl_NewObj();
-	    createdNewObj = 1;
-	} else if (Tcl_IsShared(valuePtr)) {
-	    valuePtr = Tcl_DuplicateObj(valuePtr);
-	    createdNewObj = 1;
-	}
-
-	DECACHE_STACK_INFO();
-	result = Tcl_ListObjAppendElement(interp, valuePtr, value2Ptr);
-	CACHE_STACK_INFO();
-	if (result != TCL_OK) {
-	    if (createdNewObj) TclDecrRefCount_Q(valuePtr);
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-
-	DECACHE_STACK_INFO();
-	newValuePtr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-				     TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (newValuePtr == NULL) {
-	    if (createdNewObj) TclDecrRefCount_Q(valuePtr);
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	SET_TOS(newValuePtr);
-	pc++;
-	NEXT_INSTR;
     }
 
     _CASE(INST_LAPPEND_ARRAY4):
@@ -1925,15 +1862,16 @@ TclExecuteByteCode(interp, codePtr)
 
     _CASE(INST_LIST_LENGTH):
     {
-	Tcl_Obj *valuePtr = POP_OBJECT();
+	Tcl_Obj *valuePtr = TOS;
 	int length;
 	
 	result = Tcl_ListObjLength(interp, valuePtr, &length);
+	TclDecrRefCount(valuePtr);
 	if (result != TCL_OK) {
-	    TclDecrRefCount(valuePtr);
+	    tosPtr--;
 	    goto checkForCatch;
 	}
-	PUSH_OBJECT(Tcl_NewIntObj(length));
+	SET_TOS(Tcl_NewIntObj(length));
 	pc++;
 	NEXT_INSTR;
     }
@@ -2045,8 +1983,8 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 	if ((valuePtr->typePtr == &tclByteArrayType) &&
 	    (value2Ptr->typePtr == &tclByteArrayType)) {
-	    s1 = Tcl_GetByteArrayFromObj(valuePtr, &s1len);
-	    s2 = Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
+	    s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
+	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    iResult = memcmp(s1, s2,
 			     (size_t) ((s1len < s2len) ? s1len : s2len));
 	} else {
@@ -2111,74 +2049,74 @@ TclExecuteByteCode(interp, codePtr)
     }
 	    
     _CASE(INST_STR_INDEX): /* tosPtr -= 1 */
-	{
-	    Tcl_Obj *idxPtr = POP_OBJECT(); /* the index to look for */
-	    Tcl_Obj *stringPtr  = TOS;      /* the string object */
-	    Tcl_Obj *objPtr;
-	    int index, length;
-
-	    /*
-	     * If we have a ByteArray object, avoid indexing in the
-	     * Utf string since the byte array contains one byte per
-	     * character.  Otherwise, use the Unicode string rep to
-	     * get the index'th char.
-	     */
-
-	    if (stringPtr->typePtr == &tclByteArrayType) {
-		/* INLINING from Tcl_GetByteArrayFromObj (tclBinary.c) */
-		unsigned char *bytes;
-		{
-		    ByteArray *byteArr = (ByteArray *) (stringPtr)->internalRep.otherValuePtr;
-		    bytes  = byteArr->bytes;
-		    length = byteArr->used;
-		}
-
-		if (idxPtr->typePtr == &tclIntType) {
-		    index = (int) idxPtr->internalRep.longValue;
-		} else {
-		    result = TclGetIntForIndex(interp, idxPtr, length - 1,
-					       &index);
-		    if (result != TCL_OK) {
-			tosPtr++; /* to decrRefCt idxPtr */
-			goto checkForCatch;
-		    }
-		}
-		if ((index >= 0) && (index < length)) {
-		    objPtr = Tcl_NewByteArrayObj(&bytes[index], 1);
-		} else {
-		    objPtr = Tcl_NewObj();
-		}
+    {
+	Tcl_Obj *idxPtr = POP_OBJECT(); /* the index to look for */
+	Tcl_Obj *stringPtr  = TOS;      /* the string object */
+	Tcl_Obj *objPtr;
+	int index, length;
+	
+	/*
+	 * If we have a ByteArray object, avoid indexing in the
+	 * Utf string since the byte array contains one byte per
+	 * character.  Otherwise, use the Unicode string rep to
+	 * get the index'th char.
+	 */
+	
+	if (stringPtr->typePtr == &tclByteArrayType) {
+	    /* INLINING from Tcl_GetByteArrayFromObj (tclBinary.c) */
+	    unsigned char *bytes;
+	    {
+		ByteArray *byteArr = (ByteArray *) (stringPtr)->internalRep.otherValuePtr;
+		bytes  = byteArr->bytes;
+		length = byteArr->used;
+	    }
+	    
+	    if (idxPtr->typePtr == &tclIntType) {
+		index = (int) idxPtr->internalRep.longValue;
 	    } else {
-		/*
-		 * Get Unicode char length to calculate what 'end' means.
-		 */
-		length = Tcl_GetCharLength(stringPtr);
-
 		result = TclGetIntForIndex(interp, idxPtr, length - 1,
 					   &index);
 		if (result != TCL_OK) {
 		    tosPtr++; /* to decrRefCt idxPtr */
 		    goto checkForCatch;
 		}
-
-		if ((index >= 0) && (index < length)) {
-		    char buf[TCL_UTF_MAX];
-		    Tcl_UniChar ch;
-
-		    ch     = Tcl_GetUniChar(stringPtr, index);
-		    length = Tcl_UniCharToUtf(ch, buf);
-		    objPtr = Tcl_NewStringObj(buf, length);
-		} else {
-		    objPtr = Tcl_NewObj();
-		}
 	    }
-	    TclDecrRefCount(stringPtr);
-	    TclDecrRefCount(idxPtr);
-	    SET_TOS(objPtr);
-	    pc++;
-	    NEXT_INSTR;
+	    if ((index >= 0) && (index < length)) {
+		objPtr = Tcl_NewByteArrayObj(&bytes[index], 1);
+	    } else {
+		objPtr = Tcl_NewObj();
+	    }
+	} else {
+	    /*
+	     * Get Unicode char length to calculate what 'end' means.
+	     */
+	    length = Tcl_GetCharLength(stringPtr);
+	    
+	    result = TclGetIntForIndex(interp, idxPtr, length - 1,
+				       &index);
+	    if (result != TCL_OK) {
+		tosPtr++; /* to decrRefCt idxPtr */
+		goto checkForCatch;
+	    }
+	    
+	    if ((index >= 0) && (index < length)) {
+		char buf[TCL_UTF_MAX];
+		Tcl_UniChar ch;
+		
+		ch     = Tcl_GetUniChar(stringPtr, index);
+		length = Tcl_UniCharToUtf(ch, buf);
+		objPtr = Tcl_NewStringObj(buf, length);
+	    } else {
+		objPtr = Tcl_NewObj();
+	    }
 	}
+	TclDecrRefCount(stringPtr);
+	TclDecrRefCount(idxPtr);
+	SET_TOS(objPtr);
+	pc++;
+	NEXT_INSTR;
     }
+
 
     _CASE(INST_STR_MATCH): /* tosPtr -= 2 */
     {

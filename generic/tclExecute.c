@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21.2.9 2001/06/02 19:53:10 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.21.2.10 2001/07/13 17:03:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1204,9 +1204,10 @@ TclExecuteByteCode(interp, codePtr)
 		goto checkForCatch;
 	    } 
 	    TclDecrRefCount_Q(objPtr);
-	SET_TOS(valuePtr);
-	pc++;
-	NEXT_INSTR_Q;
+	    SET_TOS(valuePtr);
+	    pc++;
+	    NEXT_INSTR_Q;
+	}
     }
 
     _CASE(INST_LOAD_ARRAY4): /* tosPtr += 0 */
@@ -1861,15 +1862,16 @@ TclExecuteByteCode(interp, codePtr)
 
     _CASE(INST_LIST_LENGTH):
     {
-	Tcl_Obj *valuePtr = POP_OBJECT();
+	Tcl_Obj *valuePtr = TOS;
 	int length;
 	
 	result = Tcl_ListObjLength(interp, valuePtr, &length);
+	TclDecrRefCount(valuePtr);
 	if (result != TCL_OK) {
-	    TclDecrRefCount(valuePtr);
+	    tosPtr--;
 	    goto checkForCatch;
 	}
-	PUSH_OBJECT(Tcl_NewIntObj(length));
+	SET_TOS(Tcl_NewIntObj(length));
 	pc++;
 	NEXT_INSTR;
     }
@@ -2047,74 +2049,74 @@ TclExecuteByteCode(interp, codePtr)
     }
 	    
     _CASE(INST_STR_INDEX): /* tosPtr -= 1 */
-	{
-	    Tcl_Obj *idxPtr = POP_OBJECT(); /* the index to look for */
-	    Tcl_Obj *stringPtr  = TOS;      /* the string object */
-	    Tcl_Obj *objPtr;
-	    int index, length;
-
-	    /*
-	     * If we have a ByteArray object, avoid indexing in the
-	     * Utf string since the byte array contains one byte per
-	     * character.  Otherwise, use the Unicode string rep to
-	     * get the index'th char.
-	     */
-
-	    if (stringPtr->typePtr == &tclByteArrayType) {
-		/* INLINING from Tcl_GetByteArrayFromObj (tclBinary.c) */
-		unsigned char *bytes;
-		{
-		    ByteArray *byteArr = (ByteArray *) (stringPtr)->internalRep.otherValuePtr;
-		    bytes  = byteArr->bytes;
-		    length = byteArr->used;
-		}
-
-		if (idxPtr->typePtr == &tclIntType) {
-		    index = (int) idxPtr->internalRep.longValue;
-		} else {
-		    result = TclGetIntForIndex(interp, idxPtr, length - 1,
-					       &index);
-		    if (result != TCL_OK) {
-			tosPtr++; /* to decrRefCt idxPtr */
-			goto checkForCatch;
-		    }
-		}
-		if ((index >= 0) && (index < length)) {
-		    objPtr = Tcl_NewByteArrayObj(&bytes[index], 1);
-		} else {
-		    objPtr = Tcl_NewObj();
-		}
+    {
+	Tcl_Obj *idxPtr = POP_OBJECT(); /* the index to look for */
+	Tcl_Obj *stringPtr  = TOS;      /* the string object */
+	Tcl_Obj *objPtr;
+	int index, length;
+	
+	/*
+	 * If we have a ByteArray object, avoid indexing in the
+	 * Utf string since the byte array contains one byte per
+	 * character.  Otherwise, use the Unicode string rep to
+	 * get the index'th char.
+	 */
+	
+	if (stringPtr->typePtr == &tclByteArrayType) {
+	    /* INLINING from Tcl_GetByteArrayFromObj (tclBinary.c) */
+	    unsigned char *bytes;
+	    {
+		ByteArray *byteArr = (ByteArray *) (stringPtr)->internalRep.otherValuePtr;
+		bytes  = byteArr->bytes;
+		length = byteArr->used;
+	    }
+	    
+	    if (idxPtr->typePtr == &tclIntType) {
+		index = (int) idxPtr->internalRep.longValue;
 	    } else {
-		/*
-		 * Get Unicode char length to calculate what 'end' means.
-		 */
-		length = Tcl_GetCharLength(stringPtr);
-
 		result = TclGetIntForIndex(interp, idxPtr, length - 1,
 					   &index);
 		if (result != TCL_OK) {
 		    tosPtr++; /* to decrRefCt idxPtr */
 		    goto checkForCatch;
 		}
-
-		if ((index >= 0) && (index < length)) {
-		    char buf[TCL_UTF_MAX];
-		    Tcl_UniChar ch;
-
-		    ch     = Tcl_GetUniChar(stringPtr, index);
-		    length = Tcl_UniCharToUtf(ch, buf);
-		    objPtr = Tcl_NewStringObj(buf, length);
-		} else {
-		    objPtr = Tcl_NewObj();
-		}
 	    }
-	    TclDecrRefCount(stringPtr);
-	    TclDecrRefCount(idxPtr);
-	    SET_TOS(objPtr);
-	    pc++;
-	    NEXT_INSTR;
+	    if ((index >= 0) && (index < length)) {
+		objPtr = Tcl_NewByteArrayObj(&bytes[index], 1);
+	    } else {
+		objPtr = Tcl_NewObj();
+	    }
+	} else {
+	    /*
+	     * Get Unicode char length to calculate what 'end' means.
+	     */
+	    length = Tcl_GetCharLength(stringPtr);
+	    
+	    result = TclGetIntForIndex(interp, idxPtr, length - 1,
+				       &index);
+	    if (result != TCL_OK) {
+		tosPtr++; /* to decrRefCt idxPtr */
+		goto checkForCatch;
+	    }
+	    
+	    if ((index >= 0) && (index < length)) {
+		char buf[TCL_UTF_MAX];
+		Tcl_UniChar ch;
+		
+		ch     = Tcl_GetUniChar(stringPtr, index);
+		length = Tcl_UniCharToUtf(ch, buf);
+		objPtr = Tcl_NewStringObj(buf, length);
+	    } else {
+		objPtr = Tcl_NewObj();
+	    }
 	}
+	TclDecrRefCount(stringPtr);
+	TclDecrRefCount(idxPtr);
+	SET_TOS(objPtr);
+	pc++;
+	NEXT_INSTR;
     }
+
 
     _CASE(INST_STR_MATCH): /* tosPtr -= 2 */
     {

@@ -1,3 +1,8 @@
+2001-07-13  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: small changes; brought the version in this
+	directory back in synch with the one in generic ...
+
 2001-06-02  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: (TclExecuteByteCode): Added two casts to
