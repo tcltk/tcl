@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.3 1999/06/24 21:15:13 jpeek Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.4 2000/05/09 17:50:38 ericm Exp $
 '\" 
 .so man.macros
 .TH lsearch n 7.0 Tcl "Tcl Built-In Commands"
@@ -14,33 +14,69 @@
 .SH NAME
 lsearch \- See if a list contains a particular element
 .SH SYNOPSIS
-\fBlsearch \fR?\fImode\fR? \fIlist pattern\fR
+\fBlsearch \fR?\fIoptions\fR? \fIlist pattern\fR
 .BE
 
 .SH DESCRIPTION
 .PP
 This command searches the elements of \fIlist\fR to see if one
-of them matches \fIpattern\fR.
-If so, the command returns the index of the first matching
-element.
-If not, the command returns \fB\-1\fR.
-The \fImode\fR argument indicates how the elements of the list are to
+of them matches \fIpattern\fR.  If so, the command returns the index
+of the first matching element.  If not, the command returns \fB\-1\fR.
+The \fIoption\fR arguments indicates how the elements of the list are to
 be matched against \fIpattern\fR and it must have one of the following
 values:
 .TP
+\fB\-ascii\fR
+The list elements are to be examined as ASCII strings.  This option is only
+meaningful when used with \fB\-exact\fR or \fB\-sorted\fR.
+.TP
+\fB\-decreasing\fR
+The list elements are sorted in decreasing order.  This option is only
+meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-dictionary\fR
+The list elements are to be compared using dictionary-style
+comparisons.  This option is only meaningful when used with
+\fB\-exact\fR or \fB\-sorted\fR.
+.TP
 \fB\-exact\fR
 The list element must contain exactly the same string as \fIpattern\fR.
+.TP
+\fB\-increasing\fR
+The list elements are sorted in increasing order.  This option is only
+meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-integer\fR
+The list elements are to be compared as integers.  This option is only
+meaningful when used with \fB\-exact\fR or \fB\-sorted\fR.
 .TP
 \fB\-glob\fR
 \fIPattern\fR is a glob-style pattern which is matched against each list
 element using the same rules as the \fBstring match\fR command.
 .TP
+\fB\-real\fR
+The list elements are to be compared as floating-point values.  This
+option is only meaningful when used with \fB\-exact\fR or \fB\-sorted\fR.
+.TP
 \fB\-regexp\fR
 \fIPattern\fR is treated as a regular expression and matched against
 each list element using the rules described in the \fBre_syntax\fR
 reference page.
+.TP
+\fB\-sorted\fR
+The list elements are in sorted order.  If this option is specified,
+\fBlsearch\fR will use a more efficient searching algorithm to search
+\fIlist\fR.  If no other options are specified, \fIlist\fR is assumed
+to be sorted in increasing order, and to contain ASCII strings.  This
+option cannot be used with \fB\-glob\fR or \fB\-regexp\fR.
 .PP
-If \fImode\fR is omitted then it defaults to \fB\-glob\fR.
+If \fIoption\fR is omitted then it defaults to \fB\-glob\fR.  If more
+than one of \fB\-exact\fR, \fB\-glob\fR, \fB\-regexp\fR, and
+\fB\-sorted\fR is specified, whichever option is specified last takes
+precendence.  If more than one of \fB\-ascii\fR, \fB\-dictionary\fR,
+\fB\-integer\fR and \fB\-real\fR is specified, the option specified
+last takes precendence.  If more than one of \fB\-increasing\fR and
+\fB\-decreasing\fR is specified, the option specified last takes precedence.
 
 .SH KEYWORDS
 list, match, pattern, regular expression, search, string

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.25 2000/05/08 22:21:15 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.26 2000/05/09 17:50:38 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -2399,23 +2399,73 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 {
     char *bytes, *patternBytes;
     int i, match, mode, index, result, listc, length, elemLen;
+    int dataType, isIncreasing, lower, upper, patInt, objInt;
+    double patDouble, objDouble;
     Tcl_Obj *patObj, **listv;
     static char *options[] = {
-	"-exact",	"-glob",	"-regexp",	NULL
+	"-ascii", "-decreasing", "-dictionary", "-exact", "-increasing", 
+	    "-integer", "-glob", "-real", "-regexp", "-sorted", NULL
     };
     enum options {
-	LSEARCH_EXACT,	LSEARCH_GLOB,	LSEARCH_REGEXP
+	LSEARCH_ASCII, LSEARCH_DECREASING, LSEARCH_DICTIONARY, LSEARCH_EXACT,
+	    LSEARCH_INCREASING, LSEARCH_INTEGER, LSEARCH_GLOB,
+	    LSEARCH_REAL, LSEARCH_REGEXP, LSEARCH_SORTED
     };
 
-    mode = LSEARCH_GLOB;
-    if (objc == 4) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], options, "search mode", 0,
-		&mode) != TCL_OK) {
+    enum datatypes {
+	ASCII, DICTIONARY, INTEGER, REAL
+    };
+
+    enum modes {
+	EXACT, GLOB, REGEXP, SORTED
+    };
+
+    mode = GLOB;
+    dataType = ASCII;
+    isIncreasing = 1;
+    
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?options? list pattern");
+	return TCL_ERROR;
+    }
+    
+    for (i = 1; i < objc-2; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &index)
+		!= TCL_OK) {
 	    return TCL_ERROR;
 	}
-    } else if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?mode? list pattern");
-	return TCL_ERROR;
+	switch ((enum options) index) {
+	    case LSEARCH_ASCII:		/* -ascii */
+		dataType = ASCII;
+		break;
+	    case LSEARCH_DECREASING:	/* -decreasing */
+		isIncreasing = 0;
+		break;
+	    case LSEARCH_DICTIONARY:	/* -dictionary */
+		dataType = DICTIONARY;
+		break;
+	    case LSEARCH_EXACT:		/* -increasing */
+		mode = EXACT;
+		break;
+	    case LSEARCH_INCREASING:	/* -increasing */
+		isIncreasing = 1;
+		break;
+	    case LSEARCH_INTEGER:	/* -integer */
+		dataType = INTEGER;
+		break;
+	    case LSEARCH_GLOB:		/* -glob */
+		mode = GLOB;
+		break;
+	    case LSEARCH_REAL:		/* -real */
+		dataType = REAL;
+		break;
+	    case LSEARCH_REGEXP:	/* -regexp */
+		mode = REGEXP;
+		break;
+	    case LSEARCH_SORTED:	/* -sorted */
+		mode = SORTED;
+		break;
+	}
     }
 
     /*
@@ -2429,35 +2479,172 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     }
 
     patObj = objv[objc - 1];
-    patternBytes = Tcl_GetStringFromObj(patObj, &length);
+    patternBytes = NULL;
+    if ((enum modes) mode == EXACT || (enum modes) mode == SORTED) {
+	switch ((enum datatypes) dataType) {
+	    case ASCII:
+	    case DICTIONARY:
+		patternBytes = Tcl_GetStringFromObj(patObj, &length);
+		break;
+	    case INTEGER:
+		result = Tcl_GetIntFromObj(interp, patObj, &patInt);
+		if (result != TCL_OK) {
+		    return result;
+		}
+		break;
+	    case REAL:
+		result = Tcl_GetDoubleFromObj(interp, patObj, &patDouble);
+		if (result != TCL_OK) {
+		    return result;
+		}
+		break;
+	}
+    } else {
+	patternBytes = Tcl_GetStringFromObj(patObj, &length);
+    }
 
+    /*
+     * Set default index value to -1, indicating failure; if we find the
+     * item in the course of our search, index will be set to the correct
+     * value.
+     */
     index = -1;
-    for (i = 0; i < listc; i++) {
-	match = 0;
-	switch ((enum options) mode) {
-	    case LSEARCH_EXACT: {
-		bytes = Tcl_GetStringFromObj(listv[i], &elemLen);
-		if (length == elemLen) {
-		    match = (memcmp(bytes, patternBytes,
-			    (size_t) length) == 0);
+    match = 0;
+    if ((enum modes) mode == SORTED) {
+	/* If the data is sorted, we can do a more intelligent search */
+	lower = -1;
+	upper = listc;
+	while (lower + 1 != upper) {
+	    i = (lower + upper)/2;
+	    switch ((enum datatypes) dataType) {
+		case ASCII: {
+		    bytes = Tcl_GetString(listv[i]);
+		    match = strcmp(patternBytes, bytes);
+		    break;
 		}
-		break;
-	    }
-	    case LSEARCH_GLOB: {
-		match = Tcl_StringMatch(Tcl_GetString(listv[i]), patternBytes);
-		break;
-	    }
-	    case LSEARCH_REGEXP: {
-		match = Tcl_RegExpMatchObj(interp, listv[i], patObj);
-		if (match < 0) {
-		    return TCL_ERROR;
+		case DICTIONARY: {
+		    bytes = Tcl_GetString(listv[i]);
+		    match = DictionaryCompare(patternBytes, bytes);
+		    break;
 		}
-		break;
+		case INTEGER: {
+		    result = Tcl_GetIntFromObj(interp, listv[i], &objInt);
+		    if (result != TCL_OK) {
+			return result;
+		    }
+		    if (patInt == objInt) {
+			match = 0;
+		    } else if (patInt < objInt) {
+			match = -1;
+		    } else {
+			match = 1;
+		    }
+		    break;
+		}
+		case REAL: {
+		    result = Tcl_GetDoubleFromObj(interp, listv[i],
+			    &objDouble);
+		    if (result != TCL_OK) {
+			return result;
+		    }
+		    if (patDouble == objDouble) {
+			match = 0;
+		    } else if (patDouble < objDouble) {
+			match = -1;
+		    } else {
+			match = 1;
+		    }
+		    break;
+		}
+	    }
+	    if (match == 0) {
+		/*
+		 * Normally, binary search is written to stop when it
+		 * finds a match.  If there are duplicates of an element in
+		 * the list, our first match might not be the first occurance.
+		 * Consider:  0 0 0 1 1 1 2 2 2
+		 * To maintain consistancy with standard lsearch semantics,
+		 * we must find the leftmost occurance of the pattern in the
+		 * list.  Thus we don't just stop searching here.  This
+		 * variation means that a search always makes log n
+		 * comparisons (normal binary search might "get lucky" with
+		 * an early comparison).
+		 */
+		index = i;
+		upper = i;
+	    } else if (match > 0) {
+		if (isIncreasing) {
+		    lower = i;
+		} else {
+		    upper = i;
+		}
+	    } else {
+		if (isIncreasing) {
+		    upper = i;
+		} else {
+		    lower = i;
+		}
 	    }
 	}
-	if (match != 0) {
-	    index = i;
-	    break;
+    } else {
+	for (i = 0; i < listc; i++) {
+	    match = 0;
+	    switch ((enum modes) mode) {
+		case SORTED:
+		case EXACT: {
+		    switch ((enum datatypes) dataType) {
+			case ASCII: {
+			    bytes = Tcl_GetStringFromObj(listv[i], &elemLen);
+			    if (length == elemLen) {
+				match = (memcmp(bytes, patternBytes,
+					(size_t) length) == 0);
+			    }
+			    break;
+			}
+			case DICTIONARY: {
+			    bytes = Tcl_GetString(listv[i]);
+			    match =
+				(DictionaryCompare(bytes, patternBytes) == 0);
+			    break;
+			}
+			case INTEGER: {
+			    result = Tcl_GetIntFromObj(interp, listv[i],
+				    &objInt);
+			    if (result != TCL_OK) {
+				return result;
+			    }
+			    match = (objInt == patInt);
+			    break;
+			}
+			case REAL: {
+			    result = Tcl_GetDoubleFromObj(interp, listv[i],
+				    &objDouble);
+			    if (result != TCL_OK) {
+				return result;
+			    }
+			    match = (objDouble == patDouble);
+			    break;
+			}
+		    }
+		    break;
+		}
+		case GLOB: {
+		    match = Tcl_StringMatch(Tcl_GetString(listv[i]),
+			    patternBytes);
+		    break;
+		}
+		case REGEXP: {
+		    match = Tcl_RegExpMatchObj(interp, listv[i], patObj);
+		    if (match < 0) {
+			return TCL_ERROR;
+		    }
+		    break;
+		}
+	    }
+	    if (match != 0) {
+		index = i;
+		break;
+	    }
 	}
     }
     Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
