@@ -1,5 +1,7 @@
 2001-09-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/winPipe.test: removed obsolete cat16 tests
+
 	* generic/tclExecute.c (TclExecuteByteCode): fixed invalid usage
 	of valuePtr in TRACE_WITH_OBJ in INST_EVAL_STK case. [Bug #462594]
 	Changed INST_STR_CMP instruction to promote to Unicode strings
