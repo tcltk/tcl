@@ -23,6 +23,10 @@
 	* win/tclWinThrd.c (TclFinalizeLock): release the critical section
 	before deleting it. [Bug 731778]
 
+	* generic/tcl.h: Removed the file level 'extern "C" {' and the
+	coresponding closing block as it serves no purpose given that all
+	the function prototypes have the proper extern usage already.
+
 2004-10-27  Andreas Kupries <andreask@activestate.com>
 
 	* tests/tm.test:  Expanded on the testsuite entered by Donal.
