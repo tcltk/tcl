@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.9 2002/03/02 04:55:31 hobbs Exp $
+# RCS: @(#) $Id: encoding.test,v 1.10 2002/03/04 22:00:40 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -199,7 +199,7 @@ test encoding-10.1 {Tcl_UtfToExternal} {
 proc viewable {str} {
     set res ""
     foreach c [split $str {}] {
-	if {[string is print $c]} {
+	if {[string is print $c] && [string is ascii $c]} {
 	    append res $c
 	} else {
 	    append res "\\u[format %4.4x [scan $c %c]]"
@@ -229,10 +229,10 @@ test encoding-11.4 {LoadEncodingFile: multi-byte} {
 } "\u4e4e"
 test encoding-11.5 {LoadEncodingFile: escape file} {
     viewable [encoding convertto iso2022 \u4e4e]
-} [viewable "\x1b(B\x1b\$B8C"]
+} [viewable "\x1b\$B8C\x1b(B"]
 test encoding-11.5.1 {LoadEncodingFile: escape file} {
     viewable [encoding convertto iso2022-jp \u4e4e]
-} [viewable "\x1b(B\x1b\$B8C"]
+} [viewable "\x1b\$B8C\x1b(B"]
 test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
@@ -278,7 +278,7 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
 
 test encoding-13.1 {LoadEscapeTable} {
     viewable [set x [encoding convertto iso2022 ab\u4e4e\u68d9g]]
-} [viewable "\x1b(Bab\x1b\$B8C\x1b\$\(DD%\x1b(Bg"]
+} [viewable "ab\x1b\$B8C\x1b\$\(DD%\x1b(Bg"]
 
 test encoding-14.1 {BinaryProc} {
     encoding convertto identity \x12\x34\x56\xff\x69
@@ -361,7 +361,49 @@ test encoding-23.3 {iso2022-jp escape encoding test} {
     set data
 } [string range $::iso2022uniData 0 49] ; # 0 .. 49 inclusive == 50
 
+test encoding-24.1 {EscapeFreeProc on open channels} {
+    # Bug #524674 input
+    set f [open iso2022.tcl w]
+    puts $f {
+	set f [open iso2022.txt]
+	fconfigure $f -encoding iso2022-jp
+	gets $f
+    }
+    close $f
+    exec [list $::tcltest::tcltest] iso2022.tcl
+} {}
+
+test encoding-24.2 {EscapeFreeProc on open channels} {
+    # Bug #524674 output
+    set f [open iso2022.tcl w]
+    puts $f {
+	fconfigure stdout -encoding iso2022-jp
+	puts ab\u4e4e\u68d9g
+	exit
+    }
+    close $f
+    viewable [exec [list $::tcltest::tcltest] iso2022.tcl]
+} "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
+
+test encoding-24.3 {EscapeFreeProc on open channels} {
+    # Bug #219314 - if we don't free escape encodings correctly on
+    # channel closure, we go boom
+    set f [open iso2022.tcl w]
+    puts $f {
+	encoding system iso2022-jp
+	set a "\u4e4e\u4e5e\u4e5f"; # 3 Japanese Kanji letters
+	puts $a
+    }
+    close $f
+    set f [open "|[list $::tcltest::tcltest iso2022.tcl]"]
+    fconfigure $f -encoding iso2022-jp
+    set count [gets $f line]
+    close $f
+    list $count [viewable $line]
+} [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
+
 ::tcltest::removeFile iso2022.txt
+::tcltest::removeFile iso2022.tcl
 
 # EscapeFreeProc, GetTableEncoding, unilen
 # are fully tested by the rest of this file

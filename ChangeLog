@@ -1,3 +1,13 @@
+2002-03-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test:
+	* tests/encoding.test: corrected iso2022 encoding results.
+	added encoding-24.*
+	* generic/tclEncoding.c (EscapeFromUtfProc): corrected output of
+	escape codes as per RFC 1468. [Patch #474358] (taguchi)
+	(TclFinalizeEncodingSubsystem): corrected potential double-free
+	when encodings were finalized on exit. [Bug #219314, #524674]
+
 2002-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/encoding/iso2022-jp.enc: 
