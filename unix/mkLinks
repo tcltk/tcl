@@ -896,8 +896,6 @@ if test -r Namespace.3; then
     rm -f Tcl_FindCommand.3 Tcl_FindCommand.3.* 
     rm -f Tcl_FindNamespace.3 Tcl_FindNamespace.3.* 
     rm -f Tcl_ForgetImport.3 Tcl_ForgetImport.3.* 
-    rm -f Tcl_GetCommandFromObj.3 Tcl_GetCommandFromObj.3.* 
-    rm -f Tcl_GetCommandFullName.3 Tcl_GetCommandFullName.3.* 
     rm -f Tcl_GetCurrentNamespace.3 Tcl_GetCurrentNamespace.3.* 
     rm -f Tcl_GetGloblaNamespace.3 Tcl_GetGloblaNamespace.3.* 
     rm -f Tcl_Import.3 Tcl_Import.3.* 
@@ -908,8 +906,6 @@ if test -r Namespace.3; then
     ln $S Namespace.3$Z Tcl_FindCommand.3$Z 
     ln $S Namespace.3$Z Tcl_FindNamespace.3$Z 
     ln $S Namespace.3$Z Tcl_ForgetImport.3$Z 
-    ln $S Namespace.3$Z Tcl_GetCommandFromObj.3$Z 
-    ln $S Namespace.3$Z Tcl_GetCommandFullName.3$Z 
     ln $S Namespace.3$Z Tcl_GetCurrentNamespace.3$Z 
     ln $S Namespace.3$Z Tcl_GetGloblaNamespace.3$Z 
     ln $S Namespace.3$Z Tcl_Import.3$Z 
