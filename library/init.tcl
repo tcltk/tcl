@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: %Z% $Id: init.tcl,v 1.3 1998/07/02 17:52:32 escoffon Exp $ 
+# SCCS: %Z% $Id: init.tcl,v 1.4 1998/07/02 17:54:45 escoffon Exp $ 
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -690,26 +690,26 @@ proc pkg_mkIndex {args} {
 		load [lindex $pkg 0] [lindex $pkg 1] $c
 	    }
 
+	    # We also call package ifneeded for all packages that have been
+	    # identified so far. This way, each pass will have loaded the
+	    # equivalent of the pkgIndex.tcl file that we are constructing,
+	    # and packages whose processing failed in previous passes may
+	    # be processed successfully now
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	    foreach pkg [array names files] {
+		$c eval "package ifneeded $pkg\
+			\[list tclPkgSetup $dir \
+			[lrange $pkg 0 0] [lrange $pkg 1 1]\
+			[list $files($pkg)]\]"
+	    }
+	    if {$noPkgRequire == 1} {
+		$c eval {
+		    rename package __package_orig
+		    proc package {what args} {
+			switch -- $what {
+			    require { return ; # ignore transitive requires }
+			    default { eval __package_orig {$what} $args }
+			}
 		    }
 		    proc __dummy args {}
 		    package unknown __dummy
@@ -932,8 +932,7 @@ proc pkg_mkIndex {args} {
 		incr processed
 		unset toProcess($file)
 	    }
-
-	    tclLog "error while loading or sourcing $file: $msg"
+	    interp delete $c
 	}
 
 	if {$processed == 0} {
