@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.25 2004/10/06 20:16:33 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.26 2004/11/12 23:42:17 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2333,7 +2333,18 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    break;
 	}
 	len = TclUtfToUniChar(src, &ch);
-	word = fromUnicode[(ch >> 8)][ch & 0xff];
+
+#if TCL_UTF_MAX > 3
+	/*
+	 * This prevents a crash condition.  More evaluation is required
+	 * for full support of int Tcl_UniChar. [Bug 1004065]
+	 */
+	if (ch & 0xffff0000) {
+	    word = 0;
+	} else
+#endif
+	    word = fromUnicode[(ch >> 8)][ch & 0xff];
+
 	if ((word == 0) && (ch != 0)) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
 		result = TCL_CONVERT_UNKNOWN;
