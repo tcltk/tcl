@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.20 2002/11/27 02:54:00 hobbs Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.20.2.1 2003/03/12 17:51:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -461,7 +461,9 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		    Tcl_WrongNumArgs(interp, 2, objv, "?-safe? ?--? ?path?");
 		    return TCL_ERROR;
 		}
-		slavePtr = objv[i];
+		if (i < objc) {
+		    slavePtr = objv[i];
+		}
 	    }
 	    buf[0] = '\0';
 	    if (slavePtr == NULL) {
