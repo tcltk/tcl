@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.110 2004/10/06 09:28:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.111 2004/10/06 09:44:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -115,7 +115,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	char *name;
 	int index;
 
-	name = Tcl_GetString(objv[i]);
+	name = TclGetString(objv[i]);
 	if (name[0] != '-') {
 	    break;
 	}
@@ -354,7 +354,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		if (valuePtr == NULL) {
 		    Tcl_DecrRefCount(newPtr);
 		    Tcl_AppendResult(interp, "couldn't set variable \"",
-			    Tcl_GetString(objv[i]), "\"", (char *) NULL);
+			    TclGetString(objv[i]), "\"", (char *) NULL);
 		    return TCL_ERROR;
 		}
 	    }
@@ -449,7 +449,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	char *name;
 	int index;
 	
-	name = Tcl_GetString(objv[idx]);
+	name = TclGetString(objv[idx]);
 	if (name[0] != '-') {
 	    break;
 	}
@@ -511,8 +511,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     objv += idx;
 
     if (all && (offset == 0)
-	    && (strpbrk(Tcl_GetString(objv[2]), "&\\") == NULL)
-	    && (strpbrk(Tcl_GetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
+	    && (strpbrk(TclGetString(objv[2]), "&\\") == NULL)
+	    && (strpbrk(TclGetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
 	/*
 	 * This is a simple one pair string map situation.  We make use of
 	 * a slightly modified version of the one pair STR_MAP code.
@@ -757,7 +757,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     if (objc == 4) {
 	if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr, 0) == NULL) {
 	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    Tcl_GetString(objv[3]), "\"", (char *) NULL);
+		    TclGetString(objv[3]), "\"", (char *) NULL);
 	    result = TCL_ERROR;
 	} else {
 	    /*
@@ -813,8 +813,8 @@ Tcl_RenameObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    oldName = Tcl_GetString(objv[1]);
-    newName = Tcl_GetString(objv[2]);
+    oldName = TclGetString(objv[1]);
+    newName = TclGetString(objv[2]);
     return TclRenameCommand(interp, oldName, newName);
 }
 
@@ -909,7 +909,7 @@ TclProcessReturn(interp, code, level, returnOpts)
 		    iPtr->returnErrorinfoKey, &valuePtr);
 	    if (valuePtr != NULL) {
 		int infoLen;
-		CONST char *info = Tcl_GetStringFromObj(valuePtr,&infoLen);
+		CONST char *info = Tcl_GetStringFromObj(valuePtr, &infoLen);
 		if (infoLen) {
 		    Tcl_AddObjErrorInfo(interp, info, infoLen);
 		    iPtr->flags |= ERR_ALREADY_LOGGED;
@@ -994,7 +994,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "bad ",
 			compare, " value: expected dictionary but got \"",
-			Tcl_GetString(objv[1]), "\"", (char *) NULL);
+			TclGetString(objv[1]), "\"", (char *) NULL);
 		goto error;
 	    }
 
@@ -1028,7 +1028,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 	    /* Value is not a legal return code */
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad completion code \"",
-		    Tcl_GetString(valuePtr),
+		    TclGetString(valuePtr),
 		    "\": must be ok, error, return, break, ",
 		    "continue, or an integer", (char *) NULL);
 	    goto error;
@@ -1045,7 +1045,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp,
 		"bad -level value: expected non-negative integer but got \"",
-		Tcl_GetString(valuePtr), "\"", (char *) NULL);
+		TclGetString(valuePtr), "\"", (char *) NULL);
 	goto error;
     }
 
@@ -1135,7 +1135,7 @@ Tcl_SourceObjCmd(dummy, interp, objc, objv)
 		options, "option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
-	encodingName = Tcl_GetString(objv[2]);
+	encodingName = TclGetString(objv[2]);
     }
     return Tcl_FSEvalFileEx(interp, fileName, encodingName);
 }
@@ -2401,11 +2401,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    if (objc == 3) {
 		Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
 		if ((enum options) index == STR_TOLOWER) {
-		    length1 = Tcl_UtfToLower(Tcl_GetString(resultPtr));
+		    length1 = Tcl_UtfToLower(TclGetString(resultPtr));
 		} else if ((enum options) index == STR_TOUPPER) {
-		    length1 = Tcl_UtfToUpper(Tcl_GetString(resultPtr));
+		    length1 = Tcl_UtfToUpper(TclGetString(resultPtr));
 		} else {
-		    length1 = Tcl_UtfToTitle(Tcl_GetString(resultPtr));
+		    length1 = Tcl_UtfToTitle(TclGetString(resultPtr));
 		}
 		Tcl_SetObjLength(resultPtr, length1);
 		Tcl_SetObjResult(interp, resultPtr);
