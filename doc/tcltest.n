@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.35 2002/09/06 20:46:15 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.36 2002/10/03 15:39:56 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -1047,10 +1047,10 @@ be reported by [\fBcleanupTests\fR] for tests at the same level as
 test level-1.1.  However, test results for all tests run prior to
 level-1.1 will be available when test level-2.1 runs.  What this
 means is that if you try to access the test results for test level-2.1,
-it will may say that 'm' tests have run, 'n' tests have been skipped,
-'o' tests have passed and 'p' tests have failed, where 'm', 'n', 'o',
-and 'p' refer to tests that were run at the same test level as
-test level-1.1. 
+it will may say that 'm' tests have run, 'n' tests have
+been skipped, 'o' tests have passed and 'p' tests have failed,
+where 'm', 'n', 'o', and 'p' refer to tests that were run at the
+same test level as test level-1.1. 
 .PP
 Implementation of output and error comparison in the test command
 depends on usage of puts in your application code.  Output is
