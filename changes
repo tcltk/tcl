@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.83 2004/03/01 19:27:07 dgp Exp $
+RCS: @(#) $Id: changes,v 1.84 2004/03/03 22:49:16 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5963,3 +5963,81 @@ various odd regexp "can't happen" bugs.
 2004-03-01 (platform support)[218561] Allow 64-bit configure on IRIX64-6.5*
 
 --- Released 8.4.6, March 1, 2004 --- See ChangeLog for details ---
+
+Changes to 8.5a1 include all changes to the 8.4 line through 8.4.6,
+plus the following, which focuses on the high-level feature changes
+in this changeset (new minor version) rather than bug fixes:
+
+ * refactored IO code to split FS path code into generic/tclPathObj.c
+  and generic/tclFileSystem.h
+
+ * refactored trace code into generic/tclTrace.c
+
+ * configure scripts now require autoconf 2.57 for regeneration
+
+ * updated runtime library scripts to use newer Tcl code features
+   (like replacing regsub with string map)
+
+ * improve robustness of tcltest test suite across environments
+
+ * changed the bytecode evaluation-stack addressing mode, from array-style
+   to pointer-style; the catch stack and evaluation stack are now
+   contiguous in memory
+
+ * switch command is now byte-compiled
+
+ * enhanced checking in 'file' command for Windows NT file permissions
+
+ * [TIP #57] new 'lassign' command (adopted from TclX)
+
+ * [TIP #75] switch -regexp now provides submatch info
+
+ * [TIP #90] extended 'catch' and 'return' to enable creation of procs
+   that are a true replacement for 'return'
+
+ * [TIP #100] new 'unload' command (can unload DLLs loaded via 'load',
+   requires the extension writer to support it)
+
+ * [TIP #111] new 'dict' command.  Several commands have been updated
+   to handle the list form of dicts implicitly at the C level where
+   only lists were previously accepted
+
+ * [TIP #112] 'namespace ensemble' command addition allows for ensembles
+   that build on the namespace abstraction
+
+ * [TIP #118] file attributes -readonly option for unices that support
+   chflags(), support Mac Classic attribute options on OS X, add
+   -rsrclength for OS X, enhance file copy on OS X to copy finder
+   attributes and resource forks transparently
+
+ * [TIP #120] enable dde in safe interpreters
+ * [TIP #130] enable unique dde server names on Windows
+ * [TIP #135] change dde servername -exact option to -force
+
+ * [TIP #121] new Tcl_SetExitProc C API to control application shutdown
+
+ * [TIP #123] expr ** exponentiation operator
+
+ * [TIP #127] added 'lsearch -index' option
+
+ * [TIP #136] added 'lrepeat' command
+
+ * [TIP #137/151] Add -encoding option to 'source' command and main tclsh
+   executable.
+     *** POTENTIAL INCOMPATIBILITY ***
+   For Tcl embedders that build on Tcl_Main() and make use of Tcl_Main's
+   former ability to pass a leading "-encoding" option to interactive shell
+   operations, this will now be consumed by Tcl.
+
+ * [TIP #138] New TCL_HASH_KEY_SYSTEM_HASH option for Tcl hash tables
+
+ * [TIP #139] documented portions of Tcl's namespace C APIs
+
+ * [TIP #148] correct [list]-quoting of the '#' character
+
+ * [TIP #156] add "root locale" to msgcat
+
+ * [TIP #157] leading {expand} syntax on words to cause argument expansion.
+   This is a safer/cleaner alternative to the use of 'eval'.
+
+--- Released 8.5a1, March 3, 2004 --- See ChangeLog for details ---
