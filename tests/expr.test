@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.19 2003/09/12 23:55:34 dkf Exp $
+# RCS: @(#) $Id: expr.test,v 1.20 2003/09/19 23:05:40 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -810,7 +810,7 @@ test expr-22.8 {non-numeric floats} nonPortable {
 test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16
 test expr-23.2 {CompileExponentialExpr: just exponential expr} {expr 0xff**2} 65025
 test expr-23.3 {CompileExponentialExpr: just exponential expr} {expr -1**2} 1
-test expr-23.4 {CompileExponentialExpr: just exponential expr} {expr 7891**0123} 75407563
+test expr-23.4 {CompileExponentialExpr: just exponential expr} {expr 18**07} 612220032
 test expr-23.5 {CompileExponentialExpr: error in exponential expr} {
     catch {expr x**3} msg
     set msg
