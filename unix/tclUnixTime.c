@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.16 2003/05/18 19:48:27 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.17 2003/05/19 05:42:36 das Exp $
  */
 
 #include "tclInt.h"
@@ -343,7 +343,7 @@ TclpStrftime(s, maxsize, format, t, useGMT)
 	    Tcl_DStringInit ( &utf8Buffer );
 	    Tcl_ExternalToUtfDString( NULL, s, status, &utf8Buffer );
 	    strcpy( s, Tcl_DStringValue( &utf8Buffer ) );
-	    Tcl_DStringFree( &utf8buffer );
+	    Tcl_DStringFree( &utf8Buffer );
 	}
 	return status;
     }
