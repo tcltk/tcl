@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.10 2002/06/17 22:52:51 hobbs Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.11 2002/07/16 22:27:35 dgp Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -56,7 +56,7 @@ command is as follows:
 \fIcommand oldName newName op\fR
 .CE
 \fIOldName\fR and \fInewName\fR give the traced command's current
-(old) namename, and the name to which it is being renamed (the empty
+(old) name, and the name to which it is being renamed (the empty
 string if this is a 'delete' operation).
 \fIOp\fR indicates what operation is being performed on the
 command, and is one of \fBrename\fR or \fBdelete\fR as
