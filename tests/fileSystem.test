@@ -31,6 +31,7 @@ testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
 testConstraint testsimplefilesystem [llength [info commands ::testsimplefilesystem]]
 
+cd [tcltest::temporaryDirectory]
 makeFile "test file" gorp.file
 makeDirectory dir.dir
 makeDirectory [file join dir.dir dirinside.dir]
