@@ -5,6 +5,11 @@
 	* win/tclWinInit.c (TclpInitLibraryPath):	for [Bug 832657]
 	that should not run afoul of startup constraints.
 
+	* library/dde/pkgIndex.tcl:	Added safeguards so that registry
+	* library/reg/pkgIndex.tcl:	and dde packages are not offered
+	* win/tclWinDde.c:	on non-Windows platforms.  Bumped to
+	* win/tclWinReg.c:	registry 1.1.3 and dde 1.2.2.
+
 2003-11-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/unixInit.test (unixInit-2.10): mark as knownBug
