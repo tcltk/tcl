@@ -1,5 +1,19 @@
 2000-07-26  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* generic/tclStubInit.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclIO.c: moved the Tcl_Channel* macros from tcl.h to
+	tclIO.c and made them proper stubbed functions.  These are:
+	Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc,
+	Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc,
+	Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc,
+	Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc,
+	Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc,
+	and Tcl_ChannelHandlerProc.  These should be used to access the
+	Tcl_ChannelType structure instead of direct pointer dereferencing.
+
 	* unix/Makefile.in: undid 07-25 Makefile.in changes because we
 	don't really want to force all private makefiles on everyone.
 	This needs to be addressed again in the future.  Best possible

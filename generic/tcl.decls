@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33.4.3 2000/07/25 16:54:47 kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.33.4.4 2000/07/27 00:38:58 hobbs Exp $
 
 library tcl
 
@@ -1369,6 +1369,53 @@ declare 396 generic {
 }
 declare 397 generic {
     int Tcl_ChannelBuffered (Tcl_Channel chan)
+}
+declare 398 generic {
+    char * Tcl_ChannelName(Tcl_ChannelType *chanTypePtr)
+}
+declare 399 generic {
+    Tcl_ChannelTypeVersion Tcl_ChannelVersion(Tcl_ChannelType *chanTypePtr)
+}
+declare 400 generic {
+    Tcl_DriverBlockModeProc * Tcl_ChannelBlockModeProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 401 generic {
+    Tcl_DriverCloseProc * Tcl_ChannelCloseProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 402 generic {
+    Tcl_DriverClose2Proc * Tcl_ChannelClose2Proc(Tcl_ChannelType *chanTypePtr)
+}
+declare 403 generic {
+    Tcl_DriverInputProc * Tcl_ChannelInputProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 404 generic {
+    Tcl_DriverOutputProc * Tcl_ChannelOutputProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 405 generic {
+    Tcl_DriverSeekProc * Tcl_ChannelSeekProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 406 generic {
+    Tcl_DriverSetOptionProc * Tcl_ChannelSetOptionProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 407 generic {
+    Tcl_DriverGetOptionProc * Tcl_ChannelGetOptionProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 408 generic {
+    Tcl_DriverWatchProc * Tcl_ChannelWatchProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 409 generic {
+    Tcl_DriverGetHandleProc * Tcl_ChannelGetHandleProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 410 generic {
+    Tcl_DriverFlushProc * Tcl_ChannelFlushProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 411 generic {
+    Tcl_DriverHandlerProc * Tcl_ChannelHandlerProc(Tcl_ChannelType \
+	    *chanTypePtr)
 }
 
 ##############################################################################

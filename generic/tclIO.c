@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.6 2000/07/25 16:54:49 kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.7 2000/07/27 00:39:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -5298,7 +5298,7 @@ Tcl_ChannelBuffered(chan)
     Tcl_Channel chan;			/* The channel to query. */
 {
     Channel *chanPtr = (Channel *) chan;
-					/* State of real channel structure. */
+					/* real channel structure. */
     ChannelBuffer *bufPtr;
     int bytesBuffered;
 
@@ -7941,4 +7941,338 @@ Tcl_GetChannelNamesEx(interp, pattern)
 	}
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelName --
+ *
+ *	Return the name of the channel type.
+ *
+ * Results:
+ *	A pointer the name of the channel type.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_ChannelName(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->typeName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelVersion --
+ *
+ *	Return the of version of the channel type.
+ *
+ * Results:
+ *	TCL_CHANNEL_VERSION_2 or TCL_CHANNEL_VERSION_1.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_ChannelTypeVersion
+Tcl_ChannelVersion(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
+	return TCL_CHANNEL_VERSION_2;
+    } else {
+	/*
+	 * In <v2 channel versions, the version field is occupied
+	 * by the Tcl_DriverBlockModeProc
+	 */
+	return TCL_CHANNEL_VERSION_1;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelBlockModeProc --
+ *
+ *	Return the Tcl_DriverBlockModeProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverBlockModeProc *
+Tcl_ChannelBlockModeProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
+	return (chanTypePtr->blockModeProc);
+    } else {
+	return (Tcl_DriverBlockModeProc *) (chanTypePtr->version);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelCloseProc --
+ *
+ *	Return the Tcl_DriverCloseProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverCloseProc *
+Tcl_ChannelCloseProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->closeProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelClose2Proc --
+ *
+ *	Return the Tcl_DriverClose2Proc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverClose2Proc *
+Tcl_ChannelClose2Proc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->close2Proc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelInputProc --
+ *
+ *	Return the Tcl_DriverInputProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverInputProc *
+Tcl_ChannelInputProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->inputProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelOutputProc --
+ *
+ *	Return the Tcl_DriverOutputProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverOutputProc *
+Tcl_ChannelOutputProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->outputProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelSeekProc --
+ *
+ *	Return the Tcl_DriverSeekProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverSeekProc *
+Tcl_ChannelSeekProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->seekProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelSetOptionProc --
+ *
+ *	Return the Tcl_DriverSetOptionProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverSetOptionProc *
+Tcl_ChannelSetOptionProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->setOptionProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelGetOptionProc --
+ *
+ *	Return the Tcl_DriverGetOptionProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverGetOptionProc *
+Tcl_ChannelGetOptionProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->getOptionProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelWatchProc --
+ *
+ *	Return the Tcl_DriverWatchProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverWatchProc *
+Tcl_ChannelWatchProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->watchProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelGetHandleProc --
+ *
+ *	Return the Tcl_DriverGetHandleProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverGetHandleProc *
+Tcl_ChannelGetHandleProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->getHandleProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelFlushProc --
+ *
+ *	Return the Tcl_DriverFlushProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverFlushProc *
+Tcl_ChannelFlushProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->flushProc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelHandlerProc --
+ *
+ *	Return the Tcl_DriverHandlerProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverHandlerProc *
+Tcl_ChannelHandlerProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    return (chanTypePtr->handlerProc);
 }

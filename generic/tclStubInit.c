@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35.4.4 2000/07/25 16:54:52 kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.35.4.5 2000/07/27 00:39:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -797,6 +797,20 @@ TclStubs tclStubs = {
     Tcl_WriteRaw, /* 395 */
     Tcl_GetTopChannel, /* 396 */
     Tcl_ChannelBuffered, /* 397 */
+    Tcl_ChannelName, /* 398 */
+    Tcl_ChannelVersion, /* 399 */
+    Tcl_ChannelBlockModeProc, /* 400 */
+    Tcl_ChannelCloseProc, /* 401 */
+    Tcl_ChannelClose2Proc, /* 402 */
+    Tcl_ChannelInputProc, /* 403 */
+    Tcl_ChannelOutputProc, /* 404 */
+    Tcl_ChannelSeekProc, /* 405 */
+    Tcl_ChannelSetOptionProc, /* 406 */
+    Tcl_ChannelGetOptionProc, /* 407 */
+    Tcl_ChannelWatchProc, /* 408 */
+    Tcl_ChannelGetHandleProc, /* 409 */
+    Tcl_ChannelFlushProc, /* 410 */
+    Tcl_ChannelHandlerProc, /* 411 */
 };
 
 /* !END!: Do not edit above this line. */

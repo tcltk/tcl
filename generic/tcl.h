@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70.4.2 2000/07/17 23:09:54 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.70.4.3 2000/07/27 00:38:58 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -386,7 +386,7 @@ typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
-typedef struct Tcl_ChannelVersion_ *Tcl_ChannelVersion;
+typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
 
 /*
  * Definition of the interface to procedures implementing threads.
@@ -1154,8 +1154,8 @@ typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
  * Channel version tag.  This was introduced in 8.3.2/8.4.
  */
 
-#define TCL_CHANNEL_VERSION_1	((Tcl_ChannelVersion) 0x1)
-#define TCL_CHANNEL_VERSION_2	((Tcl_ChannelVersion) 0x2)
+#define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
+#define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
 
 /*
  * Typedefs for the various operations in a channel type:
@@ -1236,13 +1236,16 @@ typedef enum Tcl_EolTranslation {
  * One such structure exists for each type (kind) of channel.
  * It collects together in one place all the functions that are
  * part of the specific channel type.
+ *
+ * It is recommend that the Tcl_Channel* functions are used to access
+ * elements of this structure, instead of direct accessing.
  */
 
 typedef struct Tcl_ChannelType {
     char *typeName;			/* The name of the channel type in Tcl
 					 * commands. This storage is owned by
 					 * channel type. */
-    Tcl_ChannelVersion version;		/* Version of the channel. */
+    Tcl_ChannelTypeVersion version;	/* Version of the channel type. */
     Tcl_DriverCloseProc *closeProc;	/* Procedure to call to close the
 					 * channel, or TCL_CLOSE2PROC if the
 					 * close2Proc should be used
@@ -1278,31 +1281,6 @@ typedef struct Tcl_ChannelType {
 					 * channel event.  This will be passed
 					 * up the stacked channel chain. */
 } Tcl_ChannelType;
-
-/*
- * The following macros are provided as convenience functions
- * for accessing the internals of the Tcl_ChannelType
- */
-
-#define Tcl_ChannelName(chanTypePtr)		((chanTypePtr)->typeName)
-#define Tcl_ChannelVersion(chanTypePtr) \
-	(((chanTypePtr)->version == TCL_CHANNEL_VERSION_2) ? \
-		TCL_CHANNEL_VERSION_2 : TCL_CHANNEL_VERSION_1)
-#define Tcl_ChannelBlockModeProc(chanTypePtr) \
-	(((chanTypePtr)->version == TCL_CHANNEL_VERSION_2) ? \
-		(chanTypePtr)->blockModeProc : \
-		(Tcl_DriverBlockModeProc *) (chanTypePtr)->version)
-#define Tcl_ChannelCloseProc(chanTypePtr)	((chanTypePtr)->closeProc)
-#define Tcl_ChannelClose2Proc(chanTypePtr)	((chanTypePtr)->close2Proc)
-#define Tcl_ChannelInputProc(chanTypePtr)	((chanTypePtr)->inputProc)
-#define Tcl_ChannelOutputProc(chanTypePtr)	((chanTypePtr)->outputProc)
-#define Tcl_ChannelSeekProc(chanTypePtr)	((chanTypePtr)->seekProc)
-#define Tcl_ChannelSetOptionProc(chanTypePtr)	((chanTypePtr)->setOptionProc)
-#define Tcl_ChannelGetOptionProc(chanTypePtr)	((chanTypePtr)->getOptionProc)
-#define Tcl_ChannelWatchProc(chanTypePtr)	((chanTypePtr)->watchProc)
-#define Tcl_ChannelGetHandleProc(chanTypePtr)	((chanTypePtr)->getHandleProc)
-#define Tcl_ChannelFlushProc(chanTypePtr)	((chanTypePtr)->flushProc)
-#define Tcl_ChannelHandlerProc(chanTypePtr)	((chanTypePtr)->handlerProc)
 
 /*
  * The following flags determine whether the blockModeProc above should
