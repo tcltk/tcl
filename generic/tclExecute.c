@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.161 2004/10/25 01:06:49 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.162 2004/10/25 20:24:12 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1237,10 +1237,7 @@ TclExecuteByteCode(interp, codePtr)
 	    int level = TclGetUInt4AtPtr(pc+5);
 	    Tcl_Obj *returnOpts = POP_OBJECT();
 
-	    DECACHE_STACK_INFO();
-	    Tcl_ResetResult(interp);
 	    result = TclProcessReturn(interp, code, level, returnOpts);
-	    CACHE_STACK_INFO();
 	    Tcl_DecrRefCount(returnOpts);
 	    if (result != TCL_OK) {
 		Tcl_SetObjResult(interp, *tosPtr);
@@ -2186,9 +2183,7 @@ TclExecuteByteCode(interp, codePtr)
 		 if (result != TCL_OK) {
 		     TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
 			     opnd, O2S(objPtr)), Tcl_GetObjResult(interp));
-		     DECACHE_STACK_INFO();
 		     Tcl_AddErrorInfo(interp, "\n    (reading increment)");
-		     CACHE_STACK_INFO();
 		     goto checkForCatch;
 		 }
 		 isWide = (objPtr->typePtr == &tclWideIntType);
@@ -2231,10 +2226,8 @@ TclExecuteByteCode(interp, codePtr)
 	     varPtr = TclObjLookupVar(interp, objPtr, part2, 
 		     TCL_LEAVE_ERR_MSG, "read", 0, 1, &arrayPtr);
 	     if (varPtr == NULL) {
-		 DECACHE_STACK_INFO();
 		 Tcl_AddObjErrorInfo(interp,
 			 "\n    (reading value of variable to increment)", -1);
-		 CACHE_STACK_INFO();
 		 TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 		 result = TCL_ERROR;
 		 goto checkForCatch;
@@ -2516,9 +2509,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		        (t1Ptr? t1Ptr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -2547,9 +2538,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		        (t2Ptr? t2Ptr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, value2Ptr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -3491,9 +3480,7 @@ TclExecuteByteCode(interp, codePtr)
 		        O2S(valuePtr), O2S(value2Ptr), 
 		        (valuePtr->typePtr? 
 			     valuePtr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -3508,9 +3495,7 @@ TclExecuteByteCode(interp, codePtr)
 		        O2S(valuePtr), O2S(value2Ptr),
 		        (value2Ptr->typePtr?
 			    value2Ptr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, value2Ptr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -3825,9 +3810,7 @@ TclExecuteByteCode(interp, codePtr)
 		        s, O2S(valuePtr),
 		        (valuePtr->typePtr?
 			    valuePtr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	    t1Ptr = valuePtr->typePtr;
@@ -3859,9 +3842,7 @@ TclExecuteByteCode(interp, codePtr)
 		        O2S(value2Ptr), s,
 		        (value2Ptr->typePtr?
 			    value2Ptr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, value2Ptr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	    t2Ptr = value2Ptr->typePtr;
@@ -3914,9 +3895,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (IS_NAN(dResult) || IS_INF(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
 		        O2S(valuePtr), O2S(value2Ptr)));
-		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, dResult);
-		CACHE_STACK_INFO();
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
@@ -4092,9 +4071,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) { 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n",
 		        s, (tPtr? tPtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	    tPtr = valuePtr->typePtr;
@@ -4182,9 +4159,7 @@ TclExecuteByteCode(interp, codePtr)
 		if (result != TCL_OK) {
 		    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
 		            s, (tPtr? tPtr->name : "null")));
-		    DECACHE_STACK_INFO();
 		    IllegalExprOperandType(interp, pc, valuePtr);
-		    CACHE_STACK_INFO();
 		    goto checkForCatch;
 		}
 	    }
@@ -4277,9 +4252,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {   /* try to convert to double */
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
 		        O2S(valuePtr), (tPtr? tPtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -4459,9 +4432,7 @@ TclExecuteByteCode(interp, codePtr)
 		if (IS_NAN(d) || IS_INF(d)) {
 		    TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 		            O2S(objResultPtr)));
-		    DECACHE_STACK_INFO();
 		    TclExprFloatError(interp, d);
-		    CACHE_STACK_INFO();
 		    result = TCL_ERROR;
 		    goto checkForCatch;
 		}
@@ -4730,11 +4701,9 @@ TclExecuteByteCode(interp, codePtr)
      */
 	
  divideByZero:
-    DECACHE_STACK_INFO();
     Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
             (char *) NULL);
-    CACHE_STACK_INFO();
 
     result = TCL_ERROR;
     goto checkForCatch;
@@ -4745,12 +4714,10 @@ TclExecuteByteCode(interp, codePtr)
      */
 
  exponOfZero:
-    DECACHE_STACK_INFO();
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "exponentiation of zero by negative power", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 	    "exponentiation of zero by negative power", (char *) NULL);
-    CACHE_STACK_INFO();
     result = TCL_ERROR;
     goto checkForCatch;
 
@@ -4862,9 +4829,7 @@ TclExecuteByteCode(interp, codePtr)
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    if (bytes != NULL) {
-		DECACHE_STACK_INFO();
 		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
-		CACHE_STACK_INFO();
 	    }
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
@@ -5146,7 +5111,7 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	operator = "**";
     }
 
-    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewObj()); 
     if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {
 	Tcl_AppendResult(interp, "can't use empty string as operand of \"",
 		operator, "\"", (char *) NULL);
