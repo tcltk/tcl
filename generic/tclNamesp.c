@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.5 2004/09/30 22:45:14 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.6 2004/10/05 16:22:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,6 @@ Tcl_PopCallFrame(interp)
 {
     register Interp *iPtr = (Interp *) interp;
     register CallFrame *framePtr = iPtr->framePtr;
-    int saveErrFlag;
     Namespace *nsPtr;
 
     /*
@@ -364,21 +363,6 @@ Tcl_PopCallFrame(interp)
     iPtr->framePtr = framePtr->callerPtr;
     iPtr->varFramePtr = framePtr->callerVarPtr;
 
-    /*
-     * Delete the local variables. As a hack, we save then restore the
-     * ERR_IN_PROGRESS flag in the interpreter. The problem is that there
-     * could be unset traces on the variables, which cause scripts to be
-     * evaluated. This will clear the ERR_IN_PROGRESS flag, losing stack
-     * trace information if the procedure was exiting with an error. The
-     * code below preserves the flag. Unfortunately, that isn't really
-     * enough: we really should preserve the errorInfo variable too
-     * (otherwise a nested error in the trace script will trash errorInfo).
-     * What's really needed is a general-purpose mechanism for saving and
-     * restoring interpreter state.
-     */
-
-    saveErrFlag = (iPtr->flags & ERR_IN_PROGRESS);
-
     if (framePtr->varTablePtr != NULL) {
         TclDeleteVars(iPtr, framePtr->varTablePtr);
         ckfree((char *) framePtr->varTablePtr);
@@ -387,8 +371,6 @@ Tcl_PopCallFrame(interp)
     if (framePtr->numCompiledLocals > 0) {
         TclDeleteCompiledLocalVars(iPtr, framePtr);
     }
-
-    iPtr->flags |= saveErrFlag;
 
     /*
      * Decrement the namespace's count of active call frames. If the
