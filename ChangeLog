@@ -1,3 +1,40 @@
+2000-05-26  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): reworked to operate in
+	Unicode, tweaked for performance.
+	(Tcl_StringObjCmd) changed STR_FIRST/STR_LAST error message to
+	something more understandable, reworked STR_FIRST, STR_LAST,
+	STR_MAP, STR_MATCH, STR_RANGE, STR_REPLACE to operate in Unicode.
+	Removed inneffectual STR_RANGE "special" ByteArray support.
+	Optimized STR_MAP algorithm, especially optimized for one-pair case.
+	Fixed possible mem overrun in STR_INDEX bytearray case.
+	
+	* generic/tclCompExpr.c: changed INST_STREQ -> INST_STR_EQ,
+	INST_STRNEQ -> INST_STR_NEQ
+	* generic/tclCompile.c: added streq, strneq, strcmp, strlen &
+	strmatch to the compiled stats instructionTable
+	* generic/tclCompile.h: added instructions INST_STR_CMP,
+	INST_STR_INDEX, INST_STR_MATCH
+	* generic/tclCompCmds.c: added byte compiler support for
+	[string compare|match|index].
+	* generic/tclExecute.c:
+	Changed INST_STR_(N)EQ to return an Int object and not bother
+	trying to reuse the top stack object.
+	Added INST_STR_CMP, INST_STR_INDEX, INST_STR_MATCH bytecode ops.
+	Extended evalstats output info with Tcl_IsShared stat info.
+
+	* generic/tclInt.h:
+	* generic/tclObj.c (Tcl_DbIsShared): added support for checking
+	result of Tcl_IsShared in evalstats (TCL_COMPILE_STATS).
+
+	* generic/tclStringObj.c (Tcl_AppendUnicodeToObj): removed dead code.
+	(AppendUnicodeToUnicodeRep) removed overallocation by extra
+	sizeof(Tcl_UniChar) multiplier.
+
+	* tests/string.test: added string map tests for the one-pair case,
+	corrected tests to reflect improved error messages in first/last.
+	Added tests against mem overrun in string index bytearray case.
+
 2000-05-23  Eric Melski  <ericm@scriptics.com>
 
 	* generic/tclInt.h: Added function prototypes for
@@ -16,7 +53,7 @@
 	(TclCompileStringCmd): Basic implementation of byte-compiled
 	[string] command.  Not all subcommands are implemented; those
 	that are not an out-line compiled.
-	
+
 	(TclCompileReturnCmd): Byte-compiled implementation of [return]
 	command.  Only "simple" returns are byte-compiled; in particular,
 	if the -code, -errorinfo or -errorcode flags are used, the command
@@ -31,11 +68,6 @@
 	* win/tclWinConsole.c: cast and header cleanup [Bug: 5625]
 	* win/tclWinSerial.c: cast cleanup [Bug: 5626]
 	* win/tclWinFCmd.c: cast cleanup [Bug: 5627]
-
-2000-05-20  Jeff Hobbs  <hobbs@scriptics.com>
-
-	* generic/tclStringObj.c (AppendUnicodeToUnicodeRep): removed
-	overallocation by extra sizeof(Tcl_UniChar) multiplication.
 
 2000-05-19  Jeff Hobbs  <hobbs@scriptics.com>
 
@@ -2570,7 +2602,7 @@
 
 	* generic/tclCmdMZ.c:
 	* tests/string.test: Fixed bug where string map failed on null
-	strings. 
+	strings.
 
 	* generic/regexec.c: 
 	* unix/tclUnixNotfy.c: lint
