@@ -1,3 +1,8 @@
+2003-08-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/util.test: Added new tests for remaining TclNeedSpace()
+	bugs discussed in [Bug 411825].
+
 2003-08-26  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tcl.h: Added some support for the LCC-Win32 compiler.
