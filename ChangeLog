@@ -8,7 +8,10 @@
 	queue. Added test code in 'tcltest' and a new file of test cases
 	'notify.test' to exercise this functionality; several of the new
 	test cases fail for the original code and pass for the corrected
-	code.
+	code. [Bug 673714]
+
+	* unix/tclUnixTest.c (TestfilehandlerCmd): Corrected a couple
+	of typos in error messages. [Bug 596027]
 	
 2003-02-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
