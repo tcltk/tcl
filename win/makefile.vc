@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.31 1999/04/30 23:35:41 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.32 1999/05/05 20:29:04 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -475,6 +475,9 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	-@copy "$(ROOT)\library\reg1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	@echo installing encoding files
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
+	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"
 	@echo installing library files
 	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(GENERICDIR)\tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
