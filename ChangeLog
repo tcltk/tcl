@@ -1,3 +1,9 @@
+2004-04-19  Kevin B. Kenny   <kennykb@acm.org>
+
+	* generic/tclObj.c (Tcl_GetDoubleFromObj) Corrected
+	"short circuit" conversion of int to double. Reported by
+	Jeff Hobbs on the Tcl'ers Chat.
+	
 2004-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/lreplace.n, doc/lrange.n, doc/llength.n:	More examples for
