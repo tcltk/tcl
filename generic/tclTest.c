@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.21 2000/09/28 06:38:22 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.22 2000/11/24 11:27:37 dkf Exp $
  */
 
 #define TCL_TEST
@@ -292,6 +292,9 @@ static int		TestupvarCmd _ANSI_ARGS_((ClientData dummy,
 static int              TestWrongNumArgsObjCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
+static int              TestGetIndexFromObjStructObjCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 static int		TestChannelCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestChannelEventCmd _ANSI_ARGS_((ClientData clientData,
@@ -347,6 +350,9 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
+			 TestGetIndexFromObjStructObjCmd, (ClientData) 0,
+			 (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testaccessproc", TestaccessprocCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, (ClientData) 0,
@@ -4945,5 +4951,55 @@ TestWrongNumArgsObjCmd(dummy, interp, objc, objv)
     }
 
     Tcl_WrongNumArgs(interp, i, &(objv[3]), msg);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestGetIndexFromObjStructObjCmd --
+ *
+ *	Test the Tcl_GetIndexFromObjStruct function.
+ *
+ * Results:
+ *	Standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestGetIndexFromObjStructObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    char *ary[] = { "a", "b", "c", "d", "e", "f", (char *)NULL,(char *)NULL };
+    int idx,target;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "argument targetvalue");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ary, 2*sizeof(char *),
+				  "dummy", 0, &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIntFromObj(interp, objv[2], &target) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (idx != target) {
+	char buffer[64];
+	sprintf(buffer, "%d", idx);
+	Tcl_AppendResult(interp, "index value comparison failed: got ",
+			 buffer, NULL);
+	sprintf(buffer, "%d", target);
+	Tcl_AppendResult(interp, " when ", buffer, " expected", NULL);
+	return TCL_ERROR;
+    }
+    Tcl_WrongNumArgs(interp, 3, objv, NULL);
     return TCL_OK;
 }
