@@ -1,3 +1,17 @@
+2000-04-25  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc: updated for http change and some cleanup
+	* library/http2.[13]: moved dir http2.1 to http2.3 to match version
+
+	* doc/Utf.3: clarified docs for Tcl_(UniChar|Utf)AtIndex
+
+	* unix/tclUnixThrd.c: removed {}s around PTHREAD_MUTEX_INITIALIZER
+	[Bug: 5254]
+
+	* unix/tclLoadDyld.c (TclpLoadFile): removed use of interp->result
+
 2000-04-24  Eric Melski  <ericm@scriptics.com>
 
 	* unix/mkLinks: 

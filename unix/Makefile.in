@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.62 2000/04/19 08:32:45 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63 2000/04/25 20:58:48 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -49,8 +49,7 @@ BIN_INSTALL_DIR		= $(INSTALL_ROOT)$(bindir)
 # Directory in which to install libtcl.so or libtcl.a:
 LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
 
-# Path name to use when installing library scripts.  Don't
-# include $(prefix) here since it's already part of $(TCL_LIBRARY)
+# Path name to use when installing library scripts.
 SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Directory in which to install the include file tcl.h:
@@ -165,6 +164,13 @@ SHELL			= /bin/sh
 INSTALL			= @srcdir@/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
+
+# The following specifies which Tcl executable to use for make targets
+# below.  This can generally be 'tclsh', meaning all targets will work
+# once we have created the initial executable, but in some cases you
+# may want to use a target without having made tclsh on these sources
+# (like for make genstubs)
+TCL_EXE			= tclsh
 
 # The symbols below provide support for dynamic loading and shared
 # libraries.  See configure.in for a description of what the
@@ -467,7 +473,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.62 2000/04/19 08:32:45 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63 2000/04/25 20:58:48 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -543,7 +549,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.1 http1.0 opt0.4 encoding msgcat1.0 tcltest1.0; \
+	@for i in http2.3 http1.0 opt0.4 encoding msgcat1.0 tcltest1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -565,7 +571,7 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR); \
 	    done;
-	@for i in http2.1 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
+	@for i in http2.3 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
 	    do \
 	    echo "Installing library $$i directory"; \
 	    for j in $(TOP_DIR)/library/$$i/*.tcl ; \
@@ -1012,11 +1018,11 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 		$(GENERIC_DIR)/tclInt.decls
-	tclsh $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls
 
 genstubs:
-	tclsh $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls
 
 #
@@ -1095,7 +1101,7 @@ dist: $(UNIX_DIR)/configure
 	chmod 775 $(DISTDIR)/unix/ldAix
 	chmod +x $(DISTDIR)/unix/install-sh
 
-	tclsh $(UNIX_DIR)/mkLinks.tcl \
+	$(TCL_EXE) $(UNIX_DIR)/mkLinks.tcl \
 		$(UNIX_DIR)/../doc/*.[13n] > $(DISTDIR)/unix/mkLinks
 	chmod +x $(DISTDIR)/unix/mkLinks
 	mkdir $(DISTDIR)/generic
@@ -1108,7 +1114,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.1 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0; \
+	for i in http2.3 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
@@ -1210,7 +1216,7 @@ allpatch: dist
 #
 
 html: 
-	tclsh $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(DISTDIR)/html \
+	$(TCL_EXE) $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(DISTDIR)/html \
 		--srcdir=$(TOP_DIR)/..
 
 #
@@ -1225,7 +1231,7 @@ macdist: dist machtml
 machtml:
 	rm -f $(DISTDIR)/mac/tclMacProjects.sea.hqx
 	rm -rf $(DISTDIR)/doc
-	tclsh $(TOOL_DIR)/cvtEOL.tcl $(DISTDIR)
+	$(TCL_EXE) $(TOOL_DIR)/cvtEOL.tcl $(DISTDIR)
 
 #
 # Targets to build Solaris package of the distribution for the current
@@ -1301,7 +1307,7 @@ package-generate:
 		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/lib=lib \
 		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/man=man \
 		 $(DISTDIR)/$(PACKAGE)/$(VERSION)/`arch`=`arch` \
-	| tclsh $(UNIX_DIR)/mkProto.tcl \
+	| $(TCL_EXE) $(UNIX_DIR)/mkProto.tcl \
 		$(VERSION) $(UNIX_DIR) > prototype
 	pkgmk -o -d . -f prototype -a `arch`
 	pkgtrans -s . $(PACKAGE).`arch` $(PACKAGE)
