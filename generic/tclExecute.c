@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.53 2002/04/18 13:04:20 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.54 2002/05/29 09:09:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2718,7 +2718,7 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * String compare
 		 */
-		char *s1, *s2;
+		CONST char *s1, *s2;
 		int s1len, s2len, iResult;
 
 		value2Ptr = POP_OBJECT();
@@ -2728,18 +2728,25 @@ TclExecuteByteCode(interp, codePtr)
 		 * The comparison function should compare up to the
 		 * minimum byte length only.
 		 */
-		if ((valuePtr->typePtr == &tclByteArrayType) &&
+		if (valuePtr == value2Ptr) {
+		    /*
+		     * In the pure equality case, set lengths too for
+		     * the checks below (or we could goto beyond it).
+		     */
+		    iResult = s1len = s2len = 0;
+		} else if ((valuePtr->typePtr == &tclByteArrayType) &&
 			(value2Ptr->typePtr == &tclByteArrayType)) {
 		    s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
 		    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 		    iResult = memcmp(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
-		} else if ((valuePtr->typePtr == &tclStringType) ||
-			(value2Ptr->typePtr == &tclStringType)) {
+		} else if (((valuePtr->typePtr == &tclStringType)
+			&& (valuePtr->bytes == NULL))
+			|| ((value2Ptr->typePtr == &tclStringType)
+				&& (value2Ptr->bytes == NULL))) {
 		    /*
-		     * The alternative is to break this into more code
-		     * that does type sensitive comparison, as done in
-		     * Tcl_StringObjCmd.
+		     * Do a unicode-specific comparison if one of the args
+		     * only has the unicode rep.
 		     */
 		    Tcl_UniChar *uni1, *uni2;
 		    uni1 = Tcl_GetUnicodeFromObj(valuePtr, &s1len);
@@ -2748,21 +2755,12 @@ TclExecuteByteCode(interp, codePtr)
 			    (unsigned) ((s1len < s2len) ? s1len : s2len));
 		} else {
 		    /*
-		     * This solution is less mem intensive, but it is
-		     * computationally expensive as the string grows.  The
-		     * reason that we can't use a memcmp is that UTF-8 strings
-		     * that contain a \u0000 can't be compared with memcmp.  If
-		     * we knew that the string was ascii-7 or had no null byte,
-		     * we could just do memcmp and save all the hassle.
+		     * We can't do a simple memcmp in order to handle the
+		     * special Tcl \xC0\x80 null encoding for utf-8.
 		     */
 		    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
-		    /*
-		     * These have to be in true chars
-		     */
-		    s1len = Tcl_NumUtfChars(s1, s1len);
-		    s2len = Tcl_NumUtfChars(s2, s2len);
-		    iResult = Tcl_UtfNcmp(s1, s2,
+		    iResult = TclpUtfNcmp2(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
 		}
 
@@ -2931,6 +2929,26 @@ TclExecuteByteCode(interp, codePtr)
 
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
+
+		if (valuePtr == value2Ptr) {
+		    /*
+		     * Optimize the equal object case.
+		     */
+		    switch (*pc) {
+			case INST_EQ:
+			case INST_LE:
+			case INST_GE:
+			    iResult = 1;
+			    break;
+			case INST_NEQ:
+			case INST_LT:
+			case INST_GT:
+			    iResult = 0;
+			    break;
+		    }
+		    goto foundResult;
+		}
+
 		t1Ptr = valuePtr->typePtr;
 		t2Ptr = value2Ptr->typePtr;
 
@@ -2967,30 +2985,39 @@ TclExecuteByteCode(interp, codePtr)
 		if (!IS_NUMERIC_TYPE(t1Ptr) || !IS_NUMERIC_TYPE(t2Ptr)) {
 		    /*
 		     * One operand is not numeric. Compare as strings.
-		     * NOTE: strcmp is not correct for \x00 < \x01.
+		     * NOTE: strcmp is not correct for \x00 < \x01, but
+		     * that is unlikely to occur here.  We could use the
+		     * TclUtfNCmp2 to handle this.
 		     */
-		    int cmpValue;
-		    s1 = TclGetString(valuePtr);
-		    s2 = TclGetString(value2Ptr);
-		    cmpValue = strcmp(s1, s2);
+		    int s1len, s2len;
+		    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
 		    switch (*pc) {
 		    case INST_EQ:
-			iResult = (cmpValue == 0);
+			if (s1len == s2len) {
+			    iResult = (strcmp(s1, s2) == 0);
+			} else {
+			    iResult = 0;
+			}
 			break;
 		    case INST_NEQ:
-			iResult = (cmpValue != 0);
+			if (s1len == s2len) {
+			    iResult = (strcmp(s1, s2) != 0);
+			} else {
+			    iResult = 1;
+			}
 			break;
 		    case INST_LT:
-			iResult = (cmpValue < 0);
+			iResult = (strcmp(s1, s2) < 0);
 			break;
 		    case INST_GT:
-			iResult = (cmpValue > 0);
+			iResult = (strcmp(s1, s2) > 0);
 			break;
 		    case INST_LE:
-			iResult = (cmpValue <= 0);
+			iResult = (strcmp(s1, s2) <= 0);
 			break;
 		    case INST_GE:
-			iResult = (cmpValue >= 0);
+			iResult = (strcmp(s1, s2) >= 0);
 			break;
 		    }
 		} else if ((t1Ptr == &tclDoubleType)
@@ -3094,7 +3121,7 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * Reuse the valuePtr object already on stack if possible.
 		 */
-		
+		foundResult:
 		TRACE(("%.20s %.20s => %ld\n",
 		       O2S(valuePtr), O2S(value2Ptr), iResult));
 		if (Tcl_IsShared(valuePtr)) {
