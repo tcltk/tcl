@@ -1,3 +1,9 @@
+2001-09-18 Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* generic/tclIOCmd.c (Tcl_PutsObjCmd): Rewritten to have saner and
+	  faster argument handling.  Fixes bug #123552. Patch provided by
+	  Donal K. Fellows <fellowsd@cs.man.ac.uk>: #402564.
+
 2001-09-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/configure: Regen.
