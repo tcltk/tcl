@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.93 2002/08/05 15:01:04 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.94 2003/04/05 01:26:11 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1564,6 +1564,48 @@ EXTERN Tcl_WideInt	Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
 /* 493 */
 EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc _ANSI_ARGS_((
 				Tcl_ChannelType * chanTypePtr));
+/* 494 */
+EXTERN int		Tcl_DictObjPut _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * dictPtr, Tcl_Obj * keyPtr, 
+				Tcl_Obj * valuePtr));
+/* 495 */
+EXTERN int		Tcl_DictObjGet _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * dictPtr, Tcl_Obj * keyPtr, 
+				Tcl_Obj ** valuePtrPtr));
+/* 496 */
+EXTERN int		Tcl_DictObjRemove _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * dictPtr, Tcl_Obj * keyPtr));
+/* 497 */
+EXTERN int		Tcl_DictObjSize _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * dictPtr, int * sizePtr));
+/* 498 */
+EXTERN int		Tcl_DictObjFirst _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * dictPtr, 
+				Tcl_DictSearch * searchPtr, 
+				Tcl_Obj ** keyPtrPtr, Tcl_Obj ** valuePtrPtr, 
+				int * donePtr));
+/* 499 */
+EXTERN void		Tcl_DictObjNext _ANSI_ARGS_((
+				Tcl_DictSearch * searchPtr, 
+				Tcl_Obj ** keyPtrPtr, Tcl_Obj ** valuePtrPtr, 
+				int * donePtr));
+/* 500 */
+EXTERN void		Tcl_DictObjDone _ANSI_ARGS_((
+				Tcl_DictSearch * searchPtr));
+/* 501 */
+EXTERN int		Tcl_DictObjPutKeyList _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * dictPtr, 
+				int keyc, Tcl_Obj *CONST * keyv, 
+				Tcl_Obj * valuePtr));
+/* 502 */
+EXTERN int		Tcl_DictObjRemoveKeyList _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * dictPtr, 
+				int keyc, Tcl_Obj *CONST * keyv));
+/* 503 */
+EXTERN Tcl_Obj *	Tcl_NewDictObj _ANSI_ARGS_((void));
+/* 504 */
+EXTERN Tcl_Obj *	Tcl_DbNewDictObj _ANSI_ARGS_((CONST char * file, 
+				int line));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2117,6 +2159,17 @@ typedef struct TclStubs {
     Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 491 */
     Tcl_WideInt (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 492 */
     Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 493 */
+    int (*tcl_DictObjPut) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_Obj * keyPtr, Tcl_Obj * valuePtr)); /* 494 */
+    int (*tcl_DictObjGet) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_Obj * keyPtr, Tcl_Obj ** valuePtrPtr)); /* 495 */
+    int (*tcl_DictObjRemove) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_Obj * keyPtr)); /* 496 */
+    int (*tcl_DictObjSize) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, int * sizePtr)); /* 497 */
+    int (*tcl_DictObjFirst) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_DictSearch * searchPtr, Tcl_Obj ** keyPtrPtr, Tcl_Obj ** valuePtrPtr, int * donePtr)); /* 498 */
+    void (*tcl_DictObjNext) _ANSI_ARGS_((Tcl_DictSearch * searchPtr, Tcl_Obj ** keyPtrPtr, Tcl_Obj ** valuePtrPtr, int * donePtr)); /* 499 */
+    void (*tcl_DictObjDone) _ANSI_ARGS_((Tcl_DictSearch * searchPtr)); /* 500 */
+    int (*tcl_DictObjPutKeyList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, int keyc, Tcl_Obj *CONST * keyv, Tcl_Obj * valuePtr)); /* 501 */
+    int (*tcl_DictObjRemoveKeyList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * dictPtr, int keyc, Tcl_Obj *CONST * keyv)); /* 502 */
+    Tcl_Obj * (*tcl_NewDictObj) _ANSI_ARGS_((void)); /* 503 */
+    Tcl_Obj * (*tcl_DbNewDictObj) _ANSI_ARGS_((CONST char * file, int line)); /* 504 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4132,6 +4185,50 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ChannelWideSeekProc
 #define Tcl_ChannelWideSeekProc \
 	(tclStubsPtr->tcl_ChannelWideSeekProc) /* 493 */
+#endif
+#ifndef Tcl_DictObjPut
+#define Tcl_DictObjPut \
+	(tclStubsPtr->tcl_DictObjPut) /* 494 */
+#endif
+#ifndef Tcl_DictObjGet
+#define Tcl_DictObjGet \
+	(tclStubsPtr->tcl_DictObjGet) /* 495 */
+#endif
+#ifndef Tcl_DictObjRemove
+#define Tcl_DictObjRemove \
+	(tclStubsPtr->tcl_DictObjRemove) /* 496 */
+#endif
+#ifndef Tcl_DictObjSize
+#define Tcl_DictObjSize \
+	(tclStubsPtr->tcl_DictObjSize) /* 497 */
+#endif
+#ifndef Tcl_DictObjFirst
+#define Tcl_DictObjFirst \
+	(tclStubsPtr->tcl_DictObjFirst) /* 498 */
+#endif
+#ifndef Tcl_DictObjNext
+#define Tcl_DictObjNext \
+	(tclStubsPtr->tcl_DictObjNext) /* 499 */
+#endif
+#ifndef Tcl_DictObjDone
+#define Tcl_DictObjDone \
+	(tclStubsPtr->tcl_DictObjDone) /* 500 */
+#endif
+#ifndef Tcl_DictObjPutKeyList
+#define Tcl_DictObjPutKeyList \
+	(tclStubsPtr->tcl_DictObjPutKeyList) /* 501 */
+#endif
+#ifndef Tcl_DictObjRemoveKeyList
+#define Tcl_DictObjRemoveKeyList \
+	(tclStubsPtr->tcl_DictObjRemoveKeyList) /* 502 */
+#endif
+#ifndef Tcl_NewDictObj
+#define Tcl_NewDictObj \
+	(tclStubsPtr->tcl_NewDictObj) /* 503 */
+#endif
+#ifndef Tcl_DbNewDictObj
+#define Tcl_DbNewDictObj \
+	(tclStubsPtr->tcl_DbNewDictObj) /* 504 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
