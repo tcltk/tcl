@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.29 2002/02/15 14:28:50 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.30 2002/02/26 20:03:05 hobbs Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -45,16 +45,42 @@
 
 #ifdef USE_TERMIOS
 #   include <termios.h>
+#   ifdef HAVE_SYS_IOCTL_H
+#       include <sys/ioctl.h>
+#   endif
+#   ifdef HAVE_SYS_MODEM_H
+#       include <sys/modem.h>
+#   endif
 #   define IOSTATE			struct termios
 #   define GETIOSTATE(fd, statePtr)	tcgetattr((fd), (statePtr))
 #   define SETIOSTATE(fd, statePtr)	tcsetattr((fd), TCSADRAIN, (statePtr))
+#   define GETCONTROL(fd, intPtr)	ioctl((fd), TIOCMGET, (intPtr))
+#   define SETCONTROL(fd, intPtr)	ioctl((fd), TIOCMSET, (intPtr))
+#   define TTYFLUSH(fd)			tcflush((fd), TCIOFLUSH);
+#   ifdef FIONREAD
+#	define GETREADQUEUE(fd, int)	ioctl((fd), FIONREAD, &(int))
+#   elif defined(FIORDCHK)
+#	define GETREADQUEUE(fd, int)	int = ioctl((fd), FIORDCHK, NULL)
+#   endif
+#   ifdef TIOCOUTQ
+#	define GETWRITEQUEUE(fd, int)	ioctl((fd), TIOCOUTQ, &(int))
+#   endif
+#   if defined(TIOCSBRK) && defined(TIOCCBRK)
+#	define SETBREAK(fd, flag)		\
+		ioctl((fd), (unsigned) ((flag) ? TIOCSBRK:TIOCCBRK), NULL)
+#   endif
+#   if !defined(CRTSCTS) && defined(CNEW_RTSCTS)
+#	define CRTSCTS CNEW_RTSCTS
+#   endif
 #else	/* !USE_TERMIOS */
+
 #ifdef USE_TERMIO
 #   include <termio.h>
 #   define IOSTATE			struct termio
 #   define GETIOSTATE(fd, statePtr)	ioctl((fd), TCGETA, (statePtr))
 #   define SETIOSTATE(fd, statePtr)	ioctl((fd), TCSETAW, (statePtr))
 #else	/* !USE_TERMIO */
+
 #ifdef USE_SGTTY
 #   include <sgtty.h>
 #   define IOSTATE			struct sgttyb
@@ -63,6 +89,7 @@
 #else	/* !USE_SGTTY */
 #   undef SUPPORTS_TTY
 #endif	/* !USE_SGTTY */
+
 #endif	/* !USE_TERMIO */
 #endif	/* !USE_TERMIOS */
 
@@ -220,6 +247,8 @@ static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
+static int		TtyOutputProc _ANSI_ARGS_((ClientData instanceData,
+			    CONST char *buf, int toWrite, int *errorCode));
 static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *mode, int *speedPtr, int *parityPtr,
 			    int *dataPtr, int *stopPtr));
@@ -264,7 +293,7 @@ static Tcl_ChannelType ttyChannelType = {
     TCL_CHANNEL_VERSION_2,	/* v2 channel */
     TtyCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
-    FileOutputProc,		/* Output proc. */
+    TtyOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
     TtySetOptionProc,		/* Set option proc. */
     TtyGetOptionProc,		/* Get option proc. */
@@ -631,11 +660,10 @@ FileGetHandleProc(instanceData, direction, handlePtr)
  *	0 if successful, errno if failed.
  *
  * Side effects:
- *	Restores the settings and closes the device of the channel.
+ *	Closes the device of the channel.
  *
  *----------------------------------------------------------------------
  */
-
 static int
 TtyCloseProc(instanceData, interp)
     ClientData instanceData;	/* Tty state. */
@@ -644,11 +672,98 @@ TtyCloseProc(instanceData, interp)
     TtyState *ttyPtr;
 
     ttyPtr = (TtyState *) instanceData;
+#ifdef TTYFLUSH
+    TTYFLUSH(ttyPtr->fs.fd);
+#endif
+#if 0
+    /*
+     * TIP#35 agreed to remove the unsave so that TCL could be used as a 
+     * simple stty. 
+     * It would be cleaner to remove all the stuff related to 
+     *    TtyState.stateUpdated
+     *    TtyState.savedState
+     * Then the structure TtyState would be the same as FileState.
+     * IMO this cleanup could better be done for the final 8.4 release
+     * after nobody complained about the missing unsave. -- schroedter
+     */
     if (ttyPtr->stateUpdated) {
 	SETIOSTATE(ttyPtr->fs.fd, &ttyPtr->savedState);
     }
+#endif
     return FileCloseProc(instanceData, interp);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TtyOutputProc--
+ *
+ *	This procedure is invoked from the generic IO level to write
+ *	output to a TTY channel.
+ *
+ * Results:
+ *	The number of bytes written is returned or -1 on error. An
+ *	output argument	contains a POSIX error code if an error occurred,
+ *	or zero.
+ *
+ * Side effects:
+ *	Writes output on the output device of the channel
+ *	if the channel is not designated to be closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TtyOutputProc(instanceData, buf, toWrite, errorCodePtr)
+    ClientData instanceData;		/* File state. */
+    CONST char *buf;			/* The data buffer. */
+    int toWrite;			/* How many bytes to write? */
+    int *errorCodePtr;			/* Where to store error code. */
+{
+    if ( TclInExit() ) {
+	/*
+	 * Do not write data during Tcl exit.
+	 * Serial port may block preventing Tcl from exit.
+	 */
+	return toWrite;
+    } else {
+	return FileOutputProc(instanceData, buf, toWrite, errorCodePtr);
+    }
+}
+
+#ifdef USE_TERMIOS
+/*
+ *----------------------------------------------------------------------
+ *
+ * TtyModemStatusStr --
+ *
+ *  Converts a RS232 modem status list of readable flags
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TtyModemStatusStr(status, dsPtr)
+    int status;            /* RS232 modem status */
+    Tcl_DString *dsPtr;    /* Where to store string */
+{
+#ifdef TIOCM_CTS
+    Tcl_DStringAppendElement(dsPtr, "CTS");
+    Tcl_DStringAppendElement(dsPtr, (status & TIOCM_CTS) ? "1" : "0" );
+#endif
+#ifdef TIOCM_DSR
+    Tcl_DStringAppendElement(dsPtr, "DSR");
+    Tcl_DStringAppendElement(dsPtr, (status & TIOCM_DSR) ? "1" : "0" );
+#endif
+#ifdef TIOCM_RNG
+    Tcl_DStringAppendElement(dsPtr, "RING");
+    Tcl_DStringAppendElement(dsPtr, (status & TIOCM_RNG) ? "1" : "0" );
+#endif
+#ifdef TIOCM_CD
+    Tcl_DStringAppendElement(dsPtr, "DCD");
+    Tcl_DStringAppendElement(dsPtr, (status & TIOCM_CD) ? "1" : "0" );
+#endif
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -676,11 +791,21 @@ TtySetOptionProc(instanceData, interp, optionName, value)
     CONST char *value;		/* New value for option. */
 {
     FileState *fsPtr = (FileState *) instanceData;
-    unsigned int len;
+    unsigned int len, vlen;
     TtyAttrs tty;
+#ifdef USE_TERMIOS
+    int flag, control, argc;
+    CONST char **argv;
+    IOSTATE iostate;
+#endif
 
     len = strlen(optionName);
-    if ((len > 1) && (strncmp(optionName, "-mode", len) == 0)) {
+    vlen = strlen(value);
+
+    /*
+     * Option -mode baud,parity,databits,stopbits
+     */
+    if ((len > 2) && (strncmp(optionName, "-mode", len) == 0)) {
 	if (TtyParseMode(interp, value, &tty.baud, &tty.parity, &tty.data,
 		&tty.stop) != TCL_OK) {
 	    return TCL_ERROR;
@@ -692,9 +817,181 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 	TtySetAttributes(fsPtr->fd, &tty);
 	((TtyState *) fsPtr)->stateUpdated = 1;
 	return TCL_OK;
-    } else {
-	return Tcl_BadChannelOption(interp, optionName, "mode");
     }
+
+#ifdef USE_TERMIOS
+
+    /*
+     * Option -handshake none|xonxoff|rtscts|dtrdsr
+     */
+    if ((len > 1) && (strncmp(optionName, "-handshake", len) == 0)) {
+	/*
+	 * Reset all handshake options
+	 * DTR and RTS are ON by default
+	 */
+	GETIOSTATE(fsPtr->fd, &iostate);
+	iostate.c_iflag &= ~(IXON | IXOFF | IXANY);
+#ifdef CRTSCTS
+	iostate.c_cflag &= ~CRTSCTS;
+#endif
+	if (strncasecmp(value, "NONE", vlen) == 0) {
+	    /* leave all handshake options disabled */
+	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
+	    iostate.c_iflag |= (IXON | IXOFF | IXANY);
+	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
+#ifdef CRTSCTS
+	    iostate.c_cflag |= CRTSCTS;
+#else
+	    if (interp) {
+		Tcl_AppendResult(interp, "-handshake RTSCTS ",
+		    "not supported for this platform",
+		     (char *) NULL);
+		}
+	    return TCL_ERROR;
+#endif
+	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
+	    if (interp) {
+		Tcl_AppendResult(interp, "-handshake DTRDSR ",
+		    "not supported for this platform",
+		     (char *) NULL);
+		}
+	    return TCL_ERROR;
+    } else {
+	    if (interp) {
+		Tcl_AppendResult(interp, "bad value for -handshake: ",
+		    "must be one of xonxoff, rtscts, dtrdsr or none",
+		    (char *) NULL);
+		return TCL_ERROR;
+	    }
+	}
+	SETIOSTATE(fsPtr->fd, &iostate);
+	return TCL_OK;
+    }
+
+    /*
+     * Option -xchar {\x11 \x13}
+     */
+    if ((len > 1) && (strncmp(optionName, "-xchar", len) == 0)) {
+
+	GETIOSTATE(fsPtr->fd, &iostate);
+	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (argc == 2) {
+	    iostate.c_cc[VSTART] = argv[0][0];
+	    iostate.c_cc[VSTOP]  = argv[1][0];
+	} else {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+		    "bad value for -xchar: should be a list of two elements",
+		    (char *) NULL);
+	    }
+	    return TCL_ERROR;
+    }
+	SETIOSTATE(fsPtr->fd, &iostate);
+	return TCL_OK;
+    }
+
+    /*
+    * Option -timeout msec
+    */
+    if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
+	int msec;
+
+	GETIOSTATE(fsPtr->fd, &iostate);
+	if ( Tcl_GetInt(interp, value, &msec) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+	iostate.c_cc[VMIN]  = 0;
+	iostate.c_cc[VTIME] = (msec == 0) ? 0 : (msec < 100) ? 1 : (msec+50)/100;
+	SETIOSTATE(fsPtr->fd, &iostate);
+	return TCL_OK;
+    }
+
+    /*
+     * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
+     */
+    if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
+
+	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if ((argc % 2) == 1) {
+	    if (interp) {
+		Tcl_AppendResult(interp,
+		    "bad value for -ttycontrol: should be a list of",
+		    "signal,value pairs", (char *) NULL);
+	    }
+	    return TCL_ERROR;
+	}
+
+	GETCONTROL(fsPtr->fd, &control);
+	while (argc > 1) {
+	    if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
+		return TCL_ERROR;
+	    }
+	    if (strncasecmp(argv[0], "DTR", strlen(argv[0])) == 0) {
+#ifdef TIOCM_DTR
+		if (flag ) {
+		    control |= TIOCM_DTR;
+		} else {
+		    control &= ~TIOCM_DTR;
+		}
+#else
+		if (interp) {
+		    Tcl_AppendResult(interp, "-ttycontrol DTR ",
+			"not supported for this platform",
+			(char *) NULL);
+		}
+		return TCL_ERROR;
+#endif
+	    } else if (strncasecmp(argv[0], "RTS", strlen(argv[0])) == 0) {
+#ifdef TIOCM_RTS
+		if (flag ) {
+		    control |= TIOCM_RTS;
+		} else {
+		    control &= ~TIOCM_RTS;
+		}
+#else
+		if (interp) {
+		    Tcl_AppendResult(interp, "-ttycontrol RTS ",
+			"not supported for this platform",
+			(char *) NULL);
+		}
+		return TCL_ERROR;
+#endif
+	    } else if (strncasecmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
+#ifdef SETBREAK
+		SETBREAK(fsPtr->fd, flag);
+#else
+		if (interp) {
+		    Tcl_AppendResult(interp, "-ttycontrol BREAK ",
+			"not supported for this platform",
+			(char *) NULL);
+		}
+		return TCL_ERROR;
+#endif
+	    } else {
+		if (interp) {
+		    Tcl_AppendResult(interp,
+			"bad signal for -ttycontrol: must be ",
+			"DTR, RTS or BREAK", (char *) NULL);
+		}
+		return TCL_ERROR;
+	    }
+	    argc -= 2, argv += 2;
+	} /* while (argc > 1) */
+
+	SETCONTROL(fsPtr->fd, &control);
+	return TCL_OK;
+     }
+
+    return Tcl_BadChannelOption(interp, optionName,
+	"mode handshake timeout ttycontrol xchar ");
+
+#else    /* not USE_TERMIOS */
+    return Tcl_BadChannelOption(interp, optionName, "mode");
+#endif
 }
 
 /*
@@ -730,21 +1027,94 @@ TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     unsigned int len;
     char buf[3 * TCL_INTEGER_SPACE + 16];
     TtyAttrs tty;
+    int valid = 0;  /* flag if valid option parsed */
 
     if (optionName == NULL) {
-	Tcl_DStringAppendElement(dsPtr, "-mode");
 	len = 0;
     } else {
 	len = strlen(optionName);
     }
+    if (len == 0) {
+	Tcl_DStringAppendElement(dsPtr, "-mode");
+    }
     if ((len == 0) || 
-	    ((len > 1) && (strncmp(optionName, "-mode", len) == 0))) {
+	    ((len > 2) && (strncmp(optionName, "-mode", len) == 0))) {
+	valid = 1;
 	TtyGetAttributes(fsPtr->fd, &tty);
 	sprintf(buf, "%d,%c,%d,%d", tty.baud, tty.parity, tty.data, tty.stop);
 	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+
+#ifdef USE_TERMIOS
+    /*
+     * get option -xchar
+     */
+    if (len == 0) {
+	Tcl_DStringAppendElement(dsPtr, "-xchar");
+	Tcl_DStringStartSublist(dsPtr);
+    }
+    if ((len == 0) ||
+	    ((len > 1) && (strncmp(optionName, "-xchar", len) == 0))) {
+
+	IOSTATE iostate;
+	valid = 1;
+
+	GETIOSTATE(fsPtr->fd, &iostate);
+	sprintf(buf, "%c", iostate.c_cc[VSTART]);
+	Tcl_DStringAppendElement(dsPtr, buf);
+	sprintf(buf, "%c", iostate.c_cc[VSTOP]);
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+    if (len == 0) {
+	Tcl_DStringEndSublist(dsPtr);
+    }
+
+    /*
+     * get option -queue
+     * option is readonly and returned by [fconfigure chan -queue]
+     * but not returned by unnamed [fconfigure chan]
+     */
+    if ( (len > 1) && (strncmp(optionName, "-queue", len) == 0) ) {
+	int inQueue=0, outQueue=0;
+	int inBuffered, outBuffered;
+        valid = 1;
+#ifdef GETREADQUEUE
+	GETREADQUEUE(fsPtr->fd, inQueue);
+#endif
+#ifdef GETWRITEQUEUE
+	GETWRITEQUEUE(fsPtr->fd, outQueue);
+#endif
+	inBuffered  = Tcl_InputBuffered(fsPtr->channel);
+	outBuffered = Tcl_OutputBuffered(fsPtr->channel);
+
+	sprintf(buf, "%d", inBuffered+inQueue);
+	Tcl_DStringAppendElement(dsPtr, buf);
+	sprintf(buf, "%d", outBuffered+outQueue);
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
+
+    /*
+     * get option -ttystatus
+     * option is readonly and returned by [fconfigure chan -ttystatus]
+     * but not returned by unnamed [fconfigure chan]
+     */
+    if ( (len > 4) && (strncmp(optionName, "-ttystatus", len) == 0) ) {
+	int status;
+	valid = 1;
+	GETCONTROL(fsPtr->fd, &status);
+	TtyModemStatusStr(status, dsPtr);
+    }
+#endif
+
+    if (valid) {
 	return TCL_OK;
     } else {
-	return Tcl_BadChannelOption(interp, optionName, "mode");
+	return Tcl_BadChannelOption(interp, optionName,
+#ifdef USE_TERMIOS
+	    "mode queue ttystatus xchar");
+#else
+	    "mode");
+#endif
     }
 }
 
@@ -1462,7 +1832,7 @@ Tcl_MakeFileChannel(handle, mode)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif
     int socketType = 0;
-    int argLength = sizeof(int);
+    size_t argLength = sizeof(int);
 
     if (mode == 0) {
         return NULL;
@@ -1822,7 +2192,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
     struct sockaddr_in sockname;
     struct sockaddr_in peername;
     struct hostent *hostEntPtr;
-    int size = sizeof(struct sockaddr_in);
+    size_t size = sizeof(struct sockaddr_in);
     size_t len = 0;
     char buf[TCL_INTEGER_SPACE];
 
@@ -1832,10 +2202,9 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
-	int optlen;
+	size_t optlen = sizeof(int);
 	int err, ret;
     
-	optlen = sizeof(int);
 	ret = getsockopt(statePtr->fd, SOL_SOCKET, SO_ERROR,
 		(char *)&err, &optlen);
 	if (ret < 0) {
@@ -1844,7 +2213,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 	if (err != 0) {
 	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(err), -1);
 	}
-       return TCL_OK;
+	return TCL_OK;
     }
 
     if ((len == 0) ||
@@ -2454,7 +2823,7 @@ TcpAccept(data, mask)
     int newsock;			/* The new client socket */
     TcpState *newSockState;		/* State for new socket. */
     struct sockaddr_in addr;		/* The remote address */
-    int len;				/* For accept interface */
+    size_t len;				/* For accept interface */
     char channelName[16 + TCL_INTEGER_SPACE];
 
     sockState = (TcpState *) data;
