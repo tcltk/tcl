@@ -1,3 +1,15 @@
+2003-03-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/utf.test:	Altered test numers to eliminate duplicates.
+	* tests/trace.test:	[Bugs 710322, 710327, 710349, 710363]
+	* tests/lsearch.test:
+	* tests/list.test:
+	* tests/info.test:
+	* tests/incr-old.test:
+	* tests/if-old.test:
+	* tests/format.test:
+	* tests/foreach.test:
+
 2003-03-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if-old.test,v 1.5 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: if-old.test,v 1.6 2003/03/27 13:19:15 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -45,22 +45,22 @@ test if-old-1.5 {taking proper branch} {
     if 0 {set a 1} else {}
     set a
 } {}
-test if-old-1.5 {taking proper branch} {
+test if-old-1.6 {taking proper branch} {
     set a {}
     if 0 {set a 1} elseif 1 {set a 2} elseif 1 {set a 3} else {set a 4}
     set a
 } {2}
-test if-old-1.6 {taking proper branch} {
+test if-old-1.7 {taking proper branch} {
     set a {}
     if 0 {set a 1} elseif 0 {set a 2} elseif 1 {set a 3} else {set a 4}
     set a
 } {3}
-test if-old-1.7 {taking proper branch} {
+test if-old-1.8 {taking proper branch} {
     set a {}
     if 0 {set a 1} elseif 0 {set a 2} elseif 0 {set a 3} else {set a 4}
     set a
 } {4}
-test if-old-1.8 {taking proper branch, multiline test expr} {
+test if-old-1.9 {taking proper branch, multiline test expr} {
     set a {}
     if {($tcl_platform(platform) != "foobar1") && \
 	($tcl_platform(platform) != "foobar2")} {set a 3} else {set a 4}
@@ -162,15 +162,3 @@ test if-old-4.11 {error conditions} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
