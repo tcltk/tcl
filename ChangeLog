@@ -1,3 +1,10 @@
+2002-10-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWinTime.c: Added code to set an exit handler that
+	terminates the thread that calibrates the performance counter, so
+	that the thread won't outlive unloading the Tcl DLL. [Tcl bug
+	620735].
+	
 2002-10-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/binary.n: More clarification of [binary scan]'s behaviour.
