@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.8 2001/04/04 14:49:35 dgp Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.9 2001/11/23 01:28:30 das Exp $
  */
 
 #include "tclInt.h"
@@ -196,7 +196,7 @@ pascal void NotifyRoutine (
 
 static Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
-    TcpBlockMode,		/* Set blocking or
+    (Tcl_ChannelTypeVersion)TcpBlockMode,		/* Set blocking or
                                  * non-blocking mode.*/
     TcpClose,			/* Close proc. */
     TcpInput,			/* Input proc. */

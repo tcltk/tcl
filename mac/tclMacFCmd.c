@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.10 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.11 2001/11/23 01:27:29 das Exp $
  */
 
 #include "tclInt.h"
@@ -32,16 +32,16 @@
  */
 
 static int		GetFileFinderAttributes _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, CONST char *fileName,
+			    int objIndex, Tcl_Obj *fileName,
 			    Tcl_Obj **attributePtrPtr));
 static int		GetFileReadOnly _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, CONST char *fileName,
+			    int objIndex, Tcl_Obj *fileName,
 			    Tcl_Obj **readOnlyPtrPtr));
 static int		SetFileFinderAttributes _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, CONST char *fileName,
+			    int objIndex, Tcl_Obj *fileName,
 			    Tcl_Obj *attributePtr));
 static int		SetFileReadOnly _ANSI_ARGS_((Tcl_Interp *interp,
-			    int objIndex, CONST char *fileName,
+			    int objIndex, Tcl_Obj *fileName,
 			    Tcl_Obj *readOnlyPtr));
 
 /*
@@ -716,7 +716,7 @@ DoCopyDirectory(
         err = FSpDirCreateCompat(&tmpDirSpec, smSystemScript, &tmpDirID);
     }
     if (err == noErr) {
-	err = FSpDirectoryCopy(&srcFileSpec, &tmpDirSpec, NULL, 0, true,
+	err = FSpDirectoryCopy(&srcFileSpec, &tmpDirSpec, NULL, NULL, 0, true,
 	    	CopyErrHandler);
     }
     
@@ -1157,18 +1157,17 @@ static int
 GetFileFinderAttributes(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute option. */
-    CONST char *fileName,	/* The name of the file (UTF-8). */
+    Tcl_Obj *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
-    Tcl_DString pathString;
+    char *native;
 
-    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
-    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
-	    Tcl_DStringValue(&pathString), &fileSpec);
-    Tcl_DStringFree(&pathString);
+    native=Tcl_FSGetNativePath(fileName);
+    err = FSpLocationFromPath(strlen(native),
+	    native, &fileSpec);
 
     if (err == noErr) {
     	err = FSpGetFInfo(&fileSpec, &finfo);
@@ -1204,7 +1203,7 @@ GetFileFinderAttributes(
     if (err != noErr) {
     	errno = TclMacOSErrorToPosixError(err);
     	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-    		"could not read \"", fileName, "\": ",
+    		"could not read \"", Tcl_GetString(fileName), "\": ",
     		Tcl_PosixError(interp), (char *) NULL);
     	return TCL_ERROR;
     }
@@ -1236,18 +1235,17 @@ static int
 GetFileReadOnly(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute. */
-    CONST char *fileName,	/* The name of the file (UTF-8). */
+    Tcl_Obj *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj **readOnlyPtrPtr)	/* A pointer to return the object with. */
 {
     OSErr err;
     FSSpec fileSpec;
     CInfoPBRec paramBlock;
-    Tcl_DString pathString;
+    char *native;
 
-    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
-    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
-	    Tcl_DStringValue(&pathString), &fileSpec);
-    Tcl_DStringFree(&pathString);
+    native=Tcl_FSGetNativePath(fileName);
+    err = FSpLocationFromPath(strlen(native),
+	    native, &fileSpec);
     
     if (err == noErr) {
     	if (err == noErr) {
@@ -1273,7 +1271,7 @@ GetFileReadOnly(
     if (err != noErr) {
     	errno = TclMacOSErrorToPosixError(err);
     	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-    		"could not read \"", fileName, "\": ",
+    		"could not read \"", Tcl_GetString(fileName), "\": ",
     		Tcl_PosixError(interp), (char *) NULL);
     	return TCL_ERROR;
     }
@@ -1301,18 +1299,17 @@ static int
 SetFileFinderAttributes(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute. */
-    CONST char *fileName,	/* The name of the file (UTF-8). */
+    Tcl_Obj *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* The command line object. */
 {
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
-    Tcl_DString pathString;
+    char *native;
 
-    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
-    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
-	    Tcl_DStringValue(&pathString), &fileSpec);
-    Tcl_DStringFree(&pathString);
+    native=Tcl_FSGetNativePath(fileName);
+    err = FSpLocationFromPath(strlen(native),
+	    native, &fileSpec);
     
     if (err == noErr) {
     	err = FSpGetFInfo(&fileSpec, &finfo);
@@ -1357,7 +1354,7 @@ SetFileFinderAttributes(
     	    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
     	    Tcl_AppendStringsToObj(resultPtr, "cannot set ",
     	    	    tclpFileAttrStrings[objIndex], ": \"",
-    	    	    fileName, "\" is a directory", (char *) NULL);
+    	    	    Tcl_GetString(fileName), "\" is a directory", (char *) NULL);
     	    return TCL_ERROR;
     	}
     }
@@ -1365,7 +1362,7 @@ SetFileFinderAttributes(
     if (err != noErr) {
     	errno = TclMacOSErrorToPosixError(err);
     	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-    		"could not read \"", fileName, "\": ",
+    		"could not read \"", Tcl_GetString(fileName), "\": ",
     		Tcl_PosixError(interp), (char *) NULL);
     	return TCL_ERROR;
     }
@@ -1393,19 +1390,18 @@ static int
 SetFileReadOnly(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute. */
-    CONST char *fileName,	/* The name of the file (UTF-8). */
+    Tcl_Obj *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj *readOnlyPtr)	/* The command line object. */
 {
     OSErr err;
     FSSpec fileSpec;
     HParamBlockRec paramBlock;
     int hidden;
-    Tcl_DString pathString;
+    char *native;
 
-    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
-    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
-	    Tcl_DStringValue(&pathString), &fileSpec);
-    Tcl_DStringFree(&pathString);
+    native=Tcl_FSGetNativePath(fileName);
+    err = FSpLocationFromPath(strlen(native),
+	    native, &fileSpec);
     
     if (err == noErr) {
     	if (Tcl_GetBooleanFromObj(interp, readOnlyPtr, &hidden) != TCL_OK) {
@@ -1440,7 +1436,7 @@ SetFileReadOnly(
     if (err != noErr) {
     	errno = TclMacOSErrorToPosixError(err);
     	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-    		"could not read \"", fileName, "\": ",
+    		"could not read \"", Tcl_GetString(fileName), "\": ",
     		Tcl_PosixError(interp), (char *) NULL);
     	return TCL_ERROR;
     }
@@ -1625,20 +1621,23 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		Tcl_UtfToExternalDString(NULL,&path[lastCheckpoint],
 					 fileNameLen,&nativeds);
 		fileNameLen=Tcl_DStringLength(&nativeds);
-		if(fileNameLen > MAXMACFILENAMELEN) 
-		    fileNameLen=MAXMACFILENAMELEN;
+		if(fileNameLen > MAXMACFILENAMELEN) { 
+		    err = bdNamErr;
+		} else {
 		fileName[0]=fileNameLen;
 		strncpy((char *) fileName + 1, Tcl_DStringValue(&nativeds), 
 			fileNameLen);
+		}
 		Tcl_DStringFree(&nativeds);
 	    }
+	    if(err == noErr)
 	    err=FSMakeFSSpecCompat(vRefNum, dirID, fileNamePtr, &fileSpec);
 	    if(err != noErr) {
 		if(err != fnfErr) {
 		    /*
-		     * this can if trying to get parent of a root
+		     * this can occur if trying to get parent of a root
 		     * volume via '::' or when using an illegal
-		     * filename revert to last checkpoint and stop
+		     * filename; revert to last checkpoint and stop
 		     * processing path further
 		     */
 		    err=FSMakeFSSpecCompat(vRefNum, dirID, NULL, &fileSpec);
@@ -1687,11 +1686,11 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_ExternalToUtfDString(NULL,*newPathHandle,newPathLen,&nativeds);
     if (cur != 0) {
 	/* not at end, append remaining path */
-    	if ( newPathLen==0 || *(*newPathHandle+(newPathLen-1))!=':') {
+    	if ( newPathLen==0 || (*(*newPathHandle+(newPathLen-1))!=':' && path[nextCheckpoint] !=':')) {
 	    Tcl_DStringAppend(&nativeds, ":" , 1);
 	}
-	Tcl_DStringAppend(&nativeds, &path[nextCheckpoint+1], 
-			  strlen(&path[nextCheckpoint+1]));
+	Tcl_DStringAppend(&nativeds, &path[nextCheckpoint], 
+			  strlen(&path[nextCheckpoint]));
     }
     DisposeHandle(newPathHandle);
     

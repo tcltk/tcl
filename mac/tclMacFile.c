@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.12 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.13 2001/11/23 01:27:32 das Exp $
  */
 
 /*
@@ -177,7 +177,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
      */
     Tcl_DStringFree(&dsOrig);
     Tcl_DStringAppend(&dsOrig, ":", 1);
-    Tcl_DStringAppend(&dsOrig, fileName2, -1);
+    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
     baseLength = Tcl_DStringLength(&dsOrig);
 
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
@@ -234,9 +234,9 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		&fileString);
 	if (Tcl_StringMatch(Tcl_DStringValue(&fileString), pattern)) {
 	    int typeOk = 1;
+	    Tcl_Obj *tempName;
 	    Tcl_DStringSetLength(&dsOrig, baseLength);
 	    Tcl_DStringAppend(&dsOrig, Tcl_DStringValue(&fileString), -1);
-	    Tcl_Obj *tempName;
 	    fname = Tcl_DStringValue(&dsOrig);
 	    fnameLen = Tcl_DStringLength(&dsOrig);
 	    
@@ -282,13 +282,10 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    }
 		}
 		if (typeOk == 1 && types->type != 0) {
-		    if (types->perm == 0) {
-			/* We haven't yet done a stat on the file */
 			if (TclpObjStat(tempName, &buf) != 0) {
 			    /* Posix error occurred */
 			    typeOk = 0;
 			}
-		    }
 		    if (typeOk) {
 			/*
 			 * In order bcdpfls as in 'find -t'

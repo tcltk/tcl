@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.12 2001/09/10 17:17:41 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.13 2001/11/23 01:26:55 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -149,15 +149,15 @@ EXTERN OSErr		FSpFindFolder _ANSI_ARGS_((short vRefNum,
 				OSType folderType, Boolean createFolder, 
 				FSSpec * spec));
 /* 7 */
-EXTERN void		GetGlobalMouse _ANSI_ARGS_((Point * mouse));
+EXTERN void		GetGlobalMouseTcl _ANSI_ARGS_((Point * mouse));
 /* 8 */
-EXTERN pascal OSErr	FSpGetDirectoryID _ANSI_ARGS_((CONST FSSpec * spec, 
+EXTERN pascal OSErr	FSpGetDirectoryIDTcl _ANSI_ARGS_((CONST FSSpec * spec, 
 				long * theDirID, Boolean * isDirectory));
 /* 9 */
-EXTERN pascal short	FSpOpenResFileCompat _ANSI_ARGS_((
+EXTERN pascal short	FSpOpenResFileCompatTcl _ANSI_ARGS_((
 				CONST FSSpec * spec, SignedByte permission));
 /* 10 */
-EXTERN pascal void	FSpCreateResFileCompat _ANSI_ARGS_((
+EXTERN pascal void	FSpCreateResFileCompatTcl _ANSI_ARGS_((
 				CONST FSSpec * spec, OSType creator, 
 				OSType fileType, ScriptCode scriptTag));
 /* 11 */
@@ -193,7 +193,8 @@ EXTERN int		TclMacCreateEnv _ANSI_ARGS_((void));
 /* 23 */
 EXTERN FILE *		TclMacFOpenHack _ANSI_ARGS_((CONST char * path, 
 				CONST char * mode));
-/* Slot 24 is reserved */
+/* 24 */
+EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 /* 25 */
 EXTERN int		TclMacChmod _ANSI_ARGS_((char * path, int mode));
 #endif /* MAC_TCL */
@@ -252,10 +253,10 @@ typedef struct TclIntPlatStubs {
     int (*fSpGetDefaultDir) _ANSI_ARGS_((FSSpecPtr theSpec)); /* 4 */
     int (*fSpSetDefaultDir) _ANSI_ARGS_((FSSpecPtr theSpec)); /* 5 */
     OSErr (*fSpFindFolder) _ANSI_ARGS_((short vRefNum, OSType folderType, Boolean createFolder, FSSpec * spec)); /* 6 */
-    void (*getGlobalMouse) _ANSI_ARGS_((Point * mouse)); /* 7 */
-    pascal OSErr (*fSpGetDirectoryID) _ANSI_ARGS_((CONST FSSpec * spec, long * theDirID, Boolean * isDirectory)); /* 8 */
-    pascal short (*fSpOpenResFileCompat) _ANSI_ARGS_((CONST FSSpec * spec, SignedByte permission)); /* 9 */
-    pascal void (*fSpCreateResFileCompat) _ANSI_ARGS_((CONST FSSpec * spec, OSType creator, OSType fileType, ScriptCode scriptTag)); /* 10 */
+    void (*getGlobalMouseTcl) _ANSI_ARGS_((Point * mouse)); /* 7 */
+    pascal OSErr (*fSpGetDirectoryIDTcl) _ANSI_ARGS_((CONST FSSpec * spec, long * theDirID, Boolean * isDirectory)); /* 8 */
+    pascal short (*fSpOpenResFileCompatTcl) _ANSI_ARGS_((CONST FSSpec * spec, SignedByte permission)); /* 9 */
+    pascal void (*fSpCreateResFileCompatTcl) _ANSI_ARGS_((CONST FSSpec * spec, OSType creator, OSType fileType, ScriptCode scriptTag)); /* 10 */
     int (*fSpLocationFromPath) _ANSI_ARGS_((int length, CONST char * path, FSSpecPtr theSpec)); /* 11 */
     OSErr (*fSpPathFromLocation) _ANSI_ARGS_((FSSpecPtr theSpec, int * length, Handle * fullPath)); /* 12 */
     void (*tclMacExitHandler) _ANSI_ARGS_((void)); /* 13 */
@@ -455,21 +456,21 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define FSpFindFolder \
 	(tclIntPlatStubsPtr->fSpFindFolder) /* 6 */
 #endif
-#ifndef GetGlobalMouse
-#define GetGlobalMouse \
-	(tclIntPlatStubsPtr->getGlobalMouse) /* 7 */
+#ifndef GetGlobalMouseTcl
+#define GetGlobalMouseTcl \
+	(tclIntPlatStubsPtr->getGlobalMouseTcl) /* 7 */
 #endif
-#ifndef FSpGetDirectoryID
-#define FSpGetDirectoryID \
-	(tclIntPlatStubsPtr->fSpGetDirectoryID) /* 8 */
+#ifndef FSpGetDirectoryIDTcl
+#define FSpGetDirectoryIDTcl \
+	(tclIntPlatStubsPtr->fSpGetDirectoryIDTcl) /* 8 */
 #endif
-#ifndef FSpOpenResFileCompat
-#define FSpOpenResFileCompat \
-	(tclIntPlatStubsPtr->fSpOpenResFileCompat) /* 9 */
+#ifndef FSpOpenResFileCompatTcl
+#define FSpOpenResFileCompatTcl \
+	(tclIntPlatStubsPtr->fSpOpenResFileCompatTcl) /* 9 */
 #endif
-#ifndef FSpCreateResFileCompat
-#define FSpCreateResFileCompat \
-	(tclIntPlatStubsPtr->fSpCreateResFileCompat) /* 10 */
+#ifndef FSpCreateResFileCompatTcl
+#define FSpCreateResFileCompatTcl \
+	(tclIntPlatStubsPtr->fSpCreateResFileCompatTcl) /* 10 */
 #endif
 #ifndef FSpLocationFromPath
 #define FSpLocationFromPath \
@@ -523,7 +524,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclMacFOpenHack \
 	(tclIntPlatStubsPtr->tclMacFOpenHack) /* 23 */
 #endif
-/* Slot 24 is reserved */
+#ifndef TclpGetTZName
+#define TclpGetTZName \
+	(tclIntPlatStubsPtr->tclpGetTZName) /* 24 */
+#endif
 #ifndef TclMacChmod
 #define TclMacChmod \
 	(tclIntPlatStubsPtr->tclMacChmod) /* 25 */

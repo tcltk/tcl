@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.70 2001/11/21 02:36:20 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.71 2001/11/23 01:26:52 das Exp $
  */
 
 #ifndef _TCLINT
@@ -1799,7 +1799,6 @@ EXTERN int		TclpFindVariable _ANSI_ARGS_((CONST char *name,
 EXTERN void		TclpFree _ANSI_ARGS_((char *ptr));
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
-EXTERN long		TclpGetGMTOffset _ANSI_ARGS_((void));
 EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
 EXTERN int		TclpGetTimeZone _ANSI_ARGS_((unsigned long time));
 EXTERN char *		TclpGetUserHome _ANSI_ARGS_((CONST char *name,
