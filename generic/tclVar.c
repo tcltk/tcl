@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.29 2001/03/13 11:18:48 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.30 2001/03/24 01:14:11 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2915,7 +2915,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     Interp *iPtr = (Interp *) interp;
     Var *varPtr, *arrayPtr;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
+    Tcl_Obj *resultPtr;
     int notArray;
     char *varName, *msg;
     int index, result;
@@ -2960,6 +2960,13 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
     }
+
+    /*
+     * We have to wait to get the resultPtr until here because
+     * CallTraces can affect the result.
+     */
+
+    resultPtr = Tcl_GetObjResult(interp);
 
     switch (index) {
         case ARRAY_ANYMORE: {
