@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.30 2001/09/17 11:51:58 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.31 2001/09/17 12:29:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5420,6 +5420,7 @@ Tcl_GetCommandFromObj(interp, objPtr)
     if (cmdPtr == NULL) {
         result = tclCmdNameType.setFromAnyProc(interp, objPtr);
         if (result != TCL_OK) {
+	    iPtr->varFramePtr = savedFramePtr;
             return (Tcl_Command) NULL;
         }
         resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
