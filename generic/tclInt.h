@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.117 2003/02/04 17:06:50 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118 2003/02/10 10:26:25 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1717,6 +1717,8 @@ EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    Tcl_StatBuf *buf));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
+EXTERN Tcl_Obj*         TclNewFSPathObj _ANSI_ARGS_((Tcl_Obj *dirPtr, 
+			    CONST char *addStrRep, int len));
 EXTERN int              TclpDeleteFile _ANSI_ARGS_((CONST char *path));
 EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.26 2003/02/04 17:06:52 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.27 2003/02/10 10:26:26 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -839,8 +839,9 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     }
 
     while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native. */
-	if ((strcmp(dirEntPtr->d_name, ".") == 0)
-	        || (strcmp(dirEntPtr->d_name, "..") == 0)) {
+	if ((dirEntPtr->d_name[0] == '.')
+		&& ((dirEntPtr->d_name[1] == '\0')
+			|| (strcmp(dirEntPtr->d_name, "..") == 0))) {
 	    continue;
 	}
 
@@ -1652,7 +1653,6 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
  *
  *---------------------------------------------------------------------------
  */
-
 int
 TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_Interp *interp;
@@ -1668,9 +1668,29 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_DString ds;
     CONST char *nativePath; 
 #endif
+    /* 
+     * We add '1' here because if nextCheckpoint is zero we know
+     * that '/' exists, and if it isn't zero, it must point at
+     * a directory separator which we also know exists.
+     */
+    currentPathEndPosition = path + nextCheckpoint + 1;
 
-    currentPathEndPosition = path + nextCheckpoint;
-
+#ifndef NO_REALPATH
+    /* For speed, try to get the entire path in one go */
+    if (nextCheckpoint == 0) {
+        char *lastDir = strrchr(currentPathEndPosition, '/');
+	if (lastDir != NULL) {
+	    nativePath = Tcl_UtfToExternalDString(NULL, path, 
+						  lastDir - path, &ds);
+	    if (Realpath(nativePath, normPath) != NULL) {
+		nextCheckpoint = lastDir - path;
+		goto wholeStringOk;
+	    }
+	}
+    }
+    /* Else do it the slow way */
+#endif
+    
     while (1) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
@@ -1713,12 +1733,25 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     
     nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
     if (Realpath(nativePath, normPath) != NULL) {
+	int newNormLen;
+	wholeStringOk:
+	newNormLen = strlen(normPath);
+	if ((newNormLen == Tcl_DStringLength(&ds))
+		&& (strcmp(normPath, nativePath) == 0)) {
+	    /* String is unchanged */
+	    Tcl_DStringFree(&ds);
+	    if (path[nextCheckpoint] != '\0') {
+		nextCheckpoint++;
+	    }
+	    return nextCheckpoint;
+	}
+	
 	/* 
 	 * Free up the native path and put in its place the
 	 * converted, normalized path.
 	 */
 	Tcl_DStringFree(&ds);
-	Tcl_ExternalToUtfDString(NULL, normPath, (int) strlen(normPath), &ds);
+	Tcl_ExternalToUtfDString(NULL, normPath, (int) newNormLen, &ds);
 
 	if (path[nextCheckpoint] != '\0') {
 	    /* not at end, append remaining path */
@@ -1745,3 +1778,6 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 
     return nextCheckpoint;
 }
+
+
+

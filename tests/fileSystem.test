@@ -423,7 +423,6 @@ removeFile gorp.file
 test filesystem-8.1 {relative path objects and caching of pwd} {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
-    # We created this file several tests ago.
     makeDirectory abc
     makeDirectory def
     makeFile "contents" [file join abc foo]
@@ -444,6 +443,22 @@ test filesystem-8.1 {relative path objects and caching of pwd} {
     cd $dir
     set res
 } {1 1 0 0}
+
+test filesystem-8.2 {relative path objects and use of pwd} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set dir "abc"
+    makeDirectory $dir
+    makeFile "contents" [file join abc foo]
+    cd $dir
+    set res [file exists [lindex [glob *] 0]]
+    cd ..
+    removeFile [file join abc foo]
+    removeDirectory abc
+    removeDirectory def
+    cd $origdir
+    set res
+} {1}
 
 cleanupTests
 }
