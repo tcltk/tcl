@@ -115,13 +115,13 @@ chr **coldp;			/* store coldstart pointer here, if nonNULL */
 	chr *realmax = (max == v->stop) ? max : max + 1;
 	color co;
 	struct sset *css;
-	struct sset *firstss;
 	struct sset *ss;
 	struct colormap *cm = d->cm;
+	chr *nopr;
+	int i;
 
 	/* initialize */
 	css = initialize(v, d, start);
-	firstss = css;
 	cp = start;
 
 	/* startup */
@@ -175,72 +175,93 @@ chr **coldp;			/* store coldstart pointer here, if nonNULL */
 
 	if (ss == NULL)
 		return NULL;
-	if (ss->flags&POSTSTATE) {
-		assert(firstss->flags&STARTER);
-		assert(firstss->lastseen != NULL);
-		if (coldp != NULL)
-			*coldp = firstss->lastseen;
+	else if (ss->flags&POSTSTATE) {
 		assert(cp >= realmin);
-		return cp - 1;
-	}
-
-	/* shutdown */
-	FDEBUG(("--- shutdown at c%d ---\n", css - d->ssets));
-	if (cp == v->stop && max == v->stop) {
+		cp--;
+	} else if (cp == v->stop && max == v->stop) {
 		co = d->cnfa->eos[(v->eflags&REG_NOTEOL) ? 0 : 1];
 		FDEBUG(("color %ld\n", (long)co));
 		ss = miss(v, d, css, co, cp, start);
-		/* special case:  match ended at eol? */
-		if (ss != NULL && (ss->flags&POSTSTATE)) {
-			assert(firstss->flags&STARTER);
-			assert(firstss->lastseen != NULL);
-			if (coldp != NULL)
-				*coldp = firstss->lastseen;
-			return cp;
-		}
+		/* match might have ended at eol */
 	}
 
-	return NULL;
+	if (ss == NULL || !(ss->flags&POSTSTATE))
+		return NULL;
+
+	/* find last no-progress state set, if any */
+	nopr = d->lastnopr;
+	for (ss = d->ssets, i = 0; i < d->nssused; ss++, i++)
+		if ((ss->flags&NOPROGRESS) && nopr != ss->lastseen &&
+					(nopr == NULL || nopr < ss->lastseen))
+			nopr = ss->lastseen;
+	assert(nopr != NULL);
+	if (coldp != NULL)
+		*coldp = (nopr == v->start) ? nopr : nopr-1;
+	return cp;
 }
 
 /*
  - newdfa - set up a fresh DFA
  ^ static struct dfa *newdfa(struct vars *, struct cnfa *,
- ^ 	struct colormap *);
+ ^ 	struct colormap *, struct smalldfa *);
  */
 static struct dfa *
-newdfa(v, cnfa, cm)
+newdfa(v, cnfa, cm, small)
 struct vars *v;
 struct cnfa *cnfa;
 struct colormap *cm;
+struct smalldfa *small;		/* preallocated space, may be NULL */
 {
-	struct dfa *d = (struct dfa *)MALLOC(sizeof(struct dfa));
+	struct dfa *d;
+	size_t nss = cnfa->nstates * 2;
 	int wordsper = (cnfa->nstates + UBITS - 1) / UBITS;
-	struct sset *ss;
-	int i;
+	struct smalldfa *smallwas = small;
 
 	assert(cnfa != NULL && cnfa->nstates != 0);
-	if (d == NULL) {
-		ERR(REG_ESPACE);
-		return NULL;
-	}
 
-	d->ssets = (struct sset *)MALLOC(CACHE * sizeof(struct sset));
-	d->statesarea = (unsigned *)MALLOC((CACHE+WORK) * wordsper *
+	if (nss <= FEWSTATES && cnfa->ncolors <= FEWCOLORS) {
+		assert(wordsper == 1);
+		if (small == NULL) {
+			small = (struct smalldfa *)MALLOC(
+						sizeof(struct smalldfa));
+			if (small == NULL) {
+				ERR(REG_ESPACE);
+				return NULL;
+			}
+		}
+		d = &small->dfa;
+		d->ssets = small->ssets;
+		d->statesarea = small->statesarea;
+		d->work = &d->statesarea[nss];
+		d->outsarea = small->outsarea;
+		d->incarea = small->incarea;
+		d->cptsmalloced = 0;
+		d->mallocarea = (smallwas == NULL) ? (char *)small : NULL;
+	} else {
+		d = (struct dfa *)MALLOC(sizeof(struct dfa));
+		if (d == NULL) {
+			ERR(REG_ESPACE);
+			return NULL;
+		}
+		d->ssets = (struct sset *)MALLOC(nss * sizeof(struct sset));
+		d->statesarea = (unsigned *)MALLOC((nss+WORK) * wordsper *
 							sizeof(unsigned));
-	d->work = &d->statesarea[CACHE * wordsper];
-	d->outsarea = (struct sset **)MALLOC(CACHE * cnfa->ncolors *
+		d->work = &d->statesarea[nss * wordsper];
+		d->outsarea = (struct sset **)MALLOC(nss * cnfa->ncolors *
 							sizeof(struct sset *));
-	d->incarea = (struct arcp *)MALLOC(CACHE * cnfa->ncolors *
+		d->incarea = (struct arcp *)MALLOC(nss * cnfa->ncolors *
 							sizeof(struct arcp));
-	if (d->ssets == NULL || d->statesarea == NULL || d->outsarea == NULL ||
-							d->incarea == NULL) {
-		freedfa(d);
-		ERR(REG_ESPACE);
-		return NULL;
+		d->cptsmalloced = 1;
+		d->mallocarea = (char *)d;
+		if (d->ssets == NULL || d->statesarea == NULL ||
+				d->outsarea == NULL || d->incarea == NULL) {
+			freedfa(d);
+			ERR(REG_ESPACE);
+			return NULL;
+		}
 	}
 
-	d->nssets = (v->eflags&REG_SMALL) ? 7 : CACHE;
+	d->nssets = (v->eflags&REG_SMALL) ? 7 : nss;
 	d->nssused = 0;
 	d->nstates = cnfa->nstates;
 	d->ncolors = cnfa->ncolors;
@@ -248,14 +269,10 @@ struct colormap *cm;
 	d->cnfa = cnfa;
 	d->cm = cm;
 	d->lastpost = NULL;
+	d->lastnopr = NULL;
 	d->search = d->ssets;
 
-	for (ss = d->ssets, i = 0; i < d->nssets; ss++, i++) {
-		/* initialization of most fields is done as needed */
-		ss->states = &d->statesarea[i * d->wordsper];
-		ss->outs = &d->outsarea[i * d->ncolors];
-		ss->inchain = &d->incarea[i * d->ncolors];
-	}
+	/* initialization of sset fields is done as needed */
 
 	return d;
 }
@@ -268,15 +285,19 @@ static VOID
 freedfa(d)
 struct dfa *d;
 {
-	if (d->ssets != NULL)
-		FREE(d->ssets);
-	if (d->statesarea != NULL)
-		FREE(d->statesarea);
-	if (d->outsarea != NULL)
-		FREE(d->outsarea);
-	if (d->incarea != NULL)
-		FREE(d->incarea);
-	FREE(d);
+	if (d->cptsmalloced) {
+		if (d->ssets != NULL)
+			FREE(d->ssets);
+		if (d->statesarea != NULL)
+			FREE(d->statesarea);
+		if (d->outsarea != NULL)
+			FREE(d->outsarea);
+		if (d->incarea != NULL)
+			FREE(d->incarea);
+	}
+
+	if (d->mallocarea != NULL)
+		FREE(d->mallocarea);
 }
 
 /*
@@ -319,9 +340,9 @@ chr *start;
 		for (i = 0; i < d->wordsper; i++)
 			ss->states[i] = 0;
 		BSET(ss->states, d->cnfa->pre);
-		ss->hash = hash(ss->states, d->wordsper);
+		ss->hash = HASH(ss->states, d->wordsper);
 		assert(d->cnfa->pre != d->cnfa->post);
-		ss->flags = STARTER|LOCKED;
+		ss->flags = STARTER|LOCKED|NOPROGRESS;
 		/* lastseen dealt with below */
 	}
 
@@ -329,6 +350,7 @@ chr *start;
 		d->ssets[i].lastseen = NULL;
 	ss->lastseen = start;		/* maybe untrue, but harmless */
 	d->lastpost = NULL;
+	d->lastnopr = NULL;
 	return ss;
 }
 
@@ -352,6 +374,7 @@ chr *start;			/* where the attempt got started */
 	struct carc *ca;
 	struct sset *p;
 	int ispost;
+	int noprogress;
 	int gotstate;
 	int dolacons;
 	int didlacons;
@@ -367,15 +390,18 @@ chr *start;			/* where the attempt got started */
 	for (i = 0; i < d->wordsper; i++)
 		d->work[i] = 0;
 	ispost = 0;
+	noprogress = 1;
 	gotstate = 0;
 	for (i = 0; i < d->nstates; i++)
 		if (ISBSET(css->states, i))
-			for (ca = cnfa->states[i]; ca->co != COLORLESS; ca++)
+			for (ca = cnfa->states[i]+1; ca->co != COLORLESS; ca++)
 				if (ca->co == co) {
 					BSET(d->work, ca->to);
 					gotstate = 1;
 					if (ca->to == cnfa->post)
 						ispost = 1;
+					if (!cnfa->states[ca->to]->co)
+						noprogress = 0;
 					FDEBUG(("%d -> %d\n", i, ca->to));
 				}
 	dolacons = (gotstate) ? (cnfa->flags&HASLACONS) : 0;
@@ -384,7 +410,7 @@ chr *start;			/* where the attempt got started */
 		dolacons = 0;
 		for (i = 0; i < d->nstates; i++)
 			if (ISBSET(d->work, i))
-				for (ca = cnfa->states[i]; ca->co != COLORLESS;
+				for (ca = cnfa->states[i]+1; ca->co != COLORLESS;
 									ca++)
 					if (ca->co > cnfa->ncolors &&
 						!ISBSET(d->work, ca->to) &&
@@ -395,17 +421,23 @@ chr *start;			/* where the attempt got started */
 						didlacons = 1;
 						if (ca->to == cnfa->post)
 							ispost = 1;
+						if (!cnfa->states[ca->to]->co)
+							noprogress = 0;
 						FDEBUG(("%d :> %d\n",i,ca->to));
 					}
 	}
 	if (!gotstate)
 		return NULL;
-	h = hash(d->work, d->wordsper);
+	h = HASH(d->work, d->wordsper);
 
 	/* next, is that in the cache? */
 	for (p = d->ssets, i = d->nssused; i > 0; p++, i--)
-		if (p->hash == h && memcmp(VS(d->work), VS(p->states),
+		if (HIT(h, d->work, p, d->wordsper)) {
+#ifndef xxx
+p->hash == h && 
+memcmp(VS(d->work), VS(p->states),
 					d->wordsper*sizeof(unsigned)) == 0) {
+#endif
 			FDEBUG(("cached c%d\n", p - d->ssets));
 			break;			/* NOTE BREAK OUT */
 		}
@@ -416,6 +448,8 @@ chr *start;			/* where the attempt got started */
 			p->states[i] = d->work[i];
 		p->hash = h;
 		p->flags = (ispost) ? POSTSTATE : 0;
+		if (noprogress)
+			p->flags |= NOPROGRESS;
 		/* lastseen to be dealt with by caller */
 	}
 
@@ -442,13 +476,14 @@ pcolor co;			/* "color" of the lookahead constraint */
 	int n;
 	struct subre *sub;
 	struct dfa *d;
+	struct smalldfa sd;
 	chr *end;
 
 	n = co - pcnfa->ncolors;
 	assert(n < v->g->nlacons && v->g->lacons != NULL);
 	FDEBUG(("=== testing lacon %d\n", n));
 	sub = &v->g->lacons[n];
-	d = newdfa(v, &sub->cnfa, &v->g->cmap);
+	d = newdfa(v, &sub->cnfa, &v->g->cmap, &sd);
 	if (d == NULL) {
 		ERR(REG_ESPACE);
 		return 0;
@@ -520,6 +555,11 @@ chr *start;
 			(d->lastpost == NULL || d->lastpost < ss->lastseen))
 		d->lastpost = ss->lastseen;
 
+	/* likewise for a no-progress state */
+	if ((ss->flags&NOPROGRESS) && ss->lastseen != d->lastnopr &&
+			(d->lastnopr == NULL || d->lastnopr < ss->lastseen))
+		d->lastnopr = ss->lastseen;
+
 	return ss;
 }
 
@@ -541,17 +581,21 @@ chr *start;
 
 	/* shortcut for cases where cache isn't full */
 	if (d->nssused < d->nssets) {
-		ss = &d->ssets[d->nssused];
+		i = d->nssused;
 		d->nssused++;
-		FDEBUG(("new c%d\n", ss - d->ssets));
-		/* must make innards consistent */
+		ss = &d->ssets[i];
+		FDEBUG(("new c%d\n", i));
+		/* set up innards */
+		ss->states = &d->statesarea[i * d->wordsper];
+		ss->flags = 0;
 		ss->ins.ss = NULL;
 		ss->ins.co = WHITE;		/* give it some value */
+		ss->outs = &d->outsarea[i * d->ncolors];
+		ss->inchain = &d->incarea[i * d->ncolors];
 		for (i = 0; i < d->ncolors; i++) {
 			ss->outs[i] = NULL;
 			ss->inchain[i].ss = NULL;
 		}
-		ss->flags = 0;
 		return ss;
 	}
 

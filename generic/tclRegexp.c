@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.5 1998/11/11 04:54:19 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.6 1998/11/17 21:38:39 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -163,7 +163,7 @@ Tcl_RegExpCompile(interp, string)
 
     if (iPtr->patterns[NUM_REGEXPS-1] != NULL) {
 	ckfree(iPtr->patterns[NUM_REGEXPS-1]);
-	re_ufree(&(iPtr->regexps[NUM_REGEXPS-1]->re));
+	TclReFree(&(iPtr->regexps[NUM_REGEXPS-1]->re));
 	ckfree((char *) iPtr->regexps[NUM_REGEXPS-1]);
     }
     for (i = NUM_REGEXPS - 2; i >= 0; i--) {
@@ -326,7 +326,7 @@ TclRegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
     if (nmatches >= 0 && (size_t) nmatches < nm)
 	nm = (size_t) nmatches;
 
-    status = re_uexec(&regexpPtr->re, wString, (size_t) numChars,
+    status = TclReExec(&regexpPtr->re, wString, (size_t) numChars,
 	    (rm_detail_t *)NULL, nm, regexpPtr->matches, flags);
 
     /*
@@ -621,12 +621,12 @@ TclRegError(interp, msg, status)
     char *p;
 
     Tcl_ResetResult(interp);
-    n = re_uerror(status, (regex_t *)NULL, buf, sizeof(buf));
+    n = TclReError(status, (regex_t *)NULL, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_AppendResult(interp, msg, buf, p, NULL);
 
     sprintf(cbuf, "%d", status);
-    (VOID) re_uerror(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
+    (VOID) TclReError(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
@@ -654,7 +654,7 @@ FreeRegexpInternalRep(objPtr)
 {
     TclRegexp *regexpRepPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
-    re_ufree(&regexpRepPtr->re);
+    TclReFree(&regexpRepPtr->re);
     if (regexpRepPtr->matches) {
 	ckfree((char *) regexpRepPtr->matches);
     }
@@ -765,7 +765,7 @@ CompileRegexp(interp, string, length, flags)
      */
 
     regexpPtr->flags = flags;
-    status = re_ucomp(&regexpPtr->re, uniString, (size_t) numChars, flags);
+    status = TclReComp(&regexpPtr->re, uniString, (size_t) numChars, flags);
     Tcl_DStringFree(&stringBuf);
 
     if (status != REG_OKAY) {

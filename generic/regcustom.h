@@ -1,6 +1,5 @@
 /* headers (which also pick up the standard ones, or equivalents) */
 #include "tclInt.h"
-#include "tclPort.h"
 
 /* overrides for regguts.h definitions */
 /* function-pointer declarations */
@@ -41,16 +40,16 @@
 #define	__REG_VOID_T	VOID
 #define	__REG_CONST	CONST
 /* names and declarations */
-#define	__REG_WIDE_COMPILE	re_ucomp
-#define	__REG_WIDE_EXEC		re_uexec
+#define	__REG_WIDE_COMPILE	TclReComp
+#define	__REG_WIDE_EXEC		TclReExec
 #ifndef __REG_NOFRONT
 #define	__REG_NOFRONT		/* don't want regcomp() and regexec() */
 #endif
 #ifndef __REG_NOCHAR
 #define	__REG_NOCHAR		/* or the char versions */
 #endif
-#define	regfree		re_ufree
-#define	regerror	re_uerror
+#define	regfree		TclReFree
+#define	regerror	TclReError
 /* --- end --- */
 
 
@@ -74,8 +73,8 @@ typedef int celt;		/* type to hold chr, MCCE number, or NOCELT */
 #define	iscspace(x)	TclUniCharIsSpace(x)
 
 /* name the external functions */
-#define	compile		re_ucomp
-#define	exec		re_uexec
+#define	compile		TclReComp
+#define	exec		TclReExec
 
 /* enable/disable debugging code (by whether REG_DEBUG is defined or not) */
 #ifdef notdef

@@ -14,6 +14,7 @@
 int compile _ANSI_ARGS_((regex_t *, CONST chr *, size_t, int));
 static VOID moresubs _ANSI_ARGS_((struct vars *, int));
 static int freev _ANSI_ARGS_((struct vars *, int));
+static VOID makescan _ANSI_ARGS_((struct vars *, struct nfa *));
 static struct subre *parse _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *));
 static struct subre *parsebranch _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, int));
 static VOID parseqatom _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, struct subre *));
@@ -369,12 +370,9 @@ int flags;
 	for (i = 1; i < v->nlacons; i++)
 		nfanode(v, &v->lacons[i], debug);
 	CNOERR();
-	rainbow(v->nfa, v->cm, PLAIN, COLORLESS, v->nfa->pre, v->nfa->pre);
-	newarc(v->nfa, PLAIN, v->nfa->bos[0], v->nfa->pre, v->nfa->pre);
-	newarc(v->nfa, PLAIN, v->nfa->bos[1], v->nfa->pre, v->nfa->pre);
-	newarc(v->nfa, PLAIN, v->nfa->eos[0], v->nfa->pre, v->nfa->pre);
-	newarc(v->nfa, PLAIN, v->nfa->eos[1], v->nfa->pre, v->nfa->pre);
 	(DISCARD)optimize(v->nfa, debug);
+	CNOERR();
+	makescan(v, v->nfa);
 	CNOERR();
 	compact(v->nfa, &g->search);
 	CNOERR();
@@ -467,6 +465,78 @@ int err;
 	ERR(err);			/* nop if err==0 */
 
 	return v->err;
+}
+
+/*
+ - makescan - turn an NFA into a fast-scan NFA (implicit prepend of .*?)
+ * NFA must have been optimize()d already.
+ ^ static VOID makescan(struct vars *, struct nfa *);
+ */
+static VOID
+makescan(v, nfa)
+struct vars *v;
+struct nfa *nfa;
+{
+	struct arc *a;
+	struct arc *b;
+	struct state *pre = nfa->pre;
+	struct state *s;
+	struct state *s2;
+	struct state *slist;
+
+	/* no changes are needed if it's anchored */
+	for (a = pre->outs; a != NULL; a = a->outchain) {
+		assert(a->type == PLAIN);
+		if (a->co != nfa->bos[0] && a->co != nfa->bos[1])
+			break;
+	}
+	if (a == NULL)
+		return;
+
+	/* add implicit .* in front */
+	rainbow(nfa, v->cm, PLAIN, COLORLESS, pre, pre);
+
+	/* and ^* and \Z* too -- not always necessary, but harmless */
+	newarc(nfa, PLAIN, nfa->bos[0], pre, pre);
+	newarc(nfa, PLAIN, nfa->bos[1], pre, pre);
+
+	/*
+	 * Now here's the subtle part.  Because many REs have no lookback
+	 * constraints, often knowing when you were in the pre state tells
+	 * you little; it's the next state(s) that are informative.  But
+	 * some of them may have other inarcs, i.e. it may be possible to
+	 * make actual progress and then return to one of them.  We must
+	 * de-optimize such cases, splitting each such state into progress
+	 * and no-progress states.
+	 */
+
+	/* first, make a list of the states */
+	slist = NULL;
+	for (a = pre->outs; a != NULL; a = a->outchain) {
+		s = a->to;
+		for (b = s->ins; b != NULL; b = b->inchain)
+			if (b->from != pre)
+				break;
+		if (b != NULL) {		/* must be split */
+			s->tmp = slist;
+			slist = s;
+		}
+	}
+
+	/* do the splits */
+	for (s = slist; s != NULL; s = s2) {
+		s2 = newstate(nfa);
+		copyouts(nfa, s, s2);
+		for (a = s->ins; a != NULL; a = b) {
+			b = a->inchain;
+			if (a->from != pre) {
+				cparc(nfa, a, a->from, s2);
+				freearc(nfa, a);
+			}
+		}
+		s2 = s->tmp;
+		s->tmp = NULL;		/* clean up while we're at it */
+	}
 }
 
 /*

@@ -1192,7 +1192,8 @@ struct cnfa *cnfa;
 	narcs = 0;
 	for (s = nfa->states; s != NULL; s = s->next) {
 		nstates++;
-		narcs += s->nouts + 1;
+		narcs += 1 + s->nouts + 1;
+		/* 1 as a fake for flags, nouts for arcs, 1 as endmarker */
 	}
 
 	cnfa->states = (struct carc **)MALLOC(nstates * sizeof(struct carc *));
@@ -1213,12 +1214,14 @@ struct cnfa *cnfa;
 	cnfa->eos[0] = nfa->eos[0];
 	cnfa->eos[1] = nfa->eos[1];
 	cnfa->ncolors = maxcolor(nfa->cm) + 1;
-	cnfa->flags = LEFTANCH;		/* tentatively */
+	cnfa->flags = 0;
 
 	ca = cnfa->arcs;
 	for (s = nfa->states; s != NULL; s = s->next) {
 		assert((size_t)s->no < nstates);
 		cnfa->states[s->no] = ca;
+		ca->co = 0;		/* clear and skip flags "arc" */
+		ca++;
 		first = ca;
 		for (a = s->outs; a != NULL; a = a->outchain)
 			switch (a->type) {
@@ -1246,10 +1249,10 @@ struct cnfa *cnfa;
 	assert(ca == &cnfa->arcs[narcs]);
 	assert(cnfa->nstates != 0);
 
+	/* mark no-progress states */
 	for (a = nfa->pre->outs; a != NULL; a = a->outchain)
-		if (a->type == PLAIN && a->co != nfa->bos[0] &&
-							a->co != nfa->bos[1])
-			cnfa->flags &= ~LEFTANCH;
+		cnfa->states[a->to->no]->co = 1;
+	cnfa->states[nfa->pre->no]->co = 1;
 }
 
 /*
@@ -1480,8 +1483,6 @@ FILE *f;
 		fprintf(f, ", eol [%ld]", (long)cnfa->eos[1]);
 	if (cnfa->flags&HASLACONS)
 		fprintf(f, ", haslacons");
-	if (cnfa->flags&LEFTANCH)
-		fprintf(f, ", leftanch");
 	fprintf(f, "\n");
 	for (st = 0; st < cnfa->nstates; st++)
 		dumpcstate(st, cnfa->states[st], cnfa, f);
@@ -1505,9 +1506,9 @@ FILE *f;
 	int i;
 	int pos;
 
-	fprintf(f, "%d.", st);
+	fprintf(f, "%d%s", st, (ca[0].co) ? ":" : ".");
 	pos = 1;
-	for (i = 0; ca[i].co != COLORLESS; i++) {
+	for (i = 1; ca[i].co != COLORLESS; i++) {
 		if (ca[i].co < cnfa->ncolors)
 			fprintf(f, "\t[%ld]->%d", (long)ca[i].co, ca[i].to);
 		else
@@ -1519,7 +1520,7 @@ FILE *f;
 		} else
 			pos++;
 	}
-	if (i == 0 || pos != 1)
+	if (i == 1 || pos != 1)
 		fprintf(f, "\n");
 	fflush(f);
 }

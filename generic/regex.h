@@ -79,16 +79,16 @@ extern "C" {
 #define	__REG_VOID_T	VOID
 #define	__REG_CONST	CONST
 /* names and declarations */
-#define	__REG_WIDE_COMPILE	re_ucomp
-#define	__REG_WIDE_EXEC		re_uexec
+#define	__REG_WIDE_COMPILE	TclReComp
+#define	__REG_WIDE_EXEC		TclReExec
 #ifndef __REG_NOFRONT
 #define	__REG_NOFRONT		/* don't want regcomp() and regexec() */
 #endif
 #ifndef __REG_NOCHAR
 #define	__REG_NOCHAR		/* or the char versions */
 #endif
-#define	regfree		re_ufree
-#define	regerror	re_uerror
+#define	regfree		TclReFree
+#define	regerror	TclReError
 /* --- end --- */
 
 
@@ -289,8 +289,8 @@ int regexec _ANSI_ARGS_((regex_t *, __REG_CONST char *, size_t, regmatch_t [], i
 #ifdef __REG_WIDE_T
 int __REG_WIDE_EXEC _ANSI_ARGS_((regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
 #endif
-re_void re_ufree _ANSI_ARGS_((regex_t *));
-extern size_t re_uerror _ANSI_ARGS_((int, __REG_CONST regex_t *, char *, size_t));
+re_void regfree _ANSI_ARGS_((regex_t *));
+extern size_t regerror _ANSI_ARGS_((int, __REG_CONST regex_t *, char *, size_t));
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 

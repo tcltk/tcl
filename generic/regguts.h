@@ -308,7 +308,6 @@ struct cnfa {
 	int ncolors;		/* number of colors */
 	int flags;
 #		define	HASLACONS	01	/* uses lookahead constraints */
-#		define	LEFTANCH	02	/* anchored on left */
 	int pre;		/* setup state number */
 	int post;		/* teardown state number */
 	color bos[2];		/* colors, if any, assigned to BOS and BOL */
