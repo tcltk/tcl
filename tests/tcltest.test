@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.43 2004/05/26 16:25:01 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.44 2004/06/23 15:36:58 dkf Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -561,7 +561,7 @@ switch $tcl_platform(platform) {
     }
 }
 
-test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {unixOnly notRoot} {
+test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {unix notRoot} {
     slave msg $a -tmpdir $notReadableDir 
     string match {*not readable*} $msg
 } {1}
@@ -621,7 +621,7 @@ test tcltest-8.11 {tcltest a.tcl -testdir thisdirectoryisafile} {unixOrPc} {
     string match "*not a directory*" $msg 
 } {1}
 
-test tcltest-8.12 {tcltest a.tcl -testdir notReadableDir} {unixOnly notRoot} {
+test tcltest-8.12 {tcltest a.tcl -testdir notReadableDir} {unix notRoot} {
     slave msg $a -testdir $notReadableDir 
     string match {*not readable*} $msg
 } {1}

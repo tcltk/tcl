@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.13 2004/05/19 13:29:02 dkf Exp $
+# RCS: @(#) $Id: winFile.test,v 1.14 2004/06/23 15:36:59 dkf Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -28,15 +28,15 @@ if {[info commands ::testvolumetype] == ""} {
     }
 }
 
-test winFile-1.1 {TclpGetUserHome} {pcOnly} {
+test winFile-1.1 {TclpGetUserHome} {win} {
     list [catch {glob ~nosuchuser} msg] $msg
 } {1 {user "nosuchuser" doesn't exist}}
-test winFile-1.2 {TclpGetUserHome} {pcOnly nt nonPortable} {
+test winFile-1.2 {TclpGetUserHome} {win nt nonPortable} {
     # The administrator account should always exist.
 
     catch {glob ~administrator}
 } {0}
-test winFile-1.3 {TclpGetUserHome} {pcOnly 95} {
+test winFile-1.3 {TclpGetUserHome} {win 95} {
     # Find some user in system.ini and then see if they have a home.
 
     set f [open $::env(windir)/system.ini]
@@ -55,24 +55,24 @@ test winFile-1.3 {TclpGetUserHome} {pcOnly 95} {
     close $f
     set x
 } {0}
-test winFile-1.4 {TclpGetUserHome} {pcOnly nt nonPortable} {
+test winFile-1.4 {TclpGetUserHome} {win nt nonPortable} {
     catch {glob ~stanton@workgroup}
 } {0}
 
-test winFile-2.1 {TclpMatchFiles: case sensitivity} {pcOnly} {
+test winFile-2.1 {TclpMatchFiles: case sensitivity} {win} {
     makeFile {} GlobCapS
     set result [list [glob -nocomplain GlobC*] [glob -nocomplain globc*]]
     removeFile GlobCapS
     set result
 } {GlobCapS GlobCapS}
-test winFile-2.2 {TclpMatchFiles: case sensitivity} {pcOnly} {
+test winFile-2.2 {TclpMatchFiles: case sensitivity} {win} {
     makeFile {} globlower
     set result [list [glob -nocomplain globl*] [glob -nocomplain gLOBl*]]
     removeFile globlower
     set result
 } {globlower globlower}
 
-test winFile-3.1 {file system} {pcOnly} {
+test winFile-3.1 {file system} {win} {
     set res "volume types ok"
     foreach vol [file volumes] {
 	# Have to catch in case there is a removable drive (CDROM, floppy)
@@ -160,7 +160,7 @@ close [open $fname w]
 test winFile-4.0 {
     Enhanced NTFS user/group permissions: test no acccess
 } -constraints {
-    notNTFS pcOnly nt
+    win nt notNTFS
 } -setup {
     set owner [getuser $fname]
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
@@ -175,7 +175,7 @@ test winFile-4.0 {
 test winFile-4.1 {
     Enhanced NTFS user/group permissions: test readable only
 } -constraints {
-    notNTFS pcOnly nt
+    win nt notNTFS
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -186,7 +186,7 @@ test winFile-4.1 {
 test winFile-4.2 {
     Enhanced NTFS user/group permissions: test writable only
 } -constraints {
-    notNTFS pcOnly nt
+    win nt notNTFS
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -198,7 +198,7 @@ test winFile-4.2 {
 test winFile-4.3 {
     Enhanced NTFS user/group permissions: test read+write
 } -constraints {
-    notNTFS pcOnly nt
+    win nt notNTFS
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {
@@ -211,7 +211,7 @@ test winFile-4.3 {
 test winFile-4.4 {
     Enhanced NTFS user/group permissions: test full access
 } -constraints {
-    notNTFS pcOnly nt
+    win nt notNTFS
 } -setup {
     set user $::env(USERDOMAIN)\\$::env(USERNAME)
 } -body {

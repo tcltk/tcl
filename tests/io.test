@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.55 2004/06/01 18:36:26 davygrvy Exp $
+# RCS: @(#) $Id: io.test,v 1.56 2004/06/23 15:36:56 dkf Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -1606,7 +1606,7 @@ out
 } {err
 }}
 # This test relies on the fact that the smallest available fd is used first.
-test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unixOnly} {
+test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unix} {
     set f [open $path(test1) w]
     puts -nonewline $f { close stdin
 	close stdout
@@ -1855,13 +1855,13 @@ test io-20.1 {Tcl_CreateChannel: initial settings} {
 	close $a
     set x
 } {ascii}    
-test io-20.2 {Tcl_CreateChannel: initial settings} {pcOnly} {
+test io-20.2 {Tcl_CreateChannel: initial settings} {win} {
     set f [open $path(test1) w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
     set x
 } [list [list \x1a ""] {auto crlf}]
-test io-20.3 {Tcl_CreateChannel: initial settings} {unixOnly} {
+test io-20.3 {Tcl_CreateChannel: initial settings} {unix} {
     set f [open $path(test1) w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
@@ -2149,7 +2149,7 @@ test io-28.4 {Tcl_Close} {testchannel} {
 		$consoleFileNames]
     string compare $l $x
 } 0
-test io-28.5 {Tcl_Close vs standard handles} {stdio unixOnly testchannel openpipe} {
+test io-28.5 {Tcl_Close vs standard handles} {stdio unix testchannel openpipe} {
     file delete $path(script)
     set f [open $path(script) w]
     puts $f {
@@ -2978,7 +2978,7 @@ there
 and
 here
 }
-test io-30.17 {Tcl_Write, implicit ^Z at end, Tcl_Read auto} {pcOnly} {
+test io-30.17 {Tcl_Write, implicit ^Z at end, Tcl_Read auto} {win} {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -eofchar \x1a -translation lf
@@ -5093,7 +5093,7 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     set modes
 } {auto crlf}
 
-test io-39.22 {Tcl_SetChannelOption, invariance} {unixOnly} {
+test io-39.22 {Tcl_SetChannelOption, invariance} {unix} {
     file delete $path(test1)
     set f1 [open $path(test1) w+]
     set l ""
@@ -5153,7 +5153,7 @@ test io-40.1 {POSIX open access modes: RDWR} {
     close $f
     set x
 } {zzy abzzy}
-test io-40.2 {POSIX open access modes: CREAT} {unixOnly} {
+test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT} 0600]
     file stat $path(test3) stats
@@ -5170,7 +5170,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unixOnly} {
 # if "umask" cannot be run, the tests will be skipped.
 catch {testConstraint umask2 [expr {[exec umask] == 2}]}
 
-test io-40.3 {POSIX open access modes: CREAT} {unixOnly umask2} {
+test io-40.3 {POSIX open access modes: CREAT} {unix umask2} {
     # This test only works if your umask is 2, like ouster's.
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT}]
@@ -5242,7 +5242,7 @@ test io-40.8 {POSIX open access modes: TRUNC} {
     close $f
     set x
 } abc
-test io-40.9 {POSIX open access modes: NONBLOCK} {nonPortable unixOnly} {
+test io-40.9 {POSIX open access modes: NONBLOCK} {nonPortable unix} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY NONBLOCK CREAT}]
     puts $f "NONBLOCK test"
@@ -5717,7 +5717,7 @@ test io-48.2 {testing readability conditions} {nonBlockFiles fileevent} {
 
 set path(my_script) [makeFile {} my_script]
 
-test io-48.3 {testing readability conditions} {stdio unixOnly nonBlockFiles openpipe fileevent} {
+test io-48.3 {testing readability conditions} {stdio unix nonBlockFiles openpipe fileevent} {
     set f [open $path(bar) w]
     puts $f abcdefg
     puts $f abcdefg
@@ -6653,7 +6653,7 @@ test io-53.2 {CopyData} {fcopy} {
     }
     set result
 } {0 0 ok}
-test io-53.3 {CopyData: background read underflow} {stdio unixOnly openpipe fcopy} {
+test io-53.3 {CopyData: background read underflow} {stdio unix openpipe fcopy} {
     file delete $path(test1)
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
@@ -6685,7 +6685,7 @@ test io-53.3 {CopyData: background read underflow} {stdio unixOnly openpipe fcop
     close $f
     set result
 } "ready line1 line2 {done\n}"
-test io-53.4 {CopyData: background write overflow} {stdio unixOnly openpipe fileevent fcopy} {
+test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileevent fcopy} {
     set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
     variable x
     for {set x 0} {$x < 12} {incr x} {

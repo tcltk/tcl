@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.20 2004/05/25 17:44:29 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.21 2004/06/23 15:36:55 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -432,7 +432,7 @@ if {[testConstraint exec]} {
     exec [interpreter] $path(sleep) 3
 }
 test exec-12.1 {reaping background processes} \
-	{exec unixOnly nonPortable} {
+	{exec unix nonPortable} {
     for {set i 0} {$i < 20} {incr i} {
 	exec echo foo > /dev/null &
     }
@@ -441,7 +441,7 @@ test exec-12.1 {reaping background processes} \
     lindex $msg 0
 } 0
 test exec-12.2 {reaping background processes} \
-	{exec unixOnly nonPortable} {
+	{exec unix nonPortable} {
     exec sleep 2 | sleep 2 | sleep 2 &
     catch {exec ps | fgrep -i "sleep" | fgrep -i -v fgrep | wc} msg
     set x [lindex $msg 0]
@@ -450,7 +450,7 @@ test exec-12.2 {reaping background processes} \
     list $x [lindex $msg 0]
 } {3 0}
 test exec-12.3 {reaping background processes} \
-	{exec unixOnly nonPortable} {
+	{exec unix nonPortable} {
     exec sleep 1000 &
     exec sleep 1000 &
     set x [exec ps | fgrep "sleep" | fgrep -v fgrep]
