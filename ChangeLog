@@ -1,5 +1,9 @@
 2004-09-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclObj.c (SetIntOrWideFromAny): Rewritten integral value
+	parsing code so that values do not flip so easily between numeric
+	representations. Thanks to KBK for this! [Bug 868489]
+
 	* generic/tclIO.c (Tcl_Seek): Make sure wide seeks do not fail to
 	set ::errorCode on error. [Bug 1025359]
 
