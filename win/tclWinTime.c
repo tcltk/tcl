@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.12 2002/11/26 22:35:21 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.13 2003/01/27 02:19:57 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -99,16 +99,22 @@ typedef struct TimeInfo {
 } TimeInfo;
 
 static TimeInfo timeInfo = {
-    { NULL }, 
-    0, 
-    0, 
-    (HANDLE) NULL, 
-    (HANDLE) NULL, 
-    (HANDLE) NULL, 
-    0, 
-    0, 
-    0, 
-    0, 
+    { NULL },
+    0,
+    0,
+    (HANDLE) NULL,
+    (HANDLE) NULL,
+    (HANDLE) NULL,
+#ifdef HAVE_CAST_TO_UNION
+    (ULARGE_INTEGER) (DWORDLONG) 0,
+    (LARGE_INTEGER) (LONGLONG) 0,
+    (LARGE_INTEGER) (LONGLONG) 0,
+#else
+    0,
+    0,
+    0,
+#endif
+    0,
     0,
     0
 };

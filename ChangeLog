@@ -1,3 +1,12 @@
+2003-01-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in: Add test that checks to
+	see if the compiler can cast to a union type.
+	* win/tclWinTime.c: Squelch compiler warning
+	about union initializer by casting to union
+	type when compiling with gcc.
+
 2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_CutChannel, Tcl_SpliceChannel):
