@@ -790,25 +790,58 @@ TclpFinalizeCondition(condPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef HAVE_READDIR_R
+TCL_DECLARE_MUTEX( rdMutex )
+#undef readdir
+#endif
+
 Tcl_DirEntry *
 TclpReaddir(DIR * dir)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_DirEntry *ent;
 
+#ifdef HAVE_READDIR_R
     ent = &tsdPtr->rdbuf.ent; 
     if (Tcl_PlatformReaddir_r(dir, ent, &ent) != 0) {
 	ent = NULL;
     }
+#else
+    Tcl_MutexLock( &rdMutex );
+#ifdef HAVE_STRUCT_DIRENT64
+    ent = readdir64(dir);
+#else
+    ent = readdir(dir);
+#endif
+    if(ent != NULL) {
+    	memcpy( (VOID *) &tsdPtr->rdbuf.ent, (VOID *) ent,
+    		sizeof (Tcl_DirEntry) + sizeof (char) * (PATH_MAX+1) );
+    	ent = &tsdPtr->rdbuf.ent;     
+    }
+    Tcl_MutexUnlock( &rdMutex );
+#endif
     return ent;
 }
+
+#if !defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R)
+TCL_DECLARE_MUTEX( tmMutex )
+#undef localtime
+#undef gmtime
+#endif
 
 struct tm *
 TclpLocaltime(time_t * clock)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+#ifdef HAVE_LOCALTIME_R
     return localtime_r(clock, &tsdPtr->ltbuf);
+#else
+    Tcl_MutexLock( &tmMutex );
+    memcpy( (VOID *) &tsdPtr->ltbuf, (VOID *) localtime( clock ), sizeof (struct tm) );
+    Tcl_MutexUnlock( &tmMutex );
+	return &tsdPtr->ltbuf;
+#endif    
 }
 
 struct tm *
@@ -816,7 +849,14 @@ TclpGmtime(time_t * clock)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+#ifdef HAVE_GMTIME_R
     return gmtime_r(clock, &tsdPtr->gtbuf);
+#else
+    Tcl_MutexLock( &tmMutex );
+    memcpy( (VOID *) &tsdPtr->gtbuf, (VOID *) gmtime( clock ), sizeof (struct tm) );
+    Tcl_MutexUnlock( &tmMutex );
+    return &tsdPtr->gtbuf;
+#endif    
 }
 
 char *
