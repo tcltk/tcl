@@ -1,3 +1,9 @@
+2002-06-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): get the resultPtr again
+	as the Tcl_ObjSetVar2 may cause the result to change.
+	[Patch #558324] (watson)
+
 2002-06-19  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c (TEBC): removing unused "for(;;)" loop;
