@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.9 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.10 2001/08/23 18:20:50 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1417,7 +1417,6 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     if (Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
         newMode = (mode_t) (mode & 0x00007FFF);
     } else {
-	Tcl_DString ds;
 	struct stat buf;
 	char *modeStringPtr = Tcl_GetString(attributePtr);
 

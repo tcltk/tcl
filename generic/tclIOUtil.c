@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.15 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.16 2001/08/23 18:20:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2680,7 +2680,7 @@ Tcl_FSJoinPath(listObj, elements)
 	        Tcl_AppendToObj(res, &separator, 1);
 		length++;
 	    }
-	    Tcl_SetObjLength(res, length + strlen(strElt));
+	    Tcl_SetObjLength(res, length + (int) strlen(strElt));
 	    
 	    ptr = Tcl_GetString(res) + length;
 	    for (; *strElt != '\0'; strElt++) {
@@ -2790,7 +2790,7 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 		    if (pathLen < len) {
 			continue;
 		    }
-		    if (strncmp(strVol, path, len) == 0) {
+		    if (strncmp(strVol, path, (size_t) len) == 0) {
 			type = TCL_PATH_ABSOLUTE;
 			if (filesystemPtrPtr != NULL) {
 			    *filesystemPtrPtr = fsRecPtr->fsPtr;
