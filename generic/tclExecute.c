@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.178 2005/04/04 10:12:51 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.179 2005/04/05 16:56:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6146,11 +6146,7 @@ ExprSrandFunc(interp, tosPtr, clientData)
 	return TCL_ERROR;
     }
 
-    if (valuePtr->typePtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-    } else if (valuePtr->typePtr == &tclWideIntType) {
-	TclGetLongFromWide(i,valuePtr);
-    } else {
+    if (Tcl_GetLongFromObj(NULL, valuePtr, &i) != TCL_OK) {
 	/*
 	 * At this point, the only other possible type is double
 	 */
