@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.24 2003/01/16 19:02:00 mdejong Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.25 2003/01/16 20:55:53 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1034,7 +1034,7 @@ SerialOutputProc(
         infoPtr->toWrite = toWrite;
         ResetEvent(infoPtr->evWritable);
         SetEvent(infoPtr->evStartWriter);
-        bytesWritten = toWrite;
+        bytesWritten = (DWORD) toWrite;
 
     } else {
         /*
@@ -1045,7 +1045,7 @@ SerialOutputProc(
                 &bytesWritten, &infoPtr->osWrite) ) {
             goto writeError;
         }
-        if (bytesWritten != toWrite) {
+        if (bytesWritten != (DWORD) toWrite) {
             /* Write timeout */
             infoPtr->lastError |= CE_PTO;
             errno = EIO;
@@ -1053,7 +1053,7 @@ SerialOutputProc(
         }
     }
 
-    return bytesWritten;
+    return (int) bytesWritten;
 
 writeError:
     TclWinConvertError(GetLastError());

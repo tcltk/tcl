@@ -1,5 +1,8 @@
 2003-01-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinSerial.c (SerialOutputProc): add casts for
+	bytesWritten to allow strict compilation (no warnings).
+
 	* tests/winDde.test:
 	* win/tclWinDde.c (Tcl_DdeObjCmd): Prevent crash when empty
 	service name is passed to 'dde eval' and goto errorNoResult in
