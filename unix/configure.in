@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.57.2.8 2002/02/05 01:31:40 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.57.2.9 2002/02/05 02:46:24 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -423,7 +423,7 @@ if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
     else
         TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
     fi
-    TCL_BUILD_LIB_SPEC="-L`${PWD}` ${TCL_LIB_FLAG}"
+    TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
 else
     TCL_BUILD_EXP_FILE="lib.exp"
@@ -433,10 +433,10 @@ else
     eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
     
     if test "$GCC" = "yes" ; then
-	TCL_BUILD_LIB_SPEC="-Wl,-bI:`${PWD}`/${TCL_BUILD_EXP_FILE} -L`${PWD}`"
-	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`${PWD}`"
+	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
+	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"
     else
-	TCL_BUILD_LIB_SPEC="-bI:`${PWD}`/${TCL_BUILD_EXP_FILE}"
+	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
 	TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"
     fi
 fi
@@ -477,9 +477,9 @@ else
     TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
 fi
 
-TCL_BUILD_STUB_LIB_SPEC="-L`${PWD}` ${TCL_STUB_LIB_FLAG}"
+TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
-TCL_BUILD_STUB_LIB_PATH="`${PWD}`/${TCL_STUB_LIB_FILE}"
+TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
 TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
 
 #------------------------------------------------------------------------
