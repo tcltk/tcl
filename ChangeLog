@@ -1,3 +1,8 @@
+2004-10-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/cmdAH.test (cmdAH-8.45): Simplify in the hope that the
+	reasons for [Bug 1053908] will become clearer.
+
 2004-10-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (IllegalExprOperandType,TclExecuteByteCode):
