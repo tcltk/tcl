@@ -1,3 +1,10 @@
+2004-11-24  Don Porter  <dgp@users.sourceforge.net>
+
+        * unix/tcl.m4 (SC_ENABLE_THREADS):      Corrected failure to determine
+        the number of arguments for readdir_r on SunOS systems.  [Bug 1071701]
+
+        * unix/configure:       autoconf-2.13
+
 2004-11-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:           Bumped patchlevel to 8.4.9
