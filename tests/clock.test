@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.26 2004/05/14 21:43:29 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.27 2004/05/18 21:45:55 kennykb Exp $
 
 set env(LC_TIME) POSIX
 
@@ -525,153 +525,154 @@ test clock-9.1 {%s gmt testing} {needPST} {
     set c [expr {$b-$a}]
 } {28800}
 
-test clock-10.1 {ISO week-based calendar} {
-    clock format 977702400 -format {%a %A %u %V %w} -gmt true; # 2000-12-25
-} {Mon Monday 1 52 1}
-test clock-10.2 {ISO week-based calendar} {
-    clock format 978220800 -format {%a %A %u %V %w} -gmt true; # 2000-12-31
-} {Sun Sunday 7 52 0}
-test clock-10.3 {ISO week-based calendar} {
-    clock format 978307200 -format {%a %A %u %V %w} -gmt true; # 2001-1-1
-} {Mon Monday 1 01 1}
-test clock-10.4 {ISO week-based calendar} {
-    clock format 978825600 -format {%a %A %u %V %w} -gmt true; # 2001-1-7
-} {Sun Sunday 7 01 0}
-test clock-10.5 {ISO week-based calendar} {
-    clock format 978912000 -format {%a %A %u %V %w} -gmt true; # 2001-1-8
-} {Mon Monday 1 02 1}
-test clock-10.6 {ISO week-based calendar} {
-    clock format 1009152000 -format {%a %A %u %V %w} -gmt true; # 2001-12-24
-} {Mon Monday 1 52 1}
-test clock-10.7 {ISO week-based calendar} {
-    clock format 1009670400 -format {%a %A %u %V %w} -gmt true; # 2001-12-30
-} {Sun Sunday 7 52 0}
-test clock-10.8 {ISO week-based calendar} {
-    clock format 1009756800 -format {%a %A %u %V %w} -gmt true; # 2001-12-31
-} {Mon Monday 1 01 1}
-test clock-10.9 {ISO week-based calendar} {
-    clock format 1009843200 -format {%a %A %u %V %w} -gmt true; # 2002-1-1
-} {Tue Tuesday 2 01 2}
-test clock-10.10 {ISO week-based calendar} {
-    clock format 1010275200 -format {%a %A %u %V %w} -gmt true; # 2002-1-6
-} {Sun Sunday 7 01 0}
-test clock-10.11 {ISO week-based calendar} {
-    clock format 1010361600 -format {%a %A %u %V %w} -gmt true; # 2002-1-7
-} {Mon Monday 1 02 1}
-test clock-10.12 {ISO week-based calendar} {
-    clock format 1040601600 -format {%a %A %u %V %w} -gmt true; # 2002-12-23
-} {Mon Monday 1 52 1}
-test clock-10.13 {ISO week-based calendar} {
-    clock format 1041120000 -format {%a %A %u %V %w} -gmt true; # 2002-12-29
-} {Sun Sunday 7 52 0}
-test clock-10.14 {ISO week-based calendar} {
-    clock format 1041206400 -format {%a %A %u %V %w} -gmt true; # 2002-12-30
-} {Mon Monday 1 01 1}
-test clock-10.15 {ISO week-based calendar} {
-    clock format 1041292800 -format {%a %A %u %V %w} -gmt true; # 2002-12-31
-} {Tue Tuesday 2 01 2}
-test clock-10.16 {ISO week-based calendar} {
-    clock format 1041379200 -format {%a %A %u %V %w} -gmt true; # 2003-1-1
-} {Wed Wednesday 3 01 3}
-test clock-10.17 {ISO week-based calendar} {
-    clock format 1041724800 -format {%a %A %u %V %w} -gmt true; # 2003-1-5
-} {Sun Sunday 7 01 0}
-test clock-10.18 {ISO week-based calendar} {
-    clock format 1041811200 -format {%a %A %u %V %w} -gmt true; # 2003-1-6
-} {Mon Monday 1 02 1}
-test clock-10.19 {ISO week-based calendar} {
-    clock format 1072051200 -format {%a %A %u %V %w} -gmt true; # 2003-12-22
-} {Mon Monday 1 52 1}
-test clock-10.20 {ISO week-based calendar} {
-    clock format 1072569600 -format {%a %A %u %V %w} -gmt true; # 2003-12-28
-} {Sun Sunday 7 52 0}
-test clock-10.21 {ISO week-based calendar} {
-    clock format 1072656000 -format {%a %A %u %V %w} -gmt true; # 2003-12-29
-} {Mon Monday 1 01 1}
-test clock-10.22 {ISO week-based calendar} {
-    clock format 1072828800 -format {%a %A %u %V %w} -gmt true; # 2003-12-31
-} {Wed Wednesday 3 01 3}
-test clock-10.23 {ISO week-based calendar} {
-    clock format 1072915200 -format {%a %A %u %V %w} -gmt true; # 2004-1-1
-} {Thu Thursday 4 01 4}
-test clock-10.24 {ISO week-based calendar} {
-    clock format 1073174400 -format {%a %A %u %V %w} -gmt true; # 2004-1-4
-} {Sun Sunday 7 01 0}
-test clock-10.25 {ISO week-based calendar} {
-    clock format 1073260800 -format {%a %A %u %V %w} -gmt true; # 2004-1-5
-} {Mon Monday 1 02 1}
-test clock-10.26 {ISO week-based calendar} {
-    clock format 1103500800 -format {%a %A %u %V %w} -gmt true; # 2004-12-20
-} {Mon Monday 1 52 1}
-test clock-10.27 {ISO week-based calendar} {
-    clock format 1104019200 -format {%a %A %u %V %w} -gmt true; # 2004-12-26
-} {Sun Sunday 7 52 0}
-test clock-10.28 {ISO week-based calendar} {
-    clock format 1104105600 -format {%a %A %u %V %w} -gmt true; # 2004-12-27
-} {Mon Monday 1 53 1}
-test clock-10.29 {ISO week-based calendar} {
-    clock format 1104451200 -format {%a %A %u %V %w} -gmt true; # 2004-12-31
-} {Fri Friday 5 53 5}
-test clock-10.30 {ISO week-based calendar} {
-    clock format 1104537600 -format {%a %A %u %V %w} -gmt true; # 2005-1-1
-} {Sat Saturday 6 53 6}
-test clock-10.31 {ISO week-based calendar} {
-    clock format 1104624000 -format {%a %A %u %V %w} -gmt true; # 2005-1-2
-} {Sun Sunday 7 53 0}
-test clock-10.32 {ISO week-based calendar} {
-    clock format 1104710400 -format {%a %A %u %V %w} -gmt true; # 2005-1-3
-} {Mon Monday 1 01 1}
-test clock-10.33 {ISO week-based calendar} {
-    clock format 1105228800 -format {%a %A %u %V %w} -gmt true; # 2005-1-9
-} {Sun Sunday 7 01 0}
-test clock-10.34 {ISO week-based calendar} {
-    clock format 1105315200 -format {%a %A %u %V %w} -gmt true; # 2005-1-10
-} {Mon Monday 1 02 1}
-test clock-10.35 {ISO week-based calendar} {
-    clock format 1135555200 -format {%a %A %u %V %w} -gmt true; # 2005-12-26
-} {Mon Monday 1 52 1}
-test clock-10.36 {ISO week-based calendar} {
-    clock format 1135987200 -format {%a %A %u %V %w} -gmt true; # 2005-12-31
-} {Sat Saturday 6 52 6}
-test clock-10.37 {ISO week-based calendar} {
-    clock format 1136073600 -format {%a %A %u %V %w} -gmt true; # 2006-1-1
-} {Sun Sunday 7 52 0}
-test clock-10.38 {ISO week-based calendar} {
-    clock format 1136160000 -format {%a %A %u %V %w} -gmt true; # 2006-1-2
-} {Mon Monday 1 01 1}
-test clock-10.39 {ISO week-based calendar} {
-    clock format 1136678400 -format {%a %A %u %V %w} -gmt true; # 2006-1-8
-} {Sun Sunday 7 01 0}
-test clock-10.40 {ISO week-based calendar} {
-    clock format 1136764800 -format {%a %A %u %V %w} -gmt true; # 2006-1-9
-} {Mon Monday 1 02 1}
-test clock-10.41 {ISO week-based calendar} {
-    clock format 1261353600 -format {%a %A %u %V %w} -gmt true; # 2009-12-21
-} {Mon Monday 1 52 1}
-test clock-10.42 {ISO week-based calendar} {
-    clock format 1261872000 -format {%a %A %u %V %w} -gmt true; # 2009-12-27
-} {Sun Sunday 7 52 0}
-test clock-10.43 {ISO week-based calendar} {
-    clock format 1261958400 -format {%a %A %u %V %w} -gmt true; # 2009-12-28
-} {Mon Monday 1 53 1}
-test clock-10.44 {ISO week-based calendar} {
-    clock format 1262217600 -format {%a %A %u %V %w} -gmt true; # 2009-12-31
-} {Thu Thursday 4 53 4}
-test clock-10.45 {ISO week-based calendar} {
-    clock format 1262304000 -format {%a %A %u %V %w} -gmt true; # 2010-1-1
-} {Fri Friday 5 53 5}
-test clock-10.46 {ISO week-based calendar} {
-    clock format 1262476800 -format {%a %A %u %V %w} -gmt true; # 2010-1-3
-} {Sun Sunday 7 53 0}
-test clock-10.47 {ISO week-based calendar} {
-    clock format 1262563200 -format {%a %A %u %V %w} -gmt true; # 2010-1-4
-} {Mon Monday 1 01 1}
-test clock-10.48 {ISO week-based calendar} {
-    clock format 1263081600 -format {%a %A %u %V %w} -gmt true; # 2010-1-10
-} {Sun Sunday 7 01 0}
-test clock-10.49 {ISO week-based calendar} {
-    clock format 1263168000 -format {%a %A %u %V %w} -gmt true; # 2010-1-11
-} {Mon Monday 1 02 1}
+test clock-10.1 {ISO week-based calendar 2000-W52-1} {
+    clock format 977702400 -format {%a %A %g %G %u %V %w} -gmt true; # 2000-12-25
+} {Mon Monday 00 2000 1 52 1}
+test clock-10.2 {ISO week-based calendar 2000-W52-7} {
+    clock format 978220800 -format {%a %A %g %G %u %V %w} -gmt true; # 2000-12-31
+} {Sun Sunday 00 2000 7 52 0}
+test clock-10.3 {ISO week-based calendar 2001-W01-1} {
+    clock format 978307200 -format {%a %A %g %G %u %V %w} -gmt true; # 2001-1-1
+} {Mon Monday 01 2001 1 01 1}
+test clock-10.4 {ISO week-based calendar 2001-W01-7} {
+    clock format 978825600 -format {%a %A %g %G %u %V %w} -gmt true; # 2001-1-7
+} {Sun Sunday 01 2001 7 01 0}
+test clock-10.5 {ISO week-based calendar 2001-W02-1} {
+    clock format 978912000 -format {%a %A %g %G %u %V %w} -gmt true; # 2001-1-8
+} {Mon Monday 01 2001 1 02 1}
+test clock-10.6 {ISO week-based calendar 2001-W52-1} {
+    clock format 1009152000 -format {%a %A %g %G %u %V %w} -gmt true; # 2001-12-24
+} {Mon Monday 01 2001 1 52 1}
+test clock-10.7 {ISO week-based calendar 2001-W52-7} {
+    clock format 1009670400 -format {%a %A %g %G %u %V %w} -gmt true; # 2001-12-30
+} {Sun Sunday 01 2001 7 52 0}
+test clock-10.8 {ISO week-based calendar 2002-W01-1} {
+    clock format 1009756800 -format {%a %A %g %G %u %V %w} -gmt true; # 2001-12-31
+} {Mon Monday 02 2002 1 01 1}
+test clock-10.9 {ISO week-based calendar 2002-W01-2} {
+    clock format 1009843200 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-1-1
+} {Tue Tuesday 02 2002 2 01 2}
+test clock-10.10 {ISO week-based calendar 2002-W01-7} {
+    clock format 1010275200 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-1-6
+} {Sun Sunday 02 2002 7 01 0}
+test clock-10.11 {ISO week-based calendar 2002-W02-1} {
+    clock format 1010361600 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-1-7
+} {Mon Monday 02 2002 1 02 1}
+test clock-10.12 {ISO week-based calendar 2002-W52-1} {
+    clock format 1040601600 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-12-23
+} {Mon Monday 02 2002 1 52 1}
+test clock-10.13 {ISO week-based calendar 2002-W52-7} {
+    clock format 1041120000 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-12-29
+} {Sun Sunday 02 2002 7 52 0}
+test clock-10.14 {ISO week-based calendar 2003-W01-1} {
+    clock format 1041206400 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-12-30
+} {Mon Monday 03 2003 1 01 1}
+test clock-10.15 {ISO week-based calendar 2003-W01-2} {
+    clock format 1041292800 -format {%a %A %g %G %u %V %w} -gmt true; # 2002-12-31
+} {Tue Tuesday 03 2003 2 01 2}
+test clock-10.16 {ISO week-based calendar 2003-W01-3} {
+    clock format 1041379200 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-1-1
+} {Wed Wednesday 03 2003 3 01 3}
+test clock-10.17 {ISO week-based calendar 2003-W01-7} {
+    clock format 1041724800 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-1-5
+} {Sun Sunday 03 2003 7 01 0}
+test clock-10.18 {ISO week-based calendar 2003-W02-1} {
+    clock format 1041811200 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-1-6
+} {Mon Monday 03 2003 1 02 1}
+test clock-10.19 {ISO week-based calendar 2003-W52-1} {
+    clock format 1072051200 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-12-22
+} {Mon Monday 03 2003 1 52 1}
+test clock-10.20 {ISO week-based calendar 2003-W52-7} {
+    clock format 1072569600 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-12-28
+} {Sun Sunday 03 2003 7 52 0}
+test clock-10.21 {ISO week-based calendar 2004-W01-1} {
+    clock format 1072656000 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-12-29
+} {Mon Monday 04 2004 1 01 1}
+test clock-10.22 {ISO week-based calendar 2004-W01-3} {
+    clock format 1072828800 -format {%a %A %g %G %u %V %w} -gmt true; # 2003-12-31
+} {Wed Wednesday 04 2004 3 01 3}
+test clock-10.23 {ISO week-based calendar 2004-W01-4} {
+    clock format 1072915200 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-1-1
+} {Thu Thursday 04 2004 4 01 4}
+test clock-10.24 {ISO week-based calendar 2004-W01-7} {
+    clock format 1073174400 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-1-4
+} {Sun Sunday 04 2004 7 01 0}
+test clock-10.25 {ISO week-based calendar 2004-W02-1} {
+    clock format 1073260800 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-1-5
+} {Mon Monday 04 2004 1 02 1}
+test clock-10.26 {ISO week-based calendar 2004-W52-1} {
+    clock format 1103500800 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-12-20
+} {Mon Monday 04 2004 1 52 1}
+test clock-10.27 {ISO week-based calendar 2004-W52-7} {
+    clock format 1104019200 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-12-26
+} {Sun Sunday 04 2004 7 52 0}
+test clock-10.28 {ISO week-based calendar 2004-W53-1} {
+    clock format 1104105600 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-12-27
+} {Mon Monday 04 2004 1 53 1}
+test clock-10.29 {ISO week-based calendar 2004-W53-5} {
+    clock format 1104451200 -format {%a %A %g %G %u %V %w} -gmt true; # 2004-12-31
+} {Fri Friday 04 2004 5 53 5}
+test clock-10.30 {ISO week-based calendar 2004-W53-6} {
+    clock format 1104537600 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-1-1
+} {Sat Saturday 04 2004 6 53 6}
+test clock-10.31 {ISO week-based calendar 2004-W53-7} {
+    clock format 1104624000 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-1-2
+} {Sun Sunday 04 2004 7 53 0}
+test clock-10.32 {ISO week-based calendar 2005-W01-1} {
+    clock format 1104710400 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-1-3
+} {Mon Monday 05 2005 1 01 1}
+test clock-10.33 {ISO week-based calendar 2005-W01-7} {
+    clock format 1105228800 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-1-9
+} {Sun Sunday 05 2005 7 01 0}
+test clock-10.34 {ISO week-based calendar 2005-W02-1} {
+    clock format 1105315200 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-1-10
+} {Mon Monday 05 2005 1 02 1}
+test clock-10.35 {ISO week-based calendar 2005-W52-1} {
+    clock format 1135555200 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-12-26
+} {Mon Monday 05 2005 1 52 1}
+test clock-10.36 {ISO week-based calendar 2005-W52-6} {
+    clock format 1135987200 -format {%a %A %g %G %u %V %w} -gmt true; # 2005-12-31
+} {Sat Saturday 05 2005 6 52 6}
+test clock-10.37 {ISO week-based calendar 2005-W52-7} {
+    clock format 1136073600 -format {%a %A %g %G %u %V %w} -gmt true; # 2006-1-1
+} {Sun Sunday 05 2005 7 52 0}
+test clock-10.38 {ISO week-based calendar 2006-W01-1} {
+    clock format 1136160000 -format {%a %A %g %G %u %V %w} -gmt true; # 2006-1-2
+} {Mon Monday 06 2006 1 01 1}
+test clock-10.39 {ISO week-based calendar 2006-W01-7} {
+    clock format 1136678400 -format {%a %A %g %G %u %V %w} -gmt true; # 2006-1-8
+} {Sun Sunday 06 2006 7 01 0}
+test clock-10.40 {ISO week-based calendar 2006-W02-1} {
+    clock format 1136764800 -format {%a %A %g %G %u %V %w} -gmt true; # 2006-1-9
+} {Mon Monday 06 2006 1 02 1}
+test clock-10.41 {ISO week-based calendar 2009-W52-1} {
+    clock format 1261353600 -format {%a %A %g %G %u %V %w} -gmt true; # 2009-12-21
+} {Mon Monday 09 2009 1 52 1}
+test clock-10.42 {ISO week-based calendar 2009-W52-7} {
+    clock format 1261872000 -format {%a %A %g %G %u %V %w} -gmt true; # 2009-12-27
+} {Sun Sunday 09 2009 7 52 0}
+test clock-10.43 {ISO week-based calendar 2009-W53-1} {
+    clock format 1261958400 -format {%a %A %g %G %u %V %w} -gmt true; # 2009-12-28
+} {Mon Monday 09 2009 1 53 1}
+test clock-10.44 {ISO week-based calendar 2009-W53-4} {
+    clock format 1262217600 -format {%a %A %g %G %u %V %w} -gmt true; # 2009-12-31
+} {Thu Thursday 09 2009 4 53 4}
+test clock-10.45 {ISO week-based calendar 2009-W53-5} {
+    clock format 1262304000 -format {%a %A %g %G %u %V %w} -gmt true; # 2010-1-1
+} {Fri Friday 09 2009 5 53 5}
+test clock-10.46 {ISO week-based calendar 2009-W53-7} {
+    clock format 1262476800 -format {%a %A %g %G %u %V %w} -gmt true; # 2010-1-3
+} {Sun Sunday 09 2009 7 53 0}
+test clock-10.47 {ISO week-based calendar 2010-W01-1} {
+    clock format 1262563200 -format {%a %A %g %G %u %V %w} -gmt true; # 2010-1-4
+} {Mon Monday 10 2010 1 01 1}
+test clock-10.48 {ISO week-based calendar 2010-W01-7} {
+    clock format 1263081600 -format {%a %A %g %G %u %V %w} -gmt true; # 2010-1-10
+} {Sun Sunday 10 2010 7 01 0}
+test clock-10.49 {ISO week-based calendar 2010-W02-1} {
+    clock format 1263168000 -format {%a %A %g %G %u %V %w} -gmt true; # 2010-1-11
+} {Mon Monday 10 2010 1 02 1}
+
 
 test clock-11.1 {scan of time alone in GMT assumes correct date} {
     set base [clock scan 20040309T000001 -gmt true]
