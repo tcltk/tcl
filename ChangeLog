@@ -1,3 +1,16 @@
+2001-08-16  David Gravereaux <davygrvy@pobox.com>
+
+	* tools/tcl.wse.in:
+	* win/tcl.hpj.in:  Removed -kb storage in CVS to ensure these text
+	files are checked-out in the translation mode CVS is in.  Setting
+	these as binary as part of an effort to make sure they are always
+	in CRLF, no matter what the CVS translation, is bypassing how CVS
+	works and is confusing.
+
+	* tools/genStubs.tcl:  Removed LF-only output.  Having to reconvert
+	back to CRLF before committing to CVS was giving me a headache.
+	[Bug: 451333]
+
 2001-08-14  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c: make the intial maxNestingDepth of an
