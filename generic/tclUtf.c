@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.19 2001/10/16 05:31:19 dgp Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.20 2002/01/02 13:52:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1690,6 +1690,9 @@ Tcl_UniCharCaseMatch(string, pattern, nocase)
 	    p = *pattern;
 	    if (p == 0) {
 		return 1;
+	    }
+	    if (nocase) {
+		p = Tcl_UniCharToLower(p);
 	    }
 	    while (1) {
 		/*

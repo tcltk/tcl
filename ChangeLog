@@ -1,3 +1,15 @@
+2002-01-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/util.test (Wrapper_Tcl_StringMatch,util-5.*): Rewrote so
+	the test is performed with the right internal function since
+	[string match] no longer uses Tcl_StringCaseMatch internally.
+
+	* tests/string.test (string-11.51):
+	* generic/tclUtf.c (Tcl_UniCharCaseMatch):
+	* generic/tclUtil.c (Tcl_StringCaseMatch): Fault with matching
+	case-insensitive non-ASCII patterns containing upper case
+	characters.  [Bug #233257]
+
 2001-12-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/init.tcl: make sure env(COMSPEC) on Windows is executed
