@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgua.c,v 1.1 2004/02/24 22:58:48 dkf Exp $
+ * RCS: @(#) $Id: pkgua.c,v 1.2 2004/03/04 09:40:51 dkf Exp $
  */
 
 #include "tcl.h"
@@ -41,7 +41,7 @@ static int interpTokenMapInitialised = 0;
 #define MAX_REGISTERED_COMMANDS 2
 
 
-static int
+static void
 PkguaInitTokensHashTable(void)
 {
     if (interpTokenMapInitialised) {
@@ -49,7 +49,7 @@ PkguaInitTokensHashTable(void)
     }
     Tcl_InitHashTable(&interpTokenMap, TCL_ONE_WORD_KEYS);
     interpTokenMapInitialised = 1;
-};
+}
 
 static int
 PkguaFreeTokensHashTable(void)
@@ -62,7 +62,7 @@ PkguaFreeTokensHashTable(void)
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));
     }
     interpTokenMapInitialised = 0;
-};
+}
 
 static Tcl_Command *
 PkguaInterpToTokens(interp)
@@ -84,7 +84,7 @@ PkguaInterpToTokens(interp)
 	cmdTokens = (Tcl_Command *) Tcl_GetHashValue(entryPtr);
     }
     return cmdTokens;
-};
+}
 
 static void
 PkguaDeleteTokens(interp)
@@ -97,7 +97,7 @@ PkguaDeleteTokens(interp)
 	Tcl_Free((char *) Tcl_GetHashValue(entryPtr));
 	Tcl_DeleteHashEntry(entryPtr);
     }
-};
+}
 
 /*
  *----------------------------------------------------------------------
