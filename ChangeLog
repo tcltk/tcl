@@ -30,7 +30,7 @@
 	function and use of the vfork function.  Modern VM systems rarely
 	suffer any performance degradation when fork is used, and it
 	solves multiple problems with vfork.  Users that still want vfork
-	and add -Dfork=vfork to the compile flags. [Bug: 942 2228 1312]
+	can add -Dfork=vfork to the compile flags. [Bug: 942 2228 1312]
 
 1999-12-09  Jeff Hobbs  <hobbs@scriptics.com>
 
@@ -46,6 +46,7 @@
 	* win/tclWinSock.c: removed all code that supported Win32s.  It
 	was no longer officially supported, and likely didn't work anyway.
 	* win/makefile.vc: removed 16 bit stuff, cleaned up.
+
 	* win/tcl16.rc:
 	* win/tclWin16.c:
 	* win/winDumpExts.c: these files have been removed from the
