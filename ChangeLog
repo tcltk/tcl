@@ -1,3 +1,26 @@
+1999-10-05  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* {win,mac,unix,tools,}/README:
+	* win/README.binary:
+	* win/makefile.vc:
+	* {win,unix}/configure.in:
+	* generic/tcl.h:
+	* library/init.tcl: updated to 8.3a1 from 8.2.0.
+
+	* library/http2.1/http.tcl: fixed possible use of global c var.
+
+	* win/tclWinReg.c: fixed registry command to properly 'get'
+	HKEY_PERFORMANCE_DATA root key data.  Needs more work.
+	
+	* generic/tclNamesp.c:
+	* generic/tclVar.c:
+	* generic/tclCmdIL.c: fixed comment typos
+
+	* mac/tclMacFCmd.c: fixed filename stuff to support UTF-8 [Bug: 2869]
+
+	* win/tclWinSerial.c: changed SerialSetOptionProc to return
+	TCL_OK by default. (patch from Rolf Schroedter)
+
 1999-09-21  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl: Applied patches sent in by
@@ -21,7 +44,6 @@
 	* tests/pkg.test:
 	* generic/tclPkg.c: fixed package version check to disallow 1.2..3
 	[Bug: 2539]
-	
 
 	* unix/Makefile.in: fixed gendate target - this never worked
 	since RCS was intro'd.
