@@ -3,7 +3,7 @@
 	* unix/Makefile.in: added customization of default module path roots
 	via TCL_MODULE_PATH makefile variable.
 	* macosx/Makefile: add platform standard locations to default
-	module path roots. [Patch 94288]
+	module path roots. [Patch 942881]
 
 	* tests/env.test: macosx fixes.
 
