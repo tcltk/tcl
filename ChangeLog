@@ -3,6 +3,8 @@
 	* win/tclWin32Dll.c: Removed Dll instance from thread-local
 	storage.
 
+	
+
 1999-02-25    <redman@scriptics.com>
 
 	* win/makefile.vc: Added tclWinConsole.c and tclWinSerial.c
