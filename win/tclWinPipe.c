@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.10 2000/04/10 21:08:27 ericm Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.11 2000/04/11 21:42:12 ericm Exp $
  */
 
 #include "tclWinInt.h"
@@ -692,7 +692,7 @@ TclpCreateTempFile(contents)
     CONST char *contents;	/* String to write into temp file, or NULL. */
 {
     WCHAR name[MAX_PATH];
-    char *native;
+    CONST char *native;
     Tcl_DString dstring;
     HANDLE handle;
 
