@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.16 2001/09/13 11:56:20 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.17 2001/11/16 20:01:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -179,9 +179,6 @@ static int		CommandComplete _ANSI_ARGS_((char *script,
 			    int length));
 static int		ParseTokens _ANSI_ARGS_((char *src, int mask,
 			    Tcl_Parse *parsePtr));
-static int		EvalObjv _ANSI_ARGS_((Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[], char *command, int length,
-			    int flags));
 
 /*
  *----------------------------------------------------------------------
@@ -755,7 +752,7 @@ TclExpandTokenArray(parsePtr)
 /*
  *----------------------------------------------------------------------
  *
- * EvalObjv --
+ * TclEvalObjvInternal --
  *
  *	This procedure evaluates a Tcl command that has already been
  *	parsed into words, with one Tcl_Obj holding each word.
@@ -772,8 +769,8 @@ TclExpandTokenArray(parsePtr)
  *----------------------------------------------------------------------
  */
 
-static int
-EvalObjv(interp, objc, objv, command, length, flags)
+int
+TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     Tcl_Interp *interp;		/* Interpreter in which to evaluate the
 				 * command.  Also used for error
 				 * reporting. */
@@ -785,7 +782,8 @@ EvalObjv(interp, objc, objv, command, length, flags)
 				 * is used for traces.  If the string
 				 * representation of the command is
 				 * unknown, an empty string should be
-				 * supplied. */
+				 * supplied. If it is NULL, no traces will
+				 * be called. */
     int length;			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are
 				 * used. */
@@ -869,7 +867,7 @@ EvalObjv(interp, objc, objv, command, length, flags)
 		    (char *) NULL);
 	    code = TCL_ERROR;
 	} else {
-	    code = EvalObjv(interp, objc+1, newObjv, command, length, 0);
+	    code = TclEvalObjvInternal(interp, objc+1, newObjv, command, length, 0);
 	}
 	Tcl_DecrRefCount(newObjv[0]);
 	ckfree((char *) newObjv);
@@ -880,44 +878,46 @@ EvalObjv(interp, objc, objv, command, length, flags)
      * Call trace procedures if needed.
      */
 
-    argv = NULL;
-    commandCopy = command;
+    if (command != NULL) {
+	argv = NULL;
+	commandCopy = command;
 
-    for (tracePtr = iPtr->tracePtr; tracePtr != NULL; tracePtr = nextPtr) {
-	nextPtr = tracePtr->nextPtr;
-	if (iPtr->numLevels > tracePtr->level) {
-	    continue;
-	}
-
-	/*
-	 * This is a bit messy because we have to emulate the old trace
-	 * interface, which uses strings for everything.
-	 */
-
-	if (argv == NULL) {
-	    argv = (char **) ckalloc((unsigned) (objc + 1) * sizeof(char *));
-	    for (i = 0; i < objc; i++) {
-		argv[i] = Tcl_GetString(objv[i]);
+	for (tracePtr = iPtr->tracePtr; tracePtr != NULL; tracePtr = nextPtr) {
+	    nextPtr = tracePtr->nextPtr;
+	    if (iPtr->numLevels > tracePtr->level) {
+		continue;
 	    }
-	    argv[objc] = 0;
 
-	    if (length < 0) {
-		length = strlen(command);
-	    } else if ((size_t)length < strlen(command)) {
-		commandCopy = (char *) ckalloc((unsigned) (length + 1));
-		strncpy(commandCopy, command, (size_t) length);
-		commandCopy[length] = 0;
+	    /*
+	     * This is a bit messy because we have to emulate the old trace
+	     * interface, which uses strings for everything.
+	     */
+	    
+	    if (argv == NULL) {
+		argv = (char **) ckalloc((unsigned) (objc + 1) * sizeof(char *));
+		for (i = 0; i < objc; i++) {
+		    argv[i] = Tcl_GetString(objv[i]);
+		}
+		argv[objc] = 0;
+		
+		if (length < 0) {
+		    length = strlen(command);
+		} else if ((size_t)length < strlen(command)) {
+		    commandCopy = (char *) ckalloc((unsigned) (length + 1));
+		    strncpy(commandCopy, command, (size_t) length);
+		    commandCopy[length] = 0;
+		}
 	    }
-	}
-	(*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels,
+	    (*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels,
 			  commandCopy, cmdPtr->proc, cmdPtr->clientData,
 			  objc, argv);
-    }
-    if (argv != NULL) {
-	ckfree((char *) argv);
-    }
-    if (commandCopy != command) {
-	ckfree((char *) commandCopy);
+	}
+	if (argv != NULL) {
+	    ckfree((char *) argv);
+	}
+	if (commandCopy != command) {
+	    ckfree((char *) commandCopy);
+	}
     }
     
     /*
@@ -1016,7 +1016,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
      */
     switch (code) {
 	case TCL_OK:
-	    code = EvalObjv(interp, objc, objv, cmdString, cmdLen, flags);
+	    code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen, flags);
 	    if (code == TCL_ERROR && cmdLen == 0)
 		goto cmdtraced;
 	    break;
@@ -1447,7 +1447,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	     * Execute the command and free the objects for its words.
 	     */
     
-	    code = EvalObjv(interp, objectsUsed, objv, p, bytesLeft, 0);
+	    code = TclEvalObjvInternal(interp, objectsUsed, objv, p, bytesLeft, 0);
 	    if (code != TCL_OK) {
 		goto error;
 	    }

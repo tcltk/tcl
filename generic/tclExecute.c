@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.35 2001/11/14 23:17:03 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.36 2001/11/16 20:01:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -221,10 +221,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * Declarations for local procedures to this file:
  */
 
-static void		CallTraceProcedure _ANSI_ARGS_((Tcl_Interp *interp,
-			    Trace *tracePtr, Command *cmdPtr,
-			    char *command, int numChars,
-			    int objc, Tcl_Obj *objv[]));
 static void		DupCmdNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
 static int		ExprAbsFunc _ANSI_ARGS_((Tcl_Interp *interp,
@@ -536,7 +532,7 @@ GrowEvaluationStack(eePtr)
  *
  *----------------------------------------------------------------------
  */
-
+ 
 int
 TclExecuteByteCode(interp, codePtr)
     Tcl_Interp *interp;		/* Token for command interpreter. */
@@ -751,113 +747,19 @@ TclExecuteByteCode(interp, codePtr)
 	    {
 		int objc = opnd; /* The number of arguments. */
 		Tcl_Obj **objv;	 /* The array of argument objects. */
-		Command *cmdPtr; /* Points to command's Command struct. */
 		int newPcOffset; /* New inst offset for break, continue. */
 		Tcl_Obj **preservedStack;
 				 /* Reference to memory block containing
 				  * objv array (must be kept live throughout
 				  * trace and command invokations.) */
-#ifdef TCL_COMPILE_DEBUG
-		int isUnknownCmd = 0;
-		char cmdNameBuf[21];
-#endif /* TCL_COMPILE_DEBUG */
-
-		/*
-		 * If the interpreter was deleted, return an error.
-		 */
-
-		if (iPtr->flags & DELETED) {
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		            "attempt to call eval in deleted interpreter", -1);
-		    Tcl_SetErrorCode(interp, "CORE", "IDELETE",
-			    "attempt to call eval in deleted interpreter",
-			    (char *) NULL);
-		    result = TCL_ERROR;
-		    goto checkForCatch;
-		}
-
-		/*
-		 * Find the procedure to execute this command. If the
-		 * command is not found, handle it with the "unknown" proc.
-		 */
 
 		objv = &(stackPtr[stackTop - (objc-1)]);
-		cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-		if (cmdPtr == NULL) {
-		    cmdPtr = (Command *) Tcl_FindCommand(interp, "unknown",
-                            (Tcl_Namespace *) NULL, TCL_GLOBAL_ONLY);
-                    if (cmdPtr == NULL) {
-			Tcl_ResetResult(interp);
-			Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			        "invalid command name \"",
-				Tcl_GetString(objv[0]), "\"",
-				(char *) NULL);
-			TRACE(("%u => unknown proc not found: ", objc));
-			result = TCL_ERROR;
-			goto checkForCatch;
-		    }
-#ifdef TCL_COMPILE_DEBUG
-		    isUnknownCmd = 1;
-#endif /*TCL_COMPILE_DEBUG*/			
-		    stackTop++; /* need room for new inserted objv[0] */
-		    for (i = objc-1;  i >= 0;  i--) {
-			objv[i+1] = objv[i];
-		    }
-		    objc++;
-		    objv[0] = Tcl_NewStringObj("unknown", -1);
-		    Tcl_IncrRefCount(objv[0]);
-		}
 
-		/*
-		 * A reference to part of the stack vector itself
-		 * escapes our control, so must use preserve/release
-		 * to stop it from being deallocated by a recursive
-		 * call to ourselves.  The extra variable is needed
-		 * because all others are liable to change due to the
-		 * trace procedures.
-		 */
-
-		Tcl_Preserve((ClientData)stackPtr);
-		preservedStack = stackPtr;
-
-		/*
-		 * Call any trace procedures.
-		 */
-
-		if (iPtr->tracePtr != NULL) {
-		    Trace *tracePtr, *nextTracePtr;
-		    
-		    for (tracePtr = iPtr->tracePtr;  tracePtr != NULL;
-		            tracePtr = nextTracePtr) {
-			nextTracePtr = tracePtr->nextPtr;
-			if (iPtr->numLevels <= tracePtr->level) {
-			    int numChars;
-			    char *cmd = GetSrcInfoForPc(pc, codePtr,
-				    &numChars);
-			    if (cmd != NULL) {
-				DECACHE_STACK_INFO();
-				CallTraceProcedure(interp, tracePtr, cmdPtr,
-				        cmd, numChars, objc, objv);
-				CACHE_STACK_INFO();
-			    }
-			}
-		    }
-		}
-
-		/*
-		 * Finally, invoke the command's Tcl_ObjCmdProc. First reset
-		 * the interpreter's string and object results to their
-		 * default empty values since they could have gotten changed
-		 * by earlier invocations.
-		 */
-
-		Tcl_ResetResult(interp);
 #ifdef TCL_COMPILE_DEBUG
 		if (tclTraceExec >= 2) {
 		    if (traceInstructions) {
 			strncpy(cmdNameBuf, Tcl_GetString(objv[0]), 20);
-			TRACE(("%u => call ", (isUnknownCmd? objc-1:objc)));
+			TRACE(("%u => call ", objc));
 		    } else {
 			fprintf(stdout, "%d: (%u) invoking ",
 			        iPtr->numLevels,
@@ -872,13 +774,56 @@ TclExecuteByteCode(interp, codePtr)
 		}
 #endif /*TCL_COMPILE_DEBUG*/
 
-		iPtr->cmdCount++;
+		/* 
+		 * If trace procedures will be called, we need a
+		 * command string to pass to TclEvalObjvInternal; note 
+		 * that a copy of the string will be made there to 
+		 * include the ending \0.
+		 */
+
+		bytes = NULL;
+		length = 0;
+		if (iPtr->tracePtr != NULL) {
+		    Trace *tracePtr, *nextTracePtr;
+		    
+		    for (tracePtr = iPtr->tracePtr;  tracePtr != NULL;
+		            tracePtr = nextTracePtr) {
+			nextTracePtr = tracePtr->nextPtr;
+
+			/*
+			 * TclEvalObjvInternal will increment numLevels 
+			 * so use "<" rather than "<="
+			 */
+
+			if (iPtr->numLevels < tracePtr->level) {
+			    /*
+			     * Traces will be called: get command string
+			     */
+
+			    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+			    break;
+			}
+		    }
+		}		
+
+		/*
+		 * A reference to part of the stack vector itself
+		 * escapes our control, so must use preserve/release
+		 * to stop it from being deallocated by a recursive
+		 * call to ourselves.  The extra variable is needed
+		 * because all others are liable to change due to the
+		 * trace procedures.
+		 */
+
+		Tcl_Preserve((ClientData)stackPtr);
+		preservedStack = stackPtr;
+
+		/*
+		 * Finally, let TclEvalObjvInternal handle the command.
+		 */
+
 		DECACHE_STACK_INFO();
-		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
-					    objc, objv);
-		if (Tcl_AsyncReady()) {
-		    result = Tcl_AsyncInvoke(interp, result);
-		}
+		result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 		CACHE_STACK_INFO();
 
 		/*
@@ -887,19 +832,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * going to be used from now on.
 		 */
 
-		Tcl_Release((ClientData)preservedStack);
-
-		/*
-		 * If the interpreter has a non-empty string result, the
-		 * result object is either empty or stale because some
-		 * procedure set interp->result directly. If so, move the
-		 * string result to the result object, then reset the
-		 * string result.
-		 */
-
-		if (*(iPtr->result) != 0) {
-		    (void) Tcl_GetObjResult(interp);
-		}
+		Tcl_Release((ClientData) preservedStack);
 		
 		/*
 		 * Pop the objc top stack elements and decrement their ref
@@ -3836,74 +3769,6 @@ IllegalExprOperandType(interp, pc, opndPtr)
 		msg, " as operand of \"", operatorStrings[opCode - INST_LOR],
 		"\"", (char *) NULL);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CallTraceProcedure --
- *
- *	Invokes a trace procedure registered with an interpreter. These
- *	procedures trace command execution. Currently this trace procedure
- *	is called with the address of the string-based Tcl_CmdProc for the
- *	command, not the Tcl_ObjCmdProc.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Those side effects made by the trace procedure.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-CallTraceProcedure(interp, tracePtr, cmdPtr, command, numChars, objc, objv)
-    Tcl_Interp *interp;		/* The current interpreter. */
-    register Trace *tracePtr;	/* Describes the trace procedure to call. */
-    Command *cmdPtr;		/* Points to command's Command struct. */
-    char *command;		/* Points to the first character of the
-				 * command's source before substitutions. */
-    int numChars;		/* The number of characters in the
-				 * command's source. */
-    register int objc;		/* Number of arguments for the command. */
-    Tcl_Obj *objv[];		/* Pointers to Tcl_Obj of each argument. */
-{
-    Interp *iPtr = (Interp *) interp;
-    register char **argv;
-    register int i;
-    int length;
-    char *p;
-
-    /*
-     * Get the string rep from the objv argument objects and place their
-     * pointers in argv. First make sure argv is large enough to hold the
-     * objc args plus 1 extra word for the zero end-of-argv word.
-     */
-    
-    argv = (char **) ckalloc((unsigned)(objc + 1) * sizeof(char *));
-    for (i = 0;  i < objc;  i++) {
-	argv[i] = Tcl_GetStringFromObj(objv[i], &length);
-    }
-    argv[objc] = 0;
-
-    /*
-     * Copy the command characters into a new string.
-     */
-
-    p = (char *) ckalloc((unsigned) (numChars + 1));
-    memcpy((VOID *) p, (VOID *) command, (size_t) numChars);
-    p[numChars] = '\0';
-    
-    /*
-     * Call the trace procedure then free allocated storage.
-     */
-    
-    (*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels,
-                      p, cmdPtr->proc, cmdPtr->clientData, objc, argv);
-
-    ckfree((char *) argv);
-    ckfree((char *) p);
 }
 
 /*
