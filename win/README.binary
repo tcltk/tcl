@@ -1,6 +1,6 @@
 Tcl/Tk 8.5 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.37 2004/03/26 19:47:29 dgp Exp $ 
+RCS: @(#) $Id: README.binary,v 1.38 2004/07/01 10:08:11 dkf Exp $ 
 
 1. Introduction
 --------------- 
@@ -64,8 +64,8 @@ this release, you will need to use the appropriate .lib file for your
 compiler.  In the lib directory of the installation directory, there
 are library files for the Microsoft Visual C++ compiler:
 
-	tcl84.lib
-	tk84.lib
+	tcl85.lib
+	tk85.lib
 
 5. Building dynamically loadable extensions
 --------------------------------------------
