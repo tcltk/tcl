@@ -131,6 +131,35 @@
 #pragma warning( disable : 4102 )
 #endif /* _MSC_VER */
 
+/*
+ * yyparse will accept a 'struct TclGetDateInfo' as its parameter;
+ * that's where the parsed fields will be returned.
+ */
+
+#define YYPARSE_PARAM info
+
+#define yyDSTmode (((TclGetDateInfo*)info)->dateDSTmode)
+#define yyDayOrdinal (((TclGetDateInfo*)info)->dateDayOrdinal)
+#define yyDayNumber (((TclGetDateInfo*)info)->dateDayNumber)
+#define yyMonthOrdinal (((TclGetDateInfo*)info)->dateMonthOrdinal)
+#define yyHaveDate (((TclGetDateInfo*)info)->dateHaveDate)
+#define yyHaveDay (((TclGetDateInfo*)info)->dateHaveDay)
+#define yyHaveOrdinalMonth (((TclGetDateInfo*)info)->dateHaveOrdinalMonth)
+#define yyHaveRel (((TclGetDateInfo*)info)->dateHaveRel)
+#define yyHaveTime (((TclGetDateInfo*)info)->dateHaveTime)
+#define yyHaveZone (((TclGetDateInfo*)info)->dateHaveZone)
+#define yyTimezone (((TclGetDateInfo*)info)->dateTimezone)
+#define yyDay (((TclGetDateInfo*)info)->dateDay)
+#define yyMonth (((TclGetDateInfo*)info)->dateMonth)
+#define yyYear (((TclGetDateInfo*)info)->dateYear)
+#define yyHour (((TclGetDateInfo*)info)->dateHour)
+#define yyMinutes (((TclGetDateInfo*)info)->dateMinutes)
+#define yySeconds (((TclGetDateInfo*)info)->dateSeconds)
+#define yyMeridian (((TclGetDateInfo*)info)->dateMeridian)
+#define yyRelMonth (((TclGetDateInfo*)info)->dateRelMonth)
+#define yyRelDay (((TclGetDateInfo*)info)->dateRelDay)
+#define yyRelSeconds (((TclGetDateInfo*)info)->dateRelSeconds)
+
 #include "tclInt.h"
 
 #define EPOCH           1970
@@ -183,27 +212,6 @@ typedef enum _MERIDIAN {
  */
 
 static char     *yyInput;
-static DSTMODE  yyDSTmode;
-static time_t   yyDayOrdinal;
-static time_t   yyDayNumber;
-static time_t   yyMonthOrdinal;
-static int      yyHaveDate;
-static int      yyHaveDay;
-static int      yyHaveOrdinalMonth;
-static int      yyHaveRel;
-static int      yyHaveTime;
-static int      yyHaveZone;
-static time_t   yyTimezone;
-static time_t   yyDay;
-static time_t   yyHour;
-static time_t   yyMinutes;
-static time_t   yyMonth;
-static time_t   yySeconds;
-static time_t   yyYear;
-static MERIDIAN yyMeridian;
-static time_t   yyRelMonth;
-static time_t   yyRelDay;
-static time_t   yyRelSeconds;
 static time_t  *yyRelPointer;
 
 /*
@@ -214,14 +222,15 @@ static time_t	ToSeconds _ANSI_ARGS_((time_t Hours, time_t Minutes,
 		    time_t Seconds, MERIDIAN Meridian));
 static int	Convert _ANSI_ARGS_((time_t Month, time_t Day, time_t Year,
 		    time_t Hours, time_t Minutes, time_t Seconds,
-		    MERIDIAN Meridia, DSTMODE DSTmode, time_t *TimePtr));
+		    MERIDIAN Meridia, DSTMODE DSTmode, time_t *TimePtr,
+                    VOID* info));
 static time_t	DSTcorrect _ANSI_ARGS_((time_t Start, time_t Future));
 static time_t	NamedDay _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
 		    time_t DayNumber));
 static time_t   NamedMonth _ANSI_ARGS_((time_t Start, time_t MonthOrdinal,
-                    time_t MonthNumber));
+                    time_t MonthNumber, VOID* info));
 static int	RelativeMonth _ANSI_ARGS_((time_t Start, time_t RelMonth,
-		    time_t *TimePtr));
+		    time_t *TimePtr, VOID* info));
 static int	RelativeDay _ANSI_ARGS_((time_t Start, time_t RelDay,
 		    time_t *TimePtr));
 static int	LookupWord _ANSI_ARGS_((char *buff));
@@ -244,13 +253,13 @@ static int	TclDatelex _ANSI_ARGS_((void));
 #endif
 
 #if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
-#line 141 "../unix/../generic/tclGetDate.y"
+#line 150 "../unix/../generic/tclGetDate.y"
 typedef union YYSTYPE {
     time_t              Number;
     enum _MERIDIAN      Meridian;
 } YYSTYPE;
 /* Line 191 of yacc.c.  */
-#line 253 "../unix/../generic/tclDate.c"
+#line 262 "../unix/../generic/tclDate.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
@@ -262,7 +271,7 @@ typedef union YYSTYPE {
 
 
 /* Line 214 of yacc.c.  */
-#line 265 "../unix/../generic/tclDate.c"
+#line 274 "../unix/../generic/tclDate.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
@@ -451,12 +460,12 @@ static const yysigned_char yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned short yyrline[] =
 {
-       0,   157,   157,   158,   161,   164,   167,   170,   173,   176,
-     179,   183,   188,   191,   197,   203,   210,   216,   226,   230,
-     234,   240,   244,   248,   252,   256,   262,   266,   271,   276,
-     281,   286,   290,   295,   299,   304,   311,   315,   321,   330,
-     339,   349,   362,   367,   369,   370,   371,   372,   373,   375,
-     376,   378,   379,   380,   383,   402,   405
+       0,   166,   166,   167,   170,   173,   176,   179,   182,   185,
+     188,   192,   197,   200,   206,   212,   219,   225,   235,   239,
+     243,   249,   253,   257,   261,   265,   271,   275,   280,   285,
+     290,   295,   299,   304,   308,   313,   320,   324,   330,   339,
+     348,   358,   371,   376,   378,   379,   380,   381,   382,   384,
+     385,   387,   388,   389,   392,   411,   414
 };
 #endif
 
@@ -1205,49 +1214,49 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-#line 161 "../unix/../generic/tclGetDate.y"
+#line 170 "../unix/../generic/tclGetDate.y"
     {
             yyHaveTime++;
         ;}
     break;
 
   case 5:
-#line 164 "../unix/../generic/tclGetDate.y"
+#line 173 "../unix/../generic/tclGetDate.y"
     {
             yyHaveZone++;
         ;}
     break;
 
   case 6:
-#line 167 "../unix/../generic/tclGetDate.y"
+#line 176 "../unix/../generic/tclGetDate.y"
     {
             yyHaveDate++;
         ;}
     break;
 
   case 7:
-#line 170 "../unix/../generic/tclGetDate.y"
+#line 179 "../unix/../generic/tclGetDate.y"
     {
             yyHaveOrdinalMonth++;
         ;}
     break;
 
   case 8:
-#line 173 "../unix/../generic/tclGetDate.y"
+#line 182 "../unix/../generic/tclGetDate.y"
     {
             yyHaveDay++;
         ;}
     break;
 
   case 9:
-#line 176 "../unix/../generic/tclGetDate.y"
+#line 185 "../unix/../generic/tclGetDate.y"
     {
             yyHaveRel++;
         ;}
     break;
 
   case 10:
-#line 179 "../unix/../generic/tclGetDate.y"
+#line 188 "../unix/../generic/tclGetDate.y"
     {
 	    yyHaveTime++;
 	    yyHaveDate++;
@@ -1255,7 +1264,7 @@ yyreduce:
     break;
 
   case 11:
-#line 183 "../unix/../generic/tclGetDate.y"
+#line 192 "../unix/../generic/tclGetDate.y"
     {
 	    yyHaveTime++;
 	    yyHaveDate++;
@@ -1264,7 +1273,7 @@ yyreduce:
     break;
 
   case 13:
-#line 191 "../unix/../generic/tclGetDate.y"
+#line 200 "../unix/../generic/tclGetDate.y"
     {
             yyHour = yyvsp[-1].Number;
             yyMinutes = 0;
@@ -1274,7 +1283,7 @@ yyreduce:
     break;
 
   case 14:
-#line 197 "../unix/../generic/tclGetDate.y"
+#line 206 "../unix/../generic/tclGetDate.y"
     {
             yyHour = yyvsp[-3].Number;
             yyMinutes = yyvsp[-1].Number;
@@ -1284,7 +1293,7 @@ yyreduce:
     break;
 
   case 15:
-#line 203 "../unix/../generic/tclGetDate.y"
+#line 212 "../unix/../generic/tclGetDate.y"
     {
             yyHour = yyvsp[-4].Number;
             yyMinutes = yyvsp[-2].Number;
@@ -1295,7 +1304,7 @@ yyreduce:
     break;
 
   case 16:
-#line 210 "../unix/../generic/tclGetDate.y"
+#line 219 "../unix/../generic/tclGetDate.y"
     {
             yyHour = yyvsp[-5].Number;
             yyMinutes = yyvsp[-3].Number;
@@ -1305,7 +1314,7 @@ yyreduce:
     break;
 
   case 17:
-#line 216 "../unix/../generic/tclGetDate.y"
+#line 225 "../unix/../generic/tclGetDate.y"
     {
             yyHour = yyvsp[-6].Number;
             yyMinutes = yyvsp[-4].Number;
@@ -1317,7 +1326,7 @@ yyreduce:
     break;
 
   case 18:
-#line 226 "../unix/../generic/tclGetDate.y"
+#line 235 "../unix/../generic/tclGetDate.y"
     {
             yyTimezone = yyvsp[-1].Number;
             yyDSTmode = DSTon;
@@ -1325,7 +1334,7 @@ yyreduce:
     break;
 
   case 19:
-#line 230 "../unix/../generic/tclGetDate.y"
+#line 239 "../unix/../generic/tclGetDate.y"
     {
             yyTimezone = yyvsp[0].Number;
             yyDSTmode = DSToff;
@@ -1333,7 +1342,7 @@ yyreduce:
     break;
 
   case 20:
-#line 234 "../unix/../generic/tclGetDate.y"
+#line 243 "../unix/../generic/tclGetDate.y"
     {
             yyTimezone = yyvsp[0].Number;
             yyDSTmode = DSTon;
@@ -1341,7 +1350,7 @@ yyreduce:
     break;
 
   case 21:
-#line 240 "../unix/../generic/tclGetDate.y"
+#line 249 "../unix/../generic/tclGetDate.y"
     {
             yyDayOrdinal = 1;
             yyDayNumber = yyvsp[0].Number;
@@ -1349,7 +1358,7 @@ yyreduce:
     break;
 
   case 22:
-#line 244 "../unix/../generic/tclGetDate.y"
+#line 253 "../unix/../generic/tclGetDate.y"
     {
             yyDayOrdinal = 1;
             yyDayNumber = yyvsp[-1].Number;
@@ -1357,7 +1366,7 @@ yyreduce:
     break;
 
   case 23:
-#line 248 "../unix/../generic/tclGetDate.y"
+#line 257 "../unix/../generic/tclGetDate.y"
     {
             yyDayOrdinal = yyvsp[-1].Number;
             yyDayNumber = yyvsp[0].Number;
@@ -1365,7 +1374,7 @@ yyreduce:
     break;
 
   case 24:
-#line 252 "../unix/../generic/tclGetDate.y"
+#line 261 "../unix/../generic/tclGetDate.y"
     {
             yyDayOrdinal = yyvsp[-2].Number * yyvsp[-1].Number;
             yyDayNumber = yyvsp[0].Number;
@@ -1373,7 +1382,7 @@ yyreduce:
     break;
 
   case 25:
-#line 256 "../unix/../generic/tclGetDate.y"
+#line 265 "../unix/../generic/tclGetDate.y"
     {
             yyDayOrdinal = 2;
             yyDayNumber = yyvsp[0].Number;
@@ -1381,7 +1390,7 @@ yyreduce:
     break;
 
   case 26:
-#line 262 "../unix/../generic/tclGetDate.y"
+#line 271 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[-2].Number;
             yyDay = yyvsp[0].Number;
@@ -1389,7 +1398,7 @@ yyreduce:
     break;
 
   case 27:
-#line 266 "../unix/../generic/tclGetDate.y"
+#line 275 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[-4].Number;
             yyDay = yyvsp[-2].Number;
@@ -1398,7 +1407,7 @@ yyreduce:
     break;
 
   case 28:
-#line 271 "../unix/../generic/tclGetDate.y"
+#line 280 "../unix/../generic/tclGetDate.y"
     {
 	    yyYear = yyvsp[0].Number / 10000;
 	    yyMonth = (yyvsp[0].Number % 10000)/100;
@@ -1407,7 +1416,7 @@ yyreduce:
     break;
 
   case 29:
-#line 276 "../unix/../generic/tclGetDate.y"
+#line 285 "../unix/../generic/tclGetDate.y"
     {
 	    yyDay = yyvsp[-4].Number;
 	    yyMonth = yyvsp[-2].Number;
@@ -1416,7 +1425,7 @@ yyreduce:
     break;
 
   case 30:
-#line 281 "../unix/../generic/tclGetDate.y"
+#line 290 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[-2].Number;
             yyDay = yyvsp[0].Number;
@@ -1425,7 +1434,7 @@ yyreduce:
     break;
 
   case 31:
-#line 286 "../unix/../generic/tclGetDate.y"
+#line 295 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[-1].Number;
             yyDay = yyvsp[0].Number;
@@ -1433,7 +1442,7 @@ yyreduce:
     break;
 
   case 32:
-#line 290 "../unix/../generic/tclGetDate.y"
+#line 299 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[-3].Number;
             yyDay = yyvsp[-2].Number;
@@ -1442,7 +1451,7 @@ yyreduce:
     break;
 
   case 33:
-#line 295 "../unix/../generic/tclGetDate.y"
+#line 304 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[0].Number;
             yyDay = yyvsp[-1].Number;
@@ -1450,7 +1459,7 @@ yyreduce:
     break;
 
   case 34:
-#line 299 "../unix/../generic/tclGetDate.y"
+#line 308 "../unix/../generic/tclGetDate.y"
     {
 	    yyMonth = 1;
 	    yyDay = 1;
@@ -1459,7 +1468,7 @@ yyreduce:
     break;
 
   case 35:
-#line 304 "../unix/../generic/tclGetDate.y"
+#line 313 "../unix/../generic/tclGetDate.y"
     {
             yyMonth = yyvsp[-1].Number;
             yyDay = yyvsp[-2].Number;
@@ -1468,7 +1477,7 @@ yyreduce:
     break;
 
   case 36:
-#line 311 "../unix/../generic/tclGetDate.y"
+#line 320 "../unix/../generic/tclGetDate.y"
     {
 	    yyMonthOrdinal = 1;
 	    yyMonth = yyvsp[0].Number;
@@ -1476,7 +1485,7 @@ yyreduce:
     break;
 
   case 37:
-#line 315 "../unix/../generic/tclGetDate.y"
+#line 324 "../unix/../generic/tclGetDate.y"
     {
 	    yyMonthOrdinal = yyvsp[-1].Number;
 	    yyMonth = yyvsp[0].Number;
@@ -1484,7 +1493,7 @@ yyreduce:
     break;
 
   case 38:
-#line 321 "../unix/../generic/tclGetDate.y"
+#line 330 "../unix/../generic/tclGetDate.y"
     {
             if (yyvsp[-1].Number != HOUR(- 7)) YYABORT;
 	    yyYear = yyvsp[-2].Number / 10000;
@@ -1497,7 +1506,7 @@ yyreduce:
     break;
 
   case 39:
-#line 330 "../unix/../generic/tclGetDate.y"
+#line 339 "../unix/../generic/tclGetDate.y"
     {
             if (yyvsp[-5].Number != HOUR(- 7)) YYABORT;
 	    yyYear = yyvsp[-6].Number / 10000;
@@ -1510,7 +1519,7 @@ yyreduce:
     break;
 
   case 40:
-#line 339 "../unix/../generic/tclGetDate.y"
+#line 348 "../unix/../generic/tclGetDate.y"
     {
 	    yyYear = yyvsp[-1].Number / 10000;
 	    yyMonth = (yyvsp[-1].Number % 10000)/100;
@@ -1522,7 +1531,7 @@ yyreduce:
     break;
 
   case 41:
-#line 349 "../unix/../generic/tclGetDate.y"
+#line 358 "../unix/../generic/tclGetDate.y"
     {
             /*
 	     * Offset computed year by -377 so that the returned years will
@@ -1537,7 +1546,7 @@ yyreduce:
     break;
 
   case 42:
-#line 362 "../unix/../generic/tclGetDate.y"
+#line 371 "../unix/../generic/tclGetDate.y"
     {
 	    yyRelSeconds *= -1;
 	    yyRelMonth *= -1;
@@ -1546,57 +1555,57 @@ yyreduce:
     break;
 
   case 44:
-#line 369 "../unix/../generic/tclGetDate.y"
+#line 378 "../unix/../generic/tclGetDate.y"
     { *yyRelPointer += yyvsp[-2].Number * yyvsp[-1].Number * yyvsp[0].Number; ;}
     break;
 
   case 45:
-#line 370 "../unix/../generic/tclGetDate.y"
+#line 379 "../unix/../generic/tclGetDate.y"
     { *yyRelPointer += yyvsp[-1].Number * yyvsp[0].Number; ;}
     break;
 
   case 46:
-#line 371 "../unix/../generic/tclGetDate.y"
+#line 380 "../unix/../generic/tclGetDate.y"
     { *yyRelPointer += yyvsp[0].Number; ;}
     break;
 
   case 47:
-#line 372 "../unix/../generic/tclGetDate.y"
+#line 381 "../unix/../generic/tclGetDate.y"
     { *yyRelPointer += yyvsp[-1].Number * yyvsp[0].Number; ;}
     break;
 
   case 48:
-#line 373 "../unix/../generic/tclGetDate.y"
+#line 382 "../unix/../generic/tclGetDate.y"
     { *yyRelPointer += yyvsp[0].Number; ;}
     break;
 
   case 49:
-#line 375 "../unix/../generic/tclGetDate.y"
+#line 384 "../unix/../generic/tclGetDate.y"
     { yyval.Number = -1; ;}
     break;
 
   case 50:
-#line 376 "../unix/../generic/tclGetDate.y"
+#line 385 "../unix/../generic/tclGetDate.y"
     { yyval.Number =  1; ;}
     break;
 
   case 51:
-#line 378 "../unix/../generic/tclGetDate.y"
+#line 387 "../unix/../generic/tclGetDate.y"
     { yyval.Number = yyvsp[0].Number; yyRelPointer = &yyRelSeconds; ;}
     break;
 
   case 52:
-#line 379 "../unix/../generic/tclGetDate.y"
+#line 388 "../unix/../generic/tclGetDate.y"
     { yyval.Number = yyvsp[0].Number; yyRelPointer = &yyRelDay; ;}
     break;
 
   case 53:
-#line 380 "../unix/../generic/tclGetDate.y"
+#line 389 "../unix/../generic/tclGetDate.y"
     { yyval.Number = yyvsp[0].Number; yyRelPointer = &yyRelMonth; ;}
     break;
 
   case 54:
-#line 384 "../unix/../generic/tclGetDate.y"
+#line 393 "../unix/../generic/tclGetDate.y"
     {
 	if (yyHaveTime && yyHaveDate && !yyHaveRel) {
 	    yyYear = yyvsp[0].Number;
@@ -1616,14 +1625,14 @@ yyreduce:
     break;
 
   case 55:
-#line 402 "../unix/../generic/tclGetDate.y"
+#line 411 "../unix/../generic/tclGetDate.y"
     {
             yyval.Meridian = MER24;
         ;}
     break;
 
   case 56:
-#line 405 "../unix/../generic/tclGetDate.y"
+#line 414 "../unix/../generic/tclGetDate.y"
     {
             yyval.Meridian = yyvsp[0].Meridian;
         ;}
@@ -1633,7 +1642,7 @@ yyreduce:
     }
 
 /* Line 991 of yacc.c.  */
-#line 1636 "../unix/../generic/tclDate.c"
+#line 1645 "../unix/../generic/tclDate.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1844,7 +1853,7 @@ yyreturn:
 }
 
 
-#line 410 "../unix/../generic/tclGetDate.y"
+#line 419 "../unix/../generic/tclGetDate.y"
 
 
 /*
@@ -2094,7 +2103,7 @@ ToSeconds(Hours, Minutes, Seconds, Meridian)
  *-----------------------------------------------------------------------------
  */
 static int
-Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
+Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr, info)
     time_t      Month;
     time_t      Day;
     time_t      Year;
@@ -2104,6 +2113,7 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
     MERIDIAN    Meridian;
     DSTMODE     DSTmode;
     time_t     *TimePtr;
+    VOID*	info;
 {
     static int  DaysInMonth[12] = {
         31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -2186,10 +2196,11 @@ NamedDay(Start, DayOrdinal, DayNumber)
 }
 
 static time_t
-NamedMonth(Start, MonthOrdinal, MonthNumber)
+NamedMonth(Start, MonthOrdinal, MonthNumber, info)
     time_t Start;
     time_t MonthOrdinal;
     time_t MonthNumber;
+    VOID* info;
 {
     struct tm *tm;
     time_t now;
@@ -2208,7 +2219,7 @@ NamedMonth(Start, MonthOrdinal, MonthNumber)
 	tm->tm_year--;
     }
     result = Convert(MonthNumber, (time_t) 1, tm->tm_year + TM_YEAR_BASE,
-	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now);
+	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now, info);
     if (result < 0) {
 	return 0;
     }
@@ -2216,10 +2227,11 @@ NamedMonth(Start, MonthOrdinal, MonthNumber)
 }
 
 static int
-RelativeMonth(Start, RelMonth, TimePtr)
+RelativeMonth(Start, RelMonth, TimePtr, info)
     time_t Start;
     time_t RelMonth;
     time_t *TimePtr;
+    VOID* info;
 {
     struct tm *tm;
     time_t Month;
@@ -2237,7 +2249,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
     Month = Month % 12 + 1;
     result = Convert(Month, (time_t) tm->tm_mday, Year,
 	    (time_t) tm->tm_hour, (time_t) tm->tm_min, (time_t) tm->tm_sec,
-	    MER24, DSTmaybe, &Julian);
+	    MER24, DSTmaybe, &Julian, info);
 
     /*
      * The Julian time returned above is behind by one day, if "month" 
@@ -2267,7 +2279,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
 	tm->tm_mday--;
 	result = Convert(Month, (time_t) tm->tm_mday, Year,
 		(time_t) tm->tm_hour, (time_t) tm->tm_min, (time_t) tm->tm_sec,
-		MER24, DSTmaybe, &Julian);
+		MER24, DSTmaybe, &Julian, info);
     }
     if (result != 0) {
 	return -1;
@@ -2500,6 +2512,9 @@ TclGetDate(p, now, zone, timePtr)
     time_t Time;
     time_t tod;
     int thisyear;
+    TclGetDateInfo dateInfo;
+
+    void* info = (void*) &dateInfo;
 
     yyInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
@@ -2532,7 +2547,7 @@ TclGetDate(p, now, zone, timePtr)
     yyHaveTime = 0;
     yyHaveZone = 0;
 
-    if (yyparse() || yyHaveTime > 1 || yyHaveZone > 1 || yyHaveDate > 1 ||
+    if (yyparse(info) || yyHaveTime > 1 || yyHaveZone > 1 || yyHaveDate > 1 ||
 	    yyHaveDay > 1 || yyHaveOrdinalMonth > 1) {
         return -1;
     }
@@ -2559,7 +2574,7 @@ TclGetDate(p, now, zone, timePtr)
 	    }
 	}
 	if (Convert(yyMonth, yyDay, yyYear, yyHour, yyMinutes, yySeconds,
-		yyMeridian, yyDSTmode, &Start) < 0) {
+		yyMeridian, yyDSTmode, &Start, info) < 0) {
             return -1;
 	}
     } else {
@@ -2571,7 +2586,7 @@ TclGetDate(p, now, zone, timePtr)
     }
 
     Start += yyRelSeconds;
-    if (RelativeMonth(Start, yyRelMonth, &Time) < 0) {
+    if (RelativeMonth(Start, yyRelMonth, &Time, info) < 0) {
         return -1;
     }
     Start += Time;
@@ -2587,7 +2602,7 @@ TclGetDate(p, now, zone, timePtr)
     }
 
     if (yyHaveOrdinalMonth) {
-	tod = NamedMonth(Start, yyMonthOrdinal, yyMonth);
+	tod = NamedMonth(Start, yyMonthOrdinal, yyMonth, info);
 	Start += tod;
     }
     
