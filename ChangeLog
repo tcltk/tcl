@@ -1,3 +1,44 @@
+2003-11-14  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/ParseCmd.3:	Implementation of TIP 157.  Adds recognition
+	* doc/Tcl.n:		of the new leading {expand} syntax on words.
+	* generic/tcl.h:	Parses such words as the new Tcl_Token type
+	* generic/tclBasic.c:	TCL_TOKEN_EXPAND_WORD.  Updated Tcl_EvalEx
+	* generic/tclCompile.c: and the bytecode compiler/execution engine
+	* generic/tclCompile.h:	to recognize the new token type.  New opcodes
+	* generic/tclExecute.c:	INST_LIST_VERIFY and INST_INVOKE_EXP and a new
+	* generic/tclParse.c:	operand type OPERAND_ULIST1 are defined.  Docs
+	* generic/tclTest.c:	and tests are included.
+	* tests/basic.test:
+	* tests/compile.test:
+	* tests/parse.test:
+
+	* library/auto.tcl:	Replaced several [eval]s used to perform
+	* library/package.tcl:	argument expansion with the new syntax.
+	* library/safe.tcl:	In the test files lindex.test and lset.test,
+	* tests/cmdInfo.test:	replaced use of [eval] to force direct
+	* tests/encoding.test:	string evaluation with use of [testevalex]
+	* tests/execute.test:	which more directly and robustly serves the
+	* tests/fCmd.test:	same purpose.
+	* tests/http.test:
+	* tests/init.test:
+	* tests/interp.test:
+	* tests/io.test:
+	* tests/ioUtil.test:
+	* tests/iogt.test:
+	* tests/lindex.test:
+	* tests/lset.test:
+	* tests/namespace-old.test:
+	* tests/namespace.test:
+	* tests/pkg.test:
+	* tests/pkgMkIndex.test:
+	* tests/proc.test:
+	* tests/reg.test:
+	* tests/trace.test:
+	* tests/upvar.test:
+	* tests/winConsole.test:
+	* tests/winFCmd.test:
+
 2003-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/cmdMZ.test (cmdMZ-1.4): change to nonPortable as more

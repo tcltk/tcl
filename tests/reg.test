@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.18 2003/10/06 14:32:22 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.19 2003/11/14 20:44:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -231,10 +231,8 @@ proc f {testid flags re target args} {
 	if {$amp >= 0} {
 		set f [string range $flags 0 [expr $amp - 1]]
 		append f [string range $flags [expr $amp + 1] end]
-		eval [linsert $args 0 f [linsert $testid end ARE] ${f} $re \
-								$target]
-		eval [linsert $args 0 f [linsert $testid end BRE] ${f}b $re \
-								$target]
+		f [linsert $testid end ARE] ${f} $re $target {expand}$args
+		f [linsert $testid end BRE] ${f}b $re $target {expand}$args
 		return
 	}
 
@@ -283,10 +281,12 @@ proc matchexpected {opts testid flags re target args} {
 	if {$amp >= 0} {
 		set f [string range $flags 0 [expr $amp - 1]]
 		append f [string range $flags [expr $amp + 1] end]
-		eval [concat [list matchexpected $opts \
-			[linsert $testid end ARE] ${f} $re $target] $args]
-		eval [concat [list matchexpected $opts \
-			[linsert $testid end BRE] ${f}b $re $target] $args]
+		matchexpected $opts [linsert $testid end ARE] \
+			${f} $re $target {expand}$args
+
+
+		matchexpected $opts [linsert $testid end BRE] \
+			${f}b $re $target {expand}$args
 		return
 	}
 
@@ -332,13 +332,13 @@ proc matchexpected {opts testid flags re target args} {
 # match expected (no missing, empty, or ambiguous submatches)
 # m testno flags re target mat submat ...
 proc m {args} {
-	eval matchexpected [linsert $args 0 [list]]
+	matchexpected {} {expand}$args
 }
 
 # match expected (full fanciness)
 # i testno flags re target mat submat ...
 proc i {args} {
-	eval matchexpected [linsert $args 0 [list "-indices"]]
+	matchexpected -indices {expand}$args 
 }
 
 # partial match expected
@@ -347,7 +347,7 @@ proc i {args} {
 proc p {args} {
 	set f [lindex $args 1]			;# add ! flag
 	set args [lreplace $args 1 1 "!$f"]
-	eval matchexpected [linsert $args 0 [list "-indices"]]
+	matchexpected -indices {expand}$args
 }
 
 # test is a knownBug

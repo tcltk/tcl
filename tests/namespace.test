@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.22 2003/09/29 14:37:14 dkf Exp $
+# RCS: @(#) $Id: namespace.test,v 1.23 2003/11/14 20:44:46 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -19,7 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # Clear out any namespaces called test_ns_*
-catch {eval namespace delete [namespace children :: test_ns_*]}
+catch {namespace delete {expand}[namespace children :: test_ns_*]}
 
 test namespace-1.1 {TclInitNamespaces, GetNamespaceFromObj, NamespaceChildrenCmd} {
     namespace children :: test_ns_*
@@ -79,7 +79,7 @@ test namespace-5.2 {Tcl_PopCallFrame, local vars must be deleted} {
 } {123}
 
 test namespace-6.1 {Tcl_CreateNamespace} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [lsort [namespace children :: test_ns_*]] \
         [namespace eval test_ns_1 {namespace current}] \
 	[namespace eval test_ns_2 {namespace current}] \
@@ -98,7 +98,7 @@ test namespace-6.3 {Tcl_CreateNamespace, trailing ::s in ns name are ignored} {
     list [catch {namespace eval test_ns_7::: {namespace current}} msg] $msg 
 } {0 ::test_ns_7}
 test namespace-6.4 {Tcl_CreateNamespace, trailing ::s in ns name are ignored} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1:: {
         namespace eval test_ns_2:: {}
         namespace eval test_ns_3:: {}
@@ -116,7 +116,7 @@ test namespace-6.5 {Tcl_CreateNamespace, relative ns names now only looked up in
 } {::test_ns_1::test_ns_2 ::test_ns_1::test_ns_2}
 
 test namespace-7.1 {Tcl_DeleteNamespace, active call frames in ns} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1 {
         proc p {} {
             namespace delete [namespace current]
@@ -161,7 +161,7 @@ test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
          [interp delete test_interp]
 } {{::test_ns_1 27} {} 1 {invalid command name "set"} {}}
 test namespace-8.2 {TclTeardownNamespace, remove deleted ns from parent} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1::test_ns_2::test_ns_3a {proc p {} {}}
     namespace eval test_ns_1::test_ns_2::test_ns_3b {proc q {} {}}
     list [namespace children test_ns_1] \
@@ -169,7 +169,7 @@ test namespace-8.2 {TclTeardownNamespace, remove deleted ns from parent} {
          [namespace children test_ns_1]
 } {::test_ns_1::test_ns_2 {} {}}
 test namespace-8.3 {TclTeardownNamespace, delete child namespaces} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1::test_ns_2::test_ns_3a {proc p {} {}}
     namespace eval test_ns_1::test_ns_2::test_ns_3b {proc q {} {}}
     list [namespace children test_ns_1] \
@@ -179,7 +179,7 @@ test namespace-8.3 {TclTeardownNamespace, delete child namespaces} {
          [info commands test_ns_1::test_ns_2::test_ns_3a::*]
 } {::test_ns_1::test_ns_2 {} {} 1 {unknown namespace "test_ns_1::test_ns_2" in namespace children command} {}}
 test namespace-8.4 {TclTeardownNamespace, cmds imported from deleted ns go away} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_export {
         namespace export cmd1 cmd2
         proc cmd1 {args} {return "cmd1: $args"}
@@ -195,7 +195,7 @@ test namespace-8.4 {TclTeardownNamespace, cmds imported from deleted ns go away}
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1 ::test_ns_import::cmd2}] {} ::test_ns_import::p]
 
 test namespace-9.1 {Tcl_Import, empty import pattern} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace eval test_ns_import {namespace import {}}} msg] $msg
 } {1 {empty import pattern}}
 test namespace-9.2 {Tcl_Import, unknown namespace in import pattern} {
@@ -205,7 +205,7 @@ test namespace-9.3 {Tcl_Import, import ns == export ns} {
     list [catch {namespace eval test_ns_import {namespace import ::test_ns_import::puts}} msg] $msg
 } {1 {import pattern "::test_ns_import::puts" tries to import from namespace "test_ns_import" into itself}}
 test namespace-9.4 {Tcl_Import, simple import} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_export {
         namespace export cmd1
         proc cmd1 {args} {return "cmd1: $args"}
@@ -227,7 +227,7 @@ test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {
     }
 } {cmd1: 555}
 test namespace-9.7 {Tcl_Import, links are preserved if cmd is redefined} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_export {
         namespace export cmd1
         proc cmd1 {args} {return "cmd1: $args"}
@@ -245,7 +245,7 @@ test namespace-9.7 {Tcl_Import, links are preserved if cmd is redefined} {
 } {{cmd1: a b c} {cmd1: d e f} {} ::test_ns_export::cmd1 ::test_ns_export::cmd1 {new1: g h i} {new1: j k l}}
 
 test namespace-10.1 {Tcl_ForgetImport, check for valid namespaces} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace forget xyzzy::*} msg] $msg
 } {1 {unknown namespace in namespace forget pattern "xyzzy::*"}}
 test namespace-10.2 {Tcl_ForgetImport, ignores patterns that don't match} {
@@ -271,7 +271,7 @@ test namespace-10.3 {Tcl_ForgetImport, deletes matching imported cmds} {
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1}] ::test_ns_import::p 1 {invalid command name "cmd1"}]
 
 test namespace-11.1 {TclGetOriginalCommand, check if not imported cmd} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_export {
         namespace export cmd1
         proc cmd1 {args} {return "cmd1: $args"}
@@ -295,7 +295,7 @@ test namespace-11.3 {TclGetOriginalCommand, indirectly imported cmd} {
 } {{cmd1: 123} ::test_ns_export::cmd1}
 
 test namespace-12.1 {InvokeImportedCmd} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_export {
         namespace export cmd1
         proc cmd1 {args} {namespace current}
@@ -316,7 +316,7 @@ test namespace-13.1 {DeleteImportedCmd, deletes imported cmds} {
 } {::test_ns_import::cmd1 {}}
 
 test namespace-14.1 {TclGetNamespaceForQualName, absolute names} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     variable v 10
     namespace eval test_ns_1::test_ns_2 {
         variable v 20
@@ -394,7 +394,7 @@ test namespace-14.11 {TclGetNamespaceForQualName, extra ::s are significant for 
     lappend l [test_ns_1::test_ns_2:: hello]
 } {1 {invalid command name "test_ns_1::test_ns_2::"} {{}: hello}}
 test namespace-14.12 {TclGetNamespaceForQualName, extra ::s are significant for vars} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1 {
         variable {}
         set test_ns_1::(x) y
@@ -402,12 +402,12 @@ test namespace-14.12 {TclGetNamespaceForQualName, extra ::s are significant for 
     set test_ns_1::(x)
 } y
 test namespace-14.13 {TclGetNamespaceForQualName, namespace other than global ns can't have empty name} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace eval test_ns_1 {proc {} {} {}; namespace eval {} {}; {}}} msg] $msg
 } {1 {can't create namespace "": only global namespace can have empty name}}
 
 test namespace-15.1 {Tcl_FindNamespace, absolute name found} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_delete {
         namespace eval test_ns_delete2 {}
         proc cmd {args} {namespace current}
@@ -434,7 +434,7 @@ test namespace-15.4 {Tcl_FindNamespace, relative name not found} {
 } {1 {unknown namespace "test_ns_delete2" in namespace delete command}}
 
 test namespace-16.1 {Tcl_FindCommand, absolute name found} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1 {
         proc cmd {args} {return "[namespace current]::cmd: $args"}
         variable v "::test_ns_1::cmd"
@@ -502,7 +502,7 @@ test namespace-16.11 {Tcl_FindCommand, relative name not found} {
 
 catch {unset x}
 test namespace-17.1 {Tcl_FindNamespaceVar, absolute name found} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     set x 314159
     namespace eval test_ns_1 {
         set ::x
@@ -565,7 +565,7 @@ catch {unset x}
 catch {unset l}
 catch {rename foo {}}
 test namespace-18.1 {TclResetShadowedCmdRefs, one-level check for command shadowing} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     proc foo {} {return "global foo"}
     namespace eval test_ns_1 {
         proc trigger {} {
@@ -606,7 +606,7 @@ catch {unset l}
 catch {rename foo {}}
 
 test namespace-19.1 {GetNamespaceFromObj, global name found} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1::test_ns_2 {}
     namespace children ::test_ns_1
 } {::test_ns_1::test_ns_2}
@@ -636,7 +636,7 @@ test namespace-19.4 {GetNamespaceFromObj, invalidation of cached ns refs} {
 } {{} ::test_ns_1::test_ns_2::test_ns_3}
 
 test namespace-20.1 {Tcl_NamespaceObjCmd, bad subcommand} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace} msg] $msg
 } {1 {wrong # args: should be "namespace subcommand ?arg ...?"}}
 test namespace-20.2 {Tcl_NamespaceObjCmd, bad subcommand} {
@@ -647,7 +647,7 @@ test namespace-20.3 {Tcl_NamespaceObjCmd, abbreviations are okay} {
 } {}
 
 test namespace-21.1 {NamespaceChildrenCmd, no args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1::test_ns_2 {}
     expr {[string first ::test_ns_1 [namespace children]] != -1}
 } {1}
@@ -679,7 +679,7 @@ test namespace-21.7 {NamespaceChildrenCmd, glob-style pattern given} {
 } [lsort {::test_ns_1::test_ns_2 ::test_ns_1::test_ns_foo}]
 
 test namespace-22.1 {NamespaceCodeCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace code} msg] $msg \
          [catch {namespace code xxx yyy} msg] $msg
 } {1 {wrong # args: should be "namespace code arg"} 1 {wrong # args: should be "namespace code arg"}}
@@ -713,7 +713,7 @@ test namespace-22.6 {NamespaceCodeCmd, in other namespace} {
 } {42} 
 
 test namespace-23.1 {NamespaceCurrentCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace current xxx} msg] $msg \
          [catch {namespace current xxx yyy} msg] $msg
 } {1 {wrong # args: should be "namespace current"} 1 {wrong # args: should be "namespace current"}}
@@ -727,7 +727,7 @@ test namespace-23.3 {NamespaceCurrentCmd, in nested ns} {
 } {::test_ns_1::test_ns_2}
 
 test namespace-24.1 {NamespaceDeleteCmd, no args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace delete
 } {}
 test namespace-24.2 {NamespaceDeleteCmd, one arg} {
@@ -743,7 +743,7 @@ test namespace-24.4 {NamespaceDeleteCmd, unknown ns} {
 } {1 {unknown namespace "::test_ns_foo" in namespace delete command}}
 
 test namespace-25.1 {NamespaceEvalCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace eval} msg] $msg
 } {1 {wrong # args: should be "namespace eval name arg ?arg...?"}}
 test namespace-25.2 {NamespaceEvalCmd, bad args} {
@@ -781,7 +781,7 @@ test namespace-25.6 {NamespaceEvalCmd, error in eval'd script} {
 catch {unset v}
 
 test namespace-26.1 {NamespaceExportCmd, no args and new ns} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace export
 } {}
 test namespace-26.2 {NamespaceExportCmd, just -clear arg} {
@@ -830,7 +830,7 @@ test namespace-26.7 {NamespaceExportCmd, -clear resets export list} {
 } [list [lsort {::test_ns_2::cmd4 ::test_ns_2::cmd1 ::test_ns_2::cmd3}] {cmd4: hello}]
 
 test namespace-27.1 {NamespaceForgetCmd, no args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace forget
 } {}
 test namespace-27.2 {NamespaceForgetCmd, args must be valid namespaces} {
@@ -850,7 +850,7 @@ test namespace-27.3 {NamespaceForgetCmd, arg is forgotten} {
 } {::test_ns_2::cmd2}
 
 test namespace-28.1 {NamespaceImportCmd, no args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace import
 } {}
 test namespace-28.2 {NamespaceImportCmd, no args and just "-force"} {
@@ -870,7 +870,7 @@ test namespace-28.3 {NamespaceImportCmd, arg is imported} {
 } {::test_ns_2::cmd2}
 
 test namespace-29.1 {NamespaceInscopeCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace inscope} msg] $msg
 } {1 {wrong # args: should be "namespace inscope name arg ?arg...?"}}
 test namespace-29.2 {NamespaceInscopeCmd, bad args} {
@@ -895,7 +895,7 @@ test namespace-29.5 {NamespaceInscopeCmd, has lappend semantics} {
 } {{::test_ns_1::cmd: v=747, args=x y z} {::test_ns_1::cmd: v=747, args=x y z}}
 
 test namespace-30.1 {NamespaceOriginCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace origin} msg] $msg
 } {1 {wrong # args: should be "namespace origin name"}}
 test namespace-30.2 {NamespaceOriginCmd, bad args} {
@@ -928,7 +928,7 @@ test namespace-30.5 {NamespaceOriginCmd, imported command} {
 } {::foreach ::test_ns_2::p ::test_ns_1::cmd1 ::test_ns_1::cmd2}
 
 test namespace-31.1 {NamespaceParentCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace parent a b} msg] $msg
 } {1 {wrong # args: should be "namespace parent ?name?"}}
 test namespace-31.2 {NamespaceParentCmd, no args} {
@@ -949,7 +949,7 @@ test namespace-31.4 {NamespaceParentCmd, bad namespace specified} {
 } {1 {unknown namespace "test_ns_1::test_ns_foo" in namespace parent command}}
 
 test namespace-32.1 {NamespaceQualifiersCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace qualifiers} msg] $msg
 } {1 {wrong # args: should be "namespace qualifiers string"}}
 test namespace-32.2 {NamespaceQualifiersCmd, bad args} {
@@ -975,7 +975,7 @@ test namespace-32.8 {NamespaceQualifiersCmd, odd number of :s} {
 } {foo}
 
 test namespace-33.1 {NamespaceTailCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace tail} msg] $msg
 } {1 {wrong # args: should be "namespace tail string"}}
 test namespace-33.2 {NamespaceTailCmd, bad args} {
@@ -1001,7 +1001,7 @@ test namespace-33.8 {NamespaceTailCmd, odd number of :s} {
 } {}
 
 test namespace-34.1 {NamespaceWhichCmd, bad args} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {namespace which} msg] $msg
 } {1 {wrong # args: should be "namespace which ?-command? ?-variable? name"}}
 test namespace-34.2 {NamespaceWhichCmd, bad args} {
@@ -1054,7 +1054,7 @@ test namespace-34.7 {NamespaceWhichCmd, variable lookup} {
 } {::env ::test_ns_3::v3 ::test_ns_2::v2 0 {}}
 
 test namespace-35.1 {FreeNsNameInternalRep, resulting ref count > 0} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1 {
         proc p {} {
             namespace delete [namespace current]
@@ -1077,7 +1077,7 @@ test namespace-35.2 {FreeNsNameInternalRep, resulting ref count == 0} {
 catch {unset x}
 catch {unset y}
 test namespace-36.1 {DupNsNameInternalRep} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1 {}
     set x "::test_ns_1"
     list [namespace parent $x] [set y $x] [namespace parent $y]
@@ -1086,7 +1086,7 @@ catch {unset x}
 catch {unset y}
 
 test namespace-37.1 {SetNsNameFromAny, ns name found} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_1::test_ns_2 {}
     namespace eval test_ns_1 {
         namespace children ::test_ns_1
@@ -1099,14 +1099,14 @@ test namespace-37.2 {SetNsNameFromAny, ns name not found} {
 } {1 {unknown namespace "::test_ns_1::test_ns_foo" in namespace children command}}
 
 test namespace-38.1 {UpdateStringOfNsName} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     ;# Tcl_NamespaceObjCmd calls UpdateStringOfNsName to get subcmd name
     list [namespace eval {} {namespace current}] \
          [namespace eval {} {namespace current}]
 } {:: ::}
 
 test namespace-39.1 {NamespaceExistsCmd} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval ::test_ns_z::test_me { variable foo }
     list [namespace exists ::] \
 	    [namespace exists ::bogus_namespace] \
@@ -1309,10 +1309,9 @@ set SETUP {
 	namespace ensemble create -subcommands {b c}
     }
 }
-test namespace-43.3 {ensembles: list-driven} {
-    eval $SETUP
+test namespace-43.3 {ensembles: list-driven} -setup $SETUP -body {
     namespace delete ns
-} {}
+} -result {}
 test namespace-43.4 {ensembles: list-driven} -setup $SETUP -body {
     ns a foo bar boo spong wibble
 } -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": must be b, or c}
@@ -1335,10 +1334,9 @@ set SETUP {
 	namespace ensemble create -subcommands {b c} -map {c ::ns::d}
     }
 }
-test namespace-43.8 {ensembles: list-and-map-driven} {
-    eval $SETUP
+test namespace-43.8 {ensembles: list-and-map-driven} -setup $SETUP -body {
     namespace delete ns
-} {}
+} -result {}
 test namespace-43.9 {ensembles: list-and-map-driven} -setup $SETUP -body {
     ns a foo bar boo spong wibble
 } -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": must be b, or c}
@@ -1359,10 +1357,9 @@ set SETUP {
 	namespace ensemble create -prefixes off
     }
 }
-test namespace-43.13 {ensembles: turn off prefixes} {
-    eval $SETUP
+test namespace-43.13 {ensembles: turn off prefixes} -setup $SETUP -body {
     namespace delete ns
-} {}
+} -result {}
 test namespace-43.14 {ensembles: turn off prefixes} -setup $SETUP -body {
     ns fo
 } -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "fo": must be foo, or spong}
@@ -1636,6 +1633,6 @@ catch {rename cmd1 {}}
 catch {unset l}
 catch {unset msg}
 catch {unset trigger}
-eval namespace delete [namespace children :: test_ns_*]
+namespace delete {expand}[namespace children :: test_ns_*]
 ::tcltest::cleanupTests
 return

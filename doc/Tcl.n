@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.9 2003/02/01 19:48:23 kennykb Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.10 2003/11/14 20:44:43 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl n "8.1" Tcl "Tcl Built-In Commands"
@@ -49,8 +49,17 @@ as ordinary characters and included in the word.
 Command substitution, variable substitution, and backslash substitution
 are performed on the characters between the quotes as described below.
 The double-quotes are not retained as part of the word.
-.IP "[5] \fBBraces.\fR"
-If the first character of a word is an open brace (``{'') then
+.IP "[5] \fBArgument expansion.\fR"
+If a word starts with the string ``{expand}'' followed by a 
+non-whitespace character, then the leading ``{expand}'' is removed
+and the rest of the word is parsed and substituted as any other other 
+word. After substitution, the word is parsed again without
+substitutions, and its words are added to the command being
+substituted. For instance, ``cmd a {expand}{b c} d {expand}{e f}'' is
+equivalent to ``cmd a b c d e f''. 
+.IP "[6] \fBBraces.\fR"
+If the first character of a word is an open brace (``{'') and
+rule [5] does not apply, then
 the word is terminated by the matching close brace (``}'').
 Braces nest within the word: for each additional open
 brace there must be an additional close brace (however,
@@ -63,7 +72,7 @@ below, nor do semi-colons, newlines, close brackets,
 or white space receive any special interpretation.
 The word will consist of exactly the characters between the
 outer braces, not including the braces themselves.
-.IP "[6] \fBCommand substitution.\fR"
+.IP "[7] \fBCommand substitution.\fR"
 If a word contains an open bracket (``['') then Tcl performs
 \fIcommand substitution\fR.
 To do this it invokes the Tcl interpreter recursively to process
@@ -75,7 +84,7 @@ substituted into the word in place of the brackets and all of the
 characters between them.
 There may be any number of command substitutions in a single word.
 Command substitution is not performed on words enclosed in braces.
-.IP "[7] \fBVariable substitution.\fR"
+.IP "[8] \fBVariable substitution.\fR"
 If a word contains a dollar-sign (``$'') then Tcl performs \fIvariable
 substitution\fR:  the dollar-sign and the following characters are
 replaced in the word by the value of a variable.
@@ -102,7 +111,7 @@ characters whatsoever except for close braces.
 There may be any number of variable substitutions in a single word.
 Variable substitution is not performed on words enclosed in braces.
 .RE
-.IP "[8] \fBBackslash substitution.\fR"
+.IP "[9] \fBBackslash substitution.\fR"
 If a backslash (``\e'') appears within a word then
 \fIbackslash substitution\fR occurs.
 In all cases but those described below the backslash is dropped and
@@ -173,14 +182,14 @@ inserted.
 Backslash substitution is not performed on words enclosed in braces,
 except for backslash-newline as described above.
 .RE
-.IP "[9] \fBComments.\fR"
+.IP "[10] \fBComments.\fR"
 If a hash character (``#'') appears at a point where Tcl is
 expecting the first character of the first word of a command,
 then the hash character and the characters that follow it, up
 through the next newline, are treated as a comment and ignored.
 The comment character only has significance when it appears
 at the beginning of a command.
-.IP "[10] \fBOrder of substitution.\fR"
+.IP "[11] \fBOrder of substitution.\fR"
 Each character is processed exactly once by the Tcl interpreter
 as part of creating the words of a command.
 For example, if variable substitution occurs then no further
@@ -201,8 +210,9 @@ set y [set x 0][incr x][incr x]
 .CE
 will always set the variable \fIy\fR to the value, \fI012\fR.
 .RE
-.IP "[11] \fBSubstitution and word boundaries.\fR"
-Substitutions do not affect the word boundaries of a command.
+.IP "[12] \fBSubstitution and word boundaries.\fR"
+Substitutions do not affect the word boundaries of a command,
+except for argument expansion as specified in rule [5].
 For example, during variable substitution the entire value of
 the variable becomes part of a single word, even if the variable's
 value contains spaces.
