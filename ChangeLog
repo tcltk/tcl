@@ -1,3 +1,8 @@
+2004-07-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* generic/tclEvent.c (NewThreadProc): Backout of changes
+	to fix the Tcl Bug #770053. See SF bugreport for more info.
+
 2004-07-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_EvalEx): leak fix by dgp, release
