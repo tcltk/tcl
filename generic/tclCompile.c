@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.71 2004/07/15 17:42:12 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.72 2004/09/21 22:45:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1806,15 +1806,6 @@ LogCompilationInfo(interp, script, command, length)
     register CONST char *p;
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *message;
-
-    if (iPtr->flags & ERR_ALREADY_LOGGED) {
-	/*
-	 * Someone else has already logged error information for this
-	 * command; we shouldn't add anything more.
-	 */
-
-	return;
-    }
 
     /*
      * Compute the line number where the error occurred.
