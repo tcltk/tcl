@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.38 2002/07/11 12:39:16 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.39 2002/07/16 01:12:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1421,17 +1421,20 @@ TclUpdateReturnInfo(iPtr)
 				 * exception is being processed. */
 {
     int code;
+    char *errorCode;
 
     code = iPtr->returnCode;
     iPtr->returnCode = TCL_OK;
     if (code == TCL_ERROR) {
-	Tcl_SetVar2((Tcl_Interp *) iPtr, "errorCode", (char *) NULL,
-		(iPtr->errorCode != NULL) ? iPtr->errorCode : "NONE",
+	errorCode = ((iPtr->errorCode != NULL) ? iPtr->errorCode : "NONE");
+	Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
+	        NULL, Tcl_NewStringObj(errorCode, -1),
 		TCL_GLOBAL_ONLY);
 	iPtr->flags |= ERROR_CODE_SET;
 	if (iPtr->errorInfo != NULL) {
-	    Tcl_SetVar2((Tcl_Interp *) iPtr, "errorInfo", (char *) NULL,
-		    iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorInfo,
+	            NULL, Tcl_NewStringObj(iPtr->errorInfo, -1),
+		    TCL_GLOBAL_ONLY);
 	    iPtr->flags |= ERR_IN_PROGRESS;
 	}
     }
