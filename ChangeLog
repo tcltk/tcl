@@ -1,4 +1,21 @@
-2001-12-07  Miguel Sofer  <msofer@users.sourceforge.net>
+2001-12-10  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/Access.3:
+	* doc/CrtChannel.3:
+	* doc/DString.3:
+	* doc/ExprLong.3:
+	* doc/FileSystem.3:
+	* doc/GetStdChan.3:
+	* doc/OpenFileChnl.3:
+	* doc/StdChannels.3:
+	* doc/TCL_MEM_DEBUG.3:
+	* doc/Tcl_Main.3:
+	* doc/Utf.3:
+	* doc/file.n:
+	* doc/tclsh.1:  Several typo and formatting corrections discovered
+	during conversion to TMML.  Thanks to Joe English.  [Patch 490514]
+
+2001-12-10  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c:
 	* generic/tclCompExpr.c:
@@ -7,7 +24,6 @@
 	* generic/tclExecute.c:
 	* generic/tclProc.c: fixed the calculation of the maximal stack
 	depth required by bytecodes [Bug 483611].
-
 
 2001-12-07  Miguel Sofer  <msofer@users.sourceforge.net>
 
