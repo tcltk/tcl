@@ -1,3 +1,8 @@
+2004-10-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/FileSystem.3: Formatting fixes for greater documentation
+	clarity.
+
 2004-10-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclFileName.c (DoGlob, TclGlob): Stop messy sharing of
