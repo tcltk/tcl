@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unknown.n,v 1.4 2001/06/27 21:00:45 hobbs Exp $
+'\" RCS: @(#) $Id: unknown.n,v 1.5 2004/05/30 14:13:52 dkf Exp $
 '\" 
 .so man.macros
 .TH unknown n "" Tcl "Tcl Built-In Commands"
@@ -71,6 +71,20 @@ auto-exec step is skipped.
 Under normal circumstances the return value from \fBunknown\fR
 is the return value from the command that was eventually
 executed.
+.SH EXAMPLE
+Arrange for the \fBunknown\fR command to have its standard behavior
+except for first logging the fact that a command was not found:
+.PP
+.CS
+# Save the original one so we can chain to it
+rename \fBunknown\fR _original_unknown
+
+# Provide our own implementation
+proc \fBunknown\fR args {
+    puts stderr "WARNING: unknown command: $args"
+    uplevel 1 [list _original_unknown {expand}$args]
+}
+.CE
 
 .SH "SEE ALSO"
 info(n), proc(n), interp(n), library(n)
