@@ -1,3 +1,7 @@
+2004-04-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/read.n: Added example from David Welton. [Patch 938056]
+
 2004-04-19  Kevin B. Kenny   <kennykb@acm.org>
 
 	* generic/tclObj.c (Tcl_GetDoubleFromObj) Corrected
