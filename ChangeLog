@@ -1,5 +1,10 @@
 2001-06-25  Mo DeJong  <mdejong@redhat.com>
 
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Link to the
+	imm32 library when building with mingw gcc.
+
+2001-06-25  Mo DeJong  <mdejong@redhat.com>
+
 	* win/configure: Regen.
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): When building with
 	gcc, don't attempt to link with LD or support dllwrap.
