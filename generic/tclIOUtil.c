@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.46 2002/06/10 10:41:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.47 2002/06/10 17:41:52 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -4485,11 +4485,11 @@ NativeDupInternalRep(clientData)
 	len = sizeof(WCHAR) + (wcslen((CONST WCHAR*)clientData) * sizeof(WCHAR));
     } else {
 	/* ansi representation when running on 95/98/ME */
-	len = sizeof(CHAR) + (strlen((CONST CHAR*)clientData) * sizeof(CHAR));
+	len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
     }
 #else
     /* ansi representation when running on Unix/MacOS */
-    len = sizeof(CHAR) + (strlen((CONST CHAR*)clientData) * sizeof(CHAR));
+    len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
 #endif
     
     copy = (ClientData) ckalloc(len);
