@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.114 2004/09/17 22:59:14 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.115 2004/09/21 22:45:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3311,7 +3311,6 @@ Tcl_LogCommandInfo(interp, script, command, length)
     if (!(iPtr->flags & ERROR_CODE_SET)) {
 	Tcl_SetErrorCode(interp, "NONE", NULL);
     }
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 }
 
 /*
@@ -3837,17 +3836,8 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	        && !allowExceptions) {
 		ProcessUnexpectedResult(interp, result);
 		result = TCL_ERROR;
-
-		/*
-		 * If an error was created here, record information about 
-		 * what was being executed when the error occurred.
-		 */
-
-		if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
-		    iPtr->flags &= ~ERR_ALREADY_LOGGED;
-		}
+		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	    }
 	}
 	iPtr->evalFlags = 0;
