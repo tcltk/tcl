@@ -1,3 +1,11 @@
+2002-10-29  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinInt.h:
+	* win/tclWin32Dll.c: added comments about certain NULL function
+	pointers which will be filled in when Tcl_FindExecutable is
+	called, so that users don't report invalid bugs on this topic.
+	(No code changes at all).
+	
 2002-10-29  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclLoadDyld.c (TclpFindSymbol): pass all dyld error

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.16 2002/06/13 09:40:01 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.17 2002/10/29 14:17:58 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -83,6 +83,13 @@ static TclWinProcs asciiProcs = {
 	    WCHAR *, TCHAR **)) SearchPathA,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryA,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesA,
+    /* 
+     * These two function pointers will only be set when
+     * Tcl_FindExecutable is called.  If you don't ever call that
+     * function, the application will crash whenever WinTcl tries to call
+     * functions through these null pointers.  That is not a bug in Tcl
+     * -- Tcl_FindExecutable is obligatory in recent Tcl releases.
+     */
     NULL,
     NULL,
 };
@@ -122,6 +129,13 @@ static TclWinProcs unicodeProcs = {
 	    WCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesW,
+    /* 
+     * These two function pointers will only be set when
+     * Tcl_FindExecutable is called.  If you don't ever call that
+     * function, the application will crash whenever WinTcl tries to call
+     * functions through these null pointers.  That is not a bug in Tcl
+     * -- Tcl_FindExecutable is obligatory in recent Tcl releases.
+     */
     NULL,
     NULL,
 };
