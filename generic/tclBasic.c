@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.1 2003/04/25 21:21:25 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.2 2003/05/05 16:52:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1166,8 +1166,8 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
 
     if (strstr(hiddenCmdToken, "::") != NULL) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "cannot use namespace qualifiers as hidden command",
-		"token (rename)", (char *) NULL);
+                "cannot use namespace qualifiers in hidden command",
+		" token (rename)", (char *) NULL);
         return TCL_ERROR;
     }
 
