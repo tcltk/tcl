@@ -151,6 +151,7 @@ test filesystem-4.3 {testfilesystem} {
 }
 
 test filesystem-5.1 {cache and ~} {
+	-match regexp
     -body {
 	set orig $env(HOME)
 	set ::env(HOME) /foo/bar/blah
@@ -158,9 +159,10 @@ test filesystem-5.1 {cache and ~} {
 	set res1 "Parent of ~ (/foo/bar/blah) is [file dirname $testdir]"
 	set ::env(HOME) /a/b/c
 	set res2 "Parent of ~ (/a/b/c) is [file dirname $testdir]"
+	set ::env(HOME) $orig
 	list $res1 $res2
     }
-    -result {{Parent of ~ (/foo/bar/blah) is /foo/bar} {Parent of ~ (/a/b/c) is /a/b}}
+    -result {{Parent of ~ \(/foo/bar/blah\) is (/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is (/a/b|a:b)}}
 }
 
 	

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.13 2002/02/26 02:49:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.14 2002/04/08 09:03:17 das Exp $
  */
 
 #include "tclInt.h"
@@ -1361,6 +1361,7 @@ TcpGetOptionProc(
     Tcl_DString dString;
     TCPiopb statusPB;
     int errorCode;
+    size_t len = 0;
 
     /*
      * If an asynchronous connect is in progress, attempt to wait for it
@@ -1388,11 +1389,12 @@ TcpGetOptionProc(
     if (optionName == (CONST char *) NULL || optionName[0] == '\0') {
         doAll = true;
     } else {
-	if (!strcmp(optionName, "-peername")) {
+	len = strlen(optionName);
+	if (!strncmp(optionName, "-peername", len)) {
 	    doPeerName = true;
-	} else if (!strcmp(optionName, "-sockname")) {
+	} else if (!strncmp(optionName, "-sockname", len)) {
 	    doSockName = true;
-	} else if (!strcmp(optionName, "-error")) {
+	} else if (!strncmp(optionName, "-error", len)) {
 	    /* SF Bug #483575 */
 	    doError = true;
 	} else {
@@ -1417,7 +1419,7 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-error");
 	    Tcl_DStringAppendElement(dsPtr, "");
 	} else {
-	    Tcl_DStringAppend (dsPtr, "");
+	    Tcl_DStringAppend (dsPtr, "", -1);
 	    return TCL_OK;
 	}
     }
