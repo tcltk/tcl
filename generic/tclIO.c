@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.62 2003/03/06 09:16:19 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.63 2003/03/06 09:47:49 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -3006,7 +3006,9 @@ WriteBytes(chanPtr, src, srcLen)
 	    dstLen--;
 	    sawLF++;
 	}
-	sawLF += TranslateOutputEOL(statePtr, dst, src, &dstLen, &toWrite);
+	if (TranslateOutputEOL(statePtr, dst, src, &dstLen, &toWrite)) {
+	    sawLF++;
+	}
 	dstLen += savedLF;
 	savedLF = 0;
 
@@ -3104,7 +3106,9 @@ WriteChars(chanPtr, src, srcLen)
 	    stageLen--;
 	    sawLF++;
 	}
-	sawLF += TranslateOutputEOL(statePtr, stage, src, &stageLen, &toWrite);
+	if (TranslateOutputEOL(statePtr, stage, src, &stageLen, &toWrite)) {
+	    sawLF++;
+	}
 
 	stage -= savedLF;
 	stageLen += savedLF;
@@ -3169,7 +3173,7 @@ WriteChars(chanPtr, src, srcLen)
 	    /*
 	     * The following code must be executed only when result is not 0.
 	     */
-	    if (result && ((stageRead + dstWrote) == 0)) {
+	    if ((result != 0) && ((stageRead + dstWrote) == 0)) {
 		/*
 		 * We have an incomplete UTF-8 character at the end of the
 		 * staging buffer.  It will get moved to the beginning of the
@@ -3602,6 +3606,13 @@ Tcl_GetsObj(chan, objPtr)
 		for (eol = dst; eol < dstEnd; eol++) {
 		    if (*eol == '\r') {
 			eol++;
+
+			/*
+			 * If a CR is at the end of the buffer,
+			 * then check for a LF at the begining
+			 * of the next buffer.
+			 */
+
 			if (eol >= dstEnd) {
 			    int offset;
 			    
