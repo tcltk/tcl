@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.5 2003/11/19 16:29:30 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.6 2004/02/20 18:35:48 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5926,3 +5926,30 @@ asked for writable events by the generic layer.
 various odd regexp "can't happen" bugs.
 
 --- Released 8.4.5, November 20, 2003 --- See ChangeLog for details ---
+
+2003-12-02 (bug fix)[851747] object sharing fix in [binary scan]
+
+2003-12-09 (platform support)[852369] update errno usage for recent glibc
+
+2003-12-12 (bug fix)[858937] fix for [file normalize ~nobody] 
+
+2003-12-17 (bug fix)[839519] fixed two memory leaks (vasiljevic)
+
+2004-01-09 (bug fix)[873311] fixed infinite loop in TclFinalizeFilesystem
+
+2004-02-02 (bug fix)[405995] Tcl_Ungets buffer filling fix
+
+2004-02-04 (bug fix)[833910] tcltest command line option parsing error
+=> tcltest 2.4.5
+
+2004-02-04 (bug fix)[833637] code error in tcltest -preservecore operation
+
+2004-02-12 (feature enhancement) update HP-11 build libs setup
+
+2004-02-17 (bug fix)[849514,859251] corrected [file normailze] of $link/.. 
+
+2004-02-17 (bug fix)[772288] Unix std channels forced to exist at startup.
+
+2004-02-17 (new default) tcltest::configure -verbose {body error}
+
+--- Released 8.4.6, February 27, 2004 --- See ChangeLog for details ---
