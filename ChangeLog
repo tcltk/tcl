@@ -1,3 +1,13 @@
+2004-05-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c: Added comments describing the purposes of
+	each function in the limit implementation and rewrote the names of
+	some non-public functions for greater clarity of purpose.
+	* doc/interp.n: Added note about what happens when a limited
+	interpreter creates a slave interpreter.
+	* doc/Limit.3: Added manual page for the resource limit
+	subsystem's C API. [Bug 953903]
+
 2004-05-29  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/global.n, doc/interp.n, doc/lrange.n:
