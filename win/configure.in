@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.42 2001/10/15 21:16:31 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.43 2001/10/15 21:53:46 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -188,7 +188,8 @@ AC_SUBST(TCL_PATCH_LEVEL)
 
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
-AC_SUBST(TCL_LIB_SPEC) ; # empty on win
+# empty on win
+AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_FILE)
 AC_SUBST(TCL_STUB_LIB_FLAG)
 AC_SUBST(TCL_STUB_LIB_SPEC)
