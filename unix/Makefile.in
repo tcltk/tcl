@@ -352,12 +352,14 @@ xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 
 test: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY=${TOP_DIR}/library; export TCL_LIBRARY; \
 	( echo cd $(TOP_DIR)/tests\; source all ) | ./tcltest
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest:
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY=${TOP_DIR}/library; export TCL_LIBRARY; \
 	./tcltest
 
