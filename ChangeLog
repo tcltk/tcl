@@ -1,3 +1,9 @@
+2004-09-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tcl.h: Micro formatting fixes.
+	* generic/tclIOGT.c: Channel version fixed, must be 3, to have
+	  wideseekProc. Thanks to David Graveraux <davygrvy@pobox.com>.
+
 2004-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamespace.c (TclGetNamespaceForQualName):	Resolved
