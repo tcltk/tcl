@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.102 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.103 2004/05/13 13:00:18 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3222,6 +3222,98 @@ EXTERN int		Tcl_FSEvalFileEx _ANSI_ARGS_((Tcl_Interp * interp,
 /* 519 */
 EXTERN Tcl_ExitProc *	Tcl_SetExitProc _ANSI_ARGS_((Tcl_ExitProc * proc));
 #endif
+#ifndef Tcl_LimitAddHandler_TCL_DECLARED
+#define Tcl_LimitAddHandler_TCL_DECLARED
+/* 520 */
+EXTERN void		Tcl_LimitAddHandler _ANSI_ARGS_((Tcl_Interp * interp, 
+				int type, Tcl_LimitHandlerProc * handlerProc, 
+				ClientData clientData, 
+				Tcl_LimitHandlerDeleteProc * deleteProc));
+#endif
+#ifndef Tcl_LimitRemoveHandler_TCL_DECLARED
+#define Tcl_LimitRemoveHandler_TCL_DECLARED
+/* 521 */
+EXTERN void		Tcl_LimitRemoveHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, int type, 
+				Tcl_LimitHandlerProc * handlerProc, 
+				ClientData clientData));
+#endif
+#ifndef Tcl_LimitReady_TCL_DECLARED
+#define Tcl_LimitReady_TCL_DECLARED
+/* 522 */
+EXTERN int		Tcl_LimitReady _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef Tcl_LimitCheck_TCL_DECLARED
+#define Tcl_LimitCheck_TCL_DECLARED
+/* 523 */
+EXTERN int		Tcl_LimitCheck _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef Tcl_LimitExceeded_TCL_DECLARED
+#define Tcl_LimitExceeded_TCL_DECLARED
+/* 524 */
+EXTERN int		Tcl_LimitExceeded _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef Tcl_LimitSetCommands_TCL_DECLARED
+#define Tcl_LimitSetCommands_TCL_DECLARED
+/* 525 */
+EXTERN void		Tcl_LimitSetCommands _ANSI_ARGS_((
+				Tcl_Interp * interp, int commandLimit));
+#endif
+#ifndef Tcl_LimitSetTime_TCL_DECLARED
+#define Tcl_LimitSetTime_TCL_DECLARED
+/* 526 */
+EXTERN void		Tcl_LimitSetTime _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Time * timeLimitPtr));
+#endif
+#ifndef Tcl_LimitSetGranularity_TCL_DECLARED
+#define Tcl_LimitSetGranularity_TCL_DECLARED
+/* 527 */
+EXTERN void		Tcl_LimitSetGranularity _ANSI_ARGS_((
+				Tcl_Interp * interp, int type, 
+				int granularity));
+#endif
+#ifndef Tcl_LimitTypeEnabled_TCL_DECLARED
+#define Tcl_LimitTypeEnabled_TCL_DECLARED
+/* 528 */
+EXTERN int		Tcl_LimitTypeEnabled _ANSI_ARGS_((
+				Tcl_Interp * interp, int type));
+#endif
+#ifndef Tcl_LimitTypeExceeded_TCL_DECLARED
+#define Tcl_LimitTypeExceeded_TCL_DECLARED
+/* 529 */
+EXTERN int		Tcl_LimitTypeExceeded _ANSI_ARGS_((
+				Tcl_Interp * interp, int type));
+#endif
+#ifndef Tcl_LimitTypeSet_TCL_DECLARED
+#define Tcl_LimitTypeSet_TCL_DECLARED
+/* 530 */
+EXTERN void		Tcl_LimitTypeSet _ANSI_ARGS_((Tcl_Interp * interp, 
+				int type));
+#endif
+#ifndef Tcl_LimitTypeReset_TCL_DECLARED
+#define Tcl_LimitTypeReset_TCL_DECLARED
+/* 531 */
+EXTERN void		Tcl_LimitTypeReset _ANSI_ARGS_((Tcl_Interp * interp, 
+				int type));
+#endif
+#ifndef Tcl_LimitGetCommands_TCL_DECLARED
+#define Tcl_LimitGetCommands_TCL_DECLARED
+/* 532 */
+EXTERN int		Tcl_LimitGetCommands _ANSI_ARGS_((
+				Tcl_Interp * interp));
+#endif
+#ifndef Tcl_LimitGetTime_TCL_DECLARED
+#define Tcl_LimitGetTime_TCL_DECLARED
+/* 533 */
+EXTERN void		Tcl_LimitGetTime _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Time * timeLimitPtr));
+#endif
+#ifndef Tcl_LimitGetGranularity_TCL_DECLARED
+#define Tcl_LimitGetGranularity_TCL_DECLARED
+/* 534 */
+EXTERN int		Tcl_LimitGetGranularity _ANSI_ARGS_((
+				Tcl_Interp * interp, int type));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3783,6 +3875,21 @@ typedef struct TclStubs {
     void (*tcl_GetCommandFullName) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command command, Tcl_Obj * objPtr)); /* 517 */
     int (*tcl_FSEvalFileEx) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * fileName, CONST char * encodingName)); /* 518 */
     Tcl_ExitProc * (*tcl_SetExitProc) _ANSI_ARGS_((Tcl_ExitProc * proc)); /* 519 */
+    void (*tcl_LimitAddHandler) _ANSI_ARGS_((Tcl_Interp * interp, int type, Tcl_LimitHandlerProc * handlerProc, ClientData clientData, Tcl_LimitHandlerDeleteProc * deleteProc)); /* 520 */
+    void (*tcl_LimitRemoveHandler) _ANSI_ARGS_((Tcl_Interp * interp, int type, Tcl_LimitHandlerProc * handlerProc, ClientData clientData)); /* 521 */
+    int (*tcl_LimitReady) _ANSI_ARGS_((Tcl_Interp * interp)); /* 522 */
+    int (*tcl_LimitCheck) _ANSI_ARGS_((Tcl_Interp * interp)); /* 523 */
+    int (*tcl_LimitExceeded) _ANSI_ARGS_((Tcl_Interp * interp)); /* 524 */
+    void (*tcl_LimitSetCommands) _ANSI_ARGS_((Tcl_Interp * interp, int commandLimit)); /* 525 */
+    void (*tcl_LimitSetTime) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Time * timeLimitPtr)); /* 526 */
+    void (*tcl_LimitSetGranularity) _ANSI_ARGS_((Tcl_Interp * interp, int type, int granularity)); /* 527 */
+    int (*tcl_LimitTypeEnabled) _ANSI_ARGS_((Tcl_Interp * interp, int type)); /* 528 */
+    int (*tcl_LimitTypeExceeded) _ANSI_ARGS_((Tcl_Interp * interp, int type)); /* 529 */
+    void (*tcl_LimitTypeSet) _ANSI_ARGS_((Tcl_Interp * interp, int type)); /* 530 */
+    void (*tcl_LimitTypeReset) _ANSI_ARGS_((Tcl_Interp * interp, int type)); /* 531 */
+    int (*tcl_LimitGetCommands) _ANSI_ARGS_((Tcl_Interp * interp)); /* 532 */
+    void (*tcl_LimitGetTime) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Time * timeLimitPtr)); /* 533 */
+    int (*tcl_LimitGetGranularity) _ANSI_ARGS_((Tcl_Interp * interp, int type)); /* 534 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -5902,6 +6009,66 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_SetExitProc
 #define Tcl_SetExitProc \
 	(tclStubsPtr->tcl_SetExitProc) /* 519 */
+#endif
+#ifndef Tcl_LimitAddHandler
+#define Tcl_LimitAddHandler \
+	(tclStubsPtr->tcl_LimitAddHandler) /* 520 */
+#endif
+#ifndef Tcl_LimitRemoveHandler
+#define Tcl_LimitRemoveHandler \
+	(tclStubsPtr->tcl_LimitRemoveHandler) /* 521 */
+#endif
+#ifndef Tcl_LimitReady
+#define Tcl_LimitReady \
+	(tclStubsPtr->tcl_LimitReady) /* 522 */
+#endif
+#ifndef Tcl_LimitCheck
+#define Tcl_LimitCheck \
+	(tclStubsPtr->tcl_LimitCheck) /* 523 */
+#endif
+#ifndef Tcl_LimitExceeded
+#define Tcl_LimitExceeded \
+	(tclStubsPtr->tcl_LimitExceeded) /* 524 */
+#endif
+#ifndef Tcl_LimitSetCommands
+#define Tcl_LimitSetCommands \
+	(tclStubsPtr->tcl_LimitSetCommands) /* 525 */
+#endif
+#ifndef Tcl_LimitSetTime
+#define Tcl_LimitSetTime \
+	(tclStubsPtr->tcl_LimitSetTime) /* 526 */
+#endif
+#ifndef Tcl_LimitSetGranularity
+#define Tcl_LimitSetGranularity \
+	(tclStubsPtr->tcl_LimitSetGranularity) /* 527 */
+#endif
+#ifndef Tcl_LimitTypeEnabled
+#define Tcl_LimitTypeEnabled \
+	(tclStubsPtr->tcl_LimitTypeEnabled) /* 528 */
+#endif
+#ifndef Tcl_LimitTypeExceeded
+#define Tcl_LimitTypeExceeded \
+	(tclStubsPtr->tcl_LimitTypeExceeded) /* 529 */
+#endif
+#ifndef Tcl_LimitTypeSet
+#define Tcl_LimitTypeSet \
+	(tclStubsPtr->tcl_LimitTypeSet) /* 530 */
+#endif
+#ifndef Tcl_LimitTypeReset
+#define Tcl_LimitTypeReset \
+	(tclStubsPtr->tcl_LimitTypeReset) /* 531 */
+#endif
+#ifndef Tcl_LimitGetCommands
+#define Tcl_LimitGetCommands \
+	(tclStubsPtr->tcl_LimitGetCommands) /* 532 */
+#endif
+#ifndef Tcl_LimitGetTime
+#define Tcl_LimitGetTime \
+	(tclStubsPtr->tcl_LimitGetTime) /* 533 */
+#endif
+#ifndef Tcl_LimitGetGranularity
+#define Tcl_LimitGetGranularity \
+	(tclStubsPtr->tcl_LimitGetGranularity) /* 534 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
