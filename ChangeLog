@@ -1,3 +1,10 @@
+2002-09-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/file.n:  Format correction, and clarified [file normalize]
+	returns an absolute path.
+
+	* doc/tcltest.n:  Added examples section, as long promised.
+
 2002-09-06  Reinhard Max  <max@suse.de>
 
 	* tests/tcltest.test: Added nonRoot flag to tests 8.3, 8.4, and 8.12.
