@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.16 1999/03/11 19:03:10 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.17 1999/03/11 23:49:42 hershey Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -444,7 +444,7 @@ test: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./tcltest ../tests/all.tcl
+	./tcltest $(TOP_DIR)/tests/all.tcl
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
