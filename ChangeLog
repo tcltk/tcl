@@ -1,3 +1,9 @@
+2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixPipe.c (PipeInputProc, PipeOutputProc): do immediate
+	retry when error is returned with errno == EINTR.
+	[Bug #415131] (leger)
+
 2001-10-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclLoadAout.c (TclGuessPackageName): removed unused vars
