@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.46 2002/02/15 14:28:49 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.47 2002/03/20 22:47:36 dgp Exp $
 
 library tcl
 
@@ -236,7 +236,7 @@ declare 55 generic {
 #      int TclLooksLikeInt(char *p)
 #  }
 declare 58 generic {
-    Var * TclLookupVar(Tcl_Interp *interp, char *part1, char *part2,
+    Var * TclLookupVar(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    int flags, char *msg, int createPart1, int createPart2,
 	    Var **arrayPtrPtr)
 }
@@ -347,7 +347,7 @@ declare 81 generic {
 #  }
 declare 88 generic {
     char * TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
-	    char *name1, char *name2, int flags)
+	    char *name1, CONST char *name2, int flags)
 }
 declare 89 generic {
     int TclPreventAliasLoop(Tcl_Interp *interp, Tcl_Interp *cmdInterp,

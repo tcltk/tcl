@@ -1,3 +1,26 @@
+2002-03-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/SetVar.3:
+	* doc/TraceVar.3:
+	* doc/UpVar.3:
+	* generic/tcl.h (Tcl_VarTraceProc):
+	* generic/tcl.decls (Tcl_GetVar2, Tcl_SetVar2, Tcl_TraceVar2,
+	  Tcl_UnsetVar2, Tcl_UntraceVar2, Tcl_UpVar2, Tcl_VarTraceInfo2,
+	  Tcl_GetVar2Ex, TclSetVar2Ex):
+	* generic/tclCmdMZ.c (TraceVarProc):
+	* generic/tclEnv.c (EnvTraceProc):
+	* generic/tclEvent.c (VwaitVarProc):
+	* generic/tclInt.decls (TclLookupVar,TclPrecTraceProc):
+	* generic/tclLink.c (LinkTraceProc):
+	* generic/tclUtil.c (TclPrecTraceProc):
+	* generic/tclVar.c (CallTraces, MakeUpvar, VarErrMsg, TclLookupVar,
+	  Tcl_GetVar2, Tcl_SetVar2, Tcl_TraceVar2, Tcl_UnsetVar2,
+	  Tcl_UntraceVar2, Tcl_UpVar2, Tcl_VarTraceInfo2, Tcl_GetVar2Ex,
+	  TclSetVar2Ex): Updated interfaces of generic/tclVar.c according
+	to TIP 27.  In particular, the "part2" arguments were CONSTified.
+	* generic/tclDecls.h: 
+	* generic/tclIntDecls.h: make genstubs
+
 2002-03-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/compile.test (compile-12.3): Test to detect bug 530320.
