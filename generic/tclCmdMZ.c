@@ -10,11 +10,12 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Scriptics Corporation.
  * Copyright (c) 2002 ActiveState Corporation.
+ * Copyright (c) 2003 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.96 2003/10/14 18:23:39 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.97 2003/12/14 18:32:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2561,19 +2562,23 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, matched, result, splitObjs;
+    int i, j, index, mode, matched, result, splitObjs, numMatchesSaved;
     char *string, *pattern;
-    Tcl_Obj *stringObj;
+    Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
+    Tcl_RegExp regExpr;
     static CONST char *options[] = {
-	"-exact",	"-glob",	"-regexp",	"--", 
+	"-exact", "-glob", "-indexvar", "-matchvar", "-regexp", "--", 
 	NULL
     };
     enum options {
-	OPT_EXACT,	OPT_GLOB,	OPT_REGEXP,	OPT_LAST
+	OPT_EXACT, OPT_GLOB, OPT_INDEXV, OPT_MATCHV, OPT_REGEXP, OPT_LAST
     };
 
     mode = OPT_EXACT;
+    indexVarObj = NULL;
+    matchVarObj = NULL;
+    numMatchesSaved = 0;
     for (i = 1; i < objc; i++) {
 	string = Tcl_GetString(objv[i]);
 	if (string[0] != '-') {
@@ -2587,12 +2592,50 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    i++;
 	    break;
 	}
-	mode = index;
+
+	/*
+	 * Check for TIP#75 options specifying the variables to write
+	 * regexp information into.
+	 */
+
+	if (index == OPT_INDEXV) {
+	    i++;
+	    if (i == objc) {
+		Tcl_AppendResult(interp,
+			"missing variable name argument to -indexvar option",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	    indexVarObj = objv[i];
+	    numMatchesSaved = -1;
+	} else if (index == OPT_MATCHV) {
+	    i++;
+	    if (i == objc) {
+		Tcl_AppendResult(interp,
+			"missing variable name argument to -matchvar option",
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
+	    matchVarObj = objv[i];
+	    numMatchesSaved = -1;
+	} else {
+	    mode = index;
+	}
     }
 
     if (objc - i < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? string pattern body ... ?default body?");
+	return TCL_ERROR;
+    }
+    if (indexVarObj != NULL && mode != OPT_REGEXP) {
+	Tcl_AppendResult(interp,
+		"-indexvar option requires -regexp option", (char *) NULL);
+	return TCL_ERROR;
+    }
+    if (matchVarObj != NULL && mode != OPT_REGEXP) {
+	Tcl_AppendResult(interp,
+		"-matchvar option requires -regexp option", (char *) NULL);
 	return TCL_ERROR;
     }
 
@@ -2682,26 +2725,136 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	if ((i == objc - 2) 
 		&& (*pattern == 'd') 
 		&& (strcmp(pattern, "default") == 0)) {
+	    Tcl_Obj *emptyObj = NULL;
+
 	    matched = 1;
+	    /*
+	     * If either indexVarObj or matchVarObj are non-NULL,
+	     * we're in REGEXP mode but have reached the default
+	     * clause anyway.  TIP#75 specifies that we set the
+	     * variables to empty lists (== empty objects) in that
+	     * case.
+	     */
+	    if (indexVarObj != NULL) {
+		TclNewObj(emptyObj);
+		if (Tcl_ObjSetVar2(interp, indexVarObj, NULL, emptyObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    Tcl_DecrRefCount(emptyObj);
+		    return TCL_ERROR;
+		}
+	    }
+	    if (matchVarObj != NULL) {
+		if (emptyObj == NULL) {
+		    TclNewObj(emptyObj);
+		}
+		if (Tcl_ObjSetVar2(interp, matchVarObj, NULL, emptyObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    if (indexVarObj == NULL) {
+			Tcl_DecrRefCount(emptyObj);
+		    }
+		    return TCL_ERROR;
+		}
+	    }
+	    numMatchesSaved = 0;
 	} else {
 	    switch (mode) {
-		case OPT_EXACT:
-		    matched = (strcmp(Tcl_GetString(stringObj), pattern) == 0);
-		    break;
-		case OPT_GLOB:
-		    matched = Tcl_StringMatch(Tcl_GetString(stringObj),
-			    pattern);
-		    break;
-		case OPT_REGEXP:
-		    matched = Tcl_RegExpMatchObj(interp, stringObj, objv[i]);
-		    if (matched < 0) {
-			return TCL_ERROR;
-		    }
-		    break;
+	    case OPT_EXACT:
+		matched = (strcmp(Tcl_GetString(stringObj), pattern) == 0);
+		break;
+	    case OPT_GLOB:
+		matched = Tcl_StringMatch(Tcl_GetString(stringObj), pattern);
+		break;
+	    case OPT_REGEXP:
+		regExpr = Tcl_GetRegExpFromObj(interp, objv[i],
+			TCL_REG_ADVANCED);
+		if (regExpr == NULL) {
+		    return TCL_ERROR;
+		}
+		matched = Tcl_RegExpExecObj(interp, regExpr, stringObj, 0,
+			numMatchesSaved, 0);
+		if (matched < 0) {
+		    return TCL_ERROR;
+		}
+		break;
 	    }
 	}
 	if (matched == 0) {
 	    continue;
+	}
+
+	/*
+	 * We are operating in REGEXP mode and we need to store
+	 * information about what we matched in some user-nominated
+	 * arrays.  So build the lists of values and indices to write
+	 * here.  [TIP#75]
+	 */
+
+	if (numMatchesSaved) {
+	    Tcl_RegExpInfo info;
+	    Tcl_Obj *matchesObj, *indicesObj;
+
+	    Tcl_RegExpGetInfo(regExpr, &info);
+	    if (matchVarObj != NULL) {
+		TclNewObj(matchesObj);
+	    } else {
+		matchesObj = NULL;
+	    }
+	    if (indexVarObj != NULL) {
+		TclNewObj(indicesObj);
+	    }
+	    for (j=0 ; j<=info.nsubs ; j++) {
+		if (indexVarObj != NULL) {
+		    Tcl_Obj *rangeObjAry[2];
+
+		    rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
+		    rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end);
+		    /*
+		     * Never fails; the object is always clean at this point.
+		     */
+		    Tcl_ListObjAppendElement(NULL, indicesObj,
+			    Tcl_NewListObj(2, rangeObjAry));
+		}
+		if (matchVarObj != NULL) {
+		    Tcl_Obj *substringObj;
+
+		    substringObj = Tcl_GetRange(stringObj,
+			    info.matches[j].start, info.matches[j].end-1);
+		    /*
+		     * Never fails; the object is always clean at this point.
+		     */
+		    Tcl_ListObjAppendElement(NULL, matchesObj, substringObj);
+		}
+	    }
+	    if (indexVarObj != NULL) {
+		if (Tcl_ObjSetVar2(interp, indexVarObj, NULL, indicesObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    Tcl_DecrRefCount(indicesObj);
+		    /*
+		     * Careful!  Check to see if we have allocated the
+		     * list of matched strings; if so (but there was
+		     * an error assigning the indices list) we have a
+		     * potential memory leak because the match list
+		     * has not been written to a variable.  Except
+		     * that we'll clean that up right now.
+		     */
+		    if (matchesObj != NULL) {
+			Tcl_DecrRefCount(matchesObj);
+		    }
+		    return TCL_ERROR;
+		}
+	    }
+	    if (matchVarObj != NULL) {
+		if (Tcl_ObjSetVar2(interp, matchVarObj, NULL, matchesObj,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    Tcl_DecrRefCount(matchesObj);
+		    /*
+		     * Unlike above, if indicesObj is non-NULL at this
+		     * point, it will have been written to a variable
+		     * already and will hence not be leaked.
+		     */
+		    return TCL_ERROR;
+		}
+	    }
 	}
 
 	/*
