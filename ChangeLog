@@ -10,9 +10,9 @@
 	tcl_libPath variable.
 
 	* unix/tclUnixInit.c:	Stopped setting the tclDefaultLibrary variable,
-	execept on the Mac OS X platform with HAVE_CFBUNDLE.  In that configuration
-	we should seek some way to make use of the TIP 59 facilities and
-	get rid of that usage of tclDefaultLibrary as well.
+	execept on the Mac OS X platform with HAVE_CFBUNDLE.  In that
+	configuration we should seek some way to make use of the TIP 59
+	facilities and get rid of that usage of tclDefaultLibrary as well.
 
 	* generic/tclInterp.c:	Updated [tclInit] to make $env(TCL_LIBRARY) an
 	absolute path, and to include the scriptdir,runtime configuration value
