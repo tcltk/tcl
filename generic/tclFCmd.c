@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.10 2001/08/23 17:37:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.11 2001/08/30 08:53:14 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -544,8 +544,8 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	/*
 	 * The rename failed because the move was across file systems.
 	 * Fall through to copy file and then remove original.  Note that
-	 * the low-level TclpRenameFile is allowed to implement
-	 * cross-filesystem moves itself.
+	 * the low-level Tcl_FSRenameFileProc in the filesystem is allowed 
+	 * to implement cross-filesystem moves itself, if it desires.
 	 */
     }
 

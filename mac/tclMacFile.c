@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.11 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.12 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 /*
@@ -31,9 +31,10 @@
 #include <MoreFilesExtras.h>
 #include <FSpCompat.h>
 
-static OSErr FspLocationFromFsPath _ANSI_ARGS_((Tcl_Obj *pathPtr, FSSpec* specPtr));
+static OSErr FspLocationFromFsPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+						FSSpec* specPtr));
 
-OSErr 
+static OSErr 
 FspLocationFromFsPath(pathPtr, specPtr)
     Tcl_Obj *pathPtr;
     FSSpec* specPtr;
@@ -164,15 +165,17 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
 	    Tcl_DStringLength(&dsOrig), &fileString);
 
-    err = FSpLocationFromPath(Tcl_DStringLength(&fileString), Tcl_DStringValue(&fileString), &dirSpec);
+    err = FSpLocationFromPath(Tcl_DStringLength(&fileString), 
+			      Tcl_DStringValue(&fileString), &dirSpec);
     Tcl_DStringFree(&fileString);
 	if (err == noErr)
     err = FSpGetDirectoryID(&dirSpec, &dirID, &isDirectory);
     if ((err != noErr) || !isDirectory) {
     /*
-     * Check if we had a relative path (unix style rel path compatibility for glob)
+     * Check if we had a relative path (unix style relative path 
+     * compatibility for glob)
      */
-	Tcl_DStringFree(&dsOrig);
+    Tcl_DStringFree(&dsOrig);
     Tcl_DStringAppend(&dsOrig, ":", 1);
     Tcl_DStringAppend(&dsOrig, fileName2, -1);
     baseLength = Tcl_DStringLength(&dsOrig);
@@ -180,7 +183,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
 	    Tcl_DStringLength(&dsOrig), &fileString);
     
-    err = FSpLocationFromPath(Tcl_DStringLength(&fileString), Tcl_DStringValue(&fileString), &dirSpec);
+    err = FSpLocationFromPath(Tcl_DStringLength(&fileString), 
+			      Tcl_DStringValue(&fileString), &dirSpec);
     Tcl_DStringFree(&fileString);
     if (err == noErr)
     err = FSpGetDirectoryID(&dirSpec, &dirID, &isDirectory);
@@ -232,8 +236,16 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    int typeOk = 1;
 	    Tcl_DStringSetLength(&dsOrig, baseLength);
 	    Tcl_DStringAppend(&dsOrig, Tcl_DStringValue(&fileString), -1);
+	    Tcl_Obj *tempName;
 	    fname = Tcl_DStringValue(&dsOrig);
 	    fnameLen = Tcl_DStringLength(&dsOrig);
+	    
+	    /* 
+	     * We use this tempName in calls to check the file's
+	     * type below.  We may also use it for the result.
+	     */
+	    tempName = Tcl_NewStringObj(fname, fnameLen);
+	    Tcl_IncrRefCount(tempName);
 
 	    if (types == NULL) {
 		/* If invisible, don't return the file */
@@ -242,7 +254,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		}
 	    } else {
 		struct stat buf;
-
+		
 		if (pb.hFileInfo.ioFlFndrInfo.fdFlags & kIsInvisible) {
 		    /* If invisible */
 		    if ((types->perm == 0) || 
@@ -260,11 +272,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			((types->perm & TCL_GLOB_PERM_RONLY) &&
 				!(pb.hFileInfo.ioFlAttrib & 1)) ||
 			((types->perm & TCL_GLOB_PERM_R) &&
-				(TclpAccess(fname, R_OK) != 0)) ||
+				(TclpObjAccess(tempName, R_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_W) &&
-				(TclpAccess(fname, W_OK) != 0)) ||
+				(TclpObjAccess(tempName, W_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_X) &&
-				(TclpAccess(fname, X_OK) != 0))
+				(TclpObjAccess(tempName, X_OK) != 0))
 			) {
 			typeOk = 0;
 		    }
@@ -272,7 +284,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		if (typeOk == 1 && types->type != 0) {
 		    if (types->perm == 0) {
 			/* We haven't yet done a stat on the file */
-			if (TclpStat(fname, &buf) != 0) {
+			if (TclpObjStat(tempName, &buf) != 0) {
 			    /* Posix error occurred */
 			    typeOk = 0;
 			}
@@ -302,7 +314,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			    typeOk = 0;
     #ifdef S_ISLNK
 			    if (types->type & TCL_GLOB_TYPE_LINK) {
-				if (TclpLstat(fname, &buf) == 0) {
+				if (TclpObjLstat(tempName, &buf) == 0) {
 				    if (S_ISLNK(buf.st_mode)) {
 					typeOk = 1;
 				    }
@@ -325,10 +337,14 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    Tcl_ListObjAppendElement(interp, resultPtr, 
 			    Tcl_NewStringObj(fname+1, fnameLen-1));
 		} else {
-		    Tcl_ListObjAppendElement(interp, resultPtr, 
-			    Tcl_NewStringObj(fname, fnameLen));
+		    Tcl_ListObjAppendElement(interp, resultPtr, tempName);
 		}
 	    }
+	    /* 
+	     * This will free the object, unless it was inserted in
+	     * the result list above.
+	     */
+	    Tcl_DecrRefCount(tempName);
 	}
 	Tcl_DStringFree(&fileString);
 	itemIndex++;
@@ -341,7 +357,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 /*
  *----------------------------------------------------------------------
  *
- * TclpAccess --
+ * TclpObjAccess --
  *
  *	This function replaces the library version of access().
  *
@@ -354,23 +370,89 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
  *----------------------------------------------------------------------
  */
 
-int
-TclpAccess(
-    CONST char *path,		/* Path of file to access (UTF-8). */
-    int mode)			/* Permission setting. */
+int 
+TclpObjAccess(pathPtr, mode)
+    Tcl_Obj *pathPtr;
+    int mode;
 {
-    int ret;
-    Tcl_Obj *obj = Tcl_NewStringObj(path,-1);
-    Tcl_IncrRefCount(obj);
-    ret = TclpObjAccess(obj,mode);
-    Tcl_DecrRefCount(obj);
-    return ret;
+    HFileInfo fpb;
+    HVolumeParam vpb;
+    OSErr err;
+    FSSpec fileSpec;
+    Boolean isDirectory;
+    long dirID;
+    int full_mode = 0;
+
+    err = FspLocationFromFsPath(pathPtr, &fileSpec);
+
+    if (err != noErr) {
+	errno = TclMacOSErrorToPosixError(err);
+	return -1;
+    }
+    
+    /*
+     * Fill the fpb & vpb struct up with info about file or directory.
+     */
+    FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
+    vpb.ioVRefNum = fpb.ioVRefNum = fileSpec.vRefNum;
+    vpb.ioNamePtr = fpb.ioNamePtr = fileSpec.name;
+    if (isDirectory) {
+	fpb.ioDirID = fileSpec.parID;
+    } else {
+	fpb.ioDirID = dirID;
+    }
+
+    fpb.ioFDirIndex = 0;
+    err = PBGetCatInfoSync((CInfoPBPtr)&fpb);
+    if (err == noErr) {
+	vpb.ioVolIndex = 0;
+	err = PBHGetVInfoSync((HParmBlkPtr)&vpb);
+	if (err == noErr) {
+	    /* 
+	     * Use the Volume Info & File Info to determine
+	     * access information.  If we have got this far
+	     * we know the directory is searchable or the file
+	     * exists.  (We have F_OK)
+	     */
+
+	    /*
+	     * Check to see if the volume is hardware or
+	     * software locked.  If so we arn't W_OK.
+	     */
+	    if (mode & W_OK) {
+		if ((vpb.ioVAtrb & 0x0080) || (vpb.ioVAtrb & 0x8000)) {
+		    errno = EROFS;
+		    return -1;
+		}
+		if (fpb.ioFlAttrib & 0x01) {
+		    errno = EACCES;
+		    return -1;
+		}
+	    }
+	    
+	    /*
+	     * Directories are always searchable and executable.  But only 
+	     * files of type 'APPL' are executable.
+	     */
+	    if (!(fpb.ioFlAttrib & 0x10) && (mode & X_OK)
+		&& (fpb.ioFlFndrInfo.fdType != 'APPL')) {
+		return -1;
+	    }
+	}
+    }
+
+    if (err != noErr) {
+	errno = TclMacOSErrorToPosixError(err);
+	return -1;
+    }
+    
+    return 0;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpChdir --
+ * TclpObjChdir --
  *
  *	This function replaces the library version of chdir().
  *
@@ -379,27 +461,57 @@ TclpAccess(
  *
  * Side effects:
  *	See chdir() documentation.  Also the cache maintained used by 
- *	TclGetCwd() is deallocated and set to NULL.
+ *	Tcl_FSGetCwd() is deallocated and set to NULL.
  *
  *----------------------------------------------------------------------
  */
 
-int
-TclpChdir(
-    CONST char *dirName)     	/* Path to new working directory (UTF-8). */
+int 
+TclpObjChdir(pathPtr)
+    Tcl_Obj *pathPtr;
 {
-    int ret;
-    Tcl_Obj *obj = Tcl_NewStringObj(dirName,-1);
-    Tcl_IncrRefCount(obj);
-    ret = TclpObjChdir(obj);
-    Tcl_DecrRefCount(obj);
-    return ret;
+    FSSpec spec;
+    OSErr err;
+    Boolean isFolder;
+    long dirID;
+
+    err = FspLocationFromFsPath(pathPtr, &spec);
+
+    if (err != noErr) {
+	errno = ENOENT;
+	return -1;
+    }
+    
+    err = FSpGetDirectoryID(&spec, &dirID, &isFolder);
+    if (err != noErr) {
+	errno = ENOENT;
+	return -1;
+    }
+
+    if (isFolder != true) {
+	errno = ENOTDIR;
+	return -1;
+    }
+
+    err = FSpSetDefaultDir(&spec);
+    if (err != noErr) {
+	switch (err) {
+	    case afpAccessDenied:
+		errno = EACCES;
+		break;
+	    default:
+		errno = ENOENT;
+	}
+	return -1;
+    }
+
+    return 0;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetCwd --
+ * TclpObjGetCwd --
  *
  *	This function replaces the library version of getcwd().
  *
@@ -416,6 +528,21 @@ TclpChdir(
  *
  *----------------------------------------------------------------------
  */
+
+Tcl_Obj* 
+TclpObjGetCwd(interp)
+    Tcl_Interp *interp;
+{
+    Tcl_DString ds;
+    if (TclpGetCwd(interp, &ds) != NULL) {
+	Tcl_Obj *cwdPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_IncrRefCount(cwdPtr);
+	Tcl_DStringFree(&ds);
+	return cwdPtr;
+    } else {
+	return NULL;
+    }
+}
 
 char *
 TclpGetCwd(
@@ -585,35 +712,32 @@ TclpReadlink(
 /*
  *----------------------------------------------------------------------
  *
- * TclpLstat --
+ * TclpObjLstat --
  *
  *	This function replaces the library version of lstat().
  *
  * Results:
- *	See stat() documentation.
+ *	See lstat() documentation.
  *
  * Side effects:
- *	See stat() documentation.
+ *	See lstat() documentation.
  *
  *----------------------------------------------------------------------
  */
 
-int
-TclpLstat(
-    CONST char *path,		/* Path of file to stat (in UTF-8). */
-    struct stat *bufPtr)	/* Filled with results of stat call. */
+int 
+TclpObjLstat(pathPtr, buf)
+    Tcl_Obj *pathPtr;
+    struct stat *buf;
 {
-    /*
-     * FIXME: Emulate TclpLstat
-     */
-     
-    return TclpStat(path, bufPtr);
+    /* This needs to be enhanced to deal with aliases */
+    return TclpObjStat(pathPtr, buf);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpStat --
+ * TclpObjStat --
  *
  *	This function replaces the library version of stat().
  *
@@ -626,17 +750,107 @@ TclpLstat(
  *----------------------------------------------------------------------
  */
 
-int
-TclpStat(
-    CONST char *path,		/* Path of file to stat (in UTF-8). */
-    struct stat *bufPtr)	/* Filled with results of stat call. */
+int 
+TclpObjStat(pathPtr, bufPtr)
+    Tcl_Obj *pathPtr;
+    struct stat *bufPtr;
 {
-    int ret;
-    Tcl_Obj *obj = Tcl_NewStringObj(path,-1);
-    Tcl_IncrRefCount(obj);
-    ret = TclpObjStat(obj,bufPtr);
-    Tcl_DecrRefCount(obj);
-    return ret;
+    HFileInfo fpb;
+    HVolumeParam vpb;
+    OSErr err;
+    FSSpec fileSpec;
+    Boolean isDirectory;
+    long dirID;
+    
+    err = FspLocationFromFsPath(pathPtr, &fileSpec);
+    
+    if (err != noErr) {
+	errno = TclMacOSErrorToPosixError(err);
+	return -1;
+    }
+    
+    /*
+     * Fill the fpb & vpb struct up with info about file or directory.
+     */
+     
+    FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
+    vpb.ioVRefNum = fpb.ioVRefNum = fileSpec.vRefNum;
+    vpb.ioNamePtr = fpb.ioNamePtr = fileSpec.name;
+    if (isDirectory) {
+	fpb.ioDirID = fileSpec.parID;
+    } else {
+	fpb.ioDirID = dirID;
+    }
+
+    fpb.ioFDirIndex = 0;
+    err = PBGetCatInfoSync((CInfoPBPtr)&fpb);
+    if (err == noErr) {
+	vpb.ioVolIndex = 0;
+	err = PBHGetVInfoSync((HParmBlkPtr)&vpb);
+	if (err == noErr && bufPtr != NULL) {
+	    /* 
+	     * Files are always readable by everyone.
+	     */
+	     
+	    bufPtr->st_mode = S_IRUSR | S_IRGRP | S_IROTH;
+
+	    /* 
+	     * Use the Volume Info & File Info to fill out stat buf.
+	     */
+	    if (fpb.ioFlAttrib & 0x10) {
+		bufPtr->st_mode |= S_IFDIR;
+		bufPtr->st_nlink = 2;
+	    } else {
+		bufPtr->st_nlink = 1;
+		if (fpb.ioFlFndrInfo.fdFlags & 0x8000) {
+		    bufPtr->st_mode |= S_IFLNK;
+		} else {
+		    bufPtr->st_mode |= S_IFREG;
+		}
+	    }
+	    if ((fpb.ioFlAttrib & 0x10) || (fpb.ioFlFndrInfo.fdType == 'APPL')) {
+		/*
+		 * Directories and applications are executable by everyone.
+		 */
+		 
+		bufPtr->st_mode |= S_IXUSR | S_IXGRP | S_IXOTH;
+	    }
+	    if ((fpb.ioFlAttrib & 0x01) == 0){
+		/* 
+		 * If not locked, then everyone has write acces.
+		 */
+		 
+		bufPtr->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+	    }
+	    bufPtr->st_ino = fpb.ioDirID;
+	    bufPtr->st_dev = fpb.ioVRefNum;
+	    bufPtr->st_uid = -1;
+	    bufPtr->st_gid = -1;
+	    bufPtr->st_rdev = 0;
+	    bufPtr->st_size = fpb.ioFlLgLen;
+	    bufPtr->st_blksize = vpb.ioVAlBlkSiz;
+	    bufPtr->st_blocks = (bufPtr->st_size + bufPtr->st_blksize - 1)
+		/ bufPtr->st_blksize;
+
+	    /*
+	     * The times returned by the Mac file system are in the
+	     * local time zone.  We convert them to GMT so that the
+	     * epoch starts from GMT.  This is also consistent with
+	     * what is returned from "clock seconds".
+	     */
+
+	    bufPtr->st_atime = bufPtr->st_mtime = fpb.ioFlMdDat 
+	      - TclpGetGMTOffset() + tcl_mac_epoch_offset;
+	    bufPtr->st_ctime = fpb.ioFlCrDat - TclpGetGMTOffset() 
+	      + tcl_mac_epoch_offset;
+	}
+    }
+
+    if (err != noErr) {
+	errno = TclMacOSErrorToPosixError(err);
+    }
+    
+    return (err == noErr ? 0 : -1);
 }
 
 /*
@@ -822,251 +1036,6 @@ TclMacChmod(
     return 0;
 }
 
-int 
-TclpObjStat(pathPtr, bufPtr)
-    Tcl_Obj *pathPtr;
-    struct stat *bufPtr;
-{
-    HFileInfo fpb;
-    HVolumeParam vpb;
-    OSErr err;
-    FSSpec fileSpec;
-    Boolean isDirectory;
-    long dirID;
-    
-    err = FspLocationFromFsPath(pathPtr, &fileSpec);
-    
-    if (err != noErr) {
-	errno = TclMacOSErrorToPosixError(err);
-	return -1;
-    }
-    
-    /*
-     * Fill the fpb & vpb struct up with info about file or directory.
-     */
-     
-    FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
-    vpb.ioVRefNum = fpb.ioVRefNum = fileSpec.vRefNum;
-    vpb.ioNamePtr = fpb.ioNamePtr = fileSpec.name;
-    if (isDirectory) {
-	fpb.ioDirID = fileSpec.parID;
-    } else {
-	fpb.ioDirID = dirID;
-    }
-
-    fpb.ioFDirIndex = 0;
-    err = PBGetCatInfoSync((CInfoPBPtr)&fpb);
-    if (err == noErr) {
-	vpb.ioVolIndex = 0;
-	err = PBHGetVInfoSync((HParmBlkPtr)&vpb);
-	if (err == noErr && bufPtr != NULL) {
-	    /* 
-	     * Files are always readable by everyone.
-	     */
-	     
-	    bufPtr->st_mode = S_IRUSR | S_IRGRP | S_IROTH;
-
-	    /* 
-	     * Use the Volume Info & File Info to fill out stat buf.
-	     */
-	    if (fpb.ioFlAttrib & 0x10) {
-		bufPtr->st_mode |= S_IFDIR;
-		bufPtr->st_nlink = 2;
-	    } else {
-		bufPtr->st_nlink = 1;
-		if (fpb.ioFlFndrInfo.fdFlags & 0x8000) {
-		    bufPtr->st_mode |= S_IFLNK;
-		} else {
-		    bufPtr->st_mode |= S_IFREG;
-		}
-	    }
-	    if ((fpb.ioFlAttrib & 0x10) || (fpb.ioFlFndrInfo.fdType == 'APPL')) {
-		/*
-		 * Directories and applications are executable by everyone.
-		 */
-		 
-		bufPtr->st_mode |= S_IXUSR | S_IXGRP | S_IXOTH;
-	    }
-	    if ((fpb.ioFlAttrib & 0x01) == 0){
-		/* 
-		 * If not locked, then everyone has write acces.
-		 */
-		 
-		bufPtr->st_mode |= S_IWUSR | S_IWGRP | S_IWOTH;
-	    }
-	    bufPtr->st_ino = fpb.ioDirID;
-	    bufPtr->st_dev = fpb.ioVRefNum;
-	    bufPtr->st_uid = -1;
-	    bufPtr->st_gid = -1;
-	    bufPtr->st_rdev = 0;
-	    bufPtr->st_size = fpb.ioFlLgLen;
-	    bufPtr->st_blksize = vpb.ioVAlBlkSiz;
-	    bufPtr->st_blocks = (bufPtr->st_size + bufPtr->st_blksize - 1)
-		/ bufPtr->st_blksize;
-
-	    /*
-	     * The times returned by the Mac file system are in the
-	     * local time zone.  We convert them to GMT so that the
-	     * epoch starts from GMT.  This is also consistant with
-	     * what is returned from "clock seconds".
-	     */
-
-	    bufPtr->st_atime = bufPtr->st_mtime = fpb.ioFlMdDat - TclpGetGMTOffset() + tcl_mac_epoch_offset;
-	    bufPtr->st_ctime = fpb.ioFlCrDat - TclpGetGMTOffset() + tcl_mac_epoch_offset;
-	}
-    }
-
-    if (err != noErr) {
-	errno = TclMacOSErrorToPosixError(err);
-    }
-    
-    return (err == noErr ? 0 : -1);
-}
-
-Tcl_Obj* 
-TclpObjGetCwd(interp)
-    Tcl_Interp *interp;
-{
-    Tcl_DString ds;
-    if (TclpGetCwd(interp, &ds) != NULL) {
-	Tcl_Obj *cwdPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(cwdPtr);
-	Tcl_DStringFree(&ds);
-	return cwdPtr;
-    } else {
-	return NULL;
-    }
-}
-
-int 
-TclpObjChdir(pathPtr)
-    Tcl_Obj *pathPtr;
-{
-    FSSpec spec;
-    OSErr err;
-    Boolean isFolder;
-    long dirID;
-
-    err = FspLocationFromFsPath(pathPtr, &spec);
-
-    if (err != noErr) {
-	errno = ENOENT;
-	return -1;
-    }
-    
-    err = FSpGetDirectoryID(&spec, &dirID, &isFolder);
-    if (err != noErr) {
-	errno = ENOENT;
-	return -1;
-    }
-
-    if (isFolder != true) {
-	errno = ENOTDIR;
-	return -1;
-    }
-
-    err = FSpSetDefaultDir(&spec);
-    if (err != noErr) {
-	switch (err) {
-	    case afpAccessDenied:
-		errno = EACCES;
-		break;
-	    default:
-		errno = ENOENT;
-	}
-	return -1;
-    }
-
-    return 0;
-}
-
-int 
-TclpObjAccess(pathPtr, mode)
-    Tcl_Obj *pathPtr;
-    int mode;
-{
-    HFileInfo fpb;
-    HVolumeParam vpb;
-    OSErr err;
-    FSSpec fileSpec;
-    Boolean isDirectory;
-    long dirID;
-    int full_mode = 0;
-
-    err = FspLocationFromFsPath(pathPtr, &fileSpec);
-
-    if (err != noErr) {
-	errno = TclMacOSErrorToPosixError(err);
-	return -1;
-    }
-    
-    /*
-     * Fill the fpb & vpb struct up with info about file or directory.
-     */
-    FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
-    vpb.ioVRefNum = fpb.ioVRefNum = fileSpec.vRefNum;
-    vpb.ioNamePtr = fpb.ioNamePtr = fileSpec.name;
-    if (isDirectory) {
-	fpb.ioDirID = fileSpec.parID;
-    } else {
-	fpb.ioDirID = dirID;
-    }
-
-    fpb.ioFDirIndex = 0;
-    err = PBGetCatInfoSync((CInfoPBPtr)&fpb);
-    if (err == noErr) {
-	vpb.ioVolIndex = 0;
-	err = PBHGetVInfoSync((HParmBlkPtr)&vpb);
-	if (err == noErr) {
-	    /* 
-	     * Use the Volume Info & File Info to determine
-	     * access information.  If we have got this far
-	     * we know the directory is searchable or the file
-	     * exists.  (We have F_OK)
-	     */
-
-	    /*
-	     * Check to see if the volume is hardware or
-	     * software locked.  If so we arn't W_OK.
-	     */
-	    if (mode & W_OK) {
-		if ((vpb.ioVAtrb & 0x0080) || (vpb.ioVAtrb & 0x8000)) {
-		    errno = EROFS;
-		    return -1;
-		}
-		if (fpb.ioFlAttrib & 0x01) {
-		    errno = EACCES;
-		    return -1;
-		}
-	    }
-	    
-	    /*
-	     * Directories are always searchable and executable.  But only 
-	     * files of type 'APPL' are executable.
-	     */
-	    if (!(fpb.ioFlAttrib & 0x10) && (mode & X_OK)
-		&& (fpb.ioFlFndrInfo.fdType != 'APPL')) {
-		return -1;
-	    }
-	}
-    }
-
-    if (err != noErr) {
-	errno = TclMacOSErrorToPosixError(err);
-	return -1;
-    }
-    
-    return 0;
-}
-
-int 
-TclpObjLstat(pathPtr, buf)
-    Tcl_Obj *pathPtr;
-    struct stat *buf;
-{
-    return TclpObjStat(pathPtr, buf);
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -1089,7 +1058,7 @@ TclpTempFileName()
 {
     char fileName[L_tmpnam];
     
-    if (tmpnam(fileName) == NULL) {			/* INTL: Native. */
+    if (tmpnam(fileName) == NULL) {	       /* INTL: Native. */
 	return NULL;
     }
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.20 2001/06/18 13:13:23 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.21 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1281,10 +1281,10 @@ TtyInit(fd, initialize)
  */
 
 Tcl_Channel
-TclpOpenFileChannel(interp, fileName, modeString, permissions)
+TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;			/* Name of file to open. */
+    Tcl_Obj *pathPtr;			/* Name of file to open. */
     char *modeString;			/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;			/* If the open involves creating a
@@ -1295,7 +1295,6 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
     FileState *fsPtr;
     char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
-    Tcl_DString ds, buffer;
     Tcl_ChannelType *channelTypePtr;
 #ifdef DEPRECATED
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1323,19 +1322,17 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	    return NULL;
     }
 
-    native = Tcl_TranslateFileName(interp, fileName, &buffer);
+    native = Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
 	return NULL;
     }
-    native = Tcl_UtfToExternalDString(NULL, native, -1, &ds);
-    fd = open(native, mode, permissions);		/* INTL: Native. */
-    Tcl_DStringFree(&ds);    
-    Tcl_DStringFree(&buffer);
+    fd = open(native, mode, permissions);
 
     if (fd < 0) {
         if (interp != (Tcl_Interp *) NULL) {
-            Tcl_AppendResult(interp, "couldn't open \"", fileName, "\": ",
-                    Tcl_PosixError(interp), (char *) NULL);
+            Tcl_AppendResult(interp, "couldn't open \"", 
+			     Tcl_GetString(pathPtr), "\": ",
+			     Tcl_PosixError(interp), (char *) NULL);
         }
         return NULL;
     }

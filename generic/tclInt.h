@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.60 2001/08/30 07:50:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.61 2001/08/30 08:53:14 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1773,12 +1773,7 @@ EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    struct stat *buf));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
-EXTERN int		TclpCopyFile _ANSI_ARGS_((CONST char *source,
-			    CONST char *dest));
-EXTERN int		TclpCopyDirectory _ANSI_ARGS_((CONST char *source,
-			    CONST char *dest, Tcl_DString *errorPtr));
-EXTERN int		TclpCreateDirectory _ANSI_ARGS_((CONST char *path));
-EXTERN int		TclpDeleteFile _ANSI_ARGS_((CONST char *path));
+EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
 EXTERN void		TclpExit _ANSI_ARGS_((int status));
 EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));
@@ -1805,7 +1800,11 @@ EXTERN void		TclpInitLibraryPath _ANSI_ARGS_((CONST char *argv0));
 EXTERN void		TclpInitLock _ANSI_ARGS_((void));
 EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
-EXTERN int		TclpListVolumes _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN int              TclpLoadFile _ANSI_ARGS_((Tcl_Interp *interp, 
+				Tcl_Obj *pathPtr, char *sym1, char *sym2, 
+				Tcl_PackageInitProc **proc1Ptr,
+				Tcl_PackageInitProc **proc2Ptr, 
+				ClientData *clientDataPtr));
 EXTERN Tcl_Obj*		TclpObjListVolumes _ANSI_ARGS_((void));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
 EXTERN void		TclpMasterUnlock _ANSI_ARGS_((void));
@@ -1833,14 +1832,12 @@ EXTERN int		TclpObjRemoveDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr,
 EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
 				Tcl_Obj *destPathPtr));
 EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, char *pattern, Tcl_GlobTypeData *types));
-EXTERN int		TclpChdir _ANSI_ARGS_((CONST char *dirName));
-EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp *interp, Tcl_DString *bufferPtr));
 EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *fileName, char *modeString,
+			    Tcl_Obj *pathPtr, char *modeString,
 			    int permissions));
 EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
@@ -1849,10 +1846,6 @@ EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
 			    unsigned int size));
 EXTERN void		TclpReleaseFile _ANSI_ARGS_((TclFile file));
-EXTERN int		TclpRemoveDirectory _ANSI_ARGS_((CONST char *path,
-			    int recursive, Tcl_DString *errorPtr));
-EXTERN int		TclpRenameFile _ANSI_ARGS_((CONST char *source,
-			    CONST char *dest));
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN VOID *		TclpSysAlloc _ANSI_ARGS_((long size, int isBin));
