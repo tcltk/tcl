@@ -1,5 +1,10 @@
 2002-08-23  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclObj.c (USE_THREAD_ALLOC): fixed leak [Bug 597936]. 
+	Thanks to Zoran Vasiljevic.
+
+2002-08-23  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclThreadAlloc.c (USE_THREAD_ALLOC): moving objects
 	between caches as a block, instead of one-by-one.
 
