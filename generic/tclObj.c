@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.7 2004/09/10 22:59:54 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.8 2004/09/14 16:30:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1795,7 +1795,7 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
     }
 
     if (((long)((int)l)) == l) {
-	*intPtr = (int)objPtr->internalRep.longValue;
+	*intPtr = (int)l;
 	return TCL_OK;
     }
 #ifndef TCL_WIDE_INT_IS_LONG
