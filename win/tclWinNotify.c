@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.14 2004/03/03 10:44:41 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.15 2004/03/16 03:40:36 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -477,8 +477,7 @@ again:
      * Check to see if there are any messages to process.
      */
 
-    if (result == (WAIT_OBJECT_0 + 1) ||
-	    PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+    if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 	/*
 	 * Retrieve and dispatch the first message.
 	 */
