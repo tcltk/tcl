@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.6 1998/11/11 04:08:36 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.7 1998/11/18 03:15:33 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -251,8 +251,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o panic.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclParse.o tclParseExpr.o tclPipe.o \
 	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
-	tclResolve.o tclResult.o tclStringObj.o tclThread.o tclTimer.o \
-	tclUtf.o tclUtil.o tclVar.o
+	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
+	tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
 
@@ -313,6 +313,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclRegexp.c \
 	$(GENERIC_DIR)/tclResolve.c \
 	$(GENERIC_DIR)/tclResult.c \
+	$(GENERIC_DIR)/tclScan.c \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
@@ -791,6 +792,9 @@ tclResolve.o: $(GENERIC_DIR)/tclResolve.c
 
 tclResult.o: $(GENERIC_DIR)/tclResult.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResult.c
+
+tclScan.o: $(GENERIC_DIR)/tclScan.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclScan.c
 
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
