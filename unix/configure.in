@@ -709,7 +709,7 @@ case $system in
 	    DL_OBJS="tclLoadShl.o"
 	    DL_LIBS="-ldld"
 	    LD_FLAGS="-Wl,-E"
-	    LD_SEARCH_FLAGS='-Wl,+b,${LIB_RUNTIME_DIR}:.'
+	    LD_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
 	fi
 	;;
     IRIX-4.*)
