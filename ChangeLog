@@ -1,5 +1,9 @@
 2004-07-16  Andreas Kupries  <andreask@activestate.com>
 
+	* doc/CrtCommand.3: Added note that the arguments given to the
+	  command proc of a Tcl_CreateCommand are in utf8 since Tcl
+	  8.1. Closing [Tcl SF Patch 414778].
+
 	* doc/ChnlStack.3: Removed the declaration that the interp
 	  argument to Tcl_(un)StackChannel can be NULL. This fixes [Tcl SF
 	  Bug 881220], reported by Marco Maggi
