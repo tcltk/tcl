@@ -2,6 +2,9 @@
 
 	* tests/tcltest.test: Cleaned up management of file/directory
 	creation/deletion to improve "-debug 1" output.  [Bug 675614]
+	The utility [slave] command failed to properly [list]-quote a
+	constructed [open] command, causing failure when the pathname
+	contained whitespace.  [Bug 678415]
 
 	* tests/main.test: Stopped main.test from deleting existing file.
 	Test suite should not delete files that already exist. [Bug 675660]
