@@ -1,3 +1,8 @@
+2004-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lreplace.n, doc/lrange.n, doc/llength.n:	More examples for
+	* doc/linsert.n, doc/lappend.n:			the documentation.
+
 2004-04-16  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3: Corrected documentation of Tcl_FSUtime, and
