@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.69 2001/06/26 20:28:43 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.70 2001/07/11 00:59:31 mdejong Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -382,7 +382,7 @@ if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
     if test "x$DL_OBJS" = "xtclLoadAout.o"; then
-	MAKE_LIB="ar cr \[$]@ \${OBJS}"
+	MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
     else
 	MAKE_LIB="\${SHLIB_LD} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
 	RANLIB=":"
@@ -402,7 +402,7 @@ else
     TCL_SHLIB_CFLAGS=""
     TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
-    MAKE_LIB="ar cr \[$]@ \${OBJS}"
+    MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
 fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
@@ -469,7 +469,7 @@ eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 # Replace DBGX with TCL_DBGX
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
-MAKE_STUB_LIB="ar cr \[$]@ \${STUB_LIB_OBJS}"
+MAKE_STUB_LIB="\${STLIB_LD} \[$]@ \${STUB_LIB_OBJS}"
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}\${TCL_DBGX}"
@@ -510,6 +510,8 @@ AC_SUBST(LDFLAGS_DEFAULT)
 # FIXME: Should this be TCL_LDFLAGS_DEBUG ?
 AC_SUBST(LDFLAGS_DEBUG)
 AC_SUBST(LDFLAGS_OPTIMIZE)
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
 AC_SUBST(MAKE_LIB)
 AC_SUBST(TCL_SHARED_BUILD)
 AC_SUBST(SHLIB_CFLAGS)
