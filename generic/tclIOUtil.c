@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.7 2003/07/18 20:28:32 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.8 2003/09/01 12:30:38 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -586,11 +586,11 @@ FsRecacheFilesystemList(void)
     /* Trash the current cache */
     fsRecPtr = tsdPtr->filesystemList;
     while (fsRecPtr != NULL) {
-	tmpFsRecPtr = fsRecPtr;
+	tmpFsRecPtr = fsRecPtr->nextPtr;
 	if (--fsRecPtr->fileRefCount <= 0) {
 	    ckfree((char *)fsRecPtr);
 	}
-	fsRecPtr = tmpFsRecPtr->nextPtr;
+	fsRecPtr = tmpFsRecPtr;
     }
     tsdPtr->filesystemList = NULL;
 
