@@ -1,3 +1,37 @@
+1999-12-10  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/var.test:
+	* generic/tclCompile.c: fixed problem where setting to {} array
+	would intermittently not work. (Fontaine) [Bug: 3339]
+
+	* generic/tclCmdMZ.c:
+	* generic/tclExecute.c: optimized INST_TRY_CVT_TO_NUMERIC to
+	recognize boolean objects. (Spjuth) [Bug: 2815]
+
+	* tests/info.test:
+	* tests/parseOld.test:
+	* generic/tclCmdAH.c:
+	* generic/tclProc.c: changed Tcl_UplevelObjCmd (uplevel) and
+	Tcl_EvalObjCmd (eval) to use TCL_EVAL_DIRECT in the single arg
+	case as well, to take advantage	of potential pure list input
+	optimization.  This means that it won't get byte compiled though,
+	which should be acceptable.
+	* generic/tclBasic.c: made Tcl_EvalObjEx pure list object aware in
+	the TCL_EVAL_DIRECT case for efficiency.
+	* generic/tclUtil.c: made Tcl_ConcatObj pure list object aware,
+	and return a list object in that case [Bug: 2098 2257]
+
+	* generic/tclMain.c: changed Tcl_Main to not constantly reuse the
+	commandPtr object (interactive case) as it could be shared. (Fellows)
+
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* unix/tclUnixPipe.c: removed checking for compatible vfork
+	function and use of the vfork function.  Modern VM systems rarely
+	suffer any performance degradation when fork is used, and it
+	solves multiple problems with vfork.  Users that still want vfork
+	and add -Dfork=vfork to the compile flags. [Bug: 942 2228 1312]
+
 1999-12-09  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* win/aclocal.m4: made it just include tcl.m4
