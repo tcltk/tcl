@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.119 2003/03/05 22:31:24 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.120 2003/03/13 02:48:53 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1249,8 +1249,7 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval.  See below for valid
 				 * values. */
-    int termOffset;		/* Offset of character just after last one
-				 * compiled or executed by Tcl_EvalObj. */
+    int unused1;		/* No longer used (was termOffset) */
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all
 				 * Tcl objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by
@@ -1320,14 +1319,11 @@ typedef struct Interp {
 /*
  * EvalFlag bits for Interp structures:
  *
- * TCL_BRACKET_TERM	1 means that the current script is terminated by
- *			a close bracket rather than the end of the string.
  * TCL_ALLOW_EXCEPTIONS	1 means it's OK for the script to terminate with
  *			a code other than TCL_OK or TCL_ERROR;	0 means
  *			codes other than these should be turned into errors.
  */
 
-#define TCL_BRACKET_TERM	  1
 #define TCL_ALLOW_EXCEPTIONS	  4
 
 /*
@@ -1802,7 +1798,10 @@ EXTERN void		TclRememberDataKey _ANSI_ARGS_((Tcl_ThreadDataKey *mutex));
 EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
 EXTERN void		TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
-			     int result));
+			    int result));
+EXTERN int		TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, int count,
+			    int *tokensLeftPtr));
 EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 			    int result, Tcl_Interp *targetInterp));
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
