@@ -1,6 +1,12 @@
+2003-01-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/main.test: Stopped main.test from deleting existing file.
+	Test suite should not delete files that already exist. [Bug 675660]
+
 2003-01-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/main.test: Constrain tests that do not work on Windows.
+	[Bug 674387]
 
 2003-01-28  Vince Darley  <vincentdarley@users.sourceforge.net>
 
