@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.25 2002/03/12 11:32:19 mdejong Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.26 2002/03/14 20:51:44 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -186,7 +186,7 @@ DoRenameFile(
 	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
 	    retval = TCL_OK;
 	}
-    } __except (EXCEPTION_CONTINUE_EXECUTION) {}
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     /*
      * Avoid using control flow statements in the SEH guarded block!
@@ -472,7 +472,7 @@ DoCopyFile(
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
 	    retval = TCL_OK;
 	}
-    } __except (EXCEPTION_CONTINUE_EXECUTION) {}
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     /*
      * Avoid using control flow statements in the SEH guarded block!
