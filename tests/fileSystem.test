@@ -460,6 +460,16 @@ test filesystem-8.2 {relative path objects and use of pwd} {
     set res
 } {1}
 
+test filesystem-8.3 {path objects and empty string} {
+    set anchor ""
+    set dst foo
+    set res $dst
+
+    set yyy [file split $anchor]
+    set dst [file join  $anchor $dst]
+    lappend res $dst $yyy
+} {foo foo {}}
+
 cleanupTests
 }
 namespace delete ::tcl::test::fileSystem
