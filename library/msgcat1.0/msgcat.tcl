@@ -10,9 +10,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.4.2.2 2000/08/03 21:59:35 ericm Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.4.2.3 2000/08/08 17:53:42 hobbs Exp $
 
-package provide msgcat 1.0
+package provide msgcat 1.1
 
 namespace eval msgcat {
     namespace export mc mcset mclocale mcpreferences mcunknown
