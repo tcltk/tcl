@@ -1,5 +1,13 @@
 2001-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	8.4a3 RELEASE
+
+	* changes:
+	* README:
+	* mac/README: 
+	* unix/README:
+	* win/README.binary: updated for 8.4a3 release
+
 	* generic/tclFileName.c (Tcl_FSSplitPath): update to Tcl style
 	guide.
 
@@ -1489,7 +1497,7 @@
  	  additional cast to LONGLONG. My cross-compiling gcc was unable to
 	  process the original form. The SF Id of the patch is 102459.
 
-       	* tclWinTime.c: Add to the static data a set of variables that
+	* tclWinTime.c: Add to the static data a set of variables that
  	  manage the phase-locked techniques, including a
  	  ''CRITICAL_SECTION'' to guard them so that multi-threaded code
  	  is stable.
