@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.60 2003/02/17 22:32:05 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61 2003/02/19 01:04:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -8787,7 +8787,7 @@ Tcl_ChannelVersion(chanTypePtr)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 HaveVersion(chanTypePtr, minimumVersion)
     Tcl_ChannelType *chanTypePtr;
     Tcl_ChannelTypeVersion minimumVersion;
