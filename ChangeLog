@@ -1,3 +1,12 @@
+2002-05-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* win/tclWinError.c: Added comment on conversion of
+	ERROR_NEGATIVE_SEEK because that is a mapping that really belongs,
+	and not a catch-all case.
+	* win/tclWinPort.h (EOVERFLOW): Should be either EFBIG or EINVAL
+	* generic/tclPosixStr.c (Tcl_ErrnoId, Tcl_ErrnoMsg): EOVERFLOW can
+	potentially be a synonym for EINVAL.
+
 2002-05-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	=== Changes due to TIP#91 ===
