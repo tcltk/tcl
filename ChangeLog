@@ -1,5 +1,8 @@
 2003-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinSerial.c (SerialCloseProc): correct mem leak on
+	closing a Windows serial port [Bug #718002] (schroedter)
+
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): prevent string repeat
 	crash when overflow sizes were given (throws error). [Bug #714106]
 
