@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.40 2004/06/17 20:18:25 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.41 2004/06/17 21:40:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -72,7 +72,7 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	}\n\
 	catch {\n\
 	    lappend dirs $tclDefaultLibrary\n\
-#unset tclDefaultLibrary\n\
+	    unset tclDefaultLibrary\n\
 	}\n\
 	catch {\n\
             set dirs [concat $dirs $tcl_libPath]\n\
