@@ -1,5 +1,10 @@
 1999-07-29    <redman@scriptics.com>
 
+	* win/tclWinChan.c: Allow tcl to open CON and NUL, even for std
+	channels.  Checking for bad/unusable std channels was moved to Tk
+	since its only purpose was to check whether to use the Tk Console
+	Window for the std channels.  [Bug: 2393 2392 2209 2458]
+
 	* unix/mkLinks.tcl: Applied patch to avoid linking pack.n to
 	pack-old.n.  Patch from Don Porter. [Bug: 2469]
 

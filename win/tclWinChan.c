@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.7 1999/05/22 01:20:15 stanton Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.8 1999/07/30 02:02:35 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -785,6 +785,7 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	    if (GetCommState(handle, &dcb)) {
 		type = FILE_TYPE_SERIAL;
 	    }
+		    
 	}
     }
 
@@ -811,22 +812,23 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	}
 	channel = TclpCreateCommandChannel(readFile, writeFile, NULL, 0, NULL);
 	break;
+    case FILE_TYPE_CHAR:
     case FILE_TYPE_DISK:
+    case FILE_TYPE_UNKNOWN:
 	channel = TclWinOpenFileChannel(handle, channelName,
 					channelPermissions,
 					(mode & O_APPEND) ? FILE_APPEND : 0);
 	break;
 
-    case FILE_TYPE_UNKNOWN:
-    case FILE_TYPE_CHAR:
     default:
 	/*
 	 * The handle is of an unknown type, probably /dev/nul equivalent
-	 * or possibly a closed handle.  Don't use it, otherwise Tk runs into
-	 * trouble with the MS DevStudio debugger.
+	 * or possibly a closed handle.  
 	 */
 	
 	channel = NULL;
+	Tcl_AppendResult(interp, "couldn't open \"", fileName, "\": ",
+		"bad file type", (char *) NULL);
 	break;
     }
 
@@ -927,16 +929,15 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	break;
 
     case FILE_TYPE_DISK:
+    case FILE_TYPE_CHAR:
+    case FILE_TYPE_UNKNOWN:
 	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
 	break;
 	
-    case FILE_TYPE_UNKNOWN:
-    case FILE_TYPE_CHAR:
     default:
 	/*
 	 * The handle is of an unknown type, probably /dev/nul equivalent
-	 * or possibly a closed handle.  Don't use it, otherwise Tk runs into
-	 * trouble with the MS DevStudio debugger.
+	 * or possibly a closed handle.
 	 */
 	
 	channel = NULL;
@@ -994,19 +995,21 @@ TclpGetDefaultStdChannel(type)
 	    panic("TclGetDefaultStdChannel: Unexpected channel type");
 	    break;
     }
+
     handle = GetStdHandle(handleId);
 
     /*
-     * Note that we need to check for 0 because Windows will return 0 if this
+     * Note that we need to check for 0 because Windows may return 0 if this
      * is not a console mode application, even though this is not a valid
-     * handle. 
+     * handle.
      */
-
+    
     if ((handle == INVALID_HANDLE_VALUE) || (handle == 0)) {
 	return NULL;
     }
-
+    
     channel = Tcl_MakeFileChannel(handle, mode);
+
     if (channel == NULL) {
 	return NULL;
     }
@@ -1065,7 +1068,7 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
      */
     
     for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL; 
-	    infoPtr = infoPtr->nextPtr) {
+	 infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->handle == (HANDLE) handle) {
 	    return (permissions == infoPtr->validMask) ? infoPtr->channel : NULL;
 	}
