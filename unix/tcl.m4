@@ -429,6 +429,51 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     fi
 ])
 
+#------------------------------------------------------------------------
+# SC_ENABLE_LANGINFO --
+#
+#	Allows use of modern nl_langinfo check for better l10n.
+#	This is only relevant for Unix.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-langinfo=yes|no (default is yes)
+#
+#	Defines the following vars:
+#		HAVE_LANGINFO	Triggers use of nl_langinfo if defined.
+#
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_ENABLE_LANGINFO, [
+    AC_ARG_ENABLE(langinfo,
+	[  --enable-langinfo	  use nl_langinfo if possible to determine
+			  encoding at startup, otherwise use old heuristic],
+	[langinfo_ok=$enableval], [langinfo_ok=yes])
+
+    HAVE_LANGINFO=0
+    if test "$langinfo_ok" = "yes"; then
+	if test "$langinfo_ok" = "yes"; then
+	    AC_CHECK_HEADER(langinfo.h,[langinfo_ok=yes],[langinfo_ok=no])
+	fi
+    fi
+    AC_MSG_CHECKING([whether to use nl_langinfo])
+    if test "$langinfo_ok" = "yes"; then
+	AC_TRY_COMPILE([#include <langinfo.h>],
+		[nl_langinfo(CODESET);],[langinfo_ok=yes],[langinfo_ok=no])
+	if test "$langinfo_ok" = "no"; then
+	    langinfo_ok="no (could not compile with nl_langinfo)";
+	fi
+	if test "$langinfo_ok" = "yes"; then
+	    AC_DEFINE(HAVE_LANGINFO)
+	fi
+    fi
+    AC_MSG_RESULT([$langinfo_ok])
+])
+
 #--------------------------------------------------------------------
 # SC_CONFIG_CFLAGS
 #
@@ -926,7 +971,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # FreeBSD 3.* and greater have ELF.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""

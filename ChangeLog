@@ -1,3 +1,15 @@
+2001-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixInit.c: added HAVE_LANGINFO code block.
+	* unix/configure: regened
+	* unix/configure.in: added SC_ENABLE_LANGINFO call
+	* unix/tcl.m4: made SHLIB_LD_LIBS='${LIBS}' for FreeBSD* (meyer)
+	Added modified version of Wagner patch to make use of nl_langinfo
+	where possible to determine Unix platform encoding, instead of the
+	inflexible built-in system.  This is used by default when
+	possible, and can be disabled with --enable-langinfo=no.
+	[Patch #418645] (hobbs, wagner)
+
 2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompile.h:
