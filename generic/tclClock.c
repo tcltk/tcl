@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.22 2003/04/15 03:43:26 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23 2003/05/18 19:48:26 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -264,7 +264,7 @@ FormatClock(interp, clockVal, useGMT, format)
     char *format;			/* Format string */
 {
     struct tm *timeDataPtr;
-    Tcl_DString buffer, uniBuffer;
+    Tcl_DString buffer;
     int bufSize;
     char *p;
     int result;
@@ -336,8 +336,7 @@ FormatClock(interp, clockVal, useGMT, format)
 	    bufSize++;
 	}
     }
-    Tcl_DStringInit(&uniBuffer);
-    Tcl_UtfToExternalDString(NULL, format, -1, &uniBuffer);
+
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer, bufSize);
 
@@ -346,12 +345,11 @@ FormatClock(interp, clockVal, useGMT, format)
 #if defined(HAVE_TM_ZONE) || defined(WIN32)
     Tcl_MutexLock(&clockMutex);
 #endif
-    result = TclpStrftime(buffer.string, (unsigned int) bufSize,
-	    Tcl_DStringValue(&uniBuffer), timeDataPtr, useGMT);
+    result = TclpStrftime( buffer.string, (unsigned int) bufSize,
+			   format, timeDataPtr, useGMT);
 #if defined(HAVE_TM_ZONE) || defined(WIN32)
     Tcl_MutexUnlock(&clockMutex);
 #endif
-    Tcl_DStringFree(&uniBuffer);
 
 #if !defined(HAVE_TM_ZONE) && !defined(WIN32)
     if (useGMT) {
@@ -379,15 +377,8 @@ FormatClock(interp, clockVal, useGMT, format)
 	return TCL_ERROR;
     }
 
-    /*
-     * Convert the time to UTF from external encoding [Bug: 3345]
-     */
-    Tcl_DStringInit(&uniBuffer);
-    Tcl_ExternalToUtfDString(NULL, buffer.string, -1, &uniBuffer);
+    Tcl_SetStringObj(Tcl_GetObjResult(interp), buffer.string, -1);
 
-    Tcl_SetStringObj(Tcl_GetObjResult(interp), uniBuffer.string, -1);
-
-    Tcl_DStringFree(&uniBuffer);
     Tcl_DStringFree(&buffer);
     return TCL_OK;
 }

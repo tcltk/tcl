@@ -1,3 +1,12 @@
+2003-05-18  Kevin Kenny  <kennykb@acm.org>
+
+	* compat/strftime.c:  Modified TclpStrftime to return its
+	* generic/tclClock.c: result in UTF-8 encoding, and removed
+	* mac/tclMacTime.c:   the conversion from system encoding to
+	* unix/tclUnixTime.c: UTF-8 from [clock format]. Needed to
+	* win/tclWinTime.c:   avoid double conversion of the timezone
+	                      name on Windows systems. [Bug 624408]
+
 2003-05-16  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/dde/pkgIndex.tcl:  Applied TIP #130 which provides
@@ -8,7 +17,7 @@
 	* tests/winDde.test: Applied patch for [Bug 738929] by KKB and
 	changed to new-style tests.
 
-2003-05-16  Kevin B. Kenny  <kennykb@hippolyta>
+2003-05-16  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/Makefile.in:	Removed one excess source file tclDToA.c
 
@@ -16,7 +25,7 @@
 
 	* macosx/Tcl.pbproj/project.pbxproj: updated copyright year.
 	
-2003-05-15  Kevin B. Kenny  <kennykb@hippolyta>
+2003-05-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclGetDate.y: added further hackery to the yacc
 	* generic/tclDate.c:    post-processing to arrange for the

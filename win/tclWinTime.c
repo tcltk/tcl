@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.17 2003/04/15 20:59:10 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18 2003/05/18 19:48:27 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -449,6 +449,7 @@ StopCalibration( ClientData unused )
  *
  * Results:
  *	Returns a pointer to a static string, or NULL on failure.
+ *	Return value is in UTF-8 encoding
  *
  * Side effects:
  *	None.

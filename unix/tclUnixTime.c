@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.15 2002/07/19 12:31:10 dkf Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.16 2003/05/18 19:48:27 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -308,22 +308,26 @@ TclpGetDate(time, useGMT)
  *	and also ignore the useGMT parameter.
  *
  * Results:
- *	The normal strftime result.
+ *	Returns the number of Unicode code points in the result string.
+ *
  *
  * Side effects:
- *	None.
+ *	Stores the converted time in the buffer designated by the
+ *	's' parameter.
  *
  *----------------------------------------------------------------------
  */
 
 size_t
 TclpStrftime(s, maxsize, format, t, useGMT)
-    char *s;
-    size_t maxsize;
-    CONST char *format;
-    CONST struct tm *t;
-    int useGMT;
+    char *s;			/* Buffer to receive the formatted string */
+    size_t maxsize;		/* Allocated length of the buffer */
+    CONST char *format;		/* Format to use for the conversion */
+    CONST struct tm *t;		/* Time to convert */
+    int useGMT;			/* Flag == 1 if converting in UTC */
 {
+    Tcl_DString utf8Buffer;
+    size_t status;
     if (format[0] == '%' && format[1] == 'Q') {
 	/* Format as a stardate */
 	sprintf(s, "Stardate %2d%03d.%01d",
@@ -332,9 +336,18 @@ TclpStrftime(s, maxsize, format, t, useGMT)
 			(365 + IsLeapYear((t->tm_year + TM_YEAR_BASE)))),
 		(((t->tm_hour * 60) + t->tm_min)/144));
 	return(strlen(s));
+    } else {
+	setlocale(LC_TIME, "");
+	status = strftime(s, maxsize, format, t);
+	if ( status > 0 ) {
+	    Tcl_DStringInit ( &utf8Buffer );
+	    Tcl_ExternalToUtfDString( NULL, s, status, &utf8Buffer );
+	    strcpy( s, Tcl_DStringValue( &utf8Buffer ) );
+	    Tcl_DStringFree( &utf8buffer );
+	}
+	return status;
     }
-    setlocale(LC_TIME, "");
-    return strftime(s, maxsize, format, t);
+
 }
 
 /*
