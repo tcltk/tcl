@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.20.2.10 2002/10/16 00:06:53 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.20.2.11 2002/10/18 01:43:16 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -29,7 +29,13 @@ fi
 # before AC_PROG_CC and AC_CYGWIN are called so the compiler can 
 # be fully tested by built-in autoconf tools.
 #--------------------------------------------------------------------
- 
+
+# If the user did not set CFLAGS, set it now to keep
+# the AC_PROG_CC macro from adding "-g -O2".
+if test "${CFLAGS+set}" != "set" ; then
+    CFLAGS=""
+fi
+
 SC_ENABLE_GCC
 #AC_PROG_CC
 

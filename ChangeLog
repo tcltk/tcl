@@ -1,3 +1,10 @@
+2002-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure: Regen.
+	* win/configure.in: Set CFLAGS to "" if the user
+	did not set CFLAGS in the env. This keeps AC_PROG_CC
+	from adding "-g -O2" to the CFLAGS by default. (dejong)
+
 2002-10-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/configure:                 add workaround for cygwin windres
