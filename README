@@ -5,7 +5,7 @@ README:  Tcl
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.46 2002/09/27 18:04:12 dgp Exp $
+RCS: @(#) $Id: README,v 1.47 2002/10/11 03:41:24 hobbs Exp $
 
 Contents
 --------
@@ -57,7 +57,7 @@ by clicking on the relevant version.
 Information about Tcl itself can be found at
 	http://www.tcl.tk/scripting/
 
-There are many Tcl books on the market.  Most are listed at
+There have been many Tcl books on the market.  Most are listed at
 	http://www.tcl.tk/resource/doc/books/
 
 2a. Unix Documentation
@@ -112,9 +112,11 @@ Visit its home at SourceForge for more information and source/binaries:
 5. Tcl newsgroup
 ----------------
 
-There is a network news group "comp.lang.tcl" intended for the exchange of
+There is a USENET news group, "comp.lang.tcl", intended for the exchange of
 information about Tcl, Tk, and related applications.  The newsgroup is a
-great place to ask general information questions.  For bug reports, please
+great place to ask general information questions.  There is also
+a USENET news group, "comp.lang.tcl.announce", intended to announce new
+releases of software, training, and more.  For bug reports, please
 see the "Support and bug fixes" section below.
 
 6. Tcl contributed archive
@@ -122,9 +124,9 @@ see the "Support and bug fixes" section below.
 
 Many people have created exciting packages and applications based on Tcl
 and/or Tk and made them freely available to the Tcl community.  An archive
-of these contributions is kept on the machine ftp.neosoft.com.  You
+of these contributions is kept on the machine ftp.procplace.com.  You
 can access the archive using anonymous FTP; the Tcl contributed archive is
-in the directory "/pub/tcl".  The archive also contains several FAQ
+in the directory "/pub/tcl/".  The archive also contains several FAQ
 ("frequently asked questions") documents that provide solutions to problems
 that are commonly encountered by TCL newcomers.
 
@@ -163,16 +165,17 @@ The bug form was designed to give uniform structure to bug reports as
 well as to solicit enough information to minimize followup questions.
 
 We will log and follow-up on each bug, although we cannot promise a
-specific turn-around time.  Enhancements may take longer and may not happen
-at all unless there is widespread support for them (we're trying to slow
-the rate at which Tcl/Tk turns into a kitchen sink).  It's very difficult
-to make incompatible changes to Tcl/Tk at this point, due to the size of
-the installed base.
+specific turn-around time.  Enhancements, reported via the Feature
+Requests form at the same web site, may take longer and may not happen
+at all unless there is widespread support for them (we're trying to
+slow the rate at which Tcl/Tk turns into a kitchen sink).  It's very
+difficult to make incompatible changes to Tcl/Tk at this point, due to
+the size of the installed base.
 
 The Tcl community is too large for us to provide much individual support
 for users.  If you need help we suggest that you post questions to
 comp.lang.tcl.  We read the newsgroup and will attempt to answer esoteric
-questions for which no-one else is likely to know the answer.  In addition,
+questions for which no one else is likely to know the answer.  In addition,
 see the following Web site for links to other organizations that offer
 Tcl/Tk training:
 
