@@ -288,6 +288,11 @@ AC_DEFUN(SC_ENABLE_GCC, [
     else
 	CC=${CC-cc}
     fi
+    # Extra check to ensure that we double-check if we are running
+    # gcc, even though it may not be clear.
+    if test "$GCC" != "yes" -a `$CC -v 2>&1 | grep -c gcc` != "0" ; then
+	GCC=yes
+    fi
 ])
 
 #------------------------------------------------------------------------
