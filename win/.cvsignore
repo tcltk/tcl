@@ -7,6 +7,7 @@ Release
 *.plg
 *.00?
 Makefile
+configure
 tcl.hpj
 tclConfig.sh
 .#*
