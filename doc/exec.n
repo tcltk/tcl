@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.8 2004/04/22 12:48:25 dkf Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.9 2004/04/22 12:55:15 dkf Exp $
 '\" 
 .so man.macros
 .TH exec n 7.6 Tcl "Tcl Built-In Commands"
@@ -340,7 +340,7 @@ if {[catch {exec grep foo bar.txt} results]} {
 }
 .CE
 
-When translating a command from a Unix shell invokation, care should
+When translating a command from a Unix shell invocation, care should
 be taken over the fact that single quote characters have no special
 significance to Tcl.  Thus:
 .CS
@@ -351,7 +351,7 @@ would be translated into something like:
 exec awk {{sum += $1} END {print sum}} numbers.list
 .CE
 
-If you are converting invokations involving shell globbing, you should
+If you are converting invocations involving shell globbing, you should
 remember that Tcl does not handle globbing or expand things into
 multiple arguments by default.  Instead you should write things like
 this:
