@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.23 1999/12/12 02:26:42 hobbs Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.24 2000/05/03 00:14:35 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -840,6 +840,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     register CompiledLocal *localPtr;
     char *procName;
     int nameLen, localCt, numArgs, argCt, i, result;
+    Tcl_Obj *objResult = Tcl_GetObjResult(interp);
 
     /*
      * This procedure generates an array "compiledLocals" that holds the
@@ -960,20 +961,32 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
 					* another reference to object. */
 	} else {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no value given for parameter \"", localPtr->name,
-		    "\" to \"", Tcl_GetString(objv[0]), "\"", (char *) NULL);
-	    result = TCL_ERROR;
-	    goto procDone;
+	    goto incorrectArgs;
 	}
 	varPtr++;
 	localPtr = localPtr->nextPtr;
     }
     if (argCt > 0) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"called \"", Tcl_GetString(objv[0]),
-		"\" with too many arguments", (char *) NULL);
+	incorrectArgs:
+	/*
+	 * Build up equivalent to Tcl_WrongNumArgs message for proc
+	 */
+	Tcl_ResetResult(interp);
+	Tcl_AppendStringsToObj(objResult,
+		"wrong # args: should be \"", procName, (char *) NULL);
+	localPtr = procPtr->firstLocalPtr;
+	for (i = 1;  i <= numArgs;  i++) {
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_AppendStringsToObj(objResult,
+			" ?", localPtr->name, "?", (char *) NULL);
+	    } else {
+		Tcl_AppendStringsToObj(objResult,
+			" ", localPtr->name, (char *) NULL);
+	    }
+	    localPtr = localPtr->nextPtr;
+	}
+	Tcl_AppendStringsToObj(objResult, "\"", (char *) NULL);
+
 	result = TCL_ERROR;
 	goto procDone;
     }

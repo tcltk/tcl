@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.8 2000/04/10 17:18:58 ericm Exp $
+# RCS: @(#) $Id: compile.test,v 1.9 2000/05/03 00:14:36 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -44,8 +44,7 @@ test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} {
 test compile-1.2 {TclCompileString, error result is reset if TclGetLong determines word isn't an integer} {
     proc p {x} {info commands 3m}
     list [catch {p} msg] $msg
-} {1 {no value given for parameter "x" to "p"}}
-
+} {1 {wrong # args: should be "p x"}}
 test compile-2.1 {TclCompileDollarVar: global scalar name with ::s} {
     catch {unset x}
     set x 123

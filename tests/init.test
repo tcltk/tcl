@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: init.test,v 1.6 2000/04/10 17:19:00 ericm Exp $
+# RCS: @(#) $Id: init.test,v 1.7 2000/05/03 00:14:36 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -78,13 +78,13 @@ test init-2.0 {load parray - stage 1} {
     set ret [catch {namespace eval ::tcltest {parray}} error]
     rename parray {} ; # remove it, for the next test - that should not fail.
     list $ret $error
-} {1 {no value given for parameter "a" to "parray"}}
+} {1 {wrong # args: should be "parray a ?pattern?"}}
 
 
 test init-2.1 {load parray - stage 2} {
     set ret [catch {namespace eval ::tcltest {parray}} error]
     list $ret $error
-} {1 {no value given for parameter "a" to "parray"}}
+} {1 {wrong # args: should be "parray a ?pattern?"}}
 
 
 auto_reset
@@ -139,7 +139,7 @@ test init-2.8 {load http::geturl (package)} {
     # removing it, for the next test. should not fail.
     rename ::http::geturl {} ; 
     list $ret $error
-} {1 {no value given for parameter "url" to "http:::geturl"}}
+} {1 {wrong # args: should be "http:::geturl url args"}}
 
 
 test init-3.0 {random stuff in the auto_index, should still work} {
