@@ -1,5 +1,8 @@
 2002-10-10  Daniel Steffen  <das@users.sourceforge.net>
 
+	* mac/tclMacFCmd.c: removed GenerateUniqueName(), use equivalent
+	(and identically named) routine from MoreFiles instead.
+
 	* mac/tclMacOSA.c: (8.4 backport) sprintf fixes, UH 3.4.x changes;
 	fix for missing autoname token from TclOSACompileCmd. (bdesgraupes)
 	* mac/AppleScript.html(AppleScript delete): doc fix. (bdesgraupes)
