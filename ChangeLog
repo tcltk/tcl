@@ -326,8 +326,8 @@
 
 2002-02-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
-	with the POP_OBJECT() macro [Bug 507181] (Don Porter).
 	* generic/tclExecute.c: Replaced a few direct stack accesses 
+	with the POP_OBJECT() macro [Bug 507181] (Don Porter).
 
 2002-02-27  Don Porter  <dgp@users.sourceforge.net>
 
