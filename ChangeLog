@@ -1,3 +1,10 @@
+2001-10-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/tclUnixFile.c (TclpMatchInDirectory): Argument to access()
+	was entryPtr->d_name instead of nativeEntry which failed when
+	trying to check access for files in other than the current
+	directory. [Bug 475941, reported by Georgios Petasis]
+
 2001-10-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* unix/tclUnixChan.c: Added stateUpdated member to struct TtyState.

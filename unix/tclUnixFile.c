@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.13 2001/10/29 14:25:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -301,7 +301,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	if (entryPtr == NULL) {
 	    break;
 	}
-
 	if (types != NULL && (types->perm & TCL_GLOB_PERM_HIDDEN)) {
 	    /* 
 	     * We explicitly asked for hidden files, so turn around
@@ -365,11 +364,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			((types->perm & TCL_GLOB_PERM_RONLY) &&
 				(buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
 			((types->perm & TCL_GLOB_PERM_R) &&
-				(access(entryPtr->d_name, R_OK) != 0)) ||
+				(access(nativeEntry, R_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_W) &&
-				(access(entryPtr->d_name, W_OK) != 0)) ||
+				(access(nativeEntry, W_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_X) &&
-				(access(entryPtr->d_name, X_OK) != 0))
+				(access(nativeEntry, X_OK) != 0))
 			)) {
 			typeOk = 0;
 		    }
