@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.11 2004/10/08 22:44:49 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.12 2004/10/19 22:20:05 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1025,6 +1025,18 @@ test dict-22.9 {dict with command} {
     }
     set a
 } {b {c dd}}
+test dict-22.10 {dict with command: result handling tricky case} {
+    set a {b {c d}}
+    foreach i {0 1} {
+	if {$i} break
+	dict with a b {
+	    set a {}
+	    # We're checking to see if we lose this break
+	    break
+	}
+    }
+    list $i $a
+} {0 {}}
 
 # cleanup
 ::tcltest::cleanupTests
