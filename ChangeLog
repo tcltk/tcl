@@ -1,3 +1,25 @@
+2003-05-13  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.decls:
+	* macosx/tclMacOSXBundle.c: added extended version of the 
+	Tcl_MacOSXOpenBundleResources() API taking an extra version number
+	argument: Tcl_MacOSXOpenVersionedBundleResources().
+	This is needed to be able to access bundle resources in versioned
+	frameworks such as Tcl and Tk, otherwise if multiple versions were
+	installed, only the latest version's resources could be accessed.
+	[Bug 736774]
+	
+	* unix/tclUnixInit.c (Tcl_MacOSXGetLibraryPath): use new versioned
+	bundle resource API to get tcl runtime library for TCL_VERSION.
+	[Bug 736774]
+	
+	* generic/tclPlatDecls.h:
+	* generic/tclStubInit.c: regen.
+
+	* unix/tclUnixPort.h: worked around the issue of realpath() not
+	being thread-safe on Mac OS X by defining NO_REALPATH for threaded
+	builds on Mac OS X. [Bug 711232]
+
 2003-05-12  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/cmdAH.test: General clean-up of tests so that all
@@ -6,9 +28,9 @@
 
 2003-05-12  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclInterp.c: (AliasObjCmd):   Added refCounting of the words
-        * tests/interp.test (interp-33.1):      of the target of an interp
-        alias during its execution.  Also added test. [Bug 730244].
+	* generic/tclInterp.c: (AliasObjCmd):   Added refCounting of the words
+	* tests/interp.test (interp-33.1):      of the target of an interp
+	alias during its execution.  Also added test. [Bug 730244].
 
 	* generic/tclBasic.c (TclInvokeObjectCommand):  objv[argc] is no
 	longer set to NULL (Tcl_CreateObjCommand docs already say that it
