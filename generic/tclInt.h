@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.14 1998/08/04 11:53:33 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.15 1998/08/07 11:48:51 stanton Exp $ 
  */
 
 #ifndef _TCLINT
@@ -63,24 +63,36 @@
 #endif
 
 /*
-  * The following procedures allow namespaces to be customized to
-  * support special name resolution rules for commands/variables.
-  * 
-  */
-typedef Tcl_Var (Tcl_ResolveRuntimeVarProc) _ANSI_ARGS_((
-    Tcl_Interp* interp, ClientData identity));
+ * The following procedures allow namespaces to be customized to
+ * support special name resolution rules for commands/variables.
+ * 
+ */
 
-typedef void (Tcl_ResolveVarDeleteProc) _ANSI_ARGS_((ClientData identity));
+struct Tcl_ResolvedVarInfo;
+
+typedef Tcl_Var (Tcl_ResolveRuntimeVarProc) _ANSI_ARGS_((
+    Tcl_Interp* interp, struct Tcl_ResolvedVarInfo *vinfoPtr));
+
+typedef void (Tcl_ResolveVarDeleteProc) _ANSI_ARGS_((
+    struct Tcl_ResolvedVarInfo *vinfoPtr));
+
+/*
+ * The following structure encapsulates the routines needed to resolve a
+ * variable reference at runtime.  Any variable specific state will typically
+ * be appended to this structure.
+ */
+
 
 typedef struct Tcl_ResolvedVarInfo {
-    ClientData identity;
     Tcl_ResolveRuntimeVarProc *fetchProc;
     Tcl_ResolveVarDeleteProc *deleteProc;
 } Tcl_ResolvedVarInfo;
 
+
+
 typedef int (Tcl_ResolveCompiledVarProc) _ANSI_ARGS_((
     Tcl_Interp* interp, char* name, int length,
-    Tcl_Namespace *context, Tcl_ResolvedVarInfo *rPtr));
+    Tcl_Namespace *context, Tcl_ResolvedVarInfo **rPtr));
 
 typedef int (Tcl_ResolveVarProc) _ANSI_ARGS_((
     Tcl_Interp* interp, char* name, Tcl_Namespace *context,
@@ -408,6 +420,17 @@ typedef struct Var {
  *				initialized and is marked undefined.
  *				The variable's refCount is incremented to
  *				reflect the "reference" from its namespace.
+ *
+ * The following additional flags are used with the CompiledLocal type
+ * defined below:
+ *
+ * VAR_ARGUMENT -		1 means that this variable holds a procedure
+ *				argument. 
+ * VAR_TEMPORARY -		1 if the local variable is an anonymous
+ *				temporary variable. Temporaries have a NULL
+ *				name.
+ * VAR_RESOLVED -		1 if name resolution has been done for this
+ *				variable.
  */
 
 #define VAR_SCALAR		0x1
@@ -418,6 +441,10 @@ typedef struct Var {
 #define VAR_TRACE_ACTIVE	0x20
 #define VAR_ARRAY_ELEMENT	0x40
 #define VAR_NAMESPACE_VAR	0x80
+
+#define VAR_ARGUMENT		0x100
+#define VAR_TEMPORARY		0x200
+#define VAR_RESOLVED		0x400	
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
@@ -458,6 +485,9 @@ typedef struct Var {
  * EXTERN int	TclIsVarArray _ANSI_ARGS_((Var *varPtr));
  * EXTERN int	TclIsVarUndefined _ANSI_ARGS_((Var *varPtr));
  * EXTERN int	TclIsVarArrayElement _ANSI_ARGS_((Var *varPtr));
+ * EXTERN int	TclIsVarTemporary _ANSI_ARGS_((Var *varPtr));
+ * EXTERN int	TclIsVarArgument _ANSI_ARGS_((Var *varPtr));
+ * EXTERN int	TclIsVarResolved _ANSI_ARGS_((Var *varPtr));
  */
     
 #define TclIsVarScalar(varPtr) \
@@ -474,6 +504,15 @@ typedef struct Var {
 
 #define TclIsVarArrayElement(varPtr) \
     ((varPtr)->flags & VAR_ARRAY_ELEMENT)
+
+#define TclIsVarTemporary(varPtr) \
+    ((varPtr)->flags & VAR_TEMPORARY)
+    
+#define TclIsVarArgument(varPtr) \
+    ((varPtr)->flags & VAR_ARGUMENT)
+    
+#define TclIsVarResolved(varPtr) \
+    ((varPtr)->flags & VAR_RESOLVED)
 
 /*
  *----------------------------------------------------------------
@@ -512,15 +551,11 @@ typedef struct CompiledLocal {
 				 * variable lookups. */
     int frameIndex;		/* Index in the array of compiler-assigned
 				 * variables in the procedure call frame. */
-    int isArg;			/* 1 if the local variable is a formal
-				 * argument. */
-    int isTemp;			/* 1 if the local variable is an anonymous
-				 * temporary variable. Temporaries have
-				 * a NULL name. */
     int flags;			/* Flag bits for the local variable. Same as
 				 * the flags for the Var structure above,
-				 * although only VAR_SCALAR, VAR_ARRAY, and
-				 * VAR_LINK make sense. */
+				 * although only VAR_SCALAR, VAR_ARRAY, 
+				 * VAR_LINK, VAR_ARGUMENT, VAR_TEMPORARY, and
+				 * VAR_RESOLVED make sense. */
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
@@ -1487,6 +1522,9 @@ EXTERN Tcl_Obj *	TclIncrIndexedScalar _ANSI_ARGS_((
 EXTERN Tcl_Obj *	TclIncrVar2 _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 			    long incrAmount, int part1NotParsed));
+EXTERN void		TclInitCompiledLocals _ANSI_ARGS_((
+			    Tcl_Interp *interp, CallFrame *framePtr,
+			    Namespace *nsPtr));
 EXTERN void		TclInitNamespaces _ANSI_ARGS_((void));
 EXTERN int		TclInterpInit _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		TclInvoke _ANSI_ARGS_((Tcl_Interp *interp,
