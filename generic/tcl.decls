@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.94.2.1 2003/05/13 08:41:26 das Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.94.2.2 2003/05/13 09:57:40 mistachkin Exp $
 
 library tcl
 
@@ -1457,7 +1457,7 @@ declare 411 generic {
 
 # Introduced in 8.4a2
 declare 412 generic {
-    int Tcl_JoinThread(Tcl_ThreadId id, int* result)
+    int Tcl_JoinThread(Tcl_ThreadId threadId, int* result)
 }
 declare 413 generic {
     int Tcl_IsChannelShared(Tcl_Channel channel)
