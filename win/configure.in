@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.43 2001/10/15 21:53:46 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.44 2001/11/07 23:37:52 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -71,10 +71,15 @@ fi
 AC_PROG_MAKE_SET
 
 #--------------------------------------------------------------------
-# These two macros perform additinal compiler test.
+# Perform additinal compiler tests.
 #--------------------------------------------------------------------
 
 AC_CYGWIN
+
+if test "$ac_cv_cygwin" = "yes" ; then
+    AC_MSG_ERROR([Compiling with the Cygwin version of gcc is not supported.
+    Use the Mingw version of gcc from www.mingw.org instead.])
+fi
 
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
