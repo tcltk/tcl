@@ -1,3 +1,9 @@
+2002-10-28  Andreas Kupries  <andreask@activestate.com>
+
+	* library/dde/pkgIndex.tcl:
+	* library/reg/pkgIndex.tcl: Changed the hardwired debug suffix
+	  (d) to the correct suffix (g).
+
 2002-10-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl:	Converted the Mac-specific [package unknown]
