@@ -1,3 +1,8 @@
+2003-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/CrtSlave.3 (Tcl_MakeSafe):  Removed warning about possible
+	deprecation (no TIP on that).
+
 2003-07-17  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixFCmd.c: fix for compilation errors on platforms where
