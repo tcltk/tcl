@@ -1,3 +1,9 @@
+2003-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclPreserve.c: In Result and Preserve'd routines, do not
+	* generic/tclUtil.c:     assume that ckfree == free, as that is not
+	* generic/tclResult.c:   always true. [Bug 756791] (fuller)
+
 2003-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/Makefile.in: Don't define TCL_DBGX
@@ -99,11 +105,11 @@
 	do encoding conversion by dropping high bytes, unlike the rest of
 	the core.  [Bug 735364]
 
-2003-07-11  Don Porter  <dgp@users.sourceforge.net>
+2003-07-11  Don Porter	<dgp@users.sourceforge.net>
 
-        * library/package.tcl:  Corrected [pkg_mkIndex] bug reported on
-        comp.lang.tcl.  The indexer was searching for newly indexed packages
-        instead of newly provided packages.
+	* library/package.tcl:	Corrected [pkg_mkIndex] bug reported on
+	comp.lang.tcl.	The indexer was searching for newly indexed packages
+	instead of newly provided packages.
 
 2003-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
@@ -152,17 +158,17 @@
 	the part of [Bug 495830] that is new in 8.4. 
 	* tests/interp.test: Added tests 18.9 (knownbug) and 18.10
 
-2003-06-09  Don Porter  <dgp@users.sourceforge.net>
+2003-06-09  Don Porter	<dgp@users.sourceforge.net>
 
-        * string.test (string-4.15): Added test for [string first] bug
-        reported in Tcl 8.3, where test for all-single-byte-encoded strings
-        was not reliable.
+	* tests/string.test (string-4.15): Added test for [string first] bug
+	reported in Tcl 8.3, where test for all-single-byte-encoded strings
+	was not reliable.
 
 2003-06-04  Joe Mistachkin  <joe@mistachkin.com>
 
-        * tools/man2help.tcl: Added duplicate help section checking           
-        * tools/index.tcl:    and corrected a comment typo for the 
-        getTopics proc in index.tcl [Bug #748700].
+	* tools/man2help.tcl: Added duplicate help section checking	      
+	* tools/index.tcl:    and corrected a comment typo for the 
+	getTopics proc in index.tcl [Bug #748700].
 
 2003-05-23  Don Porter  <dgp@users.sourceforge.net>
 
