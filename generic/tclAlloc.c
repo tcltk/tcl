@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.3 1998/11/18 03:34:27 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.4 1998/12/08 04:29:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -520,13 +520,27 @@ TclpRealloc(
      */
 
     if (i == 0xff) {
+	struct block *prevPtr, *nextPtr;
 	bigBlockPtr = (struct block *) op - 1;
+	prevPtr = bigBlockPtr->prevPtr;
+	nextPtr = bigBlockPtr->nextPtr;
 	bigBlockPtr = (struct block *) TclpSysRealloc(bigBlockPtr, 
 		sizeof(struct block) + OVERHEAD + nbytes);
 	if (bigBlockPtr == NULL) {
 	    TclpMutexUnlock(&allocMutex);
 	    return NULL;
 	}
+
+	if (prevPtr->nextPtr != bigBlockPtr) {
+	    /*
+	     * If the block has moved, splice the new block into the list where
+	     * the old block used to be. 
+	     */
+
+	    prevPtr->nextPtr = bigBlockPtr;
+	    nextPtr->prevPtr = bigBlockPtr;
+	}
+
 	op = (union overhead *) (bigBlockPtr + 1);
 #ifdef MSTATS
 	nmalloc[NBUCKETS]++;

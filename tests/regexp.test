@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.1.2.5 1998/12/03 23:59:13 stanton Exp $
+# RCS: @(#) $Id: regexp.test,v 1.1.2.6 1998/12/08 04:29:49 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -341,5 +341,21 @@ test regexp-10.7 {regsub errors} {
 test regexp-11.1 {Tcl_RegExpExec: large number of subexpressions} {
     list [regexp (.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.) abcdefghijklmnopqrstuvwxyz all a b c d e f g h i j k l m n o p q r s t u v w x y z] $all $a $b $c $d $e $f $g $h $i $j $k $l $m $n $o $p $q $r $s $t $u $v $w $x $y $z
 } {1 abcdefghijklmnopqrstuvwxyz a b c d e f g h i j k l m n o p q r s t u v w x y z}
+
+test regexp-12.1 {regsub of a very large string} {
+    # This test is designed to stress the memory subsystem in order
+    # to catch Bug #933.  It only fails if the Tcl memory allocator
+    # is in use.
+
+    set line {BEGIN_TABLE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; END_TABLE}
+    set filedata ""
+    for {set i 1} {$i<200} {incr i} {
+	append filedata $line
+    }
+    for {set i 1} {$i<10} {incr i} {
+	regsub -all "BEGIN_TABLE " $filedata "" newfiledata
+    }
+    set x done
+} {done}
 
 return
