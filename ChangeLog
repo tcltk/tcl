@@ -1,3 +1,12 @@
+2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclVar.c: removing the now redundant functions to access
+	indexed variables: Tcl(Get|Set|Incr)IndexedScalar() and
+	Tcl(Get|Set|Incr)ElementOfIndexedArray(). 
+
 2002-07-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Minor fixes to make
