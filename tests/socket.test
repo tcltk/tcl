@@ -59,7 +59,7 @@
 # listening at port 2048. If all fails, a message is printed and the tests
 # using the remote server are not performed.
 #
-# RCS: @(#) $Id: socket.test,v 1.5 1998/09/14 18:40:13 stanton Exp $
+# RCS: @(#) $Id: socket.test,v 1.6 1998/12/04 01:01:55 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -1369,6 +1369,218 @@ test socket-11.13 {testing async write, async flush, async close} {
     sendCommand {close $l}
     set count
 } 65566
+
+test socket-12.1 {testing inheritance of server sockets} {
+    removeFile script1
+    removeFile script2
+
+    # Script1 is just a 10 second delay.  If the server socket
+    # is inherited, it will be held open for 10 seconds
+
+    set f [open script1 w]
+    puts $f {
+	after 10000 exit
+	vwait forever
+    }
+    close $f
+
+    # Script2 creates the server socket, launches script1,
+    # waits a second, and exits.  The server socket will now
+    # be closed unless script1 inherited it.
+
+    set f [open script2 w]
+    puts $f [list set tcltest $tcltest]
+    puts $f {
+	set f [socket -server accept 2828]
+	proc accept { file addr port } {
+	    close $file
+	}
+	exec $tcltest script1 &
+	close $f
+	after 1000 exit
+	vwait forever
+    }
+    close $f
+	
+    # Launch script2 and wait 5 seconds
+
+    exec $tcltest script2 &
+    after 5000 { set ok_to_proceed 1 }
+    vwait ok_to_proceed
+
+    # If we can still connect to the server, the socket got inherited.
+
+    if {[catch {socket localhost 2828} msg]} {
+	set x {server socket was not inherited}
+    } else {
+	close $msg
+	set x {server socket was inherited}
+    }
+
+    removeFile script1
+    removeFile script2
+    set x
+} {server socket was not inherited}
+test socket-12.2 {testing inheritance of client sockets} {
+    removeFile script1
+    removeFile script2
+
+    # Script1 is just a 10 second delay.  If the server socket
+    # is inherited, it will be held open for 10 seconds
+
+    set f [open script1 w]
+    puts $f {
+	after 10000 exit
+	vwait forever
+    }
+    close $f
+
+    # Script2 opens the client socket and writes to it.  It then
+    # launches script1 and exits.  If the child process inherited the
+    # client socket, the socket will still be open.
+
+    set f [open script2 w]
+    puts $f [list set tcltest $tcltest]
+    puts $f {
+	set f [socket localhost 2829]
+	exec $tcltest script1 &
+	puts $f testing
+	flush $f
+	after 1000 exit
+	vwait forever
+    }
+    close $f
+
+    # Create the server socket
+
+    set server [socket -server accept 2829]
+    proc accept { file host port } {
+
+	# When the client connects, establish the read handler
+	global server
+	close $server
+	fileevent $file readable [list getdata $file]
+	fconfigure $file -buffering line -blocking 0
+	return
+    }
+    proc getdata { file } {
+
+	# Read handler on the accepted socket.
+	global x
+	global failed
+	set status [catch {read $file} data]
+	if {$status != 0} {
+	    set x {read failed, error was $data}
+	    catch { close $file }
+	} elseif {[string compare {} $data]} {
+	} elseif {[fblocked $file]} {
+	} elseif {[eof $file]} {
+	    if {$failed} {
+		set x {client socket was inherited}
+	    } else {
+		set x {client socket was not inherited}
+	    }
+	    catch { close $file }
+	} else {
+	    set x {impossible case}
+	    catch { close $file }
+	}
+	return
+    }
+
+    # If the socket doesn't hit end-of-file in 5 seconds, the
+    # script1 process must have inherited the client.
+
+    set failed 0
+    after 5000 [list set failed 1]
+
+    # Launch the script2 process
+
+    exec $tcltest script2 &
+
+    vwait x
+    if {!$failed} {
+	vwait failed
+    }
+    removeFile script1
+    removeFile script2
+    set x
+} {client socket was not inherited}
+test socket-12.3 {testing inheritance of accepted sockets} {
+    removeFile script1
+    removeFile script2
+
+    set f [open script1 w]
+    puts $f {
+	after 10000 exit
+	vwait forever
+    }
+    close $f
+
+    set f [open script2 w]
+    puts $f [list set tcltest $tcltest]
+    puts $f {
+	set server [socket -server accept 2930]
+	proc accept { file host port } {
+	    global tcltest
+	    puts $file {test data on socket}
+	    exec $tcltest script1 &
+	    after 1000 exit
+	}
+	vwait forever
+    }
+    close $f
+
+    # Launch the script2 process and connect to it.  See how long
+    # the socket stays open
+
+    exec $tcltest script2 &
+
+    after 1000 set ok_to_proceed 1
+    vwait ok_to_proceed
+
+    set f [socket localhost 2930]
+    fconfigure $f -buffering full -blocking 0
+    fileevent $f readable [list getdata $f]
+
+    # If the socket is still open after 5 seconds, the script1 process
+    # must have inherited the accepted socket.
+
+    set failed 0
+    after 5000 set failed 1
+
+    proc getdata { file } {
+
+	# Read handler on the client socket.
+	global x
+	global failed
+	set status [catch {read $file} data]
+	if {$status != 0} {
+	    set x {read failed, error was $data}
+	    catch { close $file }
+	} elseif {[string compare {} $data]} {
+	} elseif {[fblocked $file]} {
+	} elseif {[eof $file]} {
+	    if {$failed} {
+		set x {accepted socket was inherited}
+	    } else {
+		set x {accepted socket was not inherited}
+	    }
+	    catch { close $file }
+	} else {
+	    set x {impossible case}
+	    catch { close $file }
+	}
+	return
+    }
+    
+    vwait x
+
+    removeFile script1
+    removeFile script2
+    set x
+} {accepted socket was not inherited}
+
 
 if {[string match sock* $commandSocket] == 1} {
    puts $commandSocket exit
