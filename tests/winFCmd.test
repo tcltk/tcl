@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.16 2002/03/24 11:41:51 vincentdarley Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.17 2002/07/15 09:01:51 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -47,15 +47,15 @@ proc cleanup {args} {
 if {[string equal $tcl_platform(platform) "windows"]} {
     if {[string equal $tcl_platform(os) "Windows NT"] \
       && [string equal [string index $tcl_platform(osVersion) 0] "5"]} {
-	tcltest::testConstraint win2000 1
-	tcltest::testConstraint notWin2000 0
+	tcltest::testConstraint win2000orXP 1
+	tcltest::testConstraint winOlderThan2000 0
     } else {
-	tcltest::testConstraint win2000 0
-	tcltest::testConstraint notWin2000 1
+	tcltest::testConstraint win2000orXP 0
+	tcltest::testConstraint winOlderThan2000 1
     }
 } else {
-    tcltest::testConstraint win2000 0
-    tcltest::testConstraint notWin2000 0
+    tcltest::testConstraint win2000orXP 0
+    tcltest::testConstraint winOlderThan2000 0
 }
 
 set ::tcltest::testConstraints(cdrom) 0
@@ -202,11 +202,11 @@ test winFCmd-1.12 {TclpRenameFile: errno: EACCES} {pcOnly} {
     close $fd
     set msg
 } {1 EACCES}
-test winFCmd-1.13 {TclpRenameFile: errno: EACCES} {win2000} {
+test winFCmd-1.13 {TclpRenameFile: errno: EACCES} {win2000orXP} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.13.1 {TclpRenameFile: errno: EACCES} {notWin2000} {
+test winFCmd-1.13.1 {TclpRenameFile: errno: EACCES} {winOlderThan2000} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EACCES}
@@ -234,11 +234,11 @@ test winFCmd-1.18 {TclpRenameFile: srcAttr == -1} {pcOnly} {
     cleanup
     list [catch {testfile mv tf1 tf2} msg] $msg
 } {1 ENOENT} 
-test winFCmd-1.19 {TclpRenameFile: errno == EACCES} {win2000} {
+test winFCmd-1.19 {TclpRenameFile: errno == EACCES} {win2000orXP} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.19.1 {TclpRenameFile: errno == EACCES} {notWin2000} {
+test winFCmd-1.19.1 {TclpRenameFile: errno == EACCES} {winOlderThan2000} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EACCES}
@@ -383,11 +383,11 @@ test winFCmd-2.7 {TclpCopyFile: errno: EACCES} {95} {
     close $fd
     set msg
 } {1 EACCES}
-test winFCmd-2.8 {TclpCopyFile: errno: EACCES} {win2000} {
+test winFCmd-2.8 {TclpCopyFile: errno: EACCES} {win2000orXP} {
     cleanup
     list [catch {testfile cp nul tf1} msg] $msg
 } {1 EINVAL}
-test winFCmd-2.8.1 {TclpCopyFile: errno: EACCES} {nt notWin2000} {
+test winFCmd-2.8.1 {TclpCopyFile: errno: EACCES} {nt winOlderThan2000} {
     cleanup
     list [catch {testfile cp nul tf1} msg] $msg
 } {1 EACCES}
