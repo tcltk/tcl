@@ -1,3 +1,8 @@
+2004-07-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclObj.c (TclInitObjSubsystem): Declare all current
+	object types.
+
 2004-07-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/cmdMZ.test (cmdMZ-return-2.17):  Added a test that a word
