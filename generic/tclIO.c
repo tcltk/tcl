@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61 2003/02/19 01:04:57 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.1 2003/04/10 22:18:07 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -6850,6 +6850,18 @@ UpdateInterest(chanPtr)
 		&& (statePtr->inQueueHead->nextRemoved <
 			statePtr->inQueueHead->nextAdded)) {
 	    mask &= ~TCL_READABLE;
+
+	    /*
+	     * Andreas Kupries -- Experimental change
+	     *
+	     * Squash interest in exceptions too. Solaris may/will
+	     * generate superfluous exceptions for plain text files,
+	     * screwing up expect, which doesn't get the synthesized
+	     * readable event, or to late.
+	     */
+	    mask &= ~TCL_EXCEPTION;
+
+
 	    if (!statePtr->timer) {
 		statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,
 			(ClientData) chanPtr);
