@@ -1,12 +1,12 @@
 '\"
-'\" Copyright (c) 1999 Scriptics Corporation
+'\" Copyright (c) 1999-2000 Ajuba Solutions.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlStack.3,v 1.1.10.1 2000/08/07 21:29:37 hobbs Exp $
+'\" RCS: @(#) $Id: ChnlStack.3,v 1.1.10.2 2000/08/08 00:57:52 hobbs Exp $
 .so man.macros
-.TH Tcl_StackChannel 3 8.2 Tcl "Tcl Library Procedures"
+.TH Tcl_StackChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -19,7 +19,7 @@ Tcl_StackChannel, Tcl_UnstackChannel, Tcl_GetStackedChannel \- stack an I/O chan
 Tcl_Channel
 \fBTcl_StackChannel\fR(\fIinterp, typePtr, clientData, mask, channel\fR)
 .sp
-void
+int
 \fBTcl_UnstackChannel\fR(\fIinterp, channel\fR)
 .sp
 Tcl_Channel
@@ -43,57 +43,45 @@ An existing Tcl channel such as returned by \fBTcl_CreateChannel\fR.
 
 .SH DESCRIPTION
 .PP
-These functions are for use by extensions that add processing
-layers to Tcl I/O channels.  Examples include compression
-and encryption modules.  These functions transparently stack and unstack
-a new channel on top of an existing one.
-Any number of channels can be stacked together.
+These functions are for use by extensions that add processing layers to Tcl
+I/O channels.  Examples include compression and encryption modules.  These
+functions transparently stack and unstack a new channel on top of an
+existing one.  Any number of channels can be stacked together.
 .PP
-\fBTcl_StackChannel\fR
-replaces an existing \fIchannel\fP with a new channel by
-the same name that was registered for \fIchannel\fP
-with \fBTcl_RegisterChannel\fP.
+The implementation of the Tcl channel code was rewritten in 8.3.2 to
+correct some problems with the previous implementation with regard to
+stacked channels.  Anyone using stacked channels or creating stacked
+channel drivers should update to the new \fBTCL_CHANNEL_VERSION_2\fR
+\fBTcl_ChannelType\fR structure.  See \fBTcl_CreateChannel\fR for details.
 .PP
-\fBTcl_StackChannel\fR
-works by creating a new channel structure under the existing
-\fIchannel\fP and pushing the existing channel functions
-down to the newly created channel.
-The hidden channel does no buffering, newline translations,
-or character set encoding.
-Instead, 
-the buffering, newline translations, and
-encoding functions all remain at the top of the channel stack.
-The top-most channel gets changed to use the 
-I/O channel functions
-defined in \fItypePtr\fP, and the channel functions are passed
-the new \fIclientData\fP.
-The existing \fIchannel\fP structure is modified in place,
-so C applications that continue to use \fIchannel\fP will
-also see the effects of the new processing module.
-A pointer to a new channel structure is returned,
-although this new data structure is the one that has been
-pushed down below the top of the channel module stack.
-(This pointer can also be obtained with the
-\fBTcl_GetStackedChannel\fP call.)
-If an error occurs when stacking the channel,
-NULL is returned instead. 
+\fBTcl_StackChannel\fR stacks a new \fIchannel\fP on an existing channel
+with the same name that was registered for \fIchannel\fP by
+\fBTcl_RegisterChannel\fP.
 .PP
-The \fImask\fP parameter specifies the operations that
-are allowed on the new channel.
-These can be a subset of the operations allowed on the original channel.
-For example, a read-write channel may become
-read-only after the \fBTcl_StackChannel\fR call.
+\fBTcl_StackChannel\fR works by creating a new channel structure and
+placing itself on top of the channel stack.  EOL translation, encoding and
+buffering options are shared between all channels in the stack.  The hidden
+channel does no buffering, newline translations, or character set encoding.
+Instead, the buffering, newline translations, and encoding functions all
+remain at the top of the channel stack.  A pointer to the new top channel
+structure is returned.  If an error occurs when stacking the channel, NULL
+is returned instead.
 .PP
-Closing a channel closes the channels stacked below it.
-The close of stacked channels is executed in a way that
-allows buffered data to be properly flushed.
+The \fImask\fP parameter specifies the operations that are allowed on the
+new channel.  These can be a subset of the operations allowed on the
+original channel.  For example, a read-write channel may become read-only
+after the \fBTcl_StackChannel\fR call.
 .PP
-\fBTcl_UnstackChannel\fP reverses the process.
-The old channel is associated with the channel name,
-and the processing module added by
-\fBTcl_StackChannel\fR is destroyed.
-If there is no old channel, then \fBTcl_UnstackChannel\fP 
-is equivalent to \fBTcl_Close\fP .
+Closing a channel closes the channels stacked below it.  The close of
+stacked channels is executed in a way that allows buffered data to be
+properly flushed.
+.PP
+\fBTcl_UnstackChannel\fP reverses the process.  The old channel is
+associated with the channel name, and the processing module added by
+\fBTcl_StackChannel\fR is destroyed.  If there is no old channel, then
+\fBTcl_UnstackChannel\fP is equivalent to \fBTcl_Close\fP.  If an error
+occurs unstacking the channel, \fBTCL_ERROR\fR is returned, otherwise
+\fBTCL_OK\fR is returned.
 
 .SH "SEE ALSO"
 Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n).
