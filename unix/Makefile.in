@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.11 1998/12/10 01:40:56 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.12 1998/12/10 03:28:02 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -464,7 +464,7 @@ install-binaries: $(TCL_LIB_FILE) tclsh
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
-		mkdir $$i; \
+		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
 		fi; \
@@ -484,7 +484,7 @@ install-libraries:
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
-		mkdir $$i; \
+		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
 		fi; \
@@ -493,7 +493,7 @@ install-libraries:
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		mkdir $(SCRIPT_INSTALL_DIR)/$$i; \
+		mkdir -p $(SCRIPT_INSTALL_DIR)/$$i; \
 		chmod 755 $(SCRIPT_INSTALL_DIR)/$$i; \
 		else true; \
 		fi; \
@@ -523,7 +523,7 @@ install-man:
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
-		mkdir $$i; \
+		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
 		fi; \
