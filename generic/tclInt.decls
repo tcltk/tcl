@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.20.2.5 2001/10/15 20:27:23 andreas_kupries Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.20.2.6 2001/10/17 19:29:25 das Exp $
 
 library tcl
 
@@ -740,6 +740,9 @@ declare 23 mac {
 #  declare 24 mac {
 #      int TclMacReadlink(char *path, char *buf, int size)
 #  }
+declare 24 mac {
+    char * TclpGetTZName(int isdst)
+}
 declare 25 mac {
     int TclMacChmod(char *path, int mode)
 }

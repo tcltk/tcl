@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLibrary.r,v 1.4.2.1 2001/04/04 21:22:19 hobbs Exp $
+ * RCS: @(#) $Id: tclMacLibrary.r,v 1.4.2.2 2001/10/17 19:29:25 das Exp $
  */
 
 #include <Types.r>
@@ -42,14 +42,14 @@ resource 'vers' (1) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham" "\n" "© 2000 Ajuba Solutions"
+	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham" "\n" "© 2001 Tcl Core Team"
 };
 
 resource 'vers' (2) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2000"
+	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2001"
 };
 
 /*
@@ -96,7 +96,7 @@ resource 'FREF' (TCL_LIBRARY_RESOURCES, purgeable)
 
 type TCL_CREATOR as 'STR ';
 resource TCL_CREATOR (0, purgeable) {
-	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2000"
+	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2001"
 };
 
 /*
@@ -130,20 +130,6 @@ resource 'STR ' (-16397, purgeable) {
 };
 
 /* 
- * The mechanisim below loads Tcl source into the resource fork of the
- * application.  The example below creates a TEXT resource named
- * "Init" from the file "init.tcl".  This allows applications to use
- * Tcl to define the behavior of the application without having to
- * require some predetermined file structure - all needed Tcl "files"
- * are located within the application.  To source a file for the
- * resource fork the source command has been modified to support
- * sourcing from resources.  In the below case "source -rsrc {Init}"
- * will load the TEXT resource named "Init".
- */
-
-#include "tclMacTclCode.r"
-
-/*
  * The following are icons for the shared library.
  */
 

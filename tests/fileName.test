@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.8 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: fileName.test,v 1.8.2.1 2001/10/17 19:29:25 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1124,7 +1124,7 @@ test filename-11.16 {Tcl_GlobCmd} {
 set globname "globTest"
 set horribleglobname "glob\[\{Test"
 
-test filename-11.17 {Tcl_GlobCmd} {
+test filename-11.17 {Tcl_GlobCmd} {unixOrPc} {
     list [catch {lsort [glob -directory $globname *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname a3]\
@@ -1132,7 +1132,17 @@ test filename-11.17 {Tcl_GlobCmd} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
-test filename-11.18 {Tcl_GlobCmd} {
+test filename-11.17.1 {Tcl_GlobCmd} {macOnly} {
+    list [catch {lsort [glob -directory $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+        [file join $globname .1]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.18 {Tcl_GlobCmd}        [file join $globname .1]\
+ {
     list [catch {lsort [glob -path $globname/ *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname a3]\
@@ -1140,10 +1150,29 @@ test filename-11.18 {Tcl_GlobCmd} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
-test filename-11.19 {Tcl_GlobCmd} {
+test filename-11.18.1 {Tcl_GlobCmd} {macOnly} {
+    list [catch {lsort [glob -path $globname/ *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+        [file join $globname .1]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.19 {Tcl_GlobCmd} {unixOrPc} {
     list [catch {lsort [glob -join -path \
 	    [string range $globname 0 5] * *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.19.1 {Tcl_GlobCmd} {macOnly} {
+    list [catch {lsort [glob -join -path \
+	    [string range $globname 0 5] * *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+        [file join $globname .1]\
 	[file join $globname a3]\
 	[file join $globname "weird name.c"]\
 	[file join $globname x,z1.c]\
@@ -1161,7 +1190,7 @@ test filename-11.21 {Tcl_GlobCmd} {
 file rename globTest $horribleglobname
 set globname $horribleglobname
 
-test filename-11.22 {Tcl_GlobCmd} {
+test filename-11.22 {Tcl_GlobCmd} {unixOrPc} {
     list [catch {lsort [glob -dir $globname *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname a3]\
@@ -1169,7 +1198,16 @@ test filename-11.22 {Tcl_GlobCmd} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
-test filename-11.23 {Tcl_GlobCmd} {
+test filename-11.22.1 {Tcl_GlobCmd} {macOnly} {
+    list [catch {lsort [glob -dir $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+        [file join $globname .1]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.23 {Tcl_GlobCmd} {unixOrPc} {
     list [catch {lsort [glob -path $globname/ *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
 	[file join $globname a3]\
@@ -1177,10 +1215,29 @@ test filename-11.23 {Tcl_GlobCmd} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
-test filename-11.24 {Tcl_GlobCmd} {
+test filename-11.23.1 {Tcl_GlobCmd} {macOnly} {
+    list [catch {lsort [glob -path $globname/ *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+        [file join $globname .1]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.24 {Tcl_GlobCmd} {unixOrPc} {
     list [catch {lsort [glob -join -path \
 	    [string range $globname 0 5] * *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.24.1 {Tcl_GlobCmd} {macOnly} {
+    list [catch {lsort [glob -join -path \
+	    [string range $globname 0 5] * *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+        [file join $globname .1]\
 	[file join $globname a3]\
 	[file join $globname "weird name.c"]\
 	[file join $globname x,z1.c]\
@@ -1398,9 +1455,17 @@ test filename-14.23 {slash globbing} {unixOrPc} {
 test filename-14.24 {slash globbing} {pcOnly} {
     glob {\\}
 } /
-test filename-14.25 {type specific globbing} {
+test filename-14.25 {type specific globbing} {unixOrPc} {
     list [catch {lsort [glob -dir globTest -types f *]} msg] $msg
 } [list 0 [lsort [list \
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-14.25.1 {type specific globbing} {macOnly} {
+    list [catch {lsort [glob -dir globTest -types f *]} msg] $msg
+} [list 0 [lsort [list \
+        [file join $globname .1]\
 	[file join $globname "weird name.c"]\
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
@@ -1526,7 +1591,7 @@ test filename-16.13 {windows specific globbing} {pcOnly sharedCdrive} {
 } //[info hostname]/c/globTest
 
 # cleanup
-file delete -force //[info hostname]/c/globTest
+catch {file delete -force //[info hostname]/c/globTest}
 cd $temp
 file delete -force globTest
 set env(HOME) $oldhome

@@ -10,13 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.17.2.1 2000/08/07 21:30:36 hobbs Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.17.2.2 2001/10/17 19:29:25 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 
-#ifdef MAC_TCL
+#if defined(MAC_TCL) && !defined(TCL_MAC_USE_MSL_EPOCH)
 #   define EPOCH           1904
 #   define START_OF_TIME   1904
 #   define END_OF_TIME     2039

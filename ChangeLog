@@ -1,3 +1,54 @@
+2001-10-17 Daniel Steffen <das@users.sourceforge.net>
+
+	Backport of mac specific changes added to 8.4 since 8.3.3:
+	
+	* generic/tcl.h: removed line continuation in #if clause as this
+	breaks the mac resource compiler (note that *.r files include tcl.h)
+	
+	* compat/strftime.c: 
+	* mac/tclMacTime.c:
+	* mac/tclMacPort.h:
+	* generic/tclInt.decls: 
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c: timezone support for mac via 
+	TclpGetTZName() like on windows, using an inverse timezone table
+	adapted from tclDate.c to map gmtoffset in seconds gotten from
+	the MacOS APIs to a  timezone string, as there is no good way to get
+	this info from MacOS. I had to make up some unusual timezones and
+	arbitrarily decide on the most standard of the multiple choices
+
+	* generic/tclCmdAH.c:
+	* generic/tclDate.c:
+	* generic/tclGetDate.y:
+	* mac/tclMacInt.h:
+	* mac/tclMacFile.c: default mac epoch changed to standard unix
+	epoch and related mac time/date handling changes from TIP17.
+
+	* mac/tclMacFile.c: glob -dir compatibility for unix style 
+	relative paths, from TIP17
+
+	* mac/tclMacAppInit.c: support for WASTE text library using
+	temporary memory, setting has no effect if WASTE is not used.
+
+	* tests/cmdAH.test: access time not available on the mac, skip the 
+	atime touch test
+	
+	* mac/tclMacApplication.r:
+	* mac/tclMacLibrary.r:
+	* mac/tclMacOSA.r:
+	* mac/tclMacResource.r: updated copyrights/dates in version
+	strings; reorganized resources among these files to avoid 
+	multiple copies in applications and shared libraries, the script
+	libraries are now no longer duplicated in Tclsh but are only  
+	included in the resources of Tcl.shlb.
+
+	* tests/cmdMZ.test:
+	* tests/exec.test:
+	* tests/fileName.test: added missing cleanups/tests/catches that
+	caused tests to fail on the mac.
+
+	* doc/tclvars.n: documentation error, env(PWD) should be env(HOME)
+	
 2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c: minor casts to prevent warnings

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.10.2.2 2001/09/01 22:53:45 davygrvy Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.10.2.3 2001/10/17 19:29:25 das Exp $
  */
 
 
@@ -212,19 +212,38 @@ extern char **environ;
 #define TCL_SHLIB_EXT ".shlb"
 
 /*
- * The following define is bogus and needs to be fixed.  It claims that
+ * The following define is defined as a workaround on the mac.  It claims that
  * struct tm has the timezone string in it, which is not true.  However,
  * the code that works around this fact does not compile on the Mac, since
  * it relies on the fact that time.h has a "timezone" variable, which the
  * Metrowerks time.h does not have...
  * 
- * The Mac timezone stuff never worked (clock format 0 -format %Z returns "Z")
- * so this just keeps the status quo.  The real answer is to not use the
- * MSL strftime, and provide the needed compat functions...
+ * The Mac timezone stuff is implemented via the TclpGetTZName() routine in
+ * tclMacTime.c
  * 
  */
  
 #define HAVE_TM_ZONE 
+ 
+ 
+/*
+ * If we're using the Metrowerks MSL, we need to convert time_t values from
+ * the mac epoch to the msl epoch (== unix epoch) by adding the offset from
+ * <time.mac.h> to mac time_t values, as MSL is using its epoch for file
+ * access routines such as stat or utime
+ */
+
+#ifdef __MSL__
+#include <time.mac.h>
+#ifdef _mac_msl_epoch_offset_
+#define tcl_mac_epoch_offset  _mac_msl_epoch_offset_
+#define TCL_MAC_USE_MSL_EPOCH  /* flag for TclDate.c */
+#else
+#define tcl_mac_epoch_offset 0L
+#endif
+#else
+#define tcl_mac_epoch_offset 0L
+#endif
  
 /*
  * The following macros have trivial definitions, allowing generic code to 

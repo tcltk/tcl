@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.r,v 1.3.2.1 2001/04/04 21:22:19 hobbs Exp $
+ * RCS: @(#) $Id: tclMacOSA.r,v 1.3.2.2 2001/10/17 19:29:25 das Exp $
  */
 
 #include <Types.r>
@@ -39,14 +39,14 @@ resource 'vers' (1) {
 	SCRIPT_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	SCRIPT_PATCH_LEVEL,
-	SCRIPT_PATCH_LEVEL ", by Jim Ingham © Cygnus Solutions" "\n" "© 2000 Ajuba Solutions"
+	SCRIPT_PATCH_LEVEL ", by Jim Ingham © Cygnus Solutions" "\n" "© 2001 Tcl Core Team"
 };
 
 resource 'vers' (2) {
 	SCRIPT_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	SCRIPT_PATCH_LEVEL,
-	"Tclapplescript " SCRIPT_PATCH_LEVEL " © 1996-2000"
+	"Tclapplescript " SCRIPT_PATCH_LEVEL " © 1996-2001"
 };
 
 /*

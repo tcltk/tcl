@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAppInit.c,v 1.5.12.1 2001/04/04 21:22:18 hobbs Exp $
+ * RCS: @(#) $Id: tclMacAppInit.c,v 1.5.12.2 2001/10/17 19:29:25 das Exp $
  */
 
 #include "tcl.h"
@@ -189,6 +189,7 @@ MacintoshInit()
     SIOUXSettings.autocloseonquit = true;
     SIOUXSettings.showstatusline = true;
     SIOUXSettings.asktosaveonclose = false;
+    SIOUXSettings.wasteusetempmemory = true;    
     InstallConsole(0);
     SIOUXSetTitle("\pTcl Interpreter");
 		

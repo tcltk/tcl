@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.9 1999/12/12 22:46:45 hobbs Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.9.2.1 2001/10/17 19:29:25 das Exp $
  */
 
 /*
@@ -30,13 +30,6 @@
 #include <MoreFiles.h>
 #include <MoreFilesExtras.h>
 #include <FSpCompat.h>
-
-/*
- * Static variables used by the TclpStat function.
- */
-static int initialized = false;
-static long gmt_offset;
-TCL_DECLARE_MUTEX(gmtMutex)
 
 
 /*
@@ -134,7 +127,7 @@ TclpMatchFilesTypes(
     char *fname, *patternEnd = tail;
     char savedChar;
     int fnameLen, result = TCL_OK;
-    int baseLength = Tcl_DStringLength(dirPtr);
+    int baseLength;
     CInfoPBRec pb;
     OSErr err;
     FSSpec dirSpec;
@@ -146,21 +139,55 @@ TclpMatchFilesTypes(
     Tcl_Obj *resultPtr;
     OSType okType = 0;
     OSType okCreator = 0;
+    Tcl_DString dsOrig;
+
+    Tcl_DStringInit(&dsOrig);
+    Tcl_DStringAppend(&dsOrig, Tcl_DStringValue(dirPtr), 
+    	Tcl_DStringLength(dirPtr));
+    baseLength = Tcl_DStringLength(&dsOrig);
 
     /*
      * Make sure that the directory part of the name really is a
      * directory.
      */
 
-    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(dirPtr),
-	    Tcl_DStringLength(dirPtr), &fileString);
+    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
+	    Tcl_DStringLength(&dsOrig), &fileString);
 
-    FSpLocationFromPath(fileString.length, fileString.string, &dirSpec);
+    err = FSpLocationFromPath(Tcl_DStringLength(&fileString), 
+			      Tcl_DStringValue(&fileString), &dirSpec);
     Tcl_DStringFree(&fileString);
-
+    if (err == noErr)
     err = FSpGetDirectoryID(&dirSpec, &dirID, &isDirectory);
     if ((err != noErr) || !isDirectory) {
-	return TCL_OK;
+    /*
+     * Check if we had a relative path (unix style relative path 
+     * compatibility for glob)
+     */
+    Tcl_DStringFree(&dsOrig);
+    Tcl_DStringAppend(&dsOrig, ":", 1);
+    Tcl_DStringAppend(&dsOrig, Tcl_DStringValue(dirPtr), 
+    	Tcl_DStringLength(dirPtr));
+    baseLength = Tcl_DStringLength(&dsOrig);
+
+    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
+	    Tcl_DStringLength(&dsOrig), &fileString);
+    
+    err = FSpLocationFromPath(Tcl_DStringLength(&fileString), 
+			      Tcl_DStringValue(&fileString), &dirSpec);
+    Tcl_DStringFree(&fileString);
+    if (err == noErr)
+    err = FSpGetDirectoryID(&dirSpec, &dirID, &isDirectory);
+    if ((err != noErr) || !isDirectory) {
+    	Tcl_DStringFree(&dsOrig);
+    	return TCL_OK;
+    }
+    }
+
+    /* Make sure we have a trailing directory delimiter */
+    if (Tcl_DStringValue(&dsOrig)[baseLength-1] != ':') {
+	Tcl_DStringAppend(&dsOrig, ":", 1);
+	baseLength++;
     }
 
     /*
@@ -218,10 +245,10 @@ TclpMatchFilesTypes(
 	Tcl_ExternalToUtfDString(NULL, (char *) fileName + 1, fileName[0],
 		&fileString);
 	if (Tcl_StringMatch(Tcl_DStringValue(&fileString), pattern)) {
-	    Tcl_DStringSetLength(dirPtr, baseLength);
-	    Tcl_DStringAppend(dirPtr, Tcl_DStringValue(&fileString), -1);
-	    fname = Tcl_DStringValue(dirPtr);
-	    fnameLen = Tcl_DStringLength(dirPtr);
+	    Tcl_DStringSetLength(&dsOrig, baseLength);
+	    Tcl_DStringAppend(&dsOrig, Tcl_DStringValue(&fileString), -1);
+	    fname = Tcl_DStringValue(&dsOrig);
+	    fnameLen = Tcl_DStringLength(&dsOrig);
 	    if (tail == NULL) {
 		int typeOk = 1;
 		if (types != NULL) {
@@ -296,8 +323,8 @@ TclpMatchFilesTypes(
 		    }
 		}
 	    } else if ((pb.hFileInfo.ioFlAttrib & ioDirMask) != 0) {
-		Tcl_DStringAppend(dirPtr, ":", 1);
-		result = TclDoGlob(interp, separators, dirPtr, tail, types);
+		Tcl_DStringAppend(&dsOrig, ":", 1);
+		result = TclDoGlob(interp, separators, &dsOrig, tail, types);
 		if (result != TCL_OK) {
 		    Tcl_DStringFree(&fileString);
 		    break;
@@ -309,6 +336,7 @@ TclpMatchFilesTypes(
     }
     *patternEnd = savedChar;
 
+    Tcl_DStringFree(&dsOrig);
     return result;
 }
 
@@ -811,25 +839,14 @@ TclpStat(
 	    /*
 	     * The times returned by the Mac file system are in the
 	     * local time zone.  We convert them to GMT so that the
-	     * epoch starts from GMT.  This is also consistant with
+	     * epoch starts from GMT.  This is also consistent with
 	     * what is returned from "clock seconds".
 	     */
 
-	    Tcl_MutexLock(&gmtMutex);
-	    if (initialized == false) {
-		MachineLocation loc;
-    
-		ReadLocation(&loc);
-		gmt_offset = loc.u.gmtDelta & 0x00ffffff;
-		if (gmt_offset & 0x00800000) {
-		    gmt_offset = gmt_offset | 0xff000000;
-		}
-		initialized = true;
-	    }
-	    Tcl_MutexUnlock(&gmtMutex);
-
-	    bufPtr->st_atime = bufPtr->st_mtime = fpb.ioFlMdDat - gmt_offset;
-	    bufPtr->st_ctime = fpb.ioFlCrDat - gmt_offset;
+	    bufPtr->st_atime = bufPtr->st_mtime = fpb.ioFlMdDat 
+	      - TclpGetGMTOffset() + tcl_mac_epoch_offset;
+	    bufPtr->st_ctime = fpb.ioFlCrDat - TclpGetGMTOffset() 
+	      + tcl_mac_epoch_offset;
 	}
     }
 

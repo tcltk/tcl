@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInt.h,v 1.6.2.1 2001/04/04 21:22:19 hobbs Exp $
+ * RCS: @(#) $Id: tclMacInt.h,v 1.6.2.2 2001/10/17 19:29:25 das Exp $
  */
 
 #ifndef _TCLMACINT
@@ -66,7 +66,8 @@
  */
 
 EXTERN char *	TclMacGetFontEncoding _ANSI_ARGS_((int fontId));
-EXTERN int	TclMacHaveThreads(void);
+EXTERN int		TclMacHaveThreads _ANSI_ARGS_((void));
+EXTERN long		TclpGetGMTOffset _ANSI_ARGS_((void));
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

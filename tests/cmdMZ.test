@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.7.2.1 2001/08/24 16:19:10 dgp Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.7.2.2 2001/10/17 19:29:25 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -78,7 +78,7 @@ test cmdMZ-3.1 {Tcl_SourceObjCmd: error conditions} {macOnly} {
 } {1 {wrong # args: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?"}}
 test cmdMZ-3.2 {Tcl_SourceObjCmd: error conditions} {macOnly} {
     list [catch {source a b} msg] $msg
-} {1 {wrong # args: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?"}}
+} {1 {bad argument: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?"}}
 test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} {unixOrPc} {
     list [catch {source} msg] $msg
 } {1 {wrong # args: should be "source fileName"}}

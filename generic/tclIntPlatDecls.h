@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.4 2001/09/10 17:15:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.5 2001/10/17 19:29:25 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -194,7 +194,8 @@ EXTERN int		TclMacCreateEnv _ANSI_ARGS_((void));
 /* 23 */
 EXTERN FILE *		TclMacFOpenHack _ANSI_ARGS_((CONST char * path, 
 				CONST char * mode));
-/* Slot 24 is reserved */
+/* 24 */
+EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 /* 25 */
 EXTERN int		TclMacChmod _ANSI_ARGS_((char * path, int mode));
 #endif /* MAC_TCL */
@@ -524,7 +525,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclMacFOpenHack \
 	(tclIntPlatStubsPtr->tclMacFOpenHack) /* 23 */
 #endif
-/* Slot 24 is reserved */
+#ifndef TclpGetTZName
+#define TclpGetTZName \
+	(tclIntPlatStubsPtr->tclpGetTZName) /* 24 */
+#endif
 #ifndef TclMacChmod
 #define TclMacChmod \
 	(tclIntPlatStubsPtr->tclMacChmod) /* 25 */

@@ -11,11 +11,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.1 2001/09/20 01:13:16 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2 2001/10/17 19:29:24 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#ifdef MAC_TCL
+#include "tclMacInt.h"
+#endif
 #include <locale.h>
 
 typedef int (StatProc)_ANSI_ARGS_((CONST char *path, struct stat *buf));
@@ -842,6 +845,10 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		}
 		tval.actime = buf.st_atime;
 		tval.modtime = buf.st_mtime;
+#ifdef MAC_TCL
+		tval.actime += TclpGetGMTOffset();
+		tval.modtime += TclpGetGMTOffset();
+#endif
 		fileName = Tcl_GetString(objv[2]);
 		if (utime(fileName, &tval) != 0) {
 		    Tcl_AppendStringsToObj(resultPtr,
@@ -1029,6 +1036,10 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		}
 		tval.actime = buf.st_atime;
 		tval.modtime = buf.st_mtime;
+#ifdef MAC_TCL
+		tval.actime += TclpGetGMTOffset();
+		tval.modtime += TclpGetGMTOffset();
+#endif
 		fileName = Tcl_GetString(objv[2]);
 		if (utime(fileName, &tval) != 0) {
 		    Tcl_AppendStringsToObj(resultPtr,
