@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.4 1999/03/14 18:56:10 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.5 1999/03/19 04:01:22 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -323,22 +323,22 @@ TclWinNoBackslash(path)
 
 /* Slot 25 */
 TCHAR *
-Tcl_WinUtfToTChar(string, len, dsPtr)
-    CONST char * string;
+Tcl_WinUtfToTChar(str, len, dsPtr)
+    CONST char * str;
     int len;
     Tcl_DString * dsPtr;
 {
-    return (tclIntPlatStubsPtr->tcl_WinUtfToTChar)(string, len, dsPtr);
+    return (tclIntPlatStubsPtr->tcl_WinUtfToTChar)(str, len, dsPtr);
 }
 
 /* Slot 26 */
 char *
-Tcl_WinTCharToUtf(string, len, dsPtr)
-    CONST TCHAR * string;
+Tcl_WinTCharToUtf(str, len, dsPtr)
+    CONST TCHAR * str;
     int len;
     Tcl_DString * dsPtr;
 {
-    return (tclIntPlatStubsPtr->tcl_WinTCharToUtf)(string, len, dsPtr);
+    return (tclIntPlatStubsPtr->tcl_WinTCharToUtf)(str, len, dsPtr);
 }
 
 #endif /* __WIN32__ */

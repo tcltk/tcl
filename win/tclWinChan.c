@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.5 1999/03/10 06:49:29 stanton Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.6 1999/03/19 04:01:26 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -750,7 +750,6 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 
     if (handle == INVALID_HANDLE_VALUE) {
 	DWORD err;
-//        openerr:
 	err = GetLastError();
 	if ((err & 0xffffL) == ERROR_OPEN_FAILED) {
 	    err = (mode & O_CREAT) ? ERROR_FILE_EXISTS : ERROR_FILE_NOT_FOUND;
@@ -765,12 +764,21 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
     }
     
     type = GetFileType(handle);
-    if (type) {
-	dcb.DCBlength = sizeof( DCB ) ;
-	if (GetCommState(handle, &dcb)) {
-	    type = FILE_TYPE_SERIAL;
-	} else if (GetConsoleMode(handle, &consoleParams)) {
+
+    /*
+     * If the file is a character device, we need to try to figure out
+     * whether it is a serial port, a console, or something else.  We
+     * test for the console case first because this is more common.
+     */
+
+    if (type == FILE_TYPE_CHAR) {
+	if (GetConsoleMode(handle, &consoleParams)) {
 	    type = FILE_TYPE_CONSOLE;
+	} else {
+	    dcb.DCBlength = sizeof( DCB ) ;
+	    if (GetCommState(handle, &dcb)) {
+		type = FILE_TYPE_SERIAL;
+	    }
 	}
     }
 
@@ -779,14 +787,6 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
     switch (type)
     {
     case FILE_TYPE_SERIAL:
-//	CloseHandle(handle);
-//	handle = (*tclWinProcs->createFileProc)(nativeName, accessMode, 
-//	        0, NULL, OPEN_EXISTING, flags, NULL);
-
-//	if (handle == INVALID_HANDLE_VALUE) {
-//	    goto openerr;
-//	}
-    
 	channel = TclWinOpenSerialChannel(handle, channelName,
 	        channelPermissions);
 	break;
@@ -872,12 +872,21 @@ Tcl_MakeFileChannel(rawHandle, mode)
     }
 
     type = GetFileType(handle);
-    if (type) {
-	dcb.DCBlength = sizeof( DCB ) ;
-	if (GetCommState(handle, &dcb)) {
-	    type = FILE_TYPE_SERIAL;
-	} else if (GetConsoleMode(handle, &consoleParams)) {
+
+    /*
+     * If the file is a character device, we need to try to figure out
+     * whether it is a serial port, a console, or something else.  We
+     * test for the console case first because this is more common.
+     */
+
+    if (type == FILE_TYPE_CHAR) {
+	if (GetConsoleMode(handle, &consoleParams)) {
 	    type = FILE_TYPE_CONSOLE;
+	} else {
+	    dcb.DCBlength = sizeof( DCB ) ;
+	    if (GetCommState(handle, &dcb)) {
+		type = FILE_TYPE_SERIAL;
+	    }
 	}
     }
 

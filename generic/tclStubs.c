@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.3.2.6 1999/03/14 18:56:11 stanton Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.3.2.7 1999/03/19 04:01:23 stanton Exp $
  */
 
 #include "tcl.h"
@@ -361,12 +361,12 @@ TclFreeObj(objPtr)
 
 /* Slot 31 */
 int
-Tcl_GetBoolean(interp, string, boolPtr)
+Tcl_GetBoolean(interp, str, boolPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     int * boolPtr;
 {
-    return (tclStubsPtr->tcl_GetBoolean)(interp, string, boolPtr);
+    return (tclStubsPtr->tcl_GetBoolean)(interp, str, boolPtr);
 }
 
 /* Slot 32 */
@@ -390,12 +390,12 @@ Tcl_GetByteArrayFromObj(objPtr, lengthPtr)
 
 /* Slot 34 */
 int
-Tcl_GetDouble(interp, string, doublePtr)
+Tcl_GetDouble(interp, str, doublePtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     double * doublePtr;
 {
-    return (tclStubsPtr->tcl_GetDouble)(interp, string, doublePtr);
+    return (tclStubsPtr->tcl_GetDouble)(interp, str, doublePtr);
 }
 
 /* Slot 35 */
@@ -423,12 +423,12 @@ Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
 
 /* Slot 37 */
 int
-Tcl_GetInt(interp, string, intPtr)
+Tcl_GetInt(interp, str, intPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     int * intPtr;
 {
-    return (tclStubsPtr->tcl_GetInt)(interp, string, intPtr);
+    return (tclStubsPtr->tcl_GetInt)(interp, str, intPtr);
 }
 
 /* Slot 38 */
@@ -1180,12 +1180,12 @@ Tcl_DoWhenIdle(proc, clientData)
 
 /* Slot 117 */
 char *
-Tcl_DStringAppend(dsPtr, string, length)
+Tcl_DStringAppend(dsPtr, str, length)
     Tcl_DString * dsPtr;
-    CONST char * string;
+    CONST char * str;
     int length;
 {
-    return (tclStubsPtr->tcl_DStringAppend)(dsPtr, string, length);
+    return (tclStubsPtr->tcl_DStringAppend)(dsPtr, str, length);
 }
 
 /* Slot 118 */
@@ -1335,12 +1335,12 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 
 /* Slot 135 */
 int
-Tcl_ExprBoolean(interp, string, ptr)
+Tcl_ExprBoolean(interp, str, ptr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     int * ptr;
 {
-    return (tclStubsPtr->tcl_ExprBoolean)(interp, string, ptr);
+    return (tclStubsPtr->tcl_ExprBoolean)(interp, str, ptr);
 }
 
 /* Slot 136 */
@@ -1355,12 +1355,12 @@ Tcl_ExprBooleanObj(interp, objPtr, ptr)
 
 /* Slot 137 */
 int
-Tcl_ExprDouble(interp, string, ptr)
+Tcl_ExprDouble(interp, str, ptr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     double * ptr;
 {
-    return (tclStubsPtr->tcl_ExprDouble)(interp, string, ptr);
+    return (tclStubsPtr->tcl_ExprDouble)(interp, str, ptr);
 }
 
 /* Slot 138 */
@@ -1375,12 +1375,12 @@ Tcl_ExprDoubleObj(interp, objPtr, ptr)
 
 /* Slot 139 */
 int
-Tcl_ExprLong(interp, string, ptr)
+Tcl_ExprLong(interp, str, ptr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     long * ptr;
 {
-    return (tclStubsPtr->tcl_ExprLong)(interp, string, ptr);
+    return (tclStubsPtr->tcl_ExprLong)(interp, str, ptr);
 }
 
 /* Slot 140 */
@@ -1627,14 +1627,14 @@ Tcl_GetObjResult(interp)
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* Slot 167 */
 int
-Tcl_GetOpenFile(interp, string, write, checkUsage, filePtr)
+Tcl_GetOpenFile(interp, str, write, checkUsage, filePtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     int write;
     int checkUsage;
     ClientData * filePtr;
 {
-    return (tclStubsPtr->tcl_GetOpenFile)(interp, string, write, checkUsage, filePtr);
+    return (tclStubsPtr->tcl_GetOpenFile)(interp, str, write, checkUsage, filePtr);
 }
 
 #endif /* UNIX */
@@ -2045,23 +2045,23 @@ Tcl_RegExpCompile(interp, string)
 
 /* Slot 213 */
 int
-Tcl_RegExpExec(interp, regexp, string, start)
+Tcl_RegExpExec(interp, regexp, str, start)
     Tcl_Interp * interp;
     Tcl_RegExp regexp;
-    CONST char * string;
+    CONST char * str;
     CONST char * start;
 {
-    return (tclStubsPtr->tcl_RegExpExec)(interp, regexp, string, start);
+    return (tclStubsPtr->tcl_RegExpExec)(interp, regexp, str, start);
 }
 
 /* Slot 214 */
 int
-Tcl_RegExpMatch(interp, string, pattern)
+Tcl_RegExpMatch(interp, str, pattern)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     char * pattern;
 {
-    return (tclStubsPtr->tcl_RegExpMatch)(interp, string, pattern);
+    return (tclStubsPtr->tcl_RegExpMatch)(interp, str, pattern);
 }
 
 /* Slot 215 */
@@ -2093,21 +2093,21 @@ Tcl_ResetResult(interp)
 
 /* Slot 218 */
 int
-Tcl_ScanElement(string, flagPtr)
-    CONST char * string;
+Tcl_ScanElement(str, flagPtr)
+    CONST char * str;
     int * flagPtr;
 {
-    return (tclStubsPtr->tcl_ScanElement)(string, flagPtr);
+    return (tclStubsPtr->tcl_ScanElement)(str, flagPtr);
 }
 
 /* Slot 219 */
 int
-Tcl_ScanCountedElement(string, length, flagPtr)
-    CONST char * string;
+Tcl_ScanCountedElement(str, length, flagPtr)
+    CONST char * str;
     int length;
     int * flagPtr;
 {
-    return (tclStubsPtr->tcl_ScanCountedElement)(string, length, flagPtr);
+    return (tclStubsPtr->tcl_ScanCountedElement)(str, length, flagPtr);
 }
 
 /* Slot 220 */
@@ -2224,12 +2224,12 @@ Tcl_SetRecursionLimit(interp, depth)
 
 /* Slot 232 */
 void
-Tcl_SetResult(interp, string, freeProc)
+Tcl_SetResult(interp, str, freeProc)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     Tcl_FreeProc * freeProc;
 {
-    (tclStubsPtr->tcl_SetResult)(interp, string, freeProc);
+    (tclStubsPtr->tcl_SetResult)(interp, str, freeProc);
 }
 
 /* Slot 233 */
@@ -2316,13 +2316,13 @@ Tcl_SourceRCFile(interp)
 
 /* Slot 242 */
 int
-Tcl_SplitList(interp, list, argcPtr, argvPtr)
+Tcl_SplitList(interp, listStr, argcPtr, argvPtr)
     Tcl_Interp * interp;
-    CONST char * list;
+    CONST char * listStr;
     int * argcPtr;
     char *** argvPtr;
 {
-    return (tclStubsPtr->tcl_SplitList)(interp, list, argcPtr, argvPtr);
+    return (tclStubsPtr->tcl_SplitList)(interp, listStr, argcPtr, argvPtr);
 }
 
 /* Slot 243 */
@@ -2348,11 +2348,11 @@ Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc)
 
 /* Slot 245 */
 int
-Tcl_StringMatch(string, pattern)
-    CONST char * string;
+Tcl_StringMatch(str, pattern)
+    CONST char * str;
     CONST char * pattern;
 {
-    return (tclStubsPtr->tcl_StringMatch)(string, pattern);
+    return (tclStubsPtr->tcl_StringMatch)(str, pattern);
 }
 
 /* Slot 246 */
@@ -2613,12 +2613,12 @@ Tcl_HashStats(tablePtr)
 
 /* Slot 270 */
 char *
-Tcl_ParseVar(interp, string, termPtr)
+Tcl_ParseVar(interp, str, termPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     char ** termPtr;
 {
-    return (tclStubsPtr->tcl_ParseVar)(interp, string, termPtr);
+    return (tclStubsPtr->tcl_ParseVar)(interp, str, termPtr);
 }
 
 /* Slot 271 */

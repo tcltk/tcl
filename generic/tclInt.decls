@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.3.2.3 1999/03/14 18:56:08 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.3.2.4 1999/03/19 04:01:20 stanton Exp $
 
 library tcl
 
@@ -101,9 +101,9 @@ declare 21 generic {
     int TclFileRenameCmd(Tcl_Interp *interp, int argc, char **argv)
 }
 declare 22 generic {
-    int TclFindElement(Tcl_Interp *interp, CONST char *list, int listLength, \
-	    CONST char **elementPtr, CONST char **nextPtr, int *sizePtr, \
-	    int *bracePtr)
+    int TclFindElement(Tcl_Interp *interp, CONST char *listStr, \
+	    int listLength, CONST char **elementPtr, CONST char **nextPtr, \
+	    int *sizePtr, int *bracePtr)
 }
 declare 23 generic {
     Proc * TclFindProc(Interp *iPtr, char *procName)
@@ -137,7 +137,7 @@ declare 31 generic {
     char * TclGetExtension(char *name)
 }
 declare 32 generic {
-    int TclGetFrame(Tcl_Interp *interp, char *string, CallFrame **framePtrPtr)
+    int TclGetFrame(Tcl_Interp *interp, char *str, CallFrame **framePtrPtr)
 }
 declare 33 generic {
     TclCmdProcType TclGetInterpProc(void)
@@ -151,7 +151,7 @@ declare 35 generic {
 	    int leaveErrorMsg)
 }
 declare 36 generic {
-    int TclGetLong(Tcl_Interp *interp, char *string, long *longPtr)
+    int TclGetLong(Tcl_Interp *interp, char *str, long *longPtr)
 }
 declare 37 generic {
     int TclGetLoadedPackages(Tcl_Interp *interp, char *targetName)
@@ -166,7 +166,7 @@ declare 39 generic {
     TclObjCmdProcType TclGetObjInterpProc(void)
 }
 declare 40 generic {
-    int TclGetOpenMode(Tcl_Interp *interp, char *string, int *seekFlagPtr)
+    int TclGetOpenMode(Tcl_Interp *interp, char *str, int *seekFlagPtr)
 }
 declare 41 generic {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
@@ -318,15 +318,15 @@ declare 83 generic {
 }
 # Removed in 8.1:
 #  declare 84 generic {
-#      int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, \
+#      int TclParseBraces(Tcl_Interp *interp, char *str, char **termPtr, \
 #  	    ParseValue *pvPtr)
 #  }
 #  declare 85 generic {
-#      int TclParseNestedCmd(Tcl_Interp *interp, char *string, int flags, \
+#      int TclParseNestedCmd(Tcl_Interp *interp, char *str, int flags, \
 #  	    char **termPtr, ParseValue *pvPtr)
 #  }
 #  declare 86 generic {
-#      int TclParseQuotes(Tcl_Interp *interp, char *string, int termChar, \
+#      int TclParseQuotes(Tcl_Interp *interp, char *str, int termChar, \
 #  	    int flags, char **termPtr, ParseValue *pvPtr)
 #  }
 #  declare 87 generic {
@@ -387,7 +387,7 @@ declare 102 generic {
     void TclSetupEnv(Tcl_Interp *interp)
 }
 declare 103 generic {
-    int TclSockGetPort(Tcl_Interp *interp, char *string, char *proto, \
+    int TclSockGetPort(Tcl_Interp *interp, char *str, char *proto, \
 	    int *portPtr)
 }
 declare 104 generic {
@@ -730,10 +730,10 @@ declare 24 win {
     char * TclWinNoBackslash(char *path)
 }
 declare 25 win {
-    TCHAR * Tcl_WinUtfToTChar(CONST char *string, int len, Tcl_DString *dsPtr)
+    TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, Tcl_DString *dsPtr)
 }
 declare 26 win {
-    char * Tcl_WinTCharToUtf(CONST TCHAR *string, int len, Tcl_DString *dsPtr)
+    char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, Tcl_DString *dsPtr)
 }
 
 #########################

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.4 1999/03/14 18:56:09 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.5 1999/03/19 04:01:20 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -96,7 +96,7 @@ EXTERN int		TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp * interp,
 				int argc, char ** argv));
 /* 22 */
 EXTERN int		TclFindElement _ANSI_ARGS_((Tcl_Interp * interp, 
-				CONST char * list, int listLength, 
+				CONST char * listStr, int listLength, 
 				CONST char ** elementPtr, 
 				CONST char ** nextPtr, int * sizePtr, 
 				int * bracePtr));
@@ -122,7 +122,7 @@ EXTERN Tcl_Obj *	TclGetElementOfIndexedArray _ANSI_ARGS_((
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char * name));
 /* 32 */
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, CallFrame ** framePtrPtr));
+				char * str, CallFrame ** framePtrPtr));
 /* 33 */
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 /* 34 */
@@ -134,7 +134,7 @@ EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp * interp,
 				int localIndex, int leaveErrorMsg));
 /* 36 */
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, long * longPtr));
+				char * str, long * longPtr));
 /* 37 */
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 				Tcl_Interp * interp, char * targetName));
@@ -150,7 +150,7 @@ EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
 EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
 /* 40 */
 EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, int * seekFlagPtr));
+				char * str, int * seekFlagPtr));
 /* 41 */
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 				Tcl_Command command));
@@ -320,7 +320,7 @@ EXTERN Tcl_Obj *	TclSetIndexedScalar _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp * interp));
 /* 103 */
 EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * proto, int * portPtr));
+				char * str, char * proto, int * portPtr));
 /* 104 */
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock, 
 				int size));
@@ -467,7 +467,7 @@ typedef struct TclIntStubs {
     int (*tclFileDeleteCmd) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv)); /* 19 */
     int (*tclFileMakeDirsCmd) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv)); /* 20 */
     int (*tclFileRenameCmd) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv)); /* 21 */
-    int (*tclFindElement) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * list, int listLength, CONST char ** elementPtr, CONST char ** nextPtr, int * sizePtr, int * bracePtr)); /* 22 */
+    int (*tclFindElement) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * listStr, int listLength, CONST char ** elementPtr, CONST char ** nextPtr, int * sizePtr, int * bracePtr)); /* 22 */
     Proc * (*tclFindProc) _ANSI_ARGS_((Interp * iPtr, char * procName)); /* 23 */
     int (*tclFormatInt) _ANSI_ARGS_((char * buffer, long n)); /* 24 */
     void (*tclFreePackageInfo) _ANSI_ARGS_((Interp * iPtr)); /* 25 */
@@ -477,15 +477,15 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclGetElementOfIndexedArray) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, Tcl_Obj * elemPtr, int leaveErrorMsg)); /* 29 */
     void *reserved30;
     char * (*tclGetExtension) _ANSI_ARGS_((char * name)); /* 31 */
-    int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, char * string, CallFrame ** framePtrPtr)); /* 32 */
+    int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, char * str, CallFrame ** framePtrPtr)); /* 32 */
     TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
     Tcl_Obj * (*tclGetIndexedScalar) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, int leaveErrorMsg)); /* 35 */
-    int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, char * string, long * longPtr)); /* 36 */
+    int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, char * str, long * longPtr)); /* 36 */
     int (*tclGetLoadedPackages) _ANSI_ARGS_((Tcl_Interp * interp, char * targetName)); /* 37 */
     int (*tclGetNamespaceForQualName) _ANSI_ARGS_((Tcl_Interp * interp, char * qualName, Namespace * cxtNsPtr, int flags, Namespace ** nsPtrPtr, Namespace ** altNsPtrPtr, Namespace ** actualCxtPtrPtr, char ** simpleNamePtr)); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) _ANSI_ARGS_((void)); /* 39 */
-    int (*tclGetOpenMode) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int * seekFlagPtr)); /* 40 */
+    int (*tclGetOpenMode) _ANSI_ARGS_((Tcl_Interp * interp, char * str, int * seekFlagPtr)); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) _ANSI_ARGS_((Tcl_Command command)); /* 41 */
     char * (*tclpGetUserHome) _ANSI_ARGS_((CONST char * name, Tcl_DString * bufferPtr)); /* 42 */
     int (*tclGlobalInvoke) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, int flags)); /* 43 */
@@ -548,7 +548,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclSetIndexedScalar) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, Tcl_Obj * objPtr, int leaveErrorMsg)); /* 100 */
     void *reserved101;
     void (*tclSetupEnv) _ANSI_ARGS_((Tcl_Interp * interp)); /* 102 */
-    int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * proto, int * portPtr)); /* 103 */
+    int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char * proto, int * portPtr)); /* 103 */
     int (*tclSockMinimumBuffers) _ANSI_ARGS_((int sock, int size)); /* 104 */
     int (*tclStat) _ANSI_ARGS_((CONST char * path, TclStat_ * buf)); /* 105 */
     int (*tclStatDeleteProc) _ANSI_ARGS_((TclStatProc_ * proc)); /* 106 */
@@ -679,8 +679,8 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclFileRenameCmd)(interp, argc, argv) /* 21 */
 #endif
 #ifndef TclFindElement
-#define TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr, bracePtr) \
-	(tclIntStubsPtr->tclFindElement)(interp, list, listLength, elementPtr, nextPtr, sizePtr, bracePtr) /* 22 */
+#define TclFindElement(interp, listStr, listLength, elementPtr, nextPtr, sizePtr, bracePtr) \
+	(tclIntStubsPtr->tclFindElement)(interp, listStr, listLength, elementPtr, nextPtr, sizePtr, bracePtr) /* 22 */
 #endif
 #ifndef TclFindProc
 #define TclFindProc(iPtr, procName) \
@@ -713,8 +713,8 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetExtension)(name) /* 31 */
 #endif
 #ifndef TclGetFrame
-#define TclGetFrame(interp, string, framePtrPtr) \
-	(tclIntStubsPtr->tclGetFrame)(interp, string, framePtrPtr) /* 32 */
+#define TclGetFrame(interp, str, framePtrPtr) \
+	(tclIntStubsPtr->tclGetFrame)(interp, str, framePtrPtr) /* 32 */
 #endif
 #ifndef TclGetInterpProc
 #define TclGetInterpProc() \
@@ -729,8 +729,8 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetIndexedScalar)(interp, localIndex, leaveErrorMsg) /* 35 */
 #endif
 #ifndef TclGetLong
-#define TclGetLong(interp, string, longPtr) \
-	(tclIntStubsPtr->tclGetLong)(interp, string, longPtr) /* 36 */
+#define TclGetLong(interp, str, longPtr) \
+	(tclIntStubsPtr->tclGetLong)(interp, str, longPtr) /* 36 */
 #endif
 #ifndef TclGetLoadedPackages
 #define TclGetLoadedPackages(interp, targetName) \
@@ -745,8 +745,8 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetObjInterpProc)() /* 39 */
 #endif
 #ifndef TclGetOpenMode
-#define TclGetOpenMode(interp, string, seekFlagPtr) \
-	(tclIntStubsPtr->tclGetOpenMode)(interp, string, seekFlagPtr) /* 40 */
+#define TclGetOpenMode(interp, str, seekFlagPtr) \
+	(tclIntStubsPtr->tclGetOpenMode)(interp, str, seekFlagPtr) /* 40 */
 #endif
 #ifndef TclGetOriginalCommand
 #define TclGetOriginalCommand(command) \
@@ -973,8 +973,8 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetupEnv)(interp) /* 102 */
 #endif
 #ifndef TclSockGetPort
-#define TclSockGetPort(interp, string, proto, portPtr) \
-	(tclIntStubsPtr->tclSockGetPort)(interp, string, proto, portPtr) /* 103 */
+#define TclSockGetPort(interp, str, proto, portPtr) \
+	(tclIntStubsPtr->tclSockGetPort)(interp, str, proto, portPtr) /* 103 */
 #endif
 #ifndef TclSockMinimumBuffers
 #define TclSockMinimumBuffers(sock, size) \

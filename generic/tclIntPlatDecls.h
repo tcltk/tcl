@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.4 1999/03/14 18:56:09 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.5 1999/03/19 04:01:21 stanton Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -127,10 +127,10 @@ EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 /* 24 */
 EXTERN char *		TclWinNoBackslash _ANSI_ARGS_((char * path));
 /* 25 */
-EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * string, 
+EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
 				int len, Tcl_DString * dsPtr));
 /* 26 */
-EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * string, 
+EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
 				int len, Tcl_DString * dsPtr));
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
@@ -243,8 +243,8 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
     char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 23 */
     char * (*tclWinNoBackslash) _ANSI_ARGS_((char * path)); /* 24 */
-    TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * string, int len, Tcl_DString * dsPtr)); /* 25 */
-    char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * string, int len, Tcl_DString * dsPtr)); /* 26 */
+    TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * str, int len, Tcl_DString * dsPtr)); /* 25 */
+    char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * str, int len, Tcl_DString * dsPtr)); /* 26 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     VOID * (*tclpSysAlloc) _ANSI_ARGS_((long size, int isBin)); /* 0 */
@@ -416,12 +416,12 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinNoBackslash)(path) /* 24 */
 #endif
 #ifndef Tcl_WinUtfToTChar
-#define Tcl_WinUtfToTChar(string, len, dsPtr) \
-	(tclIntPlatStubsPtr->tcl_WinUtfToTChar)(string, len, dsPtr) /* 25 */
+#define Tcl_WinUtfToTChar(str, len, dsPtr) \
+	(tclIntPlatStubsPtr->tcl_WinUtfToTChar)(str, len, dsPtr) /* 25 */
 #endif
 #ifndef Tcl_WinTCharToUtf
-#define Tcl_WinTCharToUtf(string, len, dsPtr) \
-	(tclIntPlatStubsPtr->tcl_WinTCharToUtf)(string, len, dsPtr) /* 26 */
+#define Tcl_WinTCharToUtf(str, len, dsPtr) \
+	(tclIntPlatStubsPtr->tcl_WinTCharToUtf)(str, len, dsPtr) /* 26 */
 #endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL

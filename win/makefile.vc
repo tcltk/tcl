@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.19 1999/03/14 23:57:45 surles Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.20 1999/03/19 04:01:26 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -105,6 +105,9 @@ TCLTEST		= $(OUTDIR)\$(NAMEPREFIX)test.exe
 DUMPEXTS	= $(TMPDIR)\dumpexts.exe
 CAT16		= $(TMPDIR)\cat16.exe
 CAT32		= $(TMPDIR)\cat32.exe
+RMDIR		= .\rmd.bat
+MKDIR		= .\mkd.bat
+RM		= del
 
 LIB_INSTALL_DIR	= $(INSTALLDIR)\lib
 BIN_INSTALL_DIR	= $(INSTALLDIR)\bin
@@ -329,8 +332,8 @@ test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 <<
 
 setup:
-	@mkd $(TMPDIR)
-	@mkd $(OUTDIR)
+	@$(MKDIR) $(TMPDIR)
+	@$(MKDIR) $(OUTDIR)
 
 $(DUMPEXTS): $(WINDIR)\winDumpExts.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
@@ -429,8 +432,8 @@ $(TCLOBJS)
 <<
 
 install-binaries: $(TCLSH)
-	mkd "$(BIN_INSTALL_DIR)"
-	mkd "$(LIB_INSTALL_DIR)"
+	$(MKDIR) "$(BIN_INSTALL_DIR)"
+	$(MKDIR) "$(LIB_INSTALL_DIR)"
 	@echo installing $(TCLDLLNAME)
 	@copy "$(TCLDLL)" "$(BIN_INSTALL_DIR)"
 	@copy "$(TCLLIB)" "$(LIB_INSTALL_DIR)"
@@ -444,19 +447,19 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
 
 install-libraries:
-	-@mkd "$(LIB_INSTALL_DIR)"
-	-@mkd "$(INCLUDE_INSTALL_DIR)"
-	-@mkd "$(SCRIPT_INSTALL_DIR)"
-	-@mkd "$(SCRIPT_INSTALL_DIR)\http1.0"
+	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
+	-@$(MKDIR) "$(INCLUDE_INSTALL_DIR)"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
 	@copy << "$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
 package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]] registry"
 <<
 	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
-	-@mkd  "$(SCRIPT_INSTALL_DIR)\http2.0"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.0"
 	-@copy "$(ROOT)\library\http2.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.0"
 	-@copy "$(ROOT)\library\http2.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.0"
-	-@mkd  "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
@@ -485,7 +488,7 @@ $(TMPDIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) -Fo$(TMPDIR)\ $?
 
 $(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS)-DTCL_TEST -Fo$(TMPDIR)\testMain.obj $?
+	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$(TMPDIR)\testMain.obj $?
 
 $(TMPDIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
@@ -558,15 +561,15 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 		$(TCL_DEFINES) $<
 
 clean:
-	-@del $(OUTDIR)\*.exp 
-	-@del $(OUTDIR)\*.lib 
-	-@del $(OUTDIR)\*.dll 
-	-@del $(OUTDIR)\*.exe
-	-@del $(OUTDIR)\*.pdb
-	-@del $(TMPDIR)\*.pch
-	-@del $(TMPDIR)\*.obj
-	-@del $(TMPDIR)\*.res
-	-@del $(TMPDIR)\*.def
-	-@del $(TMPDIR)\*.exe
-	-@rmd $(OUTDIR)
-	-@rmd $(TMPDIR)
+	-@$(RM) $(OUTDIR)\*.exp 
+	-@$(RM) $(OUTDIR)\*.lib 
+	-@$(RM) $(OUTDIR)\*.dll 
+	-@$(RM) $(OUTDIR)\*.exe
+	-@$(RM) $(OUTDIR)\*.pdb
+	-@$(RM) $(TMPDIR)\*.pch
+	-@$(RM) $(TMPDIR)\*.obj
+	-@$(RM) $(TMPDIR)\*.res
+	-@$(RM) $(TMPDIR)\*.def
+	-@$(RM) $(TMPDIR)\*.exe
+	-@$(RMDIR) $(OUTDIR)
+	-@$(RMDIR) $(TMPDIR)

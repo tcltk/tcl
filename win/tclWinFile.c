@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.4 1999/03/12 23:29:21 surles Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.5 1999/03/19 04:01:27 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -289,14 +289,13 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	 * the file name to lower case for comparison purposes.  Note that we
 	 * are ignoring the case sensitivity flag because Windows doesn't honor
 	 * case even if the volume is case sensitive.  If the volume also
-	 * doesn't preserve case, then we return the lower case form of the
-	 * name, otherwise we return the system form.
+	 * doesn't preserve case, then we previously returned the lower case
+	 * form of the name.  This didn't seem quite right since there are
+	 * non-case-preserving volumes that actually return mixed case.  So now
+	 * we are returning exactly what we get from the system.
 	 */
 
-	if ((volFlags & FS_CASE_SENSITIVE) == 0) {
-	    Tcl_UtfToLower(name);
-	}
-
+	Tcl_UtfToLower(name);
 	nativeMatchResult = NULL;
 
 	if ((matchDotFiles == 0) && (name[0] == '.')) {
@@ -319,9 +318,6 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	 */
 
 	name = Tcl_WinTCharToUtf(nativeMatchResult, -1, &ds);
-        if ((volFlags & FS_CASE_IS_PRESERVED) == 0) {
-	    Tcl_UtfToLower(name);
-	}
 	Tcl_DStringAppend(dirPtr, name, -1);
 	Tcl_DStringFree(&ds);
 

@@ -1,3 +1,25 @@
+1999-03-18    <stanton@scriptics.com>
+
+	* win/tclWinChan.c (TclpOpenFileChannel, Tcl_MakeFileChannel):
+	Changed to only test for console or comm handles when the type is
+	FILE_TYPE_CHAR to avoid useless tests on simple files.  Also
+	reordered tests so consoles are tested first as this is more
+	common.
+
+	* win/makefile.vc: Regularized usage of mkd and rmd and rm.
+
+	* library/encoding/shiftjis.enc: 
+	* tools/encoding/shiftjis.txt: Missing/incorrect characters in
+	shift-jis table. [Bug: 1008, 1526]
+
+	* generic/tclInt.decls:
+	* generic/tcl.decls: Eliminated use of "string" and "list" from
+	argument lists to avoid conflicts with C++ STL. [Bug: 1181]
+
+	* win/tclWinFile.c (TclpMatchFiles): Changed to ignore the
+	FS_CASE_IS_PRESERVED bit and always return exactly what we get
+	from the system.
+
 1999-03-17    <stanton@GASPODE>
 
 	* win/README.binary: 

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntStubs.c,v 1.3.2.4 1999/03/14 18:56:10 stanton Exp $
+ * RCS: @(#) $Id: tclIntStubs.c,v 1.3.2.5 1999/03/19 04:01:22 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -224,16 +224,16 @@ TclFileRenameCmd(interp, argc, argv)
 
 /* Slot 22 */
 int
-TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr, bracePtr)
+TclFindElement(interp, listStr, listLength, elementPtr, nextPtr, sizePtr, bracePtr)
     Tcl_Interp * interp;
-    CONST char * list;
+    CONST char * listStr;
     int listLength;
     CONST char ** elementPtr;
     CONST char ** nextPtr;
     int * sizePtr;
     int * bracePtr;
 {
-    return (tclIntStubsPtr->tclFindElement)(interp, list, listLength, elementPtr, nextPtr, sizePtr, bracePtr);
+    return (tclIntStubsPtr->tclFindElement)(interp, listStr, listLength, elementPtr, nextPtr, sizePtr, bracePtr);
 }
 
 /* Slot 23 */
@@ -304,12 +304,12 @@ TclGetExtension(name)
 
 /* Slot 32 */
 int
-TclGetFrame(interp, string, framePtrPtr)
+TclGetFrame(interp, str, framePtrPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     CallFrame ** framePtrPtr;
 {
-    return (tclIntStubsPtr->tclGetFrame)(interp, string, framePtrPtr);
+    return (tclIntStubsPtr->tclGetFrame)(interp, str, framePtrPtr);
 }
 
 /* Slot 33 */
@@ -342,12 +342,12 @@ TclGetIndexedScalar(interp, localIndex, leaveErrorMsg)
 
 /* Slot 36 */
 int
-TclGetLong(interp, string, longPtr)
+TclGetLong(interp, str, longPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     long * longPtr;
 {
-    return (tclIntStubsPtr->tclGetLong)(interp, string, longPtr);
+    return (tclIntStubsPtr->tclGetLong)(interp, str, longPtr);
 }
 
 /* Slot 37 */
@@ -383,12 +383,12 @@ TclGetObjInterpProc()
 
 /* Slot 40 */
 int
-TclGetOpenMode(interp, string, seekFlagPtr)
+TclGetOpenMode(interp, str, seekFlagPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     int * seekFlagPtr;
 {
-    return (tclIntStubsPtr->tclGetOpenMode)(interp, string, seekFlagPtr);
+    return (tclIntStubsPtr->tclGetOpenMode)(interp, str, seekFlagPtr);
 }
 
 /* Slot 41 */
@@ -911,13 +911,13 @@ TclSetupEnv(interp)
 
 /* Slot 103 */
 int
-TclSockGetPort(interp, string, proto, portPtr)
+TclSockGetPort(interp, str, proto, portPtr)
     Tcl_Interp * interp;
-    char * string;
+    char * str;
     char * proto;
     int * portPtr;
 {
-    return (tclIntStubsPtr->tclSockGetPort)(interp, string, proto, portPtr);
+    return (tclIntStubsPtr->tclSockGetPort)(interp, str, proto, portPtr);
 }
 
 /* Slot 104 */
