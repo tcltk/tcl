@@ -1,3 +1,13 @@
+2003-11-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Make sure that
+	Tcl_AsyncInvoke is called regularly when processing bytecodes.
+	* generic/tclTest.c (AsyncThreadProc, TestasyncCmd): Extended
+	testing harness to send an asynchronous marking without relying on
+	UNIX signals.
+	* tests/async.test (async-4.*): Tests to check that async events
+	are handled by the bytecode core. [Bug 746722]
+
 2003-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclTest.c (TestHashSystemHashCmd): Removed 'const'
