@@ -1,3 +1,21 @@
+2002-03-27  David Gravereaux <davygrvy@pobox.com>
+
+	* win/.cvsignore:
+	* win/buildall.vc.bat:
+	* win/coffbase.txt:
+	* win/makefile.vc:
+	* win/nmakehlp.c (new):
+	* win/rules.vc:  First draft fix for [Bug 527941].  More changes
+	need to done to the makehelp target to get to stop leaving build
+	files in the tools/ directory.  This does not address the syntax
+	errors in the man files.  Having the contents of tcl.hpj(.in)
+	inside makefile.vc allows for version numbers to be replaced with
+	macros.
+	
+	The new nmakehlp.c is built by rules.vc in preprocessing and removes
+	the need to use tricky shell syntax that wasn't compatible on Win9x
+	systems.  This is a first draft repair for [Bug 533862].
+
 2002-03-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_EvalEx): passing the correct commandSize
