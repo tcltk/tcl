@@ -1,3 +1,13 @@
+2004-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamespace.c (TclGetNamespaceForQualName):	Resolved
+	longstanding inconsistency in the treatment of the TCL_NAMESPACE_ONLY
+	flag revealed by testing the 2004-09-09 commits against Itcl.
+	TCL_NAMESPACE_ONLY now acts as specified in the pre-function
+	comment, forcing resolution in the passed in context namespace.
+	It has been incorrectly forcing resolution in the interp's current
+	namespace.
+
 2004-09-10  Kevin Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Fixed a bug where %z always put a plus
