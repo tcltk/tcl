@@ -14,7 +14,7 @@
 
 	* win/tclWinInit.c: minor 64bit casts
 
-2001-09-30  Miguel Sofer  <msofer@users.sourceforge.net>
+2001-10-01  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCmdIL.c:
 	* generic/tclCmdMZ.c:
