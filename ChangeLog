@@ -1,5 +1,28 @@
 2004-10-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp,
+		TclEvalObjvInternal,Tcl_LogCommandInfo):
+	* generic/tclCmdAH.c (Tcl_CatchObjCmd):
+	* generic/tclEvent.c (BgError,Tcl_BackgroundError,HandleBgErrors):
+	* generic/tclInt.h (Interp, ERROR_CODE_SET):
+	* generic/tclNamesp.c
+		(Tcl_CreateNamespace,Tcl_DeleteNamespace,TclTeardownNamespace):
+	* generic/tclResult.c
+		(Tcl_ResetResult,Tcl_SetObjErrorCode,TclTransferResult):
+	* generic/tclTrace.c (CallVarTraces):
+	Reworked management of the "errorCode" data of an interp.
+	That information is now primarily stored in a new private
+	(Tcl_Obj *) field of the Interp struct, rather than using a
+	global variable ::errorCode as the primary storage.  The
+	ERROR_CODE_SET flag bit value is no longer required to manage
+	the value in its new location, and is removed.  Variable traces
+	are established to support compatibility for any code expecting
+	the ::errorCode variable to hold the information.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Code that sets traces on the ::errorCode value may notice a
+	difference in timing of the firing of those traces.
+
 	* generic/tclNamesp.c (Tcl_PopCallFrame):	Removed Bug 1038021
 	workaround.  That bug is now fixed.
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.11 2004/09/30 23:06:48 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.12 2004/10/05 18:14:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -801,7 +801,13 @@ Tcl_ResetResult(interp)
     }
     iPtr->result = iPtr->resultSpace;
     iPtr->resultSpace[0] = 0;
-    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_IN_PROGRESS | ERROR_CODE_SET);
+    if (iPtr->errorCode) {
+	Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL,
+		iPtr->errorCode, TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(iPtr->errorCode);
+	iPtr->errorCode = NULL;
+    }
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_IN_PROGRESS);
 }
 
 /*
@@ -955,9 +961,11 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
 {
     Interp *iPtr = (Interp *) interp;
     
-    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL,
-	    errorObjPtr, TCL_GLOBAL_ONLY);
-    iPtr->flags |= ERROR_CODE_SET;
+    if (iPtr->errorCode) {
+	Tcl_DecrRefCount(iPtr->errorCode);
+    }
+    iPtr->errorCode = errorObjPtr;
+    Tcl_IncrRefCount(iPtr->errorCode);
 }
 
 /*
@@ -1033,8 +1041,7 @@ TclTransferResult(sourceInterp, result, targetInterp)
 	    ((Interp *) targetInterp)->flags |= ERR_IN_PROGRESS;
 	}
 
-	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorCode", NULL,
-		TCL_GLOBAL_ONLY);
+	objPtr = ((Interp *) sourceInterp)->errorCode;
 	if (objPtr) {
 	    Tcl_SetObjErrorCode(targetInterp, objPtr);
 	}
