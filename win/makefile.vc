@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.18 1998/10/07 20:57:09 escoffon Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.19 1998/10/17 00:20:50 escoffon Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -240,7 +240,9 @@ conlibsdll = $(libcdll) $(baselibs)
 # MSVC on Alpha doesn't understand -Ot
 cdebug = -O2i -Gs -GD
 !ELSE
-cdebug = -Oti -Gs -GD
+#cdebug = -Oti -Gs -GD
+# This cranks the optimization level to maximize speed
+cdebug = -O2 -Gs -GD
 !ENDIF
 !ELSE
 cdebug = -Z7 -Od -WX

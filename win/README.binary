@@ -1,11 +1,11 @@
-Tcl/Tk 8.0.3 for Windows, Binary Distribution
+Tcl/Tk 8.0.4 for Windows, Binary Distribution
 
-%Z% $Id: README.binary,v 1.1 1998/08/31 16:31:53 stanton Exp $ 
+%Z% $Id: README.binary,v 1.2 1998/10/17 00:20:50 escoffon Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.0.3 for
+This directory contains the binary distribution of Tcl/Tk 8.0.4 for
 Windows.  It was compiled with Microsoft Visual C++ 5.0 using Win32
 API, so that it will run under Windows NT and Windows 95.  The
 information here corresponds to release 8.0.  This patch provides
@@ -22,11 +22,11 @@ release fixes various bugs in Tcl 8.0, plus it adds a few minor
 features to support the TclPro 1.0 tool set and [incr Tcl] 3.0.
 Please check the changes file in the source release for details.
 
-This release also corresponds to Tk 8.0.3.  This is a major release with
+This release also corresponds to Tk 8.0.4.  This is a major release with
 significant new features such as native look and feel on Macintoshes
 and PCs, a new font mechanism, application embedding, and proper
 support for Safe-Tcl.  See below for details.  There should be no
-backward incompatibilities in Tk 8.0.3 that affect scripts.
+backward incompatibilities in Tk 8.0.4 that affect scripts.
 
 Note: with this release the Tk version number skips from 4.2 to 8.0.
 The jump was made in order to synchronize the Tcl and Tk version
