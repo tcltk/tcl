@@ -1,3 +1,8 @@
+2000-04-22  Jim Ingham <jingham@cygnus.com>
+
+        * library/package.tcl (tclPkgUnknown): Fixed a typo in the Mac package
+        search part of tclPkgUnknown.
+        
 2000-04-21  Sandeep Tamhankar <sandeep@scriptics.com>
 
 	* library/http2.1/http.tcl: Fixed a newly introduced bug where if
