@@ -444,6 +444,7 @@ fi
 #	instead of vfork.
 #--------------------------------------------------------------------
 
+AC_TYPE_SIGNAL()
 AC_CHECK_FUNC(vfork, tcl_ok=1, tcl_ok=0)
 if test "$tcl_ok" = 1; then
     AC_MSG_CHECKING([vfork/signal bug]);
