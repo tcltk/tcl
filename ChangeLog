@@ -1,3 +1,11 @@
+2002-09-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/encoding/koi8-u.enc: removed extraneous spaces that
+	confused encoding reader. [Bug #615115]
+
+	* unix/Makefile.in: generate source dists with -src designator and
+	do not generate .Z anymore (just .gz and .zip).
+
 2002-09-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: preserve environment value of INSTALL_ROOT.
