@@ -2907,7 +2907,7 @@ rm -f conftest*
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-	    PLAT_OBJS="tclMacOSXBundle.o"
+	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -prebind"
 	    CC_SEARCH_FLAGS=""
@@ -2926,7 +2926,7 @@ EOF
 #define USE_VFORK 1
 EOF
 
-	    cat >> confdefs.h <<EOF
+	    cat >> confdefs.h <<\EOF
 #define TCL_DEFAULT_ENCODING "utf-8"
 EOF
 
