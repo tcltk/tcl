@@ -8,7 +8,7 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.3 2000/06/20 21:28:11 ericm Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.4 2000/07/18 21:30:41 ericm Exp $
 
 package provide opt 0.4.1
 
@@ -18,7 +18,7 @@ namespace eval ::tcl {
     namespace export OptKeyRegister OptKeyDelete OptKeyError OptKeyParse \
              OptProc OptProcArgGiven OptParse \
 	     Lempty Lget \
-             Lassign Lvarpop Lvarpop1 Lvarset Lvarincr Lfirst Lrest \
+             Lassign Lvarpop Lvarpop1 Lvarset Lvarincr \
              SetMax SetMin
 
 
@@ -109,9 +109,9 @@ namespace eval ::tcl {
 #    instruction    :== single element list
 #
 # (the difference between singleStep and program is that \
-#   llength [Lfirst $program] >= 2
+#   llength [lindex $program 0] >= 2
 # while
-#   llength [Lfirst $singleStep] == 1
+#   llength [lindex $singleStep 0] == 1
 # )
 #
 # And for this application:
@@ -174,7 +174,7 @@ proc ::tcl::OptKeyRegister {desc {key ""}} {
 	    return -code error "'args' special argument must be the last one";
 	}
         set res [OptNormalizeOne $item];
-        set state [Lfirst $res];
+        set state [lindex $res 0];
         if {$inflags} {
             if {$state == "flags"} {
 		# add to 'subprogram'
@@ -277,7 +277,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 
     # Return the instruction word/list of a given step/(sub)program
     proc OptInstr {lst} {
-	Lfirst $lst;
+	lindex $lst 0;
     }
     # Is a (sub) program or a plain instruction ?
     proc OptIsPrg {lst} {
@@ -285,7 +285,7 @@ proc ::tcl::OptProcArgGiven {argname} {
     }
     # Is this instruction a program counter or a real instr
     proc OptIsCounter {item} {
-	expr {[Lfirst $item]=="P"}
+	expr {[lindex $item 0]=="P"}
     }
     # Current program counter (2nd word of first word)
     proc OptGetPrgCounter {lst} {
@@ -299,7 +299,7 @@ proc ::tcl::OptProcArgGiven {argname} {
     # returns a list of currently selected items.
     proc OptSelection {lst} {
 	set res {};
-	foreach idx [lrange [Lfirst $lst] 1 end] {
+	foreach idx [lrange [lindex $lst 0] 1 end] {
 	    lappend res [Lget $lst $idx];
 	}
 	return $res;
@@ -348,7 +348,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 
     # empty state means done/paste the end of the program
     proc OptState {item} {
-        Lfirst $item
+        lindex $item 0
     }
     
     # current state
@@ -361,7 +361,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 
     # Returns the argument that has to be processed now
     proc OptCurrentArg {lst} {
-        Lfirst $lst;
+        lindex $lst 0;
     }
     # Advance to next argument
     proc OptNextArg {argsName} {
@@ -962,7 +962,7 @@ proc ::tcl::Lget {list indexLst} {
     if {[llength $indexLst] <= 1} {
         return [lindex $list $indexLst];
     }
-    Lget [lindex $list [Lfirst $indexLst]] [Lrest $indexLst];
+    Lget [lindex $list [lindex $indexLst 0]] [lrange $indexLst 1 end];
 }
 # Sets the value of one leaf of a lists tree
 # (we use the version that does not create the elements because
@@ -977,13 +977,13 @@ proc ::tcl::Lvarset {listName indexLst newValue} {
     if {[llength $indexLst] <= 1} {
         Lvarset1nc list $indexLst $newValue;
     } else {
-        set idx [Lfirst $indexLst];
+        set idx [lindex $indexLst 0];
         set targetList [lindex $list $idx];
         # reduce refcount on targetList (not really usefull now,
 	# could be with optimizing compiler)
 #        Lvarset1 list $idx {};
         # recursively replace in targetList
-        Lvarset targetList [Lrest $indexLst] $newValue;
+        Lvarset targetList [lrange $indexLst 1 end] $newValue;
         # put updated sub list back in the tree
         Lvarset1nc list $idx $targetList;
     }
@@ -1017,12 +1017,12 @@ proc ::tcl::Lvarincr {listName indexLst {howMuch 1}} {
     if {[llength $indexLst] <= 1} {
         Lvarincr1 list $indexLst $howMuch;
     } else {
-        set idx [Lfirst $indexLst];
+        set idx [lindex $indexLst 0];
         set targetList [lindex $list $idx];
         # reduce refcount on targetList
         Lvarset1nc list $idx {};
         # recursively replace in targetList
-        Lvarincr targetList [Lrest $indexLst] $howMuch;
+        Lvarincr targetList [lrange $indexLst 1 end] $howMuch;
         # put updated sub list back in the tree
         Lvarset1nc list $idx $targetList;
     }
@@ -1034,14 +1034,6 @@ proc ::tcl::Lvarincr1 {listName index {howMuch 1}} {
     set list [lreplace $list $index $index $newValue];
     return $newValue;
 }
-# Returns the first element of a list
-proc ::tcl::Lfirst {list} {
-    lindex $list 0
-}
-# Returns the rest of the list minus first element
-proc ::tcl::Lrest {list} {
-    lrange $list 1 end
-}
 # Removes the first element of a list
 # and returns the new list value
 proc ::tcl::Lvarpop1 {listName} {
@@ -1052,7 +1044,7 @@ proc ::tcl::Lvarpop1 {listName} {
 # (Like the tclX version)
 proc ::tcl::Lvarpop {listName} {
     upvar $listName list;
-    set el [Lfirst $list];
+    set el [lindex $list 0];
     set list [lrange $list 1 end];
     return $el;
 }

@@ -1,3 +1,13 @@
+2000-07-18  Eric Melski  <ericm@ajubasolutions.com>
+
+	* tests/opt.test: Removed references to Lfirst, Lrest functions.
+
+	* library/opt0.4/optparse.tcl: Applied patch from Chris Nelson,
+	which replaces the [Lfirst] function with an inline [lindex ... 0]
+	and [Lrest] with [lrange ... 1 end], for better performance. 
+	[RFE: 6019]
+	
+
 2000-07-18  Eric Melski  <ericm@scriptics.com>
 
 	* compat/string.h: Fixed function prototypes for strpbrk and
