@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.3 1998/12/01 05:01:02 stanton Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.4 1998/12/11 00:44:57 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,10 @@ static char *errorProcString;
 
 static Tcl_Mutex threadMutex;
 
-EXTERN int	TclThread_Init(Tcl_Interp *interp);
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+
+EXTERN int	TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int	Tcl_ThreadObjCmd _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclCreateThread _ANSI_ARGS_((Tcl_Interp *interp,
@@ -119,6 +122,10 @@ EXTERN int	TclCreateThread _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int	TclThreadList _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int	TclThreadSend _ANSI_ARGS_((Tcl_Interp *interp, Tcl_ThreadId id,
 	char *script, int wait));
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLIMPORT
+
 #ifdef MAC_TCL
 static pascal void *NewThread _ANSI_ARGS_((ClientData clientData));
 #else
