@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.1.2.6 1999/03/24 02:49:47 hershey Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.1.2.7 1999/03/25 04:32:19 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -24,7 +24,19 @@ catch {set oldlibrary $env(TCL_LIBRARY); unset env(TCL_LIBRARY)}
 catch {set oldlang $env(LANG)}
 set env(LANG) C
 
-test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly} {
+# Some tests will fail if they are run on a machine that doesn't have
+# this Tcl version installed (as opposed to built) on it.
+if {[catch {
+    set f [open "|[list $tcltest]" w+]
+    exec kill -PIPE [pid $f]
+    close $f
+}]} {
+    set ::tcltest::testConfig(installedTcl) 0
+} else {
+    set ::tcltest::testConfig(installedTcl) 1
+}
+
+test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly installedTcl} {
     set x {}
 
     set f [open "|[list $tcltest]" w+]
@@ -47,14 +59,21 @@ proc getlibpath "{program [list $tcltest]}" {
     return $path
 }
 
-test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} {unixOnly} {
+# Some tests require the testgetdefenc command
+
+set ::tcltest::testConfig(testgetdefenc) \
+	[expr {[info commands testgetdefenc] != {}}]
+
+test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} \
+	{unixOnly testgetdefenc} {
     set origDir [testgetdefenc]
     testsetdefenc slappy
     set path [testgetdefenc]
     testsetdefenc $origDir
     set path
 } {slappy}
-test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} {unixOnly} {
+test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} \
+	{unixOnly installedTcl} {
     set path [getlibpath]
 
     set installLib lib/tcl[info tclversion]
@@ -70,7 +89,7 @@ test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} {unixOn
     lappend x [string compare [lindex $path 1] [file dirname $prefix]/$developLib]
     set x
 } {0 0}
-test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} {unixOnly} {
+test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} {unixOnly installedTcl} {
     # ((str != NULL) && (str[0] != '\0')) 
 
     set env(TCL_LIBRARY) sparkly
@@ -79,7 +98,8 @@ test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} {unixOnly} {
 
     lindex $path 0
 } "sparkly"
-test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} {unixOnly} {
+test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} \
+	{unixOnly installedTcl} {
     # ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc - 1]) != 0))
 
     set env(TCL_LIBRARY) /a/b/tcl1.7
@@ -88,7 +108,8 @@ test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} {unixOnly} {
 
     lrange $path 0 1
 } [list /a/b/tcl1.7 /a/b/tcl[info tclversion]]
-test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} {unixOnly} {
+test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} \
+	{unixOnly installedTcl} {
     # Child process translates env variable from native encoding.
 
     set env(TCL_LIBRARY) "\xa7"
@@ -102,7 +123,8 @@ test unixInit-2.5 {TclpInitLibraryPath: compiled-in library path} \
 	{emptyTest unixOnly} {
     # cannot test
 } {}
-test unixInit-2.6 {TclpInitLibraryPath: executable relative} {unixOnly} {
+test unixInit-2.6 {TclpInitLibraryPath: executable relative} \
+	{unixOnly installedTcl} {
     file delete -force /tmp/sparkly
     file mkdir /tmp/sparkly/bin
     file copy $tcltest /tmp/sparkly/bin/tcltest
@@ -110,7 +132,7 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} {unixOnly} {
     file mkdir /tmp/sparkly/lib/tcl[info tclversion]
     close [open /tmp/sparkly/lib/tcl[info tclversion]/init.tcl w]
 
-    set x [lrange [getlibpath /tmp/sparkly/bin/tcltest] 0 2]
+    set x [lrange [getlibpath /tmp/sparkly/bin/tcltest] 0 1]
     file delete -force /tmp/sparkly
     set x
 } [list /tmp/sparkly/lib/tcl[info tclversion] /tmp/tcl[info patchlevel]/library]
@@ -119,7 +141,7 @@ test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
     # would need test command to get defaultLibDir and compare it to
     # [lindex $auto_path end]
 } {}
-test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly} {
+test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     set env(LANG) C
 
     set f [open "|[list $tcltest]" w+]
@@ -131,7 +153,8 @@ test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly} {
 
     set enc
 } {iso8859-1}
-test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly japanese nonPortable} {
+test unixInit-3.1 {TclpSetInitialEncodings} \
+	{unixOnly japanese installedTcl nonPortable} {
     set env(LANG) japanese
 
     set f [open "|[list $tcltest]" w+]

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.1.2.10 1999/03/24 02:49:18 hershey Exp $
+# RCS: @(#) $Id: io.test,v 1.1.2.11 1999/03/25 04:32:17 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -66,70 +66,70 @@ set thisScript [file join $::tcltest::testsDir [info script]]
 
 # These tests are disabled until we decide what to do with "unsupported0".
 #
-#test io-1.1 {unsupported0 command} {
-#    removeFile test1
-#    set f1 [open iocmd.test]
-#    set f2 [open test1 w]
-#    unsupported0 $f1 $f2
-#    close $f1
-#    catch {close $f2}
-#    set s1 [file size $thisScript]
-#    set s2 [file size test1]
-#    set x ok
-#    if {"$s1" != "$s2"} {
-#        set x broken
-#    }
-#    set x
-#} ok
-#test io-1.2 {unsupported0 command} {
-#    removeFile test1
-#    set f1 [open $thisScript]
-#    set f2 [open test1 w]
-#    unsupported0 $f1 $f2 40
-#    close $f1
-#    close $f2
-#    file size test1
-#} 40
-#test io-1.3 {unsupported0 command} {
-#    removeFile test1
-#    set f1 [open $thisScript]
-#    set f2 [open test1 w]
-#    unsupported0 $f1 $f2 -1
-#    close $f1
-#    close $f2
-#    set x ok
-#    set s1 [file size $thisScript]
-#    set s2 [file size test1]
-#    if {$s1 != $s2} {
-#        set x broken
-#    }
-#    set x
-#} ok
-#test io-1.4 {unsupported0 command} {unixOrPc} {
-#    removeFile pipe
-#    removeFile test1
-#    set f1 [open pipe w]
-#    puts $f1 {puts ready}
-#    puts $f1 {gets stdin}
-#    puts $f1 {set f1 [open $thisScript r]}
-#    puts $f1 {puts [read $f1 100]}
-#    puts $f1 {close $f1}
-#    close $f1
-#    set f1 [open "|[list $tcltest pipe]" r+]
-#    gets $f1
-#    puts $f1 ready
-#    flush $f1
-#    set f2 [open test1 w]
-#    set c [unsupported0 $f1 $f2 40]
-#    catch {close $f1}
-#    close $f2
-#    set s1 [file size test1]
-#    set x ok
-#    if {$s1 != "40"} {
-#        set x broken
-#    }
-#    list $c $x
-#} {40 ok}
+test io-1.1 {unsupported0 command} {knownBug} {
+    removeFile test1
+    set f1 [open iocmd.test]
+    set f2 [open test1 w]
+    unsupported0 $f1 $f2
+    close $f1
+    catch {close $f2}
+    set s1 [file size $thisScript]
+    set s2 [file size test1]
+    set x ok
+    if {"$s1" != "$s2"} {
+        set x broken
+    }
+    set x
+} ok
+test io-1.2 {unsupported0 command} {knownBug} {
+    removeFile test1
+    set f1 [open $thisScript]
+    set f2 [open test1 w]
+    unsupported0 $f1 $f2 40
+    close $f1
+    close $f2
+    file size test1
+} 40
+test io-1.3 {unsupported0 command} {knownBug} {
+    removeFile test1
+    set f1 [open $thisScript]
+    set f2 [open test1 w]
+    unsupported0 $f1 $f2 -1
+    close $f1
+    close $f2
+    set x ok
+    set s1 [file size $thisScript]
+    set s2 [file size test1]
+    if {$s1 != $s2} {
+        set x broken
+    }
+    set x
+} ok
+test io-1.4 {unsupported0 command} {knownBug unixOrPc} {
+    removeFile pipe
+    removeFile test1
+    set f1 [open pipe w]
+    puts $f1 {puts ready}
+    puts $f1 {gets stdin}
+    puts $f1 {set f1 [open $thisScript r]}
+    puts $f1 {puts [read $f1 100]}
+    puts $f1 {close $f1}
+    close $f1
+    set f1 [open "|[list $tcltest pipe]" r+]
+    gets $f1
+    puts $f1 ready
+    flush $f1
+    set f2 [open test1 w]
+    set c [unsupported0 $f1 $f2 40]
+    catch {close $f1}
+    close $f2
+    set s1 [file size test1]
+    set x ok
+    if {$s1 != "40"} {
+        set x broken
+    }
+    list $c $x
+} {40 ok}
 
 proc contents {file} {
     set f [open $file]
@@ -139,7 +139,7 @@ proc contents {file} {
     return $a
 }
 
-test io-1.5 {Tcl_WriteChars: CheckChannelErrors} {
+test io-1.5 {Tcl_WriteChars: CheckChannelErrors} {emptyTest} {
     # no test, need to cause an async error.
 } {}
 test io-1.6 {Tcl_WriteChars: WriteBytes} {
@@ -6408,14 +6408,14 @@ test io-52.8 {TclCopyChannel} {stdio} {
     removeFile pipe
     set f1 [open pipe w]
     fconfigure $f1 -translation lf
-    puts $f1 {
+    puts $f1 [subst {
 	puts ready
 	gets stdin
-	set f1 [open $thisScript r]
-	fconfigure $f1 -translation lf
-	puts [read $f1 100]
-	close $f1
-    }
+	set f1 \[open $thisScript r\]
+	fconfigure \$f1 -translation lf
+	puts \[read \$f1 100\]
+	close \$f1
+    }]
     close $f1
     set f1 [open "|[list $tcltest pipe]" r+]
     fconfigure $f1 -translation lf

@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.6 1999/03/24 02:49:33 hershey Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.7 1999/03/25 04:32:18 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -329,19 +329,19 @@ test pkgMkIndex-9.1 {circular packages} {
     pkgtest::runIndex pkg circ1.tcl circ2.tcl circ3.tcl
 } {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
 
-# Try to find one of the DLLs in the dltest directory
-set x [file join $::tcltest::testsDir ../unix/dltest/pkga[info sharedlibextension]]
-if {[file exists $x]} {
+# Some tests require the existence of one of the DLLs in the dltest directory
+set x [file join $::tcltest::testsDir \
+	../unix/dltest/pkga[info sharedlibextension]]
+set dll "[file tail $x]Required"
+set ::tcltest::testConfig($dll) [file exists $x]
+
+test pkgMkIndex-10.1 {package in DLL and script} $dll {
     file copy -force $x pkg
-    test pkgMkIndex-10.1 {package in DLL and script} {
-	pkgtest::runIndex pkg pkga[info sharedlibextension] pkga.tcl
-    } "0 {{Pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
-    test pkgMkIndex-10.2 {package in DLL hidden by -load} {
-	pkgtest::runIndex -load Pkg* -- pkg pkga[info sharedlibextension]
-    } {0 {}}
-} else {
-    puts "Skipping pkgMkIndex-10.1 (index of DLL and script)"
-}
+    pkgtest::runIndex pkg pkga[info sharedlibextension] pkga.tcl
+} "0 {{Pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
+test pkgMkIndex-10.2 {package in DLL hidden by -load} $dll {
+    pkgtest::runIndex -load Pkg* -- pkg pkga[info sharedlibextension]
+} {0 {}}
 
 # cleanup
 namespace delete pkgtest

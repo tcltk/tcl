@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.1.2.5 1999/03/24 02:48:57 hershey Exp $
+# RCS: @(#) $Id: basic.test,v 1.1.2.6 1999/03/25 04:32:16 hershey Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -43,28 +43,28 @@ test basic-1.1 {Tcl_CreateInterp, creates interp's global namespace} {
          [interp delete test_interp]
 } {::test_ns_basic {}}
 
-test basic-2.1 {TclHideUnsafeCommands} {
+test basic-2.1 {TclHideUnsafeCommands} {emptyTest} {
 } {}
 
-test basic-3.1 {Tcl_CallWhenDeleted: see dcall.test} {
+test basic-3.1 {Tcl_CallWhenDeleted: see dcall.test} {emptyTest} {
 } {}
 
-test basic-4.1 {Tcl_DontCallWhenDeleted: see dcall.test} {
+test basic-4.1 {Tcl_DontCallWhenDeleted: see dcall.test} {emptyTest} {
 } {}
 
-test basic-5.1 {Tcl_SetAssocData: see assoc.test} {
+test basic-5.1 {Tcl_SetAssocData: see assoc.test} {emptyTest} {
 } {}
 
-test basic-6.1 {Tcl_DeleteAssocData: see assoc.test} {
+test basic-6.1 {Tcl_DeleteAssocData: see assoc.test} {emptyTest} {
 } {}
 
-test basic-7.1 {Tcl_GetAssocData: see assoc.test} {
+test basic-7.1 {Tcl_GetAssocData: see assoc.test} {emptyTest} {
 } {}
 
-test basic-8.1 {Tcl_InterpDeleted} {
+test basic-8.1 {Tcl_InterpDeleted} {emptyTest} {
 } {}
 
-test basic-9.1 {Tcl_DeleteInterp: see interp.test} {
+test basic-9.1 {Tcl_DeleteInterp: see interp.test} {emptyTest} {
 } {}
 
 test basic-10.1 {DeleteInterpProc, destroys interp's global namespace} {
@@ -226,10 +226,10 @@ test basic-15.1 {Tcl_CreateObjCommand, new cmd goes into a namespace specified i
          [namespace delete test_ns_basic]
 } {::test_ns_basic {}}
 
-test basic-16.1 {TclInvokeStringCommand} {
+test basic-16.1 {TclInvokeStringCommand} {emptyTest} {
 } {}
 
-test basic-17.1 {TclInvokeObjCommand} {
+test basic-17.1 {TclInvokeObjCommand} {emptyTest} {
 } {}
 
 test basic-18.1 {TclRenameCommand, name of existing cmd can have namespace qualifiers} {
@@ -296,7 +296,7 @@ test basic-18.6 {TclRenameCommand, check for command shadowing by newly renamed 
          [test_ns_basic::callP]
 } {{p in ::} {} {q in ::test_ns_basic}}
 
-test basic-19.1 {Tcl_SetCommandInfo} {
+test basic-19.1 {Tcl_SetCommandInfo} {emptyTest} {
 } {}
 
 if {[info commands testcmdtoken] == {}} {
@@ -325,7 +325,7 @@ test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespac
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
 }
 
-test basic-21.1 {Tcl_GetCommandName} {
+test basic-21.1 {Tcl_GetCommandName} {emptyTest} {
 } {}
 
 test basic-22.1 {Tcl_GetCommandFullName} {
@@ -351,7 +351,7 @@ test basic-22.1 {Tcl_GetCommandFullName} {
     }
 } {::foreach ::test_ns_basic3::q ::test_ns_basic3::p ::test_ns_basic3::cmd1 ::test_ns_basic2::cmd2}
 
-test basic-23.1 {Tcl_DeleteCommand} {
+test basic-23.1 {Tcl_DeleteCommand} {emptyTest} {
 } {}
 
 test basic-24.1 {Tcl_DeleteCommandFromToken, invalidate all compiled code if cmd has compile proc} {
@@ -412,7 +412,7 @@ test basic-24.3 {Tcl_DeleteCommandFromToken, delete imported cmds that refer to 
          [info commands test_ns_basic2::*]
 } {42 {::test_ns_basic2::callP ::test_ns_basic2::p} {} 1 {invalid command name "p"} ::test_ns_basic2::callP}
 
-test basic-25.1 {TclCleanupCommand} {
+test basic-25.1 {TclCleanupCommand} {emptyTest} {
 } {}
 
 test basic-26.1 {Tcl_EvalObj: preserve object while evaling it} {
@@ -432,31 +432,31 @@ test basic-26.1 {Tcl_EvalObj: preserve object while evaling it} {
     set x
 } "foo\n    while executing\n\"error foo\""
 
-test basic-27.1 {Tcl_ExprLong} {
+test basic-27.1 {Tcl_ExprLong} {emptyTest} {
 } {}
 
-test basic-28.1 {Tcl_ExprDouble} {
+test basic-28.1 {Tcl_ExprDouble} {emptyTest} {
 } {}
 
-test basic-29.1 {Tcl_ExprBoolean} {
+test basic-29.1 {Tcl_ExprBoolean} {emptyTest} {
 } {}
 
-test basic-30.1 {Tcl_ExprLongObj} {
+test basic-30.1 {Tcl_ExprLongObj} {emptyTest} {
 } {}
 
-test basic-31.1 {Tcl_ExprDoubleObj} {
+test basic-31.1 {Tcl_ExprDoubleObj} {emptyTest} {
 } {}
 
-test basic-32.1 {Tcl_ExprBooleanObj} {
+test basic-32.1 {Tcl_ExprBooleanObj} {emptyTest} {
 } {}
 
-test basic-33.1 {TclInvoke} {
+test basic-33.1 {TclInvoke} {emptyTest} {
 } {}
 
-test basic-34.1 {TclGlobalInvoke} {
+test basic-34.1 {TclGlobalInvoke} {emptyTest} {
 } {}
 
-test basic-35.1 {TclObjInvokeGlobal} {
+test basic-35.1 {TclObjInvokeGlobal} {emptyTest} {
 } {}
 
 test basic-36.1 {TclObjInvoke, lookup of "unknown" command} {
@@ -478,10 +478,10 @@ test basic-36.1 {TclObjInvoke, lookup of "unknown" command} {
          [interp delete test_interp]
 } {newAlias 0 {global unknown} {}}
 
-test basic-37.1 {Tcl_ExprString: see expr.test} {
+test basic-37.1 {Tcl_ExprString: see expr.test} {emptyTest} {
 } {}
 
-test basic-38.1 {Tcl_ExprObj} {
+test basic-38.1 {Tcl_ExprObj} {emptyTest} {
 } {}
 
 if {[info commands testcmdtrace] == {}} {
@@ -499,25 +499,25 @@ test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of tra
 } 8.1
 }
 
-test basic-40.1 {Tcl_DeleteTrace} {
+test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
 } {}
 
-test basic-41.1 {Tcl_AddErrorInfo} {
+test basic-41.1 {Tcl_AddErrorInfo} {emptyTest} {
 } {}
 
-test basic-42.1 {Tcl_AddObjErrorInfo} {
+test basic-42.1 {Tcl_AddObjErrorInfo} {emptyTest} {
 } {}
 
-test basic-43.1 {Tcl_VarEval} {
+test basic-43.1 {Tcl_VarEval} {emptyTest} {
 } {}
 
-test basic-44.1 {Tcl_GlobalEval} {
+test basic-44.1 {Tcl_GlobalEval} {emptyTest} {
 } {}
 
-test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {
+test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {emptyTest} {
 } {}
 
-test basic-46.1 {Tcl_AllowExceptions} {
+test basic-46.1 {Tcl_AllowExceptions} {emptyTest} {
 } {}
 
 # cleanup
