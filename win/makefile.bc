@@ -193,7 +193,6 @@ TCLOBJS	= \
 	$(TMPDIR)\regexec.obj \
 	$(TMPDIR)\regfree.obj \
 	$(TMPDIR)\regerror.obj \
-	$(TMPDIR)\strftime.obj \
 	$(TMPDIR)\strtoll.obj \
 	$(TMPDIR)\strtoull.obj \
 	$(TMPDIR)\tclAlloc.obj \

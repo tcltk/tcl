@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.6 2004/09/08 23:02:40 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.7 2004/09/30 00:51:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -242,14 +242,17 @@ HandleBgErrors(clientData)
     ClientData clientData;	/* Pointer to ErrAssocData structure. */
 {
     Tcl_Interp *interp;
-    CONST char *argv[2];
     int code;
     BgError *errPtr;
     ErrAssocData *assocPtr = (ErrAssocData *) clientData;
     Tcl_Channel errChannel;
+    Tcl_Obj *objv[2];
+
+    objv[0] = Tcl_NewStringObj("bgerror", -1);
+    Tcl_IncrRefCount(objv[0]);
+    objv[1] = NULL;
 
     Tcl_Preserve((ClientData) assocPtr);
-    
     while (assocPtr->firstBgPtr != NULL) {
 	interp = assocPtr->firstBgPtr->interp;
 	if (interp == NULL) {
@@ -270,12 +273,12 @@ HandleBgErrors(clientData)
 	 * Create and invoke the bgerror command.
 	 */
 
-	argv[0] = "bgerror";
-	argv[1] = assocPtr->firstBgPtr->errorMsg;
+	objv[1] = Tcl_NewStringObj(assocPtr->firstBgPtr->errorMsg, -1);
+	Tcl_IncrRefCount(objv[1]);
 	
 	Tcl_AllowExceptions(interp);
         Tcl_Preserve((ClientData) interp);
-	code = TclGlobalInvoke(interp, 2, argv, 0);
+	code = Tcl_EvalObjv(interp, 2, objv, TCL_EVAL_GLOBAL);
 	if (code == TCL_ERROR) {
 
             /*
@@ -293,7 +296,7 @@ HandleBgErrors(clientData)
 		Tcl_SavedResult save;
 		
 		Tcl_SaveResult(interp, &save);
-                TclGlobalInvoke(interp, 2, argv, TCL_INVOKE_HIDDEN);
+                TclObjInvoke(interp, 2, objv, TCL_INVOKE_HIDDEN);
 		Tcl_RestoreResult(interp, &save);
 
                 goto doneWithInterp;
@@ -347,6 +350,10 @@ HandleBgErrors(clientData)
 	 */
 
 doneWithInterp:
+	if (objv[1]) {
+	    Tcl_DecrRefCount(objv[1]);
+	    objv[1] = NULL;
+	}
 
 	if (assocPtr->firstBgPtr) {
 	    ckfree(assocPtr->firstBgPtr->errorMsg);
@@ -362,6 +369,7 @@ doneWithInterp:
         }
     }
     assocPtr->lastBgPtr = NULL;
+    Tcl_DecrRefCount(objv[0]);
 
     Tcl_Release((ClientData) assocPtr);
 }

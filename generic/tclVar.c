@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.8 2004/09/08 23:02:49 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.9 2004/09/30 00:51:46 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -498,9 +498,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 		 */
 
 		objPtr = part1Ptr;
-		if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-		    typePtr->freeIntRepProc(objPtr);
-		}
+		TclFreeIntRep(objPtr);
 		objPtr->typePtr = &tclParsedVarNameType;
 
 		/*
@@ -529,10 +527,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
      * it to one of the cached types if possible.
      */
 
-    if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-	typePtr->freeIntRepProc(part1Ptr);
-	part1Ptr->typePtr = NULL;
-    }
+    TclFreeIntRep(part1Ptr);
+    part1Ptr->typePtr = NULL;
 
     varPtr = TclLookupSimpleVar(interp, part1, flags, 
             createPart1, &errMsg, &index);
@@ -2299,7 +2295,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
      */
 
     if (part1Ptr->typePtr == &tclNsVarNameType) {
-	part1Ptr->typePtr->freeIntRepProc(part1Ptr);
+	TclFreeIntRep(part1Ptr);
 	part1Ptr->typePtr = NULL;
     }
 #endif
@@ -4019,9 +4015,7 @@ SetArraySearchObj(interp, objPtr)
     end++;
     offset = end - string;
 
-    if (objPtr->typePtr != NULL && objPtr->typePtr->freeIntRepProc != NULL) {
-	objPtr->typePtr->freeIntRepProc(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     objPtr->typePtr = &tclArraySearchType;
     objPtr->internalRep.twoPtrValue.ptr1 = (VOID *)(((char *)NULL)+id);
     objPtr->internalRep.twoPtrValue.ptr2 = (VOID *)(((char *)NULL)+offset);

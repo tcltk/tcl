@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.9 2004/09/21 23:10:24 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.10 2004/09/30 00:51:31 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -324,7 +324,7 @@ function.
 given lie in the same filesystem (according to
 \fBTcl_FSGetFileSystemForPath\fR) then that filesystem's 'rename file'
 function is called (if it is non-NULL).  Otherwise the function returns -1
-and sets the \Berrno\fR global C variable to the 'EXDEV' POSIX error
+and sets the \fBerrno\fR global C variable to the 'EXDEV' POSIX error
 code (which signifies a 'cross-domain link').
 .PP
 \fBTcl_FSListVolumes\fR calls each filesystem which has a non-NULL 'list
@@ -1091,6 +1091,21 @@ to \fIresult\fR should include any path prefix given in \fIpathPtr\fR
 Note that if no matches are found, that simply leads to an empty
 result --- errors are only signaled for actual file or filesystem
 problems which may occur during the matching process.
+.PP
+The \fBTcl_GlobTypeData\fR structure passed in the \fItypes\fR 
+parameter contains the following fields:
+.CS
+typedef struct Tcl_GlobTypeData {
+	/* Corresponds to bcdpfls as in 'find -t' */
+	int \fItype\fR;
+	/* Corresponds to file permissions */
+	int \fIperm\fR;
+	/* Acceptable mac type */
+	Tcl_Obj *\fImacType\fR;
+	/* Acceptable mac creator */
+	Tcl_Obj *\fImacCreator\fR;
+} Tcl_GlobTypeData;
+.CE
 .PP
 There are two specific cases which it is important to handle correctly,
 both when \fItypes\fR is non-NULL. The two cases are when \fItypes->types

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.5 2004/04/09 20:58:16 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.6 2004/09/30 00:51:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1359,20 +1359,19 @@ ParsePrimaryExpr(infoPtr)
 		    (size_t) (numTokens * sizeof(Tcl_Token)));
 	    parsePtr->numTokens += (numTokens + 1);
 
+	    exprTokenPtr = &parsePtr->tokenPtr[exprIndex];
+	    exprTokenPtr->size = (src - tokenPtr->start);
+	    exprTokenPtr->numComponents = 1 + numTokens;
+
 	    if (lastTokenPtr->type == TCL_TOKEN_ERROR) {
 		parsePtr->errorType = lastTokenPtr->numComponents;
 		parsePtr->term = term;
 		parsePtr->incomplete = 1;
-
-		ckfree((char *) appendTokens);
-		return TCL_ERROR;
+		infoPtr->next = parsePtr->end;
+	    } else {
+		infoPtr->next = term + 1;
 	    }
 	    ckfree((char *) appendTokens);
-	    infoPtr->next = term + 1;
-
-	    exprTokenPtr = &parsePtr->tokenPtr[exprIndex];
-	    exprTokenPtr->size = (src - tokenPtr->start);
-	    exprTokenPtr->numComponents = 1 + numTokens;
 	    break;
 	}
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.9 2004/09/08 23:02:48 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.10 2004/09/30 00:51:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2146,6 +2146,12 @@ Tcl_SubstObj(interp, objPtr, flags)
 	}
 
 	if (tokensLeft == 0) {
+	    /* Check for a parse error */
+	    if (code != TCL_BREAK && endTokenPtr[-1].type == TCL_TOKEN_ERROR) {
+		TclSubstTokens(interp, endTokenPtr - 1, 1, NULL, 0);
+		Tcl_DecrRefCount(result);
+		result = NULL;
+	    }
 	    Tcl_FreeParse(&parse);
 	    return result;
 	}
@@ -2251,7 +2257,8 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
 		    varName = Tcl_NewStringObj(tokenPtr[1].start,
 			    tokenPtr[1].size);
 		    appendObj = Tcl_ObjGetVar2(interp, varName, arrayIndex,
-			    TCL_LEAVE_ERR_MSG);
+			    TCL_LEAVE_ERR_MSG |
+			    ((flags & TCL_EVAL_GLOBAL) ? TCL_GLOBAL_ONLY : 0));
 		    Tcl_DecrRefCount(varName);
 		    if (appendObj == NULL) {
 			code = TCL_ERROR;
@@ -2287,9 +2294,6 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
 		appendObj = Tcl_GetObjResult(interp);
 		count -= tokenPtr->numComponents;
 		tokenPtr += tokenPtr->numComponents;
-		if (tokenPtr->type == TCL_TOKEN_ERROR) {
-		    count++; tokenPtr--;
-		}
 		break;
 
 	    case TCL_TOKEN_ERROR:

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.6 2004/09/08 23:02:39 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.7 2004/09/30 00:51:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -361,7 +361,6 @@ SetDictFromAny(interp, objPtr)
     Tcl_Interp *interp;
     Tcl_Obj *objPtr;
 {
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *s;
     CONST char *elemStart, *nextElem;
     int lenRemain, length, elemSize, hasBrace, result, isNew;
@@ -378,7 +377,7 @@ SetDictFromAny(interp, objPtr)
      * special-case the conversion from lists to dictionaries.
      */
 
-    if (oldTypePtr == &tclListType) {
+    if (objPtr->typePtr == &tclListType) {
 	int objc, i;
 	Tcl_Obj **objv;
 
@@ -523,10 +522,7 @@ SetDictFromAny(interp, objPtr)
      * Tcl_GetStringFromObj, to use that old internalRep.
      */
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;

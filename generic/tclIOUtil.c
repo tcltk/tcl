@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.11 2004/09/08 23:02:43 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.12 2004/09/30 00:51:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -619,6 +619,25 @@ FsGetFirstFilesystem(void) {
     fsRecPtr = tsdPtr->filesystemList;
 #endif
     return fsRecPtr;
+}
+
+/*
+ * The epoch can be changed both by filesystems being added or
+ * removed and by env(HOME) changing.
+ */
+int
+TclFSEpochOk (filesystemEpoch)
+    int filesystemEpoch; 
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#ifndef TCL_THREADS
+    tsdPtr->filesystemEpoch = theFilesystemEpoch;
+#else
+    Tcl_MutexLock(&filesystemMutex);
+    tsdPtr->filesystemEpoch = theFilesystemEpoch;
+    Tcl_MutexUnlock(&filesystemMutex);
+#endif
+    return (filesystemEpoch == tsdPtr->filesystemEpoch);
 }
 
 /* 
@@ -2636,12 +2655,20 @@ Tcl_FSChdir(pathPtr)
     if (fsPtr != NULL) {
 	Tcl_FSChdirProc *proc = fsPtr->chdirProc;
 	if (proc != NULL) {
+	    /* 
+	     * If this fails, an appropriate errno will have
+	     * been stored using 'Tcl_SetErrno()'.
+	     */
 	    retVal = (*proc)(pathPtr);
 	} else {
 	    /* Fallback on stat-based implementation */
 	    Tcl_StatBuf buf;
-	    /* If the file can be stat'ed and is a directory and
-	     * is readable, then we can chdir. */
+	    /* 
+	     * If the file can be stat'ed and is a directory and is
+	     * readable, then we can chdir.  If any of these actions
+	     * fail, then 'Tcl_SetErrno()' should automatically have
+	     * been called to set an appropriate error code
+	     */
 	    if ((Tcl_FSStat(pathPtr, &buf) == 0) 
 	      && (S_ISDIR(buf.st_mode))
 	      && (Tcl_FSAccess(pathPtr, R_OK) == 0)) {
@@ -2649,88 +2676,86 @@ Tcl_FSChdir(pathPtr)
 		retVal = 0;
 	    }
 	}
-    }
-
-    if (retVal != -1) {
-	/* 
-	 * The cwd changed, or an error was thrown.  If an error was
-	 * thrown, we can just continue (and that will report the error
-	 * to the user).  If there was no error we must assume that the
-	 * cwd was actually changed to the normalized value we
-	 * calculated above, and we must therefore cache that
-	 * information.
-	 */
-
-	/*
-	 * If the filesystem in question has a getCwdProc, then the
-	 * correct logic which performs the part below is already part
-	 * of the Tcl_FSGetCwd() call, so no need to replicate it again.
-	 * This will have a side effect though.  The private
-	 * authoritative representation of the current working directory
-	 * stored in cwdPathPtr in static memory will be out-of-sync
-	 * with the real OS-maintained value.  The first call to
-	 * Tcl_FSGetCwd will however recalculate the private copy to
-	 * match the OS-value so everything will work right.
-	 * 
-	 * However, if there is no getCwdProc, then we _must_ update
-	 * our private storage of the cwd, since this is the only
-	 * opportunity to do that!
-	 * 
-	 * Note: We currently call this block of code irrespective of
-	 * whether there was a getCwdProc or not, but the code should
-	 * all in principle work if we only call this block if 
-	 * fsPtr->getCwdProc == NULL.
-	 */
-
-	if (retVal == 0) {
-	    /* 
-	     * Note that this normalized path may be different to what
-	     * we found above (or at least a different object), if the
-	     * filesystem epoch changed recently.  This can actually
-	     * happen with scripted documents very easily.  Therefore
-	     * we ask for the normalized path again (the correct value
-	     * will have been cached as a result of the
-	     * Tcl_FSGetFileSystemForPath call above anyway).
-	     */
-	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-	    if (normDirName == NULL) {
-		/* Not really true, but what else to do? */
-		Tcl_SetErrno(ENOENT); 
-		return -1;
-	    }
-	    if (fsPtr == &tclNativeFilesystem) {
-		/* 
-		 * For the native filesystem, we keep a cache of the
-		 * native representation of the cwd.  But, we want to do
-		 * that for the exact format that is returned by
-		 * 'getcwd' (so that we can later compare the two
-		 * representations for equality), which might not be
-		 * exactly the same char-string as the native
-		 * representation of the fully normalized path (e.g. on
-		 * Windows there's a forward-slash vs backslash
-		 * difference).  Hence we ask for this again here.  On
-		 * Unix it might actually be true that we always have
-		 * the correct form in the native rep in which case we
-		 * could simply use:
-		 * 
-		 * cd = Tcl_FSGetNativePath(pathPtr);
-		 * 
-		 * instead.  This should be examined by someone on
-		 * Unix.
-		 */
-		ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-		ClientData cd;
-
-		/* Assumption we are using a filesystem version 2 */
-		TclFSGetCwdProc2 *proc2 = (TclFSGetCwdProc2*)fsPtr->getCwdProc;
-		cd = (*proc2)(tsdPtr->cwdClientData);
-		FsUpdateCwd(normDirName, TclNativeDupInternalRep(cd));
-	    } else {
-		FsUpdateCwd(normDirName, NULL);
-	    }
-	}
     } else {
 	Tcl_SetErrno(ENOENT);
+    }
+    
+    /* 
+     * The cwd changed, or an error was thrown.  If an error was
+     * thrown, we can just continue (and that will report the error
+     * to the user).  If there was no error we must assume that the
+     * cwd was actually changed to the normalized value we
+     * calculated above, and we must therefore cache that
+     * information.
+     */
+
+    /*
+     * If the filesystem in question has a getCwdProc, then the
+     * correct logic which performs the part below is already part
+     * of the Tcl_FSGetCwd() call, so no need to replicate it again.
+     * This will have a side effect though.  The private
+     * authoritative representation of the current working directory
+     * stored in cwdPathPtr in static memory will be out-of-sync
+     * with the real OS-maintained value.  The first call to
+     * Tcl_FSGetCwd will however recalculate the private copy to
+     * match the OS-value so everything will work right.
+     * 
+     * However, if there is no getCwdProc, then we _must_ update
+     * our private storage of the cwd, since this is the only
+     * opportunity to do that!
+     * 
+     * Note: We currently call this block of code irrespective of
+     * whether there was a getCwdProc or not, but the code should
+     * all in principle work if we only call this block if 
+     * fsPtr->getCwdProc == NULL.
+     */
+
+    if (retVal == 0) {
+	/* 
+	 * Note that this normalized path may be different to what
+	 * we found above (or at least a different object), if the
+	 * filesystem epoch changed recently.  This can actually
+	 * happen with scripted documents very easily.  Therefore
+	 * we ask for the normalized path again (the correct value
+	 * will have been cached as a result of the
+	 * Tcl_FSGetFileSystemForPath call above anyway).
+	 */
+	Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (normDirName == NULL) {
+	    /* Not really true, but what else to do? */
+	    Tcl_SetErrno(ENOENT); 
+	    return -1;
+	}
+	if (fsPtr == &tclNativeFilesystem) {
+	    /* 
+	     * For the native filesystem, we keep a cache of the
+	     * native representation of the cwd.  But, we want to do
+	     * that for the exact format that is returned by
+	     * 'getcwd' (so that we can later compare the two
+	     * representations for equality), which might not be
+	     * exactly the same char-string as the native
+	     * representation of the fully normalized path (e.g. on
+	     * Windows there's a forward-slash vs backslash
+	     * difference).  Hence we ask for this again here.  On
+	     * Unix it might actually be true that we always have
+	     * the correct form in the native rep in which case we
+	     * could simply use:
+	     * 
+	     * cd = Tcl_FSGetNativePath(pathPtr);
+	     * 
+	     * instead.  This should be examined by someone on
+	     * Unix.
+	     */
+	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+	    ClientData cd;
+
+	    /* Assumption we are using a filesystem version 2 */
+	    TclFSGetCwdProc2 *proc2 = (TclFSGetCwdProc2*)fsPtr->getCwdProc;
+	    cd = (*proc2)(tsdPtr->cwdClientData);
+	    FsUpdateCwd(normDirName, TclNativeDupInternalRep(cd));
+	} else {
+	    FsUpdateCwd(normDirName, NULL);
+	}
     }
     
     return (retVal);

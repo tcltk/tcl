@@ -12,10 +12,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr-old.test,v 1.7.6.3 2004/05/27 14:29:17 dgp Exp $
+# RCS: @(#) $Id: compExpr-old.test,v 1.7.6.4 2004/09/30 00:51:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -479,11 +479,11 @@ test compExpr-old-14.15 {CompilePrimaryExpr: var reference primary} {
     catch {expr $i.2} msg
     set msg
 } 123.2
-test compExpr-old-14.16 {CompilePrimaryExpr: error compiling var reference primary} {
+test compExpr-old-14.16 {CompilePrimaryExpr: error compiling var reference primary} -body {
     catch {expr {$a(foo}} msg
     set errorInfo
-} {missing )
-    while executing
+} -match glob -result {missing )
+    while *ing
 "expr {$a(foo}"}
 test compExpr-old-14.17 {CompilePrimaryExpr: string primary that looks like var ref} {
     expr $
@@ -508,93 +508,91 @@ test compExpr-old-14.21 {CompilePrimaryExpr: error in quoted string primary} {
 test compExpr-old-14.22 {CompilePrimaryExpr: subcommand primary} {
     expr {[set i 123; set i]}
 } 123
-test compExpr-old-14.23 {CompilePrimaryExpr: error in subcommand primary} {
+test compExpr-old-14.23 {CompilePrimaryExpr: error in subcommand primary} -body {
     catch {expr {[set]}} msg
     set errorInfo
-} {wrong # args: should be "set varName ?newValue?"
-    while executing
-"set"}
-test compExpr-old-14.24 {CompilePrimaryExpr: error in subcommand primary} {
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+test compExpr-old-14.24 {CompilePrimaryExpr: error in subcommand primary} -body {
     catch {expr {[set i}} msg
     set errorInfo
-} {missing close-bracket
-    while compiling
-"set i"
-    invoked from within
-"expr {[set i}"}
+} -match glob -result {missing close-bracket
+    while *ing
+"*set i*"}
 test compExpr-old-14.25 {CompilePrimaryExpr: math function primary} {
     format %.6g [expr exp(1.0)]
 } 2.71828
 test compExpr-old-14.26 {CompilePrimaryExpr: math function primary} {
     format %.6g [expr pow(2.0+0.1,3.0+0.1)]
 } 9.97424
-test compExpr-old-14.27 {CompilePrimaryExpr: error in math function primary} {
+test compExpr-old-14.27 {CompilePrimaryExpr: error in math function primary} -body {
     catch {expr sinh::(2.0)} msg
     set errorInfo
-} {syntax error in expression "sinh::(2.0)": expected parenthesis enclosing function arguments
-    while executing
+} -match glob -result {syntax error in expression "sinh::(2.0)": expected parenthesis enclosing function arguments
+    while *ing
 "expr sinh::(2.0)"}
 test compExpr-old-14.28 {CompilePrimaryExpr: subexpression primary} {
     expr 2+(3*4)
 } 14
-test compExpr-old-14.29 {CompilePrimaryExpr: error in subexpression primary} {
+test compExpr-old-14.29 {CompilePrimaryExpr: error in subexpression primary} -body {
     catch {expr 2+(3*[set])} msg
     set errorInfo
-} {wrong # args: should be "set varName ?newValue?"
-    while executing
-"set"}
-test compExpr-old-14.30 {CompilePrimaryExpr: missing paren in subexpression primary} {
+} -match glob -result {wrong # args: should be "set varName ?newValue?"
+    while *ing
+"set"*}
+test compExpr-old-14.30 {CompilePrimaryExpr: missing paren in subexpression primary} -body {
     catch {expr 2+(3*(4+5)} msg
     set errorInfo
-} {syntax error in expression "2+(3*(4+5)": looking for close parenthesis
-    while executing
+} -match glob -result {syntax error in expression "2+(3*(4+5)": looking for close parenthesis
+    while *ing
 "expr 2+(3*(4+5)"}
 test compExpr-old-14.31 {CompilePrimaryExpr: just var ref in subexpression primary} {
     set i "5+10"
     list "[expr $i] == 15" "[expr ($i)] == 15" "[eval expr ($i)] == 15"
 } {{15 == 15} {15 == 15} {15 == 15}}
-test compExpr-old-14.32 {CompilePrimaryExpr: unexpected token} {
+test compExpr-old-14.32 {CompilePrimaryExpr: unexpected token} -body {
     catch {expr @} msg
     set errorInfo
-} {syntax error in expression "@": character not legal in expressions
-    while executing
+} -match glob -result {syntax error in expression "@": character not legal in expressions
+    while *ing
 "expr @"}
 
-test compExpr-old-15.1 {CompileMathFuncCall: missing parenthesis} {
+test compExpr-old-15.1 {CompileMathFuncCall: missing parenthesis} -body {
     catch {expr sinh2.0)} msg
     set errorInfo
-} {syntax error in expression "sinh2.0)": variable references require preceding $
-    while executing
+} -match glob -result {syntax error in expression "sinh2.0)": variable references require preceding $
+    while *ing
 "expr sinh2.0)"}
-test compExpr-old-15.2 {CompileMathFuncCall: unknown math function} {
+test compExpr-old-15.2 {CompileMathFuncCall: unknown math function} -body {
     catch {expr whazzathuh(1)} msg
     set errorInfo
-} {unknown math function "whazzathuh"
-    while executing
+} -match glob -result {unknown math function "whazzathuh"
+    while *ing
 "expr whazzathuh(1)"}
-test compExpr-old-15.3 {CompileMathFuncCall: too many arguments} {
+test compExpr-old-15.3 {CompileMathFuncCall: too many arguments} -body {
     catch {expr sin(1,2,3)} msg
     set errorInfo
-} {too many arguments for math function
-    while executing
+} -match glob -result {too many arguments for math function
+    while *ing
 "expr sin(1,2,3)"}
-test compExpr-old-15.4 {CompileMathFuncCall: ')' found before last required arg} {
+test compExpr-old-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
     set errorInfo
-} {too few arguments for math function
-    while executing
+} -match glob -result {too few arguments for math function
+    while *ing
 "expr sin()"}
-test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} {
+test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
     catch {expr pow(1)} msg
     set errorInfo
-} {too few arguments for math function
-    while executing
+} -match glob -result {too few arguments for math function
+    while *ing
 "expr pow(1)"}
-test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} {
+test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} -body {
     catch {expr sin(1} msg
     set errorInfo
-} {syntax error in expression "sin(1": missing close parenthesis at end of function call
-    while executing
+} -match glob -result {syntax error in expression "sin(1": missing close parenthesis at end of function call
+    while *ing
 "expr sin(1"}
 test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} testmathfunctions {
     expr 2*T1()

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: misc.test,v 1.6.4.2 2004/09/08 23:03:20 dgp Exp $
+# RCS: @(#) $Id: misc.test,v 1.6.4.3 2004/09/30 00:51:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -57,14 +57,14 @@ test misc-1.2 {error in variable ref. in command in array reference} {
 } [subst -novariables -nocommands {1
 missing close-brace for variable name
 missing close-brace for variable name
-    while compiling
+    while executing
 "set tst $a([winfo name $\{zz)
 	# this is a bogus comment
 	# this is a bogus comment
 	# this is a bogus comment
 	# this is a bogus comment
 	# this is a ..."
-    (compiling body of proc "tstProc", line 4)
+    (procedure "tstProc" line 4)
     invoked from within
 "tstProc"}]
 

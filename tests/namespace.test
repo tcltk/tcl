@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.6 2004/09/21 23:10:29 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.7 2004/09/30 00:51:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -950,6 +950,18 @@ test namespace-25.6 {NamespaceEvalCmd, error in eval'd script} {
     (in namespace eval "::test_ns_1" script line 1)
     invoked from within
 "namespace eval test_ns_1 {xxxx}"}}
+test namespace-25.7 {NamespaceEvalCmd, error in eval'd script} {
+    list [catch {namespace eval test_ns_1 {error foo bar baz}} msg] $msg $errorInfo
+} {1 foo {bar
+    (in namespace eval "::test_ns_1" script line 1)
+    invoked from within
+"namespace eval test_ns_1 {error foo bar baz}"}}
+test namespace-25.8 {NamespaceEvalCmd, error in eval'd script} {
+    list [catch {namespace eval test_ns_1 error foo bar baz} msg] $msg $errorInfo
+} {1 foo {bar
+    (in namespace eval "::test_ns_1" script line 1)
+    invoked from within
+"namespace eval test_ns_1 error foo bar baz"}}
 catch {unset v}
 
 test namespace-26.1 {NamespaceExportCmd, no args and new ns} {

@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.5 2004/03/29 21:43:18 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.6 2004/09/30 00:51:49 dgp Exp $
 #
 
 package require tcltest 2
@@ -450,16 +450,7 @@ test basic-31.1 {Tcl_ExprDoubleObj} {emptyTest} {
 test basic-32.1 {Tcl_ExprBooleanObj} {emptyTest} {
 } {}
 
-test basic-33.1 {TclInvoke} {emptyTest} {
-} {}
-
-test basic-34.1 {TclGlobalInvoke} {emptyTest} {
-} {}
-
-test basic-35.1 {TclObjInvokeGlobal} {emptyTest} {
-} {}
-
-test basic-36.1 {TclObjInvoke, lookup of "unknown" command} {
+test basic-36.1 {Tcl_EvalObjv, lookup of "unknown" command} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {interp delete test_interp}
     interp create test_interp
@@ -896,6 +887,26 @@ test basic-48.23.$noComp {expansion: handle return codes} -constraints $constrai
 } -result {0 10 1 Hejsan}
 
 } ;# End of noComp loop
+
+test basic-49.1 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} {
+    set ::x global
+    namespace eval ns {
+	variable x namespace
+	testevalex {set x changed} global
+	set ::result [list $::x $x]
+    }
+    namespace delete ns
+    set ::result
+} {changed namespace}
+test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} {
+    set ::x global
+    namespace eval ns {
+	variable x namespace
+	testevalex {set ::context $x} global
+    }
+    namespace delete ns
+    set ::context
+} {global}
 
 # Clean up after expand tests
 unset noComp l1 l2 constraints

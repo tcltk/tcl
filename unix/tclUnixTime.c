@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.3 2004/05/17 18:42:25 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.4 2004/09/30 00:51:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -284,61 +284,6 @@ TclpGetDate(time, useGMT)
     } else {
 	return TclpLocaltime(time);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpStrftime --
- *
- *	On Unix, we can safely call the native strftime implementation,
- *	and also ignore the useGMT parameter.
- *
- * Results:
- *	Returns the number of Unicode code points in the result string.
- *
- *
- * Side effects:
- *	Stores the converted time in the buffer designated by the
- *	's' parameter.
- *
- *----------------------------------------------------------------------
- */
-
-size_t
-TclpStrftime(s, maxsize, format, t, useGMT)
-    char *s;			/* Buffer to receive the formatted string */
-    size_t maxsize;		/* Allocated length of the buffer */
-    CONST char *format;		/* Format to use for the conversion */
-    CONST struct tm *t;		/* Time to convert */
-    int useGMT;			/* Flag == 1 if converting in UTC */
-{
-    Tcl_DString utf8Buffer;
-    size_t status;
-    char* utf8Format;
-    if (format[0] == '%' && format[1] == 'Q') {
-	/* Format as a stardate */
-	sprintf(s, "Stardate %2d%03d.%01d",
-		(((t->tm_year + TM_YEAR_BASE) + 377) - 2323),
-		(((t->tm_yday + 1) * 1000) /
-			(365 + IsLeapYear((t->tm_year + TM_YEAR_BASE)))),
-		(((t->tm_hour * 60) + t->tm_min)/144));
-	return(strlen(s));
-    } else {
-        Tcl_DStringInit( &utf8Buffer );
-	utf8Format = Tcl_UtfToExternalDString( NULL, format, -1, &utf8Buffer );
-	setlocale(LC_TIME, "");
-	status = strftime( s, maxsize, utf8Format, t );
-	Tcl_DStringFree( &utf8Buffer );
-	if ( status > 0 ) {
-	    Tcl_DStringInit ( &utf8Buffer );
-	    Tcl_ExternalToUtfDString( NULL, s, (int) status, &utf8Buffer );
-	    strcpy( s, Tcl_DStringValue( &utf8Buffer ) );
-	    Tcl_DStringFree( &utf8Buffer );
-	}
-	return status;
-    }
-
 }
 
 /*

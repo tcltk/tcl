@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.15 2004/09/21 23:10:26 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.16 2004/09/30 00:51:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3501,6 +3501,8 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
     int *expand = expandStatic;
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS];
     Tcl_Obj **objvSpace = staticObjArray;
+    CONST char *cmdString = scriptTokenPtr->start;
+    int cmdSize = scriptTokenPtr->size;
 
     if (length == 0) {
         Tcl_Panic("EvalScriptTokens: can't eval zero tokens");
@@ -3510,7 +3512,7 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
     }
     tokenPtr++; length--;
 
-    if (numCommands == 0) {
+    if (length == 0) {
 	return TclInterpReady(interp);
     }
     while (numCommands-- && (code == TCL_OK)) {
@@ -3639,11 +3641,16 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
 	while (--objc >= 0) {
 	    Tcl_DecrRefCount(objv[objc]);
 	}
-        if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-            Tcl_LogCommandInfo(interp, scriptTokenPtr->start,
-                    commandTokenPtr->start, commandTokenPtr->size);
-        }
+	cmdString = commandTokenPtr->start;
+	cmdSize = commandTokenPtr->size;
     }
+    if (length && (code == TCL_OK)) {
+	code = TclSubstTokens(interp, tokenPtr, length, NULL, flags);
+    }
+    if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+	Tcl_LogCommandInfo(interp, scriptTokenPtr->start, cmdString, cmdSize);
+    }
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
     if (expand != expandStatic) {
 	ckfree((char *) expand);
     }
@@ -3698,13 +3705,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     code = TclEvalScriptTokens(interp, tokensPtr,
 	    1 + (int)(lastTokenPtr - tokensPtr), flags);
 
-    /* Take care of any parse error */
-    if ((code == TCL_OK) && (lastTokenPtr->type == TCL_TOKEN_ERROR)) {
-	code = TclSubstTokens(interp, lastTokenPtr, 1, NULL, flags);
-	Tcl_LogCommandInfo(interp, script,
-		lastTokenPtr->start, lastTokenPtr->size);
-    }
-
     if (iPtr->numLevels == 0) {
         if (code == TCL_RETURN) {
 	    code = TclUpdateReturnInfo(iPtr);
@@ -3713,16 +3713,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 		&& !allowExceptions) {
 	    ProcessUnexpectedResult(interp, code );
 	    code = TCL_ERROR;
-
-            /*
-	     * If an error was created here, record information about 
-	     * what was being executed when the error occurred.
-	     */
-
-            if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	        Tcl_LogCommandInfo(interp, script, script, numBytes);
-	        iPtr->flags &= ~ERR_ALREADY_LOGGED;
-	    }
+	    Tcl_LogCommandInfo(interp, script, script, numBytes);
         }
     }
     ckfree((char *) tokensPtr);
@@ -3885,14 +3876,6 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    Tcl_Token *tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
 	    result = TclEvalScriptTokens(interp, tokensPtr,
 		    1 + (int)(lastTokenPtr - tokensPtr), flags);
-
-	    /* Take care of any parse error */
-	    if ((result == TCL_OK) && (lastTokenPtr->type == TCL_TOKEN_ERROR)) {
-		result = TclSubstTokens(interp, lastTokenPtr, 1, NULL, flags);
-		Tcl_LogCommandInfo(interp, Tcl_GetString(objPtr),
-			lastTokenPtr->start, lastTokenPtr->size);
-	    }
-
 	} else {
 	    /* Let the compiler/engine subsystem do the evaluation. */
 
@@ -4239,191 +4222,6 @@ Tcl_ExprBooleanObj(interp, objPtr, ptr)
 /*
  *----------------------------------------------------------------------
  *
- * TclInvoke --
- *
- *	Invokes a Tcl command, given an argv/argc, from either the
- *	exposed or the hidden sets of commands in the given interpreter.
- *	NOTE: The command is invoked in the current stack frame of
- *	the interpreter, thus it can modify local variables.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclInvoke(interp, argc, argv, flags)
-    Tcl_Interp *interp;		/* Where to invoke the command. */
-    int argc;			/* Count of args. */
-    register CONST char **argv;	/* The arg strings; argv[0] is the name of
-                                 * the command to invoke. */
-    int flags;			/* Combination of flags controlling the
-				 * call: TCL_INVOKE_HIDDEN and
-				 * TCL_INVOKE_NO_UNKNOWN. */
-{
-    register Tcl_Obj *objPtr;
-    register int i;
-    int length, result;
-
-    /*
-     * This procedure generates an objv array for object arguments that hold
-     * the argv strings. It starts out with stack-allocated space but uses
-     * dynamically-allocated storage if needed.
-     */
-
-#define NUM_ARGS 20
-    Tcl_Obj *(objStorage[NUM_ARGS]);
-    register Tcl_Obj **objv = objStorage;
-
-    /*
-     * Create the object argument array "objv". Make sure objv is large
-     * enough to hold the objc arguments plus 1 extra for the zero
-     * end-of-objv word.
-     */
-
-    if ((argc + 1) > NUM_ARGS) {
-	objv = (Tcl_Obj **)
-	    ckalloc((unsigned)(argc + 1) * sizeof(Tcl_Obj *));
-    }
-
-    for (i = 0;  i < argc;  i++) {
-	length = strlen(argv[i]);
-	objv[i] = Tcl_NewStringObj(argv[i], length);
-	Tcl_IncrRefCount(objv[i]);
-    }
-    objv[argc] = 0;
-
-    /*
-     * Use TclObjInterpProc to actually invoke the command.
-     */
-
-    result = TclObjInvoke(interp, argc, objv, flags);
-
-    /*
-     * Move the interpreter's object result to the string result, 
-     * then reset the object result.
-     */
-    
-    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	    TCL_VOLATILE);
-
-    /*
-     * Decrement the ref counts on the objv elements since we are done
-     * with them.
-     */
-
-    for (i = 0;  i < argc;  i++) {
-	objPtr = objv[i];
-	Tcl_DecrRefCount(objPtr);
-    }
-    
-    /*
-     * Free the objv array if malloc'ed storage was used.
-     */
-
-    if (objv != objStorage) {
-	ckfree((char *) objv);
-    }
-    return result;
-#undef NUM_ARGS
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGlobalInvoke --
- *
- *	Invokes a Tcl command, given an argv/argc, from either the
- *	exposed or hidden sets of commands in the given interpreter.
- *	NOTE: The command is invoked in the global stack frame of
- *	the interpreter, thus it cannot see any current state on
- *	the stack for that interpreter.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclGlobalInvoke(interp, argc, argv, flags)
-    Tcl_Interp *interp;		/* Where to invoke the command. */
-    int argc;			/* Count of args. */
-    register CONST char **argv;	/* The arg strings; argv[0] is the name of
-                                 * the command to invoke. */
-    int flags;			/* Combination of flags controlling the
-				 * call: TCL_INVOKE_HIDDEN and
-				 * TCL_INVOKE_NO_UNKNOWN. */
-{
-    register Interp *iPtr = (Interp *) interp;
-    int result;
-    CallFrame *savedVarFramePtr;
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = NULL;
-    result = TclInvoke(interp, argc, argv, flags);
-    iPtr->varFramePtr = savedVarFramePtr;
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclObjInvokeGlobal --
- *
- *	Object version: Invokes a Tcl command, given an objv/objc, from
- *	either the exposed or hidden set of commands in the given
- *	interpreter.
- *	NOTE: The command is invoked in the global stack frame of the
- *	interpreter, thus it cannot see any current state on the
- *	stack of that interpreter.
- *
- *	NOTE: This routine is no longer used at all by Tcl itself.
- *	It is kept only because it appears in the internal stub table,
- *	for the sake of any extensions that might be calling it.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Whatever the command does.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclObjInvokeGlobal(interp, objc, objv, flags)
-    Tcl_Interp *interp;		/* Interpreter in which command is to be
-				 * invoked. */
-    int objc;			/* Count of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects; objv[0] points to the
-				 * name of the command to invoke. */
-    int flags;			/* Combination of flags controlling the
-				 * call: TCL_INVOKE_HIDDEN,
-				 * TCL_INVOKE_NO_UNKNOWN, or
-				 * TCL_INVOKE_NO_TRACEBACK. */
-{
-    register Interp *iPtr = (Interp *) interp;
-    int result;
-    CallFrame *savedVarFramePtr;
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    iPtr->varFramePtr = NULL;
-    result = TclObjInvoke(interp, objc, objv, flags);
-    iPtr->varFramePtr = savedVarFramePtr;
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclObjInvokeNamespace --
  *
  *	Object version: Invokes a Tcl command, given an objv/objc, from
@@ -4507,11 +4305,8 @@ TclObjInvoke(interp, objc, objv, flags)
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     char *cmdName;		/* Name of the command from objv[0]. */
     register Tcl_HashEntry *hPtr;
-    Tcl_Command cmd;
     Command *cmdPtr;
-    int localObjc;		/* Used to invoke "unknown" if the */
     Tcl_Obj **localObjv = NULL;	/* command is not found. */
-    register int i;
     int result;
 
     /* make whole thing a call to TEOVICount */
@@ -4540,47 +4335,8 @@ TclObjInvoke(interp, objc, objv, flags)
         }
 	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
     } else {
-	cmdPtr = NULL;
-	cmd = Tcl_FindCommand(interp, cmdName,
-	        (Tcl_Namespace *) NULL, /*flags*/ TCL_GLOBAL_ONLY);
-        if (cmd != (Tcl_Command) NULL) {
-	    cmdPtr = (Command *) cmd;
-        }
-	if (cmdPtr == NULL) {
-            if (!(flags & TCL_INVOKE_NO_UNKNOWN)) {
-		cmd = Tcl_FindCommand(interp, "unknown",
-	        	(Tcl_Namespace *) NULL, /*flags*/ TCL_GLOBAL_ONLY);
-		if (cmd != (Tcl_Command) NULL) {
-	            cmdPtr = (Command *) cmd;
-                }
-                if (cmdPtr != NULL) {
-                    localObjc = (objc + 1);
-                    localObjv = (Tcl_Obj **)
-			ckalloc((unsigned) (sizeof(Tcl_Obj *) * localObjc));
-		    localObjv[0] = Tcl_NewStringObj("unknown", -1);
-		    Tcl_IncrRefCount(localObjv[0]);
-                    for (i = 0;  i < objc;  i++) {
-                        localObjv[i+1] = objv[i];
-                    }
-                    objc = localObjc;
-                    objv = localObjv;
-                }
-            }
-
-            /*
-             * Check again if we found the command. If not, "unknown" is
-             * not present and we cannot help, or the caller said not to
-             * call "unknown" (they specified TCL_INVOKE_NO_UNKNOWN).
-             */
-
-            if (cmdPtr == NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"invalid command name \"",  cmdName, "\"", 
-			 (char *) NULL);
-                return TCL_ERROR;
-            }
-        }
+	cmdPtr = NULL; /* Avoid warning */
+	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
 
     /*

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.6 2004/09/08 23:02:43 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.7 2004/09/30 00:51:41 dgp Exp $
 
 library tcl
 
@@ -124,10 +124,11 @@ declare 25 generic {
 #  declare 26 generic {
 #      char *TclGetCwd(Tcl_Interp *interp)
 #  }
-declare 27 generic {
-    int TclGetDate(char *p, unsigned long now, long zone,
-	    unsigned long *timePtr)
-}
+# Removed in 8.5
+#declare 27 generic {
+#    int TclGetDate(char *p, unsigned long now, long zone,
+#	    unsigned long *timePtr)
+#}
 declare 28 generic {
     Tcl_Channel TclpGetDefaultStdChannel(int type)
 }
@@ -184,10 +185,11 @@ declare 41 generic {
 declare 42 generic {
     char *TclpGetUserHome(CONST char *name, Tcl_DString *bufferPtr)
 }
-declare 43 generic {
-    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
-	    int flags)
-}
+# Removed in Tcl 8.5a2
+#declare 43 generic {
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#	    int flags)
+#}
 declare 44 generic {
     int TclGuessPackageName(CONST char *fileName, Tcl_DString *bufPtr)
 }
@@ -218,9 +220,10 @@ declare 50 generic {
 declare 51 generic {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 52 generic {
-    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv, int flags)
-}
+# Removed in Tcl 8.5a2
+#declare 52 generic {
+#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv, int flags)
+#}
 declare 53 generic {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
 	    int argc, CONST84 char **argv)
@@ -269,10 +272,11 @@ declare 64 generic {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
 	    int flags)
 }
-declare 65 generic {
-    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
-	    Tcl_Obj *CONST objv[], int flags)
-}
+# Removed in Tcl 8.5a2
+#declare 65 generic {
+#    int TclObjInvokeGlobal(Tcl_Interp *interp, int objc,
+#	    Tcl_Obj *CONST objv[], int flags)
+#}
 declare 66 generic {
     int TclOpenFileChannelDeleteProc(TclOpenFileChannelProc_ *proc)
 }
@@ -526,10 +530,11 @@ declare 132 generic {
 declare 133 generic {
     struct tm *TclpGetDate(CONST time_t *time, int useGMT)
 }
-declare 134 generic {
-    size_t TclpStrftime(char *s, size_t maxsize, CONST char *format,
-	    CONST struct tm *t, int useGMT)
-}
+# Removed in 8.5
+#declare 134 generic {
+#    size_t TclpStrftime(char *s, size_t maxsize, CONST char *format,
+#	    CONST struct tm *t, int useGMT)
+#}
 #declare 135 generic {
 #    int TclpCheckStackSpace(void)
 #}

@@ -1,4 +1,174 @@
+2004-09-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/basic.test (49.*):	New tests for TCL_EVAL_GLOBAL.
+
+2004-09-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclVar.c (TclObjLookupVar, TclObjLookupVar): 
+	(TclObjUnsetVar2, SetArraySearchObj): 
+	* generic/tclUtil.c (SetEndOffsetFromAny): 
+	* generic/tclStringObj.c (Tcl_SetStringObj): 
+	(Tcl_SetUnicodeObj, SetStringFromAny): 
+	* generic/tclResult.c (ResetObjResult): 
+	* generic/tclRegexp.c (Tcl_GetRegExpFromObj): 
+	* generic/tclPathObj.c (TclFSMakePathRelative, SetFsPathFromAny): 
+	(TclFSMakePathFromNormalized, Tcl_FSNewNativePath): 
+	* generic/tclObj.c (TclFreeObj, Tcl_SetBooleanObj, SetBooleanFromAny): 
+	(Tcl_SetDoubleObj, SetDoubleFromAny, Tcl_SetIntObj): 
+	(SetIntOrWideFromAny, Tcl_SetLongObj, SetWideIntFromAny): 
+	(Tcl_SetWideIntObj, TclSetCmdNameObj, SetCmdNameFromAny): 
+	* generic/tclNamesp.c (SetNsNameFromAny, MakeCachedEnsembleCommand): 
+	* generic/tclListObj.c (Tcl_SetListObj, SetListFromAny): 
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): 
+	* generic/tclDictObj.c (SetDictFromAny): 
+	* generic/tclCompile.c (TclInitByteCodeObj): 
+	* generic/tclBinary.c (Tcl_SetByteArrayObj, SetByteArrayFromAny): 
+	* generic/tclInt.h (TclFreeIntRep): Factorize out deletion of object
+	internal representation to a shared macro, so simplifying much code.
+
+2004-09-27  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclObjInvoke): fix for bogus gcc warning
+	about uninitialised variable.
+
+2004-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Removed internal routines TclInvoke,
+	* generic/tclInt.decls: TclGlobalInvoke, TclObjInvokeGlobal and
+	* tests/basic.test:	the portion of TclObjInvoke that handles
+	calls without TCL_INVOKE_HIDDEN enabled.  None of this code is
+	called any longer within the core, and the superior public
+	interface, Tcl_EvalObjv, is available for any external callers.
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclEvent.c (HandleBgErrors):	Updated [bgerror]
+	invocations to make use of Tcl_Obj based routines, dropping
+	the calls to TclGlobalInvoke()
+
+2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c:
+	* generic/tclFileSystem.h:
+	* generic/tclIOUtil.c:
+	* generic/tclPathObj.c:
+	* tests/cmdAH.test:
+	* tests/fileSystem.test:
+	* tests/winFCmd.test: fix to bad error message with 'cd' on
+	windows, when permissions are inadequate [Bug 1035462] and
+	to treatment of a volume-relative pwd on Windows [Bug 1018980].
+
+	* doc/FileSystem.3: added missing Tcl_GlobTypeData documentation
+	[Bug 935853]
+
+2004-09-27  Kevin Kenny  <kennykb@acm.org>
+
+	* compat/strftime.c (Removed):
+	* generic/tclClock.c (removed TclClockOldscanObjCmd):
+	* generic/tclDate.c (Regenerated):
+	* generic/tclGetDate.y:
+	* generic/tclInt.decls (removed TclGetDate and TclpStrftime):
+	* generic/tclInt.h (removed TclGetDateInfo):
+	* generic/tclIntDecls.h (Regenerated):
+	* generic/tclStubInit.c (Regenerated):
+	* library/clock.tcl: 
+	* unix/tclUnixTime.c (removed TclpStrftime):
+	* win/Makefile.in:
+	* win/makefile.bc:
+	* win/makefile.bc:
+	* win/tcl.dsp:
+	Continued refactoring of [clock] for TIP 173 changes.
+	Broke the free-form parser apart so that the Bison parser
+	is responsible for only parsing, while clock.tcl handles
+	relative times like "next Thursday", "next January".  This
+	change is needed to make timezones other than :localtime
+	and :Etc/UTC work with free-form scanning. This change closes
+	out the issue identified as being "for another day" in
+	my log message of 2004-09-08.  The refactored code also
+	eliminates the last known references to TclpStrftime and
+	TclGetDate, so those routines (including compat/strftime.c)
+	have been removed.  The refactoring also has the benefit
+	that all storage in the Bison parser is now on the C stack,
+	eliminating any need for mutex protection around [clock scan].
+	Also, changed the Makefiles so that 'make gendate' is
+	available on Windows as well as Unix.
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Removed some grubby
+	* generic/tclObj.c (SetBooleanFromAny):  work-around code
+					         that was needed only
+	                                         because of Bug 868489.
+	
+	* generic/tclBasic.c (TclObjInvoke): Removed three unused
+	variables to silence a compiler warning in VC++.
+	
+2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3: fix to small typo.
+
+2004-09-26  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* tests/compExpr-old.test:
+	* tests/compExpr.test:
+	* tests/expr.test:
+	* tests/for.test:
+	* tests/if.test:
+	* tests/incr.test:
+	* tests/while.test: 
+	Report compilation errors at runtime, [Patch 1033689] by dgp. 
+	
+2004-09-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/dltest/Makefile.in (clean): Fixup make clean
+	rule so that it does not delete all files when
+	SHLIB_SUFFIX is set to the empty string in a static build.
+	[Bug 1016726]
+
+2004-09-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Corrections to the 2004-09-21 commit
+	* generic/tclExecute.c:	regarding ERR_ALREADY_LOGGED.  That commit
+	* generic/tclNamesp.c:	caused Tk test send-10.7 to fail.  Added
+	* tests/namespace.test (25.7,8):	tests in the Tcl test suite
+	* tests/pkg.test (2.25,26):	to catch this error without the
+	aid of Tk in the future.
+
+	* generic/tclCmdAH.c (Tcl_ExprObjCmd):	Simplified the TclObjCmdProc
+	of [expr] with a call to Tcl_ConcatObj.
+
+2004-09-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (TclProcessReturn):	Support the -errorline
+	* generic/tclCompile.c (TclCompileScript):	option to [return].
+	* tests/compile.test (16.23.*):	Use that capability to defer reporting
+	* tests/misc.test (1.2):	of parse errors until runtime.
+	Updated tests to reflect change. [Bug 1032805]
+
+2004-09-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_START_CMD):
+	* tests/proc.test (7.2-3): fix for [Bug 729692] was incorrect
+	whenever a loop exception was returned.
+
+2004-09-22  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/America/Montevideo: Updated to reflect
+	ftp://elsie.nci.nih.gov/pub/tzdata2004d.tar.gz. (Changes
+	to Asia/Jerusalem were in the comments only.) [Routine
+	maintenance - no bug] Spanish-language description of the
+	change at http://www.presidencia.gub.uy/decretos/2004091502.htm
+	
 2004-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c:	Tolerate [append] syntax errors
+	* tests/appendComp.test (8.1):	at compile time, and allow runtime
+	to raise the error (or succeed if a redefined [append] allows).
 
 	* generic/tclBasic.c:	Reworked management of the interp
 	* generic/tclCompile.c:	flag ERR_ALREADY_LOGGED, to reduce

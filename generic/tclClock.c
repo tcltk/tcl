@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.7 2004/09/21 23:10:26 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.8 2004/09/30 00:51:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -519,107 +519,4 @@ TzsetIfNecessary()
     }
     Tcl_MutexUnlock( &clockMutex );
 }
-
-/*
- *-------------------------------------------------------------------------
- *
- * TclClockOldscanObjCmd --
- *
- *	Implements the legacy 'clock scan' Tcl command when no '-format'
- *	option is supplied.
- *
- * Results:
- *	Returns a standard Tcl result.
- *
- * This function implements the 'clock scan' Tcl command when no
- * -format group is present. Refer to the user documentation to see
- * what it does.
- *
- *-------------------------------------------------------------------------
- */
 
-int
-TclClockOldscanObjCmd( ClientData clientData, /* unused */
-		       Tcl_Interp* interp, /* Tcl interpreter */
-		       int objc, /* Parameter count */
-		       Tcl_Obj *CONST * objv /* Parameter vector */
-		       )
-{
-    int index;
-    Tcl_Obj *CONST *objPtr;
-    char *scanStr;
-    Tcl_Obj *baseObjPtr = NULL;
-    int useGMT = 0;
-    unsigned long baseClock;
-    unsigned long clockVal;
-    long zone;
-    Tcl_Obj *resultPtr;
-    int dummy;
-
-    static CONST char *scanSwitches[] = {
-	"-base", "-gmt", (char *) NULL
-    };
-
-    if ((objc < 2) || (objc > 6)) {
-    wrongScanArgs:
-	Tcl_WrongNumArgs(interp, 2, objv,
-			 "dateString ?-base clockValue? ?-gmt boolean?");
-	return TCL_ERROR;
-    }
-    objPtr = objv+2;
-    objc -= 2;
-    while (objc > 1) {
-	if (Tcl_GetIndexFromObj(interp, objPtr[0], scanSwitches,
-				"switch", 0, &index) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	switch (index) {
-	case 0:		/* -base */
-	    baseObjPtr = objPtr[1];
-	    break;
-	case 1:		/* -gmt */
-	    if (Tcl_GetBooleanFromObj(interp, objPtr[1],
-				      &useGMT) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    break;
-	}
-	objPtr += 2;
-	objc -= 2;
-    }
-    if (objc != 0) {
-	goto wrongScanArgs;
-    }
-    
-    if (baseObjPtr != NULL) {
-	if (Tcl_GetLongFromObj(interp, baseObjPtr,
-			       (long*) &baseClock) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    } else {
-	baseClock = TclpGetSeconds();
-    }
-    
-    if (useGMT) {
-	zone = -50000; /* Force GMT */
-    } else {
-	zone = TclpGetTimeZone((unsigned long) baseClock);
-    }
-    
-    scanStr = Tcl_GetStringFromObj(objv[1], &dummy);
-    Tcl_MutexLock(&clockMutex);
-    if (TclGetDate(scanStr, (unsigned long) baseClock, zone,
-		   &clockVal) < 0) {
-	Tcl_MutexUnlock(&clockMutex);
-	resultPtr = Tcl_NewObj();
-	Tcl_AppendStringsToObj(resultPtr,
-			       "unable to convert date-time string \"",
-			       scanStr, "\"", (char *) NULL);
-	Tcl_SetObjResult( interp, resultPtr );
-	return TCL_ERROR;
-    }
-    Tcl_MutexUnlock(&clockMutex);
-    Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt) clockVal ) );
-    return TCL_OK;
-
-}

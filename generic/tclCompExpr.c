@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.4 2004/04/09 20:58:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.5 2004/09/30 00:51:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -365,11 +365,8 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    tokenPtr->start, tokenPtr->size);
     switch (tokenPtr->type) {
         case TCL_TOKEN_WORD:
-	    code = TclCompileTokens(interp, tokenPtr+1,
+	    TclCompileTokens(interp, tokenPtr+1,
 	            tokenPtr->numComponents, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    break;
 	    
@@ -397,36 +394,20 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    break;
 	    
         case TCL_TOKEN_COMMAND:
-	    code = TclCompileScript(interp, tokenPtr->start+1,
+	    TclCompileScript(interp, tokenPtr->start+1,
 		    tokenPtr->size-2, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
 	    tokenPtr += 1;
 	    break;
 	    
         case TCL_TOKEN_SCRIPT_SUBST: {
 	    Tcl_Token *lastTokenPtr = tokenPtr + (tokenPtr->numComponents);
-	    code = TclCompileScriptTokens(interp, tokenPtr+1,
-		    lastTokenPtr, envPtr);
-	    if ((code == TCL_OK) && (lastTokenPtr->type == TCL_TOKEN_ERROR)) {
-		code = TclSubstTokens(interp, lastTokenPtr, 1, NULL,
-			/* flags */ 0);
-	        TclLogCompilationInfo(interp, tokenPtr[1].start,
-			lastTokenPtr->start, lastTokenPtr->size);
-	    }
-	    if (code != TCL_OK) {
-		goto done;
-	    }
+	    TclCompileScriptTokens(interp, tokenPtr+1, lastTokenPtr, envPtr);
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    break;
 	}
 	    
         case TCL_TOKEN_VARIABLE:
-	    code = TclCompileTokens(interp, tokenPtr, 1, envPtr);
-	    if (code != TCL_OK) {
-		goto done;
-	    }
+	    TclCompileTokens(interp, tokenPtr, 1, envPtr);
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    break;
 	    

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.7 2004/09/21 23:10:27 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.8 2004/09/30 00:51:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1581,7 +1581,7 @@ TclCompileNoOp(interp, parsePtr, envPtr)
     CompileEnv *envPtr;         /* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int i, code;
+    int i;
     int savedStackDepth = envPtr->currStackDepth;
 
     tokenPtr = parsePtr->tokenPtr;
@@ -1590,11 +1590,8 @@ TclCompileNoOp(interp, parsePtr, envPtr)
 	envPtr->currStackDepth = savedStackDepth;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) { 
-	    code = TclCompileTokens(interp, tokenPtr+1,
+	    TclCompileTokens(interp, tokenPtr+1,
 	            tokenPtr->numComponents, envPtr);
-	    if (code != TCL_OK) {
-		return code;
-	    }
 	    TclEmitOpcode(INST_POP, envPtr);
 	} 
     }

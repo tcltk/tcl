@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.12 2004/09/21 23:10:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.13 2004/09/30 00:51:37 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -910,6 +910,7 @@ TclCompEvalObj(interp, objPtr, flags)
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
     int result;
     Namespace *namespacePtr;
+    CallFrame *savedVarFramePtr = iPtr->varFramePtr;
 
     /*
      * Check that the interpreter is ready to execute scripts
@@ -917,11 +918,14 @@ TclCompEvalObj(interp, objPtr, flags)
 
     iPtr->numLevels++;
     if (TclInterpReady(interp) == TCL_ERROR) {
-	iPtr->numLevels--;
-	return TCL_ERROR;
+	result = TCL_ERROR;
+	goto done;
     }
 
-    if ((flags & TCL_EVAL_GLOBAL) || (iPtr->varFramePtr == NULL)) {
+    if (flags & TCL_EVAL_GLOBAL) {
+	iPtr->varFramePtr = NULL;
+    }
+    if (iPtr->varFramePtr == NULL) {
         namespacePtr = iPtr->globalNsPtr;
     } else {
         namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -939,8 +943,7 @@ TclCompEvalObj(interp, objPtr, flags)
 	iPtr->errorLine = 1; 
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
 	if (result != TCL_OK) {
-	    iPtr->numLevels--;
-	    return result;
+	    goto done;
 	}
 	iPtr->evalFlags = 0;
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
@@ -1006,6 +1009,8 @@ PrintByteCodeInfo(codePtr);
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
+done:
+    iPtr->varFramePtr = savedVarFramePtr;
     iPtr->numLevels--;
     return result;
 }
@@ -1340,7 +1345,8 @@ TclExecuteByteCode(interp, codePtr)
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    result = Tcl_EvalEx(interp, bytes, length, 0);
 	    if (result != TCL_OK) {
-		goto checkForCatch;
+		cleanup = 0;
+		goto processExceptionReturn;
 	    }
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    objResultPtr = Tcl_GetObjResult(interp);
@@ -4833,6 +4839,7 @@ TclExecuteByteCode(interp, codePtr)
 		CACHE_STACK_INFO();
 	    }
 	}
+	iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
 	/*
 	 * Clear all expansions that may have started after the last

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.9.14.3 2004/05/27 14:29:21 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.9.14.4 2004/09/30 00:51:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -261,6 +261,25 @@ test pkg-2.24 {Tcl_PkgRequire procedure, version checks} {
     package provide t 2.3
     list [catch {package require -exact t 2.2} msg] $msg
 } {1 {version conflict for package "t": have 2.3, need 2.2}}
+test pkg-2.25 {Tcl_PkgRequire procedure, error in ifneeded script} {
+    package forget t
+    package ifneeded t 2.1 {package provide t 2.1; error "ifneeded test" EI}
+    list [catch {package require t 2.1} msg] $msg $errorInfo
+} {1 {ifneeded test} {EI
+    ("package ifneeded" script)
+    invoked from within
+"package require t 2.1"}}
+test pkg-2.26 {Tcl_PkgRequire procedure, error in ifneeded script} {
+    package forget t
+    package ifneeded t 2.1 {package provide t 2.1; foreach x 1 {error "ifneeded test" EI}}
+    list [catch {package require t 2.1} msg] $msg $errorInfo
+} {1 {ifneeded test} {EI
+    ("foreach" body line 1)
+    invoked from within
+"foreach x 1 {error "ifneeded test" EI}"
+    ("package ifneeded" script)
+    invoked from within
+"package require t 2.1"}}
 
 test pkg-3.1 {Tcl_PackageCmd procedure} {
     list [catch {package} msg] $msg

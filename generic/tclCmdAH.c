@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.6 2004/09/21 23:10:26 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.7 2004/09/30 00:51:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -758,52 +758,23 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
 {	 
     register Tcl_Obj *objPtr;
     Tcl_Obj *resultPtr;
-    register char *bytes;
-    int length, i, result;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
 
-    if (objc == 2) {
-	result = Tcl_ExprObj(interp, objv[1], &resultPtr);
-	if (result == TCL_OK) {
-	    Tcl_SetObjResult(interp, resultPtr);
-	    Tcl_DecrRefCount(resultPtr);  /* done with the result object */
-	}
-	return result;
-    }
-
-    /*
-     * Create a new object holding the concatenated argument strings.
-     */
-
-    /*** QUESTION: Do we need to copy the slow way? ***/
-    bytes = Tcl_GetStringFromObj(objv[1], &length);
-    objPtr = Tcl_NewStringObj(bytes, length);
+    objPtr = Tcl_ConcatObj(objc-1, objv+1);
     Tcl_IncrRefCount(objPtr);
-    for (i = 2;  i < objc;  i++) {
-	Tcl_AppendToObj(objPtr, " ", 1);
-	bytes = Tcl_GetStringFromObj(objv[i], &length);
-	Tcl_AppendToObj(objPtr, bytes, length);
-    }
-
-    /*
-     * Evaluate the concatenated string object.
-     */
-
     result = Tcl_ExprObj(interp, objPtr, &resultPtr);
+    Tcl_DecrRefCount(objPtr);
+
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_DecrRefCount(resultPtr);  /* done with the result object */
     }
 
-    /*
-     * Free allocated resources.
-     */
-    
-    Tcl_DecrRefCount(objPtr);
     return result;
 }
 
@@ -2258,18 +2229,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		size = 40 + precision;
 		break;
 	    }
-	    if (objv[objIndex]->typePtr == &tclWideIntType) {
-		/* Operation won't fail; we're typed! */
-		Tcl_GetWideIntFromObj(NULL, objv[objIndex], &wideValue);
-		if (wideValue>ULONG_MAX || wideValue<LONG_MIN) {
-		    /*
-		     * Value too big for type.  Generate an error;
-		     */
-		    Tcl_GetLongFromObj(interp, objv[objIndex], &intValue);
-		    goto fmtError;
-		}
-		intValue = Tcl_WideAsLong(wideValue);
-	    } else if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
+	    if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
 		    objv[objIndex], &intValue) != TCL_OK) {
 		goto fmtError;
 	    }

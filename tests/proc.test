@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.11.4.4 2004/05/27 14:29:21 dgp Exp $
+# RCS: @(#) $Id: proc.test,v 1.11.4.5 2004/09/30 00:51:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -332,6 +332,36 @@ test proc-7.1 {Redefining a compiled cmd: Bug 729692} {
     }
     foo
 } bar
+
+test proc-7.2 {Shadowing a compiled cmd: Bug 729692} {
+    namespace eval ugly {}
+    proc ugly::foo {} {
+	proc set args {return bar}
+	set x 1
+    }
+    set res [list [catch {ugly::foo} msg] $msg]
+    namespace delete ugly
+    set res
+} {0 bar}
+
+test proc-7.3 {Returning loop exception from redefined cmd: Bug 729692} {
+    namespace eval ugly {}
+    proc ugly::foo {} {
+	set i 0
+	while { 1 } {
+	    if { [incr i] > 3 } {
+		proc continue {} {return -code break}
+	    }
+	    continue
+	}
+	return $i
+    }
+    set res [list [catch {ugly::foo} msg] $msg]
+    namespace delete ugly
+    set res
+} {0 4}
+
+
 
 # cleanup
 catch {rename p ""}

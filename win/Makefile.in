@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.5 2004/09/08 23:03:27 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.6 2004/09/30 00:51:53 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -292,7 +292,7 @@ WIN_OBJS = \
 	tclWinTime.$(OBJEXT) 
 
 COMPAT_OBJS = \
-	strftime.$(OBJEXT) strtoll.$(OBJEXT) strtoull.$(OBJEXT)
+	strtoll.$(OBJEXT) strtoull.$(OBJEXT)
 
 PIPE_OBJS = stub16.$(OBJEXT)
 
@@ -458,6 +458,17 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 
 .rc.$(RES):
 	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
+
+# The following target generates the file generic/tclDate.c 
+# from the yacc grammar found in generic/tclGetDate.y.  This is
+# only run by hand as yacc is not available in all environments.
+# The name of the .c file is different than the name of the .y file
+# so that make doesn't try to automatically regenerate the .c file.
+
+gendate:
+	bison --output-file=$(GENERIC_DIR)/tclDate.c \
+	--name-prefix=TclDate \
+	$(GENERIC_DIR)/tclGetDate.y
 
 install: all install-binaries install-libraries install-doc
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.3 2004/05/17 18:42:20 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.4 2004/09/30 00:51:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -268,16 +268,12 @@ Tcl_SetByteArrayObj(objPtr, bytes, length)
     int length;			/* Length of the array of bytes, which must
 				 * be >= 0. */
 {
-    Tcl_ObjType *typePtr;
     ByteArray *byteArrayPtr;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetByteArrayObj called with shared object");
     }
-    typePtr = objPtr->typePtr;
-    if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-	(*typePtr->freeIntRepProc)(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
     byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
@@ -397,15 +393,13 @@ SetByteArrayFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Not used. */
     Tcl_Obj *objPtr;		/* The object to convert to type ByteArray. */
 {
-    Tcl_ObjType *typePtr;
     int length;
     char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
     Tcl_UniChar ch;
     
-    typePtr = objPtr->typePtr;
-    if (typePtr != &tclByteArrayType) {
+    if (objPtr->typePtr != &tclByteArrayType) {
 	src = Tcl_GetStringFromObj(objPtr, &length);
 	srcEnd = src + length;
 
@@ -418,9 +412,7 @@ SetByteArrayFromAny(interp, objPtr)
 	byteArrayPtr->used = dst - byteArrayPtr->bytes;
 	byteArrayPtr->allocated = length;
 
-	if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
-	    (*typePtr->freeIntRepProc)(objPtr);
-	}
+	TclFreeIntRep(objPtr);
 	objPtr->typePtr = &tclByteArrayType;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }

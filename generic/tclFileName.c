@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.7 2004/05/17 18:42:22 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.8 2004/09/30 00:51:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -240,6 +240,12 @@ Tcl_GetPathType(path)
  *	tclIOUtil.c (but needs to be here due to its dependence on
  *	static variables/functions in this file).  The exported
  *	function Tcl_FSGetPathType should be used by extensions.
+ *	
+ *	Note that '~' paths are always considered TCL_PATH_ABSOLUTE,
+ *	even though expanding the '~' could lead to any possible
+ *	path type.  This function should therefore be considered a
+ *	low-level, string-manipulation function only -- it doesn't
+ *	actually do any expansion in making its determination.
  *
  * Results:
  *	Returns one of TCL_PATH_ABSOLUTE, TCL_PATH_RELATIVE, or

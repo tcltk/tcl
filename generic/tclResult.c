@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.3 2004/09/21 23:10:27 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.4 2004/09/30 00:51:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -841,10 +841,7 @@ ResetObjResult(iPtr)
 	}
 	objResultPtr->bytes  = tclEmptyStringRep;
 	objResultPtr->length = 0;
-	if ((objResultPtr->typePtr != NULL)
-	        && (objResultPtr->typePtr->freeIntRepProc != NULL)) {
-	    objResultPtr->typePtr->freeIntRepProc(objResultPtr);
-	}
+	TclFreeIntRep(objResultPtr);
 	objResultPtr->typePtr = (Tcl_ObjType *) NULL;
     }
 }

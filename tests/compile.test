@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.27.2.2 2004/09/08 23:03:18 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.27.2.3 2004/09/30 00:51:50 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -569,6 +569,19 @@ test compile-16.22.$noComp {
 } -constraints $constraints -cleanup {
     rename ReturnResults {}
 } -returnCodes ok -result [string trim [string repeat {x } 260]]
+
+test compile-16.23.$noComp {
+    Bug 1032805: defer parse error until run time
+} -body {
+    namespace eval x {
+	run {
+	    proc if {a b} {uplevel 1 [list set $a $b]}
+	    if 1 {syntax {}{}}
+	}
+    }
+} -cleanup {
+    namespace delete x
+} -returnCodes ok -result {syntax {}{}}
 
 }	;# End of noComp loop
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.15 2004/09/21 23:10:27 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.16 2004/09/30 00:51:41 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -844,18 +844,19 @@ struct CompileEnv;
 /*
  * The type of procedures called by the Tcl bytecode compiler to compile
  * commands. Pointers to these procedures are kept in the Command structure
- * describing each command. When a CompileProc returns, the interpreter's
- * result is set to error information, if any. In addition, the CompileProc
- * returns an integer value, which is one of the following:
+ * describing each command.  The integer value returned by a CompileProc
+ * must be one of the following:
  *
  * TCL_OK		Compilation completed normally.
- * TCL_ERROR		Compilation failed because of an error;
- *			the interpreter's result describes what went wrong.
- * TCL_OUT_LINE_COMPILE	Compilation failed because, e.g., the command is
- *			too complex for effective inline compilation. The
- *			CompileProc believes the command is legal but 
- *			should be compiled "out of line" by emitting code
- *			to invoke its command procedure at runtime.
+ * TCL_OUT_LINE_COMPILE	Compilation could not be completed.  This can
+ * 			be just a judgment by the CompileProc that the
+ * 			command is too complex to compile effectively,
+ * 			or it can indicate that in the current state of
+ * 			the interp, the command would raise an error.
+ * 			In the latter circumstance, we defer error reporting
+ * 			until the actual runtime, because by then changes
+ * 			in the interp state may allow the command to be
+ * 			successfully evaluated.
  */
 
 #define TCL_OUT_LINE_COMPILE	(TCL_CONTINUE + 1)
@@ -1669,10 +1670,10 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
  *                              could not be parsed into commands.
  */
 
-#define TCL_TOKEN_SCRIPT        256
-#define TCL_TOKEN_SCRIPT_SUBST  512
-#define TCL_TOKEN_CMD           1024
-#define TCL_TOKEN_ERROR         2048
+#define TCL_TOKEN_SCRIPT        512
+#define TCL_TOKEN_SCRIPT_SUBST  1024
+#define TCL_TOKEN_CMD           2048
+#define TCL_TOKEN_ERROR         4096
 
 /*
  *----------------------------------------------------------------
@@ -2565,6 +2566,22 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 /*
  *----------------------------------------------------------------
+ * Macro used by the Tcl core to clean out an object's internal
+ * representation.  Does not actually reset the rep's bytes.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * EXTERN void  TclFreeIntRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+ *----------------------------------------------------------------
+ */
+
+#define TclFreeIntRep(objPtr) \
+    if ((objPtr)->typePtr != NULL && \
+	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
+	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+    }
+
+/*
+ *----------------------------------------------------------------
  * Macro used by the Tcl core to get a Tcl_WideInt value out of
  * a Tcl_Obj of the "wideInt" type.  Different implementation on
  * different platforms depending whether TCL_WIDE_INT_IS_LONG.
@@ -2687,41 +2704,6 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT
-
-/*
- * Data structure used to hold information returned from TclGetDate
- */
-
-typedef struct TclGetDateInfo {
-
-    time_t   dateYear;
-    time_t   dateMonth;
-    time_t   dateDay;
-    int      dateHaveDate;
-
-    time_t   dateHour;
-    time_t   dateMinutes;
-    time_t   dateSeconds;
-    int      dateMeridian;
-    int      dateHaveTime;
-
-    time_t   dateTimezone;
-    int      dateDSTmode;
-    int      dateHaveZone;
-
-    time_t   dateRelMonth;
-    time_t   dateRelDay;
-    time_t   dateRelSeconds;
-    int      dateHaveRel;
-
-    time_t   dateMonthOrdinal;
-    int      dateHaveOrdinalMonth;
-
-    time_t   dateDayOrdinal;
-    time_t   dateDayNumber;
-    int      dateHaveDay;
-
-} TclGetDateInfo;
 
 #endif /* _TCLINT */
 

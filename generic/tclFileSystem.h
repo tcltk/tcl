@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.4 2004/05/17 18:42:23 dgp Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.5 2004/09/30 00:51:40 dgp Exp $
  */
 
 /* 
@@ -98,4 +98,5 @@ Tcl_PathType     TclFSNonnativePathType  _ANSI_ARGS_((CONST char *pathPtr,
 Tcl_PathType     TclGetPathType  _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_Filesystem **filesystemPtrPtr, 
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
+int              TclFSEpochOk _ANSI_ARGS_((int filesystemEpoch));
 Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;

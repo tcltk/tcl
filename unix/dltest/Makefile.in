@@ -1,7 +1,7 @@
 # This Makefile is used to create several test cases for Tcl's load
 # command.  It also illustrates how to take advantage of configuration
 # exported by Tcl to set up Makefiles for shared libraries.
-# RCS: @(#) $Id: Makefile.in,v 1.12.2.2 2004/05/27 14:29:47 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.12.2.3 2004/09/30 00:51:53 dgp Exp $
 
 TCL_DBGX =		@TCL_DBGX@
 CC = @CC@
@@ -49,8 +49,12 @@ pkgua${SHLIB_SUFFIX}: $(SRC_DIR)/pkgua.c
 	${SHLIB_LD} -o pkgua${SHLIB_SUFFIX} pkgua.o ${SHLIB_LD_LIBS}
 
 clean:
-	rm -f *.o *${SHLIB_SUFFIX} config.cache config.log config.status
+	rm -f *.o config.cache config.log config.status
 	rm -f lib.exp ../dltest.marker
+	@if test "$(SHLIB_SUFFIX)" != ""; then \
+	    echo "rm -f *${SHLIB_SUFFIX}" ; \
+	    rm -f *${SHLIB_SUFFIX} ; \
+	fi
 
 distclean: clean
 	rm -f Makefile

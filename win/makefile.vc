@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.9 2004/09/08 23:03:27 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.10 2004/09/30 00:51:53 dgp Exp $
 #------------------------------------------------------------------------------
 
 !if !defined(MSDEVDIR) && !defined(MSVCDIR)
@@ -247,7 +247,6 @@ TCLOBJS = \
 	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
-	$(TMP_DIR)\strftime.obj \
 	$(TMP_DIR)\strtoll.obj \
 	$(TMP_DIR)\strtoull.obj \
 	$(TMP_DIR)\tclAlloc.obj \
@@ -712,6 +711,17 @@ tclConfig:
 	close $$f
 <<
 !endif
+
+# The following target generates the file generic/tclDate.c 
+# from the yacc grammar found in generic/tclGetDate.y.  This is
+# only run by hand as yacc is not available in all environments.
+# The name of the .c file is different than the name of the .y file
+# so that make doesn't try to automatically regenerate the .c file.
+
+gendate:
+	bison --output-file=$(GENERICDIR)/tclDate.c \
+	--name-prefix=TclDate \
+	$(GENERICDIR)/tclGetDate.y
 
 #---------------------------------------------------------------------
 # Special case object file targets

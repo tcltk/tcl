@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.2 2004/09/21 23:10:27 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.3 2004/09/30 00:51:40 dgp Exp $
  */
 
 %{
@@ -27,8 +27,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCSID
  */
+
+#include "tclInt.h"
 
 /*
  * Bison generates several labels that happen to be unused. MS Visual
@@ -40,35 +41,70 @@
 #endif /* _MSC_VER */
 
 /*
- * yyparse will accept a 'struct TclGetDateInfo' as its parameter;
+ * yyparse will accept a 'struct DateInfo' as its parameter;
  * that's where the parsed fields will be returned.
  */
 
+typedef struct DateInfo {
+
+    time_t   dateYear;
+    time_t   dateMonth;
+    time_t   dateDay;
+    int      dateHaveDate;
+
+    time_t   dateHour;
+    time_t   dateMinutes;
+    time_t   dateSeconds;
+    int      dateMeridian;
+    int      dateHaveTime;
+
+    time_t   dateTimezone;
+    int      dateDSTmode;
+    int      dateHaveZone;
+
+    time_t   dateRelMonth;
+    time_t   dateRelDay;
+    time_t   dateRelSeconds;
+    int      dateHaveRel;
+
+    time_t   dateMonthOrdinal;
+    int      dateHaveOrdinalMonth;
+
+    time_t   dateDayOrdinal;
+    time_t   dateDayNumber;
+    int      dateHaveDay;
+
+    char     *dateInput;
+    time_t   *dateRelPointer;
+
+} DateInfo;
+
 #define YYPARSE_PARAM info
+#define YYLEX_PARAM info
 
-#define yyDSTmode (((TclGetDateInfo*)info)->dateDSTmode)
-#define yyDayOrdinal (((TclGetDateInfo*)info)->dateDayOrdinal)
-#define yyDayNumber (((TclGetDateInfo*)info)->dateDayNumber)
-#define yyMonthOrdinal (((TclGetDateInfo*)info)->dateMonthOrdinal)
-#define yyHaveDate (((TclGetDateInfo*)info)->dateHaveDate)
-#define yyHaveDay (((TclGetDateInfo*)info)->dateHaveDay)
-#define yyHaveOrdinalMonth (((TclGetDateInfo*)info)->dateHaveOrdinalMonth)
-#define yyHaveRel (((TclGetDateInfo*)info)->dateHaveRel)
-#define yyHaveTime (((TclGetDateInfo*)info)->dateHaveTime)
-#define yyHaveZone (((TclGetDateInfo*)info)->dateHaveZone)
-#define yyTimezone (((TclGetDateInfo*)info)->dateTimezone)
-#define yyDay (((TclGetDateInfo*)info)->dateDay)
-#define yyMonth (((TclGetDateInfo*)info)->dateMonth)
-#define yyYear (((TclGetDateInfo*)info)->dateYear)
-#define yyHour (((TclGetDateInfo*)info)->dateHour)
-#define yyMinutes (((TclGetDateInfo*)info)->dateMinutes)
-#define yySeconds (((TclGetDateInfo*)info)->dateSeconds)
-#define yyMeridian (((TclGetDateInfo*)info)->dateMeridian)
-#define yyRelMonth (((TclGetDateInfo*)info)->dateRelMonth)
-#define yyRelDay (((TclGetDateInfo*)info)->dateRelDay)
-#define yyRelSeconds (((TclGetDateInfo*)info)->dateRelSeconds)
-
-#include "tclInt.h"
+#define yyDSTmode (((DateInfo*)info)->dateDSTmode)
+#define yyDayOrdinal (((DateInfo*)info)->dateDayOrdinal)
+#define yyDayNumber (((DateInfo*)info)->dateDayNumber)
+#define yyMonthOrdinal (((DateInfo*)info)->dateMonthOrdinal)
+#define yyHaveDate (((DateInfo*)info)->dateHaveDate)
+#define yyHaveDay (((DateInfo*)info)->dateHaveDay)
+#define yyHaveOrdinalMonth (((DateInfo*)info)->dateHaveOrdinalMonth)
+#define yyHaveRel (((DateInfo*)info)->dateHaveRel)
+#define yyHaveTime (((DateInfo*)info)->dateHaveTime)
+#define yyHaveZone (((DateInfo*)info)->dateHaveZone)
+#define yyTimezone (((DateInfo*)info)->dateTimezone)
+#define yyDay (((DateInfo*)info)->dateDay)
+#define yyMonth (((DateInfo*)info)->dateMonth)
+#define yyYear (((DateInfo*)info)->dateYear)
+#define yyHour (((DateInfo*)info)->dateHour)
+#define yyMinutes (((DateInfo*)info)->dateMinutes)
+#define yySeconds (((DateInfo*)info)->dateSeconds)
+#define yyMeridian (((DateInfo*)info)->dateMeridian)
+#define yyRelMonth (((DateInfo*)info)->dateRelMonth)
+#define yyRelDay (((DateInfo*)info)->dateRelDay)
+#define yyRelSeconds (((DateInfo*)info)->dateRelSeconds)
+#define yyRelPointer (((DateInfo*)info)->dateRelPointer)
+#define yyInput (((DateInfo*)info)->dateInput)
 
 #define EPOCH           1970
 #define START_OF_TIME   1902
@@ -76,10 +112,7 @@
 
 /*
  * The offset of tm_year of struct tm returned by localtime, gmtime, etc.
- * I don't know how universal this is; K&R II, the NetBSD manpages, and
- * ../compat/strftime.c all agree that tm_year is the year-1900.  However,
- * some systems may have a different value.  This #define should be the
- * same as in ../compat/strftime.c.
+ * Posix requires 1900.
  */
 #define TM_YEAR_BASE 1900
 
@@ -113,36 +146,13 @@ typedef enum _MERIDIAN {
 
 
 /*
- *  Global variables.  We could get rid of most of these by using a good
- *  union as the yacc stack.  (This routine was originally written before
- *  yacc had the %union construct.)  Maybe someday; right now we only use
- *  the %union very rarely.
- */
-
-static char     *yyInput;
-static time_t  *yyRelPointer;
-
-/*
  * Prototypes of internal functions.
  */
 static void	TclDateerror _ANSI_ARGS_((char *s));
 static time_t	ToSeconds _ANSI_ARGS_((time_t Hours, time_t Minutes,
 		    time_t Seconds, MERIDIAN Meridian));
-static int	Convert _ANSI_ARGS_((time_t Month, time_t Day, time_t Year,
-		    time_t Hours, time_t Minutes, time_t Seconds,
-		    MERIDIAN Meridia, DSTMODE DSTmode, time_t *TimePtr,
-                    VOID* info));
-static time_t	DSTcorrect _ANSI_ARGS_((time_t Start, time_t Future));
-static time_t	NamedDay _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
-		    time_t DayNumber));
-static time_t   NamedMonth _ANSI_ARGS_((time_t Start, time_t MonthOrdinal,
-                    time_t MonthNumber, VOID* info));
-static int	RelativeMonth _ANSI_ARGS_((time_t Start, time_t RelMonth,
-		    time_t *TimePtr, VOID* info));
-static int	RelativeDay _ANSI_ARGS_((time_t Start, time_t RelDay,
-		    time_t *TimePtr));
 static int	LookupWord _ANSI_ARGS_((char *buff));
-static int	TclDatelex _ANSI_ARGS_((void));
+static int	TclDatelex _ANSI_ARGS_((void* info));
 
 
 %}
@@ -215,6 +225,7 @@ time    : tUNUMBER tMERIDIAN {
             yyMeridian = MER24;
             yyDSTmode = DSToff;
             yyTimezone = ($5 % 100 + ($5 / 100) * 60);
+	    ++yyHaveZone;
         }
         | tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid {
             yyHour = $1;
@@ -229,6 +240,7 @@ time    : tUNUMBER tMERIDIAN {
             yyMeridian = MER24;
             yyDSTmode = DSToff;
             yyTimezone = ($7 % 100 + ($7 / 100) * 60);
+	    ++yyHaveZone;
         }
         ;
 
@@ -621,7 +633,6 @@ TclDateerror(s)
 {
 }
 
-
 static time_t
 ToSeconds(Hours, Minutes, Seconds, Meridian)
     time_t      Hours;
@@ -648,238 +659,6 @@ ToSeconds(Hours, Minutes, Seconds, Meridian)
     return -1;  /* Should never be reached */
 }
 
-/*
- *-----------------------------------------------------------------------------
- *
- * Convert --
- *
- *      Convert a {month, day, year, hours, minutes, seconds, meridian, dst}
- *      tuple into a clock seconds value.
- *
- * Results:
- *      0 or -1 indicating success or failure.
- *
- * Side effects:
- *      Fills TimePtr with the computed value.
- *
- *-----------------------------------------------------------------------------
- */
-static int
-Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr, info)
-    time_t      Month;
-    time_t      Day;
-    time_t      Year;
-    time_t      Hours;
-    time_t      Minutes;
-    time_t      Seconds;
-    MERIDIAN    Meridian;
-    DSTMODE     DSTmode;
-    time_t     *TimePtr;
-    VOID*	info;
-{
-    static int  DaysInMonth[12] = {
-        31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-    };
-    time_t tod;
-    time_t Julian;
-    int i;
-
-    /* Figure out how many days are in February for the given year.
-     * Every year divisible by 4 is a leap year.
-     * But, every year divisible by 100 is not a leap year.
-     * But, every year divisible by 400 is a leap year after all.
-     */
-    DaysInMonth[1] = IsLeapYear(Year) ? 29 : 28;
-
-    /* Check the inputs for validity */
-    if (Month < 1 || Month > 12
-	    || Year < START_OF_TIME || Year > END_OF_TIME
-	    || Day < 1 || Day > DaysInMonth[(int)--Month])
-        return -1;
-
-    /* Start computing the value.  First determine the number of days
-     * represented by the date, then multiply by the number of seconds/day.
-     */
-    for (Julian = Day - 1, i = 0; i < Month; i++)
-        Julian += DaysInMonth[i];
-    if (Year >= EPOCH) {
-        for (i = EPOCH; i < Year; i++)
-            Julian += 365 + IsLeapYear(i);
-    } else {
-        for (i = Year; i < EPOCH; i++)
-            Julian -= 365 + IsLeapYear(i);
-    }
-    Julian *= SECSPERDAY;
-
-    /* Add the timezone offset ?? */
-    Julian += yyTimezone * 60L;
-
-    /* Add the number of seconds represented by the time component */
-    if ((tod = ToSeconds(Hours, Minutes, Seconds, Meridian)) < 0)
-        return -1;
-    Julian += tod;
-
-    /* Perform a preliminary DST compensation ?? */
-    if (DSTmode == DSTon
-     || (DSTmode == DSTmaybe && TclpGetDate(&Julian, 0)->tm_isdst))
-        Julian -= 60 * 60;
-    *TimePtr = Julian;
-    return 0;
-}
-
-
-static time_t
-DSTcorrect(Start, Future)
-    time_t      Start;
-    time_t      Future;
-{
-    time_t      StartDay;
-    time_t      FutureDay;
-    StartDay = (TclpGetDate(&Start, 0)->tm_hour + 1) % 24;
-    FutureDay = (TclpGetDate(&Future, 0)->tm_hour + 1) % 24;
-    return (Future - Start) + (StartDay - FutureDay) * 60L * 60L;
-}
-
-
-static time_t
-NamedDay(Start, DayOrdinal, DayNumber)
-    time_t      Start;
-    time_t      DayOrdinal;
-    time_t      DayNumber;
-{
-    struct tm   *tm;
-    time_t      now;
-
-    now = Start;
-    tm = TclpGetDate(&now, 0);
-    now += SECSPERDAY * ((DayNumber - tm->tm_wday + 7) % 7);
-    now += 7 * SECSPERDAY * (DayOrdinal <= 0 ? DayOrdinal : DayOrdinal - 1);
-    return DSTcorrect(Start, now);
-}
-
-static time_t
-NamedMonth(Start, MonthOrdinal, MonthNumber, info)
-    time_t Start;
-    time_t MonthOrdinal;
-    time_t MonthNumber;
-    VOID* info;
-{
-    struct tm *tm;
-    time_t now;
-    int result;
-    
-    now = Start;
-    tm = TclpGetDate(&now, 0);
-    /* To compute the next n'th month, we use this alg:
-     * add n to year value
-     * if currentMonth < requestedMonth decrement year value by 1 (so that
-     *  doing next february from january gives us february of the current year)
-     * set day to 1, time to 0
-     */
-    tm->tm_year += MonthOrdinal;
-    if (tm->tm_mon < MonthNumber - 1) {
-	tm->tm_year--;
-    }
-    result = Convert(MonthNumber, (time_t) 1, tm->tm_year + TM_YEAR_BASE,
-	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now, info);
-    if (result < 0) {
-	return 0;
-    }
-    return DSTcorrect(Start, now);
-}
-
-static int
-RelativeMonth(Start, RelMonth, TimePtr, info)
-    time_t Start;
-    time_t RelMonth;
-    time_t *TimePtr;
-    VOID* info;
-{
-    struct tm *tm;
-    time_t Month;
-    time_t Year;
-    time_t Julian;
-    int result;
-
-    if (RelMonth == 0) {
-        *TimePtr = 0;
-        return 0;
-    }
-    tm = TclpGetDate(&Start, 0);
-    Month = 12 * (tm->tm_year + TM_YEAR_BASE) + tm->tm_mon + RelMonth;
-    Year = Month / 12;
-    Month = Month % 12 + 1;
-    result = Convert(Month, (time_t) tm->tm_mday, Year,
-	    (time_t) tm->tm_hour, (time_t) tm->tm_min, (time_t) tm->tm_sec,
-	    MER24, DSTmaybe, &Julian, info);
-
-    /*
-     * The Julian time returned above is behind by one day, if "month" 
-     * or "year" is used to specify relative time and the GMT flag is true.
-     * This problem occurs only when the current time is closer to
-     * midnight, the difference being not more than its time difference
-     * with GMT. For example, in US/Pacific time zone, the problem occurs
-     * whenever the current time is between midnight to 8:00am or 7:00amDST.
-     * See Bug# 413397 for more details and sample script.
-     * To resolve this bug, we simply add the number of seconds corresponding
-     * to timezone difference with GMT to Julian time, if GMT flag is true.
-     */
-
-    if (yyTimezone == 0) {
-        Julian += TclpGetTimeZone((unsigned long) Start) * 60L;
-    }
-
-    /*
-     * The following iteration takes into account the case were we jump
-     * into a "short month".  Far example, "one month from Jan 31" will
-     * fail because there is no Feb 31.  The code below will reduce the
-     * day and try converting the date until we succed or the date equals
-     * 28 (which always works unless the date is bad in another way).
-     */
-
-    while ((result != 0) && (tm->tm_mday > 28)) {
-	tm->tm_mday--;
-	result = Convert(Month, (time_t) tm->tm_mday, Year,
-		(time_t) tm->tm_hour, (time_t) tm->tm_min, (time_t) tm->tm_sec,
-		MER24, DSTmaybe, &Julian, info);
-    }
-    if (result != 0) {
-	return -1;
-    }
-    *TimePtr = DSTcorrect(Start, Julian);
-    return 0;
-}
-
-
-/*
- *-----------------------------------------------------------------------------
- *
- * RelativeDay --
- *
- *      Given a starting time and a number of days before or after, compute the
- *      DST corrected difference between those dates.
- *
- * Results:
- *     1 or -1 indicating success or failure.
- *
- * Side effects:
- *      Fills TimePtr with the computed value.
- *
- *-----------------------------------------------------------------------------
- */
-
-static int
-RelativeDay(Start, RelDay, TimePtr)
-    time_t Start;
-    time_t RelDay;
-    time_t *TimePtr;
-{
-    time_t new;
-
-    new = Start + (RelDay * 60 * 60 * 24);
-    *TimePtr = DSTcorrect(Start, new);
-    return 1;
-}
 
 static int
 LookupWord(buff)
@@ -1000,9 +779,8 @@ LookupWord(buff)
     return tID;
 }
 
-
 static int
-TclDatelex()
+TclDatelex( void* info )
 {
     register char       c;
     register char       *p;
@@ -1058,116 +836,147 @@ TclDatelex()
     }
 }
 
-/*
- * Specify zone is of -50000 to force GMT.  (This allows BST to work).
- */
-
 int
-TclGetDate(p, now, zone, timePtr)
-    char *p;
-    unsigned long now;
-    long zone;
-    unsigned long *timePtr;
+TclClockOldscanObjCmd( clientData, interp, objc, objv )
+     ClientData clientData;	/* Unused */
+     Tcl_Interp* interp;	/* Tcl interpreter */
+     int objc;			/* Count of paraneters */
+     Tcl_Obj *CONST *objv;	/* Parameters */
 {
-    struct tm *tm;
-    time_t Start;
-    time_t Time;
-    time_t tod;
-    int thisyear;
-    TclGetDateInfo dateInfo;
 
+    Tcl_Obj* result;
+    Tcl_Obj* resultElement;
+    int yr, mo, da;
+    DateInfo dateInfo;
     void* info = (void*) &dateInfo;
 
-    yyInput = p;
-    /* now has to be cast to a time_t for 64bit compliance */
-    Start = now;
-    tm = TclpGetDate(&Start, (zone == -50000));
-    thisyear = tm->tm_year + TM_YEAR_BASE;
-    yyYear = thisyear;
-    yyMonth = tm->tm_mon + 1;
-    yyDay = tm->tm_mday;
-    yyTimezone = zone;
-    if (zone == -50000) {
-        yyDSTmode = DSToff;  /* assume GMT */
-        yyTimezone = 0;
-    } else {
-        yyDSTmode = DSTmaybe;
+    if ( objc != 5 ) {
+	Tcl_WrongNumArgs( interp, 1, objv, 
+			  "stringToParse baseYear baseMonth baseDay" );
+	return TCL_ERROR;
     }
-    yyHour = 0;
-    yyMinutes = 0;
-    yySeconds = 0;
-    yyMeridian = MER24;
-    yyRelSeconds = 0;
-    yyRelMonth = 0;
-    yyRelDay = 0;
-    yyRelPointer = NULL;
+
+    yyInput = Tcl_GetString( objv[1] );
 
     yyHaveDate = 0;
-    yyHaveDay = 0;
-    yyHaveOrdinalMonth = 0;
-    yyHaveRel = 0;
+    if ( Tcl_GetIntFromObj( interp, objv[2], &yr ) != TCL_OK
+	 || Tcl_GetIntFromObj( interp, objv[3], &mo ) != TCL_OK
+	 || Tcl_GetIntFromObj( interp, objv[4], &da ) != TCL_OK ) {
+	return TCL_ERROR;
+    }
+    yyYear = yr; yyMonth = mo; yyDay = da;
+
     yyHaveTime = 0;
+    yyHour = 0; yyMinutes = 0; yySeconds = 0; yyMeridian = MER24;
+
     yyHaveZone = 0;
+    yyTimezone = 0; yyDSTmode = DSTmaybe;
 
-    if (yyparse(info) || yyHaveTime > 1 || yyHaveZone > 1 || yyHaveDate > 1 ||
-	    yyHaveDay > 1 || yyHaveOrdinalMonth > 1) {
-        return -1;
+    yyHaveOrdinalMonth = 0;
+    yyMonthOrdinal = 0;
+
+    yyHaveDay = 0;
+    yyDayOrdinal = 0; yyDayNumber = 0;
+
+    yyHaveRel = 0;
+    yyRelMonth = 0; yyRelDay = 0; yyRelSeconds = 0; yyRelPointer = NULL;
+
+    if ( yyparse( info ) ) {
+	Tcl_SetObjResult( interp, Tcl_NewStringObj( "syntax error", -1 ) );
+	return TCL_ERROR;
     }
-    
-    if (yyHaveDate || yyHaveTime || yyHaveDay) {
-	if (yyYear < 0) {
-	    yyYear = -yyYear;
-	}
-	/*
-	 * The following line handles years that are specified using
-	 * only two digits.  The line of code below implements a policy
-	 * defined by the X/Open workgroup on the millinium rollover.
-	 * Note: some of those dates may not actually be valid on some
-	 * platforms.  The POSIX standard startes that the dates 70-99
-	 * shall refer to 1970-1999 and 00-38 shall refer to 2000-2038.
-	 * This later definition should work on all platforms.
-	 */
 
-	if (yyYear < 100) {
-	    if (yyYear >= 69) {
-		yyYear += 1900;
-	    } else {
-		yyYear += 2000;
-	    }
-	}
-	if (Convert(yyMonth, yyDay, yyYear, yyHour, yyMinutes, yySeconds,
-		yyMeridian, yyDSTmode, &Start, info) < 0) {
-            return -1;
-	}
+    if ( yyHaveDate > 1 ) {
+	Tcl_SetObjResult
+	    ( interp, 
+	      Tcl_NewStringObj( "more than one date in string", -1 ) );
+	return TCL_ERROR;
+    }
+    if ( yyHaveTime > 1 ) {
+	Tcl_SetObjResult
+	    ( interp, 
+	      Tcl_NewStringObj( "more than one time of day in string", -1 ) );
+	return TCL_ERROR;
+    }
+    if ( yyHaveZone > 1 ) {
+	Tcl_SetObjResult
+	    ( interp, 
+	      Tcl_NewStringObj( "more than one time zone in string", -1 ) );
+	return TCL_ERROR;
+    }
+    if ( yyHaveDay > 1 ) {
+	Tcl_SetObjResult
+	    ( interp, 
+	      Tcl_NewStringObj( "more than one weekday in string", -1 ) );
+	return TCL_ERROR;
+    }
+    if ( yyHaveOrdinalMonth > 1 ) {
+	Tcl_SetObjResult
+	    ( interp, 
+	      Tcl_NewStringObj( "more than one ordinal month in string", -1 ) );
+	return TCL_ERROR;
+    }
+	
+    result = Tcl_NewObj();
+    resultElement = Tcl_NewObj();
+    if ( yyHaveDate ) {
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyYear ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyMonth ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyDay ) );
+    }
+    Tcl_ListObjAppendElement( interp, result, resultElement );
+
+    if ( yyHaveTime ) {
+	Tcl_ListObjAppendElement( interp, result,
+				  Tcl_NewIntObj( ToSeconds( yyHour,
+							    yyMinutes,
+							    yySeconds,
+							    yyMeridian ) ) );
     } else {
-        Start = now;
-        if (!yyHaveRel) {
-            Start -= ((tm->tm_hour * 60L * 60L) +
-		    tm->tm_min * 60L) +	tm->tm_sec;
-	}
+	Tcl_ListObjAppendElement( interp, result, Tcl_NewObj() );
     }
 
-    Start += yyRelSeconds;
-    if (RelativeMonth(Start, yyRelMonth, &Time, info) < 0) {
-        return -1;
+    resultElement = Tcl_NewObj();
+    if ( yyHaveZone ) {
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( -yyTimezone ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( 1-yyDSTmode ) );
     }
-    Start += Time;
+    Tcl_ListObjAppendElement( interp, result, resultElement );
 
-    if (RelativeDay(Start, yyRelDay, &Time) < 0) {
-	return -1;
+    resultElement = Tcl_NewObj();
+    if ( yyHaveRel ) {
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyRelMonth ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyRelDay ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyRelSeconds ) );
     }
-    Start += Time;
-    
-    if (yyHaveDay && !yyHaveDate) {
-        tod = NamedDay(Start, yyDayOrdinal, yyDayNumber);
-        Start += tod;
-    }
+    Tcl_ListObjAppendElement( interp, result, resultElement );
 
-    if (yyHaveOrdinalMonth) {
-	tod = NamedMonth(Start, yyMonthOrdinal, yyMonth, info);
-	Start += tod;
+    resultElement = Tcl_NewObj();
+    if ( yyHaveDay && !yyHaveDate ) {
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyDayOrdinal ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyDayNumber ) );
     }
-    
-    *timePtr = Start;
-    return 0;
+    Tcl_ListObjAppendElement( interp, result, resultElement );
+
+    resultElement = Tcl_NewObj();
+    if ( yyHaveOrdinalMonth ) {
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyMonthOrdinal ) );
+	Tcl_ListObjAppendElement( interp, resultElement,
+				  Tcl_NewIntObj( yyMonth ) );
+    }
+    Tcl_ListObjAppendElement( interp, result, resultElement );
+	
+    Tcl_SetObjResult( interp, result );
+    return TCL_OK;
 }

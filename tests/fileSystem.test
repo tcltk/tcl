@@ -539,7 +539,7 @@ test filesystem-5.1 {cache and ~} {
 	set ::env(HOME) $orig
 	list $res1 $res2
     }
-    -result {{Parent of ~ \(/foo/bar/blah\) is (/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is (/a/b|a:b)}}
+    -result {{Parent of ~ \(/foo/bar/blah\) is ([a-zA-Z]:)?(/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is ([a-zA-Z]:)?(/a/b|a:b)}}
 }
 
 test filesystem-6.1 {empty file name} {

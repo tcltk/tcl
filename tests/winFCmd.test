@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.4.6 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.4.7 2004/09/30 00:51:52 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1043,6 +1043,26 @@ test winFCmd-16.12 {Windows file normalization} -constraints win -setup {
     set ::env(HOME) $oldhome
     cd $oldwd
 } -result ok
+
+test winFCmd-16.13 {Windows bad permissions cd} -constraints win -setup {
+    set oldwd [pwd]
+} -body {
+    set d {}
+    foreach dd {c:/ d:/ e:/} {
+	eval lappend d [glob -nocomplain \
+	  -types hidden -dir $dd "System Volume Information"]
+    }
+    # Old versions of Tcl gave a misleading error that the 
+    # directory in question didn't exist.
+    if {[llength $d] && [catch {cd [lindex $d 0]} err]} {
+	regsub ".*: " $err "" err
+	set err
+    } else {
+        set err "permission denied"
+    }
+} -cleanup {
+    cd $oldwd
+} -result "permission denied"
 
 cd $pwd
 unset d dd pwd
