@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: dde.n,v 1.8.2.3 2004/11/26 09:37:39 dkf Exp $
+'\" RCS: @(#) $Id: dde.n,v 1.8.2.4 2004/12/03 00:37:21 hobbs Exp $
 '\" 
 .so man.macros
 .TH dde n 1.2 dde "Tcl Bundled Packages"
@@ -43,7 +43,7 @@ own \fIservice name\fRs and \fItopic\fRs. For instance, Microsoft Excel
 has the service name \fBExcel\fR.
 .PP
 The \fBeval\fR and \fBexecute\fR commands accept the option \fB\-async\fR:
-.TP
+
 .SH "DDE COMMANDS"
 .PP
 The following commands are a subset of the full Dynamic Data Exchange
@@ -103,6 +103,7 @@ service.  The \fB\-async\fR option requests asynchronous invocation.  The
 command returns an error message if the script did not run, unless the
 \fB\-async\fR flag was used, in which case the command returns immediately
 with no error.  This command can be used to replace \fBsend\fR on Windows.
+
 .SH "DDE AND TCL"
 A Tcl interpreter always has a service name of \fBTclEval\fR.  Each
 different interpreter of all running Tcl applications must be
@@ -135,6 +136,7 @@ without adding the \fB&\fR to place the process in the background).
 If for any reason the event queue is not flushed, DDE commands may
 hang until the event queue is flushed.  This can create a deadlock
 situation.
+
 .SH EXAMPLE
 This asks Internet Explorer (which must already be running) to go to a
 particularly important website:
