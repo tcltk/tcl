@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.1.2.1 2002/01/25 01:47:01 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.1.2.2 2002/02/05 20:45:51 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -36,7 +36,12 @@ typedef struct Tcl_ConfigMeta {
   int            entries;       /* Number of entries in
 				 * configuration. */
   Tcl_Obj*       value [1];     /* Array of the values converted to
-				 * UTF-8 */
+				 * UTF-8. Usage of Tcl_Obj's means
+				 * that we remove one conversion from
+				 * string to object when querying the
+				 * data, and also share them with
+				 * other parts of the system as much
+				 * as possible. */
 } Tcl_ConfigMeta;
 
 /*
@@ -52,7 +57,7 @@ void QueryConfigDelete _ANSI_ARGS_((ClientData clientData));
 
 
 /*
- *---------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * Tcl_RegisterConfig --
  *
@@ -64,20 +69,21 @@ void QueryConfigDelete _ANSI_ARGS_((ClientData clientData));
  * Side effects:
  *	Creates namespace and cfg query command in it as per TIP #59.
  *
- *---------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 
 void
 Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
-     Tcl_Interp* interp;            /* interp the configuration command is registered in */
-     CONST char* pkgName;           /* Name of the package registering the
-				     * embedded configuration. ASCII, thus
-				     * in UTF-8 too. */
+     Tcl_Interp* interp;            /* Interpreter the configuration
+				     * command is registered in. */
+     CONST char* pkgName;           /* Name of the package registering
+				     * the embedded configuration. ASCII,
+				     * thus in UTF-8 too. */
      Tcl_Config* configuration;     /* Embedded configuration */
-     CONST char* valEncoding;       /* Name of the encoding used to store
-				     * the configuration values, ASCII,
-				     * thus UTF-8 */
+     CONST char* valEncoding;       /* Name of the encoding used to
+				     * store the configuration values,
+				     * ASCII, thus UTF-8 */
 {
     /* Actions:
      * - Count the entries in the configuration,
@@ -91,11 +97,20 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
     Tcl_ConfigMeta* wrap;
     Tcl_DString     cmdName;
 
-    for (n = 0, cfg = configuration; cfg->key != (CONST char*) NULL; n++, cfg++)
+    /* The counting loop stops if it encounters either an empty key
+     * ("") or a NULL pointer as key. This is an extension of the
+     * specification, which only recognizes "" as end of array.
+     */
+
+    for (n = 0, cfg = configuration;
+	 (cfg->key != (CONST char*) NULL) && (cfg->key [0] != '\0') ;
+	 n++, cfg++)
         /* empty loop */
       ;
 
-    wrap = (Tcl_ConfigMeta*) Tcl_Alloc (sizeof (Tcl_ConfigMeta) + (sizeof (char*) * n));
+    wrap = (Tcl_ConfigMeta*) ckalloc (sizeof (Tcl_ConfigMeta) +
+				      (sizeof (Tcl_Obj*) * n));
+
     wrap->configuration = configuration;
     wrap->entries       = n;
     wrap->valEncoding   = Tcl_GetEncoding (NULL, valEncoding);
@@ -110,27 +125,30 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
     Tcl_DStringAppend (&cmdName, pkgName,       -1);   
 
     /* The incomplete command name is the name of the namespace to
-     * place it in
+     * place it in.
      */
 
     if ((Tcl_Namespace*) NULL == Tcl_CreateNamespace (interp,
 		      Tcl_DStringValue (&cmdName), (ClientData) NULL,
 		      (Tcl_NamespaceDeleteProc *) NULL)) {
-        Tcl_Panic ("Unable to create namespace for package configuration");
+
+        Tcl_Panic ("Tcl_RegisterConfig: Unable to create namespace for package configuration");
     }
 
     Tcl_DStringAppend (&cmdName, "::pkgconfig", -1);   
-    if ((Tcl_Command) NULL == Tcl_CreateObjCommand (interp, Tcl_DStringValue (&cmdName),
-		    QueryConfigObjCmd, (ClientData) wrap, QueryConfigDelete)) {
-        Tcl_Panic ("Unable to create query command for package configuration");
+
+    if ((Tcl_Command) NULL == Tcl_CreateObjCommand (interp,
+		    Tcl_DStringValue (&cmdName), QueryConfigObjCmd,
+		    (ClientData) wrap, QueryConfigDelete)) {
+
+        Tcl_Panic ("Tcl_RegisterConfig: Unable to create query command for package configuration");
     }
 
     Tcl_DStringFree (&cmdName);
 }
-
-
+
 /*
- *-------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  *
  * QueryConfigObjCmd --
  *
@@ -143,7 +161,7 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
  * Side effects:
  *	See the manual for what this command does.
  *
- *-------------------------------------------------------------------------
+ *----------------------------------------------------------------------
  */
 
 static
@@ -167,8 +185,8 @@ int QueryConfigObjCmd (clientData, interp, objc, objv)
         Tcl_WrongNumArgs (interp, objc-1, objv+1, "list | get key");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings, "subcommand", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings,
+	   "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -182,7 +200,9 @@ int QueryConfigObjCmd (clientData, interp, objc, objv)
 	        /* We can use 'strcmp' as we know that the keys are in
 		 * ASCII/UTF-8
 		 */
-	        if (strcmp (wrap->configuration [i].key, Tcl_GetString (objv [2])) == 0) {
+	        if (strcmp (wrap->configuration [i].key,
+			Tcl_GetString (objv [2])) == 0) {
+
 		    if (wrap->value [i] == (Tcl_Obj*) NULL) {
 		        /* Convert the value associated with a key to
 			 * UTF 8 on demand, i.e. only if requested at
@@ -191,23 +211,32 @@ int QueryConfigObjCmd (clientData, interp, objc, objv)
 			 */
 
 		        Tcl_DString conv;
-			Tcl_Obj* s = Tcl_NewStringObj (Tcl_ExternalToUtfDString (wrap->valEncoding,
-					 wrap->configuration [i].value, -1, &conv), -1 );
+
+			CONST char* convValue =
+			    Tcl_ExternalToUtfDString (wrap->valEncoding,
+					      wrap->configuration [i].value,
+					      -1, &conv);
+
+			Tcl_Obj* valString = Tcl_NewStringObj (convValue, -1);
+
 			Tcl_DStringFree (&conv);
 
-			if (s == (Tcl_Obj*) NULL) {
+			if (valString == (Tcl_Obj*) NULL) {
 			    Tcl_SetObjResult (interp,
-				      Tcl_NewStringObj ("unable to convert value to utf-8", -1));
+			        Tcl_NewStringObj (
+				  "unable to convert value to utf-8",
+				  -1));
 			    return TCL_ERROR;
 			}
-			Tcl_IncrRefCount (s);
-			wrap->value [i] = s;
+			Tcl_IncrRefCount (valString);
+			wrap->value [i] = valString;
 		    }
 		    Tcl_SetObjResult (interp, wrap->value [i]);
 		    return TCL_OK;
 		}
 	    }
-	    Tcl_SetObjResult (interp, Tcl_NewStringObj ("key not known", -1));
+	    Tcl_SetObjResult (interp,
+			      Tcl_NewStringObj ("key not known", -1));
 	    return TCL_ERROR;
 
         case CFG_LIST:
@@ -221,30 +250,34 @@ int QueryConfigObjCmd (clientData, interp, objc, objv)
 		 */
 
 	        int i;
-		Tcl_Obj* l = Tcl_NewListObj (0, NULL);
+		Tcl_Obj* listResult = Tcl_NewListObj (0, NULL);
 
-		if (l == (Tcl_Obj*) NULL) {
+		if (listResult == (Tcl_Obj*) NULL) {
 		    return TCL_ERROR;
 		}
 		for (i=0; i < wrap->entries; i++) {
-		    Tcl_Obj* s = Tcl_NewStringObj (wrap->configuration [i].key, -1);
-		    if (s == (Tcl_Obj*) NULL) {
-		        Tcl_DecrRefCount (l);
+		    Tcl_Obj* keyString =
+		        Tcl_NewStringObj (wrap->configuration [i].key,
+					  -1);
+
+		    if (keyString == (Tcl_Obj*) NULL) {
+		        Tcl_DecrRefCount (listResult);
 			return TCL_ERROR;
 		    }
-		    if (TCL_OK != Tcl_ListObjAppendElement (interp, l, s)) {
-		        Tcl_DecrRefCount (l);
+		    if (TCL_OK != Tcl_ListObjAppendElement (interp,
+					    listResult, keyString)) {
+		        Tcl_DecrRefCount (listResult);
 			return TCL_ERROR;
 		    }
 		}
 
-		Tcl_IncrRefCount (l);
-		wrap->keylist =   l;
+		Tcl_IncrRefCount (listResult);
+		wrap->keylist =   listResult;
 	    }
 	    Tcl_SetObjResult (interp, wrap->keylist);
 	    return TCL_OK;
         default:
-	    Tcl_Panic ("This can't happen");
+	    Tcl_Panic ("QueryConfigObjCmd: Unknown subcommand to 'pkgconfig'. This can't happen");
 	    break;
     }
     return TCL_ERROR;
@@ -283,5 +316,5 @@ void QueryConfigDelete (clientData)
         Tcl_DecrRefCount (wrap->keylist);
     }
     Tcl_FreeEncoding (wrap->valEncoding);
-    Tcl_Free ((char*) wrap);
+    ckfree ((char*) wrap);
 }

@@ -1,3 +1,20 @@
+2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* This commit addresses the following topics from the comments at
+	  SF item 507083:
+
+	  @ Reformatted to 72 columns per line (mostly). Some character
+	    strings (Panic messages) are still longer.
+
+	  @ Better panic messages.
+
+	  @ Allocation of wrapper uses sizeof(Tcl_Obj*) instead of sizeof
+	    (char*).
+
+	  @ Terminate array with either "" or NULL.
+
+	  @ Changed to use ckalloc/ckfree instead of Tcl_Alloc/Tcl_Free.
+
 2002-01-23  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* unix/mkLinks: Regenerated.
