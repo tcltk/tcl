@@ -810,24 +810,36 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    LIBS="$LIBS -lc"
 	    # AIX-5 uses ELF style dynamic libraries
 	    SHLIB_CFLAGS=""
-	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
+	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+	    if test "`uname -m`" = "ia64" ; then
+		# AIX-5 uses ELF style dynamic libraries on IA-64, but not PPC
+		SHLIB_LD="/usr/ccs/bin/ld -G -z text"
+		# AIX-5 has dl* in libc.so
+		DL_LIBS=""
+		if test "$GCC" = "yes" ; then
+		    CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+		else
+		    CC_SEARCH_FLAGS='-R${LIB_RUNTIME_DIR}'
+		fi
+		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
+	    else
+		SHLIB_LD="${TCL_SRC_DIR}/unix/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
+		DL_LIBS="-ldl"
+		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+		TCL_NEEDS_EXP_FILE=1
+		TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
+	    fi
 
 	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
 	    # symbols when dynamically loaded into tclsh.
 
-	    SHLIB_LD_LIBS='${LIBS}'
-	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    # AIX-5 has dl* in libc.so
 	    DL_LIBS=""
 	    LDFLAGS=""
 
-	    if test "$GCC" = "yes" ; then
-	        CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
-	    else
-	        CC_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
-	    fi
-	    LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 	    LD_LIBRARY_PATH_VAR="LIBPATH"
 
 	    # Check to enable 64-bit flags for compiler/linker
