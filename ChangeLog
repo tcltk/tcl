@@ -1,3 +1,10 @@
+2004-02-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:
+	* library/tcltest/tcltest.tcl:	Changed -verbose default value to
+	{body error} so that detailed information on unexpected errors in
+	tests is provided by default, even after the fix for [Bug 725253]
+
 2004-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c: backport of rewrite of generic file 
