@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.63 2003/03/06 09:47:49 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.64 2003/03/06 09:58:44 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -3642,7 +3642,7 @@ Tcl_GetsObj(chan, objPtr)
 		skip = 1;
 		if (statePtr->flags & INPUT_SAW_CR) {
 		    statePtr->flags &= ~INPUT_SAW_CR;
-		    if (*eol == '\n') {
+		    if ((eol < dstEnd) && (*eol == '\n')) {
 			/*
 			 * Skip the raw bytes that make up the '\n'.
 			 */
