@@ -1,3 +1,8 @@
+2002-06-25  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.m4 (SC_PATH_TCLCONFIG): Replaced ${exec_prefix}/lib by
+	${libdir}.
+
 2002-06-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclUtil.c (TclGetIntForIndex): Fix of critical bug
