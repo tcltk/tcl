@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.69 2002/08/22 15:57:53 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.70 2002/09/06 00:20:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2001,6 +2001,13 @@ TclRenameCommand(interp, oldName, newName)
         return result;
     }
 
+    /*
+     * Script for rename traces can delete the command "oldName".
+     * Therefore increment the reference count for cmdPtr so that
+     * it's Command structure is freed only towards the end of this
+     * function by calling TclCleanupCommand.
+     */
+    cmdPtr->refCount++;
     CallCommandTraces(iPtr,cmdPtr,oldName,newName,TCL_TRACE_RENAME);
 
     /*
@@ -2022,6 +2029,12 @@ TclRenameCommand(interp, oldName, newName)
     if (cmdPtr->compileProc != NULL) {
 	iPtr->compileEpoch++;
     }
+
+    /*
+     * Now free the Command structure, if the "oldName" command has
+     * been deleted by invocation of rename traces.
+     */
+    TclCleanupCommand(cmdPtr);
 
     return TCL_OK;
 }
@@ -2523,14 +2536,16 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     if (cmdPtr->flags & CMD_TRACE_ACTIVE) {
 	/* 
 	 * While a rename trace is active, we will not process any more
-	 * rename traces; while a delete trace is active we will not
-	 * process any more delete traces 
+	 * rename traces; while a delete trace is active we will never
+	 * reach here -- because Tcl_DeleteCommandFromToken checks for the
+	 * condition (cmdPtr->flags & CMD_IS_DELETED) and returns immediately
+	 * when a command deletion is in progress.  For all other traces,
+	 * delete traces will not be invoked but a call to TraceCommandProc
+	 * will ensure that tracePtr->clientData is freed whenever the
+	 * command "oldName" is deleted.
 	 */
 	if (cmdPtr->flags & TCL_TRACE_RENAME) {
 	    flags &= ~TCL_TRACE_RENAME;
-	}
-	if (cmdPtr->flags & TCL_TRACE_DELETE) {
-	    flags &= ~TCL_TRACE_DELETE;
 	}
 	if (flags == 0) {
 	    return NULL;
