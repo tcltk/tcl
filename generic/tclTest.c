@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.42 2002/02/01 17:17:59 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.43 2002/02/10 20:36:34 kennykb Exp $
  */
 
 #define TCL_TEST
@@ -168,8 +168,16 @@ static int              NoopCmd _ANSI_ARGS_((ClientData clientData,
 static int              NoopObjCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+static int		ObjTraceProc _ANSI_ARGS_(( ClientData clientData,
+						   Tcl_Interp* interp,
+						   int level,
+						   CONST char* command,
+						   Tcl_Command commandToken,
+						   int objc,
+						   Tcl_Obj *CONST objv[] ));
+static void		ObjTraceDeleteProc _ANSI_ARGS_(( ClientData ));
 static void		PrintParse _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr));
+						Tcl_Parse *parsePtr));
 static void		SpecialFree _ANSI_ARGS_((char *blockPtr));
 static int		StaticInitProc _ANSI_ARGS_((Tcl_Interp *interp));
 static int		TestaccessprocCmd _ANSI_ARGS_((ClientData dummy,
@@ -1031,9 +1039,30 @@ TestcmdtraceCmd(dummy, interp, argc, argv)
 	cmdTrace = Tcl_CreateTrace(interp, 50000,
 	        (Tcl_CmdTraceProc *) CmdTraceDeleteProc, (ClientData) NULL);
 	Tcl_Eval(interp, argv[2]);
+    } else if ( strcmp(argv[1], "resulttest" ) == 0 ) {
+	/* Create an object-based trace, then eval a script. This is used
+	 * to test return codes other than TCL_OK from the trace engine.
+	 */
+	static int deleteCalled;
+	deleteCalled = 0;
+	cmdTrace = Tcl_CreateObjTrace( interp, 50000,
+				       TCL_ALLOW_INLINE_COMPILATION,
+				       ObjTraceProc,
+				       (ClientData) &deleteCalled,
+				       ObjTraceDeleteProc );
+	result = Tcl_Eval( interp, argv[ 2 ] );
+	Tcl_DeleteTrace( interp, cmdTrace );
+	if ( !deleteCalled ) {
+	    Tcl_SetResult( interp, "Delete wasn't called", TCL_STATIC );
+	    return TCL_ERROR;
+	} else {
+	    return result;
+	}
+	
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be tracetest or deletetest", (char *) NULL);
+			 "\": must be tracetest, deletetest or resulttest",
+			 (char *) NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1088,6 +1117,41 @@ CmdTraceDeleteProc(clientData, interp, level, command, cmdProc,
      */
     
     Tcl_DeleteTrace(interp, cmdTrace);
+}
+
+static int
+ObjTraceProc( clientData, interp, level, command, token, objc, objv )
+    ClientData clientData;	/* unused */
+    Tcl_Interp* interp;		/* Tcl interpreter */
+    int level;			/* Execution level */
+    CONST char* command;	/* Command being executed */
+    Tcl_Command token;		/* Command information */
+    int objc;			/* Parameter count */
+    Tcl_Obj *CONST objv[];	/* Parameter list */
+{
+    CONST char* word = Tcl_GetString( objv[ 0 ] );
+    if ( !strcmp( word, "Error" ) ) {
+	Tcl_SetObjResult( interp, Tcl_NewStringObj( command, -1 ) );
+	return TCL_ERROR;
+    } else if ( !strcmp( word, "Break" ) ) {
+	return TCL_BREAK;
+    } else if ( !strcmp( word, "Continue" ) ) {
+	return TCL_CONTINUE;
+    } else if ( !strcmp( word, "Return" ) ) {
+	return TCL_RETURN;
+    } else if ( !strcmp( word, "OtherStatus" ) ) {
+	return 6;
+    } else {
+	return TCL_OK;
+    }
+}
+
+static void
+ObjTraceDeleteProc( clientData )
+    ClientData clientData;
+{
+    int * intPtr = (int *) clientData;
+    *intPtr = 1;		/* Record that the trace was deleted */
 }
 
 /*

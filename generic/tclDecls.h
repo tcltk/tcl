@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.81 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.82 2002/02/10 20:36:34 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -738,7 +738,8 @@ EXTERN int		Tcl_SetChannelOption _ANSI_ARGS_((
 				CONST char * newValue));
 /* 226 */
 EXTERN int		Tcl_SetCommandInfo _ANSI_ARGS_((Tcl_Interp * interp, 
-				CONST char * cmdName, Tcl_CmdInfo * infoPtr));
+				CONST char * cmdName, 
+				CONST Tcl_CmdInfo * infoPtr));
 /* 227 */
 EXTERN void		Tcl_SetErrno _ANSI_ARGS_((int err));
 /* 228 */
@@ -1519,6 +1520,19 @@ EXTERN int		Tcl_EvalTokensStandard _ANSI_ARGS_((
 				int count));
 /* 482 */
 EXTERN void		Tcl_GetTime _ANSI_ARGS_((Tcl_Time* timeBuf));
+/* 483 */
+EXTERN Tcl_Trace	Tcl_CreateObjTrace _ANSI_ARGS_((Tcl_Interp* interp, 
+				int level, int flags, 
+				Tcl_CmdObjTraceProc* objProc, 
+				ClientData clientData, 
+				Tcl_CmdObjTraceDeleteProc* delProc));
+/* 484 */
+EXTERN int		Tcl_GetCommandInfoFromToken _ANSI_ARGS_((
+				Tcl_Command token, Tcl_CmdInfo* infoPtr));
+/* 485 */
+EXTERN int		Tcl_SetCommandInfoFromToken _ANSI_ARGS_((
+				Tcl_Command token, 
+				CONST Tcl_CmdInfo* infoPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1804,7 +1818,7 @@ typedef struct TclStubs {
     void (*tcl_SetAssocData) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 223 */
     void (*tcl_SetChannelBufferSize) _ANSI_ARGS_((Tcl_Channel chan, int sz)); /* 224 */
     int (*tcl_SetChannelOption) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan, CONST char * optionName, CONST char * newValue)); /* 225 */
-    int (*tcl_SetCommandInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * cmdName, Tcl_CmdInfo * infoPtr)); /* 226 */
+    int (*tcl_SetCommandInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * cmdName, CONST Tcl_CmdInfo * infoPtr)); /* 226 */
     void (*tcl_SetErrno) _ANSI_ARGS_((int err)); /* 227 */
     void (*tcl_SetErrorCode) _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp)); /* 228 */
     void (*tcl_SetMaxBlockTime) _ANSI_ARGS_((Tcl_Time * timePtr)); /* 229 */
@@ -2061,6 +2075,9 @@ typedef struct TclStubs {
     void (*tcl_FSMountsChanged) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 480 */
     int (*tcl_EvalTokensStandard) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Token * tokenPtr, int count)); /* 481 */
     void (*tcl_GetTime) _ANSI_ARGS_((Tcl_Time* timeBuf)); /* 482 */
+    Tcl_Trace (*tcl_CreateObjTrace) _ANSI_ARGS_((Tcl_Interp* interp, int level, int flags, Tcl_CmdObjTraceProc* objProc, ClientData clientData, Tcl_CmdObjTraceDeleteProc* delProc)); /* 483 */
+    int (*tcl_GetCommandInfoFromToken) _ANSI_ARGS_((Tcl_Command token, Tcl_CmdInfo* infoPtr)); /* 484 */
+    int (*tcl_SetCommandInfoFromToken) _ANSI_ARGS_((Tcl_Command token, CONST Tcl_CmdInfo* infoPtr)); /* 485 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4032,6 +4049,18 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetTime
 #define Tcl_GetTime \
 	(tclStubsPtr->tcl_GetTime) /* 482 */
+#endif
+#ifndef Tcl_CreateObjTrace
+#define Tcl_CreateObjTrace \
+	(tclStubsPtr->tcl_CreateObjTrace) /* 483 */
+#endif
+#ifndef Tcl_GetCommandInfoFromToken
+#define Tcl_GetCommandInfoFromToken \
+	(tclStubsPtr->tcl_GetCommandInfoFromToken) /* 484 */
+#endif
+#ifndef Tcl_SetCommandInfoFromToken
+#define Tcl_SetCommandInfoFromToken \
+	(tclStubsPtr->tcl_SetCommandInfoFromToken) /* 485 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

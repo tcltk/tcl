@@ -7,10 +7,11 @@
 #	
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.81 2002/02/08 02:52:54 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.82 2002/02/10 20:36:33 kennykb Exp $
 
 library tcl
 
@@ -801,7 +802,7 @@ declare 225 generic {
 }
 declare 226 generic {
     int Tcl_SetCommandInfo(Tcl_Interp *interp, CONST char *cmdName, \
-	    Tcl_CmdInfo *infoPtr)
+	    CONST Tcl_CmdInfo *infoPtr)
 }
 declare 227 generic {
     void Tcl_SetErrno(int err)
@@ -1698,6 +1699,25 @@ declare 481 generic {
 # New export due to TIP#73 
 declare 482 generic {
     void Tcl_GetTime( Tcl_Time* timeBuf )
+}
+
+# New exports due to TIP#32
+
+declare 483 generic {
+    Tcl_Trace Tcl_CreateObjTrace( Tcl_Interp* interp,
+             	                  int level,
+	                          int flags,
+                                  Tcl_CmdObjTraceProc* objProc,
+                                  ClientData clientData,
+			          Tcl_CmdObjTraceDeleteProc* delProc )
+}
+declare 484 generic {
+    int Tcl_GetCommandInfoFromToken( Tcl_Command token,
+	                             Tcl_CmdInfo* infoPtr )
+}
+declare 485 generic {
+    int Tcl_SetCommandInfoFromToken( Tcl_Command token,
+	                             CONST Tcl_CmdInfo* infoPtr )
 }
 
 ##############################################################################

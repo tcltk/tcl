@@ -7,12 +7,12 @@
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.78 2002/01/31 04:39:43 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.79 2002/02/10 20:36:34 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -646,9 +646,13 @@ typedef struct Proc {
 typedef struct Trace {
     int level;			/* Only trace commands at nesting level
 				 * less than or equal to this. */
-    Tcl_CmdTraceProc *proc;	/* Procedure to call to trace command. */
+    Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
     ClientData clientData;	/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
+    int flags;			/* Flags governing the trace - see
+				 * Tcl_CreateObjTrace for details */
+    Tcl_CmdObjTraceDeleteProc* delProc;
+				/* Procedure to call when trace is deleted */
 } Trace;
 
 /*
@@ -1301,6 +1305,10 @@ typedef struct Interp {
     ActiveCommandTrace *activeCmdTracePtr;
 				/* First in list of active command traces for
 				 * interp, or NULL if no active traces. */
+
+    int tracesForbiddingInline; /* Count of traces (in the list headed by
+				 * tracePtr) that forbid inline bytecode
+				 * compilation */
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
