@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.13 2001/12/10 15:50:46 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.14 2002/01/03 21:52:15 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -46,7 +46,7 @@ Tcl_Obj*
 \fBTcl_FSListVolumes\fR(\fIvoid\fR)
 .sp
 int
-\fBTcl_FSEvalFile\fR(\fIinterp, fileName\fR)
+\fBTcl_FSEvalFile\fR(\fIinterp, pathPtr\fR)
 .sp
 int
 \fBTcl_FSLoadFile\fR(\fIinterp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr\fR)
@@ -401,7 +401,7 @@ If \fIpath\fR exists, \fBTcl_FSStat\fR returns 0 and the stat structure
 is filled with data.  Otherwise, -1 is returned, and no stat info is
 given.
 .PP
-\fBTcl_FSOpenFileChannel\fR opens a file specified by \fIfileName\fR and
+\fBTcl_FSOpenFileChannel\fR opens a file specified by \fIpathPtr\fR and
 returns a channel handle that can be used to perform input and output on
 the file. This API is modeled after the \fBfopen\fR procedure of
 the Unix standard I/O library.
