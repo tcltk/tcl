@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.8 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: fileName.test,v 1.9 2000/09/29 01:12:15 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1451,14 +1451,12 @@ test filename-15.6 {unix specific globbing} {unixOnly} {
 } [list 0 [list [glob ~]/globTest/odd\\\[\]*?\{\}name]]
 catch {exec rm -f globTest/odd\\\[\]*?\{\}name}
 
-
 # The following tests are only valid for Windows systems.
-set temp [pwd]
-catch {cd c:/}
-catch {
+set oldDir [pwd]
+if {$::tcltest::testConstraints(pcOnly)} {
     cd c:/
-    removeDirectory globTest
-    makeDirectory globTest
+    file delete -force globTest
+    file mkdir globTest
     close [open globTest/x1.BAT w]
     close [open globTest/y1.Bat w]
     close [open globTest/z1.bat w]
@@ -1508,41 +1506,19 @@ if {[catch {cd //[info hostname]/c}]} {
 
 test filename-16.12 {windows specific globbing} {pcOnly sharedCdrive} {
     cd //[info hostname]/c
-    removeDirectory globTest
-    makeDirectory globTest
-    close [open globTest/x1.BAT w]
-    close [open globTest/y1.Bat w]
-    close [open globTest/z1.bat w]
     glob //[info hostname]/c/*Test
 } //[info hostname]/c/globTest
 test filename-16.13 {windows specific globbing} {pcOnly sharedCdrive} {
     cd //[info hostname]/c
-    removeDirectory globTest
-    makeDirectory globTest
-    close [open globTest/x1.BAT w]
-    close [open globTest/y1.Bat w]
-    close [open globTest/z1.bat w]
     glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
 } //[info hostname]/c/globTest
 
 # cleanup
-file delete -force //[info hostname]/c/globTest
-cd $temp
+file delete -force C:/globTest
+cd $oldDir
 file delete -force globTest
 set env(HOME) $oldhome
 testsetplatform $platform
 catch {unset oldhome platform temp result}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
