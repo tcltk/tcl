@@ -1,3 +1,10 @@
+2003-09-28  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c: The windows port of expect can call
+	TclWinAddProcess before any of the other pipe functions.
+	Added a missing PipeInit() call to make sure the
+	initialization happens.
+
 2003-09-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: ensure SYMROOT exists if OBJROOT is overridden 
