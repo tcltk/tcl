@@ -5,7 +5,7 @@ README:  Tcl
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.47 2002/10/11 03:41:24 hobbs Exp $
+RCS: @(#) $Id: README,v 1.48 2002/10/16 01:10:23 hobbs Exp $
 
 Contents
 --------
@@ -109,6 +109,11 @@ Visit its home at SourceForge for more information and source/binaries:
 
 	http://tclpro.sourceforge.net/
 
+ActiveState has picked up support for commercial Tcl development tools.
+More information can be found at
+
+	http://www.ActiveState.com/Tcl
+
 5. Tcl newsgroup
 ----------------
 
@@ -124,11 +129,11 @@ see the "Support and bug fixes" section below.
 
 Many people have created exciting packages and applications based on Tcl
 and/or Tk and made them freely available to the Tcl community.  An archive
-of these contributions is kept on the machine ftp.procplace.com.  You
-can access the archive using anonymous FTP; the Tcl contributed archive is
-in the directory "/pub/tcl/".  The archive also contains several FAQ
-("frequently asked questions") documents that provide solutions to problems
-that are commonly encountered by TCL newcomers.
+of these contributions is kept on the machine ftp://archives.tcl.tk/pub/tcl
+(aka ftp://ftp.procplace.com/pub/tcl).  You can access the archive using
+anonymous FTP.  The archive also contains several FAQ ("frequently asked
+questions") documents that provide solutions to problems that are commonly
+encountered by Tcl newcomers.
 
 7. Tcl Resource Center
 ----------------------
