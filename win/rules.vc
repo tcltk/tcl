@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.15 2003/12/23 02:19:13 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.16 2004/01/10 00:24:55 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -266,6 +266,22 @@ TCL_COMPILE_DEBUG   = 0
 
 
 #----------------------------------------------------------
+# Decode the checks requested.
+#----------------------------------------------------------
+
+!if "$(CHECKS)" == "" || [nmakehlp -f "$(CHECKS)" "none"]
+TCL_NO_DEPRECATED	    = 0
+!else
+!if [nmakehlp -f $(CHECKS) "nodep"]
+!message *** Doing nodep check
+TCL_NO_DEPRECATED	    = 1
+!else
+TCL_NO_DEPRECATED	    = 0
+!endif
+!endif
+
+
+#----------------------------------------------------------
 # Set our defines now armed with our options.
 #----------------------------------------------------------
 
@@ -285,6 +301,9 @@ OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
 !endif
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
+!endif
+!if $(TCL_NO_DEPRECATED)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 !endif
 
 !if $(DEBUG)
