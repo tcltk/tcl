@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.10 1999/12/08 03:50:04 hobbs Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.11 2000/07/26 01:28:24 davidg Exp $
  */
 
 
@@ -224,7 +224,6 @@ extern char **environ;
  * address platform-specific issues.
  */
  
-#define TclpAsyncMark(async)
 #define TclpGetPid(pid)	    	((unsigned long) (pid))
 #define TclSetSystemEnv(a,b)
 #define tzset()

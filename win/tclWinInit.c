@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.23 2000/06/13 20:30:23 ericm Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.24 2000/07/26 01:27:58 davidg Exp $
  */
 
 #include "tclWinInt.h"
@@ -73,12 +73,6 @@ static char* processors[NUMPROCESSORS] = {
 };
 
 /*
- * Thread id used for asynchronous notification from signal handlers.
- */
-
-static DWORD mainThreadId;
-
-/*
  * The Init script (common to Windows and Unix platforms) is
  * defined in tkInitScript.h
  */
@@ -127,16 +121,6 @@ TclpInitPlatform()
      */
 
     SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
-
-    /*
-     * Save the id of the first thread to intialize the Tcl library.  This
-     * thread will be used to handle notifications from async event
-     * procedures.  This is not strictly correct.  A better solution involves
-     * using a designated "main" notifier that is kept up to date as threads
-     * come and go.
-     */
-
-    mainThreadId = GetCurrentThreadId();
 
 #ifdef STATIC_BUILD
     /*
@@ -813,32 +797,4 @@ Tcl_SourceRCFile(interp)
 	}
         Tcl_DStringFree(&temp);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpAsyncMark --
- *
- *	Wake up the main thread from a signal handler.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Sends a message to the main thread.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpAsyncMark(async)
-    Tcl_AsyncHandler async;		/* Token for handler. */
-{
-    /*
-     * Need a way to kick the Windows event loop and tell it to go look at
-     * asynchronous events.
-     */
-
-    PostThreadMessage(mainThreadId, WM_USER, 0, 0);
 }
