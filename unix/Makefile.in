@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.153 2004/11/12 20:20:24 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.154 2004/11/12 20:27:29 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -275,17 +275,17 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${BUILD_DIR} -I${GENERIC_DIR} -I${SRC_DIR} \
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
 ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${BUILD_DIR} -I${GENERIC_DIR} -I${SRC_DIR} \
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
 
 LIBS		= @TCL_LIBS@
 
-DEPEND_SWITCHES	= ${CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
+DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} \
 ${GENERIC_FLAGS} ${PROTO_FLAGS}
 
@@ -331,7 +331,8 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
-	$(GENERIC_DIR)/tclRegexp.h
+	$(GENERIC_DIR)/tclRegexp.h \
+	$(BUILD_DIR)/tclConfig.h
 
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regcomp.c \
@@ -649,7 +650,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h ; \
+		$(GENERIC_DIR)/tclPlatDecls.h $(BUILD_DIR)/tclConfig.h; \
 	    do \
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
@@ -759,7 +760,7 @@ install-private-headers: libraries
 	@echo "Installing private header files";
 	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
 		$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
-		$(UNIX_DIR)/tclUnixPort.h $(BUILD_DIR)/tclConfig.h; \
+		$(UNIX_DIR)/tclUnixPort.h; \
 	    do \
 	    $(INSTALL_DATA) $$i $(PRIVATE_INCLUDE_INSTALL_DIR); \
 	    done;
