@@ -1,3 +1,10 @@
+2002-03-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	Backport of Donal Fellows patch:
+	* tests/compile.test (compile-12.3): Test to detect bug 530320.
+	* generic/tclCompile.c (TclCompileTokens): Fixed buffer overrun
+	reported in bug 530320.
+
 2002-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/io.test:
