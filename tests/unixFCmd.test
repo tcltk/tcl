@@ -91,7 +91,14 @@ test unixFCmd-1.7 {TclpRenameFile: EXDEV} {
     catch {file delete -force foo}
     set result
 } {1}
-
+test unixFCmd-1.8 {Checking EINTR Bug} {
+    global gotsig
+    set gotsig 0
+    testalarm {set gotsig 1}
+    for {set i 0} {$i < 500000} {incr i} {}
+    return $gotsig
+} {1}
+catch {unset gotsig}
 test unixFCmd-2.1 {TclpCopyFile: target exists: lstat(dst) == 0} {
     cleanup
     exec touch tf1
