@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.12 2003/10/14 13:38:58 dkf Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.13 2003/10/15 13:15:45 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -418,7 +418,7 @@ test lsearch-20.2 {lsearch -index option, malformed index} {
 } {1 {bad index "foo": must be integer or end?-integer?}}
 test lsearch-20.3 {lsearch -index option, malformed index} {
     list [catch {lsearch -index \{ {{a c} {a b} {a a}} a} msg] $msg
-} [list 1 "argument \"\{\" given to -index is invalid"]
+} {1 {unmatched open brace in list}}
 
 # cleanup
 catch {unset res}
