@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.38 2004/03/17 18:14:17 das Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.39 2004/04/06 08:45:04 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -831,7 +831,7 @@ set gorpfile [makeFile abcde gorp.file]
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} {testchmod} {
     list [catch {file executable a b} msg] $msg
 } {1 {wrong # args: should be "file executable name"}}
-test cmdAH-18.2 {Tcl_FileObjCmd: executable} {testchmod} {
+test cmdAH-18.2 {Tcl_FileObjCmd: executable} {testchmod notRoot} {
     file executable $gorpfile
 } 0
 test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly testchmod} {
