@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.1.2.6 1999/03/24 02:49:04 hershey Exp $
+# RCS: @(#) $Id: encoding.test,v 1.1.2.7 1999/03/24 04:25:42 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -86,33 +86,29 @@ test encoding-3.2 {Tcl_GetEncodingName, non-null} {
     set x
 } {jis0208}
 
-test encoding-4.1 {Tcl_GetEncodingNames} {pcOnly testencoding} {
+test encoding-4.1 {Tcl_GetEncodingNames} {
     file mkdir tmp/encoding
     close [open tmp/encoding/junk.enc w]
     close [open tmp/encoding/junk2.enc w]
     cd tmp
     set path [testencoding path]
+    testencoding path {}
+    catch {unset encodings}
+    catch {unset x}
+    foreach encoding [encoding names] {
+	set encodings($encoding) 1
+    }
     testencoding path .
-    set x [encoding names]
+    foreach encoding [encoding names] {
+	if {![info exists encodings($encoding)]} {
+	    lappend x $encoding
+	}
+    }
     testencoding path $path
     cd ..
     file delete -force tmp
-    set x
-} {junk utf-8 cp1252 junk2 identity unicode iso8859-1}
-test encoding-4.1 {Tcl_GetEncodingNames} {unixOnly testencoding} {
-    file mkdir tmp/encoding
-    close [open tmp/encoding/junk.enc w]
-    close [open tmp/encoding/junk2.enc w]
-    cd tmp
-    set path [testencoding path]
-    testencoding path .
-    set x [encoding names]
-    testencoding path $path
-    cd ..
-    file delete -force tmp
-    set x
-} {junk utf-8 junk2 identity unicode iso8859-1}
-
+    lsort $x
+} {junk junk2}
 
 test encoding-5.1 {Tcl_SetSystemEncoding} {
     set old [encoding system]
