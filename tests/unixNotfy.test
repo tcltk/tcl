@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.7 1999/07/01 17:36:20 jenn Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.8 1999/10/19 18:08:44 jenn Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -19,6 +19,12 @@
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
+}
+
+if {[info exists tk_version]} {
+    puts "When run in a Tk shell, these tests run hang.  Skipping tests ..."
+    ::tcltest::cleanupTests
+    return
 }
 
 set ::tcltest::testConstraints(testthread) \

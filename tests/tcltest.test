@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.8 1999/08/27 21:45:18 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.9 1999/10/19 18:08:44 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -106,7 +106,7 @@ test tcltest-3.4 {tcltest -match 'a* b*'} {unixOrPc} {
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
 	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
 } {0 1 1 0 1}
-    
+
 # -skip
 test tcltest-4.1 {tcltest -skip 'a*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -skip a* -v 'ps'} msg]
@@ -133,7 +133,7 @@ test tcltest-4.5 {tcltest -match 'a* b*' -skip 'b*'} {unixOrPc} {
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
 	    [regexp "Total.+3.+Passed.+1.+Skipped.+2.+Failed.+0" $msg]
 } {0 1 0 0 1}
-    
+
 # -constraints, -limitconstraints
 test tcltest-5.1 {tcltest -constraints 'knownBug'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -constraints knownBug -v 'ps'} msg]
@@ -265,6 +265,26 @@ test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {unixOrPc} {
     list [regexp {not writeable} [join $msg]]
 } {1}
 
+# -testdir
+test tcltest-8.5 {tcltest a.tcl -testdir thisdirectorydoesnotexist} {
+    file delete -force thisdirectorydoesnotexist
+    catch {exec $::tcltest::tcltest a.tcl -testdir thisdirectorydoesnotexist}  msg
+    list [regexp "does not exist" [join $msg]]
+} {1}
+
+test tcltest-8.6 {tcltest a.tcl -testdir thisdirectoryisafile} {
+    catch {exec $::tcltest::tcltest a.tcl -testdir thisdirectoryisafile} msg
+    # The join is necessary because the message can be split on multiple lines
+    list [regexp "not a directory" [join $msg]] 
+} {1}
+
+test tcltest-8.7 {tcltest a.tcl -testdir notReadableDir} {unixOnly} {
+    catch {exec $::tcltest::tcltest a.tcl -testdir $notReadableDir} msg 
+    # The join is necessary because the message can be split on multiple lines
+    list [regexp {not readable} [join $msg]]
+} {1}
+
+
 switch $tcl_platform(platform) {
     "unix" {
 	file attributes $notReadableDir -permissions 777
@@ -290,9 +310,12 @@ test tcltest-9.2 {-file a*.tcl} {unixOrPc} {
     list [regexp assocd\.test $msg]
 } {0}
 
+
+
 makeFile {
     package require tcltest
     namespace import ::tcltest::*
+
     test makecore {make a core file} {
 	set f [open core w]
 	close $f
@@ -300,6 +323,7 @@ makeFile {
     ::tcltest::cleanupTests
     return
 } makecore.tcl
+
 # -preservecore 
 test tcltest-10.1 {-preservecore 0} {unixOrPc} {
     catch {exec $::tcltest::tcltest makecore.tcl -preservecore 0} msg
@@ -346,6 +370,26 @@ test tcltest-11.3 {-args {-foo bar -baz}} {unixOrPc} {
     catch {exec $::tcltest::tcltest args.tcl -args {-foo bar -baz}} msg
     list $msg
 } {{=-foo bar -baz=}}
+
+# -load -loadfile
+makeFile {
+    package require tcltest
+    namespace import ::tcltest::*
+    puts $::tcltest::loadScript
+    exit
+} load.tcl
+
+test tcltest-12.1 {-load xxx} {
+    catch {exec $::tcltest::tcltest load.tcl -load xxx} msg
+    set msg
+} {xxx}
+
+test tcltest-12.1 {-loadfile load.tcl} {
+    catch {exec $::tcltest::tcltest load.tcl -d 2 -loadfile load.tcl} msg
+    list \
+	    [regexp {tcltest} [join $msg [split $msg \n]]] \
+	    [regexp {loadScript} [join $msg [split $msg \n]]]
+} {1 1}
 
 # Begin testing of tcltest procs ...
 

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.6 1999/08/31 01:48:25 jenn Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.7 1999/10/19 18:08:40 jenn Exp $
 '\" 
 .so man.macros
 .TH "Tcltest" n 8.2 Tcl "Tcl Built-In Commands"
@@ -22,6 +22,8 @@ Tcltest \- Test harness support code and utilities
 \fB::tcltest::cleanupTests \fI?runningMultipleTests?\fR
 .sp
 \fB::tcltest::getMatchingTestFiles\fR
+.sp
+\fB::tcltest::loadTestedCommands\fR
 .sp
 \fB::tcltest::makeFile \fIcontents name\fR
 .sp
@@ -95,6 +97,12 @@ This proc has no defined return value.
 This command is used when you want to run multiple test files.  It returns
 the list of tests that should be sourced in an 'all.tcl' file.  See the
 section \fI"Running test files"\fR for more information.
+.TP
+\fB::tcltest::loadTestedCommands\fP
+This command uses the script specified via the \fI-load\fR or
+\fI-loadfile\fR to load the commands checked by the test suite.
+Allowed to be empty, as the tested commands could have been compiled
+into the interpreter running the test suite.
 .TP
 \fB::tcltest::makeFile\fP \fIcontents name\fR
 Create a file that will be automatically be removed by
@@ -250,11 +258,16 @@ specified using -tmpdir on the command line.
 \fB::tcltest::testsDirectory\fR
 where the tests reside - defaults to \fI::tcltest::workingDirectory\fR
 if the script cannot determine where the \fItests\fR directory is
-located.  This variable should be explicitly set if tests are being
-run from an all.tcl file.
+located. It is possible to change the default by specifying
+\fI-testdir\fR on the commandline. This variable should be
+explicitly set if tests are being run from an all.tcl file.
 .TP
 \fB::tcltest::tcltest\fR
-the name of the executable used to invoke the test suite.  
+the name of the executable used to invoke the test suite. 
+.TP
+\fB::tcltest::loadScript\fR
+The script executed \fBloadTestedCommands\fR. Specified either by
+\fI-load\fR or \fI-loadfile\fR.
 .SH "TEST CONSTRAINTS"
 Constraints are used to determine whether a test should be skipped.
 Each constraint is stored as an index in the array
@@ -433,10 +446,24 @@ interested in running only those tests that are constrained to be
 unixOnly and no other tests.
 (::tcltest::limitConstraints)
 .TP
+\fB-load <script>\fR
+will use the specified script to load the commands under test
+(::tcltest::loadTestedCommands). The default is the empty
+script. See -loadfile below too. (::tcltest::loadScript)
+.TP
+\fB-loadfile <scriptfile>\fR
+will use the contents of the named file to load the commands under
+test (::tcltest::loadTestedCommands). See -load above too. The default
+is the empty script. (::tcltest::loadScript)
+.TP
 \fB-tmpdir <directoryName>\fR
 put any temporary files (created with ::tcltest::makeFile and
 ::tcltest::makeDirectory) into the named directory.  The default
 location is ::tcltest::workingDirectory.  (::tcltest::temporaryDirectory)
+.TP
+\fB-testdir <directoryName>\fR
+search the test suite to execute in the named directory.  The default
+location is ::tcltest::workingDirectory.  (::tcltest::testsDirectory)
 .TP
 \fB-preservecore <level>\fR
 check for core files.  This flag is used to determine how much

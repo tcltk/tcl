@@ -1,8 +1,21 @@
+1999-10-19  Jennifer Hom  <jenn@scriptics.com>
+
+	* tests/tcltest.test:
+	* doc/tcltest.n:
+	* library/tcltest1.0/tcltest.tcl: Removed the extra return at the
+	end of the tcltest.tcl file.
+
+	Applied patches sent in by Andreas Kupries to add helper procs for
+	debug output, add 3 new flags (-testsdir, -load, -loadfile), and
+	internally refactors common code for dealing with paths into
+	separate procedures. [Bug: 2838, 2842]
+
 1999-10-12  Jim Ingham  <jingham@scriptics.com>
 
         * mac/tclMacLoad.c: Stupid bug - we converted the filename to
         external, but used the unconverted version.
         * mac/tclMacFCmd.c: Fix a merge error in the bug fix for [Bug: 2869]
+
 1999-10-12  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/regc_color.c:
@@ -147,6 +160,12 @@
 	* generic/tclCmdMZ.c: changed [string equal] to return an Int
 	type object (was a Boolean)
 
+1999-09-01  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/tcltest.tcl: Process command-line arguments
+	only ::tcltest doesn't have a child namespace (requires that
+	command-line args are processed in that namespace)
+
 1999-09-01  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclParseExpr.c: changed '"' to '\"' to make FreeBSD
@@ -173,6 +192,14 @@
 
 1999-08-27  Jennifer Hom  <jenn@scriptics.com>
 
+	* tests/env.test:
+	* tests/exec.test:
+	* tests/io.test:
+	* tests/event.test:
+	* tests/tcltest.test: Added 'exit' calls to scripts that the tests 
+	themselves write, and removed accidental checkin of knownBugThreaded
+	constraints for Solaris and Linux.
+	
 	* library/tcltest1.0/tcltest.tcl:  Modified tcltest so that
 	variables are only initialized to their default values if they did
 	not previously exist. 
@@ -373,6 +400,13 @@
 	function.  Added code to avoid calling TerminateThread(), but
 	instead to send a message to the socket event window to tell it to
 	terminate its thread.
+
+1999-07-30  Jennifer Hom  <jenn@scriptics.com>
+
+	* tests/tcltest.test:
+	* library/tcltest1.0/tcltest.tcl: Exit with non-zero status if
+	there were problems with the way the test suite was started
+	(e.g. wrong # arguments).  
 
 1999-07-30  Jeff Hobbs  <hobbs@scriptics.com>
 

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: autoMkindex.test,v 1.6 1999/06/26 03:54:10 jenn Exp $
+# RCS: @(#) $Id: autoMkindex.test,v 1.7 1999/10/19 18:08:44 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -40,6 +40,9 @@ proc AutoMkindexTestReset {} {
 }
 
 set result ""
+
+set origDir [pwd]
+cd $::tcltest::testsDirectory
 
 test autoMkindex-1.1 {remove any existing tclIndex file} {
     file delete tclIndex
@@ -188,4 +191,7 @@ if {[info exists removeAutoMkindex]} {
 if {[file exists tclIndex]} {
     file delete -force tclIndex
 }
+
+cd $origDir
+
 ::tcltest::cleanupTests

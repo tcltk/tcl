@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.8 1999/10/13 00:32:29 hobbs Exp $
+# RCS: @(#) $Id: basic.test,v 1.9 1999/10/19 18:08:44 jenn Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -494,10 +494,10 @@ test basic-39.1 {Tcl_CreateTrace, correct command and argc/argv arguments of tra
 } {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
 test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace tracetest {set stuff [info tclversion]}
-} {{info tclversion} {info tclversion} {set stuff [info tclversion]} {set stuff 8.3}}
+} [list {info tclversion} {info tclversion} {set stuff [info tclversion]} "set stuff $::tcltest::version"]
 test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace deletetest {set stuff [info tclversion]}
-} 8.3
+} $::tcltest::version
 }
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {

@@ -12,21 +12,19 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.14 1999/09/21 23:11:24 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.15 1999/10/19 18:08:42 jenn Exp $
 
 package provide tcltest 1.0
 
-# Ensure that we have a minimal auto_path so we don't pick up extra junk.
-set auto_path [list [info library]]
-
 # create the "tcltest" namespace for all testing variables and procedures
 
-namespace eval tcltest {
+namespace eval tcltest { 
 
     # Export the public tcltest procs
     set procList [list test cleanupTests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile bytestring safeFetch threadReap getMatchingFiles]
+	    viewFile bytestring safeFetch threadReap getMatchingFiles \
+	    loadTestedCommands]
     foreach proc $procList {
 	namespace export $proc
     }
@@ -156,8 +154,16 @@ namespace eval tcltest {
     }
 
     # Don't run only the constrained tests by default
+
     if {![info exists limitConstraints]} {
 	variable limitConstraints false
+    }
+
+    # A test application has to know how to load the tested commands into
+    # the interpreter.
+
+    if {![info exists loadScript]} {
+	variable loadScript {}
     }
 
     # tests that use threads need to know which is the main thread
@@ -191,10 +197,11 @@ namespace eval tcltest {
     # ::tcltest::testsDirectory.
 
     if {![info exists testsDirectory]} {
-	set oDir [pwd]
+	set oldpwd [pwd]
 	catch {cd [file join [file dirname [info script]] .. .. tests]}
 	variable testsDirectory [pwd]
-	cd $oDir
+	cd $oldpwd
+	unset oldpwd
     }
 
     # the variables and procs that existed when ::tcltest::saveState was
@@ -255,7 +262,85 @@ namespace eval tcltest {
 		    $::tcltest::workingDirectory core]]
 	}
     }
+
+    # Tcl version numbers
+    if {![info exists version]} {
+	variable version 8.3
+    }
+    if {![info exists patchLevel]} {
+	variable patchLevel 8.3.0
+    }
 }   
+
+# ::tcltest::Debug* --
+#
+#     Internal helper procedures to write out debug information
+#     dependent on the chosen level. A test shell may overide
+#     them, f.e. to redirect the output into a different
+#     channel, or even into a GUI.
+
+# ::tcltest::DebugPuts --
+#
+#     Prints the specified string if the current debug level is
+#     higher than the provided level argument.
+#
+# Arguments:
+#     level   The lowest debug level triggering the output
+#     string  The string to print out.
+#
+# Results:
+#     Prints the string. Nothing else is allowed.
+#
+
+proc ::tcltest::DebugPuts {level string} {
+    variable debug
+    if {$debug >= $level} {
+	puts $string
+    }
+}
+
+# ::tcltest::DebugPArray --
+#
+#     Prints the contents of the specified array if the current
+#       debug level is higher than the provided level argument
+#
+# Arguments:
+#     level           The lowest debug level triggering the output
+#     arrayvar        The name of the array to print out.
+#
+# Results:
+#     Prints the contents of the array. Nothing else is allowed.
+#
+
+proc ::tcltest::DebugPArray {level arrayvar} {
+    variable debug
+
+    if {$debug >= $level} {
+	catch {upvar  $arrayvar $arrayvar}
+	parray $arrayvar
+    }
+}
+
+# ::tcltest::DebugDo --
+#
+#     Executes the script if the current debug level is greater than
+#       the provided level argument
+#
+# Arguments:
+#     level   The lowest debug level triggering the execution.
+#     script  The tcl script executed upon a debug level high enough.
+#
+# Results:
+#     Arbitrary side effects, dependent on the executed script.
+#
+
+proc ::tcltest::DebugDo {level script} {
+    variable debug
+
+    if {$debug >= $level} {
+	uplevel $script
+    }
+}
 
 # ::tcltest::AddToSkippedBecause --
 #
@@ -604,7 +689,7 @@ proc ::tcltest::initConstraints {} {
 	set ::tcltest::testConstraints(hasIsoLocale) 0
     } else {
 	set ::tcltest::testConstraints(hasIsoLocale) \
-	    [string length [::tcltest::set_iso8859_1_locale]]
+		[string length [::tcltest::set_iso8859_1_locale]]
 	::tcltest::restore_locale
     }
 }   
@@ -631,45 +716,136 @@ proc ::tcltest::PrintUsageInfo {} {
     puts [format "Usage: [file tail [info nameofexecutable]] \
 	    script ?-help? ?flag value? ... \n\
 	    Available flags (and valid input values) are: \n\
-	        -help          \t Display this usage information. \n\
-		-verbose level \t Takes any combination of the values \n\
-		\t                 'p', 's' and 'b'.  Test suite will \n\
-		\t                 display all passed tests if 'p' is \n\
-		\t                 specified, all skipped tests if 's' \n\
-		\t                 is specified, and the bodies of \n\
-		\t                 failed tests if 'b' is specified. \n\
-		\t                 The default value is 'b'. \n\
-		-constraints list\t Do not skip the listed constraints\n\
-		-limitconstraints bool\t Only run tests with the constraints\n\
-		\t                 listed in -constraints.\n\
-		-match pattern \t Run all tests within the specified \n\
-		\t                 files that match the glob pattern \n\
-		\t                 given. \n\
-		-skip pattern  \t Skip all tests within the set of \n\
-		\t                 specified tests (via -match) and \n\
-		\t                 files that match the glob pattern \n\
-		\t                 given. \n\
-		-file pattern  \t Run tests in all test files that \n\
-		\t                 match the glob pattern given. \n\
-		-notfile pattern\t Skip all test files that match the \n\
-		\t                 glob pattern given. \n\
-		-preservecore level \t If 2, save any core files produced \n\
-		\t                 during testing in the directory \n\
-		\t                 specified by -tmpdir. If 1, notify the\n\
-		\t                 user if core files are created. The default \n\
-		\t                 is $::tcltest::preserveCore. \n\
-		-tmpdir directory\t Save temporary files in the specified\n\
-		\t                 directory.  The default value is \n\
-		\t                 $::tcltest::temporaryDirectory. \n\
-		-outfile file    \t Send output from test runs to the \n\
-		\t                 specified file.  The default is \n\
-		\t                 stdout. \n\
-		-errfile file    \t Send errors from test runs to the \n\
-		\t                 specified file.  The default is \n\
-		\t                 stderr. \n\
-		-debug level     \t Internal debug flag."]
+	    -help          \t Display this usage information. \n\
+	    -verbose level \t Takes any combination of the values \n\
+	    \t                 'p', 's' and 'b'.  Test suite will \n\
+	    \t                 display all passed tests if 'p' is \n\
+	    \t                 specified, all skipped tests if 's' \n\
+	    \t                 is specified, and the bodies of \n\
+	    \t                 failed tests if 'b' is specified. \n\
+	    \t                 The default value is 'b'. \n\
+	    -constraints list\t Do not skip the listed constraints\n\
+	    -limitconstraints bool\t Only run tests with the constraints\n\
+	    \t                 listed in -constraints.\n\
+	    -match pattern \t Run all tests within the specified \n\
+	    \t                 files that match the glob pattern \n\
+	    \t                 given. \n\
+	    -skip pattern  \t Skip all tests within the set of \n\
+	    \t                 specified tests (via -match) and \n\
+	    \t                 files that match the glob pattern \n\
+	    \t                 given. \n\
+	    -file pattern  \t Run tests in all test files that \n\
+	    \t                 match the glob pattern given. \n\
+	    -notfile pattern\t Skip all test files that match the \n\
+	    \t                 glob pattern given. \n\
+	    -preservecore level \t If 2, save any core files produced \n\
+	    \t                 during testing in the directory \n\
+	    \t                 specified by -tmpdir. If 1, notify the\n\
+	    \t                 user if core files are created. The default \n\
+	    \t                 is $::tcltest::preserveCore. \n\
+	    -tmpdir directory\t Save temporary files in the specified\n\
+	    \t                 directory.  The default value is \n\
+	    \t                 $::tcltest::temporaryDirectory. \n\
+	    -testdir directories\t Search tests in the specified\n\
+	    \t                 directories.  The default value is \n\
+	    \t                 $::tcltest::testsDirectory. \n\
+	    -outfile file    \t Send output from test runs to the \n\
+	    \t                 specified file.  The default is \n\
+	    \t                 stdout. \n\
+	    -errfile file    \t Send errors from test runs to the \n\
+	    \t                 specified file.  The default is \n\
+	    \t                 stderr. \n\
+	    -loadfile file   \t Read the script to load the tested \n\
+	    \t                 commands from the specified file. \n\
+	    -load script     \t Specifies the script to load the tested \n\
+	    \t                 commands. \n\
+	    -debug level     \t Internal debug flag."]
     ::tcltest::PrintUsageInfoHook
     return
+}
+
+# ::tcltest::CheckDirectory --
+#
+#     This procedure checks whether the specified path is a readable
+#     and/or writable directory. If one of the conditions is not
+#     satisfied an error is printed and the application aborted. The
+#     procedure assumes that the caller already checked the existence
+#     of the path.
+#
+# Arguments
+#     rw      Information what attributes to check. Allowed values:
+#             r, w, rw, wr. If 'r' is part of the value the directory
+#             must be readable. 'w' associates to 'writable'.
+#     dir     The directory to check.
+#     errMsg  The string to prepend to the actual error message before
+#             printing it.
+#
+# Results
+#     none
+#
+
+proc ::tcltest::CheckDirectory {rw dir errMsg} {
+    # Allowed values for 'rw': r, w, rw, wr
+
+    if {![file isdir $dir]} { 
+	::tcltest::PrintError "$errMsg \"$dir\" is not a directory"
+	exit 1
+    } elseif {([string first w $rw] >= 0) && ![file writable $dir]} {
+	::tcltest::PrintError "$errMsg \"$dir\" is not writeable"
+	exit 1
+    } elseif {([string first r $rw] >= 0) && ![file readable $dir]} {
+	::tcltest::PrintError "$errMsg \"$dir\" is not readable"
+	exit 1
+    }
+}
+
+# ::tcltest::NormalizePath --
+#
+#     This procedure resolves any symlinks in the path thus creating a
+#     path without internal redirection. It assumes that the incoming
+#     path is absolute.
+#
+# Arguments
+#     pathVar contains the name of the variable containing the path to modify.
+#
+# Results
+#     The path is modified in place.
+#
+
+proc ::tcltest::NormalizePath {pathVar} {
+    upvar $pathVar path
+
+    set oldpwd [pwd]
+    catch {cd $path}
+    set path [pwd]
+    cd $oldpwd
+}
+
+# ::tcltest::MakeAbsolutePath --
+#
+#     This procedure checks whether the incoming path is absolute or not.
+#     Makes it absolute if it was not.
+#
+# Arguments
+#     pathVar contains the name of the variable containing the path to modify.
+#     prefix  is optional, contains the path to use to make the other an
+#             absolute one. The current working directory is used if it was
+#             not specified.
+#
+# Results
+#     The path is modified in place.
+#
+
+proc ::tcltest::MakeAbsolutePath {pathVar {prefix {}}} {
+    upvar $pathVar path
+
+    if {![string equal [file pathtype $path] "absolute"]} { 
+	if {$prefix == {}} {
+	    set prefix [pwd]
+	}
+
+	set path [file join $prefix $path] 
+    }
 }
 
 # ::tcltest::processCmdLineArgsFlagsHook --
@@ -734,7 +910,7 @@ proc ::tcltest::processCmdLineArgs {} {
 
     if {[catch {array set flag $flagArray}]} {
 	::tcltest::PrintError "odd number of arguments specified on command line: \ 
-		$argv"
+	$argv"
 	::tcltest::PrintUsageInfo
 	exit 1
     }
@@ -742,7 +918,8 @@ proc ::tcltest::processCmdLineArgs {} {
     # -help is not listed since it has already been processed
     lappend defaultFlags -verbose -match -skip -constraints \
 	    -outfile -errfile -debug -tmpdir -file -notfile \
-	    -preservecore -limitconstraints -args
+	    -preservecore -limitconstraints -args -testdir \
+	    -load -loadfile
     set defaultFlags [concat $defaultFlags \
 	    [ ::tcltest::processCmdLineArgsAddFlagsHook ]]
 
@@ -825,37 +1002,43 @@ proc ::tcltest::processCmdLineArgs {} {
     set tmpDirError ""
     if {[info exists flag(-tmpdir)]} {
 	set ::tcltest::temporaryDirectory $flag(-tmpdir)
-
-	if {![string equal \
-		[file pathtype $::tcltest::temporaryDirectory] \
-		"absolute"]} { 
-	    set ::tcltest::temporaryDirectory [file join [pwd] \
-		    $::tcltest::temporaryDirectory] 
-	}
+	
+	MakeAbsolutePath ::tcltest::temporaryDirectory
 	set tmpDirError "bad argument \"$flag(-tmpdir)\" to -tmpdir: "
     }
     if {[file exists $::tcltest::temporaryDirectory]} {
-	if {![file isdir $::tcltest::temporaryDirectory]} { 
-	    ::tcltest::PrintError "$tmpDirError \"$::tcltest::temporaryDirectory\" \
-		    is not a directory"
-	    exit 1
-	} elseif {![file writable $::tcltest::temporaryDirectory]} {
-	    ::tcltest::PrintError "$tmpDirError \"$::tcltest::temporaryDirectory\" \
-		    is not writeable" 
-	    exit 1
-	} elseif {![file readable $::tcltest::temporaryDirectory]} {
-	    ::tcltest::PrintError "$tmpDirError \"$::tcltest::temporaryDirectory\" \
-		    is not readable" 
-	    exit 1
-	}
+	::tcltest::CheckDirectory rw $::tcltest::temporaryDirectory $tmpDirError
     } else {
 	file mkdir $::tcltest::temporaryDirectory
     }
-    set oldpwd [pwd]
-    cd $::tcltest::temporaryDirectory
-    set ::tcltest::temporaryDirectory [pwd]
-    cd $oldpwd
 
+    NormalizePath ::tcltest::temporaryDirectory
+
+    # Set the ::tcltest::testsDirectory to the arg of -testdir, if
+    # given.
+    # 
+    # If the path is relative, make it absolute.  If the file exists but
+    # is not a dir, then return an error.
+    #
+    # If ::tcltest::temporaryDirectory does not already exist return an error.
+    
+    set testDirError ""
+    if {[info exists flag(-testdir)]} {
+	set ::tcltest::testsDirectory $flag(-testdir)
+	
+	MakeAbsolutePath ::tcltest::testsDirectory
+	set testDirError "bad argument \"$flag(-testdir)\" to -testdir: "
+    }
+    if {[file exists $::tcltest::testsDirectory]} {
+	::tcltest::CheckDirectory r $::tcltest::testsDirectory $testDirError
+    } else {
+	::tcltest::PrintError "$testDirError \"$::tcltest::testsDirectory\" \
+		does not exist"
+	exit 1
+    }
+    
+    NormalizePath ::tcltest::testsDirectory
+    
     # Save the names of files that already exist in
     # the output directory.
     foreach file [glob -nocomplain \
@@ -868,18 +1051,33 @@ proc ::tcltest::processCmdLineArgs {} {
 
     if {[info exists flag(-outfile)]} {
 	set tmp $flag(-outfile)
-	if {![string equal [file pathtype $tmp] "absolute"]} {
-	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
-	}
+	MakeAbsolutePath tmp $::tcltest::temporaryDirectory
 	set ::tcltest::outputChannel [open $tmp w]
     } 
 
     if {[info exists flag(-errfile)]} {
 	set tmp $flag(-errfile)
-	if {![string equal [file pathtype $tmp] "absolute"]} {
-	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
-	}
+	MakeAbsolutePath tmp $::tcltest::temporaryDirectory
 	set ::tcltest::errorChannel [open $tmp w]
+    }
+
+    # If a load script was specified, either directly or through
+    # a file, remember it for later usage.
+    
+    if {[info exists flag(-load)] &&  \
+	    ([lsearch -exact $flagArray -load] > \
+	    [lsearch -exact $flagArray -loadfile])} {
+	    set ::tcltest::loadScript $flag(-load)
+    }
+    
+    if {[info exists flag(-loadfile)] && \
+	    ([lsearch -exact $flagArray -loadfile] > \
+	    [lsearch -exact $flagArray -load]) } {
+	set tmp $flag(-loadfile)
+	MakeAbsolutePath tmp $::tcltest::temporaryDirectory
+	set tmp [open $tmp r]
+	set ::tcltest::loadScript [read $tmp]
+	close $tmp
     }
 
     # If the user specifies debug testing, print out extra information during
@@ -896,21 +1094,40 @@ proc ::tcltest::processCmdLineArgs {} {
     # Call the hook
     ::tcltest::processCmdLineArgsHook [array get flag]
 
-    # Spit out everything you know if we're at debug level 2 or greater
-    if {$::tcltest::debug > 1} {
-	puts "Flags passed into tcltest:"
-	parray flag
-	puts "::tcltest::debug = $::tcltest::debug"
-	puts "::tcltest::testsDirectory = $::tcltest::testsDirectory"
-	puts "::tcltest::workingDirectory = $::tcltest::workingDirectory"
-	puts "::tcltest::temporaryDirectory = $::tcltest::temporaryDirectory"
-	puts "::tcltest::outputChannel = $::tcltest::outputChannel"
-	puts "::tcltest::errorChannel = $::tcltest::errorChannel"
-	puts "Original environment (::tcltest::originalEnv):"
-	parray ::tcltest::originalEnv
-	puts "Constraints:"
-	parray ::tcltest::testConstraints
+    # Spit out everything you know if we're at a debug level 2 or greater
+
+    DebugPuts    2 "Flags passed into tcltest:"
+    DebugPArray  2 flag
+    DebugPuts    2 "::tcltest::debug              = $::tcltest::debug"
+    DebugPuts    2 "::tcltest::testsDirectory     = $::tcltest::testsDirectory"
+    DebugPuts    2 "::tcltest::workingDirectory   = $::tcltest::workingDirectory"
+    DebugPuts    2 "::tcltest::temporaryDirectory = $::tcltest::temporaryDirectory"
+    DebugPuts    2 "::tcltest::outputChannel      = $::tcltest::outputChannel"
+    DebugPuts    2 "::tcltest::errorChannel       = $::tcltest::errorChannel"
+    DebugPuts    2 "Original environment (::tcltest::originalEnv):"
+    DebugPArray  2 ::tcltest::originalEnv
+    DebugPuts    2 "Constraints:"
+    DebugPArray  2 ::tcltest::testConstraints
+}
+
+# ::tcltest::loadTestedCommands --
+#
+#     Uses the specified script to load the commands to test. Allowed to
+#     be empty, as the tested commands could have been compiled into the
+#     interpreter.
+#
+# Arguments
+#     none
+#
+# Results
+#     none
+
+proc ::tcltest::loadTestedCommands {} {
+    if {$::tcltest::loadScript == {}} {
+	return
     }
+    
+    uplevel #0 $::tcltest::loadScript
 }
 
 # ::tcltest::cleanupTests --
@@ -1153,9 +1370,8 @@ if {[namespace inscope ::tcltest info procs cleanupTestsHook] == {}} {
 # expectedAnswer -	Expected result from script.
 
 proc ::tcltest::test {name description script expectedAnswer args} {
-    if {$::tcltest::debug > 2} {
-	puts "Running $name ($description)"
-    }
+
+    DebugPuts 3 "Running $name ($description)"
 
     incr ::tcltest::numTests(Total)
 
@@ -1164,9 +1380,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
     foreach pattern $::tcltest::skip {
 	if {[string match $pattern $name]} {
 	    incr ::tcltest::numTests(Skipped)
-	    if {$::tcltest::debug} {
-		::tcltest::AddToSkippedBecause userSpecifiedSkip
-	    }
+	    DebugDo 1 {::tcltest::AddToSkippedBecause userSpecifiedSkip}
 	    return
 	}
     }
@@ -1183,9 +1397,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
         }
 	if {!$ok} {
 	    incr ::tcltest::numTests(Skipped)
-	    if {$::tcltest::debug} {
-		::tcltest::AddToSkippedBecause userSpecifiedNonMatch
-	    }
+	    DebugDo 1 {::tcltest::AddToSkippedBecause userSpecifiedNonMatch}
 	    return
 	}
     }
@@ -1422,9 +1634,7 @@ proc ::tcltest::leakfiles {old} {
 
 proc ::tcltest::saveState {} {
     uplevel #0 {set ::tcltest::saveState [list [info procs] [info vars]]}
-    if {$::tcltest::debug > 1} {
-	puts "::tcltest::saveState: $::tcltest::saveState"
-    }
+    DebugPuts  2 "::tcltest::saveState: $::tcltest::saveState"
 }
 
 # ::tcltest::restoreState --
@@ -1443,18 +1653,15 @@ proc ::tcltest::restoreState {} {
     foreach p [info procs] {
 	if {([lsearch [lindex $::tcltest::saveState 0] $p] < 0) && \
 		(![string equal ::tcltest::$p [namespace origin $p]])} {
-	    if {$::tcltest::debug > 2} {
-		puts "::tcltest::restoreState: Removing proc $p"
-	    }
+	    
+	    DebugPuts 3 "::tcltest::restoreState: Removing proc $p"
 	    rename $p {}
 	}
     }
     foreach p [uplevel #0 {info vars}] {
 	if {[lsearch [lindex $::tcltest::saveState 1] $p] < 0} {
-	    if {$::tcltest::debug > 2} {
-		puts "::tcltest::restoreState: Removing variable $p"
-	    }
-	    uplevel #0 "unset $p"
+	    DebugPuts 3 "::tcltest::restoreState: Removing variable $p"
+	    uplevel #0 "catch {unset $p}"
 	}
     }
 }
@@ -1485,9 +1692,8 @@ proc ::tcltest::normalizeMsg {msg} {
 proc ::tcltest::makeFile {contents name} {
     global tcl_platform
     
-    if {$::tcltest::debug > 2} {
-	puts "::tcltest::makeFile: putting $contents into $name"
-    }
+    DebugPuts 3 "::tcltest::makeFile: putting $contents into $name"
+
     set fd [open [file join $::tcltest::temporaryDirectory $name] w]
 
     fconfigure $fd -translation lf
@@ -1516,9 +1722,7 @@ proc ::tcltest::makeFile {contents name} {
 #
 
 proc ::tcltest::removeFile {name} {
-    if {$::tcltest::debug > 2} {
-	puts "::tcltest::removeFile: removing $name"
-    }
+    DebugPuts 3 "::tcltest::removeFile: removing $name"
     file delete [file join $::tcltest::temporaryDirectory $name]
 }
 
@@ -1665,10 +1869,11 @@ proc ::tcltest::threadReap {} {
 
 # Initialize the constraints and set up command line arguments 
 namespace eval tcltest {
+    # Ensure that we have a minimal auto_path so we don't pick up extra junk.
+    set ::auto_path [list [info library]]
+
     ::tcltest::initConstraints
     if {[namespace children ::tcltest] == {}} {
 	::tcltest::processCmdLineArgs
     }
 }
-
-return
