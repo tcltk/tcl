@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.51 2004/05/02 20:49:56 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.52 2004/05/04 03:20:22 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -215,13 +215,14 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
  *	This procedure knows how to handle two types of body objects:
  *	strings and procbody. Strings are the traditional (and common) value
  *	for bodies, procbody are values created by extensions that have
- *	loaded a previously compiled script.
+ *	loaded a previously compiled script. 
  *
  * Results:
  *	Returns TCL_OK on success, along with a pointer to a Tcl
- *	procedure definition in procPtrPtr.  This definition should
- *	be freed by calling TclCleanupProc() when it is no longer
- *	needed.  Returns TCL_ERROR if anything goes wrong.
+ *	procedure definition in procPtrPtr where the cmdPtr field is not
+ *      initialised. This definition should be freed by calling
+ *      TclCleanupProc() when it is no longer needed.  Returns TCL_ERROR if
+ *      anything goes wrong. 
  *
  * Side effects:
  *	If anything goes wrong, this procedure returns an error
@@ -256,11 +257,9 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
          * there may be no source code).
          *
          * We don't create and initialize a Proc structure for the procedure;
-         * rather, we use what is in the body object. Note that
-         * we initialize its cmdPtr field below after we've created the command
-         * for the procedure. We increment the ref count of the Proc struct
-         * since the command (soon to be created) will be holding a reference
-         * to it.
+         * rather, we use what is in the body object. We increment the ref
+         * count of the Proc struct since the command (soon to be created)
+         * will be holding a reference to it.
          */
     
         procPtr = (Proc *) bodyPtr->internalRep.otherValuePtr;
@@ -288,11 +287,9 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
         }
 
         /*
-         * Create and initialize a Proc structure for the procedure. Note that
-         * we initialize its cmdPtr field below after we've created the command
-         * for the procedure. We increment the ref count of the procedure's
-         * body object since there will be a reference to it in the Proc
-         * structure.
+         * Create and initialize a Proc structure for the procedure. We
+	 * increment the ref count of the procedure's body object since there
+	 * will be a reference to it in the Proc structure.
          */
     
         Tcl_IncrRefCount(bodyPtr);
@@ -488,13 +485,6 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
         ckfree((char *) fieldValues);
     }
-
-    /*
-     * Now initialize the new procedure's cmdPtr field. This will be used
-     * later when the procedure is called to determine what namespace the
-     * procedure will run in. This will be different than the current
-     * namespace if the proc was renamed into a different namespace.
-     */
     
     *procPtrPtr = procPtr;
     ckfree((char *) argArray);
