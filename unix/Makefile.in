@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.24 1999/04/01 21:52:57 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.25 1999/04/07 00:36:09 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -1103,7 +1103,7 @@ dist: $(UNIX_DIR)/configure
 	    $(TOP_DIR)/tools/configure.in \
 	    $(TOP_DIR)/tools/*.tcl \
 	    $(TOP_DIR)/tools/man2tcl.c \
-	    $(TOP_DIR)/tools/tcl.wse \
+	    $(TOP_DIR)/tools/tcl.wse.in \
 	    $(TOP_DIR)/tools/*.bmp \
 	    $(TOP_DIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools
