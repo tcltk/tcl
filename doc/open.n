@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.6 1999/11/10 02:51:42 hobbs Exp $
+'\" RCS: @(#) $Id: open.n,v 1.7 1999/11/24 20:54:54 hobbs Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -153,6 +153,15 @@ set the maximum time between polling for fileevents.  This affects the
 time interval between checking for events throughout the Tcl
 interpreter (the smallest value always wins).  Use this option only if
 you want to poll the serial port more often than 10 msec (the default).
+.TP
+\fB\-lasterror
+.
+This option is available only on Windows for serial ports, and is
+query only (will only be reported when directly requested).
+In case of a serial communication error, \fBread\fR or \fBputs\fR
+returns a general Tcl file I/O error.
+\fBfconfigure -lasterror\fR can be called to get a list 
+of error details (e.g. FRAME RXOVER).
 .VE
 
 .VS
