@@ -1,3 +1,9 @@
+2003-05-16  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/dde/pkgIndex.tcl:  Applied TIP #130 which provides
+	* tests/winDde.test:         for unique dde server names. Added
+	* win/tclWinDde.c:           some more tests. Fixes [Bug 219293]
+
 2003-05-16  Kevin B. Kenny  <kennykb@hippolyta>
 
 	* unix/Makefile.in:	Removed one excess source file tclDToA.c

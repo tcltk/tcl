@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.14 2003/03/22 23:01:23 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15 2003/05/16 17:29:49 patthoyts Exp $
  */
 
 #include "tclPort.h"
@@ -70,7 +70,7 @@ static DWORD ddeInstance;       /* The application instance handle given
 				 * to us by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION "1.2.2"
+#define TCL_DDE_VERSION "1.2.3"
 #define TCL_DDE_PACKAGE_NAME "dde"
 #define TCL_DDE_SERVICE_NAME "TclEval"
 
@@ -231,16 +231,21 @@ Initialize(void)
 static char *
 DdeSetServerName(
     Tcl_Interp *interp,
-    char *name			/* The name that will be used to
+    char *name,			/* The name that will be used to
 				 * refer to the interpreter in later
 				 * "send" commands.  Must be globally
 				 * unique. */
+    int exactName		/* Should we make a unique name? 0 = unique */
     )
 {
     int suffix, offset;
     RegisteredInterp *riPtr, *prevPtr;
     Tcl_DString dString;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    char *actualName;
+    Tcl_Obj *srvListPtr = NULL;
+    Tcl_Obj **srvPtrPtr = NULL;
+    int n, srvCount = 0, lastSuffix, r = TCL_OK;
 
     /*
      * See if the application is already registered; if so, remove its
@@ -279,16 +284,61 @@ DdeSetServerName(
 	return "";
     }
     
-    /*
-     * Pick a name to use for the application.  Use "name" if it's not
-     * already in use.  Otherwise add a suffix such as " #2", trying
-     * larger and larger numbers until we eventually find one that is
-     * unique.
+    /* 
+     * Get the list of currently registered Tcl interpreters by calling
+     * the internal implementation of the 'dde services' command.
      */
-
-    suffix = 1;
-    offset = 0;
     Tcl_DStringInit(&dString);
+    actualName = name;
+
+    if (! exactName )
+    {
+	    r = DdeGetServicesList(interp, "TclEval", NULL);
+        if (r == TCL_OK)
+	        srvListPtr = Tcl_GetObjResult(interp);
+	    if (r == TCL_OK)
+	        r = Tcl_ListObjGetElements(interp, srvListPtr, &srvCount, &srvPtrPtr);
+        if (r != TCL_OK) {
+            OutputDebugString(Tcl_GetStringResult(interp));
+            return NULL;
+        }
+	
+	/*
+	 * Pick a name to use for the application.  Use "name" if it's not
+	 * already in use.  Otherwise add a suffix such as " #2", trying
+	 * larger and larger numbers until we eventually find one that is
+	 * unique.
+	 */
+	
+	offset = lastSuffix = 0;
+	suffix = 1;
+	
+	while (suffix != lastSuffix) {
+	    lastSuffix = suffix;
+	    if (suffix > 1) {
+		if (suffix == 2) {
+		    Tcl_DStringAppend(&dString, name, -1);
+		    Tcl_DStringAppend(&dString, " #", 2);
+		    offset = Tcl_DStringLength(&dString);
+		    Tcl_DStringSetLength(&dString, offset + TCL_INTEGER_SPACE);
+		    actualName = Tcl_DStringValue(&dString);
+		}
+		sprintf(Tcl_DStringValue(&dString) + offset, "%d", suffix);
+	    }
+	    
+	    /* see if the name is already in use, if so increment suffix */
+	    for (n = 0; n < srvCount; ++n) {
+		Tcl_Obj* namePtr;
+		
+		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
+		if (strcmp(actualName, Tcl_GetString(namePtr)) == 0)
+		{
+		    suffix++;
+		    break;
+		}
+	    }
+	}
+    }
 
     /*
      * We have found a unique name. Now add it to the registry.
@@ -296,10 +346,10 @@ DdeSetServerName(
 
     riPtr = (RegisteredInterp *) ckalloc(sizeof(RegisteredInterp));
     riPtr->interp = interp;
-    riPtr->name = ckalloc(strlen(name) + 1);
+    riPtr->name = ckalloc(strlen(actualName) + 1);
     riPtr->nextPtr = tsdPtr->interpListPtr;
     tsdPtr->interpListPtr = riPtr;
-    strcpy(riPtr->name, name);
+    strcpy(riPtr->name, actualName);
 
     Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd,
 	    (ClientData) riPtr, DeleteProc);
@@ -989,13 +1039,19 @@ Tcl_DdeObjCmd(
 	DDE_EVAL
     };
 
+    enum {
+	DDE_SERVERNAME_EXACT,
+	DDE_SERVERNAME_LAST,
+    };
+
     static CONST char *ddeCommands[] = {"servername", "execute", "poke",
           "request", "services", "eval", 
 	  (char *) NULL};
     static CONST char *ddeOptions[] = {"-async", (char *) NULL};
     static CONST char *ddeReqOptions[] = {"-binary", (char *) NULL};
-    int index, argIndex;
-    int async = 0, binary = 0;
+    static CONST char *ddeSrvOptions[] = {"-exact", "--", (char *) NULL};
+    int index, argIndex, i;
+    int async = 0, binary = 0, exact = 0;
     int result = TCL_OK;
     HSZ ddeService = NULL;
     HSZ ddeTopic = NULL;
@@ -1031,11 +1087,34 @@ Tcl_DdeObjCmd(
 
     switch (index) {
 	case DDE_SERVERNAME:
-	    if ((objc != 3) && (objc != 2)) {
-		Tcl_WrongNumArgs(interp, 1, objv, "servername ?serverName?");
+	    for (i = 2; i < objc; i++) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
+			"option", 0, &argIndex) != TCL_OK) {
+		    break;
+		} else if (argIndex == DDE_SERVERNAME_EXACT) {
+		    exact = 1;
+		} else if (argIndex == DDE_SERVERNAME_LAST) {
+		    i++;
+		    break;
+		} else {
+		    Tcl_ResetResult(interp);
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			    "bad option \"", Tcl_GetString(objv[i]),
+			    "\": must be -exact, or --",
+			    (char*)NULL);
+		    return TCL_ERROR;
+		}
+	    }
+
+	    if ((objc - i) > 1) {
+		Tcl_ResetResult(interp);
+		Tcl_WrongNumArgs(interp, 1, objv,
+			"servername ?-exact? ?--?"
+			" ?serverName?");
 		return TCL_ERROR;
 	    }
-	    firstArg = (objc - 1);
+	    
+	    firstArg = (objc == i) ? 1 : i;
 	    break;
 	case DDE_EXECUTE:
 	    if ((objc < 5) || (objc > 6)) {
@@ -1157,7 +1236,7 @@ Tcl_DdeObjCmd(
 
     switch (index) {
 	case DDE_SERVERNAME: {
-	    serviceName = DdeSetServerName(interp, serviceName);
+	    serviceName = DdeSetServerName(interp, serviceName, exact);
 	    if (serviceName != NULL) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			serviceName, -1);
