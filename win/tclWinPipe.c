@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.47 2004/05/10 21:50:37 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.48 2004/05/30 21:57:09 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -2551,53 +2551,65 @@ Tcl_WaitPid(
 	}
     } else if (ret == WAIT_OBJECT_0) {
 	GetExitCodeProcess(infoPtr->hProcess, &exitCode);
-	if (exitCode & 0xC0000000) {
-	    /*
-	     * A fatal exception occured.
-	     */
-	    switch (exitCode) {
-		case EXCEPTION_FLT_DENORMAL_OPERAND:
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-		case EXCEPTION_FLT_INEXACT_RESULT:
-		case EXCEPTION_FLT_INVALID_OPERATION:
-		case EXCEPTION_FLT_OVERFLOW:
-		case EXCEPTION_FLT_STACK_CHECK:
-		case EXCEPTION_FLT_UNDERFLOW:
-		case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		case EXCEPTION_INT_OVERFLOW:
-		    *statPtr = SIGFPE;
-		    break;
 
-		case EXCEPTION_PRIV_INSTRUCTION:
-		case EXCEPTION_ILLEGAL_INSTRUCTION:
-		    *statPtr = SIGILL;
-		    break;
+	/*
+	 * Does the exit code look like one of the exception codes?
+	 */
 
-		case EXCEPTION_ACCESS_VIOLATION:
-		case EXCEPTION_DATATYPE_MISALIGNMENT:
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-		case EXCEPTION_STACK_OVERFLOW:
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-		case EXCEPTION_INVALID_DISPOSITION:
-		case EXCEPTION_GUARD_PAGE:
-		case EXCEPTION_INVALID_HANDLE:
-		    *statPtr = SIGSEGV;
-		    break;
+	switch (exitCode) {
+	    case EXCEPTION_FLT_DENORMAL_OPERAND:
+	    case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+	    case EXCEPTION_FLT_INEXACT_RESULT:
+	    case EXCEPTION_FLT_INVALID_OPERATION:
+	    case EXCEPTION_FLT_OVERFLOW:
+	    case EXCEPTION_FLT_STACK_CHECK:
+	    case EXCEPTION_FLT_UNDERFLOW:
+	    case EXCEPTION_INT_DIVIDE_BY_ZERO:
+	    case EXCEPTION_INT_OVERFLOW:
+		*statPtr = SIGFPE;
+		break;
 
-		case CONTROL_C_EXIT:
-		    *statPtr = SIGINT;
-		    break;
+	    case EXCEPTION_PRIV_INSTRUCTION:
+	    case EXCEPTION_ILLEGAL_INSTRUCTION:
+		*statPtr = SIGILL;
+		break;
 
-		default:
-		    *statPtr = SIGABRT;
-		    break;
-	    }
-	} else {
-	    /*
-	     * Non exception, normal, exit code.  Note that the exit code
-	     * is truncated to a byte range.
-	     */
-	    *statPtr = ((exitCode << 8) & 0xff00);
+	    case EXCEPTION_ACCESS_VIOLATION:
+	    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+	    case EXCEPTION_STACK_OVERFLOW:
+	    case EXCEPTION_NONCONTINUABLE_EXCEPTION:
+	    case EXCEPTION_INVALID_DISPOSITION:
+	    case EXCEPTION_GUARD_PAGE:
+	    case EXCEPTION_INVALID_HANDLE:
+		*statPtr = SIGSEGV;
+		break;
+
+	    case EXCEPTION_DATATYPE_MISALIGNMENT:
+		*statPtr = SIGBUS;
+		break;
+	    
+	    case EXCEPTION_BREAKPOINT:
+	    case EXCEPTION_SINGLE_STEP:
+		*statPtr = SIGTRAP;
+		break;
+
+	    case CONTROL_C_EXIT:
+		*statPtr = SIGINT;
+		break;
+
+	    default:
+		/*
+		 * Non-exceptional, normal, exit code.  Note that the
+		 * exit code is truncated to a signed short range
+		 * [-32768,32768) whether it fits into this range or not.
+		 *
+		 * BUG: Even though the exit code is a DWORD, it is
+		 * understood by convention to be a signed integer, yet
+		 * there isn't enough room to fit this into the POSIX
+		 * style waitstatus mask without truncating it.
+		 */
+		*statPtr = (((int)(short) exitCode << 8) & 0xffff00);
+		break;
 	}
 	result = pid;
     } else {
