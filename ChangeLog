@@ -1,3 +1,7 @@
+2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/file.n: clarification of 'file tail' behaviour [Bug 737977]
+
 2003-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/expr.n: Tighten up the wording of some operations. [Bug 758488]
