@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.11 2002/04/22 22:41:46 hobbs Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.12 2003/04/12 19:08:54 kennykb Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -31,15 +31,34 @@ out by the command.  The legal \fIoptions\fR (which may be
 abbreviated) are:
 .TP
 .VS 8.3
-\fBclock clicks\fR ?\fB\-milliseconds\fR?
-Return a high-resolution time value as a system-dependent integer
-value.  The unit of the value is system-dependent but should be the
-highest resolution clock available on the system such as a CPU cycle
-counter. If \fB\-milliseconds\fR is specified, then the value is
-guaranteed to be of millisecond granularity.
-This value should only be used for the relative measurement
-of elapsed time.
+\fBclock clicks\fR ?\fI\-option\fR?
+If no \fIoption\fR argument is supplied, returns a high-resolution 
+time value as a system-dependent integer value.  The unit of the value
+is system-dependent but should be the highest resolution clock available
+on the system such as a CPU cycle counter. 
 .VE 8.3
+.TP
+.VS 8.5
+If the \fIoption\fR argument is \fB\-milliseconds\fR, then the value is
+guaranteed to be an approximate count of milliseconds returned as
+a wide integer; the rule should
+always hold that \fBclock clicks -milliseconds\fR divided by 1000 is the
+same as \fBclock seconds\fR.
+.TP
+It the \fIoption\fR argument is \fB-microseconds\fR, then the value is
+guaranteed to be an approximate count of microseconds returned as a wide
+integer; the rule should hold that \fBclock clicks -microseconds\fR
+divided by 1000 is the same as \fBclock clicks -milliseconds\fR.
+.TP
+On some hardware, the counts of milliseconds and microseconds may diverge
+from the system clock for short periods; the reason is that they can
+be derived from different sources, and a complex procedure is required
+to calibrate them.  Moreover, Tcl makes an effort never to have the clock
+leap forward nor appear to run backward, preferring instead to slow or
+speed up the clock frequency slightly until it's back in synchronization.
+For this reason, most Tcl programmers need never worry about such
+phenomena as leap seconds.
+.VE 8.5
 .TP
 \fBclock format \fIclockValue\fR ?\fB\-format \fIstring\fR? ?\fB\-gmt \fIboolean\fR?
 Converts an integer time value, typically returned by
