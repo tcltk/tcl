@@ -265,7 +265,7 @@ struct colormap *cm;
 	struct smalldfa sa;
 	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
 	chr *begin;
-	chr *end;
+	chr *end = NULL;	/* needed to eliminate gcc warning */
 	chr *cold;
 	chr *open;		/* open and close of range of possible starts */
 	chr *close;

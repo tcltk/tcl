@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.3 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.4 1999/06/10 04:27:44 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -366,14 +366,13 @@ Tcl_ServiceModeHook(mode)
  *
  * Tcl_CreateFileHandler --
  *
- *	This procedure registers a file handler with the Xt notifier.
+ *	This procedure registers a file handler with the select notifier.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Creates a new file handler structure and registers one or more
- *	input procedures with Xt.
+ *	Creates a new file handler structure.
  *
  *----------------------------------------------------------------------
  */
