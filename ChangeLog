@@ -3,6 +3,10 @@
 	* win/tclWinPipe.c (BuildCommandLine): Moved non-obvious appending
 	logic to outside the loop and added commentary for its purpose.
 
+	(TclpCreateProcess): When under NT, with no console, and executing a
+	DOS application, the path priming does not need an ending space as
+	BuildCommandLine() will do this for us.
+
 2004-05-08  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: 
