@@ -1,3 +1,27 @@
+2001-12-03  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* NOTES:
+	* tcl.h:
+	* tclBasic.c:
+	* tclCmdAH.c:
+	* tclCmdIL.c:
+	* tclCompCmds.c:
+	* tclCompExpr.c:
+	* tclCompile.c:
+	* tclExecute.c:
+	* tclHash.c:
+	* tclListObj.c:
+	* tclLiteral.c:
+	* tclParse.c:
+	* tclParseExpr.c:
+	* tclProc.c:
+	* tclResult.c:
+	* tclScan.c:
+	* tclStringObj.c:
+	* tclUtil.c: NRE1 patch by Miguel Sofer. Several new controlling
+	  macros for information on the stack. Parser information on the
+	  stack can now be switched to allocation on the heap.
+
 2001-11-28  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* NOTES: New file. Read here about the new modularization macros,

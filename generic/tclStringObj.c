@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.15 1999/11/19 06:34:25 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.15.6.1 2001/12/03 18:23:14 andreas_kupries Exp $ */
 
 #include "tclInt.h"
 
@@ -1196,7 +1196,8 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
     Tcl_Obj *objPtr;		/* Points to the object to append to. */
     va_list argList;		/* Variable argument list. */
 {
-#define STATIC_LIST_SIZE 16
+#define STATIC_LIST_SIZE TCL_RESULT_APPEND_STATIC_LIST_SZ
+#define STATIC_LIST_INCR 16
     String *stringPtr;
     int newLength, oldLength;
     register char *string, *dst;
@@ -1229,7 +1230,7 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
  	    /* 
  	     * Expand the args buffer
  	     */
- 	    nargs_space += STATIC_LIST_SIZE;
+ 	    nargs_space += STATIC_LIST_INCR;
  	    if (args == static_list) {
  	    	args = (void *)ckalloc(nargs_space * sizeof(char *));
  		for (i = 0; i < nargs; ++i) {

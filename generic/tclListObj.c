@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.7.8.1 2001/04/04 07:38:47 hobbs Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.7.8.1.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1006,7 +1006,7 @@ static void
 UpdateStringOfList(listPtr)
     Tcl_Obj *listPtr;		/* List object with string rep to update. */
 {
-#   define LOCAL_SIZE 20
+#   define LOCAL_SIZE TCL_MERGE_STATIC_LIST_SZ
     int localFlags[LOCAL_SIZE], *flagPtr;
     List *listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
     int numElems = listRepPtr->elemCount;

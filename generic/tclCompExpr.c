@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.4 1999/08/19 02:59:08 hobbs Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.4.6.1 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -230,9 +230,11 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     ExprInfo info;
-    Tcl_Parse parse;
+    TYPE (Tcl_Parse) parse;
     Tcl_HashEntry *hPtr;
     int maxDepth, new, i, code;
+
+    NEWSTRUCT(Tcl_Parse,parse);
 
     /*
      * If this is the first time we've been called, initialize the table
@@ -264,7 +266,7 @@ TclCompileExpr(interp, script, numBytes, envPtr)
      */
 
     info.interp = interp;
-    info.parsePtr = &parse;
+    info.parsePtr = REF (parse);
     info.expr = script;
     info.lastChar = (script + numBytes); 
     info.hasOperators = 0;
@@ -276,14 +278,14 @@ TclCompileExpr(interp, script, numBytes, envPtr)
      */
 
     maxDepth = 0;
-    code = Tcl_ParseExpr(interp, script, numBytes, &parse);
+    code = Tcl_ParseExpr(interp, script, numBytes, REF (parse));
     if (code != TCL_OK) {
 	goto done;
     }
 
-    code = CompileSubExpr(parse.tokenPtr, &info, envPtr);
+    code = CompileSubExpr(ITEM(parse,tokenPtr), &info, envPtr);
     if (code != TCL_OK) {
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(REF (parse));
 	goto done;
     }
     maxDepth = envPtr->maxStackDepth;
@@ -298,9 +300,10 @@ TclCompileExpr(interp, script, numBytes, envPtr)
 	
 	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
     }
-    Tcl_FreeParse(&parse);
+    Tcl_FreeParse(REF (parse));
 
     done:
+    RELSTRUCT (parse);
     envPtr->maxStackDepth = maxDepth;
     envPtr->exprIsJustVarRef = info.exprIsJustVarRef;
     envPtr->exprIsComparison = info.exprIsComparison;

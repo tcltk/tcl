@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.5 2000/01/21 02:25:26 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.5.6.1 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -618,7 +618,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      *    varvList[i] points to array of var names in i-th var list
      */
 
-#define STATIC_VAR_LIST_SIZE 5
+#define STATIC_VAR_LIST_SIZE TCL_FOREACH_STATIC_VARLIST_SZ
     int varcListStaticSpace[STATIC_VAR_LIST_SIZE];
     char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
     int *varcList = varcListStaticSpace;
@@ -1318,18 +1318,21 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    Tcl_Parse elemParse;
+    TYPE (Tcl_Parse) elemParse;
     int gotElemParse = 0;
     char *name, *elName, *p;
     int nameChars, elNameChars, haveImmValue, immValue, localIndex, i, code;
     int maxDepth = 0;
     char buffer[160];
 
+    NEWSTRUCT (Tcl_Parse,elemParse);
+
     envPtr->maxStackDepth = 0;
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	        "wrong # args: should be \"incr varName ?increment?\"", -1);
+	RELSTRUCT(elemParse);
 	return TCL_ERROR;
     }
     
@@ -1395,19 +1398,19 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    *(elName-1) = '"';
 	    *(elName+elNameChars) = '"';
 	    code = Tcl_ParseCommand(interp, elName-1, elNameChars+2,
-                    /*nested*/ 0, &elemParse);
+                    /*nested*/ 0, REF (elemParse));
 	    *(elName-1) = '(';
 	    *(elName+elNameChars) = ')';
 	    gotElemParse = 1;
-	    if ((code != TCL_OK) || (elemParse.numWords > 1)) {
+	    if ((code != TCL_OK) || (ITEM (elemParse,numWords) > 1)) {
 		sprintf(buffer, "\n    (parsing index for array \"%.*s\")",
 			TclMin(nameChars, 100), name);
 		Tcl_AddObjErrorInfo(interp, buffer, -1);
 		code = TCL_ERROR;
 		goto done;
-	    } else if (elemParse.numWords == 1) {
-		code = TclCompileTokens(interp, elemParse.tokenPtr+1,
-                        elemParse.tokenPtr->numComponents, envPtr);
+	    } else if (ITEM (elemParse,numWords) == 1) {
+		code = TclCompileTokens(interp, ITEM (elemParse,tokenPtr)+1,
+                        ITEM (elemParse,tokenPtr)->numComponents, envPtr);
 		if (code != TCL_OK) {
 		    goto done;
 		}
@@ -1534,8 +1537,9 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	
     done:
     if (gotElemParse) {
-        Tcl_FreeParse(&elemParse);
+        Tcl_FreeParse(REF (elemParse));
     }
+    RELSTRUCT (elemParse);
     envPtr->maxStackDepth = maxDepth;
     return code;
 }
@@ -1574,7 +1578,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    Tcl_Parse elemParse;
+    TYPE (Tcl_Parse) elemParse;
     int gotElemParse = 0;
     register char *p;
     char *name, *elName;
@@ -1584,12 +1588,15 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     int maxDepth = 0;
     int code = TCL_OK;
 
+    NEWSTRUCT (Tcl_Parse,elemParse);
+
     envPtr->maxStackDepth = 0;
     numWords = parsePtr->numWords;
     if ((numWords != 2) && (numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	        "wrong # args: should be \"set varName ?newValue?\"", -1);
+	RELSTRUCT(elemParse);
         return TCL_ERROR;
     }
     isAssignment = (numWords == 3);
@@ -1729,20 +1736,20 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	    *(elName-1) = '"';
 	    *(elName+elNameChars) = '"';
 	    code = Tcl_ParseCommand(interp, elName-1, elNameChars+2,
-                    /*nested*/ 0, &elemParse);
+                    /*nested*/ 0, REF (elemParse));
 	    *(elName-1) = '(';
 	    *(elName+elNameChars) = ')';
 	    gotElemParse = 1;
-	    if ((code != TCL_OK) || (elemParse.numWords > 1)) {
+	    if ((code != TCL_OK) || (ITEM (elemParse,numWords) > 1)) {
 		char buffer[160];
 		sprintf(buffer, "\n    (parsing index for array \"%.*s\")",
 		        TclMin(nameChars, 100), name);
 		Tcl_AddObjErrorInfo(interp, buffer, -1);
 		code = TCL_ERROR;
 		goto done;
-	    } else if (elemParse.numWords == 1) {
-		code = TclCompileTokens(interp, elemParse.tokenPtr+1,
-                        elemParse.tokenPtr->numComponents, envPtr);
+	    } else if (ITEM (elemParse,numWords) == 1) {
+		code = TclCompileTokens(interp, ITEM (elemParse,tokenPtr)+1,
+                        ITEM (elemParse,tokenPtr)->numComponents, envPtr);
 		if (code != TCL_OK) {
 		    goto done;
 		}
@@ -1831,8 +1838,9 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	
     done:
     if (gotElemParse) {
-        Tcl_FreeParse(&elemParse);
+        Tcl_FreeParse(REF (elemParse));
     }
+    RELSTRUCT (elemParse);
     envPtr->maxStackDepth = maxDepth;
     return code;
 }

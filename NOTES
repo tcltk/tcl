@@ -151,3 +151,101 @@ Future:
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
+
+Cut 2, Working on the stacksize.
+
+*	Spliced the NRE1 engine by Miguel Sofer into
+	the core. Stack testing the testsuite show
+	an average saving of 4 K stack space.
+
+*	Reducing amount of characters directly stored in
+	a DString structure from 200 to 1. Average
+	savings when going through testsuite:
+
+*	Going through #defines in headers and sources
+	to identify more locations placing data on the
+	stack.
+
+New controlling macros.
+
+#define TCL_NO_RECURSE		/* enables the NRE modifications */
+	set by default
+
+Tcl_ExternalToUtfDString is in trouble for TCL_DSTRING_STATIC_SIZE=1 I
+guess TDSS < UTF_MAX is trouble because the function does not check
+before attempting the first conversion. ... Ok, SZ=25 is ok for the
+testsuite. This doesn't mean that it is ok in real life, but encoding
+is cut of for cisco, so we can screw this here. Keep in mind for
+later.
+
+1,4,5,10,17	fail
+21,25	ok
+
+
+#define TCL_FMT_STATIC_FLOATBUFFER_SZ    320
+#define TCL_FMT_STATIC_VALIDATE_LIST      16
+#define TCL_FOREACH_STATIC_ARGS            9
+#define TCL_FOREACH_STATIC_LIST_SZ         4
+#define TCL_FOREACH_STATIC_VARLIST_SZ      5
+#define TCL_RESULT_APPEND_STATIC_LIST_SZ  16
+#define TCL_MERGE_STATIC_LIST_SZ          20
+#define TCL_PROC_STATIC_CLOCALS           20
+#define TCL_PROC_STATIC_ARGS              20
+#define TCL_INVOKE_STATIC_ARGS            20
+#define TCL_EVAL_STATIC_VARCHARS          30
+#define TCL_STATS_COUNTERS                10
+#define TCL_LSORT_STATIC_MERGE_BUCKETS    30
+
+-DTCL_FMT_STATIC_FLOATBUFFER_SZ=320 -DTCL_FMT_STATIC_VALIDATE_LIST=16 -DTCL_FOREACH_STATIC_ARGS=9 -DTCL_FOREACH_STATIC_LIST_SZ=4 -DTCL_FOREACH_STATIC_VARLIST_SZ=5 -DTCL_RESULT_APPEND_STATIC_LIST_SZ=16 -DTCL_MERGE_STATIC_LIST_SZ=20 -DTCL_PROC_STATIC_CLOCALS=20 -DTCL_PROC_STATIC_ARGS=20 -DTCL_INVOKE_STATIC_ARGS=20 -DTCL_EVAL_STATIC_VARCHARS=30 -DTCL_STATS_COUNTERS=10 -DTCL_LSORT_STATIC_MERGE_BUCKETS=30
+
+cut_dstring ...
+-DTCL_FMT_STATIC_FLOATBUFFER_SZ=0 -DTCL_FMT_STATIC_VALIDATE_LIST=0 -DTCL_FOREACH_STATIC_ARGS=0 -DTCL_FOREACH_STATIC_LIST_SZ=0 -DTCL_FOREACH_STATIC_VARLIST_SZ=0 -DTCL_RESULT_APPEND_STATIC_LIST_SZ=0 -DTCL_MERGE_STATIC_LIST_SZ=0 -DTCL_PROC_STATIC_CLOCALS=0 -DTCL_PROC_STATIC_ARGS=0 -DTCL_INVOKE_STATIC_ARGS=0 -DTCL_EVAL_STATIC_VARCHARS=0 -DTCL_STATS_COUNTERS=0 -DTCL_LSORT_STATIC_MERGE_BUCKETS=0
+
+------------------------------------------------------
+General look through the code for static buffers
+on the stack.
+
+tclAlloc	/ok
+tclAsync	/ok
+tclBasic	Tcl_CallWhenDeleted		32+INT_SPACE
+		Tcl_ExprString			TCL_DOUBLE_SPACE
+tclBinary	/ok
+tclClock	/ok
+tclCmdAH	StoreStatData			TCL_INTEGER_SPACE
+		Tcl_FormatObjCmd
+
+...(Obj)Cmd functions often hold quite a lot of state in local
+variables.
+
+For exact measurements we have to instrument the C code with
+additional (macroized) function calls to record exact sizes for every
+invoked C function. Automatic instrumentation is difficult. Could
+instrument the dispatchers first (where commands are invoked) to get
+stack sizes for bigger blocks of execution (command + utility
+functionality called by it).
+
+-----------------------------------------------------------------------------------------------
+
+A big structure is 'CompileEnv'. Instead of trying to reduce its size
+it might be better to allocate the whole structure of the heap.
+
+#define TCL_COMPENV_ON_HEAP    /* Allocate temp. CompileEnv structs off the heap */
+
+Stack measure
+	@ TclSetByteCodeFromAny ../../src/tcl834_stkr/unix/../generic/tclCompile.c 300 = 2036
+	@ TclCompileByteCodesForExpr ../../src/tcl834_stkr/unix/../generic/tclExecute.c 6022 = 2008
+
+On Heap
+	@ TclSetByteCodeFromAny ../../src/tcl834_stkr/unix/../generic/tclCompile.c 300 = 100
+	@ TclCompileByteCodesForExpr ../../src/tcl834_stkr/unix/../generic/tclExecute.c 6022 = 68
+
+-----------------------------------------------------------------------------------------------
+
+Ditto Tcl_Parse
+	@ TclCompileSetCmd ../../src/tcl834_stkr/unix/../generic/tclCompCmds.c 1618 = 640
+	@ TclCompileIncrCmd ../../src/tcl834_stkr/unix/../generic/tclCompCmds.c 1356 = 636
+On Heap
+	@ TclCompileSetCmd ../../src/tcl834_stkr/unix/../generic/tclCompCmds.c 1619 = 268
+	@ TclCompileIncrCmd ../../src/tcl834_stkr/unix/../generic/tclCompCmds.c 1356 = 264
+
+-----------------------------------------------------------------------------------------------

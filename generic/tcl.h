@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70.2.9.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.70.2.9.2.2 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -47,12 +47,72 @@ extern "C" {
 #define TCL_NO_LOADCMD         /* Disable [load] and machinery below */
 #define TCL_NO_SLAVEINTERP     /* No slave interp's */
 #define TCL_NO_CMDALIASES      /* No command aliases */
+#define TCL_STRUCT_ON_HEAP     /* Allocate temp. big structures off the heap */
 #endif
 
 #ifdef TCL_NO_NONSTDCHAN
 #define TCL_NO_SOCKETS    /* Disable "tcp"  channel driver */
 #define TCL_NO_TTY        /* Disable "tty"  channel driver */
 #define TCL_NO_PIPES      /* Disable "pipe" channel driver */
+#endif
+
+
+#ifdef TCL_STRUCT_ON_HEAP
+#define TYPE(t)          t *
+#define ITEM(var,item)   var -> item
+#define REF(var)         (var)
+#define NEWSTRUCT(t,var) (var) = (t *) Tcl_Alloc(sizeof(t))
+#define RELSTRUCT(var)   Tcl_Free((void*)(var))
+#else
+#define TYPE(t)         t
+#define ITEM(var,item)  var . item
+#define REF(var)        &(var)
+#define NEWSTRUCT(t,var) 
+#define RELSTRUCT(var) 
+#endif
+
+/*
+ * Additional macros to control the sizes of various data placed on the stack.
+ */
+
+#ifndef TCL_FMT_STATIC_FLOATBUFFER_SZ
+#define TCL_FMT_STATIC_FLOATBUFFER_SZ    320
+#endif
+#ifndef TCL_FMT_STATIC_VALIDATE_LIST
+#define TCL_FMT_STATIC_VALIDATE_LIST      16
+#endif
+#ifndef TCL_FOREACH_STATIC_ARGS
+#define TCL_FOREACH_STATIC_ARGS            9
+#endif
+#ifndef TCL_FOREACH_STATIC_LIST_SZ
+#define TCL_FOREACH_STATIC_LIST_SZ         4
+#endif
+#ifndef TCL_FOREACH_STATIC_VARLIST_SZ
+#define TCL_FOREACH_STATIC_VARLIST_SZ      5
+#endif
+#ifndef TCL_RESULT_APPEND_STATIC_LIST_SZ
+#define TCL_RESULT_APPEND_STATIC_LIST_SZ  16
+#endif
+#ifndef TCL_MERGE_STATIC_LIST_SZ
+#define TCL_MERGE_STATIC_LIST_SZ          20
+#endif
+#ifndef TCL_PROC_STATIC_CLOCALS
+#define TCL_PROC_STATIC_CLOCALS           20
+#endif
+#ifndef TCL_PROC_STATIC_ARGS
+#define TCL_PROC_STATIC_ARGS              20
+#endif
+#ifndef TCL_INVOKE_STATIC_ARGS
+#define TCL_INVOKE_STATIC_ARGS            20
+#endif
+#ifndef TCL_EVAL_STATIC_VARCHARS
+#define TCL_EVAL_STATIC_VARCHARS          30
+#endif
+#ifndef TCL_STATS_COUNTERS
+#define TCL_STATS_COUNTERS                10
+#endif
+#ifndef TCL_LSORT_STATIC_MERGE_BUCKETS
+#define TCL_LSORT_STATIC_MERGE_BUCKETS    30
 #endif
 
 /*
@@ -862,7 +922,9 @@ typedef struct Tcl_CmdInfo {
  * never modify it.
  */
 
+#ifndef TCL_DSTRING_STATIC_SIZE
 #define TCL_DSTRING_STATIC_SIZE 200
+#endif
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string:  either
 				 * staticSpace below or a malloced array. */
@@ -1726,6 +1788,7 @@ EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
 
 /*
  * end block for C++

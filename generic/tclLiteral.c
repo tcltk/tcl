@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3 2001/10/11 22:34:11 msofer Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -895,7 +895,7 @@ char *
 TclLiteralStats(tablePtr)
     LiteralTable *tablePtr;	/* Table for which to produce stats. */
 {
-#define NUM_COUNTERS 10
+#define NUM_COUNTERS TCL_STATS_COUNTERS
     int count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     register LiteralEntry *entryPtr;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2.2.2 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1732,11 +1732,11 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
      * if the loop body requires a large amount of stack space.
      */
     
-#define NUM_ARGS 9
+#define NUM_ARGS TCL_FOREACH_STATIC_ARGS
     Tcl_Obj *(argObjStorage[NUM_ARGS]);
     Tcl_Obj **argObjv = argObjStorage;
     
-#define STATIC_LIST_SIZE 4
+#define STATIC_LIST_SIZE TCL_FOREACH_STATIC_LIST_SZ
     int indexArray[STATIC_LIST_SIZE];	  /* Array of value list indices */
     int varcListArray[STATIC_LIST_SIZE];  /* # loop variables per list */
     Tcl_Obj **varvListArray[STATIC_LIST_SIZE]; /* Array of var name lists */
@@ -1972,7 +1972,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define PTR_VALUE 2
 #   define DOUBLE_VALUE 3
 #   define STRING_VALUE 4
-#   define MAX_FLOAT_SIZE 320
+#   define MAX_FLOAT_SIZE TCL_FMT_STATIC_FLOATBUFFER_SZ
     
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
     char staticBuf[MAX_FLOAT_SIZE + 1];

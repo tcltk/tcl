@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.3 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.3.16.1 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -303,7 +303,7 @@ char *
 Tcl_HashStats(tablePtr)
     Tcl_HashTable *tablePtr;		/* Table for which to produce stats. */
 {
-#define NUM_COUNTERS 10
+#define NUM_COUNTERS TCL_STATS_COUNTERS
     int count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     register Tcl_HashEntry *hPtr;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27.6.1 2001/11/28 17:58:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.2 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -26,13 +26,12 @@
  */
 
 static void		DeleteInterpProc _ANSI_ARGS_((Tcl_Interp *interp));
-static void		ProcessUnexpectedResult _ANSI_ARGS_((
-			    Tcl_Interp *interp, int returnCode));
-static void		RecordTracebackInfo _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int numSrcBytes));
+extern int TclEvalByteCodeFromObj _ANSI_ARGS_ ((Tcl_Interp *interp, Tcl_Obj *objPtr, int flags));
+extern int TclExprByteCodeFromObj _ANSI_ARGS_ ((Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr));
+
 
 extern TclStubs tclStubs;
+
 
 /*
  * The following structure defines the commands in the Tcl core.
@@ -1780,7 +1779,7 @@ TclInvokeStringCommand(clientData, interp, objc, objv)
      * storage if needed.
      */
 
-#define NUM_ARGS 20
+#define NUM_ARGS TCL_INVOKE_STATIC_ARGS
     char *(argStorage[NUM_ARGS]);
     char **argv = argStorage;
 
@@ -1855,7 +1854,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
      * dynamically-allocated storage if needed.
      */
 
-#define NUM_ARGS 20
+#define NUM_ARGS TCL_INVOKE_STATIC_ARGS
     Tcl_Obj *(argStorage[NUM_ARGS]);
     register Tcl_Obj **objv = argStorage;
 
@@ -2598,18 +2597,9 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 					 * TCL_EVAL_DIRECT. */
 {
     register Interp *iPtr = (Interp *) interp;
-    int evalFlags;			/* Interp->evalFlags value when the
-					 * procedure was called. */
-    register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
-    int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
-					 * at all were executed. */
-    int numSrcBytes;
     int result;
-    CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
-					 * in case TCL_EVAL_GLOBAL was set. */
-    Namespace *namespacePtr;
+    int numSrcBytes;
 
-    Tcl_IncrRefCount(objPtr);
 
     if ((iPtr->flags & USE_EVAL_DIRECT) || (flags & TCL_EVAL_DIRECT)) {
 	/*
@@ -2626,6 +2616,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	 * USE_EVAL_DIRECT is a special flag used for testing purpose only
 	 * (ensure we go into the TCL_EVAL_DIRECT path, avoiding opt)
 	 */
+	Tcl_IncrRefCount(objPtr);
 	if (!(iPtr->flags & USE_EVAL_DIRECT) &&
 		(objPtr->typePtr == &tclListType) && /* is a list... */
 		(objPtr->bytes == NULL) /* ...without a string rep */) {
@@ -2638,314 +2629,11 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    p = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    result = Tcl_EvalEx(interp, p, numSrcBytes, flags);
 	}
-	Tcl_DecrRefCount(objPtr);
+	TclDecrRefCount(objPtr);
 	return result;
     }
 
-    /*
-     * Prevent the object from being deleted as a side effect of evaling it.
-     */
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    if (flags & TCL_EVAL_GLOBAL) {
-	iPtr->varFramePtr = NULL;
-    }
-
-    /*
-     * Reset both the interpreter's string and object results and clear out
-     * any error information. This makes sure that we return an empty
-     * result if there are no commands in the command string.
-     */
-
-    Tcl_ResetResult(interp);
-
-    /*
-     * Check depth of nested calls to Tcl_Eval:  if this gets too large,
-     * it's probably because of an infinite loop somewhere.
-     */
-
-    iPtr->numLevels++;
-    if (iPtr->numLevels > iPtr->maxNestingDepth) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested calls to Tcl_EvalObj (infinite loop?)", -1); 
-	result = TCL_ERROR;
-	goto done;
-    }
-
-    /*
-     * On the Mac, we will never reach the default recursion limit before
-     * blowing the stack. So we need to do a check here.
-     */
-    
-    if (TclpCheckStackSpace() == 0) {
-	/*NOTREACHED*/
-    	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested calls to Tcl_EvalObj (infinite loop?)", -1);
-	result = TCL_ERROR;
-	goto done;
-    }
-
-    /*
-     * If the interpreter has been deleted, return an error.
-     */
-    
-    if (iPtr->flags & DELETED) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "attempt to call eval in deleted interpreter", -1);
-	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
-	        "attempt to call eval in deleted interpreter",
-		(char *) NULL);
-	result = TCL_ERROR;
-	goto done;
-    }
-
-    /*
-     * Get the ByteCode from the object. If it exists, make sure it hasn't
-     * been invalidated by, e.g., someone redefining a command with a
-     * compile procedure (this might make the compiled code wrong). If
-     * necessary, convert the object to be a ByteCode object and compile it.
-     * Also, if the code was compiled in/for a different interpreter,
-     * or for a different namespace, or for the same namespace but
-     * with different name resolution rules, we recompile it.
-     *
-     * Precompiled objects, however, are immutable and therefore
-     * they are not recompiled, even if the epoch has changed.
-     *
-     * To be pedantically correct, we should also check that the
-     * originating procPtr is the same as the current context procPtr
-     * (assuming one exists at all - none for global level).  This
-     * code is #def'ed out because [info body] was changed to never
-     * return a bytecode type object, which should obviate us from
-     * the extra checks here.
-     */
-
-    if (iPtr->varFramePtr != NULL) {
-        namespacePtr = iPtr->varFramePtr->nsPtr;
-    } else {
-        namespacePtr = iPtr->globalNsPtr;
-    }
-
-    if (objPtr->typePtr == &tclByteCodeType) {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	
-	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)
-#ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
-		|| (codePtr->procPtr != NULL && !(iPtr->varFramePtr &&
-			iPtr->varFramePtr->procPtr == codePtr->procPtr))
-#endif
-	        || (codePtr->nsPtr != namespacePtr)
-	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    panic("Tcl_EvalObj: compiled script jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
-                tclByteCodeType.freeIntRepProc(objPtr);
-            }
-	}
-    }
-    if (objPtr->typePtr != &tclByteCodeType) {
-	iPtr->errorLine = 1; 
-	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
-	if (result != TCL_OK) {
-	    goto done;
-	}
-    } else {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    (*tclByteCodeType.freeIntRepProc)(objPtr);
-	    iPtr->errorLine = 1; 
-	    result = (*tclByteCodeType.setFromAnyProc)(interp, objPtr);
-	    if (result != TCL_OK) {
-		iPtr->numLevels--;
-		return result;
-	    }
-	}
-    }
-    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-
-    /*
-     * Extract then reset the compilation flags in the interpreter.
-     * Resetting the flags must be done after any compilation.
-     */
-
-    evalFlags = iPtr->evalFlags;
-    iPtr->evalFlags = 0;
-
-    /*
-     * Execute the commands. If the code was compiled from an empty string,
-     * don't bother executing the code.
-     */
-
-    numSrcBytes = codePtr->numSrcBytes;
-    if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
-	/*
-	 * Increment the code's ref count while it is being executed. If
-	 * afterwards no references to it remain, free the code.
-	 */
-	
-	codePtr->refCount++;
-	result = TclExecuteByteCode(interp, codePtr);
-	codePtr->refCount--;
-	if (codePtr->refCount <= 0) {
-	    TclCleanupByteCode(codePtr);
-	}
-    } else {
-	result = TCL_OK;
-    }
-
-    /*
-     * If no commands at all were executed, check for asynchronous
-     * handlers so that they at least get one change to execute.
-     * This is needed to handle event loops written in Tcl with
-     * empty bodies.
-     */
-
-    if ((oldCount == iPtr->cmdCount) && Tcl_AsyncReady()) {
-	result = Tcl_AsyncInvoke(interp, result);
-    }
-
-    /*
-     * Update the interpreter's evaluation level count. If we are again at
-     * the top level, process any unusual return code returned by the
-     * evaluated code.
-     */
-
-    if (iPtr->numLevels == 1) {
-	if (result == TCL_RETURN) {
-	    result = TclUpdateReturnInfo(iPtr);
-	}
-	if ((result != TCL_OK) && (result != TCL_ERROR)
-		&& ((evalFlags & TCL_ALLOW_EXCEPTIONS) == 0)) {
-	    ProcessUnexpectedResult(interp, result);
-	    result = TCL_ERROR;
-	}
-    }
-
-    /*
-     * If an error occurred, record information about what was being
-     * executed when the error occurred.
-     */
-
-    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	RecordTracebackInfo(interp, objPtr, numSrcBytes);
-    }
-
-    /*
-     * Set the interpreter's termOffset member to the offset of the
-     * character just after the last one executed. We approximate the offset
-     * of the last character executed by using the number of characters
-     * compiled.
-     */
-
-    iPtr->termOffset = numSrcBytes;
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
-
-    done:
-    TclDecrRefCount(objPtr);
-    iPtr->varFramePtr = savedVarFramePtr; 
-    iPtr->numLevels--;
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ProcessUnexpectedResult --
- *
- *	Procedure called by Tcl_EvalObj to set the interpreter's result
- *	value to an appropriate error message when the code it evaluates
- *	returns an unexpected result code (not TCL_OK and not TCL_ERROR) to
- *	the topmost evaluation level.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The interpreter result is set to an error message appropriate to
- *	the result code.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ProcessUnexpectedResult(interp, returnCode)
-    Tcl_Interp *interp;		/* The interpreter in which the unexpected
-				 * result code was returned. */
-    int returnCode;		/* The unexpected result code. */
-{
-    Tcl_ResetResult(interp);
-    if (returnCode == TCL_BREAK) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "invoked \"break\" outside of a loop", -1);
-    } else if (returnCode == TCL_CONTINUE) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"invoked \"continue\" outside of a loop", -1);
-    } else {
-        char buf[30 + TCL_INTEGER_SPACE];
-
-	sprintf(buf, "command returned bad code: %d", returnCode);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * RecordTracebackInfo --
- *
- *	Procedure called by Tcl_EvalObj to record information about what was
- *	being executed when the error occurred.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Appends information about the script being evaluated to the
- *	interpreter's "errorInfo" variable.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-RecordTracebackInfo(interp, objPtr, numSrcBytes)
-    Tcl_Interp *interp;		/* The interpreter in which the error
-				 * occurred. */
-    Tcl_Obj *objPtr;		/* Points to object containing script whose
-				 * evaluation resulted in an error. */
-    int numSrcBytes;		/* Number of bytes compiled in script. */
-{
-    Interp *iPtr = (Interp *) interp;
-    char buf[200];
-    char *ellipsis, *bytes;
-    int length;
-
-    /*
-     * Decide how much of the command to print in the error message
-     * (up to a certain number of bytes).
-     */
-    
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
-    length = TclMin(numSrcBytes, length);
-    
-    ellipsis = "";
-    if (length > 150) {
-	length = 150;
-	ellipsis = " ...";
-    }
-    
-    if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-	sprintf(buf, "\n    while executing\n\"%.*s%s\"",
-		length, bytes, ellipsis);
-    } else {
-	sprintf(buf, "\n    invoked from within\n\"%.*s%s\"",
-		length, bytes, ellipsis);
-    }
-    Tcl_AddObjErrorInfo(interp, buf, -1);
+    return TclEvalByteCodeFromObj(interp, objPtr, flags);
 }
 
 /*
@@ -3260,7 +2948,7 @@ TclInvoke(interp, argc, argv, flags)
      * dynamically-allocated storage if needed.
      */
 
-#define NUM_ARGS 20
+#define NUM_ARGS TCL_INVOKE_STATIC_ARGS
     Tcl_Obj *(objStorage[NUM_ARGS]);
     register Tcl_Obj **objv = objStorage;
 
@@ -3524,6 +3212,7 @@ TclObjInvoke(interp, objc, objv, flags)
 
     Tcl_ResetResult(interp);
     iPtr->cmdCount++;
+
     result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
 
     /*
@@ -3684,18 +3373,8 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
     Tcl_Obj **resultPtrPtr;	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
 {
-    Interp *iPtr = (Interp *) interp;
-    CompileEnv compEnv;		/* Compilation environment structure
-				 * allocated in frame. */
-    LiteralTable *localTablePtr = &(compEnv.localLitTable);
-    register ByteCode *codePtr = NULL;
-    				/* Tcl Internal type of bytecode.
-				 * Initialized to avoid compiler warning. */
-    AuxData *auxDataPtr;
-    LiteralEntry *entryPtr;
-    Tcl_Obj *saveObjPtr;
     char *string;
-    int length, i, result;
+    int length;
 
     /*
      * First handle some common expressions specially.
@@ -3724,143 +3403,9 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	}
     }
 
-    /*
-     * Get the ByteCode from the object. If it exists, make sure it hasn't
-     * been invalidated by, e.g., someone redefining a command with a
-     * compile procedure (this might make the compiled code wrong). If
-     * necessary, convert the object to be a ByteCode object and compile it.
-     * Also, if the code was compiled in/for a different interpreter, we
-     * recompile it.
-     *
-     * Precompiled expressions, however, are immutable and therefore
-     * they are not recompiled, even if the epoch has changed.
-     *
-     */
-
-    if (objPtr->typePtr == &tclByteCodeType) {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    panic("Tcl_ExprObj: compiled expression jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
-                (*tclByteCodeType.freeIntRepProc)(objPtr);
-                objPtr->typePtr = (Tcl_ObjType *) NULL;
-            }
-	}
-    }
-    if (objPtr->typePtr != &tclByteCodeType) {
-	TclInitCompileEnv(interp, &compEnv, string, length);
-	result = TclCompileExpr(interp, string, length, &compEnv);
-
-	/*
-	 * Free the compilation environment's literal table bucket array if
-	 * it was dynamically allocated. 
-	 */
-
-	if (localTablePtr->buckets != localTablePtr->staticBuckets) {
-	    ckfree((char *) localTablePtr->buckets);
-	}
-    
-	if (result != TCL_OK) {
-	    /*
-	     * Compilation errors. Free storage allocated for compilation.
-	     */
-
-#ifdef TCL_COMPILE_DEBUG
-	    TclVerifyLocalLiteralTable(&compEnv);
-#endif /*TCL_COMPILE_DEBUG*/
-	    entryPtr = compEnv.literalArrayPtr;
-	    for (i = 0;  i < compEnv.literalArrayNext;  i++) {
-		TclReleaseLiteral(interp, entryPtr->objPtr);
-		entryPtr++;
-	    }
-#ifdef TCL_COMPILE_DEBUG
-	    TclVerifyGlobalLiteralTable(iPtr);
-#endif /*TCL_COMPILE_DEBUG*/
-    
-	    auxDataPtr = compEnv.auxDataArrayPtr;
-	    for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-		if (auxDataPtr->type->freeProc != NULL) {
-		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
-		}
-		auxDataPtr++;
-	    }
-	    TclFreeCompileEnv(&compEnv);
-	    return result;
-	}
-
-	/*
-	 * Successful compilation. If the expression yielded no
-	 * instructions, push an zero object as the expression's result.
-	 */
-	    
-	if (compEnv.codeNext == compEnv.codeStart) {
-	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, /*onHeap*/ 0),
-	            &compEnv);
-	}
-	    
-	/*
-	 * Add a "done" instruction as the last instruction and change the
-	 * object into a ByteCode object. Ownership of the literal objects
-	 * and aux data items is given to the ByteCode object.
-	 */
-
-	compEnv.numSrcBytes = iPtr->termOffset;
-	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	TclFreeCompileEnv(&compEnv);
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile == 2) {
-	    TclPrintByteCodeObj(interp, objPtr);
-	}
-#endif /* TCL_COMPILE_DEBUG */
-    }
-
-    /*
-     * Execute the expression after first saving the interpreter's result.
-     */
-    
-    saveObjPtr = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(saveObjPtr);
-    Tcl_ResetResult(interp);
-
-    /*
-     * Increment the code's ref count while it is being executed. If
-     * afterwards no references to it remain, free the code.
-     */
-    
-    codePtr->refCount++;
-    result = TclExecuteByteCode(interp, codePtr);
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-	objPtr->typePtr = NULL;
-	objPtr->internalRep.otherValuePtr = NULL;
-    }
-    
-    /*
-     * If the expression evaluated successfully, store a pointer to its
-     * value object in resultPtrPtr then restore the old interpreter result.
-     * We increment the object's ref count to reflect the reference that we
-     * are returning to the caller. We also decrement the ref count of the
-     * interpreter's result object after calling Tcl_SetResult since we
-     * next store into that field directly.
-     */
-    
-    if (result == TCL_OK) {
-	*resultPtrPtr = iPtr->objResultPtr;
-	Tcl_IncrRefCount(iPtr->objResultPtr);
-	
-	Tcl_SetObjResult(interp, saveObjPtr);
-    }
-    Tcl_DecrRefCount(saveObjPtr);
-    return result;
+    return TclExprByteCodeFromObj(interp, objPtr, resultPtrPtr);
 }
+
 
 /*
  *----------------------------------------------------------------------

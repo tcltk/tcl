@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.13.2.1 2001/04/03 22:54:38 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.13.2.1.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -540,7 +540,9 @@ ParseTokens(src, mask, parsePtr)
     int type, originalTokens, varToken;
     char utfBytes[TCL_UTF_MAX];
     Tcl_Token *tokenPtr;
-    Tcl_Parse nested;
+    TYPE (Tcl_Parse) nested;
+
+    NEWSTRUCT (Tcl_Parse,nested);
 
     /*
      * Each iteration through the following loop adds one token of
@@ -587,6 +589,7 @@ ParseTokens(src, mask, parsePtr)
 	    varToken = parsePtr->numTokens;
 	    if (Tcl_ParseVarName(parsePtr->interp, src, parsePtr->end - src,
 		    parsePtr, 1) != TCL_OK) {
+	      RELSTRUCT(nested);
 		return TCL_ERROR;
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
@@ -600,17 +603,18 @@ ParseTokens(src, mask, parsePtr)
 	    src++;
 	    while (1) {
 		if (Tcl_ParseCommand(parsePtr->interp, src,
-			parsePtr->end - src, 1, &nested) != TCL_OK) {
-		    parsePtr->errorType = nested.errorType;
-		    parsePtr->term = nested.term;
-		    parsePtr->incomplete = nested.incomplete;
+			parsePtr->end - src, 1, REF(nested)) != TCL_OK) {
+		    parsePtr->errorType = ITEM(nested,errorType);
+		    parsePtr->term = ITEM(nested,term);
+		    parsePtr->incomplete = ITEM(nested,incomplete);
+		    RELSTRUCT(nested);
 		    return TCL_ERROR;
 		}
-		src = nested.commandStart + nested.commandSize;
-		if (nested.tokenPtr != nested.staticTokens) {
-		    ckfree((char *) nested.tokenPtr);
+		src = ITEM (nested,commandStart) + ITEM (nested,commandSize);
+		if (ITEM (nested,tokenPtr) != ITEM (nested,staticTokens)) {
+		    ckfree((char *) ITEM (nested,tokenPtr));
 		}
-		if ((*nested.term == ']') && !nested.incomplete) {
+		if ((*ITEM (nested,term) == ']') && !ITEM (nested,incomplete)) {
 		    break;
 		}
 		if (src == parsePtr->end) {
@@ -621,6 +625,7 @@ ParseTokens(src, mask, parsePtr)
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
+		    RELSTRUCT(nested);
 		    return TCL_ERROR;
 		}
 	    }
@@ -682,6 +687,7 @@ ParseTokens(src, mask, parsePtr)
 	parsePtr->numTokens++;
     }
     parsePtr->term = src;
+    RELSTRUCT(nested);
     return TCL_OK;
 }
 
@@ -909,10 +915,10 @@ EvalObjv(interp, objc, objv, command, length, flags)
 		commandCopy[length] = 0;
 	    }
 	}
-	(*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels,
+		(*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels,
 			  commandCopy, cmdPtr->proc, cmdPtr->clientData,
 			  objc, argv);
-    }
+	    }
     if (argv != NULL) {
 	ckfree((char *) argv);
     }
@@ -929,7 +935,9 @@ EvalObjv(interp, objc, objv, command, length, flags)
     if (flags & TCL_EVAL_GLOBAL) {
 	iPtr->varFramePtr = NULL;
     }
+
     code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+
     iPtr->varFramePtr = savedVarFramePtr;
     if (Tcl_AsyncReady()) {
 	code = Tcl_AsyncInvoke(interp, code);
@@ -1152,7 +1160,7 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 #ifdef TCL_MEM_DEBUG
 #   define  MAX_VAR_CHARS 5
 #else
-#   define  MAX_VAR_CHARS 30
+#   define  MAX_VAR_CHARS TCL_EVAL_STATIC_VARCHARS
 #endif
     char nameBuffer[MAX_VAR_CHARS+1];
     char *varName, *index;
@@ -1317,21 +1325,21 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 {
     Interp *iPtr = (Interp *) interp;
     char *p, *next;
-    Tcl_Parse parse;
-#define NUM_STATIC_OBJS 20
+    TYPE (Tcl_Parse) parse;
+#define NUM_STATIC_OBJS TCL_INVOKE_STATIC_ARGS
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
     Tcl_Token *tokenPtr;
     int i, code, commandLength, bytesLeft, nested;
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
 					 * in case TCL_EVAL_GLOBAL was set. */
-
     /*
      * The variables below keep track of how much state has been
      * allocated while evaluating the script, so that it can be freed
      * properly if an error occurs.
      */
-
     int gotParse = 0, objectsUsed = 0;
+
+    NEWSTRUCT(Tcl_Parse,parse);
 
     if (numBytes < 0) {
 	numBytes = strlen(script);
@@ -1358,25 +1366,25 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     }
     iPtr->evalFlags = 0;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, nested, &parse)
+	if (Tcl_ParseCommand(interp, p, bytesLeft, nested, REF(parse))
 	        != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
 	gotParse = 1; 
-	if (parse.numWords > 0) {
+	if (ITEM (parse,numWords) > 0) {
 	    /*
 	     * Generate an array of objects for the words of the command.
 	     */
     
-	    if (parse.numWords <= NUM_STATIC_OBJS) {
+	    if (ITEM (parse,numWords) <= NUM_STATIC_OBJS) {
 		objv = staticObjArray;
 	    } else {
 		objv = (Tcl_Obj **) ckalloc((unsigned)
-		    (parse.numWords * sizeof (Tcl_Obj *)));
+		    (ITEM (parse,numWords) * sizeof (Tcl_Obj *)));
 	    }
-	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
-		    objectsUsed < parse.numWords;
+	    for (objectsUsed = 0, tokenPtr = ITEM (parse,tokenPtr);
+		    objectsUsed < ITEM (parse,numWords);
 		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		objv[objectsUsed] = Tcl_EvalTokens(interp, tokenPtr+1,
 			tokenPtr->numComponents);
@@ -1408,10 +1416,10 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	 * Advance to the next command in the script.
 	 */
 
-	next = parse.commandStart + parse.commandSize;
+	next = ITEM (parse,commandStart) + ITEM (parse,commandSize);
 	bytesLeft -= next - p;
 	p = next;
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(REF(parse));
 	gotParse = 0;
 	if ((nested != 0) && (p > script) && (p[-1] == ']')) {
 	    /*
@@ -1422,9 +1430,11 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 
 	    iPtr->termOffset = (p - 1) - script;
 	    iPtr->varFramePtr = savedVarFramePtr;
-	    return TCL_OK;
+	    RELSTRUCT(parse);
+		    return TCL_OK;
 	}
     } while (bytesLeft > 0);
+    RELSTRUCT(parse);
     iPtr->termOffset = p - script;
     iPtr->varFramePtr = savedVarFramePtr;
     return TCL_OK;
@@ -1438,8 +1448,8 @@ Tcl_EvalEx(interp, script, numBytes, flags)
      */
 
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) { 
-	commandLength = parse.commandSize;
-	if ((parse.commandStart + commandLength) != (script + numBytes)) {
+	commandLength = ITEM (parse,commandSize);
+	if ((ITEM (parse,commandStart) + commandLength) != (script + numBytes)) {
 	    /*
 	     * The command where the error occurred didn't end at the end
 	     * of the script (i.e. it ended at a terminator character such
@@ -1449,17 +1459,17 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    
 	    commandLength -= 1;
 	}
-	Tcl_LogCommandInfo(interp, script, parse.commandStart, commandLength);
+	Tcl_LogCommandInfo(interp, script, ITEM (parse,commandStart), commandLength);
     }
     
     for (i = 0; i < objectsUsed; i++) {
 	Tcl_DecrRefCount(objv[i]);
     }
     if (gotParse) {
-	next = parse.commandStart + parse.commandSize;
+	next = ITEM (parse,commandStart) + ITEM (parse,commandSize);
 	bytesLeft -= next - p;
 	p = next;
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(REF(parse));
 
 	if ((nested != 0) && (p > script)) {
 	    char *nextCmd = NULL;	/* pointer to start of next command */
@@ -1473,7 +1483,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	     */
 
 	    while ((p[-1] != ']') && bytesLeft) {
-		if (Tcl_ParseCommand(NULL, p, bytesLeft, nested, &parse)
+		if (Tcl_ParseCommand(NULL, p, bytesLeft, nested, REF(parse))
 			!= TCL_OK) {
 		    /*
 		     * We were looking for the ']' to close the script.
@@ -1484,22 +1494,22 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 		     * one causing the return.  -- hobbs
 		     */
 
-		    p = (nextCmd == NULL) ? parse.commandStart : nextCmd;
+		    p = (nextCmd == NULL) ? ITEM (parse,commandStart) : nextCmd;
 		    break;
 		}
 
 		if (nextCmd == NULL) {
-		    nextCmd = parse.commandStart;
+		    nextCmd = ITEM (parse,commandStart);
 		}
 
 		/*
 		 * Advance to the next command in the script.
 		 */
 
-		next = parse.commandStart + parse.commandSize;
+		next = ITEM (parse,commandStart) + ITEM (parse,commandSize);
 		bytesLeft -= next - p;
 		p = next;
-		Tcl_FreeParse(&parse);
+		Tcl_FreeParse(REF(parse));
 	    }
 	    iPtr->termOffset = (p - 1) - script;
 	} else {
@@ -1509,6 +1519,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     if (objv != staticObjArray) {
 	ckfree((char *) objv);
     }
+    RELSTRUCT(parse);
     iPtr->varFramePtr = savedVarFramePtr;
     return code;
 }
@@ -1581,7 +1592,9 @@ Tcl_EvalObj(interp, objPtr)
     Tcl_Interp * interp;
     Tcl_Obj * objPtr;
 {
-    return Tcl_EvalObjEx(interp, objPtr, 0);
+  register int res;
+    res = Tcl_EvalObjEx(interp, objPtr, 0);
+    return res;
 }
 
 #undef Tcl_GlobalEvalObj
@@ -1590,7 +1603,9 @@ Tcl_GlobalEvalObj(interp, objPtr)
     Tcl_Interp * interp;
     Tcl_Obj * objPtr;
 {
-    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+  register int res;
+    res = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+    return res;
 }
 
 /*
@@ -1839,26 +1854,31 @@ Tcl_ParseVar(interp, string, termPtr)
 					 * one in the variable specifier. */
 
 {
-    Tcl_Parse parse;
+    TYPE (Tcl_Parse) parse;
     register Tcl_Obj *objPtr;
 
-    if (Tcl_ParseVarName(interp, string, -1, &parse, 0) != TCL_OK) {
+    NEWSTRUCT(Tcl_Parse,parse);
+
+    if (Tcl_ParseVarName(interp, string, -1, REF(parse), 0) != TCL_OK) {
+	RELSTRUCT(parse);
 	return NULL;
     }
 
     if (termPtr != NULL) {
-	*termPtr = string + parse.tokenPtr->size;
+	*termPtr = string + ITEM (parse,tokenPtr)->size;
     }
-    if (parse.numTokens == 1) {
+    if (ITEM (parse,numTokens) == 1) {
 	/*
 	 * There isn't a variable name after all: the $ is just a $.
 	 */
 
+	RELSTRUCT(parse);
 	return "$";
     }
 
-    objPtr = Tcl_EvalTokens(interp, parse.tokenPtr, parse.numTokens);
+    objPtr = Tcl_EvalTokens(interp, ITEM (parse,tokenPtr), ITEM (parse,numTokens));
     if (objPtr == NULL) {
+	RELSTRUCT(parse);
 	return NULL;
     }
 
@@ -1873,6 +1893,7 @@ Tcl_ParseVar(interp, string, termPtr)
     }
 #endif /*TCL_COMPILE_DEBUG*/    
     TclDecrRefCount(objPtr);
+    RELSTRUCT(parse);
     return TclGetString(objPtr);
 }
 
@@ -2197,26 +2218,29 @@ CommandComplete(script, length)
     char *script;			/* Script to check. */
     int length;				/* Number of bytes in script. */
 {
-    Tcl_Parse parse;
+    TYPE (Tcl_Parse) parse;
     char *p, *end;
     int result;
 
+    NEWSTRUCT(Tcl_Parse,parse);
+
     p = script;
     end = p + length;
-    while (Tcl_ParseCommand((Tcl_Interp *) NULL, p, end - p, 0, &parse)
+    while (Tcl_ParseCommand((Tcl_Interp *) NULL, p, end - p, 0, REF(parse))
 	    == TCL_OK) {
-	p = parse.commandStart + parse.commandSize;
+	p = ITEM (parse,commandStart) + ITEM (parse,commandSize);
 	if (*p == 0) {
 	    break;
 	}
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(REF(parse));
     }
-    if (parse.incomplete) {
+    if (ITEM (parse,incomplete)) {
 	result = 0;
     } else {
 	result = 1;
     }
-    Tcl_FreeParse(&parse);
+    Tcl_FreeParse(REF(parse));
+    RELSTRUCT(parse);
     return result;
 }
 
@@ -2244,7 +2268,9 @@ int
 Tcl_CommandComplete(script)
     char *script;			/* Script to check. */
 {
-    return CommandComplete(script, (int) strlen(script));
+  register int res;
+    res = CommandComplete(script, (int) strlen(script));
+    return res;
 }
 
 /*

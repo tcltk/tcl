@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.6 1999/12/04 06:15:42 hobbs Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.6.6.1 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1122,9 +1122,11 @@ ParsePrimaryExpr(infoPtr)
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     Tcl_Interp *interp = parsePtr->interp;
     Tcl_Token *tokenPtr, *exprTokenPtr;
-    Tcl_Parse nested;
+    TYPE (Tcl_Parse) nested;
     char *dollarPtr, *stringStart, *termPtr, *src;
     int lexeme, exprIndex, firstIndex, numToMove, code;
+
+    NEWSTRUCT(Tcl_Parse,nested);
 
     /*
      * We simply recurse on parenthesized subexpressions.
@@ -1135,10 +1137,12 @@ ParsePrimaryExpr(infoPtr)
     if (lexeme == OPEN_PAREN) {
 	code = GetLexeme(infoPtr); /* skip over the '(' */
 	if (code != TCL_OK) {
+	  RELSTRUCT(nested);
 	    return code;
 	}
 	code = ParseCondExpr(infoPtr);
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
 	if (infoPtr->lexeme != CLOSE_PAREN) {
@@ -1146,8 +1150,10 @@ ParsePrimaryExpr(infoPtr)
 	}
 	code = GetLexeme(infoPtr); /* skip over the ')' */
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
+	RELSTRUCT(nested);
 	return TCL_OK;
     }
 
@@ -1202,6 +1208,7 @@ ParsePrimaryExpr(infoPtr)
 	code = Tcl_ParseVarName(interp, dollarPtr,
 	        (infoPtr->lastChar - dollarPtr), parsePtr, 1);
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
 	infoPtr->next = dollarPtr + parsePtr->tokenPtr[firstIndex].size;
@@ -1221,6 +1228,7 @@ ParsePrimaryExpr(infoPtr)
 	code = Tcl_ParseQuotedString(interp, infoPtr->start,
 	        (infoPtr->lastChar - stringStart), parsePtr, 1, &termPtr);
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
 	infoPtr->next = termPtr;
@@ -1277,17 +1285,18 @@ ParsePrimaryExpr(infoPtr)
 	src = infoPtr->next;
 	while (1) {
 	    if (Tcl_ParseCommand(interp, src, (parsePtr->end - src), 1,
-		    &nested) != TCL_OK) {
-		parsePtr->term = nested.term;
-		parsePtr->errorType = nested.errorType;
-		parsePtr->incomplete = nested.incomplete;
+		    REF (nested)) != TCL_OK) {
+		parsePtr->term = ITEM (nested,term);
+		parsePtr->errorType = ITEM (nested,errorType);
+		parsePtr->incomplete = ITEM (nested,incomplete);
+	RELSTRUCT(nested);
 		return TCL_ERROR;
 	    }
-	    src = (nested.commandStart + nested.commandSize);
-	    if (nested.tokenPtr != nested.staticTokens) {
-		ckfree((char *) nested.tokenPtr);
+	    src = (ITEM (nested,commandStart) + ITEM (nested,commandSize));
+	    if (ITEM (nested,tokenPtr) != ITEM (nested,staticTokens)) {
+		ckfree((char *) ITEM (nested,tokenPtr));
 	    }
-	    if ((src[-1] == ']') && !nested.incomplete) {
+	    if ((src[-1] == ']') && !ITEM (nested,incomplete)) {
 		break;
 	    }
 	    if (src == parsePtr->end) {
@@ -1298,6 +1307,7 @@ ParsePrimaryExpr(infoPtr)
 		parsePtr->term = tokenPtr->start;
 		parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		parsePtr->incomplete = 1;
+	RELSTRUCT(nested);
 		return TCL_ERROR;
 	    }
 	}
@@ -1318,6 +1328,7 @@ ParsePrimaryExpr(infoPtr)
 	        (infoPtr->lastChar - infoPtr->start), parsePtr, 1,
 		&termPtr);
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
 	infoPtr->next = termPtr;
@@ -1369,6 +1380,7 @@ ParsePrimaryExpr(infoPtr)
 	
 	code = GetLexeme(infoPtr); /* skip over function name */
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
 	if (infoPtr->lexeme != OPEN_PAREN) {
@@ -1376,18 +1388,21 @@ ParsePrimaryExpr(infoPtr)
 	}
 	code = GetLexeme(infoPtr); /* skip over '(' */
 	if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	    return code;
 	}
 
 	while (infoPtr->lexeme != CLOSE_PAREN) {
 	    code = ParseCondExpr(infoPtr);
 	    if (code != TCL_OK) {
+	RELSTRUCT(nested);
 		return code;
 	    }
 	    
 	    if (infoPtr->lexeme == COMMA) {
 		code = GetLexeme(infoPtr); /* skip over , */
 		if (code != TCL_OK) {
+	RELSTRUCT(nested);
 		    return code;
 		}
 	    } else if (infoPtr->lexeme != CLOSE_PAREN) {
@@ -1410,13 +1425,16 @@ ParsePrimaryExpr(infoPtr)
     
     code = GetLexeme(infoPtr);
     if (code != TCL_OK) {
+	RELSTRUCT(nested);
 	return code;
     }
     parsePtr->term = infoPtr->next;
+	RELSTRUCT(nested);
     return TCL_OK;
 
     syntaxError:
     LogSyntaxError(infoPtr);
+	RELSTRUCT(nested);
     return TCL_ERROR;
 }
 

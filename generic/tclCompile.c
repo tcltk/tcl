@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1 2001/10/15 20:27:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.1 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -289,14 +289,17 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     ClientData clientData;	/* Hook procedure private data. */
 {
     Interp *iPtr = (Interp *) interp;
-    CompileEnv compEnv;		/* Compilation environment structure
+    TYPE (CompileEnv) compEnv;	/* Compilation environment structure
 				 * allocated in frame. */
-    LiteralTable *localTablePtr = &(compEnv.localLitTable);
+    LiteralTable *localTablePtr;
     register AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
     int length, nested, result;
     char *string;
+
+    NEWSTRUCT(CompileEnv,compEnv);
+    localTablePtr = &(ITEM(compEnv,localLitTable));
 
     if (!traceInitialized) {
         if (Tcl_LinkVar(interp, "tcl_traceCompile",
@@ -312,23 +315,23 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
 	nested = 0;
     }
     string = Tcl_GetStringFromObj(objPtr, &length);
-    TclInitCompileEnv(interp, &compEnv, string, length);
-    result = TclCompileScript(interp, string, length, nested, &compEnv);
+    TclInitCompileEnv(interp, REF(compEnv), string, length);
+    result = TclCompileScript(interp, string, length, nested, REF(compEnv));
 
     if (result == TCL_OK) {
 	/*
 	 * Successful compilation. Add a "done" instruction at the end.
 	 */
 
-	compEnv.numSrcBytes = iPtr->termOffset;
-	TclEmitOpcode(INST_DONE, &compEnv);
+	ITEM(compEnv,numSrcBytes) = iPtr->termOffset;
+	TclEmitOpcode(INST_DONE, REF(compEnv));
 
 	/*
 	 * Invoke the compilation hook procedure if one exists.
 	 */
 
 	if (hookProc) {
-	    result = (*hookProc)(interp, &compEnv, clientData);
+	    result = (*hookProc)(interp, REF(compEnv), clientData);
 	}
 
 	/*
@@ -337,10 +340,10 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
 	 */
     
 #ifdef TCL_COMPILE_DEBUG
-	TclVerifyLocalLiteralTable(&compEnv);
+	TclVerifyLocalLiteralTable(REF(compEnv));
 #endif /*TCL_COMPILE_DEBUG*/
 
-	TclInitByteCodeObj(objPtr, &compEnv);
+	TclInitByteCodeObj(objPtr, REF(compEnv));
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile == 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -353,8 +356,8 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
 	 * Compilation errors. 
 	 */
 
-	entryPtr = compEnv.literalArrayPtr;
-	for (i = 0;  i < compEnv.literalArrayNext;  i++) {
+	entryPtr = ITEM(compEnv,literalArrayPtr);
+	for (i = 0;  i < ITEM(compEnv,literalArrayNext);  i++) {
 	    TclReleaseLiteral(interp, entryPtr->objPtr);
 	    entryPtr++;
 	}
@@ -362,8 +365,8 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
 	TclVerifyGlobalLiteralTable(iPtr);
 #endif /*TCL_COMPILE_DEBUG*/
 
-	auxDataPtr = compEnv.auxDataArrayPtr;
-	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
+	auxDataPtr = ITEM(compEnv,auxDataArrayPtr);
+	for (i = 0;  i < ITEM(compEnv,auxDataArrayNext);  i++) {
 	    if (auxDataPtr->type->freeProc != NULL) {
 		auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
@@ -379,7 +382,8 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     if (localTablePtr->buckets != localTablePtr->staticBuckets) {
 	ckfree((char *) localTablePtr->buckets);
     }
-    TclFreeCompileEnv(&compEnv);
+    TclFreeCompileEnv(REF(compEnv));
+    RELSTRUCT(compEnv);
     return result;
 }
 
@@ -509,8 +513,8 @@ TclCleanupByteCode(codePtr)
     register Tcl_Obj **objArrayPtr;
     register AuxData *auxDataPtr;
     int i;
-#ifdef TCL_COMPILE_STATS
 
+#ifdef TCL_COMPILE_STATS
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
 	Tcl_Time destroyTime;
@@ -751,7 +755,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Parse parse;
+    TYPE (Tcl_Parse) parse;
     int maxDepth = 0;		/* Maximum number of stack elements needed
 				 * to execute all cmds. */
     int lastTopLevelCmdIndex = -1;
@@ -770,6 +774,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     char prev;
     Tcl_DString ds;
 
+    NEWSTRUCT (Tcl_Parse,parse);
     Tcl_DStringInit(&ds);
 
     if (numBytes < 0) {
@@ -787,12 +792,13 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     bytesLeft = numBytes;
     gotParse = 0;
     while (bytesLeft > 0) {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, nested, &parse) != TCL_OK) {
+	if (Tcl_ParseCommand(interp, p, bytesLeft, nested,
+			     REF(parse)) != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
 	gotParse = 1;
-	if (parse.numWords > 0) {
+	if (ITEM (parse,numWords) > 0) {
 	    /*
 	     * If not the first command, pop the previous command's result
 	     * and, if we're compiling a top level command, update the last
@@ -812,12 +818,12 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	     * Determine the actual length of the command.
 	     */
 
-	    commandLength = parse.commandSize;
+	    commandLength = ITEM (parse,commandSize);
 	    prev = '\0';
 	    if (commandLength > 0) {
-		prev = parse.commandStart[commandLength-1];
+		prev = ITEM (parse, commandStart)[commandLength-1];
 	    }
-	    if (((parse.commandStart+commandLength) != (script+numBytes))
+	    if (((ITEM (parse,commandStart)+commandLength) != (script+numBytes))
 	            || ((prev=='\n') || (nested && (prev==']')))) {
 		/*
 		 * The command didn't end at the end of the script (i.e.  it
@@ -836,7 +842,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	    if ((tclTraceCompile >= 1)
 		    && !nested && (envPtr->procPtr == NULL)) {
 		fprintf(stdout, "  Compiling: ");
-		TclPrintSource(stdout, parse.commandStart,
+		TclPrintSource(stdout, ITEM (parse,commandStart),
 			TclMin(commandLength, 55));
 		fprintf(stdout, "\n");
 	    }
@@ -853,10 +859,10 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	    }
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
-	            (parse.commandStart - envPtr->source), startCodeOffset);
+	            (ITEM (parse,commandStart) - envPtr->source), startCodeOffset);
 	    
-	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
-		    wordIdx < parse.numWords;
+	    for (wordIdx = 0, tokenPtr = ITEM (parse,tokenPtr);
+		    wordIdx < ITEM (parse,numWords);
 		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		    /*
@@ -890,7 +896,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			if ((cmdPtr != NULL)
 			        && (cmdPtr->compileProc != NULL)
 			        && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-			    code = (*(cmdPtr->compileProc))(interp, &parse,
+			    code = (*(cmdPtr->compileProc))(interp, REF(parse),
 			            envPtr);
 			    if (code == TCL_OK) {
 				maxDepth = TclMax(envPtr->maxStackDepth,
@@ -968,16 +974,16 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	    EnterCmdExtentData(envPtr, currCmdIndex, commandLength,
 		    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
 	    isFirstCmd = 0;
-	} /* end if parse.numWords > 0 */
+	} /* end if ITEM (parse,numWords) > 0 */
 
 	/*
 	 * Advance to the next command in the script.
 	 */
 	
-	next = parse.commandStart + parse.commandSize;
+	next = ITEM (parse,commandStart) + ITEM (parse,commandSize);
 	bytesLeft -= (next - p);
 	p = next;
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(REF(parse));
 	gotParse = 0;
 	if (nested && (p[-1] == ']')) {
 	    /*
@@ -988,7 +994,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	    
 	    break;
 	}
-    }
+    } /* bytesLeft > 0 */
 
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
@@ -1007,6 +1013,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	iPtr->termOffset = (p - script);
     }
     envPtr->maxStackDepth = maxDepth;
+    RELSTRUCT (parse);
     Tcl_DStringFree(&ds);
     return TCL_OK;
 	
@@ -1018,12 +1025,12 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
      * to the command.
      */
 
-    commandLength = parse.commandSize;
+    commandLength = ITEM (parse,commandSize);
     prev = '\0';
     if (commandLength > 0) {
-	prev = parse.commandStart[commandLength-1];
+	prev = ITEM (parse,commandStart)[commandLength-1];
     }
-    if (((parse.commandStart+commandLength) != (script+numBytes))
+    if (((ITEM (parse,commandStart)+commandLength) != (script+numBytes))
 	    || ((prev == '\n') || (nested && (prev == ']')))) {
 	/*
 	 * The command where the error occurred didn't end at the end
@@ -1034,10 +1041,11 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 
 	commandLength -= 1;
     }
-    LogCompilationInfo(interp, script, parse.commandStart, commandLength);
+    LogCompilationInfo(interp, script, ITEM (parse,commandStart), commandLength);
     if (gotParse) {
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(REF(parse));
     }
+    RELSTRUCT (parse);
     iPtr->termOffset = (p - script);
     envPtr->maxStackDepth = maxDepth;
     Tcl_DStringFree(&ds);

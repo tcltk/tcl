@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.6.2.2 2001/09/20 01:13:16 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.6.2.2.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -263,7 +263,8 @@ ValidateFormat(interp, format, numVars, totalSubs)
     int *totalSubs;		/* The number of variables that will be
 				 * required. */
 {
-#define STATIC_LIST_SIZE 16
+#define STATIC_LIST_SIZE TCL_FMT_STATIC_VALIDATE_LIST
+#define STATIC_LIST_INCR 16
     int gotXpg, gotSequential, value, i, flags;
     char *end;
     Tcl_UniChar ch;
@@ -441,7 +442,7 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		if (xpgSize) {
 		    nspace = xpgSize;
 		} else {
-		    nspace += STATIC_LIST_SIZE;
+		    nspace += STATIC_LIST_INCR;
 		}
 		if (nassign == staticAssign) {
 		    nassign = (void *)ckalloc(nspace * sizeof(int));

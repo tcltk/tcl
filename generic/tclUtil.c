@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.17.2.1.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.17.2.1.2.2 2001/12/03 18:23:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -824,7 +824,7 @@ Tcl_Merge(argc, argv)
     int argc;			/* How many strings to merge. */
     char **argv;		/* Array of string values. */
 {
-#   define LOCAL_SIZE 20
+#   define LOCAL_SIZE TCL_MERGE_STATIC_LIST_SZ
     int localFlags[LOCAL_SIZE], *flagPtr;
     int numChars;
     char *result;

@@ -1,3 +1,5 @@
+#define TCL_NO_RECURSE 1
+
 /* 
  * tclExecute.c --
  *
@@ -10,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2 2001/08/07 15:41:20 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.1 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -263,6 +265,13 @@ static void		InitByteCodeExecution _ANSI_ARGS_((
 #ifdef TCL_COMPILE_DEBUG
 static void		PrintByteCodeInfo _ANSI_ARGS_((ByteCode *codePtr));
 #endif
+static void		ProcessUnexpectedResult _ANSI_ARGS_((
+			    Tcl_Interp *interp, int returnCode));
+static  int	ProcessProcResultCode _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *procName, int nameLen, int returnCode));
+static void		RecordTracebackInfo _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    int numSrcBytes));
 static int		SetCmdNameFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 #ifdef TCL_COMPILE_DEBUG
@@ -274,6 +283,19 @@ static void		ValidatePcAndStackTop _ANSI_ARGS_((
 #endif
 static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
+
+static int TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
+static int TclCompileByteCodesForEval _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr));
+static int TclInterpPostEval _ANSI_ARGS_((Tcl_Interp *interp,
+        int evalFlags, int result, Tcl_Obj *objPtr, int numSrcBytes));
+static int TclCompileByteCodesForExpr _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr));
+static int PrepareProcFrameForExecution _ANSI_ARGS_((Tcl_Interp *interp, 
+        CallFrame *framePtr, int objc, Tcl_Obj *CONST objv[0], 
+        Var *compiledLocals));
+
+int TclEvalByteCodeFromObj _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr, int flags));
+int TclExprByteCodeFromObj _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj **resultPtrPtr));
+
 
 /*
  * Table describing the built-in math functions. Entries in this table are
@@ -497,7 +519,7 @@ GrowEvaluationStack(eePtr)
     int currElems = (eePtr->stackEnd + 1);
     int newElems  = 2*currElems;
     int currBytes = currElems * sizeof(Tcl_Obj *);
-    int newBytes  = 2*currBytes;
+    int newBytes  = newElems * sizeof(Tcl_Obj *);
     Tcl_Obj **newStackPtr = (Tcl_Obj **) ckalloc((unsigned) newBytes);
 
     /*
@@ -511,7 +533,58 @@ GrowEvaluationStack(eePtr)
     eePtr->stackPtr = newStackPtr;
     eePtr->stackEnd = (newElems - 1); /* i.e. index of last usable item */
 }
-
+
+/*********************************/
+#if TCL_NO_RECURSE
+/*
+ * Definitions for the internal return stack rs
+ *
+ * REMARK: this simple code assumes that pointers are at least
+ * as large as integers: 
+ *    sizeof(void *) >= sizeof(int)
+ * Are there any systems where this is not true?
+ *
+ * Furthermore, should sizeof(void *) > sizeof(int), this
+ * may cause a misalignment of the stack data ...
+ */
+
+typedef struct rsData {
+    Tcl_Obj *objPtr;
+    ByteCode *codePtr;
+    unsigned char *pc;
+    int initStackTop;
+    int catchTop;
+} rsData;
+    
+#define RS_PUSH(callType) \
+    { \
+        rsData *rsPtr = (rsData *) &stackPtr[stackTop + 1];\
+        \
+        rsPtr->codePtr           = oldCodePtr;\
+        rsPtr->objPtr            = objPtr;\
+        rsPtr->pc                = pc;\
+        rsPtr->initStackTop      = initStackTop;\
+        rsPtr->catchTop          = catchTop;\
+    }\
+    stackTop += (sizeof(rsData) + 1);\
+    stackPtr[stackTop] = (Tcl_Obj *) (callType);\
+    currentDepth++;
+
+
+#define RS_POP() \
+    stackTop -= sizeof(rsData);\
+    { \
+        rsData *rsPtr = (rsData *) &stackPtr[stackTop + 1];\
+        \
+        codePtr = rsPtr->codePtr;\
+        objPtr = rsPtr->objPtr;\
+        pc = rsPtr->pc;\
+        initStackTop = rsPtr->initStackTop;\
+        catchTop = rsPtr->catchTop;\
+        catchStackPtr = (int *) &stackPtr[initStackTop - (codePtr->maxExceptDepth) + 1];\
+    }
+#endif /* TCL_NO_RECURSE */
+
 /*
  *----------------------------------------------------------------------
  *
@@ -559,18 +632,48 @@ TclExecuteByteCode(interp, codePtr)
     char *bytes;
     int length;
     long i;
+    int catchTop, *catchStackPtr;
 
     /*
      * This procedure uses a stack to hold information about catch commands.
      * This information is the current operand stack top when starting to
-     * execute the code for each catch command. It starts out with stack-
-     * allocated space but uses dynamically-allocated storage if needed.
+     * execute the code for each catch command. It is set at the bottom of
+     * the bytecodes stack, its depth is the exception range array's depth. 
+     * 
+     * Make sure the stack has enough room to execute this ByteCode,  
+     * holding the bytecodes catch stack, and storing the data for a
+     * possible internal recursion.
+     *
+     * REMARK: this simple code assumes that Tcl_Obj* and int* are the same 
+     * size (can this ever be wrong?)
      */
 
-#define STATIC_CATCH_STACK_SIZE 4
-    int (catchStackStorage[STATIC_CATCH_STACK_SIZE]);
-    int *catchStackPtr = catchStackStorage;
-    int catchTop = -1;
+#if TCL_NO_RECURSE
+    int currentDepth = 0;
+    ByteCode *oldCodePtr;  
+
+    /*
+     * Jump back here for internal recursions
+     */
+
+ startInternalRecursionHere: 
+    pc = codePtr->codeStart;
+    result = TCL_OK;
+    length = stackTop + sizeof(rsData) 
+	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth + 3)*sizeof(Tcl_Obj *);
+#else
+    length = stackTop + (codePtr->maxStackDepth + codePtr->maxExceptDepth)*sizeof(Tcl_Obj *);
+#endif
+
+    while (length > eePtr->stackEnd) {
+        GrowEvaluationStack(eePtr); 
+        stackPtr = eePtr->stackPtr;
+    }
+    catchStackPtr = (int *) &stackPtr[stackTop + 1];
+    catchTop = -1;
+    stackTop += (codePtr->maxExceptDepth);
+    initStackTop = stackTop;
+
 
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
@@ -584,31 +687,12 @@ TclExecuteByteCode(interp, codePtr)
     iPtr->stats.numExecutions++;
 #endif
 
-    /*
-     * Make sure the catch stack is large enough to hold the maximum number
-     * of catch commands that could ever be executing at the same time. This
-     * will be no more than the exception range array's depth.
-     */
-
-    if (codePtr->maxExceptDepth > STATIC_CATCH_STACK_SIZE) {
-	catchStackPtr = (int *)
-	        ckalloc(codePtr->maxExceptDepth * sizeof(int));
-    }
-
-    /*
-     * Make sure the stack has enough room to execute this ByteCode.
-     */
-
-    while ((stackTop + codePtr->maxStackDepth) > eePtr->stackEnd) {
-        GrowEvaluationStack(eePtr); 
-        stackPtr = eePtr->stackPtr;
-    }
 
     /*
      * Loop executing instructions until a "done" instruction, a TCL_RETURN,
      * or some error.
      */
-
+ 
     for (;;) {
 #ifdef TCL_COMPILE_DEBUG
 	ValidatePcAndStackTop(codePtr, pc, stackTop, initStackTop,
@@ -805,18 +889,6 @@ TclExecuteByteCode(interp, codePtr)
 		}
 
 		/*
-		 * A reference to part of the stack vector itself
-		 * escapes our control, so must use preserve/release
-		 * to stop it from being deallocated by a recursive
-		 * call to ourselves.  The extra variable is needed
-		 * because all others are liable to change due to the
-		 * trace procedures.
-		 */
-
-		Tcl_Preserve((ClientData)stackPtr);
-		preservedStack = stackPtr;
-
-		/*
 		 * Call any trace procedures.
 		 */
 
@@ -871,11 +943,191 @@ TclExecuteByteCode(interp, codePtr)
 			    Tcl_GetString(objv[0]));
 #endif /*TCL_COMPILE_DEBUG*/
 		}
-
+	    
 		iPtr->cmdCount++;
+#if TCL_NO_RECURSE
+#define VAR_TO_POINTER   (sizeof(Var)/sizeof(void *) + 1)
+#define FRAME_TO_POINTER (sizeof(CallFrame)/sizeof(void *) + 1)
+		if ((*cmdPtr->objProc) == TclObjInterpProc) {
+		    /*
+		     * This is code "borrowed" from TclObjInterpProc
+		     */
+
+		    Proc *procPtr = (Proc *) (cmdPtr->objClientData);
+		    Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
+		    CallFrame *framePtr;
+		    Var *compiledLocals;
+		    int localCt;
+
+		    objPtr = procPtr->bodyPtr;
+		    result = TclProcCompileProc(interp, procPtr, objPtr, nsPtr,
+			    "body of proc", Tcl_GetString(objv[0]));		    
+		    if (result != TCL_OK) {
+			goto earlyReturnFromPROC;
+		    }
+		    localCt = procPtr->numCompiledLocals;
+
+                    /*
+		     * make sure there is enough room in the stack 
+		     */
+
+		    length = stackTop + sizeof(rsData) + 
+			+(FRAME_TO_POINTER +localCt*VAR_TO_POINTER + 7)*sizeof(Tcl_Obj *); 
+		    while (length > eePtr->stackEnd) {
+			GrowEvaluationStack(eePtr); 
+			stackPtr = eePtr->stackPtr;
+		    }
+
+		    framePtr = (CallFrame *) &stackPtr[stackTop + 1];
+		    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
+		            (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 1);
+		    if (result != TCL_OK) {
+			goto earlyReturnFromPROC;
+		    }
+		    stackTop += FRAME_TO_POINTER;
+		    framePtr->procPtr = procPtr;
+
+		    compiledLocals = (Var *) &stackPtr[stackTop + 1];
+		    stackTop += localCt * VAR_TO_POINTER;
+
+		    stackPtr[++stackTop] = (Tcl_Obj *) objc;		    
+		    stackPtr[++stackTop] = (Tcl_Obj *) procPtr;
+
+		    result = PrepareProcFrameForExecution(interp, framePtr, objc, objv, compiledLocals);
+		    if (result == TCL_ERROR) {
+			Tcl_PopCallFrame(interp);
+			stackTop -= (FRAME_TO_POINTER + (procPtr->numCompiledLocals)*VAR_TO_POINTER + 2);
+			goto earlyReturnFromPROC;
+		    }
+		    procPtr->refCount++;
+		    Tcl_Preserve((ClientData) stackPtr);
+		    preservedStack = stackPtr;
+
+		    /*
+		     * This is code borrowed from TclEvalByteCodeFromObj
+		     */
+
+		    Tcl_ResetResult(interp);
+
+		    result = TclInterpReady(interp);
+		    if (result == TCL_ERROR) {
+			goto earlyReturnFromEvalBody;
+		    }
+
+		    oldCodePtr = codePtr;
+		    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+		    
+		    stackPtr[++stackTop] = (Tcl_Obj *) preservedStack;
+		    stackPtr[++stackTop] = (Tcl_Obj *) pcAdjustment;
+		    stackPtr[++stackTop] = (Tcl_Obj *) codePtr->numSrcBytes;
+		    stackPtr[++stackTop] = (Tcl_Obj *) iPtr->evalFlags;
+		    iPtr->evalFlags = 0;
+		    codePtr->refCount++;
+		    iPtr->numLevels++;
+
+		    RS_PUSH(0);
+		    goto startInternalRecursionHere;		    
+		} else {
+		    /*
+		     * Command is not a proc
+		     */
+
+		    Tcl_Preserve((ClientData)stackPtr);
+		    preservedStack = stackPtr;
+		    DECACHE_STACK_INFO();
+		    result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
+		        objc, objv);
+		    if (Tcl_AsyncReady()) {
+			result = Tcl_AsyncInvoke(interp, result);
+		    }
+		    CACHE_STACK_INFO();
+		    Tcl_Release((ClientData) preservedStack);
+
+		    /*
+		     * If the interpreter has a non-empty string result, the
+		     * result object is either empty or stale because some
+		     * procedure set interp->result directly. If so, move the
+		     * string result to the result object, then reset the
+		     * string result.
+		     */
+		    
+		    if (*(iPtr->result) != 0) {
+			(void) Tcl_GetObjResult(interp);
+		    }
+		    
+		    goto returnFromNON_PROC;
+		}
+
+	    returnFromPROC:
+		if (--(codePtr->refCount) <= 0) {
+		    TclCleanupByteCode(codePtr);
+		}
+		RS_POP();
+		{
+		    int evalFlags = (int) stackPtr[stackTop--];		    
+		    int numSrcBytes = (int) stackPtr[stackTop--];
+		    result = TclInterpPostEval(interp, evalFlags, result, objPtr, numSrcBytes);
+		}
+		iPtr->numLevels--;
+		pcAdjustment = (int) stackPtr[stackTop--];
+		preservedStack = (Tcl_Obj **) stackPtr[stackTop--]; 
+
+	    earlyReturnFromEvalBody:
+		{ 
+		    Proc *procPtr;
+		    
+		    procPtr = (Proc *) stackPtr[stackTop--];
+		    objc = (int) stackPtr[stackTop--];
+		    stackTop -= (FRAME_TO_POINTER + (procPtr->numCompiledLocals)*VAR_TO_POINTER);
+		    
+		    procPtr->refCount--;
+		    if (procPtr->refCount <= 0) {
+			TclProcCleanupProc(procPtr);
+		    }
+		    
+		    if (result != TCL_OK) {
+			int nameLen;
+			char *procName;
+			
+			objv = &stackPtr[stackTop - objc + 1];
+			procName = Tcl_GetStringFromObj(objv[0], &nameLen);
+			result = ProcessProcResultCode(interp, procName, nameLen, result);
+		    }
+		}
+		Tcl_PopCallFrame(interp);
+		Tcl_Release((ClientData) preservedStack);
+
+	    earlyReturnFromPROC:
+		if (Tcl_AsyncReady()) {
+		    DECACHE_STACK_INFO();
+		    result = Tcl_AsyncInvoke(interp, result);
+		    CACHE_STACK_INFO();
+		}
+
+		if (*(iPtr->result) != 0) {
+		    (void) Tcl_GetObjResult(interp);
+		}
+
+	    returnFromNON_PROC:
+#undef VAR_TO_POINTER
+#undef FRAME_TO_POINTER
+#else /* TCL_NO_RECURSE */
+
+		/*
+		 * A reference to part of the stack vector itself
+		 * escapes our control, so must use preserve/release
+		 * to stop it from being deallocated by a recursive
+		 * call to ourselves.  The extra variable is needed
+		 * because all others are liable to change due to the
+		 * trace procedures.
+		 */
+
+		Tcl_Preserve((ClientData)stackPtr);
+		preservedStack = stackPtr;
+
 		DECACHE_STACK_INFO();
 		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
-					    objc, objv);
+		        objc, objv);
 		if (Tcl_AsyncReady()) {
 		    result = Tcl_AsyncInvoke(interp, result);
 		}
@@ -901,6 +1153,7 @@ TclExecuteByteCode(interp, codePtr)
 		    (void) Tcl_GetObjResult(interp);
 		}
 		
+#endif
 		/*
 		 * Pop the objc top stack elements and decrement their ref
 		 * counts. 
@@ -908,8 +1161,8 @@ TclExecuteByteCode(interp, codePtr)
 
 		for (i = 0;  i < objc;  i++) {
 		    valuePtr = stackPtr[stackTop];
-		    TclDecrRefCount(valuePtr);
-		    stackTop--;
+		    TclDecrRefCount(valuePtr); 
+		    stackTop--; 
 		}
 
 		/*
@@ -1005,9 +1258,49 @@ TclExecuteByteCode(interp, codePtr)
 	    
 	case INST_EVAL_STK:
 	    objPtr = POP_OBJECT();
+#if TCL_NO_RECURSE
+	    Tcl_ResetResult(interp);
+
+	    result = ((TclInterpReady(interp) == TCL_ERROR) \
+		      || (TclCompileByteCodesForEval(interp, objPtr) == TCL_ERROR));
+	    if (result == TCL_ERROR) {
+		Tcl_DecrRefCount(objPtr);
+		goto checkForCatch;
+	    }
+	    oldCodePtr = codePtr;
+	    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+
+	    stackPtr[++stackTop] = (Tcl_Obj *) codePtr->numSrcBytes;
+	    stackPtr[++stackTop] = (Tcl_Obj *) iPtr->evalFlags;
+	    iPtr->evalFlags = 0;
+	    stackPtr[++stackTop] = (Tcl_Obj *) iPtr->cmdCount;
+	    codePtr->refCount++;
+	    iPtr->numLevels++;
+	    RS_PUSH(1);
+	    goto startInternalRecursionHere;
+
+	returnFromEVAL:
+	    if (--(codePtr->refCount) <= 0) {
+		TclCleanupByteCode(codePtr);
+	    }
+	    RS_POP();
+	    {
+		int oldCount = (int) stackPtr[stackTop--];
+		if ((oldCount == iPtr->cmdCount) && Tcl_AsyncReady()) {
+		    result = Tcl_AsyncInvoke(interp, result);
+		}
+	    }
+	    {
+		int evalFlags = (int) stackPtr[stackTop--];
+		int numSrcBytes = (int) stackPtr[stackTop--];
+		result = TclInterpPostEval(interp, evalFlags, result, objPtr, numSrcBytes);
+	    }
+	    iPtr->numLevels--;
+#else
 	    DECACHE_STACK_INFO();
-	    result = Tcl_EvalObjEx(interp, objPtr, 0);
+	    result = TclEvalByteCodeFromObj(interp, objPtr, 0);
 	    CACHE_STACK_INFO();
+#endif
 	    if (result == TCL_OK) {
 		/*
 		 * Normal return; push the eval's object result.
@@ -1078,9 +1371,48 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_EXPR_STK:
 	    objPtr = POP_OBJECT();
 	    Tcl_ResetResult(interp);
+
+#if TCL_NO_RECURSE 
+	    /*
+	     * This is the internal call; it mimics TclExprByteCodeFromObj
+	     */
+
+	    result = TclCompileByteCodesForExpr(interp, objPtr);
+	    if (result != TCL_OK) {
+		goto compErrorFromEXPR;
+	    } else {
+		value2Ptr = Tcl_GetObjResult(interp);
+		PUSH_OBJECT(value2Ptr);
+		Tcl_ResetResult(interp);
+		oldCodePtr = codePtr;
+		codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+		codePtr->refCount++;
+		RS_PUSH(2);
+		goto startInternalRecursionHere;
+	    }
+
+	returnFromEXPR:	    
+	    if (--(codePtr->refCount) <= 0) {
+		TclCleanupByteCode(codePtr);
+		RS_POP();
+		objPtr->typePtr = NULL;
+		objPtr->internalRep.otherValuePtr = NULL;
+	    } else {
+		RS_POP();
+	    }
+	    value2Ptr = POP_OBJECT();
+	    valuePtr = Tcl_GetObjResult(interp);
+	    if (result == TCL_OK) {
+		Tcl_IncrRefCount(valuePtr);
+		Tcl_SetObjResult(interp, value2Ptr);
+	    }
+	    TclDecrRefCount(value2Ptr);
+	compErrorFromEXPR:
+#else	
 	    DECACHE_STACK_INFO();
-	    result = Tcl_ExprObj(interp, objPtr, &valuePtr);
+	    result = TclExprByteCodeFromObj(interp, objPtr, &valuePtr);
 	    CACHE_STACK_INFO();
+#endif
 	    if (result != TCL_OK) {
 		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", 
 		        O2S(objPtr)), Tcl_GetObjResult(interp));
@@ -2959,12 +3291,30 @@ TclExecuteByteCode(interp, codePtr)
      */
 
     done:
-    if (catchStackPtr != catchStackStorage) {
-	ckfree((char *) catchStackPtr);
+    stackTop -= codePtr->maxExceptDepth;
+#if TCL_NO_RECURSE
+    if (currentDepth--) {
+	/* 
+	 * An internal return
+	 */
+	int retCode = (int) stackPtr[stackTop--];
+	switch (retCode) {
+	    case 0: goto returnFromPROC;
+	    case 1: goto returnFromEVAL;
+	    case 2: goto returnFromEXPR;
+	    default:
+		fprintf(stderr, "ERROR: Internal return code is %i: this should never happen!\n", retCode );
+		panic("FATAL ERROR");
+	}
     }
-    eePtr->stackTop = initStackTop;
+#endif   
+
+    /*
+     * A real return
+     */
+    
+    eePtr->stackTop = stackTop;
     return result;
-#undef STATIC_CATCH_STACK_SIZE
 }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -4173,7 +4523,9 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     long i;
     double d;
     int j, k, result;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_ResetResult(interp);
 
@@ -4362,7 +4714,9 @@ TclExprFloatError(interp, value)
 int
 TclMathInProgress()
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = TCL_TSD_INIT(&dataKey);
     return tsdPtr->mathInProgress;
 }
 
@@ -5175,3 +5529,877 @@ StringForResultCode(result)
     return buf;
 }
 #endif /* TCL_COMPILE_DEBUG */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcessUnexpectedResult --
+ *
+ *	Procedure called by Tcl_EvalObj to set the interpreter's result
+ *	value to an appropriate error message when the code it evaluates
+ *	returns an unexpected result code (not TCL_OK and not TCL_ERROR) to
+ *	the topmost evaluation level.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The interpreter result is set to an error message appropriate to
+ *	the result code.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ProcessUnexpectedResult(interp, returnCode)
+    Tcl_Interp *interp;		/* The interpreter in which the unexpected
+				 * result code was returned. */
+    int returnCode;		/* The unexpected result code. */
+{
+    Tcl_ResetResult(interp);
+    if (returnCode == TCL_BREAK) {
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+	        "invoked \"break\" outside of a loop", -1);
+    } else if (returnCode == TCL_CONTINUE) {
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		"invoked \"continue\" outside of a loop", -1);
+    } else {
+        char buf[30 + TCL_INTEGER_SPACE];
+
+	sprintf(buf, "command returned bad code: %d", returnCode);
+	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecordTracebackInfo --
+ *
+ *	Procedure called by Tcl_EvalObj to record information about what was
+ *	being executed when the error occurred.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Appends information about the script being evaluated to the
+ *	interpreter's "errorInfo" variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RecordTracebackInfo(interp, objPtr, numSrcBytes)
+    Tcl_Interp *interp;		/* The interpreter in which the error
+				 * occurred. */
+    Tcl_Obj *objPtr;		/* Points to object containing script whose
+				 * evaluation resulted in an error. */
+    int numSrcBytes;		/* Number of bytes compiled in script. */
+{
+    Interp *iPtr = (Interp *) interp;
+    char buf[200];
+    char *ellipsis, *bytes;
+    int length;
+
+    /*
+     * Decide how much of the command to print in the error message
+     * (up to a certain number of bytes).
+     */
+    
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    length = TclMin(numSrcBytes, length);
+    
+    ellipsis = "";
+    if (length > 150) {
+	length = 150;
+	ellipsis = " ...";
+    }
+    
+    if (!(iPtr->flags & ERR_IN_PROGRESS)) {
+	sprintf(buf, "\n    while executing\n\"%.*s%s\"",
+		length, bytes, ellipsis);
+    } else {
+	sprintf(buf, "\n    invoked from within\n\"%.*s%s\"",
+		length, bytes, ellipsis);
+    }
+    Tcl_AddObjErrorInfo(interp, buf, -1);
+}
+
+/*
+ * Recently imported stuff ...
+ */
+
+static int 
+TclInterpReady(interp)
+    Tcl_Interp *interp;
+{
+    register Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Check depth of nested calls to Tcl_Eval:  if this gets too large,
+     * it's probably because of an infinite loop somewhere.
+     */
+
+    if ((iPtr->numLevels + 1) > iPtr->maxNestingDepth) {
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		"too many nested calls to Tcl_EvalObj (infinite loop?)", -1); 
+	return TCL_ERROR;
+    }
+
+    /*
+     * On the Mac, we will never reach the default recursion limit before
+     * blowing the stack. So we need to do a check here.
+     */
+    
+    if (TclpCheckStackSpace() == 0) {
+	/*NOTREACHED*/
+    	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		"too many nested calls to Tcl_EvalObj (infinite loop?)", -1);
+	return TCL_ERROR;	
+    }
+
+    /*
+     * If the interpreter has been deleted, return an error.
+     */
+    
+    if (iPtr->flags & DELETED) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+	        "attempt to call eval in deleted interpreter", -1);
+	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
+	        "attempt to call eval in deleted interpreter",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+static int 
+TclCompileByteCodesForEval(interp, objPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+{
+    register Interp *iPtr = (Interp *) interp;
+    ByteCode *codePtr;
+    Namespace *namespacePtr;
+    int result;
+
+    /*
+     * Get the ByteCode from the object. If it exists, make sure it hasn't
+     * been invalidated by, e.g., someone redefining a command with a
+     * compile procedure (this might make the compiled code wrong). If
+     * necessary, convert the object to be a ByteCode object and compile it.
+     * Also, if the code was compiled in/for a different interpreter,
+     * or for a different namespace, or for the same namespace but
+     * with different name resolution rules, we recompile it.
+     *
+     * Precompiled objects, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
+     *
+     * To be pedantically correct, we should also check that the
+     * originating procPtr is the same as the current context procPtr
+     * (assuming one exists at all - none for global level).  This
+     * code is #def'ed out because [info body] was changed to never
+     * return a bytecode type object, which should obviate us from
+     * the extra checks here.
+     */
+
+    if (iPtr->varFramePtr != NULL) {
+        namespacePtr = iPtr->varFramePtr->nsPtr;
+    } else {
+        namespacePtr = iPtr->globalNsPtr;
+    }
+
+    if (objPtr->typePtr == &tclByteCodeType) {
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	
+	if (((Interp *) *codePtr->interpHandle != iPtr)
+	        || (codePtr->compileEpoch != iPtr->compileEpoch)
+#ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
+		|| (codePtr->procPtr != NULL && !(iPtr->varFramePtr &&
+			iPtr->varFramePtr->procPtr == codePtr->procPtr))
+#endif
+	        || (codePtr->nsPtr != namespacePtr)
+	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if ((Interp *) *codePtr->interpHandle != iPtr) {
+                    panic("Tcl_EvalObj: compiled script jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                tclByteCodeType.freeIntRepProc(objPtr);
+            }
+	}
+    }
+    if (objPtr->typePtr != &tclByteCodeType) {
+	iPtr->errorLine = 1; 
+	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
+    } else {
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	if (((Interp *) *codePtr->interpHandle != iPtr)
+	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
+	    (*tclByteCodeType.freeIntRepProc)(objPtr);
+	    iPtr->errorLine = 1; 
+	    result = (*tclByteCodeType.setFromAnyProc)(interp, objPtr);
+	    if (result != TCL_OK) {
+		iPtr->numLevels--;
+		return result;
+	    }
+	}
+    }
+    return TCL_OK;
+}
+
+static int 
+TclInterpPostEval(interp, evalFlags, result, objPtr, numSrcBytes)
+    Tcl_Interp *interp;
+    int evalFlags;
+    int result;
+    Tcl_Obj *objPtr;
+    int numSrcBytes;
+{
+    register Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Update the interpreter's evaluation level count. If we will be 
+     * again at the top level, process any unusual return code returned 
+     * by the evaluated code.
+     */
+
+    if (iPtr->numLevels == 1) {
+	if (result == TCL_RETURN) {
+	    result = TclUpdateReturnInfo(iPtr);
+	}
+	if ((result != TCL_OK) && (result != TCL_ERROR)
+		&& ((evalFlags & TCL_ALLOW_EXCEPTIONS) == 0)) {
+	    ProcessUnexpectedResult(interp, result);
+	    result = TCL_ERROR;
+	}
+    }
+
+    /*
+     * If an error occurred, record information about what was being
+     * executed when the error occurred.
+     */
+
+    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+	RecordTracebackInfo(interp, objPtr, numSrcBytes);
+    }
+
+    /*
+     * Set the interpreter's termOffset member to the offset of the
+     * character just after the last one executed. We approximate the offset
+     * of the last character executed by using the number of characters
+     * compiled.
+     */
+
+    iPtr->termOffset = numSrcBytes;
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    return result;
+}
+
+int
+TclEvalByteCodeFromObj(interp, objPtr, flags)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+    int flags;
+{
+    register Interp *iPtr = (Interp *) interp;
+    int evalFlags;			/* Interp->evalFlags value when the
+					 * procedure was called. */
+    register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
+    int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
+					 * at all were executed. */
+    int numSrcBytes;
+    int result;
+    CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
+					 * in case TCL_EVAL_GLOBAL was set. */
+
+    Tcl_IncrRefCount(objPtr);
+
+    /*
+     * Reset both the interpreter's string and object results and clear out
+     * any error information. This makes sure that we return an empty
+     * result if there are no commands in the command string.
+     */
+
+    Tcl_ResetResult(interp);
+
+    /*
+     * Check that the interpreter is ready to execute scripts
+     */
+
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	TclDecrRefCount(objPtr);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Take care of the TCL_EVAL_GLOBAL case.
+     */
+
+    savedVarFramePtr = iPtr->varFramePtr;
+    if (flags & TCL_EVAL_GLOBAL) {
+	iPtr->varFramePtr = NULL;
+    }
+
+
+    /*
+     * Get the ByteCode from the object.
+     */
+
+    result = TclCompileByteCodesForEval(interp, objPtr);
+    if (result == TCL_ERROR) {
+	goto done;
+    }
+    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+
+    /*
+     * Extract then reset the compilation flags in the interpreter.
+     * Resetting the flags must be done after any compilation.
+     */
+
+    evalFlags = iPtr->evalFlags;
+    iPtr->evalFlags = 0;
+
+    /*
+     * Execute the commands. If the code was compiled from an empty string,
+     * don't bother executing the code.
+     */
+
+    iPtr->numLevels++;
+    numSrcBytes = codePtr->numSrcBytes;
+
+    if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	/*
+	 * Increment the code's ref count while it is being executed. If
+	 * afterwards no references to it remain, free the code.
+	 */
+	
+	codePtr->refCount++;
+	result = TclExecuteByteCode(interp, codePtr);
+	codePtr->refCount--;
+	if (codePtr->refCount <= 0) {
+	    TclCleanupByteCode(codePtr);
+	}
+    } else {
+	result = TCL_OK;
+    }
+
+    /*
+     * If no commands at all were executed, check for asynchronous
+     * handlers so that they at least get one change to execute.
+     * This is needed to handle event loops written in Tcl with
+     * empty bodies.
+     */
+
+    if ((oldCount == iPtr->cmdCount) && Tcl_AsyncReady()) {
+	result = Tcl_AsyncInvoke(interp, result);
+    }
+
+    /*
+     * Update the interpreter's state
+     */
+
+    result = TclInterpPostEval(interp, evalFlags, result, objPtr, numSrcBytes);
+    iPtr->numLevels--;
+
+    done:
+    TclDecrRefCount(objPtr);
+    iPtr->varFramePtr = savedVarFramePtr; 
+    return result;
+}
+
+static int
+TclCompileByteCodesForExpr(interp, objPtr)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+{
+    Interp *iPtr = (Interp *) interp;
+    TYPE (CompileEnv) compEnv;	/* Compilation environment structure
+				 * allocated in frame. */
+    LiteralTable *localTablePtr;
+    register ByteCode *codePtr = NULL;
+    				/* Tcl Internal type of bytecode.
+				 * Initialized to avoid compiler warning. */
+    AuxData *auxDataPtr;
+    LiteralEntry *entryPtr;
+    char *string;
+    int length, i, result;
+
+    NEWSTRUCT(CompileEnv,compEnv);
+    localTablePtr = &(ITEM(compEnv,localLitTable));
+
+    string = Tcl_GetStringFromObj(objPtr, &length);
+
+    /*
+     * Get the ByteCode from the object. If it exists, make sure it hasn't
+     * been invalidated by, e.g., someone redefining a command with a
+     * compile procedure (this might make the compiled code wrong). If
+     * necessary, convert the object to be a ByteCode object and compile it.
+     * Also, if the code was compiled in/for a different interpreter, we
+     * recompile it.
+     *
+     * Precompiled expressions, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
+     *
+     */
+
+    if (objPtr->typePtr == &tclByteCodeType) {
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	if (((Interp *) *codePtr->interpHandle != iPtr)
+	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if ((Interp *) *codePtr->interpHandle != iPtr) {
+                    panic("Tcl_ExprObj: compiled expression jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                (*tclByteCodeType.freeIntRepProc)(objPtr);
+                objPtr->typePtr = (Tcl_ObjType *) NULL;
+            }
+	}
+    }
+    if (objPtr->typePtr != &tclByteCodeType) {
+	TclInitCompileEnv(interp, REF(compEnv), string, length);
+	result = TclCompileExpr(interp, string, length, REF(compEnv));
+
+	/*
+	 * Free the compilation environment's literal table bucket array if
+	 * it was dynamically allocated. 
+	 */
+
+	if (localTablePtr->buckets != localTablePtr->staticBuckets) {
+	    ckfree((char *) localTablePtr->buckets);
+	}
+    
+	if (result != TCL_OK) {
+	    /*
+	     * Compilation errors. Free storage allocated for compilation.
+	     */
+
+#ifdef TCL_COMPILE_DEBUG
+	    TclVerifyLocalLiteralTable(REF(compEnv));
+#endif /*TCL_COMPILE_DEBUG*/
+	    entryPtr = ITEM(compEnv,literalArrayPtr);
+	    for (i = 0;  i < ITEM(compEnv,literalArrayNext);  i++) {
+		TclReleaseLiteral(interp, entryPtr->objPtr);
+		entryPtr++;
+	    }
+#ifdef TCL_COMPILE_DEBUG
+	    TclVerifyGlobalLiteralTable(iPtr);
+#endif /*TCL_COMPILE_DEBUG*/
+    
+	    auxDataPtr = ITEM(compEnv,auxDataArrayPtr);
+	    for (i = 0;  i < ITEM(compEnv,auxDataArrayNext);  i++) {
+		if (auxDataPtr->type->freeProc != NULL) {
+		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
+		}
+		auxDataPtr++;
+	    }
+	    TclFreeCompileEnv(REF(compEnv));
+	    RELSTRUCT(compEnv);
+	    return result;
+	}
+
+	/*
+	 * Successful compilation. If the expression yielded no
+	 * instructions, push an zero object as the expression's result.
+	 */
+	    
+	if (ITEM(compEnv,codeNext) == ITEM(compEnv,codeStart)) {
+	    TclEmitPush(TclRegisterLiteral(REF(compEnv), "0", 1, /*onHeap*/ 0),
+	            REF(compEnv));
+	}
+	    
+	/*
+	 * Add a "done" instruction as the last instruction and change the
+	 * object into a ByteCode object. Ownership of the literal objects
+	 * and aux data items is given to the ByteCode object.
+	 */
+
+	ITEM(compEnv,numSrcBytes) = iPtr->termOffset;
+	TclEmitOpcode(INST_DONE, REF(compEnv));
+	TclInitByteCodeObj(objPtr, REF(compEnv));
+	TclFreeCompileEnv(REF(compEnv));
+	RELSTRUCT(compEnv);
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceCompile == 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	}
+#endif /* TCL_COMPILE_DEBUG */
+    }
+
+    return TCL_OK;
+}
+
+int 
+TclExprByteCodeFromObj(interp, objPtr, resultPtrPtr)
+    Tcl_Interp *interp;		/* Context in which to evaluate the
+				 * expression. */
+    register Tcl_Obj *objPtr;	/* Points to Tcl object containing
+				 * expression to evaluate. */
+    Tcl_Obj **resultPtrPtr;	/* Where the Tcl_Obj* that is the expression
+				 * result is stored if no errors occur. */
+{
+    Interp *iPtr = (Interp *) interp;
+    register ByteCode *codePtr = NULL;
+    				/* Tcl Internal type of bytecode.
+				 * Initialized to avoid compiler warning. */
+    Tcl_Obj *saveObjPtr;
+    int result;
+
+    /*
+     * Get the ByteCode from the object.
+     */
+
+    result = TclCompileByteCodesForExpr(interp, objPtr);
+    if (result != TCL_OK) {
+	return result;
+    }
+    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+
+    /*
+     * Execute the expression after first saving the interpreter's result.
+     */
+    
+    saveObjPtr = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(saveObjPtr);
+    Tcl_ResetResult(interp);
+
+    /*
+     * Increment the code's ref count while it is being executed. If
+     * afterwards no references to it remain, free the code.
+     */
+    
+    codePtr->refCount++;
+    result = TclExecuteByteCode(interp, codePtr);
+
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+	objPtr->typePtr = NULL;
+	objPtr->internalRep.otherValuePtr = NULL;
+    }
+    
+    /*
+     * If the expression evaluated successfully, store a pointer to its
+     * value object in resultPtrPtr then restore the old interpreter result.
+     * We increment the object's ref count to reflect the reference that we
+     * are returning to the caller. We also decrement the ref count of the
+     * interpreter's result object after calling Tcl_SetResult since we
+     * next store into that field directly.
+     */
+    
+    if (result == TCL_OK) {
+	*resultPtrPtr = iPtr->objResultPtr;
+	Tcl_IncrRefCount(iPtr->objResultPtr);
+	
+	Tcl_SetObjResult(interp, saveObjPtr);
+    }
+    Tcl_DecrRefCount(saveObjPtr);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclObjInterpProc --
+ *
+ *	When a Tcl procedure gets invoked during bytecode evaluation, this 
+ *	object-based routine gets invoked to interpret the procedure.
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	Depends on the commands in the procedure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PrepareProcFrameForExecution (interp, framePtr, objc, objv, compiledLocals)
+    Tcl_Interp *interp;
+    CallFrame *framePtr;
+    int objc;
+    Tcl_Obj *CONST objv[0];
+    Var *compiledLocals;
+{
+    register Proc *procPtr = framePtr->procPtr;
+    register Var *varPtr;
+    register CompiledLocal *localPtr;
+    Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
+    int numArgs, argCt, i, nameLen;
+    char *procName;
+
+
+    framePtr->objc = objc;
+    framePtr->objv = objv;  /* ref counts for args are incremented below */
+    framePtr->numCompiledLocals = procPtr->numCompiledLocals;
+    framePtr->compiledLocals = compiledLocals;
+
+
+    /*
+     * Initialize and resolve compiled variable references.
+     */
+
+    TclInitCompiledLocals(interp, framePtr, nsPtr);
+
+    /*
+     * Match and assign the call's actual parameters to the procedure's
+     * formal arguments. The formal arguments are described by the first
+     * numArgs entries in both the Proc structure's local variable list and
+     * the call frame's local variable array.
+     */
+
+    numArgs = procPtr->numArgs;
+    varPtr = framePtr->compiledLocals;
+    localPtr = procPtr->firstLocalPtr;
+    argCt = objc;
+    for (i = 1, argCt -= 1;  i <= numArgs;  i++, argCt--) {
+	if (!TclIsVarArgument(localPtr)) {
+	    panic("TclObjInterpProc: local variable %s is not argument but should be",
+		  localPtr->name);
+	    return TCL_ERROR;
+	}
+	if (TclIsVarTemporary(localPtr)) {
+	    panic("TclObjInterpProc: local variable %d is temporary but should be an argument", i);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Handle the special case of the last formal being "args".  When
+	 * it occurs, assign it a list consisting of all the remaining
+	 * actual arguments.
+	 */
+
+	if ((i == numArgs) && ((localPtr->name[0] == 'a')
+	        && (strcmp(localPtr->name, "args") == 0))) {
+	    Tcl_Obj *listPtr = Tcl_NewListObj(argCt, &(objv[i]));
+	    varPtr->value.objPtr = listPtr;
+	    Tcl_IncrRefCount(listPtr); /* local var is a reference */
+	    varPtr->flags &= ~VAR_UNDEFINED;
+	    argCt = 0;
+	    break;		/* done processing args */
+	} else if (argCt > 0) {
+	    Tcl_Obj *objPtr = objv[i];
+	    varPtr->value.objPtr = objPtr;
+	    varPtr->flags &= ~VAR_UNDEFINED;
+	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
+					* another reference to object. */
+	} else if (localPtr->defValuePtr != NULL) {
+	    Tcl_Obj *objPtr = localPtr->defValuePtr;
+	    varPtr->value.objPtr = objPtr;
+	    varPtr->flags &= ~VAR_UNDEFINED;
+	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
+					* another reference to object. */
+	} else {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "no value given for parameter \"", localPtr->name,
+		    "\" to \"", Tcl_GetString(objv[0]), "\"", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	varPtr++;
+	localPtr = localPtr->nextPtr;
+    }
+    if (argCt > 0) {
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"called \"", Tcl_GetString(objv[0]),
+		"\" with too many arguments", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Invoke the commands in the procedure's body.
+     */
+
+    if (tclTraceExec >= 1) {
+#ifdef TCL_COMPILE_DEBUG
+	fprintf(stdout, "Calling proc ");
+	for (i = 0;  i < objc;  i++) {
+	    TclPrintObject(stdout, objv[i], 15);
+	    fprintf(stdout, " ");
+	}
+	fprintf(stdout, "\n");
+#else /* TCL_COMPILE_DEBUG */
+	procName = Tcl_GetStringFromObj(objv[0], &nameLen);
+	fprintf(stdout, "Calling proc %.*s\n", nameLen, procName);
+#endif /*TCL_COMPILE_DEBUG*/
+	fflush(stdout);
+    }
+    return TCL_OK;
+}
+
+int
+TclObjInterpProc(clientData, interp, objc, objv)
+    ClientData clientData; 	 /* Record describing procedure to be
+				  * interpreted. */
+    register Tcl_Interp *interp; /* Interpreter in which procedure was
+				  * invoked. */
+    int objc;			 /* Count of number of arguments to this
+				  * procedure. */
+    Tcl_Obj *CONST objv[];	 /* Argument value objects. */
+{
+    Interp *iPtr = (Interp *) interp;
+    register Proc *procPtr = (Proc *) clientData;
+    Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
+    CallFrame frame;
+    register CallFrame *framePtr = &frame;
+    char *procName;
+    int nameLen, localCt, result;
+
+    /*
+     * This procedure generates an array "compiledLocals" that holds the
+     * storage for local variables. It starts out with stack-allocated space
+     * but uses dynamically-allocated storage if needed.
+     */
+
+#define NUM_LOCALS TCL_PROC_STATIC_CLOCALS
+    Var localStorage[NUM_LOCALS];
+    Var *compiledLocals = localStorage;
+
+    /*
+     * Get the procedure's name.
+     */
+    
+    procName = Tcl_GetStringFromObj(objv[0], &nameLen);
+
+    /*
+     * If necessary, compile the procedure's body. The compiler will
+     * allocate frame slots for the procedure's non-argument local
+     * variables.  Note that compiling the body might increase
+     * procPtr->numCompiledLocals if new local variables are found
+     * while compiling.
+     */
+
+    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
+	    "body of proc", procName);
+    
+    if (result != TCL_OK) {
+        return result;
+    }
+
+    /*
+     * Set up and push a new call frame for the new procedure invocation.
+     * This call frame will execute in the proc's namespace, which might
+     * be different than the current namespace. The proc's namespace is
+     * that of its command, which can change if the command is renamed
+     * from one namespace to another.
+     */
+
+    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
+            (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 1);
+    if (result != TCL_OK) {
+        return result;
+    }
+    framePtr->procPtr = procPtr;
+
+    /*
+     * Create the "compiledLocals" array. Make sure it is large enough to
+     * hold all the procedure's compiled local variables, including its
+     * formal parameters.
+     */
+
+    localCt = procPtr->numCompiledLocals;
+    if (localCt > NUM_LOCALS) {
+	compiledLocals = (Var *) ckalloc((unsigned) localCt * sizeof(Var));
+    }
+    
+    result = PrepareProcFrameForExecution(interp, framePtr, objc, objv, compiledLocals);
+    if (result == TCL_ERROR) {
+	goto procDone;
+    }
+
+    iPtr->returnCode = TCL_OK;
+    procPtr->refCount++;
+    result = Tcl_EvalObjEx(interp, procPtr->bodyPtr, 0);
+    procPtr->refCount--;
+    if (procPtr->refCount <= 0) {
+	TclProcCleanupProc(procPtr);
+    }
+
+    if (result != TCL_OK) {
+	result = ProcessProcResultCode(interp, procName, nameLen, result);
+    }
+    
+    /*
+     * Pop and free the call frame for this procedure invocation, then
+     * free the compiledLocals array if malloc'ed storage was used.
+     */
+
+    procDone:    
+    Tcl_PopCallFrame(interp);
+    if (compiledLocals != localStorage) {
+	ckfree((char *) compiledLocals);
+    }
+    return result;
+#undef NUM_LOCALS
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcessProcResultCode --
+ *
+ *	Procedure called by TclObjInterpProc to process a return code other
+ *	than TCL_OK returned by a Tcl procedure.
+ *
+ * Results:
+ *	Depending on the argument return code, the result returned is
+ *	another return code and the interpreter's result is set to a value
+ *	to supplement that return code.
+ *
+ * Side effects:
+ *	If the result returned is TCL_ERROR, traceback information about
+ *	the procedure just executed is appended to the interpreter's
+ *	"errorInfo" variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ProcessProcResultCode(interp, procName, nameLen, returnCode)
+    Tcl_Interp *interp;		/* The interpreter in which the procedure
+				 * was called and returned returnCode. */
+    char *procName;		/* Name of the procedure. Used for error
+				 * messages and trace information. */
+    int nameLen;		/* Number of bytes in procedure's name. */
+    int returnCode;		/* The unexpected result code. */
+{
+    Interp *iPtr = (Interp *) interp;
+
+    if (returnCode == TCL_RETURN) {
+	returnCode = TclUpdateReturnInfo(iPtr);
+    } else if (returnCode == TCL_ERROR) {
+	char msg[100 + TCL_INTEGER_SPACE];
+	char *ellipsis = "";
+	int numChars = nameLen;
+
+	if (numChars > 60) {
+	    numChars = 60;
+	    ellipsis = "...";
+	}
+	sprintf(msg, "\n    (procedure \"%.*s%s\" line %d)",
+		numChars, procName, ellipsis, iPtr->errorLine);
+	Tcl_AddObjErrorInfo(interp, msg, -1);
+    } else if (returnCode == TCL_BREAK) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		"invoked \"break\" outside of a loop", -1);
+	returnCode = TCL_ERROR;
+    } else if (returnCode == TCL_CONTINUE) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendToObj(Tcl_GetObjResult(interp),
+	        "invoked \"continue\" outside of a loop", -1);
+	returnCode = TCL_ERROR;
+    }
+    return returnCode;
+}

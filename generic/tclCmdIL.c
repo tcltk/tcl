@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.24.2.3 2001/10/08 15:50:24 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.24.2.3.2.1 2001/12/03 18:23:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1020,6 +1020,7 @@ InfoHostnameCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     char *name;
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         return TCL_ERROR;
@@ -1599,6 +1600,7 @@ InfoScriptCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         return TCL_ERROR;
@@ -2675,7 +2677,7 @@ MergeSort(headPtr, infoPtr)
      * length 2**i.
      */
 
-#   define NUM_LISTS 30
+#   define NUM_LISTS TCL_LSORT_STATIC_MERGE_BUCKETS
     SortElement *subList[NUM_LISTS];
     SortElement *elementPtr;
     int i;
