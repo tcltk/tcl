@@ -407,6 +407,10 @@ test var-8.1 {TclDeleteVars, "unset" traces are called with fully-qualified var 
     list [unset test_ns_var::v] $test_ns_var::info
 } {{} {test_ns_var::v {} u}}
 
+if {[info commands testsetnoerr] == {}} {
+    puts "This application hasn't been compiled with the \"testsetnoerr\""
+    puts "command, so I can't test TclSetVar etc."
+} else {
 test var-9.1 {behaviour of TclSetVar without TCL_LEAVE_ERR_MSG flag} {
 	testsetnoerr v 1
 } 1
@@ -449,6 +453,7 @@ test var-9.9 {behaviour of TclSetVar without TCL_LEAVE_ERR_MSG flag} {
     trace var v w readonly
     list [catch {testsetnoerr v 2} msg] $msg
 } {1 {before set}}
+}
 
 catch {namespace delete ns}
 catch {unset arr}

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# SCCS: %Z% $Id: ioUtil.test,v 1.2 1998/07/13 14:04:50 suresh Exp $ 
+# SCCS: %Z% $Id: ioUtil.test,v 1.3 1998/07/28 11:09:15 hershey Exp $ 
  
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -25,6 +25,10 @@ test stat-1.1 {TclStat: Check that none of the test procs are there.} {
     list $err1 $err2 $err3
 } {{couldn't stat "testStat1%.fil": no such file or directory} {couldn't stat "testStat2%.fil": no such file or directory} {couldn't stat "testStat3%.fil": no such file or directory}}
 
+if {[info commands teststatproc] == {}} {
+    puts "This application hasn't been compiled with the \"teststatproc\""
+    puts "command, so I can't test Tcl_Stat_* etc."
+} else {
 test stat-1.2 {TclStatInsertProc: Insert the 3 test TclStat_ procedures.} {
     catch {teststatproc insert TclpStat} err1
     teststatproc insert TestStatProc1
@@ -100,6 +104,7 @@ test stat-1.8 {TclStatDeleteProc: Verify that all procs have been deleted.} {
 
     list $err9 $err10 $err11
 } {{"TestStatProc1": could not be deleteed} {"TestStatProc2": could not be deleteed} {"TestStatProc3": could not be deleteed}}
+}
 
 eval $unsetScript
 
@@ -111,6 +116,10 @@ test access-1.1 {TclAccess: Check that none of the test procs are there.} {
     list $err1 $err2 $err3
 } {0 0 0}
 
+if {[info commands testaccessproc] == {}} {
+    puts "This application hasn't been compiled with the \"testaccessproc\""
+    puts "command, so I can't test Tcl_Access_* etc."
+} else {
 test access-1.2 {TclAccessInsertProc: Insert the 3 test TclAccess_ procedures.} {
     catch {testaccessproc insert TclpAccess} err1
     testaccessproc insert TestAccessProc1
@@ -177,7 +186,7 @@ test access-1.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} 
 
     list $err9 $err10 $err11
 } {{"TestAccessProc1": could not be deleteed} {"TestAccessProc2": could not be deleteed} {"TestAccessProc3": could not be deleteed}}
-
+}
 
 test openfilechannel-1.1 {TclOpenFileChannel: Check that none of the test procs are there.} {
     catch {file exists __testOpenFileChannel1%__.fil} err1
@@ -189,6 +198,10 @@ test openfilechannel-1.1 {TclOpenFileChannel: Check that none of the test procs 
     list $err1 $err2 $err3 $err4 $err5 $err6
 } {0 0 0 0 0 0}
 
+if {[info commands testopenfilechannelproc] == {}} {
+    puts "This application hasn't been compiled with the \"testopenfilechannelproc\""
+    puts "command, so I can't test Tcl_OpenFileChannelInsert"
+} else {
 test openfilechannel-1.2 {TclOpenFileChannelInsertProc: Insert the 3 test TclOpenFileChannel_ procedures.} {
     catch {testopenfilechannelproc insert TclpOpenFileChannel} err1
     testopenfilechannelproc insert TestOpenFileChannelProc1
@@ -284,3 +297,4 @@ test openfilechannel-1.8 {TclOpenFileChannelDeleteProc: Verify that all procs ha
 
     list $err9 $err10 $err11
 } {{"TestOpenFileChannelProc1": could not be deleteed} {"TestOpenFileChannelProc2": could not be deleteed} {"TestOpenFileChannelProc3": could not be deleteed}}
+}

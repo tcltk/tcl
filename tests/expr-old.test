@@ -900,15 +900,24 @@ test expr-old-36.10 {ExprLooksLikeInt procedure} {nonPortable unixOnly} {
     list [catch {expr 78e} msg] $msg
 } {1 {syntax error in expression "78e"}}
 
+if {[info commands testexprlong] == {}} {
+    puts "This application hasn't been compiled with the \"testexprlong\""
+    puts "command, so I can't test Tcl_ExprLong etc."
+} else {
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} {
     testexprlong
 } {This is a result: 5}
+}
 
+if {[info commands testexprstring] == {}} {
+    puts "This application hasn't been compiled with the \"testexprstring\""
+    puts "command, so I can't test Tcl_ExprString etc."
+} else {
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
         [catch {testexprstring "1+"} msg] $msg
 } {5 10.2 1 {syntax error in expression "1+"}}
-
+}
 
 # Special test for Pentium arithmetic bug of 1994:
 
