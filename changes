@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.23 1999/03/23 21:58:01 hershey Exp $
+RCS: @(#) $Id: changes,v 1.1.2.24 1999/03/26 19:47:12 suresh Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4201,4 +4201,9 @@ define the test procedure and other auxiliary procedures as well as
 global variables.  The previously chosen "test" namespace was thought
 to be too generic and likely to create conflits.
 (hirschl)
+*** POTENTIAL INCOMPATIBILITY ***
+
+3/26/99 (feature change) --nameble-shared is now the default and build
+Tcl as a shared library; specify --disable-shared to build a static Tcl
+library and shell.
 *** POTENTIAL INCOMPATIBILITY ***
