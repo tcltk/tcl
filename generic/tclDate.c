@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.4 1999/04/16 00:46:45 stanton Exp $ 
+ * RCS: @(#) $Id: tclDate.c,v 1.4.2.1 1999/05/14 17:27:18 redman Exp $ 
  */
 
 #include "tclInt.h"
@@ -430,10 +430,12 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
         Julian += DaysInMonth[i];
     if (Year >= EPOCH) {
         for (i = EPOCH; i < Year; i++)
-            Julian += 365 + (i % 4 == 0);
+            Julian += 365 + (((i % 4) == 0) &&
+	            (((i % 100) != 0) || ((i % 400) == 0)));
     } else {
         for (i = Year; i < EPOCH; i++)
-            Julian -= 365 + (i % 4 == 0);
+            Julian -= 365 + (((i % 4) == 0) &&
+	            (((i % 100) != 0) || ((i % 400) == 0)));
     }
     Julian *= SECSPERDAY;
     Julian += TclDateTimezone * 60L;
