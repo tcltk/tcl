@@ -1,3 +1,10 @@
+1999-03-29    <stanton@scriptics.com>
+
+	* generic/tclFileName.c: 
+	* generic/tclDecls.h: 
+	* generic/tcl.decls: Added CONST to Tcl_JoinPath and
+	Tcl_TranslateFileName.
+
 1999-03-29    <redman@scriptics.com>
 
 	* tools/genStubs.tcl:
@@ -14,7 +21,6 @@
 	&tclStubs into the interp (don't use tclStubsPtr because of
 	collisions with the stubs on Solaris).
 	
-
 1999-03-27    <redman@scriptics.com>
 
 	* win/makefile.bc: Removed makefile for Borland compiler, no
@@ -37,6 +43,12 @@
 
 1999-03-25    <stanton@scriptics.com>
 
+	* tests/interp.test: 
+	* generic/tclInterp.c (AliasObjCmd): Changed so aliases are
+	invoked at current scope in the target interpreter instead of at
+	the global scope.  This was an incompatibility introduced in 8.1
+	that is being removed. [Bug: 1153, 1556]
+	
 	* library/encoding/big5.enc:
 	* library/encoding/gb2312.enc:
 	* tools/encoding/big5.enc:
