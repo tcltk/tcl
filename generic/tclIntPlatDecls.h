@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.5 2001/10/17 19:29:25 das Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.6 2001/10/18 01:01:53 hobbs Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -271,7 +271,7 @@ typedef struct TclIntPlatStubs {
     short (*tclMacUnRegisterResourceFork) _ANSI_ARGS_((char * tokenPtr, Tcl_Obj * resultPtr)); /* 21 */
     int (*tclMacCreateEnv) _ANSI_ARGS_((void)); /* 22 */
     FILE * (*tclMacFOpenHack) _ANSI_ARGS_((CONST char * path, CONST char * mode)); /* 23 */
-    void *reserved24;
+    char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 24 */
     int (*tclMacChmod) _ANSI_ARGS_((char * path, int mode)); /* 25 */
 #endif /* MAC_TCL */
 } TclIntPlatStubs;
