@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.112 2003/10/21 20:42:04 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.113 2003/10/28 22:06:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -140,15 +140,15 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * ARGUMENTS:
  *    pcAdjustment: how much to increment pc
  *    nCleanup: how many objects to remove from the stack
- *    result: 0 indicates no object should be pushed on the
+ *    resultHandling: 0 indicates no object should be pushed on the
  *       stack; otherwise, push objResultPtr. If (result < 0),
  *       objResultPtr already has the correct reference count.
  */
 
-#define NEXT_INST_F(pcAdjustment, nCleanup, result) \
+#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling) \
      if (nCleanup == 0) {\
-	 if (result != 0) {\
-	     if ((result) > 0) {\
+	 if (resultHandling != 0) {\
+	     if ((resultHandling) > 0) {\
 		 PUSH_OBJECT(objResultPtr);\
 	     } else {\
 		 *(++tosPtr) = objResultPtr;\
@@ -156,8 +156,8 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	 } \
 	 pc += (pcAdjustment);\
 	 goto cleanup0;\
-     } else if (result != 0) {\
-	 if ((result) > 0) {\
+     } else if (resultHandling != 0) {\
+	 if ((resultHandling) > 0) {\
 	     Tcl_IncrRefCount(objResultPtr);\
 	 }\
 	 pc += (pcAdjustment);\
@@ -175,11 +175,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	 }\
      }
 
-#define NEXT_INST_V(pcAdjustment, nCleanup, result) \
+#define NEXT_INST_V(pcAdjustment, nCleanup, resultHandling) \
     pc += (pcAdjustment);\
     cleanup = (nCleanup);\
-    if (result) {\
-	if ((result) > 0) {\
+    if (resultHandling) {\
+	if ((resultHandling) > 0) {\
 	    Tcl_IncrRefCount(objResultPtr);\
 	}\
 	goto cleanupV_pushObjResultPtr;\
