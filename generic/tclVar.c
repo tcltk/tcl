@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.33 2001/05/26 01:25:59 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.34 2001/07/03 23:38:58 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -29,11 +29,11 @@ static char *noSuchVar =	"no such variable";
 static char *isArray =		"variable is array";
 static char *needArray =	"variable isn't array";
 static char *noSuchElement =	"no such element in array";
-static char *danglingElement =  "upvar refers to element in deleted array";
+static char *danglingElement =	"upvar refers to element in deleted array";
 static char *danglingVar =     "upvar refers to variable in deleted namespace";
 static char *badNamespace =	"parent namespace doesn't exist";
 static char *missingName =	"missing variable name";
-static char *isArrayElement =   "name refers to an element in an array";
+static char *isArrayElement =	"name refers to an element in an array";
 
 /*
  * Forward references to procedures defined later in this file:
@@ -616,8 +616,14 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
     Var *arrayPtr;
     char *msg;
 
+    /*
+     * We need a special flag check to see if we want to create part 1,
+     * because commands like lappend require read traces to trigger for
+     * previously non-existent values.
+     */
     varPtr = TclLookupVar(interp, part1, part2, flags, "read",
-            /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+            /*createPart1*/ (flags & TCL_TRACE_READS),
+	    /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
 	return NULL;
     }
@@ -775,7 +781,6 @@ TclGetIndexedScalar(interp, localIndex, flags)
 		msg = noSuchVar;
 	    }
 	    VarErrMsg(interp, varName, NULL, "read", msg);
-
 	}
 	return NULL;
     }
@@ -1456,6 +1461,23 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
     }
 
     /*
+     * Invoke any read traces that have been set for the variable if we
+     * are appending, but only in the lappend case.
+     */
+
+    if ((flags & TCL_APPEND_VALUE) && (flags & TCL_LIST_ELEMENT)
+	    && (varPtr->tracePtr != NULL)) {
+	char *msg = CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName, NULL,
+		TCL_TRACE_READS);
+	if (msg != NULL) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		VarErrMsg(interp, varName, NULL, "read", msg);
+	    }
+	    return NULL;
+	}
+    }
+
+    /*
      * If the variable is in a hashtable and its hPtr field is NULL, then we
      * may have an upvar to an array element where the array was deleted
      * or an upvar to a namespace variable whose namespace was deleted.
@@ -1748,6 +1770,24 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
     }
 
     /*
+     * Invoke any read traces that have been set for the element variable if
+     * we are appending, but only in the lappend case.
+     */
+
+    if ((flags & TCL_APPEND_VALUE) && (flags & TCL_LIST_ELEMENT)
+	    && ((varPtr->tracePtr != NULL)
+		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
+	char *msg = CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+		TCL_TRACE_READS);
+	if (msg != NULL) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		VarErrMsg(interp, arrayName, elem, "read", msg);
+	    }
+	    goto errorReturn;
+	}
+    }
+
+    /*
      * Set the variable's new value and discard the old one.
      */
 
@@ -1840,10 +1880,8 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
      */
 
     errorReturn:
-    if (varPtr != NULL) {
-	if (TclIsVarUndefined(varPtr)) {
-	    CleanupVar(varPtr, NULL); /* note: array isn't in hashtable */
-	}
+    if ((varPtr != NULL) && TclIsVarUndefined(varPtr)) {
+	CleanupVar(varPtr, NULL); /* note: array isn't in hashtable */
     }
     return resultPtr;
 }
@@ -2821,19 +2859,18 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (objc == 2) {
-	newValuePtr = Tcl_ObjGetVar2(interp, objv[1], (Tcl_Obj *) NULL,
-		(TCL_LEAVE_ERR_MSG));
+	newValuePtr = Tcl_ObjGetVar2(interp, objv[1], (Tcl_Obj *) NULL, 0);
 	if (newValuePtr == NULL) {
 	    /*
 	     * The variable doesn't exist yet. Just create it with an empty
 	     * initial value.
 	     */
 	    
-	    Tcl_Obj *nullObjPtr = Tcl_NewObj();
-	    newValuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL,
-		    nullObjPtr, TCL_LEAVE_ERR_MSG);
+	    varValuePtr = Tcl_NewObj();
+	    newValuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL, varValuePtr,
+		    TCL_LEAVE_ERR_MSG);
 	    if (newValuePtr == NULL) {
-		Tcl_DecrRefCount(nullObjPtr); /* free unneeded object */
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded object */
 		return TCL_ERROR;
 	    }
 	}
@@ -2850,11 +2887,16 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 
 	createdNewObj = 0;
 	createVar = 1;
-	varValuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
+	/*
+	 * Use the TCL_TRACE_READS flag to ensure that if we have an
+	 * array with no elements set yet, but with a read trace on it,
+	 * we will create the variable and get read traces triggered.
+	 */
+	varValuePtr = Tcl_ObjGetVar2(interp, objv[1], NULL, TCL_TRACE_READS);
 	if (varValuePtr == NULL) {
 	    /*
 	     * We couldn't read the old value: either the var doesn't yet
-	     * exist or it's an array element. If it's new, we will try to
+	     * exist or it's an array element.  If it's new, we will try to
 	     * create it with Tcl_ObjSetVar2 below.
 	     */
 	    
@@ -2866,6 +2908,11 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 		if (*p == '(') {
 		    p = (varName + nameBytes-1);	
 		    if (*p == ')') { /* last char is ')' => array ref */
+			/*
+			 * This case occurs when we tried something like:
+			 set x ""
+			 lappend x(0) 44
+			 */
 			createVar = 0;
 		    }
 		    break;
