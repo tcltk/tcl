@@ -2,7 +2,15 @@
 
         * generic/tclCompCmds.c (TclCompileIncrCmd):    Corrected checks
         for immediate operand usage to permit leading space and sign
-        characters.  [Bug 1165671]
+        characters.  Restores more efficient bytecode for [incr x -1]
+	that got lost in the CONST string reforms of Tcl 8.4.  [Bug 1165671]
+
+	* generic/tclBasic.c (Tcl_EvalEx):	Restored recursion limit
+	* generic/tclParse.c (TclSubstTokens):	testing in nested command
+	* tests/basic.test (basic-46.4):	substitutions within direct
+	* tests/parse.test (parse-19.*):	script evaluation (Tcl_EvalEx)
+	that got lost in the parser reforms of Tcl 8.1.  Added tests for
+	correct behavior.  [Bug 1115904]
 
 2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
 
