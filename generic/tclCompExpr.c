@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.5 2000/05/09 00:00:34 hobbs Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.6 2000/05/26 08:53:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -144,8 +144,8 @@ OperatorDesc operatorTable[] = {
     {"?",   0},
     {"!",   1,  INST_LNOT},
     {"~",   1,  INST_BITNOT},
-    {"eq",  2,  INST_STREQ},
-    {"ne",  2,  INST_STRNEQ},
+    {"eq",  2,  INST_STR_EQ},
+    {"ne",  2,  INST_STR_NEQ},
     {NULL}
 };
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.6 2000/05/23 22:10:50 ericm Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.7 2000/05/26 08:53:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2021,14 +2021,32 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     
     switch ((enum options) index) {
 	case STR_BYTELENGTH:
+	case STR_FIRST:
+	case STR_IS:
+	case STR_LAST:
+	case STR_MAP:
+	case STR_RANGE:
+	case STR_REPEAT:
+	case STR_REPLACE:
+	case STR_TOLOWER:
+	case STR_TOUPPER:
+	case STR_TOTITLE:
+	case STR_TRIM:
+	case STR_TRIMLEFT:
+	case STR_TRIMRIGHT:
+	case STR_WORDEND:
+	case STR_WORDSTART:
+	    /*
+	     * All other cases: compile out of line.
+	     */
+	    return TCL_OUT_LINE_COMPILE;
+
 	case STR_COMPARE: 
-	    break;
 	case STR_EQUAL: {
-	    int i;
-	    int depth;
+	    int i, depth;
 	    /*
 	     * If there are any flags to the command, we can't byte compile it
-	     * because the INST_STREQ bytecode doesn't support flags.
+	     * because the INST_STR_EQ bytecode doesn't support flags.
 	     */
 
 	    if (parsePtr->numWords != 4) {
@@ -2059,59 +2077,124 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    }
 
 	    envPtr->maxStackDepth = depth;
-	    TclEmitOpcode(INST_STREQ, envPtr);
+	    TclEmitOpcode(((((enum options) index) == STR_COMPARE) ?
+		    INST_STR_CMP : INST_STR_EQ), envPtr);
 	    return TCL_OK;
-	    break;
 	}
-	case STR_FIRST:
-	case STR_INDEX:
-	case STR_IS:
-	case STR_LAST:
-	    break;
+	case STR_INDEX: {
+	    int i, depth;
+
+	    if (parsePtr->numWords != 4) {
+		Tcl_SetResult(interp, "wrong # args: should be "
+			"\"string index string charIndex\"", TCL_STATIC);
+		return TCL_ERROR;
+	    }
+
+	    depth = 0;
+
+	    /*
+	     * Push the two operands onto the stack.
+	     */
+
+	    for (i = 0; i < 2; i++) {
+		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		    TclEmitPush(TclRegisterLiteral(envPtr,
+			    varTokenPtr[1].start, varTokenPtr[1].size,
+			    0), envPtr);
+		    depth++;
+		} else {
+		    code = TclCompileTokens(interp, varTokenPtr+1,
+			    varTokenPtr->numComponents, envPtr);
+		    if (code != TCL_OK) {
+			return code;
+		    }
+		    depth += envPtr->maxStackDepth;
+		}
+		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+	    }
+
+	    envPtr->maxStackDepth = depth;
+	    TclEmitOpcode(INST_STR_INDEX, envPtr);
+	    return TCL_OK;
+	}
 	case STR_LENGTH: {
 	    if (parsePtr->numWords != 3) {
 		Tcl_SetResult(interp, "wrong # args: should be "
 			"\"string length string\"", TCL_STATIC);
 		return TCL_ERROR;
 	    }
-	    
+
 	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
 			varTokenPtr[1].size, 0), envPtr);
 		envPtr->maxStackDepth = 1;
-		TclEmitOpcode(INST_STRLEN, envPtr);
-		return TCL_OK;
 	    } else {
 		code = TclCompileTokens(interp, varTokenPtr+1,
 			varTokenPtr->numComponents, envPtr);
 		if (code != TCL_OK) {
 		    return code;
 		}
-		TclEmitOpcode(INST_STRLEN, envPtr);
-		return TCL_OK;
 	    }
-	    break;
+	    TclEmitOpcode(INST_STR_LEN, envPtr);
+	    return TCL_OK;
 	}
-	case STR_MAP:
-	case STR_MATCH:
-	case STR_RANGE:
-	case STR_REPEAT:
-	case STR_REPLACE:
-	case STR_TOLOWER:
-	case STR_TOUPPER:
-	case STR_TOTITLE:
-	case STR_TRIM:
-	case STR_TRIMLEFT:
-	case STR_TRIMRIGHT:
-	case STR_WORDEND:
-	case STR_WORDSTART:
-	    break;
+	case STR_MATCH: {
+	    int i, length, nocase = 0, depth = 0;
+	    char *str;
+
+	    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
+		Tcl_SetResult(interp, "wrong # args: should be "
+			"\"string match ?-nocase? pattern string\"",
+			TCL_STATIC);
+		return TCL_ERROR;
+	    }
+
+	    if (parsePtr->numWords == 5) {
+		if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+		    return TCL_OUT_LINE_COMPILE;
+		}
+		str    = varTokenPtr[1].start;
+		length = varTokenPtr[1].size;
+		if ((length > 1) &&
+			strncmp(str, "-nocase", (size_t) length) == 0) {
+		    nocase = 1;
+		} else {
+		    char c = str[length];
+		    str[length] = '\0';
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			    "bad option \"", str, "\": must be -nocase",
+			    (char *) NULL);
+		    str[length] = c;
+		    return TCL_ERROR;
+		}
+		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+	    }
+	    TclEmitPush(TclRegisterLiteral(envPtr, (nocase ? "1" : "0"),
+		    1, 0), envPtr);
+	    depth++;
+
+	    for (i = 0; i < 2; i++) {
+		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		    TclEmitPush(TclRegisterLiteral(envPtr,
+			    varTokenPtr[1].start, varTokenPtr[1].size,
+			    0), envPtr);
+		    depth++;
+		} else {
+		    code = TclCompileTokens(interp, varTokenPtr+1,
+			    varTokenPtr->numComponents, envPtr);
+		    if (code != TCL_OK) {
+			return code;
+		    }
+		    depth += envPtr->maxStackDepth;
+		}
+		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+	    }
+
+	    envPtr->maxStackDepth = depth;
+	    TclEmitOpcode(INST_STR_MATCH, envPtr);
+	    return TCL_OK;
+	}
     }
-    
-    /*
-     * All other cases: compile out of line.
-     */
-    return TCL_OUT_LINE_COMPILE;
 
     return TCL_OK;
 }

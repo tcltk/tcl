@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20 2000/03/30 04:36:11 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.21 2000/05/26 08:53:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -50,166 +50,178 @@ static int traceInitialized = 0;
  */
 
 InstructionDesc instructionTable[] = {
-   /* Name	      Bytes #Opnds Operand types        Stack top, next   */
-    {"done",	          1,   0,   {OPERAND_NONE}},
-        /* Finish ByteCode execution and return stktop (top stack item) */
-    {"push1",	          2,   1,   {OPERAND_UINT1}},
-        /* Push object at ByteCode objArray[op1] */
-    {"push4",	          5,   1,   {OPERAND_UINT4}},
-        /* Push object at ByteCode objArray[op4] */
-    {"pop",	          1,   0,   {OPERAND_NONE}},
-        /* Pop the topmost stack object */
-    {"dup",	          1,   0,   {OPERAND_NONE}},
-        /* Duplicate the topmost stack object and push the result */
-    {"concat1",	          2,   1,   {OPERAND_UINT1}},
-        /* Concatenate the top op1 items and push result */
-    {"invokeStk1",        2,   1,   {OPERAND_UINT1}},
-        /* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
-    {"invokeStk4",        5,   1,   {OPERAND_UINT4}},
-        /* Invoke command named objv[0]; <objc,objv> = <op4,top op4> */
-    {"evalStk",           1,   0,   {OPERAND_NONE}},
-        /* Evaluate command in stktop using Tcl_EvalObj. */
-    {"exprStk",           1,   0,   {OPERAND_NONE}},
-        /* Execute expression in stktop using Tcl_ExprStringObj. */
+   /* Name	      Bytes #Opnds Operand types	Stack top, next	  */
+    {"done",		  1,   0,   {OPERAND_NONE}},
+	/* Finish ByteCode execution and return stktop (top stack item) */
+    {"push1",		  2,   1,   {OPERAND_UINT1}},
+	/* Push object at ByteCode objArray[op1] */
+    {"push4",		  5,   1,   {OPERAND_UINT4}},
+	/* Push object at ByteCode objArray[op4] */
+    {"pop",		  1,   0,   {OPERAND_NONE}},
+	/* Pop the topmost stack object */
+    {"dup",		  1,   0,   {OPERAND_NONE}},
+	/* Duplicate the topmost stack object and push the result */
+    {"concat1",		  2,   1,   {OPERAND_UINT1}},
+	/* Concatenate the top op1 items and push result */
+    {"invokeStk1",	  2,   1,   {OPERAND_UINT1}},
+	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
+    {"invokeStk4",	  5,   1,   {OPERAND_UINT4}},
+	/* Invoke command named objv[0]; <objc,objv> = <op4,top op4> */
+    {"evalStk",		  1,   0,   {OPERAND_NONE}},
+	/* Evaluate command in stktop using Tcl_EvalObj. */
+    {"exprStk",		  1,   0,   {OPERAND_NONE}},
+	/* Execute expression in stktop using Tcl_ExprStringObj. */
     
-    {"loadScalar1",       2,   1,   {OPERAND_UINT1}},
-        /* Load scalar variable at index op1 <= 255 in call frame */
-    {"loadScalar4",       5,   1,   {OPERAND_UINT4}},
-        /* Load scalar variable at index op1 >= 256 in call frame */
-    {"loadScalarStk",     1,   0,   {OPERAND_NONE}},
-        /* Load scalar variable; scalar's name is stktop */
-    {"loadArray1",        2,   1,   {OPERAND_UINT1}},
-        /* Load array element; array at slot op1<=255, element is stktop */
-    {"loadArray4",        5,   1,   {OPERAND_UINT4}},
-        /* Load array element; array at slot op1 > 255, element is stktop */
-    {"loadArrayStk",      1,   0,   {OPERAND_NONE}},
-        /* Load array element; element is stktop, array name is stknext */
-    {"loadStk",           1,   0,   {OPERAND_NONE}},
-        /* Load general variable; unparsed variable name is stktop */
-    {"storeScalar1",      2,   1,   {OPERAND_UINT1}},
-        /* Store scalar variable at op1<=255 in frame; value is stktop */
-    {"storeScalar4",      5,   1,   {OPERAND_UINT4}},
-        /* Store scalar variable at op1 > 255 in frame; value is stktop */
-    {"storeScalarStk",    1,   0,   {OPERAND_NONE}},
-        /* Store scalar; value is stktop, scalar name is stknext */
-    {"storeArray1",       2,   1,   {OPERAND_UINT1}},
-        /* Store array element; array at op1<=255, value is top then elem */
-    {"storeArray4",       5,   1,   {OPERAND_UINT4}},
-        /* Store array element; array at op1>=256, value is top then elem */
-    {"storeArrayStk",     1,   0,   {OPERAND_NONE}},
-        /* Store array element; value is stktop, then elem, array names */
-    {"storeStk",          1,   0,   {OPERAND_NONE}},
-        /* Store general variable; value is stktop, then unparsed name */
+    {"loadScalar1",	  2,   1,   {OPERAND_UINT1}},
+	/* Load scalar variable at index op1 <= 255 in call frame */
+    {"loadScalar4",	  5,   1,   {OPERAND_UINT4}},
+	/* Load scalar variable at index op1 >= 256 in call frame */
+    {"loadScalarStk",	  1,   0,   {OPERAND_NONE}},
+	/* Load scalar variable; scalar's name is stktop */
+    {"loadArray1",	  2,   1,   {OPERAND_UINT1}},
+	/* Load array element; array at slot op1<=255, element is stktop */
+    {"loadArray4",	  5,   1,   {OPERAND_UINT4}},
+	/* Load array element; array at slot op1 > 255, element is stktop */
+    {"loadArrayStk",	  1,   0,   {OPERAND_NONE}},
+	/* Load array element; element is stktop, array name is stknext */
+    {"loadStk",		  1,   0,   {OPERAND_NONE}},
+	/* Load general variable; unparsed variable name is stktop */
+    {"storeScalar1",	  2,   1,   {OPERAND_UINT1}},
+	/* Store scalar variable at op1<=255 in frame; value is stktop */
+    {"storeScalar4",	  5,   1,   {OPERAND_UINT4}},
+	/* Store scalar variable at op1 > 255 in frame; value is stktop */
+    {"storeScalarStk",	  1,   0,   {OPERAND_NONE}},
+	/* Store scalar; value is stktop, scalar name is stknext */
+    {"storeArray1",	  2,   1,   {OPERAND_UINT1}},
+	/* Store array element; array at op1<=255, value is top then elem */
+    {"storeArray4",	  5,   1,   {OPERAND_UINT4}},
+	/* Store array element; array at op1>=256, value is top then elem */
+    {"storeArrayStk",	  1,   0,   {OPERAND_NONE}},
+	/* Store array element; value is stktop, then elem, array names */
+    {"storeStk",	  1,   0,   {OPERAND_NONE}},
+	/* Store general variable; value is stktop, then unparsed name */
     
-    {"incrScalar1",       2,   1,   {OPERAND_UINT1}},
-        /* Incr scalar at index op1<=255 in frame; incr amount is stktop */
-    {"incrScalarStk",     1,   0,   {OPERAND_NONE}},
-        /* Incr scalar; incr amount is stktop, scalar's name is stknext */
-    {"incrArray1",        2,   1,   {OPERAND_UINT1}},
-        /* Incr array elem; arr at slot op1<=255, amount is top then elem */
-    {"incrArrayStk",      1,   0,   {OPERAND_NONE}},
-        /* Incr array element; amount is top then elem then array names */
-    {"incrStk",           1,   0,   {OPERAND_NONE}},
-        /* Incr general variable; amount is stktop then unparsed var name */
-    {"incrScalar1Imm",    3,   2,   {OPERAND_UINT1, OPERAND_INT1}},
-        /* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
+    {"incrScalar1",	  2,   1,   {OPERAND_UINT1}},
+	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
+    {"incrScalarStk",	  1,   0,   {OPERAND_NONE}},
+	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
+    {"incrArray1",	  2,   1,   {OPERAND_UINT1}},
+	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
+    {"incrArrayStk",	  1,   0,   {OPERAND_NONE}},
+	/* Incr array element; amount is top then elem then array names */
+    {"incrStk",		  1,   0,   {OPERAND_NONE}},
+	/* Incr general variable; amount is stktop then unparsed var name */
+    {"incrScalar1Imm",	  3,   2,   {OPERAND_UINT1, OPERAND_INT1}},
+	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     {"incrScalarStkImm",  2,   1,   {OPERAND_INT1}},
-        /* Incr scalar; scalar name is stktop; incr amount is op1 */
-    {"incrArray1Imm",     3,   2,   {OPERAND_UINT1, OPERAND_INT1}},
-        /* Incr array elem; array at slot op1 <= 255, elem is stktop,
+	/* Incr scalar; scalar name is stktop; incr amount is op1 */
+    {"incrArray1Imm",	  3,   2,   {OPERAND_UINT1, OPERAND_INT1}},
+	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
-    {"incrArrayStkImm",   2,   1,   {OPERAND_INT1}},
-        /* Incr array element; elem is top then array name, amount is op1 */
-    {"incrStkImm",        2,   1,   {OPERAND_INT1}},
-        /* Incr general variable; unparsed name is top, amount is op1 */
+    {"incrArrayStkImm",	  2,   1,   {OPERAND_INT1}},
+	/* Incr array element; elem is top then array name, amount is op1 */
+    {"incrStkImm",	  2,   1,   {OPERAND_INT1}},
+	/* Incr general variable; unparsed name is top, amount is op1 */
     
-    {"jump1",             2,   1,   {OPERAND_INT1}},
-        /* Jump relative to (pc + op1) */
-    {"jump4",             5,   1,   {OPERAND_INT4}},
-        /* Jump relative to (pc + op4) */
-    {"jumpTrue1",         2,   1,   {OPERAND_INT1}},
-        /* Jump relative to (pc + op1) if stktop expr object is true */
-    {"jumpTrue4",         5,   1,   {OPERAND_INT4}},
-        /* Jump relative to (pc + op4) if stktop expr object is true */
-    {"jumpFalse1",        2,   1,   {OPERAND_INT1}},
-        /* Jump relative to (pc + op1) if stktop expr object is false */
-    {"jumpFalse4",        5,   1,   {OPERAND_INT4}},
-        /* Jump relative to (pc + op4) if stktop expr object is false */
+    {"jump1",		  2,   1,   {OPERAND_INT1}},
+	/* Jump relative to (pc + op1) */
+    {"jump4",		  5,   1,   {OPERAND_INT4}},
+	/* Jump relative to (pc + op4) */
+    {"jumpTrue1",	  2,   1,   {OPERAND_INT1}},
+	/* Jump relative to (pc + op1) if stktop expr object is true */
+    {"jumpTrue4",	  5,   1,   {OPERAND_INT4}},
+	/* Jump relative to (pc + op4) if stktop expr object is true */
+    {"jumpFalse1",	  2,   1,   {OPERAND_INT1}},
+	/* Jump relative to (pc + op1) if stktop expr object is false */
+    {"jumpFalse4",	  5,   1,   {OPERAND_INT4}},
+	/* Jump relative to (pc + op4) if stktop expr object is false */
 
-    {"lor",               1,   0,   {OPERAND_NONE}},
-        /* Logical or:	push (stknext || stktop) */
-    {"land",              1,   0,   {OPERAND_NONE}},
-        /* Logical and:	push (stknext && stktop) */
-    {"bitor",             1,   0,   {OPERAND_NONE}},
-        /* Bitwise or:	push (stknext | stktop) */
-    {"bitxor",            1,   0,   {OPERAND_NONE}},
-        /* Bitwise xor	push (stknext ^ stktop) */
-    {"bitand",            1,   0,   {OPERAND_NONE}},
-        /* Bitwise and:	push (stknext & stktop) */
-    {"eq",                1,   0,   {OPERAND_NONE}},
-        /* Equal:	push (stknext == stktop) */
-    {"neq",               1,   0,   {OPERAND_NONE}},
-        /* Not equal:	push (stknext != stktop) */
-    {"lt",                1,   0,   {OPERAND_NONE}},
-        /* Less:	push (stknext < stktop) */
-    {"gt",                1,   0,   {OPERAND_NONE}},
-        /* Greater:	push (stknext || stktop) */
-    {"le",                1,   0,   {OPERAND_NONE}},
-        /* Logical or:	push (stknext || stktop) */
-    {"ge",                1,   0,   {OPERAND_NONE}},
-        /* Logical or:	push (stknext || stktop) */
-    {"lshift",            1,   0,   {OPERAND_NONE}},
-        /* Left shift:	push (stknext << stktop) */
-    {"rshift",            1,   0,   {OPERAND_NONE}},
-        /* Right shift:	push (stknext >> stktop) */
-    {"add",               1,   0,   {OPERAND_NONE}},
-        /* Add:		push (stknext + stktop) */
-    {"sub",               1,   0,   {OPERAND_NONE}},
-        /* Sub:		push (stkext - stktop) */
-    {"mult",              1,   0,   {OPERAND_NONE}},
-        /* Multiply:	push (stknext * stktop) */
-    {"div",               1,   0,   {OPERAND_NONE}},
-        /* Divide:	push (stknext / stktop) */
-    {"mod",               1,   0,   {OPERAND_NONE}},
-        /* Mod:		push (stknext % stktop) */
-    {"uplus",             1,   0,   {OPERAND_NONE}},
-        /* Unary plus:	push +stktop */
-    {"uminus",            1,   0,   {OPERAND_NONE}},
-        /* Unary minus:	push -stktop */
-    {"bitnot",            1,   0,   {OPERAND_NONE}},
-        /* Bitwise not:	push ~stktop */
-    {"not",               1,   0,   {OPERAND_NONE}},
-        /* Logical not:	push !stktop */
+    {"lor",		  1,   0,   {OPERAND_NONE}},
+	/* Logical or:	push (stknext || stktop) */
+    {"land",		  1,   0,   {OPERAND_NONE}},
+	/* Logical and:	push (stknext && stktop) */
+    {"bitor",		  1,   0,   {OPERAND_NONE}},
+	/* Bitwise or:	push (stknext | stktop) */
+    {"bitxor",		  1,   0,   {OPERAND_NONE}},
+	/* Bitwise xor	push (stknext ^ stktop) */
+    {"bitand",		  1,   0,   {OPERAND_NONE}},
+	/* Bitwise and:	push (stknext & stktop) */
+    {"eq",		  1,   0,   {OPERAND_NONE}},
+	/* Equal:	push (stknext == stktop) */
+    {"neq",		  1,   0,   {OPERAND_NONE}},
+	/* Not equal:	push (stknext != stktop) */
+    {"lt",		  1,   0,   {OPERAND_NONE}},
+	/* Less:	push (stknext < stktop) */
+    {"gt",		  1,   0,   {OPERAND_NONE}},
+	/* Greater:	push (stknext || stktop) */
+    {"le",		  1,   0,   {OPERAND_NONE}},
+	/* Logical or:	push (stknext || stktop) */
+    {"ge",		  1,   0,   {OPERAND_NONE}},
+	/* Logical or:	push (stknext || stktop) */
+    {"lshift",		  1,   0,   {OPERAND_NONE}},
+	/* Left shift:	push (stknext << stktop) */
+    {"rshift",		  1,   0,   {OPERAND_NONE}},
+	/* Right shift:	push (stknext >> stktop) */
+    {"add",		  1,   0,   {OPERAND_NONE}},
+	/* Add:		push (stknext + stktop) */
+    {"sub",		  1,   0,   {OPERAND_NONE}},
+	/* Sub:		push (stkext - stktop) */
+    {"mult",		  1,   0,   {OPERAND_NONE}},
+	/* Multiply:	push (stknext * stktop) */
+    {"div",		  1,   0,   {OPERAND_NONE}},
+	/* Divide:	push (stknext / stktop) */
+    {"mod",		  1,   0,   {OPERAND_NONE}},
+	/* Mod:		push (stknext % stktop) */
+    {"uplus",		  1,   0,   {OPERAND_NONE}},
+	/* Unary plus:	push +stktop */
+    {"uminus",		  1,   0,   {OPERAND_NONE}},
+	/* Unary minus:	push -stktop */
+    {"bitnot",		  1,   0,   {OPERAND_NONE}},
+	/* Bitwise not:	push ~stktop */
+    {"not",		  1,   0,   {OPERAND_NONE}},
+	/* Logical not:	push !stktop */
     {"callBuiltinFunc1",  2,   1,   {OPERAND_UINT1}},
-        /* Call builtin math function with index op1; any args are on stk */
-    {"callFunc1",         2,   1,   {OPERAND_UINT1}},
-        /* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1>  */
-    {"tryCvtToNumeric",   1,   0,   {OPERAND_NONE}},
-        /* Try converting stktop to first int then double if possible. */
+	/* Call builtin math function with index op1; any args are on stk */
+    {"callFunc1",	  2,   1,   {OPERAND_UINT1}},
+	/* Call non-builtin func objv[0]; <objc,objv>=<op1,top op1>  */
+    {"tryCvtToNumeric",	  1,   0,   {OPERAND_NONE}},
+	/* Try converting stktop to first int then double if possible. */
 
-    {"break",             1,   0,   {OPERAND_NONE}},
-        /* Abort closest enclosing loop; if none, return TCL_BREAK code. */
-    {"continue",          1,   0,   {OPERAND_NONE}},
-        /* Skip to next iteration of closest enclosing loop; if none,
+    {"break",		  1,   0,   {OPERAND_NONE}},
+	/* Abort closest enclosing loop; if none, return TCL_BREAK code. */
+    {"continue",	  1,   0,   {OPERAND_NONE}},
+	/* Skip to next iteration of closest enclosing loop; if none,
 	 * return TCL_CONTINUE code. */
 
-    {"foreach_start4",    5,   1,   {OPERAND_UINT4}},
-        /* Initialize execution of a foreach loop. Operand is aux data index
+    {"foreach_start4",	  5,   1,   {OPERAND_UINT4}},
+	/* Initialize execution of a foreach loop. Operand is aux data index
 	 * of the ForeachInfo structure for the foreach command. */
-    {"foreach_step4",     5,   1,   {OPERAND_UINT4}},
-        /* "Step" or begin next iteration of foreach loop. Push 0 if to
+    {"foreach_step4",	  5,   1,   {OPERAND_UINT4}},
+	/* "Step" or begin next iteration of foreach loop. Push 0 if to
 	 *  terminate loop, else push 1. */
 
     {"beginCatch4",	  5,   1,   {OPERAND_UINT4}},
-        /* Record start of catch with the operand's exception index.
+	/* Record start of catch with the operand's exception index.
 	 * Push the current stack depth onto a special catch stack. */
     {"endCatch",	  1,   0,   {OPERAND_NONE}},
-        /* End of last catch. Pop the bytecode interpreter's catch stack. */
+	/* End of last catch. Pop the bytecode interpreter's catch stack. */
     {"pushResult",	  1,   0,   {OPERAND_NONE}},
-        /* Push the interpreter's object result onto the stack. */
+	/* Push the interpreter's object result onto the stack. */
     {"pushReturnCode",	  1,   0,   {OPERAND_NONE}},
-        /* Push interpreter's return code (e.g. TCL_OK or TCL_ERROR) as
+	/* Push interpreter's return code (e.g. TCL_OK or TCL_ERROR) as
 	 * a new object onto the stack. */
+    {"streq",		  1,   0,   {OPERAND_NONE}},
+	/* Str Equal:	push (stknext eq stktop) */
+    {"strneq",		  1,   0,   {OPERAND_NONE}},
+	/* Str !Equal:	push (stknext neq stktop) */
+    {"strcmp",		  1,   0,   {OPERAND_NONE}},
+	/* Str Compare:	push (stknext cmp stktop) */
+    {"strlen",		  1,   0,   {OPERAND_NONE}},
+	/* Str Length:	push (strlen stktop) */
+    {"strindex",	  1,   0,   {OPERAND_NONE}},
+	/* Str Index:	push (strindex stknext stktop) */
+    {"strmatch",	  1,   0,   {OPERAND_NONE}},
+	/* Str Match:	push (strmatch stkforenext stknext stktop) */
     {0}
 };
 
@@ -3383,7 +3395,7 @@ RecordByteCodeStats(codePtr)
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
     
     statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2(codePtr->structureSize)]++;
+    statsPtr->byteCodeCount[TclLog2((int)(codePtr->structureSize))]++;
 
     statsPtr->currentInstBytes   += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes    +=

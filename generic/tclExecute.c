@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.12 2000/05/23 22:10:51 ericm Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.13 2000/05/26 08:53:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1757,15 +1757,14 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    ADJUST_PC(1);
 
-	case INST_STREQ:
-	case INST_STRNEQ:
+	case INST_STR_EQ:
+	case INST_STR_NEQ:
 	    {
 		/*
 		 * String (in)equality check
 		 */
 		char *s1, *s2;
-		int s1len, s2len;
-		long iResult;
+		int s1len, s2len, iResult;
 
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
@@ -1777,54 +1776,160 @@ TclExecuteByteCode(interp, codePtr)
 		     * We only need to check (in)equality when we have equal
 		     * length strings.
 		     */
-		    if (*pc == INST_STRNEQ) {
+		    if (*pc == INST_STR_NEQ) {
 			iResult = (strcmp(s1, s2) != 0);
 		    } else {
-			/* INST_STREQ */
+			/* INST_STR_EQ */
 			iResult = (strcmp(s1, s2) == 0);
 		    }
 		} else {
-		    iResult = (*pc == INST_STRNEQ);
+		    iResult = (*pc == INST_STR_NEQ);
 		}
 
-		/*
-		 * Reuse the valuePtr object already on stack if possible.
-		 */
-		
-		if (Tcl_IsShared(valuePtr)) {
-		    PUSH_OBJECT(Tcl_NewLongObj(iResult));
-		    TRACE(("%.20s %.20s => %ld\n",
-			   O2S(valuePtr), O2S(value2Ptr), iResult));
-		    TclDecrRefCount(valuePtr);
-		} else {	/* reuse the valuePtr object */
-		    TRACE(("%.20s %.20s => %ld\n",
-			    O2S(valuePtr), O2S(value2Ptr), iResult));
-		    Tcl_SetLongObj(valuePtr, iResult);
-		    ++stackTop; /* valuePtr now on stk top has right r.c. */
-		}
+		PUSH_OBJECT(Tcl_NewIntObj(iResult));
+		TRACE(("%.20s %.20s => %d\n",
+			O2S(valuePtr), O2S(value2Ptr), iResult));
+		TclDecrRefCount(valuePtr);
 		TclDecrRefCount(value2Ptr);
 	    }
 	    ADJUST_PC(1);
 
-       case INST_STRLEN:
-           {
-	       int length1;
-	       valuePtr = POP_OBJECT();
-	       if (valuePtr->typePtr == &tclByteArrayType) {
-		   (void) Tcl_GetByteArrayFromObj(valuePtr, &length1);
-	       } else {
-		   length1 = Tcl_GetCharLength(valuePtr);
-	       }
-	       if (Tcl_IsShared(valuePtr)) {
-		   PUSH_OBJECT(Tcl_NewIntObj(length1));
-		   TclDecrRefCount(valuePtr);
-	       } else {
-		   Tcl_SetIntObj(valuePtr, length1);
-		   ++stackTop;
-	       }
-	   }
-	   ADJUST_PC(1);
+	case INST_STR_CMP:
+	    {
+		/*
+		 * String compare
+		 */
+		char *s1, *s2;
+		int s1len, s2len, iResult;
+
+		value2Ptr = POP_OBJECT();
+		valuePtr  = POP_OBJECT();
+
+		s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+		/*
+		 * Compare up to the minimum byte length
+		 */
+		iResult = memcmp(s1, s2,
+			(size_t) ((s1len < s2len) ? s1len : s2len));
+		if (iResult == 0) {
+		    iResult = s1len - s2len;
+		}
+
+		PUSH_OBJECT(Tcl_NewIntObj(iResult));
+		TRACE(("%.20s %.20s => %d\n",
+			O2S(valuePtr), O2S(value2Ptr), iResult));
+		TclDecrRefCount(valuePtr);
+		TclDecrRefCount(value2Ptr);
+	    }
+	    ADJUST_PC(1);
+
+       case INST_STR_LEN:
+	    {
+		int length1;
+		 
+		valuePtr = POP_OBJECT();
+
+		if (valuePtr->typePtr == &tclByteArrayType) {
+		    (void) Tcl_GetByteArrayFromObj(valuePtr, &length1);
+		} else {
+		    length1 = Tcl_GetCharLength(valuePtr);
+		}
+		PUSH_OBJECT(Tcl_NewIntObj(length1));
+		TRACE(("%.20s => %d\n", O2S(valuePtr), length1));
+		TclDecrRefCount(valuePtr);
+	    }
+	    ADJUST_PC(1);
 	    
+       case INST_STR_INDEX:
+	    {
+		/*
+		 * String compare
+		 */
+		int index;
+		bytes = NULL; /* lint */
+
+		value2Ptr = POP_OBJECT();
+		valuePtr  = POP_OBJECT();
+
+		/*
+		 * If we have a ByteArray object, avoid indexing in the
+		 * Utf string since the byte array contains one byte per
+		 * character.  Otherwise, use the Unicode string rep to
+		 * get the index'th char.
+		 */
+
+		if (valuePtr->typePtr == &tclByteArrayType) {
+		    bytes = Tcl_GetByteArrayFromObj(valuePtr, &length);
+		} else {
+		    /*
+		     * Get Unicode char length to calulate what 'end' means.
+		     */
+		    length = Tcl_GetCharLength(valuePtr);
+		}
+
+		result = TclGetIntForIndex(interp, value2Ptr, length - 1,
+			&index);
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(value2Ptr);
+		    Tcl_DecrRefCount(valuePtr);
+		    goto checkForCatch;
+		}
+
+		if ((index >= 0) && (index < length)) {
+		    if (valuePtr->typePtr == &tclByteArrayType) {
+			objPtr = Tcl_NewByteArrayObj((unsigned char *)
+				(&bytes[index]), 1);
+		    } else {
+			char buf[TCL_UTF_MAX];
+			Tcl_UniChar ch;
+
+			ch     = Tcl_GetUniChar(valuePtr, index);
+			length = Tcl_UniCharToUtf(ch, buf);
+			objPtr = Tcl_NewStringObj(buf, length);
+		    }
+		} else {
+		    objPtr = Tcl_NewObj();
+		}
+
+		PUSH_OBJECT(objPtr);
+		TRACE(("%.20s %.20s => %s\n",
+			O2S(valuePtr), O2S(value2Ptr), O2S(objPtr)));
+		TclDecrRefCount(valuePtr);
+		TclDecrRefCount(value2Ptr);
+	    }
+	    ADJUST_PC(1);
+
+	case INST_STR_MATCH:
+	    {
+		int nocase, match;
+
+		valuePtr  = POP_OBJECT();	/* String */
+		value2Ptr = POP_OBJECT();	/* Pattern */
+		objPtr    = POP_OBJECT();	/* Case Sensitivity */
+
+		Tcl_GetBooleanFromObj(interp, objPtr, &nocase);
+		match = Tcl_UniCharCaseMatch(Tcl_GetUnicode(valuePtr),
+			Tcl_GetUnicode(value2Ptr), nocase);
+
+		/*
+		 * Reuse the casePtr object already on stack if possible.
+		 */
+
+		TRACE(("%.20s %.20s => %d\n",
+			O2S(valuePtr), O2S(value2Ptr), match));
+		if (Tcl_IsShared(objPtr)) {
+		    PUSH_OBJECT(Tcl_NewIntObj(match));
+		    TclDecrRefCount(objPtr);
+		} else {	/* reuse the valuePtr object */
+		    Tcl_SetIntObj(objPtr, match);
+		    ++stackTop; /* valuePtr now on stk top has right r.c. */
+		}
+		TclDecrRefCount(valuePtr);
+		TclDecrRefCount(value2Ptr);
+	    }
+	    ADJUST_PC(1);
+
 	case INST_EQ:
 	case INST_NEQ:
 	case INST_LT:
@@ -4519,7 +4624,7 @@ EvalStatsCmd(unused, interp, argc, argv)
     fprintf(stdout, "  Mean code/source		%.1f\n",
 	    totalCodeBytes / statsPtr->totalSrcBytes);
 
-    fprintf(stdout, "\nCurrent ByteCodes		%ld\n",
+    fprintf(stdout, "\nCurrent (active) ByteCodes	%ld\n",
 	    numCurrentByteCodes);
     fprintf(stdout, "  Source bytes			%.6g\n",
 	    statsPtr->currentSrcBytes);
@@ -4540,6 +4645,29 @@ EvalStatsCmd(unused, interp, argc, argv)
     fprintf(stdout, "  Code + source bytes		%.6g (%0.1f mean code/src)\n",
 	    (currentCodeBytes + statsPtr->currentSrcBytes),
 	    (currentCodeBytes / statsPtr->currentSrcBytes) + 1.0);
+
+    /*
+     * Tcl_IsShared statistics check
+     *
+     * This gives the refcount of each obj as Tcl_IsShared was called
+     * for it.  Shared objects must be duplicated before they can be
+     * modified.
+     */
+
+    numSharedMultX = 0;
+    fprintf(stdout, "\nTcl_IsShared object check (all objects):\n");
+    fprintf(stdout, "  Object had refcount <=1 (not shared)	%ld\n",
+	    tclObjsShared[1]);
+    for (i = 2;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
+	fprintf(stdout, "  refcount ==%d		%ld\n",
+		i, tclObjsShared[i]);
+	numSharedMultX += tclObjsShared[i];
+    }
+    fprintf(stdout, "  refcount >=%d		%ld\n",
+	    i, tclObjsShared[0]);
+    numSharedMultX += tclObjsShared[0];
+    fprintf(stdout, "  Total shared objects			%d\n",
+	    numSharedMultX);
 
     /*
      * Literal table statistics.
@@ -4581,7 +4709,7 @@ EvalStatsCmd(unused, interp, argc, argv)
 	    (tclObjsAlloced - tclObjsFreed));
     fprintf(stdout, "Total literal objects		%ld\n",
 	    statsPtr->numLiteralsCreated);
-    
+
     fprintf(stdout, "\nCurrent literal objects		%d (%0.1f%% of current objects)\n",
 	    globalTablePtr->numEntries,
 	    (globalTablePtr->numEntries * 100.0) / (tclObjsAlloced-tclObjsFreed));
@@ -4732,7 +4860,7 @@ EvalStatsCmd(unused, interp, argc, argv)
 		decadeHigh, (sum * 100.0) / statsPtr->numCompilations);
     }
 
-    fprintf(stdout, "\nByteCode longevity (excludes current ByteCodes):\n");
+    fprintf(stdout, "\nByteCode longevity (excludes Current ByteCodes):\n");
     fprintf(stdout, "	       Up to ms		Percentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
