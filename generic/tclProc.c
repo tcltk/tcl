@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.11 1998/07/24 18:47:37 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclProc.c,v 1.12 1998/07/28 13:55:21 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -1222,4 +1222,54 @@ TclUpdateReturnInfo(iPtr)
 	}
     }
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetInterpProc --
+ *
+ *  Returns a pointer to the TclProcInterpProc procedure; this is different
+ *  from the value obtained from the TclProcInterpProc reference on systems
+ *  like Windows where import and export versions of a procedure exported
+ *  by a DLL exist.
+ *
+ * Results:
+ *  Returns the internal address of the TclProcInterpProc procedure.
+ *
+ * Side effects:
+ *  None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclCmdProcType
+TclGetInterpProc()
+{
+    return TclProcInterpProc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetObjInterpProc --
+ *
+ *  Returns a pointer to the TclObjInterpProc procedure; this is different
+ *  from the value obtained from the TclObjInterpProc reference on systems
+ *  like Windows where import and export versions of a procedure exported
+ *  by a DLL exist.
+ *
+ * Results:
+ *  Returns the internal address of the TclProcInterpProc procedure.
+ *
+ * Side effects:
+ *  None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclObjCmdProcType
+TclGetObjInterpProc()
+{
+    return TclObjInterpProc;
 }
