@@ -893,6 +893,23 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} \
 
 removeFile gorp.file
 
+test filesystem-7.8 {vfs cd} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    testsimplefilesystem 1
+    # This can variously cause an infinite loop or simply have
+    # no effect at all (before certain bugs were fixed, of course).
+    cd simplefs:/simpledir
+    set res [pwd]
+    cd [tcltest::temporaryDirectory]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+    set res
+} {simplefs:/simpledir}
+
 test filesystem-8.1 {relative path objects and caching of pwd} {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
