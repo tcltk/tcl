@@ -1,3 +1,10 @@
+2002-07-08  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* tests/socket.test: Fixed bug #578164. The original reason for
+	  the was a DNS outage while running the testsuite. Changed [info
+	  hostname] to 127.0.0.1 to bypass DNS, knowing that we operate on
+	  the local host.
+
 2002-07-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:		Fixed incompatibility in [viewFile].

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.24 2002/07/04 20:06:13 andreas_kupries Exp $
+# RCS: @(#) $Id: socket.test,v 1.25 2002/07/08 22:01:41 andreas_kupries Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -360,7 +360,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
     set f [open $path(script) w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept -myaddr [info hostname] 0]
+        set f [socket -server accept -myaddr 127.0.0.1 0]
 	proc accept {file addr port} {
             global x
             puts "[gets $file]"
@@ -377,7 +377,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
     set f [open "|[list $::tcltest::tcltest $path(script)]" r]
     gets $f x
     gets $f listen
-    if {[catch {socket [info hostname] $listen} sock]} {
+    if {[catch {socket 127.0.0.1 $listen} sock]} {
         set x $sock
     } else {
         puts $sock hello
