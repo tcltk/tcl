@@ -1,5 +1,11 @@
 2004-11-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclInt.h: Change uses of EXTERN to MODULE_SCOPE (defined
+	in this file too to be 'extern' if not overridden) as nothing
+	declared in tclInt.h is supposed to be visible outside the Tcl
+	core. If there *is* anything that extensions are actually using,
+	we can open this up later on. [Patch 1055668]
+
 	* doc/CrtChannel.3 (Tcl_GetChannelMode): Add synopsis. [Bug 1058446]
 
 2004-11-01  Kevin B. Kenny  <kennykb@acm.org>
