@@ -1,17 +1,23 @@
+2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclObj.c (HashObjKey): Rewrote to fix fault which hashed
+	every single-character object to the same hash bucket.  The new
+	code is shorter, simpler, clearer, and (happily) faster.
+
 2004-03-30  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TEBC): reverting to the previous method
 	for async tests in TEBC, as the new method turned out to be too
 	costly. Async tests now run every 64 instructions.
-	
+
 2004-03-30  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:     New instruction code INST_START_CMD
-	* generic/tclCompile.h:     that allows checking the bytecode's  
-	* generic/tclExecute.c:     validity [Bug 729692] and the interp's  
-	* tests/interp.test (18.9): readyness [Bug 495830] before running 
-	* tests/proc.test (7.1):    the command. It also changes the 
-	* tests/rename.test (6.1):  mechanics of the async tests in TEBC, 		   	 
+	* generic/tclCompile.h:     that allows checking the bytecode's
+	* generic/tclExecute.c:     validity [Bug 729692] and the interp's
+	* tests/interp.test (18.9): readyness [Bug 495830] before running
+	* tests/proc.test (7.1):    the command. It also changes the
+	* tests/rename.test (6.1):  mechanics of the async tests in TEBC,
 	doing it now at command start instead of every 16 instructions.
 
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
