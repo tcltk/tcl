@@ -2,17 +2,16 @@
  * tclLoadDyld.c --
  *
  *     This procedure provides a version of the TclLoadFile that
- *     works with NeXT/Apple's dyld dynamic loading.  This file
+ *     works with Apple's dyld dynamic loading.  This file
  *     provided by Wilfredo Sanchez (wsanchez@apple.com).
- *     The works on Mac OS X and Mac OS X Server.
- *     It should work with OpenStep, but it's not been tried.
+ *     This works on Mac OS X.
  *
  * Copyright (c) 1995 Apple Computer, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.5 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.6 2001/11/23 01:40:10 das Exp $
  */
 
 #include "tclInt.h"
@@ -58,63 +57,55 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * function which should be used for
 				 * this file. */
 {
-    NSObjectFileImageReturnCode	err;
-    NSObjectFileImage		image;
-    NSModule			module;
-    NSSymbol			symbol;
-    char			*name;
+    NSSymbol symbol;
+    enum DYLD_BOOL dyld_return;
+    Tcl_DString newName, ds;
+    char *native;
 
-    char *fileName = Tcl_GetString(pathPtr);
-    err = NSCreateObjectFileImageFromFile(fileName, &image);
-    if (err != NSObjectFileImageSuccess) {
-	switch (err) {
-	    case NSObjectFileImageFailure:
-		Tcl_SetResult(interp, "dyld: general failure", TCL_STATIC);
-		break;
-	    case NSObjectFileImageInappropriateFile:
-		Tcl_SetResult(interp, "dyld: inappropriate Mach-O file",
-			TCL_STATIC);
-		break;
-	    case NSObjectFileImageArch:
-		Tcl_SetResult(interp,
-			"dyld: inappropriate Mach-O architecture", TCL_STATIC);
-		break;
-	    case NSObjectFileImageFormat:
-		Tcl_SetResult(interp, "dyld: invalid Mach-O file format",
-			TCL_STATIC);
-		break;
-	    case NSObjectFileImageAccess:
-		Tcl_SetResult(interp, "dyld: permission denied", TCL_STATIC);
-		break;
-	    default:
-		Tcl_SetResult(interp, "dyld: unknown failure", TCL_STATIC);
-		break;
-	}
-	return TCL_ERROR;
-    }
-
-    module = NSLinkModule(image, fileName, TRUE);
-
-    if (module == NULL) {
-	Tcl_SetResult(interp, "dyld: falied to link module", TCL_STATIC);
-	return TCL_ERROR;
-    }
-
-    name = (char*)malloc(sizeof(char)*(strlen(sym1)+2));
-    sprintf(name, "_%s", sym1);
-    symbol = NSLookupAndBindSymbol(name);
-    free(name);
-    *proc1Ptr = NSAddressOfSymbol(symbol);
-
-    name = (char*)malloc(sizeof(char)*(strlen(sym2)+2));
-    sprintf(name, "_%s", sym2);
-    symbol = NSLookupAndBindSymbol(name);
-    free(name);
-    *proc2Ptr = NSAddressOfSymbol(symbol);
-
-    *clientDataPtr = module;
-    *unloadProcPtr = &TclpUnloadFile;
+    native = Tcl_FSGetNativePath(pathPtr);
+    dyld_return = NSAddLibrary(native);
     
+    if (dyld_return !=  TRUE) {
+	Tcl_AppendResult(interp, "dyld: couldn't add library \"",
+		Tcl_GetString(pathPtr),
+		"\": ", Tcl_PosixError(interp), (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    *unloadProcPtr = &TclpUnloadFile;
+
+    /* 
+     * dyld adds an underscore to the beginning of symbol names.
+     */
+
+    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    Tcl_DStringInit(&newName);
+    Tcl_DStringAppend(&newName, "_", 1);
+    native = Tcl_DStringAppend(&newName, native, -1);
+    if(NSIsSymbolNameDefined(native)) {
+        symbol = NSLookupAndBindSymbol(native);
+        *proc1Ptr = NSAddressOfSymbol(symbol);
+        *clientDataPtr = NSModuleForSymbol(symbol);
+    } else {
+        *proc1Ptr=NULL;
+        *clientDataPtr=NULL;
+    }
+    Tcl_DStringFree(&newName);
+    Tcl_DStringFree(&ds);
+
+    native = Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
+    Tcl_DStringInit(&newName);
+    Tcl_DStringAppend(&newName, "_", 1);
+    native = Tcl_DStringAppend(&newName, native, -1);
+    if(NSIsSymbolNameDefined(native)) {
+        symbol = NSLookupAndBindSymbol(native);
+        *proc2Ptr = NSAddressOfSymbol(symbol);
+    } else {
+        *proc2Ptr=NULL;
+    }
+    Tcl_DStringFree(&newName);
+    Tcl_DStringFree(&ds);
+
     return TCL_OK;
 }
 
