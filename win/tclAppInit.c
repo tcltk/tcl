@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.9 2002/09/30 00:08:01 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.10 2002/11/04 05:50:19 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -166,6 +166,23 @@ Tcl_AppInit(interp)
     Tcl_StaticPackage(interp, "procbodytest", Procbodytest_Init,
             Procbodytest_SafeInit);
 #endif /* TCL_TEST */
+
+#if defined(STATIC_BUILD) && defined(TCL_USE_STATIC_PACKAGES)
+    {
+	extern Tcl_PackageInitProc Registry_Init;
+	extern Tcl_PackageInitProc Dde_Init;
+
+	if (Registry_Init(interp) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
+
+	if (Dde_Init(interp) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	Tcl_StaticPackage(interp, "dde", Dde_Init, NULL);
+   }
+#endif
 
     /*
      * Call the init procedures for included packages.  Each call should

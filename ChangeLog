@@ -1,3 +1,17 @@
+2002-11-03  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclAppInit.c:  Calls Registry_Init() and Dde_Init() when
+	STATIC_BUILD and TCL_USE_STATIC_PACKAGES macros are set.
+
+	* win/makefile.vc:
+	* win/rules.vc:  linkexten option now sets the TCL_USE_STATIC_PACKAGES
+	macro which also adds the registry and dde object files to the link
+	of the shell. [Patch 479697]  Also factored some additional macros
+	that will be helpful for extension authors.  Version grepping of tcl.h
+	will need to be added to complete this.
+
+	* win/buildall.vc.bat: Added more descriptive commentary.
+
 2002-11-01  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinReg.c:  Changed the Tcl_PkgProvide() line to declare

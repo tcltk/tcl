@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.95 2002/10/26 07:59:58 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.96 2002/11/04 05:50:19 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -197,7 +197,7 @@ INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
-!if $(TCL_LINKWITHEXTENSIONS)
+!if $(TCL_USE_STATIC_PACKAGES)
 	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
 !endif
@@ -209,7 +209,7 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
-!if $(TCL_LINKWITHEXTENSIONS)
+!if $(TCL_USE_STATIC_PACKAGES)
 	$(TMP_DIR)\tclWinReg.obj \
 	$(TMP_DIR)\tclWinDde.obj \
 !endif
@@ -575,7 +575,7 @@ $(MAN2TCL): $(TOOLSDIR)\$$(@B).c
 	$(cc32) -nologo -G4 -ML -O2 -Fo$(@D)\ $(TOOLSDIR)\$(@B).c -link -out:$@
 
 $(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
-	$(TCLSH) $(MAN2HELP:\=/) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
+	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
 
 install-docs:
 !if exist($(HELPFILE))
@@ -589,8 +589,8 @@ install-docs:
 #---------------------------------------------------------------------
 
 $(TMP_DIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-!if $(TCL_LINKWITHEXTENSIONS)
-	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -DTCL_LINKWITHEXTENSIONS -Fo$@ $?
+!if $(TCL_USE_STATIC_PACKAGES)
+	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -DTCL_USE_STATIC_PACKAGES -Fo$@ $?
 !else
 	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$@ $?
 !endif
@@ -605,8 +605,8 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
-!if $(TCL_LINKWITHEXTENSIONS)
-	$(cc32) $(TCL_CFLAGS) -DTCL_LINKWITHEXTENSIONS -Fo$@ $?
+!if $(TCL_USE_STATIC_PACKAGES)
+	$(cc32) $(TCL_CFLAGS) -DTCL_USE_STATIC_PACKAGES -Fo$@ $?
 !else
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 !endif
@@ -709,16 +709,6 @@ $<
 #---------------------------------------------------------------------
 # Installation.
 #---------------------------------------------------------------------
-
-!if "$(OS)" == "Windows_NT"
-!if ![ver | find "4.0" > nul]
-CPY	= echo y | xcopy /i
-!else
-CPY	= xcopy /i /y
-!endif
-!else
-CPY	= xcopy /i
-!endif
 
 install-binaries:
 	@echo installing $(TCLLIBNAME)
