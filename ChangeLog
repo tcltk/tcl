@@ -1,3 +1,7 @@
+2003-05-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/Eval.3:  Corrected prototype for Tcl_GlobalEvalObj [Bug 727622].
+
 2003-05-12  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclObjLookupVar): [Bug 735335] temporary fix,
