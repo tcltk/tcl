@@ -1,3 +1,11 @@
+2001-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): 
+	* tests/string.test (string-4.14): Negative string indices should
+	not be added as offsets to the result of [string first] but
+	instead be treated as referring to the start of the string.
+	[Bug: 423581]
+
 2001-05-11  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/Makefile.in: Add a LDFLAGS variable to the
