@@ -47,31 +47,23 @@ foreach file $argv {
 		if {[regexp "^.SH NAME" $line]} {
 		    set state name
 		}
-	    }
-	    name {
-		regsub {\\-.*} $line {} line
-		set rmOutput ""
-		set lnOutput ""
-		set namelist {}
-		foreach name [split $line ,] {
-		    regsub -all {(\\)? } $name "" name
-		    if {![string match $name*$ext $tail]} {
-			lappend namelist $name$ext
-			append rmOutput "    rm -f $name$ext\n"
-			append lnOutput "    ln $tail $name$ext\n"
-		    }
-		}
-		if { [llength $namelist] } {
+			    }
+					name {
+	    regsub {\\-.*} $line {} line
+	    foreach name [split $line ,] {
+		regsub -all { } $name "" name
+		if {![string match $name*$ext $tail]} {
 		    puts "if test -r $tail; then"
-		    puts -nonewline $rmOutput
-		    puts -nonewline $lnOutput
+		    puts "    rm -f $name$ext"
+		    puts "    ln $tail $name$ext"
 		    puts "fi"
 		}
-		set state end
 	    }
-	    end {
-		break
-	    }
+	    set state end
+	}
+	end {
+	    break
+	}
 	}
     }
     close $in

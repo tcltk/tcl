@@ -1,36 +1,17 @@
-2000-04-27  Eric Melski  <ericm@scriptics.com>
+2000-05-29  Sandeep Tamhankar <sandeep@scriptics.com>
 
-	* doc/library.n: Added entries for auto_qualify and auto_import
-	[Bug: 1271].
-
-	* doc/Init.3: Manual entry for Tcl_Init [Bug: 1820].
-
-	* doc/expr.n: Added documentation for each of the math library
-	functions that expr supports [Bug: 1054].
-
-2000-04-26  Eric Melski  <ericm@scriptics.com>
-
-	* doc/memory.n: Man page for Tcl "memory" command, which is
-	created when TCL_MEM_DEBUG is defined at compile time.
-
-	* doc/TCL_MEM_DEBUG.3: Man page with overall information about
-	TCL_MEM_DEBUG usage.
-
-	* doc/DumpActiveMemory.3: Man page for Tcl_DumpActiveMemory,
-	Tcl_InitMemory, and Tcl_ValidateAllMemory [Bug: 1816, 1835].
-
-	* generic/tclCkalloc.c: Fixed some function headers.
-
-	* unix/mkLinks: Regen'd with new mkLinks.tcl.
-
-	* unix/mkLinks.tcl: Fixed indentation, made link setup more
-	intelligent (only do one existance test per man page, instead of
-	one per function).
-
-	* doc/library.n: Fixed .SH NAME macro to include each function
-	documented on the page, so that mkLinks will know about the
-	functions listed there, and so that the Windows help file index
-	will get set up correctly [Bug: 1898, 5273].
+	* tests/http.test
+	* doc/http.n
+	* library/http2.3/http.tcl: Fixed bug 5741, where unsuccessful
+	geturl calls sometimes leaked memory and resources (sockets).  
+	Also, switched around some of the logic so that http::wait never 
+	throws an exception.  This is because in an asynchronous geturl, 
+	the command callback will probably end up doing all the error 
+	handling anyway, and in an asynchronous situation, the user
+	expects to check the state when the transaction completes, as
+	opposed to being thrown an exception.	For the http package, this
+	menas the user can check http::status for "error" and http::error
+	for the error message after doing the http::wait.
 
 2000-04-26  Jeff Hobbs  <hobbs@scriptics.com>
 

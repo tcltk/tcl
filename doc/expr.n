@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.3 2000/04/28 00:47:49 ericm Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.2 1998/09/14 18:39:52 stanton Exp $
 '\" 
 .so man.macros
 .TH expr n 8.0 Tcl "Tcl Built-In Commands"
@@ -184,79 +184,29 @@ invoking the \fBexpr\fR command.
 Tcl supports the following mathematical functions in expressions:
 .DS
 .ta 3c 6c 9c
-\fBabs\fR	\fBcosh\fR	\fBlog\fR	\fBsqrt\fR
-\fBacos\fR	\fBdouble\fR	\fBlog10\fR	\fBsrand\fR
-\fBasin\fR	\fBexp\fR	\fBpow\fR	\fBtan\fR
-\fBatan\fR	\fBfloor\fR	\fBrand\fR	\fBtanh\fR
-\fBatan2\fR	\fBfmod\fR	\fBround\fR
-\fBceil\fR	\fBhypot\fR	\fBsin\fR
-\fBcos\fR	\fBint\fR	\fBsinh\fR
+\fBacos\fR	\fBcos\fR	\fBhypot\fR	\fBsinh\fR
+\fBasin\fR	\fBcosh\fR	\fBlog\fR	\fBsqrt\fR
+\fBatan\fR	\fBexp\fR	\fBlog10\fR	\fBtan\fR
+\fBatan2\fR	\fBfloor\fR	\fBpow\fR	\fBtanh\fR
+\fBceil\fR	\fBfmod\fR	\fBsin\fR
 .DE
-.PP
+Each of these functions invokes the math library function of the same
+name;  see the manual entries for the library functions for details
+on what they do.  Tcl also implements the following functions for
+conversion between integers and floating-point numbers and the
+generation of random numbers:
 .TP
 \fBabs(\fIarg\fB)\fR
 Returns the absolute value of \fIarg\fR.  \fIArg\fR may be either
 integer or floating-point, and the result is returned in the same form.
 .TP
-\fBacos(\fIarg\fB)\fR
-Returns the arc cosine of \fIarg\fR, in the range [0,pi]
-radians. \fIArg\fR should be in the range [-1,1].
-.TP
-\fBasin(\fIarg\fB)\fR
-Returns the arc sine of \fIarg\fR, in the range [-pi/2,pi/2] radians.
-\fIArg\fR should be in the range [-1,1].
-.TP
-\fBatan(\fIarg\fB)\fR
-Returns the arc tangent of \fIarg\fR, in the range [-pi/2,pi/2] radians.
-.TP
-\fBatan2(\fIx, y\fB)\fR
-Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [-pi,pi]
-radians.  \fIx\fR and \fIy\fR cannot both be 0.
-.TP
-\fBceil(\fIarg\fB)\fR
-Returns the smallest integer value not less than \fIarg\fR.
-.TP
-\fBcos(\fIarg\fB)\fR
-Returns the cosine of \fIarg\fR, measured in radians.
-.TP
-\fBcosh(\fIarg\fB)\fR
-Returns the hyperbolic cosine of \fIarg\fR.  If the result would cause
-an overflow, an error is returned.
-.TP
 \fBdouble(\fIarg\fB)\fR
 If \fIarg\fR is a floating value, returns \fIarg\fR, otherwise converts
 \fIarg\fR to floating and returns the converted value.
 .TP
-\fBexp(\fIarg\fB)\fR
-Returns the exponential of \fIarg\fR, defined as e**\fIarg\fR.  If the
-result would cause an overflow, an error is returned.
-.TP
-\fBfloor(\fIarg\fB)\fR
-Returns the largest integral value not greater than \fIarg\fR.
-.TP
-\fBfmod(\fIx, y\fB)\fR
-Returns the floating-point remainder of the division of \fIx\fR by
-\fIy\fR.  If \fIy\fR is 0, an error is returned.
-.TP
-\fBhypot(\fIx, y\fB)\fR
-Computes the length of the hypotenuse of a right-angled triangle
-(\fIx\fR*\fIx\fR+\fIy\fR*\fIy\fR).
-.TP
 \fBint(\fIarg\fB)\fR
 If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts
 \fIarg\fR to integer by truncation and returns the converted value.
-.TP
-\fBlog(\fIarg\fB)\fR
-Returns the natural logarithm of \fIarg\fR.  \fIArg\fR must be a
-positive value.
-.TP
-\fBlog10(\fIarg\fB)\fR
-Returns the base 10 logarithm of \fIarg\fR.  \fIArg\fR must be a
-positive value.
-.TP
-\fBpow(\fIx, y\fB)\fR
-Computes the value of \fIx\fR raised to the power \fIy\fR.  If \fIx\fR
-is negative, \fIy\fR must be an integer value.
 .TP
 \fBrand()\fR
 Returns a floating point number from zero to just less than one or,
@@ -268,26 +218,10 @@ function.
 If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts
 \fIarg\fR to integer by rounding and returns the converted value.
 .TP
-\fBsin(\fIarg\fB)\fR
-Returns the sine of \fIarg\fR, measured in radians.
-.TP
-\fBsinh(\fIarg\fB)\fR
-Returns the hyperbolic sine of \fIarg\fR.  If the result would cause
-an overflow, an error is returned.
-.TP
-\fBsqrt(\fIarg\fB)\fR
-Returns the square root of \fIarg\fR.  \fIArg\fR must be non-negative.
-.TP
 \fBsrand(\fIarg\fB)\fR
 The \fIarg\fR, which must be an integer, is used to reset the seed for
 the random number generator.  Returns the first random number from
 that seed.  Each interpreter has it's own seed.
-.TP
-\fBtan(\fIarg\fB)\fR
-Returns the tangent of \fIarg\fR, measured in radians.
-.TP
-\fBtanh(\fIarg\fB)\fR
-Returns the hyperbolic tangent of \fIarg\fR.
 .PP
 In addition to these predefined functions, applications may
 define additional functions using \fBTcl_CreateMathFunc\fR().

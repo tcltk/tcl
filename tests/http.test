@@ -6,13 +6,13 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 by Ajuba Solutions.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.19 2000/04/22 07:07:59 sandeep Exp $
+# RCS: @(#) $Id: http.test,v 1.19.2.1 2000/05/31 01:28:57 sandeep Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -290,6 +290,15 @@ test http-3.12 {http::geturl querychannel with aborted request} {nonPortable} {
     list [http::status $t] [http::code $t]
 } {ok {HTTP/1.0 200 Data follows}}
 
+test http-3.13 {http::geturl socket leak test} {
+    set chanCount [llength [file channels]]
+    for {set i 0} {$i<200} {incr i} {
+	catch {http::geturl $badurl -timeout 10000} 
+    }
+
+    # No extra channels should be taken
+    expr {[llength [file channels]] == $chanCount}
+} 1
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url]

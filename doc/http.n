@@ -1,11 +1,11 @@
 '\"
 '\" Copyright (c) 1995-1997 Sun Microsystems, Inc.
-'\" Copyright (c) 1999 by Scriptics Corporation.
+'\" Copyright (c) 1998-2000 by Ajuba Solutions.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.10 2000/04/09 23:55:54 welch Exp $
+'\" RCS: @(#) $Id: http.n,v 1.10.2.1 2000/05/31 01:28:56 sandeep Exp $
 '\" 
 .so man.macros
 .TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
@@ -14,7 +14,7 @@
 .SH NAME
 Http \- Client-side implementation of the HTTP/1.0 protocol.
 .SH SYNOPSIS
-\fBpackage require http ?2.2?\fP
+\fBpackage require http ?2.3?\fP
 .sp
 \fB::http::config \fI?options?\fR
 .sp
@@ -32,7 +32,11 @@ Http \- Client-side implementation of the HTTP/1.0 protocol.
 .sp
 \fB::http::code \fItoken\fR
 .sp
+\fB::http::ncode \fItoken\fR
+.sp
 \fB::http::data \fItoken\fR
+.sp
+\fB::http::error \fItoken\fR
 .sp
 \fB::http::cleanup \fItoken\fR
 .sp
@@ -57,9 +61,8 @@ Its \fIoptions \fR determine whether a GET, POST, or HEAD transaction
 is performed.  
 The return value of \fB::http::geturl\fR is a token for the transaction.
 The value is also the name of an array in the ::http namespace
- that contains state
-information about the transaction.  The elements of this array are
-described in the STATE ARRAY section.
+that contains state information about the transaction.  The elements
+of this array are described in the STATE ARRAY section.
 .PP
 If the \fB-command\fP option is specified, then
 the HTTP operation is done in the background.
@@ -262,11 +265,19 @@ any.  This sets the \fBstate(status)\fP value to \fIwhy\fP, which defaults to \f
 \fB::http::wait\fP \fItoken\fP
 This is a convenience procedure that blocks and waits for the
 transaction to complete.  This only works in trusted code because it
-uses \fBvwait\fR.
+uses \fBvwait\fR.  Also, it's not useful for the case where
+\fB::http::geturl\fP is called \fIwithout\fP the \fB-command\fP option
+because in this case the \fB::http::geturl\fP call doesn't return
+until the HTTP transaction is complete, and thus there's nothing to
+wait for.
 .TP
 \fB::http::data\fP \fItoken\fP
 This is a convenience procedure that returns the \fBbody\fP element
 (i.e., the URL data) of the state array.
+.TP
+\fB::http::error\fP \fItoken\fP
+This is a convenience procedure that returns the \fBerror\fP element
+of the state array.
 .TP
 \fB::http::status\fP \fItoken\fP
 This is a convenience procedure that returns the \fBstatus\fP element of
@@ -276,15 +287,24 @@ the state array.
 This is a convenience procedure that returns the \fBhttp\fP element of the
 state array.
 .TP
+\fB::http::ncode\fP \fItoken\fP
+This is a convenience procedure that returns just the numeric return
+code (200, 404, etc.) from the \fBhttp\fP element of the state array.
+.TP
 \fB::http::size\fP \fItoken\fP
 This is a convenience procedure that returns the \fBcurrentsize\fP
-element of the state array.
+element of the state array, which represents the number of bytes
+received from the URL in the \fB::http::geturl\fP call.
 .TP
 \fB::http::cleanup\fP \fItoken\fP
 This procedure cleans up the state associated with the connection
 identified by \fItoken\fP.  After this call, the procedures
 like \fB::http::data\fP cannot be used to get information
-about the operation.
+about the operation.  It is \fIstrongly\fP recommended that you call
+this function after you're done with a given HTTP request.  Not doing
+so will result in memory not being freed, and if your app calls
+\fB::http::geturl\fP enough times, the memory leak could cause a
+performance hit...or worse.
 .TP
 \fB::http::register\fP \fIproto port command\fP
 This procedure allows one to provide custom HTTP transport types
@@ -309,19 +329,36 @@ registered via \fBhttp::register\fR.
 The \fBhttp::geturl\fP procedure will raise errors in the following cases:
 invalid command line options,
 an invalid URL,
-or a URL on a non-existent host,
+a URL on a non-existent host,
+or a URL at a bad port on an existing host.
 These errors mean that it
 cannot even start the network transaction.
 It will also raise an error if it gets an I/O error while
 writing out the HTTP request header.
+For synchronous \fB::http::geturl\fP calls (where \fB-command\fP is
+not specified), it will raise an error if it gets an I/O error while
+reading the HTTP reply headers or data.  Because \fB::http::geturl\fP
+doesn't return a token in these cases, it does all the required
+cleanup and there's no issue of your app having to call
+\fB::http::cleanup\fP.
 .PP
-The \fBhttp::wait\fP procedure will raise errors if an I/O error
-occurs while reading the HTTP reply headers or data.  If the
-\fB-command\fP flag is not passed to \fBhttp::geturl\fP,
-then it will call \fBhttp::wait\fP and so these errors will
-occur in \fBhttp::geturl\fP.
-If you get an error from \fBhttp::wait\fP, you must still call
-\fBhttp::cleanup\fP to delete the state array.
+For asynchronous \fB::http::geturl\fP calls, all of the above error
+situations apply, except that if there's any error while 
+reading the
+HTTP reply headers or data, no exception is thrown.  This is because
+after writing the HTTP headers, \fB::http::geturl\fP returns, and the
+rest of the HTTP transaction occurs in the background.  The command
+callback can check if any error occurred during the read by calling
+\fB::http::status\fP to check the status and if it's \fIerror\fP,
+calling \fB::http::error\fP to get the error message.
+.PP
+Alternatively, if the main program flow reaches a point where it needs
+to know the result of the asynchronous HTTP request, it can call
+\fB::http::wait\fP and then check status and error, just as the
+callback does.
+.PP
+In any case, you must still call
+\fBhttp::cleanup\fP to delete the state array when you're done.
 .PP
 There are other possible results of the HTTP transaction
 determined by examining the status from \fBhttp::status\fP.
@@ -336,12 +373,11 @@ procedure returns a value like "HTTP 404 File not found".
 .TP
 eof
 If the server closes the socket without replying, then no error
-is rasied, but the status of the transaction will be \fBeof\fP.
+is raised, but the status of the transaction will be \fBeof\fP.
 .TP
 error
-In this case \fBhttp::wait\fP should have raised an error.
 The error message will also be stored in the \fBerror\fP status
-array element.
+array element, accessible via \fB::http::error\fP.
 .PP
 Another error possibility is that \fBhttp::geturl\fP is unable to
 write all the post query data to the server before the server
@@ -424,7 +460,8 @@ the post query data to the server.
 .TP
 \fBstatus\fR
 Either \fBok\fR, for successful completion, \fBreset\fR for
-user-reset, or \fBerror\fR for an error condition.  During the
+user-reset, \fBtimeout\fP if a timeout occurred before the transaction
+could complete, or \fBerror\fR for an error condition.  During the
 transaction this value is the empty string.
 .TP
 \fBtotalsize\fR
