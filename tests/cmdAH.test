@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.12 2000/10/06 21:10:51 hobbs Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.13 2001/07/06 09:29:36 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1010,11 +1010,11 @@ makeDirectory dir.file
 test cmdAH-16.1 {Tcl_FileObjCmd: readable} {
     list [catch {file readable a b} msg] $msg
 } {1 {wrong # args: should be "file readable name"}}
-testchmod 444 gorp.file
+testchmod 0444 gorp.file
 test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     file readable gorp.file
 } 1
-testchmod 333 gorp.file
+testchmod 0333 gorp.file
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {unixOnly notRoot} {
     file reada gorp.file
 } 0
@@ -1024,11 +1024,11 @@ test cmdAH-16.3 {Tcl_FileObjCmd: readable} {unixOnly notRoot} {
 test cmdAH-17.1 {Tcl_FileObjCmd: writable} {
     list [catch {file writable a b} msg] $msg
 } {1 {wrong # args: should be "file writable name"}}
-testchmod 555 gorp.file
+testchmod 0555 gorp.file
 test cmdAH-17.2 {Tcl_FileObjCmd: writable} {notRoot} {
     file writable gorp.file
 } 0
-testchmod 222 gorp.file
+testchmod 0222 gorp.file
 test cmdAH-17.3 {Tcl_FileObjCmd: writable} {
     file writable gorp.file
 } 1
@@ -1049,7 +1049,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly} {
     # Only on unix will setting the execute bit on a regular file
     # cause that file to be executable.   
     
-    testchmod 775 gorp.file
+    testchmod 0775 gorp.file
     file exe gorp.file
 } 1
 
