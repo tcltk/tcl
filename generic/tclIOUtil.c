@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.80 2003/04/15 06:56:02 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81 2003/05/13 22:59:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -37,7 +37,7 @@
 
 static FilesystemRecord* FsGetIterator(void);
 static void FsReleaseIterator(void);
-
+static void FsThrExitProc(ClientData cd);
 
 /* 
  * These form part of the native filesystem support.  They are needed
@@ -425,7 +425,20 @@ TCL_DECLARE_MUTEX(filesystemMutex)
  * This is protected by the cwdMutex below.
  */
 static Tcl_Obj* cwdPathPtr = NULL;
+static int cwdPathEpoch = 0;
 TCL_DECLARE_MUTEX(cwdMutex)
+
+/*
+ * This structure holds per-thread private copy of the
+ * current directory maintained by the global cwdPathPtr.
+ */
+typedef struct ThreadSpecificData {
+    int initialized;
+    int cwdPathEpoch;
+    Tcl_Obj *cwdPathPtr;
+} ThreadSpecificData;
+
+Tcl_ThreadDataKey dataKey;
 
 /* 
  * Declare fallback support function and 
@@ -451,21 +464,48 @@ typedef struct FsDivertLoad {
 
 /* Now move on to the basic filesystem implementation */
 
+static void
+FsThrExitProc(cd)
+    ClientData cd;
+{
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData*)cd;
+    if (tsdPtr->cwdPathPtr != NULL) {
+	Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+    }
+}
 
 int 
 TclFSCwdPointerEquals(objPtr)
     Tcl_Obj* objPtr;
 {
-    Tcl_MutexLock(&cwdMutex);
-    if (cwdPathPtr == objPtr) {
-	Tcl_MutexUnlock(&cwdMutex);
-	return 1;
-    } else {
-	Tcl_MutexUnlock(&cwdMutex);
-	return 0;
-    }
-}
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+    Tcl_MutexLock(&cwdMutex);
+    if (tsdPtr->initialized == 0) {
+	Tcl_CreateThreadExitHandler(FsThrExitProc, (ClientData)tsdPtr);
+	tsdPtr->initialized = 1;
+    }
+    if (tsdPtr->cwdPathPtr == NULL) {
+        if (cwdPathPtr == NULL) {
+    	    tsdPtr->cwdPathPtr = NULL;
+        } else {
+    	    tsdPtr->cwdPathPtr = Tcl_DuplicateObj(cwdPathPtr);
+    	    Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
+        }
+	tsdPtr->cwdPathEpoch = cwdPathEpoch;
+    } else if (tsdPtr->cwdPathEpoch != cwdPathEpoch) { 
+        Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+        if (cwdPathPtr == NULL) {
+    	    tsdPtr->cwdPathPtr = NULL;
+        } else {
+    	    tsdPtr->cwdPathPtr = Tcl_DuplicateObj(cwdPathPtr);
+    	    Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
+        }
+    }
+    Tcl_MutexUnlock(&cwdMutex);
+
+    return (tsdPtr->cwdPathPtr == objPtr); 
+}
 
 static FilesystemRecord* 
 FsGetIterator(void) {
@@ -487,6 +527,44 @@ FsReleaseIterator(void) {
 	}
     }
     Tcl_MutexUnlock(&filesystemMutex);
+}
+
+static void
+FsUpdateCwd(cwdObj)
+    Tcl_Obj *cwdObj;
+{
+    int len;
+    char *str = NULL;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (cwdObj != NULL) {
+	str = Tcl_GetStringFromObj(cwdObj, &len);
+    }
+
+    Tcl_MutexLock(&cwdMutex);
+    if (cwdPathPtr != NULL) {
+        Tcl_DecrRefCount(cwdPathPtr);
+    }
+    if (cwdObj == NULL) {
+	cwdPathPtr = NULL;
+    } else {
+	/* This must be stored as string obj! */
+	cwdPathPtr = Tcl_NewStringObj(str, len); 
+    	Tcl_IncrRefCount(cwdPathPtr);
+    }
+    cwdPathEpoch++;
+    tsdPtr->cwdPathEpoch = cwdPathEpoch;
+    Tcl_MutexUnlock(&cwdMutex);
+
+    if (tsdPtr->cwdPathPtr) {
+        Tcl_DecrRefCount(tsdPtr->cwdPathPtr);
+    }
+    if (cwdObj == NULL) {
+	tsdPtr->cwdPathPtr = NULL;
+    } else {
+	tsdPtr->cwdPathPtr = Tcl_NewStringObj(str, len); 
+	Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
+    }
 }
 
 /*
@@ -520,6 +598,7 @@ TclFinalizeFilesystem()
     if (cwdPathPtr != NULL) {
 	Tcl_DecrRefCount(cwdPathPtr);
 	cwdPathPtr = NULL;
+        cwdPathEpoch = 0;
     }
 
     /* 
@@ -2020,8 +2099,10 @@ Tcl_FSFileAttrsSet(interp, index, pathPtr, objPtr)
  *	should therefore ensure they only access the cwd through this
  *	function to avoid confusion.
  *	
- *	If a global cwdPathPtr already exists, it is returned, subject
- *	to a synchronisation attempt in that cwdPathPtr's fs.
+ *	If a global cwdPathPtr already exists, it is cached in the thread's
+ *	private data structures and reference to the cached copy is returned,
+ *	subject to a synchronisation attempt in that cwdPathPtr's fs.
+ *	
  *	Otherwise, the chain of functions that have been "inserted"
  *	into the filesystem will be called in succession until either a
  *	value other than NULL is returned, or the entire list is
@@ -2035,13 +2116,6 @@ Tcl_FSFileAttrsSet(interp, index, pathPtr, objPtr)
  *	
  *	The result already has its refCount incremented for the caller.
  *	When it is no longer needed, that refCount should be decremented.
- *	This is needed for thread-safety purposes, to allow multiple
- *	threads to access this and related functions, while ensuring the
- *	results are always valid.
- *	
- *	Of course it is probably a bad idea for multiple threads to
- *	be *setting* the cwd anyway, but we can at least try to 
- *	help the case of multiple reads with occasional sets.
  *
  * Side effects:
  *	Various objects may be freed and allocated.
@@ -2053,7 +2127,7 @@ Tcl_Obj*
 Tcl_FSGetCwd(interp)
     Tcl_Interp *interp;
 {
-    Tcl_Obj *cwdToReturn;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     
     if (TclFSCwdPointerEquals(NULL)) {
 	FilesystemRecord *fsRecPtr;
@@ -2099,14 +2173,7 @@ Tcl_FSGetCwd(interp)
 		 * we'll always be in the 'else' branch below which
 		 * is simpler.
 		 */
-		Tcl_MutexLock(&cwdMutex);
-		/* Just in case the pointer has been set by another
-		 * thread between now and the test above */
-		if (cwdPathPtr != NULL) {
-		    Tcl_DecrRefCount(cwdPathPtr);
-		}
-		cwdPathPtr = norm;
-		Tcl_MutexUnlock(&cwdMutex);
+                FsUpdateCwd(norm);
 	    }
 	    Tcl_DecrRefCount(retVal);
 	}
@@ -2118,7 +2185,7 @@ Tcl_FSGetCwd(interp)
 	 * allows an error to be thrown if, say, the permissions on
 	 * that directory have changed.
 	 */
-	Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(cwdPathPtr);
+	Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
 	/* 
 	 * If the filesystem couldn't be found, or if no cwd function
 	 * exists for this filesystem, then we simply assume the cached
@@ -2141,7 +2208,7 @@ Tcl_FSGetCwd(interp)
 		     */
 		    if (norm == NULL) {
 			/* Do nothing */
-		    } else if (Tcl_FSEqualPaths(cwdPathPtr, norm)) {
+		    } else if (Tcl_FSEqualPaths(tsdPtr->cwdPathPtr, norm)) {
 			/* 
 			 * If the paths were equal, we can be more
 			 * efficient and retain the old path object
@@ -2151,42 +2218,22 @@ Tcl_FSGetCwd(interp)
 			 */
 			Tcl_DecrRefCount(norm);
 		    } else {
-			/* The cwd has in fact changed, so we must
-			 * lock down the cwdMutex to modify. */
-			Tcl_MutexLock(&cwdMutex);
-			Tcl_DecrRefCount(cwdPathPtr);
-			cwdPathPtr = norm;
-			Tcl_MutexUnlock(&cwdMutex);
+			FsUpdateCwd(norm);
 		    }
 		    Tcl_DecrRefCount(retVal);
 		} else {
-		    /* The 'cwd' function returned an error, so we
-		     * reset the cwd after locking down the mutex. */
-		    Tcl_MutexLock(&cwdMutex);
-		    Tcl_DecrRefCount(cwdPathPtr);
-		    cwdPathPtr = NULL;
-		    Tcl_MutexUnlock(&cwdMutex);
+		    /* The 'cwd' function returned an error; reset the cwd */
+		    FsUpdateCwd(NULL);
 		}
 	    }
 	}
     }
     
-    /* 
-     * The paths all eventually fall through to here.  Note that
-     * we use a bunch of separate mutex locks throughout this
-     * code to help prevent deadlocks between threads.  Really
-     * the only weirdness will arise if multiple threads are setting
-     * and reading the cwd, and that behaviour is always going to be
-     * a little suspect.
-     */
-    Tcl_MutexLock(&cwdMutex);
-    cwdToReturn = cwdPathPtr;
-    if (cwdToReturn != NULL) {
-	Tcl_IncrRefCount(cwdToReturn);
+    if (tsdPtr->cwdPathPtr != NULL) {
+	Tcl_IncrRefCount(tsdPtr->cwdPathPtr);
     }
-    Tcl_MutexUnlock(&cwdMutex);
     
-    return (cwdToReturn);
+    return tsdPtr->cwdPathPtr; 
 }
 
 /*
@@ -2263,20 +2310,7 @@ Tcl_FSChdir(pathPtr)
 	    if (normDirName == NULL) {
 	        return TCL_ERROR;
 	    }
-	    /* 
-	     * We will be adding a reference to this object when
-	     * we store it in the cwdPathPtr.
-	     */
-	    Tcl_IncrRefCount(normDirName);
-	    /* Get a lock on the cwd while we modify it */
-	    Tcl_MutexLock(&cwdMutex);
-	    /* Free up the previous cwd we stored */
-	    if (cwdPathPtr != NULL) {
-		Tcl_DecrRefCount(cwdPathPtr);
-	    }
-	    /* Now remember the current cwd */
-	    cwdPathPtr = normDirName;
-	    Tcl_MutexUnlock(&cwdMutex);
+	    FsUpdateCwd(normDirName);
 	}
     } else {
 	Tcl_SetErrno(ENOENT);
