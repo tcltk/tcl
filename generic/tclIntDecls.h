@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.38 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.39 2002/03/20 22:47:36 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -209,7 +209,7 @@ EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command * cmdPtr));
 /* Slot 57 is reserved */
 /* 58 */
 EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags, 
+				char * part1, CONST char * part2, int flags, 
 				char * msg, int createPart1, int createPart2, 
 				Var ** arrayPtrPtr));
 /* Slot 59 is reserved */
@@ -267,7 +267,7 @@ EXTERN char *		TclpRealloc _ANSI_ARGS_((char * ptr,
 /* 88 */
 EXTERN char *		TclPrecTraceProc _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Interp * interp, char * name1, 
-				char * name2, int flags));
+				CONST char * name2, int flags));
 /* 89 */
 EXTERN int		TclPreventAliasLoop _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Interp * cmdInterp, Tcl_Command cmd));
@@ -581,7 +581,7 @@ typedef struct TclIntStubs {
     Proc * (*tclIsProc) _ANSI_ARGS_((Command * cmdPtr)); /* 55 */
     void *reserved56;
     void *reserved57;
-    Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
+    Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
     void *reserved59;
     int (*tclNeedSpace) _ANSI_ARGS_((CONST char * start, CONST char * end)); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) _ANSI_ARGS_((Proc * procPtr)); /* 61 */
@@ -611,7 +611,7 @@ typedef struct TclIntStubs {
     void *reserved85;
     void *reserved86;
     void *reserved87;
-    char * (*tclPrecTraceProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, char * name1, char * name2, int flags)); /* 88 */
+    char * (*tclPrecTraceProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, char * name1, CONST char * name2, int flags)); /* 88 */
     int (*tclPreventAliasLoop) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Interp * cmdInterp, Tcl_Command cmd)); /* 89 */
     void *reserved90;
     void (*tclProcCleanupProc) _ANSI_ARGS_((Proc * procPtr)); /* 91 */

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.120 2002/03/06 15:20:23 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.121 2002/03/20 22:47:36 dgp Exp $
  */
 
 #ifndef _TCL
@@ -710,7 +710,7 @@ typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	struct Tcl_Obj *objPtr));
 typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, char *part1, char *part2, int flags));
+	Tcl_Interp *interp, char *part1, CONST84 char *part2, int flags));
 typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, CONST char *oldName, CONST char *newName,
 	int flags));
