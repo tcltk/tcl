@@ -1,4 +1,4 @@
-2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
+2001-11-19  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c:
 	* generic/tclParse.c: Code reorganisation. Moved all evaluation
