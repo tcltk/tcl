@@ -1,3 +1,11 @@
+2001-07-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:
+	* mac/README:
+	* unix/README:
+	* win/README:
+	* win/README.binary: updated READMEs with purls
+
 2001-07-03  Mo DeJong  <mdejong@redhat.com>
 
 	* win/Makefile.in: Remove PATHTYPE variable.
