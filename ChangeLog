@@ -1,3 +1,12 @@
+2004-11-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclProc.c (TclObjInterpProc):	    Make it so that only
+	* generic/tclIndexObj.c (Tcl_WrongNumArgs): [proc] instances do
+	* tests/indexObj.test (indexObj-5.7):	    quoting of their first
+	arguments, so keeping [Bug 942757] fixed and making [Bug 1066837]
+	be fixed as well. Done with a load of #ifdef-ery because this hack
+	is so ugly nobody should keep it around once Itcl's fixed.
+
 2004-11-25  Reinhard Max  <max@suse.de>
 
 	* tests/tcltest.test: The order in which [glob] returns the file

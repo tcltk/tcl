@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.65 2004/11/01 11:58:00 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.66 2004/11/25 16:37:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1046,7 +1046,11 @@ TclObjInterpProc(clientData, interp, objc, objv)
 
 	desiredObjs = (Tcl_Obj **)
 		ckalloc(sizeof(Tcl_Obj *) * (unsigned)(numArgs+1));
+#ifdef AVOID_HACKS_FOR_ITCL
 	desiredObjs[0] = objv[0];
+#else
+	desiredObjs[0] = Tcl_NewListObj(1, objv);
+#endif /* AVOID_HACKS_FOR_ITCL */
 	localPtr = procPtr->firstLocalPtr;
 	for (i=1 ; i<=numArgs ; i++) {
 	    TclNewObj(argObj);
@@ -1066,9 +1070,15 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	Tcl_WrongNumArgs(interp, numArgs+1, desiredObjs, NULL);
 	result = TCL_ERROR;
 
+#ifdef AVOID_HACKS_FOR_ITCL
 	for (i=1 ; i<=numArgs ; i++) {
 	    TclDecrRefCount(desiredObjs[i]);
 	}
+#else
+	for (i=0 ; i<=numArgs ; i++) {
+	    TclDecrRefCount(desiredObjs[i]);
+	}
+#endif /* AVOID_HACKS_FOR_ITCL */
 	ckfree((char *) desiredObjs);
 	goto procDone;
     }
