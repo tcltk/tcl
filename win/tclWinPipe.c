@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.16 2001/07/16 23:30:16 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.17 2001/07/17 01:45:30 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1824,14 +1824,6 @@ PipeClose2Proc(
 
 	if (pipePtr->readThread) {
 	    /*
-	     * Note that we need to guard against terminating the thread while
-	     * it is in the middle of Tcl_ThreadAlert because it won't be able
-	     * to release the notifier lock.
-	     */
-
-	    Tcl_MutexLock(&pipeMutex);
-
-	    /*
 	     * The thread may already have closed on it's own.  Check it's
 	     * exit code.
 	     */
@@ -1856,23 +1848,30 @@ PipeClose2Proc(
 
 		if (exitCode == STILL_ACTIVE) {
 		    /*
-		     * The thread must be blocked waiting for the pipe to become
-		     * readable in ReadFile().  There isn't a clean way to exit
-		     * the thread from this condition.  We should terminate the
-		     * child process instead to get the reader thread to fall out of
-		     * ReadFile with a FALSE.  (below) is not the correct way to do
-		     * this, but will stay here until a better solution is found.
+		     * The thread must be blocked waiting for the pipe to
+		     * become readable in ReadFile().  There isn't a clean way
+		     * to exit the thread from this condition.  We should
+		     * terminate the child process instead to get the reader
+		     * thread to fall out of ReadFile with a FALSE.  (below) is
+		     * not the correct way to do this, but will stay here until
+		     * a better solution is found.
+		     *
+		     * Note that we need to guard against terminating the
+		     * thread while it is in the middle of Tcl_ThreadAlert
+		     * because it won't be able to release the notifier lock.
 		     */
+
+		    Tcl_MutexLock(&pipeMutex);
 
 		    /* BUG: this leaks memory */
 		    TerminateThread(pipePtr->readThread, 0);
 
 		    /* Wait for the thread to terminate. */
 		    WaitForSingleObject(pipePtr->readThread, INFINITE);
+
+		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
-
-	    Tcl_MutexUnlock(&pipeMutex);
 
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
