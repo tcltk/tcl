@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.5 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: source.n,v 1.5.18.1 2004/10/27 14:23:58 dkf Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -50,9 +50,22 @@ what \fBTEXT\fR resource to source by either name or id.  By default Tcl
 searches all open resource files, which include the current
 application and any loaded C extensions.  Alternatively, you may
 specify the \fIfileName\fR where the \fBTEXT\fR resource can be found.
+.SH EXAMPLE
+Run the script in the file \fBfoo.tcl\fR and then the script in the
+file \fBbar.tcl\fR:
+.CS
+\fBsource\fR foo.tcl
+\fBsource\fR bar.tcl
+.CE
+Alternatively:
+.CS
+foreach scriptFile {foo.tcl bar.tcl} {
+   \fBsource\fR $scriptFile
+}
+.CE
 
 .SH "SEE ALSO"
-file(n), cd(n)
+file(n), cd(n), info(n)
 
 .SH KEYWORDS
 file, script
