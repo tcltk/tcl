@@ -1,3 +1,10 @@
+2002-07-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/unixFCmd.test, tests/fileName.test: 
+	* tests/fCmd.test: Removed [exec] of Unix utilities that have
+	equivalents in standard Tcl.  [Bug 579268]  Also simplified some
+	of unixFCmd.test while I was at it.
+
 2002-07-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/basic.test:	Cleaned up, constrained, and reduced the
