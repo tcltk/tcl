@@ -1,3 +1,9 @@
+2002-07-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/expr.test: Added tests to make sure that this works.
+	* generic/tclExecute.c (ExprCallMathFunc): Functions should also
+	be able to return wide-ints.  [Bug 579284]
+
 2002-07-08  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* tests/socket.test: Fixed bug #578164. The original reason for
@@ -13,11 +19,11 @@
 
 2002-07-08  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * tests/cmdAH.test:
+	* tests/cmdAH.test:
 	* tests/fCmd.test:
 	* tests/fileName.test: tests which rely on 'file link' need a
 	constraint so they don't run on older Windows OS. [Bug 578158]
-        * generic/tclIOUtil.c:
+	* generic/tclIOUtil.c:
 	* generic/tcl.h:
 	* generic/tclInt.h:
 	* generic/tclTest.c:
@@ -414,7 +420,7 @@
 	* win/makefile.vc:	to installation on Windows.
 
 	* library/init.tcl:  Corrected comments and namespace style
-        issues.  Thanks to Bruce Stephens. [Bug 572025]
+	issues.  Thanks to Bruce Stephens. [Bug 572025]
 
 2002-06-21  Vince Darley  <vincentdarley@users.sourceforge.net>
 
@@ -2250,7 +2256,7 @@
 	* win/tclWinInit.c: Partial TIP 27 rollback.  Following routines
 	restored to return (char *): Tcl_DStringAppend,
 	Tcl_DStringAppendElement, Tcl_JoinPath, Tcl_TranslateFileName,
-        Tcl_ExternalToUtfDString, Tcl_UtfToExternalDString,
+	Tcl_ExternalToUtfDString, Tcl_UtfToExternalDString,
 	Tcl_UniCharToUtfDString, Tcl_GetCwd, Tcl_WinTCharToUtf.  Also
 	restored Tcl_WinUtfToTChar to return (TCHAR *) and 
 	Tcl_UtfToUniCharDString to return (Tcl_UniChar *).  Modified
@@ -2788,7 +2794,7 @@
 	* generic/tcl.decls (Tcl_ParseVar):
 	* generic/tclParse.c (Tcl_ParseVar):
 	* generic/tclTest.c (TestparsevarObjCmd): Updated APIs in
-        generic/tclParse.c according to the guidelines of TIP 27.  Updated
+	generic/tclParse.c according to the guidelines of TIP 27.  Updated
 	callers.  [Patch 501046]
 	* generic/tclDecls.h: make genstubs
 
@@ -2817,13 +2823,13 @@
 	Tcl_ErrnoMsg; it takes an integer argument.  Thanks to Georgios
 	Petasis.  [Bug 468183]
 
-        * doc/AddErrInfo.3 (Tcl_PosixError):
-        * doc/Eval.3 (Tcl_EvalFile):
-        * doc/FileSystem.c (Tcl_FSOpenFileChannel,Tcl_FSOpenFileChannelProc):
-        * doc/OpenFileChnl.3 (Tcl_OpenFileChannel):
-        * doc/SetErrno.3 (Tcl_ErrnoId,Tcl_ErrnoMsg):
-        * doc/Signal.3 (Tcl_SignalId,Tcl_SignalMsg):
-        * generic/tcl.decls (Tcl_ErrnoId,TclErrnoMsg,Tcl_EvalFile,
+	* doc/AddErrInfo.3 (Tcl_PosixError):
+	* doc/Eval.3 (Tcl_EvalFile):
+	* doc/FileSystem.c (Tcl_FSOpenFileChannel,Tcl_FSOpenFileChannelProc):
+	* doc/OpenFileChnl.3 (Tcl_OpenFileChannel):
+	* doc/SetErrno.3 (Tcl_ErrnoId,Tcl_ErrnoMsg):
+	* doc/Signal.3 (Tcl_SignalId,Tcl_SignalMsg):
+	* generic/tcl.decls (Tcl_ErrnoId,TclErrnoMsg,Tcl_EvalFile,
 	  Tcl_OpenFileChannel,Tcl_PosixError,Tcl_SignalId,Tcl_SignalMsg,
 	  Tcl_FSOpenFileChannel):
 	* generic/tcl.h (Tcl_FSOpenFileChannelProc):
@@ -3564,9 +3570,9 @@
 	* generic/tclThreadTest.c: renamed routines conflicting with standard
 	Apple or MoreFiles headers (at compile or link time):
 	GetGlobalMouse         -> GetGlobalMouseTcl
-    	FSpGetDirectoryID      -> FSpGetDirectoryIDTcl
-    	FSpOpenResFileCompat   -> FSpOpenResFileCompatTcl
-    	FSpCreateResFileCompat -> FSpCreateResFileCompatTcl
+	FSpGetDirectoryID      -> FSpGetDirectoryIDTcl
+	FSpOpenResFileCompat   -> FSpOpenResFileCompatTcl
+	FSpCreateResFileCompat -> FSpCreateResFileCompatTcl
 	NewThread              -> NewTestThread
 	the renamed MoreFiles *Tcl routines are just wrappers calling into the
 	MoreFiles DLL.
@@ -5395,7 +5401,7 @@
 
 2001-08-11  Vince Darley <vincentdarley@users.sourceforge.net>
 
-        Variety of small issues introduced by the vfs code fixed:
+	Variety of small issues introduced by the vfs code fixed:
 	* generic/tclIOUtil.c: uninitialised read.
 	* generic/tclFCmd.c: possible memory leak in file delete 
 	with error condition.
@@ -5531,7 +5537,7 @@
 
 2001-07-31  Vince Darley <vincentdarley@users.sourceforge.net>
 
-        Changes from TIP#17 "Redo Tcl's filesystem"
+	Changes from TIP#17 "Redo Tcl's filesystem"
 	The following files were impacted:
 	* doc/Access.3: 
 	* doc/FileSystem.3: 
@@ -5929,7 +5935,7 @@
 	* unix/Makefile.in: Set CFLAGS to @CFLAGS@ and @CFLAGS_DEFAULT@.
 	Set LDFLAGS to @LDFLAGS@ and @LDFLAGS_DEFAULT@. Add LDFLAGS_DEBUG
 	and LDFLAGS_OPTIMIZE to match the way CFLAGS_DEFAULT works.
- 	This will support user set CFLAGS or LDFLAGS at configure time.
+	This will support user set CFLAGS or LDFLAGS at configure time.
 	* unix/configure: Regen.
 	* unix/configure.in: Don't set CFLAGS to CFLAGS_DEFAULT, instead
 	subst CFLAGS_DEFAULT into the Makefile. Add AC_SUBST for CFLAGS_DEFAULT,
@@ -6598,28 +6604,28 @@
 	  Thread-Aware Channels]. See also [Patch #403358] at SF.
 
 	* generic/tclIO.h (struct ChannelState, line 236f): Extended the
- 	  structure with a new field of type 'Tcl_ThreadId' to hold the id
- 	  of the thread currently managing all channels with this state.
+	  structure with a new field of type 'Tcl_ThreadId' to hold the id
+	  of the thread currently managing all channels with this state.
 
 	  Note: This structure is shared by all channels in a stack of
- 	  transformations.
+	  transformations.
 
 	* generic/tclIO.c (Tcl_CreateChannel, lines 1058-1065): Modified
- 	  to store the Id of the current thread in the 'ChannelState' of
- 	  the new channel.
+	  to store the Id of the current thread in the 'ChannelState' of
+	  the new channel.
 
 	* generic/tclIO.c (Tcl_SpliceChannel, lines 2265-2270): Modified
- 	  in the same manner as 'Tcl_CreateChannel' as the channel will be
- 	  managed by the current thread afterward.
+	  in the same manner as 'Tcl_CreateChannel' as the channel will be
+	  managed by the current thread afterward.
 
 	* generic/tclIO.c   (Tcl_GetChannelThread, lines 1478-1503):
 	* generic/tcl.decls (Tcl_GetChannelThread, lines 1504-1506): New
- 	  API function to retrieve the Id of the managing thread from a
- 	  channel. Implementation and declaration.
+	  API function to retrieve the Id of the managing thread from a
+	  channel. Implementation and declaration.
 
 	* generic/tclTest.c (TestChannelCmd, lines 4520-4532): Added
- 	  subcommand 'mthread' to query a channel about its managing
- 	  thread.
+	  subcommand 'mthread' to query a channel about its managing
+	  thread.
 
 2001-03-29  Mo DeJong  <mdejong@redhat.com>
 
@@ -6636,11 +6642,11 @@
 
 	* unix/tclUnixPipe.c (TclpCreateTempFile): prevent potential race
 	condition and security leak in tmp filename creation.
- 	(max) [Patch #402924]
+	(max) [Patch #402924]
 
 	* unix/configure:
 	* unix/tcl.m4: corrected IRIX-5.x config to not use -n32.
- 	(english) [Patch #403626]
+	(english) [Patch #403626]
 
 	* unix/tclUnixThrd.c (Tcl_ConditionWait): fixed handling of
 	timeout for threads (corrects excessive CPU usage issue for Tk on
@@ -6677,7 +6683,7 @@
 	resultPtr to prevent possible corruption.
 
 	* generic/tclNamesp.c (Tcl_Import): Correctly freed a DString.
- 	(lavana) [Patch #403755]
+	(lavana) [Patch #403755]
 
 2001-03-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
