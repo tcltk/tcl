@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.2.2.1 1999/03/05 20:18:04 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.2.2.2 1999/03/06 21:19:57 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -860,7 +860,6 @@ typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
     struct TclIntStubs *tclIntStubs;
     struct TclIntPlatStubs *tclIntPlatStubs;
-    struct TclCompileStubs *tclCompileStubs;
 } TclStubHooks;
 
 typedef struct TclStubs {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.2.2.1 1999/03/05 20:18:05 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.2.2.2 1999/03/06 21:19:57 stanton Exp $
 
 library tcl
 
@@ -779,103 +779,4 @@ declare 7 unix {
 }
 declare 8 unix {
     int TclUnixWaitForFile(int fd, int mask, int timeout)
-}
-
-##############################################################################
-
-# Declare the functions used by tclCompile.h.  This is an internal API and
-# is subject to change.  Use at your own risk.
-
-interface tclCompile
-
-declare 0 generic {
-    void TclCleanupByteCode(ByteCode *codePtr)
-}
-declare 1 generic {
-    int TclCompileExpr(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int flags, CompileEnv *envPtr)
-}
-declare 2 generic {
-    int TclCompileQuotes(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int termChar, int flags, CompileEnv *envPtr)
-}
-declare 3 generic {
-    int TclCompileString(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int flags, CompileEnv *envPtr)
-}
-declare 4 generic {
-    int TclCompileDollarVar(Tcl_Interp *interp, char *string, \
-	    char *lastChar, int flags, CompileEnv *envPtr)
-}
-declare 5 generic {
-    int TclCreateAuxData(ClientData clientData, AuxDataType *typePtr, \
-	    CompileEnv *envPtr)
-}
-declare 6 generic {
-    ExecEnv * TclCreateExecEnv(Tcl_Interp *interp)
-}
-declare 7 generic {
-    void TclDeleteExecEnv(ExecEnv *eePtr)
-}
-declare 8 generic {
-    void TclEmitForwardJump(CompileEnv *envPtr, TclJumpType jumpType, \
-	    JumpFixup *jumpFixupPtr)
-}
-declare 9 generic {
-    AuxDataType *TclGetAuxDataType(char *typeName)
-}
-declare 10 generic {
-    ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc, \
-	    int catchOnly, ByteCode* codePtr)
-}
-declare 11 generic {
-    InstructionDesc * TclGetInstructionTable(void)
-}
-declare 12 generic {
-    int TclExecuteByteCode(Tcl_Interp *interp, ByteCode *codePtr)
-}
-declare 13 generic {
-    void TclExpandCodeArray(CompileEnv *envPtr)
-}
-declare 14 generic {
-    void TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr)
-}
-declare 15 generic {
-    void TclFinalizeAuxDataTypeTable(void)
-}
-declare 16 generic {
-    int TclFixupForwardJump(CompileEnv *envPtr, JumpFixup *jumpFixupPtr, \
-	    int jumpDist, int distThreshold)
-}
-declare 17 generic {
-    void TclFreeCompileEnv(CompileEnv *envPtr)
-}
-declare 18 generic {
-    void TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr)
-}
-declare 19 generic {
-    void TclInitAuxDataTypeTable(void)
-}
-declare 20 generic {
-    void TclInitByteCodeObj(Tcl_Obj *objPtr, CompileEnv *envPtr)
-}
-declare 21 generic {
-    void TclInitCompileEnv(Tcl_Interp *interp, CompileEnv *envPtr, \
-	    char *string)
-}
-declare 22 generic {
-    void TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr)
-}
-declare 23 generic {
-    int TclObjIndexForString(char *start, int length, int allocStrRep, \
-	    int inHeap, CompileEnv *envPtr)
-}
-declare 24 generic {
-    int TclPrintInstruction(ByteCode* codePtr, unsigned char *pc)
-}
-declare 25 generic {
-    void TclPrintSource(FILE *outFile, char *string, int maxChars)
-}
-declare 26 generic {
-    void TclRegisterAuxDataType(AuxDataType *typePtr)
 }

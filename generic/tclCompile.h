@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.8.4.1 1999/03/05 20:18:03 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.8.4.2 1999/03/06 21:19:56 stanton Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -150,58 +150,6 @@ typedef struct CmdLocation {
     int srcOffset;		/* Offset of first char of the command. */
     int numSrcChars;		/* Number of command source chars. */
 } CmdLocation;
-
-/*
- * CompileProcs need the ability to record information during compilation
- * that can be used by bytecode instructions during execution. The AuxData
- * structure provides this "auxiliary data" mechanism. An arbitrary number
- * of these structures can be stored in the ByteCode record (during
- * compilation they are stored in a CompileEnv structure). Each AuxData
- * record holds one word of client-specified data (often a pointer) and is
- * given an index that instructions can later use to look up the structure
- * and its data.
- *
- * The following definitions declare the types of procedures that are called
- * to duplicate or free this auxiliary data when the containing ByteCode
- * objects are duplicated and freed. Pointers to these procedures are kept
- * in the AuxData structure.
- */
-
-typedef ClientData (AuxDataDupProc)  _ANSI_ARGS_((ClientData clientData));
-typedef void       (AuxDataFreeProc) _ANSI_ARGS_((ClientData clientData));
-
-/*
- * We define a separate AuxDataType struct to hold type-related information
- * for the AuxData structure. This separation makes it possible for clients
- * outside of the TCL core to manipulate (in a limited fashion!) AuxData;
- * for example, it makes it possible to pickle and unpickle AuxData structs.
- */
-
-typedef struct AuxDataType {
-    char *name;					/* the name of the type. Types can be
-                                 * registered and found by name */
-    AuxDataDupProc *dupProc;	/* Callback procedure to invoke when the
-                                 * aux data is duplicated (e.g., when the
-                                 * ByteCode structure containing the aux
-                                 * data is duplicated). NULL means just
-                                 * copy the source clientData bits; no
-                                 * proc need be called. */
-    AuxDataFreeProc *freeProc;	/* Callback procedure to invoke when the
-                                 * aux data is freed. NULL means no
-                                 * proc need be called. */
-} AuxDataType;
-
-/*
- * The definition of the AuxData structure that holds information created
- * during compilation by CompileProcs and used by instructions during
- * execution.
- */
-
-typedef struct AuxData {
-    AuxDataType *type;		/* pointer to the AuxData type associated with
-                             * this ClientData. */
-    ClientData clientData;	/* The compilation data itself. */
-} AuxData;
 
 /*
  * Structure defining the compilation environment. After compilation, fields
@@ -771,11 +719,60 @@ typedef struct ResolvedCmdName {
  *----------------------------------------------------------------
  */
 
+EXTERN void		TclCleanupByteCode _ANSI_ARGS_((ByteCode *codePtr));
+EXTERN int		TclCompileExpr _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *string, char *lastChar, int flags,
+			    CompileEnv *envPtr));
+EXTERN int		TclCompileQuotes _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *string, char *lastChar, int termChar,
+			    int flags, CompileEnv *envPtr));
+EXTERN int		TclCompileString _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *string, char *lastChar, int flags,
+			    CompileEnv *envPtr));
+EXTERN int		TclCompileDollarVar _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *string, char *lastChar, int flags,
+			    CompileEnv *envPtr));
+EXTERN int		TclCreateAuxData _ANSI_ARGS_((ClientData clientData,
+				AuxDataType *typePtr, CompileEnv *envPtr));
+EXTERN ExecEnv *	TclCreateExecEnv _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN void		TclDeleteExecEnv _ANSI_ARGS_((ExecEnv *eePtr));
+EXTERN void		TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
+			    TclJumpType jumpType, JumpFixup *jumpFixupPtr));
+EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
+			    unsigned char *pc, int catchOnly,
+			    ByteCode* codePtr));
+EXTERN InstructionDesc * TclGetInstructionTable _ANSI_ARGS_(());
+EXTERN int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
+			    ByteCode *codePtr));
+EXTERN void		TclExpandCodeArray _ANSI_ARGS_((
+                            CompileEnv *envPtr));
+EXTERN void		TclExpandJumpFixupArray _ANSI_ARGS_((
+                            JumpFixupArray *fixupArrayPtr));
+EXTERN void		TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
+EXTERN int		TclFixupForwardJump _ANSI_ARGS_((
+			    CompileEnv *envPtr, JumpFixup *jumpFixupPtr,
+			    int jumpDist, int distThreshold));
+EXTERN void		TclFreeCompileEnv _ANSI_ARGS_((CompileEnv *envPtr));
+EXTERN void		TclFreeJumpFixupArray _ANSI_ARGS_((
+  			    JumpFixupArray *fixupArrayPtr));
+EXTERN void		TclInitAuxDataTypeTable _ANSI_ARGS_((void));
+EXTERN void		TclInitByteCodeObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+			    CompileEnv *envPtr));
+EXTERN void		TclInitCompileEnv _ANSI_ARGS_((Tcl_Interp *interp,
+			    CompileEnv *envPtr, char *string));
+EXTERN void		TclInitJumpFixupArray _ANSI_ARGS_((
+			    JumpFixupArray *fixupArrayPtr));
 #ifdef TCL_COMPILE_STATS
 EXTERN int		TclLog2 _ANSI_ARGS_((int value));
 #endif /*TCL_COMPILE_STATS*/
-
-#include "tclCompileDecls.h"
+EXTERN int		TclObjIndexForString _ANSI_ARGS_((char *start,
+			    int length, int allocStrRep, int inHeap,
+			    CompileEnv *envPtr));
+EXTERN int		TclPrintInstruction _ANSI_ARGS_((ByteCode* codePtr,
+			    unsigned char *pc));
+EXTERN void		TclPrintSource _ANSI_ARGS_((FILE *outFile,
+			    char *string, int maxChars));
+EXTERN void		TclRegisterAuxDataType _ANSI_ARGS_((AuxDataType *typePtr));
 
 /*
  *----------------------------------------------------------------

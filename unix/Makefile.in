@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.17.4.4 1999/03/05 23:24:52 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.17.4.5 1999/03/06 21:19:58 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -270,11 +270,15 @@ TCL_DECLS = \
 	$(GENERIC_DIR)/tclInt.decls
 
 GENERIC_HDRS = \
-	$(GENERIC_DIR)/tclRegexp.h \
 	$(GENERIC_DIR)/tcl.h \
+	$(GENERIC_DIR)/tclDecls.h \
 	$(GENERIC_DIR)/tclInt.h \
+	$(GENERIC_DIR)/tclIntDecls.h \
+	$(GENERIC_DIR)/tclIntPlatDecls.h \
+	$(GENERIC_DIR)/tclPatch.h \
+	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
-	$(GENERIC_DIR)/tclPatch.h
+	$(GENERIC_DIR)/tclRegexp.h
 
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regexp.c \
@@ -328,7 +332,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclVar.c
 
 STUB_SRCS = \
-	$(GENERIC_DIR)/tclCompileStubs.c \
 	$(GENERIC_DIR)/tclIntPlatStubs.c \
 	$(GENERIC_DIR)/tclIntStubs.c \
 	$(GENERIC_DIR)/tclPlatStubs.c \
@@ -445,7 +448,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.17.4.4 1999/03/05 23:24:52 stanton Exp $'
+	    -e 's/SCCSID/RCS: @(#) \$Id\$'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -883,9 +886,6 @@ waitpid.o: $(COMPAT_DIR)/waitpid.c
 
 # Stub library binaries, these must be compiled for use in a shared library
 # even though they will be placed in a static archive
-
-tclCompileStubs.o: $(GENERIC_DIR)/tclCompileStubs.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclCompileStubs.c
 
 tclIntPlatStubs.o: $(GENERIC_DIR)/tclIntPlatStubs.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclIntPlatStubs.c

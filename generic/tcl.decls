@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.2.2.1 1999/03/05 20:18:02 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.2.2.2 1999/03/06 21:19:56 stanton Exp $
 
 library tcl
 
@@ -18,10 +18,9 @@ library tcl
 #     tclPlat	 - platform specific public
 #     tclInt	 - generic private
 #     tclPlatInt - platform specific private
-#     tclCompile - private compiler/execution module fucntions
 
 interface tcl
-hooks {tclPlat tclInt tclIntPlat tclCompile}
+hooks {tclPlat tclInt tclIntPlat}
 
 # Declare each of the functions in the public Tcl interface.  Note that
 # the an index should never be reused for a different function in order

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.23.4.2 1999/03/04 01:01:58 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.23.4.3 1999/03/06 21:19:58 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -53,13 +53,14 @@
 #include <string.h>
 #endif
 
-#ifdef ACCESS_TCL_THROUGH_STUB
-# undef TCL_STORAGE_CLASS
-# define TCL_STORAGE_CLASS
+#undef TCL_STORAGE_CLASS
+#ifdef BUILD_tcl
+# define TCL_STORAGE_CLASS DLLEXPORT
 #else
-# ifdef BUILD_tcl
-#  undef TCL_STORAGE_CLASS
-#  define TCL_STORAGE_CLASS DLLEXPORT
+# ifdef USE_TCL_STUBS
+#  define TCL_STORAGE_CLASS
+# else
+#  define TCL_STORAGE_CLASS DLLIMPORT
 # endif
 #endif
 
@@ -823,6 +824,58 @@ typedef struct ExecEnv {
 				 * the stack is empty. */
     int stackEnd;		/* Index of last usable item in stack. */
 } ExecEnv;
+
+/*
+ * CompileProcs need the ability to record information during compilation
+ * that can be used by bytecode instructions during execution. The AuxData
+ * structure provides this "auxiliary data" mechanism. An arbitrary number
+ * of these structures can be stored in the ByteCode record (during
+ * compilation they are stored in a CompileEnv structure). Each AuxData
+ * record holds one word of client-specified data (often a pointer) and is
+ * given an index that instructions can later use to look up the structure
+ * and its data.
+ *
+ * The following definitions declare the types of procedures that are called
+ * to duplicate or free this auxiliary data when the containing ByteCode
+ * objects are duplicated and freed. Pointers to these procedures are kept
+ * in the AuxData structure.
+ */
+
+typedef ClientData (AuxDataDupProc)  _ANSI_ARGS_((ClientData clientData));
+typedef void       (AuxDataFreeProc) _ANSI_ARGS_((ClientData clientData));
+
+/*
+ * We define a separate AuxDataType struct to hold type-related information
+ * for the AuxData structure. This separation makes it possible for clients
+ * outside of the TCL core to manipulate (in a limited fashion!) AuxData;
+ * for example, it makes it possible to pickle and unpickle AuxData structs.
+ */
+
+typedef struct AuxDataType {
+    char *name;					/* the name of the type. Types can be
+                                 * registered and found by name */
+    AuxDataDupProc *dupProc;	/* Callback procedure to invoke when the
+                                 * aux data is duplicated (e.g., when the
+                                 * ByteCode structure containing the aux
+                                 * data is duplicated). NULL means just
+                                 * copy the source clientData bits; no
+                                 * proc need be called. */
+    AuxDataFreeProc *freeProc;	/* Callback procedure to invoke when the
+                                 * aux data is freed. NULL means no
+                                 * proc need be called. */
+} AuxDataType;
+
+/*
+ * The definition of the AuxData structure that holds information created
+ * during compilation by CompileProcs and used by instructions during
+ * execution.
+ */
+
+typedef struct AuxData {
+    AuxDataType *type;		/* pointer to the AuxData type associated with
+				 * this ClientData. */
+    ClientData clientData;	/* The compilation data itself. */
+} AuxData;
 
 /*
  *----------------------------------------------------------------

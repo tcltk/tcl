@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.2.2.1 1999/03/05 20:18:06 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.2.2.2 1999/03/06 21:19:58 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -326,40 +326,6 @@ TclStubs tclStubs = {
 
 TclStubs *tclStubsPtr = &tclStubs;
 
-TclCompileStubs tclCompileStubs = {
-    TCL_STUB_MAGIC,
-    NULL,
-    TclCleanupByteCode, /* 0 */
-    TclCompileExpr, /* 1 */
-    TclCompileQuotes, /* 2 */
-    TclCompileString, /* 3 */
-    TclCompileDollarVar, /* 4 */
-    TclCreateAuxData, /* 5 */
-    TclCreateExecEnv, /* 6 */
-    TclDeleteExecEnv, /* 7 */
-    TclEmitForwardJump, /* 8 */
-    TclGetAuxDataType, /* 9 */
-    TclGetExceptionRangeForPc, /* 10 */
-    TclGetInstructionTable, /* 11 */
-    TclExecuteByteCode, /* 12 */
-    TclExpandCodeArray, /* 13 */
-    TclExpandJumpFixupArray, /* 14 */
-    TclFinalizeAuxDataTypeTable, /* 15 */
-    TclFixupForwardJump, /* 16 */
-    TclFreeCompileEnv, /* 17 */
-    TclFreeJumpFixupArray, /* 18 */
-    TclInitAuxDataTypeTable, /* 19 */
-    TclInitByteCodeObj, /* 20 */
-    TclInitCompileEnv, /* 21 */
-    TclInitJumpFixupArray, /* 22 */
-    TclObjIndexForString, /* 23 */
-    TclPrintInstruction, /* 24 */
-    TclPrintSource, /* 25 */
-    TclRegisterAuxDataType, /* 26 */
-};
-
-TclCompileStubs *tclCompileStubsPtr = &tclCompileStubs;
-
 TclIntStubs tclIntStubs = {
     TCL_STUB_MAGIC,
     NULL,
@@ -613,8 +579,7 @@ TclPlatStubs *tclPlatStubsPtr = &tclPlatStubs;
 static TclStubHooks tclStubHooks = {
     &tclPlatStubs,
     &tclIntStubs,
-    &tclIntPlatStubs,
-    &tclCompileStubs
+    &tclIntPlatStubs
 };
 
 
