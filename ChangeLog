@@ -1,3 +1,8 @@
+2003-09-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/opt/optparse.tcl:	Overlooked dependence of opt 0.4.4
+	* library/opt/pkgIndex.tcl:	on Tcl 8.2.  Bumped to opt 0.4.4.1.
+
 2003-09-01  Zoran Vasiljevic <zoran@archiware.com>
 
 	* generic/tclIOUtil.c: backported fix from HEAD [Bug 788780]
