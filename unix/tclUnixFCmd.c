@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.3 2004/11/11 01:15:29 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.4 2005/01/10 11:21:51 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -433,8 +433,8 @@ CopyFile(src, dst, statBufPtr)
 {
     int srcFd;
     int dstFd;
-    u_int blockSize;   /* Optimal I/O blocksize for filesystem */
-    char *buffer;      /* Data buffer for copy */
+    unsigned blockSize;		/* Optimal I/O blocksize for filesystem */
+    char *buffer;		/* Data buffer for copy */
     size_t nread;
 
     if ((srcFd = TclOSopen(src, O_RDONLY, 0)) < 0) {	/* INTL: Native. */
