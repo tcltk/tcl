@@ -1,3 +1,9 @@
+2003-07-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/http/pkgIndex.tcl: merged to v2.4.4 from head
+	* library/http/http.tcl: add support for user:pass info in URL.
+	* tests/http.test:       [Bug 759888] (shiobara)
+
 2003-07-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/AddErrInfo.3:     Improved consistency of documentation
@@ -28,10 +34,9 @@
 	* generic/tclFileName.c (Tcl_TranslateFileName): And remove from here.
 	(TclDoGlob): Adjust for cygwin and append / for dirs instead of \
 	* win/tclWinFile.c (TclpObjChdir): Use chdir on Cygwin.
+	[Patch 679315]
 
 2003-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	* win/tclWinFile.c (TclpObjChdir): 
 
 	* library/safe.tcl (FileInAccessPath): normalize paths before
 	comparison. [Bug 759607] (myers)
