@@ -1,4 +1,4 @@
-// RCS: @(#) $Id: tclsh.rc,v 1.10 2004/01/16 02:40:20 davygrvy Exp $
+// RCS: @(#) $Id: tclsh.rc,v 1.11 2004/02/07 21:47:19 davygrvy Exp $
 //
 // Version Resource Script
 //
@@ -21,7 +21,7 @@
 #define SUFFIX_STATIC	    ""
 #endif
 
-#if DEBUG
+#if DEBUG && !UNCHECKED
 #define SUFFIX_DEBUG	    "g"
 #else
 #define SUFFIX_DEBUG	    ""
