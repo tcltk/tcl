@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.23 2004/01/21 19:59:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.24 2004/01/29 10:28:20 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -525,6 +525,22 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		    Tcl_GetString(source), "\"", (char *) NULL);
 	    goto done;
 	}
+	
+	/* 
+	 * The destination exists, but appears to be ok to over-write,
+	 * and -force is given.  We now try to adjust permissions to
+	 * ensure the operation succeeds.  If we can't adjust
+	 * permissions, we'll let the actual copy/rename return
+	 * an error later.
+	 */
+#if !defined(__WIN32__) && !defined(MAC_TCL)
+	{
+	Tcl_Obj* perm = Tcl_NewStringObj("u+w",-1);
+	Tcl_IncrRefCount(perm);
+	Tcl_FSFileAttrsSet(NULL, 2, target, perm);
+	Tcl_DecrRefCount(perm);
+	}
+#endif
     }
 
     if (copyFlag == 0) {

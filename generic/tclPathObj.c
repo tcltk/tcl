@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.21 2004/01/23 11:04:11 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.22 2004/01/29 10:28:20 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -512,6 +512,12 @@ TclPathPart(interp, pathPtr, portion)
 			}
 			return root;
 		    }
+		}
+		default: {
+		    /* We should never get here */
+		    Tcl_Panic("Bad portion to TclPathPart");
+		    /* For less clever compilers */
+		    return NULL;
 		}
 	    }
 	} else if (fsPathPtr->cwdPtr != NULL) {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.37 2004/01/21 19:59:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.38 2004/01/29 10:28:23 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -209,6 +209,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 {
     CONST char *native;
     Tcl_Obj *fileNamePtr;
+
+    if (types != NULL && types->type == TCL_GLOB_TYPE_MOUNT) {
+	/* The native filesystem never adds mounts */
+	return TCL_OK;
+    }
 
     fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
     if (fileNamePtr == NULL) {
