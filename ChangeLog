@@ -1,3 +1,14 @@
+2000-11-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclIndexObj.c:
+	* generic/tclTestObj.c (TestindexobjCmd): Changed internal
+	representation of index objects to fix Bug #119082; fix shouldn't
+	be visible to outside world...
+
+	* generic/tclTest.c (TestGetIndexFromObjStructObjCmd): 
+	* tests/indexObj.test: (indexObj-6.*) Added to test for presence
+	of Bug #119082.
+
 2000-11-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fixed memory leak from Bug
