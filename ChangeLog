@@ -1,13 +1,13 @@
 2003-07-16  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c (Tcl_GlobObjCmd):       [Bug 771840]
+	* generic/tclFileName.c (Tcl_GlobObjCmd):	[Bug 771840]
 	* generic/tclPathObj.c (Tcl_FSConvertToPathType):[Bug 771947]
-	* unix/tclUnixFCmd.c (GetModeFromPermString):   [Bug 771949]
+	* unix/tclUnixFCmd.c (GetModeFromPermString):	[Bug 771949]
 	Silence compiler warnings about unreached lines.
 
-        * library/tcltest/tcltest.tcl (ProcessFlags):   Corrected broken call
-        * library/tcltest/pkgIndex.tcl:                 to [lrange].  Bumped
-        to version 2.2.4. [Bug 772333]
+	* library/tcltest/tcltest.tcl (ProcessFlags):	Corrected broken call
+	* library/tcltest/pkgIndex.tcl:			to [lrange].  Bumped
+	to version 2.2.4. [Bug 772333]
 
 2003-07-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
@@ -23,9 +23,9 @@
 	* doc/http.n:  Updated SYNOPSIS to match actual syntax of
 	commands.  [Bug 756112]
 
-        * unix/dltest/pkga.c:   Updated to not use Tcl_UtfNcmp and counted
-        strings instead of strcmp (not defined in any #include'd header)
-        and presumed NULL-terminated strings.
+	* unix/dltest/pkga.c:	Updated to not use Tcl_UtfNcmp and counted
+	strings instead of strcmp (not defined in any #include'd header)
+	and presumed NULL-terminated strings.
 
 	* generic/tclCompCmds.c (TclCompileIfCmd):  Prior fix of Bug 711371
 	on 2003-04-07 introduced a buffer overflow.  Corrected.  [Bug 771613]
@@ -90,10 +90,10 @@
 
 2003-06-27  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/init.test:	Added [cleanupTests] to report results of tests
-	* tests/pkg.test:	that run in slave interps.  [Bugs 761334,761344]
+	* tests/init.test: Added [cleanupTests] to report results of tests
+	* tests/pkg.test:  that run in slave interps.  [Bugs 761334,761344]
 
-	* tests/http.test:	Used more reliable path to find httpd script.
+	* tests/http.test: Used more reliable path to find httpd script.
 
 2003-06-25  Don Porter  <dgp@users.sourceforge.net>
 
@@ -219,9 +219,9 @@
 
 2003-06-04  Joe Mistachkin  <joe@mistachkin.com>
 
-        * tools/man2help.tcl: Added duplicate help section checking
-        * tools/index.tcl:    and corrected a comment typo for the 
-        getTopics proc in index.tcl [Bug #748700].
+	* tools/man2help.tcl: Added duplicate help section checking
+	* tools/index.tcl:    and corrected a comment typo for the 
+	getTopics proc in index.tcl [Bug #748700].
 
 2003-06-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
@@ -238,14 +238,14 @@
 
 2003-05-23  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclObj.c (tclCmdNameType):  Converted internal rep
-        management of the cmdName Tcl_ObjType the opposite way, to always
-        use the twoPtrValue instead of always using the otherValuePtr.
-        Previous fix on 2003-05-12 broke several extensions that wanted
-        to poke around with the twoPtrValue.ptr2 value of a cmdName
-        Tcl_Obj, like TclBlend and e4graph.  [Bug 726018]
-        Thanks to George Petasis for the bug report and Jacob Levy for
-        testing assistance.
+	* generic/tclObj.c (tclCmdNameType):  Converted internal rep
+	management of the cmdName Tcl_ObjType the opposite way, to always
+	use the twoPtrValue instead of always using the otherValuePtr.
+	Previous fix on 2003-05-12 broke several extensions that wanted
+	to poke around with the twoPtrValue.ptr2 value of a cmdName
+	Tcl_Obj, like TclBlend and e4graph.  [Bug 726018]
+	Thanks to George Petasis for the bug report and Jacob Levy for
+	testing assistance.
 
 2003-05-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
