@@ -1,3 +1,8 @@
+2003-02-18  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclTest.c: cleanup of new 'simplefs' test code, and
+	better documentation.
+	
 2003-02-17  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclRenameCommand): fixing error in previous
