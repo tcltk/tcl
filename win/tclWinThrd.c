@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.15 2001/09/03 00:37:45 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.16 2001/09/03 01:28:42 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -101,8 +101,6 @@ typedef struct WinCondition {
     struct ThreadSpecificData *firstPtr;	/* Queue pointers */
     struct ThreadSpecificData *lastPtr;
 } WinCondition;
-
-static void FinalizeConditionEvent(ClientData data);
 
 
 /*
@@ -377,6 +375,10 @@ Tcl_GetAllocMutex()
 
 
 #ifdef TCL_THREADS
+
+/* locally used prototype */
+static void FinalizeConditionEvent(ClientData data);
+
 /*
  *----------------------------------------------------------------------
  *
