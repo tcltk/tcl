@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.17 2003/01/14 02:06:11 mdejong Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.18 2003/01/14 17:51:16 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -263,7 +263,7 @@ FormatClock(interp, clockVal, useGMT, format)
     char *p;
     int result;
     time_t tclockVal;
-#if defined(HAVE_TM_ZONE) && !defined(WIN32)
+#if !defined(HAVE_TM_ZONE) && !defined(WIN32)
     int savedTimeZone = 0;	/* lint. */
     char *savedTZEnv = NULL;	/* lint. */
 #endif

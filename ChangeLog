@@ -1,3 +1,8 @@
+2003-01-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclClock.c (FormatClock): corrected typo that
+	incorrectly conditionally defined savedTZEnv and savedTimeZone.
+
 2003-01-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Fix mingw build problems and compiler warnings.
