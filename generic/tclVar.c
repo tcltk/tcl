@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.93 2004/10/01 12:45:20 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.94 2004/10/06 09:48:40 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1154,8 +1154,8 @@ Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags)
     Var *varPtr, *arrayPtr;
     char *part1, *part2;
 
-    part1 = Tcl_GetString(part1Ptr);
-    part2 = ((part2Ptr == NULL) ? NULL : Tcl_GetString(part2Ptr));
+    part1 = TclGetString(part1Ptr);
+    part2 = ((part2Ptr == NULL) ? NULL : TclGetString(part2Ptr));
     
     /*
      * We need a special flag check to see if we want to create part 1,
@@ -1514,7 +1514,7 @@ Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, newValuePtr, flags)
     char *part1, *part2;
 
     part1 = TclGetString(part1Ptr);
-    part2 = ((part2Ptr == NULL) ? NULL : Tcl_GetString(part2Ptr));    
+    part2 = ((part2Ptr == NULL) ? NULL : TclGetString(part2Ptr));    
 
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
@@ -2932,9 +2932,9 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	        return TCL_OK;
 	    }
 	    if (objc == 4) {
-	        pattern = Tcl_GetString(objv[3]);
+	        pattern = TclGetString(objv[3]);
 	    } else if (objc == 5) {
-		pattern = Tcl_GetString(objv[4]);
+		pattern = TclGetString(objv[4]);
 		if (Tcl_GetIndexFromObj(interp, objv[3], options, "option",
 			0, &mode) != TCL_OK) {
 		    return TCL_ERROR;
@@ -3117,7 +3117,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    } else {
-		pattern = Tcl_GetString(objv[3]);
+		pattern = TclGetString(objv[3]);
 		for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr,
 			&search);
 		     hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
@@ -3992,7 +3992,7 @@ SetArraySearchObj(interp, objPtr)
      * Get the string representation. Make it up-to-date if necessary.
      */
 
-    string = Tcl_GetString(objPtr);
+    string = TclGetString(objPtr);
 
     /*
      * Parse the id into the three parts separated by dashes.
@@ -4068,7 +4068,7 @@ ParseSearchId(interp, varPtr, varName, handleObj)
      */
     id = (int)(((char*)handleObj->internalRep.twoPtrValue.ptr1) -
 	       ((char*)NULL));
-    string = Tcl_GetString(handleObj);
+    string = TclGetString(handleObj);
     offset = (((char*)handleObj->internalRep.twoPtrValue.ptr2) -
 	      ((char*)NULL));
     /*
@@ -4225,7 +4225,7 @@ TclDeleteVars(iPtr, tablePtr)
 	    objPtr = Tcl_NewObj();
 	    Tcl_IncrRefCount(objPtr); /* until done with traces */
 	    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
-	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, Tcl_GetString(objPtr),
+	    TclCallVarTraces(iPtr, (Var *) NULL, varPtr, TclGetString(objPtr),
 		    NULL, flags, /* leaveErrMsg */ 0);
 	    Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 
@@ -4715,7 +4715,7 @@ UpdateParsedVarName(objPtr)
     }
     part1 = Tcl_GetStringFromObj(arrayPtr, &len1);
     len2 = strlen(part2);
-	
+
     totalLen = len1 + len2 + 2;
     p = ckalloc((unsigned int) totalLen + 1);
     objPtr->bytes = p;
