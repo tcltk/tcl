@@ -1,5 +1,9 @@
 2004-07-16  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Corrected a typo in the
+	  generation of error messages and simplified by reusing data in a
+	  variable instead of retrieving the string again. Fixes [Tcl SF Bug 835289].
+
 	* doc/OpenFileChnl.3: Added description of the behaviour of
 	  Tcl_ReadChars when its 'charsToRead' argument is set to
 	  -1. Fixes [Tcl SF Bug 934511].
