@@ -3,7 +3,7 @@
 # This script attempts to determine what APIs exist in the source base that 
 # have not been documented.  By grepping through all of the doc/*.3 man 
 # pages, looking for "Pkg_*" (e.g., Tcl_ or Tk_), and comparing this list
-# against the list of Pkg_ APIs found in the source (e.g., tcl8.1/*/*.[ch])
+# against the list of Pkg_ APIs found in the source (e.g., tcl8.2/*/*.[ch])
 # we create six lists:
 #      1) APIs in Source not in Docs.
 #      2) APIs in Docs not in Source.
@@ -19,7 +19,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.5 1999/04/21 21:50:32 rjohnson Exp $
+# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.6 1999/07/22 21:50:55 redman Exp $
 
 
 lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
@@ -109,7 +109,7 @@ proc main {} {
     if {($len != 2) && ($len != 3)} {
 	puts "usage: $argv0 pkgName pkgDir \[outFile\]"
 	puts "   pkgName == Tcl,Tk"
-	puts "   pkgDir  == /home/surles/cvs/tcl8.1"
+	puts "   pkgDir  == /home/surles/cvs/tcl8.2"
 	exit 1
     }
 

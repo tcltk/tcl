@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.16 1999/07/21 02:01:36 hershey Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.17 1999/07/22 21:50:56 redman Exp $
  */
 
 #include "tclInt.h"
@@ -267,17 +267,17 @@ CONST char *path;		/* Path to the executable in native
      * This code looks in the following directories:
      *
      *	<bindir>/../<installLib>
-     *		(e.g. /usr/local/bin/../lib/tcl8.1)
+     *		(e.g. /usr/local/bin/../lib/tcl8.2)
      *	<bindir>/../../<installLib>
-     *		(e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.1)
+     *		(e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.2)
      *	<bindir>/../library
-     *		(e.g. /usr/src/tcl8.1/unix/../library)
+     *		(e.g. /usr/src/tcl8.2/unix/../library)
      *	<bindir>/../../library
-     *		(e.g. /usr/src/tcl8.1/unix/solaris-sparc/../../library)
+     *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../library)
      *	<bindir>/../../<developLib>
-     *		(e.g. /usr/src/tcl8.1/unix/../../tcl8.1/library)
+     *		(e.g. /usr/src/tcl8.2/unix/../../tcl8.2/library)
      *	<bindir>/../../../<devlopLib>
-     *		(e.g. /usr/src/tcl8.1/unix/solaris-sparc/../../../tcl8.1/library)
+     *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../../tcl8.2/library)
      */
      
     if (path != NULL) {

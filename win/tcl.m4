@@ -20,13 +20,13 @@
 AC_DEFUN(SC_PATH_TCLCONFIG, [
     AC_MSG_CHECKING([the location of tclConfig.sh])
 
-    if test -d ../../tcl8.1$1/win;  then
-	TCL_BIN_DIR_DEFAULT=../../tcl8.1$1/win
+    if test -d ../../tcl8.2$1/win;  then
+	TCL_BIN_DIR_DEFAULT=../../tcl8.2$1/win
     else
-	TCL_BIN_DIR_DEFAULT=../../tcl8.1/win
+	TCL_BIN_DIR_DEFAULT=../../tcl8.2/win
     fi
     
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.1 binaries from DIR],
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.2 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DIR_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)
@@ -58,13 +58,13 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 AC_DEFUN(SC_PATH_TKCONFIG, [
     AC_MSG_CHECKING([the location of tkConfig.sh])
 
-    if test -d ../../tk8.1$1/win;  then
-	TK_BIN_DIR_DEFAULT=../../tk8.1$1/win
+    if test -d ../../tk8.2$1/win;  then
+	TK_BIN_DIR_DEFAULT=../../tk8.2$1/win
     else
-	TK_BIN_DIR_DEFAULT=../../tk8.1/win
+	TK_BIN_DIR_DEFAULT=../../tk8.2/win
     fi
     
-    AC_ARG_WITH(tk, [  --with-tk=DIR          use Tk 8.1 binaries from DIR],
+    AC_ARG_WITH(tk, [  --with-tk=DIR          use Tk 8.2 binaries from DIR],
 	    TK_BIN_DIR=$withval, TK_BIN_DIR=`cd $TK_BIN_DIR_DEFAULT; pwd`)
     if test ! -d $TK_BIN_DIR; then
 	AC_MSG_ERROR(Tk directory $TK_BIN_DIR does not exist)
@@ -423,13 +423,13 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_WITH_TCL, [
-    if test -d ../../tcl8.1$1/win;  then
-	TCL_BIN_DEFAULT=../../tcl8.1$1/win
+    if test -d ../../tcl8.2$1/win;  then
+	TCL_BIN_DEFAULT=../../tcl8.2$1/win
     else
-	TCL_BIN_DEFAULT=../../tcl8.1/win
+	TCL_BIN_DEFAULT=../../tcl8.2/win
     fi
     
-    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.1 binaries from DIR],
+    AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.2 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
 	AC_MSG_ERROR(Tcl directory $TCL_BIN_DIR does not exist)

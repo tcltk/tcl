@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.19 1999/07/21 23:28:05 hershey Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.20 1999/07/22 21:50:57 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -233,17 +233,17 @@ TclpInitLibraryPath(path)
      * This code looks in the following directories:
      *
      *	<bindir>/../<installLib>
-     *		(e.g. /usr/local/bin/../lib/tcl8.1)
+     *		(e.g. /usr/local/bin/../lib/tcl8.2)
      *	<bindir>/../../<installLib>
-     *		(e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.1)
+     *		(e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.2)
      *	<bindir>/../library
-     *		(e.g. /usr/src/tcl8.1/unix/../library)
+     *		(e.g. /usr/src/tcl8.2/unix/../library)
      *	<bindir>/../../library
-     *		(e.g. /usr/src/tcl8.1/unix/solaris-sparc/../../library)
+     *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../library)
      *	<bindir>/../../<developLib>
-     *		(e.g. /usr/src/tcl8.1/unix/../../tcl8.1/library)
+     *		(e.g. /usr/src/tcl8.2/unix/../../tcl8.2/library)
      *	<bindir>/../../../<devlopLib>
-     *		(e.g. /usr/src/tcl8.1/unix/solaris-sparc/../../../tcl8.1/library)
+     *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../../tcl8.2/library)
      */
      
     if (path != NULL) {
@@ -304,7 +304,7 @@ TclpInitLibraryPath(path)
  *	Append the value of the TCL_LIBRARY environment variable onto the
  *	path pointer.  If the env variable points to another version of
  *	tcl (e.g. "tcl7.6") also append the path to this version (e.g.,
- *	"tcl7.6/../tcl8.1")
+ *	"tcl7.6/../tcl8.2")
  *
  * Results:
  *	None.

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.10 1999/07/02 19:51:29 welch Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.11 1999/07/22 21:50:54 redman Exp $
  */
 
 #include "tclInt.h"
@@ -1815,7 +1815,8 @@ Tcl_UnstackChannel (interp, chan)
  */
 
 Tcl_Channel
-Tcl_GetStackedChannel(Tcl_Channel chan)
+Tcl_GetStackedChannel(chan)
+    Tcl_Channel chan;
 {
   Channel* chanPtr = (Channel*) chan;
   return (Tcl_Channel) chanPtr->supercedes;

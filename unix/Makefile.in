@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.41 1999/07/22 00:38:40 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.42 1999/07/22 21:50:56 redman Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -501,6 +501,7 @@ install-binaries:
 		fi; \
 	    done;
 	@echo "Installing $(TCL_LIB_FILE)"
+	chmod +x $(SRC_DIR)/install-sh
 	@$(INSTALL_DATA) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
 	@(cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE))
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
@@ -539,6 +540,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
+	chmod +x $(SRC_DIR)/install-sh
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h ; \
 	    do \
 	    echo "Installing $$i"; \

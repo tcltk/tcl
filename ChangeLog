@@ -1,3 +1,23 @@
+1999-07-22    <redman@scriptics.com>
+
+	* Changed version to 8.2b2.
+
+	* win/tclWinPort.h: Block out include of sys/*.h in order to
+	build extensions with MetroWerks compiler for Win32. [Bug: 2385]
+	
+	* generic/tclCmdMZ.c:
+	* generic/tclIO.c: Fix ANSI-style prototypes based on patch from
+	Ulrich Ring.  [Bug: 2391]
+	
+	* unix/Makefile.in: Need to make install-sh executable before
+	calling (with chmod +x).  [Bug: 2413]
+	
+	* tests/var.test:
+	* generic/tclVar.c:  Fixed bug that caused a seg. fault when using
+	"array set a(b) {}", which is a bad array name anyway.  Now the
+	"array set" command will return an error in this case.  Added test
+	case and fixed existing test. [Bug: 2427]
+
 1999-07-21    <redman@scriptics.com>
 
 	* tests/info.test:

@@ -4,7 +4,7 @@ by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.12 1999/06/25 23:29:55 welch Exp $
+RCS: @(#) $Id: README,v 1.13 1999/07/22 21:50:56 redman Exp $
 
 1. Introduction
 ---------------
@@ -21,11 +21,11 @@ The information in this file is maintained on the web at:
 
 In order to compile Tcl for Windows, you need the following items:
 
-	Tcl 8.1 Source Distribution (plus any patches)
+	Tcl 8.2 Source Distribution (plus any patches)
 
 	Visual C++ 2.x/4.x/5.x
 
-In practice, the 8.1 release is built with Visual C++ 5.0
+In practice, the 8.2 release is built with Visual C++ 5.0
 
 In the "win" subdirectory of the source release, you will find
 "makefile.vc".  This is the makefile Visual C++ compiler.  You should
@@ -45,7 +45,7 @@ find them.  Tcl looks in one of three places for the library files:
 		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.2
 
 	3) Relative to the directory containing the current .exe.
-	    Tcl will look for a directory "..\lib\tcl8.1" relative to the
+	    Tcl will look for a directory "..\lib\tcl8.2" relative to the
 	    directory containing the currently running .exe.
 
 Note that in order to run tclsh82.exe, you must ensure that tcl82.dll

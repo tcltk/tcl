@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.18 1999/07/09 02:11:56 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.19 1999/07/22 21:50:54 redman Exp $
  */
 
 #include "tclInt.h"
@@ -1089,7 +1089,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_IS: {
 	    char *end;
 	    Tcl_UniChar ch;
-	    int (*chcomp)(int) = NULL;	/* The UniChar comparison function */
+
+            /*
+	     * The UniChar comparison function
+	     */
+
+	    int (*chcomp)_ANSI_ARGS_((int)) = NULL; 
 	    int i, failat = 0, result = 1, strict = 0;
 	    Tcl_Obj *objPtr, *failVarObj = NULL;
 

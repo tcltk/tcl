@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.9 1999/04/22 20:28:02 redman Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.10 1999/07/22 21:50:57 redman Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -52,8 +52,17 @@ typedef float *TCHAR;
 #include <process.h>
 #include <signal.h>
 #include <string.h>
+
+/*
+ * Need to block out these includes for building extensions with MetroWerks
+ * compiler for Win32.
+ */
+
+#ifndef __MWERKS__
 #include <sys/stat.h>
 #include <sys/timeb.h>
+#endif
+
 #include <tchar.h>
 #include <time.h>
 #include <winsock2.h>

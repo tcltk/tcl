@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.7 1999/06/26 20:55:17 rjohnson Exp $
+# RCS: @(#) $Id: var.test,v 1.8 1999/07/22 21:50:55 redman Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -577,7 +577,12 @@ test var-9.12 {behaviour of TclSetVar write trace error} {
 test var-10.1 {can't nest arrays with array set} {
    catch {unset arr}
    list [catch {array set arr(x) {a 1 b 2}} res] $res
-} {1 {can't set "arr(x)(a)": variable isn't array}}
+} {1 {can't set "arr(x)": variable isn't array}}
+
+test var-10.2 {can't nest arrays with array set} {
+   catch {unset arr}
+   list [catch {array set arr(x) {}} res] $res
+} {1 {can't set "arr(x)": variable isn't array}}
 
 catch {namespace delete ns}
 catch {unset arr}

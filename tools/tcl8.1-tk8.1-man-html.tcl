@@ -77,8 +77,8 @@ proc parse_command_line {} {
     set webdir ../html
 
     # Directory names for Tcl and Tk, in priority order.
-    set tclDirList {tcl8.1 tcl8.0 tcl tcl7.4 tcl7.5 tcl7.6}
-    set tkDirList {tk8.1 tk8.0 tk tk4.0 tk4.1 tk4.2}
+    set tclDirList {tcl8.2 tcl8.1 tcl8.0 tcl tcl7.4 tcl7.5 tcl7.6}
+    set tkDirList {tk8.2 tk8.1 tk8.0 tk tk4.0 tk4.1 tk4.2}
 
     # Handle arguments a la GNU:
     #   --version

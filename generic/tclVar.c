@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.10 1999/06/17 00:20:55 hershey Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.11 1999/07/22 21:50:54 redman Exp $
  */
 
 #include "tclInt.h"
@@ -3198,9 +3198,23 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
     Var *varPtr, *arrayPtr;
     Tcl_Obj **elemPtrs;
     int result, elemLen, i;
-    char *varName;
+    char *varName, *p;
     
     varName = TclGetString(arrayNameObj);
+    for (p = varName; *p ; p++) {
+	if (*p == '(') {
+	    do {
+		p++;
+	    } while (*p != '\0');
+	    p--;
+	    if (*p == ')') {
+		VarErrMsg(interp, varName, NULL, "set", needArray);
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+    }
+
     varPtr = TclLookupVar(interp, varName, (char *) NULL, /*flags*/ 0,
             /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
 
@@ -3257,6 +3271,7 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 	
 	varPtr = TclLookupVar(interp, varName, (char *) NULL, 0, 0,
 	        /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+
     }
     TclSetVarArray(varPtr);
     TclClearVarUndefined(varPtr);
