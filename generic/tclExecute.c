@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.93 2003/02/18 02:25:44 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94 2003/02/19 14:33:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5446,7 +5446,6 @@ ExprSrandFunc(interp, eePtr, clientData)
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *valuePtr;
     long i = 0;			/* Initialized to avoid compiler warning. */
-    int result;
 
     /*
      * Set stackPtr and stackTop from eePtr.
@@ -5462,7 +5461,6 @@ ExprSrandFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
 
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
 	goto badValue;
     }
 
