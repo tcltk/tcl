@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.44 2002/04/04 05:36:56 hobbs Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.45 2002/04/04 15:30:55 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -2547,8 +2547,9 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 # Side Effects:
 #       None
 
-# a lower case version is needed for compatibility with 8.3
-interp alias {} tcltest::getMatchingFiles {} tcltest::GetMatchingFiles
+# a lower case version is needed for compatibility with tcltest 1.0
+interp alias {} [namespace current]::tcltest::getMatchingFiles \
+	{} [namespace current]::tcltest::GetMatchingFiles
 
 proc tcltest::GetMatchingFiles { {searchDirectory ""} } {
     if {[llength [info level 0]] == 1} {
