@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.7.2.1 2001/04/03 22:54:39 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.7.2.2 2001/09/07 17:10:33 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -812,6 +812,14 @@ TclpStat(path, statPtr)
 	Tcl_SetErrno(ENOENT);
 	return -1;
     }
+
+    /*
+     * Ensure correct file sizes by forcing the OS to write any
+     * pending data to disk. This is done only for channels which are
+     * dirty, i.e. have been written to since the last flush here.
+     */
+
+    TclWinFlushDirtyChannels ();
 
     nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
     handle = (*tclWinProcs->findFirstFileProc)(nativePath, &data);
