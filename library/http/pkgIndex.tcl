@@ -8,5 +8,5 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-if {![package vsatisfies [package provide Tcl] 8.2]} {return}
-package ifneeded http 2.5.0 [list tclPkgSetup $dir http 2.5.0 {{http.tcl source {::http::config ::http::formatQuery ::http::geturl ::http::reset ::http::wait ::http::register ::http::unregister}}}]
+if {![package vsatisfies [package provide Tcl] 8.4]} {return}
+package ifneeded http 2.5.1 [list tclPkgSetup $dir http 2.5.1 {{http.tcl source {::http::config ::http::formatQuery ::http::geturl ::http::reset ::http::wait ::http::register ::http::unregister}}}]
