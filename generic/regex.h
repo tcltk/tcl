@@ -223,6 +223,7 @@ typedef struct {
 #define	REG_NEWLINE	000300	/* newlines are line terminators */
 #define	REG_PEND	000400	/* ugh -- backward-compatibility hack */
 #define	REG_EXPECT	001000	/* report details on partial/limited matches */
+#define	REG_BOSONLY	002000	/* temporary kludge for BOS-only matches */
 #define	REG_DUMP	004000	/* none of your business :-) */
 #define	REG_FAKEEC	010000	/* none of your business :-) */
 #define	REG_PROGRESS	020000	/* none of your business :-) */

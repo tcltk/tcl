@@ -533,7 +533,7 @@ struct nfa *nfa;
 		/* add implicit .* in front */
 		rainbow(nfa, v->cm, PLAIN, COLORLESS, pre, pre);
 
-		/* and ^* and \Z* too -- not always necessary, but harmless */
+		/* and ^* and \A* too -- not always necessary, but harmless */
 		newarc(nfa, PLAIN, nfa->bos[0], pre, pre);
 		newarc(nfa, PLAIN, nfa->bos[1], pre, pre);
 	}
