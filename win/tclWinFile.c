@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.9 2004/07/02 16:52:20 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.10 2004/10/08 20:16:42 hobbs Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1334,28 +1334,31 @@ NativeIsExec(nativePath)
     if (tclWinProcs->useWide) {
 	CONST WCHAR *path;
 	int len;
-	
+
 	path = (CONST WCHAR*)nativePath;
 	len = wcslen(path);
-	
+
 	if (len < 5) {
 	    return 0;
 	}
-	
+
 	if (path[len-4] != L'.') {
 	    return 0;
 	}
-	
-	if ((memcmp((char*)(path+len-3),L"exe",3*sizeof(WCHAR)) == 0)
-	    || (memcmp((char*)(path+len-3),L"com",3*sizeof(WCHAR)) == 0)
-	    || (memcmp((char*)(path+len-3),L"bat",3*sizeof(WCHAR)) == 0)) {
+
+	/*
+	 * Use wide-char case-insensitive comparison
+	 */
+	if ((_wcsicmp(path+len-3,L"exe") == 0)
+		|| (_wcsicmp(path+len-3,L"com") == 0)
+		|| (_wcsicmp(path+len-3,L"bat") == 0)) {
 	    return 1;
 	}
     } else {
 	CONST char *p;
-	
+
 	/* We are only looking for pure ascii */
-	
+
 	p = strrchr((CONST char*)nativePath, '.');
 	if (p != NULL) {
 	    p++;
