@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.7 2001/11/23 01:27:57 das Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.8 2002/01/25 20:40:56 dgp Exp $
  */
 
 #define MAC_TCL
@@ -2068,7 +2068,7 @@ tclOSAStore(
     char idStr[16 + TCL_INTEGER_SPACE];
     FSSpec fileSpec;
     Tcl_DString buffer;
-    char *nativeName;
+    CONST char *nativeName;
     OSErr myErr = noErr;
     OSAID scriptID;
     Size scriptSize;
@@ -2287,7 +2287,7 @@ tclOSALoad(
     char idStr[16 + TCL_INTEGER_SPACE];
     FSSpec fileSpec;
     Tcl_DString buffer;
-    char *nativeName;
+    CONST char *nativeName;
 
     saveRef = CurResFile();
 	

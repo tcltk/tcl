@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.21 2002/01/15 17:55:31 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.22 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -180,7 +180,7 @@ typedef struct PipeEvent {
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
 static void		BuildCommandLine(const char *executable, int argc, 
-			    char **argv, Tcl_DString *linePtr);
+			    CONST char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
 static void		PipeCheckProc(ClientData clientData, int flags);
@@ -949,7 +949,7 @@ TclpCreateProcess(
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
     int argc,			/* Number of arguments in following array. */
-    char **argv,		/* Array of argument strings.  argv[0]
+    CONST char **argv,		/* Array of argument strings.  argv[0]
 				 * contains the name of the executable
 				 * converted to native format (using the
 				 * Tcl_TranslateFileName call).  Additional
@@ -1524,7 +1524,7 @@ BuildCommandLine(
     CONST char *executable,	/* Full path of executable (including 
 				 * extension).  Replacement for argv[0]. */
     int argc,			/* Number of arguments. */
-    char **argv,		/* Argument strings in UTF. */
+    CONST char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (TCHAR). */
 {

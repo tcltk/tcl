@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.9 2002/01/18 03:23:02 das Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.10 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include <Errors.h>
@@ -1235,10 +1235,10 @@ SetSoundVolume(
 int
 Tcl_MacEvalResource(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
-    char *resourceName,		/* Name of TEXT resource to source,
+    CONST char *resourceName,	/* Name of TEXT resource to source,
 				   NULL if number should be used. */
     int resourceNumber,		/* Resource id of source. */
-    char *fileName)		/* Name of file to process.
+    CONST char *fileName)	/* Name of file to process.
 				   NULL if application resource. */
 {
     Handle sourceText;
@@ -1249,7 +1249,7 @@ Tcl_MacEvalResource(
     char idStr[64];
     FSSpec fileSpec;
     Tcl_DString buffer;
-    char *nativeName;
+    CONST char *nativeName;
 
     saveRef = CurResFile();
 	
@@ -1420,10 +1420,10 @@ Handle
 Tcl_MacFindResource(
     Tcl_Interp *interp,		/* Interpreter in which to process file. */
     long resourceType,		/* Type of resource to load. */
-    char *resourceName,		/* Name of resource to find,
+    CONST char *resourceName,	/* Name of resource to find,
 				 * NULL if number should be used. */
     int resourceNumber,		/* Resource id of source. */
-    char *resFileRef,		/* Registered resource file reference,
+    CONST char *resFileRef,	/* Registered resource file reference,
 				 * NULL if searching all open resource files. */
     int *releaseIt)	        /* Should we release this resource when done. */
 {
@@ -1462,15 +1462,17 @@ Tcl_MacFindResource(
 	    resource = GetResource(resourceType, resourceNumber);
 	}
     } else {
-	c2pstr(resourceName);
+	Tcl_DString ds;
+	char *native = Tcl_UtfToExternalDString(NULL, resourceName, -1, &ds);
+	c2pstr(native);
 	if (limitSearch) {
 	    resource = Get1NamedResource(resourceType,
-		    (StringPtr) resourceName);
+		    (StringPtr) native);
 	} else {
 	    resource = GetNamedResource(resourceType,
 		    (StringPtr) resourceName);
 	}
-	p2cstr((StringPtr) resourceName);
+	Tcl_DStringFree(&ds);
     }
     
     if (*resource == NULL) {

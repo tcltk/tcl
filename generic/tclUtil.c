@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.27 2002/01/02 13:52:04 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.28 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -420,10 +420,10 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
     CONST char *list;		/* Pointer to string with list structure. */
     int *argcPtr;		/* Pointer to location to fill in with
 				 * the number of elements in the list. */
-    char ***argvPtr;		/* Pointer to place to store pointer to
+    CONST char ***argvPtr;	/* Pointer to place to store pointer to
 				 * array of pointers to list elements. */
 {
-    char **argv;
+    CONST char **argv;
     CONST char *l;
     char *p;
     int length, size, i, result, elSize, brace;
@@ -442,7 +442,7 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
 	}
     }
     size++;			/* Leave space for final NULL pointer. */
-    argv = (char **) ckalloc((unsigned)
+    argv = (CONST char **) ckalloc((unsigned)
 	    ((size * sizeof(char *)) + (l - list) + 1));
     length = strlen(list);
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
@@ -847,7 +847,7 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 char *
 Tcl_Merge(argc, argv)
     int argc;			/* How many strings to merge. */
-    char * CONST *argv;		/* Array of string values. */
+    CONST char * CONST *argv;	/* Array of string values. */
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
@@ -950,7 +950,7 @@ Tcl_Backslash(src, readPtr)
 char *
 Tcl_Concat(argc, argv)
     int argc;			/* Number of strings to concatenate. */
-    char * CONST *argv;		/* Array of strings to concatenate. */
+    CONST char * CONST *argv;	/* Array of strings to concatenate. */
 {
     int totalSize, i;
     char *p;
@@ -1882,7 +1882,8 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
-    char *value, *end;
+    CONST char *value;
+    char *end;
     int prec;
 
     /*

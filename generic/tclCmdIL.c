@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.38 2002/01/23 20:46:01 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.39 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1192,7 +1192,7 @@ InfoLibraryCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *libDirName;
+    CONST char *libDirName;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -1454,7 +1454,7 @@ InfoPatchLevelCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *patchlevel;
+    CONST char *patchlevel;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -1742,7 +1742,7 @@ InfoTclVersionCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *version;
+    CONST char *version;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);

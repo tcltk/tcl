@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.75 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.76 2002/01/25 20:40:55 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1845,7 +1845,7 @@ EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 				Tcl_Obj *destPathPtr));
 EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, 
 			        Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, 
-				char *pattern, Tcl_GlobTypeData *types));
+				CONST char *pattern, Tcl_GlobTypeData *types));
 EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));

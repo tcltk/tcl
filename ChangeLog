@@ -1,3 +1,93 @@
+2002-01-25  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/Concat.3:
+	* doc/Encoding.3:
+	* doc/Filesystem.3:
+	* doc/Macintosh.3:
+	* doc/OpenFileChnl.3
+	* doc/SetResult.3:
+	* doc/SetVar.3:
+	* doc/SplitList.3:
+	* doc/SplitPath.3:
+	* doc/Translate.3:
+	* generic/tcl.h (Tcl_FSMatchInDirectoryProc):
+	* generic/tclInt.h (TclpMatchInDirectory):
+	* generic/tcl.decls (Tcl_Concat,Tcl_GetStringResult,Tcl_GetVar,
+	  Tcl_GetVar2,Tcl_JoinPath,Tcl_Merge,Tcl_OpenCommandChannel,Tcl_SetVar,
+	  Tcl_SetVar2,Tcl_SplitList,Tcl_SplitPath,Tcl_TranslateFileName,
+	  Tcl_ExternalToUtfDString,Tcl_GetEncodingName,Tcl_UtfToExternalDString,
+	  Tcl_GetDefaultEncodingDir,Tcl_SetDefaultEncodingDir,
+	  Tcl_FSMatchInDirectory,Tcl_MacEvalResource,Tcl_MacFindResource):
+	* generic/tclInt.decls (TclCreatePipeline,TclGetEnv,TclpGetCwd,
+	  TclpCreateProcess):
+	* mac/tclMacFile.c (TclpGetCwd):
+	* generic/tclEncoding.c (Tcl_GetDefaultEncodingDir,
+	  Tcl_SetDefaultEncodingDir,Tcl_GetEncodingName,
+	  Tcl_ExternalToUtfDString,Tcl_UtfToExternalDString, OpenEncodingFile,
+	  LoadEscapeEncoding):
+	* generic/tclFileName.c (DoTildeSubst,Tcl_JoinPath,Tcl_SplitPath,
+	  Tcl_TranslateFileName): 
+	* generic/tclIOUtil.c (Tcl_FSMatchInDirectory):
+	* generic/tclPipe.c (FileForRedirect,TclCreatePipeline,
+	  Tcl_OpenCommandChannel):
+	* generic/tclResult.c (Tcl_GetStringResult):
+	* generic/tclUtil.c (Tcl_Concat,Tcl_SplitList,Tcl_Merge):
+	* generic/tclVar.c (Tcl_GetVar,Tcl_GetVar2,Tcl_SetVar,Tcl_SetVar2):
+	* mac/tclMacResource.c (Tcl_MacEvalResource,Tcl_MacFindResource):
+	Updated interfaces of generic/tclEncoding, generic/tclFilename.c,
+	generic/tclIOUtil.c, generic/tclPipe.c, generic/tclResult.c,
+	generic/tclUtil.c, generic/tclVar.c and mac/tclMacResource.c according
+	to TIP 27.  Tcl_TranslateFileName rewritten as wrapper around
+	VFS-aware version.
+	***POTENTIAL INCOMPATIBILITY*** 
+	Includes source incompatibilities: argv arguments of Tcl_Concat,
+	Tcl_JoinPath, Tcl_OpenCommandChannel, Tcl_Merge; argvPtr arguments of
+	Tcl_SplitList and Tcl_SplitPath.
+	* generic/tclDecls.h: 
+	* generic/tclIntDecls.h: make genstubs
+
+	* generic/tclCkalloc.c (MemoryCmd):
+	* generic/tclClock.c (FormatClock):
+	* generic/tclCmdAH.c (Tcl_CaseObjCmd,Tcl_EncodingObjCmd,Tcl_FileObjCmd):
+	* generic/tclCmdIL.c (InfoLibraryCmd,InfoPatchLevelCmd,
+	  InfoTclVersionCmd):
+	* generic/tclCompCmds.c (TclCompileForeachCmd):
+	* generic/tclCompCmds.h (TclCompileForeachCmd):
+	* generic/tclCompile.c (TclFindCompiledLocal):
+	* generic/tclEnv.c (TclSetupEnv,TclSetEnv,Tcl_PutEnv,TclGetEnv,
+	  EnvTraceProc):
+	* generic/tclEvent.c (Tcl_BackgroundError):
+	* generic/tclIO.c (Tcl_BadChannelOption,Tcl_SetChannelOption):
+	* generic/tclIOCmd.c (Tcl_ExecObjCmd,Tcl_OpenObjCmd):
+	* generic/tclIOSock.c (TclSockGetPort):
+	* generic/tclIOUtil.c (SetFsPathFromAny):
+	* generic/tclLink.c (LinkTraceProc):
+	* generic/tclMain.c (Tcl_Main):
+	* generic/tclNamesp.c (TclTeardownNamespace):
+	* generic/tclProc.c (TclCreateProc):
+	* generic/tclTest.c (TestregexpObjCmd,TesttranslatefilenameCmd,
+	  TestchmodCmd,GetTimesCmd,TestsetCmd,TestOpenFileChannelProc1,
+	  TestOpenFileChannelProc2,TestOpenFileChannelProc3,AsyncHandlerProc,
+	  TestpanicCmd):
+	* generic/tclThreadTest.c (ThreadErrorProc,ThreadEventProc):
+	* generic/tclUtil.c (TclPrecTraceProc):
+	* mac/tclMacFCmd.c (GetFileSpecs):
+	* mac/tclMacFile.c (TclpMatchInDirectory):
+	* mac/tclMacInit.c (TclpInitLibraryPath,Tcl_SourceRCFile):
+	* mac/tclMacOSA.c (tclOSAStore,tclOSALoad):
+	* mac/tclMacResource.c (Tcl_MacEvalResource):
+	* unix/tclUnixFCmd.c (TclpObjNormalizePath):
+	* unix/tclUnixFile.c (TclpMatchInDirectory,TclpGetUserHome,TclpGetCwd,
+	  TclpReadLink):
+	* unix/tclUnixInit.c (TclpInitLibraryPath,TclpSetVariables,
+	  Tcl_SourceRCFile):
+	* unix/tclUnixPipe.c (TclpOpenFile,TclpCreateTempFile,
+	  TclpCreateProcess):
+	* win/tclWinFile.c (TclpGetCwd,TclpMatchInDirectory):
+	* win/tclWinInit.c (TclpInitLibraryPath,Tcl_SourceRCFile,
+	  TclpSetVariables):
+	* win/tclWinPipe.c (TclpCreateProcess): Updated callers.
+
 2002-01-24  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c (SetFsPathFromAny):  Corrected tilde-substitution
@@ -26,6 +116,7 @@
 	* win/tclWinSerial.c (TclWinSerialReopen):
 	* win/tclWinSock.c (Tcl_OpenTcpServer):  Corrections to earlier
 	TIP 27 changes.  Thanks to Andreas Kupries for the feedback.
+	* generic/tclPlatDecls.h: make genstubs
 
 	* doc/GetHostName.3:
 	* doc/GetOpnFl.3:

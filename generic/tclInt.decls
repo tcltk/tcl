@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.42 2002/01/17 03:03:12 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.43 2002/01/25 20:40:55 dgp Exp $
 
 library tcl
 
@@ -60,7 +60,7 @@ declare 8 generic {
 # TclCreatePipeline unofficially exported for use by BLT.
 
 declare 9 {unix win} {
-    int TclCreatePipeline(Tcl_Interp *interp, int argc, char **argv, \
+    int TclCreatePipeline(Tcl_Interp *interp, int argc, CONST char **argv, \
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, \
 	    TclFile *errFilePtr)
 }
@@ -530,7 +530,7 @@ declare 135 generic {
 #   int TclpChdir(CONST char *dirName)
 #}
 declare 138 generic {
-    char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
+    CONST char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
 }
 #declare 139 generic {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1, \
@@ -542,7 +542,7 @@ declare 140 generic {
 }
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
-    char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    CONST char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr, \
@@ -841,7 +841,7 @@ declare 14 win {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
 declare 15 win {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc, char **argv, \
+    int TclpCreateProcess(Tcl_Interp *interp, int argc, CONST char **argv, \
 	    TclFile inputFile, TclFile outputFile, TclFile errorFile, \
 	    Tcl_Pid *pidPtr)
 }
@@ -909,7 +909,7 @@ declare 3 unix {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
 declare 4 unix {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc, char **argv, \
+    int TclpCreateProcess(Tcl_Interp *interp, int argc, CONST char **argv, \
 	    TclFile inputFile, TclFile outputFile, TclFile errorFile, \
 	    Tcl_Pid *pidPtr)
 }

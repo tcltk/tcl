@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.18 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.19 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -140,7 +140,7 @@ Tcl_BackgroundError(interp)
 				 * occurred. */
 {
     BgError *errPtr;
-    char *errResult, *varValue;
+    CONST char *errResult, *varValue;
     ErrAssocData *assocPtr;
     int length;
 
