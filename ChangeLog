@@ -1,3 +1,11 @@
+2004-11-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/dde.n: Synchronized the documentation of the commands with
+	the header of the docs and what the package actually does. Thanks
+	to Andreas Kupries for spotting this.
+	* win/tclWinDde.c (Tcl_DdeObjCmd): Much cleanup of argument
+	parsing code.
+
 2004-11-24  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclPort.h: Relative include of tclWinPort.h returned
