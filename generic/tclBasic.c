@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.59 2002/06/12 19:36:14 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.60 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -334,7 +334,7 @@ Tcl_CreateInterp()
     iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
     iPtr->framePtr = NULL;
     iPtr->varFramePtr = NULL;
-    iPtr->activeTracePtr = NULL;
+    iPtr->activeVarTracePtr = NULL;
     iPtr->returnCode = TCL_OK;
     iPtr->errorInfo = NULL;
     iPtr->errorCode = NULL;
@@ -357,6 +357,7 @@ Tcl_CreateInterp()
     iPtr->tracePtr = NULL;
     iPtr->tracesForbiddingInline = 0;
     iPtr->activeCmdTracePtr = NULL;
+    iPtr->activeInterpTracePtr = NULL;
     iPtr->assocData = (Tcl_HashTable *) NULL;
     iPtr->execEnvPtr = NULL;	      /* set after namespaces initialized */
     iPtr->emptyObjPtr = Tcl_NewObj(); /* another empty object */
@@ -2501,15 +2502,15 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 }
 static char *
 CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
-    Interp *iPtr;		/* Interpreter containing variable. */
-    Command *cmdPtr;		/* Variable whose traces are to be
+    Interp *iPtr;		/* Interpreter containing command. */
+    Command *cmdPtr;		/* Command whose traces are to be
 				 * invoked. */
     CONST char *oldName;        /* Command's old name, or NULL if we
                                  * must get the name from cmdPtr */
     CONST char *newName;        /* Command's new name, or NULL if
                                  * the command is not being renamed */
     int flags;			/* Flags passed to trace procedures:
-				 * indicates what's happening to variable,
+				 * indicates what's happening to command,
 				 * plus other stuff like TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY, and
 				 * TCL_INTERP_DESTROYED. */
@@ -2540,6 +2541,9 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     active.nextPtr = iPtr->activeCmdTracePtr;
     iPtr->activeCmdTracePtr = &active;
 
+    if (flags & TCL_TRACE_DELETE) {
+	flags |= TCL_TRACE_DESTROYED;
+    }
     active.cmdPtr = cmdPtr;
     Tcl_Preserve((ClientData) iPtr);
     for (tracePtr = cmdPtr->tracePtr; tracePtr != NULL;
@@ -2916,113 +2920,91 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **newObjv;
     int i;
-    Trace *tracePtr, *nextPtr;
-    char *commandCopy;
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
 					 * in case TCL_EVAL_GLOBAL was set. */
     int code = TCL_OK;
+    int traceCode = TCL_OK;
+    int checkTraces = 1;
 
     if (objc == 0) {
 	return TCL_OK;
     }
 
     /*
-     * Find the procedure to execute this command. If there isn't one,
-     * then see if there is a command "unknown".  If so, create a new
-     * word array with "unknown" as the first word and the original
-     * command words as arguments.  Then call ourselves recursively
-     * to execute it.
+     * If any execution traces rename or delete the current command,
+     * we may need (at most) two passes here.
      */
+    while (1) {
     
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-    if (cmdPtr == NULL) {
-	newObjv = (Tcl_Obj **) ckalloc((unsigned)
+        /*
+         * Find the procedure to execute this command. If there isn't one,
+         * then see if there is a command "unknown".  If so, create a new
+         * word array with "unknown" as the first word and the original
+         * command words as arguments.  Then call ourselves recursively
+         * to execute it.
+         */
+    
+        cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
+        if (cmdPtr == NULL) {
+	    newObjv = (Tcl_Obj **) ckalloc((unsigned)
 		((objc + 1) * sizeof (Tcl_Obj *)));
-	for (i = objc-1; i >= 0; i--) {
-	    newObjv[i+1] = objv[i];
-	}
-	newObjv[0] = Tcl_NewStringObj("::unknown", -1);
-	Tcl_IncrRefCount(newObjv[0]);
-	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
-	if (cmdPtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	    for (i = objc-1; i >= 0; i--) {
+	        newObjv[i+1] = objv[i];
+	    }
+	    newObjv[0] = Tcl_NewStringObj("::unknown", -1);
+	    Tcl_IncrRefCount(newObjv[0]);
+	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
+	    if (cmdPtr == NULL) {
+	        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "invalid command name \"", Tcl_GetString(objv[0]), "\"",
 		    (char *) NULL);
-	    code = TCL_ERROR;
-	} else if (TclInterpReady(interp) == TCL_ERROR) {
-	    code = TCL_ERROR;
-	} else {
-	    iPtr->numLevels++;
-	    code = TclEvalObjvInternal(interp, objc+1, newObjv, command, length, 0);
-	    iPtr->numLevels--;
-	}
-	Tcl_DecrRefCount(newObjv[0]);
-	ckfree((char *) newObjv);
-	goto done;
-    }
-    
-    /*
-     * Call trace procedures if needed.
-     */
-
-    if ( command != NULL && iPtr->tracePtr != NULL ) {
-	commandCopy = command;
-
-	/* 
-	 * Make a copy of the command if necessary, so that trace
-	 * procs will see it.
-	 */
-
-	if (length < 0) {
-	    length = strlen(command);
-	} else if ((size_t)length < strlen(command)) {
-	    commandCopy = (char *) ckalloc((unsigned) (length + 1));
-	    strncpy(commandCopy, command, (size_t) length);
-	    commandCopy[length] = 0;
-	}
-
-	/*
-	 * Walk through the trace procs
-	 */
-
-	for ( tracePtr = iPtr->tracePtr;
-	      (code == TCL_OK) && (tracePtr != NULL);
-	      tracePtr = nextPtr) {
-	    nextPtr = tracePtr->nextPtr;
-	    if (iPtr->numLevels > tracePtr->level) {
-		continue;
+	        code = TCL_ERROR;
+	    } else if (TclInterpReady(interp) == TCL_ERROR) {
+	        code = TCL_ERROR;
+	    } else {
+	        iPtr->numLevels++;
+	        code = TclEvalObjvInternal(interp, objc+1, newObjv, command, length, 0);
+	        iPtr->numLevels--;
 	    }
-
-	    /*
-	     * Invoke one trace proc
-	     */
-
-	    code = (tracePtr->proc)( tracePtr->clientData,
-				     (Tcl_Interp*) iPtr,
-				     iPtr->numLevels,
-				     commandCopy,
-				     (Tcl_Command) cmdPtr,
-				     objc,
-				     objv );
-	}
-	
-	/*
-	 * If we had to copy the command for the trace procs, free the
-	 * copy.
-	 */
-
-	if (commandCopy != command) {
-	    ckfree((char *) commandCopy);
-	}
-
-    }
+	    Tcl_DecrRefCount(newObjv[0]);
+	    ckfree((char *) newObjv);
+	    goto done;
+        }
     
+        /*
+         * Call trace procedures if needed.
+         */
+        if ((checkTraces) && (command != NULL)) {
+            int cmdEpoch = cmdPtr->cmdEpoch;
+            cmdPtr->refCount++;
+            /* If the first set of traces modifies/deletes the command or
+             * any existing traces, then the set checkTraces to 0 and
+             * go through this while loop one more time.
+             */
+            if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+                traceCode = TclCheckInterpTraces(interp, command, length,
+                               cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+            }
+            if (cmdPtr->flags & CMD_HAS_EXEC_TRACES && traceCode == TCL_OK) {
+                traceCode = TclCheckExecutionTraces(interp, command, length,
+                               cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+            }
+            cmdPtr->refCount--;
+            if (cmdEpoch != cmdPtr->cmdEpoch) {
+                /* The command has been modified in some way */
+                checkTraces = 0;
+                continue;
+            }
+        }
+        break;
+    }
+
     /*
      * Finally, invoke the command's Tcl_ObjCmdProc.
      */
     
     iPtr->cmdCount++;
-    if ( code == TCL_OK ) {
+    if ( code == TCL_OK && traceCode == TCL_OK) {
 	savedVarFramePtr = iPtr->varFramePtr;
 	if (flags & TCL_EVAL_GLOBAL) {
 	    iPtr->varFramePtr = NULL;
@@ -3034,6 +3016,29 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	code = Tcl_AsyncInvoke(interp, code);
     }
 
+    /*
+     * Call 'leave' command traces
+     */
+    if (cmdPtr->flags & CMD_HAS_EXEC_TRACES && traceCode == TCL_OK) {
+	traceCode = TclCheckExecutionTraces(interp, command, length,
+		       cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+    }
+    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+	traceCode = TclCheckInterpTraces(interp, command, length,
+		       cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+    }
+
+    /*
+     * If one of the trace invocation resulted in error, then 
+     * change the result code accordingly. Note, that the
+     * interp->result should already be set correctly by the
+     * call to TraceExecutionProc.  
+     */
+
+    if (traceCode != TCL_OK) {
+	code = traceCode;
+    }
+    
     /*
      * If the interpreter has a non-empty string result, the result
      * object is either empty or stale because some procedure set
@@ -3095,8 +3100,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
     for (tracePtr = iPtr->tracePtr; tracePtr; tracePtr = tracePtr->nextPtr) {
-	if (iPtr->numLevels <= tracePtr->level) {
-
+	if ((tracePtr->level == 0) || (iPtr->numLevels <= tracePtr->level)) {
 	    /*
 	     * The command may be needed for an execution trace.  Generate a
 	     * command string.
@@ -4841,7 +4845,6 @@ Tcl_CreateTrace(interp, level, proc, clientData)
 				 * command. */
     ClientData clientData;	/* Arbitrary value word to pass to proc. */
 {
-    
     StringTraceData* data;
     data = (StringTraceData*) ckalloc( sizeof( *data ));
     data->clientData = clientData;
@@ -4901,15 +4904,13 @@ StringTraceProc( clientData, interp, level, command, commandInfo, objc, objv )
      * on two parameters for compatibility with legacy code; the code
      * MUST NOT modify either command or argv.
      */
-	
+          
     ( data->proc )( data->clientData, interp, level,
 		    (char*) command, cmdPtr->proc, cmdPtr->clientData,
 		    objc, (char**) argv );
-
     ckfree( (char*) argv );
 
     return TCL_OK;
-
 }
 
 /*
@@ -4974,7 +4975,7 @@ Tcl_DeleteTrace(interp, trace)
 	return;
     }
     (*tracePtr2) = (*tracePtr2)->nextPtr;
-    
+
     /*
      * If the trace forbids bytecode compilation, change the interpreter's
      * state.  If bytecode compilation is now permitted, flag the fact and

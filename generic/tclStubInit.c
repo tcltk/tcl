@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.71 2002/05/29 09:09:57 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.72 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -249,6 +249,8 @@ TclIntStubs tclIntStubs = {
     TclSetStartupScriptPath, /* 167 */
     TclGetStartupScriptPath, /* 168 */
     TclpUtfNcmp2, /* 169 */
+    TclCheckInterpTraces, /* 170 */
+    TclCheckExecutionTraces, /* 171 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
