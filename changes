@@ -3461,3 +3461,24 @@ supported correctly by WinSock. (SS)
 6/9/98 (bug fix) Generic channel code failed to report readable file
 events on buffered data that was left behind by a gets or read that
 did not consume all available data. (SS)
+
+6/18/98 (bug fix) Compilation of loop expressions was too aggressive
+and incorrectly inlined non-literal expressions. (SS)
+
+6/18/98 (bug fix) "info var" and "info locals" incorrectly reported
+the existence of compiler temporary variables. (SS)
+
+6/18/98 (bug fix) Dictionary sorting used signed character
+comparisons. (SS)
+
+6/18/98 (bug fix) Compile procs corrupted the exception stack in some
+cases. (SS)
+
+6/18/98 (bug fix) Array set had erratic behavior when initializing a
+variable from an empty value list. (SS)
+
+6/18/98 (bug fix) The Windows registry package had a bad bounds check
+that could lead to a crash. (SS)
+
+6/18/98 (bug fix) The foreach compile proc did not correctly handle
+non-local variable references. (SS)
