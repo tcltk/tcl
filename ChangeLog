@@ -1,3 +1,12 @@
+2001-11-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): update of patch
+	from 2001-11-16 that uses the old Tcl encoding check mechanism as
+	a fallback to the original.  Also added a TCL_DEFAULT_ENCODING
+	#define (defaults to iso8859-1).  Tcl will first try setlocale and
+	nl_langinfo, and if that fails, guess based on certain LANG|LC_*
+	env vars. [Patch #418645]
+
 2001-11-19  David Gravereaux <davygrvy@pobox.com>
 
 	* win/buildall.vc.bat:  Added useful comments.
@@ -72,7 +81,7 @@
 
 	* generic/tclListObj.c: removed a C++-style comment that
 	  was inadvertently left in the source code.
-	
+
 2001-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/interp.test: 
@@ -97,7 +106,6 @@
 	code for tclCmdNameType objects to tclObj.c (from tclExecute.c). 
 	This code has nothing to do with bytecodes.
 
-
 2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c:
@@ -107,7 +115,7 @@
 	* generic/tclProc.c:
 	* tests/stack.test: consolidation of duplicated code (in
 	TclExecuteByteCode and EvalObjv); renaming of EvalObjv to
-	TclEvalObjv i as itisnot static anymore; restored consistency of
+	TclEvalObjv as it is not static anymore; restored consistency of
 	level counts between compiled and directly evaled code.
 	[Bug 480896]
 
