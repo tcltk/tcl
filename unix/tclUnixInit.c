@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.38 2004/02/17 23:50:39 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.39 2004/03/09 13:34:45 vbwagner Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -830,12 +830,25 @@ TclpSetVariables(interp)
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
 		    TCL_GLOBAL_ONLY);
 	} else {
+#ifdef DJGPP	
+		/* For some obscure reason DJGPP puts major version into
+		 * name.release and minor into name.version. As of DJGPP 2.04
+		 * this is documented in djgpp libc.info file*/
+	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
+		    TCL_GLOBAL_ONLY);
+	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", ".",
+		    TCL_GLOBAL_ONLY|TCL_APPEND_VALUE);
+	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.version,
+		    TCL_GLOBAL_ONLY|TCL_APPEND_VALUE);
+#else
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.version,
 		    TCL_GLOBAL_ONLY);
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", ".",
 		    TCL_GLOBAL_ONLY|TCL_APPEND_VALUE);
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
 		    TCL_GLOBAL_ONLY|TCL_APPEND_VALUE);
+
+#endif
 	}
 	Tcl_SetVar2(interp, "tcl_platform", "machine", name.machine,
 		TCL_GLOBAL_ONLY);
