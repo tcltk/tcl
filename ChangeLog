@@ -1,3 +1,15 @@
+2003-10-22  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIOUtil.c (FsListMounts, FsAddMountsToGlobResult): New
+	  functions. See below for context.
+	  (Tcl_FSMatchInDirectory): Modified to call on the new functions
+	  (above) to handle the mountpoints in the glob'bed directory
+	  correctly. Part of the patch by Vincent Darly to solve the
+	  [Bug 800106] for the 8.4.x series.
+
+	* generic/tcl.h (TCL_GLOB_TYPE_MOUNT): New definition. Part of the
+	  patch by Vincent Darly to solve [Bug 800106] for the 8.4.x series.
+
 2003-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_FileObjCmd): Changed FILE_ prefix for
@@ -12,7 +24,7 @@
 	Added skipping of directives directly after .TP to avoid them
 	being used as item descriptions, e.g. .TP\n.VS in clock.n.
 
-2003-10-21  Andreas Kupries  <andreask@pliers.activestate.com>
+2003-10-21  Andreas Kupries  <andreask@activestate.com>
 
 	* win/tclWinPipe.c (BuildCommandLine): Applied the patch coming
 	  with [Bug 805605] to the code, fixing the incorrect use of
@@ -1120,7 +1132,7 @@
 	common user errors due to confusion between [package names] names
 	and [info loaded] names.
 
-2003-02-25  Andreas Kupries  <andreask@pliers.activestate.com>
+2003-02-25  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/pid.test: See below [Bug #678412].
 	* tests/io.test: Made more robust against spaces in paths
