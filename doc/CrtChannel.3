@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.2.3 2005/01/27 22:53:27 andreas_kupries Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.2.4 2005/02/23 10:27:45 dkf Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -817,7 +817,7 @@ a pointer to the function.
 .VS 8.4
 .SH "THREADACTIONPROC"
 .PP
-The \fthreadActionProc\fR field contains the address of the function
+The \fIthreadActionProc\fR field contains the address of the function
 called by the generic layer when a channel is created, closed, or
 going to move to a different thread, i.e. whenever thread-specific
 driver state might have to initialized or updated. It can be NULL.
