@@ -1,3 +1,13 @@
+2003-12-21  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWin32Dll.c: Structured Exception Handling added around
+	Tcl_Finalize called from DllMain's DLL_PROCESS_DETACH.  We can't
+	100% assured that Tcl is being unloaded by the OS in a stable
+	condition and we need to protect the exit handlers should the
+	stack be in a hosed state.  AT&T style assembly for SEH under
+	MinGW has not been added yet.  This is a first part change for
+	[Patch 858493]
+
 2003-12-17  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclBinary.c (DeleteScanNumberCache): fixed crashing bug
