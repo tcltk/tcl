@@ -5,7 +5,7 @@
 # Copyright (c) 1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: genWinImage.tcl,v 1.4 1999/05/26 02:39:13 stanton Exp $
+# RCS: @(#) $Id: genWinImage.tcl,v 1.5 2000/04/25 22:29:21 hobbs Exp $
 
 
 # This file is insensitive to the directory from which it is invoked.
@@ -28,6 +28,9 @@ namespace eval genWinImage {
     # This variable points to the directory containing the Tk built tree.
 
     variable tkBuildDir
+
+    # our script name at runtime
+    variable script [info script]
 }
 
 # genWinImage::init --
@@ -45,8 +48,9 @@ proc genWinImage::init {} {
     variable tclBuildDir
     variable tkBuildDir
     variable toolsDir
+    variable script
  
-    puts "\n--- genWiImage.tcl started: \
+    puts "\n--- $script started: \
 	    [clock format [clock seconds] -format "%Y%m%d-%H:%M"] --\n"
 
     if {$tcl_platform(platform) != "windows"} {
@@ -65,7 +69,7 @@ proc genWinImage::init {} {
 
     generateInstallers
  
-    puts "\n--- genWiImage.tcl finished: \
+    puts "\n--- $script finished: \
 	    [clock format [clock seconds] -format "%Y%m%d-%H:%M"] --\n\n"
 }
 
@@ -141,8 +145,7 @@ proc genWinImage::generateInstallers {} {
 
     # Run the Wise installer to create the Windows install images.
 
-    if {[catch {exec [file native $wise32ProgFilePath] \
-	    /c tcl.wse} errMsg]} {
+    if {[catch {exec [file native $wise32ProgFilePath] /c tcl.wse} errMsg]} {
 	puts stderr "ERROR: $errMsg"
     } else {
 	puts "\"TCL.EXE\" created."
