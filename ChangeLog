@@ -1,5 +1,8 @@
 2004-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/interp.n: Added user documentation for the TIP#143 resource
+	limits and some examples.
+
 	* generic/tclInterp.c (Tcl_LimitCheck, Tcl_LimitTypeReset): Reset
 	the limit-exceeded flag when removing a limit.
 
