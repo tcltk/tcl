@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.16 2004/04/16 20:44:18 dgp Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.17 2004/04/26 09:16:50 dkf Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -43,7 +43,7 @@ int
 int
 \fBTcl_JoinThread\fR(\fIid, result\fR)
 .SH ARGUMENTS
-.AS Tcl_ThreadDataKey *keyPtr
+.AS Tcl_CreateThreadProc *keyPtr
 .AP Tcl_Condition *condPtr in
 A condition variable, which must be associated with a mutex lock.
 .AP Tcl_Mutex *mutexPtr in
@@ -88,12 +88,10 @@ when you configure and compile your Tcl core.
 An important constraint of the Tcl threads implementation is that
 \fIonly the thread that created a Tcl interpreter can use that
 interpreter\fR.  In other words, multiple threads can not access
-the same Tcl interpreter.  (However, as was the case in previous
-releases, a single thread can safely create and use multiple
-interpreters.)
-.PP
-.VS 8.3.1
-Tcl does provide \fBTcl_CreateThread\fR for creating threads. The
+the same Tcl interpreter.  (However, a single thread can safely create
+and use multiple interpreters.)
+.SH DESCRIPTION
+Tcl provides \fBTcl_CreateThread\fR for creating threads. The
 caller can determine the size of the stack given to the new thread and
 modify the behaviour through the supplied \fIflags\fR. The value
 \fBTCL_THREAD_STACK_DEFAULT\fR for the \fIstackSize\fR indicates that
@@ -110,14 +108,12 @@ contain the functionality to specify the stacksize of a thread. The
 specified value for the stacksize is ignored on these systems.
 Windows currently does not support joinable threads. This
 flag value is therefore ignored on this platform.
-.VE
 .PP
 Tcl does provide \fBTcl_ExitThread\fR and \fBTcl_FinalizeThread\fR
 for terminating threads and invoking optional per-thread exit
 handlers.  See the \fBTcl_Exit\fR page for more information on these
 procedures.
 .PP
-.VS
 The \fBTcl_JoinThread\fR function is provided to allow threads to wait
 upon the exit of another thread, which must have been marked as
 joinable through usage of the \fBTCL_THREAD_JOINABLE\fR-flag during
@@ -129,30 +125,24 @@ thread which already exited is possible, the system will retain the
 necessary information until after the call to \fBTcl_JoinThread\fR.
 This means that not calling \fBTcl_JoinThread\fR for a joinable thread
 will cause a memory leak.
-.VE
 .PP
+The \fBTcl_GetThreadData\fR call returns a pointer to a block of
+thread-private data.  Its argument is a key that is shared by all threads
+and a size for the block of storage.  The storage is automatically 
+allocated and initialized to all zeros the first time each thread asks for it.
+The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
+.SS "SYNCHRONIZATION AND COMMUNICATION"
 Tcl provides \fBTcl_ThreadQueueEvent\fR and \fBTcl_ThreadAlert\fR
 for handling event queueing in multithreaded applications.  See
 the \fBNotifier\fR manual page for more information on these procedures.
 .PP
-In this release, the Tcl language itself provides no support for
-creating multithreaded scripts (for example, scripts that could spawn
-a Tcl interpreter in a separate thread).  If you need to add this
-feature at this time, see the \fItclThreadTest.c\fR
-file in the Tcl source distribution for an experimental implementation
-of a Tcl "Thread" package implementing thread creation and management
-commands at the script level.
-
-.SH DESCRIPTION
 A mutex is a lock that is used to serialize all threads through a piece
 of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
 If one thread holds a mutex, any other thread calling \fBTcl_MutexLock\fR will
 block until \fBTcl_MutexUnlock\fR is called.
-.VS
 A mutex can be destroyed after its use by calling \fBTcl_MutexFinalize\fR.
 The result of locking a mutex twice from the same thread is undefined.
 On some platforms it will result in a deadlock.
-.VE
 The \fBTcl_MutexLock\fR, \fBTcl_MutexUnlock\fR and \fBTcl_MutexFinalize\fR
 procedures are defined as empty macros if not compiling with threads enabled.
 .PP
@@ -172,40 +162,34 @@ The caller of \fBTcl_ConditionWait\fR should be prepared for spurious
 notifications by calling \fBTcl_ConditionWait\fR within a while loop
 that tests some invariant.
 .PP
-.VS
 A condition variable can be destroyed after its use by calling
 \fBTcl_ConditionFinalize\fR.
 .PP
 The \fBTcl_ConditionNotify\fR, \fBTcl_ConditionWait\fR and
 \fBTcl_ConditionFinalize\fR procedures are defined as empty macros if
 not compiling with threads enabled.
-.VE
-.PP
-The \fBTcl_GetThreadData\fR call returns a pointer to a block of
-thread-private data.  Its argument is a key that is shared by all threads
-and a size for the block of storage.  The storage is automatically 
-allocated and initialized to all zeros the first time each thread asks for it.
-The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
-.SH INITIALIZATION
+.SS INITIALIZATION
 .PP
 All of these synchronization objects are self initializing.
 They are implemented as opaque pointers that should be NULL
 upon first use.
 The mutexes and condition variables are
-.VS
 either cleaned up by process exit handlers (if living that long) or
 explicitly by calls to \fBTcl_MutexFinalize\fR or
 \fBTcl_ConditionFinalize\fR.
-.VE
 Thread local storage is reclaimed during \fBTcl_FinalizeThread\fR.
-.SH "CREATING THREADS"
-The API to create threads is not finalized at this time.
-There are private facilities to create threads that contain a new
-Tcl interpreter, and to send scripts among threads.
-Dive into tclThreadTest.c and tclThread.c for examples.
+.SH "SCRIPT-LEVEL ACCESS TO THREADS"
+.VS 8.5
+Tcl provides no built-in commands for scripts to use to create,
+manage, or join threads, nor any script-level access to mutex or
+condition variables.  It provides such facilities only via C
+interfaces, and leaves it up to packages to expose these matters to
+the script level.  One such package is the \fBThread\fR package.
+.VE 8.5
 .SH "SEE ALSO"
-Tcl_GetCurrentThread, Tcl_ThreadQueueEvent, Tcl_ThreadAlert,
-Tcl_ExitThread, Tcl_FinalizeThread,
-Tcl_CreateThreadExitHandler, Tcl_DeleteThreadExitHandler
+Tcl_GetCurrentThread(3), Tcl_ThreadQueueEvent(3), Tcl_ThreadAlert(3),
+Tcl_ExitThread(3), Tcl_FinalizeThread(3),
+Tcl_CreateThreadExitHandler(3), Tcl_DeleteThreadExitHandler(3),
+\fBThread\fR package
 .SH KEYWORDS
 thread, mutex, condition variable, thread local storage
