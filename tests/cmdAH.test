@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.17 2001/11/27 14:12:35 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.18 2002/03/24 11:41:50 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1496,14 +1496,18 @@ catch {unset stat}
 
 # type
 
-file delete link.file
-
 test cmdAH-29.1 {Tcl_FileObjCmd: type} {
     list [catch {file size a b} msg] $msg
 } {1 {wrong # args: should be "file size name"}}
 test cmdAH-29.2 {Tcl_FileObjCmd: type} {
     file type dir.file
 } directory
+test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {
+    set exists [list [file exists link.file] [file exists gorp.file]]
+    file delete link.file
+    set exists2	[list [file exists link.file] [file exists gorp.file]]
+    list $exists $exists2
+} {{1 1} {0 1}}
 test cmdAH-29.3 {Tcl_FileObjCmd: type} {
     file type gorp.file
 } file

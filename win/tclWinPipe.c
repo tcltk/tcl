@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.23 2002/01/25 21:36:10 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.24 2002/03/24 11:41:51 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -1431,7 +1431,7 @@ ApplicationType(interp, originalName, fullName)
 	     */
 
 	    CloseHandle(hFile);
-	    if ((ext != NULL) && (strcmp(ext, ".com") == 0)) {
+	    if ((ext != NULL) && (stricmp(ext, ".com") == 0)) {
 		applType = APPL_DOS;
 		break;
 	    }
