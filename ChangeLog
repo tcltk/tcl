@@ -1,3 +1,9 @@
+2005-03-17  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclCompCmds.c (TclCompileIncrCmd):    Corrected checks
+        for immediate operand usage to permit leading space and sign
+        characters.  [Bug 1165671]
+
 2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: 
