@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.68 2002/05/29 09:09:57 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.69 2002/05/29 10:35:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1329,7 +1329,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     * Scan forward to find the first character.
 		     */
 		    if ((*p == *ustring1) &&
-			    (Tcl_UniCharNcmp(ustring1, p,
+			    (TclUniCharNcmp(ustring1, p,
 				    (unsigned long) length1) == 0)) {
 			match = p - ustring2;
 			break;

@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.84 2002/05/21 18:17:55 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.85 2002/05/29 10:35:46 dkf Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -399,6 +399,25 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 SC_BLOCKING_STYLE
+
+#--------------------------------------------------------------------
+#	The statements below check whether we can optimise comparisons
+#	of Tcl_UniChar strings to memcmp; this only holds true on
+#	big-endian systems, but we fall-back to not doing it when
+#	cross-compiling because that is at least safe (if probably
+#	slower when the guess is wrong.)
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for Unicode optimization opportunity])
+AC_CACHE_VAL(tcl_cv_flag_optimize_unicode,[
+    AC_TRY_RUN([#include <unistd.h>
+	int main() {union {char c[2];short s;} u; u.s=1; exit(u.c[0]);}
+	], tcl_cv_flag_optimize_unicode=yes, tcl_cv_flag_optimize_unicode=no,
+	tcl_cv_flag_optimize_unicode=no)])
+AC_MSG_RESULT($tcl_cv_flag_optimize_unicode)
+if test "x$tcl_cv_flag_optimize_unicode" = "xyes"; then
+    AC_DEFINE(TCL_OPTIMIZE_UNICODE_COMPARE)
+fi
 
 #--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
