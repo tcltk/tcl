@@ -1,3 +1,10 @@
+2001-09-09  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in:
+	* win/Makefile.in: Use () around variable name
+	instead of {}. Use TCLTEST variable directly
+	instead of depending on the tcltest alias.
+
 2001-09-09  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tcl.h:
