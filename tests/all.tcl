@@ -8,53 +8,12 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.11 2000/09/20 23:09:54 jenn Exp $
+# RCS: @(#) $Id: all.tcl,v 1.12 2000/10/24 22:30:35 jenn Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force tcltest::*
 
-if {[package vcompare $tcltestVersion 1.0]} {
-    tcltest::testsDirectory [file dir [info script]]
-    tcltest::runAllTests
-} else {
-    set ::tcltest::testSingleFile false
-    set ::tcltest::testsDirectory [file dir [info script]]
-
-    # We need to ensure that the testsDirectory is absolute
-    ::tcltest::normalizePath ::tcltest::testsDirectory
-
-    puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutabl
-    e]"
-    puts stdout "Tests running in working dir:  $::tcltest::testsDirectory"
-    if {[llength $::tcltest::skip] > 0} {
-	puts stdout "Skipping tests that match:  $::tcltest::skip"
-    }
-    if {[llength $::tcltest::match] > 0} {
-	puts stdout "Only running tests that match:  $::tcltest::match"
-    }
-
-    if {[llength $::tcltest::skipFiles] > 0} {
-	puts stdout "Skipping test files that match:  $::tcltest::skipFiles"
-    }
-    if {[llength $::tcltest::matchFiles] > 0} {
-	puts stdout "Only sourcing test files that match:  $::tcltest::matchFiles"
-    }
-
-    set timeCmd {clock format [clock seconds]}
-    puts stdout "Tests began at [eval $timeCmd]"
-
-    # source each of the specified tests
-    foreach file [lsort [::tcltest::getMatchingFiles]] {
-	set tail [file tail $file]
-	puts stdout $tail
-	if {[catch {source $file} msg]} {
-	    puts stdout $msg
-	}
-    }
-
-    # cleanup
-    puts stdout "\nTests ended at [eval $timeCmd]"
-    ::tcltest::cleanupTests 1
-}
+tcltest::testsDirectory [file dir [info script]]
+tcltest::runAllTests
 
 return
