@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.57 2000/06/05 21:39:18 ericm Exp $
+RCS: @(#) $Id: changes,v 1.58 2000/06/05 23:14:15 ericm Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4895,16 +4895,16 @@ string equality and inequality (hobbs)
 list searches and typed list searches (melski)
 
 2000-05-10 (feature enhancement) added [namespace exists] command
-(hobbs)
+(darley)
 
 2000-05-18 (build enhancement) added support for mingw compile env and
-cross-compiling (hobbs)
+cross-compiling (dejong)
 
 2000-05-18 (bug fix) corrected clock grammar to properly handle the
 "ago" keyword when it follows multiple relative unit specifiers
 (melski)
 
-2000-05-22 (compile fix) type cast cleanups (hobbs)
+2000-05-22 (compile fix) type cast cleanups (dejong)
 
 2000-05-23 (performance enhancement) added byte-compiled
 implementation of [return] command and [string] command (melski)
@@ -4913,10 +4913,10 @@ implementation of [return] command and [string] command (melski)
 command with support for [string compare/index/match] (hobbs)
 
 2000-05-27 (feature enhancement) added ability to set [info script]
-return value ([info script ?newFileName?]) (hobbs)
+return value ([info script ?newFileName?]) (welch)
 
 2000-05-31 (feature enhancement) added support for regexp and exact
-pattern matching for [array names] (melski)
+pattern matching for [array names] (gazetta)
 
 2000-05-31 (feature enhancement) added -nocomplain and -- flags to
 [unset] to allow for silent unset operation (hobbs)
