@@ -31,7 +31,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 	AC_MSG_CHECKING([for Tcl configuration])
 	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
-	    # First check to see if --with-tclconfig was specified.
+	    # First check to see if --with-tcl was specified.
 	    if test x"${with_tclconfig}" != x ; then
 		if test -f "${with_tclconfig}/tclConfig.sh" ; then
 		    ac_cv_c_tclconfig=`(cd ${with_tclconfig}; pwd)`
@@ -71,7 +71,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 	    fi
 
 	    # check in a few other private locations
-	    if test x"${ac_cv_c_tcliconfig}" = x ; then
+	    if test x"${ac_cv_c_tclconfig}" = x ; then
 		for i in \
 			${srcdir}/../tcl \
 			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do

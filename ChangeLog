@@ -1,5 +1,10 @@
 2001-05-23  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/tcl.m4 (SC_PATH_TCLCONFIG): Fix comments,
+	and typo in cached variable name.
+
+2001-05-23  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/tcl.m4 (SC_LOAD_TKCONFIG):
 	Remove use of undefined TCLCONFIG variable and
 	call AC_MSG_RESULT to print the checking result.
