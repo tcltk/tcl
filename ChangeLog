@@ -1,3 +1,8 @@
+1999-08-05  Jim Ingham  <jingham@cygnus.com>
+
+        * mac/tclMacProjects.sea.hqx: Rearrange the projects so that the build 
+        directory is separate from the sources.  Much more convenient! 
+
 1999-08-12  Scott Stanton  <stanton@scriptics.com>
 
 	* win/Makefile.in: Added COMPILE_DEBUG_FLAGS macro to make it
