@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.32 2002/07/10 18:51:54 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.33 2002/08/05 22:36:00 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1667,6 +1667,24 @@ test tcltest-24.20 {
 } -match glob -result {} -output {*FAILED*Result was:
 *(negative matching):
 *}
+
+test tcltest-25.1 {
+	constraint of setup/cleanup (Bug 589859)
+} -setup {
+	set foo 0
+} -body {
+	# Buggy tcltest will generate result of 2
+	test tcltest-25.1.0 {} -constraints knownBug -setup {
+	    incr foo
+	} -body {
+	    incr foo
+	} -cleanup {
+	    incr foo
+	} -match glob -result *
+	set foo
+} -cleanup {
+	unset foo
+} -result 0
 
 cleanupTests
 }

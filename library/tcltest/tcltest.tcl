@@ -16,11 +16,11 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.71 2002/07/14 18:29:49 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.72 2002/08/05 22:36:00 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
-    variable Version 2.1.1
+    variable Version 2.2
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -276,7 +276,7 @@ namespace eval tcltest {
 	    [eval [ConstraintInitializer stdio]] ;#}]
 
     # save the platform information so it can be restored later
-    Default originalTclPlatform [array get tcl_platform]
+    Default originalTclPlatform [array get ::tcl_platform]
 
     # If a core file exists, save its modification time.
     if {[file exists [file join [workingDirectory] core]]} {
@@ -300,12 +300,12 @@ namespace eval tcltest {
 
     if {![info exists [namespace current]::isoLocale]} {
 	variable isoLocale fr
-	switch -- $tcl_platform(platform) {
+	switch -- $::tcl_platform(platform) {
 	    "unix" {
 
 		# Try some 'known' values for some platforms:
 
-		switch -exact -- $tcl_platform(os) {
+		switch -exact -- $::tcl_platform(os) {
 		    "FreeBSD" {
 			set isoLocale fr_FR.ISO_8859-1
 		    }
@@ -1097,9 +1097,9 @@ proc tcltest::DefineConstraintInitializers {} {
     ConstraintInitializer macOrUnix \
 	    {expr {[testConstraint mac] || [testConstraint unix]}}
 
-    ConstraintInitializer nt {string equal $tcl_platform(os) "Windows NT"}
-    ConstraintInitializer 95 {string equal $tcl_platform(os) "Windows 95"}
-    ConstraintInitializer 98 {string equal $tcl_platform(os) "Windows 98"}
+    ConstraintInitializer nt {string equal $::tcl_platform(os) "Windows NT"}
+    ConstraintInitializer 95 {string equal $::tcl_platform(os) "Windows 95"}
+    ConstraintInitializer 98 {string equal $::tcl_platform(os) "Windows 98"}
 
     # The following Constraints switches are used to mark tests that
     # should work, but have been temporarily disabled on certain
@@ -1759,6 +1759,7 @@ proc tcltest::SubstArguments {argList} {
 proc tcltest::test {name description args} {
     global tcl_platform
     variable testLevel
+    variable coreModTime
     DebugPuts 3 "test $name $args"
 
     FillFilesExisted
@@ -1805,7 +1806,7 @@ proc tcltest::test {name description args} {
 
 	foreach flag [array names testAttributes] {
 	    if {[lsearch -exact $validFlags $flag] == -1} {
-		incr tcltest::testLevel -1
+		incr testLevel -1
 		set sorted [lsort $validFlags]
 		set options [join [lrange $sorted 0 end-1] ", "]
 		append options ", or [lindex $sorted end]"
@@ -1821,7 +1822,7 @@ proc tcltest::test {name description args} {
 	# Check the values supplied for -match
 	variable CustomMatch
 	if {[lsearch [array names CustomMatch] $match] == -1} {
-	    incr tcltest::testLevel -1
+	    incr testLevel -1
 	    set sorted [lsort [array names CustomMatch]]
 	    set values [join [lrange $sorted 0 end-1] ", "]
 	    append values ", or [lindex $sorted end]"
@@ -1845,272 +1846,236 @@ proc tcltest::test {name description args} {
 	    set constraints [lindex $args 0]
 	    set body [lindex $args 1]
 	} else {
-	    incr tcltest::testLevel -1
+	    incr testLevel -1
 	    return -code error "wrong # args:\
 		    should be \"test name desc ?options?\""
 	}
     }
 
-    set setupFailure 0
-    set cleanupFailure 0
-
-    # Run the setup script
-    if {[catch {uplevel 1 $setup} setupMsg]} {
-	set setupFailure 1
+    if {[Skipped $name $constraints]} {
+	incr testLevel -1
+	return
     }
 
-    # run the test script
-    set command [list [namespace origin RunTest] $name $description \
-	    $body $result $constraints]
-    if {!$setupFailure} {
-	if {[info exists output] || [info exists errorOutput]} {
-	    set testResult [uplevel 1 \
-		    [list [namespace origin Eval] $command 0]]
-	} else {
-	    set testResult [uplevel 1 \
-		    [list [namespace origin Eval] $command 1]]
+    # Save information about the core file.  
+    if {[preserveCore]} {
+	if {[file exists [file join [workingDirectory] core]]} {
+	    set coreModTime [file mtime [file join [workingDirectory] core]]
 	}
-    } else {
-	set testResult setupFailure
     }
 
-    # Run the cleanup code
-    if {[catch {uplevel 1 $cleanup} cleanupMsg]} {
-	set cleanupFailure 1
+    # First, run the setup script
+    set code [catch {uplevel 1 $setup} setupMsg]
+    set setupFailure [expr {$code != 0}]
+
+    # Only run the test body if the setup was successful
+    if {!$setupFailure} {
+
+	# Verbose notification of $body start
+	if {[IsVerbose start]} {
+	    puts [outputChannel] "---- $name start"
+	    flush [outputChannel]
+	}
+
+	set command [list [namespace origin RunTest] $name $body]
+	if {[info exists output] || [info exists errorOutput]} {
+	    set testResult [uplevel 1 [list [namespace origin Eval] $command 0]]
+	} else {
+	    set testResult [uplevel 1 [list [namespace origin Eval] $command 1]]
+	}
+	foreach {actualAnswer returnCode} $testResult break
     }
 
-    # If testResult is an empty list, then the test was skipped
-    if {$testResult != {}} {
-	set coreFailure 0
-	set coreMsg ""
-	# check for a core file first - if one was created by the test,
-	# then the test failed
-	if {[preserveCore]} {
-	    set currentTclPlatform [array get tcl_platform]
-	    if {[file exists [file join [workingDirectory] core]]} {
-		# There's only a test failure if there is a core file
-		# and (1) there previously wasn't one or (2) the new
-		# one is different from the old one.
-		variable coreModTime
-		if {[info exists coreModTime]} {
-		    if {$coreModTime != [file mtime \
-			    [file join [workingDirectory] core]]} {
-			set coreFailure 1
-		    }
-		} else {
+    # Always run the cleanup script
+    set code [catch {uplevel 1 $cleanup} cleanupMsg]
+    set cleanupFailure [expr {$code != 0}]
+
+    set coreFailure 0
+    set coreMsg ""
+    # check for a core file first - if one was created by the test,
+    # then the test failed
+    if {[preserveCore]} {
+	if {[file exists [file join [workingDirectory] core]]} {
+	    # There's only a test failure if there is a core file
+	    # and (1) there previously wasn't one or (2) the new
+	    # one is different from the old one.
+	    if {[info exists coreModTime]} {
+		if {$coreModTime != [file mtime \
+			[file join [workingDirectory] core]]} {
 		    set coreFailure 1
 		}
-		
-		if {([preserveCore] > 1) && ($coreFailure)} {
-		    append coreMsg "\nMoving file to:\
-			    [file join [temporaryDirectory] core-$name]"
-		    catch {file rename -force \
-			    [file join [workingDirectory] core] \
-			    [file join [temporaryDirectory] core-$name]
-		    } msg
-		    if {[string length $msg] > 0} {
-			append coreMsg "\nError:\
-				Problem renaming core file: $msg"
-		    }
-		}
-	    }
-	    array set tcl_platform $currentTclPlatform
-	}
-
-	set actualAnswer [lindex $testResult 0]
-	set code [lindex $testResult end]
-
-	# If expected output/error strings exist, we have to compare
-	# them.  If the comparison fails, then so did the test.
-	set outputFailure 0
-	variable outData
-	if {[info exists output]} {
-	    if {[set outputCompare [catch {
-		CompareStrings $outData $output $match
-	    } outputMatch]] == 0} {
-		set outputFailure [expr {!$outputMatch}]
 	    } else {
-		set outputFailure 1
+		set coreFailure 1
 	    }
-	}
-	set errorFailure 0
-	variable errData
-	if {[info exists errorOutput]} {
-	    if {[set errorCompare [catch {
-		CompareStrings $errData $errorOutput $match
-	    } errorMatch]] == 0} {
-		set errorFailure [expr {!$errorMatch}]
-	    } else {
-		set errorFailure 1
-	    }
-	}
-
-	# check if the return code matched the expected return code
-	set codeFailure 0
-	if {[lsearch -exact $returnCodes $code] == -1} {
-	    set codeFailure 1
-	}
-
-	# check if the answer matched the expected answer
-	if {[set scriptCompare [catch {
-	    CompareStrings $actualAnswer $result $match
-	} scriptMatch]] == 0} {
-	    set scriptFailure [expr {!$scriptMatch}]
-	} else {
-	    set scriptFailure 1
-	}
-
-	# if we didn't experience any failures, then we passed
-	set testFailed 1
-	variable numTests
-	if {!($setupFailure || $cleanupFailure || $coreFailure
-		|| $outputFailure || $errorFailure || $codeFailure
-		|| $scriptFailure)} {
-	    if {$testLevel == 1} {
-		incr numTests(Passed)
-		if {[IsVerbose pass]} {
-		    puts [outputChannel] "++++ $name PASSED"
+	
+	    if {([preserveCore] > 1) && ($coreFailure)} {
+		append coreMsg "\nMoving file to:\
+		    [file join [temporaryDirectory] core-$name]"
+		catch {file rename -force \
+		    [file join [workingDirectory] core] \
+		    [file join [temporaryDirectory] core-$name]
+		} msg
+		if {[string length $msg] > 0} {
+		    append coreMsg "\nError:\
+			Problem renaming core file: $msg"
 		}
 	    }
-	    set testFailed 0
-	}
-
-	if {$testFailed} {
-	    if {$testLevel == 1} {
-		incr numTests(Failed)
-	    }
-	    variable currentFailure true
-	    if {![IsVerbose body]} {
-		set body ""
-	    }	
-	    puts [outputChannel] "\n==== $name\
-		    [string trim $description] FAILED"
-	    if {[string length $body]} {
-		puts [outputChannel] "==== Contents of test case:"
-		puts [outputChannel] $body
-	    }
-	    if {$setupFailure} {
-		puts [outputChannel] "---- Test setup\
-			failed:\n$setupMsg"
-	    }
-	    if {$scriptFailure} {
-	      if {$scriptCompare} {
-		puts [outputChannel] "---- Error testing result: $scriptMatch"
-	      } else {
-		puts [outputChannel] "---- Result\
-			was:\n$actualAnswer"
-		puts [outputChannel] "---- Result should have been\
-			($match matching):\n$result"
-	      }
-	    }
-	    if {$codeFailure} {
-		switch -- $code {
-		    0 { set msg "Test completed normally" }
-		    1 { set msg "Test generated error" }
-		    2 { set msg "Test generated return exception" }
-		    3 { set msg "Test generated break exception" }
-		    4 { set msg "Test generated continue exception" }
-		    default { set msg "Test generated exception" }
-		}
-		puts [outputChannel] "---- $msg; Return code was: $code"
-		puts [outputChannel] "---- Return code should have been\
-			one of: $returnCodes"
-		if {[IsVerbose error]} {
-		    if {[info exists ::errorInfo]} {
-			puts [outputChannel] "---- errorInfo:\
-				$::errorInfo"
-			puts [outputChannel] "---- errorCode:\
-				$::errorCode"
-		    }
-		}
-	    }
-	    if {$outputFailure} {
-	      if {$outputCompare} {
-		puts [outputChannel] "---- Error testing output: $outputMatch"
-	      } else {
-		puts [outputChannel] "---- Output was:\n$outData"
-		puts [outputChannel] "---- Output should have been\
-			($match matching):\n$output"
-	      }
-	    }
-	    if {$errorFailure} {
-	      if {$errorCompare} {
-		puts [outputChannel] "---- Error testing errorOutput:\
-			$errorMatch"
-	      } else {
-		puts [outputChannel] "---- Error output was:\n$errData"
-		puts [outputChannel] "---- Error output should have\
-			been ($match matching):\n$errorOutput"
-	      }
-	    }
-	    if {$cleanupFailure} {
-		puts [outputChannel] "---- Test cleanup\
-			failed:\n$cleanupMsg"
-	    }
-	    if {$coreFailure} {
-		puts [outputChannel] "---- Core file produced while\
-			running test!  $coreMsg"
-	    }
-	    puts [outputChannel] "==== $name FAILED\n"
-
 	}
     }
+
+    # If expected output/error strings exist, we have to compare
+    # them.  If the comparison fails, then so did the test.
+    set outputFailure 0
+    variable outData
+    if {[info exists output]} {
+	if {[set outputCompare [catch {
+	    CompareStrings $outData $output $match
+	} outputMatch]] == 0} {
+	    set outputFailure [expr {!$outputMatch}]
+	} else {
+	    set outputFailure 1
+	}
+    }
+
+    set errorFailure 0
+    variable errData
+    if {[info exists errorOutput]} {
+	if {[set errorCompare [catch {
+	    CompareStrings $errData $errorOutput $match
+	} errorMatch]] == 0} {
+	    set errorFailure [expr {!$errorMatch}]
+	} else {
+	    set errorFailure 1
+	}
+    }
+
+    # check if the return code matched the expected return code
+    set codeFailure 0
+    if {!$setupFailure && [lsearch -exact $returnCodes $returnCode] == -1} {
+	set codeFailure 1
+    }
+
+    # check if the answer matched the expected answer
+    # Only check if we ran the body of the test (no setup failure)
+    if {$setupFailure} {
+	set scriptFailure 0
+    } elseif {[set scriptCompare [catch {
+	CompareStrings $actualAnswer $result $match
+    } scriptMatch]] == 0} {
+	set scriptFailure [expr {!$scriptMatch}]
+    } else {
+	set scriptFailure 1
+    }
+
+    # if we didn't experience any failures, then we passed
+    variable numTests
+    if {!($setupFailure || $cleanupFailure || $coreFailure
+	    || $outputFailure || $errorFailure || $codeFailure
+	    || $scriptFailure)} {
+	if {$testLevel == 1} {
+	    incr numTests(Passed)
+	    if {[IsVerbose pass]} {
+		puts [outputChannel] "++++ $name PASSED"
+	    }
+	}
+	incr testLevel -1
+	return
+    }
+
+    # We know the test failed, tally it...
+    if {$testLevel == 1} {
+	incr numTests(Failed)
+    }
+
+    # ... then report according to the type of failure
+    variable currentFailure true
+    if {![IsVerbose body]} {
+	set body ""
+    }	
+    puts [outputChannel] "\n==== $name\
+	    [string trim $description] FAILED"
+    if {[string length $body]} {
+	puts [outputChannel] "==== Contents of test case:"
+	puts [outputChannel] $body
+    }
+    if {$setupFailure} {
+	puts [outputChannel] "---- Test setup\
+		failed:\n$setupMsg"
+    }
+    if {$scriptFailure} {
+	if {$scriptCompare} {
+	    puts [outputChannel] "---- Error testing result: $scriptMatch"
+	} else {
+	    puts [outputChannel] "---- Result was:\n$actualAnswer"
+	    puts [outputChannel] "---- Result should have been\
+		    ($match matching):\n$result"
+	}
+    }
+    if {$codeFailure} {
+	switch -- $code {
+	    0 { set msg "Test completed normally" }
+	    1 { set msg "Test generated error" }
+	    2 { set msg "Test generated return exception" }
+	    3 { set msg "Test generated break exception" }
+	    4 { set msg "Test generated continue exception" }
+	    default { set msg "Test generated exception" }
+	}
+	puts [outputChannel] "---- $msg; Return code was: $code"
+	puts [outputChannel] "---- Return code should have been\
+		one of: $returnCodes"
+	if {[IsVerbose error]} {
+	    if {[info exists ::errorInfo]} {
+		puts [outputChannel] "---- errorInfo: $::errorInfo"
+		puts [outputChannel] "---- errorCode: $::errorCode"
+	    }
+	}
+    }
+    if {$outputFailure} {
+	if {$outputCompare} {
+	    puts [outputChannel] "---- Error testing output: $outputMatch"
+	} else {
+	    puts [outputChannel] "---- Output was:\n$outData"
+	    puts [outputChannel] "---- Output should have been\
+		    ($match matching):\n$output"
+	}
+    }
+    if {$errorFailure} {
+	if {$errorCompare} {
+	    puts [outputChannel] "---- Error testing errorOutput: $errorMatch"
+	} else {
+	    puts [outputChannel] "---- Error output was:\n$errData"
+	    puts [outputChannel] "---- Error output should have\
+		    been ($match matching):\n$errorOutput"
+	}
+    }
+    if {$cleanupFailure} {
+	puts [outputChannel] "---- Test cleanup failed:\n$cleanupMsg"
+    }
+    if {$coreFailure} {
+	puts [outputChannel] "---- Core file produced while running\
+		test!  $coreMsg"
+    }
+    puts [outputChannel] "==== $name FAILED\n"
 
     incr testLevel -1
     return
 }
 
-
-# RunTest --
+# Skipped --
 #
-# This is the defnition of the version 1.0 test routine for tcltest.  It
-# is provided here for backward compatibility.  It is also used as the
-# 'backbone' of the test procedure, as in, this is where all the work
-# really gets done.  This procedure runs a test and prints an error
-# message if the test fails.  If verbose has been set, it also prints a
-# message even if the test succeeds.  The test will be skipped if it
-# doesn't match the match variable, if it matches an element in skip, or
-# if one of the elements of "constraints" turns out not to be true.
+# Given a test name and it constraints, returns a boolean indicating
+# whether the current configuration says the test should be skipped.
 #
-# Arguments:
-# name -		Name of test, in the form foo-1.2.
-# description -		Short textual description of the test, to help
-#			humans understand what it does.
-# constraints -		A list of one or more keywords, each of which
-#			must be the name of an element in the array
-#			"testConstraints".  If any of these elements is
-#			zero, the test is skipped.  This argument may be
-#			omitted.
-# script -		Script to run to carry out the test.  It must
-#			return a result that can be checked for
-#			correctness.
-# expectedAnswer -	Expected result from script.
+# Side Effects:  Maintains tally of total tests seen and tests skipped.
 #
-# Behavior depends on the value of testLevel; if testLevel is 1 (top
-# level), then events are logged and we track the number of tests
-# run/skipped and why.  Otherwise, we don't track this information.
-#
-# Results:
-#    empty list if test is skipped; otherwise returns list containing
-#    actual returned value from the test and the return code.
-#
-# Side Effects:
-#    none.
-#
-
-proc tcltest::RunTest {
-	name description script expectedAnswer constraints
-} {
+proc tcltest::Skipped {name constraints} {
     variable testLevel
     variable numTests
     variable testConstraints
-    variable originalTclPlatform
-    variable coreModTime
 
     if {$testLevel == 1} {
 	incr numTests(Total)
     }
-
     # skip the test if it's name matches an element of skip
     foreach pattern [skip] {
 	if {[string match $pattern $name]} {
@@ -2118,10 +2083,9 @@ proc tcltest::RunTest {
 		incr numTests(Skipped)
 		DebugDo 1 {AddToSkippedBecause userSpecifiedSkip}
 	    }
-	    return
+	    return 1
 	}
     }
-
     # skip the test if it's name doesn't match any element of match
     set ok 0
     foreach pattern [match] {
@@ -2135,12 +2099,8 @@ proc tcltest::RunTest {
 	    incr numTests(Skipped)
 	    DebugDo 1 {AddToSkippedBecause userSpecifiedNonMatch}
 	}
-	return
+	return 1
     }
-
-    DebugPuts 3 "Running $name ($description) {$script}\
-	    {$expectedAnswer} $constraints"
-
     if {[string equal {} $constraints]} {
 	# If we're limited to the listed constraints and there aren't
 	# any listed, then we shouldn't run the test.
@@ -2149,7 +2109,7 @@ proc tcltest::RunTest {
 	    if {$testLevel == 1} {
 		incr numTests(Skipped)
 	    }
-	    return
+	    return 1
 	}
     } else {
 	# "constraints" argument exists;
@@ -2182,52 +2142,33 @@ proc tcltest::RunTest {
 	
 	if {$doTest == 0} {
 	    if {[IsVerbose skip]} {
-		if {[string equal [namespace current]::Replace::puts \
-			[namespace origin puts]]} {
-		    Replace::Puts [outputChannel] \
-			    "++++ $name SKIPPED: $constraints"
-		} else {
-		    puts [outputChannel] "++++ $name SKIPPED: $constraints"
-		}
+		puts [outputChannel] "++++ $name SKIPPED: $constraints"
 	    }
 
 	    if {$testLevel == 1} {
 		incr numTests(Skipped)
 		AddToSkippedBecause $constraints
 	    }
-	    return	
+	    return 1
 	}
     }
+    return 0
+}
 
-    # Save information about the core file.  You need to restore the
-    # original tcl_platform environment because some of the tests mess
-    # with tcl_platform.
+# RunTest --
+#
+# This is where the body of a test is evaluated.  The combination of
+# [RunTest] and [Eval] allows the output and error output of the test
+# body to be captured for comparison against the expected values.
 
-    if {[preserveCore]} {
-	set currentTclPlatform [array get tcl_platform]
-	array set tcl_platform $originalTclPlatform
-	if {[file exists [file join [workingDirectory] core]]} {
-	    set coreModTime \
-		    [file mtime [file join [workingDirectory] core]]
-	}
-	array set tcl_platform $currentTclPlatform
-    }
+proc tcltest::RunTest {name script} {
+    DebugPuts 3 "Running $name {$script}"
 
     # If there is no "memory" command (because memory debugging isn't
     # enabled), then don't attempt to use the command.
 
     if {[llength [info commands memory]] == 1} {
 	memory tag $name
-    }
-
-    if {[IsVerbose start]} {
-	if {[string equal [namespace current]::Replace::puts \
-		[namespace origin puts]]} {
-	    Replace::Puts [outputChannel] "---- $name start"
-	} else {
-	    puts [outputChannel] "---- $name start"
-	}
-	flush [outputChannel]
     }
 
     set code [catch {uplevel 1 $script} actualAnswer]
@@ -2885,7 +2826,6 @@ proc tcltest::normalizeMsg {msg} {
 #	None.
 
 proc tcltest::makeFile {contents name {directory ""}} {
-    global tcl_platform
     variable filesMade
     FillFilesExisted
 
@@ -3036,7 +2976,6 @@ proc tcltest::removeDirectory {name {directory ""}} {
 #	None.
 
 proc tcltest::viewFile {name {directory ""}} {
-    global tcl_platform
     FillFilesExisted
     if {[llength [info level 0]] == 2} {
 	set directory [temporaryDirectory]
