@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.16 2004/09/21 16:04:06 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.17 2004/09/21 16:20:02 dkf Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -171,6 +171,11 @@ a Tcl script in the slave interpreter identified by \fIpath\fR. The result
 of this evaluation (including error information such as the \fBerrorInfo\fR
 and \fBerrorCode\fR variables, if an error occurs) is returned to the
 invoking interpreter.
+Note that the script will be executed in the current context stack frame of the
+\fIpath\fR interpreter; this is so that the implementations (in a master
+interpreter) of aliases in a slave interpreter can execute scripts in
+the slave that find out information about the slave's current state
+and stack frame.
 .TP
 \fBinterp exists \fIpath\fR
 Returns  \fB1\fR if a slave interpreter by the specified \fIpath\fR
@@ -185,7 +190,7 @@ in the interpreter
 denoted by \fIpath\fR.
 If an exposed command with the targeted name already exists, this command
 fails.
-Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
+Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fBinterp\fR \fBhide\fR \fIpath\fR \fIexposedCmdName\fR ?\fIhiddenCmdName\fR?
 Makes the exposed command \fIexposedCmdName\fR hidden, renaming
@@ -200,7 +205,7 @@ Commands to be hidden by \fBinterp hide\fR are looked up in the global
 namespace even if the current namespace is not the global one. This
 prevents slaves from fooling a master interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
-Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
+Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fBinterp\fR \fBhidden\fR \fIpath\fR
 Returns a list of the names of all hidden commands in the interpreter
@@ -218,7 +223,9 @@ current call frame and can access local variables in that and outer call
 frames.
 If both the \fB-namespace\fR and \fB-global\fR flags are present, the 
 \fB-namespace\fR flag is ignored.
-Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
+Note that the hidden command will be executed (by default) in the
+current context stack frame of the \fIpath\fR interpreter.
+Hidden commands are explained in more detail in \fBHIDDEN COMMANDS\fR, below.
 .TP
 \fBinterp\fR \fBlimit\fR \fIpath\fR \fIlimitType\fR ?\fIoption\fR? ?\fIvalue\fR \fI...\fR?
 .VS 8.5
@@ -338,6 +345,11 @@ the resulting string as a Tcl script in \fIslave\fR.
 The result of this evaluation (including error information
 such as the \fBerrorInfo\fR and \fBerrorCode\fR variables, if an
 error occurs) is returned to the invoking interpreter.
+Note that the script will be executed in the current context stack frame
+of \fIslave\fR; this is so that the implementations (in a master
+interpreter) of aliases in a slave interpreter can execute scripts in
+the slave that find out information about the slave's current state
+and stack frame.
 .TP
 \fIslave \fBexpose \fIhiddenName \fR?\fIexposedCmdName\fR?
 This command exposes the hidden command \fIhiddenName\fR, eventually bringing
@@ -376,6 +388,8 @@ level in the slave; otherwise it is invoked at the current call frame and
 can access local variables in that or outer call frames.
 If both the \fB-namespace\fR and \fB-global\fR flags are given, the 
 \fB-namespace\fR flag is ignored.
+Note that the hidden command will be executed (by default) in the
+current context stack frame of \fIslave\fR.
 For more details on hidden commands, 
 see \fBHIDDEN COMMANDS\fR, below.
 .TP
@@ -737,6 +751,5 @@ $i eval {
 
 .SH "SEE ALSO"
 load(n), safe(n), Tcl_CreateSlave(3)
-
 .SH KEYWORDS
 alias, master interpreter, safe interpreter, slave interpreter
