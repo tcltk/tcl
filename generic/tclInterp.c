@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.13 2002/07/29 00:25:49 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.14 2002/07/29 15:56:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1452,11 +1452,11 @@ AliasObjCmd(clientData, interp, objc, objv)
 
     if (targetInterp != interp) {
 	Tcl_Preserve((ClientData) targetInterp);
-	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_NO_TRACEBACK);
+	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
 	TclTransferResult(targetInterp, result, interp);	
 	Tcl_Release((ClientData) targetInterp);
     } else {
-	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_NO_TRACEBACK);
+	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
     }
 
     if (cmdv != cmdArr) {

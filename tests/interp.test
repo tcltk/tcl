@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.16 2002/07/29 00:25:49 msofer Exp $
+# RCS: @(#) $Id: interp.test,v 1.17 2002/07/29 15:56:54 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -280,7 +280,7 @@ test interp-8.3 {testing basic alias invocation} {
    list [catch {a alias} msg] $msg
 } {1 {wrong # args: should be "a alias aliasName ?targetName? ?args..?"}}
 
-# Part 8: Testing aliases for non-existent targets
+# Part 8: Testing aliases for non-existent or hidden targets
 test interp-9.1 {testing aliases for non-existent targets} {
     catch {interp create a}
     a alias zop nonexistent-command-in-master
@@ -292,6 +292,30 @@ test interp-9.2 {testing aliases for non-existent targets} {
     proc nonexistent-command-in-master {} {return i_exist!}
     a eval zop
 } i_exist!
+test interp-9.3 {testing aliases for hidden commands} {
+    catch {interp create a}
+    a eval {proc p {} {return ENTER_A}}
+    interp alias {} p a p
+    lappend res [list [catch p msg] $msg]
+    interp hide a p
+    lappend res [list [catch p msg] $msg]
+    rename p {}
+    interp delete a
+    set res
+ } {{0 ENTER_A} {1 {invalid command name "p"}}}
+test interp-9.4 {testing aliases and namespace commands} {
+    proc p {} {return GLOBAL}
+    namespace eval tst {
+	proc p {} {return NAMESPACE}
+    }
+    interp alias {} a {} p
+    set res [a]
+    lappend res [namespace eval tst a]
+    rename p {}
+    rename a {}
+    namespace delete tst
+    set res
+ } {GLOBAL GLOBAL}
 
 if {[info command nonexistent-command-in-master] != ""} {
     rename nonexistent-command-in-master {}
