@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.4 1998/10/06 02:59:03 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.5 1998/10/06 21:24:23 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3912,3 +3912,8 @@ as starvation of the notifier thread. (BW)
 9/22/98 (bug fix) Changed the value of TCL_TRACE_ARRAY so it no longer
 conflicts with the deprecated TCL_PARSE_PART1 flag.  This should
 improve portability of C code. (stanton)
+
+10/6/98 (bug fix) The compile procedure for "if" incorrectly attempted
+to match against the literal string "if", resulting in a stack
+overflow when "::if" was compiled.  It also would incorrectly accept
+"if" instead of "elsif" in later clauses.  (stanton)

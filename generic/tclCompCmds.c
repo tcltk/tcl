@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.5 1998/10/06 00:35:22 stanton Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.6 1998/10/06 21:24:26 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1055,7 +1055,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	}
 	word = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
-	if (((numBytes == 2) && (strncmp(word, "if", 2) == 0))
+	if ((tokenPtr == parsePtr->tokenPtr)
 	        || ((numBytes == 6) && (strncmp(word, "elseif", 6) == 0))) {
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    wordIdx++;
