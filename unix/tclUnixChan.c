@@ -5,11 +5,12 @@
  *	pipes and TCP sockets.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.3 1999/01/29 00:20:47 stanton Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.4 1999/02/10 23:31:26 stanton Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1732,6 +1733,23 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     if (optionName != (char *) NULL) {
         len = strlen(optionName);
+    }
+
+    if ((len > 1) && (optionName[1] == 'e') &&
+	    (strncmp(optionName, "-error", len) == 0)) {
+	int optlen;
+	int err, ret;
+    
+	optlen = sizeof(int);
+	ret = getsockopt(statePtr->fd, SOL_SOCKET, SO_ERROR,
+		(char *)&err, &optlen);
+	if (ret < 0) {
+	    err = errno;
+	}
+	if (err != 0) {
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(err), -1);
+	}
+       return TCL_OK;
     }
 
     if ((len == 0) ||

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.1.2.2 1998/10/03 01:56:42 stanton Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.1.2.3 1999/02/10 23:31:19 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -867,7 +867,7 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
     Interp *iPtr;
     
     iPtr = (Interp *) interp;
-    Tcl_SetObjVar2(interp, "errorCode", NULL, errorObjPtr, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "errorCode", NULL, errorObjPtr, TCL_GLOBAL_ONLY);
     iPtr->flags |= ERROR_CODE_SET;
 }
 
@@ -936,14 +936,14 @@ TclTransferResult(sourceInterp, result, targetInterp)
         
         Tcl_ResetResult(targetInterp);
         
-	objPtr = Tcl_GetObjVar2(sourceInterp, "errorInfo", NULL,
+	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorInfo", NULL,
 		TCL_GLOBAL_ONLY);
-	Tcl_SetObjVar2(targetInterp, "errorInfo", NULL, objPtr,
+	Tcl_SetVar2Ex(targetInterp, "errorInfo", NULL, objPtr,
 		TCL_GLOBAL_ONLY);
 
-	objPtr = Tcl_GetObjVar2(sourceInterp, "errorCode", NULL,
+	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorCode", NULL,
 		TCL_GLOBAL_ONLY);
-	Tcl_SetObjVar2(targetInterp, "errorCode", NULL, objPtr,
+	Tcl_SetVar2Ex(targetInterp, "errorCode", NULL, objPtr,
 		TCL_GLOBAL_ONLY);
 
 	((Interp *) targetInterp)->flags |= (ERR_IN_PROGRESS | ERROR_CODE_SET);

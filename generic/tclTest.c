@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.11 1999/02/01 21:29:55 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.12 1999/02/10 23:31:19 stanton Exp $
  */
 
 #define TCL_TEST
@@ -254,8 +254,8 @@ static int		TestsaveresultCmd _ANSI_ARGS_((ClientData dummy,
 static void		TestsaveresultFree _ANSI_ARGS_((char *blockPtr));
 static int		TestsetassocdataCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
-static int		TestsetnoerrCmd _ANSI_ARGS_((ClientData dummy,
-		            Tcl_Interp *interp, int argc, char **argv));
+static int		TestsetCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestsetobjerrorcodeCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -282,13 +282,13 @@ static int		TestupvarCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 
 /*
- * External initialization routines:
+ * External (platform specific) initialization routine, these declarations
+ * explicitly don't use EXTERN since this code does not get compiled
+ * into the library:
  */
 
-EXTERN int		TclplatformtestInit _ANSI_ARGS_((
-			    Tcl_Interp *interp));
-EXTERN int		TclThread_Init _ANSI_ARGS_((
-			    Tcl_Interp *interp));
+extern int		TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 
 /*
  *----------------------------------------------------------------------
@@ -404,8 +404,10 @@ Tcltest_Init(interp)
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "testsetnoerr", TestsetnoerrCmd,
+    Tcl_CreateCommand(interp, "testsetnoerr", TestsetCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testseterr", TestsetCmd,
+            (ClientData) TCL_LEAVE_ERR_MSG, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testsetobjerrorcode", 
 	    TestsetobjerrorcodeCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
@@ -3697,50 +3699,45 @@ NoopObjCmd(unused, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * TestsetnoerrCmd --
+ * TestsetCmd --
  *
- *	Implements the "testsetnoerr" cmd that is used when testing
- *	the Tcl_Set/GetVar C Api without TCL_LEAVE_ERR_MSG flag
+ *	Implements the "testset{err,noerr}" cmds that are used when testing
+ *	Tcl_Set/GetVar C Api with/without TCL_LEAVE_ERR_MSG flag
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	None.
+ *     Variables may be set.
  *
  *----------------------------------------------------------------------
  */
 
 	/* ARGSUSED */
-static int
-TestsetnoerrCmd(dummy, interp, argc, argv)
-    ClientData dummy;			/* Not used. */
+TestsetCmd(data, interp, argc, argv)
+    ClientData data;			/* Additional flags for Get/SetVar2. */
     register Tcl_Interp *interp;	/* Current interpreter. */
     int argc;				/* Number of arguments. */
     char **argv;			/* Argument strings. */
 {
+    int flags = (int) data;
     char *value;
+
     if (argc == 2) {
-	Tcl_SetResult(interp, "before get", TCL_STATIC);
-	value = Tcl_GetVar2(interp, argv[1], (char *) NULL, 0);
-	if (value == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetResult(interp, value, TCL_VOLATILE);
-	return TCL_OK;
+        Tcl_SetResult(interp, "before get", TCL_STATIC);
+	value = Tcl_GetVar2(interp, argv[1], (char *) NULL, flags);
+        if (value == NULL) {
+            return TCL_ERROR;
+        }
+	Tcl_AppendElement(interp, value);
+        return TCL_OK;
     } else if (argc == 3) {
-	char *m1 = "before set";
-	char *message=Tcl_Alloc(strlen(m1)+1);
-	
-	strcpy(message,m1);
-
-	Tcl_SetResult(interp, message, TCL_DYNAMIC);
-
-	value = Tcl_SetVar2(interp, argv[1], (char *) NULL, argv[2], 0);
-	if (value == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetResult(interp, value, TCL_VOLATILE);
+	Tcl_SetResult(interp, "before set", TCL_STATIC);
+        value = Tcl_SetVar2(interp, argv[1], (char *) NULL, argv[2], flags);
+        if (value == NULL) {
+            return TCL_ERROR;
+        }
+	Tcl_AppendElement(interp, value);
 	return TCL_OK;
     } else {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",

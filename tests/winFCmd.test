@@ -5,11 +5,12 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1996-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.1.2.2 1998/09/24 23:59:40 stanton Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.1.2.3 1999/02/10 23:31:24 stanton Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -721,8 +722,8 @@ test winFCmd-7.18 {TraverseWinTree: recurse on files: several files and dir} {
     createfile td1/tf3
     createfile td1/tf4
     testfile cpdir td1 td2
-    glob td2/*
-} {td2/tf1 td2/tf2 td2/td2 td2/tf3 td2/tf4}
+    lsort [glob td2/*]
+} {td2/td2 td2/tf1 td2/tf2 td2/tf3 td2/tf4}
 test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} {
     cleanup
     file mkdir td1

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.1.2.2 1998/09/24 23:59:12 stanton Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.1.2.3 1999/02/10 23:31:22 stanton Exp $
  */
 
 #include <AppleEvents.h>
@@ -511,7 +511,7 @@ TclpSetVariables(interp)
     Tcl_SetVar(interp, "tcl_library", str, TCL_GLOBAL_ONLY);
     
     if (pathPtr != NULL) {
-        Tcl_SetObjVar2(interp, "tcl_pkgPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+        Tcl_SetVar2Ex(interp, "tcl_pkgPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
     }
     
     Tcl_SetVar2(interp, "tcl_platform", "platform", "macintosh",
@@ -588,7 +588,7 @@ Tcl_Init(
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();
     }
-    Tcl_SetObjVar2(interp, "auto_path", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "auto_path", NULL, pathPtr, TCL_GLOBAL_ONLY);
     return Tcl_Eval(interp, initCmd);
 }
 

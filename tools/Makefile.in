@@ -6,7 +6,7 @@
 #
 #    HTML:		 1. Build the html target on Unix
 
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.3 1998/12/10 00:49:46 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.4 1999/02/10 23:31:25 stanton Exp $
 
 #TCL = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
 #TK = tk@TCL_VERSION@@TCL_PATCH_LEVEL@
@@ -42,7 +42,7 @@ CC=@CC@
 all: core
 
 pro:
-	$(MAKE) PRODOCS="$(PRODOCS)" VER="" rtf
+	$(MAKE) DOCS="$(PRODOCS)" VER="" rtf
 
 core:
 	$(MAKE) DOCS="$(COREDOCS)" rtf

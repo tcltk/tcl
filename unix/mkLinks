@@ -599,10 +599,6 @@ if test -r ObjectType.3; then
     rm -f Tcl_GetObjType.3
     ln ObjectType.3 Tcl_GetObjType.3
 fi
-if test -r SetVar.3; then
-    rm -f Tcl_GetObjVar2.3
-    ln SetVar.3 Tcl_GetObjVar2.3
-fi
 if test -r GetOpnFl.3; then
     rm -f Tcl_GetOpenFile.3
     ln GetOpnFl.3 Tcl_GetOpenFile.3
@@ -646,6 +642,10 @@ fi
 if test -r SetVar.3; then
     rm -f Tcl_GetVar2.3
     ln SetVar.3 Tcl_GetVar2.3
+fi
+if test -r SetVar.3; then
+    rm -f Tcl_GetVar2Ex.3
+    ln SetVar.3 Tcl_GetVar2Ex.3
 fi
 if test -r OpenFileChnl.3; then
     rm -f Tcl_Gets.3
@@ -798,6 +798,14 @@ fi
 if test -r Utf.3; then
     rm -f Tcl_NumUtfChars.3
     ln Utf.3 Tcl_NumUtfChars.3
+fi
+if test -r SetVar.3; then
+    rm -f Tcl_ObjGetVar2.3
+    ln SetVar.3 Tcl_ObjGetVar2.3
+fi
+if test -r SetVar.3; then
+    rm -f Tcl_ObjSetVar2.3
+    ln SetVar.3 Tcl_ObjSetVar2.3
 fi
 if test -r OpenFileChnl.3; then
     rm -f Tcl_OpenCommandChannel.3
@@ -1011,10 +1019,6 @@ if test -r SetResult.3; then
     rm -f Tcl_SetObjResult.3
     ln SetResult.3 Tcl_SetObjResult.3
 fi
-if test -r SetVar.3; then
-    rm -f Tcl_SetObjVar2.3
-    ln SetVar.3 Tcl_SetObjVar2.3
-fi
 if test -r SetRecLmt.3; then
     rm -f Tcl_SetRecursionLimit.3
     ln SetRecLmt.3 Tcl_SetRecursionLimit.3
@@ -1050,6 +1054,10 @@ fi
 if test -r SetVar.3; then
     rm -f Tcl_SetVar2.3
     ln SetVar.3 Tcl_SetVar2.3
+fi
+if test -r SetVar.3; then
+    rm -f Tcl_SetVar2Ex.3
+    ln SetVar.3 Tcl_SetVar2Ex.3
 fi
 if test -r Sleep.3; then
     rm -f Tcl_Sleep.3

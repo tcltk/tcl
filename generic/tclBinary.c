@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.1.2.2 1998/09/24 23:58:41 stanton Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.1.2.3 1999/02/10 23:31:13 stanton Exp $
  */
 
 #include <math.h>
@@ -964,10 +964,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			valuePtr = Tcl_NewByteArrayObj(src, size);
-			resultPtr = Tcl_SetObjVar2(interp,
-				Tcl_GetString(objv[arg]),
-				NULL, valuePtr,
-				TCL_LEAVE_ERR_MSG);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
@@ -1019,10 +1017,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			
-			resultPtr = Tcl_SetObjVar2(interp,
-				Tcl_GetString(objv[arg]),
-				NULL, valuePtr,
-				TCL_LEAVE_ERR_MSG);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
@@ -1076,10 +1072,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    }
 			}
 			
-			resultPtr = Tcl_SetObjVar2(interp,
-				Tcl_GetString(objv[arg]),
-				NULL, valuePtr,
-				TCL_LEAVE_ERR_MSG);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */
@@ -1140,10 +1134,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    offset += count*size;
 			}
 
-			resultPtr = Tcl_SetObjVar2(interp,
-				Tcl_GetString(objv[arg]),
-				NULL, valuePtr,
-				TCL_LEAVE_ERR_MSG);
+			resultPtr = Tcl_ObjSetVar2(interp, objv[arg],
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
 			arg++;
 			if (resultPtr == NULL) {
 			    Tcl_DecrRefCount(valuePtr);	/* unneeded */

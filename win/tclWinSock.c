@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.4 1998/12/12 01:37:06 lfb Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.5 1999/02/10 23:31:29 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -781,7 +781,7 @@ SocketEventProc(evPtr, flags)
 	    infoPtr->readyEvents &= ~(FD_READ);
 	}
     }
-    if (events & FD_WRITE) {
+    if (events & (FD_WRITE | FD_CONNECT)) {
 	mask |= TCL_WRITABLE;
     }
 
@@ -1829,6 +1829,24 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
         len = strlen(optionName);
     }
 
+    if ((len > 1) && (optionName[1] == 'e') &&
+	    (strncmp(optionName, "-error", len) == 0)) {
+	int optlen;
+	int err, ret;
+    
+	optlen = sizeof(int);
+	ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
+		(char *)&err, &optlen);
+	if (ret == SOCKET_ERROR) {
+	    err = (*winSock.WSAGetLastError)();
+	}
+	if (err) {
+	    TclWinConvertWSAError(err);
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+	}
+	return TCL_OK;
+    }
+
     if ((len == 0) ||
             ((len > 1) && (optionName[1] == 'p') &&
                     (strncmp(optionName, "-peername", len) == 0))) {
@@ -1956,7 +1974,7 @@ TcpWatchProc(instanceData, mask)
 	infoPtr->watchEvents |= (FD_READ|FD_CLOSE|FD_ACCEPT);
     }
     if (mask & TCL_WRITABLE) {
-	infoPtr->watchEvents |= (FD_WRITE);
+	infoPtr->watchEvents |= (FD_WRITE|FD_CONNECT);
     }
 
     /*

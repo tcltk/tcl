@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.1.2.6 1999/02/01 21:29:55 stanton Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.1.2.7 1999/02/10 23:31:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -71,7 +71,6 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
     Tcl_DString ds;
-    int result;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name args body");
@@ -85,12 +84,9 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
      */
     
     fullName = TclGetString(objv[1]);
-    result = TclGetNamespaceForQualName(interp, fullName,
-	    (Namespace *) NULL, TCL_LEAVE_ERR_MSG,
-            &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
-    if (result != TCL_OK) {
-        return result;
-    }
+    TclGetNamespaceForQualName(interp, fullName, (Namespace *) NULL,
+	    0, &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
+
     if (nsPtr == NULL) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"can't create procedure \"", fullName,

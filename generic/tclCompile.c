@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.1.2.8 1998/12/12 01:36:54 lfb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.1.2.9 1999/02/10 23:31:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1367,7 +1367,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 	envPtr->exceptDepth++;
 	envPtr->maxExceptDepth =
 	        TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
- 	range = TclCreateExceptRange(CATCH_EXCEPTION, envPtr);
+ 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 
 	Tcl_DStringInit(&exprBuffer);
@@ -2516,13 +2516,13 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
 	rangePtr->codeOffset += 3;
 	
 	switch (rangePtr->type) {
-	case LOOP_EXCEPTION:
+	case LOOP_EXCEPTION_RANGE:
 	    rangePtr->breakOffset += 3;
 	    if (rangePtr->continueOffset != -1) {
 		rangePtr->continueOffset += 3;
 	    }
 	    break;
-	case CATCH_EXCEPTION:
+	case CATCH_EXCEPTION_RANGE:
 	    rangePtr->catchOffset += 3;
 	    break;
 	default:
@@ -3028,15 +3028,16 @@ TclPrintByteCodeObj(interp, objPtr)
 	    ExceptionRange *rangePtr = &(codePtr->exceptArrayPtr[i]);
 	    fprintf(stdout, "      %d: level %d, %s, pc %d-%d, ",
 		    i, rangePtr->nestingLevel,
-		    ((rangePtr->type == LOOP_EXCEPTION)? "loop" : "catch"),
+		    ((rangePtr->type == LOOP_EXCEPTION_RANGE)
+			    ? "loop" : "catch"),
 		    rangePtr->codeOffset,
 		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1));
 	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION:
+	    case LOOP_EXCEPTION_RANGE:
 		fprintf(stdout,	"continue %d, break %d\n",
 		        rangePtr->continueOffset, rangePtr->breakOffset);
 		break;
-	    case CATCH_EXCEPTION:
+	    case CATCH_EXCEPTION_RANGE:
 		fprintf(stdout,	"catch %d\n", rangePtr->catchOffset);
 		break;
 	    default:

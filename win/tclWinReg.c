@@ -6,11 +6,12 @@
  *	loadable extension in a separate DLL.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.1.2.2 1998/09/24 23:59:53 stanton Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.1.2.3 1999/02/10 23:31:28 stanton Exp $
  */
 
 #include <tcl.h>
@@ -61,7 +62,8 @@
 
 static char *rootKeyNames[] = {
     "HKEY_LOCAL_MACHINE", "HKEY_USERS", "HKEY_CLASSES_ROOT",
-    "HKEY_CURRENT_USER", "HKEY_CURRENT_CONFIG", NULL
+    "HKEY_CURRENT_USER", "HKEY_CURRENT_CONFIG", 
+    "HKEY_PERFORMANCE_DATA", "HKEY_DYN_DATA", NULL
 };
 
 static HKEY rootKeys[] = {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.1.2.3 1998/11/11 04:08:35 stanton Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.1.2.4 1999/02/10 23:31:24 stanton Exp $
 
 if {($tcl_platform(platform) != "windows") || ($testConfig(stdio) == 0)} {
     return
@@ -387,5 +387,5 @@ if {[catch {set env(TEMP) $env_temp}]} {
     unset env(TEMP)
 }
 
-file delete big little stdout stderr nothing 
+file delete big little stdout stderr nothing echoArgs.tcl
 return

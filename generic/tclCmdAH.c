@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.8 1999/02/01 21:29:49 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.9 1999/02/10 23:31:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -261,8 +261,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
     result = Tcl_EvalObjEx(interp, objv[1], 0);
     
     if (objc == 3) {
-	if (Tcl_SetObjVar2(interp,
-		Tcl_GetString(varNamePtr), NULL,
+	if (Tcl_ObjSetVar2(interp, varNamePtr, NULL,
 		Tcl_GetObjResult(interp), 0) == NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
@@ -572,7 +571,7 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     }
     
     if (objc == 4) {
-	Tcl_SetObjVar2(interp, "errorCode", NULL, objv[3], TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "errorCode", NULL, objv[3], TCL_GLOBAL_ONLY);
 	iPtr->flags |= ERROR_CODE_SET;
     }
     
@@ -1767,8 +1766,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 		    valuePtr = Tcl_NewObj(); /* empty string */
 		    isEmptyObj = 1;
 		}
-		varValuePtr = Tcl_SetObjVar2(interp,
-			Tcl_GetString(varvList[i][v]),
+		varValuePtr = Tcl_ObjSetVar2(interp, varvList[i][v],
 			NULL, valuePtr, 0);
 		if (varValuePtr == NULL) {
 		    if (isEmptyObj) {

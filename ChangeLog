@@ -1,3 +1,116 @@
+1999-02-10    <stanton@GASPODE>
+
+	* unix/mkLinks:
+	* doc/SetVar.3:
+	* generic/tcl.h:
+	* generic/tclVar.c: Restored Tcl_ObjGetVar2 and Tcl_ObjSetVar2
+	from 8.0. Renamed Tcl_Get/SetObjVar2 to Tcl_GetVar2Ex and
+	Tcl_SetVar2Ex.
+
+1999-02-10    <stanton@GASPODE>
+
+	INTEGRATED PATCHES FROM 8.0.5b2: 
+
+	* test/winPipe.test: Changed to remove echoArgs.tcl temporary file
+	when done.
+	
+	* tests/cmdAH.test:
+	* generic/tclFileName.c (TclGetExtension): Changed behavior so the
+	split happens at the last period in the name instead of the first
+	period of the last run of periods.  So, "foo..o" is split into
+	"foo." and ".o" now. [Bug: 1126]
+	
+	* win/makefile.vc: Added better support for paths with spaces in
+	the name. Added .lib and support .dlls to the install-binaries
+	target.  Added generate of a pkgIndex.tcl script to the
+	install-libraries target.
+
+	* win/tclAppInit.c: 
+	* unix/tclAppInit.c: 
+	* mac/tclMacAppInit.c: 
+	* generic/tclTest.c: Changed some EXTERN declarations to extern
+	since they are not defining exported interfaces.  This avoids
+	generating useless declspec() attributes and makes the windows
+	makefile simpler.
+
+	* generic/tcl.h: Moved Tcl_AppInit declaration to end and cleared
+	out TCL_STORAGE_CLASS so it is not declared with a declspec().
+
+	* tests/interp.test:
+	* generic/tclInterp.c (DeleteAlias): Changed to use
+	Tcl_DeleteCommandFromToken so we handle renames properly. This
+	avoids senseless panic. [Bug: 736]
+
+	* unix/tclUnixChan.c: 
+	* win/tclWinSock.c: 
+	* doc/socket.n: Applied Gordon Chaffee's patch to handle failures
+	during asynchronous socket connection operations.  This adds a new
+	"-error" fconfgure option to socket channels. [Bug: 893]
+
+	* generic/tclProc.c:
+	* generic/tclNamesp.c:
+	* generic/tclInt.h: 
+	* generic/tclCmdIL.c: 
+	* generic/tclBasic.c: 
+	* generic/tclVar.c: Applied patch from Viktor Dukhovni to
+	rationalize TCL_LEAVE_ERR_MSG behavior when creating variables.
+	
+	* generic/tclVar.c: Fixed bug in namespace tail computation.
+	Fixed bug where upvar could resurrect a namespace variable whose
+	namespace had been deleted.
+
+	* generic/tclCompile.c (TclCompileExprCmd): Eliminated yet another
+	bogus optimization in expression compilation.
+
+	* unix/configure.in: Added branch for BSD/OS-4* to shared library
+	case statement. [Bug: 975]
+	Fixed to correctly handle IRIX 6.5 n32 library support. [Bug: 1117]
+	
+	* win/winDumpExts.c: Patched to be pickier about stripping
+	@'s. [Bug: 920]
+
+	* library/http2.0/http.tcl: Added catch around eof test in
+	CopyDone since the user may have already called http::reset.
+	[Bug: 1108] 
+
+	* unix/configure.in: Changed Linux and IRIX to set SHLIB_LIBS to
+	LIBS so shared libraries are linked with the system
+	libraries. [Bug: 1018]
+
+	* generic/tclCompile.c (CompileExprWord): Fixed exception stack
+	overflow bug caused by missing statement. [Bug: 928]
+
+	* generic/tclIOCmd.c: 
+	* generic/tclBasic.c: Objectified the "open" command. [Bug: 1113] 
+
+	* generic/tclPosixStr.c (Tcl_ErrnoId, Tcl_ErrnoMsg): When using
+	egcs, ENOTSUP and EOPNOTSUPP are the same, so now we handle that
+	case. [Bug: 1137]
+
+	* library/init.tcl: Various small changes requested by Jan Nijtmans.
+	- If the variable $tcl_library contains the empty string, this
+	empty string will be put in $auto_path. This is not useful at all,
+	it only slows down later package processing.
+	- If the variable tcl_pkgPath is not set, the "unset __dir"
+	fails. Thich makes init.tcl totally unusable. Better put a "catch"
+	around it. 
+	- In the function tcl_findLibraries, the "string match" function
+	only works correctly if $tcl_patchLevel is in one of the forms
+	"?.?a?", "?.?b?" or "?.?.?". Could a "regexp" be used instead,
+	then it allows anything to be appended to the patchLevel
+	string. And it is more efficient.
+	- The tclPkgSetup function assumes that if $type != "load" then
+	the type must be "source". This needn't be true. Some users want
+	to add their own setup types.
+	[RFE: 1138] [Bug: 978]
+
+	* win/tclWinReg.c: 
+	* doc/registry.n: Added support for HKEY_PERFORMANCE_DATA and
+	HKEY_DYN_DATA keys. [Bug: 1109]
+
+	* win/tclWinInit.c (TclPlatformInit): Added code to ensure
+	tcl_pkgPath is set to "" when no registry entry is found. [Bug: 978]
+
 1999-02-01    <stanton@GASPODE>
 
 	* generic/tclBasic.c:

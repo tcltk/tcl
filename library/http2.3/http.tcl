@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.1.2.3 1999/01/29 00:20:46 stanton Exp $
+# RCS: @(#) $Id: http.tcl,v 1.1.2.4 1999/02/10 23:31:21 stanton Exp $
 
 package provide http 2.0	;# This uses Tcl namespaces
 
@@ -363,9 +363,10 @@ proc http::size {token} {
     if {[info exists state(-progress)]} {
 	eval $state(-progress) {$token $state(totalsize) $state(currentsize)}
     }
+    # At this point the token may have been reset
     if {([string length $error] != 0)} {
 	Finish $token $error
-    } elseif {[::eof $s]} {
+    } elseif {[catch {::eof $s} iseof] || $iseof} {
 	Eof $token
     } else {
 	CopyStart $s $token

@@ -6,12 +6,12 @@ LCID=0x409 0x0 0x0 ;English (United States)
 REPORT=Yes
 CONTENTS=contents
 TITLE=Tcl/Tk Reference Manual
-CNT=.\tcl81.cnt
+CNT=tcl81.cnt
 COPYRIGHT=Copyright © 1998 Scriptics Corporation
-HLP=.\tcl81.hlp
+HLP=tcl81.hlp
 
 [FILES]
-.\tcl.rtf
+tcl.rtf
 
 [WINDOWS]
 main="Tcl/Tk Reference Manual",,0

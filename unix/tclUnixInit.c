@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.4 1998/12/01 22:39:35 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.5 1999/02/10 23:31:27 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -514,7 +514,7 @@ Tcl_Init(interp)
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();
     }
-    Tcl_SetObjVar2(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
     return Tcl_Eval(interp, initScript);
 }
 

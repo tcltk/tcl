@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.1.2.5 1998/12/02 20:08:05 welch Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.1.2.6 1999/02/10 23:31:20 stanton Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -58,7 +58,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 
     # The C application may have hardwired a path, which we honor
     
-    if {[info exist the_library]} {
+    if {[info exist the_library] && [string compare $the_library {}]} {
 	lappend dirs $the_library
     } else {
 
@@ -72,7 +72,8 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 
 	# 2. Relative to the Tcl library
 
-        lappend dirs [file join [file dirname [info library]] $basename$version]
+        lappend dirs [file join [file dirname [info library]] \
+		$basename$version]
 
 	# 3. Various locations relative to the executable
 	# ../lib/foo1.0		(From bin directory in install hierarchy)
@@ -88,9 +89,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
         lappend dirs [file join $grandParentDir lib $basename$version]
         lappend dirs [file join $parentDir library]
         lappend dirs [file join $grandParentDir library]
-        if {[string match {*[ab]*} $patch]} {
-            set ver $patch
-        } else {
+        if {![regexp {.*[ab][0-9]*} $patch ver]} {
             set ver $version
         }
         lappend dirs [file join $grandParentDir $basename$ver library]

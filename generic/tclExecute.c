@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.8 1999/02/01 21:29:51 stanton Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.9 1999/02/10 23:31:16 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -906,7 +906,7 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    newPcOffset = 0;
 		    switch (rangePtr->type) {
-		    case LOOP_EXCEPTION:
+		    case LOOP_EXCEPTION_RANGE:
 			if (result == TCL_BREAK) {
 			    newPcOffset = rangePtr->breakOffset;
 			} else if (rangePtr->continueOffset == -1) {
@@ -922,7 +922,7 @@ TclExecuteByteCode(interp, codePtr)
 			       StringForResultCode(result),
 			       rangePtr->codeOffset, newPcOffset));
 			break;
-		    case CATCH_EXCEPTION:
+		    case CATCH_EXCEPTION_RANGE:
 			TRACE(("%u => ... after \"%.20s\", %s...\n",
 			       objc, cmdNameBuf,
 			       StringForResultCode(result)));
@@ -998,7 +998,7 @@ TclExecuteByteCode(interp, codePtr)
 		    goto abnormalReturn;    /* no catch exists to check */
 		}
 		switch (rangePtr->type) {
-		case LOOP_EXCEPTION:
+		case LOOP_EXCEPTION_RANGE:
 		    if (result == TCL_BREAK) {
 			newPcOffset = rangePtr->breakOffset;
 		    } else if (rangePtr->continueOffset == -1) {
@@ -1014,7 +1014,7 @@ TclExecuteByteCode(interp, codePtr)
 			    O2S(objPtr), StringForResultCode(result),
 			    rangePtr->codeOffset, newPcOffset), valuePtr);
 		    break;
-		case CATCH_EXCEPTION:
+		case CATCH_EXCEPTION_RANGE:
 		    TRACE_WITH_OBJ(("\"%.30s\" => %s ",
 			    O2S(objPtr), StringForResultCode(result)),
 			    valuePtr);
@@ -1097,8 +1097,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_LOAD_SCALAR_STK:
 	    objPtr = POP_OBJECT(); /* scalar name */
 	    DECACHE_STACK_INFO();
-	    valuePtr = Tcl_GetObjVar2(interp,
-		    Tcl_GetString(objPtr), NULL, TCL_LEAVE_ERR_MSG);
+	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, NULL, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
@@ -1149,8 +1148,7 @@ TclExecuteByteCode(interp, codePtr)
 		
 		objPtr = POP_OBJECT();	/* array name */
 		DECACHE_STACK_INFO();
-		valuePtr = Tcl_GetObjVar2(interp,
-			Tcl_GetString(objPtr), Tcl_GetString(elemPtr),
+		valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr,
 		        TCL_LEAVE_ERR_MSG);
 		CACHE_STACK_INFO();
 		if (valuePtr == NULL) {
@@ -1173,8 +1171,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_LOAD_STK:
 	    objPtr = POP_OBJECT(); /* variable name */
 	    DECACHE_STACK_INFO();
-	    valuePtr = Tcl_GetObjVar2(interp, Tcl_GetString(objPtr), NULL,
-		    TCL_LEAVE_ERR_MSG);
+	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, NULL, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ",
@@ -1220,8 +1217,8 @@ TclExecuteByteCode(interp, codePtr)
 	    valuePtr = POP_OBJECT();
 	    objPtr = POP_OBJECT(); /* scalar name */
 	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_SetObjVar2(interp, Tcl_GetString(objPtr), NULL,
-		    valuePtr, TCL_LEAVE_ERR_MSG);
+	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, NULL, valuePtr,
+		    TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
 		TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ERROR: ",
@@ -1283,9 +1280,8 @@ TclExecuteByteCode(interp, codePtr)
 		elemPtr = POP_OBJECT();
 		objPtr = POP_OBJECT();	/* array name */
 		DECACHE_STACK_INFO();
-		value2Ptr = Tcl_SetObjVar2(interp,
-			Tcl_GetString(objPtr), Tcl_GetString(elemPtr),
-		        valuePtr, TCL_LEAVE_ERR_MSG);
+		value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
+			TCL_LEAVE_ERR_MSG);
 		CACHE_STACK_INFO();
 		if (value2Ptr == NULL) {
 		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ERROR: ",
@@ -1311,8 +1307,8 @@ TclExecuteByteCode(interp, codePtr)
 	    valuePtr = POP_OBJECT();
 	    objPtr = POP_OBJECT(); /* variable name */
 	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_SetObjVar2(interp, Tcl_GetString(objPtr), NULL,
-		    valuePtr, TCL_LEAVE_ERR_MSG);
+	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, NULL, valuePtr,
+		    TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
 		TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ERROR: ",
@@ -2564,12 +2560,12 @@ TclExecuteByteCode(interp, codePtr)
 		goto abnormalReturn; /* no catch exists to check */
 	    }
 	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION:
+	    case LOOP_EXCEPTION_RANGE:
 		result = TCL_OK;
 		TRACE(("=> range at %d, new pc %d\n",
 		       rangePtr->codeOffset, rangePtr->breakOffset));
 		break;
-	    case CATCH_EXCEPTION:
+	    case CATCH_EXCEPTION_RANGE:
 		result = TCL_BREAK;
 		TRACE(("=> ...\n"));
 		goto processCatch; /* it will use rangePtr */
@@ -2596,7 +2592,7 @@ TclExecuteByteCode(interp, codePtr)
 		goto abnormalReturn;
 	    }
 	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION:
+	    case LOOP_EXCEPTION_RANGE:
 		if (rangePtr->continueOffset == -1) {
 		    TRACE(("=> loop w/o continue, checking for catch\n"));
 		    goto checkForCatch;
@@ -2606,7 +2602,7 @@ TclExecuteByteCode(interp, codePtr)
 			   rangePtr->codeOffset, rangePtr->continueOffset));
 		}
 		break;
-	    case CATCH_EXCEPTION:
+	    case CATCH_EXCEPTION_RANGE:
 		result = TCL_CONTINUE;
 		TRACE(("=> ...\n"));
 		goto processCatch; /* it will use rangePtr */
@@ -3317,7 +3313,7 @@ GetExceptRangeForPc(pc, catchOnly, codePtr)
 		int end   = (start + rangePtr->numCodeBytes);
 		if ((start <= pcOffset) && (pcOffset < end)) {
 		    if ((!catchOnly)
-			    || (rangePtr->type == CATCH_EXCEPTION)) {
+			    || (rangePtr->type == CATCH_EXCEPTION_RANGE)) {
 			return rangePtr;
 		    }
 		}

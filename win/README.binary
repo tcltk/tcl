@@ -1,6 +1,6 @@
 Tcl/Tk 8.1b1 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.2.2.3 1998/12/11 19:33:59 stanton Exp $ 
+RCS: @(#) $Id: README.binary,v 1.2.2.4 1999/02/10 23:31:27 stanton Exp $ 
 
 1. Introduction
 --------------- 
@@ -91,31 +91,29 @@ See Encoding.3 for procedures that create new encodings and
 translate between encodings.  See ToUpper.3 for procedures
 that perform case conversions on UTF-8 strings.
 
-Binary data.  Binary data is handled differently in
-Tcl 8.1 than in Tcl 8.0.  Tcl 8.1 uses the UTF-8 facilities to represent
-binary data: the character value zero is represented with a multi-byte
-sequence, so that (once again) strings in Tcl 8.1 never contain null bytes.
-This means that binary data is now accepted everywhere in Tcl and Tk (in
-Tcl 8.0 the support for binary data was incomplete).
-If you have C code that needs to manipulate the bytes of binary data (as
-opposed to just passing the data through) you should use a new object
-type called "byte array".  See the manual entry ByteArrObj.3
-for information about procedures such as
-Tcl_GetByteArrayFromObj.
-New regular expressions.  Tcl 8.1 contains a brand new
-implementation of regular expressions from Henry Spencer.  This new version
-supports almost all of the Perl extensions and it also handles UTF-8 and
-binary data.
-Multi-Threading.
-Tcl 8.1 is multi-thread safe.
-Each thread can contain several Tcl interpreters, but a given interpreter
-can not be accessed from more than one thread.
-Each thread runs its own event loop, and you can post events
-to other threads. There is not yet support for tcl level use of threading
-except for a test command. (Compile tcltest and try testthread.)
-Tk 8.1 is not yet 
-multi-thread safe, and may never be due to limitations
-of Xlib.
+Binary data.  Binary data is handled differently in Tcl 8.1 than in
+Tcl 8.0.  Tcl 8.1 uses the UTF-8 facilities to represent binary data:
+the character value zero is represented with a multi-byte sequence, so
+that (once again) strings in Tcl 8.1 never contain null bytes.  This
+means that binary data is now accepted everywhere in Tcl and Tk (in
+Tcl 8.0 the support for binary data was incomplete).  If you have C
+code that needs to manipulate the bytes of binary data (as opposed to
+just passing the data through) you should use a new object type called
+"byte array".  See the manual entry ByteArrObj.3 for information about
+procedures such as Tcl_GetByteArrayFromObj.
+
+New regular expressions.  Tcl 8.1 contains a brand new implementation
+of regular expressions from Henry Spencer.  This new version supports
+almost all of the Perl extensions and it also handles UTF-8 and binary
+data.
+
+Multi-Threading.  Tcl 8.1 is multi-thread safe.  Each thread can
+contain several Tcl interpreters, but a given interpreter can not be
+accessed from more than one thread.  Each thread runs its own event
+loop, and you can post events to other threads. There is not yet
+support for tcl level use of threading except for a test
+command. (Compile tcltest and try testthread.)  Tk 8.1 is not yet
+multi-thread safe, and may never be due to limitations of Xlib.
 
 
 What's new in Tk 8.1
@@ -141,18 +139,14 @@ It is implemented using DDE and there is a new dde command that allows
 Tk applications to use DDE to communicate with other Windows
 applications.  send still doesn't work on the Macintosh.
 
-3. Embedding.  Application embedding now works on the Macintosh, as
-long as both the container and embedded application are in the same
-process.
-
-4. Configuration options.  There is a new library of C procedures for
+3. Configuration options.  There is a new library of C procedures for
 manipulating widget configuration options using Tcl_Objs instead of
 strings.  This should eventually make Tk much more efficient.  Label,
 button, checkbutton, radiobutton, and menu widgets have been modified
 to use the new library.  See SetOptions.3 for information on the new C
 APIs.
 
-5. More Tcl_Obj support.  Several additional C library procedures have
+4. More Tcl_Obj support.  Several additional C library procedures have
 been added to support Tcl_Objs.  See the manual entries 3DBorder.3,
 GetAnchor.3, GetBitmap.3, GetColor.3, GetCursor.3, GetFont.3,
 GetJustify.3, and GetPixels.3.
@@ -210,15 +204,6 @@ syntax changes in order to support all the new features:
     rules apply except with "longest" replaced by "shortest" everywhere.
     When greedy and non-greedy quantifiers are mixed, it's complicated and
     difficult to explain.
-
-- The procedure Tcl_EvalObj has a new argument flags, and the
-  procedure Tcl_GlobalEvalObj has been removed (Tcl_EvalObj now
-  provides all of its functionality).
-
-- The procedures Tcl_ObjSetVar2 and Tcl_ObjGetVar2 have been renamed
-  Tcl_SetObjVar2 and Tcl_GetObjVar2 for consistency with other C APIs;
-  the name arguments have been changed from objects to strings.
-
 
 Known Problems With These Releases
 

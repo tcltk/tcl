@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.11 1999/02/01 21:29:48 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.12 1999/02/10 23:31:12 stanton Exp $
  */
 
 #ifndef _TCL
@@ -515,6 +515,7 @@ typedef struct Tcl_Obj {
 EXTERN void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 EXTERN void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 EXTERN int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
+EXTERN void		TclFreeObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 #ifdef TCL_MEM_DEBUG
 #   define Tcl_IncrRefCount(objPtr) \
@@ -1289,7 +1290,6 @@ EXTERN void		Tcl_AppendToObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    char *bytes, int length));
 EXTERN void		Tcl_AppendStringsToObj _ANSI_ARGS_(
 			    TCL_VARARGS(Tcl_Obj *,interp));
-EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		Tcl_AlertNotifier _ANSI_ARGS_((ClientData clientData));
 EXTERN Tcl_AsyncHandler	Tcl_AsyncCreate _ANSI_ARGS_((Tcl_AsyncProc *proc,
 			    ClientData clientData));
@@ -1364,9 +1364,8 @@ EXTERN Tcl_Command	Tcl_CreateObjCommand _ANSI_ARGS_((
 			    Tcl_CmdDeleteProc *deleteProc));
 EXTERN Tcl_Interp *	Tcl_CreateSlave _ANSI_ARGS_((Tcl_Interp *interp,
 		            char *slaveName, int isSafe));
-EXTERN void		Tcl_CreateThreadExitHandler
-			    _ANSI_ARGS_((Tcl_ExitProc *proc,
-			    ClientData clientData));
+EXTERN void		Tcl_CreateThreadExitHandler _ANSI_ARGS_((
+			    Tcl_ExitProc *proc, ClientData clientData));
 EXTERN Tcl_TimerToken	Tcl_CreateTimerHandler _ANSI_ARGS_((int milliseconds,
 			    Tcl_TimerProc *proc, ClientData clientData));
 EXTERN Tcl_Trace	Tcl_CreateTrace _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1422,14 +1421,14 @@ EXTERN void		Tcl_DeleteHashEntry _ANSI_ARGS_((
 EXTERN void		Tcl_DeleteHashTable _ANSI_ARGS_((
 			    Tcl_HashTable *tablePtr));
 EXTERN void		Tcl_DeleteInterp _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN void		Tcl_DeleteThreadExitHandler
-			    _ANSI_ARGS_((Tcl_ExitProc *proc,
-			    ClientData clientData));
+EXTERN void		Tcl_DeleteThreadExitHandler _ANSI_ARGS_((
+			    Tcl_ExitProc *proc, ClientData clientData));
 EXTERN void		Tcl_DeleteTimerHandler _ANSI_ARGS_((
 			    Tcl_TimerToken token));
 EXTERN void		Tcl_DeleteTrace _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Trace trace));
-EXTERN void		Tcl_DetachPids _ANSI_ARGS_((int numPids, Tcl_Pid *pidPtr));
+EXTERN void		Tcl_DetachPids _ANSI_ARGS_((int numPids,
+			    Tcl_Pid *pidPtr));
 EXTERN void		Tcl_DiscardResult _ANSI_ARGS_((
 			    Tcl_SavedResult *statePtr));
 EXTERN void		Tcl_DontCallWhenDeleted _ANSI_ARGS_((
@@ -1507,7 +1506,6 @@ EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry _ANSI_ARGS_((
 			    Tcl_HashSearch *searchPtr));
 EXTERN int		Tcl_Flush _ANSI_ARGS_((Tcl_Channel chan));
 EXTERN void		Tcl_FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
-EXTERN void		TclFreeObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 EXTERN void		Tcl_FreeResult _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		Tcl_GetAlias _ANSI_ARGS_((Tcl_Interp *interp,
        			    char *slaveCmd, Tcl_Interp **targetInterpPtr,
@@ -1575,8 +1573,6 @@ EXTERN int		Tcl_GetLongFromObj _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_Interp *	Tcl_GetMaster _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN CONST char *	Tcl_GetNameOfExecutable _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	Tcl_GetObjResult _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN Tcl_Obj *	Tcl_GetObjVar2 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *part1, char *part2, int flags));
 EXTERN Tcl_ObjType *	Tcl_GetObjType _ANSI_ARGS_((char *typeName));
 EXTERN int		Tcl_GetOpenFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int write, int checkUsage,
@@ -1599,6 +1595,8 @@ EXTERN VOID *		Tcl_GetThreadData _ANSI_ARGS_((
 EXTERN char *		Tcl_GetVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *varName, int flags));
 EXTERN char *		Tcl_GetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *part1, char *part2, int flags));
+EXTERN Tcl_Obj *	Tcl_GetVar2Ex _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *part1, char *part2, int flags));
 EXTERN int		Tcl_GlobalEval _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *command));
@@ -1663,6 +1661,12 @@ EXTERN void		Tcl_NotifyChannel _ANSI_ARGS_((Tcl_Channel channel,
 			    int mask));
 EXTERN int		Tcl_NumUtfChars _ANSI_ARGS_((CONST char *src,
 			    int len));
+EXTERN Tcl_Obj *	Tcl_ObjGetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+			    int flags));
+EXTERN Tcl_Obj *	Tcl_ObjSetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+			    Tcl_Obj *newValuePtr, int flags));
 EXTERN Tcl_Channel	Tcl_OpenCommandChannel _ANSI_ARGS_((
     			    Tcl_Interp *interp, int argc, char **argv,
 			    int flags));
@@ -1760,9 +1764,6 @@ EXTERN void		Tcl_SetObjLength _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    int length));
 EXTERN void		Tcl_SetObjResult _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *resultObjPtr));
-EXTERN Tcl_Obj *	Tcl_SetObjVar2 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *part1, char *part2, Tcl_Obj *newValuePtr,
-			    int flags));
 EXTERN void		Tcl_SetPanicProc _ANSI_ARGS_((void (*proc)
 			    _ANSI_ARGS_(TCL_VARARGS(char *, format))));
 EXTERN int		Tcl_SetRecursionLimit _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1781,6 +1782,9 @@ EXTERN char *		Tcl_SetVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *varName, char *newValue, int flags));
 EXTERN char *		Tcl_SetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *part1, char *part2, char *newValue,
+			    int flags));
+EXTERN Tcl_Obj *	Tcl_SetVar2Ex _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *part1, char *part2, Tcl_Obj *newValuePtr,
 			    int flags));
 EXTERN char *		Tcl_SignalId _ANSI_ARGS_((int sig));
 EXTERN char *		Tcl_SignalMsg _ANSI_ARGS_((int sig));
@@ -1889,6 +1893,17 @@ EXTERN int		Tcl_WriteObj _ANSI_ARGS_((Tcl_Channel chan,
 			    Tcl_Obj *objPtr));
 EXTERN void		Tcl_WrongNumArgs _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[], char *message));
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS
+
+/*
+ * Convenience declaration of Tcl_AppInit for backwards compatibility.
+ * This function is not *implemented* by the tcl library, so the storage
+ * class is neither DLLEXPORT nor DLLIMPORT
+ */
+
+EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 
 #endif /* RESOURCE_INCLUDED */
 

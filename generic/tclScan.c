@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.1.2.2 1998/11/18 04:15:46 stanton Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.1.2.3 1999/02/10 23:31:19 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1012,8 +1012,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     for (i = 0; i < numVars; i++) {
 	if (objs[i] != NULL) {
 	    result++;
-	    if (Tcl_SetObjVar2(interp, Tcl_GetString(objv[i+3]),
-		    NULL, objs[i], 0) == NULL) {
+	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i], 0) == NULL) {
 		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			"couldn't set variable \"",
 			Tcl_GetString(objv[i+3]), "\"", (char *) NULL);

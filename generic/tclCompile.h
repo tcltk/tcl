@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.1.2.3 1998/09/30 20:46:24 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.1.2.4 1999/02/10 23:31:15 stanton Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -82,10 +82,10 @@ extern int 		tclTraceExec;
  */
 
 typedef enum {
-    LOOP_EXCEPTION,		/* Exception's range is part of a loop.
+    LOOP_EXCEPTION_RANGE,	/* Exception's range is part of a loop.
 				 * Break and continue "exceptions" cause
 				 * jumps to appropriate PC offsets. */
-    CATCH_EXCEPTION		/* Exception's range is controlled by a
+    CATCH_EXCEPTION_RANGE	/* Exception's range is controlled by a
 				 * catch command. Errors in the range cause
 				 * a jump to a catch PC offset. */
 } ExceptionRangeType;
@@ -98,13 +98,13 @@ typedef struct ExceptionRange {
     int codeOffset;		/* Offset of the first instruction byte of
 				 * the code range. */
     int numCodeBytes;		/* Number of bytes in the code range. */
-    int breakOffset;		/* If LOOP_EXCEPTION, the target PC offset
-				 * for a break command in the range. */
-    int continueOffset;		/* If LOOP_EXCEPTION and not -1, the target
-				 * PC offset for a continue command in the
-				 * code range. Otherwise, ignore this range
+    int breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
+				 * offset for a break command in the range. */
+    int continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
+				 * target PC offset for a continue command in
+				 * the code range. Otherwise, ignore this range
 				 * when processing a continue command. */
-    int catchOffset;		/* If a CATCH_EXCEPTION, the target PC
+    int catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
 				 * offset for any "exception" in range. */
 } ExceptionRange;
 

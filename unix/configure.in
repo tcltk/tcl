@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.1.2.7 1999/01/29 00:20:47 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.1.2.8 1999/02/10 23:31:25 stanton Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
@@ -53,6 +53,23 @@ if test "${GCC}" = "yes" ; then
     CFLAGS_WARNING="-Wall -Wconversion"
 else
     CFLAGS_WARNING=""
+fi
+
+#------------------------------------------------------------------------------
+# If we're using GCC, see if the compiler understands -pipe.  If so, use it.
+# It makes compiling go faster.  (This is only a performance feature.)
+#------------------------------------------------------------------------------
+
+if test -z "$no_pipe"; then
+if test -n "$GCC"; then
+  AC_MSG_CHECKING([if the compiler understands -pipe])
+  OLDCC="$CC"  
+  CC="$CC -pipe"
+  AC_TRY_COMPILE(,,
+    AC_MSG_RESULT(yes),
+    CC="$OLDCC"
+    AC_MSG_RESULT(no))
+fi  
 fi
 
 #--------------------------------------------------------------------
@@ -731,7 +748,7 @@ case $system in
 	LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	;;
-    BSD/OS-2.1*|BSD/OS-3*)
+    BSD/OS-2.1*|BSD/OS-3*|BSD/OS-4*)
 	SHLIB_CFLAGS=""
 	SHLIB_LD="shlicc -r"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -775,7 +792,7 @@ case $system in
 	LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	;;
-    IRIX-5.*|IRIX-6.*)
+    IRIX-5.*|IRIX-6.*|IRIX64-6.5*)
 	SHLIB_CFLAGS=""
 	SHLIB_LD="ld -n32 -shared -rdata_shared"
 	SHLIB_LD_LIBS=""
@@ -811,7 +828,7 @@ case $system in
 	;;
     Linux*)
 	SHLIB_CFLAGS="-fPIC"
-	SHLIB_LD_LIBS=""
+	SHLIB_LD_LIBS="${LIBS}"
 	SHLIB_SUFFIX=".so"
 	if test "$have_dl" = yes; then
 	    SHLIB_LD="${CC} -shared"

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.7 1998/12/01 23:33:39 stanton Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.8 1999/02/10 23:31:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -171,7 +171,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     envPtr->exceptDepth++;
     envPtr->maxExceptDepth =
 	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    range = TclCreateExceptRange(CATCH_EXCEPTION, envPtr);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 
     startOffset = (envPtr->codeNext - envPtr->codeStart);
@@ -409,8 +409,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     envPtr->exceptDepth++;
     envPtr->maxExceptDepth =
 	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    bodyRange = TclCreateExceptRange(LOOP_EXCEPTION, envPtr);
-    nextRange = TclCreateExceptRange(LOOP_EXCEPTION, envPtr);
+    bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 
     /*
      * Inline compile the initial command.
@@ -762,7 +762,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Evaluate then store each value list in the associated temporary.
      */
 
-    range = TclCreateExceptRange(LOOP_EXCEPTION, envPtr);
+    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     
     loopIndex = 0;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
@@ -1863,7 +1863,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     envPtr->exceptDepth++;
     envPtr->maxExceptDepth =
 	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    range = TclCreateExceptRange(LOOP_EXCEPTION, envPtr);
+    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     envPtr->exceptArrayPtr[range].continueOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
 

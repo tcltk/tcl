@@ -9,7 +9,7 @@
  *
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * Originally implemented by
  *   Michael J. McLennan
@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.6 1999/02/01 21:29:54 stanton Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.7 1999/02/10 23:31:17 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -288,11 +288,8 @@ Tcl_PushCallFrame(interp, callFramePtr, namespacePtr, isProcCallFrame)
     } else {
         nsPtr = (Namespace *) namespacePtr;
         if (nsPtr->flags & NS_DEAD) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "namespace \"",
-		    nsPtr->fullName, "\" not found in context \"",
-		    Tcl_GetCurrentNamespace(interp)->fullName, "\"",
-		    (char *) NULL);
-            return TCL_ERROR;
+	    panic("Trying to push call frame for dead namespace");
+	    /*NOTREACHED*/
         }
     }
 
@@ -448,7 +445,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     char *simpleName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
-    int newEntry, result;
+    int newEntry;
 
     /*
      * If there is no active namespace, the interpreter is being
@@ -472,13 +469,9 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 * Find the parent for the new namespace.
 	 */
 
-	result = TclGetNamespaceForQualName(interp, name,
-		(Namespace *) NULL,
+	TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
 		/*flags*/ (CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
 		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
-        if (result != TCL_OK) {
-            return NULL;
-        }
 
 	/*
 	 * If the unqualified name at the end is empty, there were trailing
@@ -918,7 +911,7 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
     Namespace *nsPtr, *exportNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     char *simplePattern, *patternCpy;
-    int neededElems, len, i, result;
+    int neededElems, len, i;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -951,12 +944,10 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
      * Check that the pattern doesn't have namespace qualifiers.
      */
 
-    result = TclGetNamespaceForQualName(interp, pattern, nsPtr,
+    TclGetNamespaceForQualName(interp, pattern, nsPtr,
 	    /*flags*/ TCL_LEAVE_ERR_MSG, &exportNsPtr, &dummyPtr,
 	    &dummyPtr, &simplePattern);
-    if (result != TCL_OK) {
-	return result;
-    }
+
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 	        "invalid export pattern \"", pattern,
@@ -1166,12 +1157,10 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	        "empty import pattern", -1);
         return TCL_ERROR;
     }
-    result = TclGetNamespaceForQualName(interp, pattern, nsPtr,
+    TclGetNamespaceForQualName(interp, pattern, nsPtr,
 	    /*flags*/ TCL_LEAVE_ERR_MSG, &importNsPtr, &dummyPtr,
 	    &dummyPtr, &simplePattern);
-    if (result != TCL_OK) {
-        return TCL_ERROR;
-    }
+
     if (importNsPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"unknown namespace in import pattern \"",
@@ -1336,7 +1325,6 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Command *cmdPtr;
-    int result;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1354,12 +1342,10 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
      * the end.
      */
 
-    result = TclGetNamespaceForQualName(interp, pattern, nsPtr,
+    TclGetNamespaceForQualName(interp, pattern, nsPtr,
 	    /*flags*/ TCL_LEAVE_ERR_MSG, &importNsPtr, &dummyPtr,
 	    &actualCtxPtr, &simplePattern);
-    if (result != TCL_OK) {
-        return result;
-    }
+
     if (importNsPtr == NULL) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"unknown namespace in namespace forget pattern \"",
@@ -1571,15 +1557,14 @@ DeleteImportedCmd(clientData)
  *	final component is stored in *simpleNamePtr.
  *
  * Results:
- *	Ordinarily this procedure returns TCL_OK. It sets *nsPtrPtr and
- *	*altNsPtrPtr to point to the two possible namespaces which represent
- *	the last (containing) namespace in the qualified name. If the
- *	procedure sets either *nsPtrPtr or *altNsPtrPtr to NULL, then the
- *	search along that path failed. The procedure also stores a pointer
- *	to the simple name of the final component in *simpleNamePtr. If the
- *	qualified name is "::" or was treated as a namespace reference
- *	(FIND_ONLY_NS), the procedure stores a pointer to the
- *	namespace in *nsPtrPtr, NULL in *altNsPtrPtr, and sets
+ *	It sets *nsPtrPtr and *altNsPtrPtr to point to the two possible
+ *	namespaces which represent the last (containing) namespace in the
+ *	qualified name. If the procedure sets either *nsPtrPtr or *altNsPtrPtr
+ *	to NULL, then the search along that path failed.  The procedure also
+ *	stores a pointer to the simple name of the final component in
+ *	*simpleNamePtr. If the qualified name is "::" or was treated as a
+ *	namespace reference (FIND_ONLY_NS), the procedure stores a pointer
+ *	to the namespace in *nsPtrPtr, NULL in *altNsPtrPtr, and sets
  *	*simpleNamePtr to point to an empty string.
  *
  *	If there is an error, this procedure returns TCL_ERROR. If "flags"
@@ -1591,9 +1576,12 @@ DeleteImportedCmd(clientData)
  *	set to the input context namespace pointer in cxtNsPtr. If cxtNsPtr
  *	is NULL, it is set to the current namespace context.
  *
+ *	For backwards compatibility with the TclPro byte code loader,
+ *	this function always returns TCL_OK.
+ *
  * Side effects:
- *	If flags contains TCL_LEAVE_ERR_MSG and an error is encountered,
- *	the interpreter's result object will contain an error message.
+ *	If "flags" contains CREATE_NS_IF_UNKNOWN, new namespaces may be
+ *	created.
  *
  *----------------------------------------------------------------------
  */
@@ -1648,7 +1636,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     char *nsName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer;
-    int len, result;
+    int len;
 
     /*
      * Determine the context namespace nsPtr in which to start the primary
@@ -1773,18 +1761,15 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             } else if (flags & CREATE_NS_IF_UNKNOWN) {
 		Tcl_CallFrame frame;
 		
-		result = Tcl_PushCallFrame(interp, &frame,
+		(void) Tcl_PushCallFrame(interp, &frame,
 		        (Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
-                if (result != TCL_OK) {
-                    Tcl_DStringFree(&buffer);
-                    return result;
-                }
+
                 nsPtr = (Namespace *) Tcl_CreateNamespace(interp, nsName,
 		        (ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL);
                 Tcl_PopCallFrame(interp);
+
                 if (nsPtr == NULL) {
-                    Tcl_DStringFree(&buffer);
-                    return TCL_ERROR;
+                    panic("Could not create namespace '%s'", nsName);
                 }
             } else {		/* namespace not found and wasn't created */
                 nsPtr = NULL;
@@ -1887,7 +1872,6 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 {
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     char *dummy;
-    int result;
 
     /*
      * Find the namespace(s) that contain the specified namespace name.
@@ -1895,12 +1879,9 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
      * to its last component, a namespace.
      */
 
-    result = TclGetNamespaceForQualName(interp, name,
-	    (Namespace *) contextNsPtr, /*flags*/ (flags | FIND_ONLY_NS),
-	    &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
-    if (result != TCL_OK) {
-        return NULL;
-    }
+    TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
+	    (flags | FIND_ONLY_NS), &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+    
     if (nsPtr != NULL) {
        return (Tcl_Namespace *) nsPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
@@ -2011,12 +1992,8 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
      * Find the namespace(s) that contain the command.
      */
 
-    result = TclGetNamespaceForQualName(interp, name,
-	    (Namespace *) contextNsPtr, flags, &nsPtr[0], &nsPtr[1],
-	    &cxtNsPtr, &simpleName);
-    if (result != TCL_OK) {
-        return (Tcl_Command) NULL;
-    }
+    TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
+	    flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
 
     /*
      * Look for the command in the command table of its namespace.
@@ -2145,12 +2122,8 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
      * Find the namespace(s) that contain the variable.
      */
 
-    result = TclGetNamespaceForQualName(interp, name,
-	    (Namespace *) contextNsPtr, flags, &nsPtr[0], &nsPtr[1],
-	    &cxtNsPtr, &simpleName);
-    if (result != TCL_OK) {
-        return (Tcl_Var) NULL;
-    }
+    TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
+	    flags, &nsPtr[0], &nsPtr[1], &cxtNsPtr, &simpleName);
 
     /*
      * Look for the variable in the variable table of its namespace.
@@ -3785,7 +3758,6 @@ SetNsNameFromAny(interp, objPtr)
     char *name, *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
-    int flags, result;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
@@ -3803,12 +3775,8 @@ SetNsNameFromAny(interp, objPtr)
      * object with a NULL ResolvedNsName* internal rep.
      */
 
-    flags = ((interp != NULL)? TCL_LEAVE_ERR_MSG : 0) | FIND_ONLY_NS;
-    result = TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
-            flags, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
-    if (result != TCL_OK) {
-        return result;
-    }
+    TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
+            FIND_ONLY_NS, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     /*
      * If we found a namespace, then create a new ResolvedNsName structure

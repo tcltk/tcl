@@ -6,11 +6,12 @@
  *	program must be built in Win32 console mode to work properly.
  *
  * Copyright (c) 1996-1997 by Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.1.2.3 1998/10/06 02:59:07 stanton Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.1.2.4 1999/02/10 23:31:28 stanton Exp $
  */
 
 #include "tcl.h"
@@ -18,12 +19,12 @@
 #include <locale.h>
 
 #ifdef TCL_TEST
-EXTERN int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #ifdef TCL_THREADS
-EXTERN int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif
 #endif /* TCL_TEST */
 

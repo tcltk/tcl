@@ -4,7 +4,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.13 1999/01/29 00:20:49 stanton Exp $
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.14 1999/02/10 23:31:28 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -13,9 +15,7 @@
 #
 # Project directories
 #
-# ROOT    = top of source tree
-#
-# TMPDIR  = location where .obj files should be stored during build
+# ROOT	  = top of source tree
 #
 # TOOLS32 = location of VC++ 32-bit development tools. Note that the
 #	    VC++ 2.0 header files are broken, so you need to use the
@@ -27,7 +27,7 @@
 #	    is not available, then the 16-bit code will not be built.  
 #	    Tcl will still run without the 16-bit code, but...
 #		A. Under Windows 3.X any calls to the exec command
-#	           will return an error.
+#		   will return an error.
 #		B. A 16-bit program to test the behavior of the exec
 #		   command under NT and 95 will not be built.
 # INSTALLDIR = where the install- targets should copy the binaries and
@@ -35,11 +35,11 @@
 #
 
 ROOT		= ..
-TOOLS32		= c:\progra~1\devstudio\vc
-TOOLS32_rc	= c:\progra~1\devstudio\sharedide
+TOOLS32		= c:\program files\devstudio\vc
+TOOLS32_rc	= c:\program files\devstudio\sharedide
 TOOLS16		= c:\msvc
 
-INSTALLDIR	= c:\progra~1\Tcl
+INSTALLDIR	= c:\program files\Tcl
 
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE	= IX86
@@ -191,17 +191,17 @@ TCLOBJS = \
 	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj 
 
-cc32		= $(TOOLS32)\bin\cl.exe
-link32		= $(TOOLS32)\bin\link.exe
-rc32		= $(TOOLS32_rc)\bin\rc.exe
-include32	= -I$(TOOLS32)\include
+cc32		= "$(TOOLS32)\bin\cl.exe"
+link32		= "$(TOOLS32)\bin\link.exe"
+rc32		= "$(TOOLS32_rc)\bin\rc.exe"
+include32	= -I"$(TOOLS32)\include"
 
-cc16		= $(TOOLS16)\bin\cl.exe
-link16		= $(TOOLS16)\bin\link.exe
-rc16		= $(TOOLS16)\bin\rc.exe
-include16	= -I$(TOOLS16)\include
+cc16		= "$(TOOLS16)\bin\cl.exe"
+link16		= "$(TOOLS16)\bin\link.exe"
+rc16		= "$(TOOLS16)\bin\rc.exe"
+include16	= -I"$(TOOLS16)\include"
 
-WINDIR          = $(ROOT)\win
+WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
 TCL_INCLUDES	= -I$(WINDIR) -I$(GENERICDIR)
@@ -229,9 +229,9 @@ lcommon = /NODEFAULTLIB /RELEASE /NOLOGO
 # declarations for use on Intel i386, i486, and Pentium systems
 !IF "$(MACHINE)" == "IX86"
 DLLENTRY = @12
-lflags   = $(lcommon) /MACHINE:$(MACHINE)
+lflags	 = $(lcommon) /MACHINE:$(MACHINE)
 !ELSE
-lflags   = $(lcommon) /MACHINE:$(MACHINE)
+lflags	 = $(lcommon) /MACHINE:$(MACHINE)
 !ENDIF
 
 conlflags = $(lflags) -subsystem:console -entry:mainCRTStartup
@@ -247,7 +247,7 @@ libcdll = msvcrt$(DBGX).lib oldnames.lib
 !ENDIF
 
 baselibs   = kernel32.lib $(optlibs) advapi32.lib user32.lib
-winlibs    = $(baselibs) gdi32.lib comdlg32.lib winspool.lib
+winlibs	   = $(baselibs) gdi32.lib comdlg32.lib winspool.lib
 
 guilibs	   = $(libc) $(winlibs)
 conlibs	   = $(libc) $(baselibs)
@@ -259,14 +259,8 @@ conlibsdll = $(libcdll) $(baselibs)
 ######################################################################
 
 !IF "$(NODEBUG)" == "1"
-!IF "$(MACHINE)" == "ALPHA"
-# MSVC on Alpha doesn't understand -Ot
-cdebug = -O2i -Gs -GD
-!ELSE
-#cdebug = -Oti -Gs -GD
 # This cranks the optimization level to maximize speed
 cdebug = -O2 -Gs -GD
-!ENDIF
 !ELSE
 cdebug = -Z7 -Od -WX
 !ENDIF
@@ -290,8 +284,8 @@ cflags = $(ccommon) -D_ALPHA_=1
 !ENDIF
 !ENDIF
 
-cvars      = -DWIN32 -D_WIN32
-cvarsmt    = $(cvars) -D_MT
+cvars	   = -DWIN32 -D_WIN32
+cvarsmt	   = $(cvars) -D_MT
 cvarsdll   = $(cvarsmt) -D_DLL
 
 !IF "$(NODEBUG)" == "1"
@@ -313,7 +307,8 @@ install:    install-binaries install-libraries
 test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 	copy $(WINDIR)\pkgIndex.tcl $(OUTDIR)
 	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLTEST) <<
+	$(TCLTEST) << "$(TCLREGDLL)"
+		load [lindex $$argv 0] registry
 		cd ../tests
 		source all
 <<
@@ -324,14 +319,14 @@ setup:
 
 $(DUMPEXTS): $(WINDIR)\winDumpExts.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(guilibs) -out:$@ \
 		$(TMPDIR)\winDumpExts.obj 
 
 $(TCLLIB): $(TCLDLL)
 
 $(TCLDLL): $(TCLOBJS) $(TMPDIR)\tcl.def $(TMPDIR)\tcl.res
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -def:$(TMPDIR)\tcl.def \
 		-out:$@ $(TMPDIR)\tcl.res $(guilibsdll) @<<
 $(TCLOBJS)
@@ -340,14 +335,14 @@ $(TCLOBJS)
 $(TCLPLUGINLIB): $(TCLPLUGINDLL)
 
 $(TCLPLUGINDLL): $(TCLOBJS) $(TMPDIR)\plugin.def $(TMPDIR)\tcl.res
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -def:$(TMPDIR)\plugin.def \
 		-out:$@ $(TMPDIR)\tcl.res $(guilibsdll) @<<
 $(TCLOBJS)
 <<
 
 $(TCLSH): $(TCLSHOBJS) $(TCLLIB) $(TMPDIR)\tclsh.res
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(TMPDIR)\tclsh.res -stack:2300000 \
 		-out:$@ $(conlibsdll) $(TCLLIB) $(TCLSHOBJS) 
 
@@ -357,14 +352,14 @@ $(TCLSHP): $(TCLSHOBJS) $(TCLPLUGINLIB) $(TMPDIR)\tclsh.res
 		-out:$@ $(conlibsdll) $(TCLPLUGINLIB) $(TCLSHOBJS) 
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLLIB) $(TMPDIR)\tclsh.res
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(TMPDIR)\tclsh.res -stack:2300000 \
 		 -out:$@ $(conlibsdll) $(TCLLIB) $(TCLTESTOBJS)
 
 $(TCL16DLL):  $(WINDIR)\tcl16.rc $(WINDIR)\tclWin16.c
 	if exist $(cc16) $(cc16) @<<
 $(DLL16_CFLAGS) -Fo$(TMPDIR)\ $(WINDIR)\tclWin16.c
-<<                         
+<<			   
 	@copy << $(TMPDIR)\tclWin16.def > nul
 LIBRARY $(@B);dll
 EXETYPE WINDOWS
@@ -386,17 +381,17 @@ $(TMPDIR)\tclWin16.def
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $(WINDIR)\stub16.c
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMPDIR)\stub16.obj $(guilibs)
 
 $(TCLREGDLL): $(TMPDIR)\tclWinReg.obj
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $(TMPDIR)\tclWinReg.obj \
 		$(conlibsdll) $(TCLLIB)
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
-	set LIB=$(TOOLS32)\lib
+	set LIB="$(TOOLS32)\lib"
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMPDIR)\cat.obj $(conlibs)
 
 $(CAT16): $(WINDIR)\cat.c
@@ -420,14 +415,22 @@ install-binaries: $(TCLSH)
 	@mkd $(LIB_INSTALL_DIR)
 	@echo installing $(TCLDLLNAME)
 	@copy $(TCLDLL) $(BIN_INSTALL_DIR)
+	@copy $(TCLLIB) $(LIB_INSTALL_DIR)
 	@echo installing $(TCLSH)
 	@copy $(TCLSH) $(BIN_INSTALL_DIR)
+	@echo installing $(TCLPIPEDLLNAME)
+	@copy $(TCLPIPEDLL) $(BIN_INSTALL_DIR)
+	@echo installing $(TCLREGDLLNAME)
+	@copy $(TCLREGDLL) $(LIB_INSTALL_DIR)
 
 install-libraries:
 	-@mkd $(LIB_INSTALL_DIR)
 	-@mkd $(INCLUDE_INSTALL_DIR)
 	-@mkd $(SCRIPT_INSTALL_DIR)
 	-@mkd $(SCRIPT_INSTALL_DIR)\http1.0
+	@copy << "$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
+package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]] registry"
+<<
 	-@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
 	-@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
 	-@mkd $(SCRIPT_INSTALL_DIR)\http2.0
@@ -455,8 +458,7 @@ $(TMPDIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
 		-Fo$(TMPDIR)\ $?
 
 $(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -DTCL_TEST \
-		-Fo$(TMPDIR)\testMain.obj $?
+	$(cc32) $(TCL_CFLAGS)-DTCL_TEST -Fo$(TMPDIR)\testMain.obj $?
 
 $(TMPDIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
@@ -468,7 +470,7 @@ $(TMPDIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
+	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 # Dedependency rules
 
@@ -509,15 +511,15 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 		$(TCL_DEFINES) $<
 
 clean:
-        -@del $(OUTDIR)\*.exp 
+	-@del $(OUTDIR)\*.exp 
 	-@del $(OUTDIR)\*.lib 
 	-@del $(OUTDIR)\*.dll 
 	-@del $(OUTDIR)\*.exe
 	-@del $(OUTDIR)\*.pdb
 	-@del $(TMPDIR)\*.pch
-        -@del $(TMPDIR)\*.obj
-        -@del $(TMPDIR)\*.res
-        -@del $(TMPDIR)\*.def
-        -@del $(TMPDIR)\*.exe
+	-@del $(TMPDIR)\*.obj
+	-@del $(TMPDIR)\*.res
+	-@del $(TMPDIR)\*.def
+	-@del $(TMPDIR)\*.exe
 	-@rmd $(OUTDIR)
 	-@rmd $(TMPDIR)
