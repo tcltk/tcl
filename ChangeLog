@@ -1,3 +1,9 @@
+2003-11-24  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix to [Bug 845778] - Infinite recursion 
+	on [cd] (Windows only bug), for which new tests have just been 
+	added.
+	
 2003-11-21  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/winFCmd.test (winFCmd-16.10,11): Merged new tests from
