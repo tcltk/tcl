@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.9 1999/03/24 04:25:17 stanton Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.10 1999/04/09 23:30:01 redman Exp $
  */
 
 #include "tclInt.h"
@@ -691,6 +691,7 @@ Tcl_WaitForEvent(timePtr)
          * on file events.
          */
 
+
         tsdPtr->nextPtr = waitingListPtr;
         if (waitingListPtr) {
             waitingListPtr->prevPtr = tsdPtr;
@@ -698,12 +699,16 @@ Tcl_WaitForEvent(timePtr)
         tsdPtr->prevPtr = 0;
         waitingListPtr = tsdPtr;
 	tsdPtr->onList = 1;
+	
+	Tcl_MutexUnlock(&notifierMutex);
 	write(triggerPipe, "", 1);
+	Tcl_MutexLock(&notifierMutex);
     }
 
     memset((VOID *) tsdPtr->readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
 
     if (!tsdPtr->eventReady) {
+
         Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
     }
     tsdPtr->eventReady = 0;
@@ -726,7 +731,10 @@ Tcl_WaitForEvent(timePtr)
         }
         tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	tsdPtr->onList = 0;
+        Tcl_MutexUnlock(&notifierMutex);
 	write(triggerPipe, "", 1);
+        Tcl_MutexLock(&notifierMutex);
+
     }
 
     

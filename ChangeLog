@@ -1,3 +1,11 @@
+1999-04-09    <redman@scriptics.com>
+
+	* unix/tclUnixNotfy.c: Fixed notifier deadlock situation when the
+	pipe used to talk back notifier thread is filled with data.  When
+	calling the write() function to feed data down that pipe, unlock
+	the notifierMutex to allow the notifier to wake up again.  Found
+	as a result of the focus.test for Tk hanging. [Bug: 1700]
+
 1999-04-06    <stanton@scriptics.com>
 
 	* tests/unixNotfy.test: Fixed hang in tests when built with thread
