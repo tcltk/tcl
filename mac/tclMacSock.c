@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.6 2000/02/10 08:41:46 jingham Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.7 2000/04/24 06:43:29 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -182,6 +182,13 @@ static void		TcpWatch _ANSI_ARGS_((ClientData instanceData,
 static int		WaitForSocketEvent _ANSI_ARGS_((TcpState *infoPtr,
 		            int mask, int *errorCodePtr));
 
+pascal void NotifyRoutine (
+    StreamPtr tcpStream,
+    unsigned short eventCode,
+    Ptr userDataPtr,
+    unsigned short terminReason,
+    struct ICMPReport *icmpMsg);
+    
 /*
  * This structure describes the channel type structure for TCP socket
  * based IO:
@@ -209,6 +216,7 @@ static Tcl_ChannelType tcpChannelType = {
 ResultUPP resultUPP = NULL;
 TCPIOCompletionUPP completeUPP = NULL;
 TCPIOCompletionUPP closeUPP = NULL;
+TCPNotifyUPP notifyUPP = NULL;
 
 /*
  * Built-in commands, and the procedures associated with them:
@@ -340,6 +348,7 @@ InitSockets()
 	resultUPP = NewResultProc(DNRCompletionRoutine);
 	completeUPP = NewTCPIOCompletionProc(IOCompletionRoutine);
 	closeUPP = NewTCPIOCompletionProc(CloseCompletionRoutine);
+	notifyUPP = NewTCPNotifyProc(NotifyRoutine);
     
 	/*
 	 * Install an ExitToShell patch.  We use this patch instead
@@ -721,10 +730,14 @@ TcpClose(
 	InitMacTCPParamBlock(&closePB, TCPClose);
     	closePB.tcpStream = tcpStream;
     	closePB.ioCompletion = NULL; 
+	closePB.csParam.close.ulpTimeoutValue = 60 /* seconds */;
+	closePB.csParam.close.ulpTimeoutAction = 1 /* 1:abort 0:report */;
+	closePB.csParam.close.validityFlags = timeoutValue | timeoutAction;
     	err = PBControlSync((ParmBlkPtr) &closePB);
     	if (err != noErr) {
     	    Debugger();
-            panic("error closing server socket");
+    	    goto afterRelease;
+            /* panic("error closing server socket"); */
     	}
 	statePtr->flags |= TCP_RELEASE;
 
@@ -744,8 +757,17 @@ TcpClose(
 	 * Free the buffer space used by the socket and the 
 	 * actual socket state data structure.
 	 */
-
-	ckfree((char *) statePtr->pb.csParam.create.rcvBuff);
+      afterRelease:
+        
+        /*
+         * Have to check whether the pointer is NULL, since we could get here
+         * on a failed socket open, and then the rcvBuff would never have been
+         * allocated.
+         */
+         
+        if (err == noErr) {
+	    ckfree((char *) statePtr->pb.csParam.create.rcvBuff);
+	}
 	FreeSocketInfo(statePtr);
 	return 0;
     }
@@ -763,17 +785,27 @@ TcpClose(
     	if (err == noErr) {
 	    statePtr->flags |= TCP_RELEASE;
 
-	    InitMacTCPParamBlock(&statePtr->pb, TCPRelease);
-	    statePtr->pb.tcpStream = statePtr->tcpStream;
-	    err = PBControlSync((ParmBlkPtr) &statePtr->pb);
+	    InitMacTCPParamBlock(&closePB, TCPRelease);
+    	    closePB.tcpStream = tcpStream;
+    	    closePB.ioCompletion = NULL; 
+
+	    err = PBControlSync((ParmBlkPtr) &closePB);
 	}
 
 	/*
 	 * Free the buffer space used by the socket and the 
-	 * actual socket state data structure.
+	 * actual socket state data structure.  However, if the
+	 * RELEASE returns an error, then the rcvBuff is usually
+	 * bad, so we can't release it.  I think this means we will
+	 * leak the buffer, so in the future, we may want to track the
+	 * buffers separately, and nuke them on our own (or just not
+	 * use MacTCP!).
 	 */
 
-	ckfree((char *) statePtr->pb.csParam.create.rcvBuff);
+        if (err == noErr) {
+	    ckfree((char *) closePB.csParam.create.rcvBuff);
+	}
+	
 	FreeSocketInfo(statePtr);
 	return err;
     }
@@ -1664,6 +1696,7 @@ CreateSocket(
     InitMacTCPParamBlock(&pb, TCPCreate);
     pb.csParam.create.rcvBuff = buffer;
     pb.csParam.create.rcvBuffLen = socketBufferSize;
+    pb.csParam.create.notifyProc = nil /* notifyUPP */;
     err = PBControlSync((ParmBlkPtr) &pb);
     if (err != noErr) {
         Tcl_SetErrno(0); /* TODO: set to ENOSR - maybe?*/
@@ -1688,6 +1721,10 @@ CreateSocket(
 	statePtr->pb.csParam.open.localPort = statePtr->port;
 	statePtr->pb.ioCompletion = completeUPP; 
 	statePtr->pb.csParam.open.userDataPtr = (Ptr) statePtr;
+	statePtr->pb.csParam.open.ulpTimeoutValue = 100;
+	statePtr->pb.csParam.open.ulpTimeoutAction 	= 1 /* 1:abort 0:report */;
+	statePtr->pb.csParam.open.commandTimeoutValue	= 0 /* infinity */;
+
 	statePtr->flags |= TCP_LISTENING;
 	err = PBControlAsync((ParmBlkPtr) &(statePtr->pb));
 
@@ -1717,12 +1754,18 @@ CreateSocket(
 	 */
 
 	InitMacTCPParamBlock(&statePtr->pb, TCPActiveOpen);
+	
 	statePtr->pb.tcpStream = tcpStream;
 	statePtr->pb.csParam.open.remoteHost = macAddr;
 	statePtr->pb.csParam.open.remotePort = port;
 	statePtr->pb.csParam.open.localHost = 0;
 	statePtr->pb.csParam.open.localPort = myport;
-	statePtr->pb.csParam.open.userDataPtr = (Ptr) statePtr;
+	statePtr->pb.csParam.open.userDataPtr = (Ptr) statePtr;	
+	statePtr->pb.csParam.open.validityFlags 	= timeoutValue | timeoutAction;
+	statePtr->pb.csParam.open.ulpTimeoutValue 	= 60 /* seconds */;
+	statePtr->pb.csParam.open.ulpTimeoutAction 	= 1 /* 1:abort 0:report */;
+	statePtr->pb.csParam.open.commandTimeoutValue   = 0;
+
 	statePtr->pb.ioCompletion = completeUPP;
 	if (async) {
 	    statePtr->flags |= TCP_ASYNC_CONNECT;
@@ -2010,23 +2053,48 @@ WaitForSocketEvent(
 	statusPB.csCode = TCPStatus;
 	err = PBControlSync((ParmBlkPtr) &statusPB);
 	if (err != noErr) {
-	    statePtr->checkMask |= (TCL_READABLE | TCL_WRITABLE);
-	    return 1;
+            /*
+             * I am not sure why it is right to return 1 - indicating success
+             * for synchronous sockets when an attempt to get status on the
+             * driver yeilds an error.   But it is CERTAINLY wrong for async
+             * sockect which have not yet connected.
+             */
+             
+	    if (statePtr->flags & TCP_ASYNC_CONNECT) {
+	        *errorCodePtr = EWOULDBLOCK;
+	        return 0;
+	    } else {
+	        statePtr->checkMask |= (TCL_READABLE | TCL_WRITABLE);
+	        return 1;
+	    }
 	}
 	statePtr->checkMask = 0;
-	if (statusPB.csParam.status.amtUnreadData > 0) {
-	    statePtr->checkMask |= TCL_READABLE;
-	}
-	if (!(statePtr->flags & TCP_WRITING)
-		&& (statusPB.csParam.status.sendWindow - 
-			statusPB.csParam.status.amtUnackedData) > 0) {
-	    statePtr->flags &= ~(TCP_ASYNC_CONNECT);
-	    statePtr->checkMask |= TCL_WRITABLE;
-	}
-	if (mask & statePtr->checkMask) {
-	    return 1;
-	}
-
+	
+	/*
+	 * The "6" below is the "connection being established" flag.  I couldn't
+	 * find a define for this in MacTCP.h, but that's what the programmer's
+	 * guide says.
+	 */
+	 
+	if ((statusPB.csParam.status.connectionState != 0)
+	        && (statusPB.csParam.status.connectionState != 4)
+	        && (statusPB.csParam.status.connectionState != 6)) {
+	    if (statusPB.csParam.status.amtUnreadData > 0) {
+	        statePtr->checkMask |= TCL_READABLE;
+	    }
+	    if (!(statePtr->flags & TCP_WRITING)
+		    && (statusPB.csParam.status.sendWindow - 
+			    statusPB.csParam.status.amtUnackedData) > 0) {
+	        statePtr->flags &= ~(TCP_ASYNC_CONNECT);
+	        statePtr->checkMask |= TCL_WRITABLE;
+	    }
+	    if (mask & statePtr->checkMask) {
+	        return 1;
+	    }
+        } else {
+            break;
+        }
+        
 	/*
 	 * Call the system to let other applications run while we
 	 * are waiting for this event to occur.
@@ -2658,4 +2726,41 @@ ClearZombieSockets()
 	    return;
 	}
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NotifyRoutine --
+ *
+ *	This routine does nothing currently, and is not being used.  But
+ *      it is useful if you want to experiment with what MacTCP thinks that
+ *      it is doing...
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+pascal void NotifyRoutine (
+    StreamPtr tcpStream,
+    unsigned short eventCode,
+    Ptr userDataPtr,
+    unsigned short terminReason,
+    struct ICMPReport *icmpMsg)
+{
+    StreamPtr localTcpStream;
+    unsigned short localEventCode;
+    unsigned short localTerminReason;
+    struct ICMPReport localIcmpMsg;
+
+    localTcpStream = tcpStream;
+    localEventCode = eventCode;
+    localTerminReason = terminReason;
+    localIcmpMsg = *icmpMsg;
+        
 }
