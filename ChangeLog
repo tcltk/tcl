@@ -9,6 +9,19 @@
 	* win/tclWinSock.c: Applied small patch to get thread-specific
 	data after initializing the socket driver.
 
+	* unix/tclUnixThrd.c: Applied patch to fix threads on Irix 6.5.
+	Patch from James Dennett.  [Bug: 2450]
+
+	* tests/info.test: Enable test for tclParse.c change (info
+	complete).
+	
+1999-07-30    <hobbs@scriptics.com>
+
+	* tclIO.c: added fix for Kupries' trf patch [Bug: 2386]
+
+	* tclParse.c: fixed bug in info complete regarding nested square
+	brackets [Bug: 2382, 2466]
+	
 1999-07-29    <redman@scriptics.com>
 
 	* win/tclWinChan.c: Allow tcl to open CON and NUL, even for std
@@ -1876,8 +1889,3 @@
 
 	* tclWin32Dll.c: removed TclpFinalize, cleanup of merges
 
-	* tclIO.c: added fix for Kupries' trf patch [Bug: 2386]
-
-	* tclParse.c: fixed bug in info complete regarding nested square
-	brackets [Bug: 2382, 2466]
-	

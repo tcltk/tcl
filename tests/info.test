@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.10 1999/07/23 23:40:29 redman Exp $
+# RCS: @(#) $Id: info.test,v 1.11 1999/07/31 01:55:51 redman Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -137,7 +137,7 @@ test info-5.3 {info complete option} {
 test info-5.4 {info complete option} {
     info complete {[a [b] }
 } 0
-test info-5.5 {info complete option} {knownBug} {
+test info-5.5 {info complete option} {
     info complete {[a [b]}
 } 0
 

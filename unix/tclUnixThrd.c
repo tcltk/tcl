@@ -77,7 +77,9 @@ TclpThreadCreate(idPtr, proc, clientData)
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
     if (pthread_create((pthread_t *)idPtr, &attr,
-	    (void * (*)())proc, (void *)clientData) < 0) {
+	    (void * (*)())proc, (void *)clientData) &&
+	    pthread_create((pthread_t *)idPtr, NULL,
+		    (void * (*)())proc, (void *)clientData)) {
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;
