@@ -23,7 +23,7 @@ if {$tcl_platform(platform) != "windows"} {
 test winFile-1.1 {TclpGetUserHome} {
     list [catch {glob ~nosuchuser} msg] $msg
 } {1 {user "nosuchuser" doesn't exist}}
-test winFile-1.2 {TclpGetUserHome} {nt} {
+test winFile-1.2 {TclpGetUserHome} {nt nonportable} {
     # The administrator account should always exist.
 
     catch {glob ~administrator}
@@ -47,5 +47,8 @@ test winFile-1.2 {TclpGetUserHome} {!nt} {
     close $f
     set x
 } {0}
-    
+test winFile-1.3 {TclpGetUserHome} {nt nonportable} {
+    catch {glob ~stanton@workgroup}
+} {0}
+
 return

@@ -154,11 +154,7 @@ bsCheck \ua	10
 bsCheck \uA	10
 bsCheck \340	224
 bsCheck \ua1	161
-
-# scan only works on iso8859-1 characters, so all others will return
-# the "?" character.  The expected result will change when scan is fixed.
-
-bsCheck \u4e21	63
+bsCheck \u4e21	20001
 
 test utf-11.1 {Tcl_UtfToUpper} {
     string toupper {}
