@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr.test,v 1.7 2003/02/06 22:44:58 mdejong Exp $
+# RCS: @(#) $Id: incr.test,v 1.8 2003/02/07 01:07:05 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -181,7 +181,6 @@ test incr-1.19 {TclCompileIncrCmd: increment given, but erroneous} {
 } {wrong # args: should be "set varName ?newValue?"
     while compiling
 "set"
-    (increment expression)
     while compiling
 "incr i [set]"}
 test incr-1.20 {TclCompileIncrCmd: increment given, in quotes} {
