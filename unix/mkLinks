@@ -565,6 +565,7 @@ if test -r Exit.3; then
     rm -f Tcl_FinalizeThread.3 Tcl_FinalizeThread.3.* 
     rm -f Tcl_CreateThreadExitHandler.3 Tcl_CreateThreadExitHandler.3.* 
     rm -f Tcl_DeleteThreadExitHandler.3 Tcl_DeleteThreadExitHandler.3.* 
+    rm -f Tcl_SetExitProc.3 Tcl_SetExitProc.3.* 
     ln $S Exit.3$Z Tcl_Exit.3$Z 
     ln $S Exit.3$Z Tcl_Finalize.3$Z 
     ln $S Exit.3$Z Tcl_CreateExitHandler.3$Z 
@@ -573,6 +574,7 @@ if test -r Exit.3; then
     ln $S Exit.3$Z Tcl_FinalizeThread.3$Z 
     ln $S Exit.3$Z Tcl_CreateThreadExitHandler.3$Z 
     ln $S Exit.3$Z Tcl_DeleteThreadExitHandler.3$Z 
+    ln $S Exit.3$Z Tcl_SetExitProc.3$Z 
 fi
 if test -r ExprLong.3; then
     rm -f ExprLong.3.*
