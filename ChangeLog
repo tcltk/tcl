@@ -1,5 +1,6 @@
 2004-03-29  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/msgcat.n:	Clarified message catalog file encodings. [Bug 811457]
 	* library/msgcat/msgcat.tcl:	Updated internals to make use of
 	* library/msgcat/pkgIndex.tcl:	[dict]s to store message catalog
 	data and to use [source -encoding utf-8] to access catalog files.

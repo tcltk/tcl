@@ -13,9 +13,9 @@
 .SH NAME
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
-\fBpackage require Tcl 8.2\fR
+\fBpackage require Tcl 8.5\fR
 .sp
-\fBpackage require msgcat 1.4\fR
+\fBpackage require msgcat 1.4.1\fR
 .sp
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .sp
@@ -104,7 +104,7 @@ the language specifications returned by \fB::msgcat::mcpreferences\fR
 (note that these are all lowercase), extended by the file
 extension ``.msg''.  Each matching file is 
 read in order, assuming a UTF-8 encoding.  The file contents are
-then evaluated as a Tcl script.  This means that non-Latin characters
+then evaluated as a Tcl script.  This means that Unicode characters
 may be present in the message file either directly in their UTF-8
 encoded form, or by use of the backslash-u quoting recognized by Tcl
 evaluation.  The number of message files which matched the specification
