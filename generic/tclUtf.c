@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.22 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.23 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -231,7 +231,7 @@ Tcl_UniCharToUtf(ch, str)
  *---------------------------------------------------------------------------
  */
  
-CONST char *
+char *
 Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
     CONST Tcl_UniChar *wString;	/* Unicode string to convert to UTF-8. */
     int numChars;		/* Length of Unicode string in Tcl_UniChars
@@ -393,7 +393,7 @@ Tcl_UtfToUniChar(str, chPtr)
  *---------------------------------------------------------------------------
  */
 
-CONST Tcl_UniChar *
+Tcl_UniChar *
 Tcl_UtfToUniCharDString(string, length, dsPtr)
     CONST char *string;		/* UTF-8 string to convert to Unicode. */
     int length;			/* Length of UTF-8 string in bytes, or -1

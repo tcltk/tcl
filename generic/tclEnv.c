@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.11 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.12 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -84,8 +84,7 @@ TclSetupEnv(interp)
 				 * managed. */
 {
     Tcl_DString envString;
-    CONST char *p1;
-    char *p2;
+    char *p1, *p2;
     int i;
 
     /*
@@ -134,8 +133,7 @@ TclSetupEnv(interp)
 	    }
 	    p2++;
 	    p2[-1] = '\0';
-	    Tcl_SetVar2(interp, "env", Tcl_DStringValue(&envString), p2,
-		   TCL_GLOBAL_ONLY);	
+	    Tcl_SetVar2(interp, "env", p1, p2, TCL_GLOBAL_ONLY);	
 	    Tcl_DStringFree(&envString);
 	}
 	Tcl_MutexUnlock(&envMutex);

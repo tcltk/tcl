@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.80 2002/01/31 04:39:43 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.81 2002/02/08 02:52:54 dgp Exp $
 
 library tcl
 
@@ -431,11 +431,11 @@ declare 116 generic {
     void Tcl_DoWhenIdle(Tcl_IdleProc *proc, ClientData clientData)
 }
 declare 117 generic {
-    CONST char * Tcl_DStringAppend(Tcl_DString *dsPtr, CONST char *str, \
+    char * Tcl_DStringAppend(Tcl_DString *dsPtr, CONST char *str, \
 	    int length)
 }
 declare 118 generic {
-    CONST char * Tcl_DStringAppendElement(Tcl_DString *dsPtr, \
+    char * Tcl_DStringAppendElement(Tcl_DString *dsPtr, \
 	    CONST char *string)
 }
 declare 119 generic {
@@ -663,7 +663,7 @@ declare 185 generic {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 generic {
-    CONST char * Tcl_JoinPath(int argc, CONST84 char * CONST *argv,
+    char * Tcl_JoinPath(int argc, CONST84 char * CONST *argv,
 	    Tcl_DString *resultPtr)
 }
 declare 187 generic {
@@ -878,7 +878,7 @@ declare 248 generic {
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 249 generic {
-    CONST char * Tcl_TranslateFileName(Tcl_Interp *interp, CONST char *name, \
+    char * Tcl_TranslateFileName(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_DString *bufferPtr)
 }
 declare 250 generic {
@@ -1062,7 +1062,7 @@ declare 295 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 generic {
-    CONST char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, \
+    char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, \
 	    CONST char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 297 generic {
@@ -1184,7 +1184,7 @@ declare 332 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 generic {
-    CONST char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, \
+    char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, \
 	    CONST char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 334 generic {
@@ -1249,11 +1249,11 @@ declare 353 generic {
     unsigned long n)
 }
 declare 354 generic {
-    CONST char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, \
+    char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, \
 	    int numChars, Tcl_DString *dsPtr)
 }
 declare 355 generic {
-    CONST Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, \
+    Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, \
 	    int length, Tcl_DString *dsPtr)
 }
 declare 356 generic {
@@ -1294,7 +1294,7 @@ declare 364 generic {
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
 # Tcl_FSAccess and Tcl_FSStat
 declare 365 generic {
-    CONST char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 366 generic {
    int Tcl_Chdir(CONST char *dirName)
@@ -1713,11 +1713,11 @@ interface tclPlat
 # Added in Tcl 8.1
 
 declare 0 win {
-    CONST TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, \
+    TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, \
 	    Tcl_DString *dsPtr)
 }
 declare 1 win {
-    CONST char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, \
+    char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, \
 	    Tcl_DString *dsPtr)
 }
 

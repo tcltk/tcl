@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.58 2002/02/07 00:56:02 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.59 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -775,7 +775,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 * On zero matches, just ignore the offset, since it shouldn't
 	 * matter to us in this case, and the user may have skewed it.
 	 */
-	//Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);
+	/*Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);*/
 	resultPtr = objv[1];
 	Tcl_IncrRefCount(resultPtr);
     } else if (offset < wlen) {

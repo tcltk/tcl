@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.8 2002/01/27 11:09:54 das Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.9 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include <AppleEvents.h>
@@ -401,8 +401,7 @@ TclpInitLibraryPath(argv0)
 	    argv[1] = "Tool Command Language";	    
 	    Tcl_DStringInit(&libPath);
 	    Tcl_DStringAppend(&libPath, "tcl", -1);
-	    Tcl_DStringAppend(&libPath, TCL_VERSION, -1);
-	    argv[2] = Tcl_DStringValue(&libPath);
+	    argv[2] = Tcl_DStringAppend(&libPath, TCL_VERSION, -1);
 	    Tcl_DStringInit(&path);
 	    str = Tcl_JoinPath(3, argv, &path);
         objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&path));

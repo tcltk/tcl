@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.28 2002/01/25 20:40:56 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.29 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1411,7 +1411,7 @@ Tcl_DStringInit(dsPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_DStringAppend(dsPtr, string, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     CONST char *string;		/* String to append.  If length is -1 then
@@ -1482,7 +1482,7 @@ Tcl_DStringAppend(dsPtr, string, length)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_DStringAppendElement(dsPtr, string)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     CONST char *string;		/* String to append.  Must be
