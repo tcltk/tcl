@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.22 1999/01/06 21:08:51 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.23 1999/02/02 23:01:15 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -298,7 +298,8 @@ install:    install-binaries install-libraries
 test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 	copy $(WINDIR)\pkgIndex.tcl $(OUTDIR)
 	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLTEST) <<
+	$(TCLTEST) << "$(TCLREGDLL)"
+		load [lindex $$argv 0] registry
 		cd ../tests
 		source all
 <<
