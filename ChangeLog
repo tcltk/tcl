@@ -1,3 +1,10 @@
+2001-04-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:
+	* tests/init.test:  Modified processing of $::errorInfo by
+	[unknown] when the auto-loaded command throws an error to better
+	cover the tracks of auto-loading.  [Bug 219280, Patch 403551]
+
 2001-04-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/read.n: Added section on "USE WITH SERIAL PORTS" to resolve

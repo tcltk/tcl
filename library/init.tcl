@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.44 2000/12/11 04:17:38 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.45 2001/04/06 17:57:31 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -203,14 +203,48 @@ proc unknown args {
 	    set code [catch {uplevel 1 $args} msg]
 	    if {$code ==  1} {
 		#
-		# Strip the last five lines off the error stack (they're
-		# from the "uplevel" command).
+		# Compute stack trace contribution from the [uplevel].
+		# Note the dependence on how Tcl_AddErrorInfo, etc. 
+		# construct the stack trace.
 		#
-
-		set new [split $errorInfo \n]
-		set new [join [lrange $new 0 [expr {[llength $new] - 6}]] \n]
+		set cinfo $args
+		if {[string length $cinfo] > 150} {
+		    set cinfo "[string range $cinfo 0 149]..."
+		}
+		append cinfo "\"\n    (\"uplevel\" body line 1)"
+		append cinfo "\n    invoked from within"
+		append cinfo "\n\"uplevel 1 \$args\""
+		#
+		# Try each possible form of the stack trace
+		# and trim the extra contribution from the matching case
+		#
+		set expect "$msg\n    while executing\n\"$cinfo"
+		if {$errorInfo eq $expect} {
+		    #
+		    # The stack has only the eval from the expanded command
+		    # Do not generate any stack trace here.
+		    #
+		    return -code error -errorcode $errorCode $msg
+		}
+		#
+		# Stack trace is nested, trim off just the contribution
+		# from the extra "eval" of $args due to the "catch" above.
+		#
+		set expect "\n    invoked from within\n\"$cinfo"
+		set exlen [string length $expect]
+		set eilen [string length $errorInfo]
+		set i [expr {$eilen - $exlen - 1}]
+		set einfo [string range $errorInfo 0 $i]
+		#
+		# For now verify that $errorInfo consists of what we are about
+		# to return plus what we expected to trim off.
+		#
+		if {$errorInfo ne "$einfo$expect"} {
+		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
+			[list CORE UNKNOWN BADTRACE $expect $errorInfo"]
+		}
 		return -code error -errorcode $errorCode \
-			-errorinfo $new $msg
+			-errorinfo $einfo $msg
 	    } else {
 		return -code $code $msg
 	    }
