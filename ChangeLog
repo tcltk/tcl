@@ -1,3 +1,7 @@
+2003-08-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/catch.n:	Updated [catch] docs to cover new TIP 90 features.
+	
 2003-08-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdAH.c:	Corrected bug in TIP 90 implementation 
