@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.1.2.4 1998/12/01 05:01:03 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.1.2.5 1999/04/06 20:59:58 rjohnson Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -215,6 +215,16 @@ DoRenameFile(src, dst)
 	errno = EEXIST;
     }
 
+    /*
+     * IRIX returns EIO when you attept to move a directory into
+     * itself.  We just map EIO to EINVAL get the right message on SGI.
+     * Most platforms don't return EIO except in really strange cases.
+     */
+    
+    if (errno == EIO) {
+	errno = EINVAL;
+    }
+    
 #ifndef NO_REALPATH
     /*
      * SunOS 4.1.4 reports overwriting a non-empty directory with a
