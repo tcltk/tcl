@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.12 2002/08/05 03:24:40 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.13 2003/02/16 01:36:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -398,7 +398,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    
         case TCL_TOKEN_COMMAND:
 	    code = TclCompileScript(interp, tokenPtr->start+1,
-		    tokenPtr->size-2, /*nested*/ 1, envPtr);
+		    tokenPtr->size-2, /*nested*/ 0, envPtr);
 	    if (code != TCL_OK) {
 		goto done;
 	    }

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.12 2002/08/08 15:28:55 msofer Exp $
+# RCS: @(#) $Id: subst.test,v 1.13 2003/02/16 01:36:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -156,8 +156,8 @@ test subst-8.5 {return in a subst} {
     subst {foo [return {]}; bogus code] bar}
 } {foo ] bar}
 test subst-8.6 {return in a subst} {
-    subst {foo [return {x}; bogus code bar}
-} {foo x}
+    list [catch {subst {foo [return {x}; bogus code bar}} msg] $msg
+} {1 {missing close-bracket}}
 test subst-8.7 {return in a subst, parse error} {
     subst {foo [return {x} ; set a {}" ; stuff] bar}
 } {foo xset a {}" ; stuff] bar}

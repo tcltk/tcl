@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.9 2002/12/11 20:30:16 dgp Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.10 2003/02/16 01:36:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -491,6 +491,10 @@ test parseExpr-15.34 {ParsePrimaryExpr procedure, single equal-specific message}
 test parseExpr-15.35 {ParsePrimaryExpr procedure, error in parenthesized subexpr} {
     list [catch {testexprparser {(: 123 : 456)} -1} msg] $msg
 } {1 {syntax error in expression "(: 123 : 456)": unexpected ternary 'else' separator}}
+test parseExpr-15.36 {ParsePrimaryExpr procedure, missing close-bracket} {
+    # Test for Bug 681841
+    list [catch {testexprparser {[set a [format bc]} -1} msg] $msg
+} {1 {missing close-bracket}}
 
 test parseExpr-16.1 {GetLexeme procedure, whitespace before lexeme} {
     testexprparser {   123} -1

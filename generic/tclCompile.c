@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.41 2002/09/24 12:53:33 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.42 2003/02/16 01:36:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -798,7 +798,9 @@ TclFreeCompileEnv(envPtr)
 
 int
 TclCompileScript(interp, script, numBytes, nested, envPtr)
-    Tcl_Interp *interp;		/* Used for error and status reporting. */
+    Tcl_Interp *interp;		/* Used for error and status reporting.
+				 * Also serves as context for finding and
+				 * compiling commands.  May not be NULL. */
     CONST char *script;		/* The source script to compile. */
     int numBytes;		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
@@ -824,7 +826,6 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     Tcl_Token *tokenPtr;
     int bytesLeft, isFirstCmd, gotParse, wordIdx, currCmdIndex;
     int commandLength, objIndex, code;
-    char prev;
     Tcl_DString ds;
 
     Tcl_DStringInit(&ds);
@@ -843,12 +844,56 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     p = script;
     bytesLeft = numBytes;
     gotParse = 0;
-    while (bytesLeft > 0) {
+    do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, nested, &parse) != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
 	gotParse = 1;
+	if (nested) {
+	    /*
+	     * This is an unusual situation where the caller has passed us
+	     * a non-zero value for "nested".  How unusual?  Well, this
+	     * procedure, TclCompileScript, is internal to Tcl, so all
+	     * callers should be within Tcl itself.  All but one of those
+	     * callers explicitly pass in (nested = 0).  The exceptional
+	     * caller is TclSetByteCodeFromAny, which will pass in
+	     * (nested = 1) if and only if the flag TCL_BRACKET_TERM
+	     * is set in the evalFlags field of interp.
+	     *
+	     * It appears that the TCL_BRACKET_TERM flag is only ever set
+	     * by Tcl_SubstObj, and it immediately calls Tcl_EvalEx
+	     * which clears the flag before passing the interp along.
+	     * So, I don't think this procedure, TclCompileScript, is
+	     * **ever** called with (nested != 0). 
+	     * (The testsuite indeed doesn't exercise this code. MS)
+	     *
+	     * This means that the branches in this procedure that are
+	     * only active when (nested != 0) are probably never exercised.
+	     * This means that any bugs in them go unnoticed, and any bug
+	     * fixes in them have a semi-theoretical nature.
+	     *
+	     * All that said, the spec for this procedure says it should
+	     * handle the (nested != 0) case, so here's an attempt to fix
+	     * bugs (Tcl Bug 681841) in that case.  Just in case some
+	     * callers eventually come along and expect it to work...
+	     */
+
+	    if (parse.term == (script + numBytes)) {
+		/* 
+		 * The (nested != 0) case is meant to indicate that the
+		 * caller found an open bracket ([) and asked us to
+		 * parse and compile Tcl commands up to the matching
+		 * close bracket (]).  We have to detect and handle
+		 * the case where the close bracket is missing.
+		 */
+
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("missing close-bracket", -1));
+		code = TCL_ERROR;
+		goto error;
+	    }
+	}
 	if (parse.numWords > 0) {
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -870,15 +915,10 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	     */
 
 	    commandLength = parse.commandSize;
-	    prev = '\0';
-	    if (commandLength > 0) {
-		prev = parse.commandStart[commandLength-1];
-	    }
-	    if (((parse.commandStart+commandLength) != (script+numBytes))
-	            || ((prev=='\n') || (nested && (prev==']')))) {
+	    if (parse.term == parse.commandStart + commandLength - 1) {
 		/*
-		 * The command didn't end at the end of the script (i.e.  it
-		 * ended at a terminator character such as ";".  Reduce the
+		 * The command terminator character (such as ; or ]) is
+		 * the last character in the parsed command.  Reduce the
 		 * length by one so that the trace message doesn't include
 		 * the terminator character.
 		 */
@@ -963,7 +1003,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 				 * claimed to be in (*envPtr).
 				 */
 				envPtr->numCommands--;
-				goto error;
+				goto log;
 			    }
 			}
 
@@ -993,7 +1033,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 		    code = TclCompileTokens(interp, tokenPtr+1,
 			    tokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
-			goto error;
+			goto log;
 		    }
 		}
 	    }
@@ -1031,16 +1071,17 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	p = next;
 	Tcl_FreeParse(&parse);
 	gotParse = 0;
-	if (nested && (p[-1] == ']')) {
+	if (nested && (*parse.term == ']')) {
 	    /*
 	     * We get here in the special case where TCL_BRACKET_TERM was
-	     * set in the interpreter and we reached a close bracket in the
-	     * script. Stop compilation.
+	     * set in the interpreter and the latest parsed command was
+	     * terminated by the matching close-bracket we were looking for.
+	     * Stop compilation.
 	     */
 	    
 	    break;
 	}
-    }
+    } while (bytesLeft > 0);
 
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
@@ -1052,7 +1093,13 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	        envPtr);
     }
     
-    if ((nested != 0) && (p > script) && (p[-1] == ']')) {
+    if (nested) {
+	/*
+	 * When (nested != 0) back up 1 character to have 
+	 * iPtr->termOffset indicate the offset to the matching
+	 * close-bracket.
+	 */
+
 	iPtr->termOffset = (p - 1) - script;
     } else {
 	iPtr->termOffset = (p - script);
@@ -1069,21 +1116,18 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
      */
 
     commandLength = parse.commandSize;
-    prev = '\0';
-    if (commandLength > 0) {
-	prev = parse.commandStart[commandLength-1];
-    }
-    if (((parse.commandStart+commandLength) != (script+numBytes))
-	    || ((prev == '\n') || (nested && (prev == ']')))) {
+    if (parse.term == parse.commandStart + commandLength - 1) {
 	/*
-	 * The command where the error occurred didn't end at the end
-	 * of the script (i.e. it ended at a terminator character such
-	 * as ";".  Reduce the length by one so that the error message
-	 * doesn't include the terminator character.
+	 * The terminator character (such as ; or ]) of the command where
+	 * the error occurred is the last character in the parsed command.
+	 * Reduce the length by one so that the error message doesn't
+	 * include the terminator character.
 	 */
 
 	commandLength -= 1;
     }
+
+    log:
     LogCompilationInfo(interp, script, parse.commandStart, commandLength);
     if (gotParse) {
 	Tcl_FreeParse(&parse);
@@ -1163,7 +1207,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		}
 		
 		code = TclCompileScript(interp, tokenPtr->start+1,
-			tokenPtr->size-2, /*nested*/ 1,	envPtr);
+			tokenPtr->size-2, /*nested*/ 0,	envPtr);
 		if (code != TCL_OK) {
 		    goto error;
 		}
