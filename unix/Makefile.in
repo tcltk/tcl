@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.54 2000/01/16 05:32:32 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.55 2000/01/19 00:34:37 wart Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.54 2000/01/16 05:32:32 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.55 2000/01/19 00:34:37 wart Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -600,7 +600,7 @@ install-doc: doc
 		    $$i > $(MAN3_INSTALL_DIR)/$$i; \
 	    chmod 444 $(MAN3_INSTALL_DIR)/$$i; \
 	    done;
-	@echo "Cross-linking top-level (.3) docs";
+	@echo "Cross-linking C API (.3) docs";
 	@$(UNIX_DIR)/mkLinks $(MAN3_INSTALL_DIR)
 	@echo "Installing command (.n) docs";
 	@cd $(TOP_DIR)/doc; for i in *.n; \
