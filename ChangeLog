@@ -1,5 +1,8 @@
 2005-01-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* unix/tclUnixInit.c (localeTable): Add encoding mappings for some
+	Chinese locales. [Bug 1084595]
+
 	* doc/lsearch.n: Convert to other form of emacs mode control
 	comment to prevent problems with old versions of man. [Bug 1085127]
 
