@@ -1,3 +1,17 @@
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclIO.c (Tcl_SetChannelOption):
+	Invoke the Tcl_SetChannelBufferSize method
+	as a result of changing the -buffersize
+	option to fconfigure. The previous
+	implementation used some inlined code that
+	reset the buffer size to the default size
+	instead of ignoring the request as
+	implemented in Tcl_SetChannelBufferSize.
+	* tests/io.test: Update test case so that
+	it actually checks the implementation of
+	Tcl_SetChannelBufferSize.
+
 2003-03-05  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/rules.vc: updated default tcl version to 8.5.

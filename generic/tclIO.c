@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61 2003/02/19 01:04:57 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.62 2003/03/06 09:16:19 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -6393,10 +6393,8 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
 	return TCL_OK;
     } else if ((len > 7) && (optionName[1] == 'b') &&
             (strncmp(optionName, "-buffersize", len) == 0)) {
-        statePtr->bufSize = atoi(newValue);	/* INTL: "C", UTF safe. */
-        if ((statePtr->bufSize < 10) || (statePtr->bufSize > (1024 * 1024))) {
-            statePtr->bufSize = CHANNELBUFFER_DEFAULT_SIZE;
-        }
+        Tcl_SetChannelBufferSize(chan,
+                atoi(newValue));  /* INTL: "C", UTF safe. */
     } else if ((len > 2) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-encoding", len) == 0)) {
 	Tcl_Encoding encoding;
