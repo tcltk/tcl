@@ -1,3 +1,8 @@
+2004-04-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure:    define TCL_LIB_FLAG, TCL_BUILD_LIB_SPEC,
+	* win/configure.in: TCL_LIB_SPEC, TCL_PACKAGE_PATH in tclConfig.sh.
+
 2004-04-06  Don Porter  <dgp@users.sourceforge.net>
 
 	Patch 922727 committed.  Implements three changes:
@@ -57,10 +62,10 @@
 
 2004-04-01  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclIOUtil.c:   Fix to privately reported vfs bug with
-        'glob -type d -dir . *' across a vfs boundary.  No tests for
-        this are currently possible without effectively moving tclvfs
-        into Tcl's test suite.
+	* generic/tclIOUtil.c:	 Fix to privately reported vfs bug with
+	'glob -type d -dir . *' across a vfs boundary.	No tests for
+	this are currently possible without effectively moving tclvfs
+	into Tcl's test suite.
 
 2004-03-31  Don Porter  <dgp@users.sourceforge.net>
 
@@ -104,20 +109,20 @@
 
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclFileName.c:  Fix to Windows glob where the pattern is
-        * generic/tclIOUtil.c:    a volume relative path or a network
-        * tests/fileName.test:    share [Bug 898238]. On windows 'glob'
-        * tests/fileSystem.test:  will now return the results of 
-        'glob /foo/bar' and 'glob \\foo\\bar' as 'C:/foo/bar', i.e. a 
-        correct absolute path (rather than a volume relative path).
+	* generic/tclFileName.c:  Fix to Windows glob where the pattern is
+	* generic/tclIOUtil.c:	  a volume relative path or a network
+	* tests/fileName.test:	  share [Bug 898238]. On windows 'glob'
+	* tests/fileSystem.test:  will now return the results of 
+	'glob /foo/bar' and 'glob \\foo\\bar' as 'C:/foo/bar', i.e. a 
+	correct absolute path (rather than a volume relative path).
 
-        Note that the test suite does not test commands like 
-        'glob //Machine/Shared/*' (on a network share).  
+	Note that the test suite does not test commands like 
+	'glob //Machine/Shared/*' (on a network share).	 
 
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclPathObj.c:   Fix to filename bugs recently
-        * tests/fileName.test:    introduced [Bug 918320].
+	* generic/tclPathObj.c:	  Fix to filename bugs recently
+	* tests/fileName.test:	  introduced [Bug 918320].
 
 2004-03-29  Don Porter  <dgp@users.sourceforge.net>
 
@@ -151,9 +156,9 @@
 
 2004-03-26  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclPathObj.c:   Fix to Windows-only volume relative
-        * tests/fileSystem.test:  path normalization. [Bug 923586].
-        Also fixed another volume relative bug found while testing.
+	* generic/tclPathObj.c:	  Fix to Windows-only volume relative
+	* tests/fileSystem.test:  path normalization. [Bug 923586].
+	Also fixed another volume relative bug found while testing.
 
 2004-03-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
