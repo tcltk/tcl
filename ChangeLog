@@ -1,5 +1,8 @@
 2001-08-31  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* doc/StringObj.3: added words of warning to use Tcl_ResetResult
+	with the Tcl_Append* functions.
+
 	* tests/compile.test: added compile-11.* interp result checks
 	* generic/tclUtil.c (TclGetIntForIndex): added Tcl_ResetResult
 	before Tcl_AppendStringsToObj to prevent shared object crash when
