@@ -40,6 +40,7 @@
 			projectDirPath = "";
 			targets = (
 				F50DC359017027D801DC9062,
+				F548F8DC0313D1EA016F146B,
 				00E2F84B016E8A830ACA28DC,
 				00E2F84C016E8B780ACA28DC,
 				00E2F84E016E92110ACA28DC,
@@ -179,15 +180,15 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Tcl Library 8.4b2</string>
+	<string>Tcl Library 8.4b3</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>libtcl8.4b2</string>
+	<string>libtcl8.4b3</string>
 	<key>CFBundleSignature</key>
 	<string>Tcl </string>
 	<key>CFBundleVersion</key>
-	<string>8.4b2</string>
+	<string>8.4b3</string>
 </dict>
 </plist>
 ";
@@ -438,6 +439,34 @@
 			files = (
 			);
 			isa = PBXSourcesBuildPhase;
+		};
+		F548F8DC0313D1EA016F146B = {
+			buildPhases = (
+			);
+			buildSettings = {
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "Tcl Build";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			dependencies = (
+				F548F8DD0313D1F0016F146B,
+				F548F8DE0313D1F2016F146B,
+			);
+			isa = PBXAggregateTarget;
+			name = "Tcl Build";
+			productName = "Tcl Build";
+			shouldUseHeadermap = 0;
+		};
+		F548F8DD0313D1F0016F146B = {
+			isa = PBXTargetDependency;
+			target = 00E2F84C016E8B780ACA28DC;
+		};
+		F548F8DE0313D1F2016F146B = {
+			isa = PBXTargetDependency;
+			target = 00E2F84E016E92110ACA28DC;
 		};
 		F59AE5E3017AC67A01DC9062 = {
 			buildActionMask = 8;
