@@ -1,3 +1,9 @@
+1999-05-14    <stanton@scriptics.com>
+
+	* generic/tclCmdAH.c (Tcl_ForObjCmd): Fixed crash caused by
+	failure to reset the result before evaluating the test
+	expression. 
+
 1999-05-14    <redman@scriptics.com>
 
 	* generic/tclDate.c: Applied patch to fix 100-year and 400-year
