@@ -1,3 +1,18 @@
+2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: modified to do variable lookup explicitly,
+	and then either inlining the variable access or else calling the new
+	TclPtr(Set|Get|Incr)Var functions in tclVar.c
+	* generic/tclInt.h: declare some functions previously local to
+	tclVar.c for usage by TEBC.
+	* generic/tclVar.c: removed local declarations; moved all special
+	accessor functions for indexed variables to the end of the file -
+	they are unused and ready for removal, but left there for the time
+	being as they are in the internal stubs table.
+
+	** WARNING FOR BYTECODE MAINTAINERS **
+	TCL_COMPILE_DEBUG is currently not functional; will be fixed ASAP.
+	
 2002-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in:

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.77 2002/07/16 01:12:50 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.78 2002/07/17 10:36:22 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -174,14 +174,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 #define NEXT_INST_V(pcAdjustment, nCleanup, result) \
     pc += (pcAdjustment);\
+    cleanup = (nCleanup);\
     if (result) {\
 	if ((result) > 0) {\
 	    Tcl_IncrRefCount(objResultPtr);\
 	}\
-	cleanup = (nCleanup);\
 	goto cleanupV_pushObjResultPtr;\
     } else {\
-        panic("ERROR: bad usage of macro NEXT_INST_V");\
+	goto cleanupV;\
     }
 
 
@@ -1054,15 +1054,19 @@ TclExecuteByteCode(interp, codePtr)
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
-    Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr;
+    Tcl_Obj *valuePtr, *value2Ptr, *objPtr;
     char *bytes;
     int length;
     long i = 0;			/* Init. avoids compiler warning. */
 #ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt w;
 #endif
-    int cleanup;
+    register int cleanup;
     Tcl_Obj *objResultPtr;
+//
+    char *part1, *part2;
+    Var *varPtr, *arrayPtr;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
 
     /*
      * This procedure uses a stack to hold information about catch commands.
@@ -1127,6 +1131,9 @@ TclExecuteByteCode(interp, codePtr)
     
     cleanupV_pushObjResultPtr:
     switch (cleanup) {
+        case 0:
+	    PUSH_OBJECT(objResultPtr);
+	    goto cleanup0;
         default:
 	    cleanup -= 2;
 	    while (cleanup--) {
@@ -1145,13 +1152,24 @@ TclExecuteByteCode(interp, codePtr)
     stackPtr[stackTop] = objResultPtr;
     goto cleanup0;
     
-    cleanup2:
-    valuePtr = POP_OBJECT();
-    TclDecrRefCount(valuePtr);
-
-    cleanup1:
-    valuePtr = POP_OBJECT();
-    TclDecrRefCount(valuePtr);
+    cleanupV:
+    switch (cleanup) {
+        default:
+	    cleanup -= 2;
+	    while (cleanup--) {
+		valuePtr = POP_OBJECT();
+		TclDecrRefCount(valuePtr);
+	    }
+        case 2: 
+        cleanup2:
+	    valuePtr = POP_OBJECT();
+	    TclDecrRefCount(valuePtr);
+        case 1: 
+        cleanup1:
+	    valuePtr = POP_OBJECT();
+	    TclDecrRefCount(valuePtr);
+        case 0:
+    }
 
     cleanup0:
     
@@ -1420,66 +1438,93 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)), valuePtr);
 	NEXT_INST_F(1, 1, -1); /* already has right refct */
 
+    /*
+     * ---------------------------------------------------------
+     *     Start of INST_LOAD instructions.
+     *
+     * WARNING: more 'goto' here than your doctor recommended!
+     * The different instructions set the value of some variables
+     * and then jump to somme common execution code.
+     */
+
     case INST_LOAD_SCALAR1:
 	opnd = TclGetUInt1AtPtr(pc+1);
-	DECACHE_STACK_INFO();
-	objResultPtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u => ERROR: ", opnd),
-	        Tcl_GetObjResult(interp));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
+	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
 	}
-	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
-	NEXT_INST_F(2, 0, 1);
+	if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
+	        && (varPtr->tracePtr == NULL)) {
+	    /*
+	     * No errors, no traces: just get the value.
+	     */
+	    objResultPtr = varPtr->value.objPtr;	    
+	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	    NEXT_INST_F(2, 0, 1);
+	}
+	pcAdjustment = 2;
+	cleanup = 0;
+	arrayPtr = NULL;
+	part2 = NULL;
+	goto doCallPtrGetVar;
 
     case INST_LOAD_SCALAR4:
 	opnd = TclGetUInt4AtPtr(pc+1);
-	DECACHE_STACK_INFO();
-	objResultPtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u => ERROR: ", opnd), Tcl_GetObjResult(interp));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
+	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
 	}
-	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
-	NEXT_INST_F(5, 0, 1);
+	if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
+	        && (varPtr->tracePtr == NULL)) {
+	    /*
+	     * No errors, no traces: just get the value.
+	     */
+	    objResultPtr = varPtr->value.objPtr;
+	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	    NEXT_INST_F(5, 0, 1);
+	}
+	pcAdjustment = 5;
+	cleanup = 0;
+	arrayPtr = NULL;
+	part2 = NULL;
+	goto doCallPtrGetVar;
 
     case INST_LOAD_ARRAY_STK:
-	elemPtr = stackPtr[stackTop];  /* element name */
+	cleanup = 2;
+	part2 = Tcl_GetString(stackPtr[stackTop]);  /* element name */
 	objPtr = stackPtr[stackTop-1]; /* array name */
 	goto doLoadStk;
 
     case INST_LOAD_STK:
     case INST_LOAD_SCALAR_STK:
-	elemPtr = NULL;
+	cleanup = 1;
+	part2 = NULL;
 	objPtr = stackPtr[stackTop]; /* variable name */
 
     doLoadStk:
-	DECACHE_STACK_INFO();
-	objResultPtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr, TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    if (elemPtr != NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" => ERROR: ",
-		        O2S(objPtr), O2S(elemPtr)), Tcl_GetObjResult(interp));		
-	    } else {
-		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
-		        Tcl_GetObjResult(interp));
-	    }
+	part1 = TclGetString(objPtr);
+	varPtr = TclObjLookupVar(interp, objPtr, part2, 
+	         TCL_LEAVE_ERR_MSG, "read",
+                 /*createPart1*/ 0,
+	         /*createPart2*/ 1, &arrayPtr);
+	if (varPtr == NULL) {
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	if (elemPtr != NULL) {
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" => ",
-	            O2S(objPtr), O2S(elemPtr)), objResultPtr);
-	    NEXT_INST_F(1, 2, 1);
-	} else {
-	    TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)), objResultPtr);
-	    NEXT_INST_F(1, 1, 1);
+	if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
+	        && (varPtr->tracePtr == NULL)
+	        && ((arrayPtr == NULL) 
+		        || (arrayPtr->tracePtr == NULL))) {
+	    /*
+	     * No errors, no traces: just get the value.
+	     */
+	    objResultPtr = varPtr->value.objPtr;
+	    NEXT_INST_V(1, cleanup, 1);
 	}
+	pcAdjustment = 1;
+	goto doCallPtrGetVar;
 
     case INST_LOAD_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -1489,147 +1534,115 @@ TclExecuteByteCode(interp, codePtr)
     case INST_LOAD_ARRAY1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	pcAdjustment = 2;
-	    
+    
     doLoadArray:
-	elemPtr = stackPtr[stackTop];
-
-	DECACHE_STACK_INFO();
-	objResultPtr = TclGetElementOfIndexedArray(interp, opnd,
-	        elemPtr, TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u \"%.30s\" => ERROR: ",
-	            opnd, O2S(elemPtr)), Tcl_GetObjResult(interp));
+	part2 = TclGetString(stackPtr[stackTop]);
+	arrayPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = arrayPtr->name;
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	varPtr = TclLookupArrayElement(interp, part1, part2, 
+	        TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
+	if (varPtr == NULL) {
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	TRACE_WITH_OBJ(("%u \"%.30s\" => ",
-			opnd, O2S(elemPtr)), objResultPtr);
-	NEXT_INST_F(pcAdjustment, 1, 1);
+	if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
+	        && (varPtr->tracePtr == NULL)
+	        && ((arrayPtr == NULL) 
+		        || (arrayPtr->tracePtr == NULL))) {
+	    /*
+	     * No errors, no traces: just get the value.
+	     */
+	    objResultPtr = varPtr->value.objPtr;
+	    NEXT_INST_F(pcAdjustment, 1, 1);
+	}
+	cleanup = 1;
+	goto doCallPtrGetVar;
 
-    case INST_LAPPEND_SCALAR4:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	pcAdjustment = 5;
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE 
-		      | TCL_LIST_ELEMENT | TCL_TRACE_READS);
-	goto doStoreScalar;
+    doCallPtrGetVar:
+	/*
+	 * There are either errors or the variable is traced:
+	 * call TclPtrGetVar to process fully.
+	 */
 
-    case INST_LAPPEND_SCALAR1:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	pcAdjustment = 2;	    
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE 
-		      | TCL_LIST_ELEMENT | TCL_TRACE_READS);
-	goto doStoreScalar;
-
-    case INST_APPEND_SCALAR4:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	pcAdjustment = 5;
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	goto doStoreScalar;
-
-    case INST_APPEND_SCALAR1:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	pcAdjustment = 2;	    
-	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	goto doStoreScalar;
-
-    case INST_STORE_SCALAR4:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	pcAdjustment = 5;
-	storeFlags = TCL_LEAVE_ERR_MSG;
-	goto doStoreScalar;
-
-    case INST_STORE_SCALAR1:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	pcAdjustment = 2;
-	storeFlags = TCL_LEAVE_ERR_MSG;
-
-    doStoreScalar:
-	valuePtr = stackPtr[stackTop];
 	DECACHE_STACK_INFO();
-	objResultPtr = TclSetIndexedScalar(interp, opnd, valuePtr, storeFlags);
+	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, 
+	        part2, TCL_LEAVE_ERR_MSG);
 	CACHE_STACK_INFO();
 	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u <- \"%.30s\" => ERROR: ",
-	            opnd, O2S(valuePtr)), Tcl_GetObjResult(interp));
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	TRACE_WITH_OBJ(("%u <- \"%.30s\" => ",
-	        opnd, O2S(valuePtr)), objResultPtr);
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
 
-	if (*(pc+pcAdjustment) == INST_POP) {
-	    NEXT_INST_F((pcAdjustment+1), 1, 0);
-	}
-	NEXT_INST_F(pcAdjustment, 1, 1);
+    /*
+     *     End of INST_LOAD instructions.
+     * ---------------------------------------------------------
+     */
+
+    /*
+     * ---------------------------------------------------------
+     *     Start of INST_STORE and related instructions.
+     *
+     * WARNING: more 'goto' here than your doctor recommended!
+     * The different instructions set the value of some variables
+     * and then jump to somme common execution code.
+     */
 
     case INST_LAPPEND_STK:
 	valuePtr = stackPtr[stackTop]; /* value to append */
-	elemPtr = NULL;
+	part2 = NULL;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE 
 		      | TCL_LIST_ELEMENT | TCL_TRACE_READS);
 	goto doStoreStk;
 
     case INST_LAPPEND_ARRAY_STK:
 	valuePtr = stackPtr[stackTop]; /* value to append */
-	elemPtr = stackPtr[stackTop - 1];
+	part2 = TclGetString(stackPtr[stackTop - 1]);
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE 
 		      | TCL_LIST_ELEMENT | TCL_TRACE_READS);
 	goto doStoreStk;
 
     case INST_APPEND_STK:
 	valuePtr = stackPtr[stackTop]; /* value to append */
-	elemPtr = NULL;
+	part2 = NULL;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreStk;
 
     case INST_APPEND_ARRAY_STK:
 	valuePtr = stackPtr[stackTop]; /* value to append */
-	elemPtr = stackPtr[stackTop - 1];
+	part2 = TclGetString(stackPtr[stackTop - 1]);
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreStk;
 
     case INST_STORE_ARRAY_STK:
 	valuePtr = stackPtr[stackTop];
-	elemPtr = stackPtr[stackTop - 1];
+	part2 = TclGetString(stackPtr[stackTop - 1]);
 	storeFlags = TCL_LEAVE_ERR_MSG;
 	goto doStoreStk;
 
     case INST_STORE_STK:
     case INST_STORE_SCALAR_STK:
 	valuePtr = stackPtr[stackTop];
-	elemPtr = NULL;
+	part2 = NULL;
 	storeFlags = TCL_LEAVE_ERR_MSG;
 
     doStoreStk:
-	objPtr = stackPtr[stackTop - 1 - (elemPtr != NULL)]; /* variable name */
-	DECACHE_STACK_INFO();
-	objResultPtr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr, storeFlags);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    if (elemPtr != NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ERROR: ",
-		         O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			 Tcl_GetObjResult(interp));
-	    } else {
-		TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ERROR: ",
-			 O2S(objPtr), O2S(valuePtr)), Tcl_GetObjResult(interp));
-	    }
+	objPtr = stackPtr[stackTop - 1 - (part2 != NULL)]; /* variable name */
+	part1 = TclGetString(objPtr);
+	varPtr = TclObjLookupVar(interp, objPtr, part2, 
+	         TCL_LEAVE_ERR_MSG, "set",
+                 /*createPart1*/ 1,
+	         /*createPart2*/ 1, &arrayPtr);
+	if (varPtr == NULL) {
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	if (elemPtr != NULL) {
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
-	            O2S(objPtr), O2S(elemPtr), O2S(objResultPtr)), objResultPtr);
-	    NEXT_INST_V(1, 3, 1);
-	} else {
-	    TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ",
-		    O2S(objPtr), O2S(valuePtr)), objResultPtr);
-	    if (*(pc+1) == INST_POP) {
-		NEXT_INST_F(2, 2, 0);
-	    }
-	    NEXT_INST_F(1, 2, 1);
-	}
+	cleanup = ((part2 == NULL)? 2 : 3);
+	pcAdjustment = 1;
+	goto doCallPtrSetVar;
 
     case INST_LAPPEND_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -1670,35 +1683,128 @@ TclExecuteByteCode(interp, codePtr)
 	    
     doStoreArray:
 	valuePtr = stackPtr[stackTop];
-	elemPtr = stackPtr[stackTop - 1];
-	DECACHE_STACK_INFO();
-	objResultPtr = TclSetElementOfIndexedArray(interp, opnd,
-	        elemPtr, valuePtr, storeFlags);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u \"%.30s\" <- \"%.30s\" => ERROR: ",
-	            opnd, O2S(elemPtr), O2S(valuePtr)), Tcl_GetObjResult(interp));
+	part2 = TclGetString(stackPtr[stackTop - 1]);
+	arrayPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = arrayPtr->name;
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	varPtr = TclLookupArrayElement(interp, part1, part2, 
+	        TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr);
+	if (varPtr == NULL) {
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	TRACE_WITH_OBJ(("%u \"%.30s\" <- \"%.30s\" => ",
-	        opnd, O2S(elemPtr), O2S(valuePtr)), objResultPtr);
+	cleanup = 2;
+	goto doCallPtrSetVar;
 
-	if (*(pc+pcAdjustment) == INST_POP) {
-	    NEXT_INST_F((pcAdjustment+1), 2, 0);
-	}
-	NEXT_INST_F(pcAdjustment, 2, 1);
-
-    case INST_LIST:
-	/*
-	     * Pop the opnd (objc) top stack elements into a new list obj
-	     * and then decrement their ref counts. 
-	     */
-
+    case INST_LAPPEND_SCALAR4:
 	opnd = TclGetUInt4AtPtr(pc+1);
-	objResultPtr = Tcl_NewListObj(opnd, &(stackPtr[stackTop - (opnd-1)]));
-	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
-	NEXT_INST_V(5, opnd, 1);
+	pcAdjustment = 5;
+	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE 
+		      | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	goto doStoreScalar;
+
+    case INST_LAPPEND_SCALAR1:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	pcAdjustment = 2;	    
+	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE 
+		      | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	goto doStoreScalar;
+
+    case INST_APPEND_SCALAR4:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	goto doStoreScalar;
+
+    case INST_APPEND_SCALAR1:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	pcAdjustment = 2;	    
+	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	goto doStoreScalar;
+
+    case INST_STORE_SCALAR4:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	storeFlags = TCL_LEAVE_ERR_MSG;
+	goto doStoreScalar;
+
+    case INST_STORE_SCALAR1:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	pcAdjustment = 2;
+	storeFlags = TCL_LEAVE_ERR_MSG;
+
+    doStoreScalar:
+	valuePtr = stackPtr[stackTop];
+	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	cleanup = 1;
+	arrayPtr = NULL;
+	part2 = NULL;
+
+    doCallPtrSetVar:
+	if ((storeFlags == TCL_LEAVE_ERR_MSG)
+	        && !((varPtr->flags & VAR_IN_HASHTABLE) 
+		        && (varPtr->hPtr == NULL))
+	        && (varPtr->tracePtr == NULL)
+	        && (TclIsVarScalar(varPtr) 
+		        || TclIsVarUndefined(varPtr))
+	        && ((arrayPtr == NULL) 
+		        || (arrayPtr->tracePtr == NULL))) {
+	    /*
+	     * No traces, no errors, plain 'set': we can safely inline.
+	     * The value *will* be set to what's requested, so that 
+	     * the stack top remains pointing to the same Tcl_Obj.
+	     */
+	    valuePtr = varPtr->value.objPtr;
+	    objResultPtr = stackPtr[stackTop];
+	    if (valuePtr != objResultPtr) {
+		if (valuePtr != NULL) {
+		    TclDecrRefCount(valuePtr);
+		} else {
+		    TclSetVarScalar(varPtr);
+		    TclClearVarUndefined(varPtr);
+		}
+		varPtr->value.objPtr = objResultPtr;
+		Tcl_IncrRefCount(objResultPtr);
+	    }
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		NEXT_INST_V((pcAdjustment+1), cleanup, 0);
+	    }
+	    NEXT_INST_V(pcAdjustment, cleanup, 1);
+	} else {
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr, 
+	            part1, part2, valuePtr, storeFlags);
+	    CACHE_STACK_INFO();
+	    if (objResultPtr == NULL) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+	if (*(pc+pcAdjustment) == INST_POP) {
+	    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
+	}
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+
+    /*
+     *     End of INST_STORE and related instructions.
+     * ---------------------------------------------------------
+     */
+
+    /*
+     * ---------------------------------------------------------
+     *     Start of INST_INCR instructions.
+     *
+     * WARNING: more 'goto' here than your doctor recommended!
+     * The different instructions set the value of some variables
+     * and then jump to somme common execution code.
+     */
 
     case INST_INCR_SCALAR1:
     case INST_INCR_ARRAY1:
@@ -1736,51 +1842,6 @@ TclExecuteByteCode(interp, codePtr)
 		goto doIncrStk;
 	}
 
-    case INST_INCR_SCALAR1_IMM:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	i = TclGetInt1AtPtr(pc+2);
-	pcAdjustment = 3;
-
-    doIncrScalar:
-	DECACHE_STACK_INFO();
-	objResultPtr = TclIncrIndexedScalar(interp, opnd, i);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u %ld => ERROR: ", opnd, i), Tcl_GetObjResult(interp));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	TRACE_WITH_OBJ(("%u %ld => ", opnd, i), objResultPtr);
-
-	if (*(pc+pcAdjustment) == INST_POP) {
-	    NEXT_INST_F((pcAdjustment+1), 0, 0);
-	}
-	NEXT_INST_F(pcAdjustment, 0, 1);
-
-    case INST_INCR_ARRAY1_IMM:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	i = TclGetInt1AtPtr(pc+2);
-	pcAdjustment = 3;
-
-    doIncrArray:
-	elemPtr = stackPtr[stackTop];
-	DECACHE_STACK_INFO();
-	objResultPtr = TclIncrElementOfIndexedArray(interp, opnd, elemPtr, i);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    TRACE_WITH_OBJ(("%u \"%.30s\" (by %ld) => ERROR: ",
-	            opnd, O2S(elemPtr), i), Tcl_GetObjResult(interp));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	TRACE_WITH_OBJ(("%u \"%.30s\" (by %ld) => ",
-	        opnd, O2S(elemPtr), i), objResultPtr);
-
-	if (*(pc+pcAdjustment) == INST_POP) {
-	    NEXT_INST_F((pcAdjustment+1), 1, 0);
-	}
-	NEXT_INST_F(pcAdjustment, 1, 1);
-	    	    
     case INST_INCR_ARRAY_STK_IMM:
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
@@ -1790,38 +1851,105 @@ TclExecuteByteCode(interp, codePtr)
     doIncrStk:
 	if ((*pc == INST_INCR_ARRAY_STK_IMM) 
 	        || (*pc == INST_INCR_ARRAY_STK)) {
-	    elemPtr = stackPtr[stackTop];
+	    part2 = TclGetString(stackPtr[stackTop]);
 	    objPtr = stackPtr[stackTop - 1];
 	} else {
-	    elemPtr = NULL;
+	    part2 = NULL;
 	    objPtr = stackPtr[stackTop];
 	}
-	DECACHE_STACK_INFO();
-	objResultPtr = TclIncrVar2(interp, objPtr, elemPtr, i, TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (objResultPtr == NULL) {
-	    if (elemPtr != NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ERROR: ",
-		        O2S(objPtr), O2S(elemPtr), i), Tcl_GetObjResult(interp));
-	    } else {
-		TRACE_WITH_OBJ(("\"%.30s\" %ld => ERROR: ",
-			O2S(objPtr), i), Tcl_GetObjResult(interp));
-	    }
+	part1 = TclGetString(objPtr);
+	varPtr = TclObjLookupVar(interp, objPtr, part2, 
+	        TCL_LEAVE_ERR_MSG, "read", 0, 1, &arrayPtr);
+	if (varPtr == NULL) {
+	    Tcl_AddObjErrorInfo(interp,
+	            "\n    (reading value of variable to increment)", -1);
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	if (elemPtr != NULL) {
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ",
-	            O2S(objPtr), O2S(elemPtr), i), objResultPtr);
-	    NEXT_INST_F(pcAdjustment, 2, 1);
-	} else {
-	    TRACE_WITH_OBJ(("\"%.30s\" %ld => ", O2S(objPtr), i), objResultPtr);
-	    NEXT_INST_F(pcAdjustment, 1, 1);
-	}
+	cleanup = ((part2 == NULL)? 1 : 2);
+	goto doIncrVar;
 
+    case INST_INCR_ARRAY1_IMM:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	i = TclGetInt1AtPtr(pc+2);
+	pcAdjustment = 3;
+
+    doIncrArray:
+	part2 = TclGetString(stackPtr[stackTop]);
+	arrayPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = arrayPtr->name;
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	varPtr = TclLookupArrayElement(interp, part1, part2, 
+	        TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
+	if (varPtr == NULL) {
+	    Tcl_AddObjErrorInfo(interp,
+	            "\n    (reading value of variable to increment)", -1);
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	}
+	cleanup = 1;
+	goto doIncrVar;
+
+    case INST_INCR_SCALAR1_IMM:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	i = TclGetInt1AtPtr(pc+2);
+	pcAdjustment = 3;
+
+    doIncrScalar:
+	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	part1 = varPtr->name;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	arrayPtr = NULL;
+	part2 = NULL;
+	cleanup = 0;
+
+    doIncrVar:
+	objPtr = varPtr->value.objPtr;
+	if (TclIsVarScalar(varPtr)
+	        && !TclIsVarUndefined(varPtr) 
+	        && (varPtr->tracePtr == NULL)
+	        && ((arrayPtr == NULL) 
+		        || (arrayPtr->tracePtr == NULL))
+	        && (objPtr->typePtr == &tclIntType)) {
+	    /*
+	     * No errors, no traces, the variable already has an
+	     * integer value: inline processing.
+	     */
+
+	    i += objPtr->internalRep.longValue;
+	    if (Tcl_IsShared(objPtr)) {
+		objResultPtr = Tcl_NewLongObj(i);
+		TclDecrRefCount(objPtr);
+		Tcl_IncrRefCount(objResultPtr);
+		varPtr->value.objPtr = objResultPtr;
+	    } else {
+		Tcl_SetLongObj(objPtr, i);
+		objResultPtr = objPtr;
+	    }
+	} else {
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrIncrVar(interp, varPtr, arrayPtr, part1, 
+                    part2, i, TCL_LEAVE_ERR_MSG);
+	    CACHE_STACK_INFO();
+	    if (objResultPtr == NULL) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+	if (*(pc+pcAdjustment) == INST_POP) {
+	    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
+	}
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+	    	    
     /*
-     * END INCR INSTRUCTIONS
+     *     End of INST_INCR instructions.
+     * ---------------------------------------------------------
      */
+
 
     case INST_JUMP1:
 	opnd = TclGetInt1AtPtr(pc+1);
@@ -2006,6 +2134,22 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
+    /*
+     * ---------------------------------------------------------
+     *     Start of INST_LIST and related instructions.
+     */
+
+    case INST_LIST:
+	/*
+	     * Pop the opnd (objc) top stack elements into a new list obj
+	     * and then decrement their ref counts. 
+	     */
+
+	opnd = TclGetUInt4AtPtr(pc+1);
+	objResultPtr = Tcl_NewListObj(opnd, &(stackPtr[stackTop - (opnd-1)]));
+	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	NEXT_INST_V(5, opnd, 1);
+
     case INST_LIST_LENGTH:
 	valuePtr = stackPtr[stackTop];
 
@@ -2165,6 +2309,11 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 	TRACE(("=> %s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, -1);
+
+    /*
+     *     End of INST_LIST and related instructions.
+     * ---------------------------------------------------------
+     */
 
     case INST_STR_EQ:
     case INST_STR_NEQ:
@@ -3679,19 +3828,40 @@ TclExecuteByteCode(interp, codePtr)
 			}
 			    
 			varIndex = varListPtr->varIndexes[j];
-			DECACHE_STACK_INFO();
-			value2Ptr = TclSetIndexedScalar(interp,
-			        varIndex, valuePtr, TCL_LEAVE_ERR_MSG);
-			CACHE_STACK_INFO();
-			if (value2Ptr == NULL) {
-			    TRACE_WITH_OBJ(("%u => ERROR init. index temp %d: ",
-			            opnd, varIndex),
-					   Tcl_GetObjResult(interp));
-			    if (setEmptyStr) {
-				TclDecrRefCount(valuePtr);
+			varPtr = &(varFramePtr->compiledLocals[varIndex]);
+			part1 = varPtr->name;
+			while (TclIsVarLink(varPtr)) {
+			    varPtr = varPtr->value.linkPtr;
+			}
+			if (!((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL))
+			        && (varPtr->tracePtr == NULL)
+			        && (TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr))) {
+			    value2Ptr = varPtr->value.objPtr;
+			    if (valuePtr != value2Ptr) {
+				if (value2Ptr != NULL) {
+				    TclDecrRefCount(value2Ptr);
+				} else {
+				    TclSetVarScalar(varPtr);
+				    TclClearVarUndefined(varPtr);
+				}
+				varPtr->value.objPtr = valuePtr;
+				Tcl_IncrRefCount(valuePtr);
 			    }
-			    result = TCL_ERROR;
-			    goto checkForCatch;
+			} else {
+			    DECACHE_STACK_INFO();
+			    value2Ptr = TclPtrSetVar(interp, varPtr, NULL, part1, 
+						     NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			    CACHE_STACK_INFO();
+			    if (value2Ptr == NULL) {
+				TRACE_WITH_OBJ(("%u => ERROR init. index temp %d: ",
+						opnd, varIndex),
+					       Tcl_GetObjResult(interp));
+				if (setEmptyStr) {
+				    TclDecrRefCount(valuePtr);
+				}
+				result = TCL_ERROR;
+				goto checkForCatch;
+			    }
 			}
 			valIndex++;
 		    }
