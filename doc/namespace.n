@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.6 2000/05/11 00:17:29 hobbs Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.7 2001/04/07 02:08:05 msofer Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.0 Tcl "Tcl Built-In Commands"
@@ -60,7 +60,7 @@ Then \fBeval "$script x y"\fR
 can be executed in any namespace (assuming the value of
 \fBscript\fR has been passed in properly)
 and will have the same effect as the command
-\fBnamespace eval ::a::b {foo bar x y}\fR.
+\fB::namespace eval ::a::b {foo bar x y}\fR.
 This command is needed because
 extensions like Tk normally execute callback scripts
 in the global namespace.
