@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.45 2003/05/05 20:54:40 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46 2003/05/08 00:44:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -901,7 +901,6 @@ TclObjInterpProc(clientData, interp, objc, objv)
 				  * procedure. */
     Tcl_Obj *CONST objv[];	 /* Argument value objects. */
 {
-    Interp *iPtr = (Interp *) interp;
     register Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame frame;
@@ -1428,7 +1427,6 @@ TclUpdateReturnInfo(iPtr)
 				 * exception is being processed. */
 {
     int level, code = TCL_RETURN;
-    char *errorCode;
     Tcl_Obj *valuePtr;
 
     Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnLevelKey, &valuePtr);
