@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.61 2004/10/06 15:59:24 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.62 2004/10/15 04:01:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -175,7 +175,13 @@ static void		DupNsNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 static char *		ErrorCodeRead _ANSI_ARGS_(( ClientData clientData,
 			    Tcl_Interp *interp, CONST char *name1,
 			    CONST char *name2, int flags));
+static char *		ErrorInfoRead _ANSI_ARGS_(( ClientData clientData,
+			    Tcl_Interp *interp, CONST char *name1,
+			    CONST char *name2, int flags));
 static char *		EstablishErrorCodeTraces _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    CONST char *name1, CONST char *name2, int flags));
+static char *		EstablishErrorInfoTraces _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    CONST char *name1, CONST char *name2, int flags));
 static void		FreeNsNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
@@ -525,7 +531,7 @@ Tcl_PopCallFrame(interp)
  * EstablishErrorCodeTraces --
  *
  *	Creates traces on the ::errorCode variable to keep its value
- *	consistent with the expectation of legacy code.
+ *	consistent with the expectations of legacy code.
  *
  * Results:
  *	None.
@@ -535,6 +541,7 @@ Tcl_PopCallFrame(interp)
  *
  *----------------------------------------------------------------------
  */
+
 static char *
 EstablishErrorCodeTraces(clientData, interp, name1, name2, flags)
     ClientData clientData;
@@ -549,6 +556,23 @@ EstablishErrorCodeTraces(clientData, interp, name1, name2, flags)
 	    EstablishErrorCodeTraces, (ClientData) NULL);
     return NULL;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ErrorCodeRead --
+ *
+ *	Called when the ::errorCode variable is read.  Copies the
+ *	current value of the interp's errorCode field into ::errorCode.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static char *
 ErrorCodeRead(clientData, interp, name1, name2, flags)
@@ -562,8 +586,72 @@ ErrorCodeRead(clientData, interp, name1, name2, flags)
 
     if (flags & TCL_INTERP_DESTROYED) return NULL;
     if (iPtr->errorCode == NULL) return NULL;
-    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL,
-	    iPtr->errorCode, TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL, iPtr->errorCode, TCL_GLOBAL_ONLY);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishErrorInfoTraces --
+ *
+ *	Creates traces on the ::errorInfo variable to keep its value
+ *	consistent with the expectations of legacy code.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Read and unset traces are established on ::errorInfo.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+EstablishErrorInfoTraces(clientData, interp, name1, name2, flags)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    CONST char *name1;
+    CONST char *name2;
+    int flags;
+{
+    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+	    ErrorInfoRead, (ClientData) NULL);
+    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+	    EstablishErrorInfoTraces, (ClientData) NULL);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ErrorInfoRead --
+ *
+ *	Called when the ::errorInfo variable is read.  Copies the
+ *	current value of the interp's errorInfo field into ::errorInfo.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+ErrorInfoRead(clientData, interp, name1, name2, flags)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    CONST char *name1;
+    CONST char *name2;
+    int flags;
+{
+    Interp *iPtr = (Interp *)interp;
+
+    if (flags & TCL_INTERP_DESTROYED) return NULL;
+    if (iPtr->errorInfo == NULL) return NULL;
+    Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL, iPtr->errorInfo, TCL_GLOBAL_ONLY);
     return NULL;
 }
 
@@ -705,9 +793,10 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     } else {
 	/* 
 	 * In the global namespace create traces to maintain the
-	 * ::errorCode variable.
+	 * ::errorInfo and ::errorCode variables.
 	 */
 	iPtr->globalNsPtr = nsPtr;
+	EstablishErrorInfoTraces(NULL, interp, NULL, NULL, 0);
 	EstablishErrorCodeTraces(NULL, interp, NULL, NULL, 0);
     }
 
@@ -829,11 +918,11 @@ Tcl_DeleteNamespace(namespacePtr)
         TclTeardownNamespace(nsPtr);
 
         if ((nsPtr != globalNsPtr) || (iPtr->flags & DELETED)) {
-            /*
+	    /*
 	     * If this is the global namespace, then it may have residual
-             * "errorInfo" and "errorCode" variables for errors that
-             * occurred while it was being torn down.  Try to clear the
-             * variable list one last time.
+	     * "errorInfo" and "errorCode" variables for errors that
+	     * occurred while it was being torn down.  Try to clear the
+	     * variable list one last time.
 	     */
 
             TclDeleteVars((Interp *) nsPtr->interp, &nsPtr->varTable);
@@ -852,7 +941,8 @@ Tcl_DeleteNamespace(namespacePtr)
                 nsPtr->flags |= NS_DEAD;
             }
         } else {
-	    /* Restore the ::errorCode traces */
+	    /* Restore the ::errorInfo and ::errorCode traces */
+	    EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
 	    EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
 	}
     }
@@ -868,9 +958,7 @@ Tcl_DeleteNamespace(namespacePtr)
  *	commands, variables, and child namespaces.
  *
  *	This is kept separate from Tcl_DeleteNamespace so that the global
- *	namespace can be handled specially. Global variables like
- *	"errorInfo" and "errorCode" need to remain intact while other
- *	namespaces and commands are torn down, in case any errors occur.
+ *	namespace can be handled specially. 
  *
  * Results:
  *	None.
@@ -878,8 +966,6 @@ Tcl_DeleteNamespace(namespacePtr)
  * Side effects:
  *	Removes this namespace from its parent's child namespace hashtable.
  *	Deletes all commands, variables and namespaces in this namespace.
- *	If this is the global namespace, the "errorInfo" and "errorCode"
- *	variables are left alone and deleted later.
  *
  *----------------------------------------------------------------------
  */
@@ -894,47 +980,17 @@ TclTeardownNamespace(nsPtr)
     Tcl_HashSearch search;
     Tcl_Namespace *childNsPtr;
     Tcl_Command cmd;
-    Namespace *globalNsPtr =
-	    (Namespace *) Tcl_GetGlobalNamespace((Tcl_Interp *) iPtr);
     int i;
 
     /*
      * Start by destroying the namespace's variable table,
      * since variables might trigger traces.
+     * Variable table should be cleared but not freed!
+     * TclDeleteVars frees it, so we reinitialize it afterwards.
      */
 
-    if (nsPtr == globalNsPtr) {
-	/*
-	 * This is the global namespace.  Tearing it down will destroy the
-	 * ::errorInfo variable.  We save and restore it 
-	 * in case there are any errors in progress, so the error details
-	 * it contains will not be lost.  See test namespace-8.5
-	 */
-
-	Tcl_Obj *errorInfo = Tcl_GetVar2Ex(nsPtr->interp, "errorInfo",
-		NULL, TCL_GLOBAL_ONLY);
-			                
-	if (errorInfo) {
-	    Tcl_IncrRefCount(errorInfo);
-	}   
-
-	TclDeleteVars(iPtr, &nsPtr->varTable);
-	Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
-
-	if (errorInfo) {
-	    Tcl_SetVar2Ex(nsPtr->interp, "errorInfo", NULL,
-		    errorInfo, TCL_GLOBAL_ONLY);
-	    Tcl_DecrRefCount(errorInfo);
-	}   
-    } else {
-	/*
-	 * Variable table should be cleared but not freed! TclDeleteVars
-	 * frees it, so we reinitialize it afterwards.
-	 */
-
-        TclDeleteVars(iPtr, &nsPtr->varTable);
-        Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
-    }
+    TclDeleteVars(iPtr, &nsPtr->varTable);
+    Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
 
     /*
      * Remove the namespace from its parent's child hashtable.

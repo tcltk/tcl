@@ -1,3 +1,35 @@
+2004-10-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp,
+		TclEvalObjvInternal,Tcl_LogCommandInfo,TclAddObjErrorInfo):
+	* generic/tclCmdAH.c (Tcl_CatchObjCmd):
+	* generic/tclEvent.c (BgError,ErrAssocData,Tcl_BackgroundError,
+		HandleBgErrors,BgErrorDeleteProc):
+	* generic/tclExecute.c (TclCreateExecEnv,TclDeleteExecEnv):
+	* generic/tclIOUtil.c (comments only):
+	* generic/tclInt.h (ExecEnv,Interp, ERR_IN_PROGRESS):
+	* generic/tclInterp.c ([tclInit]):
+	* generic/tclMain.c (comments only):
+	* generic/tclNamesp.c
+		(Tcl_CreateNamespace,Tcl_DeleteNamespace,TclTeardownNamespace):
+	* generic/tclProc.c (TclUpdateReturnInfo):
+	* generic/tclResult.c
+		(Tcl_ResetResult,TclTransferResult):
+	* generic/tclTrace.c (CallVarTraces):
+	Reworked management of the "errorInfo" data of an interp.
+	That information is now primarily stored in a new private
+	(Tcl_Obj *) field of the Interp struct, rather than using a
+	global variable ::errorInfo as the primary storage.  The
+	ERR_IN_PROGRESS flag bit value is no longer required to manage
+	the value in its new location, and is removed.  Variable traces
+	are established to support compatibility for any code expecting
+	the ::errorInfo variable to hold the information.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Code that sets traces on the ::errorInfo variable may notice a
+	difference in timing of the firing of those traces.  Code that
+	uses the value ERR_IN_PROGRESS.
+
 2004-10-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP#217 IMPLEMENTATION
@@ -165,7 +197,7 @@
 	the ::errorCode variable to hold the information.
 
 	***POTENTIAL INCOMPATIBILITY***
-	Code that sets traces on the ::errorCode value may notice a
+	Code that sets traces on the ::errorCode variable may notice a
 	difference in timing of the firing of those traces.
 
 	* generic/tclNamesp.c (Tcl_PopCallFrame):	Removed Bug 1038021

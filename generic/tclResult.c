@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.14 2004/10/06 15:59:25 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.15 2004/10/15 04:01:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -732,12 +732,20 @@ Tcl_ResetResult(interp)
     iPtr->result = iPtr->resultSpace;
     iPtr->resultSpace[0] = 0;
     if (iPtr->errorCode) {
-	Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL,
+	/* Legacy support */
+	Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL,
 		iPtr->errorCode, TCL_GLOBAL_ONLY);
 	Tcl_DecrRefCount(iPtr->errorCode);
 	iPtr->errorCode = NULL;
     }
-    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_IN_PROGRESS);
+    if (iPtr->errorInfo) {
+	/* Legacy support*/
+	Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
+		iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(iPtr->errorInfo);
+	iPtr->errorInfo = NULL;
+    }
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 }
 
 /*
@@ -794,26 +802,23 @@ ResetObjResult(iPtr)
  *	None.
  *
  * Side effects:
- *	The errorCode global variable is modified to hold all of the
+ *	The errorCode field of the interp is modified to hold all of the
  *	arguments to this procedure, in a list form with each argument
- *	becoming one element of the list.  A flag is set internally
- *	to remember that errorCode has been set, so the variable doesn't
- *	get set automatically when the error is returned.
+ *	becoming one element of the list.  
  *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_SetErrorCodeVA (interp, argList)
-    Tcl_Interp *interp;		/* Interpreter in which to access the errorCode
-				 * variable. */
+    Tcl_Interp *interp;		/* Interpreter in which to set errorCode */
     va_list argList;		/* Variable argument list. */
 {
     Tcl_Obj *errorObj = Tcl_NewObj();
 
     /*
      * Scan through the arguments one at a time, appending them to
-     * $errorCode as list elements.
+     * the errorCode field as list elements.
      */
 
     while (1) {
@@ -838,11 +843,9 @@ Tcl_SetErrorCodeVA (interp, argList)
  *	None.
  *
  * Side effects:
- *	The errorCode global variable is modified to hold all of the
+ *	The errorCode field of the interp is modified to hold all of the
  *	arguments to this procedure, in a list form with each argument
- *	becoming one element of the list.  A flag is set internally
- *	to remember that errorCode has been set, so the variable doesn't
- *	get set automatically when the error is returned.
+ *	becoming one element of the list.  
  *
  *----------------------------------------------------------------------
  */
@@ -855,7 +858,7 @@ Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 
     /*
      * Scan through the arguments one at a time, appending them to
-     * $errorCode as list elements.
+     * the errorCode field as list elements.
      */
 
     interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
@@ -876,10 +879,7 @@ Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
  *	None.
  *
  * Side effects:
- *	The errorCode global variable is modified to be the new value.
- *	A flag is set internally to remember that errorCode has been
- *	set, so the variable doesn't get set automatically when the
- *	error is returned.
+ *	The errorCode field of the interp is set to the new value.
  *
  *----------------------------------------------------------------------
  */
@@ -917,9 +917,9 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
  *
  * Results:
  *	The target interp's result is set to a copy of the source interp's
- *	result.  The source's error information "$errorInfo" may be
- *	appended to the target's error information and the source's error
- *	code "$errorCode" may be stored in the target's error code.
+ *	result.  The source's errorInfo field may be transferred to the
+ *	target's errorInfo field, and the source's errorCode field may be
+ *	transferred to the target's errorCode field.
  *
  * Side effects:
  *	None.
@@ -963,17 +963,13 @@ TclTransferResult(sourceInterp, result, targetInterp)
         
         Tcl_ResetResult(targetInterp);
         
-	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorInfo", NULL,
-		TCL_GLOBAL_ONLY);
-	if (objPtr) {
-	    Tcl_SetVar2Ex(targetInterp, "errorInfo", NULL, objPtr,
-		    TCL_GLOBAL_ONLY);
-	    ((Interp *) targetInterp)->flags |= ERR_IN_PROGRESS;
+	if (iPtr->errorInfo) {
+	    ((Interp *) targetInterp)->errorInfo = iPtr->errorInfo;
+	    Tcl_IncrRefCount(((Interp *) targetInterp)->errorInfo);
 	}
 
-	objPtr = ((Interp *) sourceInterp)->errorCode;
-	if (objPtr) {
-	    Tcl_SetObjErrorCode(targetInterp, objPtr);
+	if (iPtr->errorCode) {
+	    Tcl_SetObjErrorCode(targetInterp, iPtr->errorCode);
 	}
     }
 

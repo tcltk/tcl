@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.180 2004/10/05 18:14:27 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.181 2004/10/15 04:01:31 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -888,8 +888,6 @@ typedef struct ExecEnv {
     Tcl_Obj **tosPtr;		/* Points to current top of stack; 
 				 * (stackPtr-1) when the stack is empty. */
     Tcl_Obj **endPtr;		/* Points to last usable item in stack. */
-    Tcl_Obj *errorInfo;
-    Tcl_Obj *errorCode;
 } ExecEnv;
 
 /*
@@ -1332,7 +1330,10 @@ typedef struct Interp {
     Tcl_Obj *returnLevelKey;	/* holds "-level" */
     Tcl_Obj *returnOptionsKey;	/* holds "-options" */
 
+    Tcl_Obj *errorInfo;		/* errorInfo value (now as a Tcl_Obj) */
+    Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable */
     Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj) */
+    Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable */
 
     /*
      * Resource limiting framework support (TIP#143).
@@ -1395,11 +1396,8 @@ typedef struct Interp {
  *			don't process any more commands for it, and destroy
  *			the structure as soon as all nested invocations of
  *			Tcl_Eval are done.
- * ERR_IN_PROGRESS:	Non-zero means an error unwind is already in
- *			progress. Zero means a command proc has been
- *			invoked since last error occured.
  * ERR_ALREADY_LOGGED:	Non-zero means information has already been logged
- *			in $errorInfo for the current Tcl_Eval instance,
+ *			in iPtr->errorInfo for the current Tcl_Eval instance,
  *			so Tcl_Eval needn't log it (used to implement the
  *			"error message log" command).
  * DONT_COMPILE_CMDS_INLINE: Non-zero means that the bytecode compiler
@@ -1418,7 +1416,6 @@ typedef struct Interp {
  */
 
 #define DELETED				    1
-#define ERR_IN_PROGRESS			    2
 #define ERR_ALREADY_LOGGED		    4
 #define DONT_COMPILE_CMDS_INLINE	 0x20
 #define RAND_SEED_INITIALIZED		 0x40
