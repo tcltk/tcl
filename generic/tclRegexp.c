@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.9 1999/06/17 19:32:15 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.9.4.1 1999/11/02 02:09:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -642,7 +642,8 @@ TclRegAbout(interp, re)
 	{REG_ULOCALE,		"REG_ULOCALE"},
 	{REG_UEMPTYMATCH,	"REG_UEMPTYMATCH"},
 	{REG_UIMPOSSIBLE,	"REG_UIMPOSSIBLE"},
-	 {0,			""}
+	{REG_USHORTEST,		"REG_USHORTEST"},
+	{0,			""}
     };
     struct infoname *inf;
     int n;

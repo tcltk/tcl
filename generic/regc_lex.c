@@ -1010,8 +1010,9 @@ newline()
 }
 
 /*
- - ch - return the chr sequence for locale.c's fake collating element ch
- * This helps confine use of CHR to this source file.
+ - ch - return the chr sequence for regc_locale.c's fake collating element ch
+ * This helps confine use of CHR to this source file.  Beware that the caller
+ * knows how long the sequence is.
  ^ #ifdef REG_DEBUG
  ^ static chr *ch(NOPARMS);
  ^ #endif

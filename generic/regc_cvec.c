@@ -110,8 +110,6 @@ pchr to;
 	cv->nranges++;
 }
 
-#ifdef NOTDEF			/* This isn't used currently. */
-
 /*
  - addmcce - add an MCCE to a cvec
  ^ static VOID addmcce(struct cvec *, chr *, chr *);
@@ -122,24 +120,25 @@ struct cvec *cv;
 chr *startp;			/* beginning of text */
 chr *endp;			/* just past end of text */
 {
-	int n = endp - startp;
+	int len;
 	int i;
 	chr *s;
 	chr *d;
 
-	assert(n > 0);
-	assert(cv->nchrs + n < cv->chrspace - cv->nmccechrs);
+	if (startp == NULL && endp == NULL)
+		return;
+	len = endp - startp;
+	assert(len > 0);
+	assert(cv->nchrs + len < cv->chrspace - cv->nmccechrs);
 	assert(cv->nmcces < cv->mccespace);
-	d = &cv->chrs[cv->chrspace - cv->nmccechrs - n - 1];
+	d = &cv->chrs[cv->chrspace - cv->nmccechrs - len - 1];
 	cv->mcces[cv->nmcces++] = d;
-	for (s = startp, i = n; i > 0; s++, i--)
+	for (s = startp, i = len; i > 0; s++, i--)
 		*d++ = *s;
 	*d++ = 0;		/* endmarker */
 	assert(d == &cv->chrs[cv->chrspace - cv->nmccechrs]);
-	cv->nmccechrs += n + 1;
+	cv->nmccechrs += len + 1;
 }
-
-#endif /* NOTDEF */
 
 /*
  - haschr - does a cvec contain this chr?

@@ -101,6 +101,12 @@ extern "C" {
 #ifdef __REG_CONST
 #undef __REG_CONST
 #endif
+#ifdef __REG_NOFRONT
+#undef __REG_NOFRONT
+#endif
+#ifdef __REG_NOCHAR
+#undef __REG_NOCHAR
+#endif
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
@@ -109,12 +115,8 @@ extern "C" {
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec
-#ifndef __REG_NOFRONT
 #define	__REG_NOFRONT		/* don't want regcomp() and regexec() */
-#endif
-#ifndef __REG_NOCHAR
 #define	__REG_NOCHAR		/* or the char versions */
-#endif
 #define	regfree		TclReFree
 #define	regerror	TclReError
 /* --- end --- */
@@ -163,7 +165,7 @@ typedef void re_void;
 typedef struct {
 	int re_magic;		/* magic number */
 	size_t re_nsub;		/* number of subexpressions */
-	int re_info;		/* information about RE */
+	long re_info;		/* information about RE */
 #		define	REG_UBACKREF		000001
 #		define	REG_ULOOKAHEAD		000002
 #		define	REG_UBOUNDS		000004
@@ -177,6 +179,7 @@ typedef struct {
 #		define	REG_ULOCALE		002000
 #		define	REG_UEMPTYMATCH		004000
 #		define	REG_UIMPOSSIBLE		010000
+#		define	REG_USHORTEST		020000
 	int re_csize;		/* sizeof(character) */
 	char *re_endp;		/* backward compatibility kludge */
 	/* the rest is opaque pointers to hidden innards */
@@ -225,7 +228,7 @@ typedef struct {
 #define	REG_EXPECT	001000	/* report details on partial/limited matches */
 #define	REG_BOSONLY	002000	/* temporary kludge for BOS-only matches */
 #define	REG_DUMP	004000	/* none of your business :-) */
-#define	REG_FAKEEC	010000	/* none of your business :-) */
+#define	REG_FAKE	010000	/* none of your business :-) */
 #define	REG_PROGRESS	020000	/* none of your business :-) */
 
 
