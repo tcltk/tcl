@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.5.4.1 1999/09/22 04:12:45 hobbs Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.5.4.2 1999/11/19 23:32:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -165,18 +165,18 @@ void
 TclDumpMemoryInfo(outFile) 
     FILE *outFile;
 {
-        fprintf(outFile,"total mallocs             %10d\n", 
-                total_mallocs);
-        fprintf(outFile,"total frees               %10d\n", 
-                total_frees);
-        fprintf(outFile,"current packets allocated %10d\n", 
-                current_malloc_packets);
-        fprintf(outFile,"current bytes allocated   %10d\n", 
-                current_bytes_malloced);
-        fprintf(outFile,"maximum packets allocated %10d\n", 
-                maximum_malloc_packets);
-        fprintf(outFile,"maximum bytes allocated   %10d\n", 
-                maximum_bytes_malloced);
+    fprintf(outFile,"total mallocs             %10d\n", 
+	    total_mallocs);
+    fprintf(outFile,"total frees               %10d\n", 
+	    total_frees);
+    fprintf(outFile,"current packets allocated %10d\n", 
+	    current_malloc_packets);
+    fprintf(outFile,"current bytes allocated   %10d\n", 
+	    current_bytes_malloced);
+    fprintf(outFile,"maximum packets allocated %10d\n", 
+	    maximum_malloc_packets);
+    fprintf(outFile,"maximum bytes allocated   %10d\n", 
+	    maximum_bytes_malloced);
 }
 
 /*
@@ -354,8 +354,7 @@ Tcl_DbCkalloc(size, file, line)
     if (result == NULL) {
         fflush(stdout);
         TclDumpMemoryInfo(stderr);
-        panic("unable to alloc %d bytes, %s line %d", size, file, 
-              line);
+        panic("unable to alloc %d bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -452,7 +451,7 @@ Tcl_DbCkfree(ptr, file, line)
     struct mem_header *memp;
 
     if (ptr == NULL) {
- 	return;
+	return 0;
     }
 
     /*
@@ -465,12 +464,14 @@ Tcl_DbCkfree(ptr, file, line)
 
     memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
 
-    if (alloc_tracing)
+    if (alloc_tracing) {
         fprintf(stderr, "ckfree %lx %ld %s %d\n",
 		(long unsigned int) memp->body, memp->length, file, line);
+    }
 
-    if (validate_memory)
+    if (validate_memory) {
         Tcl_ValidateAllMemory(file, line);
+    }
 
     Tcl_MutexLock(ckallocMutexPtr);
     ValidateMemory(memp, file, line, TRUE);
@@ -528,7 +529,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
     struct mem_header *memp;
 
     if (ptr == NULL) {
- 	return Tcl_DbCkalloc(size, file, line);
+	return Tcl_DbCkalloc(size, file, line);
     }
 
     /*
@@ -545,7 +546,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
     new = Tcl_DbCkalloc(size, file, line);
     memcpy((VOID *) new, (VOID *) ptr, (size_t) copySize);
     Tcl_DbCkfree(ptr, file, line);
-    return(new);
+    return new;
 }
 
 
@@ -786,6 +787,8 @@ Tcl_InitMemory(interp)
 
 #else	/* TCL_MEM_DEBUG */
 
+/* This is the !TCL_MEM_DEBUG case */
+
 #undef Tcl_InitMemory
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
@@ -835,8 +838,7 @@ Tcl_DbCkalloc(size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to alloc %d bytes, %s line %d", size, file, 
-              line);
+        panic("unable to alloc %d bytes, %s line %d", size, file, line);
     }
     return result;
 }
