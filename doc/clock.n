@@ -750,7 +750,7 @@ Any other string is processed by prefixing a colon and attempting
 to use it as a location name, as above.
 .SH "LOCALIZATION"
 Developers wishing to localize the date and time formatting and parsing
-are referred to \fIhttp://www.tcl.tk/cgi-bin/tct/tip/173\fR for a
+are referred to \fIhttp://tip.tcl.tk/173\fR for a
 specification.
 .SH "FREE FORM SCAN"
 If the \fBclock scan\fR command is invoked without a \fB-format\fR
