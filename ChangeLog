@@ -1,5 +1,11 @@
 2004-07-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* win/README.binary, win/README: Updated references to Tcl and Tk
+	8.4 to point to 8.5 instead.  Thanks to Theo Verelst for spotting
+	this.
+	* generic/tcl.h: Added note to help prevent those changes from
+	getting missed in the future.
+
 	* doc/Namespace.3, doc/load.n, doc/Limit.3: Typo fixes and remove
 	duplicate documentation. [Bug 983146]
 
