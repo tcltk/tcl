@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.8 2004/04/06 22:25:55 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.9 2004/08/25 22:21:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -765,6 +765,12 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
      */
 
     if (assocPtr == NULL) {
+	Tcl_Command token = Tcl_GetCommandFromObj(interp, objv[0]);
+	Tcl_Command originalToken = TclGetOriginalCommand(token);
+
+	if (originalToken != NULL) {
+	    token = originalToken;
+	}
 	assocPtr = (AfterAssocData *) ckalloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
@@ -776,8 +782,8 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
 	cmdInfo.objClientData = (ClientData) assocPtr;
 	cmdInfo.deleteProc = NULL;
 	cmdInfo.deleteData = (ClientData) assocPtr;
-	Tcl_SetCommandInfo(interp, Tcl_GetStringFromObj(objv[0], &length),
-		&cmdInfo);
+
+	Tcl_SetCommandInfoFromToken(token, &cmdInfo);
     }
 
     /*

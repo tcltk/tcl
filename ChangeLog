@@ -1,3 +1,10 @@
+2004-08-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/timer.test (timer-10.1):	Test for Bug 1016167.
+	* generic/tclTimer.c:	Workaround for situation when a
+	[namespace import] causes the objv[0] value to be something
+	other than what Tcl_AfterObjCmd expects.  [Bug 1016167].
+
 2004-08-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (NsEnsembleImplementationCmd): Use the
@@ -8,10 +15,10 @@
 
 2004-08-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclProc.c:		The routine TclProcInterpProc was a specific
-	* generic/tclTestProcBodyObj.c:	instance of the general service already provided
-	by TclObjInvokeProc.  Removed TclProcInterpProc and TclGetInterpProc from the
-	code...
+	* generic/tclProc.c:		The routine TclProcInterpProc was a
+	* generic/tclTestProcBodyObj.c:	specific instance of the general
+	service already provided by TclObjInvokeProc.  Removed
+	TclProcInterpProc and TclGetInterpProc from the code...
 
 	* generic/tclInt.decls	...and from the internal stubs table.
 	* generic/tclIntDecls.h
