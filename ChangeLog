@@ -1,3 +1,13 @@
+2004-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in, unix/tcl.m4:     move (C|LD)FLAGS after their
+	* unix/configure.in, unix/configure: _DEFAULT to allow for env
+	setting to override m4 switches.  Move SC_MISSING_POSIX_HEADERS up
+	and consolidate calls to limit redundancy in configure.
+	(CFLAGS_WARNING): Remove -Wconversion
+	(SC_ENABLE_THREADS): Set m4 to force threaded build when built
+	against a threaded Tcl core.
+
 2004-07-16  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Corrected a typo in the
