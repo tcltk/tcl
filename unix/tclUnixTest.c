@@ -16,11 +16,9 @@
 
 /*
  * The headers are needed for the testalarm command that verifies the
- * EINITR bug has been fixed (Handling of this signal was forgotten after
- * Tcl7.4.)
+ * use of SA_RESTART in signal handlers.
  */
 
-#include <tcl.h>
 #include <signal.h>
 #include <sys/resource.h>
 
@@ -58,7 +56,7 @@ static Pipe testPipes[MAX_PIPES];
  * The stuff below is used by the testalarm and testgotsig ommands.
  */
 
-static char gotsig = '0';
+static char *gotsig = "0";
 
 /*
  * Forward declarations of procedures defined later in this file:
@@ -506,8 +504,8 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
  * TestalarmCmd --
  *
  *	Test that EINTR is handled correctly by generating and
- *	handling a signal.  This was handled correctly in Tcl7.4
- *	but was lost when channel drivers were created.
+ *	handling a signal.  This requires using the SA_RESTART
+ *	flag when registering the signal handler.
  *
  * Results:
  *	None.
@@ -525,8 +523,9 @@ TestalarmCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     char **argv;			/* Argument strings. */
 {
+#ifdef SA_RESTART
     unsigned int sec;
-    RETSIGTYPE (*oldhandler)();
+    struct sigaction action;
 
     if (argc > 1) {
 	Tcl_GetInt(interp, argv[1], (int *)&sec);
@@ -535,12 +534,15 @@ TestalarmCmd(clientData, interp, argc, argv)
     }
 
     /*
-     * Setup the signal handling.
+     * Setup the signal handling that automatically retries
+     * any interupted I/O system calls.
      */
-    
-    oldhandler = signal(SIGALRM, AlarmHandler);
-    if ((int)oldhandler == -1) {
-	Tcl_AppendResult(interp, "signal: ", Tcl_PosixError(interp), NULL);
+    action.sa_handler = AlarmHandler;
+    memset((void *)&action.sa_mask, 0, sizeof(sigset_t));
+    action.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGALRM, &action, NULL) < 0) {
+	Tcl_AppendResult(interp, "sigaction: ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
     if (alarm(sec) < 0) {
@@ -548,6 +550,10 @@ TestalarmCmd(clientData, interp, argc, argv)
 	return TCL_ERROR;
     }
     return TCL_OK;
+#else
+    Tcl_AppendResult(interp, "warning: sigaction SA_RESTART not support on this platform", NULL);
+    return TCL_ERROR;
+#endif
 }
 
 /*
@@ -569,7 +575,7 @@ TestalarmCmd(clientData, interp, argc, argv)
 void
 AlarmHandler()
 {
-    gotsig = '1';
+    gotsig = "1";
 }
 
 /*
@@ -594,7 +600,7 @@ TestgotsigCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     char **argv;			/* Argument strings. */
 {
-    Tcl_AppendResult(interp, &gotsig, (char *) NULL);
-    gotsig = '0';
+    Tcl_AppendResult(interp, gotsig, (char *) NULL);
+    gotsig = "0";
     return TCL_OK;
 }
