@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.12 2001/11/07 04:48:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.13 2002/01/21 20:37:26 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2746,6 +2746,24 @@ WriteChars(chanPtr, src, srcLen)
 	    Tcl_UtfToExternal(NULL, encoding, stage, stageLen, flags,
 		    &statePtr->outputEncodingState, dst,
 		    dstLen + BUFFER_PADDING, &stageRead, &dstWrote, NULL);
+
+	    /* Fix for SF #506297, reported by Martin Forssen <ruric@users.sourceforge.net>.
+	     *
+	     * The encoding chosen in the script exposing the bug
+	     * writes out three intro characters when
+	     * TCL_ENCODING_START is set, but does not consume any
+	     * input as TCL_ENCODING_END is cleared. As some output
+	     * was generated the enclosing loop calls UtfToExternal
+	     * again, again with START set. Three more characters in
+	     * the out and still no use of input ... To break this
+	     * infinite loop we remove TCL_ENCODING_START from the set
+	     * of flags after the first call (no condition is
+	     * required, the later calls remove an unset flag, which
+	     * is a no-op). This causes the subsequent calls to
+	     * UtfToExternal to consume and convert the actual input.
+	     */
+
+	    flags &= ~TCL_ENCODING_START;
 	    if (stageRead + dstWrote == 0) {
 		/*
 		 * We have an incomplete UTF-8 character at the end of the

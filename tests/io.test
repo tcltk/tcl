@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.14.2.1 2001/10/09 12:20:17 dkf Exp $
+# RCS: @(#) $Id: io.test,v 1.14.2.2 2002/01/21 20:37:26 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -89,6 +89,19 @@ test io-1.7 {Tcl_WriteChars: WriteChars} {
     close $f
     contents test1
 } "a\x93\xe1\x00"
+test io-1.8 {Tcl_WriteChars: WriteChars} {
+    # This test written for SF bug #506297.
+    #
+    # Executing this test without the fix for the referenced bug
+    # applied to tcl will cause tcl, more specifically WriteChars, to
+    # go into an infinite loop.
+
+    set f [open test2 w] 
+    fconfigure      $f -encoding iso2022-jp 
+    puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
+    close           $f 
+    contents test2
+} "\x1b(B    \x1b\$@\$O"
 
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
