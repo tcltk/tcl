@@ -376,7 +376,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LIBSUFFIX="s\${DBGX}.a"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s\${DBGX}.exe"
-	    DLLSUFFIX=""
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
@@ -397,10 +396,12 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	        -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
 
 	    LIBSUFFIX="\${DBGX}.a"
-	    DLLSUFFIX="\${DBGX}.dll"
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
+	# DLLSUFFIX is separate because it is the building block for
+	# users of tclConfig.sh that may build shared or static.
+	DLLSUFFIX="\${DBGX}.dll"
 
 	EXTRA_CFLAGS="${extra_cflags}"
 
@@ -450,7 +451,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LIBSUFFIX="s\${DBGX}.lib"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s\${DBGX}.exe"
-	    DLLSUFFIX=""
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
@@ -458,10 +458,12 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	    LIBSUFFIX="\${DBGX}.lib"
-	    DLLSUFFIX="\${DBGX}.dll"
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
+	# DLLSUFFIX is separate because it is the building block for
+	# users of tclConfig.sh that may build shared or static.
+	DLLSUFFIX="\${DBGX}.dll"
 
 	EXTRA_CFLAGS="-YX"
 	CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"

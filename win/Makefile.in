@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.49 2001/07/06 02:20:31 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.50 2001/08/04 00:28:25 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -305,7 +305,7 @@ winhelp: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL)
 $(MAN2TCL): $(ROOT_DIR)/tools/man2tcl.c
 	$(CC) $(CFLAGS_OPTIMIZE) $(MAN2TCLFLAGS) -o $(MAN2TCL) "$(ROOT_DIR_NATIVE)"/tools/man2tcl.c
 
-$(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS) tclsh.$(RES)
+$(TCLSH): $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(TCLSH_OBJS) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) 
 
@@ -412,9 +412,15 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 install: all install-binaries install-libraries install-doc
 
 install-binaries: binaries
-	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
-	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
-	$(COPY) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
+	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" ; \
+	    do \
+	    if [ ! -d $$i ] ; then \
+		echo "Making directory $$i"; \
+		$(MKDIR) $$i; \
+		chmod 755 $$i; \
+		else true; \
+		fi; \
+	    done;
 	@for i in dde1.1 reg1.0; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
@@ -426,14 +432,14 @@ install-binaries: binaries
 	@for i in $(TCL_DLL_FILE) $(TCLSH) $(PIPE_DLL_FILE); \
 	    do \
 	    if [ -f $$i ]; then \
-		echo "Installing $$i"; \
+		echo "Installing $$i to $(BIN_INSTALL_DIR)/"; \
 		$(COPY) $$i "$(BIN_INSTALL_DIR)"; \
 	    fi; \
 	    done
-	@for i in $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE); \
+	@for i in tclConfig.sh $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE); \
 	    do \
 	    if [ -f $$i ]; then \
-		echo "Installing $$i"; \
+		echo "Installing $$i to $(LIB_INSTALL_DIR)/"; \
 		$(COPY) $$i "$(LIB_INSTALL_DIR)"; \
 	    fi; \
 	    done
