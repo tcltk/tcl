@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.6.6.1 2001/05/31 23:45:44 kennykb Exp $
+'\" RCS: @(#) $Id: lindex.n,v 1.6.6.2 2001/07/18 22:20:35 dgp Exp $
 '\" 
 .so man.macros
 .TH lindex n 8.2 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,7 @@ lindex \- Retrieve an element from a list
 .PP
 .VS 8.4
 When presented with two arguments, this command
-d treats \fIlist\fR as a Tcl list and returns the
+treats \fIlist\fR as a Tcl list and returns the
 .VE
 \fIindex\fR'th element from it (0 refers to the first element of the list).
 In extracting the element, \fIlindex\fR observes the same rules
