@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.57 2004/01/18 16:19:04 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.58 2004/01/20 15:39:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -54,13 +54,13 @@ static int traceInitialized = 0;
 
 InstructionDesc tclInstructionTable[] = {
    /* Name	      Bytes stackEffect #Opnds Operand types	Stack top, next	  */
-    {"done",		  1,   -1,        0,   {OPERAND_NONE}},
+    {"done",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
     {"push1",		  2,   +1,         1,   {OPERAND_UINT1}},
 	/* Push object at ByteCode objArray[op1] */
     {"push4",		  5,   +1,         1,   {OPERAND_UINT4}},
 	/* Push object at ByteCode objArray[op4] */
-    {"pop",		  1,   -1,        0,   {OPERAND_NONE}},
+    {"pop",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,   {OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
@@ -97,7 +97,7 @@ InstructionDesc tclInstructionTable[] = {
 	/* Store scalar; value is stktop, scalar name is stknext */
     {"storeArray1",	  2,   -1,         1,   {OPERAND_UINT1}},
 	/* Store array element; array at op1<=255, value is top then elem */
-    {"storeArray4",	  5,   -1,          1,   {OPERAND_UINT4}},
+    {"storeArray4",	  5,   -1,         1,   {OPERAND_UINT4}},
 	/* Store array element; array at op1>=256, value is top then elem */
     {"storeArrayStk",	  1,   -2,         0,   {OPERAND_NONE}},
 	/* Store array element; value is stktop, then elem, array names */
@@ -118,12 +118,12 @@ InstructionDesc tclInstructionTable[] = {
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     {"incrScalarStkImm",  2,   0,          1,   {OPERAND_INT1}},
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    {"incrArray1Imm",	  3,   0,         2,   {OPERAND_UINT1, OPERAND_INT1}},
+    {"incrArray1Imm",	  3,   0,          2,   {OPERAND_UINT1, OPERAND_INT1}},
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     {"incrArrayStkImm",	  2,   -1,         1,   {OPERAND_INT1}},
 	/* Incr array element; elem is top then array name, amount is op1 */
-    {"incrStkImm",	  2,   0,         1,   {OPERAND_INT1}},
+    {"incrStkImm",	  2,   0,	   1,   {OPERAND_INT1}},
 	/* Incr general variable; unparsed name is top, amount is op1 */
     
     {"jump1",		  2,   0,          1,   {OPERAND_INT1}},
@@ -227,9 +227,9 @@ InstructionDesc tclInstructionTable[] = {
 	/* Str Match:	push (strmatch stknext stktop) opnd == nocase */
     {"list",		  5,   INT_MIN,    1,   {OPERAND_UINT4}},
 	/* List:	push (stk1 stk2 ... stktop) */
-    {"listindex",	  1,   -1,         0,   {OPERAND_NONE}},
+    {"listIndex",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* List Index:	push (listindex stknext stktop) */
-    {"listlength",	  1,   0,          0,   {OPERAND_NONE}},
+    {"listLength",	  1,   0,          0,   {OPERAND_NONE}},
 	/* List Len:	push (listlength stktop) */
     {"appendScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Append scalar variable at op1<=255 in frame; value is stktop */
@@ -255,7 +255,7 @@ InstructionDesc tclInstructionTable[] = {
 	/* Lappend array element; value is stktop, then elem, array names */
     {"lappendStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Lappend general variable; value is stktop, then unparsed name */
-    {"lindexMulti",	  5,   INT_MIN,   1,   {OPERAND_UINT4}},
+    {"lindexMulti",	  5,   INT_MIN,    1,   {OPERAND_UINT4}},
         /* Lindex with generalized args, operand is number of stacked objs 
 	 * used: (operand-1) entries from stktop are the indices; then list 
 	 * to process. */
@@ -264,23 +264,23 @@ InstructionDesc tclInstructionTable[] = {
     {"lsetList",          1,   -2,         0,   {OPERAND_NONE}},
         /* Four-arg version of 'lset'. stktop is old value; next is
          * new element value, next is the index list; pushes new value */
-    {"lsetFlat",          5,   INT_MIN,   1,   {OPERAND_UINT4}},
+    {"lsetFlat",          5,   INT_MIN,    1,   {OPERAND_UINT4}},
         /* Three- or >=5-arg version of 'lset', operand is number of 
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  9,   -2,          2,   {OPERAND_INT4, OPERAND_UINT4}},
+    {"return",		  9,   -2,         2,   {OPERAND_INT4, OPERAND_UINT4}},
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
-    {"expon",		  1,   -1,	    0,	 {OPERAND_NONE}},
+    {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
 	/* Binary exponentiation operator: push (stknext ** stktop) */
-    {"listverify",	  1,    0,	    0,   {OPERAND_NONE}},
+    {"listverify",	  1,    0,	   0,   {OPERAND_NONE}},
 	/* Test that top of stack is a valid list; error if not */
     {"invokeExp",   INT_MIN,   INT_MIN,    2, {OPERAND_UINT4, OPERAND_ULIST1}},
 	/* Invoke with expansion: <objc,objv> = expanded <op1,top op1> */
-    {"listIndexImm",	  5,	0,	    1,	 {OPERAND_IDX4}},
+    {"listIndexImm",	  5,	0,	   1,	{OPERAND_IDX4}},
 	/* List Index:	push (lindex stktop op4) */
-    {"listRangeImm",	  9,	0,	    2,	 {OPERAND_IDX4, OPERAND_IDX4}},
+    {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* List Range:	push (lrange stktop op4 op4) */
     {0}
 };
