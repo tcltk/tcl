@@ -1,5 +1,13 @@
 2001-03-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclCkalloc.c (TclFinalizeMemorySubsystem): set curTagPtr
+	to NULL to allow for reuse.
+	* generic/tclEvent.c (Tcl_Finalize): moved the tsdPtr
+	initialization inside the subsystemsInitialized check to prevent
+	it potentially getting called twice during finalization.  (wu)
+	[Patch #403532, Bug #219391]
+
+	* generic/tclThreadTest.c (Tcl_ThreadObjCmd): cast fixes
 	* generic/tclTest.c (TestChannelCmd): added cast to mollify
 	Windows debug build.
 
