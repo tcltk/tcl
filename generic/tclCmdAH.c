@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.5 1999/04/16 00:46:43 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.5.2.1 1999/05/14 22:18:05 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1517,7 +1517,7 @@ GetTypeFromMode(mode)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FoObjCmd --
+ * Tcl_ForObjCmd --
  *
  *      This procedure is invoked to process the "for" Tcl command.
  *      See the user documentation for details on what it does.
@@ -1559,6 +1559,13 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
         return result;
     }
     while (1) {
+	/*
+	 * We need to reset the result before passing it off to
+	 * Tcl_ExprBooleanObj.  Otherwise, any error message will be appended
+	 * to the result of the last evaluation.
+	 */
+
+	Tcl_ResetResult(interp);
         result = Tcl_ExprBooleanObj(interp, objv[2], &value);
         if (result != TCL_OK) {
             return result;
