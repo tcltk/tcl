@@ -1,3 +1,11 @@
+2004-01-27  David Gravereaux <davygrvy@pobox.com>
+
+	* win/nmakehlp.c: Use '.\nul' as the sourcefile name instead of
+	'nul' so VC 5.2 doesn't try searching the path for it and failing
+	with a possible dialogbox popping up about having to add a CD to
+	an empty drive.  Also added a SetErrorMode() call to disable any
+	dialogs that cl.exe or link.exe might create.  [Bug 885537]
+
 2004-01-22  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/file.n: clarified documentation of 'file system' [Bug 883825]
