@@ -1,3 +1,28 @@
+2000-09-29  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* win/Makefile.in: commented use of TESTFLAGS
+	* unix/Makefile.in: added TESTFLAGS to test target to
+	conform with Windows makefile and TEA style.
+
+	* tests/stack.test: prevented possible crash on systems with low
+	default stacksize (Tru64, AIX) in infinite recursion test.  A
+	solution to check remaining stack space in the core is best, but
+	hard to do in a cross-platform manner.
+
+	* generic/tclIOGT.c (FLUSH_DELAY): renamed DELAY define to
+	FLUSH_DELAY to avoid defn conflict using Tru64's cc.
+
+2000-09-28  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* tools/tcl.wse.in: added tclPlatDecls.h and tkPlatDecls.h to the
+	Windows .exe install.
+
+	* tests/fCmd.test (fCmd-6.20): corrected test to remove
+	c:/tcl8975@ after creating it.
+
+	* tests/fileName.test: cleaned up the testing of glob patterns for
+	c:/globTest (Windows) to directly create/remove directory.
+
 2000-09-27  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* generic/tcl.decls:

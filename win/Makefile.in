@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.39 2000/09/28 06:36:27 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.40 2000/09/29 21:43:32 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -511,6 +511,10 @@ install-libraries:
 	done;
 
 install-doc:
+
+# Specifying TESTFLAGS on the command line is the standard way to pass
+# args to tcltest, ie:
+#	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
 test: binaries $(TCLTEST)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
