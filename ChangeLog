@@ -1,3 +1,18 @@
+2002-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/reg/pkgIndex.tcl:
+	* win/configure:
+	* win/configure.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
+	* win/makefile.bc:    Updated to reg1.1
+
+	* doc/registry.n:      Added support for broadcasting changes to
+	* tests/registry.test: the registry Environment. Noted proper code
+	* win/tclWinReg.c:     in the docs. [Patch #625453]
+
+	* unix/Makefile.in (dist): add any mac/tcl*.sea.hqx files
+
 2002-10-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclVar.c:	Fixed code that check for proper # of args to

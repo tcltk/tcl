@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.65 2002/08/22 00:52:33 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.66 2002/10/18 23:58:41 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -433,7 +433,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde1.2 reg1.0; \
+	@for i in dde1.2 reg1.1; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
@@ -467,13 +467,13 @@ install-binaries: binaries
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
+	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.1; \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/reg1.0; \
+		$(LIB_INSTALL_DIR)/reg1.1; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
+	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.1; \
 	    fi
 
 install-libraries: libraries
