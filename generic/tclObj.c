@@ -1,5 +1,5 @@
 /* 
- * Obj.c --
+ * tclObj.c --
  *
  *	This file contains Tcl object-related procedures that are used by
  * 	many Tcl commands.
@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.15 2000/07/19 22:15:30 ericm Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.16 2000/07/20 20:33:26 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -36,7 +36,7 @@ Tcl_Obj *tclFreeObjList = NULL;
  */
 
 #ifdef TCL_THREADS
-Tcl_Mutex ObjMutex;
+Tcl_Mutex tclObjMutex;
 #endif
 
 /*
@@ -54,9 +54,9 @@ char *tclEmptyStringRep = &emptyString;
  */
 
 #ifdef TCL_COMPILE_STATS
-long ObjsAlloced = 0;
-long ObjsFreed = 0;
-long ObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
+long tclObjsAlloced = 0;
+long tclObjsFreed = 0;
+long tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
 
 /*
@@ -72,20 +72,6 @@ static int		SetIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 static void		UpdateStringOfBoolean _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
-
-/*
- * Prototypes for the array hash key methods.
- */
-
-static Tcl_HashEntry *	AllocObjEntry _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr, VOID *keyPtr));
-static int		CompareObjKeys _ANSI_ARGS_((
-			    VOID *keyPtr, Tcl_HashEntry *hPtr));
-static void		FreeObjEntry _ANSI_ARGS_((
-			    Tcl_HashEntry *hPtr));
-static unsigned int	HashObjKey _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
 
 /*
  * The structures below defines the Tcl object types defined in this file by
@@ -116,18 +102,6 @@ Tcl_ObjType tclIntType = {
     (Tcl_DupInternalRepProc *) NULL,	/* dupIntRepProc */
     UpdateStringOfInt,			/* updateStringProc */
     SetIntFromAny			/* setFromAnyProc */
-};
-
-/*
- * The structure below defines the Tcl obj hash key type.
- */
-Tcl_HashKeyType tclObjHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION,		/* version */
-    0,					/* flags */
-    HashObjKey,				/* hashKeyProc */
-    CompareObjKeys,			/* compareKeysProc */
-    AllocObjEntry,			/* allocEntryProc */
-    FreeObjEntry			/* freeEntryProc */
 };
 
 /*
@@ -167,16 +141,16 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclProcBodyType);
 
 #ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&ObjMutex);
-    ObjsAlloced = 0;
-    ObjsFreed = 0;
+    Tcl_MutexLock(&tclObjMutex);
+    tclObjsAlloced = 0;
+    tclObjsFreed = 0;
     {
 	int i;
 	for (i = 0;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
-	    ObjsShared[i] = 0;
+	    tclObjsShared[i] = 0;
 	}
     }
-    Tcl_MutexUnlock(&ObjMutex);
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif
 }
 
@@ -207,9 +181,9 @@ TclFinalizeCompExecEnv()
         typeTableInitialized = 0;
     }
     Tcl_MutexUnlock(&tableMutex);
-    Tcl_MutexLock(&ObjMutex);
+    Tcl_MutexLock(&tclObjMutex);
     tclFreeObjList = NULL;
-    Tcl_MutexUnlock(&ObjMutex);
+    Tcl_MutexUnlock(&tclObjMutex);
 
     TclFinalizeCompilation();
     TclFinalizeExecution();
@@ -415,7 +389,7 @@ Tcl_ConvertToType(interp, objPtr, typePtr)
  *
  * Side effects:
  *	If compiling with TCL_COMPILE_STATS, this procedure increments
- *	the global count of allocated objects (ObjsAlloced).
+ *	the global count of allocated objects (tclObjsAlloced).
  *
  *----------------------------------------------------------------------
  */
@@ -441,7 +415,7 @@ Tcl_NewObj()
      * we maintain.
      */
 
-    Tcl_MutexLock(&ObjMutex);
+    Tcl_MutexLock(&tclObjMutex);
     if (tclFreeObjList == NULL) {
 	TclAllocateFreeObjects();
     }
@@ -453,9 +427,9 @@ Tcl_NewObj()
     objPtr->length   = 0;
     objPtr->typePtr  = NULL;
 #ifdef TCL_COMPILE_STATS
-    ObjsAlloced++;
+    tclObjsAlloced++;
 #endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&ObjMutex);
+    Tcl_MutexUnlock(&tclObjMutex);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -482,7 +456,7 @@ Tcl_NewObj()
  *
  * Side effects:
  *	If compiling with TCL_COMPILE_STATS, this procedure increments
- *	the global count of allocated objects (ObjsAlloced).
+ *	the global count of allocated objects (tclObjsAlloced).
  *
  *----------------------------------------------------------------------
  */
@@ -510,9 +484,9 @@ Tcl_DbNewObj(file, line)
     objPtr->length   = 0;
     objPtr->typePtr  = NULL;
 #ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&ObjMutex);
-    ObjsAlloced++;
-    Tcl_MutexUnlock(&ObjMutex);
+    Tcl_MutexLock(&tclObjMutex);
+    tclObjsAlloced++;
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_COMPILE_STATS */
     return objPtr;
 }
@@ -598,7 +572,7 @@ TclAllocateFreeObjects()
  *	type-specific Tcl_FreeInternalRepProc to deallocate the object's
  *	internal representation. If compiling with TCL_COMPILE_STATS,
  *	this procedure increments the global count of freed objects
- *	(ObjsFreed).
+ *	(tclObjsFreed).
  *
  *----------------------------------------------------------------------
  */
@@ -626,7 +600,7 @@ TclFreeObj(objPtr)
      * Tcl_Obj structs we maintain.
      */
 
-    Tcl_MutexLock(&ObjMutex);
+    Tcl_MutexLock(&tclObjMutex);
 #ifdef TCL_MEM_DEBUG
     ckfree((char *) objPtr);
 #else
@@ -635,9 +609,9 @@ TclFreeObj(objPtr)
 #endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
-    ObjsFreed++;
+    tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&ObjMutex);
+    Tcl_MutexUnlock(&tclObjMutex);
 }
 
 /*
@@ -2112,219 +2086,15 @@ Tcl_DbIsShared(objPtr, file, line)
     }
 #endif
 #ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&ObjMutex);
+    Tcl_MutexLock(&tclObjMutex);
     if ((objPtr)->refCount <= 1) {
-	ObjsShared[1]++;
+	tclObjsShared[1]++;
     } else if ((objPtr)->refCount < TCL_MAX_SHARED_OBJ_STATS) {
-	ObjsShared[(objPtr)->refCount]++;
+	tclObjsShared[(objPtr)->refCount]++;
     } else {
-	ObjsShared[0]++;
+	tclObjsShared[0]++;
     }
-    Tcl_MutexUnlock(&ObjMutex);
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif
     return ((objPtr)->refCount > 1);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_InitObjHashTable --
- *
- *	Given storage for a hash table, set up the fields to prepare
- *	the hash table for use, the keys are Tcl_Obj *.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	TablePtr is now ready to be passed to Tcl_FindHashEntry and
- *	Tcl_CreateHashEntry.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_InitObjHashTable(tablePtr)
-    register Tcl_HashTable *tablePtr;	/* Pointer to table record, which
-					 * is supplied by the caller. */
-{
-    Tcl_InitHashTableEx (tablePtr, TCL_CUSTOM_PTR_KEYS, &tclObjHashKeyType);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AllocObjEntry --
- *
- *	Allocate space for a Tcl_HashEntry containing the Tcl_Obj * key.
- *
- * Results:
- *	The return value is a pointer to the created entry.
- *
- * Side effects:
- *	Increments the reference count on the object.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_HashEntry *
-AllocObjEntry(tablePtr, keyPtr)
-    Tcl_HashTable *tablePtr;	/* Hash table. */
-    VOID *keyPtr;		/* Key to store in the hash table entry. */
-{
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
-    Tcl_HashEntry *hPtr;
-
-    hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)));
-    hPtr->key.oneWordValue = (char *) objPtr;
-    Tcl_IncrRefCount (objPtr);
-
-    return hPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CompareObjKeys --
- *
- *	Compares two Tcl_Obj * keys.
- *
- * Results:
- *	The return value is 0 if they are different and 1 if they are
- *	the same.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-CompareObjKeys(keyPtr, hPtr)
-    VOID *keyPtr;		/* New key to compare. */
-    Tcl_HashEntry *hPtr;		/* Existing key to compare. */
-{
-    Tcl_Obj *objPtr1 = (Tcl_Obj *) keyPtr;
-    Tcl_Obj *objPtr2 = (Tcl_Obj *) hPtr->key.oneWordValue;
-    register CONST char *p1, *p2;
-    register int l1, l2;
-
-    /*
-     * If the object pointers are the same then they match.
-     */
-    if (objPtr1 == objPtr2) {
-	return 1;
-    }
-
-    /*
-     * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
-     * in a register.
-     */
-    p1 = Tcl_GetString (objPtr1);
-    l1 = objPtr1->length;
-    p2 = Tcl_GetString (objPtr2);
-    l2 = objPtr2->length;
-    
-    /*
-     * Only compare if the string representations are of the same length.
-     */
-    if (l1 == l2) {
-	for (;; p1++, p2++, l1--) {
-	    if (*p1 != *p2) {
-		break;
-	    }
-	    if (l1 == 0) {
-		return 1;
-	    }
-	}
-    }
-
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FreeObjEntry --
- *
- *	Frees space for a Tcl_HashEntry containing the Tcl_Obj * key.
- *
- * Results:
- *	The return value is a pointer to the created entry.
- *
- * Side effects:
- *	Decrements the reference count of the object.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeObjEntry(hPtr)
-    Tcl_HashEntry *hPtr;	/* Hash entry to free. */
-{
-    Tcl_Obj *objPtr = (Tcl_Obj *) hPtr->key.oneWordValue;
-
-    Tcl_DecrRefCount (objPtr);
-    ckfree ((char *) hPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * HashObjKey --
- *
- *	Compute a one-word summary of the string representation of the
- *	Tcl_Obj, which can be used to generate a hash index.
- *
- * Results:
- *	The return value is a one-word summary of the information in
- *	the string representation of the Tcl_Obj.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static unsigned int
-HashObjKey(tablePtr, keyPtr)
-    Tcl_HashTable *tablePtr;	/* Hash table. */
-    VOID *keyPtr;		/* Key from which to compute hash value. */
-{
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
-    register CONST char *string;
-    register int length;
-    register unsigned int result;
-    register int c;
-
-    string = Tcl_GetString (objPtr);
-    length = objPtr->length;
-    
-    /*
-     * I tried a zillion different hash functions and asked many other
-     * people for advice.  Many people had their own favorite functions,
-     * all different, but no-one had much idea why they were good ones.
-     * I chose the one below (multiply by 9 and add new character)
-     * because of the following reasons:
-     *
-     * 1. Multiplying by 10 is perfect for keys that are decimal strings,
-     *    and multiplying by 9 is just about as good.
-     * 2. Times-9 is (shift-left-3) plus (old).  This means that each
-     *    character's bits hang around in the low-order bits of the
-     *    hash value for ever, plus they spread fairly rapidly up to
-     *    the high-order bits to fill out the hash value.  This seems
-     *    works well both for decimal and non-decimal strings.
-     */
-
-    result = 0;
-    while (length) {
-	c = *string;
-	string++;
-	length--;
-	if (length == 0) {
-	    break;
-	}
-	result += (result<<3) + c;
-    }
-    return result;
 }

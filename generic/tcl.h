@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.73 2000/07/19 22:15:29 ericm Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.74 2000/07/20 20:33:25 ericm Exp $
  */
 
 #ifndef _TCL
@@ -336,14 +336,6 @@ typedef long LONG;
 #define _CLIENTDATA
 #endif
 
-/*
- * This flag controls whether binary compatability is maintained with
- * extensions built against a previous version of Tcl.
- */
-#ifndef TCL_PRESERVE_BINARY_COMPATABILITY
-#define TCL_PRESERVE_BINARY_COMPATABILITY 1
-#endif
-    
 /*
  * Data structures defined opaquely in this module. The definitions below
  * just provide dummy types. A few fields are made visible in Tcl_Interp
@@ -950,30 +942,13 @@ typedef struct Tcl_DString {
 #define TCL_LINK_READ_ONLY	0x80
 
 /*
- * Forward declarations of Tcl_HashTable and related types.
+ * Forward declaration of Tcl_HashTable.  Needed by some C++ compilers
+ * to prevent errors when the forward reference to Tcl_HashTable is
+ * encountered in the Tcl_HashEntry structure.
  */
 
-typedef struct Tcl_HashKeyType Tcl_HashKeyType;
-typedef struct Tcl_HashTable Tcl_HashTable;
-typedef struct Tcl_HashEntry Tcl_HashEntry;
-    
-typedef unsigned int (Tcl_HashKeyProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
-	VOID *keyPtr));
-typedef int (Tcl_CompareHashKeysProc) _ANSI_ARGS_((VOID *keyPtr,
-	Tcl_HashEntry *hPtr));
-typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) _ANSI_ARGS_((
-	Tcl_HashTable *tablePtr, VOID *keyPtr));
-typedef void (Tcl_FreeHashEntryProc) _ANSI_ARGS_((Tcl_HashEntry *hPtr));
-
-/*
- * This flag controls whether the hash table stores the hash of a key, or
- * recalculates it. There should be no reason for turning this flag off
- * as it is completely binary and source compatible unless you directly
- * access the bucketPtr member of the Tcl_HashTableEntry structure. This
- * member has been removed and the space used to store the hash value.
- */
-#ifndef TCL_HASH_KEY_STORE_HASH
-#define TCL_HASH_KEY_STORE_HASH 1
+#ifdef __cplusplus
+struct Tcl_HashTable;
 #endif
 
 /*
@@ -982,25 +957,14 @@ typedef void (Tcl_FreeHashEntryProc) _ANSI_ARGS_((Tcl_HashEntry *hPtr));
  * defined below.
  */
 
-struct Tcl_HashEntry {
-    Tcl_HashEntry *nextPtr;		/* Pointer to next entry in this
+typedef struct Tcl_HashEntry {
+    struct Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this
 					 * hash bucket, or NULL for end of
 					 * chain. */
-    Tcl_HashTable *tablePtr;		/* Pointer to table containing entry. */
-#if TCL_HASH_KEY_STORE_HASH
-#   if TCL_PRESERVE_BINARY_COMPATABILITY
-    VOID *hash;				/* Hash value, stored as pointer to
-					 * ensure that the offsets of the
-					 * fields in this structure are not
-					 * changed. */
-#   else
-    unsigned int hash;			/* Hash value. */
-#   endif
-#else
-    Tcl_HashEntry **bucketPtr;		/* Pointer to bucket that points to
+    struct Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
+    struct Tcl_HashEntry **bucketPtr;	/* Pointer to bucket that points to
 					 * first entry in this entry's chain:
 					 * used for deleting the entry. */
-#endif
     ClientData clientData;		/* Application stores something here
 					 * with Tcl_SetHashValue. */
     union {				/* Key has one of these forms: */
@@ -1014,64 +978,8 @@ struct Tcl_HashEntry {
 					 * will be as large as needed to hold
 					 * the key. */
     } key;				/* MUST BE LAST FIELD IN RECORD!! */
-};
+} Tcl_HashEntry;
 
-/*
- * Flags used in Tcl_HashKeyType.
- *
- * TCL_HASH_KEY_RANDOMIZE_HASH:
- *				There are some things, pointers for example
- *				which don't hash well because they do not use
- *				the lower bits. If this flag is set then the
- *				hash table will attempt to rectify this by
- *				randomising the bits and then using the upper
- *				N bits as the index into the table.
- */
-#define TCL_HASH_KEY_RANDOMIZE_HASH 0x1
-    
-/*
- * Structure definition for the methods associated with a hash table
- * key type.
- */
-#define TCL_HASH_KEY_TYPE_VERSION 1
-struct Tcl_HashKeyType {
-    int version;		/* Version of the table. If this structure is
-				 * extended in future then the version can be
-				 * used to distinguish between different
-				 * structures. 
-				 */
-
-    int flags;			/* Flags, see above for details. */
-    
-    /* Calculates a hash value for the key. If this is NULL then the pointer
-     * itself is used as a hash value.
-     */
-    Tcl_HashKeyProc *hashKeyProc;
-
-    /* Compares two keys and returns zero if they do not match, and non-zero
-     * if they do. If this is NULL then the pointers are compared.
-     */
-    Tcl_CompareHashKeysProc *compareKeysProc;
-
-    /* Called to allocate memory for a new entry, i.e. if the key is a
-     * string then this could allocate a single block which contains enough
-     * space for both the entry and the string. Only the key field of the
-     * allocated Tcl_HashEntry structure needs to be filled in. If something
-     * else needs to be done to the key, i.e. incrementing a reference count
-     * then that should be done by this function. If this is NULL then Tcl_Alloc
-     * is used to allocate enough space for a Tcl_HashEntry and the key pointer
-     * is assigned to key.oneWordValue.
-     */
-    Tcl_AllocHashEntryProc *allocEntryProc;
-
-    /* Called to free memory associated with an entry. If something else needs
-     * to be done to the key, i.e. decrementing a reference count then that
-     * should be done by this function. If this is NULL then Tcl_Free is used
-     * to free the Tcl_HashEntry.
-     */
-    Tcl_FreeHashEntryProc *freeEntryProc;
-};
-    
 /*
  * Structure definition for a hash table.  Must be in tcl.h so clients
  * can allocate space for these structures, but clients should never
@@ -1079,7 +987,7 @@ struct Tcl_HashKeyType {
  */
 
 #define TCL_SMALL_HASH_TABLE 4
-struct Tcl_HashTable {
+typedef struct Tcl_HashTable {
     Tcl_HashEntry **buckets;		/* Pointer to bucket array.  Each
 					 * element points to first entry in
 					 * bucket's hash chain, or NULL. */
@@ -1098,20 +1006,16 @@ struct Tcl_HashTable {
     int mask;				/* Mask value used in hashing
 					 * function. */
     int keyType;			/* Type of keys used in this table. 
-					 * It's either TCL_CUSTOM_KEYS,
+					 * It's either TCL_OBJ_KEYS,
 					 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS,
 					 * or an integer giving the number of
 					 * ints that is the size of the key.
 					 */
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-    Tcl_HashEntry *(*findProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+    Tcl_HashEntry *(*findProc) _ANSI_ARGS_((struct Tcl_HashTable *tablePtr,
 	    CONST char *key));
-    Tcl_HashEntry *(*createProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+    Tcl_HashEntry *(*createProc) _ANSI_ARGS_((struct Tcl_HashTable *tablePtr,
 	    CONST char *key, int *newPtr));
-#endif
-    Tcl_HashKeyType *typePtr;		/* Type of the keys used in the
-					 * Tcl_HashTable. */
-};
+} Tcl_HashTable;
 
 /*
  * Structure definition for information used to keep track of searches
@@ -1128,36 +1032,11 @@ typedef struct Tcl_HashSearch {
 
 /*
  * Acceptable key types for hash tables:
- *
- * TCL_STRING_KEYS:		The keys are strings, they are copied into
- *				the entry.
- * TCL_ONE_WORD_KEYS:		The keys are pointers, the pointer is stored
- *				in the entry.
- * TCL_CUSTOM_TYPE_KEYS:	The keys are arbitrary types which are copied
- *				into the entry.
- * TCL_CUSTOM_PTR_KEYS:		The keys are pointers to arbitrary types, the
- *				pointer is stored in the entry.
- *
- * While maintaining binary compatability the above have to be distinct
- * values as they are used to differentiate between old versions of the
- * hash table which don't have a typePtr and new ones which do. Once binary
- * compatability is discarded in favour of making more wide spread changes
- * TCL_STRING_KEYS can be the same as TCL_CUSTOM_TYPE_KEYS, and
- * TCL_ONE_WORD_KEYS can be the same as TCL_CUSTOM_PTR_KEYS because they
- * simply determine how the key is accessed from the entry and not the
- * behaviour.
  */
 
+#define TCL_OBJ_KEYS		-1
 #define TCL_STRING_KEYS		0
 #define TCL_ONE_WORD_KEYS	1
-
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define TCL_CUSTOM_TYPE_KEYS		-2
-#   define TCL_CUSTOM_PTR_KEYS		-1
-#else
-#   define TCL_CUSTOM_TYPE_KEYS		TCL_STRING_KEYS
-#   define TCL_CUSTOM_PTR_KEYS		TCL_ONE_WORD_KEYS
-#endif
 
 /*
  * Macros for clients to use to access fields of hash entries:
@@ -1165,37 +1044,22 @@ typedef struct Tcl_HashSearch {
 
 #define Tcl_GetHashValue(h) ((h)->clientData)
 #define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define Tcl_GetHashKey(tablePtr, h) \
-	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
-		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
-		   ? (h)->key.oneWordValue \
-		   : (h)->key.string))
-#else
-#   define Tcl_GetHashKey(tablePtr, h) \
-	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS) \
-		   ? (h)->key.oneWordValue \
-		   : (h)->key.string))
-#endif
+#define Tcl_GetHashKey(tablePtr, h) \
+    ((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
+		(tablePtr)->keyType == TCL_OBJ_KEYS) \
+	       ? (h)->key.oneWordValue \
+	       : (h)->key.string))
 
 /*
  * Macros to use for clients to use to invoke find and create procedures
  * for hash tables:
  */
 
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define Tcl_FindHashEntry(tablePtr, key) \
+#define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, key)
-#   define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+#define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
-#endif
 
-/*
- * Macro to use new extended version of Tcl_InitHashTable.
- */
-#define Tcl_InitHashTable(tablePtr, keyType) \
-	Tcl_InitHashTableEx(tablePtr, keyType, NULL)
-    
 /*
  * Flag values to pass to Tcl_DoOneEvent to disable searches
  * for some kinds of events:

@@ -5,22 +5,18 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.5 2000/07/19 22:15:28 ericm Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.6 2000/07/20 20:33:24 ericm Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_InitHashTable, Tcl_InitHashTableEx, Tcl_InitObjHashTable, Tcl_DeleteHashTable, Tcl_CreateHashEntry, Tcl_DeleteHashEntry, Tcl_FindHashEntry, Tcl_GetHashValue, Tcl_SetHashValue, Tcl_GetHashKey, Tcl_FirstHashEntry, Tcl_NextHashEntry, Tcl_HashStats \- procedures to manage hash tables
+Tcl_InitHashTable, Tcl_DeleteHashTable, Tcl_CreateHashEntry, Tcl_DeleteHashEntry, Tcl_FindHashEntry, Tcl_GetHashValue, Tcl_SetHashValue, Tcl_GetHashKey, Tcl_FirstHashEntry, Tcl_NextHashEntry, Tcl_HashStats \- procedures to manage hash tables
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 \fBTcl_InitHashTable\fR(\fItablePtr, keyType\fR)
-.sp
-\fBTcl_InitHashTableEx\fR(\fItablePtr, keyType, typePtr\fR)
-.sp
-\fBTcl_InitObjHashTable\fR(\fItablePtr\fR)
 .sp
 \fBTcl_DeleteHashTable\fR(\fItablePtr\fR)
 .sp
@@ -56,10 +52,8 @@ Address of hash table structure (for all procedures but
 previous call to \fBTcl_InitHashTable\fR).
 .AP int keyType in
 Kind of keys to use for new hash table.  Must be either
-TCL_STRING_KEYS, TCL_ONE_WORD_KEYS, TCL_CUSTOM_TYPE_KEYS,
-TCL_CUSTOM_PTR_KEYS, or an integer value greater than 1.
-.AP Tcl_HashKeyType *typePtr in
-Address of structure which defines the behaviour of the hash table.
+TCL_STRING_KEYS, TCL_OBJ_KEYS, TCL_ONE_WORD_KEYS, or an integer value
+greater than 1.
 .AP char *key in
 Key to use for probe into table.  Exact form depends on
 \fIkeyType\fR used to create table.
@@ -102,10 +96,7 @@ on average.
 This allows for fast lookups regardless of the number of entries
 in a table.
 .PP
-\fBTcl_InitHashTable\fR calls the extended function 
-\fBTcl_InitHashTableEx\fR with a NULL \fItypePtr\fR.
-.PP
-\fBTcl_InitHashTableEx\fR initializes a structure that describes
+\fBTcl_InitHashTable\fR initializes a structure that describes
 a new hash table.
 The space for the structure is provided by the caller, not by
 the hash module.
@@ -116,22 +107,18 @@ one of the following values:
 Keys are null-terminated ASCII strings.
 They are passed to hashing routines using the address of the
 first character of the string.
+.IP \fBTCL_OBJ_KEYS\fR 25
+Keys are Tcl_Obj *.  Hashing and comparison are done on the string
+representation of the object.  The differences between this type and
+TCL_STRING_KEYS are:  the key is not copied, instead the reference
+count is incremented; and the extra information associated with the
+Tcl_Obj * is used to optimize comparisons.  The string is only
+compared if the two Tcl_Obj * are different and have the same length.
 .IP \fBTCL_ONE_WORD_KEYS\fR 25
 Keys are single-word values;  they are passed to hashing routines
 and stored in hash table entries as ``char *'' values.
 The pointer value is the key;  it need not (and usually doesn't)
 actually point to a string.
-.IP \fBTCL_CUSTOM_TYPE_KEYS\fR 25
-Keys are of arbitrary type, and are stored in the entry. Hashing
-and comparison is determined by \fItypePtr\fR. The Tcl_HashKeyType 
-structure is described in the section 
-\fBTHE TCL_HASHKEYTYPE STRUCTURE\fR below.
-
-.IP \fBTCL_CUSTOM_TYPE_KEYS\fR 25
-Keys are pointers to arbitrary type, and the are stored in the entry. Hashing
-and comparison is determined by \fItypePtr\fR. The Tcl_HashKeyType 
-structure is described in the section 
-\fBTHE TCL_HASHKEYTYPE STRUCTURE\fR below.
 .IP \fIother\fR 25
 If \fIkeyType\fR is not one of the above,
 then it must be an integer value greater than 1.
@@ -141,9 +128,6 @@ This allows structures to be used as keys.
 All keys must have the same size.
 Array keys are passed into hashing functions using the address
 of the first int in the array.
-.PP
-\fBTcl_InitObjHashTable\fR uses \fBTcl_InitHashTableEx\fR to
-initialize a hash table whose keys are Tcl_Obj *.
 .PP
 \fBTcl_DeleteHashTable\fR deletes all of the entries in a hash
 table and frees up the memory associated with the table's
@@ -227,78 +211,5 @@ However, users of the hashing routines should never refer directly
 to any of the fields of any of the hash-related data structures;
 use the procedures and macros defined here.
 
-.SH "THE TCL_HASHKEYTYPE STRUCTURE"
-.PP
-Extension writers can define new hash key types by defining four
-procedure, initializing a Tcl_HashKeyType structure to describe
-the type, and calling \fBTcl_InitHashTableEx\fR.
-The \fBTcl_HashKeyType\fR structure is defined as follows:
-.CS
-typedef struct Tcl_HashKeyType {
-    int \fIversion\fR;
-    int \fIflags\fR;
-    Tcl_HashKeyProc *\fIhashKeyProc\fR;
-    Tcl_CompareHashKeysProc *\fIcompareKeysProc\fR;
-    Tcl_AllocHashEntryProc *\fIallocEntryProc\fR;
-    Tcl_FreeHashEntryProc *\fIfreeEntryProc\fR;
-} Tcl_HashKeyType;
-.CE
-.PP
-The \fIversion\fR member is the version of the table. If this
-structure is extended in future then the version can be used
-to distinguish between different structures. It should be set
-to \fBTCL_HASH_KEY_TYPE_VERSION\fR.
-.PP
-The \fIflags\fR member is one or more of the following OR'ed together:
-.IP \fBTCL_HASH_KEY_RANDOMIZE_HASH\fR 25
-There are some things, pointers for example which don't hash well 
-because they do not use the lower bits. If this flag is set then the
-hash table will attempt to rectify this by randomising the bits and 
-then using the upper N bits as the index into the table.
-.PP
-The \fIhashKeyProc\fR member contains the address of a function 
-called to calculate a hash value for the key.
-.CS
-typedef unsigned int (Tcl_HashKeyProc) (
-    Tcl_HashTable *\fItablePtr\fR,
-    VOID *\fIkeyPtr\fR);
-.CE
-If this is NULL then \fIkeyPtr\fR is used and 
-\fBTCL_HASH_KEY_RANDOMIZE_HASH\fR is assumed.
-.PP
-The \fIcompareKeysProc\fR member contains the address of a function 
-called to compare two keys.
-.CS
-typedef int (Tcl_CompareHashKeysProc) (VOID *\fIkeyPtr\fR,
-    Tcl_HashEntry *\fIhPtr\fR);
-.CE
-If this is NULL then the \fIkeyPtr\fR pointers are compared.
-If the keys don't match then the function returns 0, otherwise
-it returns 1.
-.PP
-The \fIallocEntryProc\fR member contains the address of a function 
-called to allocate space for an entry and initialise the key.
-.CS
-typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) (
-    Tcl_HashTable *\fItablePtr\fR, VOID *\fIkeyPtr\fR);
-.CE
-If this is NULL then Tcl_Alloc is used to allocate enough space for a
-Tcl_HashEntry and the key pointer is assigned to key.oneWordValue.
-String keys and array keys use this function to allocate enough 
-space for the entry and the key in one block, rather than doing
-it in two blocks. This saves space for a pointer to the key from
-the entry and another memory allocation. Tcl_Obj * keys use this 
-function to allocate enough space for an entry and increment the 
-reference count on the object.
-If 
-.PP
-The \fIfreeEntryProc\fR member contains the address of a function 
-called to free space for an entry.
-.CS
-typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *\fIhPtr\fR);
-.CE
-If this is NULL then Tcl_Free is used to free the space for the 
-entry. Tcl_Obj * keys use this function to decrement the
-reference count on the object.
 .SH KEYWORDS
 hash table, key, lookup, search, value
