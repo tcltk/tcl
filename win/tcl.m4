@@ -571,9 +571,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    if test "x${MSSDK}x" = "xx" ; then
 		MSSDK="C:/Progra~1/Microsoft SDK"
 	    fi
-	    # In order to work in the tortured autoconf environment,
-	    # we need to ensure that this path has no spaces
-	    MSSDK=$(cygpath -w -s "$MSSDK" | sed -e 's!\\!/!g')
+	    MSSDK=`echo "$MSSDK" | sed -e 's!\\\!/!g'`
 	    if test ! -d "${MSSDK}/bin/win64" ; then
 		AC_MSG_WARN("could not find 64-bit SDK to enable 64bit mode")
 		do64bit="no"
@@ -582,18 +580,21 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
 	if test "$do64bit" = "yes" ; then
 	    # All this magic is necessary for the Win64 SDK RC1 - hobbs
-	    CC="${MSSDK}/Bin/Win64/cl.exe \
-	-I${MSSDK}/Include/prerelease \
-	-I${MSSDK}/Include/Win64/crt \
-	-I${MSSDK}/Include/Win64/crt/sys \
-	-I${MSSDK}/Include"
-	    RC="${MSSDK}/bin/rc.exe"
+	    # The space-based-path will work for the Makefile, but will
+	    # not work if AC_TRY_COMPILE is called.  TEA has the
+	    # TEA_PATH_NOSPACE to avoid this issue.
+	    CC="\"${MSSDK}/Bin/Win64/cl.exe\" \
+		-I\"${MSSDK}/Include/prerelease\" \
+		-I\"${MSSDK}/Include/Win64/crt\" \
+		-I\"${MSSDK}/Include/Win64/crt/sys\" \
+		-I\"${MSSDK}/Include\""
+	    RC="\"${MSSDK}/bin/rc.exe\""
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
-	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
-	    lflags="-MACHINE:IA64 -LIBPATH:${MSSDK}/Lib/IA64 \
-	-LIBPATH:${MSSDK}/Lib/Prerelease/IA64"
-	    STLIB_LD="${MSSDK}/bin/win64/lib.exe -nologo ${lflags}"
-	    LINKBIN="${MSSDK}/bin/win64/link.exe ${lflags}"
+	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
+	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
+	    lflags="-MACHINE:IA64 -LIBPATH:\"${MSSDK}/Lib/IA64\" \
+		-LIBPATH:\"${MSSDK}/Lib/Prerelease/IA64\" -nologo"
+	    LINKBIN="\"${MSSDK}/bin/win64/link.exe\""
 	else
 	    RC="rc"
 	    # -Od - no optimization
@@ -601,13 +602,15 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
 	    # -O2 - create fast code (/Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy)
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
-	    STLIB_LD="link -lib -nologo"
+	    lflags="-nologo"
 	    LINKBIN="link"
 	fi
 
-	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
 	LIBS="user32.lib advapi32.lib"
 	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib"
+	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
+	# link -lib only works when -lib is the first arg
+	STLIB_LD="${LINKBIN} -lib ${lflags}"
 	RC_OUT=-fo
 	RC_TYPE=-r
 	RC_INCLUDE=-i
@@ -620,7 +623,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
 	EXTRA_CFLAGS=""
 	CFLAGS_WARNING="-W3"
-	LDFLAGS_DEBUG="-debug:full -debugtype:both"
+	LDFLAGS_DEBUG="-debug:full"
 	LDFLAGS_OPTIMIZE="-release"
 	
 	# Specify the CC output file names based on the target name
