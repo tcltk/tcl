@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.21 2004/11/20 00:17:32 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.22 2004/11/21 23:17:50 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -178,7 +178,7 @@ exists, the command raises an error.
 This command concatenates all of the \fIarg\fR arguments in the same
 fashion as the \fBconcat\fR command, then evaluates the resulting string as
 a Tcl script in the slave interpreter identified by \fIpath\fR. The result
-of this evaluation (including all \fBreturn\fT options,
+of this evaluation (including all \fBreturn\fR options,
 such as \fB-errorinfo\fR and \fB-errorcode\fR information, if an error occurs)
 is returned to the invoking interpreter.
 Note that the script will be executed in the current context stack frame of the
@@ -362,7 +362,7 @@ what to set the interpreter's background error to. See the
 This command concatenates all of the \fIarg\fR arguments in
 the same fashion as the \fBconcat\fR command, then evaluates
 the resulting string as a Tcl script in \fIslave\fR.
-The result of this evaluation (including all \fBreturn\fT options,
+The result of this evaluation (including all \fBreturn\fR options,
 such as \fB-errorinfo\fR and \fB-errorcode\fR information, if an error occurs)
 is returned to the invoking interpreter.
 Note that the script will be executed in the current context stack frame
