@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.17 1999/12/12 02:26:43 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.17.2.1 2001/07/16 23:14:13 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1071,7 +1071,7 @@ Tcl_ConcatObj(objc, objv)
         for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
 	    element = Tcl_GetStringFromObj(objPtr, &elemLength);
-	    while ((elemLength > 0)
+	    while ((elemLength > 0) && (UCHAR(*element) < 127)
 		    && (isspace(UCHAR(*element)))) { /* INTL: ISO space. */
 	         element++;
 		 elemLength--;
@@ -1083,7 +1083,7 @@ Tcl_ConcatObj(objc, objv)
 	     * this case it could be significant.
 	     */
 
-	    while ((elemLength > 0)
+	    while ((elemLength > 0) && (UCHAR(element[elemLength-1]) < 127)
 		    && isspace(UCHAR(element[elemLength-1])) /* INTL: ISO space. */
 		    && ((elemLength < 2) || (element[elemLength-2] != '\\'))) {
 		elemLength--;

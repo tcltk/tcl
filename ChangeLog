@@ -1,3 +1,25 @@
+2001-07-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/util.test: added util-4.6
+	* generic/tclUtil.c (Tcl_ConcatObj): Corrected walking backwards
+	over utf-8 chars. [Bug #227512]
+
+2001-06-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtf.c (Tcl_UtfBackslash): Corrected backslash
+	handling of multibyte utf-8 chars. [Bug #217987]
+
+	* generic/tclCmdIL.c (InfoProcsCmd): fixed potential mem leak in
+	info procs that created objects without using them.
+
+	* generic/tclCompCmds.c (TclCompileStringCmd): fixed mem leak when
+	string command failed to parse the subcommand.
+
+2001-05-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclObj.c (TclAllocateFreeObjects): simplified
+	objSizePlusPadding to use sizeof(Tcl_Obj) (max)
+
 2001-05-04  Daniel Steffen <das@users.sourceforge.net>
 
         ** Mac 8.3.3 binary release 

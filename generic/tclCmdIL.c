@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.24.2.1 2001/04/03 22:54:36 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.24.2.2 2001/07/16 23:14:13 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1506,19 +1506,19 @@ InfoProcsCmd(dummy, interp, objc, objv)
 	            || Tcl_StringMatch(cmdName, simplePattern)) {
 		cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
 
-		if (specificNsInPattern) {
-		    elemObjPtr = Tcl_NewObj();
-		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
-		            elemObjPtr);
-		} else {
-		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
-		}
-
 		realCmdPtr = (Command *)
 		    TclGetOriginalCommand((Tcl_Command) cmdPtr);
 
 		if (TclIsProc(cmdPtr)
 		        || ((realCmdPtr != NULL) && TclIsProc(realCmdPtr))) {
+		    if (specificNsInPattern) {
+			elemObjPtr = Tcl_NewObj();
+			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
+				elemObjPtr);
+		    } else {
+			elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		    }
+
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
 	    }
