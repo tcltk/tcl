@@ -1,3 +1,8 @@
+2004-11-07  David Gravereaux <davygrvy@pobox.com>
+
+	* tests/winFile.test: added contraint to winFile-4.0 to prevent
+	it being run on NT4 [Bug 981829]
+
 2004-11-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/reg.test: Major reorganization so that this file is much
