@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.3 1999/09/21 04:20:36 hobbs Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.4 2000/07/13 07:22:44 poenitz Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -31,3 +31,6 @@ specified integer offset.
 
 .SH KEYWORDS
 element, insert, list
+
+.SH SEE ALSO
+lappend, lindex, list, llength, lsearch, lsort, lrange, lreplace

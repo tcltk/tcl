@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrange.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: lrange.n,v 1.3 2000/07/13 07:22:44 poenitz Exp $
 '\" 
 .so man.macros
 .TH lrange n 7.4 Tcl "Tcl Built-In Commands"
@@ -37,3 +37,6 @@ produce exactly the same results as ``\fBlist [lindex \fIlist first\fB]\fR''
 
 .SH KEYWORDS
 element, list, range, sublist
+
+.SH SEE ALSO
+lappend, lindex, linsert, list, llength, lreplace, lsearch, lsort

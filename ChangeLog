@@ -1,3 +1,15 @@
+2000-07-13  André Pönitz <poenitz@mathematik.tu-chemnitz.de>
+
+	* doc/lappend.n:
+	* doc/lindex.n:
+	* doc/linsert.n:
+	* doc/list.n:
+	* doc/llength.n:
+	* doc/lrange.n:
+	* doc/lreplace.n:
+	* doc/lsearch.n:
+	* doc/lsort.n: Added SEE ALSO sections.
+
 2000-07-07  Mo DeJong  <mdejong@redhat.com>
 
 	* win/configure.in: Fix definition of

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lappend.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: lappend.n,v 1.3 2000/07/13 07:22:43 poenitz Exp $
 '\" 
 .so man.macros
 .TH lappend n "" Tcl "Tcl Built-In Commands"
@@ -33,3 +33,6 @@ more efficient than ``\fBset a [concat $a [list $b]]\fR'' when
 
 .SH KEYWORDS
 append, element, list, variable
+
+.SH SEE ALSO
+lindex, linsert, list, llength, lsearch, lsort, lrange, lreplace
