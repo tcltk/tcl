@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.104 2001/10/15 17:34:35 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.105 2001/11/19 14:35:54 dkf Exp $
  */
 
 #ifndef _TCL
@@ -942,6 +942,9 @@ typedef struct Tcl_DString {
 /* Required to support old variable/vdelete/vinfo traces */
 #define TCL_TRACE_OLD_STYLE	 0x1000
 #endif
+/* Indicate the semantics of the result of a trace */
+#define TCL_TRACE_RESULT_DYNAMIC 0x8000
+#define TCL_TRACE_RESULT_OBJECT  0x10000
 
 /*
  * Flag values passed to command-related procedures.
