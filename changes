@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.50.2.2 1999/11/03 00:42:07 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.50.2.3 1999/12/10 05:52:58 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4683,3 +4683,30 @@ when indexing into one (test case string-5.16) [Bug: 2871] (hobbs)
 10/30/99 (bug fix) fixes for mac UTF filename handling (ingham)
 
 --- Released 8.2.2, November 04, 1999 --- See ChangeLog for details ---
+
+11/19/99 (feature enhancement) bug fixes for http package as well as
+patch required by TLS (SSL) extension that adds http::(un)register
+and -type to http::geturl.  Up'd http pkg version to 2.2.
+
+11/19/99 (bug fix) removed extra decr of numLevels in Tcl_EvalObjEx
+that could cause seg fault (mjansen@wendt.de)
+
+11/19/99 (bug fixes) numerous minor big fixes, including correcting the
+installation of the koi8-r encoding and tcltest1.0 on Windows.
+
+11/30/99 (bug fix) fixes scan where %[..] didn't match anything
+
+11/30/99 (bug fix) fixed setting of isNonBlocking flag in PipeBlockModeProc
+so you can now close a non-blocking channel without waiting.
+
+11/30/99 (bug work-around) prevented the unloading of DLLs for Unix in
+TclFinalizeLoad.  This stops the seg fault on exit that some users would
+see (ie with oratcl) when using DLLs that do nasty things like register
+atexit handlers.  This feature will change again in a future version to
+requiring the user to specify that the library shouldn't be unloaded, as
+it does leave a resource leak.
+
+12/07/99 (bug fix) fixes for 'expr + {[incr]}' and 'expr + {[error]}'
+cases (different causes).
+
+--- Released 8.2.3, December 16, 1999 --- See ChangeLog for details ---
