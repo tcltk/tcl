@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.1.2.2 1998/09/24 23:59:50 stanton Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.1.2.3 1998/09/30 20:50:31 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -236,6 +236,7 @@ TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
     UTUNREGISTER *utUnRegisterProc;
     UT32PROC *ut32Proc;
     char buffer[] = "TCL16xx.DLL";
+    int result;
 
     hKernel = LoadLibraryA("kernel32.dll");
     if (hKernel == NULL) {
@@ -249,8 +250,8 @@ TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
     utRegisterProc = (UTREGISTER *) GetProcAddress(hKernel, "UTRegister");
     utUnRegisterProc = (UTUNREGISTER *) GetProcAddress(hKernel, "UTUnRegister");
     if ((utRegisterProc == NULL) || (utUnRegisterProc == NULL)) {
-	FreeLibrary(hKernel);
-	return 0;
+	result = 0;
+	goto done;
     }
 
     /*
@@ -266,25 +267,30 @@ TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
 
     if ((*utRegisterProc)(hInstance, buffer, NULL, "UTProc", &ut32Proc, 
 	    NULL, NULL) == FALSE) {
-	FreeLibrary(hKernel);
-	return 0;
+	result = 0;
+	goto done;
     }
-    if (ut32Proc == NULL) {
+    if (ut32Proc != NULL) {
+	/*
+	 * Invoke the thunk.
+	 */
+
+	*pidPtr = 0;
+	(*ut32Proc)(args, type, trans);
+	result = 1;
+    } else {
 	/*
 	 * The 16-bit thunking DLL wasn't found.  Return error code that
 	 * indicates this problem.
 	 */
 
-	(*utUnRegisterProc)(hInstance);
-	FreeLibrary(hKernel);
-	return 0;
+	result = 0;
     }
-
-    *pidPtr = 0;
-    (*ut32Proc)(args, type, trans);
     (*utUnRegisterProc)(hInstance);
+
+    done:
     FreeLibrary(hKernel);
-    return 1;
+    return result;
 }
 
 /*
@@ -332,10 +338,10 @@ TclWinInit(hInst)
 {
     OSVERSIONINFO os;
 
-    tclInstance = hInst;
+    hInstance = hInst;
     os.dwOSVersionInfoSize = sizeof(os);
     GetVersionEx(&os);
-    tclPlatformId = os.dwPlatformId;
+    platformId = os.dwPlatformId;
 
     /*
      * The following code stops Windows 3.x from automatically putting 
@@ -348,47 +354,11 @@ TclWinInit(hInst)
      * when the above operations fail.
      */
 
-    if (tclPlatformId == VER_PLATFORM_WIN32s) {
+    if (platformId == VER_PLATFORM_WIN32s) {
 	SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
     }
 
     tclWinProcs = &asciiProcs;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpFinalize --
- *
- *	Clean up the Windows specific library state.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Unloads any DLLs and cleans up the thunking library, if
- *	necessary.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpFinalize()
-{
-    /*
-     * Unregister the Tcl thunk.
-     */
-
-    if (UTUnRegister != NULL) {
-	UTUnRegister(tclInstance);
-	UTUnRegister = NULL;
-    }
-
-    /*
-     * Cleanup any dynamically loaded libraries.
-     */
-
-    UnloadLibraries();
 }
 
 /*

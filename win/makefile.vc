@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.2 1998/09/24 23:59:49 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.3 1998/09/30 20:50:30 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -302,6 +302,7 @@ tcltest:    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
 install:    install-binaries install-libraries
 test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32) 
+	set TCL_LIBRARY=$(ROOT)\library
 	$(TCLTEST) <<
 		cd ../tests
 		source all

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.2 1998/09/24 23:59:52 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.3 1998/09/30 20:50:31 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -330,7 +330,6 @@ AppendRegistry(
     CONST char *lib)
 {
     HKEY key;
-    char *subKey;
     LONG result;
     WCHAR wBuf[MAX_PATH + 64];
     char buf[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
