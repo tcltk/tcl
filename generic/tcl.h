@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.164 2003/08/27 06:58:43 davygrvy Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.165 2003/09/04 16:44:12 dgp Exp $
  */
 
 #ifndef _TCL
@@ -994,11 +994,18 @@ typedef struct Tcl_DString {
 #define TCL_INTEGER_SPACE	24
 
 /*
- * Flag that may be passed to Tcl_ConvertElement to force it not to
- * output braces (careful!  if you change this flag be sure to change
- * the definitions at the front of tclUtil.c).
+ * Flag values passed to Tcl_ConvertElement.
+ * TCL_DONT_USE_BRACES forces it not to enclose the element in braces, but
+ * 	to use backslash quoting instead.
+ * TCL_DONT_QUOTE_HASH disables the default quoting of the '#' character.
+ * 	It is safe to leave the hash unquoted when the element is not the
+ * 	first element of a list, and this flag can be used by the caller to
+ * 	indicated that condition.
+ * (careful!  if you change these flag values be sure to change the
+ *  definitions at the front of tclUtil.c).
  */
 #define TCL_DONT_USE_BRACES	1
+#define TCL_DONT_QUOTE_HASH	8
 
 /*
  * Flag that may be passed to Tcl_GetIndexFromObj to force it to disallow
