@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.32 2002/12/17 02:47:39 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33 2003/01/28 11:03:53 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -1201,8 +1201,40 @@ TclpCreateProcess(
 		startInfo.dwFlags |= STARTF_USESHOWWINDOW;
 		createFlags = CREATE_NEW_CONSOLE;
 	    }
-	    Tcl_DStringAppend(&cmdLine, "tclpip" STRINGIFY(TCL_MAJOR_VERSION) 
-		    STRINGIFY(TCL_MINOR_VERSION) ".dll ", -1);
+
+	    {
+		Tcl_Obj *tclExePtr, *pipeDllPtr;
+		int i, fileExists;
+		char *start,*end;
+		Tcl_DString pipeDll;
+		Tcl_DStringInit(&pipeDll);
+		Tcl_DStringAppend(&pipeDll, TCL_PREFIX_IDENT "tclpip"
+		    STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION)
+		    STRINGIFY(TCL_DEBUG_IDENT) ".dll ", -1);
+		tclExePtr = Tcl_NewStringObj(TclpFindExecutable(""), -1);
+		start = Tcl_GetStringFromObj(tclExePtr, &i);
+		for (end = start + (i-1); end > start; end--) {
+		    if (*end == '/')
+		        break;
+		}
+		if (*end != '/')
+		    panic("no / in executable path name");
+		i = (end - start) + 1;
+		pipeDllPtr = Tcl_NewStringObj(start, i);
+		Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
+		Tcl_IncrRefCount(pipeDllPtr);
+		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK)
+		    panic("Tcl_FSConvertToPathType failed");
+		fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
+		if (!fileExists) {
+		    panic("Tcl pipe dll \"%s\" not found",
+		        Tcl_DStringValue(&pipeDll));
+		}
+		Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
+		Tcl_DecrRefCount(tclExePtr);
+		Tcl_DecrRefCount(pipeDllPtr);
+		Tcl_DStringFree(&pipeDll);
+	    }
 	}
     }
     
