@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.83 2002/07/24 23:20:50 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.84 2002/07/26 18:51:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4337,10 +4337,12 @@ IllegalExprOperandType(interp, pc, opndPtr)
 		operatorStrings[opCode - INST_LOR], "\"", (char *) NULL);
     } else {
 	char *msg = "non-numeric string";
-	char *s;
+	char *s, *p;
 	int length;
+	int looksLikeInt = 0;
 
 	s = Tcl_GetStringFromObj(opndPtr, &length);
+	p = s;
 	/*
 	 * strtod() isn't particularly consistent about detecting Inf
 	 * and NaN between platforms.
@@ -4357,13 +4359,60 @@ IllegalExprOperandType(interp, pc, opndPtr)
 		goto makeErrorMessage;
 	    }
 	}
-	if (TclLooksLikeInt(s, length)) {
+
+	/*
+	 * We cannot use TclLooksLikeInt here because it passes strings
+	 * like "10;" [Bug 587140]. We'll accept as "looking like ints"
+	 * for the present purposes any string that looks formally like
+	 * a (decimal|octal|hex) integer.
+	 */
+
+	while (length && isspace(UCHAR(*p))) {
+	    length--;
+	    p++;
+	}
+	if (length && ((*p == '+') || (*p == '-'))) {
+	    length--;
+	    p++;
+	}
+	if (length) {
+	    if ((*p == '0') && ((*(p+1) == 'x') || (*(p+1) == 'X'))) {
+		p += 2;
+		length -= 2;
+		looksLikeInt = ((length > 0) && isxdigit(UCHAR(*p)));
+		if (looksLikeInt) {
+		    length--;
+		    p++;
+		    while (length && isxdigit(UCHAR(*p))) {
+			length--;
+			p++;
+		    }
+		}
+	    } else {
+		looksLikeInt = (length && isdigit(UCHAR(*p)));
+		if (looksLikeInt) {
+		    length--;
+		    p++;
+		    while (length && isdigit(UCHAR(*p))) {
+			length--;
+			p++;
+		    }
+		}
+	    }
+	    while (length && isspace(UCHAR(*p))) {
+		length--;
+		p++;
+	    }
+	    looksLikeInt = !length;
+	}
+	if (looksLikeInt) {
 	    /*
-	     * If something that looks like an integer appears here, then 
-	     * it *must* be a bad octal or too large to represent [Bug  542588].
+	     * If something that looks like an integer could not be converted, 
+	     * then it *must* be a bad octal or too large to represent 
+	     * [Bug  542588].
 	     */
 
-	    if (TclCheckBadOctal(NULL, Tcl_GetString(opndPtr))) {
+	    if (TclCheckBadOctal(NULL, s)) {
 		msg = "invalid octal number";
 	    } else {
 		msg = "integer value too large to represent";

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.14 2002/04/18 13:04:20 msofer Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.15 2002/07/26 18:51:02 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -938,6 +938,28 @@ test expr-old-36.10 {ExprLooksLikeInt procedure} {nonPortable unixOnly} {
 test expr-old-36.11 {ExprLooksLikeInt procedure} {
     # define a "too large integer"; this one works also for 64bit arith
     set x 665802003400000000000000
+    list [catch {expr {$x+1}} msg] $msg
+} {1 {can't use integer value too large to represent as operand of "+"}}
+
+# tests for [Bug #587140]
+test expr-old-36.12 {ExprLooksLikeInt procedure} {
+    set x "10;"
+    list [catch {expr {$x+1}} msg] $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+test expr-old-36.13 {ExprLooksLikeInt procedure} {
+    set x " +"
+    list [catch {expr {$x+1}} msg] $msg
+} {1 {can't use non-numeric string as operand of "+"}}
+test expr-old-36.14 {ExprLooksLikeInt procedure} {
+    set x "123456789012345678901234567890 "
+    list [catch {expr {$x+1}} msg] $msg
+} {1 {can't use integer value too large to represent as operand of "+"}}
+test expr-old-36.15 {ExprLooksLikeInt procedure} {
+    set x "099 "
+    list [catch {expr {$x+1}} msg] $msg
+} {1 {can't use invalid octal number as operand of "+"}}
+test expr-old-36.16 {ExprLooksLikeInt procedure} {
+    set x " 0xffffffffffffffffffffffffffffffffffffff  "
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use integer value too large to represent as operand of "+"}}
 
