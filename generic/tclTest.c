@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.63 2003/03/06 20:14:58 mdejong Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.64 2003/03/09 14:22:06 kennykb Exp $
  */
 
 #define TCL_TEST
@@ -5199,7 +5199,6 @@ TestChannelCmd(clientData, interp, argc, argv)
     Tcl_Channel chan;		/* The opaque type. */
     size_t len;			/* Length of subcommand string. */
     int IOQueued;		/* How much IO is queued inside channel? */
-    ChannelBuffer *bufPtr;	/* For iterating over queued IO. */
     char buf[TCL_INTEGER_SPACE];/* For sprintf. */
     int mode;			/* rw mode of the channel */
     
