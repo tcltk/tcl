@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.16.2.1 2001/04/03 22:54:38 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.16.2.2 2001/11/09 23:09:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3785,7 +3785,7 @@ Tcl_GlobalObjCmd(dummy, interp, objc, objv)
         while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
             tail--;
 	}
-        if (*tail == ':') {
+        if ((*tail == ':') && (tail > varName)) {
             tail++;
 	}
 
