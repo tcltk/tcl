@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.2.1 2003/10/07 18:53:23 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.2.2 2004/02/25 23:38:17 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1415,17 +1415,19 @@ test socket-12.1 {testing inheritance of server sockets} {socket stdio exec} {
 
     set f [open $path(script2) w]
     puts $f [list set tcltest [interpreter]]
-    puts $f [format {
+    puts -nonewline $f {
 	set f [socket -server accept 0]
 	puts [lindex [fconfigure $f -sockname] 2]
 	proc accept { file addr port } {
 	    close $file
 	}
-	exec $tcltest "%s" &
+	exec $tcltest }
+    puts $f [list $path(script1) &]
+    puts $f {
 	close $f
 	after 1000 exit
 	vwait forever
-    } $path(script1)]
+    }
     close $f
 	
     # Launch script2 and wait 5 seconds
@@ -1469,15 +1471,17 @@ test socket-12.2 {testing inheritance of client sockets} {socket stdio exec} {
 
     set f [open $path(script2) w]
     puts $f [list set tcltest [interpreter]]
-    puts $f [format {
+    puts -nonewline $f {
         gets stdin port
 	set f [socket 127.0.0.1 $port]
-	exec $tcltest "%s" &
+        exec $tcltest }
+    puts $f [list $path(script1) &]
+    puts $f {
 	puts $f testing
 	flush $f
 	after 1000 exit
 	vwait forever
-    } $path(script1)]
+    }
     close $f
 
     # Create the server socket
@@ -1547,17 +1551,23 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
 
     set f [open $path(script2) w]
     puts $f [list set tcltest [interpreter]]
-    puts $f [format {
+    puts -nonewline $f {
 	set server [socket -server accept 0]
 	puts stdout [lindex [fconfigure $server -sockname] 2]
-	proc accept { file host port } {
+	proc accept { file host port } }
+    puts $f \{
+    puts -nonewline $f {
 	    global tcltest
 	    puts $file {test data on socket}
-	    exec $tcltest "%s" &
+	    exec $tcltest }
+    puts $f [list $path(script1) &]
+    puts $f {
 	    after 1000 exit
 	}
+    puts $f \} 
+    puts $f {
 	vwait forever
-    } $path(script1)]
+    }
     close $f
 
     # Launch the script2 process and connect to it.  See how long
