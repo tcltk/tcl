@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.138 2005/01/19 23:15:14 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.139 2005/01/21 17:42:11 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4642,7 +4642,7 @@ Tcl_AllowExceptions(interp)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetVersion
+ * Tcl_GetVersion --
  *
  *	Get the Tcl major, minor, and patchlevel version numbers and
  *      the release type.  A patch is a release type TCL_FINAL_RELEASE
