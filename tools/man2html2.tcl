@@ -307,6 +307,9 @@ proc macro {name args} {
 	SH {
 	    SHmacro $args
 	}
+	SS {
+	    SSmacro $args subsection
+	}
 	SO {
 	    global noFillCount inPRE file
 
@@ -625,12 +628,13 @@ proc macro2 {name args} {
 
 # SHmacro --
 #
-# Subsection head; handles the .SH macro.
+# Subsection head; handles the .SH and .SS macros.
 #
 # Arguments:
 # name -		Section name.
+# style -		Type of section (optional) 
 
-proc SHmacro argList {
+proc SHmacro {argList {style section}} {
     global file noFillCount textState charCnt
 
     set args [join $argList " "]
@@ -641,9 +645,13 @@ proc SHmacro argList {
     set noFillCount 0
     nest reset
 
-    puts -nonewline $file "<H3>"
+    set tag H3
+    if {[string compare "subsection" $level] == 0} {
+	set tag H4
+    }
+    puts -nonewline $file "<$tag>"
     text $args
-    puts $file "</H3>"
+    puts $file "</$tag>"
 
 #	? args textState
 
