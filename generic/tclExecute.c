@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.36 2001/11/16 20:01:04 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.37 2001/11/16 20:14:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -221,8 +221,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * Declarations for local procedures to this file:
  */
 
-static void		DupCmdNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
-			    Tcl_Obj *copyPtr));
 static int		ExprAbsFunc _ANSI_ARGS_((Tcl_Interp *interp,
 			    ExecEnv *eePtr, ClientData clientData));
 static int		ExprBinaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
@@ -245,8 +243,6 @@ static int		ExprUnaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
 static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int argc, char **argv));
 #endif
-static void		FreeCmdNameInternalRep _ANSI_ARGS_((
-    			    Tcl_Obj *objPtr));
 #ifdef TCL_COMPILE_DEBUG
 static char *		GetOpcodeName _ANSI_ARGS_((unsigned char *pc));
 #endif
@@ -262,10 +258,6 @@ static void		InitByteCodeExecution _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 #ifdef TCL_COMPILE_DEBUG
 static void		PrintByteCodeInfo _ANSI_ARGS_((ByteCode *codePtr));
-#endif
-static int		SetCmdNameFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
-#ifdef TCL_COMPILE_DEBUG
 static char *		StringForResultCode _ANSI_ARGS_((int result));
 static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    ByteCode *codePtr, unsigned char *pc,
@@ -311,22 +303,6 @@ BuiltinFunc builtinFuncTable[] = {
     {"srand", 1, {TCL_INT}, ExprSrandFunc, 0},
     {0},
 };
-
-/*
- * The structure below defines the command name Tcl object type by means of
- * procedures that can be invoked by generic object code. Objects of this
- * type cache the Command pointer that results from looking up command names
- * in the command hashtable. Such objects appear as the zeroth ("command
- * name") argument in a Tcl command.
- */
-
-Tcl_ObjType tclCmdNameType = {
-    "cmdName",				/* name */
-    FreeCmdNameInternalRep,		/* freeIntRepProc */
-    DupCmdNameInternalRep,		/* dupIntRepProc */
-    (Tcl_UpdateStringProc *) NULL,	/* updateStringProc */
-    SetCmdNameFromAny			/* setFromAnyProc */
-};
 
 /*
  *----------------------------------------------------------------------
@@ -343,9 +319,8 @@ Tcl_ObjType tclCmdNameType = {
  *	This procedure initializes the array of instruction names. If
  *	compiling with the TCL_COMPILE_STATS flag, it initializes the
  *	array that counts the executions of each instruction and it
- *	creates the "evalstats" command. It also registers the command name
- *	Tcl_ObjType. It also establishes the link between the Tcl
- *	"tcl_traceExec" and C "tclTraceExec" variables.
+ *	creates the "evalstats" command. It also establishes the link 
+ *      between the Tcl "tcl_traceExec" and C "tclTraceExec" variables.
  *
  *----------------------------------------------------------------------
  */
@@ -356,7 +331,6 @@ InitByteCodeExecution(interp)
 				 * "tcl_traceExec" is linked to control
 				 * instruction tracing. */
 {
-    Tcl_RegisterObjType(&tclCmdNameType);
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
 		    TCL_LINK_INT) != TCL_OK) {
@@ -5343,364 +5317,6 @@ EvalStatsCmd(unused, interp, argc, argv)
     return TCL_OK;
 }
 #endif /* TCL_COMPILE_STATS */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetCommandFromObj --
- *
- *      Returns the command specified by the name in a Tcl_Obj.
- *
- * Results:
- *	Returns a token for the command if it is found. Otherwise, if it
- *	can't be found or there is an error, returns NULL.
- *
- * Side effects:
- *      May update the internal representation for the object, caching
- *      the command reference so that the next time this procedure is
- *	called with the same object, the command can be found quickly.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-Tcl_GetCommandFromObj(interp, objPtr)
-    Tcl_Interp *interp;		/* The interpreter in which to resolve the
-				 * command and to report errors. */
-    register Tcl_Obj *objPtr;	/* The object containing the command's
-				 * name. If the name starts with "::", will
-				 * be looked up in global namespace. Else,
-				 * looked up first in the current namespace
-				 * if contextNsPtr is NULL, then in global
-				 * namespace. */
-{
-    Interp *iPtr = (Interp *) interp;
-    register ResolvedCmdName *resPtr;
-    register Command *cmdPtr;
-    Namespace *currNsPtr;
-    int result;
-    CallFrame *savedFramePtr;
-    char *name;
-
-    /*
-     * If the variable name is fully qualified, do as if the lookup were
-     * done from the global namespace; this helps avoid repeated lookups 
-     * of fully qualified names. It costs close to nothing, and may be very
-     * helpful for OO applications which pass along a command name ("this"),
-     * [Patch 456668]
-     */
-
-    savedFramePtr = iPtr->varFramePtr;
-    name = Tcl_GetString(objPtr);
-    if ((*name++ == ':') && (*name == ':')) {
-	iPtr->varFramePtr = NULL;
-    }
-
-    /*
-     * Get the internal representation, converting to a command type if
-     * needed. The internal representation is a ResolvedCmdName that points
-     * to the actual command.
-     */
-    
-    if (objPtr->typePtr != &tclCmdNameType) {
-        result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-        if (result != TCL_OK) {
-	    iPtr->varFramePtr = savedFramePtr;
-            return (Tcl_Command) NULL;
-        }
-    }
-    resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
-
-    /*
-     * Get the current namespace.
-     */
-    
-    if (iPtr->varFramePtr != NULL) {
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	currNsPtr = iPtr->globalNsPtr;
-    }
-
-    /*
-     * Check the context namespace and the namespace epoch of the resolved
-     * symbol to make sure that it is fresh. If not, then force another
-     * conversion to the command type, to discard the old rep and create a
-     * new one. Note that we verify that the namespace id of the context
-     * namespace is the same as the one we cached; this insures that the
-     * namespace wasn't deleted and a new one created at the same address
-     * with the same command epoch.
-     */
-    
-    cmdPtr = NULL;
-    if ((resPtr != NULL)
-	    && (resPtr->refNsPtr == currNsPtr)
-	    && (resPtr->refNsId == currNsPtr->nsId)
-	    && (resPtr->refNsCmdEpoch == currNsPtr->cmdRefEpoch)) {
-        cmdPtr = resPtr->cmdPtr;
-        if (cmdPtr->cmdEpoch != resPtr->cmdEpoch) {
-            cmdPtr = NULL;
-        }
-    }
-
-    if (cmdPtr == NULL) {
-        result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-        if (result != TCL_OK) {
-	    iPtr->varFramePtr = savedFramePtr;
-            return (Tcl_Command) NULL;
-        }
-        resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
-        if (resPtr != NULL) {
-            cmdPtr = resPtr->cmdPtr;
-        }
-    }
-    iPtr->varFramePtr = savedFramePtr;
-    return (Tcl_Command) cmdPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetCmdNameObj --
- *
- *	Modify an object to be an CmdName object that refers to the argument
- *	Command structure.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old internal rep is freed. It's string rep is not
- *	changed. The refcount in the Command structure is incremented to
- *	keep it from being freed if the command is later deleted until
- *	TclExecuteByteCode has a chance to recognize that it was deleted.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclSetCmdNameObj(interp, objPtr, cmdPtr)
-    Tcl_Interp *interp;		/* Points to interpreter containing command
-				 * that should be cached in objPtr. */
-    register Tcl_Obj *objPtr;	/* Points to Tcl object to be changed to
-				 * a CmdName object. */
-    Command *cmdPtr;		/* Points to Command structure that the
-				 * CmdName object should refer to. */
-{
-    Interp *iPtr = (Interp *) interp;
-    register ResolvedCmdName *resPtr;
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-    register Namespace *currNsPtr;
-
-    if (oldTypePtr == &tclCmdNameType) {
-	return;
-    }
-    
-    /*
-     * Get the current namespace.
-     */
-    
-    if (iPtr->varFramePtr != NULL) {
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	currNsPtr = iPtr->globalNsPtr;
-    }
-    
-    cmdPtr->refCount++;
-    resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
-    resPtr->cmdPtr = cmdPtr;
-    resPtr->refNsPtr = currNsPtr;
-    resPtr->refNsId  = currNsPtr->nsId;
-    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
-    resPtr->cmdEpoch = cmdPtr->cmdEpoch;
-    resPtr->refCount = 1;
-    
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &tclCmdNameType;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FreeCmdNameInternalRep --
- *
- *	Frees the resources associated with a cmdName object's internal
- *	representation.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Decrements the ref count of any cached ResolvedCmdName structure
- *	pointed to by the cmdName's internal representation. If this is 
- *	the last use of the ResolvedCmdName, it is freed. This in turn
- *	decrements the ref count of the Command structure pointed to by 
- *	the ResolvedSymbol, which may free the Command structure.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeCmdNameInternalRep(objPtr)
-    register Tcl_Obj *objPtr;	/* CmdName object with internal
-				 * representation to free. */
-{
-    register ResolvedCmdName *resPtr =
-	(ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
-
-    if (resPtr != NULL) {
-	/*
-	 * Decrement the reference count of the ResolvedCmdName structure.
-	 * If there are no more uses, free the ResolvedCmdName structure.
-	 */
-    
-        resPtr->refCount--;
-        if (resPtr->refCount == 0) {
-            /*
-	     * Now free the cached command, unless it is still in its
-             * hash table or if there are other references to it
-             * from other cmdName objects.
-	     */
-	    
-            Command *cmdPtr = resPtr->cmdPtr;
-            TclCleanupCommand(cmdPtr);
-            ckfree((char *) resPtr);
-        }
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DupCmdNameInternalRep --
- *
- *	Initialize the internal representation of an cmdName Tcl_Obj to a
- *	copy of the internal representation of an existing cmdName object. 
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	"copyPtr"s internal rep is set to point to the ResolvedCmdName
- *	structure corresponding to "srcPtr"s internal rep. Increments the
- *	ref count of the ResolvedCmdName structure pointed to by the
- *	cmdName's internal representation.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-DupCmdNameInternalRep(srcPtr, copyPtr)
-    Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
-    register Tcl_Obj *copyPtr;	/* Object with internal rep to set. */
-{
-    register ResolvedCmdName *resPtr =
-        (ResolvedCmdName *) srcPtr->internalRep.otherValuePtr;
-
-    copyPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    if (resPtr != NULL) {
-        resPtr->refCount++;
-    }
-    copyPtr->typePtr = &tclCmdNameType;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetCmdNameFromAny --
- *
- *	Generate an cmdName internal form for the Tcl object "objPtr".
- *
- * Results:
- *	The return value is a standard Tcl result. The conversion always
- *	succeeds and TCL_OK is returned.
- *
- * Side effects:
- *	A pointer to a ResolvedCmdName structure that holds a cached pointer
- *	to the command with a name that matches objPtr's string rep is
- *	stored as objPtr's internal representation. This ResolvedCmdName
- *	pointer will be NULL if no matching command was found. The ref count
- *	of the cached Command's structure (if any) is also incremented.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetCmdNameFromAny(interp, objPtr)
-    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr;	/* The object to convert. */
-{
-    Interp *iPtr = (Interp *) interp;
-    char *name;
-    Tcl_Command cmd;
-    register Command *cmdPtr;
-    Namespace *currNsPtr;
-    register ResolvedCmdName *resPtr;
-
-    /*
-     * Get "objPtr"s string representation. Make it up-to-date if necessary.
-     */
-
-    name = objPtr->bytes;
-    if (name == NULL) {
-	name = Tcl_GetString(objPtr);
-    }
-
-    /*
-     * Find the Command structure, if any, that describes the command called
-     * "name". Build a ResolvedCmdName that holds a cached pointer to this
-     * Command, and bump the reference count in the referenced Command
-     * structure. A Command structure will not be deleted as long as it is
-     * referenced from a CmdName object.
-     */
-
-    cmd = Tcl_FindCommand(interp, name, (Tcl_Namespace *) NULL,
-	    /*flags*/ 0);
-    cmdPtr = (Command *) cmd;
-    if (cmdPtr != NULL) {
-	/*
-	 * Get the current namespace.
-	 */
-	
-	if (iPtr->varFramePtr != NULL) {
-	    currNsPtr = iPtr->varFramePtr->nsPtr;
-	} else {
-	    currNsPtr = iPtr->globalNsPtr;
-	}
-	
-	cmdPtr->refCount++;
-        resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
-        resPtr->cmdPtr        = cmdPtr;
-        resPtr->refNsPtr      = currNsPtr;
-        resPtr->refNsId       = currNsPtr->nsId;
-        resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
-        resPtr->cmdEpoch      = cmdPtr->cmdEpoch;
-        resPtr->refCount      = 1;
-    } else {
-	resPtr = NULL;	/* no command named "name" was found */
-    }
-
-    /*
-     * Free the old internalRep before setting the new one. We do this as
-     * late as possible to allow the conversion code, in particular
-     * GetStringFromObj, to use that old internalRep. If no Command
-     * structure was found, leave NULL as the cached value.
-     */
-
-    if ((objPtr->typePtr != NULL)
-	    && (objPtr->typePtr->freeIntRepProc != NULL)) {
-	objPtr->typePtr->freeIntRepProc(objPtr);
-    }
-    
-    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &tclCmdNameType;
-    return TCL_OK;
-}
 
 #ifdef TCL_COMPILE_DEBUG
 /*
