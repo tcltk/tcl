@@ -316,7 +316,7 @@ proc ::tcl::tm::Defaults {} {
     # something other than [::list] in this namespace.
     roots [::list \
 	    [file dirname [info library]] \
-	    [file join [file dirname $exe] lib] \
+	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
 
     if {$tcl_platform(platform) eq "windows"} {
