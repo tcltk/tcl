@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.42 2001/12/12 22:32:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.43 2001/12/17 22:55:50 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -7272,7 +7272,7 @@ TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr)
     if (inPtr != outPtr) {
 	if (nonBlocking != (writeFlags & CHANNEL_NONBLOCKING)) {
 	    if (SetBlockMode(NULL, outPtr,
-		    nonBlocking ? TCL_MODE_BLOCKING : TCL_MODE_NONBLOCKING)
+		    nonBlocking ? TCL_MODE_NONBLOCKING : TCL_MODE_BLOCKING)
 		    != TCL_OK) {
 		if (nonBlocking != (readFlags & CHANNEL_NONBLOCKING)) {
 		    SetBlockMode(NULL, inPtr,
@@ -7354,6 +7354,7 @@ CopyData(csPtr, mask)
     char* buffer;
 
     int inBinary, outBinary, sameEncoding; /* Encoding control */
+    int underflow;	/* input underflow */
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
@@ -7400,16 +7401,17 @@ CopyData(csPtr, mask)
 	 */
 
 	if ((csPtr->toRead == -1) || (csPtr->toRead > csPtr->bufSize)) {
-	    size = csPtr->bufSize;
+	    sizeb = csPtr->bufSize;
 	} else {
-	    size = csPtr->toRead;
+	    sizeb = csPtr->toRead;
 	}
 
 	if (inBinary || sameEncoding) {
-	    size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, size);
+	    size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
 	} else {
-	    size = DoReadChars(inStatePtr->topChanPtr, bufObj, size, 0 /* No append */);
+	    size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb, 0 /* No append */);
 	}
+	underflow = (size >= 0) && (size < sizeb);	/* input underflow */
 
 	if (size < 0) {
 	    readError:
@@ -7418,16 +7420,17 @@ CopyData(csPtr, mask)
 		    Tcl_GetChannelName(inChan), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
 	    break;
-	} else if (size == 0) {
+	} else if (underflow) {
 	    /*
 	     * We had an underflow on the read side.  If we are at EOF,
 	     * then the copying is done, otherwise set up a channel
 	     * handler to detect when the channel becomes readable again.
 	     */
 	    
-	    if (Tcl_Eof(inChan)) {
+	    if ((size == 0) && Tcl_Eof(inChan)) {
 		break;
-	    } else if (!(mask & TCL_READABLE)) {
+	    }
+	    if (! Tcl_Eof(inChan) && !(mask & TCL_READABLE)) {
 		if (mask & TCL_WRITABLE) {
 		    Tcl_DeleteChannelHandler(outChan, CopyEventProc,
 			    (ClientData) csPtr);
@@ -7435,11 +7438,13 @@ CopyData(csPtr, mask)
 		Tcl_CreateChannelHandler(inChan, TCL_READABLE,
 			CopyEventProc, (ClientData) csPtr);
 	    }
-	    if (bufObj != (Tcl_Obj*) NULL) {
-	        Tcl_DecrRefCount (bufObj);
-		bufObj = (Tcl_Obj*) NULL;
+	    if (size == 0) {
+	        if (bufObj != (Tcl_Obj*) NULL) {
+		    Tcl_DecrRefCount (bufObj);
+		    bufObj = (Tcl_Obj*) NULL;
+		}
+		return TCL_OK;
 	    }
-	    return TCL_OK;
 	}
 
 	/*
@@ -7486,11 +7491,21 @@ CopyData(csPtr, mask)
 	csPtr->total += size;
 
 	/*
-	 * Check to see if the write is happening in the background.  If so,
-	 * stop copying and wait for the channel to become writable again.
+	 * Break loop if EOF && (size>0)
 	 */
 
-	if (outStatePtr->flags & BG_FLUSH_SCHEDULED) {
+        if (Tcl_Eof(inChan)) {
+            break;
+        }
+
+	/*
+	 * Check to see if the write is happening in the background.  If so,
+	 * stop copying and wait for the channel to become writable again.
+	 * After input underflow we already installed a readable handler
+	 * therefore we don't need a writable handler.
+	 */
+
+	if ( ! underflow && (outStatePtr->flags & BG_FLUSH_SCHEDULED) ) {
 	    if (!(mask & TCL_WRITABLE)) {
 		if (mask & TCL_READABLE) {
 		    Tcl_DeleteChannelHandler(inChan, CopyEventProc,

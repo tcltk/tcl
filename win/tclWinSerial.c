@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.14 2001/10/15 17:34:53 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.15 2001/12/17 22:55:51 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -79,6 +79,8 @@ typedef struct SerialInfo {
     int readable;               /* flag that the channel is readable */
     int writable;               /* flag that the channel is writable */
     int blockTime;              /* max. blocktime in msec */
+    int lastEventTime;		/* Time in milliseconds since last readable event */
+				/* Next readable event only after blockTime */
     DWORD error;                /* pending error code returned by
                                  * ClearCommError() */
     DWORD lastError;            /* last error code, can be fetched with
@@ -325,7 +327,7 @@ ProcExitHandler(
  *----------------------------------------------------------------------
  */
 
-void
+static void
 SerialBlockTime(
     int msec)          /* milli-seconds */
 {
@@ -334,6 +336,29 @@ SerialBlockTime(
     blockTime.sec  =  msec / 1000;
     blockTime.usec = (msec % 1000) * 1000;
     Tcl_SetMaxBlockTime(&blockTime);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * SerialGetMilliseconds --
+ *
+ *  Get current time in milliseconds,
+ *  Don't care about integer overruns
+ *
+ * Results:
+ *  None.
+ *----------------------------------------------------------------------
+ */
+
+static int
+SerialGetMilliseconds(
+    void)
+{
+    Tcl_Time time;
+
+    TclpGetTime(&time);
+
+    return (time.sec * 1000 + time.usec / 1000);
 }
 /*
  *----------------------------------------------------------------------
@@ -417,6 +442,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
+    int time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
         return;
@@ -466,7 +492,11 @@ SerialCheckProc(
                     if( (cStat.cbInQue > 0) ||
                             (infoPtr->error & SERIAL_READ_ERRORS) ) {
                         infoPtr->readable = 1;
-                        needEvent = 1;
+			time = SerialGetMilliseconds();
+			if ( (time - infoPtr->lastEventTime) >= infoPtr->blockTime) {
+			    needEvent = 1;
+			    infoPtr->lastEventTime = time;
+			}
                     }
                 }
             }
@@ -475,7 +505,6 @@ SerialCheckProc(
         /*
          * Queue an event if the serial is signaled for reading or writing.
          */
-
         if (needEvent) {
             infoPtr->flags |= SERIAL_PENDING;
             evPtr = (SerialEvent *) ckalloc(sizeof(SerialEvent));
@@ -1366,6 +1395,7 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
     infoPtr->writable = 1;
     infoPtr->toWrite = infoPtr->writeQueue = 0;
     infoPtr->blockTime = SERIAL_DEFAULT_BLOCKTIME;
+    infoPtr->lastEventTime = 0;
     infoPtr->lastError = infoPtr->error = 0;
     infoPtr->threadId = Tcl_GetCurrentThread();
     infoPtr->sysBufRead = infoPtr->sysBufWrite = 4096;
