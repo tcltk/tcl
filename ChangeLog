@@ -5,6 +5,7 @@
 	* generic/tclPathObj.c: fix for normalization of volume-relative
         paths [Bug 767834]
         * tests/winFCmd.test: new tests for both of the above. 
+	* tests/cmdAH.test: fix for AFS problem in test suite [Bug 748960]
 
 2003-09-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
