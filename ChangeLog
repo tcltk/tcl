@@ -1,7 +1,23 @@
+1999-08-21  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/aclocal.m4: Changed AIX-4.[2-9] check to AIX-4.[1-9]
+	[Bug: 1909]
+
+1999-08-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclPosixStr.c: fixed typo [Bug: 2592]
+
+	* doc/*: fixed various nroff bugs in man pages [Bug: 2503 2588]
+
 1999-08-19  Jeff Hobbs  <hobbs@scriptics.com>
 
-	* generic/tclIO.c: changed Tcl_GetChannelNames* to use K&R
-	style headers (style guide, also pleases HP cc)
+	* win/README.binary: fixed version info and some typos [Bug: 2561]
+	
+	* doc/interp.n: updated list of commands available in a safe
+	interpreter [Bug: 2526]
+
+	* generic/tclIO.c: changed Tcl_GetChannelNames* to use style guide
+	headers (pleases HP cc)
 
 1999-08-18  Jeff Hobbs  <hobbs@scriptics.com>
 
@@ -40,6 +56,10 @@
 
 	* mac/tclMacProjects.sea.hqx: Rearrange the projects so that the build
 	directory is separate from the sources.	 Much more convenient!
+
+1999-08-13  Scott Redman <redman@scriptics.com>
+
+	* /: 8.2.0 tagged for final release
 
 1999-08-12  Scott Stanton  <stanton@scriptics.com>
 
