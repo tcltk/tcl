@@ -10,19 +10,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.1.2.11 1999/04/05 22:20:30 rjohnson Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.1.2.12 1999/04/05 23:14:26 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclRegexp.h"
-
-/*
- * This variable indicates whether the cleanup procedure has been
- * registered for this file yet.
- */
-
-static int initialized = 0;
 
 /*
  * The following regular expression matches the root portion of a Windows
@@ -45,9 +38,13 @@ static int initialized = 0;
  * for use in filename matching.
  */
 
-static Tcl_Obj *winRootPatternPtr = NULL;
-static Tcl_Obj *macRootPatternPtr = NULL;
-TCL_DECLARE_MUTEX(nameMutex)
+typedef struct ThreadSpecificData {
+    int initialized;
+    Tcl_Obj *winRootPatternPtr;
+    Tcl_Obj *macRootPatternPtr;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
 
 /*
  * The following variable is set in the TclPlatformInit call to one
@@ -65,6 +62,7 @@ static char *		DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
 static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
 			    Tcl_DString *resultPtr, int offset));
 static void		FileNameCleanup _ANSI_ARGS_((ClientData clientData));
+static void		FileNameInit _ANSI_ARGS_((void));
 static int		SkipToChar _ANSI_ARGS_((char **stringPtr,
 			    char *match));
 static char *		SplitMacPath _ANSI_ARGS_((CONST char *path,
@@ -93,14 +91,13 @@ static char *		SplitUnixPath _ANSI_ARGS_((CONST char *path,
 static void
 FileNameInit()
 {
-    Tcl_MutexLock(&nameMutex);
-    if (!initialized) {
-	winRootPatternPtr = Tcl_NewStringObj(WIN_ROOT_PATTERN, -1);
-	macRootPatternPtr = Tcl_NewStringObj(MAC_ROOT_PATTERN, -1);
-	Tcl_CreateExitHandler(FileNameCleanup, NULL);
-	initialized = 1;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (!tsdPtr->initialized) {
+	tsdPtr->initialized = 1;
+	tsdPtr->winRootPatternPtr = Tcl_NewStringObj(WIN_ROOT_PATTERN, -1);
+	tsdPtr->macRootPatternPtr = Tcl_NewStringObj(MAC_ROOT_PATTERN, -1);
+	Tcl_CreateThreadExitHandler(FileNameCleanup, NULL);
     }
-    Tcl_MutexUnlock(&nameMutex);
 }
 
 /*
@@ -124,17 +121,10 @@ static void
 FileNameCleanup(clientData)
     ClientData clientData;	/* Not used. */
 {
-    Tcl_MutexLock(&nameMutex);
-    if (winRootPatternPtr != NULL) {
-	Tcl_DecrRefCount(winRootPatternPtr);
-        winRootPatternPtr = NULL;
-    }
-    if (macRootPatternPtr != NULL) {
-	Tcl_DecrRefCount(macRootPatternPtr);
-        macRootPatternPtr = NULL;
-    }
-    initialized = 0;
-    Tcl_MutexUnlock(&nameMutex);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    Tcl_DecrRefCount(tsdPtr->winRootPatternPtr);
+    Tcl_DecrRefCount(tsdPtr->macRootPatternPtr);
+    tsdPtr->initialized = 0;
 }
 
 /*
@@ -168,16 +158,15 @@ ExtractWinRoot(path, resultPtr, offset)
     Tcl_RegExp re;
     char *dummy, *tail, *drive, *hostStart, *hostEnd, *shareStart,
 	*shareEnd, *lastSlash;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Initialize the path name parser for Windows path names.
      */
 
-    if (!initialized) {
-	FileNameInit();
-    }
+    FileNameInit();
 
-    re = Tcl_GetRegExpFromObj(NULL, winRootPatternPtr, REG_ADVANCED);
+    re = Tcl_GetRegExpFromObj(NULL, tsdPtr->winRootPatternPtr, REG_ADVANCED);
 
     /*
      * Match the root portion of a Windows path name.
@@ -235,6 +224,7 @@ Tcl_PathType
 Tcl_GetPathType(path)
     char *path;
 {
+    ThreadSpecificData *tsdPtr;
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     Tcl_RegExp re;
 
@@ -253,16 +243,16 @@ Tcl_GetPathType(path)
 	    if (path[0] == ':') {
 		type = TCL_PATH_RELATIVE;
 	    } else if (path[0] != '~') {
+		tsdPtr = TCL_TSD_INIT(&dataKey);
 
 		/*
 		 * Since we have eliminated the easy cases, use the
 		 * root pattern to look for the other types.
 		 */
 
-		if (!initialized) {
-		    FileNameInit();
-		}
-		re = Tcl_GetRegExpFromObj(NULL, macRootPatternPtr, REG_ADVANCED);
+		FileNameInit();
+		re = Tcl_GetRegExpFromObj(NULL, tsdPtr->macRootPatternPtr,
+			REG_ADVANCED);
 
 		if (!Tcl_RegExpExec(NULL, re, path, path)) {
 		    type = TCL_PATH_RELATIVE;
@@ -279,16 +269,16 @@ Tcl_GetPathType(path)
 	
 	case TCL_PLATFORM_WINDOWS:
 	    if (path[0] != '~') {
+		tsdPtr = TCL_TSD_INIT(&dataKey);
 
 		/*
 		 * Since we have eliminated the easy cases, check for
 		 * drive relative paths using the regular expression.
 		 */
 
-		if (!initialized) {
-		    FileNameInit();
-		}
-		re = Tcl_GetRegExpFromObj(NULL, winRootPatternPtr, REG_ADVANCED);
+		FileNameInit();
+		re = Tcl_GetRegExpFromObj(NULL, tsdPtr->winRootPatternPtr,
+			REG_ADVANCED);
 
 		if (Tcl_RegExpExec(NULL, re, path, path)) {
 		    char *drive, *dummy, *unixRoot, *lastSlash;
@@ -558,21 +548,21 @@ SplitMacPath(path, bufPtr)
     int i, length;
     CONST char *p, *elementStart;
     Tcl_RegExp re;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Initialize the path name parser for Macintosh path names.
      */
 
-    if (!initialized) {
-	FileNameInit();
-    }
+    FileNameInit();
 
     /*
      * Match the root portion of a Mac path name.
      */
 
     i = 0;			/* Needed only to prevent gcc warnings. */
-    re = Tcl_GetRegExpFromObj(NULL, macRootPatternPtr, REG_ADVANCED);
+
+    re = Tcl_GetRegExpFromObj(NULL, tsdPtr->macRootPatternPtr, REG_ADVANCED);
 
     if (Tcl_RegExpExec(NULL, re, path, path) == 1) {
 	char *start, *end;
