@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.65 2003/01/27 02:19:57 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.66 2003/02/11 02:18:46 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -89,10 +89,11 @@ AC_PROG_MAKE_SET
 
 AC_CYGWIN
 
-#if test "$ac_cv_cygwin" = "yes" ; then
-#    AC_MSG_ERROR([Compiling with the Cygwin version of gcc is not supported.
-#    Use the Mingw version of gcc from www.mingw.org instead.])
-#fi
+if test "$ac_cv_cygwin" = "yes" ; then
+    AC_MSG_ERROR([Compiling under Cygwin is not currently supported.
+A maintainer for the Cygwin port of Tcl/Tk is needed. See the README
+file for information about building with Mingw.])
+fi
 
 
 AC_CACHE_CHECK(for SEH support in compiler,
