@@ -1,3 +1,9 @@
+2000-12-08  Andreas Kupries  <a.kupries@westend.com>
+
+	* generic/tclEncoding.c (LoadTableEncoding): Changed dangerous
+	  code to something less critical. This fixes bug 119417, part A
+	  without affecting the speed when loading encodings.
+
 2000-12-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/open.n: Added xref to fconfigure and advice on the opening
