@@ -2,10 +2,10 @@ README:  Tcl
     This is the Tcl 8.4a3 source distribution.
     Tcl/Tk is also available through NetCVS:
 	http://tcl.sourceforge.net/
-    You can get any release of Tcl from:
-        ftp://ftp.scriptics.com/pub/tcl/
+    You can get any source release of Tcl from the file distributions
+    link at the above URL.
 
-RCS: @(#) $Id: README,v 1.37 2001/07/05 01:02:51 uid38172 Exp $
+RCS: @(#) $Id: README,v 1.38 2001/08/07 02:44:40 hobbs Exp $
 
 Contents
 --------
@@ -50,8 +50,9 @@ Extensive documentation is available at our website.
 The home page for this release, including new features, is
 	http://www.purl.org/tcl/home/software/tcltk/8.4.html
 
-Detailed release notes can be found at
-	http://www.purl.org/tcl/home/software/tcltk/relnotes/tcl8.4a2.txt
+Detailed release notes can be found at the file distributions page
+by clicking on the relevant version.
+	http://sourceforge.net/project/showfiles.php?group_id=10894
 
 Information about Tcl itself can be found at
 	http://www.purl.org/tcl/home/scripting/
