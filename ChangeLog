@@ -1,3 +1,15 @@
+2002-06-17  David Gravereaux <davygrvy@pobox.com>
+
+	Trims to support the removal of RESOURCE_INCLUDED from rc
+	scripts	from FR #565088.
+
+	* generic/tcl.h: moved the #ifndef RC_INVOKED start block up in
+	the file.  rc scripts don't need to know thread mutexes.
+
+	* win/tcl.rc:
+	* win/tclsh.rc: removed the #define RESOURCE_INCLUDED to let the
+	built-in -DRC_INVOKED to the work.
+
 2002-06-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/CrtTrace.3:        Added TIP#62 implementation of command
