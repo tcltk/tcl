@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.10 1998/09/14 18:40:20 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.11 1998/10/20 17:27:47 suresh Exp $
  */
 
 #include "tclInt.h"
@@ -239,6 +239,18 @@ TclPlatformInit(interp)
 		processors[oemId->wProcessorArchitecture],
 		TCL_GLOBAL_ONLY);
     }
+
+#ifdef _DEBUG
+    /*
+     * The existence of the "debug" element of the tcl_platform array indicates
+     * that this particular Tcl shell has been compiled with debug information.
+     * Using "info exists tcl_platform(debug)" a Tcl script can direct the 
+     * interpreter to load debug versions of DLLs with the load command.
+     */
+
+    Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
+		TCL_GLOBAL_ONLY);
+#endif
 
     /*
      * Set up the HOME environment variable from the HOMEDRIVE & HOMEPATH

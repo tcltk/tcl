@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.26 1998/10/13 20:30:21 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.27 1998/10/20 17:27:43 suresh Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3636,3 +3636,10 @@ handle some numbers starting with 0.  Thanks to Richard Hipp
 Tcl_Obj if the list had zero elements (despite what the comments said
 it would do).  Thanks to Sebastian Wangnick for reporting the
 problem. (RJ)
+
+10/20/98 (new feature) Added tcl_platform(debug) element to the
+tcl_platform array on Windows platform.  The existence of the debug
+element of the tcl_platform array indicates that the particular Tcl
+shell has been compiled with debug information.  Using
+"info exists tcl_platform(debug)" a Tcl script can direct the interpreter
+to load debug versions of DLLs with the load command. (SKS)
