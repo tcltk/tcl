@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.5 1999/04/30 22:45:03 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.6 1999/05/25 01:00:37 stanton Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -134,21 +134,26 @@ proc genStubs::declare {args} {
     if {[llength $args] != 3} {
 	puts stderr "wrong # args: declare $args"
     }
-    lassign $args index platform decl
+    lassign $args index platformList decl
 
     # Check for duplicate declarations, then add the declaration and
     # bump the lastNum counter if necessary.
 
-    if {[info exists stubs($curName,$platform,$index)]} {
-	puts stderr "Duplicate entry: declare $args"
+    foreach platform $platformList {
+	if {[info exists stubs($curName,$platform,$index)]} {
+	    puts stderr "Duplicate entry: declare $args"
+	}
     }
     regsub -all "\[ \t\n\]+" [string trim $decl] " " decl
     set decl [parseDecl $decl]
-    if {$decl != ""} {
-	set stubs($curName,$platform,$index) $decl
-	if {![info exists stubs($curName,$platform,lastNum)] \
-		|| ($index > $stubs($curName,$platform,lastNum))} {
-	    set stubs($curName,$platform,lastNum) $index
+
+    foreach platform $platformList {
+	if {$decl != ""} {
+	    set stubs($curName,$platform,$index) $decl
+	    if {![info exists stubs($curName,$platform,lastNum)] \
+		    || ($index > $stubs($curName,$platform,lastNum))} {
+		set stubs($curName,$platform,lastNum) $index
+	    }
 	}
     }
     return
