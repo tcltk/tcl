@@ -1,5 +1,7 @@
 2002-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/Makefile.in (dist): add any mac/tcl*.sea.hqx files
+
 	************************
 	****  8.3.5 TAGGED  ****
 	************************

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.15 2002/10/10 07:31:36 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.16 2002/10/19 01:55:48 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -508,7 +508,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.15 2002/10/10 07:31:36 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.16 2002/10/19 01:55:48 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -1204,7 +1204,7 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx \
+	cp -p $(TOP_DIR)/mac/tcl*.sea.hqx \
 		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
