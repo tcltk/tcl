@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.47 2003/04/14 16:34:40 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.48 2003/04/14 22:54:16 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -129,6 +129,8 @@ typedef struct {
 } DUMMY_REPARSE_BUFFER;
 
 #if defined(_MSC_VER) && ( _MSC_VER <= 1100 )
+#define HAVE_NO_FINDEX_ENUMS
+#elif !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0400)
 #define HAVE_NO_FINDEX_ENUMS
 #endif
 
