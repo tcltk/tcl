@@ -1,3 +1,27 @@
+2002-07-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in: Revert fix for Tcl bug 529801
+	since it was incorrect and broke the build on
+	other systems. Fix Tcl bug 587299.
+	Add MAJOR_VERSION, MINOR_VERSION, PATCH_LEVEL,
+	SHLIB_LD_FLAGS, SHLIB_LD_LIBS, CC_SEARCH_FLAGS,
+	LD_SEARCH_FLAGS, and LIB_FILE variables to support
+	more generic library build/install rules.
+	* unix/configure: Regen.
+	* unix/configure.in: Move AC_PROG_RANLIB into
+	tcl.m4. Move shared build test and setting
+	of MAKE_LIB and MAKE_STUB_LIB into tcl.m4.
+	Move subst of a number of variables into
+	tcl.m4 where they are defined.
+	* unix/tcl.m4 (SC_ENABLE_SYMBOLS, SC_CONFIG_CFLAGS):
+	Subst vars where they are defined. Add MAKE_LIB,
+	MAKE_STUB_LIB, INSTALL_LIB, and INSTALL_STUB_LIB
+	rules to deal with the ugly details of running
+	ranlib on static libs at build and install time.
+	Replace TCL_SHLIB_LD_EXTRAS with SHLIB_LD_FLAGS
+	and use it when building a shared library.
+	* unix/tclConfig.sh.in: Add TCL_CC_SEARCH_FLAGS.
+
 2002-07-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: fixed Tcl_Obj leak in code corresponding
