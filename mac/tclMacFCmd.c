@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.12 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.13 2002/01/18 03:22:40 das Exp $
  */
 
 #include "tclInt.h"
@@ -1163,7 +1163,7 @@ GetFileFinderAttributes(
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
-    char *native;
+    CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
     err = FSpLocationFromPath(strlen(native),
@@ -1241,7 +1241,7 @@ GetFileReadOnly(
     OSErr err;
     FSSpec fileSpec;
     CInfoPBRec paramBlock;
-    char *native;
+    CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
     err = FSpLocationFromPath(strlen(native),
@@ -1305,7 +1305,7 @@ SetFileFinderAttributes(
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
-    char *native;
+    CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
     err = FSpLocationFromPath(strlen(native),
@@ -1397,7 +1397,7 @@ SetFileReadOnly(
     FSSpec fileSpec;
     HParamBlockRec paramBlock;
     int hidden;
-    char *native;
+    CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
     err = FSpLocationFromPath(strlen(native),

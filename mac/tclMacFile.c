@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.13 2001/11/23 01:27:32 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.14 2002/01/18 03:22:52 das Exp $
  */
 
 /*
@@ -39,7 +39,7 @@ FspLocationFromFsPath(pathPtr, specPtr)
     Tcl_Obj *pathPtr;
     FSSpec* specPtr;
 {
-    char *native = Tcl_FSGetNativePath(pathPtr);
+    CONST char *native = Tcl_FSGetNativePath(pathPtr);
     return FSpLocationFromPath(strlen(native), native, specPtr);
 }
 
