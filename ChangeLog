@@ -1,3 +1,15 @@
+2002-12-04  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to redirected 'load' in virtual
+	filesystem for some Unix systems.
+
+	* generic/tclEvent.c: the filesystem must be cleaned up before
+	the encoding subsystem because it needs access to encodings.
+	Fixes crash on exit observed in embedded applications.
+
+	* generic/tclTestObj.c: patch omitted from previous change
+	of 2002-11-13
+	
 2002-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclStubLib.c (Tcl_InitStubs): prevent the cached check of
