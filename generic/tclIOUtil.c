@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.74 2003/02/11 09:42:15 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.75 2003/02/11 11:07:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3233,7 +3233,8 @@ Tcl_FSJoinPath(listObj, elements)
 	 * efficiency benefit elsewhere in the code (from re-using the
 	 * normalized representation of the base object).
 	 */
-	if (base->typePtr == &tclFsPathType) {
+	if (base->typePtr == &tclFsPathType
+		&& !(base->bytes != NULL && base->bytes[0] == '\0')) {
 	    Tcl_Obj *tail;
 	    Tcl_PathType type;
 	    Tcl_ListObjIndex(NULL, listObj, 1, &tail);
@@ -3855,12 +3856,19 @@ Tcl_FSConvertToPathType(interp, objPtr)
 	    return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
 	}
 	return TCL_OK;
+	/* 
+	 * This code is intentionally never reached.  Once fs-optimisation
+	 * is complete, it will be removed/replaced
+	 */
 	if (fsPathPtr->cwdPtr == NULL) {
 	    return TCL_OK;
 	} else {
 	    if (FsCwdPointerEquals(fsPathPtr->cwdPtr)) {
 		return TCL_OK;
 	    } else {
+		if (objPtr->bytes == NULL) {
+		    UpdateStringOfFsPath(objPtr);
+		}
 		FreeFsPathInternalRep(objPtr);
 		objPtr->typePtr = NULL;
 		return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
@@ -3942,38 +3950,36 @@ UpdateStringOfFsPath(objPtr)
     /* 
      * Should we perhaps use 'Tcl_FSPathSeparator'?
      * But then what about the Windows special case?
-     * Perhaps we should just check if cwd is a root
-     * volume.
+     * Perhaps we should just check if cwd is a root volume.
+     * We should never get cwdLen == 0 in this code path.
      */
-    if (cwdLen) {
-	switch (tclPlatform) {
-	    case TCL_PLATFORM_UNIX:
-		if (cwdStr[cwdLen-1] != '/') {
+    switch (tclPlatform) {
+	case TCL_PLATFORM_UNIX:
+	    if (cwdStr[cwdLen-1] != '/') {
+		Tcl_AppendToObj(copy, "/", 1);
+		cwdLen++;
+	    }
+	    break;
+	case TCL_PLATFORM_WINDOWS:
+	    /* 
+	     * We need the extra 'cwdLen != 2', and ':' checks because 
+	     * a volume relative path doesn't get a '/'.  For example 
+	     * 'glob C:*cat*.exe' will return 'C:cat32.exe'
+	     */
+	    if (cwdStr[cwdLen-1] != '/'
+		    && cwdStr[cwdLen-1] != '\\') {
+		if (cwdLen != 2 || cwdStr[1] != ':') {
 		    Tcl_AppendToObj(copy, "/", 1);
 		    cwdLen++;
 		}
-		break;
-	    case TCL_PLATFORM_WINDOWS:
-		/* 
-		 * We need the extra 'cwdLen != 2', and ':' checks because 
-		 * a volume relative path doesn't get a '/'.  For example 
-		 * 'glob C:*cat*.exe' will return 'C:cat32.exe'
-		 */
-		if (cwdStr[cwdLen-1] != '/'
-			&& cwdStr[cwdLen-1] != '\\') {
-		    if (cwdLen != 2 || cwdStr[1] != ':') {
-			Tcl_AppendToObj(copy, "/", 1);
-			cwdLen++;
-		    }
-		}
-		break;
-	    case TCL_PLATFORM_MAC:
-		if (cwdStr[cwdLen-1] != ':') {
-		    Tcl_AppendToObj(copy, ":", 1);
-		    cwdLen++;
-		}
-		break;
-	}
+	    }
+	    break;
+	case TCL_PLATFORM_MAC:
+	    if (cwdStr[cwdLen-1] != ':') {
+		Tcl_AppendToObj(copy, ":", 1);
+		cwdLen++;
+	    }
+	    break;
     }
     Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
     objPtr->bytes = Tcl_GetStringFromObj(copy, &cwdLen);
@@ -4625,8 +4631,11 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
     }
     fsPathPtr = (FsPath*) pathObjPtr->internalRep.otherValuePtr;
 
-    /* Ensure cwd hasn't changed */
     if (fsPathPtr->flags != 0) {
+	/* 
+	 * This is a special path object which is the result of
+	 * something like 'file join' 
+	 */
 	Tcl_Obj *dir, *copy;
 	int cwdLen;
 	int pathType;
@@ -4649,31 +4658,29 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	/* 
 	 * Should we perhaps use 'Tcl_FSPathSeparator'?
 	 * But then what about the Windows special case?
-	 * Perhaps we should just check if cwd is a root
-	 * volume.
+	 * Perhaps we should just check if cwd is a root volume.
+	 * We should never get cwdLen == 0 in this code path.
 	 */
-	if (cwdLen) {
-	    switch (tclPlatform) {
-		case TCL_PLATFORM_UNIX:
-		    if (cwdStr[cwdLen-1] != '/') {
-			Tcl_AppendToObj(copy, "/", 1);
-			cwdLen++;
-		    }
-		    break;
-		case TCL_PLATFORM_WINDOWS:
-		    if (cwdStr[cwdLen-1] != '/' 
-			    && cwdStr[cwdLen-1] != '\\') {
-			Tcl_AppendToObj(copy, "/", 1);
-			cwdLen++;
-		    }
-		    break;
-		case TCL_PLATFORM_MAC:
-		    if (cwdStr[cwdLen-1] != ':') {
-			Tcl_AppendToObj(copy, ":", 1);
-			cwdLen++;
-		    }
-		    break;
-	    }
+	switch (tclPlatform) {
+	    case TCL_PLATFORM_UNIX:
+		if (cwdStr[cwdLen-1] != '/') {
+		    Tcl_AppendToObj(copy, "/", 1);
+		    cwdLen++;
+		}
+		break;
+	    case TCL_PLATFORM_WINDOWS:
+		if (cwdStr[cwdLen-1] != '/' 
+			&& cwdStr[cwdLen-1] != '\\') {
+		    Tcl_AppendToObj(copy, "/", 1);
+		    cwdLen++;
+		}
+		break;
+	    case TCL_PLATFORM_MAC:
+		if (cwdStr[cwdLen-1] != ':') {
+		    Tcl_AppendToObj(copy, ":", 1);
+		    cwdLen++;
+		}
+		break;
 	}
 	Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
 	/* 
@@ -4710,8 +4717,12 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	}
 	fsPathPtr->flags = 0;
     }
+    /* Ensure cwd hasn't changed */
     if (fsPathPtr->cwdPtr != NULL) {
 	if (!FsCwdPointerEquals(fsPathPtr->cwdPtr)) {
+	    if (pathObjPtr->bytes == NULL) {
+		UpdateStringOfFsPath(pathObjPtr);
+	    }
 	    FreeFsPathInternalRep(pathObjPtr);
 	    pathObjPtr->typePtr = NULL;
 	    if (Tcl_ConvertToType(interp, pathObjPtr, 
@@ -4730,31 +4741,29 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	    /* 
 	     * Should we perhaps use 'Tcl_FSPathSeparator'?
 	     * But then what about the Windows special case?
-	     * Perhaps we should just check if cwd is a root
-	     * volume.
+	     * Perhaps we should just check if cwd is a root volume.
+	     * We should never get cwdLen == 0 in this code path.
 	     */
-	    if (cwdLen) {
-		switch (tclPlatform) {
-		    case TCL_PLATFORM_UNIX:
-			if (cwdStr[cwdLen-1] != '/') {
-			    Tcl_AppendToObj(copy, "/", 1);
-			    cwdLen++;
-			}
-			break;
-		    case TCL_PLATFORM_WINDOWS:
-			if (cwdStr[cwdLen-1] != '/' 
-				&& cwdStr[cwdLen-1] != '\\') {
-			    Tcl_AppendToObj(copy, "/", 1);
-			    cwdLen++;
-			}
-			break;
-		    case TCL_PLATFORM_MAC:
-			if (cwdStr[cwdLen-1] != ':') {
-			    Tcl_AppendToObj(copy, ":", 1);
-			    cwdLen++;
-			}
-			break;
-		}
+	    switch (tclPlatform) {
+		case TCL_PLATFORM_UNIX:
+		    if (cwdStr[cwdLen-1] != '/') {
+			Tcl_AppendToObj(copy, "/", 1);
+			cwdLen++;
+		    }
+		    break;
+		case TCL_PLATFORM_WINDOWS:
+		    if (cwdStr[cwdLen-1] != '/' 
+			    && cwdStr[cwdLen-1] != '\\') {
+			Tcl_AppendToObj(copy, "/", 1);
+			cwdLen++;
+		    }
+		    break;
+		case TCL_PLATFORM_MAC:
+		    if (cwdStr[cwdLen-1] != ':') {
+			Tcl_AppendToObj(copy, ":", 1);
+			cwdLen++;
+		    }
+		    break;
 	    }
 	    Tcl_AppendObjToObj(copy, pathObjPtr);
 	    /* 
@@ -5360,6 +5369,9 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
 	 * We have to discard the stale representation and 
 	 * recalculate it 
 	 */
+	if (pathObjPtr->bytes == NULL) {
+	    UpdateStringOfFsPath(pathObjPtr);
+	}
 	FreeFsPathInternalRep(pathObjPtr);
 	pathObjPtr->typePtr = NULL;
 	if (SetFsPathFromAny(NULL, pathObjPtr) != TCL_OK) {
