@@ -1,5 +1,11 @@
 2001-09-11  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
+	* doc/OpenFileChnl.3: Added documentation for Tcl_WriteRaw and
+	  Tcl_ReadRaw [#414929].
+	
+	* doc/CrtChannel.3: Added documentation for Tcl_ChannelBuffered
+	  and Tcl_GetTopChannel [#414929].
+
 	* The changes below are a fix for [219253].
 
 	* tests/socket.test: Removed _most_ instances of hardwired port
