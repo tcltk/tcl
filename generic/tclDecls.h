@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3 1999/03/10 05:52:47 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.4 1999/03/10 23:19:09 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -869,6 +869,21 @@ EXTERN Tcl_Pid		Tcl_WaitPid _ANSI_ARGS_((Tcl_Pid pid, int * statPtr,
 				int options));
 /* 278 */
 EXTERN void		panicVA _ANSI_ARGS_((char * format, va_list argList));
+/* 279 */
+EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
+				int * patchLevel, Tcl_ReleaseType * type));
+/* 280 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 281 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 282 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 283 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 284 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 285 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1183,6 +1198,13 @@ typedef struct TclStubs {
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
     void (*panicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
+    void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, Tcl_ReleaseType * type)); /* 279 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 280 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 281 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 282 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 283 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 284 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 285 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2311,6 +2333,34 @@ extern TclStubs *tclStubsPtr;
 #ifndef panicVA
 #define panicVA(format, argList) \
 	(tclStubsPtr->panicVA)(format, argList) /* 278 */
+#endif
+#ifndef Tcl_GetVersion
+#define Tcl_GetVersion(major, minor, patchLevel, type) \
+	(tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type) /* 279 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 280 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 281 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 282 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 283 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 284 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 285 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

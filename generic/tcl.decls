@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3 1999/03/10 05:52:46 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.4 1999/03/10 23:19:09 redman Exp $
 
 library tcl
 
@@ -956,6 +956,28 @@ declare 277 generic {
 }
 declare 278 generic {
     void panicVA(char *format, va_list argList)
+}
+declare 279 generic {
+    void Tcl_GetVersion(int *major, int *minor, int *patchLevel, \
+	    Tcl_ReleaseType *type)
+}
+declare 280 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 281 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 282 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 283 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 284 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 285 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
 }
 
 ##############################################################################
