@@ -1,5 +1,10 @@
 2004-10-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Implementation of the
+	INST_LIST_IN and INST_LIST_NOT_IN bytecodes.
+	* generic/tclParseExpr.c (GetLexeme): Parse the 'in' and 'ni'
+	operators for TIP#201.
+
 	* generic/tclDictObj.c (DictUpdateCmd,DictWithCmd): Core of
 	implementation of TIP#212; docs and tests still to do...
 

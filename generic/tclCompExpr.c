@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.24 2004/10/06 05:52:21 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.25 2004/10/08 15:39:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -91,6 +91,8 @@ typedef struct ExprInfo {
 #define OP_STREQ	21
 #define OP_STRNEQ	22
 #define OP_EXPON	23
+#define OP_IN_LIST	24
+#define OP_NOT_IN_LIST	25
 
 /*
  * Table describing the expression operators. Entries in this table must
@@ -134,6 +136,8 @@ static OperatorDesc operatorTable[] = {
     {"eq",  2,  INST_STR_EQ},
     {"ne",  2,  INST_STR_NEQ},
     {"**",  2,	INST_EXPON},
+    {"in",  2,	INST_LIST_IN},
+    {"ni",  2,	INST_LIST_NOT_IN},
     {NULL}
 };
 
