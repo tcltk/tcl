@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.14 1999/10/05 22:47:05 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.15 1999/12/06 01:46:08 wart Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -73,6 +73,13 @@ LDFLAGS=${LDFLAGS_DEFAULT}
 TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
+# man2tcl needs this so that it can use errno.h
+#--------------------------------------------------------------------
+
+AC_CHECK_HEADER(errno.h, , MAN2TCLFLAGS="-DNO_ERRNO_H")
+AC_SUBST(MAN2TCLFLAGS)
+
+#--------------------------------------------------------------------
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
 
@@ -132,4 +139,4 @@ AC_SUBST(LIBRARIES)
 AC_SUBST(MAKE_LIB)
 AC_SUBST(MAKE_DLL)
 
-AC_OUTPUT(Makefile tclConfig.sh)
+AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)

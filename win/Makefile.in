@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.21 1999/08/12 23:14:43 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.22 1999/12/06 01:46:07 wart Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -96,6 +96,9 @@ LDFLAGS_OPTIMIZE = @LDFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
 CFLAGS = 		@CFLAGS@
 
+# Special compiler flags to use when building man2tcl on Windows.
+MAN2TCLFLAGS =		@MAN2TCLFLAGS@
+
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
 GENERIC_DIR		= @srcdir@/../generic
@@ -128,6 +131,7 @@ STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 TCLTEST			= tcltest${EXEEXT}
 CAT32			= cat32$(EXEEXT)
+MAN2TCL			= man2tcl$(EXEEXT)
 
 @SET_MAKE@
 
@@ -278,6 +282,8 @@ TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
 TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} ${COMPAT_OBJS}
 
+TCL_DOCS = $(ROOT_DIR)/doc/*.[13n]
+
 all: binaries libraries doc
 
 tcltest: $(TCLTEST)
@@ -286,7 +292,13 @@ binaries: @LIBRARIES@ $(STATIC_LIBRARIES) $(TCLSH)
 
 libraries:
 
-doc:
+doc: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL) $(TCL_DOCS)
+	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
+	./$(TCLSH) "$(ROOT_DIR_NATIVE)"/tools/man2help.tcl tcl "$(VER)" $(TCL_DOCS)
+	hcw /c /e tcl.hpj
+
+$(MAN2TCL): $(ROOT_DIR)/tools/man2tcl.c
+	$(CC) $(CFLAGS) $(MAN2TCLFLAGS) -o $(MAN2TCL) "$(ROOT_DIR_NATIVE)"/tools/man2tcl.c
 
 $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
@@ -474,7 +486,8 @@ Makefile: Makefile.in
 
 clean:
 	$(RM) *.lib *.exp *.dll *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(TCLTEST) $(CAT32)
+	$(RM) *.hlp *.cnt *.GID *.rtf
+	$(RM) $(TCLSH) $(TCLTEST) $(CAT32) man2tcl.exe
 	$(RM) *.pch *.ilk *.pdb
 
 distclean: clean
