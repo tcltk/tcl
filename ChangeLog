@@ -1,8 +1,10 @@
 2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* README: added archives.tcl.tk note
+
 	* unix/configure:
-	* unix/tcl.m4: correct HP 11 64-bit gcc building.
-	[Patch #601051] (martin)
+	* unix/tcl.m4: Correct AIX-5 ppc build flags.
+	Correct HP 11 64-bit gcc building. [Patch #601051] (martin)
 
 2002-10-15  Vince Darley  <vincentdarley@users.sourceforge.net>
 
