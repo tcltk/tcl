@@ -1,6 +1,14 @@
 2001-06-26  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/configure: Regen.
+	* unix/configure.in: Fix last checkin by removing
+	export since that only works in bash.
+	* win/configure: Regen.
+	* win/configure.in: Ditto.
+
+2001-06-26  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/configure: Regen.
 	* unix/configure.in: Set CFLAGS to "" if the user
 	did not set CFLAGS in the env. This keeps AC_PROG_CC
 	from adding "-g -O2" to the CFLAGS by default.
