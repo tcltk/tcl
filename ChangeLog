@@ -1,3 +1,9 @@
+2002-05-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclMain.c: Removed "dummy" reference to Tcl_LinkVar.
+	It is no longer needed since Tcl_Main() now actually calls
+	Tcl_LinkVar().  Thanks to Joe English for pointing that out.
+
 2002-05-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): 
