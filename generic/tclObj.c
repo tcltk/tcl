@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright (c) 2001 by ActiveState Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.20 2001/04/04 16:07:21 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.21 2001/05/23 06:05:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -47,17 +48,6 @@ Tcl_Mutex tclObjMutex;
 
 static char emptyString;
 char *tclEmptyStringRep = &emptyString;
-
-/*
- * The number of Tcl objects ever allocated (by Tcl_NewObj) and freed
- * (by TclFreeObj).
- */
-
-#ifdef TCL_COMPILE_STATS
-long ObjsAlloced = 0;
-long ObjsFreed = 0;
-long ObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
-#endif /* TCL_COMPILE_STATS */
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -168,12 +158,12 @@ TclInitObjSubsystem()
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
-    ObjsAlloced = 0;
-    ObjsFreed = 0;
+    tclObjsAlloced = 0;
+    tclObjsFreed = 0;
     {
 	int i;
 	for (i = 0;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
-	    ObjsShared[i] = 0;
+	    tclObjsShared[i] = 0;
 	}
     }
     Tcl_MutexUnlock(&tclObjMutex);
@@ -415,7 +405,7 @@ Tcl_ConvertToType(interp, objPtr, typePtr)
  *
  * Side effects:
  *	If compiling with TCL_COMPILE_STATS, this procedure increments
- *	the global count of allocated objects (ObjsAlloced).
+ *	the global count of allocated objects (tclObjsAlloced).
  *
  *----------------------------------------------------------------------
  */
@@ -447,13 +437,12 @@ Tcl_NewObj()
     }
     objPtr = tclFreeObjList;
     tclFreeObjList = (Tcl_Obj *) tclFreeObjList->internalRep.otherValuePtr;
-    
     objPtr->refCount = 0;
     objPtr->bytes    = tclEmptyStringRep;
     objPtr->length   = 0;
     objPtr->typePtr  = NULL;
 #ifdef TCL_COMPILE_STATS
-    ObjsAlloced++;
+    tclObjsAlloced++;
 #endif /* TCL_COMPILE_STATS */
     Tcl_MutexUnlock(&tclObjMutex);
     return objPtr;
@@ -482,7 +471,7 @@ Tcl_NewObj()
  *
  * Side effects:
  *	If compiling with TCL_COMPILE_STATS, this procedure increments
- *	the global count of allocated objects (ObjsAlloced).
+ *	the global count of allocated objects (tclObjsAlloced).
  *
  *----------------------------------------------------------------------
  */
@@ -511,7 +500,7 @@ Tcl_DbNewObj(file, line)
     objPtr->typePtr  = NULL;
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
-    ObjsAlloced++;
+    tclObjsAlloced++;
     Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_COMPILE_STATS */
     return objPtr;
@@ -556,10 +545,7 @@ Tcl_DbNewObj(file, line)
 void
 TclAllocateFreeObjects()
 {
-    Tcl_Obj tmp[2];
-    size_t objSizePlusPadding =	/* NB: this assumes byte addressing. */
-	((int)(&(tmp[1])) - (int)(&(tmp[0])));
-    size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * objSizePlusPadding);
+    size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
     char *basePtr;
     register Tcl_Obj *prevPtr, *objPtr;
     register int i;
@@ -569,10 +555,10 @@ TclAllocateFreeObjects()
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
-    for (i = 0;  i < OBJS_TO_ALLOC_EACH_TIME;  i++) {
+    for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
 	objPtr->internalRep.otherValuePtr = (VOID *) prevPtr;
 	prevPtr = objPtr;
-	objPtr = (Tcl_Obj *) (((char *)objPtr) + objSizePlusPadding);
+	objPtr++;
     }
     tclFreeObjList = prevPtr;
 }
@@ -598,7 +584,7 @@ TclAllocateFreeObjects()
  *	type-specific Tcl_FreeInternalRepProc to deallocate the object's
  *	internal representation. If compiling with TCL_COMPILE_STATS,
  *	this procedure increments the global count of freed objects
- *	(ObjsFreed).
+ *	(tclObjsFreed).
  *
  *----------------------------------------------------------------------
  */
@@ -635,7 +621,7 @@ TclFreeObj(objPtr)
 #endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
-    ObjsFreed++;
+    tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
     Tcl_MutexUnlock(&tclObjMutex);
 }
@@ -764,18 +750,14 @@ Tcl_GetStringFromObj(objPtr, lengthPtr)
 				 * string rep's byte array length should be
 				 * stored. If NULL, no length is stored. */
 {
-    if (objPtr->bytes != NULL) {
-	if (lengthPtr != NULL) {
-	    *lengthPtr = objPtr->length;
+    if (objPtr->bytes == NULL) {
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
 	}
-	return objPtr->bytes;
+	(*objPtr->typePtr->updateStringProc)(objPtr);
     }
 
-    if (objPtr->typePtr->updateStringProc == NULL) {
-	panic("UpdateStringProc should not be invoked for type %s",
-		objPtr->typePtr->name);
-    }
-    (*objPtr->typePtr->updateStringProc)(objPtr);
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
     }
@@ -2114,11 +2096,11 @@ Tcl_DbIsShared(objPtr, file, line)
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
     if ((objPtr)->refCount <= 1) {
-	ObjsShared[1]++;
+	tclObjsShared[1]++;
     } else if ((objPtr)->refCount < TCL_MAX_SHARED_OBJ_STATS) {
-	ObjsShared[(objPtr)->refCount]++;
+	tclObjsShared[(objPtr)->refCount]++;
     } else {
-	ObjsShared[0]++;
+	tclObjsShared[0]++;
     }
     Tcl_MutexUnlock(&tclObjMutex);
 #endif
