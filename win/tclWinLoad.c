@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.5 2000/02/10 09:53:57 hobbs Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.6 2000/09/06 22:37:24 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -87,8 +87,12 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 	    case ERROR_MOD_NOT_FOUND:
 	    case ERROR_DLL_NOT_FOUND:
 		Tcl_AppendResult(interp, "this library or a dependent library",
-			" could not be found in library path", (char *)
-			NULL);
+			" could not be found in library path",
+			(char *) NULL);
+		break;
+	    case ERROR_PROC_NOT_FOUND:
+		Tcl_AppendResult(interp, "could not find specified procedure",
+			(char *) NULL);
 		break;
 	    case ERROR_INVALID_DLL:
 		Tcl_AppendResult(interp, "this library or a dependent library",
