@@ -11,12 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.56 2004/03/30 21:34:15 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.57 2004/04/06 22:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include "tclPort.h"
 
 /*
  * Table of all object types.

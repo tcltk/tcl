@@ -12,11 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.4 2001/06/17 03:48:19 dgp Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.5 2004/04/06 22:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The panicProc variable contains a pointer to an application

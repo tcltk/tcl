@@ -7,11 +7,10 @@
  *	originally from Larry Wall.
  *
  *
- * RCS: @(#) $Id: opendir.c,v 1.2 1998/09/14 18:39:44 stanton Exp $
+ * RCS: @(#) $Id: opendir.c,v 1.3 2004/04/06 22:25:48 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 #undef DIRSIZ
 #define DIRSIZ(dp) \

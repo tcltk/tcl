@@ -267,7 +267,6 @@ TCLOBJS	= \
 	$(TMPDIR)\tclWinFile.obj \
 	$(TMPDIR)\tclWinInit.obj \
 	$(TMPDIR)\tclWinLoad.obj \
-	$(TMPDIR)\tclWinMtherr.obj \
 	$(TMPDIR)\tclWinNotify.obj \
 	$(TMPDIR)\tclWinPipe.obj \
 	$(TMPDIR)\tclWinSock.obj \

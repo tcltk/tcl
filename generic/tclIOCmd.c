@@ -8,11 +8,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.17 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.18 2004/04/06 22:25:52 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * Callback structure for accept callback in a TCP server.

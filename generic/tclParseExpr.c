@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.20 2004/03/04 23:25:15 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.21 2004/04/06 22:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,9 +24,7 @@
  * the errno from tclExecute.c here.
  */
 
-#ifndef TCL_GENERIC_ONLY
-#include "tclPort.h"
-#else
+#ifdef TCL_GENERIC_ONLY
 #define NO_ERRNO_H
 #endif
 

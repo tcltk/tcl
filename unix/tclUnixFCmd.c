@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.35 2004/03/05 14:06:55 vbwagner Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.36 2004/04/06 22:25:56 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -48,7 +48,6 @@
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include <utime.h>
 #include <grp.h>
 #ifndef HAVE_ST_BLKSIZE

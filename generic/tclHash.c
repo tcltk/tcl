@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.17 2004/03/30 22:27:49 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.18 2004/04/06 22:25:51 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * Prevent macros from clashing with function definitions.
