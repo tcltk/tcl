@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.86 2003/10/13 16:48:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.87 2003/10/14 15:44:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1577,15 +1577,23 @@ Tcl_FSEvalFileEx(interp, pathPtr, encodingName)
     if (result == TCL_RETURN) {
 	result = TclUpdateReturnInfo(iPtr);
     } else if (result == TCL_ERROR) {
-	char msg[200 + TCL_INTEGER_SPACE];
 
 	/*
 	 * Record information telling where the error occurred.
 	 */
 
-	sprintf(msg, "\n    (file \"%.150s\" line %d)", Tcl_GetString(pathPtr),
-		interp->errorLine);
-	Tcl_AddErrorInfo(interp, msg);
+	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+	Tcl_Obj *msg = Tcl_NewStringObj("\n    (file \"", -1);
+	CONST char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
+	Tcl_IncrRefCount(msg);
+	Tcl_IncrRefCount(errorLine);
+	TclAppendLimitedToObj(msg, pathString, length, 150, "");
+	Tcl_AppendToObj(msg, "\" line ", -1);
+	Tcl_AppendObjToObj(msg, errorLine);
+	Tcl_DecrRefCount(errorLine);
+	Tcl_AppendToObj(msg, ")", -1);
+	TclAppendObjToErrorInfo(interp, msg);
+	Tcl_DecrRefCount(msg);
     }
 
     end:

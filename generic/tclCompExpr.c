@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.15 2003/09/12 23:55:32 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.16 2003/10/14 15:44:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -954,12 +954,10 @@ LogSyntaxError(infoPtr)
     ExprInfo *infoPtr;		/* Describes the compilation state for the
 				 * expression being compiled. */
 {
-    int numBytes = (infoPtr->lastChar - infoPtr->expr);
-    char buffer[100];
-
-    sprintf(buffer, "syntax error in expression \"%.*s\"",
-	    ((numBytes > 60)? 60 : numBytes), infoPtr->expr);
-    Tcl_ResetResult(infoPtr->interp);
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->interp),
-	    buffer, (char *) NULL);
+    Tcl_Obj *result =
+            Tcl_NewStringObj("syntax error in expression \"", -1);
+    TclAppendLimitedToObj(result, infoPtr->expr,
+            (int)(infoPtr->lastChar - infoPtr->expr), 60, "");
+    Tcl_AppendToObj(result, "\"", -1);
+    Tcl_SetObjResult(infoPtr->interp, result);
 }

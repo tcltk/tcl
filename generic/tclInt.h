@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.135 2003/09/29 22:51:50 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.136 2003/10/14 15:44:52 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1622,6 +1622,11 @@ extern char		tclEmptyString;
  *----------------------------------------------------------------
  */
 
+EXTERN void		TclAppendLimitedToObj _ANSI_ARGS_((Tcl_Obj *objPtr, 
+			    CONST char *bytes, int length, int limit,
+			    CONST char *ellipsis));
+EXTERN void		TclAppendObjToErrorInfo _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
