@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.127 2002/06/17 22:52:51 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.128 2002/06/18 00:12:44 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -118,6 +118,16 @@ extern "C" {
 #  define JOIN1(a,b) a##b
 #endif
 
+/* 
+ * A special definition used to allow this header file to be included
+ * from windows resource files so that they can obtain version
+ * information.  RC_INVOKED is defined by default by the RC tool.
+ * Resource compilers don't like all the C stuff, like typedefs and
+ * procedure declarations, that occur below, so block them out.
+ */
+
+#ifndef RC_INVOKED
+
 /*
  * Special macro to define mutexes, that doesn't do anything
  * if we are not using threads.
@@ -142,16 +152,6 @@ extern "C" {
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/* 
- * A special definition used to allow this header file to be included
- * from windows resource files so that they can obtain version
- * information.  RC_INVOKED is defined by default by the RC tool.
- * Resource compilers don't like all the C stuff, like typedefs and
- * procedure declarations, that occur below, so block them out.
- */
-
-#ifndef RC_INVOKED
 
 
 #ifndef BUFSIZ
