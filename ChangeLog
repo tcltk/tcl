@@ -1,10 +1,41 @@
 2002-09-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/ldAix (nmopts): add -X32_64 to make it work for 32 or 64bit
+	mode compilation.
+
 	* library/encoding/koi8-u.enc: removed extraneous spaces that
 	confused encoding reader. [Bug #615115]
 
 	* unix/Makefile.in: generate source dists with -src designator and
 	do not generate .Z anymore (just .gz and .zip).
+
+2002-09-18  Mumit Khan <khan@nanotech.wisc.edu>
+
+	Added basic Cygwin support.
+
+	* win/tcl.m4 (SC_PATH_TCLCONFIG): Support one-tree build.
+	(SC_PATH_TKCONFIG): Likewise.
+	(SC_PROG_TCLSH): Likewise.
+	(SC_CONFIG_CFLAGS): Assume real Cygwin port and remove -mno-cygwin 
+	flags.  Add -mwin32 to extra_cflags and extra_ldflags.
+	Remove ``-e _WinMain@16'' from LDFLAGS_WINDOW.
+	* win/configure.in: Allow Cygwin build.
+	(SEH test): Define to be 1 instead of empty value.
+	(EXCEPTION_DISPOSITION): Add test.
+	* win/configure: Regenerate.
+
+	* generic/tcl.h: Don't explicitly define __WIN32__ for Cygwin, let
+	the user decide whether to use Windows or POSIX personality.
+	(TCL_WIDE_INT_TYPE, TCL_LL_MODIFIER, struct Tcl_StatBuf): Define
+	for Cygwin.
+	* generic/tclEnv.c (Tcl_CygwinPutenv): putenv replacement for
+	Cygwin.
+	* generic/tclFileName.c (Tcl_TranslateFileName): Convert POSIX 
+	to native format.
+	(TclDoGlob): Likewise.
+	* generic/tclPlatDecls.h (TCHAR): Define for Cygwin.
+	* win/tclWinPort.h (putenv, TclpSysAlloc, TclpSysFree, 
+	TclpSysRealloc): Define for Cygwin.
 
 2002-09-26  Daniel Steffen  <das@users.sourceforge.net>
 
