@@ -1,5 +1,12 @@
 2004-11-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* unix/config.h.in:	Allow configure to put all the C #defs into
+	* unix/configure.in:	a file (called config.h) so that Unix builds
+	* unix/tcl.m4:		now take far fewer lines of scrollback to
+	* unix/Makefile.in:	proceed (making it less likely that any errors
+	* generic/tclInt.h:	or warnings will get missed).
+	* unix/tclAppInit.c:	Part of the TIP#34 upgrades.
+
 	* unix/tcl.m4, unix/tclUnixPort.h: Check for pthread_attr_get_np
 	in <pthread.h> before forcing the use of <pthread_np.h> to make
 	things work on NetBSD 2.0.  [Bug 1064882]
