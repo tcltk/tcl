@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.74 2002/06/20 00:11:43 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.75 2002/06/20 14:47:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -876,35 +876,47 @@ TclCompEvalObj(interp, objPtr)
 	return TCL_ERROR;
     }
 
-    /*
-     * Get the ByteCode from the object. If it exists, make sure it hasn't
-     * been invalidated by, e.g., someone redefining a command with a
-     * compile procedure (this might make the compiled code wrong). If
-     * necessary, convert the object to be a ByteCode object and compile it.
-     * Also, if the code was compiled in/for a different interpreter,
-     * or for a different namespace, or for the same namespace but
-     * with different name resolution rules, we recompile it.
-     *
-     * Precompiled objects, however, are immutable and therefore
-     * they are not recompiled, even if the epoch has changed.
-     *
-     * To be pedantically correct, we should also check that the
-     * originating procPtr is the same as the current context procPtr
-     * (assuming one exists at all - none for global level).  This
-     * code is #def'ed out because [info body] was changed to never
-     * return a bytecode type object, which should obviate us from
-     * the extra checks here.
-     */
-
     if (iPtr->varFramePtr != NULL) {
         namespacePtr = iPtr->varFramePtr->nsPtr;
     } else {
         namespacePtr = iPtr->globalNsPtr;
     }
 
-    if (objPtr->typePtr == &tclByteCodeType) {
+    /* 
+     * If the object is not already of tclByteCodeType, compile it (and
+     * reset the compilation flags in the interpreter; this should be 
+     * done after any compilation).
+     * Otherwise, check that it is "fresh" enough.
+     */
+
+    if (objPtr->typePtr != &tclByteCodeType) {
+        recompileObj:
+	iPtr->errorLine = 1; 
+	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	iPtr->evalFlags = 0;
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	
+    } else {
+	/*
+	 * Make sure the Bytecode hasn't been invalidated by, e.g., someone 
+	 * redefining a command with a compile procedure (this might make the 
+	 * compiled code wrong). 
+	 * The object needs to be recompiled if it was compiled in/for a 
+	 * different interpreter, or for a different namespace, or for the 
+	 * same namespace but with different name resolution rules. 
+	 * Precompiled objects, however, are immutable and therefore
+	 * they are not recompiled, even if the epoch has changed.
+	 *
+	 * To be pedantically correct, we should also check that the
+	 * originating procPtr is the same as the current context procPtr
+	 * (assuming one exists at all - none for global level).  This
+	 * code is #def'ed out because [info body] was changed to never
+	 * return a bytecode type object, which should obviate us from
+	 * the extra checks here.
+	 */
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 	        || (codePtr->compileEpoch != iPtr->compileEpoch)
 #ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
@@ -919,36 +931,14 @@ TclCompEvalObj(interp, objPtr)
                 }
 	        codePtr->compileEpoch = iPtr->compileEpoch;
             } else {
+		/*
+		 * This byteCode is invalid: free it and recompile
+		 */
                 tclByteCodeType.freeIntRepProc(objPtr);
-            }
-	}
-    }
-    if (objPtr->typePtr != &tclByteCodeType) {
-	iPtr->errorLine = 1; 
-	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
-    } else {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    (*tclByteCodeType.freeIntRepProc)(objPtr);
-	    iPtr->errorLine = 1; 
-	    result = (*tclByteCodeType.setFromAnyProc)(interp, objPtr);
-	    if (result != TCL_OK) {
-		return result;
+		goto recompileObj;
 	    }
 	}
     }
-    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-
-    /*
-     * Extract then reset the compilation flags in the interpreter.
-     * Resetting the flags must be done after any compilation.
-     */
-
-    iPtr->evalFlags = 0;
 
     /*
      * Execute the commands. If the code was compiled from an empty string,
