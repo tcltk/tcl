@@ -5,16 +5,16 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.5 1999/07/20 00:11:52 hershey Exp $
+'\" RCS: @(#) $Id: http.n,v 1.5.4.1 1999/11/19 23:31:46 hobbs Exp $
 '\" 
 .so man.macros
-.TH "Http" n 8.0 Tcl "Tcl Built-In Commands"
+.TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 Http \- Client-side implementation of the HTTP/1.0 protocol.
 .SH SYNOPSIS
-\fBpackage require http ?2.1?\fP
+\fBpackage require http ?2.2?\fP
 .sp
 \fB::http::config \fI?options?\fR
 .sp
@@ -35,6 +35,10 @@ Http \- Client-side implementation of the HTTP/1.0 protocol.
 \fB::http::data \fItoken\fR
 .sp
 \fB::http::cleanup \fItoken\fR
+.sp
+\fB::http::register \fIproto port command\fR
+.sp
+\fB::http::unregister \fIproto\fR
 .BE
 
 .SH DESCRIPTION
@@ -44,7 +48,9 @@ protocol.  The package implements the GET, POST, and HEAD operations
 of HTTP/1.0.  It allows configuration of a proxy host to get through
 firewalls.  The package is compatible with the \fBSafesock\fR security
 policy, so it can be used by untrusted applets to do URL fetching from
-a restricted set of hosts.
+a restricted set of hosts. This package can be extened to support
+additional HTTP transport protocols, such as HTTPS, by providing
+a custom \fBsocket\fR command, via \fBhttp::register\fR.
 .PP
 The \fB::http::geturl\fR procedure does a HTTP transaction.
 Its \fIoptions \fR determine whether a GET, POST, or HEAD transaction
@@ -101,7 +107,7 @@ non-empty.
 .TP
 \fB\-useragent\fP \fIstring\fP
 The value of the User-Agent header in the HTTP request.  The default
-is \fB"Tcl http client package 2.1."\fR
+is \fB"Tcl http client package 2.2."\fR
 .RE
 .TP
 \fB::http::geturl\fP \fIurl\fP ?\fIoptions\fP? 
@@ -207,6 +213,11 @@ the \fB-command\fP callback, if specified.
 The return value of \fB::http::status\fP is \fBtimeout\fP
 after a timeout has occurred.
 .TP
+\fB\-type\fP \fImime-type\fP
+Use \fImime-type\fR as the \fBContent-Type\fR value, instead of the
+default value (\fBapplication/x-www-form-urlencoded\fR) during a
+POST operation.
+.TP
 \fB\-validate\fP \fIboolean\fP
 If \fIboolean\fR is non-zero, then \fB::http::geturl\fR does an HTTP HEAD
 request.  This request returns meta information about the URL, but the
@@ -252,6 +263,25 @@ This procedure cleans up the state associated with the connection
 identified by \fItoken\fP.  After this call, the procedures
 like \fB::http::data\fP cannot be used to get information
 about the operation.
+.TP
+\fB::http::register\fP \fIproto port command\fP
+This procedure allows one to provide custom HTTP transport types
+such as HTTPS, by registering a prefix, the default port, and the
+command to execute to create the Tcl \fBchannel\fR. E.g.:
+.RS
+.CS
+package require http
+package require tls
+
+http::register https 443 ::tls::socket
+
+set token [http::geturl https://my.secure.site/]
+.CE
+.RE
+.TP
+\fB::http::unregister\fP \fIproto\fP
+This procedure unregisters a protocol handler that was previously
+registered via \fBhttp::register\fR.
 
 .SH "STATE ARRAY"
 The \fB::http::geturl\fR procedure returns a \fItoken\fR that can be used to
