@@ -1,3 +1,8 @@
+2002-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lset.n: Changed 'list' to 'varName' for consistency with
+	lappend documentation.  Thanks to Glenn Jackman [Bug 611719]
+
 2002-09-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:  Corrected [puts -nonewline] within
