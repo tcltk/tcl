@@ -1,3 +1,8 @@
+2001-03-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lsort.n: Added some notes that clarify the behaviour of
+	[lsort] as well as a whole bunch of examples.  [Bug #219202]
+
 2001-03-27  Jeff Hobbs  <jeffh@gimlet.activestate.com>
 
 	* doc/Alloc.3: corrected docs to note that Tcl_Attempt* return
