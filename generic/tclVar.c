@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.56 2002/07/16 16:29:07 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.57 2002/07/17 10:36:23 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -68,33 +68,15 @@ static int		SetArraySearchObj _ANSI_ARGS_((Tcl_Interp *interp,
 
 
 /*
- * Functions defined in this file and currently only used here and by the
- * bytecode compiler and engine. Some of these could later be placed
- * in the public interface.
+ * Functions defined in this file that may be exported in the future
+ * for use by the bytecode compiler and engine or to the public interface.
  */
 
-Var *		TclLookupArrayElement _ANSI_ARGS_((Tcl_Interp *interp,
-		    CONST char *arrayName, CONST char *elName, CONST int flags,
-		    CONST char *msg, CONST int createPart1,
-		    CONST int createPart2, Var *arrayPtr));	
 Var *		TclLookupSimpleVar _ANSI_ARGS_((Tcl_Interp *interp,
 		    CONST char *varName, int flags, CONST int create,
 		    CONST char **errMsgPtr, int *indexPtr));
-Var *		TclObjLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
-		    Tcl_Obj *part1Ptr, CONST char *part2, int flags,
-		    CONST char *msg, CONST int createPart1,
-		    CONST int createPart2, Var **arrayPtrPtr));
 int		TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Obj *part1Ptr, CONST char *part2, int flags));
-Tcl_Obj *	TclPtrGetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-		    Var *arrayPtr, char *part1, CONST char *part2,
-		    CONST int flags));
-Tcl_Obj *	TclPtrSetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-		    Var *arrayPtr, char *part1, CONST char *part2,
-		    Tcl_Obj *newValuePtr, CONST int flags));
-Tcl_Obj *	TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-		    Var *arrayPtr, char *part1, CONST char *part2,
-		    CONST long i, CONST int flags));
 
 static Tcl_FreeInternalRepProc FreeLocalVarName;
 static Tcl_DupInternalRepProc DupLocalVarName;
@@ -1232,283 +1214,6 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetIndexedScalar --
- *
- *	Return the Tcl object value of a local scalar variable in the active
- *	procedure, given its index in the procedure's array of compiler
- *	allocated local variables.
- *
- * Results:
- *	The return value points to the current object value of the variable
- *	given by localIndex. If the specified variable doesn't exist, or
- *	there is a clash in array usage, or an error occurs while executing
- *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result if TCL_LEAVE_ERR_MSG is set in flags.
- *
- * Side effects:
- *	The ref count for the returned object is _not_ incremented to
- *	reflect the returned reference; if you want to keep a reference to
- *	the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclGetIndexedScalar(interp, localIndex, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is
-				 * to be looked up. */
-    register int localIndex;	/* Index of variable in procedure's array
-				 * of local variables. */
-    int flags;			/* TCL_LEAVE_ERR_MSG if to leave an error
-				 * message in interpreter's result on an error.
-				 * Otherwise no error message is left. */
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-				/* Points to the procedure call frame whose
-				 * variables are currently in use. Same as
-				 * the current procedure's frame, if any,
-				 * unless an "uplevel" is executing. */
-    Var *compiledLocals = varFramePtr->compiledLocals;
-    register Var *varPtr;	/* Points to the variable's in-frame Var
-				 * structure. */
-    char *varName;		/* Name of the local variable. */
-    CONST char *msg;
-
-#ifdef TCL_COMPILE_DEBUG
-    int localCt = varFramePtr->procPtr->numCompiledLocals;
-
-    if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclGetIndexedScalar: can't get ");
-	fprintf(stderr, "local %i in frame 0x%x, ", localIndex,
-		(unsigned int) varFramePtr);
-	fprintf(stderr, "no compiled locals\n");
-	panic("TclGetIndexedScalar: no compiled locals in frame 0x%x",
-		(unsigned int) varFramePtr);
-    }
-    if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclGetIndexedScalar: can't get ");
-	fprintf(stderr, "local %i in frame 0x%x " localIndex,
-		(unsigned int) varFramePtr);
-	fprintf(stderr, "with %i locals\n", localCt);
-	panic("TclGetIndexedScalar: bad local index %i in frame 0x%x",
-		localIndex, (unsigned int) varFramePtr);
-    }
-#endif /* TCL_COMPILE_DEBUG */
-    
-    varPtr = &(compiledLocals[localIndex]);
-    varName = varPtr->name;
-
-    /*
-     * If varPtr is a link variable, we have a reference to some variable
-     * that was created through an "upvar" or "global" command, or we have a
-     * reference to a variable in an enclosing namespace. Traverse through
-     * any links until we find the referenced variable.
-     */
-	
-    while (TclIsVarLink(varPtr)) {
-	varPtr = varPtr->value.linkPtr;
-    }
-
-    /*
-     * Invoke any traces that have been set for the variable.
-     */
-
-    if (varPtr->tracePtr != NULL) {
-	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
-		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
-	    return NULL;
-	}
-    }
-
-    /*
-     * Make sure we're dealing with a scalar variable and not an array, and
-     * that the variable exists (isn't undefined).
-     */
-
-    if (!TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    if (TclIsVarArray(varPtr)) {
-		msg = isArray;
-	    } else {
-		msg = noSuchVar;
-	    }
-	    VarErrMsg(interp, varName, NULL, "read", msg);
-	}
-	return NULL;
-    }
-    return varPtr->value.objPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetElementOfIndexedArray --
- *
- *	Return the Tcl object value for an element in a local array
- *	variable. The element is named by the object elemPtr while the 
- *	array is specified by its index in the active procedure's array
- *	of compiler allocated local variables.
- *
- * Results:
- *	The return value points to the current object value of the
- *	element. If the specified array or element doesn't exist, or there
- *	is a clash in array usage, or an error occurs while executing
- *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result if TCL_LEAVE_ERR_MSG is set in flags.
- *
- * Side effects:
- *	The ref count for the returned object is _not_ incremented to
- *	reflect the returned reference; if you want to keep a reference to
- *	the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclGetElementOfIndexedArray(interp, localIndex, elemPtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is
-				 * to be looked up. */
-    int localIndex;		/* Index of array variable in procedure's
-				 * array of local variables. */
-    Tcl_Obj *elemPtr;		/* Points to an object holding the name of
-				 * an element to get in the array. */
-    int flags;			/* TCL_LEAVE_ERR_MSG if to leave an error
-				 * message in interpreter's result on an error.
-				 * Otherwise no error message is left. */
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-				/* Points to the procedure call frame whose
-				 * variables are currently in use. Same as
-				 * the current procedure's frame, if any,
-				 * unless an "uplevel" is executing. */
-    Var *compiledLocals = varFramePtr->compiledLocals;
-    Var *arrayPtr;		/* Points to the array's in-frame Var
-				 * structure. */
-    char *arrayName;		/* Name of the local array. */
-    Tcl_HashEntry *hPtr;
-    Var *varPtr = NULL;		/* Points to the element's Var structure
-				 * that we return. Initialized to avoid
-				 * compiler warning. */
-    CONST char *elem, *msg;
-    int new;
-
-#ifdef TCL_COMPILE_DEBUG
-    Proc *procPtr = varFramePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals;
-
-    if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclGetElementOfIndexedArray: can't get element ");
-	fprintf(stderr, "of local %i in frame 0x%x, " localIndex,
-		(unsigned int) varFramePtr);
-	fprintf(stderr, "no compiled locals\n");
-	panic("TclGetIndexedScalar: no compiled locals in frame 0x%x",
-		(unsigned int) varFramePtr);
-    }
-    if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclGetIndexedScalar: can't get element of "
-		"local %i in frame 0x%x with %i locals\n", localIndex,
-		(unsigned int) varFramePtr, localCt);
-	panic("TclGetElementOfIndexedArray: bad local index %i in frame 0x%x",
-		localIndex, (unsigned int) varFramePtr);
-    }
-#endif /* TCL_COMPILE_DEBUG */
-
-    elem = TclGetString(elemPtr);
-    arrayPtr = &(compiledLocals[localIndex]);
-    arrayName = arrayPtr->name;
-
-    /*
-     * If arrayPtr is a link variable, we have a reference to some variable
-     * that was created through an "upvar" or "global" command, or we have a
-     * reference to a variable in an enclosing namespace. Traverse through
-     * any links until we find the referenced variable.
-     */
-	
-    while (TclIsVarLink(arrayPtr)) {
-	arrayPtr = arrayPtr->value.linkPtr;
-    }
-
-    /*
-     * Make sure we're dealing with an array and that the array variable
-     * exists (isn't undefined).
-     */
-
-    if (!TclIsVarArray(arrayPtr) || TclIsVarUndefined(arrayPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    VarErrMsg(interp, arrayName, elem, "read", noSuchVar);
-	}
-	goto errorReturn;
-    } 
-
-    /*
-     * Look up the element. Note that we must create the element (but leave
-     * it marked undefined) if it does not already exist. This allows a
-     * trace to create new array elements "on the fly" that did not exist
-     * before. A trace is always passed a variable for the array element. If
-     * the trace does not define the variable, it will be deleted below (at
-     * errorReturn) and an error returned.
-     */
-
-    hPtr = Tcl_CreateHashEntry(arrayPtr->value.tablePtr, elem, &new);
-    if (new) {
-	if (arrayPtr->searchPtr != NULL) {
-	    DeleteSearches(arrayPtr);
-	}
-	varPtr = NewVar();
-	Tcl_SetHashValue(hPtr, varPtr);
-	varPtr->hPtr = hPtr;
-	varPtr->nsPtr = varFramePtr->nsPtr;
-	TclSetVarArrayElement(varPtr);
-    } else {
-	varPtr = (Var *) Tcl_GetHashValue(hPtr);
-    }
-
-    /*
-     * Invoke any traces that have been set for the element variable.
-     */
-
-    if ((varPtr->tracePtr != NULL)
-            || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
-	        TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
-	    goto errorReturn;
-	}
-    }
-
-    /*
-     * Return the element if it's an existing scalar variable.
-     */
-    
-    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return varPtr->value.objPtr;
-    }
-    
-    if (flags & TCL_LEAVE_ERR_MSG) {
-	if (TclIsVarArray(varPtr)) {
-	    msg = isArray;
-	} else {
-	    msg = noSuchVar;
-	}
-	VarErrMsg(interp, arrayName, elem, "read", msg);
-    }
-
-    /*
-     * An error. If the variable doesn't exist anymore and no-one's using
-     * it, then free up the relevant structures and hash table entries.
-     */
-
-    errorReturn:
-    if ((varPtr != NULL) && TclIsVarUndefined(varPtr)) {
-	CleanupVar(varPtr, NULL); /* the array is not in a hashtable */
-    }
-    return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetObjCmd --
  *
  *	This procedure is invoked to process the "set" Tcl command.
@@ -1976,511 +1681,6 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 /*
  *----------------------------------------------------------------------
  *
- * TclSetIndexedScalar --
- *
- *	Change the Tcl object value of a local scalar variable in the active
- *	procedure, given its compile-time allocated index in the procedure's
- *	array of local variables.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable given by localIndex. If the specified variable doesn't
- *	exist, or there is a clash in array usage, or an error occurs while
- *	executing variable traces, then NULL is returned and a message will
- *	be left in the interpreter's result if flags has TCL_LEAVE_ERR_MSG.
- *	Note that the returned object may not be the same one referenced by
- *	newValuePtr; this is because variable traces may modify the
- *	variable's value.
- *
- * Side effects:
- *	The value of the given variable is set. The reference count is
- *	decremented for any old value of the variable and incremented for
- *	its new value. If as a result of a variable trace the new value for
- *	the variable is not the same one referenced by newValuePtr, then
- *	newValuePtr's ref count is left unchanged. The ref count for the
- *	returned object is _not_ incremented to reflect the returned
- *	reference; if you want to keep a reference to the object you must
- *	increment its ref count yourself. This procedure does not create
- *	new variables, but only sets those recognized at compile time.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is
-				 * to be found. */
-    int localIndex;		/* Index of variable in procedure's array
-				 * of local variables. */
-    Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int flags;			/* Various flags that tell how to set value:
-				 * any of TCL_APPEND_VALUE,
-				 * TCL_LIST_ELEMENT or TCL_LEAVE_ERR_MSG. */
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-				/* Points to the procedure call frame whose
-				 * variables are currently in use. Same as
-				 * the current procedure's frame, if any,
-				 * unless an "uplevel" is executing. */
-    Var *compiledLocals = varFramePtr->compiledLocals;
-    register Var *varPtr;	/* Points to the variable's in-frame Var
-				 * structure. */
-    char *varName;		/* Name of the local variable. */
-    Tcl_Obj *oldValuePtr;
-    Tcl_Obj *resultPtr = NULL;
-
-#ifdef TCL_COMPILE_DEBUG
-    Proc *procPtr = varFramePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals;
-
-    if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set ");
-	fprintf(stderr, "local %i in ", localIndex);
-	fprintf(stderr, "frame 0x%x, no compiled locals\n",
-		(unsigned int) varFramePtr);
-	panic("TclSetIndexedScalar: no compiled locals in frame 0x%x",
-		(unsigned int) varFramePtr);
-    }
-    if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set ");
-	fprintf(stderr, "local %i in " localIndex);
-	fprintf(stderr, "frame 0x%x with %i locals\n",
-		(unsigned int) varFramePtr, localCt);
-	panic("TclSetIndexedScalar: bad local index %i in frame 0x%x",
-		localIndex, (unsigned int) varFramePtr);
-    }
-#endif /* TCL_COMPILE_DEBUG */
-    
-    varPtr = &(compiledLocals[localIndex]);
-    varName = varPtr->name;
-
-    /*
-     * If varPtr is a link variable, we have a reference to some variable
-     * that was created through an "upvar" or "global" command, or we have a
-     * reference to a variable in an enclosing namespace. Traverse through
-     * any links until we find the referenced variable.
-     */
-	
-    while (TclIsVarLink(varPtr)) {
-	varPtr = varPtr->value.linkPtr;
-    }
-
-    /*
-     * Invoke any read traces that have been set for the variable if it
-     * is requested; this is only done in the core when lappending.
-     */
-
-    if ((flags & TCL_TRACE_READS) && (varPtr->tracePtr != NULL)) {
-	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
-		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
-	    return NULL;
-	}
-    }
-
-    /*
-     * If the variable is in a hashtable and its hPtr field is NULL, then we
-     * may have an upvar to an array element where the array was deleted
-     * or an upvar to a namespace variable whose namespace was deleted.
-     * Generate an error (allowing the variable to be reset would screw up
-     * our storage allocation and is meaningless anyway).
-     */
-
-    if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    if (TclIsVarArrayElement(varPtr)) {
-		VarErrMsg(interp, varName, NULL, "set", danglingElement);
-	    } else {
-		VarErrMsg(interp, varName, NULL, "set", danglingVar);
-	    }
-	}
-	return NULL;
-    }
-
-    /*
-     * It's an error to try to set an array variable itself.
-     */
-
-    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    VarErrMsg(interp, varName, NULL, "set", isArray);
-	}
-	return NULL;
-    }
-
-    /*
-     * Set the variable's new value and discard its old value.
-     */
-
-    oldValuePtr = varPtr->value.objPtr;
-    if (flags & TCL_APPEND_VALUE) {
-	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
-	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
-	    varPtr->value.objPtr = NULL;
-	    oldValuePtr = NULL;
-	}
-	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
-	    if (oldValuePtr == NULL) {
-		TclNewObj(oldValuePtr);
-		varPtr->value.objPtr = oldValuePtr;
-		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
-	    } else if (Tcl_IsShared(oldValuePtr)) {
-		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		Tcl_DecrRefCount(oldValuePtr);
-		oldValuePtr = varPtr->value.objPtr;
-		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
-	    }
-	    if (Tcl_ListObjAppendElement(interp, oldValuePtr,
-		    newValuePtr) != TCL_OK) {
-		return NULL;
-	    }
-	} else {				/* append string */
-	    /*
-	     * We append newValuePtr's bytes but don't change its ref count.
-	     */
-
-	    if (oldValuePtr == NULL) {
-		varPtr->value.objPtr = newValuePtr;
-		Tcl_IncrRefCount(newValuePtr);
-	    } else {
-		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
-		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		    TclDecrRefCount(oldValuePtr);
-		    oldValuePtr = varPtr->value.objPtr;
-		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
-		}
-		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
-	    }
-	}
-    } else if (newValuePtr != oldValuePtr) {        /* set new value */
-	/*
-	 * In this case we are replacing the value, so we don't need to
-	 * do more than swap the objects.
-	 */
-
-	varPtr->value.objPtr = newValuePtr;
-	Tcl_IncrRefCount(newValuePtr);       /* var is another ref to obj */
-	if (oldValuePtr != NULL) {
-	    TclDecrRefCount(oldValuePtr);    /* discard old value */
-	}
-    }
-    TclSetVarScalar(varPtr);
-    TclClearVarUndefined(varPtr);
-
-    /*
-     * Invoke any write traces for the variable.
-     */
-
-    if (varPtr->tracePtr != NULL) {
-	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
-		NULL, TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
-	    goto cleanup;
-	}
-    }
-
-    /*
-     * Return the variable's value unless the variable was changed in some
-     * gross way by a trace (e.g. it was unset and then recreated as an
-     * array). If it was changed is a gross way, just return an empty string
-     * object.
-     */
-
-    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return varPtr->value.objPtr;
-    }
-    
-    resultPtr = Tcl_NewObj();
-
-    /*
-     * If the variable doesn't exist anymore and no-one's using it, then
-     * free up the relevant structures and hash table entries.
-     */
-
-    cleanup:
-    if (TclIsVarUndefined(varPtr)) {
-	CleanupVar(varPtr, NULL);
-    }
-    return resultPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetElementOfIndexedArray --
- *
- *	Change the Tcl object value of an element in a local array
- *	variable. The element is named by the object elemPtr while the array
- *	is specified by its index in the active procedure's array of
- *	compiler allocated local variables.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	element. If the specified array or element doesn't exist, or there
- *	is a clash in array usage, or an error occurs while executing
- *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result if flags has TCL_LEAVE_ERR_MSG. Note that the
- *	returned object may not be the same one referenced by newValuePtr;
- *	this is because variable traces may modify the variable's value.
- *
- * Side effects:
- *	The value of the given array element is set. The reference count is
- *	decremented for any old value of the element and incremented for its
- *	new value. If as a result of a variable trace the new value for the
- *	element is not the same one referenced by newValuePtr, then
- *	newValuePtr's ref count is left unchanged. The ref count for the
- *	returned object is _not_ incremented to reflect the returned
- *	reference; if you want to keep a reference to the object you must
- *	increment its ref count yourself. This procedure will not create new
- *	array variables, but only sets elements of those arrays recognized
- *	at compile time. However, if the entry doesn't exist then a new
- *	variable is created.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
-    Tcl_Interp *interp;		/* Command interpreter in which the array is
-				 * to be found. */
-    int localIndex;		/* Index of array variable in procedure's
-				 * array of local variables. */
-    Tcl_Obj *elemPtr;		/* Points to an object holding the name of
-				 * an element to set in the array. */
-    Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int flags;			/* Various flags that tell how to set value:
-				 * any of TCL_APPEND_VALUE,
-				 * TCL_LIST_ELEMENT or TCL_LEAVE_ERR_MSG. */
-{
-    Interp *iPtr = (Interp *) interp;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-				/* Points to the procedure call frame whose
-				 * variables are currently in use. Same as
-				 * the current procedure's frame, if any,
-				 * unless an "uplevel" is executing. */
-    Var *compiledLocals = varFramePtr->compiledLocals;
-    Var *arrayPtr;		/* Points to the array's in-frame Var
-				 * structure. */
-    char *arrayName;		/* Name of the local array. */
-    char *elem;
-    Tcl_HashEntry *hPtr;
-    Var *varPtr = NULL;		/* Points to the element's Var structure
-				 * that we return. */
-    Tcl_Obj *resultPtr = NULL;
-    Tcl_Obj *oldValuePtr;
-    int new;
-    
-#ifdef TCL_COMPILE_DEBUG
-    Proc *procPtr = varFramePtr->procPtr;
-    int localCt = procPtr->numCompiledLocals;
-
-    if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclSetElementOfIndexedArray: can't set element ");
-	fprintf(stderr, "of local %i in frame 0x%x, ", localIndex,
-		(unsigned int) varFramePtr);
-	fprintf(stderr, "no compiled locals\n");
-	panic("TclSetIndexedScalar: no compiled locals in frame 0x%x",
-		(unsigned int) varFramePtr);
-    }
-    if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set element of ");
-	fprintf(stderr,	"local %i in frame 0x%x ", localIndex,
-		(unsigned int) varFramePtr);
-	fprintf(stderr, "with %i locals\n", localCt);
-	panic("TclSetElementOfIndexedArray: bad local index %i in frame 0x%x",
-		localIndex, (unsigned int) varFramePtr);
-    }
-#endif /* TCL_COMPILE_DEBUG */
-
-    elem = TclGetString(elemPtr);
-    arrayPtr = &(compiledLocals[localIndex]);
-    arrayName = arrayPtr->name;
-
-    /*
-     * If arrayPtr is a link variable, we have a reference to some variable
-     * that was created through an "upvar" or "global" command, or we have a
-     * reference to a variable in an enclosing namespace. Traverse through
-     * any links until we find the referenced variable.
-     */
-
-    while (TclIsVarLink(arrayPtr)) {
-	arrayPtr = arrayPtr->value.linkPtr;
-    }
-
-    /*
-     * If the variable is in a hashtable and its hPtr field is NULL, then we
-     * may have an upvar to an array element where the array was deleted
-     * or an upvar to a namespace variable whose namespace was deleted.
-     * Generate an error (allowing the variable to be reset would screw up
-     * our storage allocation and is meaningless anyway).
-     */
-
-    if ((arrayPtr->flags & VAR_IN_HASHTABLE) && (arrayPtr->hPtr == NULL)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    if (TclIsVarArrayElement(arrayPtr)) {
-		VarErrMsg(interp, arrayName, elem, "set", danglingElement);
-	    } else {
-		VarErrMsg(interp, arrayName, elem, "set", danglingVar);
-	    }
-	}
-	goto errorReturn;
-    }
-
-    /*
-     * Make sure we're dealing with an array.
-     */
-
-    if (TclIsVarUndefined(arrayPtr) && !TclIsVarArrayElement(arrayPtr)) {
-	TclSetVarArray(arrayPtr);
-	arrayPtr->value.tablePtr =
-	    (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
-	Tcl_InitHashTable(arrayPtr->value.tablePtr, TCL_STRING_KEYS);
-	TclClearVarUndefined(arrayPtr);
-    } else if (!TclIsVarArray(arrayPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    VarErrMsg(interp, arrayName, elem, "set", needArray);
-	}
-	goto errorReturn;
-    }
-
-    /*
-     * Look up the element.
-     */
-
-    hPtr = Tcl_CreateHashEntry(arrayPtr->value.tablePtr, elem, &new);
-    if (new) {
-	if (arrayPtr->searchPtr != NULL) {
-	    DeleteSearches(arrayPtr);
-	}
-	varPtr = NewVar();
-	Tcl_SetHashValue(hPtr, varPtr);
-	varPtr->hPtr = hPtr;
-        varPtr->nsPtr = varFramePtr->nsPtr;
-	TclSetVarArrayElement(varPtr);
-    }
-    varPtr = (Var *) Tcl_GetHashValue(hPtr);
-
-    /*
-     * It's an error to try to set an array variable itself.
-     */
-
-    if (TclIsVarArray(varPtr)) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    VarErrMsg(interp, arrayName, elem, "set", isArray);
-	}
-	goto errorReturn;
-    }
-
-    /*
-     * Invoke any read traces that have been set for the variable if it
-     * is requested; this is only done in the core when lappending.
-     */
-
-    if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL)
-		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
-	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
-		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
-	    goto errorReturn;
-	}
-    }
-
-    /*
-     * Set the variable's new value and discard the old one.
-     */
-
-    oldValuePtr = varPtr->value.objPtr;
-    if (flags & TCL_APPEND_VALUE) {
-	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
-	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
-	    varPtr->value.objPtr = NULL;
-	    oldValuePtr = NULL;
-	}
-	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
-	    if (oldValuePtr == NULL) {
-		TclNewObj(oldValuePtr);
-		varPtr->value.objPtr = oldValuePtr;
-		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
-	    } else if (Tcl_IsShared(oldValuePtr)) {
-		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		Tcl_DecrRefCount(oldValuePtr);
-		oldValuePtr = varPtr->value.objPtr;
-		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
-	    }
-	    if (Tcl_ListObjAppendElement(interp, oldValuePtr,
-		    newValuePtr) != TCL_OK) {
-		return NULL;
-	    }
-	} else {				/* append string */
-	    /*
-	     * We append newValuePtr's bytes but don't change its ref count.
-	     */
-
-	    if (oldValuePtr == NULL) {
-		varPtr->value.objPtr = newValuePtr;
-		Tcl_IncrRefCount(newValuePtr);
-	    } else {
-		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
-		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		    TclDecrRefCount(oldValuePtr);
-		    oldValuePtr = varPtr->value.objPtr;
-		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
-		}
-		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
-	    }
-	}
-    } else if (newValuePtr != oldValuePtr) {	/* set new value */
-	/*
-	 * In this case we are replacing the value, so we don't need to
-	 * do more than swap the objects.
-	 */
-
-	varPtr->value.objPtr = newValuePtr;
-	Tcl_IncrRefCount(newValuePtr);		/* var is another ref to obj */
-	if (oldValuePtr != NULL) {
-	    TclDecrRefCount(oldValuePtr);	/* discard old value */
-	}
-    }
-    TclSetVarScalar(varPtr);
-    TclClearVarUndefined(varPtr);
-
-    /*
-     * Invoke any write traces for the element variable.
-     */
-
-    if ((varPtr->tracePtr != NULL)
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
-		TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
-	    goto errorReturn;
-	}
-    }
-
-    /*
-     * Return the element's value unless it was changed in some gross way by
-     * a trace (e.g. it was unset and then recreated as an array). If it was
-     * changed is a gross way, just return an empty string object.
-     */
-
-    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
-	return varPtr->value.objPtr;
-    }
-    
-    resultPtr = Tcl_NewObj();
-
-    /*
-     * An error. If the variable doesn't exist anymore and no-one's using
-     * it, then free up the relevant structures and hash table entries.
-     */
-
-    errorReturn:
-    if ((varPtr != NULL) && TclIsVarUndefined(varPtr)) {
-	CleanupVar(varPtr, NULL); /* note: array isn't in hashtable */
-    }
-    return resultPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclIncrVar2 --
  *
  *	Given a two-part variable name, which may refer either to a scalar
@@ -2648,215 +1848,6 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
     
     return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
 	    varValuePtr, flags);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclIncrIndexedScalar --
- *
- *	Increments the Tcl object value of a local scalar variable in the
- *	active procedure, given its compile-time allocated index in the
- *	procedure's array of local variables.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	variable given by localIndex. If the specified variable doesn't
- *	exist, or there is a clash in array usage, or an error occurs while
- *	executing variable traces, then NULL is returned and a message will
- *	be left in the interpreter's result. 
- *
- * Side effects:
- *	The value of the given variable is incremented by the specified
- *	amount. The ref count for the returned object is _not_ incremented
- *	to reflect the returned reference; if you want to keep a reference
- *	to the object you must increment its ref count yourself.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclIncrIndexedScalar(interp, localIndex, incrAmount)
-    Tcl_Interp *interp;		/* Command interpreter in which variable is
-				 * to be found. */
-    int localIndex;		/* Index of variable in procedure's array
-				 * of local variables. */
-    long incrAmount;		/* Amount to be added to variable. */
-{
-    register Tcl_Obj *varValuePtr;
-    int createdNewObj;		/* Set 1 if var's value object is shared
-				 * so we must increment a copy (i.e. copy
-				 * on write). */
-    long i;
-
-    varValuePtr = TclGetIndexedScalar(interp, localIndex, TCL_LEAVE_ERR_MSG);
-    if (varValuePtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
-    }
-
-    /*
-     * Reach into the object's representation to extract and increment the
-     * variable's value. If the object is unshared we can modify it
-     * directly, otherwise we must create a new copy to modify: this is
-     * "copy on write". Then free the variable's old string representation,
-     * if any, since it will no longer be valid.
-     */
-
-    createdNewObj = 0;
-    if (Tcl_IsShared(varValuePtr)) {
-	createdNewObj = 1;
-	varValuePtr = Tcl_DuplicateObj(varValuePtr);
-    }
-#ifdef TCL_WIDE_INT_IS_LONG
-    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
-	}
-	return NULL;
-    }
-    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
-#else
-    if (varValuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
-	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
-    } else if (varValuePtr->typePtr == &tclIntType) {
-	i = varValuePtr->internalRep.longValue;
-	Tcl_SetIntObj(varValuePtr, i + incrAmount);
-    } else {
-	/*
-	 * Not an integer or wide internal-rep...
-	 */
-	Tcl_WideInt wide;
-	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
-	    if (createdNewObj) {
-		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
-	    }
-	    return NULL;
-	}
-	if (wide <= Tcl_LongAsWide(LONG_MAX)
-		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
-	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
-	} else {
-	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
-	}
-    }
-#endif
-
-    /*
-     * Store the variable's new value and run any write traces.
-     */
-    
-    return TclSetIndexedScalar(interp, localIndex, varValuePtr,
-	    TCL_LEAVE_ERR_MSG);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclIncrElementOfIndexedArray --
- *
- *	Increments the Tcl object value of an element in a local array
- *	variable. The element is named by the object elemPtr while the array
- *	is specified by its index in the active procedure's array of
- *	compiler allocated local variables.
- *
- * Results:
- *	Returns a pointer to the Tcl_Obj holding the new value of the
- *	element. If the specified array or element doesn't exist, or there
- *	is a clash in array usage, or an error occurs while executing
- *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result.
- *
- * Side effects:
- *	The value of the given array element is incremented by the specified
- *	amount. The ref count for the returned object is _not_ incremented
- *	to reflect the returned reference; if you want to keep a reference
- *	to the object you must increment its ref count yourself. If the
- *	entry doesn't exist then a new variable is created.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
-    Tcl_Interp *interp;		/* Command interpreter in which the array is
-				 * to be found. */
-    int localIndex;		/* Index of array variable in procedure's
-				 * array of local variables. */
-    Tcl_Obj *elemPtr;		/* Points to an object holding the name of
-				 * an element to increment in the array. */
-    long incrAmount;		/* Amount to be added to variable. */
-{
-    register Tcl_Obj *varValuePtr;
-    int createdNewObj;		/* Set 1 if var's value object is shared
-				 * so we must increment a copy (i.e. copy
-				 * on write). */
-    long i;
-
-    varValuePtr = TclGetElementOfIndexedArray(interp, localIndex, elemPtr,
-	    TCL_LEAVE_ERR_MSG);
-    if (varValuePtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
-	return NULL;
-    }
-
-    /*
-     * Reach into the object's representation to extract and increment the
-     * variable's value. If the object is unshared we can modify it
-     * directly, otherwise we must create a new copy to modify: this is
-     * "copy on write". Then free the variable's old string representation,
-     * if any, since it will no longer be valid.
-     */
-
-    createdNewObj = 0;
-    if (Tcl_IsShared(varValuePtr)) {
-	createdNewObj = 1;
-	varValuePtr = Tcl_DuplicateObj(varValuePtr);
-    }
-#ifdef TCL_WIDE_INT_IS_LONG
-    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
-	}
-	return NULL;
-    }
-    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
-#else
-    if (varValuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
-	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
-    } else if (varValuePtr->typePtr == &tclIntType) {
-	i = varValuePtr->internalRep.longValue;
-	Tcl_SetIntObj(varValuePtr, i + incrAmount);
-    } else {
-	/*
-	 * Not an integer or wide internal-rep...
-	 */
-	Tcl_WideInt wide;
-	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
-	    if (createdNewObj) {
-		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
-	    }
-	    return NULL;
-	}
-	if (wide <= Tcl_LongAsWide(LONG_MAX)
-		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
-	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
-	} else {
-	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
-	}
-    }
-#endif
-
-    /*
-     * Store the variable's new value and run any write traces.
-     */
-    
-    return TclSetElementOfIndexedArray(interp, localIndex, elemPtr,
-	    varValuePtr, TCL_LEAVE_ERR_MSG);
 }
 
 /*
@@ -6126,4 +5117,1005 @@ UpdateParsedVarName(objPtr)
     p += len2;
     *p++ = ')';
     *p   = '\0';
+}
+
+/*
+ * ******************************************************
+ *   Special functions for indexed variables
+ *
+ * These functions are not used any longer; as they were
+ * present in the internal stubs table, their removal has 
+ * not been deemed safe at this time.
+ *
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetIndexedScalar --
+ *
+ *	Return the Tcl object value of a local scalar variable in the active
+ *	procedure, given its index in the procedure's array of compiler
+ *	allocated local variables.
+ *
+ * Results:
+ *	The return value points to the current object value of the variable
+ *	given by localIndex. If the specified variable doesn't exist, or
+ *	there is a clash in array usage, or an error occurs while executing
+ *	variable traces, then NULL is returned and a message will be left in
+ *	the interpreter's result if TCL_LEAVE_ERR_MSG is set in flags.
+ *
+ * Side effects:
+ *	The ref count for the returned object is _not_ incremented to
+ *	reflect the returned reference; if you want to keep a reference to
+ *	the object you must increment its ref count yourself.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetIndexedScalar(interp, localIndex, flags)
+    Tcl_Interp *interp;		/* Command interpreter in which variable is
+				 * to be looked up. */
+    register int localIndex;	/* Index of variable in procedure's array
+				 * of local variables. */
+    int flags;			/* TCL_LEAVE_ERR_MSG if to leave an error
+				 * message in interpreter's result on an error.
+				 * Otherwise no error message is left. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+				/* Points to the procedure call frame whose
+				 * variables are currently in use. Same as
+				 * the current procedure's frame, if any,
+				 * unless an "uplevel" is executing. */
+    Var *compiledLocals = varFramePtr->compiledLocals;
+    register Var *varPtr;	/* Points to the variable's in-frame Var
+				 * structure. */
+    char *varName;		/* Name of the local variable. */
+    CONST char *msg;
+
+#ifdef TCL_COMPILE_DEBUG
+    int localCt = varFramePtr->procPtr->numCompiledLocals;
+
+    if (compiledLocals == NULL) {
+	fprintf(stderr, "\nTclGetIndexedScalar: can't get ");
+	fprintf(stderr, "local %i in frame 0x%x, ", localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "no compiled locals\n");
+	panic("TclGetIndexedScalar: no compiled locals in frame 0x%x",
+		(unsigned int) varFramePtr);
+    }
+    if ((localIndex < 0) || (localIndex >= localCt)) {
+	fprintf(stderr, "\nTclGetIndexedScalar: can't get ");
+	fprintf(stderr, "local %i in frame 0x%x " localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "with %i locals\n", localCt);
+	panic("TclGetIndexedScalar: bad local index %i in frame 0x%x",
+		localIndex, (unsigned int) varFramePtr);
+    }
+#endif /* TCL_COMPILE_DEBUG */
+    
+    varPtr = &(compiledLocals[localIndex]);
+    varName = varPtr->name;
+
+    /*
+     * If varPtr is a link variable, we have a reference to some variable
+     * that was created through an "upvar" or "global" command, or we have a
+     * reference to a variable in an enclosing namespace. Traverse through
+     * any links until we find the referenced variable.
+     */
+	
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+
+    /*
+     * Invoke any traces that have been set for the variable.
+     */
+
+    if (varPtr->tracePtr != NULL) {
+	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
+		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
+	    return NULL;
+	}
+    }
+
+    /*
+     * Make sure we're dealing with a scalar variable and not an array, and
+     * that the variable exists (isn't undefined).
+     */
+
+    if (!TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    if (TclIsVarArray(varPtr)) {
+		msg = isArray;
+	    } else {
+		msg = noSuchVar;
+	    }
+	    VarErrMsg(interp, varName, NULL, "read", msg);
+	}
+	return NULL;
+    }
+    return varPtr->value.objPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetElementOfIndexedArray --
+ *
+ *	Return the Tcl object value for an element in a local array
+ *	variable. The element is named by the object elemPtr while the 
+ *	array is specified by its index in the active procedure's array
+ *	of compiler allocated local variables.
+ *
+ * Results:
+ *	The return value points to the current object value of the
+ *	element. If the specified array or element doesn't exist, or there
+ *	is a clash in array usage, or an error occurs while executing
+ *	variable traces, then NULL is returned and a message will be left in
+ *	the interpreter's result if TCL_LEAVE_ERR_MSG is set in flags.
+ *
+ * Side effects:
+ *	The ref count for the returned object is _not_ incremented to
+ *	reflect the returned reference; if you want to keep a reference to
+ *	the object you must increment its ref count yourself.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetElementOfIndexedArray(interp, localIndex, elemPtr, flags)
+    Tcl_Interp *interp;		/* Command interpreter in which variable is
+				 * to be looked up. */
+    int localIndex;		/* Index of array variable in procedure's
+				 * array of local variables. */
+    Tcl_Obj *elemPtr;		/* Points to an object holding the name of
+				 * an element to get in the array. */
+    int flags;			/* TCL_LEAVE_ERR_MSG if to leave an error
+				 * message in interpreter's result on an error.
+				 * Otherwise no error message is left. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+				/* Points to the procedure call frame whose
+				 * variables are currently in use. Same as
+				 * the current procedure's frame, if any,
+				 * unless an "uplevel" is executing. */
+    Var *compiledLocals = varFramePtr->compiledLocals;
+    Var *arrayPtr;		/* Points to the array's in-frame Var
+				 * structure. */
+    char *arrayName;		/* Name of the local array. */
+    Tcl_HashEntry *hPtr;
+    Var *varPtr = NULL;		/* Points to the element's Var structure
+				 * that we return. Initialized to avoid
+				 * compiler warning. */
+    CONST char *elem, *msg;
+    int new;
+
+#ifdef TCL_COMPILE_DEBUG
+    Proc *procPtr = varFramePtr->procPtr;
+    int localCt = procPtr->numCompiledLocals;
+
+    if (compiledLocals == NULL) {
+	fprintf(stderr, "\nTclGetElementOfIndexedArray: can't get element ");
+	fprintf(stderr, "of local %i in frame 0x%x, " localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "no compiled locals\n");
+	panic("TclGetIndexedScalar: no compiled locals in frame 0x%x",
+		(unsigned int) varFramePtr);
+    }
+    if ((localIndex < 0) || (localIndex >= localCt)) {
+	fprintf(stderr, "\nTclGetIndexedScalar: can't get element of "
+		"local %i in frame 0x%x with %i locals\n", localIndex,
+		(unsigned int) varFramePtr, localCt);
+	panic("TclGetElementOfIndexedArray: bad local index %i in frame 0x%x",
+		localIndex, (unsigned int) varFramePtr);
+    }
+#endif /* TCL_COMPILE_DEBUG */
+
+    elem = TclGetString(elemPtr);
+    arrayPtr = &(compiledLocals[localIndex]);
+    arrayName = arrayPtr->name;
+
+    /*
+     * If arrayPtr is a link variable, we have a reference to some variable
+     * that was created through an "upvar" or "global" command, or we have a
+     * reference to a variable in an enclosing namespace. Traverse through
+     * any links until we find the referenced variable.
+     */
+	
+    while (TclIsVarLink(arrayPtr)) {
+	arrayPtr = arrayPtr->value.linkPtr;
+    }
+
+    /*
+     * Make sure we're dealing with an array and that the array variable
+     * exists (isn't undefined).
+     */
+
+    if (!TclIsVarArray(arrayPtr) || TclIsVarUndefined(arrayPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    VarErrMsg(interp, arrayName, elem, "read", noSuchVar);
+	}
+	goto errorReturn;
+    } 
+
+    /*
+     * Look up the element. Note that we must create the element (but leave
+     * it marked undefined) if it does not already exist. This allows a
+     * trace to create new array elements "on the fly" that did not exist
+     * before. A trace is always passed a variable for the array element. If
+     * the trace does not define the variable, it will be deleted below (at
+     * errorReturn) and an error returned.
+     */
+
+    hPtr = Tcl_CreateHashEntry(arrayPtr->value.tablePtr, elem, &new);
+    if (new) {
+	if (arrayPtr->searchPtr != NULL) {
+	    DeleteSearches(arrayPtr);
+	}
+	varPtr = NewVar();
+	Tcl_SetHashValue(hPtr, varPtr);
+	varPtr->hPtr = hPtr;
+	varPtr->nsPtr = varFramePtr->nsPtr;
+	TclSetVarArrayElement(varPtr);
+    } else {
+	varPtr = (Var *) Tcl_GetHashValue(hPtr);
+    }
+
+    /*
+     * Invoke any traces that have been set for the element variable.
+     */
+
+    if ((varPtr->tracePtr != NULL)
+            || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+	        TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
+	    goto errorReturn;
+	}
+    }
+
+    /*
+     * Return the element if it's an existing scalar variable.
+     */
+    
+    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
+	return varPtr->value.objPtr;
+    }
+    
+    if (flags & TCL_LEAVE_ERR_MSG) {
+	if (TclIsVarArray(varPtr)) {
+	    msg = isArray;
+	} else {
+	    msg = noSuchVar;
+	}
+	VarErrMsg(interp, arrayName, elem, "read", msg);
+    }
+
+    /*
+     * An error. If the variable doesn't exist anymore and no-one's using
+     * it, then free up the relevant structures and hash table entries.
+     */
+
+    errorReturn:
+    if ((varPtr != NULL) && TclIsVarUndefined(varPtr)) {
+	CleanupVar(varPtr, NULL); /* the array is not in a hashtable */
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetIndexedScalar --
+ *
+ *	Change the Tcl object value of a local scalar variable in the active
+ *	procedure, given its compile-time allocated index in the procedure's
+ *	array of local variables.
+ *
+ * Results:
+ *	Returns a pointer to the Tcl_Obj holding the new value of the
+ *	variable given by localIndex. If the specified variable doesn't
+ *	exist, or there is a clash in array usage, or an error occurs while
+ *	executing variable traces, then NULL is returned and a message will
+ *	be left in the interpreter's result if flags has TCL_LEAVE_ERR_MSG.
+ *	Note that the returned object may not be the same one referenced by
+ *	newValuePtr; this is because variable traces may modify the
+ *	variable's value.
+ *
+ * Side effects:
+ *	The value of the given variable is set. The reference count is
+ *	decremented for any old value of the variable and incremented for
+ *	its new value. If as a result of a variable trace the new value for
+ *	the variable is not the same one referenced by newValuePtr, then
+ *	newValuePtr's ref count is left unchanged. The ref count for the
+ *	returned object is _not_ incremented to reflect the returned
+ *	reference; if you want to keep a reference to the object you must
+ *	increment its ref count yourself. This procedure does not create
+ *	new variables, but only sets those recognized at compile time.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
+    Tcl_Interp *interp;		/* Command interpreter in which variable is
+				 * to be found. */
+    int localIndex;		/* Index of variable in procedure's array
+				 * of local variables. */
+    Tcl_Obj *newValuePtr;	/* New value for variable. */
+    int flags;			/* Various flags that tell how to set value:
+				 * any of TCL_APPEND_VALUE,
+				 * TCL_LIST_ELEMENT or TCL_LEAVE_ERR_MSG. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+				/* Points to the procedure call frame whose
+				 * variables are currently in use. Same as
+				 * the current procedure's frame, if any,
+				 * unless an "uplevel" is executing. */
+    Var *compiledLocals = varFramePtr->compiledLocals;
+    register Var *varPtr;	/* Points to the variable's in-frame Var
+				 * structure. */
+    char *varName;		/* Name of the local variable. */
+    Tcl_Obj *oldValuePtr;
+    Tcl_Obj *resultPtr = NULL;
+
+#ifdef TCL_COMPILE_DEBUG
+    Proc *procPtr = varFramePtr->procPtr;
+    int localCt = procPtr->numCompiledLocals;
+
+    if (compiledLocals == NULL) {
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set ");
+	fprintf(stderr, "local %i in ", localIndex);
+	fprintf(stderr, "frame 0x%x, no compiled locals\n",
+		(unsigned int) varFramePtr);
+	panic("TclSetIndexedScalar: no compiled locals in frame 0x%x",
+		(unsigned int) varFramePtr);
+    }
+    if ((localIndex < 0) || (localIndex >= localCt)) {
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set ");
+	fprintf(stderr, "local %i in " localIndex);
+	fprintf(stderr, "frame 0x%x with %i locals\n",
+		(unsigned int) varFramePtr, localCt);
+	panic("TclSetIndexedScalar: bad local index %i in frame 0x%x",
+		localIndex, (unsigned int) varFramePtr);
+    }
+#endif /* TCL_COMPILE_DEBUG */
+    
+    varPtr = &(compiledLocals[localIndex]);
+    varName = varPtr->name;
+
+    /*
+     * If varPtr is a link variable, we have a reference to some variable
+     * that was created through an "upvar" or "global" command, or we have a
+     * reference to a variable in an enclosing namespace. Traverse through
+     * any links until we find the referenced variable.
+     */
+	
+    while (TclIsVarLink(varPtr)) {
+	varPtr = varPtr->value.linkPtr;
+    }
+
+    /*
+     * Invoke any read traces that have been set for the variable if it
+     * is requested; this is only done in the core when lappending.
+     */
+
+    if ((flags & TCL_TRACE_READS) && (varPtr->tracePtr != NULL)) {
+	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
+		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
+	    return NULL;
+	}
+    }
+
+    /*
+     * If the variable is in a hashtable and its hPtr field is NULL, then we
+     * may have an upvar to an array element where the array was deleted
+     * or an upvar to a namespace variable whose namespace was deleted.
+     * Generate an error (allowing the variable to be reset would screw up
+     * our storage allocation and is meaningless anyway).
+     */
+
+    if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    if (TclIsVarArrayElement(varPtr)) {
+		VarErrMsg(interp, varName, NULL, "set", danglingElement);
+	    } else {
+		VarErrMsg(interp, varName, NULL, "set", danglingVar);
+	    }
+	}
+	return NULL;
+    }
+
+    /*
+     * It's an error to try to set an array variable itself.
+     */
+
+    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    VarErrMsg(interp, varName, NULL, "set", isArray);
+	}
+	return NULL;
+    }
+
+    /*
+     * Set the variable's new value and discard its old value.
+     */
+
+    oldValuePtr = varPtr->value.objPtr;
+    if (flags & TCL_APPEND_VALUE) {
+	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
+	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
+	    varPtr->value.objPtr = NULL;
+	    oldValuePtr = NULL;
+	}
+	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
+	    if (oldValuePtr == NULL) {
+		TclNewObj(oldValuePtr);
+		varPtr->value.objPtr = oldValuePtr;
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
+	    } else if (Tcl_IsShared(oldValuePtr)) {
+		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		Tcl_DecrRefCount(oldValuePtr);
+		oldValuePtr = varPtr->value.objPtr;
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
+	    }
+	    if (Tcl_ListObjAppendElement(interp, oldValuePtr,
+		    newValuePtr) != TCL_OK) {
+		return NULL;
+	    }
+	} else {				/* append string */
+	    /*
+	     * We append newValuePtr's bytes but don't change its ref count.
+	     */
+
+	    if (oldValuePtr == NULL) {
+		varPtr->value.objPtr = newValuePtr;
+		Tcl_IncrRefCount(newValuePtr);
+	    } else {
+		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		    TclDecrRefCount(oldValuePtr);
+		    oldValuePtr = varPtr->value.objPtr;
+		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
+		}
+		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+	    }
+	}
+    } else if (newValuePtr != oldValuePtr) {        /* set new value */
+	/*
+	 * In this case we are replacing the value, so we don't need to
+	 * do more than swap the objects.
+	 */
+
+	varPtr->value.objPtr = newValuePtr;
+	Tcl_IncrRefCount(newValuePtr);       /* var is another ref to obj */
+	if (oldValuePtr != NULL) {
+	    TclDecrRefCount(oldValuePtr);    /* discard old value */
+	}
+    }
+    TclSetVarScalar(varPtr);
+    TclClearVarUndefined(varPtr);
+
+    /*
+     * Invoke any write traces for the variable.
+     */
+
+    if (varPtr->tracePtr != NULL) {
+	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
+		NULL, TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
+	    goto cleanup;
+	}
+    }
+
+    /*
+     * Return the variable's value unless the variable was changed in some
+     * gross way by a trace (e.g. it was unset and then recreated as an
+     * array). If it was changed is a gross way, just return an empty string
+     * object.
+     */
+
+    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
+	return varPtr->value.objPtr;
+    }
+    
+    resultPtr = Tcl_NewObj();
+
+    /*
+     * If the variable doesn't exist anymore and no-one's using it, then
+     * free up the relevant structures and hash table entries.
+     */
+
+    cleanup:
+    if (TclIsVarUndefined(varPtr)) {
+	CleanupVar(varPtr, NULL);
+    }
+    return resultPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetElementOfIndexedArray --
+ *
+ *	Change the Tcl object value of an element in a local array
+ *	variable. The element is named by the object elemPtr while the array
+ *	is specified by its index in the active procedure's array of
+ *	compiler allocated local variables.
+ *
+ * Results:
+ *	Returns a pointer to the Tcl_Obj holding the new value of the
+ *	element. If the specified array or element doesn't exist, or there
+ *	is a clash in array usage, or an error occurs while executing
+ *	variable traces, then NULL is returned and a message will be left in
+ *	the interpreter's result if flags has TCL_LEAVE_ERR_MSG. Note that the
+ *	returned object may not be the same one referenced by newValuePtr;
+ *	this is because variable traces may modify the variable's value.
+ *
+ * Side effects:
+ *	The value of the given array element is set. The reference count is
+ *	decremented for any old value of the element and incremented for its
+ *	new value. If as a result of a variable trace the new value for the
+ *	element is not the same one referenced by newValuePtr, then
+ *	newValuePtr's ref count is left unchanged. The ref count for the
+ *	returned object is _not_ incremented to reflect the returned
+ *	reference; if you want to keep a reference to the object you must
+ *	increment its ref count yourself. This procedure will not create new
+ *	array variables, but only sets elements of those arrays recognized
+ *	at compile time. However, if the entry doesn't exist then a new
+ *	variable is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
+    Tcl_Interp *interp;		/* Command interpreter in which the array is
+				 * to be found. */
+    int localIndex;		/* Index of array variable in procedure's
+				 * array of local variables. */
+    Tcl_Obj *elemPtr;		/* Points to an object holding the name of
+				 * an element to set in the array. */
+    Tcl_Obj *newValuePtr;	/* New value for variable. */
+    int flags;			/* Various flags that tell how to set value:
+				 * any of TCL_APPEND_VALUE,
+				 * TCL_LIST_ELEMENT or TCL_LEAVE_ERR_MSG. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+				/* Points to the procedure call frame whose
+				 * variables are currently in use. Same as
+				 * the current procedure's frame, if any,
+				 * unless an "uplevel" is executing. */
+    Var *compiledLocals = varFramePtr->compiledLocals;
+    Var *arrayPtr;		/* Points to the array's in-frame Var
+				 * structure. */
+    char *arrayName;		/* Name of the local array. */
+    char *elem;
+    Tcl_HashEntry *hPtr;
+    Var *varPtr = NULL;		/* Points to the element's Var structure
+				 * that we return. */
+    Tcl_Obj *resultPtr = NULL;
+    Tcl_Obj *oldValuePtr;
+    int new;
+    
+#ifdef TCL_COMPILE_DEBUG
+    Proc *procPtr = varFramePtr->procPtr;
+    int localCt = procPtr->numCompiledLocals;
+
+    if (compiledLocals == NULL) {
+	fprintf(stderr, "\nTclSetElementOfIndexedArray: can't set element ");
+	fprintf(stderr, "of local %i in frame 0x%x, ", localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "no compiled locals\n");
+	panic("TclSetIndexedScalar: no compiled locals in frame 0x%x",
+		(unsigned int) varFramePtr);
+    }
+    if ((localIndex < 0) || (localIndex >= localCt)) {
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set element of ");
+	fprintf(stderr,	"local %i in frame 0x%x ", localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "with %i locals\n", localCt);
+	panic("TclSetElementOfIndexedArray: bad local index %i in frame 0x%x",
+		localIndex, (unsigned int) varFramePtr);
+    }
+#endif /* TCL_COMPILE_DEBUG */
+
+    elem = TclGetString(elemPtr);
+    arrayPtr = &(compiledLocals[localIndex]);
+    arrayName = arrayPtr->name;
+
+    /*
+     * If arrayPtr is a link variable, we have a reference to some variable
+     * that was created through an "upvar" or "global" command, or we have a
+     * reference to a variable in an enclosing namespace. Traverse through
+     * any links until we find the referenced variable.
+     */
+
+    while (TclIsVarLink(arrayPtr)) {
+	arrayPtr = arrayPtr->value.linkPtr;
+    }
+
+    /*
+     * If the variable is in a hashtable and its hPtr field is NULL, then we
+     * may have an upvar to an array element where the array was deleted
+     * or an upvar to a namespace variable whose namespace was deleted.
+     * Generate an error (allowing the variable to be reset would screw up
+     * our storage allocation and is meaningless anyway).
+     */
+
+    if ((arrayPtr->flags & VAR_IN_HASHTABLE) && (arrayPtr->hPtr == NULL)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    if (TclIsVarArrayElement(arrayPtr)) {
+		VarErrMsg(interp, arrayName, elem, "set", danglingElement);
+	    } else {
+		VarErrMsg(interp, arrayName, elem, "set", danglingVar);
+	    }
+	}
+	goto errorReturn;
+    }
+
+    /*
+     * Make sure we're dealing with an array.
+     */
+
+    if (TclIsVarUndefined(arrayPtr) && !TclIsVarArrayElement(arrayPtr)) {
+	TclSetVarArray(arrayPtr);
+	arrayPtr->value.tablePtr =
+	    (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	Tcl_InitHashTable(arrayPtr->value.tablePtr, TCL_STRING_KEYS);
+	TclClearVarUndefined(arrayPtr);
+    } else if (!TclIsVarArray(arrayPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    VarErrMsg(interp, arrayName, elem, "set", needArray);
+	}
+	goto errorReturn;
+    }
+
+    /*
+     * Look up the element.
+     */
+
+    hPtr = Tcl_CreateHashEntry(arrayPtr->value.tablePtr, elem, &new);
+    if (new) {
+	if (arrayPtr->searchPtr != NULL) {
+	    DeleteSearches(arrayPtr);
+	}
+	varPtr = NewVar();
+	Tcl_SetHashValue(hPtr, varPtr);
+	varPtr->hPtr = hPtr;
+        varPtr->nsPtr = varFramePtr->nsPtr;
+	TclSetVarArrayElement(varPtr);
+    }
+    varPtr = (Var *) Tcl_GetHashValue(hPtr);
+
+    /*
+     * It's an error to try to set an array variable itself.
+     */
+
+    if (TclIsVarArray(varPtr)) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
+	    VarErrMsg(interp, arrayName, elem, "set", isArray);
+	}
+	goto errorReturn;
+    }
+
+    /*
+     * Invoke any read traces that have been set for the variable if it
+     * is requested; this is only done in the core when lappending.
+     */
+
+    if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL)
+		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
+	    goto errorReturn;
+	}
+    }
+
+    /*
+     * Set the variable's new value and discard the old one.
+     */
+
+    oldValuePtr = varPtr->value.objPtr;
+    if (flags & TCL_APPEND_VALUE) {
+	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
+	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
+	    varPtr->value.objPtr = NULL;
+	    oldValuePtr = NULL;
+	}
+	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
+	    if (oldValuePtr == NULL) {
+		TclNewObj(oldValuePtr);
+		varPtr->value.objPtr = oldValuePtr;
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
+	    } else if (Tcl_IsShared(oldValuePtr)) {
+		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		Tcl_DecrRefCount(oldValuePtr);
+		oldValuePtr = varPtr->value.objPtr;
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
+	    }
+	    if (Tcl_ListObjAppendElement(interp, oldValuePtr,
+		    newValuePtr) != TCL_OK) {
+		return NULL;
+	    }
+	} else {				/* append string */
+	    /*
+	     * We append newValuePtr's bytes but don't change its ref count.
+	     */
+
+	    if (oldValuePtr == NULL) {
+		varPtr->value.objPtr = newValuePtr;
+		Tcl_IncrRefCount(newValuePtr);
+	    } else {
+		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		    TclDecrRefCount(oldValuePtr);
+		    oldValuePtr = varPtr->value.objPtr;
+		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
+		}
+		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+	    }
+	}
+    } else if (newValuePtr != oldValuePtr) {	/* set new value */
+	/*
+	 * In this case we are replacing the value, so we don't need to
+	 * do more than swap the objects.
+	 */
+
+	varPtr->value.objPtr = newValuePtr;
+	Tcl_IncrRefCount(newValuePtr);		/* var is another ref to obj */
+	if (oldValuePtr != NULL) {
+	    TclDecrRefCount(oldValuePtr);	/* discard old value */
+	}
+    }
+    TclSetVarScalar(varPtr);
+    TclClearVarUndefined(varPtr);
+
+    /*
+     * Invoke any write traces for the element variable.
+     */
+
+    if ((varPtr->tracePtr != NULL)
+	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+		TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
+	    goto errorReturn;
+	}
+    }
+
+    /*
+     * Return the element's value unless it was changed in some gross way by
+     * a trace (e.g. it was unset and then recreated as an array). If it was
+     * changed is a gross way, just return an empty string object.
+     */
+
+    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) {
+	return varPtr->value.objPtr;
+    }
+    
+    resultPtr = Tcl_NewObj();
+
+    /*
+     * An error. If the variable doesn't exist anymore and no-one's using
+     * it, then free up the relevant structures and hash table entries.
+     */
+
+    errorReturn:
+    if ((varPtr != NULL) && TclIsVarUndefined(varPtr)) {
+	CleanupVar(varPtr, NULL); /* note: array isn't in hashtable */
+    }
+    return resultPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIncrIndexedScalar --
+ *
+ *	Increments the Tcl object value of a local scalar variable in the
+ *	active procedure, given its compile-time allocated index in the
+ *	procedure's array of local variables.
+ *
+ * Results:
+ *	Returns a pointer to the Tcl_Obj holding the new value of the
+ *	variable given by localIndex. If the specified variable doesn't
+ *	exist, or there is a clash in array usage, or an error occurs while
+ *	executing variable traces, then NULL is returned and a message will
+ *	be left in the interpreter's result. 
+ *
+ * Side effects:
+ *	The value of the given variable is incremented by the specified
+ *	amount. The ref count for the returned object is _not_ incremented
+ *	to reflect the returned reference; if you want to keep a reference
+ *	to the object you must increment its ref count yourself.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclIncrIndexedScalar(interp, localIndex, incrAmount)
+    Tcl_Interp *interp;		/* Command interpreter in which variable is
+				 * to be found. */
+    int localIndex;		/* Index of variable in procedure's array
+				 * of local variables. */
+    long incrAmount;		/* Amount to be added to variable. */
+{
+    register Tcl_Obj *varValuePtr;
+    int createdNewObj;		/* Set 1 if var's value object is shared
+				 * so we must increment a copy (i.e. copy
+				 * on write). */
+    long i;
+
+    varValuePtr = TclGetIndexedScalar(interp, localIndex, TCL_LEAVE_ERR_MSG);
+    if (varValuePtr == NULL) {
+	Tcl_AddObjErrorInfo(interp,
+		"\n    (reading value of variable to increment)", -1);
+	return NULL;
+    }
+
+    /*
+     * Reach into the object's representation to extract and increment the
+     * variable's value. If the object is unshared we can modify it
+     * directly, otherwise we must create a new copy to modify: this is
+     * "copy on write". Then free the variable's old string representation,
+     * if any, since it will no longer be valid.
+     */
+
+    createdNewObj = 0;
+    if (Tcl_IsShared(varValuePtr)) {
+	createdNewObj = 1;
+	varValuePtr = Tcl_DuplicateObj(varValuePtr);
+    }
+#ifdef TCL_WIDE_INT_IS_LONG
+    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
+	if (createdNewObj) {
+	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	}
+	return NULL;
+    }
+    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#else
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else if (varValuePtr->typePtr == &tclIntType) {
+	i = varValuePtr->internalRep.longValue;
+	Tcl_SetIntObj(varValuePtr, i + incrAmount);
+    } else {
+	/*
+	 * Not an integer or wide internal-rep...
+	 */
+	Tcl_WideInt wide;
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	if (wide <= Tcl_LongAsWide(LONG_MAX)
+		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
+	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
+	} else {
+	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	}
+    }
+#endif
+
+    /*
+     * Store the variable's new value and run any write traces.
+     */
+    
+    return TclSetIndexedScalar(interp, localIndex, varValuePtr,
+	    TCL_LEAVE_ERR_MSG);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIncrElementOfIndexedArray --
+ *
+ *	Increments the Tcl object value of an element in a local array
+ *	variable. The element is named by the object elemPtr while the array
+ *	is specified by its index in the active procedure's array of
+ *	compiler allocated local variables.
+ *
+ * Results:
+ *	Returns a pointer to the Tcl_Obj holding the new value of the
+ *	element. If the specified array or element doesn't exist, or there
+ *	is a clash in array usage, or an error occurs while executing
+ *	variable traces, then NULL is returned and a message will be left in
+ *	the interpreter's result.
+ *
+ * Side effects:
+ *	The value of the given array element is incremented by the specified
+ *	amount. The ref count for the returned object is _not_ incremented
+ *	to reflect the returned reference; if you want to keep a reference
+ *	to the object you must increment its ref count yourself. If the
+ *	entry doesn't exist then a new variable is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
+    Tcl_Interp *interp;		/* Command interpreter in which the array is
+				 * to be found. */
+    int localIndex;		/* Index of array variable in procedure's
+				 * array of local variables. */
+    Tcl_Obj *elemPtr;		/* Points to an object holding the name of
+				 * an element to increment in the array. */
+    long incrAmount;		/* Amount to be added to variable. */
+{
+    register Tcl_Obj *varValuePtr;
+    int createdNewObj;		/* Set 1 if var's value object is shared
+				 * so we must increment a copy (i.e. copy
+				 * on write). */
+    long i;
+
+    varValuePtr = TclGetElementOfIndexedArray(interp, localIndex, elemPtr,
+	    TCL_LEAVE_ERR_MSG);
+    if (varValuePtr == NULL) {
+	Tcl_AddObjErrorInfo(interp,
+		"\n    (reading value of variable to increment)", -1);
+	return NULL;
+    }
+
+    /*
+     * Reach into the object's representation to extract and increment the
+     * variable's value. If the object is unshared we can modify it
+     * directly, otherwise we must create a new copy to modify: this is
+     * "copy on write". Then free the variable's old string representation,
+     * if any, since it will no longer be valid.
+     */
+
+    createdNewObj = 0;
+    if (Tcl_IsShared(varValuePtr)) {
+	createdNewObj = 1;
+	varValuePtr = Tcl_DuplicateObj(varValuePtr);
+    }
+#ifdef TCL_WIDE_INT_IS_LONG
+    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
+	if (createdNewObj) {
+	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	}
+	return NULL;
+    }
+    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#else
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else if (varValuePtr->typePtr == &tclIntType) {
+	i = varValuePtr->internalRep.longValue;
+	Tcl_SetIntObj(varValuePtr, i + incrAmount);
+    } else {
+	/*
+	 * Not an integer or wide internal-rep...
+	 */
+	Tcl_WideInt wide;
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	if (wide <= Tcl_LongAsWide(LONG_MAX)
+		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
+	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
+	} else {
+	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	}
+    }
+#endif
+
+    /*
+     * Store the variable's new value and run any write traces.
+     */
+    
+    return TclSetElementOfIndexedArray(interp, localIndex, elemPtr,
+	    varValuePtr, TCL_LEAVE_ERR_MSG);
 }
