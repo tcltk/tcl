@@ -1,3 +1,12 @@
+2004-07-03  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.h:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c: Moved declaration of TclCompEvalObj()
+	from tclCompile.h to the internal stubs table, for compiler
+	experimentation. 
+		
 2004-07-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/regcomp.c (stid): correct minor pointer size error
