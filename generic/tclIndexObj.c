@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.5 2001/10/22 09:03:32 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.6 2001/10/22 09:54:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -53,8 +53,16 @@ typedef struct {
     int index;				/* Selected index into table. */
 } IndexRep;
 
-#define STRING_AT(table, offset, index) \
-	(*((char **)(((VOID *)(table)) + ((offset) * (index)))))
+/*
+ * SunPro CC is annoying!
+ */
+#ifdef __sparc
+#   define STRING_AT(table, offset, index) \
+	(*((char **)(((char *)(table)) + ((offset) * (index)))))
+#else
+#   define STRING_AT(table, offset, index) \
+	(*((char **)(((VOID *)(table)) + (ptrdiff_t)((offset) * (index)))))
+#endif
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset, 1)))
 #define EXPAND_OF(indexRep) \
@@ -341,8 +349,7 @@ UpdateStringOfIndex(objPtr)
     IndexRep *indexRep = (IndexRep *) objPtr->internalRep.otherValuePtr;
     register char *buf;
     register int len;
-    register char *indexStr = *(char **)
-	    (indexRep->tablePtr + (indexRep->offset * indexRep->index));
+    register char *indexStr = EXPAND_OF(indexRep);
 
     len = strlen(indexStr);
     buf = (char *) ckalloc(len + 1);

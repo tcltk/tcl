@@ -1,5 +1,10 @@
 2001-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclIndexObj.c (STRING_AT): Fixed so that it builds with
+	SunPro CC on Solaris, which refuses to perform address arithmetic
+	on void*, despite the fact that that is necessary to get the
+	correct behaviour on Crays...
+
 	* generic/tclTestObj.c (TestindexobjCmd): Fixed assumptions
 	relating to internal representation of index objects.
 
