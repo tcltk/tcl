@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.1.2.3 1998/12/10 21:21:49 stanton Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.1.2.4 1999/03/30 22:29:03 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -86,7 +86,6 @@ typedef struct InterpPackage {
 
 static void		LoadCleanupProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp));
-static void		LoadExitProc _ANSI_ARGS_((ClientData clientData));
 
 /*
  *----------------------------------------------------------------------
@@ -347,9 +346,7 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 	/*
 	 * Create a new record to describe this package.
 	 */
-	if (firstPackagePtr == NULL) {
-	    Tcl_CreateExitHandler(LoadExitProc, (ClientData) NULL);
-	}
+
 	pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
 	pkgPtr->fileName	= (char *) ckalloc((unsigned)
 		(strlen(fullFileName) + 1));
@@ -472,9 +469,7 @@ Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc)
 	    return;
 	}
     }
-    if (firstPackagePtr == NULL) {
-	Tcl_CreateExitHandler(LoadExitProc, (ClientData) NULL);
-    }
+
     Tcl_MutexUnlock(&packageMutex);
 
     pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
@@ -619,7 +614,7 @@ LoadCleanupProc(clientData, interp)
 /*
  *----------------------------------------------------------------------
  *
- * LoadExitProc --
+ * TclFinalizeLoad --
  *
  *	This procedure is invoked just before the application exits.
  *	It frees all of the LoadedPackage structures.
@@ -633,9 +628,8 @@ LoadCleanupProc(clientData, interp)
  *----------------------------------------------------------------------
  */
 
-static void
-LoadExitProc(clientData)
-    ClientData clientData;		/* Not used. */
+void
+TclFinalizeLoad()
 {
     LoadedPackage *pkgPtr;
 

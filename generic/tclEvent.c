@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.1.2.8 1999/03/13 03:09:33 surles Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.1.2.9 1999/03/30 22:29:02 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -855,6 +855,13 @@ Tcl_Finalize()
 	 */
     
 	Tcl_FinalizeThread();
+
+	/*
+	 * We defer unloading of packages until after any user callbacks
+	 * are invoked to avoid memory access issues.
+	 */
+
+	TclFinalizeLoad();
 
 	/*
 	 * Now finalize the Tcl execution environment.  Note that this
