@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.66 2002/03/04 23:12:25 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.67 2002/03/24 11:41:48 vincentdarley Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5139,8 +5139,9 @@ characters.  (hobbs, riefenstahl)
 2001-07-18 (bug fix)[427196] corrected memory overwrite error when buffer size
 of a channel is changed after channel use has already begun (kupries, porter)
 
-2001-07-31 (new feature)[TIP 17] TclFS* APIs provide new virtual file system
-(darley)
+2001-07-31 (new feature)[TIP 17] TclFS* APIs provide new virtual file
+system.  This includes the addition of 'file normalize', 'file system',
+'file separator' and 'glob -tails' (darley)
 
 2001-08-06 (bug fix) removed use of tmpnam in TclpCreateTempFile on Unix (lim)
 
