@@ -1,3 +1,12 @@
+2004-08-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/trace.n, doc/socket.n, doc/registry.n, doc/pid.n: 
+	* doc/namespace.n, doc/msgcat.n, doc/lsort.n, doc/lsearch.n: 
+	* doc/linsert.n, doc/info.n, doc/http.n, doc/history.n: 
+	* doc/format.n, doc/file.n, doc/exec.n, doc/dde.n, doc/clock.n: 
+	* doc/catch.n, doc/binary.n: More spelling and grammar fixes from
+	Mikhail Kolesnitchenko. [Patch 1018486]
+
 2004-08-31  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3:

@@ -90,9 +90,9 @@ Returns an ordered list of the locales preferred by
 the user, based on the user's language specification.
 The list is ordered from most specific to least
 preference.  The list is derived from the current
-locale set in msgcat by \fBmsgcat::mclocale\fR, and
+locale set in msgcat by \fB::msgcat::mclocale\fR, and
 cannot be set independently.  For example, if the
-current locale is en_US_funky, then \fBmsgcat::mcpreferences\fR
+current locale is en_US_funky, then \fB::msgcat::mcpreferences\fR
 .VS 1.4
 returns \fB{en_US_funky en_US en {}}\fR.
 .VE
@@ -121,8 +121,8 @@ Sets the translation for multiple source strings in
 namespace.
 \fIsrc-trans-list\fR must have an even number of elements and is in
 the form {\fIsrc-string translate-string\fR ?\fIsrc-string
-translate-string ...\fR?} \fBmsgcat::mcmset\fR can be significantly
-faster than multiple invocations of \fBmsgcat::mcset\fR. The function
+translate-string ...\fR?} \fB::msgcat::mcmset\fR can be significantly
+faster than multiple invocations of \fB::msgcat::mcset\fR. The function
 returns the number of translations set.
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR
@@ -155,7 +155,7 @@ initial locale.  The value is parsed according to the XPG4 pattern
 language[_country][.codeset][@modifier]
 .CE
 to extract its parts.  The initial locale is then set by calling
-\fBmsgcat::mclocale\fR with the argument 
+\fB::msgcat::mclocale\fR with the argument 
 .CS
 language[_country][_modifier]
 .CE

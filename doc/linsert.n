@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.8 2004/04/16 22:20:58 dkf Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.9 2004/08/31 15:19:36 dkf Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,7 @@ linsert \- Insert elements into a list
 .SH DESCRIPTION
 .PP
 This command produces a new list from \fIlist\fR by inserting all of the
-\fIelement\fR arguments just before the \fIindex\fRth element of
+\fIelement\fR arguments just before the \fIindex\fR'th element of
 \fIlist\fR.  Each \fIelement\fR argument will become a separate element of
 the new list.  If \fIindex\fR is less than or equal to zero, then the new
 elements are inserted at the beginning of the list.  If \fIindex\fR has the
