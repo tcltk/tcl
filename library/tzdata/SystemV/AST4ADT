@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(America/Halifax)]} {
-    loadTimeZoneFile America/Halifax
+    LoadTimeZoneFile America/Halifax
 }
-set tzdata(:SystemV/AST4ADT) $TZData(:America/Halifax)
+set TZData(:SystemV/AST4ADT) $TZData(:America/Halifax)

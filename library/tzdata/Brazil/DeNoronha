@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(America/Noronha)]} {
-    loadTimeZoneFile America/Noronha
+    LoadTimeZoneFile America/Noronha
 }
-set tzdata(:Brazil/DeNoronha) $TZData(:America/Noronha)
+set TZData(:Brazil/DeNoronha) $TZData(:America/Noronha)

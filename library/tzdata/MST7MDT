@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(America/Denver)]} {
-    loadTimeZoneFile America/Denver
+    LoadTimeZoneFile America/Denver
 }
-set tzdata(:MST7MDT) $TZData(:America/Denver)
+set TZData(:MST7MDT) $TZData(:America/Denver)

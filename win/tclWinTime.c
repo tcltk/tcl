@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.27 2004/06/05 17:31:08 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.28 2004/09/07 17:39:00 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -300,8 +300,13 @@ Tcl_GetTime(timePtr)
 	     * appears to fiddle with the definition of the perf counter
 	     * frequency (perhaps in an attempt to calibrate the clock?)
 	     * we use the latter rule rather than an exact match.
+	     *
+	     * We also assume (perhaps questionably) that the vendors 
+	     * have gotten their act together on Win64, so bypass all
+	     * this rubbish on that platform.
 	     */
 
+#if !defined(_WIN64)
 	    if ( timeInfo.perfCounterAvailable
 		 /* The following lines would do an exact match on
 		  * crystal frequency:
@@ -341,6 +346,7 @@ Tcl_GetTime(timePtr)
 		}
 
 	    }
+#endif /* above code is Win32 only */
 
 	    /*
 	     * If the performance counter is available, start a thread to
