@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.3 2003/04/05 07:32:32 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.4 2003/04/07 10:12:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ FreeDictInternalRep(dictPtr)
     Dict *dict = (Dict *) dictPtr->internalRep.otherValuePtr;
 
     --dict->refcount;
-    if (dict->refcount == 0) {
+    if (dict->refcount <= 0) {
 	DeleteDict(dict);
     }
 
@@ -977,7 +977,7 @@ Tcl_DictObjDone(searchPtr)
 	searchPtr->epoch = -1;
 	dict = (Dict *) searchPtr->dictionaryPtr;
 	dict->refcount--;
-	if (dict->refcount == 0) {
+	if (dict->refcount <= 0) {
 	    DeleteDict(dict);
 	}
     }
@@ -1093,7 +1093,7 @@ Tcl_DictObjRemoveKeyList(interp, dictPtr, keyc, keyv)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NewListObj --
+ * Tcl_NewDictObj --
  *
  *	This procedure is normally called when not debugging: i.e., when
  *	TCL_MEM_DEBUG is not defined. It creates a new dict object
@@ -1128,6 +1128,7 @@ Tcl_NewDictObj()
     Tcl_InitObjHashTable(&dict->table);
     dict->epoch = 0;
     dict->chain = NULL;
+    dict->refcount = 1;
     dictPtr->internalRep.otherValuePtr = (VOID *) dict;
     dictPtr->typePtr = &tclDictType;
     return dictPtr;
@@ -1137,7 +1138,7 @@ Tcl_NewDictObj()
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DbNewListObj --
+ * Tcl_DbNewDictObj --
  *
  *	This procedure is normally called when debugging: i.e., when
  *	TCL_MEM_DEBUG is defined. It creates new dict objects. It is the
@@ -1176,6 +1177,7 @@ Tcl_DbNewDictObj(file, line)
     Tcl_InitObjHashTable(&dict->table);
     dict->epoch = 0;
     dict->chain = NULL;
+    dict->refcount = 1;
     dictPtr->internalRep.otherValuePtr = (VOID *) dict;
     dictPtr->typePtr = &tclDictType;
     return dictPtr;
@@ -1676,7 +1678,8 @@ DictIncrCmd(interp, objc, objv)
     Tcl_Obj *CONST *objv;
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int result, incrValue;
+    int result;
+    long incrValue;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "varName key ?increment?");
@@ -1684,7 +1687,7 @@ DictIncrCmd(interp, objc, objv)
     }
 
     if (objc == 5) {
-	result = Tcl_GetIntFromObj(interp, objv[4], &incrValue);
+	result = Tcl_GetLongFromObj(interp, objv[4], &incrValue);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -1695,9 +1698,9 @@ DictIncrCmd(interp, objc, objv)
     dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
     if (dictPtr == NULL) {
 	dictPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(interp, dictPtr, objv[3], Tcl_NewIntObj(incrValue));
+	Tcl_DictObjPut(interp, dictPtr, objv[3], Tcl_NewLongObj(incrValue));
     } else {
-	int iValue;
+	long lValue;
 	Tcl_WideInt wValue;
 
 	if (Tcl_IsShared(dictPtr)) {
@@ -1708,7 +1711,8 @@ DictIncrCmd(interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	if (valuePtr == NULL) {
-	    valuePtr = Tcl_NewIntObj(incrValue);
+	    valuePtr = Tcl_NewLongObj(incrValue);
+#ifndef TCL_WIDE_INT_IS_LONG
 	} else if (valuePtr->typePtr == &tclWideIntType) {
 	    Tcl_GetWideIntFromObj(NULL, valuePtr, &wValue);
 	    if (Tcl_IsShared(valuePtr)) {
@@ -1720,38 +1724,45 @@ DictIncrCmd(interp, objc, objv)
 		}
 		goto valueAlreadyInDictionary;
 	    }
+#endif /* !TCL_WIDE_INT_IS_LONG */
 	} else if (valuePtr->typePtr == &tclIntType) {
-	    Tcl_GetIntFromObj(NULL, valuePtr, &iValue);
+	    Tcl_GetLongFromObj(NULL, valuePtr, &lValue);
 	    if (Tcl_IsShared(valuePtr)) {
-		valuePtr = Tcl_NewIntObj(iValue + incrValue);
+		valuePtr = Tcl_NewLongObj(lValue + incrValue);
 	    } else {
-		Tcl_SetIntObj(valuePtr, iValue + incrValue);
+		Tcl_SetLongObj(valuePtr, lValue + incrValue);
 		if (dictPtr->bytes != NULL) {
 		    Tcl_InvalidateStringRep(dictPtr);
 		}
 		goto valueAlreadyInDictionary;
 	    }
 	} else {
+	    /*
+	     * Note that these operations on wide ints should work
+	     * fine where they are the same as normal longs, though
+	     * the compiler might complain about trivially satisifed
+	     * tests.
+	     */
 	    result = Tcl_GetWideIntFromObj(interp, valuePtr, &wValue);
 	    if (result != TCL_OK) {
 		return result;
 	    }
 	    /*
-	     * Determine if we should have got a standard int instead.
+	     * Determine if we should have got a standard long instead.
 	     */
 	    if (Tcl_IsShared(valuePtr)) {
-		if (wValue >= INT_MIN && wValue <= INT_MAX) {
+		if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
 		    /*
 		     * Convert the type...
 		     */
-		    Tcl_GetIntFromObj(NULL, valuePtr, &iValue);
-		    valuePtr = Tcl_NewIntObj(iValue + incrValue);
+		    Tcl_GetLongFromObj(NULL, valuePtr, &lValue);
+		    valuePtr = Tcl_NewLongObj(lValue + incrValue);
 		} else {
 		    valuePtr = Tcl_NewWideIntObj(wValue + incrValue);
 		}
 	    } else {
-		if (wValue >= INT_MIN && wValue <= INT_MAX) {
-		    Tcl_SetIntObj(valuePtr,
+		if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
+		    Tcl_SetLongObj(valuePtr,
 			    Tcl_WideAsLong(wValue) + incrValue);
 		} else {
 		    Tcl_SetWideIntObj(valuePtr, wValue + incrValue);
@@ -1766,8 +1777,8 @@ DictIncrCmd(interp, objc, objv)
 	    Tcl_DecrRefCount(valuePtr);
 	    return TCL_ERROR;
 	}
-	valueAlreadyInDictionary:
     }
+  valueAlreadyInDictionary:
     resultPtr = Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG);
     if (resultPtr == NULL) {

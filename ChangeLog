@@ -1,3 +1,18 @@
+2003-04-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/dict.test (dict-2.6): 
+	* generic/tclDictObj.c (Tcl_NewDictObj, Tcl_DbNewDictObj): Oops!
+	Failed to fully initialise the Dict structure.
+	(DictIncrCmd): Moved valueAlreadyInDictionary label to stop
+	compiler complaints.  [Bug 715751]
+
+	* generic/tclDictObj.c (DictIncrCmd): Followed style in the rest of
+	the core by commenting out wide-specific operations on platforms
+	where wides are longs, and used longs more thoroughly than ints
+	through [dict incr] anyway to forestall further bugs.
+	* generic/tclObj.c: Made sure there's always a tclWideIntType
+	implementation available, not that it is always useful.  [Bug 713562]
+
 2003-04-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclDictObj.c: Removed commented out notes on
