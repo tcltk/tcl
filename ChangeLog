@@ -1,5 +1,7 @@
 2004-01-13  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd):  Silence compiler warnings.
+
 	Patch 876451: restores performance of [return].  Also allows forms
 	such as [return -code error $msg] to be bytecompiled.
 
@@ -32,6 +34,7 @@
 	improper interp result management in the [glob] command procedure.
 	Corrected by adopting the Tcl_SetObjResult(Tcl_NewStringObj) pattern.
 	This stopped a segfault in test filename-11.36.
+
 
 2004-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
