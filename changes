@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.34 1998/11/11 07:46:45 jingham Exp $
+RCS: @(#) $Id: changes,v 1.35 1998/12/02 01:42:00 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3673,3 +3673,5 @@ case, so we have to test for this equality explicitly. (JI)
 11/10/98 (feature change) When compiling with Metrowerk's MSL, use the exit function from
 MSL rather than ExitToShell.  This allows MSL to clean up its temporary files. Thanks to
 Vince Darley for this improvement. (JI)
+
+----------------- Released 8.0.4, 11/20/98 -------------------------
