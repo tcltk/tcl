@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.13 2000/05/26 08:53:42 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.14 2000/06/06 19:34:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1814,6 +1814,10 @@ TclExecuteByteCode(interp, codePtr)
 			(size_t) ((s1len < s2len) ? s1len : s2len));
 		if (iResult == 0) {
 		    iResult = s1len - s2len;
+		} else if (iResult < 0) {
+		    iResult = -1;
+		} else {
+		    iResult = 1;
 		}
 
 		PUSH_OBJECT(Tcl_NewIntObj(iResult));
