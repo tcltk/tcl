@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.7 2004/06/10 17:17:45 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.8 2004/10/14 15:30:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -278,6 +278,22 @@ TclIntStubs tclIntStubs = {
     NULL, /* 181 */
     TclpLocaltime, /* 182 */
     TclpGmtime, /* 183 */
+    NULL, /* 184 */
+    NULL, /* 185 */
+    NULL, /* 186 */
+    NULL, /* 187 */
+    NULL, /* 188 */
+    NULL, /* 189 */
+    NULL, /* 190 */
+    NULL, /* 191 */
+    NULL, /* 192 */
+    NULL, /* 193 */
+    NULL, /* 194 */
+    NULL, /* 195 */
+    NULL, /* 196 */
+    NULL, /* 197 */
+    NULL, /* 198 */
+    TclMatchIsTrivial, /* 199 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
