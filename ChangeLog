@@ -1,3 +1,11 @@
+2002-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclTest.c (TestCloneObjCmd): objify testclone command.
+
+	* generic/tclLiteral.c (LiteralThreadExitProc): do no delete
+	literal table in thread exit handler.  This causes a crash
+	sometimes that must be further explored.
+
 2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclBasic.c (Tcl_CloneInterp): Moved 'TclCreateExecEnv'

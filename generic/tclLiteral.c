@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.4 2002/11/26 20:15:00 hobbs Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.5 2002/12/06 02:48:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -88,7 +88,14 @@ LiteralThreadExitProc(clientData)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     if (tsdPtr->initialized) {
+#if 0
+	/*
+	 * This causes a crash on exit in some cases that must be
+	 * further explored.  It has to do with circular references
+	 * in bytecodes that cause a double-delete on literal objects.
+	 */
 	TclDeleteLiteralTable(NULL, &(tsdPtr->literalTable));
+#endif
 	tsdPtr->initialized = 0;
     }
 }
