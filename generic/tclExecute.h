@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.h,v 1.1.2.1 2001/04/11 12:09:18 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.h,v 1.1.2.2 2001/04/11 19:57:29 msofer Exp $
  */
 
 
@@ -18,7 +18,7 @@
  *  . _CASE_DECLS         declarations of special variables required
  *  . _CASE_START         start of the block containing instructions
  *  . _CASE_END           end of the block containing instructions
- *  . CHECK_OPCODES       0/1, if the opcodes have to be checked
+ *  . CHECK_OPCODES       0/1, if the opcodes have to be checked before RT
  *  . NEXT_INSTR          the jump to the next instruction
  *
  *
@@ -59,7 +59,7 @@
 #define    JUMP_version SWITCH
 #endif  /* choice of method */
 
-#ifdef TCL_COMPILE_DEBUG 
+#ifdef TCL_BYTECODE_DEBUG 
 # undef JUMP_version
 # define JUMP_version SWITCH
 #endif
@@ -81,7 +81,7 @@
       } /* end of switch on opCode */
 #define CHECK_OPCODES 0
 #define NEXT_INSTR goto instructions_start 
-#ifndef TCL_COMPILE_DEBUG /* not debugging */
+#ifndef TCL_BYTECODE_DEBUG /* not debugging */
 #  define _CASE_START \
     instructions_start: \
     switch (*pc) {
@@ -89,12 +89,12 @@
 #  define _CASE_START \
     instructions_start: \
       if (tclTraceExec == 3) {\
-          fprintf(stdout, "%2d: %2d ", iPtr->numLevels, tosPtr - stackPtr);\
+          fprintf(stdout, "%2d: %2d ", iPtr->numLevels, tosPtr - eePtr->stackPtr);\
           TclPrintInstruction(codePtr, pc);\
           fflush(stdout);\
       } \
     switch (*pc) {
-#endif /*TCL_COMPILE_DEBUG */
+#endif /*TCL_BYTECODE_DEBUG */
 #endif /* SWITCH methods */
 
 
