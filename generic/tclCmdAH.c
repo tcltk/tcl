@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.7 2001/10/04 15:28:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.8 2001/10/08 08:22:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1857,7 +1857,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define PTR_VALUE 2
 #   define DOUBLE_VALUE 3
 #   define STRING_VALUE 4
-#   define WIDE_VALUE 4
+#   define WIDE_VALUE 5
 #   define MAX_FLOAT_SIZE 320
 
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
