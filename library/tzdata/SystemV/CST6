@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(America/Regina)]} {
-    loadTimeZoneFile America/Regina
+    LoadTimeZoneFile America/Regina
 }
-set tzdata(:SystemV/CST6) $TZData(:America/Regina)
+set TZData(:SystemV/CST6) $TZData(:America/Regina)
