@@ -3569,6 +3569,6 @@ tcl_library variable can now be set before calling Tcl_Init to avoid
 doing any searches.  If it isn't set, then Tcl checks
 env(TCL_LIBRARY), the static value set at compile time, an install
 directory relative to the executable, a source directory relative to
-the executable, and a tk directory relative to the source heirarchy
+the executable, and a tcl directory relative to the source heirarchy
 containing the executable.  See the comment at the top of
 generic/tclInitScript.h for more details. (SS)
