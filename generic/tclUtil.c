@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.20 2001/07/03 03:33:42 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.21 2001/07/31 19:12:07 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2273,104 +2273,4 @@ CONST char *
 Tcl_GetNameOfExecutable()
 {
     return (tclExecutableName);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetCwd --
- *
- *	This function replaces the library version of getcwd().
- *
- * Results:
- *	The result is a pointer to a string specifying the current
- *	directory, or NULL if the current directory could not be
- *	determined.  If NULL is returned, an error message is left in the
- *	interp's result.  Storage for the result string is allocated in
- *	bufferPtr; the caller must call Tcl_DStringFree() when the result
- *	is no longer needed.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-char *
-Tcl_GetCwd(interp, cwdPtr)
-    Tcl_Interp *interp;
-    Tcl_DString *cwdPtr;
-{
-    return TclpGetCwd(interp, cwdPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Chdir --
- *
- *	This function replaces the library version of chdir().
- *
- * Results:
- *	See chdir() documentation.
- *
- * Side effects:
- *	See chdir() documentation.  
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_Chdir(dirName)
-    CONST char *dirName;
-{
-    return TclpChdir(dirName);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Access --
- *
- *	This function replaces the library version of access().
- *
- * Results:
- *	See access() documentation.
- *
- * Side effects:
- *	See access() documentation.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_Access(path, mode)
-    CONST char *path;		/* Path of file to access (UTF-8). */
-    int mode;			/* Permission setting. */
-{
-    return TclAccess(path, mode);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Stat --
- *
- *	This function replaces the library version of stat().
- *
- * Results:
- *	See stat() documentation.
- *
- * Side effects:
- *	See stat() documentation.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_Stat(path, bufPtr)
-    CONST char *path;		/* Path of file to stat (in UTF-8). */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
-{
-    return TclStat(path, bufPtr);
 }

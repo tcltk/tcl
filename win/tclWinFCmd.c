@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.8 2000/05/22 23:55:09 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.9 2001/07/31 19:12:08 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -102,6 +102,73 @@ static int		TraverseWinTree(TraversalProc *traverseProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *dstPtr, 
 			    Tcl_DString *errorPtr);
 
+
+int 
+TclpObjCreateDirectory(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    return TclpCreateDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+}
+
+int 
+TclpObjDeleteFile(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    return TclpDeleteFile(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+}
+
+int 
+TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+    Tcl_Obj **errorPtr;
+{
+    Tcl_DString ds;
+    int ret;
+    ret = TclpCopyDirectory(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			    Tcl_FSGetTranslatedPath(NULL,destPathPtr), &ds);
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
+}
+
+int 
+TclpObjCopyFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return TclpCopyFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+}
+
+int 
+TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
+    Tcl_Obj *pathPtr;
+    int recursive;
+    Tcl_Obj **errorPtr;
+{
+    Tcl_DString ds;
+    int ret;
+    ret = TclpRemoveDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr),recursive, &ds);
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
+}
+
+int 
+TclpObjRenameFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return TclpRenameFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			  Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -1289,6 +1356,106 @@ GetWinFileAttributes(
 }
 
 /*
+ *---------------------------------------------------------------------------
+ *
+ * TclpNormalizePath --
+ *
+ *	This function scans through a path specification and replaces
+ *	it, in place, with a normalized version.  On windows this
+ *	means using the 'longname'.
+ *
+ * Results:
+ *	The new 'nextCheckpoint' value, giving as far as we could
+ *	understand in the path.
+ *
+ * Side effects:
+ *	The pathPtr string, which must contain a valid path, is
+ *	possibly modified in place.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpNormalizePath(interp, pathPtr, nextCheckpoint)
+    Tcl_Interp *interp;
+    Tcl_DString *pathPtr;
+    int nextCheckpoint;
+{
+    char *currentPathEndPosition;
+    char *lastValidPathEnd = NULL;
+    char *path = Tcl_DStringValue(pathPtr);
+    
+    currentPathEndPosition = path + nextCheckpoint;
+    
+    while (1) {
+	char cur = *currentPathEndPosition;
+	if (cur == '/' || cur == 0) {
+	    /* Reached directory separator, or end of string */
+	    Tcl_DString ds;
+	    DWORD attr;
+	    char * nativePath;
+	    nativePath = Tcl_WinUtfToTChar(path, currentPathEndPosition - path, &ds);
+	    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+	    Tcl_DStringFree(&ds);
+	    
+	    if (attr == 0xffffffff) {
+		/* File doesn't exist */
+		break;
+	    }
+	    lastValidPathEnd = currentPathEndPosition;
+	    /* File does exist */
+	    if (cur == 0) {
+		break;
+	    }
+	}
+	currentPathEndPosition++;
+    }
+    nextCheckpoint = currentPathEndPosition - path;
+    if (lastValidPathEnd != NULL) {
+	/* 
+	 * The leading end of the path description was acceptable to
+	 * us.  We therefore convert it to its long form, and return
+	 * that.
+	 */
+	Tcl_Obj* objPtr = NULL;
+	int endOfString;
+	int useLength = lastValidPathEnd - path;
+	if (*lastValidPathEnd == 0) {
+	    endOfString = 1;
+	} else {
+	    endOfString = 0;
+	    path[useLength] = 0;
+	}
+	/* 
+	 * If this returns an error, we have a strange situation; the
+	 * file exists, but we can't get its long name.  We will have
+	 * to assume the name we have is ok.
+	 */
+	if (ConvertFileNameFormat(interp, 0, path, 1, &objPtr) == TCL_OK) {
+	    /* objPtr now has a refCount of 0 */
+	    int len;
+	    (void) Tcl_GetStringFromObj(objPtr,&len);
+	    if (!endOfString) {
+		/* Be nice and fix the string before we clear it */
+		path[useLength] = '/';
+		Tcl_AppendToObj(objPtr, lastValidPathEnd, -1);
+	    }
+	    nextCheckpoint += (len - useLength);
+	    Tcl_DStringSetLength(pathPtr,0);
+	    path = Tcl_GetStringFromObj(objPtr,&len);
+	    Tcl_DStringAppend(pathPtr,path,len);
+	    /* Free up the objPtr */
+	    Tcl_DecrRefCount(objPtr);
+	} else {
+	    if (!endOfString) {
+		path[useLength] = '/';
+	    }
+	}
+    }
+    return nextCheckpoint;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * ConvertFileNameFormat --
@@ -1449,7 +1616,7 @@ cleanup:
  *
  * GetWinFileLongName --
  *
- *      Returns a Tcl_Obj containing the short version of the file
+ *      Returns a Tcl_Obj containing the long version of the file
  *	name.
  *
  * Results:
@@ -1661,4 +1828,101 @@ TclpListVolumes(
 	}
     }
     return TCL_OK;	
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpObjNormalizePath --
+ *
+ *	This function scans through a path specification and replaces
+ *	it, in place, with a normalized version.  On windows this
+ *	means using the 'longname'.
+ *
+ * Results:
+ *	The new 'nextCheckpoint' value, giving as far as we could
+ *	understand in the path.
+ *
+ * Side effects:
+ *	The pathPtr string, which must contain a valid path, is
+ *	possibly modified in place.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
+    Tcl_Interp *interp;
+    Tcl_Obj *pathPtr;
+    int nextCheckpoint;
+{
+    char *currentPathEndPosition;
+    char *lastValidPathEnd = NULL;
+    char *path = Tcl_GetString(pathPtr);
+    
+    currentPathEndPosition = path + nextCheckpoint;
+    
+    while (1) {
+	char cur = *currentPathEndPosition;
+	if (cur == '/' || cur == 0) {
+	    /* Reached directory separator, or end of string */
+	    Tcl_DString ds;
+	    DWORD attr;
+	    char * nativePath;
+	    nativePath = Tcl_WinUtfToTChar(path, currentPathEndPosition - path, &ds);
+	    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+	    Tcl_DStringFree(&ds);
+	    
+	    if (attr == 0xffffffff) {
+		/* File doesn't exist */
+		break;
+	    }
+	    lastValidPathEnd = currentPathEndPosition;
+	    /* File does exist */
+	    if (cur == 0) {
+		break;
+	    }
+	}
+	currentPathEndPosition++;
+    }
+    nextCheckpoint = currentPathEndPosition - path;
+    if (lastValidPathEnd != NULL) {
+	/* 
+	 * The leading end of the path description was acceptable to
+	 * us.  We therefore convert it to its long form, and return
+	 * that.
+	 */
+	Tcl_Obj* objPtr = NULL;
+	int endOfString;
+	int useLength = lastValidPathEnd - path;
+	if (*lastValidPathEnd == 0) {
+	    endOfString = 1;
+	} else {
+	    endOfString = 0;
+	    path[useLength] = 0;
+	}
+	/* 
+	 * If this returns an error, we have a strange situation; the
+	 * file exists, but we can't get its long name.  We will have
+	 * to assume the name we have is ok.
+	 */
+	if (ConvertFileNameFormat(interp, 0, path, 1, &objPtr) == TCL_OK) {
+	    int len;
+	    (void) Tcl_GetStringFromObj(objPtr,&len);
+	    if (!endOfString) {
+		/* Be nice and fix the string before we clear it */
+		path[useLength] = '/';
+		Tcl_AppendToObj(objPtr, lastValidPathEnd, -1);
+	    }
+	    nextCheckpoint += (len - useLength);
+	    path = Tcl_GetStringFromObj(objPtr,&len);
+	    Tcl_SetStringObj(pathPtr,path, len);
+	    Tcl_DecrRefCount(objPtr);
+	} else {
+	    if (!endOfString) {
+		path[useLength] = '/';
+	    }
+	}
+    }
+    return nextCheckpoint;
 }

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Access.3,v 1.3 1999/05/06 19:14:39 stanton Exp $
+'\" RCS: @(#) $Id: Access.3,v 1.4 2001/07/31 19:12:05 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_Access 3 8.1 Tcl "Tcl Library Procedures"
@@ -34,6 +34,10 @@ The structure that contains the result.
 .BE
 
 .SH DESCRIPTION
+.PP
+As of Tcl 8.4, the object-based APIs \fBTcl_FSAccess\fR and
+\fBTcl_FSStat\fR should be used in preference to \fBTcl_Access\fR and
+\fBTcl_Stat\fR, wherever possible.
 .PP
 There are two reasons for calling \fBTcl_Access\fR and \fBTcl_Stat\fR
 rather than calling system level functions \fBaccess\fR and \fBstat\fR

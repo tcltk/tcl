@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.41 2001/07/16 18:35:50 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.42 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -102,17 +102,19 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    Tcl_DString ds;
+    Tcl_Obj *retVal;
 
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetCwd(interp, &ds) == NULL) {
+    retVal = Tcl_FSGetCwd(interp);
+    if (retVal == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_DStringResult(interp, &ds);
+    Tcl_SetObjResult(interp, retVal);
+    Tcl_DecrRefCount(retVal);
     return TCL_OK;
 }
 
@@ -863,17 +865,12 @@ Tcl_SourceObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *bytes;
-    int result;
-    
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "fileName");
 	return TCL_ERROR;
     }
 
-    bytes = Tcl_GetString(objv[1]);
-    result = Tcl_EvalFile(interp, bytes);
-    return result;
+    return Tcl_FSEvalFile(interp, objv[1]);
 }
 
 /*

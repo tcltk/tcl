@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.17 2001/07/17 01:45:30 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.18 2001/07/31 19:12:08 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -762,6 +762,34 @@ TclpCreateTempFile(contents)
     CloseHandle(handle);
     (*tclWinProcs->deleteFileProc)((TCHAR *) name);
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpTempFileName --
+ *
+ *	This function returns a unique filename.
+ *
+ * Results:
+ *	Returns a valid Tcl_Obj* with refCount 0, or NULL on failure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj* 
+TclpTempFileName()
+{
+    WCHAR fileName[MAX_PATH];
+
+    if (TempFileName(fileName) == 0) {
+	return NULL;
+    }
+
+    return TclpNativeToNormalized((ClientData) fileName);
 }
 
 /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.6 2000/12/08 18:55:58 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.7 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -563,20 +563,22 @@ Tcl_GetEncodingNames(interp)
     if (pathPtr != NULL) {
 	int i, objc;
 	Tcl_Obj **objv;
-	Tcl_DString pwdString;
 	char globArgString[10];
-
+	Tcl_Obj* encodingObj = Tcl_NewStringObj("encoding",-1);
+	Tcl_IncrRefCount(encodingObj);
+	
 	objc = 0;
 	Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
 
-	Tcl_GetCwd(interp, &pwdString);
-
 	for (i = 0; i < objc; i++) {
-	    char *string;
-	    int j, objc2, length;
-	    Tcl_Obj **objv2;
-
-	    string = Tcl_GetStringFromObj(objv[i], NULL);
+	    Tcl_Obj *searchIn;
+	    
+	    /* 
+	     * Construct the path from the element of pathPtr,
+	     * joined with 'encoding'.
+	     */
+	    searchIn = Tcl_FSJoinToPath(objv[i],1,&encodingObj);
+	    Tcl_IncrRefCount(searchIn);
 	    Tcl_ResetResult(interp);
 
 	    /*
@@ -586,15 +588,22 @@ Tcl_GetEncodingNames(interp)
 	     */
 
 	    strcpy(globArgString, "*.enc");
-	    if ((Tcl_Chdir(string) == 0)
-		    && (Tcl_Chdir("encoding") == 0)
-		    && (TclGlob(interp, globArgString, NULL, 0, NULL) == TCL_OK)) {
-		objc2 = 0;
+	    /* 
+	     * The GLOBMODE_TAILS flag returns just the tail of each file
+	     * which is the encoding name with a .enc extension 
+	     */
+	    if ((TclGlob(interp, globArgString, searchIn, 
+			 TCL_GLOBMODE_TAILS, NULL) == TCL_OK)) {
+		int objc2 = 0;
+		Tcl_Obj **objv2;
+		int j;
 
 		Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), &objc2,
 			&objv2);
 
 		for (j = 0; j < objc2; j++) {
+		    int length;
+		    char *string;
 		    string = Tcl_GetStringFromObj(objv2[j], &length);
 		    length -= 4;
 		    if (length > 0) {
@@ -604,9 +613,9 @@ Tcl_GetEncodingNames(interp)
 		    }
 		}
 	    }
-	    Tcl_Chdir(Tcl_DStringValue(&pwdString));
+	    Tcl_DecrRefCount(searchIn);
 	}
-	Tcl_DStringFree(&pwdString);
+	Tcl_DecrRefCount(encodingObj);
     }
 
     /*
@@ -1275,6 +1284,7 @@ OpenEncodingFile(dir, name)
     Tcl_DString pathString;
     char *path;
     Tcl_Channel chan;
+    Tcl_Obj *pathPtr;
     
     argv[0] = (char *) dir;
     argv[1] = "encoding";
@@ -1283,7 +1293,12 @@ OpenEncodingFile(dir, name)
     Tcl_DStringInit(&pathString);
     Tcl_JoinPath(3, argv, &pathString);
     path = Tcl_DStringAppend(&pathString, ".enc", -1);
-    chan = Tcl_OpenFileChannel(NULL, path, "r", 0);
+    pathPtr = Tcl_NewStringObj(path,-1);
+
+    Tcl_IncrRefCount(pathPtr);
+    chan = Tcl_FSOpenFileChannel(NULL, pathPtr, "r", 0);
+    Tcl_DecrRefCount(pathPtr);
+
     Tcl_DStringFree(&pathString);
 
     return chan;

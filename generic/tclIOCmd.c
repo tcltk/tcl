@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.7 1999/09/21 04:20:40 hobbs Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.8 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -953,7 +953,7 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
      */
 
     if (!pipeline) {
-        chan = Tcl_OpenFileChannel(interp, what, modeString, prot);
+        chan = Tcl_FSOpenFileChannel(interp, objv[1], modeString, prot);
     } else {
 #ifdef MAC_TCL
 	Tcl_AppendResult(interp,

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.28 2001/06/17 03:48:19 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.29 2001/07/31 19:12:06 vincentdarley Exp $
 
 library tcl
 
@@ -74,7 +74,7 @@ declare 12 generic {
 }
 declare 13 generic {
     int TclDoGlob(Tcl_Interp *interp, char *separators, \
-	    Tcl_DString *headPtr, char *tail, GlobTypeData *types)
+	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
 }
 declare 14 generic {
     void TclDumpMemoryInfo(FILE *outFile)
@@ -86,21 +86,22 @@ declare 14 generic {
 declare 16 generic {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-declare 17 generic {
-    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-}
-declare 18 generic {
-    int TclFileCopyCmd(Tcl_Interp *interp, int argc, char **argv)
-}
-declare 19 generic {
-    int TclFileDeleteCmd(Tcl_Interp *interp, int argc, char **argv)
-}
-declare 20 generic {
-    int TclFileMakeDirsCmd(Tcl_Interp *interp, int argc, char **argv)
-}
-declare 21 generic {
-    int TclFileRenameCmd(Tcl_Interp *interp, int argc, char **argv)
-}
+# Removed in 8.4
+#declare 17 generic {
+#    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+#}
+#declare 18 generic {
+#    int TclFileCopyCmd(Tcl_Interp *interp, int argc, char **argv)
+#}
+#declare 19 generic {
+#    int TclFileDeleteCmd(Tcl_Interp *interp, int argc, char **argv)
+#}
+#declare 20 generic {
+#    int TclFileMakeDirsCmd(Tcl_Interp *interp, int argc, char **argv)
+#}
+#declare 21 generic {
+#    int TclFileRenameCmd(Tcl_Interp *interp, int argc, char **argv)
+#}
 declare 22 generic {
     int TclFindElement(Tcl_Interp *interp, CONST char *listStr, \
 	    int listLength, CONST char **elementPtr, CONST char **nextPtr, \
@@ -235,10 +236,11 @@ declare 58 generic {
 	    int flags, char *msg, int createPart1, int createPart2, \
 	    Var **arrayPtrPtr)
 }
-declare 59 generic {
-    int TclpMatchFiles(Tcl_Interp *interp, char *separators, \
-	    Tcl_DString *dirPtr, char *pattern, char *tail)
-}
+# Replaced by Tcl_FSMatchInDirectory in 8.4
+#declare 59 generic {
+#    int TclpMatchFiles(Tcl_Interp *interp, char *separators, \
+#	    Tcl_DString *dirPtr, char *pattern, char *tail)
+#}
 declare 60 generic {
     int TclNeedSpace(char *start, char *end)
 }
@@ -272,19 +274,19 @@ declare 68 generic {
 declare 69 generic {
     char * TclpAlloc(unsigned int size)
 }
-declare 70 generic {
-    int TclpCopyFile(CONST char *source, CONST char *dest)
-}
-declare 71 generic {
-    int TclpCopyDirectory(CONST char *source, CONST char *dest, \
-	    Tcl_DString *errorPtr)
-}
-declare 72 generic {
-    int TclpCreateDirectory(CONST char *path)
-}
-declare 73 generic {
-    int TclpDeleteFile(CONST char *path)
-}
+#declare 70 generic {
+#    int TclpCopyFile(CONST char *source, CONST char *dest)
+#}
+#declare 71 generic {
+#    int TclpCopyDirectory(CONST char *source, CONST char *dest, \
+#	    Tcl_DString *errorPtr)
+#}
+#declare 72 generic {
+#    int TclpCreateDirectory(CONST char *path)
+#}
+#declare 73 generic {
+#    int TclpDeleteFile(CONST char *path)
+#}
 declare 74 generic {
     void TclpFree(char *ptr)
 }
@@ -310,13 +312,13 @@ declare 80 generic {
 declare 81 generic {
     char * TclpRealloc(char *ptr, unsigned int size)
 }
-declare 82 generic {
-    int TclpRemoveDirectory(CONST char *path, int recursive, \
-	    Tcl_DString *errorPtr)
-}
-declare 83 generic {
-    int TclpRenameFile(CONST char *source, CONST char *dest)
-}
+#declare 82 generic {
+#    int TclpRemoveDirectory(CONST char *path, int recursive, \
+#	    Tcl_DString *errorPtr)
+#}
+#declare 83 generic {
+#    int TclpRenameFile(CONST char *source, CONST char *dest)
+#}
 # Removed in 8.1:
 #  declare 84 generic {
 #      int TclParseBraces(Tcl_Interp *interp, char *str, char **termPtr, \
@@ -512,9 +514,9 @@ declare 135 generic {
 
 # Added in 8.1:
 
-declare 137 generic {
-   int TclpChdir(CONST char *dirName)
-}
+#declare 137 generic {
+#   int TclpChdir(CONST char *dirName)
+#}
 declare 138 generic {
     char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
 }
@@ -526,9 +528,9 @@ declare 139 generic {
 declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
-declare 141 generic {
-    char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
-}
+#declare 141 generic {
+#    char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+#}
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr, \
 	    CompileHookProc *hookProc, ClientData clientData)
@@ -601,10 +603,10 @@ declare 158 generic {
 declare 159 generic {
     char *TclGetStartupScriptFileName(void)
 }
-declare 160 generic {
-    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators, \
-	    Tcl_DString *dirPtr, char *pattern, char *tail, GlobTypeData *types)
-}
+#declare 160 generic {
+#    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators, \
+#	    Tcl_DString *dirPtr, char *pattern, char *tail, GlobTypeData *types)
+#}
 
 # new in 8.3.2/8.4a2
 declare 161 generic {
@@ -613,6 +615,31 @@ declare 161 generic {
 }
 declare 162 generic {
     void TclChannelEventScriptInvoker(ClientData clientData, int flags)
+}
+# for virtual filesystem support.  These should eventually be moved to
+# Tcl's external API and properly documented, to allow extension writers 
+# to use them easily (hence providing automatic VFS support to all
+# extensions)
+declare 163 generic {
+    int TclFileCopyCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+}
+declare 164 generic {
+    int TclFileRenameCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+}
+declare 165 generic {
+    int TclFileDeleteCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+}
+declare 166 generic {
+    int TclFileMakeDirsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+}
+declare 167 generic {
+    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
+}
+declare 168 generic {
+    Tcl_Obj* TclpTempFileName(void)
+}
+declare 169 generic {
+    void TclpSetInitialEncodings(void)
 }
 
 ##############################################################################
@@ -870,3 +897,4 @@ declare 8 unix {
 declare 9 unix {
     TclFile TclpCreateTempFile(CONST char *contents)
 }
+

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.4 1999/12/01 00:08:28 hobbs Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.5 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -19,7 +19,8 @@
  * either dynamically (with the "load" command) or statically (as
  * indicated by a call to TclGetLoadedPackages).  All such packages
  * are linked together into a single list for the process.  Packages
- * are never unloaded, so these structures are never freed.
+ * are never unloaded, until the application exits, when 
+ * TclFinalizeLoad is called, and these structures are freed.
  */
 
 typedef struct LoadedPackage {
@@ -32,7 +33,7 @@ typedef struct LoadedPackage {
 				 * others LC), no "_", as in "Net". 
 				 * Malloc-ed. */
     ClientData clientData;	/* Token for the loaded file which should be
-				 * passed to TclpUnloadFile() when the file
+				 * passed to (*unLoadProcPtr)() when the file
 				 * is no longer needed.  If fileName is NULL,
 				 * then this field is irrelevant. */
     Tcl_PackageInitProc *initProc;
@@ -46,6 +47,11 @@ typedef struct LoadedPackage {
 				 * untrusted scripts).   NULL means the
 				 * package can't be used in unsafe
 				 * interpreters. */
+    Tcl_FSUnloadFileProc *unLoadProcPtr;
+				/* Procedure to use to unload this package.
+				 * If NULL, then we do not attempt to unload
+				 * the package.  If fileName is NULL, then
+				 * this field is irrelevant. */
     struct LoadedPackage *nextPtr;
 				/* Next in list of all packages loaded into
 				 * this application process.  NULL means
@@ -113,12 +119,13 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 {
     Tcl_Interp *target;
     LoadedPackage *pkgPtr, *defaultPtr;
-    Tcl_DString pkgName, tmp, initName, safeInitName, fileName;
+    Tcl_DString pkgName, tmp, initName, safeInitName;
     Tcl_PackageInitProc *initProc, *safeInitProc;
     InterpPackage *ipFirstPtr, *ipPtr;
     int code, namesMatch, filesMatch;
-    char *p, *tempString, *fullFileName, *packageName;
+    char *p, *fullFileName, *packageName;
     ClientData clientData;
+    Tcl_FSUnloadFileProc *unLoadProcPtr = NULL;
     Tcl_UniChar ch;
     int offset;
 
@@ -126,11 +133,11 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
         Tcl_WrongNumArgs(interp, 1, objv, "fileName ?packageName? ?interp?");
 	return TCL_ERROR;
     }
-    tempString = Tcl_GetString(objv[1]);
-    fullFileName = Tcl_TranslateFileName(interp, tempString, &fileName);
-    if (fullFileName == NULL) {
+    if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
 	return TCL_ERROR;
     }
+    fullFileName = Tcl_GetString(objv[1]);
+    
     Tcl_DStringInit(&pkgName);
     Tcl_DStringInit(&initName);
     Tcl_DStringInit(&safeInitName);
@@ -328,9 +335,9 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 	 */
 
 	Tcl_MutexLock(&packageMutex);
-	code = TclpLoadFile(interp, fullFileName, Tcl_DStringValue(&initName),
+	code = Tcl_FSLoadFile(interp, objv[1], Tcl_DStringValue(&initName),
 		Tcl_DStringValue(&safeInitName), &initProc, &safeInitProc,
-		&clientData);
+		&clientData,&unLoadProcPtr);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
 	    goto done;
@@ -338,7 +345,9 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 	if (initProc == NULL) {
 	    Tcl_AppendResult(interp, "couldn't find procedure ",
 		    Tcl_DStringValue(&initName), (char *) NULL);
-	    TclpUnloadFile(clientData);
+	    if (unLoadProcPtr != NULL) {
+		(*unLoadProcPtr)(clientData);
+	    }
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -355,6 +364,7 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 		(Tcl_DStringLength(&pkgName) + 1));
 	strcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName));
 	pkgPtr->clientData	= clientData;
+	pkgPtr->unLoadProcPtr	= unLoadProcPtr;
 	pkgPtr->initProc	= initProc;
 	pkgPtr->safeInitProc	= safeInitProc;
 	Tcl_MutexLock(&packageMutex);
@@ -410,7 +420,6 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
     Tcl_DStringFree(&pkgName);
     Tcl_DStringFree(&initName);
     Tcl_DStringFree(&safeInitName);
-    Tcl_DStringFree(&fileName);
     Tcl_DStringFree(&tmp);
     return code;
 }
@@ -653,7 +662,10 @@ TclFinalizeLoad()
 	 * call a function in the dll after it's been unloaded.
 	 */
 	if (pkgPtr->fileName[0] != '\0') {
-	    TclpUnloadFile(pkgPtr->clientData);
+	    Tcl_FSUnloadFileProc *unLoadProcPtr = pkgPtr->unLoadProcPtr;
+	    if (unLoadProcPtr != NULL) {
+	        (*unLoadProcPtr)(pkgPtr->clientData);
+	    }
 	}
 #endif
 	ckfree(pkgPtr->fileName);

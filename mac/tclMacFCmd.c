@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.7 1999/10/15 04:47:03 jingham Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.8 2001/07/31 19:12:07 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +25,7 @@
 #include <Script.h>
 #include <string.h>
 #include <Finder.h>
+#include <Aliases.h>
 
 /*
  * Callback for the file attributes code.
@@ -97,6 +98,73 @@ static OSErr		MoveRename _ANSI_ARGS_((const FSSpec *srcSpecPtr,
 static int		Pstrequal _ANSI_ARGS_((ConstStr255Param stringA, 
 			    ConstStr255Param stringB));
                  
+int 
+TclpObjCreateDirectory(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    return TclpCreateDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+}
+
+int 
+TclpObjDeleteFile(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    return TclpDeleteFile(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+}
+
+int 
+TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+    Tcl_Obj **errorPtr;
+{
+    Tcl_DString ds;
+    int ret;
+    ret = TclpCopyDirectory(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			    Tcl_FSGetTranslatedPath(NULL,destPathPtr), &ds);
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
+}
+
+int 
+TclpObjCopyFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return TclpCopyFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+}
+
+int 
+TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
+    Tcl_Obj *pathPtr;
+    int recursive;
+    Tcl_Obj **errorPtr;
+{
+    Tcl_DString ds;
+    int ret;
+    ret = TclpRemoveDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr),recursive, &ds);
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
+}
+
+int 
+TclpObjRenameFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return TclpRenameFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
+			  Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1547,5 +1615,175 @@ TclpListVolumes(
         
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;      
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpObjNormalizePath --
+ *
+ *	This function scans through a path specification and replaces
+ *	it, in place, with a normalized version.  On MacOS, this means
+ *	resolving all aliases present in the path and replacing the head of
+ *	pathPtr with the absolute case-sensitive path to the last file or
+ *	directory that could be validated in the path.
+ *
+ * Results:
+ *	The new 'nextCheckpoint' value, giving as far as we could
+ *	understand in the path.
+ *
+ * Side effects:
+ *	The pathPtr string, which must contain a valid path, is
+ *	possibly modified in place.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
+    Tcl_Interp *interp;
+    Tcl_Obj *pathPtr;
+    int nextCheckpoint;
+{
+ 	#define MAXMACFILENAMELEN 31  /* assumed to be < sizeof(StrFileName) */
+ 
+    StrFileName fileName;
+    StringPtr fileNamePtr;
+    int fileNameLen,newPathLen;
+    Handle newPathHandle;
+    OSErr err;
+    short vRefNum;
+    long dirID;
+    Boolean isDirectory;
+    Boolean wasAlias;
+	FSSpec fileSpec;
+
+	Tcl_DString nativeds;
+
+	char cur;
+	int firstCheckpoint=nextCheckpoint, lastCheckpoint;
+	int origPathLen;
+    char *path = Tcl_GetStringFromObj(pathPtr,&origPathLen);
+
+	{
+	int currDirValid=0;    
+    /*
+     * check if substring to first ':' after initial
+     * nextCheckpoint is a valid relative or absolute
+     * path to a directory, if not we return without
+     * normalizing anything
+     */
+    
+    while (1) {
+	cur = path[nextCheckpoint];
+	if (cur == ':' || cur == 0) {
+	    if (cur == ':') { nextCheckpoint++; cur = path[nextCheckpoint]; } /* jump over separator */
+		Tcl_UtfToExternalDString(NULL,path,nextCheckpoint,&nativeds);	    
+	    err = FSpLocationFromPath(Tcl_DStringLength(&nativeds), Tcl_DStringValue(&nativeds), &fileSpec);
+	    Tcl_DStringFree(&nativeds);
+	    if (err == noErr) {
+	    	err = FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
+	    	currDirValid = ((err == noErr) && isDirectory);
+	    	vRefNum = fileSpec.vRefNum;
+	    	}
+		break;
+	}
+	nextCheckpoint++;
+    }
+    
+    if(!currDirValid) return firstCheckpoint; /* can't determine root dir, bail out */
+	}
+	
+	/*
+	 * Now vRefNum and dirID point to a valid
+	 * directory, so walk the rest of the path
+	 * ( code adapted from FSpLocationFromPath() )
+	 */
+
+	lastCheckpoint=nextCheckpoint;
+    while (1) {
+	cur = path[nextCheckpoint];
+	if (cur == ':' || cur == 0) {
+		fileNameLen=nextCheckpoint-lastCheckpoint;
+		fileNamePtr=fileName;
+		if(fileNameLen==0) {
+			if (cur == ':') {
+				/*
+				 * special case for empty dirname i.e. encountered
+				 * a '::' path component: get parent dir of currDir
+				 */
+				 fileName[0]=2;
+				 strcpy((char *) fileName + 1, "::");
+				 lastCheckpoint--;
+			 } else {
+			 	/*
+			 	 * empty filename, i.e. want FSSpec for currDir
+			 	 */
+			 	fileNamePtr=NULL;
+			 }
+		} else {
+			Tcl_UtfToExternalDString(NULL,&path[lastCheckpoint],fileNameLen,&nativeds);
+			fileNameLen=Tcl_DStringLength(&nativeds);
+			if(fileNameLen > MAXMACFILENAMELEN) fileNameLen=MAXMACFILENAMELEN;
+			fileName[0]=fileNameLen;
+			strncpy((char *) fileName + 1, Tcl_DStringValue(&nativeds), fileNameLen);
+	    	Tcl_DStringFree(&nativeds);
+		}
+		err=FSMakeFSSpecCompat(vRefNum, dirID, fileNamePtr, &fileSpec);
+		if(err != noErr) {
+			if(err != fnfErr) {
+				/*
+				 * this can if trying to get parent of a root volume via '::'
+				 * or when using an illegal filename
+				 * revert to last checkpoint and stop processing path further
+				 */
+				err=FSMakeFSSpecCompat(vRefNum, dirID, NULL, &fileSpec);
+				if(err != noErr) return firstCheckpoint; /* should never happen, bail out */
+				nextCheckpoint=lastCheckpoint;
+				cur = path[lastCheckpoint];
+    		}
+    		break; /* arrived at nonexistent file or dir */
+		} else {
+			/* fileSpec could point to an alias, resolve it */
+			err = ResolveAliasFile(&fileSpec, true, &isDirectory, &wasAlias);
+			if (err != noErr || !isDirectory) break; /* fileSpec doesn't point to a dir */
+		}
+		if (cur == 0) break; /* arrived at end of path */
+		
+		/* fileSpec points to possibly nonexisting subdirectory; validate */
+    	err = FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
+		if (err != noErr || !isDirectory) break; /* fileSpec doesn't point to existing dir */
+    	vRefNum = fileSpec.vRefNum;
+    	
+    	/* found a new valid subdir in path, continue processing path */
+    	lastCheckpoint=nextCheckpoint+1;
+	}
+	nextCheckpoint++;
+    }
+
+	/*
+	 * fileSpec now points to a possibly nonexisting file or dir
+	 *  inside a valid dir; get full path name to it
+	 */
+	
+	err=FSpPathFromLocation(&fileSpec, &newPathLen, &newPathHandle);
+	if(err != noErr) return firstCheckpoint; /* should not see any errors here, bail out */
+	
+	HLock(newPathHandle);
+	Tcl_ExternalToUtfDString(NULL,*newPathHandle,newPathLen,&nativeds);
+    if (cur != 0) {
+    	/* not at end, append remaining path */
+    	if ( newPathLen==0 || *(*newPathHandle+(newPathLen-1))!=':') {
+    		Tcl_DStringAppend(&nativeds, ":" , 1);
+    	}
+    	Tcl_DStringAppend(&nativeds, &path[nextCheckpoint+1], strlen(&path[nextCheckpoint+1]));
+    }
+	DisposeHandle(newPathHandle);
+	
+	fileNameLen=Tcl_DStringLength(&nativeds);
+	Tcl_SetStringObj(pathPtr,Tcl_DStringValue(&nativeds),fileNameLen);
+	Tcl_DStringFree(&nativeds);
+    
+	return nextCheckpoint+(fileNameLen-origPathLen);
 }
 

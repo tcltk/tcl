@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.11 2000/07/26 01:28:24 davidg Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.12 2001/07/31 19:12:07 vincentdarley Exp $
  */
 
 
@@ -218,6 +218,26 @@ extern char **environ;
  */
  
 #define HAVE_TM_ZONE 
+ 
+ 
+/*
+ * If we're using the Metrowerks MSL, we need to convert time_t values from
+ * the mac epoch to the msl epoch (== unix epoch) by adding the offset from
+ * <time.mac.h> to mac time_t values, as MSL is using its epoch for file
+ * access routines such as stat or utime
+ */
+
+#ifdef __MSL__
+#include <time.mac.h>
+#ifdef _mac_msl_epoch_offset_
+#define tcl_mac_epoch_offset  _mac_msl_epoch_offset_
+#define TCL_MAC_USE_MSL_EPOCH  /* flag for TclDate.c */
+#else
+#define tcl_mac_epoch_offset 0L
+#endif
+#else
+#define tcl_mac_epoch_offset 0L
+#endif
  
 /*
  * The following macros have trivial definitions, allowing generic code to 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.8 2000/09/07 14:27:48 poenitz Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.9 2001/07/31 19:12:06 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -51,6 +51,15 @@ matches the given patterns.  This allows searching for files with names
 similar to a given file even when the names contain glob-sensitive
 characters.  This option may not be used in conjunction with
 \fB\-directory\fR.
+.TP
+\fB\-tails\fR
+Only return the part of each file found which follows the last directory
+named in any \fB\-directory\fR or \fB\-path\fR path specification.  
+Thus \fBglob -tails -dir $dir *\fR is equivalent to 
+\fBset pwd [pwd] ; cd $dir ; glob *; cd $pwd\fR.  For 
+\fB\-path\fR specifications, the returned names will include the last
+path segment, so \fBglob -tails -path /usr/loc */*\fR will return paths
+like \fBlocal/bin local/lib\fR etc.
 .TP
 \fB\-types\fR \fItypeList\fR
 Only list files or directories which match \fItypeList\fR, where the items
@@ -114,8 +123,14 @@ Matches the character \fIx\fR.
 \fB{\fIa\fB,\fIb\fB,\fI...\fR}
 Matches any of the strings \fIa\fR, \fIb\fR, etc.
 .LP
-As with csh, a  ``.'' at the beginning of a file's name or just
-after a ``/'' must be matched explicitly or with a {} construct.
+On Unix, as with csh, a ``.'' at the beginning of a file's name or just
+after a ``/'' must be matched explicitly or with a {} construct,
+unless the ``-types hidden'' flag is given (since ``.'' at the beginning 
+of a file's name indicates that it is hidden).  On other platforms,
+files beginning with a ``.'' are handled no differently to any others,
+except the special directories ``.'' and ``..'' which must be matched
+explicitly (this is to avoid a recursive pattern like ``glob -join * *
+* *'' from recursing up the directory hierarchy as well as down).
 In addition, all ``/'' characters must be matched explicitly.
 .LP
 If the first character in a \fIpattern\fR is ``~'' then it refers
