@@ -1,3 +1,8 @@
+2004-11-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/AddErrInfo.3:	Typo corrections (Thanks Daniel South).
+	* doc/interp.n:
+
 2004-11-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/AddErrInfo.3:	Docs for Tcl_(Get|Set)ReturnOptions.  [TIP 227]
