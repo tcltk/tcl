@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.15 2001/12/05 20:43:58 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.16 2001/12/07 13:55:59 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -56,6 +56,18 @@ proc traceCommand {oldName newName op} {
     global info
     set info [list $oldName $newName $op]
 }
+
+test trace-0.0 {memory corruption in trace (Tcl Bug 484339)} {
+    # You may need Purify or Electric Fence to reliably
+    # see this one fail.
+    catch {unset z}
+    trace add variable z array {set z(foo) 1 ;#}
+    set res "names: [array names z]"
+    catch {unset ::z}
+    trace variable ::z w {unset ::z; error "memory corruption";#}
+    list [catch {set ::z 1} msg] $msg
+} {1 {can't set "::z": memory corruption}}
+
 # Read-tracing on variables
 
 test trace-1.1 {trace variable reads} {
@@ -913,7 +925,7 @@ test trace-15.3 {special list-handling in trace commands} {
     trace add variable "x y z(a\n\{)" write traceProc
     set "x y z(a\n\{)" 33
     set info
-} "{x y z} a\\n\\{ write"
+} "{x y z} a\\n\\\{ write"
 
 # Check for proper handling of unsets during traces.
 
