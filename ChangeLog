@@ -1,3 +1,64 @@
+2002-08-31  Daniel Steffen  <das@users.sourceforge.net>
+
+	*** macosx-8-4-branch merged into the mainline ***
+
+	* generic/tcl.decls: added new macosx specific entry to stubs table.
+
+	* tools/genStubs.tcl: added generation of platform guards for
+	macosx. This is a little more complex than it seems, because MacOS
+	X IS "unix" plus a little bit, for the purposes of Tcl. BUT
+	unfortunately, Tk uses "unix" to mean X11. So added platform keys
+	for macosx (the little added to "unix"), "aqua" and "x11" to
+	distinguish these for Tk.
+	
+	* generic/tcl.h: added a #ifnded RESOURCE_INCLUDED so that tcl.h
+	can be passed to the resource compiler.
+	
+	* generic/tcl.h:
+	* generic/tclNotify.c: added a few Notifier procs, to be able to
+	modify more bits of the Tcl notifier dynamically. Required to get
+	Mac OS X Tk to live on top of the Tcl Unix threaded notifier.
+	Changes the size of the Tcl_NotifierProcs structure, but doesn't
+	move any elements around.
+
+	* unix/tclUnixNotfy.c: moved the call to Tcl_ConditionNotify till
+	AFTER we are done mucking with the pointer swap. Fixes cases where
+	the thread waiting on the condition wakes & accesses the
+	waitingListPtr before it gets reset, causing a hang.
+
+	* library/auto.tcl (tcl_findLibrary): added checking the
+	directories in the tcl_pkgPath for library files on macosx to
+	enable support of the standard Mac OSX library locations
+
+	* unix/Makefile.in:
+	* unix/configure.in:
+	* unix/tcl.m4: added MAC_OSX_DIR.  Added PLAT_OBJS to the OBJS:
+	there are some MacOS X specific files now for Tcl, and when I get
+	he resource & applescript stuff ported over, and restore support
+	for FindFiles, etc, there will be a few more.
+	Added LD_LIBRARY_PATH_VAR configure variable to avoid having to set
+	all possible LD_LIBRARY_PATH analogues on all platforms.
+	LD_LIBRARY_PATH_VAR is "LD_LIBRARY_PATH" by default, "LIBPATH" on
+	AIX, "SHLIB_PATH" on HPUX and "DYLD_LIBRARY_PATH" on Mac OSX.
+	Added configure option to package Tcl as a framework on Mac OSX.
+
+	* macosx/tclMacOSXBundle.c (new): support for finding Tcl extension
+	packaged as 'bundles' in the standard Mac OSX library locations.
+
+	* unix/tclUnixInit.c: added support for findig the tcl script
+	library inside Tcl packaged as a framework on Mac OSX.
+
+	* macosx/Tcl.pbproj/jingham.pbxuser (new):
+	* macosx/Tcl.pbproj/project.pbxproj (new): project for Apple's
+	ProjectBuilder IDE.
+
+	* macosx/Makefile (new): simple makefile for building the project
+	from the command line via the ProjectBuilder tool 'pbxbuild'.
+
+	* unix/configure:
+	* generic/tclStubInit.c:
+	* generic/tclPlatDecls.h: regen
+
 2002-08-29  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* win/tclWinThrd.c (TclpFinalizeThreadData, TclWinFreeAllocCache):
