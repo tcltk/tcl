@@ -5,32 +5,6 @@
 	};
 	objectVersion = 38;
 	objects = {
-		00530A0D0173C8270ACA28DC = {
-			buildActionMask = 12;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# install to ${INSTALL_ROOT} with optional stripping\ncd ${TEMP_DIR}/..\nif test \"${INSTALL_STRIP}\" = \"YES\"; then\nexport INSTALL_PROGRAM='${INSTALL} ${INSTALL_STRIP_PROGRAM}'\nexport INSTALL_LIBRARY='${INSTALL} ${INSTALL_STRIP_LIBRARY}'\nelse\nexport INSTALL_PROGRAM='${INSTALL}'\nexport INSTALL_LIBRARY='${INSTALL}'\nfi\nexport CPPROG='cp -p'\ngnumake install-binaries install-libraries TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" INSTALL_ROOT=\"${INSTALL_ROOT}\" SCRIPT_INSTALL_DIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/Scripts\" INSTALL_PROGRAM=\"${INSTALL_PROGRAM}\" INSTALL_LIBRARY=\"${INSTALL_LIBRARY}\"";
-		};
-		00530A0E0173CC960ACA28DC = {
-			buildActionMask = 12;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# fixup Framework structure\ncd \"${INSTALL_ROOT}${LIBDIR}\"\nln -fs Versions/Current/Headers ../..\nln -fs \"Versions/Current/tclConfig.sh\" ../..\nln -fs `ls libtclstub* | sed -e \"s|.*|Versions/${FRAMEWORK_VERSION}/&|\"` ../..\nif [ \"${BUILD_STYLE}\" = \"Development\" ]; then\n\t# keep copy of debug library around, so that\n\t# Deployment build can be installed on top\n\t# of Development build without overwriting\n\t# the debug library\n\tcp -fp \"${PRODUCT_NAME}\" \"${PRODUCT_NAME}_debug\"\n\tln -fs \"Versions/Current/${PRODUCT_NAME}_debug\" ../..\nfi";
-		};
 		00E2F845016E82EB0ACA28DC = {
 			buildStyles = (
 				00E2F847016E82EB0ACA28DC,
@@ -42,8 +16,6 @@
 			productRefGroup = 00E2F84A016E8A830ACA28DC;
 			projectDirPath = "";
 			targets = (
-				00E2F84E016E92110ACA28DC,
-				00E2F84B016E8A830ACA28DC,
 				00E2F84C016E8B780ACA28DC,
 			);
 		};
@@ -65,9 +37,7 @@
 			buildRules = (
 			);
 			buildSettings = {
-				EXTRA_CONFIGURE_FLAGS = "--enable-symbols";
-				INSTALL_STRIP = NO;
-				TEMP_DIR = "${OBJROOT}/Development.build/$(PROJECT_NAME).build/$(TARGET_NAME).build";
+				MAKE_TARGET = develop;
 			};
 			isa = PBXBuildStyle;
 			name = Development;
@@ -76,15 +46,14 @@
 			buildRules = (
 			);
 			buildSettings = {
-				INSTALL_STRIP = YES;
-				TEMP_DIR = "${OBJROOT}/Deployment.build/$(PROJECT_NAME).build/$(TARGET_NAME).build";
+				MAKE_TARGET = deploy;
 			};
 			isa = PBXBuildStyle;
 			name = Deployment;
 		};
 		00E2F84A016E8A830ACA28DC = {
 			children = (
-				00E2F84D016E92110ACA28DC,
+				F9A61C9D04C2B4E3006F5A0B,
 				F53ACC5C031D9D11016F146B,
 				F53ACC73031DA405016F146B,
 			);
@@ -92,133 +61,30 @@
 			name = Products;
 			refType = 4;
 		};
-		00E2F84B016E8A830ACA28DC = {
-			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then if [ -z \\\"`find . ! \\\\( -path './*/*' -prune \\\\) -name Makefile -newer \\\"${SRCROOT}/../unix/configure\\\"`\\\" ]; then \\\"${SRCROOT}/../unix/configure\\\" --prefix=/usr --mandir=/usr/share/man --libdir=\\\"${LIBDIR}\\\" --includedir=\\\"${LIBDIR}/Headers\\\" --enable-threads --enable-framework ${EXTRA_CONFIGURE_FLAGS}; mkdir -p Tcl.framework; ln -fs ../Tcl Tcl.framework/Tcl; fi; fi\"";
-			buildPhases = (
-			);
-			buildSettings = {
-				EXTRA_CONFIGURE_FLAGS = "";
-				FRAMEWORK_VERSION = 8.5;
-				INSTALL_PATH = /Library/Frameworks;
-				LIBDIR = "${INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${FRAMEWORK_VERSION}";
-				PRODUCT_NAME = Tcl;
-			};
-			buildToolPath = /bin/sh;
-			buildWorkingDirectory = "${TEMP_DIR}/..";
-			dependencies = (
-			);
-			isa = PBXLegacyTarget;
-			name = Configure;
-			passBuildSettingsInEnvironment = 1;
-			productName = Configure;
-			settingsToExpand = 6;
-			settingsToPassInEnvironment = 287;
-			settingsToPassOnCommandLine = 280;
-		};
 		00E2F84C016E8B780ACA28DC = {
-			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then gnumake tclsh tcltest TCL_LIBRARY=\\\"@TCL_IN_FRAMEWORK@\\\" TCL_PACKAGE_PATH=\\\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks\\\" DYLIB_INSTALL_DIR=\\\"${DYLIB_INSTALL_DIR}\\\" ${EXTRA_MAKE_FLAGS}; else gnumake distclean; fi\"";
+			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then if [ \\\"${ACTION}\\\" = \\\"install\\\" ]; then MAKE_ACTION=\"install-\"; fi; else MAKE_ACTION=\"distclean-\"; fi; gnumake \\${MAKE_ACTION:-}${MAKE_TARGET}";
 			buildPhases = (
 			);
 			buildSettings = {
-				DYLIB_INSTALL_DIR = "${DYLIB_INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${FRAMEWORK_VERSION}";
-				DYLIB_INSTALL_PATH = "${INSTALL_PATH}";
-				EXTRA_MAKE_FLAGS = "";
-				FRAMEWORK_VERSION = 8.5;
+				EXTRA_CONFIGURE_ARGS = "";
+				EXTRA_MAKE_ARGS = "";
 				INSTALL_PATH = /Library/Frameworks;
+				INSTALL_ROOT = "${DSTROOT}";
+				PREFIX = /usr;
 				PRODUCT_NAME = Tcl;
+				SYMROOT = "${SRCROOT}/../../build/tcl";
 			};
 			buildToolPath = /bin/sh;
-			buildWorkingDirectory = "${TEMP_DIR}/..";
+			buildWorkingDirectory = "${SRCROOT}";
 			dependencies = (
-				F5877EB5031F7997016F146B,
 			);
 			isa = PBXLegacyTarget;
-			name = Make;
+			name = Tcl;
 			passBuildSettingsInEnvironment = 1;
-			productName = Make;
+			productName = Tcl;
 			settingsToExpand = 6;
 			settingsToPassInEnvironment = 287;
 			settingsToPassOnCommandLine = 280;
-		};
-		00E2F84D016E92110ACA28DC = {
-			isa = PBXFrameworkReference;
-			path = Tcl.framework;
-			refType = 3;
-		};
-		00E2F84E016E92110ACA28DC = {
-			buildPhases = (
-				F5877FB6031F97AF016F146B,
-				F50DC36A01703B7301DC9062,
-				F50DC367017033D701DC9062,
-				F50DC3680170344801DC9062,
-				00E2F84F016E92110ACA28DC,
-				F5BE9BBF02FB5974016F146B,
-				00530A0D0173C8270ACA28DC,
-				00530A0E0173CC960ACA28DC,
-				F5877FBB031FA90A016F146B,
-				F59AE5E3017AC67A01DC9062,
-			);
-			buildSettings = {
-				DSTROOT = "${TEMP_DIR}";
-				EXTRA_MAKE_INSTALL_FLAGS = "";
-				FRAMEWORK_VERSION = 8.5;
-				INSTALL_PATH = /Library/Frameworks;
-				LIBDIR = "${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}";
-				PRODUCT_NAME = Tcl;
-				WRAPPER_EXTENSION = framework;
-			};
-			dependencies = (
-				F5877EB6031F79A4016F146B,
-			);
-			isa = PBXFrameworkTarget;
-			name = Tcl;
-			productInstallPath = /Library/Frameworks;
-			productName = TclLibrary;
-			productReference = 00E2F84D016E92110ACA28DC;
-			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-<dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>Tcl</string>
-	<key>CFBundleGetInfoString</key>
-	<string>Tcl Library 8.5, Copyright Â© 2003 Tcl Core Team.
-MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â© 2001-2002, Apple Computer, Inc.</string>
-	<key>CFBundleIconFile</key>
-	<string></string>
-	<key>CFBundleIdentifier</key>
-	<string>com.tcltk.tcllibrary</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>Tcl Library 8.5</string>
-	<key>CFBundlePackageType</key>
-	<string>FMWK</string>
-	<key>CFBundleShortVersionString</key>
-	<string>8.5a0</string>
-	<key>CFBundleSignature</key>
-	<string>Tcl </string>
-	<key>CFBundleVersion</key>
-	<string>8.5a0</string>
-</dict>
-</plist>
-";
-		};
-		00E2F84F016E92110ACA28DC = {
-			buildActionMask = 2147483647;
-			files = (
-				F59D846A0338FAA4016F146B,
-				F59D846B0338FAA4016F146B,
-				F59D846E0338FAA4016F146B,
-				F59D84620338F9CA016F146B,
-				F59D846C0338FAA4016F146B,
-				F59D846D0338FAA4016F146B,
-				F5C093BB0342F7D6016F146B,
-			);
-			isa = PBXHeadersBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		00E2F854016E922C0ACA28DC = {
 			children = (
@@ -411,33 +277,6 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 //F52
 //F53
 //F54
-		F50DC367017033D701DC9062 = {
-			buildActionMask = 2147483647;
-			files = (
-			);
-			isa = PBXFrameworksBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F50DC3680170344801DC9062 = {
-			buildActionMask = 2147483647;
-			files = (
-			);
-			isa = PBXResourcesBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F50DC36A01703B7301DC9062 = {
-			buildActionMask = 2147483647;
-			files = (
-				F59D84630338F9EC016F146B,
-				F59D84640338F9ED016F146B,
-				F59D84670338FA8B016F146B,
-				F59D84680338FA8D016F146B,
-				F59D84690338FA90016F146B,
-				F5C093BA0342F7B4016F146B,
-			);
-			isa = PBXSourcesBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		F5306C9F03CAC979016F146B = {
 			children = (
 				F5306CA303CAC9DE016F146B,
@@ -478,170 +317,20 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 		F53ACC5C031D9D11016F146B = {
 			isa = PBXExecutableFileReference;
 			name = tclsh8.5;
-			path = ../../build/tclsh8.5;
+			path = ../../build/tcl/tclsh8.5;
 			refType = 2;
 		};
 		F53ACC73031DA405016F146B = {
 			isa = PBXExecutableFileReference;
 			name = tcltest;
-			path = ../../build/tcltest;
+			path = ../../build/tcl/tcltest;
 			refType = 2;
-		};
-		F5877EB5031F7997016F146B = {
-			isa = PBXTargetDependency;
-			target = 00E2F84B016E8A830ACA28DC;
-		};
-		F5877EB6031F79A4016F146B = {
-			isa = PBXTargetDependency;
-			target = 00E2F84C016E8B780ACA28DC;
-		};
-		F5877FB6031F97AF016F146B = {
-			buildActionMask = 8;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "# ensure we can overwrite a previous install\nif [ -d \"${INSTALL_ROOT}${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}\" ]; then\n    chmod -RH u+w \"${INSTALL_ROOT}${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}\"\nfi";
-		};
-		F5877FBB031FA90A016F146B = {
-			buildActionMask = 8;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "if [ -n \"${EMBEDDED_BUILD:-}\" ]; then\n# if we are embedding frameworks, don't install tclsh\nrm -f \"${INSTALL_ROOT}/usr/bin/tclsh${FRAMEWORK_VERSION}\"\nrmdir -p \"${INSTALL_ROOT}/usr/bin\" 2>&-\ntrue\nelse\n# redo prebinding\ncd \"${INSTALL_ROOT}\"\nif [ ! -d usr/lib ]; then mkdir -p usr; ln -fs /usr/lib usr/; RM_USRLIB=1; fi\nif [ ! -d System ]; then ln -fs /System .; RM_SYSTEM=1; fi\nredo_prebinding -r . \"./usr/bin/tclsh${FRAMEWORK_VERSION}\"\nif [ -n \"${RM_USRLIB:-}\" ]; then rm -f usr/lib; rmdir -p usr 2>&-; fi\nif [ -n \"${RM_SYSTEM:-}\" ]; then rm -f System; fi\n# install tclsh symbolic link\nmkdir -p \"${INSTALL_ROOT}/usr/bin\"\nln -fs \"tclsh${FRAMEWORK_VERSION}\" \"${INSTALL_ROOT}/usr/bin/tclsh\"\nfi";
-		};
-		F59AE5E3017AC67A01DC9062 = {
-			buildActionMask = 8;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "if [ -z \"${EMBEDDED_BUILD:-}\" ]; then\n# build html documentation\nif [ \"${BUILD_STYLE}\" = \"Deployment\" ]; then\n    cd \"${TEMP_DIR}/..\"\n    export DYLD_FRAMEWORK_PATH=${SYMROOT}\n    gnumake html DISTDIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    cd \"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    ln -fs contents.htm html/TclTOC.html\n    rm -fr \"${PRODUCT_NAME}\"; mv -f html \"${PRODUCT_NAME}\"\nfi\nfi";
-		};
-		F59D84620338F9CA016F146B = {
-			fileRef = F5F24F72016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F59D84630338F9EC016F146B = {
-			fileRef = F5F24F73016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D84640338F9ED016F146B = {
-			fileRef = F5F24F74016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D84670338FA8B016F146B = {
-			fileRef = F5F24F6E016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D84680338FA8D016F146B = {
-			fileRef = F5F24F70016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D84690338FA90016F146B = {
-			fileRef = F5F24F77016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D846A0338FAA4016F146B = {
-			fileRef = F5F24F6E016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D846B0338FAA4016F146B = {
-			fileRef = F5F24F70016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F59D846C0338FAA4016F146B = {
-			fileRef = F5F24F73016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F59D846D0338FAA4016F146B = {
-			fileRef = F5F24F74016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F59D846E0338FAA4016F146B = {
-			fileRef = F5F24F77016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		F5A1836F018242A501DC9062 = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
 			path = tclMacOSXBundle.c;
 			refType = 2;
-		};
-		F5BE9BBF02FB5974016F146B = {
-			buildActionMask = 2147483647;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# symolic link hackery to trick\n# 'make install INSTALL_ROOT=${TEMP_DIR}'\n# into building Tcl.framework and tclsh in ${SYMROOT}\ncd \"${TEMP_DIR}\"\nmkdir -p Library\nmkdir -p usr\nrm -f Library/Frameworks; ln -fs \"${SYMROOT}\" Library/Frameworks\nrm -f usr/bin; ln -fs \"${SYMROOT}\" usr/bin\nln -fs \"${TEMP_DIR}/../tcltest\" \"${SYMROOT}\"";
-		};
-		F5C093BA0342F7B4016F146B = {
-			fileRef = F5F24F76016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5C093BB0342F7D6016F146B = {
-			fileRef = F5F24F76016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
 		};
 		F5C88655017D604601DC9062 = {
 			children = (
@@ -1572,6 +1261,12 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 //F92
 //F93
 //F94
+		F9A61C9D04C2B4E3006F5A0B = {
+			isa = PBXFrameworkReference;
+			name = Tcl.framework;
+			path = ../../build/tcl/Tcl.framework;
+			refType = 2;
+		};
 		F9FED5C6047C7CEC006F146B = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
