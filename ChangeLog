@@ -1,3 +1,11 @@
+2002-07-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Made Solaris use gcc for linking
+	when building with gcc to resolve problems with undefined symbols
+	being present when tcl library used with non-gcc linker at later
+	stage. Symbols were compiler-generated, so it is the compiler's
+	business to define them. [Bug #541181] 
+
 2002-07-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/pkg/samename.tcl: restored.  needed by pkgMkIndex.test.
