@@ -9,8 +9,7 @@
 	* generic/tclNamesp.c (TclInitNamespaceSubsystem): 
 	* generic/tclInt.h: Moved some Tcl_ObjType initialisation to
 	TclInitObjSubsystem to be with the bulk of the rest.
-	[Patch 
-	Committed by Miguel Sofer <msofer@users.sourceforge.net>
+	[Patch 424851] Committed by Miguel Sofer <mig@utdt.edu>
 
 
 2001-05-23  Jeff Hobbs  <jeffh@ActiveState.com>
