@@ -1,5 +1,8 @@
 2001-05-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* library/history.tcl (tcl::HistAdd): prevent empty calls from
+	being added to the history (arndt)
+
 	* tests/error.test: updated error-1.3 message to account for
 	string index being compiled at toplevel.
 	* tests/appendComp.test:
