@@ -1,3 +1,7 @@
+2003-12-01  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/lset.n: fix typo [Bug 852224]
+
 2003-11-21  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.5 TAGGED FOR RELEASE ***
