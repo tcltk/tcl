@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.34 2004/05/25 22:23:01 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.35 2004/05/30 12:18:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -216,15 +216,16 @@ static void		SlaveObjCmdDeleteProc _ANSI_ARGS_((
 static int		SlaveRecursionLimit _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int objc,
 			    Tcl_Obj *CONST objv[]));
-static int		SlaveCommandLimit _ANSI_ARGS_((Tcl_Interp *interp,
+static int		SlaveCommandLimitCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int consumedObjc,
 			    int objc, Tcl_Obj *CONST objv[]));
-static int		SlaveTimeLimit _ANSI_ARGS_((Tcl_Interp *interp,
+static int		SlaveTimeLimitCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int consumedObjc,
 			    int objc, Tcl_Obj *CONST objv[]));
-static void		InheritLimits _ANSI_ARGS_((Tcl_Interp *slaveInterp,
+static void		InheritLimitsFromMaster _ANSI_ARGS_((
+			    Tcl_Interp *slaveInterp,
 			    Tcl_Interp *masterInterp));
-static void		SetLimitCallback _ANSI_ARGS_((Tcl_Interp *interp,
+static void		SetScriptLimitCallback _ANSI_ARGS_((Tcl_Interp *interp,
 			    int type, Tcl_Interp *targetInterp,
 			    Tcl_Obj *scriptObj));
 static void		CallScriptLimitCallback _ANSI_ARGS_((
@@ -689,9 +690,9 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    }
 	    switch ((enum LimitTypes) limitType) {
 	    case LIMIT_TYPE_COMMANDS:
-		return SlaveCommandLimit(interp, slaveInterp, 4, objc, objv);
+		return SlaveCommandLimitCmd(interp, slaveInterp, 4, objc,objv);
 	    case LIMIT_TYPE_TIME:
-		return SlaveTimeLimit(interp, slaveInterp, 4, objc, objv);
+		return SlaveTimeLimitCmd(interp, slaveInterp, 4, objc, objv);
 	    }
 	}
 	case OPT_MARKTRUSTED: {
@@ -1908,7 +1909,7 @@ SlaveCreate(interp, pathPtr, safe)
     /*
      * Inherit the TIP#143 limits.
      */
-    InheritLimits(slaveInterp, masterInterp);
+    InheritLimitsFromMaster(slaveInterp, masterInterp);
 
     return slaveInterp;
 
@@ -2083,9 +2084,9 @@ SlaveObjCmd(clientData, interp, objc, objv)
 	    }
 	    switch ((enum LimitTypes) limitType) {
 	    case LIMIT_TYPE_COMMANDS:
-		return SlaveCommandLimit(interp, slaveInterp, 3, objc, objv);
+		return SlaveCommandLimitCmd(interp, slaveInterp, 3, objc,objv);
 	    case LIMIT_TYPE_TIME:
-		return SlaveTimeLimit(interp, slaveInterp, 3, objc, objv);
+		return SlaveTimeLimitCmd(interp, slaveInterp, 3, objc, objv);
 	    }
 	}
 	case OPT_MARKTRUSTED: {
@@ -2583,6 +2584,24 @@ Tcl_MakeSafe(interp)
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitExceeded --
+ *
+ *	Tests whether any limit has been exceededin the given
+ *	interpreter (i.e. whether the interpreter is currently unable
+ *	to process further scripts).
+ *
+ * Results:
+ *	A boolean value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Tcl_LimitExceeded(interp)
     Tcl_Interp *interp;
@@ -2592,6 +2611,24 @@ Tcl_LimitExceeded(interp)
     return iPtr->limit.exceeded != 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitReady --
+ *
+ *	Find out whether any limit has been set on the interpreter,
+ *	and if so check whether the granularity of that limit is such
+ *	that the full limit check should be carried out.
+ *
+ * Results:
+ *	A boolean value that indicates whether to call Tcl_LimitCheck.
+ *
+ * Side effects:
+ *	Increments the limit granularity counter.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Tcl_LimitReady(interp)
     Tcl_Interp *interp;
@@ -2615,6 +2652,29 @@ Tcl_LimitReady(interp)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitCheck --
+ *
+ *	Check all currently set limits in the interpreter (where
+ *	permitted by granularity).  If a limit is exceeded, call its
+ *	callbacks and, if the limit is still exceeded after the
+ *	callbacks have run, make the interpreter generate an error
+ *	that cannot be caught within the limited interpreter.
+ *
+ * Results:
+ *	A Tcl result value (TCL_OK if no limit is exceeded, and
+ *	TCL_ERROR if a limit has been exceeded).
+ *
+ * Side effects:
+ *	May invoke system calls.  May invoke other interpreters.  May
+ *	be reentrant.  May put the interpreter into a state where it
+ *	can no longer execute commands without outside intervention.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Tcl_LimitCheck(interp)
     Tcl_Interp *interp;
@@ -2673,6 +2733,24 @@ Tcl_LimitCheck(interp)
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * RunLimitHandlers --
+ *
+ *	Invoke all the limit handlers in a list (for a particular
+ *	limit).  Note that no particular limit handler callback will
+ *	be invoked reentrantly.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on the limit handlers.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 RunLimitHandlers(handlerPtr, interp)
     LimitHandler *handlerPtr;
@@ -2723,6 +2801,22 @@ RunLimitHandlers(handlerPtr, interp)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitAddHandler --
+ *
+ *	Add a callback handler for a particular resource limit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Extends the internal linked list of handlers for a limit.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 Tcl_LimitAddHandler(interp, type, handlerProc, clientData, deleteProc)
     Tcl_Interp *interp;
@@ -2734,22 +2828,34 @@ Tcl_LimitAddHandler(interp, type, handlerProc, clientData, deleteProc)
     Interp *iPtr = (Interp *) interp;
     LimitHandler *handlerPtr;
 
+    /*
+     * Convert everything into a real deletion callback.
+     */
+
     if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
-	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_Alloc;
+	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_Free;
     }
     if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_STATIC) {
 	deleteProc = (Tcl_LimitHandlerDeleteProc *) NULL;
     }
 
+    /*
+     * Allocate a handler record.
+     */
+
+    handlerPtr = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+    handlerPtr->flags = 0;
+    handlerPtr->handlerProc = handlerProc;
+    handlerPtr->clientData = clientData;
+    handlerPtr->deleteProc = deleteProc;
+    handlerPtr->prevPtr = NULL;
+
+    /*
+     * Prepend onto the front of the correct linked list.
+     */
+
     switch (type) {
     case TCL_LIMIT_COMMANDS:
-	handlerPtr = (LimitHandler *) ckalloc(sizeof(LimitHandler));
-
-	handlerPtr->flags = 0;
-	handlerPtr->handlerProc = handlerProc;
-	handlerPtr->clientData = clientData;
-	handlerPtr->deleteProc = deleteProc;
-	handlerPtr->prevPtr = NULL;
 	handlerPtr->nextPtr = iPtr->limit.cmdHandlers;
 	if (handlerPtr->nextPtr != NULL) {
 	    handlerPtr->nextPtr->prevPtr = handlerPtr;
@@ -2758,13 +2864,6 @@ Tcl_LimitAddHandler(interp, type, handlerProc, clientData, deleteProc)
 	return;
 
     case TCL_LIMIT_TIME:
-	handlerPtr = (LimitHandler *) ckalloc(sizeof(LimitHandler));
-
-	handlerPtr->flags = 0;
-	handlerPtr->handlerProc = handlerProc;
-	handlerPtr->clientData = clientData;
-	handlerPtr->deleteProc = deleteProc;
-	handlerPtr->prevPtr = NULL;
 	handlerPtr->nextPtr = iPtr->limit.timeHandlers;
 	if (handlerPtr->nextPtr != NULL) {
 	    handlerPtr->nextPtr->prevPtr = handlerPtr;
@@ -2776,6 +2875,25 @@ Tcl_LimitAddHandler(interp, type, handlerProc, clientData, deleteProc)
     Tcl_Panic("unknown type of resource limit");
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitRemoveHandler --
+ *
+ *	Remove a callback handler for a particular resource limit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The handler is spliced out of the internal linked list for the
+ *	limit, and if not currently being invoked, deleted.  Otherwise
+ *	it is just marked for deletion and removed when the limit
+ *	handler has finished executing.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
     Tcl_Interp *interp;
@@ -2850,6 +2968,24 @@ Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLimitRemoveAllHandlers --
+ *
+ *	Remove all limit callback handlers for an interpreter.  This
+ *	is invoked as part of deleting the interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Limit handlers are deleted or marked for deletion (as with
+ *	Tcl_LimitRemoveHandler).
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclLimitRemoveAllHandlers(interp)
     Tcl_Interp *interp;
@@ -2924,6 +3060,23 @@ TclLimitRemoveAllHandlers(interp)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitTypeEnabled --
+ *
+ *	Check whether a particular limit has been enabled for an
+ *	interpreter.
+ *
+ * Results:
+ *	A boolean value.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 Tcl_LimitTypeEnabled(interp, type)
     Tcl_Interp *interp;
@@ -2933,6 +3086,24 @@ Tcl_LimitTypeEnabled(interp, type)
 
     return (iPtr->limit.active & type) != 0;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitTypeExceeded --
+ *
+ *	Check whether a particular limit has been exceeded for an
+ *	interpreter.
+ *
+ * Results:
+ *	A boolean value (note that Tcl_LimitExceeded will always
+ *	return non-zero when this function returns non-zero).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 Tcl_LimitTypeExceeded(interp, type)
@@ -2943,6 +3114,24 @@ Tcl_LimitTypeExceeded(interp, type)
 
     return (iPtr->limit.exceeded & type) != 0;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitTypeSet --
+ *
+ *	Enable a particular limit for an interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The limit is turned on and will be checked in future at an
+ *	interval determined by the frequency of calling of
+ *	Tcl_LimitReady and the granularity of the limit in question.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 Tcl_LimitTypeSet(interp, type)
@@ -2953,6 +3142,25 @@ Tcl_LimitTypeSet(interp, type)
 
     iPtr->limit.active |= type;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitTypeReset --
+ *
+ *	Disable a particular limit for an interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The limit is disabled.  If the limit was exceeded when this
+ *	function was called, the limit will no longer be exceeded
+ *	afterwards and the interpreter will be free to execute further
+ *	scripts (assuming it isn't also deleted, of course).
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 Tcl_LimitTypeReset(interp, type)
@@ -2965,6 +3173,25 @@ Tcl_LimitTypeReset(interp, type)
     iPtr->limit.exceeded &= ~type;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitSetCommands --
+ *
+ *	Set the command limit for an interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Also resets whether the command limit was exceeded.  This
+ *	might permit a small amount of further execution in the
+ *	interpreter even if the limit itself is theoretically
+ *	exceeded.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 Tcl_LimitSetCommands(interp, commandLimit)
     Tcl_Interp *interp;
@@ -2975,6 +3202,23 @@ Tcl_LimitSetCommands(interp, commandLimit)
     iPtr->limit.cmdCount = commandLimit;
     iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitGetCommands --
+ *
+ *	Get the number of commands that may be executed in the
+ *	interpreter before the command-limit is reached.
+ *
+ * Results:
+ *	An upper bound on the number of commands.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 Tcl_LimitGetCommands(interp)
@@ -2985,6 +3229,25 @@ Tcl_LimitGetCommands(interp)
     return iPtr->limit.cmdCount;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitSetTime --
+ *
+ *	Set the time limit for an interpreter by copying it from the
+ *	value pointed to by the timeLimitPtr argument.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Also resets whether the time limit was exceeded.  This might
+ *	permit a small amount of further execution in the interpreter
+ *	even if the limit itself is theoretically exceeded.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 Tcl_LimitSetTime(interp, timeLimitPtr)
     Tcl_Interp *interp;
@@ -2995,6 +3258,23 @@ Tcl_LimitSetTime(interp, timeLimitPtr)
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
     iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitGetTime --
+ *
+ *	Get the current time limit.
+ *
+ * Results:
+ *	The time limit (by it being copied into the variable pointed
+ *	to by the timeLimitPtr).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 void
 Tcl_LimitGetTime(interp, timeLimitPtr)
@@ -3006,6 +3286,23 @@ Tcl_LimitGetTime(interp, timeLimitPtr)
     memcpy(timeLimitPtr, &iPtr->limit.time, sizeof(Tcl_Time));
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitSetGranularity --
+ *
+ *	Set the granularity divisor (which must be positive) for a
+ *	particular limit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The granularity is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 Tcl_LimitSetGranularity(interp, type, granularity)
     Tcl_Interp *interp;
@@ -3027,6 +3324,22 @@ Tcl_LimitSetGranularity(interp, type, granularity)
     }
     Tcl_Panic("unknown type of resource limit");
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LimitGetGranularity --
+ *
+ *	Get the granularity divisor for a particular limit.
+ *
+ * Results:
+ *	The granularity divisor for the given limit.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 Tcl_LimitGetGranularity(interp, type)
@@ -3046,8 +3359,24 @@ Tcl_LimitGetGranularity(interp, type)
 }    
 
 /*
- * Callback for when a script limit is deleted.
+ *----------------------------------------------------------------------
+ *
+ * DeleteScriptLimitCallback --
+ *
+ *	Callback for when a script limit (a limit callback implemented
+ *	as a Tcl script in a master interpreter, as set up from Tcl)
+ *	is deleted.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The reference to the script callback from the controlling
+ *	interpreter is removed.
+ *
+ *----------------------------------------------------------------------
  */
+
 static void
 DeleteScriptLimitCallback(clientData)
     ClientData clientData;
@@ -3059,10 +3388,25 @@ DeleteScriptLimitCallback(clientData)
     Tcl_DeleteHashEntry(limitCBPtr->entryPtr);
     ckfree((char *) limitCBPtr);
 }
-
+
 /*
- * Callback for when a script limit is invoked.
+ *----------------------------------------------------------------------
+ *
+ * CallScriptLimitCallback --
+ *
+ *	Invoke a script limit callback.  Used to implement limit
+ *	callbacks set at the Tcl level on child interpreters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on the callback script.  Errors are reported as
+ *	background errors.
+ *
+ *----------------------------------------------------------------------
  */
+
 static void
 CallScriptLimitCallback(clientData, interp)
     ClientData clientData;
@@ -3083,14 +3427,31 @@ CallScriptLimitCallback(clientData, interp)
     }
     Tcl_Release(limitCBPtr->interp);
 }
-
+
 /*
- * Install (or remove, if scriptObj is NULL) a limit callback script
- * that is called when the target interpreter exceeds the type of
- * limit specified.
+ *----------------------------------------------------------------------
+ *
+ * SetScriptLimitCallback --
+ *
+ *	Install (or remove, if scriptObj is NULL) a limit callback
+ *	script that is called when the target interpreter exceeds the
+ *	type of limit specified.  Each interpreter may only have one
+ *	callback set on another interpreter through this mechanism
+ *	(though as many interpreters may be limited as the programmer
+ *	chooses overall).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A limit callback implemented as an invokation of a Tcl script
+ *	in another interpreter is either installed or removed.
+ *
+ *----------------------------------------------------------------------
  */
+
 static void
-SetLimitCallback(interp, type, targetInterp, scriptObj)
+SetScriptLimitCallback(interp, type, targetInterp, scriptObj)
     Tcl_Interp *interp;
     int type;
     Tcl_Interp *targetInterp;
@@ -3139,12 +3500,26 @@ SetLimitCallback(interp, type, targetInterp, scriptObj)
 }
 
 /*
- * Remove all limit callback scripts that make callbacks into the
- * given interpreter.
+ *----------------------------------------------------------------------
+ *
+ * TclRemoveScriptLimitCallbacks --
+ *
+ *	Remove all script-implemented limit callbacks that make calls
+ *	back into the given interpreter.  This invoked as part of
+ *	deleting an interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The script limit callbacks are removed or marked for later
+ *	removal.
+ *
+ *----------------------------------------------------------------------
  */
 
 void
-TclDecommissionLimitCallbacks(interp)
+TclRemoveScriptLimitCallbacks(interp)
     Tcl_Interp *interp;
 {
     Interp *iPtr = (Interp *) interp;
@@ -3163,6 +3538,25 @@ TclDecommissionLimitCallbacks(interp)
     Tcl_DeleteHashTable(&iPtr->limit.callbacks);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitLimitSupport --
+ *
+ *	Initialise all the parts of the interpreter relating to
+ *	resource limit management.  This allows an interpreter to both
+ *	have limits set upon itself and set limits upon other
+ *	interpreters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The resource limit subsystem is initialised for the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclInitLimitSupport(interp)
     Tcl_Interp *interp;
@@ -3182,8 +3576,28 @@ TclInitLimitSupport(interp)
 	    sizeof(struct ScriptLimitCallbackKey)/sizeof(int));
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * InheritLimitsFromMaster --
+ *
+ *	Derive the interpreter limit configuration for a slave
+ *	interpreter from the limit config for the master.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The slave interpreter limits are set so that if the master has
+ *	a limit, it may not exceed it by handing off work to slave
+ *	interpreters.  Note that this does not transfer limit
+ *	callbacks from the master to the slave.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
-InheritLimits(slaveInterp, masterInterp)
+InheritLimitsFromMaster(slaveInterp, masterInterp)
     Tcl_Interp *slaveInterp, *masterInterp;
 {
     Interp *slavePtr = (Interp *) slaveInterp;
@@ -3202,8 +3616,26 @@ InheritLimits(slaveInterp, masterInterp)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SlaveCommandLimitCmd --
+ *
+ *	Implementation of the [interp limit $i commands] and [$i limit
+ *	commands] subcommands.  See the interp manual page for a full
+ *	description.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Depends on the arguments.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
-SlaveCommandLimit(interp, slaveInterp, consumedObjc, objc, objv)
+SlaveCommandLimitCmd(interp, slaveInterp, consumedObjc, objc, objv)
     Tcl_Interp *interp;			/* Current interpreter. */
     Tcl_Interp *slaveInterp;		/* Interpreter being adjusted. */
     int consumedObjc;			/* Number of args already parsed. */
@@ -3339,7 +3771,7 @@ SlaveCommandLimit(interp, slaveInterp, consumedObjc, objc, objv)
 	    }
 	}
 	if (scriptObj != NULL) {
-	    SetLimitCallback(interp, TCL_LIMIT_COMMANDS, slaveInterp,
+	    SetScriptLimitCallback(interp, TCL_LIMIT_COMMANDS, slaveInterp,
 		    (scriptLen > 0 ? scriptObj : NULL));
 	}
 	if (granObj != NULL) {
@@ -3357,8 +3789,26 @@ SlaveCommandLimit(interp, slaveInterp, consumedObjc, objc, objv)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SlaveTimeLimitCmd --
+ *
+ *	Implementation of the [interp limit $i time] and [$i limit
+ *	time] subcommands.  See the interp manual page for a full
+ *	description.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Depends on the arguments.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
-SlaveTimeLimit(interp, slaveInterp, consumedObjc, objc, objv)
+SlaveTimeLimitCmd(interp, slaveInterp, consumedObjc, objc, objv)
     Tcl_Interp *interp;			/* Current interpreter. */
     Tcl_Interp *slaveInterp;		/* Interpreter being adjusted. */
     int consumedObjc;			/* Number of args already parsed. */
@@ -3568,7 +4018,7 @@ SlaveTimeLimit(interp, slaveInterp, consumedObjc, objc, objv)
 	    }
 	}
 	if (scriptObj != NULL) {
-	    SetLimitCallback(interp, TCL_LIMIT_TIME, slaveInterp,
+	    SetScriptLimitCallback(interp, TCL_LIMIT_TIME, slaveInterp,
 		    (scriptLen > 0 ? scriptObj : NULL));
 	}
 	if (granObj != NULL) {
