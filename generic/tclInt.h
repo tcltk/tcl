@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.192 2004/11/02 21:08:58 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.193 2004/11/03 19:13:38 davygrvy Exp $
  */
 
 #ifndef _TCLINT
@@ -49,17 +49,6 @@
 #include "../compat/string.h"
 #else
 #include <string.h>
-#endif
-
-#undef TCL_STORAGE_CLASS
-#ifdef BUILD_tcl
-# define TCL_STORAGE_CLASS DLLEXPORT
-#else
-# ifdef USE_TCL_STUBS
-#  define TCL_STORAGE_CLASS
-# else
-#  define TCL_STORAGE_CLASS DLLIMPORT
-# endif
 #endif
 
 /*
@@ -2705,9 +2694,6 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 #include "tclPort.h"
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
-
-# undef TCL_STORAGE_CLASS
-# define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLINT */
 

@@ -6,11 +6,22 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.23 2004/06/07 16:48:45 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.24 2004/11/03 19:13:40 davygrvy Exp $
  */
 
 #ifndef _TCLPLATDECLS
 #define _TCLPLATDECLS
+
+#undef TCL_STORAGE_CLASS
+#ifdef BUILD_tcl
+#   define TCL_STORAGE_CLASS DLLEXPORT
+#else
+#   ifdef USE_TCL_STUBS
+#      define TCL_STORAGE_CLASS
+#   else
+#      define TCL_STORAGE_CLASS DLLIMPORT
+#   endif
+#endif
 
 /*
  *  Pull in the typedef of TCHAR for windows.
@@ -122,6 +133,9 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLPLATDECLS */
 
