@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.9 2003/01/16 19:01:59 mdejong Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.10 2003/01/16 20:51:57 hobbs Exp $
  */
 
 #include "tclPort.h"
@@ -1061,7 +1061,7 @@ Tcl_DdeObjCmd(
 	    if (length == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			"cannot request value of null data", -1);
-		return TCL_ERROR;
+		goto errorNoResult;
 	    }
 	    hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
 	    DdeFreeStringHandle(ddeInstance, ddeService);
@@ -1107,7 +1107,7 @@ Tcl_DdeObjCmd(
 	    if (length == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			"cannot have a null item", -1);
-		return TCL_ERROR;
+		goto errorNoResult;
 	    }
 	    dataString = Tcl_GetStringFromObj(objv[firstArg + 3], &length);
 	    
@@ -1180,6 +1180,12 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 	case DDE_EVAL: {
+	    if (serviceName == NULL) {
+		Tcl_SetStringObj(Tcl_GetObjResult(interp),
+			"invalid service name \"\"", -1);
+		goto errorNoResult;
+	    }
+
 	    objc -= (async + 3);
 	    ((Tcl_Obj **) objv) += (async + 3);
 
