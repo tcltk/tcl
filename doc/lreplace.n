@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lreplace.n,v 1.5 2000/07/13 07:22:44 poenitz Exp $
+'\" RCS: @(#) $Id: lreplace.n,v 1.6 2000/09/07 14:27:49 poenitz Exp $
 '\" 
 .so man.macros
 .TH lreplace n 7.4 Tcl "Tcl Built-In Commands"
@@ -43,8 +43,9 @@ the list.  If no \fIelement\fR arguments are specified, then the elements
 between \fIfirst\fR and \fIlast\fR are simply deleted.  If \fIlist\fR
 is empty, any \fIelement\fR arguments are added to the end of the list.
 
+.SH "SEE ALSO"
+lappend(n), lindex(n), linsert(n), list(n), llength(n), lrange(n),
+lsearch(n), lsort(n)
+
 .SH KEYWORDS
 element, list, replace
-
-.SH SEE ALSO
-lappend, lindex, linsert, list, llength, lrange, lsearch, lsort

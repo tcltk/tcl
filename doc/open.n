@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.9 1999/12/21 23:57:33 hobbs Exp $
+'\" RCS: @(#) $Id: open.n,v 1.10 2000/09/07 14:27:50 poenitz Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -251,9 +251,10 @@ input, but is redirected from a file, then the above problem does not occur.
 See the PORTABILITY ISSUES section of the \fBexec\fR command for additional
 information not specific to command pipelines about executing
 applications on the various platforms
+
 .SH "SEE ALSO"
-close(n), filename(n), gets(n), read(n), puts(n), exec(n)
-.VE
+file(n), close(n), filename(n), gets(n), read(n), puts(n), exec(n), fopen(1)
+
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,
 pipeline, process, serial

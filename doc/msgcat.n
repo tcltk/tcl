@@ -262,5 +262,6 @@ The message catalog code was developed by Mark Harrison.
 
 .SH "SEE ALSO"
 format(n), scan(n), namespace(n), package(n)
+
 .SH KEYWORDS
 internationalization, i18n, localization, l10n, message, text, translation

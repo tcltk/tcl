@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: catch.n,v 1.4 1999/08/13 19:01:04 welch Exp $
+'\" RCS: @(#) $Id: catch.n,v 1.5 2000/09/07 14:27:46 poenitz Exp $
 '\" 
 .so man.macros
 .TH catch n "8.0" Tcl "Tcl Built-In Commands"
@@ -61,6 +61,9 @@ proc foo {} {
     catch {expr {1 +- }}
 }
 .CE
+
+.SH "SEE ALSO" 
+error(n), break(n), continue(n)
 
 .SH KEYWORDS
 catch, error

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.5 2000/07/22 00:51:21 ericm Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.6 2000/09/07 14:27:46 poenitz Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -542,7 +542,7 @@ element of the \fBtcl_platform\fR array to decide which type character
 to use when formatting or scanning integers.
 
 .SH "SEE ALSO"
-format, scan, tclvars
+format(n), scan(n), tclvars(n)
 
 .SH KEYWORDS
 binary, format, scan

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.3 2000/01/21 02:25:06 hobbs Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4 2000/09/07 14:27:52 poenitz Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -35,6 +35,9 @@ if an event handler sets \fIvarName\fR and then itself calls
 for a long time.  During this time the top-level \fBvwait\fR is
 blocked waiting for the event handler to complete, so it cannot
 return either.
+
+.SH "SEE ALSO"
+global(n)
 
 .SH KEYWORDS
 event, variable, wait
