@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.9 2001/10/16 23:53:21 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.10 2002/03/26 02:27:27 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -469,6 +469,24 @@ runtest: tcltest
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
+# This target can be used to run tclsh from the build directory
+# via `make shell SCRIPT=/tmp/foo.tcl`
+shell: tclsh
+	@LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
+	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./tclsh $(SCRIPT)
+
+# This target can be used to run tclsh inside either gdb or insight
+gdb: tclsh
+	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
+	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
+	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
+	gdb ./tclsh --command=gdb.run
+	rm gdb.run
+
 # The following target outputs the name of the top-level source directory
 # for Tcl (it is used by Tk's configure script, for example).  The
 # .NO_PARALLEL line is needed to avoid problems under Sun's "pmake".
@@ -488,7 +506,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.9 2001/10/16 23:53:21 dgp Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.10 2002/03/26 02:27:27 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
