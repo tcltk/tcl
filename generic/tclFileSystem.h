@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.1 2003/04/11 15:59:54 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.2 2003/04/14 15:48:35 vincentdarley Exp $
  */
 
 /* 
@@ -56,6 +56,8 @@ int      TclFSEnsureEpochOk _ANSI_ARGS_((Tcl_Obj* pathObjPtr, int theEpoch,
 void     TclFSSetPathDetails _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
 		FilesystemRecord *fsRecPtr, ClientData clientData, 
 		int theEpoch));
+Tcl_Obj* TclFSNormalizeAbsolutePath _ANSI_ARGS_((Tcl_Interp* interp, 
+		Tcl_Obj *pathPtr, ClientData *clientDataPtr));
 
 /* 
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
