@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.5 1999/07/02 06:41:29 welch Exp $
+# RCS: @(#) $Id: encoding.test,v 1.6 1999/08/23 17:54:59 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -62,7 +62,7 @@ test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
     encoding system jis0208		;# incr ref count
-    testencoding path .
+    testencoding path [list [pwd]]
     set x [encoding convertto jis0208 \u4e4e]	;# old one found   
     encoding system identity
     lappend x [catch {encoding convertto jis0208 \u4e4e} msg] $msg
@@ -99,7 +99,7 @@ test encoding-4.1 {Tcl_GetEncodingNames} {testencoding} {
     foreach encoding [encoding names] {
 	set encodings($encoding) 1
     }
-    testencoding path .
+    testencoding path [list [pwd]]
     foreach encoding [encoding names] {
 	if {![info exists encodings($encoding)]} {
 	    lappend x $encoding

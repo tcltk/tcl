@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.9 1999/06/26 20:55:08 rjohnson Exp $
+# RCS: @(#) $Id: interp.test,v 1.10 1999/08/23 17:54:59 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1701,7 +1701,7 @@ test interp-23.3 {testing hiding vs aliases} {macOnly} {
     lappend l [lsort [interp hidden a]]
     interp delete a
     set l
-} {{beep cd echo exit fconfigure file glob load ls open pwd socket source} bar {beep cd echo exit fconfigure file glob load ls open pwd socket source} bar {bar beep cd echo exit fconfigure file glob load ls open pwd socket source} {} {beep cd echo exit fconfigure file glob load ls open pwd socket source}} 
+} {{beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} bar {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} bar {bar beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} {} {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source}} 
 
 test interp-24.1 {result resetting on error} {
     catch {interp delete a}

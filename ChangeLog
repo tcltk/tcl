@@ -1,3 +1,18 @@
+1999-08-23  Jennifer Hom  <jenn@scriptics.com>
+
+	* tests/tcltest.test: Added additional tests for -tmpdir, marked
+	all tests that use exec as unixOrPc.
+
+	* tests/encoding.test:
+	* tests/interp.test: 
+	* tests/macFCmd.test:
+	* tests/parseOld.test:
+	* tests/regexp.test: Applied patches from Jim Ingham to add
+	encoding to a Mac only interp test, change an error message in
+	macFCmd.tet, put a comment in parseOld.test, fix tests using the
+	testencoding path command, and put unixOrPc constraints on tests
+	that use exec. 
+
 1999-08-21  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/aclocal.m4: Changed AIX-4.[2-9] check to AIX-4.[1-9]
