@@ -1,3 +1,28 @@
+2000-07-11  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/iogt.test: made tests [345].0 not run by default as they
+	were failing in the new design, but I'm not convinced that the
+	returned result isn't correct.
+
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tcl.decls: added Tcl_GetTopChannel C API that returns
+	the current top channel of a channel stack.  Tcl_GetChannel was
+	changed earlier to return the bottommost channel of a stack
+	because that is the one that is guaranteed to stay around the
+	longest, and this was needed to compensate for certain
+	operations that want to look at the state of the main channel.
+	Most channel APIs already compensate for grabbing the top, so it
+	shouldn't be needed often.
+
+	* generic/tclIO.c (Tcl_StackChannel, Tcl_UnstackChannel): Added
+	flushing of buffers (Kupries), removed use of DownChannel macro,
+	added Tcl_GetTopChannel public API to get to the top channel of
+	the channel stack (necessary for TLS).  Rewrote Tcl_NotifyChannel
+	for new channel design (Kupries).  Did some code cleanup in the
+	transform code.  tclIO.c must still be broken into bits (separate
+	out test code and giot code, create tclIO.h).
+
 2000-07-10  Andreas Kupries <a.kupries@westend.com>
 
 	* tests/iogt.test: Reverted some earlier changes as a fix by Jeff

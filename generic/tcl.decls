@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33.4.1 2000/07/07 03:31:36 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.33.4.2 2000/07/12 01:41:20 hobbs Exp $
 
 library tcl
 
@@ -1363,6 +1363,9 @@ declare 394 generic {
 }
 declare 395 generic {
     int Tcl_WriteRaw (Tcl_Channel chan, char *src, int srcLen)
+}
+declare 396 generic {
+    Tcl_Channel Tcl_GetTopChannel (Tcl_Channel chan)
 }
 
 ##############################################################################
