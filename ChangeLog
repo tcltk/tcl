@@ -1,3 +1,13 @@
+2004-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/http.n (http::config): add -urlencoding option (default utf-8)
+	* library/http/http.tcl:     that specifies encoding conversion of
+	* library/http/pkgIndex.tcl: args for http::formatQuery.  Previously
+	* tests/http.test:           undefined, RFC 2718 says it should be
+	utf-8. 'http::config -urlencoding {}' returns previous behavior,
+	which will throw errors processing non-latin-1 chars.
+	Bumped http package to 2.5.0.
+
 2004-05-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c (DeleteScriptLimitCallback): Move all
