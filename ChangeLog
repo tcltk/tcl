@@ -1,3 +1,13 @@
+2003-03-03  Don Porter	<dgp@users.sourceforge.net>
+
+	* library/dde/pkgIndex.tcl:	dde bumped to version 1.2.1 for
+	* win/tclWinDde.c:		bundled release with Tcl 8.4.2
+
+	* library/reg/pkgIndex.tcl:	registry bumped to version 1.1.1 for
+	* win/tclWinReg.c:		bundled release with Tcl 8.4.2
+
+	* library/opt/pkgIndex.tcl:	updated package index to version 0.4.4
+
 2003-02-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/configure:
