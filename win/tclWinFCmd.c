@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.7 1999/12/09 14:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.7.2.1 2000/08/07 21:33:02 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -237,7 +237,7 @@ DoRenameFile(
 
 	    src = Tcl_WinTCharToUtf((TCHAR *) nativeSrcPath, -1, &srcString);
 	    dst = Tcl_WinTCharToUtf((TCHAR *) nativeDstPath, -1, &dstString);
-	    if (strncmp(src, dst, Tcl_DStringLength(&srcString)) == 0) {
+	    if (strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString)) == 0) {
 		/*
 		 * Trying to move a directory into itself.
 		 */
@@ -658,7 +658,7 @@ static int
 DoCreateDirectory(
     Tcl_DString *pathPtr)	/* Pathname of directory to create (native). */
 {
-    int error;
+    DWORD error;
     CONST TCHAR *nativePath;
 
     nativePath = (TCHAR *) Tcl_DStringValue(pathPtr);
@@ -1284,7 +1284,7 @@ GetWinFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(result & attributeArray[objIndex]);
+    *attributePtrPtr = Tcl_NewBooleanObj((int) (result & attributeArray[objIndex]));
     return TCL_OK;
 }
 
@@ -1422,7 +1422,7 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_WinTCharToUtf(nativeName, -1, &ds);
-	    newv[i] = ckalloc(Tcl_DStringLength(&ds) + 1);
+	    newv[i] = ckalloc((unsigned int) (Tcl_DStringLength(&ds) + 1));
 	    lstrcpyA(newv[i], Tcl_DStringValue(&ds));
 	    Tcl_DStringFree(&ds);
 	    FindClose(handle);
