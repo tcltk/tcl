@@ -1,3 +1,10 @@
+2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: 
+	* win/tclWinFile.c:
+	* tests/winFCMd.test: fix to 'file pathtype' and 'file norm' 
+	failures on reserved filenames like 'COM1:', etc.
+
 2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* unix/tcl.m4:    Updated the OpenBSD configuration and regenerated
