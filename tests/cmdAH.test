@@ -14,7 +14,7 @@
 if {[string compare test [info procs test]] == 1} then {source defs}
 
 global env
-set platform [testgetplatform]
+catch {set platform [testgetplatform]}
 
 test cmdAH-1.1 {Tcl_FileObjCmd} {
     list [catch file msg] $msg
@@ -59,6 +59,10 @@ test cmdAH-3.1 {Tcl_FileObjCmd - file attrs} {
 
 # dirname
 
+if {[info commands testsetplatform] == {}} {
+    puts "This application hasn't been compiled with the \"testsetplatform\""
+    puts "command, so I can't test Tcl_FileObjCmd etc."
+} else {
 test cmdAH-4.1 {Tcl_FileObjCmd: dirname} {
     testsetplatform unix
     list [catch {file dirname a b} msg] $msg
@@ -847,10 +851,16 @@ test cmdAH-11.1 {Tcl_FileObjCmd} {
 } {1 {user "_bad_user" doesn't exist}}
 
 testsetplatform $platform
-makeFile abcde gorp.file
-makeDirectory dir.file
+}
 
 # readable
+
+if {[info commands testchmod] == {}} {
+    puts "This application hasn't been compiled with the \"testchmod\""
+    puts "command, so I can't test Tcl_FileObjCmd etc."
+} else {
+makeFile abcde gorp.file
+makeDirectory dir.file
 
 test cmdAH-12.1 {Tcl_FileObjCmd: readable} {
     list [catch {file readable a b} msg] $msg
@@ -923,6 +933,8 @@ test cmdAH-14.6 {Tcl_FileObjCmd: executable} {
 file delete -force dir.file  
 file delete gorp.file
 file delete link.file
+}
+
 # exists
 
 test cmdAH-15.1 {Tcl_FileObjCmd: exists} {
@@ -945,6 +957,10 @@ test cmdAH-15.5 {Tcl_FileObjCmd: exists} {
 } 1
 
 # nativename
+if {[info commands testsetplatform] == {}} {
+    puts "This application hasn't been compiled with the \"testsetplatform\""
+    puts "command, so I can't test Tcl_FileObjCmd etc."
+} else {
 test cmdAH-15.6 {Tcl_FileObjCmd: nativename} {
     testsetplatform unix
     list [catch {file nativename a/b} msg] $msg [testsetplatform $platform]
@@ -957,6 +973,7 @@ test cmdAH-15.8 {Tcl_FileObjCmd: nativename} {
     testsetplatform mac
     list [catch {file nativename a/b} msg] $msg [testsetplatform $platform]
 } {0 :a:b {}}
+}
 
 test cmdAH-15.9 {Tcl_FileObjCmd: ~ : exists} {
     file exists ~nOsUcHuSeR
@@ -988,7 +1005,7 @@ if {$tcl_platform(platform) == "unix"} {
 
 # Stat related commands
 
-testsetplatform $platform
+catch {testsetplatform $platform}
 file delete gorp.file
 makeFile "Test string" gorp.file
 catch {exec chmod 765 gorp.file}
@@ -1159,7 +1176,7 @@ test cmdAH-23.3 {Tcl_FileObjCmd: size} {
 
 # stat
 
-testsetplatform $platform
+catch {testsetplatform $platform}
 makeFile "Test string" gorp.file
 catch {exec chmod 765 gorp.file}
 
@@ -1245,7 +1262,7 @@ test cmdAH-26.8 {error conditions} {
     list [catch {file dirname ~woohgy} msg] $msg
 } {1 {user "woohgy" doesn't exist}}
 
-testsetplatform $platform
+catch {testsetplatform $platform}
 catch {unset platform}
 
 catch {exec chmod 777 dir.file}
