@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.208 2004/12/16 19:36:34 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.209 2004/12/24 18:07:00 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -973,6 +973,11 @@ typedef struct LiteralEntry {
 					 * entry can be freed when refCount
 					 * drops to 0. If in a local literal
 					 * table, -1. */
+    Namespace *nsPtr;                    /* Namespace in which this literal is
+					 * used. We try to avoid sharing
+					 * literal non-FQ command names among
+					 * different namespaces to reduce
+					 * shimmering.*/ 
 } LiteralEntry;
 
 typedef struct LiteralTable {

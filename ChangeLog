@@ -1,3 +1,14 @@
+2004-12-24  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclLiteral.c:
+	* generic/tclProc.c:
+	Avoid sharing cmdName literals accross namespaces, and generalise
+	usage of the TclRegisterNewLiteral macro [Patch 1090905]
+
 2004-12-20  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c: moved TclInitCompiledLocals to tclProc.c 
