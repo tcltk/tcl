@@ -14,6 +14,10 @@
 
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
+        * unix/Makefile.in (install-libraries): Updated the installation
+        of the http, msgcat, and tcltest packages to install as Tcl Modules.
+        [Patch 1054370]
+
 	* tests/basic.test:	Added missing constraints.
 	* tests/compile.test:
 	* tests/fileSystem.test:
