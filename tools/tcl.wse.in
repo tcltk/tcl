@@ -12,7 +12,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Disk Label=tcl8.2.1
+  Disk Label=tcl8.2.2
   Disk Filename=setup
   Patch Flags=0000000000000001
   Patch Threshold=85
@@ -1715,7 +1715,7 @@ item: Install File
 end
 item: Install File
   Source=${__TKBASEDIR__}\library\demos\twind.tcl
-  Destination=%MAINDIR%\lib\tk%VER%\demos\twin\released.tcl
+  Destination=%MAINDIR%\lib\tk%VER%\demos\twind.tcl
   Flags=0000000000000010
 end
 item: Install File
