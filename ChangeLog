@@ -1,5 +1,10 @@
 2001-09-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/socket.n: Added documentation to mention what happens when a
+	server socket is created with port=0.  Removed an old change bar,
+	and no new change bar because Tcl has always behaved this way as
+	it is really a poorly-documented standards-defined OS feature.
+
 	* tests/util.test (util-8.1): Test derived from code to detect the
 	problem, but the test always works in the C locale, so beware if
 	you are maintaining the code.
