@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.5 2000/09/07 14:27:50 poenitz Exp $
+'\" RCS: @(#) $Id: package.n,v 1.6 2002/01/27 17:35:06 dgp Exp $
 '\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
@@ -114,12 +114,14 @@ the command returns immediately.
 Otherwise, the command searches the database of information provided by
 previous \fBpackage ifneeded\fR commands to see if an acceptable
 version of the package is available.
-If so, the script for the highest acceptable version number is invoked;
+If so, the script for the highest acceptable version number is evaluated
+in the global namespace;
 it must do whatever is necessary to load the package,
 including calling \fBpackage provide\fR for the package.
 If the \fBpackage ifneeded\fR database does not contain an acceptable
 version of the package and a \fBpackage unknown\fR command has been
-specified for the interpreter then that command is invoked;  when
+specified for the interpreter then that command is evaluated in the
+global namespace;  when
 it completes, Tcl checks again to see if the package is now provided
 or if there is a \fBpackage ifneeded\fR script for it.
 If all of these steps fail to provide an acceptable version of the
