@@ -1,3 +1,10 @@
+2002-04-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/msgcat.n:
+	* library/msgcat/msgcat.tcl:
+	* library/msgcat/pkgIndex.tcl:  Added [mcload] to the export list
+	of msgcat; bumped to 1.2.3.  [Bug 544727]
+
 2002-04-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.decls:
