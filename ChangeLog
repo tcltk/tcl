@@ -6,6 +6,8 @@
 	Previous fix on 2003-05-12 broke several extensions that wanted
 	to poke around with the twoPtrValue.ptr2 value of a cmdName
 	Tcl_Obj, like TclBlend and e4graph.  [Bug 726018]
+	Thanks to George Petasis for the bug report and Jacob Levy for
+	testing assistance.
 
 2003-05-22  Daniel Steffen  <das@users.sourceforge.net>
 
