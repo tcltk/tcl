@@ -1,3 +1,19 @@
+1999-03-29    <redman@scriptics.com>
+
+	* tools/genStubs.tcl:
+	* unix/configure.in:
+	* unix/Makefile.in:
+	* generic/tcl.h:
+	* generic/tclBasic.c:
+	* generic/tclDecls.h:
+	* generic/tclIntDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclIntPlatDecls.h: Removed the stub functions and
+	changed the stub macros to just use the name without params. Pass
+	&tclStubs into the interp (don't use tclStubsPtr because of
+	collisions with the stubs on Solaris).
+	
+
 1999-03-27    <redman@scriptics.com>
 
 	* win/makefile.bc: Removed makefile for Borland compiler, no
