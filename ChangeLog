@@ -1,3 +1,7 @@
+2003-03-05  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/rules.vc: updated default tcl version to 8.5.
+
 2003-03-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): First attempt at a
