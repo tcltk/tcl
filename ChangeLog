@@ -1,3 +1,21 @@
+2004-12-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
+	* generic/tclStubInit.c:
+	* generic/tclTest.c: Added two new functions to allocate memory
+	from the execution stack (TclStackAlloc, TclStackFree). Added
+	functions TclPushStackFrame and TclPopStackFrame that do the work
+	of Tcl_PushCallFrame and Tcl_PopCallFrame, but using frames
+	allocated in the execution stack - i.e., heap instead of
+	C-stack. The core uses these two new functions exclusively; the
+	old ones remain for backwards compat, as at least two popular
+	extensions (itcl, xotcl) are known to use them.
+	
 2004-12-14  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c:
