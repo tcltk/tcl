@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.19 2002/05/31 23:21:12 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.20 2002/10/22 16:41:28 das Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -506,6 +506,25 @@ proc tclPkgUnknown {name version {exact {}}} {
 			tclLog "error reading package index file $file: $msg"
 		    } else {
 			set procdDirs($dir) 1
+		    }
+		}
+	    }
+	}
+	# On MacOSX also search the Resources/Scripts directories in
+	# the subdirectories for pkgIndex files
+	if {[string equal $::tcl_platform(platform) "unix"] && \
+	        [string equal $::tcl_platform(os) "Darwin"]} {
+	    set dir [lindex $use_path end]
+	    catch {
+		foreach file [glob -directory $dir -join -nocomplain \
+			* Resources Scripts pkgIndex.tcl] {
+		    set dir [file dirname $file]
+		    if {[file readable $file] && ![info exists procdDirs($dir)]} {
+			if {[catch {source $file} msg]} {
+			    tclLog "error reading package index file $file: $msg"
+			} else {
+			    set procdDirs($dir) 1
+			}
 		    }
 		}
 	    }
