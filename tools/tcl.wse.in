@@ -1996,7 +1996,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\tools\tcl.hlp
+  Source=${__TCLBASEDIR__}\tools\tcl81.hlp
   Destination=%MAINDIR%\doc\tcl81.hlp
   Flags=0000000000000010
 end
@@ -2157,7 +2157,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\DefaultIcon
-  New Value=%SYS32%\tk81.dll
+  New Value=%MAINDIR%\bin\tk81.dll
 end
 item: Edit Registry
   Total Keys=1
