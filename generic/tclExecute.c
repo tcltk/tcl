@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.48 2002/02/15 19:58:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.49 2002/02/28 13:03:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1371,9 +1371,8 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		for (i = 0;  i < objc;  i++) {
-		    valuePtr = stackPtr[stackTop];
+		    valuePtr = POP_OBJECT();
 		    TclDecrRefCount(valuePtr);
-		    stackTop--;
 		}
 
 		/*
@@ -1886,11 +1885,10 @@ TclExecuteByteCode(interp, codePtr)
 
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    valuePtr = Tcl_NewListObj(opnd, &(stackPtr[stackTop - (opnd-1)]));
-
-	    for (i = 0; i < opnd; stackTop--, i++) {
-		TclDecrRefCount(stackPtr[stackTop]);
+	    for (i = 0; i < opnd; i++) {
+		objPtr = POP_OBJECT();
+		TclDecrRefCount(objPtr);
 	    }
-
 	    PUSH_OBJECT(valuePtr);
 	    TRACE_WITH_OBJ(("%u => ", opnd), valuePtr);
 	    ADJUST_PC(5);
@@ -2609,7 +2607,8 @@ TclExecuteByteCode(interp, codePtr)
 		    /*
 		     * Watch out for multiple references in macros!
 		     */
-		    valuePtr = stackPtr[stackTop--];
+
+		    valuePtr = POP_OBJECT();
 		    TclDecrRefCount(valuePtr);
 		}
 
@@ -2670,7 +2669,8 @@ TclExecuteByteCode(interp, codePtr)
 		    /*
 		     * Watch out for multiple references in macros!
 		     */
-		    valuePtr = stackPtr[stackTop--];
+
+		    valuePtr = POP_OBJECT();
 		    TclDecrRefCount(valuePtr);
 		}
 
@@ -5822,14 +5822,12 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     /*
      * Pop the objc top stack elements and decrement their ref counts.
      */
-		
-    i = (stackTop - (objc-1));
-    while (i <= stackTop) {
-	valuePtr = stackPtr[i];
+
+    k = (stackTop - (objc-1));
+    while (stackTop >= k) {
+	valuePtr = POP_OBJECT();
 	TclDecrRefCount(valuePtr);
-	i++;
     }
-    stackTop -= objc;
     
     /*
      * Push the call's object result.
