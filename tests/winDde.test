@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.17 2003/06/23 21:27:56 patthoyts Exp $
+# RCS: @(#) $Id: winDde.test,v 1.18 2003/06/23 22:05:11 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -236,7 +236,7 @@ test winDde-5.4 {DDE eval bad arguments} {pcOnly} {
 test winDde-6.1 {DDE servername bad arguments} \
     -constraints pcOnly \
     -body {list [catch {dde servername -z -z -z} msg] $msg} \
-    -result {1 {wrong # args: should be "dde servername ?-exact? ?-handler proc? ?--? ?serverName?"}}
+    -result {1 {wrong # args: should be "dde servername ?-force? ?-handler proc? ?--? ?serverName?"}}
 
 test winDde-6.2 {DDE servername set name} \
     -constraints pcOnly \
@@ -245,12 +245,12 @@ test winDde-6.2 {DDE servername set name} \
 
 test winDde-6.3 {DDE servername set exact name} \
     -constraints pcOnly \
-    -body {dde servername -exact winDde-6.3} \
+    -body {dde servername -force winDde-6.3} \
     -result {winDde-6.3}
 
 test winDde-6.4 {DDE servername set exact name} \
     -constraints pcOnly \
-    -body {dde servername -exact -- winDde-6.4} \
+    -body {dde servername -force -- winDde-6.4} \
     -result {winDde-6.4}
 
 test winDde-6.5 {DDE remote servername collision} \
@@ -275,7 +275,7 @@ test winDde-6.6 {DDE remote servername collision force} \
         set child [createChildProcess $name]
     } \
     -body {
-        dde servername -exact -- $name
+        dde servername -force -- $name
     } \
     -cleanup {
         dde execute TclEval $name {set done 1}
@@ -332,7 +332,7 @@ test winDde-7.3 {DDE present in slave interp} \
     } \
     -result {{TclEval dde-interp-7.3}}
 
-test winDde-7.4 {interp name collision with -exact} \
+test winDde-7.4 {interp name collision with -force} \
     -constraints pcOnly \
     -setup {
 	interp create slave
@@ -340,14 +340,14 @@ test winDde-7.4 {interp name collision with -exact} \
 	slave eval [list dde servername -- dde-interp-7.4]
     } \
     -body {
-        dde servername -exact -- dde-interp-7.4
+        dde servername -force -- dde-interp-7.4
     } \
     -cleanup {
 	interp delete slave
     } \
     -result {dde-interp-7.4}
 
-test winDde-7.5 {interp name collision without -exact} \
+test winDde-7.5 {interp name collision without -force} \
     -constraints pcOnly \
     -setup {
 	interp create slave
@@ -546,7 +546,11 @@ test winDde-9.1 {External safe DDE check string passing} \
             set line
         } msg] $msg
     } \
-    -cleanup {dde execute TclEval $name stop ; update} \
+    -cleanup {
+        dde execute TclEval $name stop
+        update
+        file delete -force -- dde-script.tcl
+    } \
     -result {0 {set x 1}}
 
 test winDde-9.2 {External safe DDE check command evaluation} \
@@ -563,7 +567,11 @@ test winDde-9.2 {External safe DDE check command evaluation} \
             set line
         } msg] $msg
     } \
-    -cleanup {dde execute TclEval $name stop ; update} \
+    -cleanup {
+        dde execute TclEval $name stop
+        update
+        file delete -force -- dde-script.tcl
+    } \
     -result {0 1}
 
 test winDde-9.3 {External safe DDE check prefixed arguments} \
@@ -580,7 +588,11 @@ test winDde-9.3 {External safe DDE check prefixed arguments} \
             set line
         } msg] $msg
     } \
-    -cleanup {dde execute TclEval $name stop ; update} \
+    -cleanup {
+        dde execute TclEval $name stop
+        update
+        file delete -force -- dde-script.tcl
+    } \
     -result {0 {ARG {set x 1}}}
 
 # -------------------------------------------------------------------------
