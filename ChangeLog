@@ -1,5 +1,16 @@
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIO.c (Tcl_GetsObj): Check that
+	the eol pointer has not gone past the end
+	of the string when in auto translation
+	mode and the INPUT_SAW_CR flag is set.
+	The previous code worked because the
+	end of string value \0 was being compared
+	to \n, this patch just skips that pointless
+	check.
+
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tclIO.c (WriteBytes, WriteChars,
 	Tcl_GetsObj, ReadBytes): Rework calls to
 	TranslateOutputEOL to make it clear that
