@@ -1,3 +1,10 @@
+2004-09-10  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/interp.n:
+	* generic/tclInterp.c (TclPreventAliasLoop, AliasCreate):
+	* tests/interp.test (17.4-6, 19.3-4): fixing problems with
+	renaming of aliases [Bugs 707104 1026493]. Fix designed by dgp. 
+
 2004-09-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (NsEnsembleImplementationCmd): Add token
