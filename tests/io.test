@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.25 2002/02/01 21:19:03 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.26 2002/02/15 14:28:50 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,6 +20,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 tcltest::testConstraint testchannel [string equal testchannel [info commands testchannel]]
+
+# You need a *very* special environment to do some tests.  In
+# particular, many file systems do not support large-files...
+tcltest::testConstraint largefileSupport 0
 
 ::tcltest::saveState
 
@@ -3811,12 +3815,12 @@ test io-32.8 {Tcl_Read, nonblocking, file} {nonBlockFiles} {
     set z [read $f1 1000000]
     close $f1
     set x ok
-    set l [string length $z]]
-    set z [file size longfile]]
+    set l [string length $z]
+    set z [file size longfile]
     if {$z != $l} {
 	set x broken
     }
-  set x
+    set x
 } ok
 test io-32.9 {Tcl_Read, read to end of file} {
     set f1 [open longfile r]
@@ -4317,6 +4321,28 @@ test io-34.20 {Tcl_Tell combined with writing} {
     close $f
     set l
 } {29 39 40 447}
+test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport} {
+    removeFile test3
+    set f [open test3 w]
+    fconfigure $f -encoding binary
+    set l ""
+    lappend l [tell $f]
+    puts -nonewline $f abcdef
+    lappend l [tell $f]
+    flush $f
+    lappend l [tell $f]
+    # 4GB offset!
+    seek $f 0x100000000
+    lappend l [tell $f]
+    puts -nonewline $f abcdef
+    lappend l [tell $f]
+    close $f
+    lappend l [file size $f]
+    # truncate...
+    close [open test3 w]
+    lappend l [file size $f]
+    set l
+} {0 6 6 4294967296 4294967302 4294967302 0}
 
 # Test Tcl_Eof
 

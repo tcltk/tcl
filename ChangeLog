@@ -1,3 +1,71 @@
+2002-02-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	+----------------------+
+	| TIP #72 IMPLEMENTED. |
+	+----------------------+
+
+	There are a lot of changes from this TIP, so please see
+	http://purl.org/tcl/tip/72.html for discussion of
+	backward-compatability issues, but the main ones modifications are
+	in:
+
+	* generic/tcl.h: New types.
+	* generic/tcl.decls: New public functions.
+	* generic/tclExecute.c: 64-bit aware bytecode engine.
+	* generic/tclBinary.c: 64-bit handling in [binary] command.
+	* generic/tclScan.c: 64-bit handling in [scan] command.
+	* generic/tclCmdAH.c: 64-bit handling in [file] and [format]
+	commands.
+	* generic/tclBasic.c: New "wordSize" entry in ::tcl_platform.
+	* generic/tclFCmd.c: Large-file support (with many consequences.)
+	* generic/tclIO.c: Large-file support (with many consequences.)
+	* compat/strtoll.c, compat/strtoull.c: New support functions.
+	* unix/tcl.m4, unix/configure: 64-bit support and greatly enhanced
+	cacheing.
+
+	Most other changes, including all those in doc/* and test/* as
+	well as the majority in the platform directories, follow on from
+	these.
+
+	Also coming out of the woodwork:
+	* generic/tclIndex.c: Better support for Cray PVP.
+	* win/tclWinMtherr.c: Better Borland support.
+
+	Note that, in a number of places through the Unix part of the
+	platform support, there are Tcl_Platform* references.  These are
+	expanded into the correct way to call that particular underlying
+	function, i.e. with or without a '64' suffix, and should be used
+	by people working on the core in preference to the API functions
+	they overlay so that the code remains portable depending on the
+	presence or absence of 64-bit support on the underlying platform.
+
+	***POTENTIAL INCOMPATIBILITY***: Extracted from the TIP
+
+	SUMMARY OF INCOMPATIBILITIES AND FIXES 
+	======================================
+
+	The behaviour of expressions containing constants that appear
+	positive but which have a negative internal representation will
+	change, as these will now usually be interpreted as wide
+	integers. This is always fixable by replacing the constant with
+	int(constant).
+
+	Extensions creating new channel types will need to be altered as
+	different types are now in use in those areas. The change to the
+	declaration of Tcl_FSStat and Tcl_FSLstat (which are the new
+	preferred API in any case) are less serious as no non-alpha
+	releases have been made yet with those API functions.
+
+	Scripts that are lax about the use of the l modifier in format and
+	scan will probably need to be rewritten. This should be very
+	uncommon though as previously it had absolutely no effect.
+
+	Extensions that create new math functions that take more than one
+	argument will need to be recompiled (the size of Tcl_Value
+	changes), and functions that accept arguments of any type
+	(TCL_EITHER) will need to be rewritten to handle wide integer
+	values. (I do not expect this to affect many extensions at all.)
+
 2002-02-14  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Trivial fix for bug

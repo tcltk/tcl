@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.25 2002/02/08 02:52:55 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.26 2002/02/15 14:28:51 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -31,7 +31,7 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
 static int NativeAccess(CONST TCHAR *path, int mode);
-static int NativeStat(CONST TCHAR *path, struct stat *statPtr);
+static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr);
 static int NativeIsExec(CONST TCHAR *path);
 
 
@@ -367,7 +367,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		}
 	    }
 	    if (typeOk && types->type != 0) {
-		struct stat buf;
+		Tcl_StatBuf buf;
 		
 		if (NativeStat(nativeName, &buf) != 0) {
 		    /* 
@@ -830,7 +830,7 @@ TclpGetCwd(interp, bufferPtr)
 int 
 TclpObjStat(pathPtr, statPtr)
     Tcl_Obj *pathPtr;          /* Path of file to stat */
-    struct stat *statPtr;      /* Filled with results of stat call. */
+    Tcl_StatBuf *statPtr;      /* Filled with results of stat call. */
 {
 #ifdef OLD_API
     Tcl_Obj *transPtr;
@@ -883,7 +883,7 @@ TclpObjStat(pathPtr, statPtr)
 static int 
 NativeStat(nativePath, statPtr)
     CONST TCHAR *nativePath;   /* Path of file to stat */
-    struct stat *statPtr;      /* Filled with results of stat call. */
+    Tcl_StatBuf *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_DString ds;
     DWORD attr;
@@ -971,10 +971,11 @@ NativeStat(nativePath, statPtr)
 	
 	attr = data.a.dwFileAttributes;
 
-	statPtr->st_size	= data.a.nFileSizeLow;
-	statPtr->st_atime	= ToCTime(data.a.ftLastAccessTime);
-	statPtr->st_mtime	= ToCTime(data.a.ftLastWriteTime);
-	statPtr->st_ctime	= ToCTime(data.a.ftCreationTime);
+	statPtr->st_size  = ((Tcl_WideInt)data.a.nFileSizeLow) |
+		(((Tcl_WideInt)data.a.nFileSizeHigh) << 32);
+	statPtr->st_atime = ToCTime(data.a.ftLastAccessTime);
+	statPtr->st_mtime = ToCTime(data.a.ftLastWriteTime);
+	statPtr->st_ctime = ToCTime(data.a.ftCreationTime);
     } else {
 	WIN32_FILE_ATTRIBUTE_DATA data;
 	if((*tclWinProcs->getFileAttributesExProc)(nativePath,
@@ -1031,10 +1032,11 @@ NativeStat(nativePath, statPtr)
 	
 	attr = data.dwFileAttributes;
 	
-	statPtr->st_size	= data.nFileSizeLow;
-	statPtr->st_atime	= ToCTime(data.ftLastAccessTime);
-	statPtr->st_mtime	= ToCTime(data.ftLastWriteTime);
-	statPtr->st_ctime	= ToCTime(data.ftCreationTime);
+	statPtr->st_size  = ((Tcl_WideInt)data.nFileSizeLow) |
+		(((Tcl_WideInt)data.nFileSizeHigh) << 32);
+	statPtr->st_atime = ToCTime(data.ftLastAccessTime);
+	statPtr->st_mtime = ToCTime(data.ftLastWriteTime);
+	statPtr->st_ctime = ToCTime(data.ftCreationTime);
     }
 
     mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
@@ -1217,7 +1219,7 @@ TclpObjAccess(pathPtr, mode)
 int 
 TclpObjLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;
-    struct stat *buf; 
+    Tcl_StatBuf *buf; 
 {
     return TclpObjStat(pathPtr,buf);
 }

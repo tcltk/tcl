@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.30 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.31 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2467,7 +2467,7 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	 */
 
 	Tcl_Obj *nameObj;
-	struct stat buf;
+	Tcl_StatBuf buf;
 	/* Used to deal with one special case pertinent to MacOS */
 	int macSpecialCase = 0;
 
@@ -2596,4 +2596,28 @@ TclFileDirname(interp, pathPtr)
     Tcl_IncrRefCount(splitResultPtr);
     Tcl_DecrRefCount(splitPtr);
     return splitResultPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_AllocStatBuf
+ *
+ *     This procedure allocates a Tcl_StatBuf on the heap.  It exists
+ *     so that extensions may be used unchanged on systems where
+ *     largefile support is optional.
+ *
+ * Results:
+ *     A pointer to a Tcl_StatBuf which may be deallocated by being
+ *     passed to ckfree().
+ *
+ * Side effects:
+ *      None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_StatBuf *
+Tcl_AllocStatBuf() {
+    return (Tcl_StatBuf *) ckalloc(sizeof(Tcl_StatBuf));
 }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.4 2002/01/15 17:55:30 dgp Exp $
+ * CVS: $Id: tclIOGT.c,v 1.5 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -33,8 +33,8 @@ static int		TransformInputProc _ANSI_ARGS_ ((
 static int		TransformOutputProc _ANSI_ARGS_ ((
 				ClientData instanceData, CONST char *buf,
 				int toWrite, int* errorCodePtr));
-static int		TransformSeekProc _ANSI_ARGS_ ((
-				ClientData instanceData, long offset,
+static Tcl_WideInt	TransformSeekProc _ANSI_ARGS_ ((
+				ClientData instanceData, Tcl_WideInt offset,
 				int mode, int* errorCodePtr));
 static int		TransformSetOptionProc _ANSI_ARGS_((
 				ClientData instanceData, Tcl_Interp *interp,
@@ -156,8 +156,8 @@ static Tcl_ChannelType transformChannelType = {
 
 struct ResultBuffer {
     unsigned char* buf;       /* Reference to the buffer area */
-    int            allocated; /* Allocated size of the buffer area */
-    int            used;      /* Number of bytes in the buffer, <= allocated */
+    int		   allocated; /* Allocated size of the buffer area */
+    int		   used;      /* Number of bytes in the buffer, <= allocated */
 };
 
 /*
@@ -357,11 +357,11 @@ TclChannelTransform(interp, chan, cmdObjPtr)
 
 static int
 ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
-    TransformChannelData* dataPtr;     /* Transformation with the callback */
+    TransformChannelData* dataPtr;  /* Transformation with the callback */
     Tcl_Interp*           interp;   /* Current interpreter, possibly NULL */
     unsigned char*        op;       /* Operation invoking the callback */
     unsigned char*        buf;      /* Buffer to give to the script. */
-    int                   bufLen;   /* Ands its length */
+    int			  bufLen;   /* Ands its length */
     int                   transmit; /* Flag, determines whether the result
 				     * of the callback is sent to the
 				     * underlying channel or not. */
@@ -377,15 +377,13 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
      * arguments. Feather's curried commands would come in handy here.
      */
 
-    Tcl_Obj*        resObj; /* See below, switch (transmit) */
-    int             resLen;
-    unsigned char*  resBuf;
+    Tcl_Obj* resObj;		    /* See below, switch (transmit) */
+    int resLen;
+    unsigned char* resBuf;
     Tcl_SavedResult ciSave;
-
     int res = TCL_OK;
     Tcl_Obj* command = Tcl_DuplicateObj (dataPtr->command);
     Tcl_Obj* temp;
-
 
     if (preserve) {
 	Tcl_SaveResult (dataPtr->interp, &ciSave);
@@ -641,7 +639,7 @@ static int
 TransformInputProc (instanceData, buf, toRead, errorCodePtr)
     ClientData instanceData;
     char*      buf;
-    int        toRead;
+    int	       toRead;
     int*       errorCodePtr;
 {
     TransformChannelData* dataPtr = (TransformChannelData*) instanceData;
@@ -764,8 +762,7 @@ TransformInputProc (instanceData, buf, toRead, errorCodePtr)
 	 */
 
 	res = ExecuteCallback (dataPtr, NO_INTERP, A_READ,
-		UCHARP (buf), read, TRANSMIT_IBUF,
-		P_PRESERVE);
+		UCHARP (buf), read, TRANSMIT_IBUF, P_PRESERVE);
 
 	if (res != TCL_OK) {
 	    *errorCodePtr = EINVAL;
@@ -846,12 +843,12 @@ TransformOutputProc (instanceData, buf, toWrite, errorCodePtr)
  *------------------------------------------------------*
  */
 
-static int
+static Tcl_WideInt
 TransformSeekProc (instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;	/* The channel to manipulate */
-    long       offset;		/* Size of movement. */
-    int        mode;		/* How to move */
-    int*       errorCodePtr;	/* Location of error flag. */
+    ClientData  instanceData;	/* The channel to manipulate */
+    Tcl_WideInt offset;		/* Size of movement. */
+    int         mode;		/* How to move */
+    int*        errorCodePtr;	/* Location of error flag. */
 {
     int result;
     TransformChannelData* dataPtr	= (TransformChannelData*) instanceData;
@@ -1274,7 +1271,7 @@ static int
 ResultCopy (r, buf, toRead)
     ResultBuffer*  r;      /* The buffer to read from */
     unsigned char* buf;    /* The buffer to copy into */
-    int            toRead; /* Number of requested bytes */
+    int		   toRead; /* Number of requested bytes */
 {
     if (r->used == 0) {
         /* Nothing to copy in the case of an empty buffer.
@@ -1337,7 +1334,7 @@ static void
 ResultAdd (r, buf, toWrite)
     ResultBuffer*  r;       /* The buffer to extend */
     unsigned char* buf;     /* The buffer to read from */
-    int            toWrite; /* The number of bytes in 'buf' */
+    int		   toWrite; /* The number of bytes in 'buf' */
 {
     if ((r->used + toWrite) > r->allocated) {
         /* Extension of the internal buffer is required.
