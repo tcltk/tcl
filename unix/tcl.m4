@@ -428,6 +428,9 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	# USE_THREAD_ALLOC tells us to try the special thread-based
 	# allocator that significantly reduces lock contention
 	AC_DEFINE(USE_THREAD_ALLOC)
+	# USE_THREAD_STORAGE tells us to use the new generic thread 
+	# storage subsystem. 
+	AC_DEFINE(USE_THREAD_STORAGE)
 	AC_DEFINE(_REENTRANT)
 	AC_DEFINE(_THREAD_SAFE)
 	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
