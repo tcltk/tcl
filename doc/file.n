@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.28 2004/01/26 13:33:59 vincentdarley Exp $
+'\" RCS: @(#) $Id: file.n,v 1.29 2004/01/29 10:28:20 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -103,11 +103,13 @@ then the second form is used.  The second form makes a copy inside
 \fItargetDir\fR of each \fIsource\fR file listed.  If a directory is
 specified as a \fIsource\fR, then the contents of the directory will be
 recursively copied into \fItargetDir\fR. Existing files will not be
-overwritten unless the \fB\-force\fR option is specified.  When copying
+overwritten unless the \fB\-force\fR option is specified (when Tcl will
+also attempt to adjust permissions on the destination file or directory
+if that is necessary to allow the copy to proceed).  When copying
 within a single filesystem, \fIfile copy\fR will copy soft links (i.e.
 the links themselves are copied, not the things they point to).  Trying
 to overwrite a non-empty directory, overwrite a directory with a file,
-or a file with a directory will all result in errors even if
+or overwrite a file with a directory will all result in errors even if
 \fI\-force\fR was specified.  Arguments are processed in the order
 specified, halting at the first error, if any.  A \fB\-\|\-\fR marks
 the end of switches; the argument following the \fB\-\|\-\fR will be

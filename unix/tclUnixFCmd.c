@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.33 2003/11/18 23:13:34 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.34 2004/01/29 10:28:23 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -110,6 +110,10 @@ typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
 
 /*
  * Constants and variables necessary for file attributes subcommand.
+ * 
+ * IMPORTANT: The permissions attribute is assumed to be the third
+ * item (i.e. to be indexed with '2' in arrays) in code in tclIOUtil.c
+ * and possibly elsewhere in Tcl's core.
  */
 
 enum {

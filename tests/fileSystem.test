@@ -613,15 +613,145 @@ test filesystem-7.2 {cross-filesystem copy from vfs maintains mtime} \
     cd [tcltest::temporaryDirectory]
     # We created this file several tests ago.
     set origtime [file mtime gorp.file]
-    testsimplefilesystem 1
-    file delete -force theCopy
-    file copy simplefs:/gorp.file theCopy
-    testsimplefilesystem 0
-    set newtime [file mtime theCopy]
-    file delete theCopy
+    set res [file exists gorp.file]
+    if {[catch {
+	testsimplefilesystem 1
+	file delete -force theCopy
+	file copy simplefs:/gorp.file theCopy
+	testsimplefilesystem 0
+	set newtime [file mtime theCopy]
+	file delete theCopy
+    } err]} {
+	lappend res $err
+	set newtime ""
+    }
     cd $dir
-    expr {$origtime == $newtime}
-} {1}
+    lappend res [expr {$origtime == $newtime}]
+} {1 1}
+
+test filesystem-7.3 {glob in simplefs} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    set res [glob -nocomplain -dir simplefs:/simpledir *]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+    set res
+} {simplefs:/simpledir/simplefile}
+
+test filesystem-7.4 {cross-filesystem file copy with -force} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set fout [open [file join simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simplefile file2} err]
+    lappend res $err
+    lappend res [file exists file2]
+    testsimplefilesystem 0
+    file delete -force simplefile
+    file delete -force file2
+    cd $dir
+    set res
+} {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+
+test filesystem-7.5 {cross-filesystem file copy with -force} \
+  {testsimplefilesystem unixOnly} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set fout [open [file join simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    file attributes file2 -permissions 0000
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simplefile file2} err]
+    lappend res $err
+    lappend res [file exists file2]
+    testsimplefilesystem 0
+    file delete -force simplefile
+    file delete -force file2
+    cd $dir
+    set res
+} {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+
+test filesystem-7.6 {cross-filesystem dir copy with -force} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    file mkdir dir2
+    set fout [open [file join simpledir simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
+    lappend res $err
+    lappend res [file exists [file join dir2 simpledir]] \
+      [file exists [file join dir2 simpledir simplefile]]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    file delete -force dir2
+    cd $dir
+    set res
+} {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+
+test filesystem-7.7 {cross-filesystem dir copy with -force} \
+  {testsimplefilesystem unixOnly} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    file mkdir dir2
+    set fout [open [file join simpledir simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    file attributes file2 -permissions 0000
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
+    lappend res $err
+    lappend res [file exists [file join dir2 simpledir]] \
+      [file exists [file join dir2 simpledir simplefile]]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    file delete -force dir2
+    cd $dir
+    set res
+} {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
 
 removeFile gorp.file
 
