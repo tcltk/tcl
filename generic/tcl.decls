@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.85 2002/02/28 05:11:25 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.86 2002/03/20 22:47:36 dgp Exp $
 
 library tcl
 
@@ -628,7 +628,7 @@ declare 175 generic {
     CONST char * Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags)
 }
 declare 176 generic {
-    CONST char * Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2,
+    CONST char * Tcl_GetVar2(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    int flags)
 }
 declare 177 generic {
@@ -838,7 +838,7 @@ declare 237 generic {
 	    CONST char *newValue, int flags)
 }
 declare 238 generic {
-    CONST char * Tcl_SetVar2(Tcl_Interp *interp, char *part1, char *part2,
+    CONST char * Tcl_SetVar2(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    CONST char *newValue, int flags)
 }
 declare 239 generic {
@@ -874,7 +874,7 @@ declare 247 generic {
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 248 generic {
-    int Tcl_TraceVar2(Tcl_Interp *interp, char *part1, char *part2,
+    int Tcl_TraceVar2(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 249 generic {
@@ -894,14 +894,15 @@ declare 253 generic {
     int Tcl_UnsetVar(Tcl_Interp *interp, char *varName, int flags)
 }
 declare 254 generic {
-    int Tcl_UnsetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags)
+    int Tcl_UnsetVar2(Tcl_Interp *interp, char *part1, CONST char *part2,
+	    int flags)
 }
 declare 255 generic {
     void Tcl_UntraceVar(Tcl_Interp *interp, char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 256 generic {
-    void Tcl_UntraceVar2(Tcl_Interp *interp, char *part1, char *part2,
+    void Tcl_UntraceVar2(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 257 generic {
@@ -913,7 +914,7 @@ declare 258 generic {
 }
 declare 259 generic {
     int Tcl_UpVar2(Tcl_Interp *interp, CONST char *frameName, char *part1,
-	    char *part2, CONST char *localName, int flags)
+	    CONST char *part2, CONST char *localName, int flags)
 }
 declare 260 generic {
     int Tcl_VarEval(Tcl_Interp *interp, ...)
@@ -924,7 +925,7 @@ declare 261 generic {
 }
 declare 262 generic {
     ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, char *part1,
-	    char *part2, int flags, Tcl_VarTraceProc *procPtr,
+	    CONST char *part2, int flags, Tcl_VarTraceProc *procPtr,
 	    ClientData prevClientData)
 }
 declare 263 generic {
@@ -1093,7 +1094,7 @@ declare 305 generic {
     VOID * Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
 }
 declare 306 generic {
-    Tcl_Obj * Tcl_GetVar2Ex(Tcl_Interp *interp, char *part1, char *part2,
+    Tcl_Obj * Tcl_GetVar2Ex(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    int flags)
 }
 declare 307 generic {
@@ -1129,7 +1130,7 @@ declare 316 generic {
     int Tcl_SetSystemEncoding(Tcl_Interp *interp, CONST char *name)
 }
 declare 317 generic {
-    Tcl_Obj * Tcl_SetVar2Ex(Tcl_Interp *interp, char *part1, char *part2,
+    Tcl_Obj * Tcl_SetVar2Ex(Tcl_Interp *interp, char *part1, CONST char *part2,
 	    Tcl_Obj *newValuePtr, int flags)
 }
 declare 318 generic {
