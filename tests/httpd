@@ -183,6 +183,9 @@ proc httpdRespond { sock } {
 		append html "<h2>Query</h2>\n<dl>\n"
 		foreach {key value} [split $data(query) &=] {
 		    append html "<dt>$key<dd>$value\n"
+		    if {$key == "timeout"} {
+			after $value    ;# pause
+		    }
 		}
 		append html </dl>\n
 	    }
