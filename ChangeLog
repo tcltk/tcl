@@ -1,5 +1,9 @@
 2005-04-02  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclInt.h:
+	* generic/tclObj.c: Change in TclDecrRefCount and TclFreeObj, to
+	speed up the freeing of simple Tcl_Obj [Patch 1174551]
+
 	* generic/tclCompile.c: uninited var as arg to Tcl_Panic
 	* generic/tclExecute.c: leak fix in INST_STORE_SCALAR, 
 

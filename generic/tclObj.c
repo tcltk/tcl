@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.73.2.1 2005/04/01 18:49:01 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.73.2.2 2005/04/02 21:45:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -61,28 +61,79 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 #endif /* TCL_MEM_DEBUG && TCL_THREADS */
 
-/*
- * Nested Tcl_Obj deletion management support.  Note that the code
- * that implements all this is written as macros in tclInt.h
- */
-
-#ifdef TCL_THREADS
 
 /*
- * Lookup key for the thread-local data used in the implementation in
- * tclInt.h.
+ * Nested Tcl_Obj deletion management support
+ *
+ * All context references used in the object freeing code are pointers
+ * to this structure; every thread will have its own structure
+ * instance.  The purpose of this structure is to allow deeply nested
+ * collections of Tcl_Objs to be freed without taking a vast depth of
+ * C stack (which could cause all sorts of breakage.)
  */
-Tcl_ThreadDataKey tclPendingObjDataKey;
 
+typedef struct PendingObjData {
+    int deletionCount;		/* Count of the number of invokations of
+				 * TclFreeObj() are on the stack (at least
+				 * conceptually; many are actually expanded
+				 * macros). */
+    Tcl_Obj *deletionStack;	/* Stack of objects that have had TclFreeObj()
+				 * invoked upon them but which can't be deleted
+				 * yet because they are in a nested invokation
+				 * of TclFreeObj(). By postponing this way, we
+				 * limit the maximum overall C stack depth when
+				 * deleting a complex object. The down-side is
+				 * that we alter the overall behaviour by
+				 * altering the order in which objects are
+				 * deleted, and we change the order in which
+				 * the string rep and the internal rep of an
+				 * object are deleted. Note that code which
+				 * assumes the previous behaviour in either of
+				 * these respects is unsafe anyway; it was
+				 * never documented as to exactly what would
+				 * happen in these cases, and the overall
+				 * contract of a user-level Tcl_DecrRefCount()
+				 * is still preserved (assuming that a
+				 * particular T_DRC would delete an object is
+				 * not very safe). */
+} PendingObjData;
+
+/*
+ * These are separated out so that some semantic content is attached
+ * to them.
+ */
+#define ObjDeletionLock(contextPtr)   (contextPtr)->deletionCount++
+#define ObjDeletionUnlock(contextPtr) (contextPtr)->deletionCount--
+#define ObjDeletePending(contextPtr)  (contextPtr)->deletionCount > 0
+#define ObjOnStack(contextPtr)	 (contextPtr)->deletionStack != NULL
+#define PushObjToDelete(contextPtr,objPtr) \
+    /* Invalidate the string rep first so we can use the bytes value \
+     * for our pointer chain. */ \
+    if (((objPtr)->bytes != NULL) \
+	    && ((objPtr)->bytes != tclEmptyStringRep)) { \
+	ckfree((char *) (objPtr)->bytes); \
+    } \
+    /* Now push onto the head of the stack. */ \
+    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack); \
+    (contextPtr)->deletionStack = (objPtr)
+#define PopObjToDelete(contextPtr,objPtrVar) \
+    (objPtrVar) = (contextPtr)->deletionStack; \
+    (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
+
+/*
+ * Macro to set up the local reference to the deletion context.
+ */
+#ifndef TCL_THREADS
+PendingObjData pendingObjData;
+#define ObjInitDeletionContext(contextPtr) \
+    PendingObjData *CONST contextPtr = &pendingObjData
 #else
-
-/*
- * Declaration of the singleton structure referenced in the
- * implementation in tclInt.h.
- */
-PendingObjData tclPendingObjData = { 0, NULL };
-
+Tcl_ThreadDataKey pendingObjDataKey;
+#define ObjInitDeletionContext(contextPtr) \
+    PendingObjData *CONST contextPtr = (PendingObjData *) \
+	    Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
 #endif
+
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -775,19 +826,19 @@ TclFreeObj(objPtr)
     /*
      * This macro declares a variable, so must come here...
      */
-    TclObjInitDeletionContext(context);
+    ObjInitDeletionContext(context);
 
     if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
 
-    if (TclObjDeletePending(context)) {
+    if (ObjDeletePending(context)) {
 	TclPushObjToDelete(context, objPtr);
     } else {
 	if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-	    TclObjDeletionLock(context);
+	    ObjDeletionLock(context);
 	    typePtr->freeIntRepProc(objPtr);
-	    TclObjDeletionUnlock(context);
+	    ObjDeletionUnlock(context);
 	}
 	Tcl_InvalidateStringRep(objPtr);
 
@@ -797,11 +848,11 @@ TclFreeObj(objPtr)
 #ifdef TCL_COMPILE_STATS
 	tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
-	TclObjDeletionLock(context);
-	while (TclObjOnStack(context)) {
+	ObjDeletionLock(context);
+	while (ObjOnStack(context)) {
 	    Tcl_Obj *objToFree;
 
-	    TclPopObjToDelete(context,objToFree);
+	    PopObjToDelete(context,objToFree);
 	    TclFreeIntRep(objToFree);
 
 	    Tcl_MutexLock(&tclObjMutex);
@@ -811,7 +862,7 @@ TclFreeObj(objPtr)
 	    tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
 	}
-	TclObjDeletionUnlock(context);
+	ObjDeletionUnlock(context);
     }
 }
 #else /* TCL_MEM_DEBUG */
@@ -820,11 +871,58 @@ void
 TclFreeObj(objPtr)
     register Tcl_Obj *objPtr;	/* The object to be freed. */
 {
-    TclObjInitDeletionContext(context);
-    if (TclObjDeletePending(context)) {
-	TclPushObjToDelete(context, objPtr);
+    if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
+	/*
+	 * objPtr can be freed safely, as it will not attempt to free any
+	 * other objects: it will not cause recursive calls to this function.
+	 */
+
+	if (objPtr->bytes && (objPtr->bytes != tclEmptyStringRep)) {	    
+	    ckfree((char *) objPtr->bytes);
+	}
+	TclFreeObjStorage(objPtr);
+	TclIncrObjsFreed();	
     } else {
-	TclFreeObjMacro(context, objPtr);
+	/*
+	 * This macro declares a variable, so must come here...
+	 */
+	ObjInitDeletionContext(context);
+	
+	if (ObjDeletePending(context)) {
+	    PushObjToDelete(context, objPtr);
+	} else {	
+	    /*
+	     * Note that the contents of the while loop assume that the string
+	     * rep has already been freed and we don't want to do anything
+	     * fancy with adding to the queue inside ourselves. Must take care
+	     * to unstack the object first since freeing the internal rep can
+	     * add further objects to the stack. The code assumes that it is
+	     * the first thing in a block; all current usages in the core
+	     * satisfy this.  
+	     */
+	    
+	    ObjDeletionLock(context); 
+	    objPtr->typePtr->freeIntRepProc(objPtr); 
+	    ObjDeletionUnlock(context); 
+
+	    if (objPtr->bytes && (objPtr->bytes != tclEmptyStringRep)) { 
+		ckfree((char *) objPtr->bytes); 
+	    } 
+	    TclFreeObjStorage(objPtr); 
+	    TclIncrObjsFreed(); 
+	    ObjDeletionLock(context); 
+	    while (ObjOnStack(context)) { 
+		Tcl_Obj *objToFree; 
+		PopObjToDelete(context,objToFree); 
+		if ((objToFree->typePtr != NULL) 
+			&& (objToFree->typePtr->freeIntRepProc != NULL)) { 
+		    objToFree->typePtr->freeIntRepProc(objToFree); 
+		} 
+		TclFreeObjStorage(objToFree); 
+		TclIncrObjsFreed(); 
+	    } 
+	    ObjDeletionUnlock(context);
+	}
     }
 }
 #endif
