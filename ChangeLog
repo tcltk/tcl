@@ -1,3 +1,36 @@
+1999-11-19  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* generic/tcl.h:
+	* unix/configure.in:
+	* win/configure.in:
+	* win/README.binary: updated to patchlevel 3
+	* tools/tcl.wse.in: updated to patchlevel 3, as well as making
+	sure tcltest1.0 is installed, and koi-r encoding is installed
+	correctly
+
+	* generic/tclCkalloc.c: fixed Tcl_DbCkfree to return a value
+	on NULL input. [Bug: 3400]
+
+	* generic/tclStringObj.c: fixed support for passing in negative
+	length to Tcl_SetUnicodeObj, et al handling routines. [Bug: 3380]
+
+	* tests/http.test: updated http package to 2.2
+	* doc/http.n:
+	* library/http2.1/http.tcl: added register and unregister
+	commands to http:: package (better support for tls/SSL),
+	as well as -type argument to http::geturl. [RFE: 2617]
+	* library/http2.1/http.tcl: Correctly fixed the -timeout
+	problem mentioned in the 10-29 change.  Also added error
+	handling for failed writes on the socket during the protocol.
+
+	* generic/tclBasic.c: removed extra decr of numLevels in
+	Tcl_EvalObjEx that could cause seg fault. (mjansen@wendt.de)
+
+	* generic/tclEvent.c: fixed possible lack of MutexUnlock in
+	Tcl_DeleteExitHandler [Bug: 3545]
+
+
 1999-11-02  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tagged 8.2.2 final
