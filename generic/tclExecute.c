@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.128 2004/05/16 17:25:49 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.129 2004/05/16 20:23:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1336,8 +1336,13 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	
     case INST_START_CMD:
-	if ((!(iPtr->flags & DELETED)
-		    && (codeCompileEpoch == iPtr->compileEpoch)
+	/*
+	 * Remark that if the interpreter is marked for deletion
+	 * its compileEpoch is modified, so that the epoch
+	 * check also verifies that the interp is not deleted.
+	 */
+	
+	if (((codeCompileEpoch == iPtr->compileEpoch)
 		    && (codeNsEpoch == namespacePtr->resolverEpoch))
 		|| codePrecompiled) {
 	    NEXT_INST_F(5, 0, 0);
