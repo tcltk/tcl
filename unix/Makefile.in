@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.114 2002/08/22 00:52:32 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.115 2002/08/31 06:09:46 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -195,6 +195,7 @@ SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
+TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
 
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
@@ -244,6 +245,7 @@ GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(TOP_DIR)/unix
+MAC_OSX_DIR		= $(TOP_DIR)/macosx
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
@@ -314,7 +316,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
-OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
+OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
+        @DL_OBJS@ @PLAT_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -428,9 +431,12 @@ DL_SRCS = \
 	$(UNIX_DIR)/tclLoadOSF.c \
 	$(UNIX_DIR)/tclLoadShl.c
 
-# Note: don't include DL_SRCS in SRCS:  most of those files won't
-# compile on the current machine, and they will cause problems for
-# things like "make depend".
+MAC_OSX_SRCS = \
+	$(MAC_OSX_DIR)/tclMacOSXBundle.c
+
+# Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
+# files won't compile on the current machine, and they will cause
+# problems for things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
@@ -473,6 +479,11 @@ tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 # burned into its ld search path. This keeps tcltest from
 # picking up an already installed version of the Tcl library.
 
+# Resetting the LIB_RUNTIME_DIR below is required so that
+# the generated tcltest executable gets the build directory
+# burned into its ld search path. This keeps tcltest from
+# picking up an already installed version of the Tcl library.
+
 tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR=`pwd`
 
@@ -488,58 +499,40 @@ tcltest-real:
 #	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
 test: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) $(TCLTESTARGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
 # Useful target for running the test suite with an unwritable current
 # directory...
 ro-test: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | ./tcltest
 
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
-	@LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: tclsh
-	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
-	@echo "set env DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}" > gdb.run
-	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
-	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	$(GDB) ./tclsh --command=gdb.run
 	rm gdb.run
 
 # This target can be used to run tclsh inside ddd
 ddd: tclsh
-	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
-	@echo "set env DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}" > gdb.run
-	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
-	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	$(DDD) -command=gdb.run ./tclsh
 	rm gdb.run
@@ -1047,6 +1040,10 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
+
+# This is the CFBundle interface.  It is only used on Mac OS X.
+tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
+	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

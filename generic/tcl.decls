@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.93 2002/08/05 15:01:03 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.94 2002/08/31 06:09:45 das Exp $
 
 library tcl
 
@@ -1820,4 +1820,16 @@ declare 7 mac {
 }
 declare 8 mac {
     int strcasecmp(CONST char *s1, CONST char *s2)
+}
+
+##################
+# Mac OS X declarations
+#
+
+declare 0 macosx {
+    int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
+	    CONST char *bundleName,
+	    int hasResourceFile,
+	    int maxPathLen,
+	    char *libraryPath)
 }

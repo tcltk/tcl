@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.10 2000/04/24 23:32:13 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11 2002/08/31 06:09:46 das Exp $
  */
 
 #include "tclInt.h"
@@ -973,7 +973,6 @@ NotifierThreadProc(clientData)
 	    }
             if (found || (tsdPtr->pollState & POLL_DONE)) {
                 tsdPtr->eventReady = 1;
-		Tcl_ConditionNotify(&tsdPtr->waitCV);
 		if (tsdPtr->onList) {
 		    /*
 		     * Remove the ThreadSpecificData structure of this
@@ -994,6 +993,7 @@ NotifierThreadProc(clientData)
 		    tsdPtr->onList = 0;
 		    tsdPtr->pollState = 0;
 		}
+		Tcl_ConditionNotify(&tsdPtr->waitCV);
             }
         }
 	Tcl_MutexUnlock(&notifierMutex);
