@@ -1,3 +1,13 @@
+2003-01-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Set SHLIB_SUFFIX
+	so that TCL_SHLIB_SUFFIX will be set to a useful
+	value in the generated tclConfig.sh.
+	Set SHLIB_LD_LIBS to "" or '${LIBS}' based on
+	the --enable-shared flag. This matches the
+	UNIX implementation.
+
 2003-01-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCkalloc.c: change %ud to %u as appropriate.
