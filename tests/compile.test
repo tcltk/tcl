@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.10 2001/08/22 13:57:53 msofer Exp $
+# RCS: @(#) $Id: compile.test,v 1.11 2001/08/31 17:53:57 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -197,7 +197,47 @@ test compile-10.1 {BLACKBOX: exception stack overflow} {
     }
 } {}
 
-
+test compile-11.1 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} {
+	# shared object - Interp result && Var 'r'
+	set r [list foobar]
+	# command that will add error to result
+	lindex a bogus
+    }
+    list [catch {p} msg] $msg
+} {1 {bad index "bogus": must be integer or end?-integer?}}
+test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; string index a bogus }
+    list [catch {p} msg] $msg
+} {1 {bad index "bogus": must be integer or end?-integer?}}
+test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; string index a 09 }
+    list [catch {p} msg] $msg
+} {1 {bad index "09": must be integer or end?-integer? (looks like invalid octal number)}}
+test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; array set var {one two many} }
+    list [catch {p} msg] $msg
+} {1 {list must have an even number of elements}}
+test compile-11.5 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; incr foo }
+    list [catch {p} msg] $msg
+} {1 {can't read "foo": no such variable}}
+test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; incr foo bogus }
+    list [catch {p} msg] $msg
+} {1 {expected integer but got "bogus"}}
+test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; expr !a }
+    list [catch {p} msg] $msg
+} {1 {syntax error in expression "!a"}}
+test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; expr {!a} }
+    list [catch {p} msg] $msg
+} {1 {syntax error in expression "!a"}}
+test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
+    proc p {} { set r [list foobar] ; llength "\{" }
+    list [catch {p} msg] $msg
+} {1 {unmatched open brace in list}}
 
 # cleanup
 catch {rename p ""}
@@ -207,16 +247,3 @@ catch {unset y}
 catch {unset a}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-
