@@ -10,10 +10,10 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.4 2002/04/17 23:03:14 dgp Exp $
+# RCS: @(#) $Id: iogt.test,v 1.5 2002/07/01 02:29:22 dgp Exp $
 
-if {[catch {package require tcltest 2}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2 required."
+if {[catch {package require tcltest 2.1}]} {
+    puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
     return
 }
 namespace eval ::tcl::test::iogt {
@@ -486,7 +486,7 @@ test iogt-2.0 {basic I/O going through transform} testchannel {
     close $fout
 
     set res
-} {1 71 71}
+} {1 70 70}
 
 
 test iogt-2.1 {basic I/O, operation trail} {testchannel unixOnly} {
@@ -522,13 +522,10 @@ read
 query/maxRead
 read
 query/maxRead
-read
-query/maxRead
 flush/read
 delete/read
 --------
 create/write
-write
 write
 write
 write
@@ -572,10 +569,6 @@ read {\}\{`~!@#$} {\}\{`~!@#$}
 query/maxRead {} -1
 read %^&*()_+-= %^&*()_+-=
 query/maxRead {} -1
-read {
-} {
-}
-query/maxRead {} -1
 flush/read {} {}
 delete/read {} *ignored*
 --------
@@ -587,9 +580,6 @@ write 456789,./? 456789,./?
 write {><;'\|":[]} {><;'\|":[]}
 write {\}\{`~!@#$} {\}\{`~!@#$}
 write %^&*()_+-= %^&*()_+-=
-write {
-} {
-}
 flush/write {} {}
 delete/write {} *ignored*}
 
@@ -626,15 +616,10 @@ read {><;'\|":[]\}\{`~!@#$} {><;'\|":[]\}\{`~!@#$}
 write {><;'\|":[]} {><;'\|":[]}
 write {\}\{`~!@#$} {\}\{`~!@#$}
 query/maxRead {} -1
-read {%^&*()_+-=
-} {%^&*()_+-=
-}
+read %^&*()_+-= %^&*()_+-=
 query/maxRead {} -1
 flush/read {} {}
 write %^&*()_+-= %^&*()_+-=
-write {
-} {
-}
 delete/read {} *ignored*
 flush/write {} {}
 delete/write {} *ignored*}
