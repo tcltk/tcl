@@ -1,3 +1,20 @@
+2004-05-25  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_FindNamespaceVar):
+	* tests/namespace.test (namespace-17.10-12): reverted commit of
+	2004-05-23 and removed the tests, as it interferes with the
+	varname resolver and there are apps that break (AlphaTk). A fix
+	will have to wait for Tcl9.
+
+	* generic/tclVar.c: Caching of namespace variables disabled: no
+	simple way was found to avoid interfering with the resolver's idea
+	of variable existence. A cached varName may keep a variable's name
+	in the namespace's hash table, which is the resolver's criterion
+	for existence.
+
+	* tests/namespace.c (namespace-17.10): testing for interference
+	between varname caching and name resolver.
+
 2004-05-25  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/winFCmd.test: Correct test for the presence of a CD-ROM so
@@ -61,8 +78,7 @@
 	* generic/tclVar.c (TclLookupSimpleVar): comments re [Bug 736729] 
 	(predecessor of [Bug 959052]) removed.
 	* tests/namespace.test: added tests 17.10-12 
-
-	***POTENTIAL INCOMPATIBILITY***
+	
 	The patch modifies non-documented behaviour, and passes every test
 	in the testsuite. However, scripts relying on the old behaviour
 	may break.
@@ -73,6 +89,7 @@
 	the namespace resolution process deems a variable to exist exactly
 	when [info vars] finds it - ie, either it has value, or else it
 	was "fixed" by a call to [variable].
+	Note: this patch was removed on 2002-05-25. 
 
 2004-05-22  Miguel Sofer <msofer@users.sf.net>
 
