@@ -1,3 +1,10 @@
+2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: 
+	* win/tclWinFile.c:
+	* tests/winFCMd.test: fix to 'file pathtype' and 'file norm' 
+	failures on reserved filenames like 'COM1:', etc.
+
 2005-03-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c:
