@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.5 1999/07/01 17:36:17 jenn Exp $
+# RCS: @(#) $Id: exec.test,v 1.5.4.1 1999/09/22 21:06:15 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -29,6 +29,7 @@ puts $f {
 	puts -nonewline " $str"
     }
     puts {}
+    exit
 }
 close $f
 
@@ -51,6 +52,7 @@ puts $f {
 	    close $f
 	}
     }
+    exit
 }
 close $f
 
@@ -61,6 +63,7 @@ puts $f {
     set words [regsub -all "\[^ \t\n]+" $data {} dummy]
     set chars [string length $data]
     puts [format "%8.d%8.d%8.d" $lines $words $chars]
+    exit
 }
 close $f
 
@@ -85,12 +88,14 @@ puts $f {
 	}
 	lappend newcmd $arg
     }
+    exit
 }
 close $f
 
 set f [open sleep w]
 puts $f {
     after [expr $argv*1000]
+    exit
 }
 close $f
 
