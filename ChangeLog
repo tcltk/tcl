@@ -7,7 +7,9 @@
 	* tests/socket.test:
 	* tests/timer.test:
 
-	* generic/tclInterp.c:	Corrected [interp bgerror] error message.
+	* tests/interp.test (interp-36.*):	[interp bgerror] tests.
+
+	* generic/tclInterp.c:	Corrected [interp bgerror] error messages.
 
 2004-11-18  Reinhard Max  <max@suse.de>
 

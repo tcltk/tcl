@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.42 2004/11/13 00:19:10 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.43 2004/11/18 21:00:51 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -3210,6 +3210,41 @@ test interp-35.22 {interp time limits normalize milliseconds} -body {
 } -cleanup {
     interp delete $i
 } -result {2 500}
+
+test interp-36.1 {interp bgerror syntax} -body {
+    interp bgerror
+} -returnCodes error -result {wrong # args: should be "interp bgerror path ?cmdPrefix?"}
+test interp-36.2 {interp bgerror syntax} -body { 
+    interp bgerror x y z
+} -returnCodes error -result {wrong # args: should be "interp bgerror path ?cmdPrefix?"}
+test interp-36.3 {interp bgerror syntax} -setup {
+    interp create slave
+} -body {
+    slave bgerror x y
+} -cleanup {
+    interp delete slave
+} -returnCodes error -result {wrong # args: should be "slave bgerror ?cmdPrefix?"}
+test interp-36.4 {SlaveBgerror syntax} -setup {
+    interp create slave
+} -body {
+    slave bgerror \{
+} -cleanup {
+    interp delete slave
+} -returnCodes error -result {cmdPrefix must be list of length >= 1}
+test interp-36.5 {SlaveBgerror syntax} -setup {
+    interp create slave
+} -body {
+    slave bgerror {}
+} -cleanup {
+    interp delete slave
+} -returnCodes error -result {cmdPrefix must be list of length >= 1}
+test interp-36.6 {SlaveBgerror returns handler} -setup {
+    interp create slave
+} -body {
+    slave bgerror {foo bar soom}
+} -cleanup {
+    interp delete slave
+} -result {foo bar soom}
 
 # cleanup
 foreach i [interp slaves] {
