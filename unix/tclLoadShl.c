@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.3 1999/04/16 00:48:04 stanton Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.4 2001/04/09 23:09:58 kennykb Exp $
  */
 
 #include <dl.h>
@@ -73,7 +73,9 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
      * when they are build."
      */
 
-    handle = shl_load(fileName, BIND_DEFERRED|BIND_VERBOSE, 0L);
+    handle = shl_load(fileName,
+		      BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH,
+		      0L);
     if (handle == NULL) {
 	Tcl_AppendResult(interp, "couldn't load file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
