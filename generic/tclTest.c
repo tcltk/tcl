@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.31.2.3 2001/10/09 15:30:51 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.31.2.4 2001/11/07 13:35:21 dkf Exp $
  */
 
 #define TCL_TEST
@@ -1974,22 +1974,31 @@ TestlinkCmd(dummy, interp, argc, argv)
     static int intVar = 43;
     static int boolVar = 4;
     static double realVar = 1.23;
+    static Tcl_WideInt wideVar = Tcl_LongAsWide(79);
     static char *stringVar = NULL;
     static int created = 0;
-    char buffer[TCL_DOUBLE_SPACE];
+    char buffer[2*TCL_DOUBLE_SPACE];
     int writable, flag;
+    Tcl_Obj *tmp;
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option ?arg arg arg?\"", (char *) NULL);
+		" option ?arg arg arg arg arg?\"", (char *) NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "create") == 0) {
+	if (argc != 7) {
+	    Tcl_AppendResult(interp, "wrong # args: should be \"",
+		argv[0], " ", argv[1],
+		" intRO realRO boolRO stringRO wideRO\"", (char *) NULL);
+	    return TCL_ERROR;
+	}
 	if (created) {
 	    Tcl_UnlinkVar(interp, "int");
 	    Tcl_UnlinkVar(interp, "real");
 	    Tcl_UnlinkVar(interp, "bool");
 	    Tcl_UnlinkVar(interp, "string");
+	    Tcl_UnlinkVar(interp, "wide");
 	}
 	created = 1;
 	if (Tcl_GetBoolean(interp, argv[2], &writable) != TCL_OK) {
@@ -2024,11 +2033,20 @@ TestlinkCmd(dummy, interp, argc, argv)
 		TCL_LINK_STRING | flag) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	if (Tcl_GetBoolean(interp, argv[6], &writable) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	flag = (writable != 0) ? 0 : TCL_LINK_READ_ONLY;
+	if (Tcl_LinkVar(interp, "wide", (char *) &wideVar,
+			TCL_LINK_WIDE_INT | flag) != TCL_OK) {
+	    return TCL_ERROR;
+	}
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_UnlinkVar(interp, "int");
 	Tcl_UnlinkVar(interp, "real");
 	Tcl_UnlinkVar(interp, "bool");
 	Tcl_UnlinkVar(interp, "string");
+	Tcl_UnlinkVar(interp, "wide");
 	created = 0;
     } else if (strcmp(argv[1], "get") == 0) {
 	TclFormatInt(buffer, intVar);
@@ -2038,11 +2056,18 @@ TestlinkCmd(dummy, interp, argc, argv)
 	TclFormatInt(buffer, boolVar);
 	Tcl_AppendElement(interp, buffer);
 	Tcl_AppendElement(interp, (stringVar == NULL) ? "-" : stringVar);
+	/*
+	 * Wide ints only have an object-based interface.
+	 */
+	tmp = Tcl_NewWideIntObj(wideVar);
+	Tcl_AppendElement(interp, Tcl_GetString(tmp));
+	Tcl_DecrRefCount(tmp);
     } else if (strcmp(argv[1], "set") == 0) {
-	if (argc != 6) {
+	if (argc != 7) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		argv[0], " ", argv[1],
-		"intValue realValue boolValue stringValue\"", (char *) NULL);
+		    argv[0], " ", argv[1],
+		    " intValue realValue boolValue stringValue wideValue\"",
+		    (char *) NULL);
 	    return TCL_ERROR;
 	}
 	if (argv[2][0] != 0) {
@@ -2071,11 +2096,20 @@ TestlinkCmd(dummy, interp, argc, argv)
 		strcpy(stringVar, argv[5]);
 	    }
 	}
+	if (argv[6][0] != 0) {
+	    tmp = Tcl_NewStringObj(argv[6], -1);
+	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
+		Tcl_DecrRefCount(tmp);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(tmp);
+	}
     } else if (strcmp(argv[1], "update") == 0) {
-	if (argc != 6) {
+	if (argc != 7) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		argv[0], " ", argv[1],
-		"intValue realValue boolValue stringValue\"", (char *) NULL);
+		    argv[0], " ", argv[1],
+		    "intValue realValue boolValue stringValue wideValue\"",
+		    (char *) NULL);
 	    return TCL_ERROR;
 	}
 	if (argv[2][0] != 0) {
@@ -2107,6 +2141,15 @@ TestlinkCmd(dummy, interp, argc, argv)
 		strcpy(stringVar, argv[5]);
 	    }
 	    Tcl_UpdateLinkedVar(interp, "string");
+	}
+	if (argv[6][0] != 0) {
+	    tmp = Tcl_NewStringObj(argv[6], -1);
+	    if (Tcl_GetWideIntFromObj(interp, tmp, &wideVar) != TCL_OK) {
+		Tcl_DecrRefCount(tmp);
+		return TCL_ERROR;
+	    }
+	    Tcl_DecrRefCount(tmp);
+	    Tcl_UpdateLinkedVar(interp, "wide");
 	}
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.21 2001/10/19 13:07:15 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.22 2001/11/07 13:35:21 dkf Exp $
  */
 
 #ifndef _TCL
@@ -1041,6 +1041,7 @@ typedef struct Tcl_DString {
 #define TCL_LINK_DOUBLE		2
 #define TCL_LINK_BOOLEAN	3
 #define TCL_LINK_STRING		4
+#define TCL_LINK_WIDE_INT	5
 #define TCL_LINK_READ_ONLY	0x80
 
 
