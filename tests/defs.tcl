@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.3 1999/04/20 18:12:18 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.4 1999/04/20 19:19:35 hershey Exp $
 
 # Initialize wish shell
 
@@ -99,7 +99,10 @@ namespace eval tcltest {
 
     # tests that use thread need to know which is the main thread
 
-    set ::tcltest::mainThread [testthread names]
+    variable ::tcltest::mainThread 1
+    if {[info commands testthread] != {}} {
+	set ::tcltest::mainThread [testthread names]
+    }
 }
 
 # If there is no "memory" command (because memory debugging isn't
@@ -1052,7 +1055,8 @@ if {[info exists tk_version]} {
 
 # threadReap --
 #
-#	Kill all thread except for the main thread.
+#	Kill all threads except for the main thread.
+#	Do nothing if testthread is not defined.
 #
 # Arguments:
 #	none.
@@ -1060,18 +1064,24 @@ if {[info exists tk_version]} {
 # Results:
 #	Returns the number of existing threads.
 
-proc ::tcltest::threadReap {} {
-    testthread errorproc ThreadNullError
-    while {[llength [testthread names]] > 1} {
-	foreach tid [testthread names] {
-	    if {$tid != $::tcltest::mainThread} {
-		catch {testthread send -async $tid {testthread exit}}
-		update
+if {[info commands testthread] != {}} {
+    proc ::tcltest::threadReap {} {
+	testthread errorproc ThreadNullError
+	while {[llength [testthread names]] > 1} {
+	    foreach tid [testthread names] {
+		if {$tid != $::tcltest::mainThread} {
+		    catch {testthread send -async $tid {testthread exit}}
+		    update
+		}
 	    }
 	}
+	testthread errorproc ThreadError
+	return [llength [testthread names]]
     }
-    testthread errorproc ThreadError
-    return [llength [testthread names]]
+} else {
+    proc ::tcltest::threadReap {} {
+	return 1
+    }   
 }
 
 # Need to catch the import because it fails if defs.tcl is sourced
