@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.114 2005/01/14 14:16:51 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.115 2005/01/14 16:41:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2330,7 +2330,7 @@ TclFSFileAttrIndex(pathPtr, attributeName, indexPtr)
 	 * It's a constant attribute table, so use T_GIFO.
 	 */
 
-	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, NULL);
+	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
 	int result;
 
 	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
