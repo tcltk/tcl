@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.15 2004/03/12 23:21:05 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.16 2004/05/27 13:18:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -73,6 +73,7 @@ static int		DictValuesCmd _ANSI_ARGS_((Tcl_Interp *interp,
 static void		DupDictInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr));
 static void		FreeDictInternalRep _ANSI_ARGS_((Tcl_Obj *dictPtr));
+static void		InvalidateDictChain _ANSI_ARGS_((Tcl_Obj *dictObj));
 static int		SetDictFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static void		UpdateStringOfDict _ANSI_ARGS_((Tcl_Obj *dictPtr));
