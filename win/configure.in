@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.36 2001/06/26 20:28:43 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.37 2001/06/27 01:06:12 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -188,7 +188,6 @@ AC_SUBST(TCL_SHARED_BUILD)
 
 AC_SUBST(PATHTYPE)
 AC_SUBST(CYGPATH)
-AC_SUBST(VPSEP)
 AC_SUBST(CFLAGS_DEFAULT)
 AC_SUBST(CFLAGS_DEBUG)
 AC_SUBST(CFLAGS_OPTIMIZE)
