@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.26 2002/03/29 21:01:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.27 2002/05/30 15:03:57 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -223,18 +223,6 @@ typedef struct CompileEnv {
 				 * compiled code. Indexed by the string
 				 * representations of the literals. Used to
 				 * avoid creating duplicate objects. */
-    int exprIsJustVarRef;	/* Set 1 if the expression last compiled by
-				 * TclCompileExpr consisted of just a
-				 * variable reference as in the expression
-				 * of "if $b then...". Otherwise 0. Used
-				 * to implement expr's 2 level substitution
-				 * semantics properly. */
-    int exprIsComparison;	/* Set 1 if the top-level operator in the
-				 * expression last compiled is a comparison.
-				 * Otherwise 0. If 1, since the operands
-				 * might be strings, the expr is compiled
-				 * out-of-line to implement expr's 2 level
-				 * substitution semantics properly. */
     unsigned char *codeStart;	/* Points to the first byte of the code. */
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated

@@ -1,3 +1,11 @@
+2002-05-30  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h: removed exprIsJustVarRef and
+	exprIsComparison from the ExprInfo and CompileEnv structs. These
+	were set, but not used since dec 1999 [Bug 562383].
+
 2002-05-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c (TclGlob): fix to longstanding
