@@ -3,13 +3,27 @@
 	* tests/tcltest.test:
 	* doc/tcltest.n:
 	* library/tcltest1.0/tcltest.tcl: Removed the extra return at the
-	end of the tcltest.tcl file.
+	end of the tcltest.tcl file, added version information about tcl.
 
 	Applied patches sent in by Andreas Kupries to add helper procs for
 	debug output, add 3 new flags (-testsdir, -load, -loadfile), and
 	internally refactors common code for dealing with paths into
 	separate procedures. [Bug: 2838, 2842]
 
+	* tests/autoMkindex.test:
+	* tests/pkgMkIndex.test: Explicitly cd to
+	::tcltest::testsDirectory at the beginning of the test run
+
+	* tests/basic.test: Use version information defined in tcltest
+	instead of hardcoded version number
+
+	* tests/socket.test: package require tcltest before attempting to
+	use variable defined in tcltest namespace
+
+	* tests/unixInit.test: 
+	* tests/unixNotfy.test: Added explicit exits needed to avoid
+	problems when the tests area run in wish.
+	
 1999-10-12  Jim Ingham  <jingham@scriptics.com>
 
         * mac/tclMacLoad.c: Stupid bug - we converted the filename to
