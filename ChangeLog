@@ -1,3 +1,11 @@
+2000-11-16  Andreas Kupries  <a.kupries@westend.com>
+
+	* win/tclWinPort.h (line 69): Changed reference to winsock2.h into
+ 	  winsock.h. This was a leftover from a foray into using winsock
+ 	  version 2 (History lesson from Scott Redman and Jeff
+ 	  Hobbs). This code was no problem when compiling Tcl itself, but
+ 	  could trip extensions. Fixes bug 122568.
+
 2000-11-15  jeff hobbs  <jeff.hobbs@acm.org>
 
 	* unix/Makefile.in: removed bp.c references (hasn't existed in a
