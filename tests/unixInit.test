@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.13 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.14 2001/01/04 21:30:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -150,6 +150,24 @@ test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
     # would need test command to get defaultLibDir and compare it to
     # [lindex $auto_path end]
 } {}
+test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly} {
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/lib
+    file mkdir /tmp/sparkly
+    file copy $::tcltest::tcltest /tmp/sparkly/tcltest
+
+    file mkdir /tmp/lib/tcl[info tclversion]
+    close [open /tmp/lib/tcl[info tclversion]/init.tcl w]
+
+    set allAbsolute 1
+    foreach dir [getlibpath /tmp/sparkly/tcltest] {
+	set allAbsolute [expr {$allAbsolute \
+		&& [string equal absolute [file pathtype $dir]]}]
+    }
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/lib
+    set allAbsolute
+} 1
 test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     set env(LANG) C
 
