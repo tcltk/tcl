@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.6 2005/03/15 14:55:29 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.7 2005/03/15 19:20:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1120,7 +1120,7 @@ TclExecuteByteCode(interp, codePtr)
 				 * when to call Tcl_AsyncReady() */
     Tcl_Obj *expandNestList = NULL;
     int inst;
-    int opnd;
+    TclPSizedInt opnd;
     
     /*
      * Transfer variables - needed only between opcodes, but not
@@ -5048,7 +5048,6 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound, checkStack)
     TclVMWord *codeEnd = (codePtr->codeStart + codePtr->numCodeWords);
     unsigned int opCode = (unsigned int) (*pc).i;
 
-fflush(stdout);
     if (( pc < codeStart) ||  (pc > codeEnd)) {
 	fprintf(stderr, "\nBad instruction pc %p in TclExecuteByteCode\n",
 		(VOID *) pc);

@@ -1,5 +1,24 @@
 2005-03-15 Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	Attempt at fixing 64b issues; as a result, now getting plenty of
+	warnings for formatting issues - will fix later
+
+2005-03-15 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: 
+	(1) new opt for the [return] compiler, can now emit INST_BREAK or
+	INST_CONTINUE 
+	(2) changed logic of the [foreach] instructions, including loop
+	rotation optimisation 
+	(3) newjump target in TEBC to restart without changing pc
+
+2005-03-15 Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompCmds.c:
 	* generic/tclCompile.c:
 	* generic/tclCompile.h:

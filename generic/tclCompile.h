@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.7 2005/03/15 14:55:28 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.8 2005/03/15 19:20:14 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -952,7 +952,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     {\
 	int delta = tclInstructionTable[(op)].stackEffect;\
 	if (delta) {\
-	    if (delta == PINT_MIN) {\
+	    if (delta == INT_MIN) {\
 		delta = 1 - (i);\
 	    }\
             TclAdjustStackDepth(delta, envPtr);\
