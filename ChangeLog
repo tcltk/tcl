@@ -1,3 +1,10 @@
+1999-06-16    <stanton@scriptics.com>
+
+	* tests/execute.test:
+	* generic/tclExecute.c (TclExecuteByteCode): Fixed crash caused by
+	a bug in INST_LOAD_SCALAR1 where the scalar index was read as
+	a signed 1 byte value instead of unsigned.  [Bug: 2243]
+
 1999-06-14  Melissa Hirschl  <hershey@matisse.scriptics.com>
 
 	* doc/StringObj.3
