@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.17 2004/02/01 09:37:49 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.18 2004/02/02 21:35:28 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -54,9 +54,7 @@ static DWORD            exitErrorCode = 0;
  */
 
 int
-main(
-    int argc,			/* Number of command-line arguments. */
-    char **argv)		/* Values of command-line arguments. */
+main (int argc, char *argv[])
 {
     /*
      * The following #if block allows you to change the AppInit
@@ -90,7 +88,7 @@ main(
     setlocale(LC_ALL, "C");
 
     /*
-     * Forward slash substitute argv[0] for backslashes.
+     * Forward slashes substituted for backslashes.
      */
 
     for (p = argv[0]; *p != '\0'; p++) {
@@ -231,7 +229,7 @@ Tcl_AppInit(interp)
 
 static void
 AppInitExitHandler(
-    ClientData clientData)
+    ClientData clientData)	/* Not Used. */
 {
     if (exitToken != NULL) {
         /*
@@ -260,7 +258,10 @@ AppInitExitHandler(
  */
 
 int
-asyncExit (ClientData clientData, Tcl_Interp *interp, int code)
+asyncExit (
+    ClientData clientData,	/* Not Used. */
+    Tcl_Interp *interp,		/* interp in context, if any. */
+    int code)			/* result of last command, if any. */
 {
     Tcl_Exit((int)exitErrorCode);
 
@@ -289,7 +290,8 @@ asyncExit (ClientData clientData, Tcl_Interp *interp, int code)
  */
 
 BOOL WINAPI
-sigHandler(DWORD fdwCtrlType)
+sigHandler(
+    DWORD fdwCtrlType)	    /* One of the CTRL_*_EVENT constants. */
 {
     HANDLE hStdIn;
 
@@ -316,6 +318,6 @@ sigHandler(DWORD fdwCtrlType)
 	CloseHandle(hStdIn);
     }
 
-    /* indicate to the OS not to call the default terminator */
+    /* indicate to the OS not to call the default terminator. */
     return TRUE;
 }
