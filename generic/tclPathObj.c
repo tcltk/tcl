@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.26 2004/03/26 18:45:10 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.27 2004/03/26 19:04:49 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1689,10 +1689,18 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 		    }
 		    if (drive[0] == drive_cur) {
 			absolutePath = Tcl_DuplicateObj(useThisCwd);
-			/* We have a refCount on the cwd */
+			/* 
+			 * We have a refCount on the cwd, which we
+			 * will release later.
+			 */
 
-                        if (drive[cwdLen-1] != '/') {
-                            /* Only add a trailing '/' if needed */
+                        if (drive[cwdLen-1] != '/' && (path[2] != '\0')) {
+                            /* 
+                             * Only add a trailing '/' if needed, which
+                             * is if there isn't one already, and if we
+                             * are going to be adding some more
+                             * characters.
+                             */
                             Tcl_AppendToObj(absolutePath, "/", 1);
                         }
 		    } else {
