@@ -7,11 +7,17 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.1.2.6 1999/03/24 02:49:35 hershey Exp $
+# RCS: @(#) $Id: reg.test,v 1.1.2.7 1999/04/06 19:03:56 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
+
+# All tests require the testregexp command, return if this
+# command doesn't exist
+
+set ::tcltest::testConfig(testregexp) \
+	[expr {[info commands testregexp] != {}}]
 
 # This file uses some custom procedures, defined below, for regexp regression
 # testing.  The name of the procedure indicates the general nature of the
@@ -187,7 +193,7 @@ proc e {testid flags re err} {
 
 	set cmd [concat [list testregexp -$ask] [flags $flags] [list $re]]
 	set run "list \[catch \{$cmd\}\] \[lindex \$errorCode 1\]"
-	test $prefix.[tno $testid] [desc $testid] $run [list 1 REG_$err]
+	test $prefix.[tno $testid] [desc $testid] {testregexp} $run [list 1 REG_$err]
 }
 
 # match failure expected
@@ -218,11 +224,11 @@ proc f {testid flags re target args} {
 		set info [list $nsub $infoflags]
 	}
 	lappend testid "compile"
-	test $prefix.[tno $testid] [desc $testid] $ccmd $info
+	test $prefix.[tno $testid] [desc $testid] {testregexp} $ccmd $info
 
 	set testid [lreplace $testid end end "execute"]
 	set ecmd [concat [list testregexp] $f [list $re $target]]
-	test $prefix.[tno $testid] [desc $testid] $ecmd 0
+	test $prefix.[tno $testid] [desc $testid] {testregexp} $ecmd 0
 }
 
 # match expected, internal routine that does the work
@@ -270,9 +276,9 @@ proc matchexpected {opts testid flags re target args} {
 
 	set info [list $nsub $infoflags]
 	lappend testid "compile"
-	test $prefix.[tno $testid] [desc $testid] $ccmd $info
+	test $prefix.[tno $testid] [desc $testid] {testregexp} $ccmd $info
 	set testid [lreplace $testid end end "execute"]
-	test $prefix.[tno $testid] [desc $testid] $erun $result
+	test $prefix.[tno $testid] [desc $testid] {testregexp} $erun $result
 }
 
 # match expected (no missing, empty, or ambiguous submatches)

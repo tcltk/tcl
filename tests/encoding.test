@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.1.2.7 1999/03/24 04:25:42 stanton Exp $
+# RCS: @(#) $Id: encoding.test,v 1.1.2.8 1999/04/06 19:03:56 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -86,7 +86,7 @@ test encoding-3.2 {Tcl_GetEncodingName, non-null} {
     set x
 } {jis0208}
 
-test encoding-4.1 {Tcl_GetEncodingNames} {
+test encoding-4.1 {Tcl_GetEncodingNames} {testencoding} {
     file mkdir tmp/encoding
     close [open tmp/encoding/junk.enc w]
     close [open tmp/encoding/junk2.enc w]
