@@ -1,3 +1,7 @@
+2004-11-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/foreach.n: Added simple example. [FRQ 1073334]
+
 2004-11-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclProc.c (TclObjInterpProc):	    Make it so that only
