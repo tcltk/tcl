@@ -1,5 +1,11 @@
 2004-07-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/safe.test (safe-2.1):  Disabled senseless test.  [Bug 999612]
+
+	* library/auto.tcl (auto_reset):  Removed "protected" list of commands 
+	from [auto_reset].  All entries in the auto_index can be re-loaded.
+	* library/package.tcl: Updated comment to reflect 2004-07-28 commit.
+
 	* generic/tclEvent.c (Tcl_Finalize):	Re-organized Tcl_Finalize
 	so that Tcl_ExitProc's that call Tcl_Finalize recursively do not
 	cause deadlock.  [Patch 999084 fixes Tk Bug 714956]

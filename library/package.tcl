@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.30 2004/07/29 15:55:04 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.31 2004/07/30 16:54:04 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -47,7 +47,7 @@ proc tcl::Pkg::CompareExtension { fileName {ext {}} } {
 	    # The current extension does not match; if it is not a numeric
 	    # value, quit, as we are only looking to ignore version number
 	    # extensions.  Otherwise we might return 1 in this case:
-	    #		pkg_compareExtension foo.so.bar .so
+	    #		tcl::Pkg::CompareExtension foo.so.bar .so
 	    # which should not match.
 
 	    if { ![string is integer -strict [string range $currExt 1 end]] } {
