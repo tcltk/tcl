@@ -1,5 +1,8 @@
 2003-10-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/fCmd.test (fCmd-8.2):	Test only that tilde-substitution
+	happens, not for any particular result. [Bug 685991]
+
         * unix/tcl.m4 (SC_PATH_TCLCONFIG):      Corrected search path so
         that alpha and beta releases of Tcl are not favored. [Bug 608698]
 
