@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.16 2002/07/11 13:53:59 dkf Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.17 2002/08/01 18:32:53 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -1232,12 +1232,12 @@ void
 TclFinalizeMemorySubsystem()
 {
 #ifdef TCL_MEM_DEBUG
-    Tcl_MutexLock(ckallocMutexPtr);
     if (tclMemDumpFileName != NULL) {
 	Tcl_DumpActiveMemory(tclMemDumpFileName);
     } else if (onExitMemDumpFileName != NULL) {
 	Tcl_DumpActiveMemory(onExitMemDumpFileName);
     }
+    Tcl_MutexLock(ckallocMutexPtr);
     if (curTagPtr != NULL) {
 	TclpFree((char *) curTagPtr);
 	curTagPtr = NULL;

@@ -1,3 +1,12 @@
+2002-08-01  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclCkalloc.c (TclFinalizeMemorySubsystem):
+	Don't lock the ckalloc mutex before invoking the
+	Tcl_DumpActiveMemory function since it also
+	locks the same mutex. This code is only executed
+	when "memory onexit filename" has been executed
+	and Tcl is compiled with -DTCL_MEM_DEBUG.
+
 2002-08-01  Reinhard Max  <max@suse.de>
 
 	* win/tclWinPort.h: The windows headers don't provide socklen_t,
