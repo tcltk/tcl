@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.19 2000/09/14 18:42:31 ericm Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.20 2001/04/04 16:07:21 kennykb Exp $ */
 
 #include "tclInt.h"
 
@@ -42,15 +42,15 @@
  */
 
 static void		AppendUnicodeToUnicodeRep _ANSI_ARGS_((
-    			    Tcl_Obj *objPtr, Tcl_UniChar *unicode,
+    			    Tcl_Obj *objPtr, CONST Tcl_UniChar *unicode,
 			    int appendNumChars));
 static void		AppendUnicodeToUtfRep _ANSI_ARGS_((
-    			    Tcl_Obj *objPtr, Tcl_UniChar *unicode,
+    			    Tcl_Obj *objPtr, CONST Tcl_UniChar *unicode,
 			    int numChars));
 static void		AppendUtfToUnicodeRep _ANSI_ARGS_((Tcl_Obj *objPtr,
-    			    char *bytes, int numBytes));
+    			    CONST char *bytes, int numBytes));
 static void		AppendUtfToUtfRep _ANSI_ARGS_((Tcl_Obj *objPtr,
-    			    char *bytes, int numBytes));
+    			    CONST char *bytes, int numBytes));
 
 static void		FillUnicodeRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 
@@ -250,7 +250,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -275,7 +275,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -306,7 +306,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
 
 Tcl_Obj *
 Tcl_NewUnicodeObj(unicode, numChars)
-    Tcl_UniChar *unicode;	/* The unicode string used to initialize
+    CONST Tcl_UniChar *unicode;	/* The unicode string used to initialize
 				 * the new object. */
     int numChars;		/* Number of characters in the unicode
 				 * string. */
@@ -617,7 +617,7 @@ Tcl_GetRange(objPtr, first, last)
 void
 Tcl_SetStringObj(objPtr, bytes, length)
     register Tcl_Obj *objPtr;	/* Object whose internal rep to init. */
-    char *bytes;		/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the object. */
     register int length;	/* The number of bytes to copy from "bytes"
 				 * when initializing the object. If 
@@ -827,7 +827,7 @@ Tcl_AttemptSetObjLength(objPtr, length)
 void
 Tcl_SetUnicodeObj(objPtr, unicode, numChars)
     Tcl_Obj *objPtr;		/* The object to set the string of. */
-    Tcl_UniChar *unicode;	/* The unicode string used to initialize
+    CONST Tcl_UniChar *unicode;	/* The unicode string used to initialize
 				 * the object. */
     int numChars;		/* Number of characters in the unicode
 				 * string. */
@@ -889,7 +889,7 @@ Tcl_SetUnicodeObj(objPtr, unicode, numChars)
 void
 Tcl_AppendToObj(objPtr, bytes, length)
     register Tcl_Obj *objPtr;	/* Points to the object to append to. */
-    char *bytes;		/* Points to the bytes to append to the
+    CONST char *bytes;		/* Points to the bytes to append to the
 				 * object. */
     register int length;	/* The number of bytes to append from
 				 * "bytes". If < 0, then append all bytes
@@ -946,7 +946,7 @@ Tcl_AppendToObj(objPtr, bytes, length)
 void
 Tcl_AppendUnicodeToObj(objPtr, unicode, length)
     register Tcl_Obj *objPtr;	/* Points to the object to append to. */
-    Tcl_UniChar *unicode;	/* The unicode string to append to the
+    CONST Tcl_UniChar *unicode;	/* The unicode string to append to the
 			         * object. */
     int length;			/* Number of chars in "unicode". */
 {
@@ -1084,9 +1084,9 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
 
 static void
 AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
-    Tcl_Obj *objPtr;	      /* Points to the object to append to. */
-    Tcl_UniChar *unicode;     /* String to append. */
-    int appendNumChars;	      /* Number of chars of "unicode" to append. */
+    Tcl_Obj *objPtr;	        /* Points to the object to append to. */
+    CONST Tcl_UniChar *unicode; /* String to append. */
+    int appendNumChars;	        /* Number of chars of "unicode" to append. */
 {
     String *stringPtr, *tmpString;
     size_t numChars;
@@ -1160,9 +1160,9 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
 
 static void
 AppendUnicodeToUtfRep(objPtr, unicode, numChars)
-    Tcl_Obj *objPtr;	      /* Points to the object to append to. */
-    Tcl_UniChar *unicode;     /* String to convert to UTF. */
-    int numChars;	      /* Number of chars of "unicode" to convert. */
+    Tcl_Obj *objPtr;	        /* Points to the object to append to. */
+    CONST Tcl_UniChar *unicode; /* String to convert to UTF. */
+    int numChars;	        /* Number of chars of "unicode" to convert. */
 {
     Tcl_DString dsPtr;
     char *bytes;
@@ -1204,7 +1204,7 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
 static void
 AppendUtfToUnicodeRep(objPtr, bytes, numBytes)
     Tcl_Obj *objPtr;	/* Points to the object to append to. */
-    char *bytes;		/* String to convert to Unicode. */
+    CONST char *bytes;	/* String to convert to Unicode. */
     int numBytes;	/* Number of bytes of "bytes" to convert. */
 {
     Tcl_DString dsPtr;
@@ -1245,7 +1245,7 @@ AppendUtfToUnicodeRep(objPtr, bytes, numBytes)
 static void
 AppendUtfToUtfRep(objPtr, bytes, numBytes)
     Tcl_Obj *objPtr;	/* Points to the object to append to. */
-    char *bytes;	/* String to append. */
+    CONST char *bytes;	/* String to append. */
     int numBytes;	/* Number of bytes of "bytes" to append. */
 {
     String *stringPtr;

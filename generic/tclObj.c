@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.19 2001/01/18 19:09:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.20 2001/04/04 16:07:21 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -491,7 +491,7 @@ Tcl_NewObj()
 
 Tcl_Obj *
 Tcl_DbNewObj(file, line)
-    register char *file;	/* The name of the source file calling this
+    register CONST char *file;	/* The name of the source file calling this
 				 * procedure; used for debugging. */
     register int line;		/* Line number in the source file; used
 				 * for debugging. */
@@ -521,7 +521,7 @@ Tcl_DbNewObj(file, line)
 
 Tcl_Obj *
 Tcl_DbNewObj(file, line)
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -894,7 +894,7 @@ Tcl_NewBooleanObj(boolValue)
 Tcl_Obj *
 Tcl_DbNewBooleanObj(boolValue, file, line)
     register int boolValue;	/* Boolean used to initialize new object. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -914,7 +914,7 @@ Tcl_DbNewBooleanObj(boolValue, file, line)
 Tcl_Obj *
 Tcl_DbNewBooleanObj(boolValue, file, line)
     register int boolValue;	/* Boolean used to initialize new object. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -1252,7 +1252,7 @@ Tcl_NewDoubleObj(dblValue)
 Tcl_Obj *
 Tcl_DbNewDoubleObj(dblValue, file, line)
     register double dblValue;	/* Double used to initialize the object. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -1272,7 +1272,7 @@ Tcl_DbNewDoubleObj(dblValue, file, line)
 Tcl_Obj *
 Tcl_DbNewDoubleObj(dblValue, file, line)
     register double dblValue;	/* Double used to initialize the object. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -1884,7 +1884,7 @@ Tcl_Obj *
 Tcl_DbNewLongObj(longValue, file, line)
     register long longValue;	/* Long integer used to initialize the
 				 * new object. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -1905,7 +1905,7 @@ Tcl_Obj *
 Tcl_DbNewLongObj(longValue, file, line)
     register long longValue;	/* Long integer used to initialize the
 				 * new object. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -2018,7 +2018,7 @@ void
 Tcl_DbIncrRefCount(objPtr, file, line)
     register Tcl_Obj *objPtr;	/* The object we are registering a
 				 * reference to. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -2058,7 +2058,7 @@ void
 Tcl_DbDecrRefCount(objPtr, file, line)
     register Tcl_Obj *objPtr;	/* The object we are releasing a reference
 				 * to. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -2099,7 +2099,7 @@ Tcl_DbDecrRefCount(objPtr, file, line)
 int
 Tcl_DbIsShared(objPtr, file, line)
     register Tcl_Obj *objPtr;	/* The object to test for being shared. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
