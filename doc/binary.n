@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.9 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.10 2002/10/04 10:23:33 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -45,6 +45,18 @@ is a non-negative decimal integer or \fB*\fR, which normally indicates
 that all of the items in the value are to be used.  If the number of
 arguments does not match the number of fields in the format string
 that consume arguments, then an error is generated.
+.PP
+Here is a small example to clarify the relation between the field
+specifiers and the arguments:
+.CS
+\fBbinary format d3d {1.0 2.0 3.0 4.0} 0.1\fR
+.CE
+.PP
+The first argument is a list of four numbers, but because of the count
+of 3 for the associated field specifier, only the first three will be
+used. The second argument is associated with the second field
+specifier. The resulting binary string contains the four numbers 10,
+2.0, 3.0 and 0.1.
 .PP
 Each type-count pair moves an imaginary cursor through the binary
 data, storing bytes at the current position and advancing the cursor
@@ -320,6 +332,21 @@ corresponding variable is left untouched and \fBbinary scan\fR returns
 immediately with the number of variables that were set.  If there are
 not enough arguments for all of the fields in the format string that
 consume arguments, then an error is generated.
+.PP
+A similar example as with \fBbinary format\fR should explain the
+relation between field specifiers and arguments in case of the binary
+scan subcommand:
+.CS
+\fBbinary scan $bytes i3i first second\fR
+.CE
+.PP
+This command (provided the binary string in the variable \fIbytes\fR
+is long enough) assigns a list of three integers to the variable
+\fIfirst\fR and assigns a single value to the variable \fIsecond\fR.
+If \fIbytes\fR contains fewer than 16 bytes (i.e. four 4-byte
+integers), no assignment to \fIsecond\fR will be made, and if
+\fIbytes\fR contains fewer than 12 bytes (i.e. three 4-byte integers),
+no assignment to \fIfirst\fR will be made.
 .PP
 It is \fBimportant\fR to note that the \fBc\fR, \fBs\fR, and \fBS\fR
 (and \fBi\fR and \fBI\fR on 64bit systems) will be scanned into
