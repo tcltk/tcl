@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.35 1999/04/30 23:35:40 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.36 1999/05/07 20:07:56 stanton Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
@@ -957,6 +957,10 @@ case $system in
 	LD_FLAGS=""
 	LD_SEARCH_FLAGS=""
 	;;
+    OS/390-*)
+	CFLAGS_OPTIMIZE=""      # Optimizer is buggy
+	AC_DEFINE(_OE_SOCKETS)  # needed in sys/socket.h
+	;;      
     OSF1-1.0|OSF1-1.1|OSF1-1.2)
 	# OSF/1 1.[012] from OSF, and derivatives, including Paragon OSF/1
 	SHLIB_CFLAGS=""
