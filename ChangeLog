@@ -1,5 +1,10 @@
 2001-07-12  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/unixInit.test (unixInit-2.8): Added extra constraint,
+	notInstalledInTmp, to stop this test from damaging installations
+	in /tmp; not much fun to have to reinstall the Tcl library every
+	time you run the test suite!
+
 	* tests/subst.test (subst-10.*): Updated tests to check new
 	behaviour for 'break' in command substitutions.
 	(subst-1.2,subst-7.1): Error messages changed.
