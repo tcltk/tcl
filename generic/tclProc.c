@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.12 1998/07/28 13:55:21 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclProc.c,v 1.13 1998/08/06 12:15:50 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -1023,7 +1023,9 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	        || (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
             if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
                 if (codePtr->iPtr != iPtr) {
-                    panic("TclProcCompileProc: compiled body jumped interps");
+                    Tcl_AppendResult(interp,
+                            "a precompiled script jumped interps", NULL);
+                    return TCL_ERROR;
                 }
 	        codePtr->compileEpoch = iPtr->compileEpoch;
  	        codePtr->nsEpoch = nsPtr->resolverEpoch;
