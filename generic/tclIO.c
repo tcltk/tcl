@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.34 2001/08/23 17:37:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.35 2001/09/06 09:35:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5251,7 +5251,6 @@ Tcl_Seek(chan, offset, mode)
 {
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
-    ChannelBuffer *bufPtr;
     int inputBuffered, outputBuffered;
     int result;			/* Of device driver operations. */
     int curPos;			/* Position on the device. */
@@ -5293,33 +5292,8 @@ Tcl_Seek(chan, offset, mode)
      * output is buffered, cannot compute the current position.
      */
 
-    for (bufPtr = statePtr->inQueueHead, inputBuffered = 0;
-	 bufPtr != (ChannelBuffer *) NULL;
-	 bufPtr = bufPtr->nextPtr) {
-        inputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
-    }
-
-    /*
-     * Don't forget the bytes in the topmost pushback area.
-     */
-
-    for (bufPtr = statePtr->topChanPtr->inQueueHead;
-	 bufPtr != (ChannelBuffer *) NULL;
-	 bufPtr = bufPtr->nextPtr) {
-        inputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
-    }
-
-    for (bufPtr = statePtr->outQueueHead, outputBuffered = 0;
-	 bufPtr != (ChannelBuffer *) NULL;
-	 bufPtr = bufPtr->nextPtr) {
-        outputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
-    }
-    if ((statePtr->curOutPtr != (ChannelBuffer *) NULL) &&
-	    (statePtr->curOutPtr->nextAdded > statePtr->curOutPtr->nextRemoved)) {
-        statePtr->flags |= BUFFER_READY;
-        outputBuffered +=
-            (statePtr->curOutPtr->nextAdded - statePtr->curOutPtr->nextRemoved);
-    }
+    inputBuffered = Tcl_InputBuffered(chan);
+    outputBuffered = Tcl_OutputBuffered(chan);
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
         Tcl_SetErrno(EFAULT);
@@ -5437,7 +5411,6 @@ Tcl_Tell(chan)
 {
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
-    ChannelBuffer *bufPtr;
     int inputBuffered, outputBuffered;
     int result;				/* Of calling device driver. */
     int curPos;				/* Position on device. */
@@ -5478,22 +5451,8 @@ Tcl_Tell(chan)
      * output is buffered, cannot compute the current position.
      */
 
-    for (bufPtr = statePtr->inQueueHead, inputBuffered = 0;
-	 bufPtr != (ChannelBuffer *) NULL;
-	 bufPtr = bufPtr->nextPtr) {
-        inputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
-    }
-    for (bufPtr = statePtr->outQueueHead, outputBuffered = 0;
-	 bufPtr != (ChannelBuffer *) NULL;
-	 bufPtr = bufPtr->nextPtr) {
-        outputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
-    }
-    if ((statePtr->curOutPtr != (ChannelBuffer *) NULL) &&
-	    (statePtr->curOutPtr->nextAdded > statePtr->curOutPtr->nextRemoved)) {
-        statePtr->flags |= BUFFER_READY;
-        outputBuffered +=
-            (statePtr->curOutPtr->nextAdded - statePtr->curOutPtr->nextRemoved);
-    }
+    inputBuffered = Tcl_InputBuffered(chan);
+    outputBuffered = Tcl_OutputBuffered(chan);
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
         Tcl_SetErrno(EFAULT);
@@ -5700,6 +5659,48 @@ Tcl_InputBuffered(chan)
 	 bufPtr != (ChannelBuffer *) NULL;
 	 bufPtr = bufPtr->nextPtr) {
         bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+    }
+
+    return bytesBuffered;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OutputBuffered --
+ *
+ *    Returns the number of bytes of output currently buffered in the
+ *    common internal buffer of a channel.
+ *
+ * Results:
+ *    The number of output bytes buffered, or zero if the channel is not
+ *    open for writing.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_OutputBuffered(chan)
+    Tcl_Channel chan;                 /* The channel to query. */
+{
+    ChannelState *statePtr = ((Channel *) chan)->state;
+                                      /* State of real channel structure. */
+    ChannelBuffer *bufPtr;
+    int bytesBuffered;
+
+    for (bytesBuffered = 0, bufPtr = statePtr->outQueueHead;
+	bufPtr != (ChannelBuffer *) NULL;
+	bufPtr = bufPtr->nextPtr) {
+	bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+    }
+    if ((statePtr->curOutPtr != (ChannelBuffer *) NULL) &&
+	(statePtr->curOutPtr->nextAdded > statePtr->curOutPtr->nextRemoved)) {
+	statePtr->flags |= BUFFER_READY;
+	bytesBuffered +=
+	    (statePtr->curOutPtr->nextAdded - statePtr->curOutPtr->nextRemoved);
     }
 
     return bytesBuffered;

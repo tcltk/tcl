@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.54 2001/09/04 18:06:34 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.55 2001/09/06 09:35:38 dkf Exp $
 
 library tcl
 
@@ -1542,6 +1542,7 @@ declare 438 generic {
 declare 439 generic {
     int Tcl_IsStandardChannel(Tcl_Channel channel)
 }
+# New functions due to TIP#17
 declare 440 generic {
     int	Tcl_FSCopyFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
 }
@@ -1671,7 +1672,11 @@ declare 477 generic {
     Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathObjPtr)
 }
 declare 478 generic {
-    Tcl_PathType     Tcl_FSGetPathType (Tcl_Obj *pathObjPtr)
+    Tcl_PathType Tcl_FSGetPathType (Tcl_Obj *pathObjPtr)
+}
+# New function due to TIP#49
+declare 479 generic {
+    int Tcl_OutputBuffered(Tcl_Channel chan)
 }
 		  
 ##############################################################################
