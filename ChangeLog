@@ -1,6 +1,11 @@
 2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
+	optimisation of comparisons.
+
+2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
 	optimisation of INST_FOREACH - relies on peculiarities of the code
 	produced by the bytecode compiler.
 
