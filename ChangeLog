@@ -6,6 +6,10 @@
 	Borland, lcc32, Watcom and other support as well.
 	[Patch: 444255]
 
+	* win/tclWinThrd.c:  Moved FinalizeConditionEvent() proto to within
+	the main #ifdef TCL_THREADS block to avoid mingw warning about it
+	being there but unused.
+
 	* win/makefile.vc:  Added -Zl (zee el) to tclStubLib.c compile line
 	to make sure the tclstub84.lib static library is built without
 	requiring a specific C-runtime library at link-time for the end-use
