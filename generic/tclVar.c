@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.65 2002/09/03 19:52:01 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.66 2002/09/04 15:18:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4783,6 +4783,19 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	}
 	TclSetVarUndefined(elPtr);
 	TclSetVarScalar(elPtr);
+
+	/*
+	 * Even though array elements are not supposed to be namespace
+	 * variables, some combinations of [upvar] and [variable] may
+	 * create such beasts - see [Bug 604239]. This is necessary to
+	 * avoid leaking the corresponding Var struct, and is otherwise
+	 * harmless. 
+	 */
+
+	if (elPtr->flags & VAR_NAMESPACE_VAR) {
+	    elPtr->flags &= ~VAR_NAMESPACE_VAR;
+	    elPtr->refCount--;
+	}
 	if (elPtr->refCount == 0) {
 	    ckfree((char *) elPtr); /* element Vars are VAR_IN_HASHTABLE */
 	}
