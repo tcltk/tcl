@@ -1,5 +1,17 @@
 2002-07-15  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_AddObjErrorInfo):
+	* generic/tclExecute.c (TclUpdateReturnInfo):
+	* generic/tclInt.h:	
+	* generic/tclProc.c: 
+	Added two Tcl_Obj to the ExecEnv structure to hold the fully
+	qualified names "::errorInfo" and "::errorCode" to cache the
+	addresses of the corresponding variables. The two most frequent
+	setters of these variables now profit from the new variable name
+	caching. 
+
+2002-07-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclVar.c: refactorisation to reuse already looked-up Var
 	pointers; definition of three new Tcl_Obj types to cache variable
 	name parsing and lookup for later reuse; modification of internal

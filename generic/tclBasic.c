@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.62 2002/06/20 16:41:30 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.63 2002/07/16 01:12:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5084,11 +5084,11 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	iPtr->flags |= ERR_IN_PROGRESS;
 
 	if (iPtr->result[0] == 0) {
-	    (void) Tcl_SetVar2Ex(interp, "errorInfo", NULL, iPtr->objResultPtr,
-		    TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
+	            iPtr->objResultPtr, TCL_GLOBAL_ONLY);
 	} else {		/* use the string result */
-	    Tcl_SetVar2(interp, "errorInfo", (char *) NULL, interp->result,
-		    TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
+	            Tcl_NewStringObj(interp->result, -1), TCL_GLOBAL_ONLY);
 	}
 
 	/*
@@ -5097,8 +5097,8 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	 */
 
 	if (!(iPtr->flags & ERROR_CODE_SET)) {
-	    (void) Tcl_SetVar2(interp, "errorCode", (char *) NULL, "NONE",
-		    TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL, 
+	            Tcl_NewStringObj("NONE", -1), TCL_GLOBAL_ONLY);
 	}
     }
 
@@ -5109,8 +5109,8 @@ Tcl_AddObjErrorInfo(interp, message, length)
     if (length != 0) {
 	messagePtr = Tcl_NewStringObj(message, length);
 	Tcl_IncrRefCount(messagePtr);
-	Tcl_SetVar2Ex(interp, "errorInfo", NULL, messagePtr,
-		(TCL_GLOBAL_ONLY | TCL_APPEND_VALUE));
+	Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
+	        messagePtr, (TCL_GLOBAL_ONLY | TCL_APPEND_VALUE));
 	Tcl_DecrRefCount(messagePtr); /* free msg object appended above */
     }
 }

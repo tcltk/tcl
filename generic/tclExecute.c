@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.76 2002/07/10 08:25:59 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.77 2002/07/16 01:12:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -514,6 +514,12 @@ TclCreateExecEnv(interp)
     eePtr->stackTop = -1;
     eePtr->stackEnd = (TCL_STACK_INITIAL_SIZE - 1);
 
+    eePtr->errorInfo = Tcl_NewStringObj("::errorInfo", -1);
+    Tcl_IncrRefCount(eePtr->errorInfo);
+
+    eePtr->errorCode = Tcl_NewStringObj("::errorCode", -1);
+    Tcl_IncrRefCount(eePtr->errorCode);
+
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
 	TclInitAuxDataTypeTable();
@@ -548,6 +554,8 @@ TclDeleteExecEnv(eePtr)
     ExecEnv *eePtr;		/* Execution environment to free. */
 {
     Tcl_EventuallyFree((ClientData)eePtr->stackPtr, TCL_DYNAMIC);
+    TclDecrRefCount(eePtr->errorInfo);
+    TclDecrRefCount(eePtr->errorCode);
     ckfree((char *) eePtr);
 }
 
