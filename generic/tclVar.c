@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.95 2004/10/06 15:59:26 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.96 2004/10/22 12:29:53 msofer Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -548,10 +548,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	 * An indexed local variable.
 	 */
 
-	Proc *procPtr = ((Interp *) interp)->varFramePtr->procPtr;
-
 	part1Ptr->typePtr = &tclLocalVarNameType;
-	procPtr->refCount++;
 	part1Ptr->internalRep.longValue = (long) index;
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
