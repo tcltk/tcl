@@ -12,19 +12,19 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.9 1999/06/26 03:54:14 jenn Exp $
+# RCS: @(#) $Id: http.test,v 1.10 1999/07/02 06:05:11 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
 }
 
-if {[catch {package require http 2.0}]} {
+if {[catch {package require http 2.1}]} {
     if {[info exist http2]} {
-	catch {puts "Cannot load http 2.0 package"}
+	catch {puts "Cannot load http 2.1 package"}
 	return
     } else {
-	catch {puts "Running http 2.0 tests in slave interp"}
+	catch {puts "Running http 2.1 tests in slave interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
 	$interp eval [list source [info script]]
