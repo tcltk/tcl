@@ -1,3 +1,9 @@
+2003-02-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/binary.test (binary-44.[34]): 
+	* generic/tclBinary.c (ScanNumber): Fixed problem with unwanted
+	sign-bit propagation when scanning wide ints. [Bug #690774]
+
 2003-02-21  Daniel Steffen  <das@users.sourceforge.net>
 
 	* mac/tclMacChan.c (TclpCutFileChannel, TclpSpliceFileChannel):

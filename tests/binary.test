@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.10 2002/10/03 13:34:32 dkf Exp $
+# RCS: @(#) $Id: binary.test,v 1.11 2003/02/21 21:54:11 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1476,6 +1476,14 @@ test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
     binary scan lcTolleH w x
     set x
 } 5216694956358656876
+test binary-44.3 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format w [expr {wide(3) << 31}]] w x
+    set x
+} 6442450944
+test binary-44.4 {Tcl_BinaryObjCmd: scan wide int with bit 31 set} {} {
+    binary scan [binary format W [expr {wide(3) << 31}]] W x
+    set x
+} 6442450944
 
 test binary-45.1 {Tcl_BinaryObjCmd: combined wide int handling} {
     binary scan [binary format sws 16450 -1 19521] c* x
