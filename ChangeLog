@@ -1,3 +1,14 @@
+2001-11-06  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* generic/tclIO.c (ReadChars): Fixed bug #478856 reported by
+	  Stuart Cassoff <stwo@users.sourceforge.net>. The bug caused loss
+	  of fileevents when [read]ing less data from the channel than
+	  buffered. Due to an empty input buffer the flag
+	  CHANNEL_NEED_MORE_DATA was set but never reset, causing the I/O
+	  system to wait for more data instead of using a timer to
+	  synthesize fileevents and to flush the pending data out of the
+	  buffers.
+
 2001-11-06  David Gravereaux <davygrvy@pobox.com>
 
 	* win/rules.vc (new):
