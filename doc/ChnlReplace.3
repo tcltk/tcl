@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlReplace.3,v 1.2 1999/06/25 23:46:59 welch Exp $
+'\" RCS: @(#) $Id: ChnlReplace.3,v 1.3 1999/06/30 17:46:51 welch Exp $
 .so man.macros
 .TH Tcl_ReplaceChannel 3 8.2 Tcl "Tcl Library Procedures"
 .BS
@@ -47,25 +47,46 @@ a new channel on top of an existing one.
 Any number of channels can be stacked together.
 .PP
 \fBTcl_ReplaceChannel\fR
-interposes a new channel type on an existing \fIchannel\fP.
-After the call to \fBTcl_ReplaceChannel\fR,
-any operation on \fIchannel\fP uses the I/O channel functions
+replaces an existing \fIchannel\fP with a new channel by
+the same name that was registered for \fIchannel\fP
+with \fBTcl_RegisterChannel\fP.
+Because the channel name is the same, all Tcl-level I/O
+operations will automatically use the new channel instead
+of the old one.
+The new channel uses the I/O channel functions
 defined in \fItypePtr\fP, and the channel functions are passed
-the new \fIclientData\fP instead of the existing client data
-for \fIchannel\fP.
-A new channel structure is created under the same name that
-exists for \fIchannel\fP, and the existing Tcl_Channel data structure
-is linked using the channelPtr->supercedes structure member.
+the new \fIclientData\fP.
+A pointer to the new channel structure is returned.
+If an error occurs when creating the new channel,
+NULL is returned instead. 
+.PP
+The \fImask\fP parameter specifies the operations that
+are allowed on the new channel.
+These can be a subset of the operations allowed on the original channel.
+For example, a read-write channel may become
+read-only after the \fBTcl_ReplaceChannel\fR call.
+.PP
+The old Tcl_Channel data structure
+is linked to the new channel
+using the \fBsupercedes\fP structure member of the
+Tcl_Channel that is returned by
+\fBTcl_ReplaceChannel\fR.
 The new channel functions
-should use Tcl_Read and Tcl_Write to get at the underlying channel.
+should use the standard channel APIs like
+\fBTcl_Read\fP, \fBTcl_ReadChars\fP and \fBTcl_Write\fP
+to get at the underlying channel instead of
+accessing the other channel data structure directly.
+.PP
 Closing the new channel closes the channels stacked below it.
+The close of stacked channels is executed in a way that
+allows buffered data to be properly flushed.
 .PP
-The set of operations allowed on the new channel can be restricted
-by the new channel type. For example, a read-write channel may become
-read-only after the \fBTcl_ReplaceChannel\fR
-call.
-.PP
-\fBTcl_UndoReplaceChannel\fP restores the channel to its original state.
+\fBTcl_UndoReplaceChannel\fP reverses the process.
+The old channel is associated with the channel name,
+and the new channel created by 
+\fBTcl_ReplaceChannel\fR is destroyed.
+If there is no old channel, then \fBTcl_UndoReplaceChannel\fP 
+is equivalent to \fBTcl_Close\fP .
 
 .SH "SEE ALSO"
 Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n).
