@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.2.4.1 1999/04/28 02:37:44 kenj Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.2.4.2 1999/04/28 17:08:28 kenj Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -265,7 +265,7 @@ pointer as the \fIsrc\fR string.  Otherwise, these functions
 behave identically to \fBTcl_UtfToExternalDString\fR and
 \fBTcl_ExternalToUtfDString\fR.
 .PP
-\fBTcl_GetEncodingName\fR is roughly the inverse of \fBTk_GetEncoding\fR.
+\fBTcl_GetEncodingName\fR is roughly the inverse of \fBTcl_GetEncoding\fR.
 Given an \fIencoding\fR, the return value is the \fIname\fR argument that
 was used to create the encoding.  The string returned by 
 \fBTcl_GetEncodingName\fR is only guaranteed to persist until the
