@@ -419,6 +419,10 @@ install-libraries:
 # Special case object file targets
 #
 
+$(TMPDIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
+	$(cc32) -DDLL_BUILD -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) \
+		-Fo$(TMPDIR)\ $?
+
 $(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -DTCL_TEST \
 		-Fo$(TMPDIR)\testMain.obj $?
