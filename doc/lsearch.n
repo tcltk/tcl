@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.18 2004/05/18 12:54:35 dkf Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.19 2004/06/07 21:41:27 dkf Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.5 Tcl "Tcl Built-In Commands"
@@ -127,38 +127,38 @@ overall list to the term found.  This option has no effect unless the
 .SH EXAMPLES
 Basic searching:
 .CS
-lsearch {a b c d e} c
+\fBlsearch\fR {a b c d e} c
       => 2
-lsearch -all {a b c a b c} c
+\fBlsearch\fR -all {a b c a b c} c
       => 2 5
 .CE
 
 Using \fBlsearch\fR to filter lists:
 .CS
-lsearch -inline {a20 b35 c47} b*
+\fBlsearch\fR -inline {a20 b35 c47} b*
       => b35
-lsearch -inline -not {a20 b35 c47} b*
+\fBlsearch\fR -inline -not {a20 b35 c47} b*
       => a20
-lsearch -all -inline -not {a20 b35 c47} b*
+\fBlsearch\fR -all -inline -not {a20 b35 c47} b*
       => a20 c47
-lsearch -all -not {a20 b35 c47} b*
+\fBlsearch\fR -all -not {a20 b35 c47} b*
       => 0 2
 .CE
 This can even do a "set-like" removal operation:
 .CS
-lsearch -all -inline -not -exact {a b c a d e a f g a} a
+\fBlsearch\fR -all -inline -not -exact {a b c a d e a f g a} a
       => b c d e f g
 .CE
 
 Searching may start part-way through the list:
 .CS
-lsearch -start 3 {a b c a b c} c
+\fBlsearch\fR -start 3 {a b c a b c} c
       => 5
 .CE
 
 It is also possible to search inside elements:
 .CS
-lsearch -index 1 -all {{a abc} {b bcd} {c cde}} *bc*
+\fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
       => {a abc} {b bcd}
 .CE
 
