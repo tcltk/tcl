@@ -1,3 +1,13 @@
+2001-08-26  Don Porter <dgp@users.sourceforge.net>
+
+	* library/auto.tcl (tcl_findLibrary):
+	* tests/unixInit.test (unixInit-2.{1,9}):
+	* unix/tclUnixInit.c (TclpInitLibraryPath):
+	* win/tclWinInit.c (TclpInitLibraryPath):  Corrected 
+	inconsistency between  the search path for script libraries and
+	the directory name $DISTNAME into which distributions built
+	by 'make test' unpack.  [Bug 455642]
+
 2001-08-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/stringComp.test: added string-1.3
