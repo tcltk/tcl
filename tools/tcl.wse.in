@@ -1705,7 +1705,7 @@ item: Install File
 end
 item: Install File
   Source=${__TKBASEDIR__}\library\demos\twind.tcl
-  Destination=%MAINDIR%\lib\tk%VER%\demos\twin\released.tcl
+  Destination=%MAINDIR%\lib\tk%VER%\demos\twind.tcl
   Flags=0000000000000010
 end
 item: Install File
