@@ -1,5 +1,11 @@
 2001-04-07  Miguel Sofer <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c: Avoid panic when there are extra items in
+	  the tcl stack [Bug #406709, Patch #414470]
+	* tests/foreach.test: test to exercise the patch
+
+2001-04-07  Miguel Sofer <msofer@users.sourceforge.net>
+
 	* doc/namespace.n: document correct functionality
 	* generic/tclNamesp.c: corrected behaviour of [namespace code]
 	(Bug #219385, Patch #403530)
