@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.153 2004/04/23 07:21:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.154 2004/04/25 20:16:31 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1559,7 +1559,6 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 extern char *			tclExecutableName;
 extern char *			tclNativeExecutableName;
 extern char *			tclDefaultEncodingDir;
-extern Tcl_ChannelType		tclFileChannelType;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;
 extern Tcl_NotifierProcs	tclOriginalNotifier;

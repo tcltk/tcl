@@ -1,3 +1,8 @@
+2004-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Removed obsolete declarations and #include's.
+	* generic/tclInt.h:	[Bugs 926459, 926486]
+
 2004-04-24  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWin32Dll.c (DllMain): Added DisableThreadLibraryCalls()
