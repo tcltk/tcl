@@ -398,6 +398,7 @@ static void		FreeArgInfo _ANSI_ARGS_((ArgInfo *argInfoPtr));
 static int		GetCmdLocEncodingSize _ANSI_ARGS_((
 			    CompileEnv *envPtr));
 static void		InitArgInfo _ANSI_ARGS_((ArgInfo *argInfoPtr));
+static int		IsLocalScalar  _ANSI_ARGS_((char *name, int len));
 static int		LookupCompiledLocal _ANSI_ARGS_((
         		    char *name, int nameChars, int createIfNew,
 			    int flagsIfCreated, Proc *procPtr));
@@ -3247,6 +3248,48 @@ TclCompileDollarVar(interp, string, lastChar, flags, envPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * IsLocalScalar --
+ *
+ *	Checks to see if a variable name refers to a local scalar.
+ *
+ * Results:
+ *	Returns 1 if the variable is a local scalar.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IsLocalScalar(varName, length)
+    char *varName;		/* The name to check. */
+    int length;			/* The number of characters in the string.  */
+{
+    char *p;
+    char *lastChar = varName + (length - 1);
+
+    for (p = varName; p <= lastChar; p++) {
+	if (CHAR_TYPE(p, lastChar) != TCL_NORMAL) {
+	    return 0;
+	}
+	if  (*p == '(') {
+	    if (*lastChar == ')') { /* we have an array element */
+		return 0;
+	    }
+	} else if (*p == ':') {
+	    if ((p != lastChar) && *(p+1) == ':') { /* qualified name */
+		return 0;
+	    }
+	}
+    }
+	
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileBreakCmd --
  *
  *	Procedure called to compile the "break" command.
@@ -3433,21 +3476,9 @@ TclCompileCatchCmd(interp, string, lastChar, flags, envPtr)
 	}
 
 	nameChars = (lastChar - firstChar + 1);
-	if (nameChars > 0) {
-	    char *p = firstChar;
-	    while (p != lastChar) {
-		if (CHAR_TYPE(p, lastChar) != TCL_NORMAL) {
-		    result = TCL_OUT_LINE_COMPILE;
-		    goto done;
-		}
-		if (*p == '(') {
-		    if (*lastChar == ')') { /* we have an array element */
-			result = TCL_OUT_LINE_COMPILE;
-			goto done; 
-		    }
-		}
-		p++;
-	    }
+	if (!IsLocalScalar(firstChar, nameChars)) {
+	    result = TCL_OUT_LINE_COMPILE;
+	    goto done;
 	}
 
 	name = firstChar;
@@ -4429,29 +4460,9 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
 	numVars = varcList[i];
 	for (j = 0;  j < numVars;  j++) {
 	    char *varName = varvList[i][j];
-	    char *p = varName;
-	    while (*p != '\0') {
-		if (CHAR_TYPE(p, p+1) != TCL_NORMAL) {
-		    result = TCL_OUT_LINE_COMPILE;
-		    goto done;
-		}
-		if ((*p == ':') && (*(p+1) == ':')) { /* non-local name */
-		    result = TCL_OUT_LINE_COMPILE;
-		    goto done; 
-		}
-		    
-		if (*p == '(') {
-		    char *q = p;
-		    do {
-			q++;
-		    } while (*q != '\0');
-		    q--;
-		    if (*q == ')') { /* we have an array element */
-			result = TCL_OUT_LINE_COMPILE;
-			goto done; 
-		    }
-		}
-		p++;
+	    if (!IsLocalScalar(varName, strlen(varName))) {
+		result = TCL_OUT_LINE_COMPILE;
+		goto done;
 	    }
 	}
     }
