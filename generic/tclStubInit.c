@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.1 2004/12/09 22:59:26 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109.2.2 2004/12/13 21:23:14 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -968,6 +968,11 @@ TclStubs tclStubs = {
     Tcl_GetIntFromBigInt, /* 553 */
     Tcl_GetWideIntFromBigInt, /* 554 */
     Tcl_CompareBigInt, /* 555 */
+    Tcl_CopyBigInt, /* 556 */
+    Tcl_AddBigInt, /* 557 */
+    Tcl_SubtractBigInt, /* 558 */
+    Tcl_MultiplyBigIntByNarrowInt, /* 559 */
+    Tcl_ShiftBigInt, /* 560 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.107.2.1 2004/12/09 22:59:26 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.107.2.2 2004/12/13 21:23:10 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3438,6 +3438,35 @@ EXTERN Tcl_WideInt	Tcl_GetWideIntFromBigInt _ANSI_ARGS_((
 EXTERN int		Tcl_CompareBigInt _ANSI_ARGS_((Tcl_BigInt bigVal1, 
 				Tcl_BigInt bigVal2));
 #endif
+#ifndef Tcl_CopyBigInt_TCL_DECLARED
+#define Tcl_CopyBigInt_TCL_DECLARED
+/* 556 */
+EXTERN Tcl_BigInt	Tcl_CopyBigInt _ANSI_ARGS_((Tcl_BigInt bigVal));
+#endif
+#ifndef Tcl_AddBigInt_TCL_DECLARED
+#define Tcl_AddBigInt_TCL_DECLARED
+/* 557 */
+EXTERN Tcl_BigInt	Tcl_AddBigInt _ANSI_ARGS_((Tcl_BigInt bigVal1, 
+				Tcl_BigInt bigVal2));
+#endif
+#ifndef Tcl_SubtractBigInt_TCL_DECLARED
+#define Tcl_SubtractBigInt_TCL_DECLARED
+/* 558 */
+EXTERN Tcl_BigInt	Tcl_SubtractBigInt _ANSI_ARGS_((Tcl_BigInt bigVal1, 
+				Tcl_BigInt bigVal2));
+#endif
+#ifndef Tcl_MultiplyBigIntByNarrowInt_TCL_DECLARED
+#define Tcl_MultiplyBigIntByNarrowInt_TCL_DECLARED
+/* 559 */
+EXTERN Tcl_BigInt	Tcl_MultiplyBigIntByNarrowInt _ANSI_ARGS_((
+				Tcl_BigInt bigVal, Tcl_NarrowInt narrowVal));
+#endif
+#ifndef Tcl_ShiftBigInt_TCL_DECLARED
+#define Tcl_ShiftBigInt_TCL_DECLARED
+/* 560 */
+EXTERN Tcl_BigInt	Tcl_ShiftBigInt _ANSI_ARGS_((Tcl_BigInt bigVal, 
+				int intVal));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4035,6 +4064,11 @@ typedef struct TclStubs {
     int (*tcl_GetIntFromBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 553 */
     Tcl_WideInt (*tcl_GetWideIntFromBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 554 */
     int (*tcl_CompareBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal1, Tcl_BigInt bigVal2)); /* 555 */
+    Tcl_BigInt (*tcl_CopyBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal)); /* 556 */
+    Tcl_BigInt (*tcl_AddBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal1, Tcl_BigInt bigVal2)); /* 557 */
+    Tcl_BigInt (*tcl_SubtractBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal1, Tcl_BigInt bigVal2)); /* 558 */
+    Tcl_BigInt (*tcl_MultiplyBigIntByNarrowInt) _ANSI_ARGS_((Tcl_BigInt bigVal, Tcl_NarrowInt narrowVal)); /* 559 */
+    Tcl_BigInt (*tcl_ShiftBigInt) _ANSI_ARGS_((Tcl_BigInt bigVal, int intVal)); /* 560 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6298,6 +6332,26 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_CompareBigInt
 #define Tcl_CompareBigInt \
 	(tclStubsPtr->tcl_CompareBigInt) /* 555 */
+#endif
+#ifndef Tcl_CopyBigInt
+#define Tcl_CopyBigInt \
+	(tclStubsPtr->tcl_CopyBigInt) /* 556 */
+#endif
+#ifndef Tcl_AddBigInt
+#define Tcl_AddBigInt \
+	(tclStubsPtr->tcl_AddBigInt) /* 557 */
+#endif
+#ifndef Tcl_SubtractBigInt
+#define Tcl_SubtractBigInt \
+	(tclStubsPtr->tcl_SubtractBigInt) /* 558 */
+#endif
+#ifndef Tcl_MultiplyBigIntByNarrowInt
+#define Tcl_MultiplyBigIntByNarrowInt \
+	(tclStubsPtr->tcl_MultiplyBigIntByNarrowInt) /* 559 */
+#endif
+#ifndef Tcl_ShiftBigInt
+#define Tcl_ShiftBigInt \
+	(tclStubsPtr->tcl_ShiftBigInt) /* 560 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

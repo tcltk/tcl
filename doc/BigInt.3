@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: BigInt.3,v 1.1.2.2 2004/12/10 21:17:41 kennykb Exp $
+'\" RCS: @(#) $Id: BigInt.3,v 1.1.2.3 2004/12/13 21:23:10 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_BigInt 3 8.5 Tcl "Tcl Library Procedures"
@@ -62,9 +62,14 @@ Tcl_BigInt
 .sp
 Tcl_BigInt
 \fBTcl_SubtractBigInt\fR(\fIbigVal1\fR, \fIbigVal2\fR)
-
+.sp
+Tcl_BigInt
+\fBTcl_MultiplyBigIntByNarrowInt\fR(\fIbigVal1\fR,\fInarrowVal2\fR)
+.sp
+Tcl_BigInt
+\fBTcl_ShiftBigInt\fR(\fIbigVal\fR,\fIintVal\fR)
 .SH ARGUMENTS
-.AS "Tcl_WideInt" wideVal in/out
+.AS "Tcl_NarrowInt" narrowVal2 in/out
 .AP Tcl_BigInt bigVal
 The arbitrary-precision integer value to use as an operand.
 .AP Tcl_BigInt bigVal1
@@ -75,6 +80,8 @@ The arbitrary-precision integer value to use as the second operand of
 an operation.
 .AP int intVal in
 The native integer value to use as an operand.
+.AP Tcl_NarrowInt narrowVal2
+The "narrow" integer value to use as the second operand of an operation
 .AP Tcl_WideInt wideVal in
 The wide integer value to use as an operand.
 .BE
@@ -128,6 +135,20 @@ add and subtract arbitrary-precision integers. \fIbigVal1\fR is the
 left operand of these operations, and \fIbigVal2\fR is the right
 operand.  The result is returned from the functions, and must
 eventually be freed by calling \fBTcl_FreeBigInt\fR.
+.PP
+\fBTcl_MultiplyBigIntByNarrowInt\fR multiplies an arbitrary-precision
+integer, \fIbigVal1\fR, by a narrow integer, \fInarrowVal2\fR.  The
+width of the narrow integer is platform dependent; the function is
+useful chiefly for multiplying a large integer by a small constant
+such as 2 or 10. The result returned must eventually be freed by
+calling \fBTcl_FreeBigInt\fR.
+.PP
+\fBTcl_ShiftBigInt\fR multiplies an arbitrary-precision integer,
+\fIbigVal\fR by a power of two.  The exponent of two is passed as
+\fIintVal\fR.  Multiplication by a negative power of two is possible,
+and truncates toward negative infinity.  The result returned must
+eventually be freed by calling \fBTcl_FreeBigInt\fR.
+
 .SH "SEE ALSO"
 Tcl_IntObj
 

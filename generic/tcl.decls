@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105.2.2 2004/12/10 21:17:41 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105.2.3 2004/12/13 21:23:10 kennykb Exp $
 
 library tcl
 
@@ -1985,6 +1985,12 @@ declare 557 generic {
 }
 declare 558 generic {
     Tcl_BigInt Tcl_SubtractBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
+}
+declare 559 generic {
+    Tcl_BigInt Tcl_MultiplyBigIntByNarrowInt( Tcl_BigInt bigVal, Tcl_NarrowInt narrowVal )
+}
+declare 560 generic {
+    Tcl_BigInt Tcl_ShiftBigInt( Tcl_BigInt bigVal, int intVal )
 }
 
 ##############################################################################

@@ -1,3 +1,17 @@
+2004-12-13  Kevin Kenny  <kennykb@acm.org>
+
+	* doc/BigInt.3:        Added Tcl_MultiplyBigIntByNarrowInt and
+	* generic/tcl.decls:   Tcl_ShiftBigInt.
+	* generic/tclBigInt.c:
+	
+	* win/Makefile.in:     Added missing tclBigInt.$(OBJEXT)
+	
+	* generic/tclDecls.h:    
+	* generic/tclStubInit.c: Regen.
+
+	(these changes on the kennykb-numerics-branch)
+	
+	
 2004-12-08  Kevin Kenny  <kennykb@acm.org>
 	
 	* compat/strtoll.c (strtoll):   Removed redundant conditional 
@@ -14,6 +28,8 @@
 	configurator on Windows as well as Unix.
 	* unix/configure: Regenerated.
 	* win/configure: Regenerated.
+	
+	(these changes on the kennykb-numerics-branch)
 	
 2004-12-07  Don Porter  <dgp@users.sourceforge.net>
 

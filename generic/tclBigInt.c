@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBigInt.c,v 1.1.2.2 2004/12/10 21:17:42 kennykb Exp $"
+ * RCS: @(#) $Id: tclBigInt.c,v 1.1.2.3 2004/12/13 21:23:10 kennykb Exp $"
  *
  *----------------------------------------------------------------------
  */
@@ -57,6 +57,7 @@ typedef struct BigInt {
 #define NARROW_UINT_PER_WIDE_INT \
     ( ( sizeof( Tcl_WideUInt ) + sizeof( Tcl_NarrowUInt ) - 1 ) \
       / sizeof( Tcl_NarrowUInt ) )
+#define BASE ( (Tcl_WideInt) 1 << NARROW_UINT_BITS )
 
 #define NewBigInt(n) \
     ( (BigInt*) ( ckalloc( sizeof( BigInt ) \
@@ -557,6 +558,246 @@ Tcl_SubtractBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
 	}
     }
     return (Tcl_BigInt) retVal;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_MultiplyBigIntByNarrow --
+ *
+ *	Multiply a Tcl_BigInt by a small constant.
+ *
+ * Results:
+ *	Returns the product 
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_BigInt
+Tcl_MultiplyBigIntByNarrowInt( Tcl_BigInt bigVal, Tcl_NarrowInt smallVal )
+{
+    BigInt* z = (BigInt*) bigVal;
+    BigInt* result;
+    Tcl_NarrowUInt x;
+    Tcl_WideUInt carry;
+    size_t i;
+
+    if ( smallVal == 0 
+	 || ( z->len == 1 && z->v[0] == 0 ) ) {
+
+	/* Multiplication by zero */
+
+	result = NewBigInt(1);
+	result->signum = 0;
+	result->v[0] = 0;
+
+    } else if ( smallVal == 1 || smallVal == -1 ) {
+
+	/* Multiplication by unity. */
+
+	result = (BigInt*) Tcl_CopyBigInt( bigVal );
+	result->signum ^= ( smallVal < 0 );
+
+    } else {
+
+	/* Multiplication by something else. */
+
+	result = NewBigInt( z->len + 1 );
+	if ( smallVal < 0 ) {
+	    result->signum = -z->signum;
+	    x = - smallVal;
+	} else {
+	    result->signum = z->signum;
+	    x = smallVal;
+	}
+	carry = 0;
+	for ( i = 0; i < z->len; ++i ) {
+	    carry = carry + x * z->v[i];
+	    result->v[i] = (Tcl_NarrowUInt) ( carry & NARROW_UINT_MAX );
+	    carry >>= NARROW_UINT_BITS;
+	}
+	if ( carry ) {
+	    result->v[i++] = (Tcl_NarrowUInt) carry;
+	}
+	result->len = i;
+    }
+    return (Tcl_BigInt) result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ShiftBigInt
+ *
+ *	Shift a large integer, multiplying it by a power of 2.
+ *
+ * Results:
+ *	Returns bigVal * 2**intVal
+ *
+ * As is implied by the formula, intVal>0 shifts to the left,
+ * intVal<0 shifts to the right, intVal==0 does nothing.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_BigInt
+Tcl_ShiftBigInt( Tcl_BigInt bigVal, int intVal )
+{
+    BigInt* z = (BigInt*) bigVal;
+    BigInt* result;
+    Tcl_WideUInt carry;
+    Tcl_NarrowUInt *p, *q;
+    size_t i;
+
+    /* 
+     * Compute the length of the shift, in words and bits.  Also
+     * compute the word size minus the distance to shift.
+     */
+
+    size_t words = ( -intVal ) / NARROW_UINT_BITS;
+    int bits = ( -intVal ) % NARROW_UINT_BITS;
+    int notbits = NARROW_UINT_BITS - bits;
+
+    if ( intVal == 0
+	 || ( z->len == 0 && z->v[0] == 0 ) ) {
+
+	/* 
+	 * Shift by zero is the identity.  Shifting zero by anything
+	 * is zero, hence is also an identity. Handle either case
+	 * by copying the input value.
+	 */
+	return Tcl_CopyBigInt( bigVal );
+	
+    }
+
+    /* A negative shift value is a right shift. */
+
+    if ( intVal < 0 ) {
+
+	size_t l = z->len - words;
+	Tcl_WideUInt lowmask = (((Tcl_WideUInt) 1) << bits) - 1;
+
+	if ( l <= 0 ) {
+
+	    /* 
+	     * Shifting a positive number right by more than the length of the
+	     * number yields zero. Shifting a negative number right by more 
+	     * than the length of the number yields -1. */
+
+	    result = NewBigInt( 1 );
+	    result->signum = z->signum;
+	    result->v[0] = z->signum;
+	    return (Tcl_BigInt) result;
+
+	}
+
+	/* 
+	 * To preserve truncate-toward-minus-infinity semantics, if the
+	 * number being shifted is negative, we determine whether a one
+	 * bit has been shifted out anywhere, and increment the magnitude
+	 * of the result if it has.
+	 */
+
+	carry = z->v[0] >> bits;
+	if ( z->signum ) {
+	    for ( i = 0; i < words; ++i ) {
+		if ( z->v[i] != 0 ) {
+		    ++carry;
+		    break;
+		}
+	    }
+	    if ( i >= words
+		 && ( z->v[i] & lowmask ) != 0  ) {
+		++carry;
+	    }
+	}
+
+	if ( bits == 0 && carry == 0 ) {
+
+	    /* 
+	     * The simple case is shifting by a multiple of the word size
+	     * without awkward carries.
+	     */
+	    
+	    result = NewBigInt( l );
+	    result->signum = z->signum;
+	    memcpy( result->v, z->v, l * sizeof( Tcl_NarrowUInt ) );
+	    return (Tcl_BigInt) result;
+	    
+	} else {
+
+	    /*
+	     * General case - shift right.  'carry' at this point
+	     * contains the least significant 'bits' bits of the result.
+	     * It may exceed that number of bits by one if we are
+	     * shifting a negative number.
+	     * Words 1 through (l-1) of the input argument will be each
+	     * shifted onto this result.
+	     */
+
+	    result = NewBigInt( l + 1 );
+	    result->signum = z->signum;
+
+	    p = z->v + 1;
+	    q = result->v;
+	    for ( i = l; i > 0; --i ) {
+		carry += *p++ << notbits;
+		*q++ = (Tcl_NarrowUInt) ( carry & NARROW_UINT_MAX );
+		carry >>= NARROW_UINT_BITS;
+	    }
+	    if ( carry ) {
+		*q++ = (Tcl_NarrowUInt) ( carry & NARROW_UINT_MAX );
+	    }
+
+	}
+
+    } else {
+
+	/* Shift left */
+
+	size_t l = z->len + words;
+	if ( bits == 0 ) {
+
+	    /* Easy case - shift left a multiple of the word size. */
+
+	    result = NewBigInt( l );
+	    result->signum = z->signum;
+	    memset( result->v, 0, words );
+	    memcpy( result->v + words, z->v, z->len );
+	    return (Tcl_BigInt) result;
+
+	} else {
+
+	    /* Shift left by something other than a multiple of a word */
+
+	    result = NewBigInt( l + 1 );
+	    carry = 0;
+	    p = z->v;
+	    q = result->v;
+	    for ( i = z->len; i > 0; --i ) {
+		carry |= ( *p++ << bits );
+		*q++ = (Tcl_NarrowUInt) ( carry & NARROW_UINT_MAX );
+		carry >>= NARROW_UINT_BITS;
+	    }
+	    *q++ = (Tcl_NarrowUInt) carry;
+
+	}	    
+    }
+
+    /*
+     * The shift may have left a zero in the most significant
+     * word (or even the most significant two words).
+     * Find the most significant non-zero word to assign the
+     * length of the result.
+     */
+    
+    --q;
+    while ( q > result->v && *q == 0 ) {
+	--q;
+    }
+    result->len = q + 1 - result->v;
+	
+    return (Tcl_BigInt) result;
 }
 
 /*
