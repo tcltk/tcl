@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.28 2002/07/03 00:41:38 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.29 2002/07/03 00:54:48 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -91,7 +91,7 @@ commands provided by \fBtcltest\fR govern the configuration of
 [\fBtest\fR] and the collection of many [\fBtest\fR] commands into
 test suites.
 .PP
-See \fBCONTENTS OF A TEST FILE\fR below for an extended example
+See \fBCREATING TEST SUITES WITH TCLTEST\fR below for an extended example
 of how to use the commands of \fBtcltest\fR to produce test suites
 for your Tcl-enabled code.
 .SH COMMANDS
