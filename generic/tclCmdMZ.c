@@ -9,11 +9,12 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Scriptics Corporation.
+ * Copyright (c) 2002 ActiveState Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.57 2002/02/02 00:20:54 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.58 2002/02/07 00:56:02 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -489,6 +490,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     cflags = TCL_REG_ADVANCED;
     all = 0;
     offset = 0;
+    resultPtr = NULL;
 
     for (idx = 1; idx < objc; idx++) {
 	char *name;
@@ -554,6 +556,75 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
     objv += idx;
 
+    if (all && (offset == 0)
+	    && (strpbrk(Tcl_GetString(objv[2]), "&\\") == NULL)
+	    && (strpbrk(Tcl_GetString(objv[0]), "*+?{}()[].\\|^$") == NULL)) {
+	/*
+	 * This is a simple one pair string map situation.  We make use of
+	 * a slightly modified version of the one pair STR_MAP code.
+	 */
+	int slen, nocase;
+	int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar *, CONST Tcl_UniChar *,
+		unsigned long));
+	Tcl_UniChar *p, wsrclc;
+
+	numMatches = 0;
+	nocase     = (cflags & TCL_REG_NOCASE);
+	strCmpFn   = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
+
+	wsrc     = Tcl_GetUnicodeFromObj(objv[0], &slen);
+	wstring  = Tcl_GetUnicodeFromObj(objv[1], &wlen);
+	wsubspec = Tcl_GetUnicodeFromObj(objv[2], &wsublen);
+	wend     = wstring + wlen - (slen ? slen - 1 : 0);
+	result   = TCL_OK;
+
+	if (slen == 0) {
+	    /*
+	     * regsub behavior for "" matches between each character.
+	     * 'string map' skips the "" case.
+	     */
+	    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+	    Tcl_IncrRefCount(resultPtr);
+	    for (; wstring < wend; wstring++) {
+		Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		Tcl_AppendUnicodeToObj(resultPtr, wstring, 1);
+		numMatches++;
+	    }
+	    wlen = 0;
+	} else {
+	    wsrclc = Tcl_UniCharToLower(*wsrc);
+	    for (p = wfirstChar = wstring; wstring < wend; wstring++) {
+		if (((*wstring == *wsrc) ||
+			(nocase && (Tcl_UniCharToLower(*wstring) ==
+				wsrclc))) &&
+			((slen == 1) || (strCmpFn(wstring, wsrc,
+				(unsigned long) slen) == 0))) {
+		    if (numMatches == 0) {
+			resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+			Tcl_IncrRefCount(resultPtr);
+		    }
+		    if (p != wstring) {
+			Tcl_AppendUnicodeToObj(resultPtr, p, wstring - p);
+			p = wstring + slen;
+		    } else {
+			p += slen;
+		    }
+		    wstring = p - 1;
+
+		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		    numMatches++;
+		}
+	    }
+	    if (numMatches) {
+		wlen    = wfirstChar + wlen - p;
+		wstring = p;
+	    }
+	}
+	objPtr = NULL;
+	subPtr = NULL;
+	goto regsubDone;
+    }
+
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
@@ -579,8 +650,6 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
 
     result = TCL_OK;
-    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
-    Tcl_IncrRefCount(resultPtr);
 
     /*
      * The following loop is to handle multiple matches within the
@@ -607,12 +676,16 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	if (match == 0) {
 	    break;
 	}
-	if ((numMatches == 0) && (offset > 0)) {
-	    /*
-	     * Copy the initial portion of the string in if an offset
-	     * was specified.
-	     */
-	    Tcl_AppendUnicodeToObj(resultPtr, wstring, offset);
+	if (numMatches == 0) {
+	    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+	    Tcl_IncrRefCount(resultPtr);
+	    if (offset > 0) {
+		/*
+		 * Copy the initial portion of the string in if an offset
+		 * was specified.
+		 */
+		Tcl_AppendUnicodeToObj(resultPtr, wstring, offset);
+	    }
 	}
 	numMatches++;
 
@@ -696,13 +769,15 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      * Copy the portion of the source string after the last match to the
      * result variable.
      */
-
+    regsubDone:
     if (numMatches == 0) {
 	/*
 	 * On zero matches, just ignore the offset, since it shouldn't
 	 * matter to us in this case, and the user may have skewed it.
 	 */
-	Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);
+	//Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);
+	resultPtr = objv[1];
+	Tcl_IncrRefCount(resultPtr);
     } else if (offset < wlen) {
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
@@ -715,14 +790,14 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 * Set the interpreter's object result to an integer object
 	 * holding the number of matches. 
 	 */
-	
+
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), numMatches);
     }
 
     done:
-    if (objv[1] == objv[0]) { Tcl_DecrRefCount(objPtr); }
-    if (objv[2] == objv[0]) { Tcl_DecrRefCount(subPtr); }
-    Tcl_DecrRefCount(resultPtr);
+    if (objPtr && (objv[1] == objv[0])) { Tcl_DecrRefCount(objPtr); }
+    if (subPtr && (objv[2] == objv[0])) { Tcl_DecrRefCount(subPtr); }
+    if (resultPtr) { Tcl_DecrRefCount(resultPtr); }
     return result;
 }
 
@@ -1767,7 +1842,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    end = ustring1 + length1;
 
-	    strCmpFn = (nocase) ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
+	    strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
 
 	    /*
 	     * Force result to be Unicode
@@ -1782,52 +1857,69 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * This will be >30% faster on larger strings.
 		 */
 		int mapLen;
-		Tcl_UniChar *mapString;
+		Tcl_UniChar *mapString, u2lc;
 
 		ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
-		mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
-		for (p = ustring1; ustring1 < end; ustring1++) {
-		    if ((length2 > 0) &&
-			    (nocase || (*ustring1 == *ustring2)) &&
-			    (strCmpFn(ustring1, ustring2,
-				    (unsigned long) length2) == 0)) {
-			if (p != ustring1) {
-			    Tcl_AppendUnicodeToObj(resultPtr, p,
-				    ustring1 - p);
-			    p = ustring1 + length2;
-			} else {
-			    p += length2;
-			}
-			ustring1 = p - 1;
+		p = ustring1;
+		if (length2 == 0) {
+		    ustring1 = end;
+		} else {
+		    mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
+		    u2lc = (nocase ? Tcl_UniCharToLower(*ustring2) : 0);
+		    for (; ustring1 < end; ustring1++) {
+			if (((*ustring1 == *ustring2) ||
+				(nocase && (Tcl_UniCharToLower(*ustring1) ==
+					u2lc))) &&
+				((length2 == 1) || strCmpFn(ustring1, ustring2,
+					(unsigned long) length2) == 0)) {
+			    if (p != ustring1) {
+				Tcl_AppendUnicodeToObj(resultPtr, p,
+					ustring1 - p);
+				p = ustring1 + length2;
+			    } else {
+				p += length2;
+			    }
+			    ustring1 = p - 1;
 
-			Tcl_AppendUnicodeToObj(resultPtr, mapString, mapLen);
+			    Tcl_AppendUnicodeToObj(resultPtr, mapString,
+				    mapLen);
+			}
 		    }
 		}
 	    } else {
-		Tcl_UniChar **mapStrings =
-		    (Tcl_UniChar **) ckalloc((mapElemc * 2)
-			    * sizeof(Tcl_UniChar *));
-		int *mapLens =
-		    (int *) ckalloc((mapElemc * 2) * sizeof(int));
+		Tcl_UniChar **mapStrings, *u2lc = NULL;
+		int *mapLens;
 		/*
 		 * Precompute pointers to the unicode string and length.
 		 * This saves us repeated function calls later,
-		 * significantly speeding up the algorithm.
+		 * significantly speeding up the algorithm.  We only need
+		 * the lowercase first char in the nocase case.
 		 */
+		mapStrings = (Tcl_UniChar **) ckalloc((mapElemc * 2)
+			* sizeof(Tcl_UniChar *));
+		mapLens = (int *) ckalloc((mapElemc * 2) * sizeof(int));
+		if (nocase) {
+		    u2lc = (Tcl_UniChar *)
+			ckalloc((mapElemc) * sizeof(Tcl_UniChar));
+		}
 		for (index = 0; index < mapElemc; index++) {
 		    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
 			    &(mapLens[index]));
+		    if (nocase && ((index % 2) == 0)) {
+			u2lc[index/2] = Tcl_UniCharToLower(*mapStrings[index]);
+		    }
 		}
 		for (p = ustring1; ustring1 < end; ustring1++) {
 		    for (index = 0; index < mapElemc; index += 2) {
 			/*
-			 * Get the key string to match on
+			 * Get the key string to match on.
 			 */
 			ustring2 = mapStrings[index];
 			length2  = mapLens[index];
-			if ((length2 > 0) &&
-				(nocase || (*ustring1 == *ustring2)) &&
-				(strCmpFn(ustring2, ustring1,
+			if ((length2 > 0) && ((*ustring1 == *ustring2) ||
+				(nocase && (Tcl_UniCharToLower(*ustring1) ==
+					u2lc[index/2]))) &&
+				((length2 == 1) || strCmpFn(ustring2, ustring1,
 					(unsigned long) length2) == 0)) {
 			    if (p != ustring1) {
 				/*
@@ -1855,6 +1947,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		}
 		ckfree((char *) mapStrings);
 		ckfree((char *) mapLens);
+		if (nocase) {
+		    ckfree((char *) u2lc);
+		}
 	    }
 	    if (p != ustring1) {
 		/*
