@@ -1,3 +1,10 @@
+2001-05-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclObj.c (TclAllocateFreeObjects): simplified
+	objSizePlusPadding to use sizeof(Tcl_Obj) (max)
+	Corrected use of tclObjsAlloced/Freed/Shared in TCL_MEM_DEBUG
+	compile.
+
 2001-05-22  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: removed Tcl_DuplicateObj in INST_DUP 
