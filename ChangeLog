@@ -1,3 +1,8 @@
+2004-05-24 Miguel Sofer <msofer@users.sf.net>
+
+	* doc/set.n: accurate description of name resolution process,
+	referring to namespace.n for details [Bug 959180]
+
 2004-05-23  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (Tcl_FindNamespaceVar): [Bug 959052] fixed,
