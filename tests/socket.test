@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.31 2004/06/23 15:36:58 dkf Exp $
+# RCS: @(#) $Id: socket.test,v 1.32 2004/07/16 19:20:09 andreas_kupries Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -242,6 +242,12 @@ socket -server command ?-myaddr addr? port}}
 test socket-1.12 {arg parsing for socket command} {socket} {
     list [catch {socket foo badport} msg] $msg
 } {1 {expected integer but got "badport"}}
+test socket-1.13 {arg parsing for socket command} {socket} {
+list [catch {socket -async -server} msg] $msg
+} {1 {cannot set -async option for server sockets}}
+test socket-1.14 {arg parsing for socket command} {socket} {
+list [catch {socket -server foo -async} msg] $msg
+} {1 {cannot set -async option for server sockets}}
 
 set path(script) [makeFile {} script]
 
