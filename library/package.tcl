@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.5 1999/04/21 21:50:29 rjohnson Exp $
+# RCS: @(#) $Id: package.tcl,v 1.6 1999/08/19 02:59:40 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -32,12 +32,10 @@ proc pkg_compareExtension { fileName {ext {}} } {
     if {[string length $ext] == 0} {
 	set ext [info sharedlibextension]
     }
-    if {[string compare $tcl_platform(platform) "windows"] == 0} {
-	return [expr {[string compare \
-		[string tolower [file extension $fileName]] \
-		[string tolower $ext]] == 0}]
+    if {[string equal $tcl_platform(platform) "windows"]} {
+	return [string equal -nocase [file extension $fileName] $ext]
     } else {
-	return [expr {[string compare [file extension $fileName] $ext] == 0}]
+	return [string equal [file extension $fileName] $ext]
     }
 }
 
@@ -138,7 +136,7 @@ proc pkg_mkIndex {args} {
 	# interpreter, and get a list of the new commands and packages
 	# that are defined.
 
-	if {[string compare $file "pkgIndex.tcl"] == 0} {
+	if {[string equal $file "pkgIndex.tcl"]} {
 	    continue
 	}
 
@@ -156,7 +154,7 @@ proc pkg_mkIndex {args} {
 	    if {! [string match $loadPat [lindex $pkg 1]]} {
 		continue
 	    }
-	    if {[lindex $pkg 1] == "Tk"} {
+	    if {[string equal [lindex $pkg 1] "Tk"]} {
 		$c eval {set argv {-geometry +0+0}}
 	    }
 	    if {[catch {
@@ -165,10 +163,8 @@ proc pkg_mkIndex {args} {
 		if {$doVerbose} {
 		    tclLog "warning: load [lindex $pkg 0] [lindex $pkg 1]\nfailed with: $err"
 		}
-	    } else {
-		if {$doVerbose} {
-		    tclLog "loaded [lindex $pkg 0] [lindex $pkg 1]"
-		}
+	    } elseif {$doVerbose} {
+		tclLog "loaded [lindex $pkg 0] [lindex $pkg 1]"
 	    }
 	}
 	cd $dir
@@ -241,7 +237,7 @@ proc pkg_mkIndex {args} {
 		    return $list
 		}
 
-		# initialize the list of existing namespaces, packages, commands
+		# init the list of existing namespaces, packages, commands
 
 		foreach ::tcl::x [::tcl::GetAllNamespaces] {
 		    set ::tcl::namespaces($::tcl::x) 1
@@ -300,7 +296,7 @@ proc pkg_mkIndex {args} {
 
 		    set ::tcl::abs [auto_qualify $::tcl::abs ::]
 
-		    if {[string compare $::tcl::x $::tcl::abs] != 0} {
+		    if {[string compare $::tcl::x $::tcl::abs]} {
 			# Name changed during qualification
 
 			set ::tcl::newCmds($::tcl::abs) 1
@@ -312,7 +308,7 @@ proc pkg_mkIndex {args} {
 		# a version provided, then record it
 
 		foreach ::tcl::x [package names] {
-		    if {([string compare [package provide $::tcl::x] ""] != 0) \
+		    if {[string compare [package provide $::tcl::x] ""] \
 			    && ![info exists ::tcl::packages($::tcl::x)]} {
 			lappend ::tcl::newPkgs \
 			    [list $::tcl::x [package provide $::tcl::x]]
@@ -391,7 +387,7 @@ proc tclPkgSetup {dir pkg version files} {
 	set f [lindex $fileInfo 0]
 	set type [lindex $fileInfo 1]
 	foreach cmd [lindex $fileInfo 2] {
-	    if {$type == "load"} {
+	    if {[string equal $type "load"]} {
 		set auto_index($cmd) [list load [file join $dir $f] $pkg]
 	    } else {
 		set auto_index($cmd) [list source [file join $dir $f]]
@@ -410,7 +406,7 @@ proc tclMacPkgSearch {dir} {
 	if {[file isfile $x]} {
 	    set res [resource open $x]
 	    foreach y [resource list TEXT $res] {
-		if {$y == "pkgIndex"} {source -rsrc pkgIndex}
+		if {[string equal $y "pkgIndex"]} {source -rsrc pkgIndex}
 	    }
 	    catch {resource close $res}
 	}
@@ -461,7 +457,8 @@ proc tclPkgUnknown {name version {exact {}}} {
 	# On the Macintosh we also look in the resource fork 
 	# of shared libraries
 	# We can't use tclMacPkgSearch in safe interps because it uses glob
-	if {(![interp issafe]) && ($tcl_platform(platform) == "macintosh")} {
+	if {(![interp issafe]) && \
+		[string equal $tcl_platform(platform) "macintosh"]} {
 	    set dir [lindex $auto_path $i]
 	    tclMacPkgSearch $dir
 	    foreach x [glob -nocomplain [file join $dir *]] {

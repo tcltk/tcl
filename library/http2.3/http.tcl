@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.9 1999/08/05 16:57:48 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.10 1999/08/19 02:59:45 hobbs Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
@@ -179,12 +179,10 @@ proc http::geturl { url args } {
     set pat ^-([join $options |])$
     foreach {flag value} $args {
 	if {[regexp $pat $flag]} {
-
 	    # Validate numbers
-
 	    if {[info exists state($flag)] && \
-		    [regexp {^[0-9]+$} $state($flag)] && \
-		    ![regexp {^[0-9]+$} $value]} {
+		    [string is integer -strict $state($flag)] && \
+		    ![string is integer -strict $value]} {
 		return -code error "Bad value for $flag ($value), must be integer"
 	    }
 	    set state($flag) $value
@@ -192,7 +190,7 @@ proc http::geturl { url args } {
 	    return -code error "Unknown option $flag, can be: $usage"
 	}
     }
-    if {! [regexp -nocase {^(http://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
+    if {![regexp -nocase {^(http://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
 	    x proto host y port srvurl]} {
 	error "Unsupported URL: $url"
     }
@@ -239,7 +237,7 @@ proc http::geturl { url args } {
 	#fileevent $s writable [list set $token\(status) connect]
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
-	if {[string compare $state(status) "timeout"] == 0} {
+	if {[string equal $state(status) "timeout"]} {
 	    return
 	}
 	fileevent $s writable {}
@@ -351,7 +349,7 @@ proc http::cleanup {token} {
 	Eof $token
 	return
     }
-    if {$state(state) == "header"} {
+    if {[string equal $state(state) "header"]} {
 	set n [gets $s line]
 	if {$n == 0} {
 	    set state(state) body
@@ -423,7 +421,7 @@ proc http::cleanup {token} {
 	eval $state(-progress) {$token $state(totalsize) $state(currentsize)}
     }
     # At this point the token may have been reset
-    if {([string length $error] != 0)} {
+    if {[string length $error]} {
 	Finish $token $error
     } elseif {[catch {::eof $s} iseof] || $iseof} {
 	Eof $token
@@ -434,7 +432,7 @@ proc http::cleanup {token} {
  proc http::Eof {token} {
     variable $token
     upvar 0 $token state
-    if {$state(state) == "header"} {
+    if {[string equal $state(state) "header"]} {
 	# Premature eof
 	set state(status) eof
     } else {
@@ -458,9 +456,7 @@ proc http::wait {token} {
     upvar 0 $token state
 
     if {![info exists state(status)] || [string length $state(status)] == 0} {
-
 	# We must wait on the original variable name, not the upvar alias
-
 	vwait $token\(status)
     }
     if {[info exists state(error)]} {
@@ -487,8 +483,8 @@ proc http::formatQuery {args} {
     set result ""
     set sep ""
     foreach i $args {
-	append result  $sep [mapReply $i]
-	if {$sep != "="} {
+	append result $sep [mapReply $i]
+	if {[string compare $sep "="]} {
 	    set sep =
 	} else {
 	    set sep &

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.2 1999/04/16 00:46:56 stanton Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.3 1999/08/19 02:59:40 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -202,7 +202,7 @@ proc auto_mkindex_old {dir args} {
     append index "# sets an element in the auto_index array, where the\n"
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
-    if {$args == ""} {
+    if {[string equal $args ""]} {
 	set args *.tcl
     }
     foreach file [eval glob $args] {
@@ -398,7 +398,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
 
     set ns [namespace qualifiers $name]
     set tail [namespace tail $name]
-    if {$ns == ""} {
+    if {[string equal $ns ""]} {
         set fakeName "[namespace current]::_%@fake_$tail"
     } else {
         set fakeName "_%@fake_$name"
@@ -462,7 +462,7 @@ proc auto_mkindex_parser::fullname {name} {
         }
     }
 
-    if {[namespace qualifiers $name] == ""} {
+    if {[string equal [namespace qualifiers $name] ""]} {
         return [namespace tail $name]
     } elseif {![string match ::* $name]} {
         return "::$name"
@@ -494,7 +494,7 @@ auto_mkindex_parser::command proc {name args} {
 
 auto_mkindex_parser::hook {
     if {![catch {package require tbcload}]} {
-	if {[info commands tbcload::bcproc] == ""} {
+	if {[llength [info commands tbcload::bcproc]] == 0} {
 	    auto_load tbcload::bcproc
 	}
 	load {} tbcload $auto_mkindex_parser::parser
@@ -541,7 +541,7 @@ auto_mkindex_parser::command namespace {op args} {
             variable parser
             variable imports
             foreach pattern $args {
-                if {$pattern != "-force"} {
+                if {[string compare $pattern "-force"]} {
                     lappend imports $pattern
                 }
             }

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.2 1999/04/16 00:47:17 stanton Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.3 1999/08/19 02:59:49 hobbs Exp $
 
 package provide msgcat 1.0
 
@@ -78,8 +78,7 @@ proc msgcat::mclocale {args} {
 	set word ""
 	foreach part [split $args _] {
 	    set word [string trimleft "${word}_${part}" _]
-	    set ::msgcat::loclist \
-                    [linsert $::msgcat::loclist 0 $word]
+	    set ::msgcat::loclist [linsert $::msgcat::loclist 0 $word]
 	}
     }
     return $::msgcat::locale
@@ -137,7 +136,7 @@ proc msgcat::mcload {langdir} {
 #	Returns the new locale.
 
 proc msgcat::mcset {locale src {dest ""}} {
-    if {$dest == ""} {
+    if {[string equal $dest ""]} {
 	set dest $src
     }
 
