@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.40.2.4 2004/04/23 23:40:59 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.40.2.5 2004/07/23 16:00:58 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7108,12 +7108,18 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
     list $x $result
 } {1 {gets {} catch {error writing "stdout": invalid argument}}}
 
-
-set datafile [file join $::tcltest::testsDirectory eofchar.data]
-
-test io-61.1 {Reset eof state after changing the eof char} {
+test io-61.1 {Reset eof state after changing the eof char} -setup {
+    set datafile [makeFile {} eofchar]
+    set f [open $datafile w]
+    puts -nonewline $f [string repeat "Ho hum\n" 11]
+    puts $f =
+    set line [string repeat "Ge gla " 4]
+    puts -nonewline $f [string repeat [string trimright $line]\n 834]
+    close $f
+} -body {
     set f [open $datafile r]
     fconfigure $f -eofchar =
+    set res {}
     lappend res [read $f; tell $f]
     fconfigure $f -eofchar {}
     lappend res [read $f 1]
@@ -7124,9 +7130,9 @@ test io-61.1 {Reset eof state after changing the eof char} {
     #lappend res [read $f; tell $f]
     close $f
     set res
-} {77 = 23431}
-
-
+} -cleanup {
+    removeFile eofchar
+} -result {77 = 23431}
 
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script foo \
