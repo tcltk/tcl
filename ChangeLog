@@ -4,6 +4,7 @@
 	case when the --with-tcl/--with-tk arguments point to the config
 	scripts themselves and not their directory. If this is the case,
 	they now complain but keep working. [FRQ 951247]
+	* unix/configure:	autoconf-2.57
 
 2005-01-10  Joe English  <jenglish@users.sourceforge.net>
 
