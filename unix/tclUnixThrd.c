@@ -255,7 +255,37 @@ TclpInitLock()
     pthread_mutex_lock(&initLock);
 #endif
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizeLock
+ *
+ *	This procedure is used to destroy all private resources used in
+ *	this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Destroys everything private.  TclpInitLock must be held
+ *	entering this function.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void
+TclFinalizeLock ()
+{
+#ifdef TCL_THREADS
+    /*
+     * You do not need to destroy mutexes that were created with the
+     * PTHREAD_MUTEX_INITIALIZER macro.  These mutexes do not need
+     * any destruction: masterLock, allocLock, and initLock.
+     */
+    pthread_mutex_unlock(&initLock);
+#endif
+}
 
 /*
  *----------------------------------------------------------------------
