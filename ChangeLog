@@ -1,5 +1,7 @@
 2002-07-29  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclObj.c: fixed a comment
+
 	* generic/tcl.h: 
 	* generic/tclBasic.c: 
 	* generic/tclInterp.c: added the new flag TCL_EVAL_INVOKE to
