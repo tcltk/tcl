@@ -22,6 +22,7 @@ puts stdout \
 # The script takes one argument, which is the name of the directory
 # where the manual entries have been installed.
 
+ZIP=true
 while true; do
     case $1 in
         -s | --symlinks )
@@ -42,7 +43,7 @@ if test $# != 1; then
     exit 1
 fi
 
-if test -n "$ZIP"; then
+if test "x$ZIP" != "xtrue"; then
     touch TeST
     $ZIP TeST
     Z=`ls TeST* | sed 's/^[^.]*//'`
@@ -94,20 +95,18 @@ foreach file $argv {
 			   set tstfi ""
 		    	}
 			lappend namelist $name$ext
-			append rmOutput "   $tst rm -f $name$ext $name$ext\$Z$tstfi\n"
-			append lnOutput "   $tst ln \$S $tail\$Z $name$ext\$Z$tstfi\n"
+			append rmOutput "   $tst rm -f $name$ext $name$ext.* $tstfi\n"
+			append lnOutput "   $tst ln \$S $tail\$Z $name$ext\$Z $tstfi\n"
 		    }
 		}
-		puts "if test -n \"\$ZIP\" -a -r $tail; then"
-		puts "    rm -f $tail\$Z"
+		puts "if test -r $tail; then"
+		puts "    rm -f $tail.*"
 		puts "    \$ZIP $tail"
-		puts "fi"
 		if { [llength $namelist] } {
-		    puts "if test -r $tail\$Z; then"
 		    puts -nonewline $rmOutput
 		    puts -nonewline $lnOutput
-		    puts "fi"
 		}
+		puts "fi"
 		set state end
 	    }
 	    end {
