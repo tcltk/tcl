@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.9 1999/04/22 20:28:02 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.10 1999/05/26 20:24:43 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -109,6 +109,13 @@ static struct {
  */
 
 #define SOCKET_MESSAGE	WM_USER+1
+
+/*
+ * The following defines the timeout value for the WSAWaitForMultipleEvents
+ * in milliseconds.
+ */
+
+#define TCL_SOCKET_EVENT_TIMEOUT 100
 
 /*
  * The following structure is used to store the data associated with
@@ -2337,6 +2344,15 @@ TcpGetHandleProc(instanceData, direction, handlePtr)
  *
  * SocketThread --
  *
+ *      Use a separate thread to check state for the sockets in each
+ *      thread.  Using a window isn't the best way, especially if the
+ *      WinSock2 API is available and working.  Also, creating N threads
+ *      per socket like the pipe, console, and serial drivers isn't
+ *      very efficient.  Currently, all sockets are tied to one event.
+ *      The overhead involved in creating an event for each socket is
+ *      a concern.  But, in order to avoid deadlocks, the call to
+ *      WSAWaitForMultipleEvents() needs to timeout to check for
+ *      status changes which haven't been handled (race condition).
  *
  * Results:
  *	0 on success.
@@ -2353,7 +2369,7 @@ SocketThread(LPVOID arg)
     WSAEVENT events[2];
     ThreadSpecificData *tsdPtr;
     DWORD result;
-    
+		
     /*
      * Find the specified socket on the socket list and update its
      * eventState flag.
@@ -2365,10 +2381,12 @@ SocketThread(LPVOID arg)
     while (1) {
 
 	result = (*winSock.WSAWaitForMultipleEvents)(2, events, FALSE,
-		WSA_INFINITE, FALSE);
+		TCL_SOCKET_EVENT_TIMEOUT, FALSE);
 
 	switch (result) {
+	    case WSA_WAIT_TIMEOUT:
 	    case (WSA_WAIT_EVENT_0 +1):
+
 		/*
 		 * A socket event has fired, determine which socket(s) it was
 		 * and which thread(s) it came from.
@@ -2384,13 +2402,6 @@ SocketThread(LPVOID arg)
 			if (GetSocketState(infoPtr) & infoPtr->watchEvents) {
 			    Tcl_ThreadAlert(tsdPtr->threadId);
 			    SetEvent(tsdPtr->wakeEvent);
-
-			    /*
-			     * Only process one at a time for a given thread,
-			     * so break here.
-			     */
-			    
-			    break;
 			}
 		    }
 		}

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.2 1999/04/16 00:46:54 stanton Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.3 1999/05/26 20:24:43 redman Exp $
  */
 
 #include "tclInt.h"
@@ -713,10 +713,10 @@ TclThreadSend(interp, id, script, wait)
     threadEventPtr->event.proc = ThreadEventProc;
     Tcl_ThreadQueueEvent(threadId, (Tcl_Event *)threadEventPtr, 
 	    TCL_QUEUE_TAIL);
-    Tcl_MutexUnlock(&threadMutex);
     Tcl_ThreadAlert(threadId);
 
     if (!wait) {
+	Tcl_MutexUnlock(&threadMutex);
 	return TCL_OK;
     }
 
@@ -725,7 +725,6 @@ TclThreadSend(interp, id, script, wait)
      */
 
     Tcl_ResetResult(interp);
-    Tcl_MutexLock(&threadMutex);
     while (resultPtr->result == NULL) {
         Tcl_ConditionWait(&resultPtr->done, &threadMutex, NULL);
     }
