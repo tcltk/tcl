@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.22 2001/08/31 17:53:57 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.23 2001/09/19 08:52:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1931,6 +1931,8 @@ TclNeedSpace(start, end)
     char *end;			/* End of string (place where space will
 				 * be added, if appropriate). */
 {
+    Tcl_UniChar ch;
+
     /*
      * A space is needed unless either
      * (a) we're at the start of the string, or
@@ -1944,10 +1946,14 @@ TclNeedSpace(start, end)
     if (end == start) {
 	return 0;
     }
-    end--;
+    end = Tcl_UtfPrev(end, start);
     if (*end != '{') {
-	if (isspace(UCHAR(*end)) /* INTL: ISO space. */
-		&& ((end == start) || (end[-1] != '\\'))) {
+	Tcl_UtfToUniChar(end, &ch);
+	/*
+	 * Direct char comparison on next line is safe as it is with
+	 * a character in the ASCII subset, and so single-byte in UTF8.
+	 */
+	if (Tcl_UniCharIsSpace(ch) && ((end == start) || (end[-1] != '\\'))) {
 	    return 0;
 	}
 	return 1;
@@ -1956,9 +1962,10 @@ TclNeedSpace(start, end)
 	if (end == start) {
 	    return 0;
 	}
-	end--;
+	end = Tcl_UtfPrev(end, start);
     } while (*end == '{');
-    if (isspace(UCHAR(*end))) {	/* INTL: ISO space. */
+    Tcl_UtfToUniChar(end, &ch);
+    if (Tcl_UniCharIsSpace(ch)) {
 	return 0;
     }
     return 1;
