@@ -3,13 +3,13 @@
 # Simple makefile for building on Mac OS X with the
 # Project Builder command line tool 'pbxbuild'
 #
-# RCS: @(#) $Id: Makefile,v 1.3 2002/09/10 09:57:44 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.4 2002/09/26 17:06:14 das Exp $
 #
 ################################################################################
 
-INSTALL_ROOT	=
+INSTALL_ROOT	?=
 
-BUILD_DIR	= ../../build
+BUILD_DIR	?= ${CURDIR}/../../build
 
 TARGET		= Tcl
 
@@ -33,9 +33,9 @@ all: develop deploy
 
 install: install-develop install-deploy
 
-embedded: embedded-develop embedded-deploy
+embedded: embedded-deploy
 
-install-embedded: install-embedded-develop install-embedded-deploy
+install-embedded: install-embedded-deploy
 
 clean: clean-develop clean-deploy
 
@@ -53,10 +53,10 @@ install-develop:
 install-deploy:
 	${DEPBUILD} install ${INSTALLOPTS}
 
-embedded-develop: 
+embedded-develop: forceRelink
 	${DEVBUILD} ${EMBEDDEDOPTS}
 
-embedded-deploy:
+embedded-deploy: forceRelink
 	${DEPBUILD} ${EMBEDDEDOPTS}
 
 install-embedded-develop: 
@@ -70,5 +70,18 @@ clean-develop:
 
 clean-deploy:
 	${DEPBUILD} clean
+
+################################################################################
+
+forceRelink:
+	@-cd ${BUILD_DIR}; \
+	rm -rf Tcl.framework tclsh8.4 \
+	Development.build/Tcl.build/Tcl Deployment.build/Tcl.build/Tcl
+
+################################################################################
+
+.PHONY: all install embedded clean develop deploy install-develop install-deploy \
+embedded-develop embedded-deploy install-embedded-develop install-embedded-deploy \
+clean-develop clean-deploy forceRelink \
 
 ################################################################################
