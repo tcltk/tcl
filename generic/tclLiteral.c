@@ -12,12 +12,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.4 1999/04/28 01:56:39 stanton Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.5 1999/05/05 00:35:41 surles Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-
+#include "tclPort.h"
 /*
  * When there are this many entries per bucket, on average, rebuild
  * a literal's hash table to make it larger.
@@ -51,7 +51,7 @@ static void		RebuildLiteralTable _ANSI_ARGS_((
  * Results:
  *	None.
  *
- * Side effects:
+ * Side effects: 
  *	The literal table is made ready for use.
  *
  *----------------------------------------------------------------------
@@ -188,6 +188,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     long n;
     char buf[TCL_INTEGER_SPACE];
 
+ 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
@@ -199,7 +200,6 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
      */
 
     localHash = (hash & localTablePtr->mask);
-
     for (localPtr = localTablePtr->buckets[localHash];
 	  localPtr != NULL;  localPtr = localPtr->nextPtr) {
 	objPtr = localPtr->objPtr;
@@ -214,6 +214,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 #ifdef TCL_COMPILE_DEBUG
 	    TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
+
 	    return objIndex;
 	}
     }
@@ -266,6 +267,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     } else {
 	TclInitStringRep(objPtr, bytes, length);
     }
+
     if (TclLooksLikeInt(bytes, length)) {
 	if (TclGetLong((Tcl_Interp *) NULL, bytes, &n) == TCL_OK) {
 	    TclFormatInt(buf, n);
@@ -679,6 +681,13 @@ TclReleaseLiteral(interp, objPtr)
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
+
+    /*
+     * Check to see if the object is in the global literal table and 
+     * remove this reference.  The object may not be in the table if
+     * it is a hidden local literal.
+     */
+
     for (prevPtr = NULL, entryPtr = globalTablePtr->buckets[index];
 	    entryPtr != NULL;
 	    prevPtr = entryPtr, entryPtr = entryPtr->nextPtr) {
@@ -724,16 +733,21 @@ TclReleaseLiteral(interp, objPtr)
 #endif /*TCL_COMPILE_STATS*/
 		ckfree((char *) entryPtr);
 		globalTablePtr->numEntries--;
+
+		/*
+		 * Remove the reference corresponding to the global 
+		 * literal table entry.
+		 */
+
 		TclDecrRefCount(objPtr);
 	    }
-	    return;
+	    break;
 	}
     }
 
     /*
-     * The object wasn't in the literal hash table, so it must be a unique
-     * local object in the object table that has no global entry.  Just
-     * decrement the refcount and return.
+     * Remove the reference corresponding to the local literal table
+     * entry.
      */
 
     Tcl_DecrRefCount(objPtr);
