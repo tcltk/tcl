@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.6 2005/03/02 21:25:24 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.7 2005/03/03 18:59:53 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -799,7 +799,8 @@ ParseNaN( int signum,		/* Flag == 1 if minus sign has been
  *	length of the string.
  *
  * Side effects:
- *	Stores the digits in the given Tcl_Obj
+ *	Stores the digits in the given buffer and sets 'signum'
+ *	according to the sign of the number.
  *
  *----------------------------------------------------------------------
  */
@@ -807,8 +808,11 @@ ParseNaN( int signum,		/* Flag == 1 if minus sign has been
 int
 TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
 				 * must have at least 18 chars */
-		 double v )	/* Number to convert. Must be positive,
+		 double v,	/* Number to convert. Must be
 				 * finite, and not NaN */
+		 int *signum )	/* Output: 1 if the number is negative.
+				 * Should handle -0 correctly on the
+				 * IEEE architecture. */
 {
 
     double f;			/* Significand of v */
@@ -840,6 +844,35 @@ TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
     double a;
     char c;
     int i, k, n;
+
+    /* 
+     * Take the absolute value of the number, and report the number's
+     * sign.  Take special steps to preserve signed zeroes in IEEE floating
+     * point. (We can't use fpclassify, because that's a C9x feature and
+     * we still have to build on C89 compilers.)
+     */
+
+#ifndef IEEE_FLOATING_POINT
+    if ( v >= 0.0 ) {
+	*signum = 0;
+    } else {
+	*signum = 1;
+	v = -v;
+    }
+#else
+    union {
+	Tcl_WideUInt iv;
+	double dv;
+    } bitwhack;
+    bitwhack.dv = v;
+    if ( bitwhack.iv & ( (Tcl_WideUInt) 1 << 63 ) ) {
+	*signum = 1;
+	bitwhack.iv &= ~( (Tcl_WideUInt) 1 << 63 );
+	v = bitwhack.dv;
+    } else {
+	*signum = 0;
+    }
+#endif
 
     /* Handle zero specially */
 

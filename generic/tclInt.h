@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.6 2005/03/02 21:25:22 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.7 2005/03/03 18:59:51 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1824,7 +1824,8 @@ MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp* interp, LiteralTable* tablePtr));
 MODULE_SCOPE int	TclDoubleDigits _ANSI_ARGS_((char* buf,
-						      double value));
+						     double value,
+						     int* signum));
 MODULE_SCOPE void	TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 MODULE_SCOPE int	TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
