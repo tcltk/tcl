@@ -1,11 +1,11 @@
 Tcl/Tk 8.4 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.21 2000/09/06 18:50:17 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.22 2001/04/02 01:59:55 hobbs Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.4a2 for
+This directory contains the binary distribution of Tcl/Tk 8.4a3 for
 Windows.  It was compiled with Microsoft Visual C++ 5.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
@@ -22,14 +22,17 @@ Tcl community by Scriptics Corporation.
 2. Documentation
 ----------------
 
-The official home for Tcl and Tk on the Web is at:
-	http://dev.scriptics.com
+The home of Tcl and Tk sources and bug database on the Web is at:
+	http://tcl.sourceforge.net/
+
+The home page for the Tcl Developer Xchange is at:
+	http://dev.scriptics.com/
 
 The home page for the Tcl/Tk 8.4 release is
 	http://dev.scriptics.com/software/tcltk/8.4.html
 
 Detailed release notes can be found at
-	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.4a2.txt
+	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.4a3.txt
 
 Information about Tcl itself can be found at
 	http://dev.scriptics.com/scripting/
@@ -44,7 +47,7 @@ There are notes about compiling Tcl at
 ---------------
 
 The binary release is distributed as a self-extracting archive called
-tcl84.exe.  The setup program which will prompt you for an
+tcl<version>.exe.  The setup program which will prompt you for an
 installation directory.  It will create the installation heirarchy
 under the specified directory, and install a wish application icon
 under the program manager group of your choice.
@@ -81,7 +84,7 @@ systems.
 If you have comments or bug reports for the Windows version of Tcl,
 please use our online database at:
 
-	http://dev.scriptics.com/ticket/
+	http://tcl.sourceforge.net/
 
 or post them to the newsgroup comp.lang.tcl.
 
@@ -124,26 +127,14 @@ resource center using the forms labeled "Add a Resource".
 10. Mailing lists
 ----------------
 
-A couple of mailing lists have been set up to discuss Macintosh or
-Windows related Tcl issues.  In order to use these Mailing Lists you
-must have access to the internet.  To subscribe send a message to:
-	
-	wintcl-request@scriptics.com
-	mactcl-request@scriptics.com
+Several mailing lists are hosted at SourceForge to discuss development or
+use issues (like Macintosh and Windows topics).  For more information and
+to subscribe, visit:
 
-In the body of the message (the subject will be ignored) put:
-	
-	subscribe mactcl Joe Blow
-	
-Replacing Joe Blow with your real name, of course.  (Use wintcl
-instead of mactcl if you're interested in the Windows list.)  If you
-would just like to receive more information about the list without
-subscribing put the line:
+	http://sourceforge.net/projects/tcl/
 
-	information mactcl
-
-in the body instead (or wintcl).  There are also Special Interest
-Groups (SIGs) setup for these topics and more at:
+and go to the Mailing Lists page.  There are also Special Interest Groups
+(SIGs) setup for these topics and more at:
 
        http://dev.scriptics.com/
 
