@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.56 2001/11/08 03:43:47 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.57 2001/11/11 03:16:10 mdejong Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -548,6 +548,12 @@ runtest: $(TCLTEST)
 shell: $(TCLSH)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	    ./$(TCLSH) $(SCRIPT)
+
+# This target can be used to run tclsh inside either gdb or insight
+gdb: $(TCLSH)
+	@echo "set env TCL_LIBRARY=$(LIBRARY_DIR)" > gdb.run
+	gdb ./tclsh --command=gdb.run
+	rm gdb.run
 
 depend:
 
