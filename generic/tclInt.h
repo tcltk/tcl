@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.195 2004/11/12 18:07:49 rmax Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.196 2004/11/12 19:16:52 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -53,6 +53,11 @@
 #include "../compat/string.h"
 #else
 #include <string.h>
+#endif
+#ifdef STDC_HEADERS
+#include <stddef.h>
+#else
+typedef int ptrdiff_t;
 #endif
 
 /*
