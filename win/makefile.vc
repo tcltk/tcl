@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.98 2003/01/05 00:44:24 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.99 2003/01/10 15:03:54 vincentdarley Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -709,7 +709,6 @@ $<
 
 install-binaries:
 	@echo Installing to '$(_INSTALLDIR)'
-	@echo.
 	@echo installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
