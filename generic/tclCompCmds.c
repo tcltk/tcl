@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.10 2005/03/22 23:12:56 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.11 2005/03/23 16:51:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1169,23 +1169,23 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    CONST char *word = incrTokenPtr[1].start;
 	    int numBytes = incrTokenPtr[1].size;
 	    int validLength = TclParseInteger(word, numBytes);
-	    long n;
+	    int n;
 
 	    /*
 	     * Note there is a danger that modifying the string could have
-	     * undesirable side effects.  In this case, TclLooksLikeInt and
-	     * TclGetLong do not have any dependencies on shared strings so we
-	     * should be safe.
+	     * undesirable side effects.  In this case, TclLooksLikeInt has
+	     * no dependencies on shared strings so we should be safe.
 	     */
 
-	    if (validLength == numBytes) {
+	    if (TclLooksLikeInt(word, numBytes)) {
 		int code;
-		Tcl_Obj *longObj = Tcl_NewStringObj(word, numBytes);
-		Tcl_IncrRefCount(longObj);
-		code = Tcl_GetLongFromObj(NULL, longObj, &n);
-		Tcl_DecrRefCount(longObj);
-		if ((code == TCL_OK) &&
-			((HPINT_MIN < (n<<2)) && ((n<<2) <= HPINT_MAX))) {
+		Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
+		Tcl_IncrRefCount(intObj);
+		code = Tcl_GetIntFromObj(NULL, intObj, &n);
+		Tcl_DecrRefCount(intObj);
+		if ((code == TCL_OK)
+			&& ((TclPSizedInt) HPINT_MIN < ((TclPSizedInt)n<<2))
+			&& (((TclPSizedInt)n<<2) <= (TclPSizedInt)HPINT_MAX)) {
 		    valAndFlags = (n << 2);
 		}
 	    }

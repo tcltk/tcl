@@ -1,3 +1,9 @@
+2005-03-23 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c: porting fix of [Bug 1165671] from HEAD
+	* generic/tclCompile.c: small fixes, mainly in TclPrintInstruction 
+	
+	
 2005-03-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c (OptCleanupByteCode):	Operands are

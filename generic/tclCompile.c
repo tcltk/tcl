@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.12 2005/03/23 06:51:22 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.13 2005/03/23 16:51:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2935,18 +2935,38 @@ TclPrintInstruction(codePtr, pc)
 	    break;	    
         case OPERAND_INT:
 		if ((opCode == INST_STORE) || (opCode == INST_LOAD)) {
-		    fprintf(stdout, "0x%lx ", opnd);
+		    fprintf(stdout, "0x%lx |", (long) opnd);
 		    if (opnd & TCL_LIST_ELEMENT) {
-			fprintf(stdout, "(lappend) ");
+			fprintf(stdout, "lappend");
 		    } else if (opnd & TCL_APPEND_VALUE) {
-			fprintf(stdout, "(append) ");
+			fprintf(stdout, "append");
 		    } else {
-			fprintf(stdout, "(set) ");
+			fprintf(stdout, "set");
 		    }
+		    if (opnd & VM_VAR_ARRAY) {
+			fprintf(stdout, "|array");
+		    }
+		    if (!(opnd & VM_VAR_OMIT_PUSH)) {
+			fprintf(stdout, "|push");
+		    }
+		    fprintf(stdout, "| ");
+		} else if (opCode == INST_INCR) {
+		    if ((opnd >> 2) != (HPINT_MIN >> 2)) {
+			fprintf(stdout, "%d ", (opnd>>2));
+		    } else {
+			fprintf(stdout, "|stackIncr");
+		    }
+		    if (opnd & VM_VAR_ARRAY) {
+			fprintf(stdout, "|array");
+		    }
+		    if (!(opnd & VM_VAR_OMIT_PUSH)) {
+			fprintf(stdout, "|push");
+		    }
+		    fprintf(stdout, "| ");
 		} else {
 		    fprintf(stdout, "%d ", (int) opnd);
 		}
-	    break;
+		break;
 	case OPERAND_UINT:
 	    if (opCode == INST_PUSH) {
 		fprintf(stdout, "%u  	# ", (unsigned) opnd);
@@ -2955,7 +2975,7 @@ TclPrintInstruction(codePtr, pc)
 		int localCt;
 		CompiledLocal *localPtr;
 		if ((unsigned int) opnd == (unsigned int) HPUINT_MAX) {
-		    fprintf(stdout, "%u #stack var ", (unsigned int) opnd);
+		    fprintf(stdout, "#stack var ");
 		    break;
 		}
 		if (!procPtr) {
@@ -3301,7 +3321,7 @@ OptimiseByteCodeTmp(codePtr)
  *      possible.
  * Remarks:
  *      A good part (if not all) of this job could have been done at compile
- *      time, saving one pass here.
+ *      time, saving (at least) one pass here.
  */
 
 static void
@@ -3360,7 +3380,7 @@ OptInitCounts(codePtr, auxCount)
 		break;
 	    case INST_BREAK:
 		auxCount[pos+1]--;
-		if (opnd > 0) {
+		if (opnd >= 0) {
 		    opnd = codePtr->exceptArrayPtr[opnd].breakOffset;
 		    auxCount[opnd]++;
 		    TclVMStoreWordAtPtr(INST_JUMP, (opnd-pos), pc);
@@ -3368,7 +3388,7 @@ OptInitCounts(codePtr, auxCount)
 		break;
 	    case INST_CONTINUE:
 		auxCount[pos+1]--;
-		if ((opnd > 0)
+		if ((opnd >= 0)
 			&& (codePtr->exceptArrayPtr[opnd].continueOffset != -1)) {
 		    opnd = codePtr->exceptArrayPtr[opnd].continueOffset;
 		    auxCount[opnd]++;
@@ -3384,6 +3404,7 @@ OptInitCounts(codePtr, auxCount)
 		break;
 	    case INST_FOREACH_START:
 		auxCount[pos]++;
+		auxCount[pos+1]--;
 		{
 		    ForeachInfo *infoPtr = (ForeachInfo *)
 			codePtr->auxDataArrayPtr[opnd].clientData;
@@ -3427,7 +3448,7 @@ OptCleanupByteCode(codePtr, auxCount)
     int i, j, noops, opCode;
     unsigned char *pr, *pw, *qr, *qw;
     int oldstart;
-	
+    
     /*
      * Compute the shifts after the NOOPs and unreachable codes 
      * are removed. This loop can not be done simultaneously with the 
