@@ -1,3 +1,20 @@
+1999-12-12  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/glob.n:
+	* tests/fileName.test:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclEncoding.c:
+	* generic/tclFileName.c:
+	* mac/tclMacFile.c:
+	* unix/tclUnixFile.c:
+	* win/tclWinFile.c: enhanced the glob command with the new options
+	-types -path -directory and -join.  Deprecated TclpMatchFiles with
+	TclpMatchFilesTypes, extended TclGlob and TclDoGlob and added
+	GlobTypeData structure.
+
 1999-12-10  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/var.test:
