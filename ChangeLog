@@ -1,3 +1,12 @@
+2003-12-17  Zoran Vasiljevic  <zv@archiware.com>
+
+	* generic/tclIOUtil.c: fixed 2 memory (object) leaks.
+	This fixes Tcl Bug #839519.
+
+	* generic/tclPathObj.c: fixed Tcl_FSGetTranslatedPath
+	to always return properly refcounted path object.
+	This fixes Tcl Bug #861515.
+
 2003-12-16  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/fCmd.test: marking fCmd-9.14.2, as nonPortable, since
