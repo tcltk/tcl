@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.191 2004/11/02 10:11:20 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.192 2004/11/02 21:08:58 davygrvy Exp $
  */
 
 #ifndef _TCLINT
@@ -69,7 +69,11 @@
  */
 
 #ifndef MODULE_SCOPE
-#define MODULE_SCOPE extern
+#   ifdef __cplusplus
+#	define MODULE_SCOPE extern "C"
+#   else
+#	define MODULE_SCOPE extern
+#   endif
 #endif
 
 /*
