@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.44 2003/03/07 02:23:40 mdejong Exp $
+# RCS: @(#) $Id: io.test,v 1.45 2003/03/07 22:03:39 mdejong Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -32,6 +32,7 @@ testConstraint testchannel [llength [info commands testchannel]]
 testConstraint exec [llength [info commands exec]]
 testConstraint openpipe 1
 testConstraint fileevent [llength [info commands fileevent]]
+testConstraint fcopy [llength [info commands fcopy]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -6429,7 +6430,7 @@ test io-51.1 {Test old socket deletion on Macintosh} {socket} {
     set result
 } {sock1 sock2 sock3 sock4}
 
-test io-52.1 {TclCopyChannel} {
+test io-52.1 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6439,7 +6440,7 @@ test io-52.1 {TclCopyChannel} {
     close $f2
     string compare $msg "channel \"$f1\" is busy"
 } {0}
-test io-52.2 {TclCopyChannel} {
+test io-52.2 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6451,7 +6452,7 @@ test io-52.2 {TclCopyChannel} {
     close $f3
     string compare $msg "channel \"$f2\" is busy"
 } {0}
-test io-52.3 {TclCopyChannel} {
+test io-52.3 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6468,7 +6469,7 @@ test io-52.3 {TclCopyChannel} {
     }
     set result
 } {0 0 ok}
-test io-52.4 {TclCopyChannel} {
+test io-52.4 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6480,7 +6481,7 @@ test io-52.4 {TclCopyChannel} {
     close $f2
     lappend result [file size $path(test1)]
 } {0 0 40}
-test io-52.5 {TclCopyChannel} {
+test io-52.5 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6497,7 +6498,7 @@ test io-52.5 {TclCopyChannel} {
     }
     set result
 } {0 0 ok}
-test io-52.6 {TclCopyChannel} {
+test io-52.6 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6514,7 +6515,7 @@ test io-52.6 {TclCopyChannel} {
     }
     set result
 } {0 0 ok}
-test io-52.7 {TclCopyChannel} {
+test io-52.7 {TclCopyChannel} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6531,7 +6532,7 @@ test io-52.7 {TclCopyChannel} {
     }
     set result
 } {0 0 ok}
-test io-52.8 {TclCopyChannel} {stdio openpipe} {
+test io-52.8 {TclCopyChannel} {stdio openpipe fcopy} {
     removeFile test1
     removeFile pipe
     set f1 [open $path(pipe) w]
@@ -6569,7 +6570,7 @@ fconfigure $out -encoding koi8-r -translation lf
 puts       $out "\u0410\u0410"
 close      $out
 
-test io-52.9 {TclCopyChannel & encodings} {
+test io-52.9 {TclCopyChannel & encodings} {fcopy} {
     # Copy kyrillic to UTF-8, using fcopy.
 
     set in  [open $path(kyrillic.txt) r]
@@ -6600,7 +6601,7 @@ test io-52.9 {TclCopyChannel & encodings} {
 	    [file size $path(utf8-rp.txt)]
 } {3 5 5}
 
-test io-52.10 {TclCopyChannel & encodings} {
+test io-52.10 {TclCopyChannel & encodings} {fcopy} {
     # encoding to binary (=> implies that the
     # internal utf-8 is written)
 
@@ -6618,7 +6619,7 @@ test io-52.10 {TclCopyChannel & encodings} {
     file size $path(utf8-fcopy.txt)
 } 5
 
-test io-52.11 {TclCopyChannel & encodings} {
+test io-52.11 {TclCopyChannel & encodings} {fcopy} {
     # binary to encoding => the input has to be
     # in utf-8 to make sense to the encoder
 
@@ -6636,7 +6637,7 @@ test io-52.11 {TclCopyChannel & encodings} {
     file size $path(kyrillic.txt)
 } 3
 
-test io-53.1 {CopyData} {
+test io-53.1 {CopyData} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6648,7 +6649,7 @@ test io-53.1 {CopyData} {
     close $f2
     lappend result [file size $path(test1)]
 } {0 0 0}
-test io-53.2 {CopyData} {
+test io-53.2 {CopyData} {fcopy} {
     removeFile test1
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
@@ -6667,7 +6668,7 @@ test io-53.2 {CopyData} {
     }
     set result
 } {0 0 ok}
-test io-53.3 {CopyData: background read underflow} {stdio unixOnly openpipe} {
+test io-53.3 {CopyData: background read underflow} {stdio unixOnly openpipe fcopy} {
     removeFile test1
     removeFile pipe
     set f1 [open $path(pipe) w]
@@ -6697,7 +6698,7 @@ test io-53.3 {CopyData: background read underflow} {stdio unixOnly openpipe} {
     close $f
     set result
 } "ready line1 line2 {done\n}"
-test io-53.4 {CopyData: background write overflow} {stdio unixOnly openpipe fileevent} {
+test io-53.4 {CopyData: background write overflow} {stdio unixOnly openpipe fileevent fcopy} {
     set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
     variable x
     for {set x 0} {$x < 12} {incr x} {
@@ -6748,7 +6749,7 @@ proc FcopyTestDone {bytes {error {}}} {
     }
 }
 
-test io-53.5 {CopyData: error during fcopy} {socket} {
+test io-53.5 {CopyData: error during fcopy} {socket fcopy} {
     variable fcopyTestDone
     set listen [socket -server [namespace code FcopyTestAccept] 0]
     set in [open $thisScript]	;# 126 K
@@ -6764,7 +6765,7 @@ test io-53.5 {CopyData: error during fcopy} {socket} {
     close $out
     set fcopyTestDone	;# 1 for error condition
 } 1
-test io-53.6 {CopyData: error during fcopy} {stdio openpipe} {
+test io-53.6 {CopyData: error during fcopy} {stdio openpipe fcopy} {
     variable fcopyTestDone
     removeFile pipe
     removeFile test1
@@ -6801,7 +6802,7 @@ proc doFcopy {in out {bytes 0} {error {}}} {
     }
 }
 
-test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio openpipe} {
+test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio openpipe fcopy} {
     variable fcopyTestDone
     removeFile pipe
     removeFile test1
