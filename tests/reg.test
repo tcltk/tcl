@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.20 2003/11/17 17:48:17 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.21 2004/06/24 10:34:12 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -995,7 +995,7 @@ test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
     # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
 } {1 2 2 {}}
 
-test reg-32.1 {canmatch functionality -- at end} {
+test reg-32.1 {canmatch functionality -- at end} testregexp {
     set pat {blah}
     set line "asd asd"
     # can match at the final d, if '%' follows
@@ -1003,7 +1003,7 @@ test reg-32.1 {canmatch functionality -- at end} {
     lappend res $resvar
 } {0 7}
 
-test reg-32.2 {canmatch functionality -- at end} {
+test reg-32.2 {canmatch functionality -- at end} testregexp {
     set pat {s%$}
     set line "asd asd"
     # can only match after the end of the string
@@ -1011,7 +1011,7 @@ test reg-32.2 {canmatch functionality -- at end} {
     lappend res $resvar
 } {0 7}
 
-test reg-32.3 {canmatch functionality -- not last char} {
+test reg-32.3 {canmatch functionality -- not last char} testregexp {
     set pat {[^d]%$}
     set line "asd asd"
     # can only match after the end of the string
@@ -1019,7 +1019,7 @@ test reg-32.3 {canmatch functionality -- not last char} {
     lappend res $resvar
 } {0 7}
 
-test reg-32.3.1 {canmatch functionality -- no match} {
+test reg-32.3.1 {canmatch functionality -- no match} testregexp {
     set pat {\Zx}
     set line "asd asd"
     # can match the last char, if followed by x
@@ -1027,7 +1027,7 @@ test reg-32.3.1 {canmatch functionality -- no match} {
     lappend res $resvar
 } {0 -1}
 
-test reg-32.4 {canmatch functionality -- last char} {knownBug} {
+test reg-32.4 {canmatch functionality -- last char} {knownBug testregexp} {
     set pat {.x}
     set line "asd asd"
     # can match the last char, if followed by x
@@ -1035,7 +1035,7 @@ test reg-32.4 {canmatch functionality -- last char} {knownBug} {
     lappend res $resvar
 } {0 6}
 
-test reg-32.4.1 {canmatch functionality -- last char} {knownBug} {
+test reg-32.4.1 {canmatch functionality -- last char} {knownBug testregexp} {
     set pat {.x$}
     set line "asd asd"
     # can match the last char, if followed by x
@@ -1043,7 +1043,7 @@ test reg-32.4.1 {canmatch functionality -- last char} {knownBug} {
     lappend res $resvar
 } {0 6}
 
-test reg-32.5 {canmatch functionality -- last char} {knownBug} {
+test reg-32.5 {canmatch functionality -- last char} {knownBug testregexp} {
     set pat {.[^d]x$}
     set line "asd asd"
     # can match the last char, if followed by not-d and x.
@@ -1051,7 +1051,7 @@ test reg-32.5 {canmatch functionality -- last char} {knownBug} {
     lappend res $resvar
 } {0 6}
 
-test reg-32.6 {canmatch functionality -- last char} {knownBug} {
+test reg-32.6 {canmatch functionality -- last char} {knownBug testregexp} {
     set pat {[^a]%[^\r\n]*$}
     set line "asd asd"
     # can match at the final d, if '%' follows
@@ -1059,7 +1059,7 @@ test reg-32.6 {canmatch functionality -- last char} {knownBug} {
     lappend res $resvar
 } {0 6}
 
-test reg-32.7 {canmatch functionality -- last char} {knownBug} {
+test reg-32.7 {canmatch functionality -- last char} {knownBug testregexp} {
     set pat {[^a]%$}
     set line "asd asd"
     # can match at the final d, if '%' follows
@@ -1067,7 +1067,7 @@ test reg-32.7 {canmatch functionality -- last char} {knownBug} {
     lappend res $resvar
 } {0 6}
 
-test reg-32.8 {canmatch functionality -- last char} {knownBug} {
+test reg-32.8 {canmatch functionality -- last char} {knownBug testregexp} {
     set pat {[^x]%$}
     set line "asd asd"
     # can match at the final d, if '%' follows
@@ -1075,7 +1075,7 @@ test reg-32.8 {canmatch functionality -- last char} {knownBug} {
     lappend res $resvar
 } {0 6}
 
-test reg-32.9 {canmatch functionality -- more complex case} {knownBug} {
+test reg-32.9 {canmatch functionality -- more complex case} {knownBug testregexp} {
     set pat {((\B\B|\Bh+line)[ \t]*|[^\B]%[^\r\n]*)$}
     set line "asd asd"
     # can match at the final d, if '%' follows
