@@ -10,12 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.4 2000/07/27 01:39:15 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.5 2000/08/08 00:57:40 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclIO.h"
+#include <assert.h>
 
 
 /*
@@ -65,7 +66,6 @@ typedef struct ThreadSpecificData {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
-
 
 /*
  * Static functions in this file:
@@ -947,6 +947,18 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
 				 * for the channel. */
     CONST char *name;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    /*
+     * With the change of the Tcl_ChannelType structure to use a version in
+     * 8.3.2+, we have to make sure that our assumption that the structure
+     * remains a binary compatible size is true.
+     *
+     * If this assertion fails on some system, then it can be removed
+     * only if the user recompiles code with older channel drivers in
+     * the new system as well.
+     */
+
+    assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc*));
 
     chanPtr  = (Channel *) ckalloc((unsigned) sizeof(Channel));
     statePtr = (ChannelState *) ckalloc((unsigned) sizeof(ChannelState));
