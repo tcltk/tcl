@@ -1,0 +1,192 @@
+#------------------------------------------------------------------------------
+# rules.vc --
+#
+#	Microsoft Visual C++ makefile include for decoding the commandline
+#	macros.  This file does not need editing to build Tcl.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# 
+# Copyright (c) 2001 Tomasoft Engineering.
+#
+#------------------------------------------------------------------------------
+# RCS: @(#) $Id: rules.vc,v 1.1 2001/11/07 03:39:30 davygrvy Exp $
+#------------------------------------------------------------------------------
+
+!ifndef _RULES_VC
+_RULES_VC = 1
+
+cc32		= $(CC)   # built-in default.
+link32		= link
+lib32		= lib
+rc32		= $(RC)   # built-in default.
+
+!ifndef INSTALLDIR
+INSTALLDIR	= C:\Progra~1\Tcl
+!endif
+
+!ifndef MACHINE
+MACHINE		= IX86
+!endif
+
+
+#----------------------------------------------------------
+# Decode the options requested.
+#----------------------------------------------------------
+!if "$(OPTS)" == "" || ![echo $(OPTS) | find /i "none" > nul]
+STATIC_BUILD	= 0
+TCL_THREADS	= 0
+DEBUG		= 0
+PROFILE		= 0
+!else
+!if ![echo $(OPTS) | find /i "static" > nul]
+!message *** Doing static
+STATIC_BUILD	= 1
+!else
+STATIC_BUILD	= 0
+!endif
+!if ![echo $(OPTS) | find /i "threads" > nul]
+!message *** Doing threads
+TCL_THREADS	= 1
+!else
+TCL_THREADS	= 0
+!endif
+!if ![echo $(OPTS) | find /i "symbols" > nul]
+!message *** Doing symbols
+DEBUG		= 1
+!else
+DEBUG		= 0
+!endif
+!if ![echo $(OPTS) | find /i "profile" > nul]
+!message *** Doing profile
+PROFILE		= 1
+!else
+PROFILE		= 0
+!endif
+!endif
+
+
+!ifndef NOMSVCRT
+!if $(STATIC_BUILD)
+NOMSVCRT	= 1
+!else
+NOMSVCRT	= 0
+!endif
+!endif
+
+!if $(STATIC_BUILD) == 0 && $(NOMSVCRT) == 1
+MSG = ^
+The static runtime in a loadable (dll) is a useless configuration that will^
+cause abnormal and unnecessary code bloat.
+!error $(MSG)
+!endif
+
+#----------------------------------------------------------
+# Figure-out how to name our intermediate and output directories.
+# We wouldn't want different builds to use the same .obj files
+# by accident.
+#----------------------------------------------------------
+
+SUFX	    = tsdx
+
+!if $(DEBUG)
+BUILDDIRTOP = .\Debug
+DBGX	    = d
+!else
+BUILDDIRTOP = .\Release
+DBGX	    =
+SUFX	    = $(SUFX:d=)
+!endif
+
+TMP_DIRFULL = $(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
+
+!if !$(STATIC_BUILD)
+TMP_DIRFULL = $(TMP_DIRFULL:Static=)
+SUFX	    = $(SUFX:s=)
+EXT	    = dll
+!if !$(NOMSVCRT)
+TMP_DIRFULL = $(TMP_DIRFULL:X=)
+SUFX	    = $(SUFX:x=)
+!endif
+!else
+TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
+EXT	    = lib
+!if $(NOMSVCRT)
+TMP_DIRFULL = $(TMP_DIRFULL:X=)
+SUFX	    = $(SUFX:x=)
+!endif
+!endif
+
+!if !$(TCL_THREADS)
+TMP_DIRFULL = $(TMP_DIRFULL:Threaded=)
+SUFX	    = $(SUFX:t=)
+!endif
+
+!ifndef TMP_DIR
+TMP_DIR	    = $(TMP_DIRFULL)
+!ifndef OUT_DIR
+OUT_DIR	    = $(BUILDDIRTOP)
+!endif
+!else
+!ifndef OUT_DIR
+OUT_DIR	    = $(TMP_DIR)
+!endif
+!endif
+
+!message *** Intermediate directory will be '$(TMP_DIR)'
+!message *** Output directory will be '$(OUT_DIR)'
+!message *** Suffix for binaries will be '$(SUFX)'
+
+
+#----------------------------------------------------------
+# Decode the statistics requested.
+#----------------------------------------------------------
+!if "$(STATS)" == "" || ![echo $(STATS) | find /i "none" > nul]
+TCL_MEM_DEBUG	    = 0
+TCL_COMPILE_DEBUG   = 0
+TCL_COMPILE_STATS   = 0
+!else
+!if ![echo $(STATS) | find /i "memdbg" > nul]
+!message *** Doing memdbg
+TCL_MEM_DEBUG	    = 1
+!else
+TCL_MEM_DEBUG	    = 0
+!endif
+!if ![echo $(STATS) | find /i "compdbg" > nul]
+!message *** Doing compdbg
+TCL_COMPILE_DEBUG   = 1
+!else
+TCL_COMPILE_DEBUG   = 0
+!endif
+!if ![echo $(STATS) | find /i "compstat" > nul]
+!message *** Doing compstat
+TCL_COMPILE_STATS   = 1
+!else
+TCL_COMPILE_STATS   = 0
+!endif
+!endif
+
+!if $(TCL_COMPILE_DEBUG) && !$(TCL_COMPILE_STATS)
+TCL_COMPILE_STATS  = 1
+!endif
+
+OPTDEFINES	=
+!if $(TCL_MEM_DEBUG)
+OPTDEFINES	= -DTCL_MEM_DEBUG
+!endif
+!if $(TCL_COMPILE_DEBUG)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG
+!endif
+!if $(TCL_COMPILE_STATS)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_STATS
+!endif
+!if $(TCL_THREADS)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
+!endif
+!if $(STATIC_BUILD)
+OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
+!endif
+
+!message *** Optional defines are '$(OPTDEFINES)'
+
+!endif
