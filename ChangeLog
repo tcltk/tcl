@@ -1,3 +1,32 @@
+2002-09-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:		Bumped version number to 8.4.0
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure:
+	* win/configure.in:
+
+	* generic/tclInterp.c (SlaveCreate): make sure that the memory and
+	checkmem commands are initialized in non-safe slave interpreters
+	when TCL_MEM_DEBUG is used. [Bug #583445]
+
+	* win/tclWinConsole.c (ConsoleCloseProc): only wait on writable
+	pipe if there was something to write.  This may prevent infinite
+	wait on exit.
+
+	* tests/exec.test: marked exec-18.1 unixOnly until the Windows
+	incompatability (in the test, not the core) can be resolved.
+
+	* tests/http.test (http-3.11): added close $fp that was causing an
+	error on Windows because the file was not closed before deleting.
+
+	* unix/tclUnixInit.c (Tcl_MacOSXGetLibraryPath): made this static
+	function only appear when HAVE_CFBUNDLE is defined.
+
 2002-08-31  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: added TK_SHLIB_LD_EXTRAS analogue of existing
