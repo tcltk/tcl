@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# SCCS: %Z% $Id: tclConfig.sh.in,v 1.5 1998/07/29 10:30:30 welch Exp $ 
+# SCCS: %Z% $Id: tclConfig.sh.in,v 1.6 1998/07/29 17:41:12 welch Exp $ 
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -35,7 +35,7 @@ TCL_CFLAGS_OPTIMIZE='@CFLAGS_OPTIMIZE@'
 TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 
 # The name of the Tcl library (may be either a .a file or a shared library):
-TCL_LIB_FILE="@TCL_LIB_FILE@"
+TCL_LIB_FILE='@TCL_LIB_FILE@'
 
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@DL_LIBS@ @LIBS@ @MATH_LIBS@'
@@ -84,7 +84,7 @@ TCL_COMPAT_OBJS='@LIBOBJS@'
 TCL_RANLIB='@RANLIB@'
 
 # -l flag to pass to the linker to pick up the Tcl library
-TCL_LIB_FLAG="@TCL_LIB_FLAG@"
+TCL_LIB_FLAG='@TCL_LIB_FLAG@'
 
 # String to pass to linker to pick up the Tcl library from its
 # build directory.

@@ -1204,8 +1204,7 @@ fi
 VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
 eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
-
-# Trick to replace ${DBGX} with ${TCL_DBGX} in TCL_LIB_FILE def
+# Trick to replace DBGX with TCL_DBGX
 DBGX='${TCL_DBGX}'
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
@@ -1220,8 +1219,8 @@ if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
 else
     TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
 fi
-TCL_BUILD_LIB_SPEC="-L`pwd` \${TCL_LIB_FLAG}"
-TCL_LIB_SPEC="-L${exec_prefix}/lib \${TCL_LIB_FLAG}"
+TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
+TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
@@ -1243,7 +1242,6 @@ AC_SUBST(CFLAGS_OPTIMIZE)
 AC_SUBST(CFLAGS_WARNING)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
-AC_SUBST(CFG_TCL_LIB_FILE)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(DL_LIBS)
 AC_SUBST(DL_OBJS)
