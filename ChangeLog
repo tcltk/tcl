@@ -1,3 +1,11 @@
+2003-10-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/cmdMZ.test:	Updated [package require tcltest] lines to
+	* tests/fileSystem.test:	indiciate that these test files
+	* tests/notify.test:	use features of tcltest 2.  [Bug 706114]
+	* tests/parseExpr.test:
+	* tests/unixNotfy.test:
+
 2003-10-06  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c:
