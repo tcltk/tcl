@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.5 1998/12/02 01:46:07 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.6 1998/12/02 01:59:35 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -968,7 +968,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
     Interp *iPtr = (Interp *)interp;
     Trace *tracePtr;
     Tcl_DString cmdBuf;
-    char cmdString[] = "";
+    char *cmdString = "";
     int cmdLen = 0;
     int code = TCL_OK;
 
