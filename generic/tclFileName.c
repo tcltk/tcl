@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.54 2004/05/07 07:44:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.55 2004/05/08 15:51:41 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1679,6 +1679,9 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
                     tail += driveNameLen;
                     break;
                 }
+		case TCL_PATH_RELATIVE: {
+		    /* Do nothing */
+		}
             }
             Tcl_DecrRefCount(temp);
 	}
@@ -1702,7 +1705,8 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
     if (pathPrefix == NULL) {
 	int driveNameLen;
 	Tcl_Obj *driveName;
-	if (TclFSNonnativePathType(tail, strlen(tail), NULL, &driveNameLen, 
+	if (TclFSNonnativePathType(tail, (int) strlen(tail), NULL, 
+				   &driveNameLen, 
 				   &driveName) == TCL_PATH_ABSOLUTE) {
 	    pathPrefix = driveName;
 	    tail += driveNameLen;
