@@ -1,3 +1,7 @@
+2001-05-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/console.n: Deleted.  Put it in the wrong source tree!  D'oh!
+
 2001-05-15  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tests/lindex.test: added test for nested braces [Patch: 423617]
