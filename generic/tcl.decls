@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.48 2001/05/30 08:57:06 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.49 2001/06/08 20:06:11 dgp Exp $
 
 library tcl
 
@@ -36,7 +36,7 @@ declare 1 generic {
 	                           int exact, ClientData *clientDataPtr )
 }
 declare 2 generic {
-    void Tcl_Panic(char *format, ...)
+    void Tcl_Panic(CONST char *format, ...)
 }
 declare 3 generic {
     char * Tcl_Alloc(unsigned int size)
@@ -967,8 +967,8 @@ declare 276 generic {
 declare 277 generic {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
-declare 278 {unix win} {
-    void Tcl_PanicVA(char *format, va_list argList)
+declare 278 generic {
+    void Tcl_PanicVA(CONST char *format, va_list argList)
 }
 declare 279 generic {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)
@@ -1588,8 +1588,7 @@ declare 6 mac {
 }
 
 # These are not in MSL 2.1.2, so we need to export them from the
-# Tcl shared library.  They are found in the compat directory
-# except the panic routine which is found in tclMacPanic.h.
+# Tcl shared library.  They are found in the compat directory.
  
 declare 7 mac {
     int strncasecmp(CONST char *s1, CONST char *s2, size_t n)

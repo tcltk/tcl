@@ -1,9 +1,9 @@
 /* 
  * tclMacPanic.c --
  *
- *	Source code for the "panic" library procedure used in "Simple Shell";
- *	other Mac applications will probably override this with a more robust
- *	application-specific panic procedure.
+ *	Source code for the "Tcl_Panic" library procedure used in "Simple
+ *	Shell";	other Mac applications will probably call Tcl_SetPanicProc
+ *	to set a more robust application-specific panic procedure.
  *
  * Copyright (c) 1993-1994 Lockheed Missle & Space Company, AI Center
  * Copyright (c) 1995-1996 Sun Microsystems, Inc.
@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPanic.c,v 1.2 1998/09/14 18:40:05 stanton Exp $
+ * RCS: @(#) $Id: tclMacPanic.c,v 1.3 2001/06/08 20:06:11 dgp Exp $
  */
 
 
@@ -27,8 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tclInt.h"
-
 /*
  * constants for panic dialog
  */
@@ -40,56 +38,31 @@
 #define	ENTERCODE  (0x03)
 #define	RETURNCODE (0x0D)
 
-/*
- * The panicProc variable contains a pointer to an application
- * specific panic procedure.
- */
+static void		MacPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *, format));
 
-void (*panicProc) _ANSI_ARGS_(TCL_VARARGS(char *,format)) = NULL;
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetPanicProc --
- *
- *	Replace the default panic behavior with the specified functiion.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Sets the panicProc variable.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetPanicProc(proc)
-    void (*proc) _ANSI_ARGS_(TCL_VARARGS(char *,format));
-{
-    panicProc = proc;
-}
 
 /*
  *----------------------------------------------------------------------
  *
  * MacPanic --
  *
- *	Displays panic info..
+ *	Displays panic info, then aborts
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Sets the panicProc variable.
+ *	The process dies, entering the debugger if possible.
  *
  *----------------------------------------------------------------------
  */
 
+        /* VARARGS ARGSUSED */
 static void
-MacPanic(
-    char *msg)		/* Text to show in panic dialog. */
+MacPanic TCL_VARARGS_DEF(CONST char *, arg1)
 {
+    va_list varg;
+    char msg[256];
     WindowRef macWinPtr, foundWinPtr;
     Rect macRect;
     Rect buttonRect = PANIC_BUTTON_RECT;
@@ -100,7 +73,10 @@ MacPanic(
     Handle stopIconHandle;
     int	part;
     Boolean done = false;
-            
+
+    va_start(varg, format);
+    vsprintf(msg, format, varg);
+    va_end(varg);
 
     /*
      * Put up an alert without using the Resource Manager (there may 
@@ -195,41 +171,138 @@ MacPanic(
 /*
  *----------------------------------------------------------------------
  *
- * panic --
+ * TclMacSetPanic --
  *
- *	Print an error message and kill the process.
+ *	Replace Tcl's default panic behavior with one more suitable for
+ *	the Mac
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The process dies, entering the debugger if possible.
+ *	Tcl's panic proc is set.
  *
  *----------------------------------------------------------------------
  */
 
-#pragma ignore_oldstyle on
 void
-panic(char * format, ...)
+TclMacSetPanic()
 {
-    va_list varg;
-    char errorText[256];
-	
-    if (panicProc != NULL) {
-	va_start(varg, format);
-	
-	(void) (*panicProc)(format, varg);
-	
-	va_end(varg);
-    } else {
-	va_start(varg, format);
-	
-	vsprintf(errorText, format, varg);
-	
-	va_end(varg);
-	
-	MacPanic(errorText);
-    }
-
+    Tcl_SetPanicProc(MacPanic);
 }
-#pragma ignore_oldstyle reset
+
+/*
+ * NOTE: The rest of this file is *identical* to the file
+ * generic/tclPanic.c.  Someone with the right set of development tools on
+ * the Mac should be able to build the Tcl library using that file, and
+ * remove the rest of this one.
+ */
+
+#include "tclInt.h"
+
+/*
+ * The panicProc variable contains a pointer to an application
+ * specific panic procedure.
+ */
+
+static Tcl_PanicProc *panicProc = NULL;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetPanicProc --
+ *
+ *	Replace the default panic behavior with the specified functiion.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the panicProc variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetPanicProc(proc)
+    Tcl_SetPanicProc *proc;
+{
+    panicProc = proc;
+}
+^L
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_PanicVA --
+ *
+ *      Print an error message and kill the process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The process dies, entering the debugger if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_PanicVA (format, argList)
+    CONST char *format;         /* Format string, suitable for passing to
+                                 * fprintf. */
+    va_list argList;            /* Variable argument list. */
+{
+    char *arg1, *arg2, *arg3, *arg4;    /* Additional arguments (variable in
+                                         * number) to pass to fprintf. */
+    char *arg5, *arg6, *arg7, *arg8;
+
+    arg1 = va_arg(argList, char *);
+    arg2 = va_arg(argList, char *);
+    arg3 = va_arg(argList, char *);
+    arg4 = va_arg(argList, char *);
+    arg5 = va_arg(argList, char *);
+    arg6 = va_arg(argList, char *);
+    arg7 = va_arg(argList, char *);
+    arg8 = va_arg(argList, char *);
+
+    if (panicProc != NULL) {
+        (void) (*panicProc)(format, arg1, arg2, arg3, arg4,
+                arg5, arg6, arg7, arg8);
+    } else {
+        (void) fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6,
+                arg7, arg8);
+        (void) fprintf(stderr, "\n");
+        (void) fflush(stderr);
+        abort();
+    }
+}
+^L
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Panic --
+ *
+ *      Print an error message and kill the process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The process dies, entering the debugger if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+        /* VARARGS ARGSUSED */
+void
+Tcl_Panic TCL_VARARGS_DEF(CONST char *,arg1)
+{
+    va_list argList;
+    CONST char *format;
+
+    format = TCL_VARARGS_START(CONST char *,arg1,argList);
+    Tcl_PanicVA(format, argList);
+    va_end (argList);
+}
+
