@@ -1,5 +1,11 @@
 2002-08-07  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclCompile.h:
+	* generic/tclObj.c: making tclCmdNameType static ([Bug 584567],
+	Don Porter).
+	
+2002-08-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclObj.c (Tcl_NewObj): added conditional code for
 	USE_THREAD_ALLOC; objects allocated through Tcl_NewObj() were
 	otherwise being leaked. [Bug 587488] reported by Sven Sass.

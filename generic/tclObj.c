@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.36 2002/08/07 14:25:01 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.37 2002/08/07 15:50:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -156,7 +156,7 @@ Tcl_HashKeyType tclObjHashKeyType = {
  * name") argument in a Tcl command.
  */
 
-Tcl_ObjType tclCmdNameType = {
+static Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
     FreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
