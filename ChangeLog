@@ -1,6 +1,6 @@
 2001-10-15  Miguel Sofer  <msofer@users.sourceforge.net>
 
-	* generic/tclProc.c: changing a memcmp to strcmp to avoid a memory
+	* generic/tclProc.c: changing a memcmp to strncmp to avoid a memory
 	error detected by purify (thanks Jeff); modify style to agrre with
 	the style guide. 
 	
