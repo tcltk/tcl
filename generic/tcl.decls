@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105 2004/11/13 00:19:05 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105.2.1 2004/12/09 22:59:26 kennykb Exp $
 
 library tcl
 
@@ -1925,6 +1925,57 @@ declare 538 generic {
 }
 declare 539 generic {
     Tcl_Obj *Tcl_GetReturnOptions(Tcl_Interp *interp, int result)
+}
+
+# Big Integers
+
+declare 540 generic {
+    Tcl_BigInt Tcl_BigIntFromInt( int intVal )
+}
+declare 541 generic {
+    Tcl_BigInt Tcl_BigIntFromWideInt( Tcl_WideInt wideVal )
+}
+declare 542 generic {
+    void Tcl_FreeBigInt( Tcl_BigInt bigVal )
+}
+declare 543 generic {
+    int Tcl_BigIntIsEven( Tcl_BigInt bigVal )
+}
+declare 544 generic {
+    int Tcl_BigIntIsOdd( Tcl_BigInt bigVal )
+}
+declare 545 generic {
+    int Tcl_BigIntIsZero( Tcl_BigInt bigVal )
+}
+declare 546 generic {
+    int Tcl_BigIntIsPositive( Tcl_BigInt bigVal )
+}
+declare 547 generic {
+    int Tcl_BigIntIsNegative( Tcl_BigInt bigVal )
+}
+declare 548 generic {
+    int Tcl_BigIntIsUnit( Tcl_BigInt bigVal )
+}
+declare 549 generic {
+    int Tcl_BigIntIsOne( Tcl_BigInt bigVal )
+}
+declare 550 generic {
+    int Tcl_BigIntIsMinusOne( Tcl_BigInt bigVal )
+}
+declare 551 generic {
+    int Tcl_BigIntIsInt( Tcl_BigInt bigVal )
+}
+declare 552 generic {
+    int Tcl_BigIntIsWideInt( Tcl_BigInt bigVal )
+}
+declare 553 generic {
+    int Tcl_GetIntFromBigInt( Tcl_BigInt bigVal )
+}
+declare 554 generic {
+    Tcl_WideInt Tcl_GetWideIntFromBigInt( Tcl_BigInt bigVal )
+}
+declare 555 generic {
+    int Tcl_CompareBigInt( Tcl_BigInt bigVal1, Tcl_BigInt bigVal2 )
 }
 
 ##############################################################################

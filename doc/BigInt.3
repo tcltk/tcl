@@ -1,0 +1,110 @@
+.\" -* nroff -*-
+.\" Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
+.\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: BigInt.3,v 1.1.2.1 2004/12/09 22:59:26 kennykb Exp $
+'\" 
+.so man.macros
+.TH Tcl_BigInt 3 8.5 Tcl "Tcl Library Procedures"
+.BS
+.SH NAME
+Tcl_BigIntFromInt, Tcl_BigIntFromWideInt, Tcl_FreeBigInt \- manipulate arbitrary precision integers.
+.SH Synopsis
+.nf
+\fB#include <tcl.h>\fR
+.sp
+Tcl_BigInt
+\fBTcl_BigIntFromInt\fR(\fIintVal\fR)
+.sp
+Tcl_BigInt
+\fBTcl_BigIntFromWideInt\fR(\fIwideVal\fR)
+.sp
+void
+\fBTcl_FreeBigInt\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsEven\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsOdd\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsZero\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsNegative\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsPositive\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsUnit\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsOne\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsMinusOne\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsInt\fR(\fIbigVal\fR)
+.sp
+int
+\fBTcl_BigIntIsWideInt\fR(\fIbigVal\fR)
+
+.SH ARGUMENTS
+.AS "Tcl_WideInt" wideVal in/out
+.AP Tcl_BigInt bigVal
+The arbitrary-precision integer value to use as an operand.
+.AP int intVal in
+The native integer value to use as an operand.
+.AP Tcl_WideInt wideVal in
+The wide integer value to use as an operand.
+.BE
+
+.SH DESCRIPTION
+.PP
+The procedures described in this manual entry allow a C program that
+links with the Tcl library to manipulate integers of arbitrary
+precision.  
+.PP
+\fBTcl_BigIntFromInt\fR and \fBTcl_BigIntFromWideInt\fR construct
+arbitrary-precision integers from native integers.  Each accepts a
+single argument which is an \fBint\fR or a \fBTcl_WideInt\fR
+respectively, and constructs a \fBTcl_BigInt\fR that represents the
+same value.  The value must eventually be freed by passing it to
+\fBTcl_FreeBigInt\fR.
+.PP
+\fBTcl_FreeBigInt\fR frees a big integer value that was previously
+allocated by any of the \fBTcl_BigInt\fR procedures.  It accepts a single
+\fIbigVal\fR argument, and frees all memory associated with it.
+.PP
+\fBTcl_BigIntIsEven\fR tests whether \fIbigVal\fR is even, returning
+1 if it is and 0 if it isn't.  Similarly \fBTcl_BigIntIsOdd\fR tests
+whether \fIbigVal\fR is odd, \fBTcl_BigIntIsZero\fR tests whether it
+is zero, \fBTcl_BigIntIsNegative\fR tests whether it is negative,
+\fBTcl_BigIntIsPositive\fR tests whether it is strictly positive,
+\fBTcl_BigIntIsUnit\fR tests whether it is either 1 or -1,
+\fBTcl_BigIntIsOne\fR tests whether it is equal to 1, and
+\fBTcl_BigIntIsMinusOne\fR tests whether it is equal to -1.
+.PP
+\fBTcl_BigIntIsInt\fR returns 1 if \fIbigVal\fR will fit in a native
+\fBint\fR, and 0 if it is too big to fit.  Similarly,
+\fBTcl_BigIntIsWideInt\fR returns 1 if \fIbigVal\fR will fit in a
+\fBTcl_WideInt\fR and 0 otherwise.
+.PP
+\fBTcl_GetIntFromBigInt\fR returns the value of \fIbigVal\fR converted
+to a native \fBint\fR.  \fBTcl_GetWideIntFromBigInt\fR returns the
+value of \fIbigVal\fR converted to a \fBTcl_WideInt\fR.  Both
+functions ignore overflow, returning the least significant bits of
+a value that is too large to fit.  Use \fBTcl_BigIntIsInt\fR or
+\fBTcl_BigIntIsWide\fR to check the size of an integer before
+conversion if overflow will be a problem.
+
+.SH "SEE ALSO"
+Tcl_IntObj
+
+.SH KEYWORDS
+integer, wide, integer type, arbitrary precision, multiple precision, bignum

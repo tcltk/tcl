@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.191.2.1 2004/12/08 20:25:27 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.191.2.2 2004/12/09 22:59:26 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -334,16 +334,20 @@ typedef long LONG;
 
 #if ( SIZEOF_LONG_LONG >= 8 ) && ( SIZEOF_LONG_LONG > SIZEOF_LONG )
 #  define TCL_WIDE_INT_TYPE long long
+#  define TCL_SIZEOF_WIDE_INT SIZEOF_LONG_LONG
 #elif ( SIZEOF___INT64 >= 8 ) && ( SIZEOF___INT64 > SIZEOF_LONG )
 #  define TCL_WIDE_INT_TYPE __int64
+#  define TCL_SIZEOF_WIDE_INT SIZEOF___INT64
 #elif ( SIZEOF_LONG >= 8 )
 #  define TCL_WIDE_INT_IS_LONG 1
 #  define TCL_WIDE_INT_TYPE long
+#  define TCL_SIZEOF_WIDE_INT SIZEOF_LONG
 #else
 /* Can't find a 64-bit integer */
 #  define TCL_WIDE_INT_IS_LONG 1
 #  define TCL_WIDE_INT_IS_4_BYTES 1
 #  define TCL_WIDE_INT_TYPE long
+#  define TCL_SIZEOF_WIDE_INT SIZEOF_LONG
 #endif
 
 typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
@@ -403,6 +407,32 @@ typedef struct stat Tcl_StatBuf;
 #endif
 
 /*
+ * Define Tcl_NarrowInt and Tcl_NarrowUInt to be integer types that are
+ * at most half the width of a Tcl_WideInt.  These definitions are needed for
+ * the arbitrary-precision integer routines.
+ */
+
+#if ( SIZEOF_LONG > 0 ) && ( 2 * SIZEOF_LONG <= TCL_SIZEOF_WIDE_INT )
+typedef long Tcl_NarrowInt;
+typedef unsigned long Tcl_NarrowUInt;
+#define TCL_SIZEOF_NARROW_INT SIZEOF_LONG
+#elif ( SIZEOF_INT > 0 ) && ( 2 * SIZEOF_INT <= TCL_SIZEOF_WIDE_INT )
+typedef int Tcl_NarrowInt;
+typedef unsigned int Tcl_NarrowUInt;
+#define TCL_SIZEOF_NARROW_INT SIZEOF_INT
+#elif ( SIZEOF_SHORT > 0 ) && ( 2 * SIZEOF_SHORT <= TCL_SIZEOF_WIDE_INT )
+typedef short Tcl_NarrowInt;
+typedef unsigned short Tcl_NarrowUInt;
+#define TCL_SIZEOF_NARROW_INT SIZEOF_SHORT
+#elif ( TCL_SIZEOF_WIDE_INT > 1 )
+typedef char Tcl_NarrowInt;
+typedef unsigned char Tcl_NarrowUInt;
+#define TCL_SIZEOF_NARROW_INT 1
+#else
+#error "Cannot find an integer type that is at most 32 bits."
+#endif
+
+/*
  * This flag controls whether binary compatability is maintained with
  * extensions built against a previous version of Tcl. This is true
  * by default.
@@ -447,6 +477,7 @@ typedef struct Tcl_Interp {
 } Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
+typedef struct Tcl_BigInt_ * Tcl_BigInt;
 typedef struct Tcl_Channel_ *Tcl_Channel;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
 typedef struct Tcl_Command_ *Tcl_Command;
