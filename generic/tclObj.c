@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.12.2.5 2001/10/19 23:47:57 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.12.2.6 2002/04/26 08:34:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -986,7 +986,8 @@ SetBooleanFromAny(interp, objPtr)
     char lowerCase[10];
     int newBool, length;
     register int i;
-    double dbl;
+    double dblValue;
+    long intValue;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
@@ -1043,15 +1044,36 @@ SetBooleanFromAny(interp, objPtr)
 	}
     } else {
         /*
-         * Still might be a string containing the characters representing an
-         * int or double that wasn't handled above. This would be a string
-         * like "27" or "1.0" that is non-zero and not "1". Such a string
-         * whould result in the boolean value true. We try converting to
-         * double. If that succeeds and the resulting double is non-zero, we
-         * have a "true". Note that numbers can't have embedded NULLs.
+         * Still might be a string containing the characters
+         * representing an int or double that wasn't handled above.
+         * This would be a string like "27", "1.0" or "0xac" that is
+         * non-zero and not "1".  Such a string whould result in the
+         * boolean value true.  We try converting to long and then to
+         * double.  If either succeeds and the resulting value is
+         * non-zero, we have a "true".  Note that numbers can't have
+         * embedded NULLs.
+	 *
+	 * (Int handling added because of Bug 548686)
 	 */
 
-	dbl = strtod(string, &end);
+	intValue = strtol(string, &end);
+	if (end != string) {
+	    /*
+	     * Make sure the string has no garbage after the end of
+	     * the int.
+	     */
+	
+	    while ((end < (string+length))
+		   && isspace(UCHAR(*end))) { /* INTL: ISO only */
+		end++;
+	    }
+	    if (end == (string+length)) {
+		newBool = (intValue != 0);
+		goto goodBoolean;
+	    }
+	}
+
+	dblValue = strtod(string, &end);
 	if (end == string) {
 	    goto badBoolean;
 	}
@@ -1067,9 +1089,10 @@ SetBooleanFromAny(interp, objPtr)
 	if (end != (string+length)) {
 	    goto badBoolean;
 	}
-	newBool = (dbl != 0.0);
+	newBool = (dblValue != 0.0);
     }
 
+    goodBoolean:
     /*
      * Free the old internalRep before setting the new one. We do this as
      * late as possible to allow the conversion code, in particular
