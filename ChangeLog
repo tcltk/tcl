@@ -1,6 +1,12 @@
 2005-04-01  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c:
+	* generic/tclInt.h: ExecEnv now stores two Tcl_Obj* pointing to
+	the constants "0" and "1", for use by TEBC. 
+
+2005-04-01  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclObj.c:
 	* generic/tclStringObj.c: defined new internal macros for creating
