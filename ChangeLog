@@ -1,3 +1,14 @@
+2000-01-12  Eric Melski  <ericm@scriptics.com>
+
+	* doc/tests/clock.test: Added numerous tests for clock scan.
+
+	* doc/generic/tclGetDate.y: Fixed some shift/reduce conflicts in
+	clock grammar.
+
+	* doc/doc/clock.n: Added documentation for new supported clock
+	scan formats and additional explanation of daylight savings time
+	correction algorithm.
+
 2000-01-12  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/file.n:
@@ -26,6 +37,14 @@
 	the TCL_THREAD_STACK_MIN define) for increasing the default stack
 	size for a thread. [Bug: 3797, 1966]
 
+2000-01-11  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclGetDate.y: Added comments for the Convert function.
+	Added a fix for daylight savings time handling for relative time
+	spans of days, weeks or fortnights. (bug 3441, 3868).
+
+	* generic/tclDate.c: Fixed compiler warning issues.
+
 2000-01-10  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* compat/waitpid.c: use pid_t type instead of int [Bug: 3999]
@@ -44,6 +63,27 @@
 	* unix/Makefile.in: made sure tcl.m4 would be installed with dist
 
 	* unix/tcl.m4: added ELF support for NetBSD [Bug: 3959]
+
+2000-01-10  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclGetDate.y: Added rules for ISO 8601 formats (BUG #847):
+	CCYY-MM-DD
+	CCYYMMDD
+	YY-MM-DD
+	YYMMDD
+	CCYYMMDDTHHMMSS
+	CCYYMMDD HHMMSS
+	CCYYMMDDTHH:MM:SS
+	Fixed "clock scan <number>" to scan the number as an hour for the
+	current day, rather than a minute after 00:00 for the current day
+	(bug #2732).
+	
+
+2000-01-07  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclClock.c: Changed switch in Tcl_ClockObjCmd to use
+	enumerated values instead of constants. (ie, COMMAND_SCAN instead
+	of 3).
 
 1999-12-22  Jeff Hobbs  <hobbs@scriptics.com>
 

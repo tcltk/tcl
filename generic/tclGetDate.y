@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.10 2000/01/12 03:13:20 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.11 2000/01/12 19:36:42 ericm Exp $
  */
 
 %{
@@ -107,7 +107,7 @@ static MERIDIAN yyMeridian;
 static time_t   yyRelMonth;
 static time_t   yyRelDay;
 static time_t   yyRelSeconds;
-
+static time_t  *yyRelPointer;
 
 /*
  * Prototypes of internal functions.
@@ -142,6 +142,7 @@ yyparse _ANSI_ARGS_((void));
 
 %type   <Number>        tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT tDST
 %type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE tDAY_UNIT
+%type   <Number>        unit ago sign
 %type   <Meridian>      tMERIDIAN o_merid
 
 %%
@@ -162,7 +163,7 @@ item    : time {
         | day {
             yyHaveDay++;
         }
-        | rel {
+        | relspec {
             yyHaveRel++;
         }
         | iso {
@@ -312,50 +313,19 @@ iso     : tISOBASE tZONE tISOBASE {
         }
         ;
 
-rel     : relunit tAGO {
-            yyRelSeconds = -yyRelSeconds;
-            yyRelMonth = -yyRelMonth;
-	    yyRelDay = -yyRelDay;
-        }
-        | relunit
+relspec : sign tUNUMBER unit ago { *yyRelPointer += $1 * $2 * $3 * $4; }
+        | tUNUMBER unit ago      { *yyRelPointer += $1 * $2 * $3; }
+        | unit ago               { *yyRelPointer += $1 * $2; }
         ;
-
-relunit : tUNUMBER tMINUTE_UNIT {
-            yyRelSeconds += $1 * $2 * 60L;
-        }
-        | '-' tUNUMBER tMINUTE_UNIT {
-            yyRelSeconds -= $2 * $3 * 60L;
-        }
-        | tMINUTE_UNIT {
-            yyRelSeconds += $1 * 60L;
-        }
-        | '-' tUNUMBER tSEC_UNIT {
-            yyRelSeconds -= $2;
-        }
-        | tUNUMBER tSEC_UNIT {
-            yyRelSeconds += $1;
-        }
-        | tSEC_UNIT {
-            yyRelSeconds++;
-        }
-        | '-' tUNUMBER tMONTH_UNIT {
-            yyRelMonth -= $2 * $3;
-        }
-        | tUNUMBER tMONTH_UNIT {
-            yyRelMonth += $1 * $2;
-        }
-        | tMONTH_UNIT {
-            yyRelMonth += $1;
-        }
-        | '-' tUNUMBER tDAY_UNIT {
-            yyRelDay -= $2 * $3;
-        }
-        | tUNUMBER tDAY_UNIT {
-            yyRelDay += $1 * $2;
-        }
-        | tDAY_UNIT {
-            yyRelDay += $1;
-        }
+sign    : '-'            { $$ = -1; }
+        | '+'            { $$ =  1; }
+        ;
+unit    : tSEC_UNIT      { $$ = $1; yyRelPointer = &yyRelSeconds; }
+        | tDAY_UNIT      { $$ = $1; yyRelPointer = &yyRelDay; }
+        | tMONTH_UNIT    { $$ = $1; yyRelPointer = &yyRelMonth; }
+        ;
+ago     : tAGO           { $$ = -1; }
+        |                { $$ = 1; }
         ;
 
 number  : tUNUMBER
@@ -422,16 +392,16 @@ static TABLE    MonthDayTable[] = {
  * Time units table.
  */
 static TABLE    UnitsTable[] = {
-    { "year",           tMONTH_UNIT,   12 },
-    { "month",          tMONTH_UNIT,    1 },
-    { "fortnight",      tDAY_UNIT,     14 },
-    { "week",           tDAY_UNIT,      7 },
-    { "day",            tDAY_UNIT,      1 },
-    { "hour",           tMINUTE_UNIT,  60 },
-    { "minute",         tMINUTE_UNIT,   1 },
-    { "min",            tMINUTE_UNIT,   1 },
-    { "second",         tSEC_UNIT,      1 },
-    { "sec",            tSEC_UNIT,      1 },
+    { "year",           tMONTH_UNIT,    12 },
+    { "month",          tMONTH_UNIT,     1 },
+    { "fortnight",      tDAY_UNIT,      14 },
+    { "week",           tDAY_UNIT,       7 },
+    { "day",            tDAY_UNIT,       1 },
+    { "hour",           tSEC_UNIT, 60 * 60 },
+    { "minute",         tSEC_UNIT,      60 },
+    { "min",            tSEC_UNIT,      60 },
+    { "second",         tSEC_UNIT,       1 },
+    { "sec",            tSEC_UNIT,       1 },
     { NULL }
 };
 
@@ -442,9 +412,9 @@ static TABLE    OtherTable[] = {
     { "tomorrow",       tDAY_UNIT,      1 },
     { "yesterday",      tDAY_UNIT,     -1 },
     { "today",          tDAY_UNIT,      0 },
-    { "now",            tMINUTE_UNIT,   0 },
+    { "now",            tSEC_UNIT,      0 },
     { "last",           tUNUMBER,      -1 },
-    { "this",           tMINUTE_UNIT,   0 },
+    { "this",           tSEC_UNIT,      0 },
     { "next",           tUNUMBER,       1 },
 #if 0
     { "first",          tUNUMBER,       1 },
@@ -994,7 +964,9 @@ TclGetDate(p, now, zone, timePtr)
     int thisyear;
 
     yyInput = p;
-    tm = TclpGetDate((TclpTime_t) &now, 0);
+    /* now has to be cast to a time_t for 64bit compliance */
+    Start = now;
+    tm = TclpGetDate((TclpTime_t) &Start, 0);
     thisyear = tm->tm_year + TM_YEAR_BASE;
     yyYear = thisyear;
     yyMonth = tm->tm_mon + 1;
@@ -1013,6 +985,8 @@ TclGetDate(p, now, zone, timePtr)
     yyRelSeconds = 0;
     yyRelMonth = 0;
     yyRelDay = 0;
+    yyRelPointer = NULL;
+
     yyHaveDate = 0;
     yyHaveDay = 0;
     yyHaveRel = 0;
