@@ -2,12 +2,12 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.19 1998/09/14 18:40:15 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.20 1998/10/13 19:03:53 escoffon Exp $
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL=".3"
+TCL_PATCH_LEVEL=".4"
 VERSION=${TCL_VERSION}
 
 if test "${prefix}" = "NONE"; then
