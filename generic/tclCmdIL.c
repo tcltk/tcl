@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.9 1999/03/20 01:26:48 redman Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.10 1999/03/26 22:39:52 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -375,8 +375,8 @@ Tcl_InfoObjCmd(clientData, interp, objc, objv)
 	    IHostnameIdx, ILevelIdx, ILibraryIdx, ILoadedIdx,
 	    ILocalsIdx, INameOfExecutableIdx, IPatchLevelIdx, IProcsIdx,
 	    IScriptIdx, ISharedLibExtensionIdx, ITclVersionIdx, IVarsIdx
-    } index;
-    int result;
+    };
+    int index, result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");

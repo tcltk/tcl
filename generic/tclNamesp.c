@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.7 1999/02/10 23:31:17 stanton Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.8 1999/03/26 22:39:53 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -2438,8 +2438,8 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
 	    NSEvalIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
 	    NSInscopeIdx, NSOriginIdx, NSParentIdx, NSQualifiersIdx,
 	    NSTailIdx, NSWhichIdx
-    } index;
-    int result;
+    };
+    int index, result;
 
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");

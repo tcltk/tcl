@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.1.2.4 1999/03/10 06:49:16 stanton Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.1.2.5 1999/03/26 22:39:53 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -1475,10 +1475,10 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     Tcl_Channel inChan, outChan;
     char *arg;
     int mode, i;
-    int toRead;
+    int toRead, index;
     Tcl_Obj *cmdPtr;
     static char* switches[] = { "-size", "-command", NULL };
-    enum { FcopySize, FcopyCommand } index;
+    enum { FcopySize, FcopyCommand };
 
     if ((objc < 3) || (objc > 7) || (objc == 4) || (objc == 6)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
