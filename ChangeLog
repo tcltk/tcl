@@ -1,3 +1,11 @@
+2003-02-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIOUtil.c (MakeFsPathFromRelative): removed dead code
+	check of typePtr (darley).
+
+	* tests/winTime.test: added note about PCI hardware dependency
+	issues with high performance clock.
+
 2003-02-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/lsearch.test (lsearch-10.7): 
@@ -6,17 +14,17 @@
 
 2003-02-26  Chengye Mao <chengye.geo@yahoo.com>
 
-        * win/tclWinInit.c: fixed a bug in TclpSetVariables by initializing
-        dwUserNameLen with the sizeof(szUserName) before calling GetUserName.
-        Don't know if this bug has been recorded: it caused crash in starting
-        Tcl or wish in Windows.
-   
-2003-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
+	* win/tclWinInit.c: fixed a bug in TclpSetVariables by initializing
+	dwUserNameLen with the sizeof(szUserName) before calling GetUserName.
+	Don't know if this bug has been recorded: it caused crash in starting
+	Tcl or wish in Windows.
+
+2003-02-26  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (TraceCommandProc): Fix mem leak when
 	deleting a command that had trace on it. [Bug #693564] (sofer)
 
-2003-02-25  Don Porter  <dgp@users.sourceforge.net>
+2003-02-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/pkgMkIndex.n:	Modified [pkg_mkIndex] to use -nocase matching
 	* library/package.tcl:	of -load patterns, to better accomodate
