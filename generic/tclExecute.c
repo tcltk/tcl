@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.16 2000/11/24 15:29:51 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.17 2000/12/10 03:26:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2505,16 +2505,18 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_LNOT:
 	    {
 		/*
-		 * The operand must be numeric. If the operand object is
-		 * unshared modify it directly, otherwise create a copy to
-		 * modify: this is "copy on write". free any old string
-		 * representation since it is now invalid.
+		 * The operand must be numeric or a boolean string as
+		 * accepted by Tcl_GetBooleanFromObj(). If the operand
+		 * object is unshared modify it directly, otherwise
+		 * create a copy to modify: this is "copy on write".
+		 * Free any old string representation since it is now
+		 * invalid.
 		 */
-		
+
 		double d;
 		int boolvar;
 		Tcl_ObjType *tPtr;
-		
+
 		valuePtr = POP_OBJECT();
 		tPtr = valuePtr->typePtr;
 		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
@@ -2546,12 +2548,12 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    tPtr = valuePtr->typePtr;
 		}
-		
+
 		if (Tcl_IsShared(valuePtr)) {
 		    /*
 		     * Create a new object.
 		     */
-		    if (tPtr == &tclIntType) {
+		    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 			i = valuePtr->internalRep.longValue;
 			objPtr = Tcl_NewLongObj(
 			        (*pc == INST_UMINUS)? -i : !i);
@@ -2575,7 +2577,7 @@ TclExecuteByteCode(interp, codePtr)
 		    /*
 		     * valuePtr is unshared. Modify it directly.
 		     */
-		    if (tPtr == &tclIntType) {
+		    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 			i = valuePtr->internalRep.longValue;
 			Tcl_SetLongObj(valuePtr,
 			        (*pc == INST_UMINUS)? -i : !i);
