@@ -1,3 +1,22 @@
+2001-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd, Tcl_RegsubObjCmd):
+	reordered the retrieval of arguments to avoid shimmering bug when
+	the pattern and string referenced the same object.
+
+	* unix/configure: regenerated
+	* unix/tcl.m4: added GNU (HURD) configuration target. (brinkmann)
+	[Patch: #442974]
+
+2001-08-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure: regenerated
+	* win/tcl.m4: fixed DLLSUFFIX definition to always be ${DBGX}.dll.
+	This is necessary for TEA compliant builds that build shared
+	against a static-built Tcl.
+	* win/Makefile.in ($(TCLSH)): added $(TCL_STUB_LIB_FILE) to build
+	target, otherwise it wouldn't get generated in a static build.
+
 2001-08-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Applied patch from SF item

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.1 2001/04/03 22:54:36 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.2 2001/08/07 00:51:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -149,7 +149,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     offset	= 0;
     all		= 0;
     doinline	= 0;
-    
+
     for (i = 1; i < objc; i++) {
 	char *name;
 	int index;
@@ -235,11 +235,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
+    /*
+     * Get the length of the string that we are matching against so
+     * we can do the termination test for -all matches.  Do this before
+     * getting the regexp to avoid shimmering problems.
+     */
+    objPtr = objv[1];
+    stringLength = Tcl_GetCharLength(objPtr);
+
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
     }
-    objPtr = objv[1];
 
     if (about) {
 	if (TclRegAbout(interp, regExpr) < 0) {
@@ -274,12 +281,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	numMatchesSaved = (objc == 0) ? all : objc;
     }
 
-    /*
-     * Get the length of the string that we are matching against so
-     * we can do the termination test for -all matches.
-     */
-    stringLength = Tcl_GetCharLength(objPtr);
-    
     /*
      * The following loop is to handle multiple matches within the
      * same source string;  each iteration handles one match.  If "-all"
@@ -530,6 +531,17 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
     objv += i;
 
+    /*
+     * Get the length of the string that we are matching before
+     * getting the regexp to avoid shimmering problems.
+     */
+
+    objPtr = objv[1];
+    wlen = Tcl_GetCharLength(objPtr);
+    wstring = Tcl_GetUnicode(objPtr);
+    subspec = Tcl_GetString(objv[2]);
+    varPtr = objv[3];
+
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
@@ -538,12 +550,6 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     result = TCL_OK;
     resultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(resultPtr);
-
-    objPtr = objv[1];
-    wlen = Tcl_GetCharLength(objPtr);
-    wstring = Tcl_GetUnicode(objPtr);
-    subspec = Tcl_GetString(objv[2]);
-    varPtr = objv[3];
 
     /*
      * The following loop is to handle multiple matches within the
