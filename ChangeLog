@@ -1,3 +1,9 @@
+2003-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileName.test:
+	* unix/tclUnixFile.c: fix for [Bug 685445] when using 'glob -l'
+	on broken symbolic links.  Added two new tests for this bug.
+
 2003-02-11  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* tests/http.test: Corrected a problem where http-4.14 would fail
