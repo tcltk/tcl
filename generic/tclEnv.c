@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.20 2003/01/14 02:06:11 mdejong Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.20.2.1 2003/05/14 17:17:46 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -429,6 +429,11 @@ TclUnsetEnv(name)
 
     if (environ[index] == string) {
 	ReplaceString(oldValue, string);
+#ifdef HAVE_PUTENV_THAT_COPIES
+    } else {
+	/* This putenv() copies instead of taking ownership */
+	ckfree(string);
+#endif
     }
 #else
     for (envPtr = environ+index+1; ; envPtr++) {
