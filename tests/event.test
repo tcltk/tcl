@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# "@(#) event.test 1.35 97/08/11 11:58:38"
+# "@(#) event.test 1.36 97/12/08 15:05:00"
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -565,3 +565,5 @@ if {[info commands testfilewait] != ""} {
 foreach i [after info] {
     after cancel $i
 }
+
+return

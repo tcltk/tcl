@@ -1,5 +1,5 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# SCCS: @(#) makefile.bc 1.82 97/11/20 15:52:39
+# SCCS: @(#) makefile.bc 1.88 98/02/19 16:49:06
 #
 # Borland C++ 4.5 makefile
 #
@@ -33,7 +33,7 @@ TOOLS	= c:\bc45
 
 STACKSIZE = 1f0001
 
-VERSION = 80
+VERSION = 81
 
 TCLLIB 		= tcl$(VERSION).lib
 TCLDLL 		= tcl$(VERSION).dll
@@ -52,12 +52,14 @@ TCLSHOBJS = \
 TCLTESTOBJS = \
 	$(TMPDIR)\tclTest.obj \
 	$(TMPDIR)\tclTestObj.obj \
+	$(TMPDIR)\tclThreadTest.obj \
 	$(TMPDIR)\tclWinTest.obj \
 	$(TMPDIR)\testMain.obj
 
 TCLOBJS = \
+	$(TMPDIR)\compile.obj \
+	$(TMPDIR)\exec.obj \
 	$(TMPDIR)\panic.obj \
-	$(TMPDIR)\regexp.obj \
 	$(TMPDIR)\strftime.obj \
 	$(TMPDIR)\tclAlloc.obj \
 	$(TMPDIR)\tclAsync.obj \
@@ -68,9 +70,11 @@ TCLOBJS = \
 	$(TMPDIR)\tclCmdAH.obj \
 	$(TMPDIR)\tclCmdIL.obj \
 	$(TMPDIR)\tclCmdMZ.obj \
+	$(TMPDIR)\tclCompCmds.obj \
 	$(TMPDIR)\tclCompExpr.obj \
 	$(TMPDIR)\tclCompile.obj \
 	$(TMPDIR)\tclDate.obj \
+	$(TMPDIR)\tclEncoding.obj \
 	$(TMPDIR)\tclEnv.obj \
 	$(TMPDIR)\tclEvent.obj \
 	$(TMPDIR)\tclExecute.obj \
@@ -86,6 +90,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclIOSock.obj \
 	$(TMPDIR)\tclIOUtil.obj \
 	$(TMPDIR)\tclLink.obj \
+	$(TMPDIR)\tclLiteral.obj \
 	$(TMPDIR)\tclListObj.obj \
 	$(TMPDIR)\tclLoad.obj \
 	$(TMPDIR)\tclMain.obj \
@@ -93,13 +98,18 @@ TCLOBJS = \
 	$(TMPDIR)\tclNotify.obj \
 	$(TMPDIR)\tclObj.obj \
 	$(TMPDIR)\tclParse.obj \
+	$(TMPDIR)\tclParseExpr.obj \
 	$(TMPDIR)\tclPipe.obj \
 	$(TMPDIR)\tclPkg.obj \
 	$(TMPDIR)\tclPosixStr.obj \
 	$(TMPDIR)\tclPreserve.obj \
 	$(TMPDIR)\tclProc.obj \
+	$(TMPDIR)\tclRegexp.obj \
+	$(TMPDIR)\tclResult.obj \
 	$(TMPDIR)\tclStringObj.obj \
+	$(TMPDIR)\tclThread.obj \
 	$(TMPDIR)\tclTimer.obj \
+	$(TMPDIR)\tclUtf.obj \
 	$(TMPDIR)\tclUtil.obj \
 	$(TMPDIR)\tclVar.obj \
 	$(TMPDIR)\tclWin32Dll.obj \
@@ -113,16 +123,16 @@ TCLOBJS = \
 	$(TMPDIR)\tclWinNotify.obj \
 	$(TMPDIR)\tclWinPipe.obj \
 	$(TMPDIR)\tclWinSock.obj \
-	$(TMPDIR)\tclWinTime.obj
-
-cc32		= $(TOOLS)\bin\bcc32.exe
-link32		= $(TOOLS)\bin\tlink32.exe
-rc32		= $(TOOLS)\bin\brcc32.exe
-implib		= $(TOOLS)\bin\implib.exe
+	$(TMPDIR)\tclWinThrd.obj \
+	$(TMPDIR)\tclWinTime.obj 
 
 cc16		= $(TOOLS)\bin\bcc.exe
+cc32		= $(TOOLS)\bin\bcc32.exe
 link16		= $(TOOLS)\bin\tlink.exe
+link32		= $(TOOLS)\bin\tlink32.exe
 rc16		= $(TOOLS)\bin\brcc32.exe -31
+rc32		= $(TOOLS)\bin\brcc32.exe
+implib		= $(TOOLS)\bin\implib.exe
 
 CP		= copy
 RM		= del
@@ -194,7 +204,6 @@ test:	    tcltest
 		cd ../tests
 		source all
 |
-
 
 $(DUMPEXTS): cfgexe.cfg $(WINDIR)\winDumpExts.c
 	$(cc32) $(CON_CFLAGS) $(WINDIR)\winDumpExts.c

@@ -6,13 +6,6 @@
 # element name is the name of a command and the value is
 # a script that loads the command.
 
-set auto_index(auto_execok) [list source [file join $dir init.tcl]]
-set auto_index(auto_reset) [list source [file join $dir init.tcl]]
-set auto_index(auto_mkindex) [list source [file join $dir init.tcl]]
-set auto_index(pkg_mkIndex) [list source [file join $dir init.tcl]]
-set auto_index(tclPkgSetup) [list source [file join $dir init.tcl]]
-set auto_index(tclMacPkgSearch) [list source [file join $dir init.tcl]]
-set auto_index(tclPkgUnknown) [list source [file join $dir init.tcl]]
 set auto_index(parray) [list source [file join $dir parray.tcl]]
 set auto_index(tclLdAout) [list source [file join $dir ldAout.tcl]]
 set auto_index(tcl_wordBreakAfter) [list source [file join $dir word.tcl]]
@@ -28,3 +21,10 @@ set auto_index(::safe::interpAddToAccessPath) [list source [file join $dir safe.
 set auto_index(::safe::interpDelete) [list source [file join $dir safe.tcl]]
 set auto_index(::safe::setLogCmd) [list source [file join $dir safe.tcl]]
 set auto_index(history) [list source [file join $dir history.tcl]]
+set auto_index(pkg_mkIndex) [list source [file join $dir package.tcl]]
+set auto_index(tclPkgSetup) [list source [file join $dir package.tcl]]
+set auto_index(tclMacPkgSearch) [list source [file join $dir package.tcl]]
+set auto_index(tclPkgUnknown) [list source [file join $dir package.tcl]]
+set auto_index(auto_execok) [list source [file join $dir auto.tcl]]
+set auto_index(auto_reset) [list source [file join $dir auto.tcl]]
+set auto_index(auto_mkindex) [list source [file join $dir auto.tcl]]

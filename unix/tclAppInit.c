@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclAppInit.c 1.20 97/03/24 14:29:43
+ * SCCS: @(#) tclAppInit.c 1.30 98/02/18 16:57:43
  */
 
 #ifdef TCL_XT_TEST
@@ -29,9 +29,17 @@ int *tclDummyMathPtr = (int *) matherr;
 
 
 #ifdef TCL_TEST
+
+#include "tclInt.h"
+
 EXTERN int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+#ifdef TCL_THREADS
+EXTERN int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
+#endif
+
 #endif /* TCL_TEST */
+
 #ifdef TCL_XT_TEST
 EXTERN int		Tclxttest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif
@@ -58,9 +66,20 @@ main(argc, argv)
     int argc;			/* Number of command-line arguments. */
     char **argv;		/* Values of command-line arguments. */
 {
+#ifdef TCL_TEST
+    /*
+     * Pass the build time location of the tcl library (to find init.tcl)
+     */
+    Tcl_Obj *path;
+    path = Tcl_NewStringObj(TCL_BUILDTIME_LIBRARY, -1);
+    TclSetLibraryPath(Tcl_NewListObj(1,&path));
+
+#endif
+
 #ifdef TCL_XT_TEST
     XtToolkitInitialize();
 #endif
+
     Tcl_Main(argc, argv, Tcl_AppInit);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -76,7 +95,7 @@ main(argc, argv)
  *
  * Results:
  *	Returns a standard Tcl completion code, and leaves an error
- *	message in interp->result if an error occurs.
+ *	message in the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.
@@ -106,6 +125,11 @@ Tcl_AppInit(interp)
     if (TclObjTest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+#ifdef TCL_THREADS
+    if (TclThread_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+#endif
 #endif /* TCL_TEST */
 
     /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) list.test 1.22 97/06/23 18:19:17
+# SCCS: @(#) list.test 1.23 97/12/08 15:03:32
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -105,3 +105,5 @@ proc slowsort list {
 test list-3.1 {SetListFromAny and lrange/concat results} {
     slowsort {fred julie alex carol bill annie}
 } {alex annie bill carol fred julie}
+
+return

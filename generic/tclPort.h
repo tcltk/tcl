@@ -10,13 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclPort.h 1.15 96/02/07 17:24:21
+ * SCCS: @(#) tclPort.h 1.16 98/01/28 17:36:25
  */
 
 #ifndef _TCLPORT
 #define _TCLPORT
 
-#if defined(__WIN32__) || defined(_WIN32)
+#if defined(__WIN32__)
 #   include "../win/tclWinPort.h"
 #else
 #   if defined(MAC_TCL)

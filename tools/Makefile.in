@@ -6,7 +6,7 @@
 #
 #    HTML:		 1. Build the html target on Unix
 
-# SCCS: %Z% $Id: Makefile.in,v 1.1 1998/04/28 18:53:49 stanton Exp $ 
+# SCCS: @(#) Makefile.in 1.2 97/01/28 18:58:31
 
 TCL = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
 TK = tk@TCL_VERSION@@TCL_PATCH_LEVEL@

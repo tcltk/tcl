@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclGetDate.y 1.34 97/02/03 14:53:54
+ * SCCS: @(#) tclGetDate.y 1.35 98/01/12 15:25:45
  */
 
 %{
@@ -692,11 +692,8 @@ LookupWord(buff)
     /*
      * Make it lowercase.
      */
-    for (p = buff; *p; p++) {
-        if (isupper(UCHAR(*p))) {
-            *p = (char) tolower(UCHAR(*p));
-	}
-    }
+
+    Tcl_UtfToLower(buff);
 
     if (strcmp(buff, "am") == 0 || strcmp(buff, "a.m.") == 0) {
         yylval.Meridian = MERam;
@@ -769,7 +766,8 @@ LookupWord(buff)
     /*
      * Military timezones.
      */
-    if (buff[1] == '\0' && isalpha(UCHAR(*buff))) {
+    if (buff[1] == '\0' && !(*buff & 0x80)
+	    && isalpha(UCHAR(*buff))) {	/* INTL: ISO only */
         for (tp = MilitaryTable; tp->name; tp++) {
             if (strcmp(buff, tp->name) == 0) {
                 yylval.Number = tp->value;
@@ -815,10 +813,10 @@ yylex()
             yyInput++;
 	}
 
-        if (isdigit(c = *yyInput) || c == '-' || c == '+') {
+        if (isdigit(c = *yyInput) || c == '-' || c == '+') { /* INTL: digit */
             if (c == '-' || c == '+') {
                 sign = c == '-' ? -1 : 1;
-                if (!isdigit(*++yyInput)) {
+                if (!isdigit(*++yyInput)) { /* INTL: digit */
                     /*
 		     * skip the '-' sign
 		     */
@@ -827,7 +825,8 @@ yylex()
             } else {
                 sign = 0;
 	    }
-            for (yylval.Number = 0; isdigit(c = *yyInput++); ) {
+            for (yylval.Number = 0;
+		    isdigit(c = *yyInput++); ) { /* INTL: digit */
                 yylval.Number = 10 * yylval.Number + c - '0';
 	    }
             yyInput--;
@@ -836,8 +835,9 @@ yylex()
 	    }
             return sign ? tSNUMBER : tUNUMBER;
         }
-        if (isalpha(UCHAR(c))) {
-            for (p = buff; isalpha(c = *yyInput++) || c == '.'; ) {
+        if (!(c & 0x80) && isalpha(UCHAR(c))) {	/* INTL: ISO only. */
+            for (p = buff; isalpha(c = *yyInput++) /* INTL: ISO only. */
+		     || c == '.'; ) {
                 if (p < &buff[sizeof buff - 1]) {
                     *p++ = c;
 		}

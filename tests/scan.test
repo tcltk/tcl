@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) scan.test 1.26 97/08/06 08:56:08
+# SCCS: @(#) scan.test 1.31 98/01/05 15:24:00
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -65,7 +65,7 @@ test scan-1.11 {integer scanning} {nonPortable} {
     list [scan "4294967280 4294967280" "%u %d" a b] $a $b
 } {2 4294967280 -16}
 
-test scan-2.1 {floating-point scanning} {
+test scan-2.1 {floating-point scanning} {eformat} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "2.1 -3.0e8 .99962 a" "%f%g%e%f" a b c d] $a $b $c $d
 } {3 2.1 -300000000.0 0.99962 {}}
@@ -89,7 +89,7 @@ test scan-2.5 {floating-point scanning} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "4.6 99999.7 876.43e-1 118" "%f %f %f %e" a b c d] $a $b $c $d
 } {4 4.6 99999.7 87.643 118.0}
-test scan-2.6 {floating-point scanning} {
+test scan-2.6 {floating-point scanning} {eformat} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "1.2345 697.0e-3 124 .00005" "%f %e %f %e" a b c d] $a $b $c $d
 } {4 1.2345 0.697 124.0 5e-05}
@@ -122,6 +122,14 @@ test scan-3.5 {string and character scanning} {
     set a {}; set b {}; set c {}
     list [scan "aaaaaabc aaabcdefg  + +  XYZQR" {%*4[a] %s %*4[a]%s%*4[ +]%c} a b c] $a $b $c
 } {3 aabc bcdefg 43}
+test scan-3.6 {string and character scanning, unicode} {
+    set a {}; set b {}; set c {}; set d {}
+    list [scan "abc d\u00c7fghijk dum " "%s %3s %20s %s" a b c d] $a $b $c $d
+} "4 abc d\u00c7f ghijk dum"
+test scan-3.7 {string and character scanning, unicode} {
+    set a {}; set b {}
+    list [scan "ab\u00c7cdef" "ab%c%c" a b] $a $b
+} "2 199 99"
 
 test scan-4.1 {error conditions} {
     catch {scan a}
@@ -223,6 +231,11 @@ test scan-6.4 {miscellaneous tests} {
     set a {}
     list [catch {scan ab%c14 ab%%c%d a} msg] $msg $a
 } {0 1 14}
+test scan-6.5 {miscellaneous tests} {
+    catch {unset arr}
+    set arr(2) {}
+    list [catch {scan ab%c14 ab%%c%d arr(2)} msg] $msg $arr(2)
+} {0 1 14}
 
 test scan-7.1 {alignment in results array (TCL_ALIGN)} {
     scan "123 13.6" "%s %f" a b
@@ -244,3 +257,5 @@ test scan-7.5 {alignment in results array (TCL_ALIGN)} {
     scan "1234567890123456789 13.6" "%s %f" a b
     set b
 } 13.6
+
+return

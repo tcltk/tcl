@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# SCCS: %Z% $Id: index.tcl,v 1.1 1998/04/28 18:53:50 stanton Exp $ 
+# SCCS: @(#) index.tcl 1.2 96/10/17 14:44:16
 # 
 
 # Global variables used by these scripts:

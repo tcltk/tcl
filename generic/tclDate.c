@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * @(#) tclDate.c 1.32 97/02/03 14:54:37
+ * @(#) tclDate.c 1.33 98/01/12 15:25:37
  */
 
 #include "tclInt.h"
@@ -537,11 +537,8 @@ LookupWord(buff)
     /*
      * Make it lowercase.
      */
-    for (p = buff; *p; p++) {
-        if (isupper(UCHAR(*p))) {
-            *p = (char) tolower(UCHAR(*p));
-	}
-    }
+
+    Tcl_UtfToLower(buff);
 
     if (strcmp(buff, "am") == 0 || strcmp(buff, "a.m.") == 0) {
         TclDatelval.Meridian = MERam;
@@ -614,7 +611,8 @@ LookupWord(buff)
     /*
      * Military timezones.
      */
-    if (buff[1] == '\0' && isalpha(UCHAR(*buff))) {
+    if (buff[1] == '\0' && !(*buff & 0x80)
+	    && isalpha(UCHAR(*buff))) {	/* INTL: ISO only */
         for (tp = MilitaryTable; tp->name; tp++) {
             if (strcmp(buff, tp->name) == 0) {
                 TclDatelval.Number = tp->value;
@@ -660,10 +658,10 @@ TclDatelex()
             TclDateInput++;
 	}
 
-        if (isdigit(c = *TclDateInput) || c == '-' || c == '+') {
+        if (isdigit(c = *TclDateInput) || c == '-' || c == '+') { /* INTL: digit */
             if (c == '-' || c == '+') {
                 sign = c == '-' ? -1 : 1;
-                if (!isdigit(*++TclDateInput)) {
+                if (!isdigit(*++TclDateInput)) { /* INTL: digit */
                     /*
 		     * skip the '-' sign
 		     */
@@ -672,7 +670,8 @@ TclDatelex()
             } else {
                 sign = 0;
 	    }
-            for (TclDatelval.Number = 0; isdigit(c = *TclDateInput++); ) {
+            for (TclDatelval.Number = 0;
+		    isdigit(c = *TclDateInput++); ) { /* INTL: digit */
                 TclDatelval.Number = 10 * TclDatelval.Number + c - '0';
 	    }
             TclDateInput--;
@@ -681,8 +680,9 @@ TclDatelex()
 	    }
             return sign ? tSNUMBER : tUNUMBER;
         }
-        if (isalpha(UCHAR(c))) {
-            for (p = buff; isalpha(c = *TclDateInput++) || c == '.'; ) {
+        if (!(c & 0x80) && isalpha(UCHAR(c))) {	/* INTL: ISO only. */
+            for (p = buff; isalpha(c = *TclDateInput++) /* INTL: ISO only. */
+		     || c == '.'; ) {
                 if (p < &buff[sizeof buff - 1]) {
                     *p++ = c;
 		}

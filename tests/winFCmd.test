@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) winFCmd.test 1.11 97/10/10 11:50:05
+# SCCS: @(#) winFCmd.test 1.17 98/02/11 17:37:01
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -46,7 +46,6 @@ proc cleanup {args} {
 
 set testConfig(cdrom) 0
 set testConfig(exdev) 0
-set testConfig(UNCPath} 0
 
 # find a CD-ROM so we can test read-only filesystems.
 
@@ -99,10 +98,6 @@ if {[file exists c:/] && [file exists d:/]} {
 	file delete d:/tf1
 	set testConfig(exdev) 1
     }
-}
-
-if {[file exists //bisque/icepick]} {
-    set testConfig(UNCPath) 1
 }
 
 file delete -force -- td1
@@ -231,91 +226,84 @@ test winFCmd-1.19 {TclpRenameFile: errno == EACCES} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EACCES}
-# under 95, this would actually succed and move the current dir out from 
-# under yourself.
 test winFCmd-1.20 {TclpRenameFile: src is dir} {!95} {
+    # under 95, this would actually succeed and move the current dir out from 
+    # under the current process!
+
     cleanup
     file delete /tf1
     list [catch {testfile mv [pwd] /tf1} msg] $msg
 } {1 EACCES}
-test winFCmd-1.21 {TclpRenameFile: obscenely long src} {!win32s} {
-    # Really long file names cause all the file system calls to lock up,
-    # endlessly throwing an access violation and retrying the operation.
-
+test winFCmd-1.21 {TclpRenameFile: long src} {
+    cleanup
     list [catch {testfile mv $longname tf1} msg] $msg
 } {1 ENAMETOOLONG}
-test winFCmd-1.22 {TclpRenameFile: obscenely long dst} {nt} {
-    # return ENOENT if name is too long!
-    cleanup
-    createfile tf1
-    list [catch {testfile mv tf1 $longname} msg] $msg
-} {1 ENOENT}
-test winFCmd-1.23 {TclpRenameFile: obscenely long dst} {95} {
+test winFCmd-1.22 {TclpRenameFile: long dst} {
     cleanup
     createfile tf1
     list [catch {testfile mv tf1 $longname} msg] $msg
 } {1 ENAMETOOLONG}
-test winFCmd-1.24 {TclpRenameFile: move dir into self} {
+test winFCmd-1.23 {TclpRenameFile: move dir into self} {
     cleanup
     file mkdir td1
     list [catch {testfile mv [pwd]/td1 td1/td2} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.25 {TclpRenameFile: move a root dir} {!$testConfig(win32s) || ("[lindex [file split [pwd]] end]" == "C:/")} {
+test winFCmd-1.24 {TclpRenameFile: move a root dir} {!$testConfig(win32s) || ("[lindex [file split [pwd]] end]" == "C:/")} {
     # Don't run this test under Win32s on a drive mounted from an NT 
-    # machine; it causes the NT machine to die.
+    # machine; it causes the NT machine to die!  Neat security hole in NT.
 
     cleanup
     list [catch {testfile mv / c:/} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.26 {TclpRenameFile: cross file systems} {cdrom} {
+test winFCmd-1.25 {TclpRenameFile: cross file systems} {cdrom} {
     cleanup
     file mkdir td1
     list [catch {testfile mv td1 $cdrom/td1} msg] $msg
 } {1 EXDEV} 
-test winFCmd-1.27 {TclpRenameFile: readonly fs} {cdrom} {
+test winFCmd-1.26 {TclpRenameFile: readonly fs} {cdrom} {
     cleanup
     list [catch {testfile mv $cdfile $cdrom/dummy~~.fil} msg] $msg
 } {1 EACCES}
-test winFCmd-1.28 {TclpRenameFile: open file} {
+test winFCmd-1.27 {TclpRenameFile: open file} {
     cleanup
     set fd [open tf1 w]
     set msg [list [catch {testfile mv tf1 tf2} msg] $msg]
     close $fd
     set msg
 } {1 EACCES}    
-test winFCmd-1.29 {TclpRenameFile: errno == EEXIST} {
+test winFCmd-1.28 {TclpRenameFile: errno == EEXIST} {
     cleanup
     createfile tf1
     createfile tf2
     testfile mv tf1 tf2
     list [file exist tf1] [file exist tf2]
 } {0 1}
-test winFCmd-1.30 {TclpRenameFile: src is dir} {
+test winFCmd-1.29 {TclpRenameFile: src is dir} {
     cleanup
     file mkdir td1
     createfile tf1
     list [catch {testfile mv td1 tf1} msg] $msg
 } {1 ENOTDIR} 
-test winFCmd-1.31 {TclpRenameFile: dst is dir} {
+test winFCmd-1.30 {TclpRenameFile: dst is dir} {
     cleanup
     file mkdir td1
     file mkdir td2/td2
     list [catch {testfile mv td1 td2} msg] $msg
 } {1 EEXIST}
-test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory fails} {
+test winFCmd-1.31 {TclpRenameFile: TclpRemoveDirectory fails} {
     cleanup
     file mkdir td1
     file mkdir td2/td2
     list [catch {testfile mv td1 td2} msg] $msg
 } {1 EEXIST}
-test winFCmd-1.33 {TclpRenameFile: TclpRemoveDirectory succeeds} {
+test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory succeeds} {
     cleanup
     file mkdir td1/td2
     file mkdir td2
     testfile mv td1 td2
     list [file exist td1] [file exist td2] [file exist td2/td2]
 } {0 1 1}
-test winFCmd-1.34 {TclpRenameFile: After removing dst dir, MoveFile fails} {exdev} {
+test winFCmd-1.33 {TclpRenameFile: After removing dst dir, MoveFile fails} {exdev} {
     file mkdir d:/td1
     testchmod 000 d:/td1
     set msg [list [catch {testfile mv c:/windows d:/td1} msg] $msg]
@@ -323,23 +311,23 @@ test winFCmd-1.34 {TclpRenameFile: After removing dst dir, MoveFile fails} {exde
     file delete d:/td1
     set msg
 } {1 EXDEV 0}
-test winFCmd-1.35 {TclpRenameFile: src is dir, dst is not} {
+test winFCmd-1.34 {TclpRenameFile: src is dir, dst is not} {
     file mkdir td1
     createfile tf1
     list [catch {testfile mv td1 tf1} msg] $msg
 } {1 ENOTDIR}
-test winFCmd-1.36 {TclpRenameFile: src is not dir, dst is} {
+test winFCmd-1.35 {TclpRenameFile: src is not dir, dst is} {
     file mkdir td1
     createfile tf1
     list [catch {testfile mv tf1 td1} msg] $msg
 } {1 EISDIR}
-test winFCmd-1.37 {TclpRenameFile: src and dst not dir} {
+test winFCmd-1.36 {TclpRenameFile: src and dst not dir} {
     createfile tf1 tf1
     createfile tf2 tf2
     testfile mv tf1 tf2
     contents tf2
 } {tf1}
-test winFCmd-1.38 {TclpRenameFile: need to restore temp file} {
+test winFCmd-1.37 {TclpRenameFile: need to restore temp file} {
     # Can't figure out how to cause this. 
     # Need a file that can't be copied.
 } {}
@@ -803,11 +791,11 @@ test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} {
 test winFCmd-10.1 {AttributesPosixError - get} {
     cleanup
     list [catch {file attributes td1 -archive} msg] $msg
-} {1 {cannot get attribute "-archive" for file "td1": no such file or directory}}
+} {1 {could not read "td1": no such file or directory}}
 test winFCmd-10.2 {AttributesPosixError - set} {
     cleanup
     list [catch {file attributes td1 -archive 0} msg] $msg
-} {1 {cannot set attribute "-archive" for file "td1": no such file or directory}}
+} {1 {could not read "td1": no such file or directory}}
 
 test winFCmd-11.1 {GetWinFileAttributes} {
     cleanup
@@ -829,6 +817,17 @@ test winFCmd-11.4 {GetWinFileAttributes} {
     close [open td1 w]
     list [catch {file attributes td1 -system} msg] $msg [cleanup]
 } {0 0 {}}
+test winfcmd-11.5 {GetWinFileAttributes} {
+    # attr of relative paths that resolve to root was failing
+    # don't care about answer, just that test runs.
+
+    set old [pwd]
+    cd c:/
+    file attr c:	    
+    file attr c:.
+    file attr . 
+    cd $old
+} {}
 
 test winFCmd-12.1 {ConvertFileNameFormat} {
     cleanup
@@ -861,11 +860,9 @@ test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} {
     close [open c:/td1 w]
     list [catch {string tolower [file attributes c:/td1 -longname]} msg] $msg [file delete -force -- c:/td1]
 } {0 c:/td1 {}}
-test winFCmd-12.7 {ConvertFileNameFormat} {UNCPath} {
-    catch {file delete -force -- //bisque/icepick/test/td1}
-    close [open //bisque/icepick/test/td1 w]
-    list [catch {string tolower [file attributes //bisque/icepick/test/td1 -longname]} msg] $msg [file delete -force -- //bisque/icepick/test/td1]
-} {0 //bisque/icepick/test/td1 {}}
+test winFCmd-12.7 {ConvertFileNameFormat} {nonPortable} {
+    string tolower [file attributes //bisque/tcl/ws -longname]
+} {//bisque/tcl/ws}
 test winFCmd-12.8 {ConvertFileNameFormat} {longFileNames} {
     cleanup
     close [open td1 w]
@@ -902,7 +899,7 @@ test winFCmd-14.1 {GetWinFileShortName} {
 test winFCmd-15.1 {SetWinFileAttributes} {
     cleanup
     list [catch {file attributes td1 -archive 0} msg] $msg
-} {1 {cannot set attribute "-archive" for file "td1": no such file or directory}}
+} {1 {could not read "td1": no such file or directory}}
 test winFCmd-15.2 {SetWinFileAttributes - archive} {
     cleanup
     close [open td1 w]
@@ -977,3 +974,4 @@ foreach source {tef ted tnf tnd "" nul com1} {
     }
 }
 
+return

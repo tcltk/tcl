@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) @(#) StringObj.3 1.13 97/06/25 13:40:25
+'\" SCCS: @(#) @(#) StringObj.3 1.16 98/01/26 19:39:49
 '\" 
 .so man.macros
-.TH Tcl_StringObj 3 8.0 Tcl "Tcl Library Procedures"
+.TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_SetStringObj, Tcl_GetStringFromObj, Tcl_AppendToObj, Tcl_AppendStringsToObj, Tcl_SetObjLength, TclConcatObj \- manipulate Tcl objects as strings
+Tcl_NewStringObj, Tcl_SetStringObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_AppendToObj, Tcl_AppendStringsToObj, Tcl_AppendObjToObj, Tcl_SetObjLength, Tcl_ConcatObj \- manipulate Tcl objects as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -23,7 +23,14 @@ Tcl_Obj *
 char *
 \fBTcl_GetStringFromObj\fR(\fIobjPtr, lengthPtr\fR)
 .sp
+char *
+\fBTcl_GetString\fR(\fIobjPtr\fR)
+.sp
 \fBTcl_AppendToObj\fR(\fIobjPtr, bytes, length\fR)
+.VS
+.sp
+\fBTcl_AppendObjToObj\fR(\fIobjPtr, appendObjPtr\fR)
+.VE
 .sp
 \fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *) NULL\fR)
 .sp
@@ -32,7 +39,7 @@ char *
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *lengthPtr out
+.AS Tcl_Interp *appendObjPtr in/out
 .AP char *bytes in
 Points to the first byte of an array of bytes
 used to set or append to a string object.
@@ -44,6 +51,10 @@ initializing, setting, or appending to a string object.
 If negative, all bytes up to the first null are used.
 .AP Tcl_Obj *objPtr in/out
 Points to an object to manipulate.
+.VS
+.AP Tcl_Obj *appendObjPtr in
+The object to append to \fIobjPtr\fR in \fBTcl_AppendObjToObj\fR.
+.VE
 .AP int *lengthPtr out
 If non-NULL, the location where \fBTcl_GetStringFromObj\fR will store
 the the length of an object's string representation.
@@ -76,21 +87,30 @@ Both procedures set the object to hold a copy of the specified string.
 \fBTcl_SetStringObj\fR frees any old string representation
 as well as any old internal representation of the object.
 .PP
-\fBTcl_GetStringFromObj\fR returns an object's string representation.
+\fBTcl_GetStringFromObj\fR and \fBTcl_GetString\fR
+return an object's string representation.
 This is given by the returned byte pointer
-and length, which is stored in \fIlengthPtr\fR if it is non-NULL.
+and (for \fBTcl_GetStringFromObj\fR) length,
+which is stored in \fIlengthPtr\fR if it is non-NULL.
 If the object's string representation is invalid
 (its byte pointer is NULL),
 the string representation is regenerated from the
 object's internal representation.
 The storage referenced by the returned byte pointer
 is owned by the object manager and should not be modified by the caller.
+The procedure \fBTcl_GetString\fR is used in the common case
+where the caller does not need the length of the string representation.
 .PP
 \fBTcl_AppendToObj\fR appends the data given by \fIbytes\fR and
 \fIlength\fR to the object specified by \fIobjPtr\fR.  It does this
 in a way that handles repeated calls relatively efficiently (it
 overallocates the string space to avoid repeated reallocations
 and copies of object's string value).
+.VS
+.PP
+\fBTcl_AppendObjToObj\fR is similar to \fBTcl_AppendToObj\fR, but it
+appends the string value of \fIappendObjPtr\fR to \fIobjPtr\fR.
+.VE
 .PP
 \fBTcl_AppendStringsToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it can be passed more than one value to append and

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacAppInit.c 1.20 97/07/28 11:03:58
+ * SCCS: @(#) tclMacAppInit.c 1.21 97/11/07 21:30:01
  */
 
 #include "tcl.h"
@@ -83,7 +83,7 @@ main(
  *
  * Results:
  *	Returns a standard Tcl completion code, and leaves an error
- *	message in interp->result if an error occurs.
+ *	message in the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.

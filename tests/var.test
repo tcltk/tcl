@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) var.test 1.10 97/07/28 18:31:47
+# SCCS: @(#) var.test 1.12 98/02/05 20:22:48
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -27,7 +27,7 @@ catch {unset i}
 catch {unset a}
 catch {unset arr}
 
-test var-1.1 {TclLookupVar, TCL_PARSE_PART1 flag set} {
+test var-1.1 {TclLookupVar, Array handling} {
     catch {unset a}
     set x "incr"  ;# force no compilation and runtime call to Tcl_IncrCmd 
     set i 10
@@ -450,6 +450,11 @@ test var-9.9 {behaviour of TclSetVar without TCL_LEAVE_ERR_MSG flag} {
     list [catch {testsetnoerr v 2} msg] $msg
 } {1 {before set}}
 
+test var-10.1 {can't nest arrays with array set} {
+   catch {unset arr}
+   list [catch {array set arr(x) {a 1 b 2}} res] $res
+} {1 {can't set "arr(x)(a)": variable isn't array}}
+
 catch {namespace delete ns}
 catch {unset arr}
 catch {unset v}
@@ -465,3 +470,4 @@ catch {unset a}
 catch {unset xxxxx}
 catch {unset aaaaa}
 
+return

@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 #
-# SCCS: @(#) registry.test 1.5 97/08/01 11:14:25
+# SCCS: @(#) registry.test 1.9 98/01/05 16:18:05
 
 if {$tcl_platform(platform) != "windows"} {
     return
@@ -31,6 +31,16 @@ switch $tcl_platform(os) {
     "Windows NT" {set testConfig(NT) 1}
     "Windows 95" {set testConfig(95) 1}
 }
+
+# determine the current locale
+set old [testlocale all]
+if {[testlocale all ""] == "English_United States.1252"} {
+    # error messages from registry package are already localized.
+
+    set testConfig(english) 1
+}
+testlocale all $old
+unset old
 
 set hostname [info hostname]
 
@@ -138,7 +148,7 @@ test registry-2.6 {DeleteKey: recursive delete} {
     set result [registry keys HKEY_CLASSES_ROOT TclFoobar]
     set result
 } {}
-test registry-2.7 {DeleteKey: trailing backslashes} {
+test registry-2.7 {DeleteKey: trailing backslashes} {english} {
     registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz
     list [catch {registry delete HKEY_CLASSES_ROOT\\TclFoobar\\} msg] $msg
 } {1 {unable to delete key: The configuration registry key is invalid.}}
@@ -157,11 +167,11 @@ test registry-3.1 {DeleteValue} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } test2
-test registry-3.2 {DeleteValue: bad key} {
+test registry-3.2 {DeleteValue: bad key} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry delete HKEY_CLASSES_ROOT\\TclFoobar test} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
-test registry-3.3 {DeleteValue: bad value} {
+test registry-3.3 {DeleteValue: bad value} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz test2 blort
     set result [list [catch {registry delete HKEY_CLASSES_ROOT\\TclFoobar test1} msg] $msg]
@@ -170,7 +180,7 @@ test registry-3.3 {DeleteValue: bad value} {
 } {1 {unable to delete value "test1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
 
 
-test registry-4.1 {GetKeyNames: bad key} {
+test registry-4.1 {GetKeyNames: bad key} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry keys HKEY_CLASSES_ROOT\\TclFoobar} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
@@ -181,7 +191,7 @@ test registry-4.2 {GetKeyNames} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } {baz}
-test registry-4.3 {GetKeyNames: remote key} {nonPortable} {
+test registry-4.3 {GetKeyNames: remote key} {nonPortable english} {
     registry set \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar\\baz
     set result [registry keys \\\\gaspode\\HKEY_CLASSES_ROOT\\TclFoobar]
     registry delete \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar
@@ -213,11 +223,11 @@ test registry-4.6 {GetKeyNames: names with spaces} {
     set result
 } {{baz bar} blat}
 
-test registry-5.1 {GetType} {
+test registry-5.1 {GetType} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry type HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
-test registry-5.2 {GetType} {
+test registry-5.2 {GetType} {english} {
     registry set HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry type HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
 } {1 {unable to get type of value "val1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
@@ -288,11 +298,11 @@ test registry-5.13 {GetType: unknown types} {
     set result
 } 24
 
-test registry-6.1 {GetValue} {
+test registry-6.1 {GetValue} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry get HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
-test registry-6.2 {GetValue} {
+test registry-6.2 {GetValue} {english} {
     registry set HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry get HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
 } {1 {unable to get value "val1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
@@ -381,7 +391,7 @@ test registry-6.16 {GetValue: unknown types} {
     set result
 } 1
 
-test registry-7.1 {GetValueNames: bad key} {
+test registry-7.1 {GetValueNames: bad key} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry values HKEY_CLASSES_ROOT\\TclFoobar} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
@@ -401,9 +411,9 @@ test registry-7.3 {GetValueNames} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } {{} baz blat}
-test registry-7.4 {GetValueNames: remote key} {nonPortable} {
+test registry-7.4 {GetValueNames: remote key} {nonPortable english} {
     registry set \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar baz blat
-    set result [registry values \\\\gaspode\\HKEY_CLASSES_ROOT\\TclFoobar]
+    set result [registry values \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar]
     registry delete \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } baz
@@ -433,7 +443,7 @@ test registry-7.7 {GetValueNames: names with spaces} {
     set result
 } {{baz bar} blat}
 
-test registry-8.1 {OpenSubKey} {nonPortable} {
+test registry-8.1 {OpenSubKey} {nonPortable english} {
     list [catch {registry keys {\\petrouchka\HKEY_LOCAL_MACHINE}} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 test registry-8.2 {OpenSubKey} {
@@ -443,7 +453,7 @@ test registry-8.2 {OpenSubKey} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } TclFoobar
-test registry-8.3 {OpenSubKey} {
+test registry-8.3 {OpenSubKey} {english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     list [catch {registry keys HKEY_CLASSES_ROOT\\TclFoobar} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
@@ -460,7 +470,7 @@ test registry-9.3 {ParseKeyName: bad keys} {
 test registry-9.4 {ParseKeyName: bad keys} {
     list [catch {registry values \\\\\\} msg] $msg
 } {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, or HKEY_CURRENT_CONFIG}}
-test registry-9.5 {ParseKeyName: bad keys} {
+test registry-9.5 {ParseKeyName: bad keys} {english} {
     list [catch {registry values \\\\\\HKEY_CLASSES_ROOT} msg] $msg
 } {1 {unable to open key: The network address is invalid.}}
 test registry-9.6 {ParseKeyName: bad keys} {
@@ -472,7 +482,7 @@ test registry-9.7 {ParseKeyName: bad keys} {
 test registry-9.8 {ParseKeyName: null keys} {
     list [catch {registry delete HKEY_CLASSES_ROOT\\} msg] $msg
 } {1 {bad key: cannot delete root keys}}
-test registry-9.9 {ParseKeyName: null keys} {
+test registry-9.9 {ParseKeyName: null keys} {english} {
     list [catch {registry keys HKEY_CLASSES_ROOT\\TclFoobar\\baz} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 
@@ -504,9 +514,10 @@ test registry-11.2 {SetValue: modification} {
     registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz blat frob
     set result [registry get HKEY_CLASSES_ROOT\\TclFoobar\\baz blat]
 } frob
-test registry-11.3 {SetValue: failure} {nonPortable} {
+test registry-11.3 {SetValue: failure} {nonPortable english} {
     list [catch {registry set {\\petrouchka\HKEY_CLASSES_ROOT\TclFoobar} bar foobar} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 
 
 unset hostname
+return

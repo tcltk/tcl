@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) timer.test 1.2 97/04/29 11:59:59
+# SCCS: @(#) timer.test 1.4 97/12/08 15:06:49
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -333,12 +333,93 @@ test timer-6.21 {Tcl_AfterCmd, info option} {
 test timer-6.22 {Tcl_AfterCmd, info option} {
     list [after info $event1] [after info $event2]
 } {{{event 1} idle} {{event 2} timer}}
+
 after cancel $event1
 after cancel $event2
 interp delete x
 
+test timer-6.23 {Tcl_AfterCmd procedure, no option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    after 1 "set x ab\0cd"
+    after 10
+    update
+    string length $x
+} {5}
+test timer-6.24 {Tcl_AfterCmd procedure, no option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    after 1 set x ab\0cd
+    after 10
+    update
+    string length $x
+} {5}
+test timer-6.25 {Tcl_AfterCmd procedure, cancel option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    after 1 set x ab\0cd
+    after cancel "set x ab\0ef"
+    set x [llength [after info]]
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x
+} {1}
+test timer-6.26 {Tcl_AfterCmd procedure, cancel option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    after 1 set x ab\0cd
+    after cancel set x ab\0ef
+    set y [llength [after info]]
+    foreach i [after info] {
+	after cancel $i
+    }
+    set y
+} {1}
+test timer-6.27 {Tcl_AfterCmd procedure, idle option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    after idle "set x ab\0cd"
+    update
+    string length $x
+} {5}
+test timer-6.28 {Tcl_AfterCmd procedure, idle option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    after idle set x ab\0cd
+    update
+    string length $x
+} {5}
+test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NULL} {
+    foreach i [after info] {
+	after cancel $i
+    }
+    set x "hello world"
+    set id junk
+    set id [after 1 set x ab\0cd]
+    update
+    set y [string length [lindex [lindex [after info $id] 0] 2]]
+    foreach i [after info] {
+	after cancel $i
+    }
+    set y
+} {5}
+
 set event [after idle foo bar]
 scan $event after#%d id
+
 test timer-7.1 {GetAfterEvent procedure} {
     list [catch {after info xfter#$id} msg] $msg
 } "1 {event \"xfter#$id\" doesn't exist}"
@@ -453,3 +534,4 @@ test timer-9.1 {AfterCleanupProc procedure} {
     set x
 } {before after2 after4}
 
+return

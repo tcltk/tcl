@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinReg.c 1.8 97/08/01 11:17:49
+ * SCCS: @(#) tclWinReg.c 1.12 98/02/11 17:41:21
  */
 
 #include <tcl.h>
@@ -1145,36 +1145,65 @@ AppendSystemError(
     DWORD error)		/* Result code from error. */
 {
     int length;
-    char *msgbuf, id[10];
+    WCHAR *wMsgPtr;
+    char *msg;
+    char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
+    Tcl_DString ds;
     Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 
-    sprintf(id, "%d", error);
-    length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM
+    length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
 	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
-	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgbuf,
+	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) &wMsgPtr,
 	    0, NULL);
     if (length == 0) {
+	char *msgPtr;
+
+	length = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM
+		| FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char *) &msgPtr,
+		0, NULL);
+	if (length > 0) {
+	    wMsgPtr = (WCHAR *) LocalAlloc(LPTR, (length + 1) * sizeof(WCHAR));
+	    MultiByteToWideChar(CP_ACP, 0, msgPtr, length + 1, wMsgPtr, 
+		    length + 1);
+	    LocalFree(msgPtr);
+	}
+    }
+    if (length == 0) {
 	if (error == ERROR_CALL_NOT_IMPLEMENTED) {
-	    msgbuf = "function not supported under Win32s";
+	    msg = "function not supported under Win32s";
 	} else {
-	    msgbuf = id;
+	    sprintf(msgBuf, "unknown error: %d", error);
+	    msg = msgBuf;
 	}
     } else {
+	Tcl_Encoding encoding;
+
+	encoding = Tcl_GetEncoding(NULL, "unicode");
+	Tcl_ExternalToUtfDString(encoding, (char *) wMsgPtr, -1, &ds);
+	Tcl_FreeEncoding(encoding);
+	LocalFree(wMsgPtr);
+
+	msg = Tcl_DStringValue(&ds);
+	length = Tcl_DStringLength(&ds);
+
 	/*
 	 * Trim the trailing CR/LF from the system message.
 	 */
-	if (msgbuf[length-1] == '\n') {
-	    msgbuf[--length] = 0;
+	if (msg[length-1] == '\n') {
+	    msg[--length] = 0;
 	}
-	if (msgbuf[length-1] == '\r') {
-	    msgbuf[--length] = 0;
+	if (msg[length-1] == '\r') {
+	    msg[--length] = 0;
 	}
     }
-    Tcl_SetErrorCode(interp, "WINDOWS", id, msgbuf, (char *) NULL);
-    Tcl_AppendToObj(resultPtr, msgbuf, -1);
+
+    sprintf(id, "%d", error);
+    Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *) NULL);
+    Tcl_AppendToObj(resultPtr, msg, length);
 
     if (length != 0) {
-	LocalFree(msgbuf);
+	Tcl_DStringFree(&ds);
     }
 }
 

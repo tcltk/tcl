@@ -36,12 +36,8 @@ if test -r http.n; then
     ln http.n Http.n
 fi
 if test -r safe.n; then
-    rm -f Safe.n
-    ln safe.n Safe.n
-fi
-if test -r StringObj.3; then
-    rm -f TclConcatObj.3
-    ln StringObj.3 TclConcatObj.3
+    rm -f Safe\.n
+    ln safe.n Safe\.n
 fi
 if test -r AddErrInfo.3; then
     rm -f Tcl_AddErrorInfo.3
@@ -70,6 +66,10 @@ fi
 if test -r SetResult.3; then
     rm -f Tcl_AppendElement.3
     ln SetResult.3 Tcl_AppendElement.3
+fi
+if test -r StringObj.3; then
+    rm -f Tcl_AppendObjToObj.3
+    ln StringObj.3 Tcl_AppendObjToObj.3
 fi
 if test -r SetResult.3; then
     rm -f Tcl_AppendResult.3
@@ -131,6 +131,18 @@ if test -r Concat.3; then
     rm -f Tcl_Concat.3
     ln Concat.3 Tcl_Concat.3
 fi
+if test -r StringObj.3; then
+    rm -f Tcl_ConcatObj.3
+    ln StringObj.3 Tcl_ConcatObj.3
+fi
+if test -r Thread.3; then
+    rm -f Tcl_ConditionNotify.3
+    ln Thread.3 Tcl_ConditionNotify.3
+fi
+if test -r Thread.3; then
+    rm -f Tcl_ConditionWait.3
+    ln Thread.3 Tcl_ConditionWait.3
+fi
 if test -r SplitList.3; then
     rm -f Tcl_ConvertElement.3
     ln SplitList.3 Tcl_ConvertElement.3
@@ -163,6 +175,10 @@ if test -r CrtCommand.3; then
     rm -f Tcl_CreateCommand.3
     ln CrtCommand.3 Tcl_CreateCommand.3
 fi
+if test -r Encoding.3; then
+    rm -f Tcl_CreateEncoding.3
+    ln Encoding.3 Tcl_CreateEncoding.3
+fi
 if test -r Notifier.3; then
     rm -f Tcl_CreateEventSource.3
     ln Notifier.3 Tcl_CreateEventSource.3
@@ -194,6 +210,10 @@ fi
 if test -r CrtSlave.3; then
     rm -f Tcl_CreateSlave.3
     ln CrtSlave.3 Tcl_CreateSlave.3
+fi
+if test -r Exit.3; then
+    rm -f Tcl_CreateThreadExitHandler.3
+    ln Exit.3 Tcl_CreateThreadExitHandler.3
 fi
 if test -r CrtTimerHdlr.3; then
     rm -f Tcl_CreateTimerHandler.3
@@ -299,6 +319,10 @@ if test -r CrtInterp.3; then
     rm -f Tcl_DeleteInterp.3
     ln CrtInterp.3 Tcl_DeleteInterp.3
 fi
+if test -r Exit.3; then
+    rm -f Tcl_DeleteThreadExitHandler.3
+    ln Exit.3 Tcl_DeleteThreadExitHandler.3
+fi
 if test -r CrtTimerHdlr.3; then
     rm -f Tcl_DeleteTimerHandler.3
     ln CrtTimerHdlr.3 Tcl_DeleteTimerHandler.3
@@ -310,6 +334,10 @@ fi
 if test -r DetachPids.3; then
     rm -f Tcl_DetachPids.3
     ln DetachPids.3 Tcl_DetachPids.3
+fi
+if test -r SaveResult.3; then
+    rm -f Tcl_DiscardResult.3
+    ln SaveResult.3 Tcl_DiscardResult.3
 fi
 if test -r DoOneEvent.3; then
     rm -f Tcl_DoOneEvent.3
@@ -336,12 +364,24 @@ if test -r Eval.3; then
     ln Eval.3 Tcl_Eval.3
 fi
 if test -r Eval.3; then
+    rm -f Tcl_Eval2.3
+    ln Eval.3 Tcl_Eval2.3
+fi
+if test -r Eval.3; then
     rm -f Tcl_EvalFile.3
     ln Eval.3 Tcl_EvalFile.3
 fi
-if test -r EvalObj.3; then
+if test -r Eval.3; then
     rm -f Tcl_EvalObj.3
-    ln EvalObj.3 Tcl_EvalObj.3
+    ln Eval.3 Tcl_EvalObj.3
+fi
+if test -r Eval.3; then
+    rm -f Tcl_EvalObjv.3
+    ln Eval.3 Tcl_EvalObjv.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_EvalTokens.3
+    ln ParseCmd.3 Tcl_EvalTokens.3
 fi
 if test -r Preserve.3; then
     rm -f Tcl_EventuallyFree.3
@@ -387,9 +427,21 @@ if test -r ExprLong.3; then
     rm -f Tcl_ExprString.3
     ln ExprLong.3 Tcl_ExprString.3
 fi
+if test -r Encoding.3; then
+    rm -f Tcl_ExternalToUtf.3
+    ln Encoding.3 Tcl_ExternalToUtf.3
+fi
+if test -r Encoding.3; then
+    rm -f Tcl_ExternalToUtfDString.3
+    ln Encoding.3 Tcl_ExternalToUtfDString.3
+fi
 if test -r Exit.3; then
     rm -f Tcl_Finalize.3
     ln Exit.3 Tcl_Finalize.3
+fi
+if test -r Exit.3; then
+    rm -f Tcl_FinalizeThread.3
+    ln Exit.3 Tcl_FinalizeThread.3
 fi
 if test -r FindExec.3; then
     rm -f Tcl_FindExecutable.3
@@ -411,6 +463,14 @@ if test -r Alloc.3; then
     rm -f Tcl_Free.3
     ln Alloc.3 Tcl_Free.3
 fi
+if test -r Encoding.3; then
+    rm -f Tcl_FreeEncoding.3
+    ln Encoding.3 Tcl_FreeEncoding.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_FreeParse.3
+    ln ParseCmd.3 Tcl_FreeParse.3
+fi
 if test -r CrtSlave.3; then
     rm -f Tcl_GetAlias.3
     ln CrtSlave.3 Tcl_GetAlias.3
@@ -430,6 +490,10 @@ fi
 if test -r BoolObj.3; then
     rm -f Tcl_GetBooleanFromObj.3
     ln BoolObj.3 Tcl_GetBooleanFromObj.3
+fi
+if test -r ByteArrObj.3; then
+    rm -f Tcl_GetByteArrayFromObj.3
+    ln ByteArrObj.3 Tcl_GetByteArrayFromObj.3
 fi
 if test -r OpenFileChnl.3; then
     rm -f Tcl_GetChannel.3
@@ -479,6 +543,18 @@ if test -r DoubleObj.3; then
     rm -f Tcl_GetDoubleFromObj.3
     ln DoubleObj.3 Tcl_GetDoubleFromObj.3
 fi
+if test -r Encoding.3; then
+    rm -f Tcl_GetEncoding.3
+    ln Encoding.3 Tcl_GetEncoding.3
+fi
+if test -r Encoding.3; then
+    rm -f Tcl_GetEncodingName.3
+    ln Encoding.3 Tcl_GetEncodingName.3
+fi
+if test -r Encoding.3; then
+    rm -f Tcl_GetEncodingNames.3
+    ln Encoding.3 Tcl_GetEncodingNames.3
+fi
 if test -r SetErrno.3; then
     rm -f Tcl_GetErrno.3
     ln SetErrno.3 Tcl_GetErrno.3
@@ -523,6 +599,10 @@ if test -r ObjectType.3; then
     rm -f Tcl_GetObjType.3
     ln ObjectType.3 Tcl_GetObjType.3
 fi
+if test -r SetVar.3; then
+    rm -f Tcl_GetObjVar2.3
+    ln SetVar.3 Tcl_GetObjVar2.3
+fi
 if test -r GetOpnFl.3; then
     rm -f Tcl_GetOpenFile.3
     ln GetOpnFl.3 Tcl_GetOpenFile.3
@@ -544,12 +624,20 @@ if test -r GetStdChan.3; then
     ln GetStdChan.3 Tcl_GetStdChannel.3
 fi
 if test -r StringObj.3; then
+    rm -f Tcl_GetString.3
+    ln StringObj.3 Tcl_GetString.3
+fi
+if test -r StringObj.3; then
     rm -f Tcl_GetStringFromObj.3
     ln StringObj.3 Tcl_GetStringFromObj.3
 fi
 if test -r SetResult.3; then
     rm -f Tcl_GetStringResult.3
     ln SetResult.3 Tcl_GetStringResult.3
+fi
+if test -r Thread.3; then
+    rm -f Tcl_GetThreadData.3
+    ln Thread.3 Tcl_GetThreadData.3
 fi
 if test -r SetVar.3; then
     rm -f Tcl_GetVar.3
@@ -563,13 +651,13 @@ if test -r OpenFileChnl.3; then
     rm -f Tcl_Gets.3
     ln OpenFileChnl.3 Tcl_Gets.3
 fi
+if test -r OpenFileChnl.3; then
+    rm -f Tcl_GetsObj.3
+    ln OpenFileChnl.3 Tcl_GetsObj.3
+fi
 if test -r Eval.3; then
     rm -f Tcl_GlobalEval.3
     ln Eval.3 Tcl_GlobalEval.3
-fi
-if test -r EvalObj.3; then
-    rm -f Tcl_GlobalEvalObj.3
-    ln EvalObj.3 Tcl_GlobalEvalObj.3
 fi
 if test -r Hash.3; then
     rm -f Tcl_HashStats.3
@@ -659,9 +747,21 @@ if test -r SplitList.3; then
     rm -f Tcl_Merge.3
     ln SplitList.3 Tcl_Merge.3
 fi
+if test -r Thread.3; then
+    rm -f Tcl_MutexLock.3
+    ln Thread.3 Tcl_MutexLock.3
+fi
+if test -r Thread.3; then
+    rm -f Tcl_MutexUnlock.3
+    ln Thread.3 Tcl_MutexUnlock.3
+fi
 if test -r BoolObj.3; then
     rm -f Tcl_NewBooleanObj.3
     ln BoolObj.3 Tcl_NewBooleanObj.3
+fi
+if test -r ByteArrObj.3; then
+    rm -f Tcl_NewByteArrayObj.3
+    ln ByteArrObj.3 Tcl_NewByteArrayObj.3
 fi
 if test -r DoubleObj.3; then
     rm -f Tcl_NewDoubleObj.3
@@ -695,13 +795,9 @@ if test -r CrtChannel.3; then
     rm -f Tcl_NotifyChannel.3
     ln CrtChannel.3 Tcl_NotifyChannel.3
 fi
-if test -r ObjSetVar.3; then
-    rm -f Tcl_ObjGetVar2.3
-    ln ObjSetVar.3 Tcl_ObjGetVar2.3
-fi
-if test -r ObjSetVar.3; then
-    rm -f Tcl_ObjSetVar2.3
-    ln ObjSetVar.3 Tcl_ObjSetVar2.3
+if test -r Utf.3; then
+    rm -f Tcl_NumUtfChars.3
+    ln Utf.3 Tcl_NumUtfChars.3
 fi
 if test -r OpenFileChnl.3; then
     rm -f Tcl_OpenCommandChannel.3
@@ -718,6 +814,26 @@ fi
 if test -r OpenTcp.3; then
     rm -f Tcl_OpenTcpServer.3
     ln OpenTcp.3 Tcl_OpenTcpServer.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_ParseBraces.3
+    ln ParseCmd.3 Tcl_ParseBraces.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_ParseCommand.3
+    ln ParseCmd.3 Tcl_ParseCommand.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_ParseExpr.3
+    ln ParseCmd.3 Tcl_ParseExpr.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_ParseQuotedString.3
+    ln ParseCmd.3 Tcl_ParseQuotedString.3
+fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_ParseVarName.3
+    ln ParseCmd.3 Tcl_ParseVarName.3
 fi
 if test -r PkgRequire.3; then
     rm -f Tcl_PkgProvide.3
@@ -746,6 +862,10 @@ fi
 if test -r OpenFileChnl.3; then
     rm -f Tcl_Read.3
     ln OpenFileChnl.3 Tcl_Read.3
+fi
+if test -r OpenFileChnl.3; then
+    rm -f Tcl_ReadChars.3
+    ln OpenFileChnl.3 Tcl_ReadChars.3
 fi
 if test -r Alloc.3; then
     rm -f Tcl_Realloc.3
@@ -795,6 +915,14 @@ if test -r SetResult.3; then
     rm -f Tcl_ResetResult.3
     ln SetResult.3 Tcl_ResetResult.3
 fi
+if test -r SaveResult.3; then
+    rm -f Tcl_RestoreResult.3
+    ln SaveResult.3 Tcl_RestoreResult.3
+fi
+if test -r SaveResult.3; then
+    rm -f Tcl_SaveResult.3
+    ln SaveResult.3 Tcl_SaveResult.3
+fi
 if test -r SplitList.3; then
     rm -f Tcl_ScanElement.3
     ln SplitList.3 Tcl_ScanElement.3
@@ -818,6 +946,14 @@ fi
 if test -r BoolObj.3; then
     rm -f Tcl_SetBooleanObj.3
     ln BoolObj.3 Tcl_SetBooleanObj.3
+fi
+if test -r ByteArrObj.3; then
+    rm -f Tcl_SetByteArrayLength.3
+    ln ByteArrObj.3 Tcl_SetByteArrayLength.3
+fi
+if test -r ByteArrObj.3; then
+    rm -f Tcl_SetByteArrayObj.3
+    ln ByteArrObj.3 Tcl_SetByteArrayObj.3
 fi
 if test -r CrtChannel.3; then
     rm -f Tcl_SetChannelBufferSize.3
@@ -875,6 +1011,10 @@ if test -r SetResult.3; then
     rm -f Tcl_SetObjResult.3
     ln SetResult.3 Tcl_SetObjResult.3
 fi
+if test -r SetVar.3; then
+    rm -f Tcl_SetObjVar2.3
+    ln SetVar.3 Tcl_SetObjVar2.3
+fi
 if test -r SetRecLmt.3; then
     rm -f Tcl_SetRecursionLimit.3
     ln SetRecLmt.3 Tcl_SetRecursionLimit.3
@@ -894,6 +1034,10 @@ fi
 if test -r StringObj.3; then
     rm -f Tcl_SetStringObj.3
     ln StringObj.3 Tcl_SetStringObj.3
+fi
+if test -r Encoding.3; then
+    rm -f Tcl_SetSystemEncoding.3
+    ln Encoding.3 Tcl_SetSystemEncoding.3
 fi
 if test -r Notifier.3; then
     rm -f Tcl_SetTimer.3
@@ -943,6 +1087,30 @@ if test -r Translate.3; then
     rm -f Tcl_TranslateFileName.3
     ln Translate.3 Tcl_TranslateFileName.3
 fi
+if test -r Utf.3; then
+    rm -f Tcl_UniChar.3
+    ln Utf.3 Tcl_UniChar.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UniCharAtIndex.3
+    ln Utf.3 Tcl_UniCharAtIndex.3
+fi
+if test -r ToUpper.3; then
+    rm -f Tcl_UniCharToLower.3
+    ln ToUpper.3 Tcl_UniCharToLower.3
+fi
+if test -r ToUpper.3; then
+    rm -f Tcl_UniCharToTitle.3
+    ln ToUpper.3 Tcl_UniCharToTitle.3
+fi
+if test -r ToUpper.3; then
+    rm -f Tcl_UniCharToUpper.3
+    ln ToUpper.3 Tcl_UniCharToUpper.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UniCharToUtf.3
+    ln Utf.3 Tcl_UniCharToUtf.3
+fi
 if test -r LinkVar.3; then
     rm -f Tcl_UnlinkVar.3
     ln LinkVar.3 Tcl_UnlinkVar.3
@@ -979,6 +1147,58 @@ if test -r LinkVar.3; then
     rm -f Tcl_UpdateLinkedVar.3
     ln LinkVar.3 Tcl_UpdateLinkedVar.3
 fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfAtIndex.3
+    ln Utf.3 Tcl_UtfAtIndex.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfBackslash.3
+    ln Utf.3 Tcl_UtfBackslash.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfCharComplete.3
+    ln Utf.3 Tcl_UtfCharComplete.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfFindFirst.3
+    ln Utf.3 Tcl_UtfFindFirst.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfFindLast.3
+    ln Utf.3 Tcl_UtfFindLast.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfNext.3
+    ln Utf.3 Tcl_UtfNext.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfPrev.3
+    ln Utf.3 Tcl_UtfPrev.3
+fi
+if test -r Encoding.3; then
+    rm -f Tcl_UtfToExternal.3
+    ln Encoding.3 Tcl_UtfToExternal.3
+fi
+if test -r Encoding.3; then
+    rm -f Tcl_UtfToExternalDString.3
+    ln Encoding.3 Tcl_UtfToExternalDString.3
+fi
+if test -r ToUpper.3; then
+    rm -f Tcl_UtfToLower.3
+    ln ToUpper.3 Tcl_UtfToLower.3
+fi
+if test -r ToUpper.3; then
+    rm -f Tcl_UtfToTitle.3
+    ln ToUpper.3 Tcl_UtfToTitle.3
+fi
+if test -r Utf.3; then
+    rm -f Tcl_UtfToUniChar.3
+    ln Utf.3 Tcl_UtfToUniChar.3
+fi
+if test -r ToUpper.3; then
+    rm -f Tcl_UtfToUpper.3
+    ln ToUpper.3 Tcl_UtfToUpper.3
+fi
 if test -r Eval.3; then
     rm -f Tcl_VarEval.3
     ln Eval.3 Tcl_VarEval.3
@@ -998,6 +1218,14 @@ fi
 if test -r OpenFileChnl.3; then
     rm -f Tcl_Write.3
     ln OpenFileChnl.3 Tcl_Write.3
+fi
+if test -r OpenFileChnl.3; then
+    rm -f Tcl_WriteChars.3
+    ln OpenFileChnl.3 Tcl_WriteChars.3
+fi
+if test -r OpenFileChnl.3; then
+    rm -f Tcl_WriteObj.3
+    ln OpenFileChnl.3 Tcl_WriteObj.3
 fi
 if test -r WrongNumArgs.3; then
     rm -f Tcl_WrongNumArgs.3

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclStringObj.c 1.31 97/10/30 13:56:35
+ * SCCS: @(#) tclStringObj.c 1.35 97/11/13 13:40:07
  */
 
 #include "tclInt.h"
@@ -74,9 +74,9 @@ Tcl_ObjType tclStringType = {
 
 Tcl_Obj *
 Tcl_NewStringObj(bytes, length)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length;	/* The number of bytes to copy from "bytes"
+    int length;			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
@@ -88,9 +88,9 @@ Tcl_NewStringObj(bytes, length)
 
 Tcl_Obj *
 Tcl_NewStringObj(bytes, length)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length;	/* The number of bytes to copy from "bytes"
+    int length;			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
@@ -140,9 +140,9 @@ Tcl_NewStringObj(bytes, length)
 
 Tcl_Obj *
 Tcl_DbNewStringObj(bytes, length, file, line)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length;	/* The number of bytes to copy from "bytes"
+    int length;			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
 				 * negative, use bytes up to the first
 				 * NULL byte. */
@@ -165,7 +165,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
 
 Tcl_Obj *
 Tcl_DbNewStringObj(bytes, length, file, line)
-    register char *bytes;	/* Points to the first of the length bytes
+    CONST char *bytes;		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
     register int length;	/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If 
@@ -224,7 +224,7 @@ Tcl_SetStringObj(objPtr, bytes, length)
 
     Tcl_InvalidateStringRep(objPtr);
     if (length < 0) {
-	length = strlen(bytes);
+	length = (bytes? strlen(bytes) : 0);
     }
     TclInitStringRep(objPtr, bytes, length);
         
@@ -335,7 +335,7 @@ Tcl_AppendToObj(objPtr, bytes, length)
 	ConvertToStringType(objPtr);
     }
     if (length < 0) {
-	length = strlen(bytes);
+	length = (bytes? strlen(bytes) : 0);
     }
     if (length == 0) {
 	return;
@@ -358,6 +358,35 @@ Tcl_AppendToObj(objPtr, bytes, length)
 	objPtr->length = newLength;
 	objPtr->bytes[objPtr->length] = 0;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AppendObjToObj --
+ *
+ *	This procedure appends the string rep of one object to another.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The string rep of appendObjPtr is appended to the string 
+ *	representation of objPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AppendObjToObj(objPtr, appendObjPtr)
+    Tcl_Obj *objPtr;		/* Points to the object to append to. */
+    Tcl_Obj *appendObjPtr;	/* Object to append. */
+{
+    int length;
+    char *stringRep;
+
+    stringRep = Tcl_GetStringFromObj(appendObjPtr, &length);
+    Tcl_AppendToObj(objPtr, stringRep, length);
 }
 
 /*

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) cmdIL.test 1.18 97/09/18 11:42:12
+# SCCS: @(#) cmdIL.test 1.22 98/01/13 18:24:45
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -251,3 +251,17 @@ test cmdIL-4.22 {DictionaryCompare procedure, case} {
 test cmdIL-4.23 {DictionaryCompare procedure, case} {
     lsort -dictionary {ABcd AbCd}
 } {ABcd AbCd}
+test cmdIL-4.24 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
+    set_iso8859_1_locale
+    set result [lsort -dictionary "a b c A B C \xe3 \xc4"]
+    restore_locale
+    set result
+} "A a B b C c \xe3 \xc4"
+test cmdIL-4.25 {DictionaryCompare procedure, international characters} {hasIsoLocale} {
+    set_iso8859_1_locale
+    set result [lsort -dictionary "a23\xe3 a23\xc5 a23\xe4"]
+    restore_locale
+    set result
+} "a23\xe3 a23\xe4 a23\xc5"
+
+return

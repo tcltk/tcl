@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacOSA.c 1.7 97/06/18 14:29:58
+ * SCCS: @(#) tclMacOSA.c 1.8 97/11/07 21:30:43
  */
 
 #define MAC_TCL
@@ -1926,7 +1926,7 @@ tclOSAAddContext(
     int newPtr;
 
     if (contextName == NULL) {
-	contextName = ckalloc(24 * sizeof(char));
+	contextName = ckalloc(16 + TCL_INTEGER_SPACE);
 	sprintf(contextName, "OSAContext%d", contextIndex++);
     } else if (*contextName == '\0') {
 	sprintf(contextName, "OSAContext%d", contextIndex++);
@@ -2057,7 +2057,7 @@ tclOSAStore(
     Str255 rezName;
     int result = TCL_OK;
     short saveRef, fileRef = -1;
-    char idStr[64];
+    char idStr[16 + TCL_INTEGER_SPACE];
     FSSpec fileSpec;
     Tcl_DString buffer;
     char *nativeName;
@@ -2276,7 +2276,7 @@ tclOSALoad(
     Str255 rezName;
     int result = TCL_OK;
     short saveRef, fileRef = -1;
-    char idStr[64];
+    char idStr[16 + TCL_INTEGER_SPACE];
     FSSpec fileSpec;
     Tcl_DString buffer;
     char *nativeName;

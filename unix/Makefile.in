@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# SCCS: @(#) Makefile.in 1.190 97/11/05 10:57:38
+# SCCS: @(#) Makefile.in 1.214 98/02/23 17:10:26
 
 # Current Tcl version;  used in various names.
 
@@ -106,7 +106,7 @@ GENERIC_FLAGS =
 #GENERIC_FLAGS = -DTCL_GENERIC_ONLY
 UNIX_OBJS = tclMtherr.o tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
-	tclUnixTime.o tclUnixInit.o
+	tclUnixTime.o tclUnixInit.o tclUnixThrd.o 
 #UNIX_OBJS =
 NOTIFY_OBJS = tclUnixNotfy.o
 #NOTIFY_OBJS =
@@ -123,6 +123,11 @@ MEM_DEBUG_FLAGS =
 COMPILE_DEBUG_FLAGS =
 #COMPILE_DEBUG_FLAGS = -DTCL_COMPILE_STATS
 #COMPILE_DEBUG_FLAGS = -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+
+# To compile without backward compatibility and deprecated code
+# uncomment the following
+NO_DEPRECATED_FLAGS=
+#NO_DEPRECATED_FLAGS= -DTCL_NO_DEPRECATED
 
 # Some versions of make, like SGI's, use the following variable to
 # determine which shell to use for executing commands:
@@ -183,8 +188,12 @@ TOP_DIR =		@srcdir@/..
 GENERIC_DIR = 		$(TOP_DIR)/generic
 COMPAT_DIR =		$(TOP_DIR)/compat
 TOOL_DIR =		$(TOP_DIR)/tools
-DLTEST_DIR =		@srcdir@/dltest
-UNIX_DIR = 		@srcdir@
+UNIX_DIR = 		$(TOP_DIR)/unix
+# Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
+DLTEST_DIR =		@TCL_SRC_DIR@/unix/dltest
+# Must be absolute to so the corresponding tcltest's tcl_library is absolute.
+TCL_BUILDTIME_LIBRARY=  @TCL_SRC_DIR@/library
+
 CC =			@CC@
 
 #----------------------------------------------------------------
@@ -196,7 +205,8 @@ CC =			@CC@
 
 CC_SWITCHES =	${CFLAGS} ${TCL_SHLIB_CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
+${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS} \
+-DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
 
 LIBS =		@DL_LIBS@ @LIBS@ $(MATH_LIBS) -lc
 
@@ -207,19 +217,24 @@ ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 
 TCLSH_OBJS = tclAppInit.o
 
-TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclUnixTest.o
+TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclUnixTest.o \
+	tclThreadTest.o
 
 XTTEST_OBJS = tclTest.o tclTestObj.o tclUnixTest.o tclXtNotify.o \
 	tclXtTest.o xtTestInit.o
 
-GENERIC_OBJS = panic.o regexp.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
-	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompExpr.o \
-	tclCompile.o tclDate.o tclEnv.o tclEvent.o tclExecute.o \
-	tclFCmd.o tclFileName.o tclGet.o tclHash.o tclHistory.o \
-	tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o tclIOSock.o \
-	tclIOUtil.o tclLink.o tclListObj.o tclLoad.o tclMain.o tclNamesp.o \
-	tclNotify.o tclObj.o tclParse.o tclPipe.o tclPkg.o tclPosixStr.o \
-	tclPreserve.o tclProc.o tclStringObj.o tclTimer.o tclUtil.o tclVar.o
+GENERIC_OBJS = compile.o exec.o panic.o \
+	tclAsync.o tclBasic.o tclBinary.o \
+	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
+	tclCompCmds.o tclCompExpr.o tclCompile.o tclDate.o tclEncoding.o \
+	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
+	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o \
+	tclIOCmd.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
+	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
+	tclObj.o tclParse.o tclParseExpr.o tclPipe.o \
+	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
+	tclResult.o tclStringObj.o tclThread.o tclTimer.o tclUtf.o tclUtil.o \
+	tclVar.o
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
 
@@ -231,7 +246,8 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h
 
 GENERIC_SRCS = \
-	$(GENERIC_DIR)/regexp.c \
+	$(GENERIC_DIR)/compile.c \
+	$(GENERIC_DIR)/exec.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
 	$(GENERIC_DIR)/tclBinary.c \
@@ -240,9 +256,11 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclCmdAH.c \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
+	$(GENERIC_DIR)/tclCompCmds.c \
 	$(GENERIC_DIR)/tclCompExpr.c \
 	$(GENERIC_DIR)/tclCompile.c \
 	$(GENERIC_DIR)/tclDate.c \
+	$(GENERIC_DIR)/tclEncoding.c \
 	$(GENERIC_DIR)/tclEnv.c \
 	$(GENERIC_DIR)/tclEvent.c \
 	$(GENERIC_DIR)/tclExecute.c \
@@ -259,20 +277,25 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclIOUtil.c \
 	$(GENERIC_DIR)/tclLink.c \
 	$(GENERIC_DIR)/tclListObj.c \
+	$(GENERIC_DIR)/tclLiteral.c \
 	$(GENERIC_DIR)/tclLoad.c \
 	$(GENERIC_DIR)/tclMain.c \
 	$(GENERIC_DIR)/tclNamesp.c \
 	$(GENERIC_DIR)/tclNotify.c \
 	$(GENERIC_DIR)/tclObj.c \
         $(GENERIC_DIR)/tclParse.c \
+        $(GENERIC_DIR)/tclParseExpr.c \
 	$(GENERIC_DIR)/tclPipe.c \
 	$(GENERIC_DIR)/tclPkg.c \
 	$(GENERIC_DIR)/tclPosixStr.c \
 	$(GENERIC_DIR)/tclPreserve.c \
 	$(GENERIC_DIR)/tclProc.c \
+	$(GENERIC_DIR)/tclRegexp.c \
+	$(GENERIC_DIR)/tclResult.c \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
+	$(GENERIC_DIR)/tclThread.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c
@@ -291,6 +314,7 @@ UNIX_SRCS = \
 	$(UNIX_DIR)/tclUnixPipe.c \
 	$(UNIX_DIR)/tclUnixSock.c \
 	$(UNIX_DIR)/tclUnixTest.c \
+	$(UNIX_DIR)/tclUnixThrd.c \
 	$(UNIX_DIR)/tclUnixTime.c \
 	$(UNIX_DIR)/tclUnixInit.c
 
@@ -352,13 +376,13 @@ xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 
 test: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	TCL_LIBRARY=${TOP_DIR}/library; export TCL_LIBRARY; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	( echo cd $(TOP_DIR)/tests\; source all ) | ./tcltest
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest:
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	TCL_LIBRARY=${TOP_DIR}/library; export TCL_LIBRARY; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
 # The following target outputs the name of the top-level source directory
@@ -440,7 +464,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.0 http1.0 opt0.1; \
+	@for i in http2.0 http1.0 opt0.4 encoding; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -456,7 +480,7 @@ install-libraries:
 	    echo "Installing $$i"; \
 	    $(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR); \
 	    done;
-	@for i in http2.0 http1.0 opt0.1; \
+	@for i in http2.0 http1.0 opt0.4; \
 	    do \
 	    for j in $(TOP_DIR)/library/$$i/*.tcl ; \
 		do \
@@ -464,6 +488,10 @@ install-libraries:
 		$(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/$$i; \
 		done; \
 	    done;
+	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
+		echo "Installing $$i"; \
+		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
+	done;
 
 install-man:
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
@@ -532,7 +560,9 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
 	fi;
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST $(UNIX_DIR)/tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) \
+		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
+		-DTCL_TEST $(UNIX_DIR)/tclAppInit.c
 	rm -f tclTestInit.o
 	mv tclAppInit.o tclTestInit.o
 	@if test -f tclAppInit.sav ; then \
@@ -557,8 +587,11 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c
 panic.o: $(GENERIC_DIR)/panic.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/panic.c
 
-regexp.o: $(GENERIC_DIR)/regexp.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regexp.c
+compile.o: $(GENERIC_DIR)/compile.c $(GENERIC_DIR)/lex.c $(GENERIC_DIR)/color.c $(GENERIC_DIR)/locale.c $(GENERIC_DIR)/nfa.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/compile.c
+
+exec.o: $(GENERIC_DIR)/exec.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/exec.c
 
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
@@ -590,11 +623,17 @@ tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c
 tclDate.o: $(GENERIC_DIR)/tclDate.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
+tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
+
 tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
 
 tclCompile.o: $(GENERIC_DIR)/tclCompile.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
+
+tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
 
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
@@ -644,6 +683,9 @@ tclLink.o: $(GENERIC_DIR)/tclLink.c
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
 
+tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
+
 tclObj.o: $(GENERIC_DIR)/tclObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
 
@@ -689,6 +731,9 @@ tclNotify.o: $(GENERIC_DIR)/tclNotify.c
 tclParse.o: $(GENERIC_DIR)/tclParse.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParse.c
 
+tclParseExpr.o: $(GENERIC_DIR)/tclParseExpr.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParseExpr.c
+
 tclPipe.o: $(GENERIC_DIR)/tclPipe.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPipe.c
 
@@ -704,11 +749,20 @@ tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
 tclProc.o: $(GENERIC_DIR)/tclProc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
 
+tclRegexp.o: $(GENERIC_DIR)/tclRegexp.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclRegexp.c
+
+tclResult.o: $(GENERIC_DIR)/tclResult.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResult.c
+
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
 tclUtil.o: $(GENERIC_DIR)/tclUtil.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
+
+tclUtf.o: $(GENERIC_DIR)/tclUtf.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
 
 tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
@@ -721,6 +775,12 @@ tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c
 
 tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTimer.c
+
+tclThread.o: $(GENERIC_DIR)/tclThread.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
+
+tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
 
 tclUnixChan.o: $(UNIX_DIR)/tclUnixChan.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
@@ -746,10 +806,13 @@ tclUnixSock.o: $(UNIX_DIR)/tclUnixSock.c
 tclUnixTest.o: $(UNIX_DIR)/tclUnixTest.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTest.c
 
+tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
+	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixThrd.c
+
 tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
 
-tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
+tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfig.sh
 	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
@@ -764,6 +827,9 @@ getcwd.o: $(COMPAT_DIR)/getcwd.c
 
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/opendir.c
+
+memcmp.o: $(COMPAT_DIR)/memcmp.c
+	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
 
 strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
 	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
@@ -843,11 +909,13 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.0 http1.0 opt0.1; \
+	for i in http2.0 http1.0 opt0.4; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	    done;
+	mkdir $(DISTDIR)/library/encoding
+	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	mkdir $(DISTDIR)/doc
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/man.macros $(DISTDIR)/doc
@@ -859,7 +927,7 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/all $(TOP_DIR)/tests/remote.tcl \
-		$(TOP_DIR)/tests/defs $(DISTDIR)/tests
+		$(TOP_DIR)/tests/defs $(TOP_DIR)/tests/httpd $(DISTDIR)/tests
 	mkdir $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.h $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
@@ -884,6 +952,12 @@ dist: $(UNIX_DIR)/configure
 		$(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
+	@echo "ignore 'cp: xxx: is a directory' errors"
+	-@for i in tools tools/encoding ; do \
+		echo "making $(DISTDIR)/$$i"; \
+		mkdir -p $(DISTDIR)/$$i;\
+		cp `ls -d1 $(TOP_DIR)/$$i/*|egrep -v "(SCCS|TAGS|~|,|#|%|core|\.l?o)"` $(DISTDIR)/$$i;\
+	done
 
 #
 # The following target can only be used for non-patch releases.  Use
@@ -891,10 +965,10 @@ dist: $(UNIX_DIR)/configure
 #
 
 alldist: dist
-	rm -f /proj/tcl/dist/$(DISTNAME).tar.Z \
-		/proj/tcl/dist/$(DISTNAME).tar.gz \
-		/proj/tcl/dist/$(ZIPNAME)
-	cd /proj/tcl/dist; tar cf $(DISTNAME).tar $(DISTNAME); \
+	rm -f $(DISTDIR)/../$(DISTNAME).tar.Z \
+		$(DISTDIR)/../$(DISTNAME).tar.gz \
+		$(DISTDIR)/../$(ZIPNAME)
+	cd $(DISTDIR)/..; tar cf $(DISTNAME).tar $(DISTNAME); \
 		gzip -9 -c $(DISTNAME).tar > $(DISTNAME).tar.gz; \
 		compress $(DISTNAME).tar; zip -r8 $(ZIPNAME) $(DISTNAME)
 
@@ -919,18 +993,26 @@ allpatch: dist
 	mv /proj/tcl/dist/old /proj/tcl/dist/tcl${VERSION}
 
 #
+# This target creates the HTML folder for Tcl & Tk and places it
+# in DISTDIR/html.  It uses the tcl8.1-tk8.1-man-html.tcl tool from
+# the Tcl group's tool workspace.  It depends on the Tcl & Tk being
+# in directories called tcl8.1 & tk8.1 up two directories from the
+# TOOL_DIR.
+#
+
+html: 
+	tclsh $(TOOL_DIR)/tcl8.1-tk8.1-man-html.tcl --htmldir=$(DISTDIR)/html
+	
+#
 # Target to create a Macintosh version of the distribution.  This will
 # do a normal distribution and then massage the output to prepare it
 # for moving to the Mac platform.  This requires a few scripts and
 # programs found only in the Tcl group's tool workspace.
 #
 
-macdist: dist
+macdist: dist html
 	rm -f $(DISTDIR)/mac/tclMacProjects.sit.hqx
-	tclsh $(TOOL_DIR)/man2html.tcl $(DISTDIR)/tmp ../.. tcl$(VERSION)
-	mv $(DISTDIR)/tmp/tcl$(VERSION) $(DISTDIR)/html
 	rm -rf $(DISTDIR)/doc
-	rm -rf $(DISTDIR)/tmp
 	tclsh $(TOOL_DIR)/cvtEOL.tcl $(DISTDIR)
 
 #

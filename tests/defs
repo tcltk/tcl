@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) defs 1.60 97/08/13 18:10:19
+# SCCS: @(#) defs 1.72 98/01/15 18:41:39
 
 if ![info exists VERBOSE] {
     set VERBOSE 0
@@ -17,30 +17,6 @@ if ![info exists VERBOSE] {
 if ![info exists TESTS] {
     set TESTS {}
 }
-
-# If tests are being run as root, issue a warning message and set a
-# variable to prevent some tests from running at all.
-
-set user {}
-if {$tcl_platform(platform) == "unix"} {
-    catch {set user [exec whoami]}
-    if {$user == ""} {
-        catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
-    }
-    if {$user == ""} {set user root}
-    if {$user == "root"} {
-        puts stdout "Warning: you're executing as root.  I'll have to"
-        puts stdout "skip some of the tests, since they'll fail as root."
-	set testConfig(root) 1
-    }
-}
-
-# Some of the tests don't work on some system configurations due to
-# differences in word length, file system configuration, etc.  In order
-# to prevent false alarms, these tests are generally only run in the
-# master development directory for Tcl.  The presence of a file
-# "doAllTests" in this directory is used to indicate that the non-portable
-# tests should be run.
 
 # If there is no "memory" command (because memory debugging isn't
 # enabled), generate a dummy command that does nothing.
@@ -92,49 +68,74 @@ if {[info commands memory] == ""} {
 #			skipped. As of 11/2/96 these are the history tests
 #			since they depend on accurate source location
 #			information.
+#       hasIsoLocale  - 1 means the tests that need to switch to an iso
+#                       locale can be run.
+#
 
 catch {unset testConfig}
-if {$tcl_platform(platform) == "unix"} {
-    set testConfig(unixOnly) 1
-    set testConfig(tempNotPc) 1
-    set testConfig(tempNotMac) 1
-} else {
-    set testConfig(unixOnly) 0
-} 
-if {$tcl_platform(platform) == "macintosh"} {
-    set testConfig(tempNotPc) 1
-    set testConfig(macOnly) 1
-} else {
-    set testConfig(macOnly) 0
-} 
-if {$tcl_platform(platform) == "windows"} {
-    set testConfig(tempNotMac) 1
-    set testConfig(pcOnly) 1
-} else {
-    set testConfig(pcOnly) 0
+
+# The following trace procedure makes it so that we can safely refer to 
+# non-existent members of the testConfig array without causing an error.
+# Instead, reading a non-existent member will return 0.  This is necessary
+# because tests are allowed to use constraint "X" without ensuring that 
+# testConfig("X") is defined.
+
+trace variable testConfig r safeFetch
+
+proc safeFetch {n1 n2 op} {
+    global testConfig 
+
+    if {($n2 != {}) && ([info exists testConfig($n2)] == 0)} {
+	set testConfig($n2) 0
+    }
 }
-set testConfig(unixOrPc) [expr $testConfig(unixOnly) || $testConfig(pcOnly)]
-set testConfig(macOrPc) [expr $testConfig(macOnly) || $testConfig(pcOnly)]
-set testConfig(macOrUnix) [expr $testConfig(macOnly) || $testConfig(unixOnly)]
-set testConfig(nonPortable)	[expr [file exists doAllTests] || [file exists doAllTe]]
-set testConfig(knownBug) [expr [file exists doBuggyTests] || [file exists doBuggyT]]
-set testConfig(notIfCompiled) [file exists doAllCompilerTests]
 
-set testConfig(unix)	$testConfig(unixOnly)
-set testConfig(mac)	$testConfig(macOnly)
-set testConfig(pc)	$testConfig(pcOnly)
+# Some of the tests don't work on some system configurations due to
+# differences in word length, file system configuration, etc.  In order
+# to prevent false alarms, these tests are generally only run in the
+# master development directory for Tcl.  The presence of a file
+# "doAllTests" in this directory is used to indicate that the non-portable
+# tests should be run.
 
-set testConfig(nt)	[expr {$tcl_platform(os) == "Windows NT"}]
-set testConfig(95)	[expr {$tcl_platform(os) == "Windows 95"}]
-set testConfig(win32s)	[expr {$tcl_platform(os) == "Win32s"}]
+set testConfig(nonPortable)	[expr [file exists doAllTests] || [file exists DOALLT~1]]
+set testConfig(notIfCompiled)	[file exists doAllCompilerTests]
+set testConfig(knownBug) 	[expr [file exists doBuggyTests] || [file exists DOBUGG~1]]
+
+if {$testConfig(nonPortable) == 0} {
+    puts "(will skip non-portable tests)"
+}
+
+set testConfig(unixOnly) 	[expr {$tcl_platform(platform) == "unix"}]
+set testConfig(macOnly) 	[expr {$tcl_platform(platform) == "macintosh"}]
+set testConfig(pcOnly)		[expr {$tcl_platform(platform) == "windows"}]
+
+set testConfig(unix)		$testConfig(unixOnly)
+set testConfig(mac)		$testConfig(macOnly)
+set testConfig(pc)		$testConfig(pcOnly)
+
+set testConfig(unixOrPc)	[expr $testConfig(unix) || $testConfig(pc)]
+set testConfig(macOrPc)		[expr $testConfig(mac) || $testConfig(pc)]
+set testConfig(macOrUnix)	[expr $testConfig(mac) || $testConfig(unix)]
+
+set testConfig(nt)		[expr {$tcl_platform(os) == "Windows NT"}]
+set testConfig(95)		[expr {$tcl_platform(os) == "Windows 95"}]
+set testConfig(win32s)		[expr {$tcl_platform(os) == "Win32s"}]
+
+# The following config switches are used to mark tests that should work,
+# but have been temporarily disabled on certain platforms because they don't
+# and we haven't gotten around to fixing the underlying problem.
+
+set testConfig(tempNotPc) 	[expr !$testConfig(pc)]
+set testConfig(tempNotMac) 	[expr !$testConfig(mac)]
+set testConfig(tempNotUnix)	[expr !$testConfig(unix)]
 
 # The following config switches are used to mark tests that crash on
 # certain platforms, so that they can be reactivated again when the
 # underlying problem is fixed.
 
-set testConfig(pcCrash) $testConfig(macOrUnix)
-set testConfig(macCrash) $testConfig(unixOrPc)
-set testConfig(unixCrash) $testConfig(macOrPc)
+set testConfig(pcCrash) 	[expr !$testConfig(pc)]
+set testConfig(macCrash) 	[expr !$testConfig(mac)]
+set testConfig(unixCrash)	[expr !$testConfig(unix)]
 
 if {[catch {set f [open defs r]}]} {
     set testConfig(nonBlockFiles) 1
@@ -147,13 +148,20 @@ if {[catch {set f [open defs r]}]} {
     close $f
 }
 
-trace variable testConfig r safeFetch
+# If tests are being run as root, issue a warning message and set a
+# variable to prevent some tests from running at all.
 
-proc safeFetch {n1 n2 op} {
-    global testConfig 
-
-    if {($n2 != {}) && ([info exists testConfig($n2)] == 0)} {
-	set testConfig($n2) 0
+set user {}
+if {$tcl_platform(platform) == "unix"} {
+    catch {set user [exec whoami]}
+    if {$user == ""} {
+        catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
+    }
+    if {$user == ""} {set user root}
+    if {$user == "root"} {
+        puts stdout "Warning: you're executing as root.  I'll have to"
+        puts stdout "skip some of the tests, since they'll fail as root."
+	set testConfig(root) 1
     }
 }
 
@@ -168,6 +176,15 @@ if {$tcl_platform(platform) == "unix"} {
     }
 } else {
     set testConfig(asyncPipeClose) 1
+}
+
+# Test to see if we have a broken version of sprintf with respect to the
+# "e" format of floating-point numbers.
+
+set testConfig(eformat) 1
+if {[string compare "[format %g 5e-5]" "5e-05"] != 0} {
+    set testConfig(eformat) 0
+    puts "(will skip tests that depend on the \"e\" format of floating-point numbers)"
 }
 
 # Test to see if execed commands such as cat, echo, rm and so forth are
@@ -222,10 +239,9 @@ if {($testConfig(unixExecs) == 1) && ($tcl_platform(platform) == "windows")} {
 	catch {exec rm -r removeMe}
     }
     if {$testConfig(unixExecs) == 0} {
-	puts stdout "Warning: Unix-style executables are not available, so"
-	puts stdout "some tests will be skipped."
+	puts "(will skip tests that depend on Unix-style executables)"
     }
-}    
+}
 
 proc print_verbose {name description constraints script code answer} {
     puts stdout "\n"
@@ -333,7 +349,14 @@ proc test {name description script answer args} {
 	error "wrong # args: must be \"test name description ?constraints? script answer\""
     }
     memory tag $name
+    set open [openfiles]
     set code [catch {uplevel $script} result]
+    if {[leakfiles $open] != ""} {
+ 	puts "\n"
+	puts "==== $name $description"
+	puts "==== Test leaking open files:"
+	puts [leakfiles $open]
+    }
     if {$code != 0} {
 	print_verbose $name $description $constraints $script \
 		$code $result
@@ -362,6 +385,45 @@ proc dotests {file args} {
     set TESTS $args
     source $file
     set TESTS $savedTests
+}
+
+proc openfiles {} {
+    if {[catch {testchannel open} result]} {
+	return {}
+    }
+    return $result
+}
+
+proc leakfiles {old} {
+    if {[catch {testchannel open} new]} {
+        return {}
+    }
+    set leak {}
+    foreach p $new {
+    	if {[lsearch $old $p] < 0} {
+	    lappend leak $p
+	}
+    }
+    return $leak
+}
+
+set saveState {}
+
+proc saveState {} {
+    uplevel #0 {set ::saveState [list [info procs] [info vars]]}
+}
+
+proc restoreState {} {
+    foreach p [info procs] {
+	if {[lsearch [lindex $::saveState 0] $p] < 0} {
+	    rename $p {}
+	}
+    }
+    foreach p [uplevel #0 {info vars}] {
+	if {[lsearch [lindex $::saveState 1] $p] < 0} {
+	    uplevel #0 "unset $p"
+	}
+    }
 }
 
 proc normalizeMsg {msg} {
@@ -407,6 +469,24 @@ proc viewFile {name} {
     }
 }
 
+#
+# Construct a string that consists of the requested sequence of bytes,
+# as opposed to a string of properly formed UTF-8 characters.  
+# This allows the tester to 
+# 1. Create denormalized or improperly formed strings to pass to C procedures 
+#    that are supposed to accept strings with embedded NULL bytes.
+# 2. Confirm that a string result has a certain pattern of bytes, for instance
+#    to confirm that "\xe0\0" in a Tcl script is stored internally in 
+#    UTF-8 as the sequence of bytes "\xc3\xa0\xc0\x80".
+#
+# Generally, it's a bad idea to examine the bytes in a Tcl string or to
+# construct improperly formed strings in this manner, because it involves
+# exposing that Tcl uses UTF-8 internally.
+
+proc bytestring {string} {
+    testencoding toutf $string identity
+}
+
 # Locate tcltest executable
 
 set tcltest [info nameofexecutable]
@@ -416,6 +496,7 @@ if {$tcltest == "{}"} {
     puts "Unable to find tcltest executable, multiple process tests will fail."
 }
 
+set testConfig(stdio) 0
 if {$tcl_platform(os) != "Win32s"} {
     # Don't even try running another copy of tcltest under win32s, or you 
     # get an error dialog about multiple instances.
@@ -443,5 +524,57 @@ set testConfig(socket) [expr {$msg != "sockets are not available on this system"
 if {$testConfig(socket) == 0} {
     puts "(will skip tests that use sockets)"
 }
-    
-        
+
+#
+# Internationalization / ISO support procs     -- dl
+#
+if {[info commands testlocale]==""} {
+    # No testlocale command, no tests...
+    # (it could be that we are a sub interp and we could just load
+    # the Tcltest package but that would interfere with tests
+    # that tests packages/loading in slaves...)
+    set testConfig(hasIsoLocale) 0
+} else {
+    proc set_iso8859_1_locale {} {
+	global previousLocale isoLocale
+	set previousLocale [testlocale ctype]
+	testlocale ctype $isoLocale
+    }
+
+    proc restore_locale {} {
+	global previousLocale
+	testlocale ctype $previousLocale
+    }
+
+    if {![info exists isoLocale]} {
+	set isoLocale fr
+        switch $tcl_platform(platform) {
+	    "unix" {
+		# Try some 'known' values for some platforms:
+		switch -exact -- $tcl_platform(os) {
+		    "FreeBSD" {
+			set isoLocale fr_FR.ISO_8859-1
+		    }
+		    default {
+			# Works on SunOS 4 and Solaris, and maybe others...
+			# define it to something else on your system
+			#if you want to test those.
+			set isoLocale iso_8859_1
+		    }
+		}
+	    }
+	    "windows" {
+		set isoLocale French
+	    }
+	}
+    }
+
+    set testConfig(hasIsoLocale) [string length [set_iso8859_1_locale]]
+    restore_locale
+
+    if {$testConfig(hasIsoLocale) == 0} {
+	puts "(will skip tests that needs to set an iso8859-1 locale)"
+    }
+
+} 
+

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixTime.c 1.13 97/10/31 15:04:58
+ * SCCS: @(#) tclUnixTime.c 1.14 98/02/19 11:52:08
  */
 
 #include "tclInt.h"
@@ -165,12 +165,15 @@ TclpGetTimeZone (currentTime)
 #if defined(HAVE_TIMEZONE_VAR) && !defined (TCL_GOT_TIMEZONE)
 #   define TCL_GOT_TIMEZONE
     static int setTZ = 0;
+    static Tcl_Mutex tzMutex;
     int        timeZone;
 
+    Tcl_MutexLock(&tzMutex);
     if (!setTZ) {
         tzset();
         setTZ = 1;
     }
+    Tcl_MutexUnlock(&tzMutex);
 
     /*
      * Note: this is not a typo in "timezone" below!  See tzset

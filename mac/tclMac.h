@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMac.h 1.8 97/06/24 18:59:08
+ * SCCS: @(#) tclMac.h 1.9 97/09/02 16:12:03
  */
 
 #ifndef _TCLMAC
@@ -79,10 +79,10 @@ EXTERN pascal	void	FSpCreateResFileCompat(const FSSpec *spec,
  * Mac calls.  These routines is from tclMacUtils.h.
  */
 
-EXTERN int 	FSpLocationFromPath _ANSI_ARGS_((int length, char *path,
-		    FSSpecPtr theSpec));
-EXTERN OSErr 	FSpPathFromLocation _ANSI_ARGS_((FSSpecPtr theSpec,
-		    int *length, Handle *fullPath));
+EXTERN int 		FSpLocationFromPath _ANSI_ARGS_((int length, 
+		 	    CONST char *path, FSSpecPtr theSpec));
+EXTERN OSErr 		FSpPathFromLocation _ANSI_ARGS_((FSSpecPtr theSpec,
+		    	    int *length, Handle *fullPath));
 
 /*
  * These are not in MSL 2.1.2, so we need to export them from the

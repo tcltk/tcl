@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclXtTest.c 1.2 97/09/15 15:26:52
+ * SCCS: @(#) tclXtTest.c 1.3 97/11/06 15:16:16
  */
 
 #include <X11/Intrinsic.h>
@@ -28,7 +28,7 @@ static int	TesteventloopCmd _ANSI_ARGS_((ClientData clientData,
  *
  * Results:
  *	Returns a standard Tcl completion code, and leaves an error
- *	message in interp->result if an error occurs.
+ *	message in the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacResource.c 1.35 97/11/24 15:03:58
+ * SCCS: @(#) tclMacResource.c 1.40 98/01/21 22:29:00
  */
 
 #include <Errors.h>
@@ -134,8 +134,6 @@ Tcl_ResourceObjCmd(
     int index, result;
     long fileRef, rsrcId;
     FSSpec fileSpec;
-    Tcl_DString buffer;
-    char *nativeName;
     char *stringPtr;
     char errbuf[16];
     OpenResourceFork *resourceRef;
@@ -396,9 +394,9 @@ resourceRef? resourceType");
                 Handle pathHandle;
                 short pathLength;
                 Str255 fileName;
+                Tcl_DString dstr;
 	        
-	        if (strcmp(Tcl_GetStringFromObj(objv[2], NULL), "ROM Map")
-			    == 0) {
+	        if (strcmp(Tcl_GetString(objv[2]), "ROM Map") == 0) {
 	            Tcl_SetStringObj(resultPtr,"no file path for ROM Map", -1);
 	            return TCL_ERROR;
 	        }
@@ -429,9 +427,12 @@ resourceRef? resourceType");
                 }
                 
                 HLock(pathHandle);
-                Tcl_SetStringObj(resultPtr,*pathHandle,pathLength);
+                Tcl_ExternalToUtfDString(NULL, *pathHandle, pathLength, &dstr);
+                
+                Tcl_SetStringObj(resultPtr, Tcl_DStringValue(&dstr), Tcl_DStringLength(&dstr));
                 HUnlock(pathHandle);
                 DisposeHandle(pathHandle);
+                Tcl_DStringFree(&dstr);
             }                    	    
 	    return TCL_OK;
 	case RESOURCE_LIST:			
@@ -471,6 +472,7 @@ resourceRef? resourceType");
 		if (resource != NULL) {
 		    GetResInfo(resource, &id, (ResType *) &rezType, theName);
 		    if (theName[0] != 0) {
+		        
 			objPtr = Tcl_NewStringObj((char *) theName + 1,
 				theName[0]);
 		    } else {
@@ -492,22 +494,27 @@ resourceRef? resourceType");
 	    }
 	
 	    return TCL_OK;
-	case RESOURCE_OPEN:			
+	case RESOURCE_OPEN: {
+	    Tcl_DString ds, buffer;
+	    char *str, *native;
+	    int length;
+	    			
 	    if (!((objc == 3) || (objc == 4))) {
 		Tcl_WrongNumArgs(interp, 2, objv, "fileName ?permissions?");
 		return TCL_ERROR;
 	    }
-	    stringPtr = Tcl_GetStringFromObj(objv[2], &length);
-	    nativeName = Tcl_TranslateFileName(interp, stringPtr, &buffer);
-	    if (nativeName == NULL) {
-		return TCL_ERROR;
+	    str = Tcl_GetStringFromObj(objv[2], &length);
+	    if (Tcl_TranslateFileName(interp, str, &buffer) == NULL) {
+	        return TCL_ERROR;
 	    }
-	    err = FSpLocationFromPath(strlen(nativeName), nativeName,
-		    &fileSpec) ;
+	    native = Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&buffer),
+	    	    Tcl_DStringLength(&buffer), &ds);
+	    err = FSpLocationFromPath(Tcl_DStringLength(&ds), native, &fileSpec);
+	    Tcl_DStringFree(&ds);
 	    Tcl_DStringFree(&buffer);
+
 	    if (!((err == noErr) || (err == fnfErr))) {
-		Tcl_AppendStringsToObj(resultPtr,
-			"invalid path", (char *) NULL);
+		Tcl_AppendStringsToObj(resultPtr, "invalid path", (char *) NULL);
 		return TCL_ERROR;
 	    }
 
@@ -530,7 +537,7 @@ resourceRef? resourceType");
 		    break;
 		    case O_WRONLY:
 		    case O_RDWR:
-			macPermision = fsRdWrShPerm;
+			macPermision = fsRdWrPerm;
 			break;
 		    default:
 			panic("Tcl_ResourceObjCmd: invalid mode value");
@@ -552,7 +559,7 @@ resourceRef? resourceType");
 	    if (fileRef == -1) {
 	    	err = ResError();
 		if (((err == fnfErr) || (err == eofErr)) &&
-			(macPermision == fsRdWrShPerm)) {
+			(macPermision == fsRdWrPerm)) {
 		    /*
 		     * No resource fork existed for this file.  Since we are
 		     * opening it for writing we will create the resource fork
@@ -600,8 +607,8 @@ resourceRef? resourceType");
                 CloseResFile(fileRef);
 		return TCL_ERROR;
             }
-
 	    return TCL_OK;
+	}
 	case RESOURCE_READ:			
 	    if (!((objc == 4) || (objc == 5))) {
 		Tcl_WrongNumArgs(interp, 2, objv,
@@ -629,7 +636,7 @@ resourceRef? resourceType");
 			    
 	    if (resource != NULL) {
 		size = GetResourceSizeOnDisk(resource);
-		Tcl_SetStringObj(resultPtr, *resource, size);
+		Tcl_SetByteArrayObj(resultPtr, (unsigned char *) *resource, size);
 
 		/*
 		 * Don't release the resource unless WE loaded it...
@@ -740,7 +747,7 @@ resourceRef? resourceType");
 	    if (Tcl_GetOSTypeFromObj(interp, objv[i], &rezType) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    stringPtr = Tcl_GetStringFromObj(objv[i+1], &length);
+	    stringPtr = (char *) Tcl_GetByteArrayFromObj(objv[i+1], &length);
 
 	    if (gotInt == false) {
 		rsrcId = UniqueID(rezType);
@@ -947,7 +954,7 @@ Tcl_MacSourceObjCmd(
     }
     
     if (objc == 2)  {
-	string = TclGetStringFromObj(objv[1], &length);
+	string = Tcl_GetStringFromObj(objv[1], &length);
 	return Tcl_EvalFile(interp, string);
     }
     
@@ -955,9 +962,9 @@ Tcl_MacSourceObjCmd(
      * The following code supports a few older forms of this command
      * for backward compatability.
      */
-    string = TclGetStringFromObj(objv[1], &length);
+    string = Tcl_GetStringFromObj(objv[1], &length);
     if (!strcmp(string, "-rsrc") || !strcmp(string, "-rsrcname")) {
-	rsrcName = TclGetStringFromObj(objv[2], &length);
+	rsrcName = Tcl_GetStringFromObj(objv[2], &length);
     } else if (!strcmp(string, "-rsrcid")) {
 	if (Tcl_GetLongFromObj(interp, objv[2], &rsrcID) != TCL_OK) {
 	    return TCL_ERROR;
@@ -968,18 +975,16 @@ Tcl_MacSourceObjCmd(
     }
     
     if (objc == 4) {
-	fileName = TclGetStringFromObj(objv[3], &length);
+	fileName = Tcl_GetStringFromObj(objv[3], &length);
     }
     return Tcl_MacEvalResource(interp, rsrcName, rsrcID, fileName);
 	
     sourceFmtErr:
     Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), errStr, "should be \"",
-		Tcl_GetStringFromObj(objv[0], (int *) NULL),
-		" fileName\" or \"",
-		Tcl_GetStringFromObj(objv[0], (int *) NULL),
-		" -rsrc name ?fileName?\" or \"", 
-		Tcl_GetStringFromObj(objv[0], (int *) NULL),
-		" -rsrcid id ?fileName?\"", (char *) NULL);
+		Tcl_GetString(objv[0]), " fileName\" or \"",
+		Tcl_GetString(objv[0]),	" -rsrc name ?fileName?\" or \"", 
+		Tcl_GetString(objv[0]), " -rsrcid id ?fileName?\"",
+		(char *) NULL);
     return TCL_ERROR;
 }
 
@@ -1102,8 +1107,7 @@ Tcl_BeepObjCmd(
 	} else {
 	    Tcl_AppendStringsToObj(resultPtr, " \"", sndArg, 
 		    "\" is not a valid sound.  (Try ",
-		    Tcl_GetStringFromObj(objv[0], (int *) NULL),
-		    " -list)", NULL);
+		    Tcl_GetString(objv[0]), " -list)", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -1682,7 +1686,7 @@ SetOSTypeFromAny(
      * Get the string representation. Make it up-to-date if necessary.
      */
 
-    string = TclGetStringFromObj(objPtr, &length);
+    string = Tcl_GetStringFromObj(objPtr, &length);
 
     if (length != 4) {
 	if (interp != NULL) {
@@ -1892,11 +1896,20 @@ TclMacRegisterResourceFork(
              * fileRef, but can't be gotten to by PBGetFCBInfo.
              */
              
-            if ((oldFileRef == fileRef) ||
-                    ((err == noErr) 
+            if (oldFileRef == fileRef) {
+                resourceId = (char *) Tcl_GetHashValue(resourceHashPtr);
+		Tcl_SetStringObj(tokenPtr, resourceId, -1);
+                return TCL_OK;
+            } else if ((err == noErr) 
                     && (newFileRec.ioFCBVRefNum == oldFileRec.ioFCBVRefNum)
-                    && (newFileRec.ioFCBFlNm == oldFileRec.ioFCBFlNm))) {
-                
+                    && (newFileRec.ioFCBFlNm == oldFileRec.ioFCBFlNm)
+                    && (newFileRec.ioFCBFlags == oldFileRec.ioFCBFlags)) {
+                /*
+                 * THis is the same file.  If the permissions are the same as well, 
+                 * then close the second path, and return the token for the 
+                 * first path
+                 */
+                CloseResFile((short) fileRef); 
                 resourceId = (char *) Tcl_GetHashValue(resourceHashPtr);
 		Tcl_SetStringObj(tokenPtr, resourceId, -1);
                 return TCL_OK;

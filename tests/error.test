@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) error.test 1.22 97/08/12 17:02:43
+# SCCS: @(#) error.test 1.23 97/12/08 15:02:42
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -172,4 +172,4 @@ test error-6.1 {catch must reset error state} {
 } {NONE 1}
 
 catch {rename p ""}
-return ""
+return 

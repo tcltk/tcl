@@ -3,12 +3,12 @@
  *
  *	Declarations of Macintosh specific shared variables and procedures.
  *
- * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacInt.h 1.24 97/09/09 16:22:01
+ * SCCS: @(#) tclMacInt.h 1.26 98/02/18 11:50:16
  */
 
 #ifndef _TCLMACINT
@@ -63,6 +63,8 @@ EXTERN void	GetGlobalMouse _ANSI_ARGS_((Point *mouse));
 EXTERN void	TclCreateMacEventSource _ANSI_ARGS_((void));
 EXTERN int	TclMacConsoleInit _ANSI_ARGS_((void));
 EXTERN void	TclMacExitHandler _ANSI_ARGS_((void));
+EXTERN char *	TclMacGetFontEncoding _ANSI_ARGS_((int fontId));
+EXTERN int	TclMacHaveThreads(void);
 EXTERN void	TclMacInitExitToShell _ANSI_ARGS_((int usePatch));
 EXTERN OSErr	TclMacInstallExitToShellPatch _ANSI_ARGS_((
 		    ExitToShellProcPtr newProc));
@@ -72,7 +74,8 @@ EXTERN void *	TclMacStartTimer _ANSI_ARGS_((long ms));
 EXTERN int	TclMacTimerExpired _ANSI_ARGS_((void *timerToken));
 EXTERN int	TclMacRegisterResourceFork _ANSI_ARGS_((short fileRef, Tcl_Obj *tokenPtr,
                     int insert));	
-EXTERN short	TclMacUnRegisterResourceFork _ANSI_ARGS_((char *tokenPtr, Tcl_Obj *resultPtr));	
+EXTERN short	TclMacUnRegisterResourceFork _ANSI_ARGS_((char *tokenPtr,
+	            Tcl_Obj *resultPtr));	
 		    
 #pragma export reset
 

@@ -3,12 +3,12 @@
  *
  *	Contains platform specific test commands for the Unix platform.
  *
- * Copyright (c) 1996 Sun Microsystems, Inc.
+ * Copyright (c) 1996-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixTest.c 1.5 97/10/31 17:23:42
+ * SCCS: @(#) tclUnixTest.c 1.6 97/11/07 21:31:30
  */
 
 #include "tclInt.h"
@@ -165,7 +165,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
 	}
 	pipePtr->readCount = pipePtr->writeCount = 0;
     } else if (strcmp(argv[1], "counts") == 0) {
-	char buf[30];
+	char buf[TCL_INTEGER_SPACE * 2];
 	
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -247,7 +247,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
             /* Empty loop body. */
         }
     } else if (strcmp(argv[1], "fillpartial") == 0) {
-	char buf[30];
+	char buf[TCL_INTEGER_SPACE];
 	
 	if (argc != 3) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -256,7 +256,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
 	}
 
 	memset((VOID *) buffer, 'b', 10);
-	sprintf(buf, "%d", write(GetFd(pipePtr->writeFile), buffer, 10));
+	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
     } else if (strcmp(argv[1], "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);

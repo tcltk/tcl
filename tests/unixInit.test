@@ -1,0 +1,155 @@
+# The file tests the functions in the tclUnixInit.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1997 by Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# SCCS: @(#) unixInit.test 1.4 98/01/13 20:03:07
+
+if {[info procs test] != "test"} {source defs}
+
+if {$tcl_platform(platform) != "unix"} {
+    return
+}
+
+if {[catch {csh -c "setenv LANG japanese"}] == 0} {
+    set testConfig(japanese) 1
+}
+
+catch {set oldlibrary $env(TCL_LIBRARY); unset env(TCL_LIBRARY)}
+catch {set oldlang $env(LANG)}
+set env(LANG) C
+
+test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {
+    set x {}
+
+    set f [open "|[list $tcltest]" w+]
+    exec kill -PIPE [pid $f]
+    lappend x [catch {close $f}]
+
+    set f [open "|[list $tcltest]" w+]
+    exec kill [pid $f]
+    lappend x [catch {close $f}]
+
+    set x
+} {0 1}
+
+proc getlibpath "{program [list $tcltest]}" {
+    set f [open "|$program" w+]
+    fconfigure $f -buffering none
+    puts $f {puts $tcl_libPath; exit}
+    set path [gets $f]
+    close $f
+    return $path
+}
+test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} {
+    set path [getlibpath]
+
+    set installLib lib/tcl[info tclversion]
+    if {[string match {*[ab]*} [info patchlevel]]} {
+	set developLib tcl[info patchlevel]/library
+    } else {
+        set developLib tcl[info tclversion]/library
+    }
+    set prefix [file dirname [file dirname $tcltest]]
+
+    set x {}
+    lappend x [string compare [lindex $path 1] $prefix/$installLib]
+    lappend x [string compare [lindex $path 2] [file dirname $prefix]/$developLib]
+    set x
+} {0 0}
+test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} {
+    # ((str != NULL) && (str[0] != '\0')) 
+
+    set env(TCL_LIBRARY) sparkly
+    set path [getlibpath]
+    unset env(TCL_LIBRARY)
+
+    lindex $path 0
+} "sparkly"
+test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} {
+    # ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc - 1]) != 0))
+
+    set env(TCL_LIBRARY) /a/b/tcl1.7
+    set path [getlibpath]
+    unset env(TCL_LIBRARY)
+
+    lrange $path 0 1
+} [list /a/b/tcl1.7 /a/b/tcl[info tclversion]]
+test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} {
+    # Child process translates env variable from native encoding.
+
+    set env(TCL_LIBRARY) "\xa7"
+    set x [lindex [getlibpath] 0]
+    unset env(TCL_LIBRARY)
+    unset env(LANG)
+
+    set x
+} "\xa7"
+test unixInit-2.5 {TclpInitLibraryPath: compiled-in library path} {
+    # cannot test
+} {}
+test unixInit-2.6 {TclpInitLibraryPath: executable relative} {
+    file delete -force /tmp/sparkly
+    file mkdir /tmp/sparkly/bin
+    file copy $tcltest /tmp/sparkly/bin/tcltest
+
+    file mkdir /tmp/sparkly/lib/tcl[info tclversion]
+    close [open /tmp/sparkly/lib/tcl[info tclversion]/init.tcl w]
+
+    set x [lrange [getlibpath /tmp/sparkly/bin/tcltest] 1 2]
+    file delete -force /tmp/sparkly
+    set x
+} [list /tmp/sparkly/lib/tcl[info tclversion] /tmp/tcl[info patchlevel]/library]
+test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} {
+    # would need test command to get defaultLibDir and compare it to
+    # [lindex $auto_path end]
+} {}
+test unixInit-3.1 {TclpSetInitialEncodings} {
+    set env(LANG) C
+
+    set f [open "|[list $tcltest]" w+]
+    fconfigure $f -buffering none
+    puts $f {puts [testencoding system]; exit}
+    set enc [gets $f]
+    close $f
+    unset env(LANG)
+
+    set enc
+} {iso8859-1}
+test unixInit-3.1 {TclpSetInitialEncodings} {japanese nonPortable} {
+    set env(LANG) japanese
+
+    set f [open "|[list $tcltest]" w+]
+    fconfigure $f -buffering none
+    puts $f {puts [testencoding system]; exit}
+    set enc [gets $f]
+    close $f
+    unset env(LANG)
+
+    set enc
+} {euc-jp}
+    
+test unixInit-4.1 {TclpSetVariables} {
+    # just make sure they exist
+
+    set a [list $tcl_library $tcl_pkgPath $tcl_platform(os)]
+    set a [list $tcl_platform(osVersion) $tcl_platform(machine)]
+    set tcl_platform(platform)
+} "unix"
+
+test unixInit-5.1 {Tcl_Init} {
+    # test initScript
+} {}
+
+test unixInit-6.1 {Tcl_SourceRCFile} {
+} {}
+    
+catch {unset env(TCL_LIBRARY); set env(TCL_LIBRARY) $oldlibrary}
+catch {unset env(LANG); set env(LANG) $oldlang}
+return

@@ -8,12 +8,12 @@
  *	Lehenbauer, Mark Diekhans and Peter da Silva.
  *
  * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1996 Sun Microsystems, Inc.
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclIOUtil.c 1.133 97/09/24 16:38:57
+ * SCCS: @(#) tclIOUtil.c 1.138 98/01/06 11:10:48
  */
 
 #include "tclInt.h"
@@ -21,7 +21,7 @@
 
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
  * TclGetOpenMode --
  *
@@ -32,8 +32,8 @@
  *
  * Results:
  *	On success, returns mode to pass to "open". If an error occurs, the
- *	returns -1 and if interp is not NULL, sets interp->result to an
- *	error message.
+ *	return value is -1 and if interp is not NULL, sets interp's result
+ *	object to an error message.
  *
  * Side effects:
  *	Sets the integer referenced by seekFlagPtr to 1 to tell the caller
@@ -43,7 +43,7 @@
  *	This code is based on a prototype implementation contributed
  *	by Mark Diekhans.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
 int
@@ -68,7 +68,14 @@ TclGetOpenMode(interp, string, seekFlagPtr)
 
     *seekFlagPtr = 0;
     mode = 0;
-    if (islower(UCHAR(string[0]))) {
+
+    /*
+     * Guard against international characters before using byte oriented
+     * routines.
+     */
+
+    if (!(string[0] & 0x80)
+	    && islower(UCHAR(string[0]))) { /* INTL: ISO only. */
 	switch (string[0]) {
 	    case 'r':
 		mode = O_RDONLY;
@@ -212,82 +219,49 @@ Tcl_EvalFile(interp, fileName)
     char *fileName;		/* Name of file to process.  Tilde-substitution
 				 * will be performed on this name. */
 {
-    int result;
-    struct stat statBuf;
-    char *cmdBuffer = (char *) NULL;
+    int result, length;
     char *oldScriptFile;
-    Interp *iPtr = (Interp *) interp;
-    Tcl_DString buffer;
-    char *nativeName;
+    Interp *iPtr;
+    Tcl_DString nameString;
+    char *name, *string;
     Tcl_Channel chan;
-    Tcl_Obj *cmdObjPtr;
+    Tcl_Obj *objPtr;
 
-    Tcl_ResetResult(interp);
-    oldScriptFile = iPtr->scriptFile;
-    iPtr->scriptFile = fileName;
-    Tcl_DStringInit(&buffer);
-    nativeName = Tcl_TranslateFileName(interp, fileName, &buffer);
-    if (nativeName == NULL) {
-	goto error;
+    name = Tcl_TranslateFileName(interp, fileName, &nameString);
+    if (name == NULL) {
+	return TCL_ERROR;
     }
 
-    /*
-     * If Tcl_TranslateFileName didn't already copy the file name, do it
-     * here.  This way we don't depend on fileName staying constant
-     * throughout the execution of the script (e.g., what if it happens
-     * to point to a Tcl variable that the script could change?).
-     */
+    result = TCL_ERROR;
+    objPtr = Tcl_NewObj();
 
-    if (nativeName != Tcl_DStringValue(&buffer)) {
-	Tcl_DStringSetLength(&buffer, 0);
-	Tcl_DStringAppend(&buffer, nativeName, -1);
-	nativeName = Tcl_DStringValue(&buffer);
-    }
-    if (stat(nativeName, &statBuf) == -1) {
-        Tcl_SetErrno(errno);
+    chan = Tcl_OpenFileChannel(NULL, name, "r", 0);
+    if (chan == NULL) {
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
+	goto end;
     }
-    chan = Tcl_OpenFileChannel(interp, nativeName, "r", 0644);
-    if (chan == (Tcl_Channel) NULL) {
-        Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
-    }
-    cmdBuffer = (char *) ckalloc((unsigned) statBuf.st_size+1);
-    result = Tcl_Read(chan, cmdBuffer, statBuf.st_size);
-    if (result < 0) {
+    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
         Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
+	goto end;
     }
-    cmdBuffer[result] = 0;
     if (Tcl_Close(interp, chan) != TCL_OK) {
-        goto error;
+        goto end;
     }
 
-    /*
-     * Transfer the buffer memory allocated above to the object system.
-     * Tcl_EvalObj will own this new string object if needed,
-     * so past the Tcl_EvalObj point, we must not ckfree(cmdBuffer)
-     * but rather use the reference counting mechanism.
-     * (Nb: and we must not thus not use goto error after this point)
-     */
-    cmdObjPtr = Tcl_NewObj();
-    cmdObjPtr->bytes = cmdBuffer;
-    cmdObjPtr->length = result;
-    
-    Tcl_IncrRefCount(cmdObjPtr);
-    result = Tcl_EvalObj(interp, cmdObjPtr);
-    Tcl_DecrRefCount(cmdObjPtr);
+    iPtr = (Interp *) interp;
+    oldScriptFile = iPtr->scriptFile;
+    iPtr->scriptFile = fileName;
+    string = Tcl_GetStringFromObj(objPtr, &length);
+    result = Tcl_Eval2(interp, string, length, 0);
+    iPtr->scriptFile = oldScriptFile;
 
     if (result == TCL_RETURN) {
 	result = TclUpdateReturnInfo(iPtr);
     } else if (result == TCL_ERROR) {
-	char msg[200];
+	char msg[200 + TCL_INTEGER_SPACE];
 
 	/*
 	 * Record information telling where the error occurred.
@@ -297,17 +271,11 @@ Tcl_EvalFile(interp, fileName)
 		interp->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     }
-    iPtr->scriptFile = oldScriptFile;
-    Tcl_DStringFree(&buffer);
-    return result;
 
-error:
-    if (cmdBuffer != (char *) NULL) {
-        ckfree(cmdBuffer);
-    }
-    iPtr->scriptFile = oldScriptFile;
-    Tcl_DStringFree(&buffer);
-    return TCL_ERROR;
+    end:
+    Tcl_DecrRefCount(objPtr);
+    Tcl_DStringFree(&nameString);
+    return result;
 }
 
 /*

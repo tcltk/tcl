@@ -1,0 +1,3295 @@
+# Commands covered:  testregexp
+#
+# This Tcl-generated file contains tests for the testregexp tcl command.
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors.  No output means no errors were found.  Setting VERBOSE to
+# -1 will run tests that are known to fail.
+#
+# Copyright (c) 1998 Sun Microsystems, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# SCCS: @(#) regexp3.test 1.4 98/01/22 14:47:51
+
+proc print {arg} {puts $arg}
+
+if {[string compare test [info procs test]] == 1} {
+    source defs ; set VERBOSE -1
+}
+
+if {$VERBOSE != -1} {
+    proc print {arg} {}
+}
+
+#
+# The remainder of this file is Tcl tests that have been
+# converted from Henry Spencer's regexp test suite.
+#
+
+# This file is a sequence of regression tests, one per line.  The first
+# field is the RE, the second flags, the third a string to match the RE
+# against, the fourth the expected match, and subsequent fields the
+# expected substring matches.  No fourth field means match not expected;
+# no later fields mean no substrings expected.  If the "*" flag is set
+# (see below), the third field is the name of the compile error expected,
+# less the leading "REG_".  Any field may be written as "" to signify an
+# empty string.  Fourth and subsequent fields may have a suffix "@11"
+# (any decimal integer) indicating the offset where the match is expected;
+# fifth and subsequent fields may be "@" indicating no match is expected
+# for that subexpression.
+
+
+# The flag characters are complex and a bit eclectic.  Generally speaking, 
+# lowercase letters are compile options, uppercase are expected re_info
+# bits, and nonalphabetics are match options, controls for how the test is 
+# run, or debugging options.  The one small surprise is that AREs are the
+# default, and you must explicitly request lesser flavors of RE.  The flags
+# are as follows.  Be warned that a number of them are specific to this
+# RE implementation.  It is admitted that some are not very mnemonic.
+#
+#	-	no-op (placeholder)
+#	=	map characters in all other fields (see below)
+#	>	map characters in later fields (see below)
+#	*	compile error expected (third field is error type)
+#	/	compile only, do not attempt match
+#	[2	expect 2 (any decimal integer) subexpressions
+#	+	provide fake ch collating element and xy equiv class
+#	,	turn on compile tracing (probably not useful in this file)
+#	;	turn on automaton tracing (probably not useful in this file)
+#	:	turn on match tracing (probably not useful in this file)
+#	.	force small state-set cache in matcher (to test cache replace)
+#	^	beginning of string is not beginning of line
+#	$	end of string is not end of line
+#
+#	&	test as both BRE and ARE
+#	b	BRE
+#	e	ERE
+#	q	literal string, no metacharacters at all
+#
+#	i	case-independent matching
+#	s	no subexpression capture
+#	p	newlines are half-magic, excluded from . and [^ only
+#	w	newlines are half-magic, significant to ^ and $ only
+#	n	newlines are fully magic, both effects
+#	x	expanded RE syntax
+#
+#	A	backslash-_a_lphanumeric seen
+#	B	ERE/ARE literal-_b_race heuristic used
+#	E	backslash (_e_scape) seen within []
+#	H	looka_h_ead constraint seen
+#	L	_l_ocale-specific construct seen
+#	M	unportable (_m_achine-specific) construct seen
+#	N	RE can match empty (_n_ull) string
+#	P	non-_P_OSIX construct seen
+#	Q	{} _q_uantifier seen
+#	R	back _r_eference seen
+#	S	POSIX-un_s_pecified syntax seen
+#	U	saw original-POSIX botch:  unmatched right paren in ERE (_u_gh)
+
+
+# The character-mapping flag causes some transformations to be done
+# before processing.  This is mostly to get funny characters into the
+# strings.  Specifically:
+#
+#	_	becomes space
+#	A	becomes \007 (some compilers lack \a)
+#	B	becomes \b
+#	E	becomes \033
+#	F	becomes \f
+#	N	becomes \n
+#	R	becomes \r
+#	T	becomes \t
+#	V	becomes \v
+
+
+# The two areas we can't easily test are memory-allocation failures (which
+# are hard to provoke on command) and embedded NULs (which the current test
+# program can't easily do; that should be fixed).
+
+
+
+
+
+
+# basic sanity checks
+test regexp-1.81 {converted from line 81} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & abc abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+test regexp-1.82 {converted from line 82} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & abc def ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.83 {converted from line 83} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & abc xyabxabce  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+
+
+# invalid option combinations
+test regexp-1.86 {converted from line 86} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp qe a INVARG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid argument to regex routine}} 
+
+test regexp-1.87 {converted from line 87} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp ba a INVARG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid argument to regex routine}} 
+
+
+
+# basic syntax
+# skipping the empty-re test from line 90
+
+test regexp-1.91 {converted from line 91} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a| a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.92 {converted from line 92} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a|b a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.93 {converted from line 93} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a|b b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.94 {converted from line 94} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a||b b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.95 {converted from line 95} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & ab ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+
+
+# parentheses
+test regexp-1.98 {converted from line 98} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (a)e ae  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ae a}} 
+
+test regexp-1.99 {converted from line 99} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp s (a)e ae ] 
+		list $match  
+	} msg] $msg 
+} {0 1} 
+
+test regexp-1.100 {converted from line 100} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\(a\)b} ab  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ab a}} 
+
+test regexp-1.101 {converted from line 101} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a((b)c) abc  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abc bc b}} 
+
+test regexp-1.102 {converted from line 102} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b)(c) abc  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abc b c}} 
+
+test regexp-1.103 {converted from line 103} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b EPAREN ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched ()}} 
+
+test regexp-1.104 {converted from line 104} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\(b} EPAREN ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched ()}} 
+
+# sigh, we blew it on the specs here... someday this will be fixed in POSIX,
+#  but meanwhile, it's fixed in AREs
+
+test regexp-1.107 {converted from line 107} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e a)b a)b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a)b}} 
+
+test regexp-1.108 {converted from line 108} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a)b EPAREN ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched ()}} 
+
+test regexp-1.109 {converted from line 109} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\)b} EPAREN ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched ()}} 
+
+test regexp-1.110 {converted from line 110} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?:b)c abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+test regexp-1.111 {converted from line 111} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e a(?:b)c BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.112 {converted from line 112} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a()b ab  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ab {}}} 
+
+test regexp-1.113 {converted from line 113} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?:)b ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.114 {converted from line 114} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(|b)c ac  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ac {}}} 
+
+test regexp-1.115 {converted from line 115} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b|)c abc  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+
+
+# simple one-char matching (full mess of brackets done later)
+test regexp-1.118 {converted from line 118} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & a.b axb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 axb}} 
+
+test regexp-1.119 {converted from line 119} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=n a.b {a
+b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.120 {converted from line 120} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[bc]d} abd  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abd}} 
+
+test regexp-1.121 {converted from line 121} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[bc]d} acd  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 acd}} 
+
+test regexp-1.122 {converted from line 122} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[bc]d} aed ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.123 {converted from line 123} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[^bc]d} abd ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.124 {converted from line 124} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[^bc]d} aed  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aed}} 
+
+test regexp-1.125 {converted from line 125} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=p {a[^bc]d} {a
+d} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+
+
+# some context-dependent syntax (and some not)
+test regexp-1.128 {converted from line 128} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} * BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.129 {converted from line 129} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b * *  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 *}} 
+
+test regexp-1.130 {converted from line 130} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\(*\)} *  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 * *}} 
+
+test regexp-1.131 {converted from line 131} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (*) BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.132 {converted from line 132} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b ^* *  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 *}} 
+
+test regexp-1.133 {converted from line 133} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ^* BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.134 {converted from line 134} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & ^b ^b ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.135 {converted from line 135} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b x^ x^  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 x^}} 
+
+test regexp-1.136 {converted from line 136} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} x^ IMPOSS ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: can never match}} 
+
+test regexp-1.137 {converted from line 137} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp n= {
+^} {x
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {
+}}} 
+
+test regexp-1.138 {converted from line 138} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\(^b\)} ^b ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.139 {converted from line 139} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - (^b) b  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 b b}} 
+
+test regexp-1.140 {converted from line 140} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {x$} x  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 x}} 
+
+test regexp-1.141 {converted from line 141} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\(x$\)} x  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 x x}} 
+
+test regexp-1.142 {converted from line 142} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {(x$)} x  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 x x}} 
+
+test regexp-1.143 {converted from line 143} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {x$y} {x$y}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {x$y}}} 
+
+test regexp-1.144 {converted from line 144} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {x$y} IMPOSS ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: can never match}} 
+
+test regexp-1.145 {converted from line 145} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp n= {x$
+} {x
+}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {x
+}}} 
+
+test regexp-1.146 {converted from line 146} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} + BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.147 {converted from line 147} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ? BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+
+
+# simple quantifiers
+test regexp-1.150 {converted from line 150} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & a* aa  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aa}} 
+
+test regexp-1.151 {converted from line 151} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & a* b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.152 {converted from line 152} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a+ aa  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aa}} 
+
+test regexp-1.153 {converted from line 153} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a?b ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.154 {converted from line 154} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a?b b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.155 {converted from line 155} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ** BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.156 {converted from line 156} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b ** ***  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ***}} 
+
+test regexp-1.157 {converted from line 157} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & a** BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.158 {converted from line 158} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & a**b BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.159 {converted from line 159} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & *** BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.160 {converted from line 160} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a++ BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.161 {converted from line 161} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a?+ BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.162 {converted from line 162} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a?* BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.163 {converted from line 163} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a+* BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.164 {converted from line 164} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a*+ BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+
+
+# braces are messy
+test regexp-1.167 {converted from line 167} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,1} {}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.168 {converted from line 168} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,1} ac  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.169 {converted from line 169} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1,0} BADBR ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid repetition count(s)}} 
+
+test regexp-1.170 {converted from line 170} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1,2,3} BADBR ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid repetition count(s)}} 
+
+test regexp-1.171 {converted from line 171} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{257} BADBR ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid repetition count(s)}} 
+
+test regexp-1.172 {converted from line 172} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1000} BADBR ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid repetition count(s)}} 
+
+test regexp-1.173 {converted from line 173} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a\{1 EBRACE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched {}}} 
+
+test regexp-1.174 {converted from line 174} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1n} BADBR ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid repetition count(s)}} 
+
+test regexp-1.175 {converted from line 175} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a\{b a\{b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a\{b}} 
+
+test regexp-1.176 {converted from line 176} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a\{ a\{  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a\{}} 
+
+test regexp-1.177 {converted from line 177} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\{0,1\}b} cb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.178 {converted from line 178} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\{0,1} EBRACE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched {}}} 
+
+test regexp-1.179 {converted from line 179} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a\{0,1\\ BADBR ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid repetition count(s)}} 
+
+test regexp-1.180 {converted from line 180} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0}b ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.181 {converted from line 181} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,0}b ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.182 {converted from line 182} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,1}b ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.183 {converted from line 183} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,2}b b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.184 {converted from line 184} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,2}b aab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aab}} 
+
+test regexp-1.185 {converted from line 185} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{0,}b aab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aab}} 
+
+test regexp-1.186 {converted from line 186} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1,1}b aab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.187 {converted from line 187} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1,3}b aaaab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aaab}} 
+
+test regexp-1.188 {converted from line 188} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1,3}b b ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.189 {converted from line 189} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{1,}b aab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aab}} 
+
+test regexp-1.190 {converted from line 190} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{2,3}b ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.191 {converted from line 191} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{2,3}b aaaab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aaab}} 
+
+test regexp-1.192 {converted from line 192} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{2,}b ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.193 {converted from line 193} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a{2,}b aaaab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aaaab}} 
+
+
+
+# brackets are too
+test regexp-1.196 {converted from line 196} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[bc]} ac  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ac}} 
+
+test regexp-1.197 {converted from line 197} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[-]} a-  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a-}} 
+
+test regexp-1.198 {converted from line 198} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[.-.]]} a-  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a-}} 
+
+test regexp-1.199 {converted from line 199} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[.zero.]]} a0  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a0}} 
+
+test regexp-1.200 {converted from line 200} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[.zero.]-9]} a2  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a2}} 
+
+test regexp-1.201 {converted from line 201} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[0-[.9.]]} a2  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a2}} 
+
+# skipping char mapping test from line 202
+print {... skip test from line 202:  a&&=x=&&	&+L	ax	ax}
+# skipping char mapping test from line 203
+print {... skip test from line 203:  a&&=x=&&	&+L	ay	ay}
+# skipping char mapping test from line 204
+print {... skip test from line 204:  a&&=x=&&	&+L	az}
+test regexp-1.205 {converted from line 205} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[0-[=x=]]} ERANGE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid character range}} 
+
+test regexp-1.206 {converted from line 206} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:digit:]]} a0  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a0}} 
+
+test regexp-1.207 {converted from line 207} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:woopsie:]]} ECTYPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid character class}} 
+
+test regexp-1.208 {converted from line 208} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:digit:]]} ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.209 {converted from line 209} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[0-[:digit:]]} ERANGE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid character range}} 
+
+test regexp-1.210 {converted from line 210} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {[[:<:]]a} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.211 {converted from line 211} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:>:]]} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.212 {converted from line 212} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[..]]b} ECOLLATE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid collating element}} 
+
+test regexp-1.213 {converted from line 213} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[==]]b} ECOLLATE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid collating element}} 
+
+test regexp-1.214 {converted from line 214} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[::]]b} ECTYPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid character class}} 
+
+test regexp-1.215 {converted from line 215} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[.a} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.216 {converted from line 216} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[=a} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.217 {converted from line 217} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:a} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.218 {converted from line 218} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.219 {converted from line 219} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[b} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.220 {converted from line 220} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[b-} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.221 {converted from line 221} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[b-c} EBRACK ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: unmatched []}} 
+
+test regexp-1.222 {converted from line 222} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[b-c]} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.223 {converted from line 223} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[b-b]} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.224 {converted from line 224} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[1-2]} a2  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a2}} 
+
+test regexp-1.225 {converted from line 225} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[c-b]} ERANGE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid character range}} 
+
+test regexp-1.226 {converted from line 226} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[a-b-c]} ERANGE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid character range}} 
+
+test regexp-1.227 {converted from line 227} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[--?]b} a?b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a?b}} 
+
+test regexp-1.228 {converted from line 228} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[---]b} a-b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a-b}} 
+
+test regexp-1.229 {converted from line 229} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[]b]c} a\]c  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a\]c}} 
+
+test regexp-1.230 {converted from line 230} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a[\]]b} a\]b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a\]b}} 
+
+test regexp-1.231 {converted from line 231} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a[\]]b} a\]b ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.232 {converted from line 232} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a[\]]b} {a\]b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a\]b}}} 
+
+test regexp-1.233 {converted from line 233} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {a[\]]b} {a\]b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a\]b}}} 
+
+test regexp-1.234 {converted from line 234} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a[\\]b} {a\b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a\b}}} 
+
+test regexp-1.235 {converted from line 235} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {a[\\]b} {a\b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a\b}}} 
+
+test regexp-1.236 {converted from line 236} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a[\\]b} {a\b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a\b}}} 
+
+test regexp-1.237 {converted from line 237} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a[\Z]b} EESCAPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid escape sequence}} 
+
+test regexp-1.238 {converted from line 238} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[b]c} {a[c}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a[c}}} 
+
+
+
+# anchors and newlines
+test regexp-1.241 {converted from line 241} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & ^a a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.242 {converted from line 242} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &^ ^a a ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.243 {converted from line 243} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & ^ a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.244 {converted from line 244} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a$} aba  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.245 {converted from line 245} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {&$} {a$} a ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.246 {converted from line 246} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {$} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.247 {converted from line 247} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &n ^a a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.248 {converted from line 248} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=n ^a {b
+a}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.249 {converted from line 249} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=w ^a {a
+a}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.250 {converted from line 250} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=n^ ^a {a
+a}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.251 {converted from line 251} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &n {a$} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.252 {converted from line 252} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=n {a$} {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.253 {converted from line 253} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=n {a$} {a
+a}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.254 {converted from line 254} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - ^^ a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.255 {converted from line 255} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b ^^ ^  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ^}} 
+
+test regexp-1.256 {converted from line 256} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {$$} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.257 {converted from line 257} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {$$} {$}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {$}}} 
+
+test regexp-1.258 {converted from line 258} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {^$} {}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.259 {converted from line 259} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {^$} a ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.260 {converted from line 260} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &=n {^$} {a
+
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.261 {converted from line 261} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {$^} {}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {}}} 
+
+test regexp-1.262 {converted from line 262} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {$^} {$^}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {$^}}} 
+
+test regexp-1.263 {converted from line 263} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {\Aa} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.264 {converted from line 264} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp ^ {\Aa} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.265 {converted from line 265} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp ^n> {\Aa} {b
+a} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.266 {converted from line 266} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {a\Z} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.267 {converted from line 267} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {$} {a\Z} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.268 {converted from line 268} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {$n>} {a\Z} {a
+b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.269 {converted from line 269} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ^* BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.270 {converted from line 270} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {$*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.271 {converted from line 271} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\A*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.272 {converted from line 272} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\Z*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+
+
+# boundary constraints
+test regexp-1.275 {converted from line 275} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {[[:<:]]a} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.276 {converted from line 276} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {[[:<:]]a} -a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.277 {converted from line 277} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {[[:<:]]a} ba ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.278 {converted from line 278} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:>:]]} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.279 {converted from line 279} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:>:]]} a-  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.280 {converted from line 280} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {a[[:>:]]} ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.281 {converted from line 281} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\<a} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.282 {converted from line 282} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\<a} ba ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.283 {converted from line 283} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\>} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.284 {converted from line 284} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\>} ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.285 {converted from line 285} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\ya} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.286 {converted from line 286} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\ya} ba ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.287 {converted from line 287} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\y} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.288 {converted from line 288} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\y} ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.289 {converted from line 289} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Y} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.290 {converted from line 290} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Y} a- ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.291 {converted from line 291} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Y} a ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.292 {converted from line 292} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {-\Y} -a ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.293 {converted from line 293} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {-\Y} -%  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 -}} 
+
+test regexp-1.294 {converted from line 294} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\Y-} a- ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.295 {converted from line 295} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {[[:<:]]*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.296 {converted from line 296} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {[[:>:]]*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.297 {converted from line 297} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\<*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.298 {converted from line 298} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {\>*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.299 {converted from line 299} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\y*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.300 {converted from line 300} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\Y*} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+
+
+# character classes
+test regexp-1.303 {converted from line 303} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\db} a0b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a0b}} 
+
+test regexp-1.304 {converted from line 304} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\db} axb ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.305 {converted from line 305} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Db} a0b ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.306 {converted from line 306} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Db} axb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 axb}} 
+
+test regexp-1.307 {converted from line 307} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\sb} {a b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a b}}} 
+
+test regexp-1.308 {converted from line 308} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\sb} {a	b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a	b}}} 
+
+test regexp-1.309 {converted from line 309} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\sb} {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a
+b}}} 
+
+test regexp-1.310 {converted from line 310} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\sb} axb ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.311 {converted from line 311} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Sb} axb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 axb}} 
+
+test regexp-1.312 {converted from line 312} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\Sb} {a b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.313 {converted from line 313} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\wb} axb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 axb}} 
+
+test regexp-1.314 {converted from line 314} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\wb} a-b ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.315 {converted from line 315} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Wb} axb ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.316 {converted from line 316} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Wb} a-b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a-b}} 
+
+test regexp-1.317 {converted from line 317} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {\y\w+z\y} adze-guz  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 guz}} 
+
+test regexp-1.318 {converted from line 318} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a[\d]b} a1b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a1b}} 
+
+test regexp-1.319 {converted from line 319} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a[\s]b} {a b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a b}}} 
+
+test regexp-1.320 {converted from line 320} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a[\w]b} axb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 axb}} 
+
+
+
+# escapes
+test regexp-1.323 {converted from line 323} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & a\\ EESCAPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid escape sequence}} 
+
+test regexp-1.324 {converted from line 324} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {a\<b} a<b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a<b}} 
+
+test regexp-1.325 {converted from line 325} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {a\<b} a<b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a<b}} 
+
+test regexp-1.326 {converted from line 326} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\wb} awb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 awb}} 
+
+test regexp-1.327 {converted from line 327} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {a\wb} awb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 awb}} 
+
+test regexp-1.328 {converted from line 328} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\ab} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.329 {converted from line 329} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\bb} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.330 {converted from line 330} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\chb} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.331 {converted from line 331} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\cHb} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.332 {converted from line 332} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\e} a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.333 {converted from line 333} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\Eb} {a\b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a\b}}} 
+
+test regexp-1.334 {converted from line 334} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\fb} {ab}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {ab}}} 
+
+test regexp-1.335 {converted from line 335} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\nb} {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a
+b}}} 
+
+test regexp-1.336 {converted from line 336} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = a\rb a\u000Db  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} [subst {0 {1 {a\u000Db}}}] 
+
+test regexp-1.337 {converted from line 337} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\tb} {a	b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a	b}}} 
+
+test regexp-1.338 {converted from line 338} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\u0008x} ax  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ax}} 
+
+test regexp-1.339 {converted from line 339} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\u008x} EESCAPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid escape sequence}} 
+
+test regexp-1.340 {converted from line 340} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\u00088x} a8x  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a8x}} 
+
+test regexp-1.341 {converted from line 341} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\U00000008x} ax  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ax}} 
+
+test regexp-1.342 {converted from line 342} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\U0000008x} EESCAPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid escape sequence}} 
+
+test regexp-1.343 {converted from line 343} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\vb} {ab}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {ab}}} 
+
+test regexp-1.344 {converted from line 344} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\x08x} ax  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ax}} 
+
+test regexp-1.345 {converted from line 345} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\xx} EESCAPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid escape sequence}} 
+
+test regexp-1.346 {converted from line 346} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\x0008x} ax  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ax}} 
+
+test regexp-1.347 {converted from line 347} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\z} EESCAPE ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid escape sequence}} 
+
+test regexp-1.348 {converted from line 348} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\010b} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+
+
+# back references (ugh)
+test regexp-1.351 {converted from line 351} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b*)c\1} abbcbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbcbb bb}} 
+
+test regexp-1.352 {converted from line 352} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b*)c\1} ac  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ac {}}} 
+
+test regexp-1.353 {converted from line 353} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b*)c\1} abbcb ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.354 {converted from line 354} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b*)\1} abbcbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abb b}} 
+
+test regexp-1.355 {converted from line 355} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b|bb)\1} abbcbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abb b}} 
+
+test regexp-1.356 {converted from line 356} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1} abb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abb b}} 
+
+test regexp-1.357 {converted from line 357} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1} abc ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.358 {converted from line 358} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1} abcabb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abb b}} 
+
+test regexp-1.359 {converted from line 359} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])*\1} abc ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.360 {converted from line 360} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1} abB ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.361 {converted from line 361} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp i {a([bc])\1} abB  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abB b}} 
+
+test regexp-1.362 {converted from line 362} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1+} abbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbb b}} 
+
+test regexp-1.363 {converted from line 363} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1{3,4}} abbbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbbb b}} 
+
+test regexp-1.364 {converted from line 364} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1{3,4}} abbb ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.365 {converted from line 365} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1*} abbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbb b}} 
+
+test regexp-1.366 {converted from line 366} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])\1*} ab  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ab b}} 
+
+test regexp-1.367 {converted from line 367} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a([bc])(\1*)} ab  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 ab b {}}} 
+
+test regexp-1.368 {converted from line 368} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a((b)\1)} ESUBREG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid backreference number}} 
+
+test regexp-1.369 {converted from line 369} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b)c\2} ESUBREG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid backreference number}} 
+
+test regexp-1.370 {converted from line 370} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\(b*\)c\1} abbcbb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbcbb bb}} 
+
+
+
+# is it an octal escape or a back reference...?
+# initial zero is always octal
+test regexp-1.374 {converted from line 374} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\010b} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.375 {converted from line 375} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\0070b} a0b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a0b}} 
+
+test regexp-1.376 {converted from line 376} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\07b} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.377 {converted from line 377} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a(b)(b)(b)(b)(b)(b)(b)(b)(b)(b)\07c} abbbbbbbbbbc  var(0) var(1) var(2) var(3) var(4) var(5) var(6) var(7) var(8) var(9) var(10)] 
+		list $match  $var(0) $var(1) $var(2) $var(3) $var(4) $var(5) $var(6) $var(7) $var(8) $var(9) $var(10) 
+	} msg] $msg 
+} {0 {1 abbbbbbbbbbc b b b b b b b b b b}} 
+
+# a single digit is always a backref
+test regexp-1.381 {converted from line 381} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\7b} ESUBREG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid backreference number}} 
+
+# otherwise it's a backref only if within range (barf!)
+test regexp-1.383 {converted from line 383} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\10b} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.384 {converted from line 384} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a\101b} aAb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aAb}} 
+
+test regexp-1.385 {converted from line 385} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(b)(b)(b)(b)(b)(b)(b)(b)(b)(b)\10c} abbbbbbbbbbbc  var(0) var(1) var(2) var(3) var(4) var(5) var(6) var(7) var(8) var(9) var(10)] 
+		list $match  $var(0) $var(1) $var(2) $var(3) $var(4) $var(5) $var(6) $var(7) $var(8) $var(9) $var(10) 
+	} msg] $msg 
+} {0 {1 abbbbbbbbbbbc b b b b b b b b b b}} 
+
+# but we're fussy about border cases -- guys who want octal should use the zero
+test regexp-1.389 {converted from line 389} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a((((((((((b\10))))))))))c} ESUBREG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid backreference number}} 
+
+# BREs don't have octal, EREs don't have backrefs
+test regexp-1.391 {converted from line 391} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {a\12b} {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a
+b}}} 
+
+test regexp-1.392 {converted from line 392} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {a\12b} ESUBREG ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid backreference number}} 
+
+test regexp-1.393 {converted from line 393} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {a\12b} a12b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a12b}} 
+
+
+
+# expanded syntax
+test regexp-1.396 {converted from line 396} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a b c} abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+test regexp-1.397 {converted from line 397} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a b #oops
+c	d} abcd  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abcd}} 
+
+test regexp-1.398 {converted from line 398} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a\ b\	c} {a b	c}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a b	c}}} 
+
+test regexp-1.399 {converted from line 399} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a b\#c} ab#c  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab#c}} 
+
+test regexp-1.400 {converted from line 400} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a b[c d]e} {ab e}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {ab e}}} 
+
+test regexp-1.401 {converted from line 401} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a b[c#d]e} ab#e  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab#e}} 
+
+test regexp-1.402 {converted from line 402} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {a b[c#d]e} abde  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abde}} 
+
+test regexp-1.403 {converted from line 403} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x ab\{\ d ab\{d  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab\{d}} 
+
+test regexp-1.404 {converted from line 404} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp =x {ab{ 1 , 2 }c} abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+
+
+# misc. syntax
+test regexp-1.407 {converted from line 407} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?#comment)b ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+
+
+# unmatchable REs
+test regexp-1.410 {converted from line 410} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a^b IMPOSS ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: can never match}} 
+
+
+
+# case independence
+test regexp-1.413 {converted from line 413} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &i ab Ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 Ab}} 
+
+test regexp-1.414 {converted from line 414} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &i {a[bc]} aC  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aC}} 
+
+test regexp-1.415 {converted from line 415} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &i {a[^bc]} aB ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.416 {converted from line 416} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &i {a[b-d]} aC  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aC}} 
+
+test regexp-1.417 {converted from line 417} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp &i {a[^b-d]} aC ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+
+
+# inline options
+test regexp-1.420 {converted from line 420} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & ***? BADPAT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid regular expression}} 
+
+test regexp-1.421 {converted from line 421} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp q ***? ***?  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ***?}} 
+
+test regexp-1.422 {converted from line 422} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & ***=a*b a*b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a*b}} 
+
+test regexp-1.423 {converted from line 423} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp q ***=a*b ***=a*b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ***=a*b}} 
+
+test regexp-1.424 {converted from line 424} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {***:\w+} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.425 {converted from line 425} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {***:\w+} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.426 {converted from line 426} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (?b)a+b a+b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a+b}} 
+
+test regexp-1.427 {converted from line 427} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp e {(?b)\w+} BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.428 {converted from line 428} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp b {(?b)\w+} (?b)w+  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 (?b)w+}} 
+
+test regexp-1.429 {converted from line 429} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp i (?c)a a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.430 {converted from line 430} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp i (?c)a A ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.431 {converted from line 431} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {(?e)\W+} WW  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 WW}} 
+
+test regexp-1.432 {converted from line 432} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (?i)a+ Aa  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 Aa}} 
+
+test regexp-1.433 {converted from line 433} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?m)a.b {a
+b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.434 {converted from line 434} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?m)^b {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.435 {converted from line 435} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?n)a.b {a
+b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.436 {converted from line 436} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?n)^b {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.437 {converted from line 437} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?p)a.b {a
+b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.438 {converted from line 438} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?p)^b {a
+b} ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.439 {converted from line 439} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (?q)a+b a+b  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a+b}} 
+
+test regexp-1.440 {converted from line 440} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp n= (?s)a.b {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a
+b}}} 
+
+test regexp-1.441 {converted from line 441} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp x= {(?t)a b} {a b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a b}}} 
+
+test regexp-1.442 {converted from line 442} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?w)a.b {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 {a
+b}}} 
+
+test regexp-1.443 {converted from line 443} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = (?w)^b {a
+b}  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 b}} 
+
+test regexp-1.444 {converted from line 444} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {(?x)a b} ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.445 {converted from line 445} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (?z)ab BADOPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: invalid embedded option}} 
+
+
+
+# capturing
+test regexp-1.448 {converted from line 448} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)c abc  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+test regexp-1.449 {converted from line 449} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?:b)c xabc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+test regexp-1.450 {converted from line 450} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a((b))c xabcy  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abc b b}} 
+
+test regexp-1.451 {converted from line 451} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?:(b))c abcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+test regexp-1.452 {converted from line 452} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a((?:b))c abc  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+test regexp-1.453 {converted from line 453} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?:(?:b))c abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+test regexp-1.454 {converted from line 454} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b){0}c ac  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ac}} 
+
+test regexp-1.455 {converted from line 455} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)c(d)e abcde  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abcde b d}} 
+
+test regexp-1.456 {converted from line 456} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - (b)c(d)e bcde  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 bcde b d}} 
+
+test regexp-1.457 {converted from line 457} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)(d)e abde  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abde b d}} 
+
+test regexp-1.458 {converted from line 458} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)c(d) abcd  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abcd b d}} 
+
+test regexp-1.459 {converted from line 459} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - (ab)(cd) xabcdy  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abcd ab cd}} 
+
+test regexp-1.460 {converted from line 460} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)?c xabcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+test regexp-1.461 {converted from line 461} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)?c xacy  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ac}} 
+
+test regexp-1.462 {converted from line 462} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)?c(d)?e xabcdey  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abcde b d}} 
+
+test regexp-1.463 {converted from line 463} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)?c(d)?e xacdey  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 acde {} d}} 
+
+test regexp-1.464 {converted from line 464} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)?c(d)?e xabcey  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 abce b {}}} 
+
+test regexp-1.465 {converted from line 465} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)?c(d)?e xacey  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 ace {} {}}} 
+
+test regexp-1.466 {converted from line 466} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)*c xabcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+test regexp-1.467 {converted from line 467} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)*c xabbbcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbbc b}} 
+
+test regexp-1.468 {converted from line 468} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)*c xacy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ac {}}} 
+
+test regexp-1.469 {converted from line 469} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b*)c xabbbcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbbc bbb}} 
+
+test regexp-1.470 {converted from line 470} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b*)c xacy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 ac {}}} 
+
+test regexp-1.471 {converted from line 471} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)+c xacy ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.472 {converted from line 472} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)+c xabcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc b}} 
+
+test regexp-1.473 {converted from line 473} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b)+c xabbbcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbbc b}} 
+
+test regexp-1.474 {converted from line 474} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(b+)c xabbbcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbbc bbb}} 
+
+test regexp-1.475 {converted from line 475} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b){2,3}c xabbbcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbbc b}} 
+
+test regexp-1.476 {converted from line 476} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b){2,3}c xabbcy  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abbc b}} 
+
+test regexp-1.477 {converted from line 477} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(b){2,3}c xabcy ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.478 {converted from line 478} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp = {\y(\w+)\y} {-- abc-}  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc abc}} 
+
+test regexp-1.479 {converted from line 479} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a((b|c)d+)+ abacdbd  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 acdbd bd b}} 
+
+test regexp-1.480 {converted from line 480} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (.*).* abc  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abc abc}} 
+
+test regexp-1.481 {converted from line 481} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} (a*)* bc  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 {} {}}} 
+
+
+
+# collating elements (ugh)
+# skipping char mapping test from line 484
+print {... skip test from line 484:  a&c&e		&+L	ace	ace}
+# skipping char mapping test from line 485
+print {... skip test from line 485:  a&c&h		&+*	IMPOSS}
+# skipping char mapping test from line 486
+print {... skip test from line 486:  a&&.ch.&&	&+L	ach	ach}
+# skipping char mapping test from line 487
+print {... skip test from line 487:  a&&.ch.&&	&+L	ace}
+# skipping char mapping test from line 488
+print {... skip test from line 488:  a&c&.ch.&&	&+L	ac	ac}
+# skipping char mapping test from line 489
+print {... skip test from line 489:  a&c&.ch.&&	&+L	ace	ac}
+# skipping char mapping test from line 490
+print {... skip test from line 490:  a&c&.ch.&&	&+L	ache	ach}
+# skipping char mapping test from line 491
+print {... skip test from line 491:  a&^c&e		&+L	ace}
+# skipping char mapping test from line 492
+print {... skip test from line 492:  a&^c&e		&+L	abe	abe}
+# skipping char mapping test from line 493
+print {... skip test from line 493:  a&^c&e		&+L	ache	ache}
+# skipping char mapping test from line 494
+print {... skip test from line 494:  a&^&.ch.&&	&+L	ach}
+# skipping char mapping test from line 495
+print {... skip test from line 495:  a&^&.ch.&&	&+L	ace	ac}
+# skipping char mapping test from line 496
+print {... skip test from line 496:  a&^&.ch.&&	&+L	ac	ac}
+# skipping char mapping test from line 497
+print {... skip test from line 497:  a&^&.ch.&&	&+L	abe	ab}
+# skipping char mapping test from line 498
+print {... skip test from line 498:  a&^c&.ch.&&	&+L	ach}
+# skipping char mapping test from line 499
+print {... skip test from line 499:  a&^c&.ch.&&	&+L	ace}
+# skipping char mapping test from line 500
+print {... skip test from line 500:  a&^c&.ch.&&	&+L	ac}
+# skipping char mapping test from line 501
+print {... skip test from line 501:  a&^c&.ch.&&	&+L	abe	ab}
+# skipping char mapping test from line 502
+print {... skip test from line 502:  a&^b&		&+L	ac	ac}
+# skipping char mapping test from line 503
+print {... skip test from line 503:  a&^b&		&+L	ace	ac}
+# skipping char mapping test from line 504
+print {... skip test from line 504:  a&^b&		&+L	ach	ach}
+# skipping char mapping test from line 505
+print {... skip test from line 505:  a&^b&		&+L	abe}
+
+
+# lookahead
+test regexp-1.508 {converted from line 508} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?=b)b* ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.509 {converted from line 509} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?=b)b* a ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.510 {converted from line 510} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?!b)b* ab ] 
+		list $match  
+	} msg] $msg 
+} {0 0} 
+
+test regexp-1.511 {converted from line 511} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?!b)b* a  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+
+
+# non-greedy quantifiers
+test regexp-1.514 {converted from line 514} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab+? abb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 ab}} 
+
+test regexp-1.515 {converted from line 515} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab+?c abbc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abbc}} 
+
+test regexp-1.516 {converted from line 516} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab*? abb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.517 {converted from line 517} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab*?c abbc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abbc}} 
+
+test regexp-1.518 {converted from line 518} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab?? ab  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 a}} 
+
+test regexp-1.519 {converted from line 519} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab??c abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+test regexp-1.520 {converted from line 520} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab{2,4}? abbbb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abb}} 
+
+test regexp-1.521 {converted from line 521} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab{2,4}?c abbbbc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abbbbc}} 
+
+
+
+# xxx mixed quantifiers (incl |)
+
+
+# attempts to trick the matcher into accepting a short match
+test regexp-1.526 {converted from line 526} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - (week|wee)(night|knights) weeknights  var(0) var(1) var(2)] 
+		list $match  $var(0) $var(1) $var(2) 
+	} msg] $msg 
+} {0 {1 weeknights wee knights}} 
+
+test regexp-1.527 {converted from line 527} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} {a(bc*).*\1} abccbccb  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abccbccb b}} 
+
+test regexp-1.528 {converted from line 528} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {a(b.[bc]*)+} abcbd  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 abcbd bd}} 
+
+
+
+# implementation misc.
+# duplicate arcs are suppressed
+test regexp-1.532 {converted from line 532} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a(?:b|b)c abc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abc}} 
+
+
+
+# boundary busters
+# color-descriptor allocation and arc allocation both change at 10
+test regexp-1.536 {converted from line 536} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & abcdefghijkl abcdefghijkl  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abcdefghijkl}} 
+
+# subexpression tracking at 10
+test regexp-1.538 {converted from line 538} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - a(((((((((((((b)))))))))))))c abc  var(0) var(1) var(2) var(3) var(4) var(5) var(6) var(7) var(8) var(9) var(10) var(11) var(12) var(13)] 
+		list $match  $var(0) $var(1) $var(2) $var(3) $var(4) $var(5) $var(6) $var(7) $var(8) $var(9) $var(10) $var(11) $var(12) $var(13) 
+	} msg] $msg 
+} {0 {1 abc b b b b b b b b b b b b b}} 
+
+# state-set handling changes slightly at unsigned size (might be 64...)
+# (also stresses arc allocation)
+test regexp-1.544 {converted from line 544} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab{1,100}c abbc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abbc}} 
+
+test regexp-1.545 {converted from line 545} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab{1,100}c abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc}} 
+
+test regexp-1.548 {converted from line 548} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} ab{1,100}c abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc}} 
+
+# force small cache and bust it, several ways
+test regexp-1.552 {converted from line 552} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp - {\w+abcdefgh} xyzabcdefgh  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 xyzabcdefgh}} 
+
+test regexp-1.553 {converted from line 553} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp . {\w+abcdefgh} xyzabcdefgh  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 xyzabcdefgh}} 
+
+test regexp-1.554 {converted from line 554} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp . {\w+(abcdefgh)?} xyz  var(0) var(1)] 
+		list $match  $var(0) $var(1) 
+	} msg] $msg 
+} {0 {1 xyz {}}} 
+
+
+
+# make color/subcolor relationship go back and forth
+test regexp-1.557 {converted from line 557} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & {[ab][ab][ab]} aba  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 aba}} 
+
+
+
+# misc.
+test regexp-1.560 {converted from line 560} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp & *** BADRPT ] 
+		list $match  
+	} msg] $msg 
+} {1 {couldn't compile regular expression pattern: ?+* follows nothing}} 
+
+test regexp-1.561 {converted from line 561} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a?b* abb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 abb}} 
+
+test regexp-1.562 {converted from line 562} {
+	catch {unset var}
+	list [catch { 
+		set match [testregexp {} a?b* bb  var(0)] 
+		list $match  $var(0) 
+	} msg] $msg 
+} {0 {1 bb}} 
+

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) binary.test 1.13 97/09/11 18:50:30
+# SCCS: @(#) binary.test 1.15 98/01/07 16:22:49
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -18,7 +18,7 @@ test binary-1.1 {Tcl_BinaryObjCmd: bad args} {
 } {1 {wrong # args: should be "binary option ?arg arg ...?"}}
 test binary-1.2 {Tcl_BinaryObjCmd: bad args} {
     list [catch {binary foo} msg] $msg
-} {1 {bad option "foo": must be format, or scan}}
+} {1 {bad option "foo": must be format or scan}}
 
 test binary-1.3 {Tcl_BinaryObjCmd: format error} {
     list [catch {binary f} msg] $msg
@@ -1441,3 +1441,5 @@ test binary-41.8 {ScanNumber: word alignment} {nonPortable pcOnly} {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f c1d1 arg1 arg2] $arg1 $arg2
 } {2 1 1.6}
+
+return

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) for-old.test 1.14 97/01/13 13:42:18
+# SCCS: @(#) for-old.test 1.15 97/12/08 15:06:07
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -64,3 +64,5 @@ test for-old-1.9 {for tests} {
     }
     set a
 } {1 2 3}
+
+return

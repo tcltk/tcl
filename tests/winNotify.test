@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) winNotify.test 1.2 97/04/14 17:24:56
+# SCCS: @(#) winNotify.test 1.3 97/12/08 15:06:52
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -153,3 +153,4 @@ test winNotify-3.8 {NotifierProc: modal idle timer, rescheduled} {
 } {1 1}
 
 # Tcl_DoOneEvent is tested by the timer.test, io.test, and event.test files
+return

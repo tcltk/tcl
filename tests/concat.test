@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) concat.test 1.10 96/12/20 18:53:31
+# SCCS: @(#) concat.test 1.11 97/12/08 15:02:29
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -44,3 +44,5 @@ test concat-4.2 {pruning off extra white space} {
 test concat-4.3 {pruning off extra white space sets length correctly} {
     llength [concat { {{a}} }]
 } 1
+
+return

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) unixFCmd.test 1.15 97/11/03 15:58:22
+# SCCS: @(#) unixFCmd.test 1.17 97/12/08 15:05:53
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -166,7 +166,7 @@ if {[catch {exec {groups}} groupList] == 0} {
 test unixFCmd-12.1 {GetGroupAttribute - file not found} {
     catch {file delete -force -- foo.test}
     list [catch {file attributes foo.test -group} msg] $msg
-} {1 {could not stat file "foo.test": no such file or directory}}
+} {1 {could not read "foo.test": no such file or directory}}
 test unixFCmd-12.2 {GetGroupAttribute - file found} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]
@@ -176,7 +176,7 @@ test unixFCmd-12.2 {GetGroupAttribute - file found} {
 test unixFCmd-13.1 {GetOwnerAttribute - file not found} {
     catch {file delete -force -- foo.test}
     list [catch {file attributes foo.test -group} msg] $msg
-} {1 {could not stat file "foo.test": no such file or directory}}
+} {1 {could not read "foo.test": no such file or directory}}
 test unixFCmd-13.2 {GetOwnerAttribute} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]
@@ -186,7 +186,7 @@ test unixFCmd-13.2 {GetOwnerAttribute} {
 test unixFCmd-14.1 {GetPermissionsAttribute - file not found} {
     catch {file delete -force -- foo.test}
     list [catch {file attributes foo.test -permissions} msg] $msg
-} {1 {could not stat file "foo.test": no such file or directory}}
+} {1 {could not read "foo.test": no such file or directory}}
 test unixFCmd-14.2 {GetPermissionsAttribute} {
     catch {file delete -force -- foo.test}
     close [open foo.test w]
@@ -249,3 +249,4 @@ test unixFCmd-18.1 {Unix pwd} {nonPortable} {
 } {1 {error getting working directory name:}}
 
 cleanup
+return

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) macFCmd.test 1.3 97/06/23 18:24:10
+# SCCS: @(#) macFCmd.test 1.4 97/12/08 15:06:36
 #
 
 if {$tcl_platform(platform) != "macintosh"} {
@@ -166,3 +166,5 @@ test macFCmd-4.7 {SetFileReadOnly - directory readonly} {notFileSharing} {
     file mkdir foo.dir
     list [catch {file attributes foo.dir -readonly 1} msg] $msg [file delete -force foo.dir]
 } {1 {cannot set a directory to read-only when File Sharing is turned off} {}}
+
+return

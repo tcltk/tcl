@@ -14,12 +14,12 @@
  *	by Karl Lehenbauer, Mark Diekhans and Peter da Silva.
  *
  * Copyright (c) 1991-1994 The Regents of the University of California.
- * Copyright (c) 1994-1995 Sun Microsystems, Inc.
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixPort.h 1.49 97/07/30 14:11:59
+ * SCCS: @(#) tclUnixPort.h 1.56 98/02/18 13:59:57
  */
 
 #ifndef _TCLUNIXPORT
@@ -28,6 +28,14 @@
 #ifndef _TCLINT
 #   include "tclInt.h"
 #endif
+
+/*
+ *---------------------------------------------------------------------------
+ * The following sets of #includes and #ifdefs are required to get Tcl to
+ * compile under the various flavors of unix.
+ *---------------------------------------------------------------------------
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #ifdef HAVE_NET_ERRNO_H
@@ -40,11 +48,11 @@
 #ifdef USE_DIRENT2_H
 #   include "../compat/dirent2.h"
 #else
-#   ifdef NO_DIRENT_H
-#	include "../compat/dirent.h"
-#   else
-#	include <dirent.h>
-#   endif
+#ifdef NO_DIRENT_H
+#   include "../compat/dirent.h"
+#else
+#   include <dirent.h>
+#endif
 #endif
 #include <sys/file.h>
 #ifdef HAVE_SYS_SELECT_H
@@ -55,11 +63,11 @@
 #   include <sys/time.h>
 #   include <time.h>
 #else
-#   if HAVE_SYS_TIME_H
-#       include <sys/time.h>
-#   else
-#       include <time.h>
-#   endif
+#if HAVE_SYS_TIME_H
+#   include <sys/time.h>
+#else
+#   include <time.h>
+#endif
 #endif
 #ifndef NO_SYS_WAIT_H
 #   include <sys/wait.h>
@@ -70,7 +78,6 @@
 #   include "../compat/unistd.h"
 #endif
 #ifdef	USE_FIONBIO
-
     /*
      * Not using the Posix fcntl(...,O_NONBLOCK,...) interface, instead
      * we are using ioctl(..,FIONBIO,..).
@@ -105,11 +112,11 @@
  */
 
 #ifndef NO_FLOAT_H
-#include <float.h>
+#   include <float.h>
 #else
-#   ifndef NO_VALUES_H
-#	include <values.h>
-#   endif
+#ifndef NO_VALUES_H
+#   include <values.h>
+#endif
 #endif
 
 #ifndef FLT_MAX
@@ -146,30 +153,6 @@
 #else
 #  define NBIO_FLAG O_NDELAY
 #endif
-
-/*
- * The following defines denote malloc and free as the system calls
- * used to allocate new memory.  These defines are only used in the
- * file tclCkalloc.c.
- */
-
-#define TclpAlloc(size)		malloc(size)
-#define TclpFree(ptr)		free(ptr)
-#define TclpRealloc(ptr, size)	realloc(ptr, size)
-
-/*
- * The default platform eol translation on Unix is TCL_TRANSLATE_LF:
- */
-
-#define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_LF
-
-/*
- * Not all systems declare the errno variable in errno.h. so this
- * file does it explicitly.  The list of system error messages also
- * isn't generally declared in a header file anywhere.
- */
-
-extern int errno;
 
 /*
  * The type of the status returned by wait varies from UNIX system
@@ -235,21 +218,18 @@ extern int errno;
 #ifndef SEEK_SET
 #   define SEEK_SET 0
 #endif
-
 #ifndef SEEK_CUR
 #   define SEEK_CUR 1
 #endif
-
 #ifndef SEEK_END
 #   define SEEK_END 2
 #endif
 
 /*
- * The stuff below is needed by the "time" command.  If this
- * system has no gettimeofday call, then must use times and the
- * CLK_TCK #define (from sys/param.h) to compute elapsed time.
- * Unfortunately, some systems only have HZ and no CLK_TCK, and
- * some might not even have HZ.
+ * The stuff below is needed by the "time" command.  If this system has no
+ * gettimeofday call, then must use times and the CLK_TCK #define (from
+ * sys/param.h) to compute elapsed time.  Unfortunately, some systems only
+ * have HZ and no CLK_TCK, and some might not even have HZ.
  */
 
 #ifdef NO_GETTOD
@@ -305,7 +285,7 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
  */
 
 #ifndef S_IFLNK
-#   define lstat stat
+#   define lstat	stat
 #endif
 
 /*
@@ -429,23 +409,19 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #define MASK_SIZE howmany(FD_SETSIZE, NFDBITS)
 
 /*
- * The following implements the Unix method for exiting the process.
- */
-#define TclPlatformExit(status) exit(status)
-
-/*
- * The following functions always succeeds under Unix.
+ * Not all systems declare the errno variable in errno.h. so this
+ * file does it explicitly.  The list of system error messages also
+ * isn't generally declared in a header file anywhere.
  */
 
-#define TclHasSockets(interp) (TCL_OK)
-#define TclHasPipes() (1)
+extern int errno;
 
 /*
  * Variables provided by the C library:
  */
 
 #if defined(_sgi) || defined(__sgi)
-#define environ _environ
+#   define environ _environ
 #endif
 extern char **environ;
 
@@ -460,15 +436,48 @@ extern char **environ;
 extern double strtod();
 
 /*
+ *---------------------------------------------------------------------------
+ * The following macros and declarations represent the interface between 
+ * generic and unix-specific parts of Tcl.  Some of the macros may override 
+ * functions declared in tclInt.h.
+ *---------------------------------------------------------------------------
+ */
+
+/*
+ * The default platform eol translation on Unix is TCL_TRANSLATE_LF.
+ */
+
+#define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_LF
+
+/*
  * The following macros define time related functions in terms of
  * standard Unix routines.
  */
 
-#define TclpGetDate(t,u) ((u) ? gmtime((t)) : localtime((t)))
-#define TclStrftime(s,m,f,t) (strftime((s),(m),(f),(t)))
-#define TclpGetPid(pid)	    ((unsigned long) (pid))
+#define TclpGetDate(t,u)	((u) ? gmtime((t)) : localtime((t)))
+#define TclStrftime(s,m,f,t)	(strftime((s),(m),(f),(t)))
 
-#define TclpReleaseFile(file)	
+/*
+ * The following macros have trivial definitions, allowing generic code to 
+ * address platform-specific issues.
+ */
+
+#define TclpCheckStackSpace()	(1)
+#define TclpGetPid(pid)		((unsigned long) (pid))
+#define TclpHasSockets(interp)	(TCL_OK)
+#define TclpReleaseFile(file)	/* Nothing. */
+
+/*
+ * The following macros and declaration wrap the C runtime library
+ * functions.
+ */
+
+#define TclpExit		exit
+
+EXTERN int		TclpLstat _ANSI_ARGS_((CONST char *path, 
+			    struct stat *buf));
+EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
+			    struct stat *buf));
 
 /*
  * The following routine is only exported for testing purposes.
@@ -476,5 +485,25 @@ extern double strtod();
 
 EXTERN int	TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
 		    int timeout));
+
+/*
+ * Platform specific mutex definition used by memory allocators.
+ * These mutexes are statically allocated and explicitly initialized.
+ * Most modules do not use this, but instead use Tcl_Mutex types and
+ * Tcl_MutexLock and Tcl_MutexUnlock that are self-initializing.
+ */
+
+#ifdef TCL_THREADS
+#include <pthread.h>
+typedef pthread_mutex_t TclpMutex;
+EXTERN void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
+EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
+EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
+#else
+typedef int TclpMutex;
+#define	TclpMutexInit(a)
+#define	TclpMutexLock(a)
+#define	TclpMutexUnlock(a)
+#endif /* TCL_THREADS */
 
 #endif /* _TCLUNIXPORT */

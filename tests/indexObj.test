@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# @(#) indexObj.test 1.3 97/06/23 18:23:09
+# @(#) indexObj.test 1.4 97/12/08 15:06:27
 
 if {[info procs test] != "test"} {
     source defs
@@ -66,3 +66,5 @@ test indexObj-4.1 {free old internal representation} {
     lindex $x 1
     testindexobj 1 1 $x abc def {a b} zzz
 } {2}
+
+return

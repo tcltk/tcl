@@ -5,12 +5,16 @@
  *	which is the lowest-level part of the Tcl event loop.  This file
  *	works together with ../generic/tclNotify.c.
  *
+ *	The Mac notifier only polls for system and OS events, so it is process
+ *	wide, rather than thread specific.  However, this means that the convert
+ *	event proc will have to arbitrate which events go to which threads.
+ *
  * Copyright (c) 1995-1996 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacNotify.c 1.36 97/05/07 19:09:29
+ * SCCS: @(#) tclMacNotify.c 1.39 98/02/18 11:53:32
  */
 
 #include "tclInt.h"
@@ -22,6 +26,7 @@
 #include <LowMem.h>
 #include <Processes.h>
 #include <Timer.h>
+#include <Threads.h>
 
 
 /* 
@@ -81,9 +86,105 @@ static void		NotifierExitHandler _ANSI_ARGS_((
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_InitNotifier --
+ *
+ *	Initializes the platform specific notifier state.  There is no thread
+ *	specific platform notifier on the Mac, so this really doesn't do 
+ *	anything.  However, we need to return the ThreadID, since the generic
+ *	notifier hands this back to us in AlertThread.
+ *
+ * Results:
+ *	Returns the threadID for this thread.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+Tcl_InitNotifier()
+{
+    
+#ifdef TCL_THREADS
+    ThreadID curThread;
+    if (TclMacHaveThreads()) {
+        GetCurrentThread(&curThread);
+        return (ClientData) curThread;
+    } else {
+        return NULL;
+    }
+#else
+    return NULL;
+#endif
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_FinalizeNotifier --
+ *
+ *	This function is called to cleanup the notifier state before
+ *	a thread is terminated.  There is no platform thread specific
+ *	notifier, so this does nothing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_FinalizeNotifier(clientData)
+    ClientData clientData;	/* Pointer to notifier data. */
+{
+    /* Nothing to do on the Mac */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AlertNotifier --
+ *
+ *	Wake up the specified notifier from any thread. This routine
+ *	is called by the platform independent notifier code whenever
+ *	the Tcl_ThreadAlert routine is called.  This routine is
+ *	guaranteed not to be called on a given notifier after
+ *	Tcl_FinalizeNotifier is called for that notifier.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls YieldToThread from this thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AlertNotifier(clientData)
+    ClientData clientData;	/* Pointer to thread data. */
+{
+
+#ifdef TCL_THREADS
+    if (TclMacHaveThreads()) {
+        YieldToThread((ThreadID) clientData);
+    }
+#endif
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * InitNotifier --
  *
- *	Initializes the notifier structure.
+ *	Initializes the notifier structure.  Note - this function is never
+ *	used.
  *
  * Results:
  *	None.
@@ -108,7 +209,8 @@ InitNotifier(void)
  * NotifierExitHandler --
  *
  *	This function is called to cleanup the notifier state before
- *	Tcl is unloaded.
+ *	Tcl is unloaded.  This function is never used, since InitNotifier
+ *	isn't either.
  *
  * Results:
  *	None.
@@ -346,6 +448,17 @@ Tcl_WaitForEvent(
 	}
     }
     TclMacRemoveTimer(timerToken);
+    
+    /*
+     * Yield time to nay other thread at this point.  If we find that the
+     * apps thrash too switching between threads, we can put a timer here,
+     * and only yield when the timer fires.
+     */
+     
+    if (TclMacHaveThreads()) {
+        YieldToAnyThread();
+    }
+    
     return 0;
 }
 
@@ -381,7 +494,9 @@ Tcl_Sleep(
     timerToken = TclMacStartTimer((long) ms);
     while (1) {
 	WaitNextEvent(0, &dummy, (ms / 16.66) + 1, NULL);
-	
+        if (TclMacHaveThreads()) {
+	    YieldToAnyThread();
+	}
 	if (TclMacTimerExpired(timerToken)) {
 	    break;
 	}

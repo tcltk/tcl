@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) async.test 1.5 96/04/05 15:29:38
+# SCCS: @(#) async.test 1.6 97/12/08 15:02:15
 
 if {[info commands testasync] == {}} {
     puts "This application hasn't been compiled with the \"testasync\""
@@ -129,3 +129,4 @@ test async-3.1 {deleting handlers} {
 } {3 del2 {0 0 0 del1 del2}}
 
 testasync delete
+return

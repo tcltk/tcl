@@ -4,16 +4,15 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) safe.n 1.11 97/10/31 12:51:13
+'\" SCCS: @(#) safe.n 1.12 98/01/28 12:46:57
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Safe Base \- A mechanism for creating and manipulating safe interpreters.
+Safe\ Base \- A mechanism for creating and manipulating safe interpreters.
 .SH SYNOPSIS
-.PP
 \fB::safe::interpCreate\fR ?\fIslave\fR? ?\fIoptions...\fR?
 .sp
 \fB::safe::interpInit\fR \fIslave\fR ?\fIoptions...\fR?

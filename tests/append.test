@@ -10,11 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) append.test 1.17 97/10/28 15:45:52
+# SCCS: @(#) append.test 1.19 97/12/24 10:40:56
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[info procs test] != "test"} {source defs}
 
 catch {unset x}
+
 test append-1.1 {append command} {
     catch {unset x}
     list [append x 1 2 abc "long string"] $x
@@ -170,5 +171,8 @@ test append-7.1 {lappend-created var and error in trace on that var} {
     list [info exists x] [catch {set x} msg] $msg
 } {0 1 {can't read "x": no such variable}}
 
-catch {unset x}
+catch {unset i x result y}
 catch {rename foo ""}
+catch {rename check ""}
+
+return

@@ -1,18 +1,18 @@
 '\"
-'\" Copyright (c) 1993 The Regents of the University of California.
-'\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 1998 Sun Microsystems, Inc.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) regexp.n 1.12 96/08/26 13:00:10
+'\" SCCS: @(#) regexp.n 1.15 98/01/22 16:51:23
 '\" 
 .so man.macros
-.TH regexp n "" Tcl "Tcl Built-In Commands"
+.TH regexp n 8.1 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 regexp \- Match a regular expression against a string
+
 .SH SYNOPSIS
 \fBregexp \fR?\fIswitches\fR? \fIexp string \fR?\fImatchVar\fR? ?\fIsubMatchVar subMatchVar ...\fR?
 .BE
@@ -59,87 +59,478 @@ portion of the expression that wasn't matched), then the corresponding
 \fIsubMatchVar\fR will be set to ``\fB\-1 \-1\fR'' if \fB\-indices\fR
 has been specified or to an empty string otherwise.
 
-.SH "REGULAR EXPRESSIONS"
+.SH DIFFERENT FLAVORS OF REs
+.VS 8.1
+Regular expressions (``RE''s),
+as defined by POSIX, come in two flavors:
+\fIextended\fR
+REs (roughly those of
+\fIegrep\fR),
+``EREs'',
+and
+\fIbasic\fR
+REs (roughly those of
+\fIed\fR),
+``BREs''.
+This implementation adds a third flavor,
+\fIadvanced\fR
+REs, ``AREs'', that offer a syntax for specifying BREs and EREs.  The
+following primarily describes AREs.
 .PP
-Regular expressions are implemented using Henry Spencer's package
-(thanks, Henry!),
-and much of the description of regular expressions below is copied verbatim
-from his manual entry.
-.PP
-A regular expression is zero or more \fIbranches\fR, separated by ``|''.
-It matches anything that matches one of the branches.
-.PP
-A branch is zero or more \fIpieces\fR, concatenated.
-It matches a match for the first, followed by a match for the second, etc.
-.PP
-A piece is an \fIatom\fR possibly followed by ``*'', ``+'', or ``?''.
-An atom followed by ``*'' matches a sequence of 0 or more matches of the atom.
-An atom followed by ``+'' matches a sequence of 1 or more matches of the atom.
-An atom followed by ``?'' matches a match of the atom, or the null string.
-.PP
-An atom is a regular expression in parentheses (matching a match for the
-regular expression), a \fIrange\fR (see below), ``.''
-(matching any single character), ``^'' (matching the null string at the
-beginning of the input string), ``$'' (matching the null string at the
-end of the input string), a ``\e'' followed by a single character (matching
-that character), or a single character with no other significance
-(matching that character).
-.PP
-A \fIrange\fR is a sequence of characters enclosed in ``[]''.
-It normally matches any single character from the sequence.
-If the sequence begins with ``^'',
-it matches any single character \fInot\fR from the rest of the sequence.
-If two characters in the sequence are separated by ``\-'', this is shorthand
-for the full list of ASCII characters between them
-(e.g. ``[0-9]'' matches any decimal digit).
-To include a literal ``]'' in the sequence, make it the first character
-(following a possible ``^'').
-To include a literal ``\-'', make it the first or last character.
+BREs mostly exist for backward compatibility in some old programs;
+they will be discussed at the end.
+POSIX EREs are
+\fIalmost\fR
+an exact subset of AREs;
 
+.SH "REGULAR EXPRESSION SYNTAX"
+.PP
+Regular expressions are implemented using the package written by Henry
+Spencer, based on the 1003.2 spec and some (not quite all) of the
+Perl5 extensions (thanks, Henry!).  Much of the description of regular
+expressions below is copied verbatim from his manual entry.
+.PP
+An ARE is one or more \fIbranches\fR,
+separated by `|'.
+It matches anything that matches any of the branches.
+.PP
+A branch is zero or more \fIitems\fR, concatenated.
+It matches a match for the first, followed by a match for the second, etc;
+an empty branch matches the empty string.
+.PP
+An item is an \fIatom\fR possibly followed
+by a single
+\fIquantifier\fR:
+`*', `+', `?', or a \fIbound\fR.
+An atom followed by `*' matches a sequence of 0 or more matches of the atom.
+An atom followed by `+' matches a sequence of 1 or more matches of the atom.
+An atom followed by `?' matches a sequence of 0 or 1 matches of the atom.
+.PP
+A \fIbound\fR is `{' followed by an unsigned decimal integer,
+possibly followed by `,'
+possibly followed by another unsigned decimal integer,
+always followed by `}'.
+The integers must lie between 0 and 255 inclusive,
+and if there are two of them, the first may not exceed the second.
+An atom followed by a bound containing one integer \fIi\fR
+and no comma matches
+a sequence of exactly \fIi\fR matches of the atom.
+An atom followed by a bound
+containing one integer \fIi\fR and a comma matches
+a sequence of \fIi\fR or more matches of the atom.
+An atom followed by a bound
+containing two integers \fIi\fR and \fIj\fR matches
+a sequence of \fIi\fR through \fIj\fR (inclusive) matches of the atom.
+.PP
+A quantifier followed by `?' (that is, `*?', `+?', `??', `{...}?') is
+a \fInon-greedy quantifier\fR, which matches the same possibilities,
+but prefers the smallest number rather than the largest number
+of matches.
+.PP
+An atom is a regular expression enclosed in `()' (matching a match for the
+regular expression, with the match noted for possible reporting),
+an empty set of `()' (matching an empty string,
+again noted for possible reporting),
+either form with the leading parenthesis replaced by `(?:'
+(``non-capturing parentheses'',
+as opposed to the plainer ``capturing'' form;
+they have the same matching semantics but do no reporting),
+a \fIbracket expression\fR (see next section),
+`.' (matching any single character),
+a \fIconstraint\fR (see below),
+a `\e' followed by any non-alphanumeric character
+(matching that character taken as an ordinary character,
+e.g. `\e\e' matches a backslash character),
+an \fIescape\fR (see later section) beginning with `\e' followed by an
+alphanumeric character,
+or a single character with no other significance (matching that character).
+.PP
+A \fIconstraint\fR matches an empty string when specific conditions
+are met.
+(Some more constraints are described later.)
+`^' matches at the beginning of a line,
+and `$' matches at the end of a line;
+these constraints are also known as \fIanchors\fR.
+A regular expression enclosed in `(?=' and `)'
+(\fIpositive lookahead\fR) matches at any point
+where a string matching that regular expression begins.
+A regular expression enclosed in `(?!' and `)'
+(\fInegative lookahead\fR) matches at any point
+where a string \fInot\fR matching that regular expression begins.
+Lookahead constraints may not contain back references (see later),
+and all parentheses within them are treated as non-capturing.
+A constraint may not be followed by a quantifier.
+.PP
+A `{' followed by a character other than a digit is an ordinary
+character, not the beginning of a bound.
+An RE may not end with an `\e'.
+.SH "BRACKET EXPRESSIONS"
+A \fIbracket expression\fR is a list of characters enclosed in `[]'.
+It normally matches any single character from the list (but see below).
+If the list begins with `^',
+it matches any single character
+(but see below) \fInot\fR from the rest of the list.
+If two characters in the list are separated by `\-', this is shorthand
+for the full \fIrange\fR of characters between those two (inclusive) in the
+collating sequence,
+e.g. `[0\-9]' in ASCII matches any decimal digit.
+Two ranges may not share an
+endpoint, e.g. `a\-c\-e'.
+Ranges are very collating-sequence-dependent,
+and portable programs should avoid relying on them.
+.PP
+To include a literal `]' in the list, make it the first character
+(following a possible `^'),
+or precede it with `\e'.
+To include a literal `\-', make it the first or last character,
+or the second endpoint of a range,
+or precede it with `\e'.
+To use a literal `\-' as the first endpoint of a range,
+enclose it in `[.' and `.]' to make it a collating element (see below),
+or precede it with `\e'.
+With the exception of these, some combinations using `[' (see next
+paragraphs), and escapes,
+all other special characters lose their
+special significance within a bracket expression.
+.PP
+Within a bracket expression, a collating element (a character,
+a multi-character sequence that collates as if it were a single character,
+or a collating-sequence name for either)
+enclosed in `[.' and `.]' stands for the
+sequence of characters of that collating element.
+The sequence is a single element of the bracket expression's list.
+A bracket expression in a locale which has
+multi-character collating elements
+can thus match more than one character.
+Most insidiously, if `^' is used,
+this can happen even if no collating 
+elements appear in the bracket expression!
+If the collating sequence includes a `ch' collating element,
+then the RE `[[.ch.]]*c' matches the first five characters
+of `chchcc',
+and the RE `[^c]b' matches all of `chb'.
+.PP
+Within a bracket expression, a collating element enclosed in `[=' and
+`=]' is an equivalence class, standing for the sequences of characters
+of all collating elements equivalent to that one, including itself.
+(If there are no other equivalent collating elements,
+the treatment is as if the enclosing delimiters were `[.' and `.]'.)
+For example, if o and \o'o^' are the members of an equivalence class,
+then `[[=o=]]', `[[=\o'o^'=]]', and `[o\o'o^']' are all synonymous.
+An equivalence class may not be an endpoint
+of a range.
+.PP
+Within a bracket expression, the name of a \fIcharacter class\fR enclosed
+in `[:' and `:]' stands for the list of all characters belonging to that
+class.
+Standard character class names are:
+.PP
+.RS
+.nf
+.ta 3c 6c 9c
+alnum	digit	punct
+alpha	graph	space
+blank	lower	upper
+cntrl	print	xdigit
+.fi
+.RE
+.PP
+These stand for the character classes defined in
+\fIctype\fR(3).
+A locale may provide others.
+A character class may not be used as an endpoint of a range.
+.PP
+There are two special cases of bracket expressions:
+the bracket expressions `[[:<:]]' and `[[:>:]]'
+are constraints, matching empty strings at
+the beginning and end of a word respectively.
+A word is defined as a sequence of
+word characters
+which is neither preceded nor followed by
+word characters.
+A word character is an
+\fIalnum\fR
+character (as defined by
+\fIctype\fR(3))
+or an underscore.
+This is an extension, and its use is deprecated;
+users of AREs should use constraint escapes instead (see below).
+.SH ESCAPES
+Escapes, which begin with a `\e' followed by an alphanumeric character,
+come in several varieties:
+character entry, class shorthands, constraint, and back references.
+A `\e' followed by an alphanumeric character but not constituting
+a valid escape is illegal in AREs.
+In EREs, there are no escapes:
+outside a bracket expression,
+a `\e' followed by an alphanumeric character merely stands for that
+character as an ordinary character,
+and inside a bracket expression, `\e' is an ordinary character.
+(The latter is the one actual incompatibility between POSIX and AREs.)
+.PP
+Character-entry escapes exist to make it easier to specify
+non-printing and otherwise inconvenient characters in REs.
+The Standard C escapes
+`\ea' (alert, aka bell),
+`\eb' (backspace),
+`\ef' (formfeed),
+`\en' (newline),
+`\er' (carriage return),
+`\et' (horizontal tab), and
+`\ev' (vertical tab)
+are all available.
+`\ee' represents the character whose collating-sequence name
+is ``ESC'', or failing that, the character with octal value 033.
+`\eE' represents `\e' (reducing the backslash doubling in some
+applications where there are multiple levels of backslash processing).
+.PP
+`\ecX', where X is any character, represents the character whose
+low-order 5 bits are the same as those of X,
+and whose other bits are all zero.
+`\e0', `\eXY' and `\eXYZ', where X, Y, and Z are octal digits (0-7),
+represent the characters whose octal values are 0, 0XY, and 0XYZ 
+respectively.
+(See below for why `\eX' isn't in the list here.)
+`\exHHH', where HHH is any sequence of hexadecimal digits (0-9, A-F, a-f),
+represents the character whose hexadecimal value is 0xHHH
+(a single character no matter how many hexadecimal digits are used).
+`\euWXYZ', where WXYZ is exactly four hexadecimal digits,
+represents the Unicode character U+WXYZ in the local byte ordering.
+`\eUstuvwxyz', where stuvwxyz is exactly eight hexadecimal digits,
+is reserved for a somewhat-hypothetical Unicode extension to 32 bits.
+.PP
+The character-entry escapes are always taken as ordinary characters.
+For example, `\e135' is `]' in ASCII,
+but `\e135' does not terminate a bracket expression.
+Beware, however, that some applications \- e.g., C compilers\-interpret 
+such sequences themselves before the regular-expression package
+gets to see them.
+.PP
+Class-shorthand escapes provide shorthands for certain commonly-used
+character classes.
+`\ed', `\es', and `\ew', outside bracket expressions, represent
+`[[:digit:]]', `[[:space:]]', and `[[:alnum:]_]' respectively
+(note the underscore in `\ew').
+`\eD', `\eS', and `\eW', outside bracket expressions, represent
+the complementary classes:
+`[^[:digit:]]', `[^[:space:]]', and `[^[:alnum:]_]' respectively.
+Within bracket expressions,
+`\ed', `\es', and `\ew' lose their outer brackets, representing
+`[:digit:]', `[:space:]', and `[:alnum:]_' respectively;
+`\eD', `\eS', and `\eW' are illegal within bracket expressions.
+.PP
+A constraint escape is a constraint,
+matching the empty string if specific conditions are met,
+written as an escape.
+`\eA' matches only at the beginning of the string, and
+`\eZ' matches only at the end of the string
+(see MATCHING, below, for how they differ from `^' and `$').
+`\ey' matches only at the beginning or end of a word, and
+`\eY' matches only at a point which is not the beginning or end of a word.
+A word is defined as in the specification of [[:<:]] and [[:>:]] above.
+Constraint escapes are illegal within bracket expressions.
+.PP
+A back reference is of the form `\eM', where M is a nonzero digit (1-9),
+or `\eMNN', where MNN is some number of
+digits (first 1-9, rest 0-9) and the value MNN
+is not greater than the number of closing capturing parentheses seen so far.
+A back reference matches the same string matched by the parenthesized
+subexpression specified by the number,
+so that (e.g.) `([bc])\e1' matches `bb' or `cc' but not `bc'.
+The subexpression must entirely precede the back reference in the RE.
+Subexpressions are numbered in the order of their leading parentheses.
+Non-capturing parentheses do not define subexpressions.
+.PP
+There is an inherent historical ambiguity between octal character-entry 
+escapes and back references, which is resolved by heuristics.
+A single non-zero digit, not followed by another digit,
+is always taken as a back reference.
+A leading zero always indicates an octal escape.
+A multi-digit sequence not starting with a zero is taken as a back 
+reference if it comes after a suitable subexpression
+(i.e. the number is in the legal range for a back reference),
+and otherwise is taken as octal.
+.SH "METASYNTAX"
+In addition to the main syntax described above, there are some special
+forms and miscellaneous syntactic facilities available.
+These are extensions, compatible with but not specified by POSIX.
+.PP
+Normally the flavor of RE being used is specified by
+application-dependent means.
+However, this can be overridden by a \fIdirector\fR.
+If an RE of any flavor begins with `***:', the rest of the RE is an ARE.
+If an RE of any flavor begins with `***=',
+the rest of the RE is taken to be a literal string,
+with all characters considered ordinary characters.
+.PP
+An ARE may begin with \fIembedded options\fR:
+the sequence `(?xyz)', where xyz is one or more alphabetic characters,
+specifies options affecting the rest of the RE.
+These supplement, and can override,
+options specified by the application in application-specific ways.
+The available option letters are:
+.RS
+.IP b 3
+rest of RE is a BRE
+.IP c
+case-sensitive matching (usual default)
+.IP e
+rest of RE is an ERE
+.IP i
+case-insensitive matching (see MATCHING, below)
+.IP m
+historical synonym for `n'
+.IP n
+newline-sensitive matching (see MATCHING, below)
+.IP p
+partial newline-sensitive matching (see MATCHING, below)
+.IP q
+rest of RE is a literal (``quoted'') string, all ordinary characters
+.IP s
+non-newline-sensitive matching (usual default)
+.IP t
+tight syntax (usual default; see below)
+.IP w
+inverse partial newline-sensitive (``weird'') matching (see MATCHING, below)
+.IP x
+expanded syntax (see below)
+.RE
+.PP
+In addition to the usual (\fItight\fR) RE syntax, in which all characters are
+significant, there is an \fIexpanded\fR syntax,
+available in all flavors of RE
+by application-specified option, or in AREs by embedded x option.
+In the expanded syntax,
+any white-space character
+not preceded by `\e'
+and not within a bracket expression is ignored,
+so a complex RE can be paragraphed legibly.
+There is one exception:  white space is not allowed within multi-character
+symbols like the ARE `(?:' or the BRE `\e('.
+White-space characters are blank, tab, newline, etc. \- any character
+defined as \fIspace\fR by
+\fIctype\fR(3).
+In addition, all characters between a non-backslashed non-bracket-expression
+`#' and the following newline (or the end of the RE) are ignored,
+so comments can be inserted conveniently.
+Exactly how a multi-line expanded-syntax RE can be entered by a user,
+if at all, is application-specific;
+this is primarily a programming facility.
+.PP
+Finally, in an ARE,
+outside bracket expressions, the sequence `(?#ttt)',
+where ttt is any text not containing a `)', is a comment,
+completely ignored.
+Again, this is not allowed between the characters of
+multi-character symbols like `(?:'.
+Such comments are more a historical artifact than a useful facility,
+and their use is deprecated;
+use the expanded syntax instead.
+.PP
+\fINone\fR of these metasyntax extensions are available if the application
+(or an initial `***=' director)
+has specified that the user's input be treated as a literal string
+rather than as an RE.
 .SH "CHOOSING AMONG ALTERNATIVE MATCHES"
+In the event that an RE could match more than one substring of a given
+string,
+the RE matches the one starting earliest in the string.
+If the RE could match more than one substring starting at that point,
+it matches the longest.
+Subexpressions also match the longest possible substrings, subject to
+the constraint that the whole match be as long as possible,
+with subexpressions starting earlier in the RE taking priority over
+ones starting later.
+Note that higher-level subexpressions thus take priority over
+their lower-level component subexpressions.
 .PP
-In general there may be more than one way to match a regular expression
-to an input string.  For example, consider the command
-.CS
-\fBregexp  (a*)b*  aabaaabb  x  y\fR
-.CE
-Considering only the rules given so far, \fBx\fR and \fBy\fR could
-end up with the values \fBaabb\fR and \fBaa\fR, \fBaaab\fR and \fBaaa\fR,
-\fBab\fR and \fBa\fR, or any of several other combinations.
-To resolve this potential ambiguity \fBregexp\fR chooses among
-alternatives using the rule ``first then longest''.
-In other words, it considers the possible matches in order working
-from left to right across the input string and the pattern, and it
-attempts to match longer pieces of the input string before shorter
-ones.  More specifically, the following rules apply in decreasing
-order of priority:
-.IP [1]
-If a regular expression could match two different parts of an input string
-then it will match the one that begins earliest.
-.IP [2]
-If a regular expression contains \fB|\fR operators then the leftmost
-matching sub-expression is chosen.
-.IP [3]
-In \fB*\fR, \fB+\fR, and \fB?\fR constructs, longer matches are chosen
-in preference to shorter ones.
-.IP [4]
-In sequences of expression components the components are considered
-from left to right.
-.LP
-In the example from above, \fB(a*)b*\fR matches \fBaab\fR:  the \fB(a*)\fR
-portion of the pattern is matched first and it consumes the leading
-\fBaa\fR; then the \fBb*\fR portion of the pattern consumes the
-next \fBb\fR.  Or, consider the following example:
-.CS
-\fBregexp  (ab|a)(b*)c  abc  x  y  z\fR
-.CE
-After this command \fBx\fR will be \fBabc\fR, \fBy\fR will be
-\fBab\fR, and \fBz\fR will be an empty string.
-Rule 4 specifies that \fB(ab|a)\fR gets first shot at the input
-string and Rule 2 specifies that the \fBab\fR sub-expression
-is checked before the \fBa\fR sub-expression.
-Thus the \fBb\fR has already been claimed before the \fB(b*)\fR
-component is checked and \fB(b*)\fR must match an empty string.
+Match lengths are measured in characters, not collating elements.
+An empty string is considered longer than no match at all.
+For example,
+`bb*' matches the three middle characters of `abbbc',
+`(week|wee)(night|knights)' matches all ten characters of `weeknights',
+when `(.*).*' is matched against `abc' the parenthesized subexpression
+matches all three characters, and
+when `(a*)*' is matched against `bc' both the whole RE and the parenthesized
+subexpression match an empty string.
+.PP
+If case-independent matching is specified,
+the effect is much as if all case distinctions had vanished from the
+alphabet.
+When an alphabetic that exists in multiple cases appears as an
+ordinary character outside a bracket expression, it is effectively
+transformed into a bracket expression containing both cases,
+e.g. `x' becomes `[xX]'.
+When it appears inside a bracket expression, all case counterparts
+of it are added to the bracket expression, so that (e.g.) `[x]'
+becomes `[xX]' and `[^x]' becomes `[^xX]'.
+.PP
+If newline-sensitive matching is specified,
+and the string supplied for matching contains newlines,
+`.' and complemented bracket expressions (`[^...]')
+will never match the newline character,
+and `^' and `$' will match the empty string after and before a newline
+respectively, in addition to matching at beginning and end of string
+respectively.
+ARE `\eA' and `\eZ' continue to match beginning or end of string \fIonly\fR.
+.PP
+If partial newline-sensitive matching is specified,
+this affects `.' and complemented bracket expressions as with
+newline-sensitive matching, but not `^' and `$'.
+.PP
+If inverse partial newline-sensitive matching is specified,
+this affects `^' and `$' as with
+newline-sensitive matching,
+but not `.' and complemented bracket expressions.
+This isn't very useful but is provided for symmetry.
 
+.SH BASIC REGULAR EXPRESSIONS
+BREs differ from EREs in several respects.
+`|', `+', and `?' are ordinary characters and there is no equivalent
+for their functionality.
+The delimiters for bounds are `\e{' and `\e}',
+with `{' and `}' by themselves ordinary characters.
+The parentheses for nested subexpressions are `\e(' and `\e)',
+with `(' and `)' by themselves ordinary characters.
+`^' is an ordinary character except at the beginning of the
+RE or the beginning of a parenthesized subexpression,
+`$' is an ordinary character except at the end of the
+RE or the end of a parenthesized subexpression,
+and `*' is an ordinary character if it appears at the beginning of the
+RE or the beginning of a parenthesized subexpression
+(after a possible leading `^').
+Finally,
+single-digit back references (but no other escapes) are available.
+
+.SH "LIMITS AND BACKWARD COMPATIBILITY"
+No particular limit is imposed on the length of REs or the number
+paired parentheses, brackets, or braces.
+.PP
+In AREs, a `\e' inside [...] is an escape,
+so a literal `\e' within `[]' must be written `\e\e'.
+.PP
+In AREs, some escapes mean special things in a bracket expression
+(i.e. `\ed', `\es', `\ew') and others are illegal (i.e. `\eD', `\eS',
+`\eW', `\eA', `\eZ').
+.PP
+In AREs, a `{' followed by a digit will not match those two characters
+but will instead start a bound.  Such sequences should be rare, and
+will often result in an error because following characters will not
+look like a valid bound.
+.PP
+In AREs, a `\e' followed by an alphanumeric character is either an
+escape or an error.  A bunch of new escapes were treated as literal
+characters in old versions of Tcl.
+.PP
+The longest-leftmost match is found in AREs.  Old versions of Tcl
+found the first-leftmost match.  This may affect some old REs which
+were written in the expectation that the first match would be
+reported.  The careful crafting of old REs to optimize the search
+order for fast matching is obsolete.  AREs examine all possible
+matches in parallel, and their performance is largely insensitive to
+their complexity, but cases where the search order was exploited to
+deliberately find a match which was \fInot\fR the longest will need
+rewriting.
+.VE
 .SH KEYWORDS
 match, regular expression, string

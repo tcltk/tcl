@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) exec.test 1.58 97/08/01 11:10:00
+# SCCS: @(#) exec.test 1.62 97/12/24 13:42:34
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -262,7 +262,7 @@ test exec-6.3 {redirecting stderr through a pipeline} {
 
 # I/O redirection: combinations.
 
-catch {exec rm -f gorp.file2}
+file delete gorp.file2
 test exec-7.1 {multiple I/O redirections} {
     exec << "command input" > gorp.file2 $tcltest cat < gorp.file
     exec $tcltest cat gorp.file2
@@ -281,6 +281,12 @@ set a [concat $a $a $a $a]
 test exec-8.1 {long input and output} {
     exec $tcltest cat << $a
 } $a
+
+# More than 20 arguments to exec.
+
+test exec-8.1 {long input and output} {
+    exec $tcltest echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23}
 
 # Commands that return errors.
 
@@ -309,6 +315,16 @@ test exec-9.7 {commands returning errors} {
 		     | $tcltest sh -c "echo error msg 1>&2"} msg] $msg
 } {1 {error msg
 error msg}}
+test exec-9.8 {commands returning errors} {
+    set f [open err w]
+    puts $f {
+	puts stdout out
+	puts stderr err
+    }
+    close $f
+    list [catch {exec $tcltest err} msg] $msg
+} {1 {out
+err}}
 
 # Errors in executing the Tcl command, as opposed to errors in the
 # processes that are invoked.
@@ -555,3 +571,6 @@ test exec-17.1 { inheriting standard I/O } {
 
 file delete script gorp.file gorp.file2
 file delete echo cat wc sh sleep exit
+file delete err
+
+return

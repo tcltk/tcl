@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) rename.test 1.20 97/06/24 17:26:23
+# SCCS: @(#) rename.test 1.21 97/12/08 15:04:05
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -166,7 +166,5 @@ test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile 
 catch {rename incr {}}
 catch {rename incr.old incr}
 
-# Make the file return an empty string (cleaner.).
-
-set x ""
+return
 

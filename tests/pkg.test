@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) pkg.test 1.12 97/08/14 01:33:54
+# SCCS: @(#) pkg.test 1.14 97/12/08 15:03:04
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -483,7 +483,7 @@ test pkg-3.52 {Tcl_PackageCmd procedure, "vsatisfies" option} {
 } {0}
 test pkg-3.53 {Tcl_PackageCmd procedure, "versions" option} {
     list [catch {package foo} msg] $msg
-} {1 {bad option "foo": should be forget, ifneeded, names, provide, require, unknown, vcompare, versions, or vsatisfies}}
+} {1 {bad option "foo": must be forget, ifneeded, names, provide, require, unknown, vcompare, versions, or vsatisfies}}
 
 # No tests for FindPackage;  can't think up anything detectable
 # errors.
@@ -561,3 +561,4 @@ concat
 
 }
 interp delete $i
+return

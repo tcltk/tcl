@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) subst.test 1.8 97/06/23 18:20:15
+# SCCS: @(#) subst.test 1.10 97/12/08 15:04:29
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -84,7 +84,7 @@ test subst-7.1 {switches} {
 } {1 {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}}
 test subst-7.2 {switches} {
     list [catch {subst -no bar} msg] $msg
-} {1 {bad switch "-no": must be -nobackslashes, -nocommands, or -novariables}}
+} {1 {ambiguous switch "-no": must be -nobackslashes, -nocommands, or -novariables}}
 test subst-7.3 {switches} {
     list [catch {subst -bogus bar} msg] $msg
 } {1 {bad switch "-bogus": must be -nobackslashes, -nocommands, or -novariables}}
@@ -104,3 +104,5 @@ test subst-7.7 {switches} {
     set x 123
     subst -nov -nob -noc {abc $x [expr 1+2] \\\x41}
 } {abc $x [expr 1+2] \\\x41}
+
+return

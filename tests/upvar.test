@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) upvar.test 1.15 97/10/29 18:25:56
+# SCCS: @(#) upvar.test 1.16 97/12/08 15:04:46
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -391,4 +391,4 @@ if {[info commands testupvar] != {}} {
 }
 catch {unset a}
 
-concat
+return

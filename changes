@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-SCCS: @(#) changes 1.338 97/11/25 08:30:52
+SCCS: @(#) changes 1.365 98/02/23 17:21:54
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3451,3 +3451,305 @@ Universal Headers V.3.0, so that Tcl will compile with CW Pro 2.
 -gmt flag set.  Thanks to Jan Nijtmans for reporting the problem. (RJ)
 
 ----------------- Released 8.0p2, 11/25/97 -----------------------
+
+12/3/97 (bug fix/optimization) Removed uneeded and potentially dangerous
+instances of double evaluations if "if" and "expr" statements from
+the library files. It is recommended that unless you need a double
+evaluation you always use "expr {...}" instead of "expr ..." and
+"if {...} ..." instead of "if ... ...". It will also be faster
+thanks to the byte compiler. (DL)
+
+---- Shipped as part of the plugin2.0b5 as 8.0p2Plugin1, Dec 8th 97 ----
+
+12/8/97 (bug fix) Need to protect the newly accepted channel in an
+accept callback on a socket, otherwise the callback may close it and
+cause an error, which would cause the C code to attempt to close the
+now deleted channel. Bumping the refcount assures that the channel sticks
+around to be really closed in this case. (JL)
+
+12/8/97 (bug fix) Need to protect the channel in a fileevent so that it
+is not deleted before the fileevent handler returns. (CS, JL)
+
+---- Shipped as part of the plugin as 8.0p2Plugin2, Jan 15th 98 ----
+
+6/18/97 (new feature) Tcl now supports international character sets:
+    - All C APIs now accept UTF-8 strings instead of iso8859-1 strings,
+      wherever you see "char *", unless explicitly noted otherwise.
+    - All Tcl strings represented in UTF-8, which is a convenient
+      multi-byte encoding of Unicode.  Variable names, procedure names,
+      and all other values in Tcl may include arbitrary Unicode characters.
+      For example, the Tcl command "string length" returns how many
+      Unicode characters are in the argument string.
+    - For Java compatibility, embedded null bytes in C strings are
+      represented as \xC080 in UTF-8 strings, but the null byte at the end
+      of a UTF-8 string remains \0.  Thus Tcl strings once again do not
+      contain null bytes, except for termination bytes.
+    - For Java compatibility, "\uXXXX" is used in Tcl to enter a Unicode
+      character.  "\u0000" through "\uffff" are acceptable Unicode 
+      characters.  
+    - "\xXX" is used to enter a small Unicode character (between 0 and 255)
+      in Tcl.
+    - Tcl automatically translates between UTF-8 and the normal encoding for
+      the platform during interactions with the system.
+    - The fconfigure command now supports a -encoding option for specifying
+      the encoding of an open file or socket.  Tcl will automatically
+      translate between the specified encoding and UTF-8 during I/O. 
+      See the directory library/encoding to find out what encodings are
+      supported (eventually there will be an "encoding" command that
+      makes this information more accessible).
+    - There are several new C APIs that support UTF-8 and various encodings.
+      See Utf.3 for procedures that translate between Unicode and UTF-8
+      and manipulate UTF-8 strings. See Encoding.3 for procedures that
+      create new encodings and translate between encodings.  See
+      ToUpper.3 for procedures that perform case conversions on UTF-8
+      strings.
+
+9/18/97 (enhancement) Literal objects are now shared by the ByteCode
+structures created when compiled different scripts. This saves up to 45%
+of the total memory needed for all literals. (BL)
+
+9/24/97 (bug fixes) Fixed Tcl_ParseCommand parsing of backslash-newline
+sequences at start of command words. Suppressed Tcl_EvalDirect error logging
+if non-TCL_OK result wasn't an error. (BL)
+
+10/17/97 (feature enhancement) "~username" now refers to the users' home
+directory on Windows (previously always returned failure). (CCS)
+
+10/20/97 (implementation change) The Tcl parser has been completely rewritten
+to make it more modular.  It can now be used to parse a script without actually
+executing it.  The APIs for the new parser are not correctly exported, but
+they will eventually be exported and augmented with Tcl commands so that
+Tcl scripts can parse other Tcl scripts. (JO)
+
+10/21/97 (API change) Added "flags" argument to Tcl_EvalObj, removed
+Tcl_GlobalEvalObj procedure.  Added new procedures Tcl_Eval2 and
+Tcl_EvalObjv. (JO)
+*** POTENTIAL INCOMPATIBILITY ***
+
+10/22/97 (API change) Renamed Tcl_ObjSetVar2 and Tcl_ObjGetVar2 to
+Tcl_SetObjVar2 and Tcl_GetObjVar2 (for consistency with other C APIs)
+and changed the name arguments to be strings instead of objects.  (JO)
+*** POTENTIAL INCOMPATIBILITY ***
+
+10/27/97 (enhancement) Bytecode compiler rewritten to use the new Tcl
+parser. (BL)
+
+11/3/97 (New routines) Added Tcl_AppendObjToObj, which appends the
+string rep of one Tcl_Obj to another. Added Tcl_GetIndexFromObjStruct,
+which is similar to Tcl_GetIndexFromObj, except that you can give an
+offset between strings. This allows Tcl_GetIndexFromObjStruct to be
+called with a table of records which have strings in them. (SRP)
+
+12/4/97 (enhancement) New Tcl expression parser added. Added new procedure
+Tcl_ParseExpr and new token types TCL_TOKEN_SUB_EXPR and
+TCL_TOKEN_OPERATOR. Expression compiler is reimplemented to use this
+parser. (BL)
+
+12/9/97 (bug fix) Tcl_EvalObj() increments/decrements the refcount of the
+script object to prevent the object from deleting itself while in the
+middle of being evaluated. (CCS)
+
+12/9/97 (bug fix) Memory leak in Tcl_GetsObjCmd(). (CCS)
+
+12/11/97 (bug fix) Environment array leaked memory when compiled with
+Visual C++. (SS)
+
+12/11/97 (bug fix) File events and non-blocking I/O did not work on
+pipes under Windows.  Changed to use threads to achieve non-blocking
+behavior. (SS)
+
+12/18/97 (bug fixes) Fixed segfault in "namespace import"; importing a
+procedure that causes a cycle now returns an error. Modified "info procs",
+"info args", "info body", and "info default" to return information about
+imported procedures as well as procedures defined in a namespace. (BL)
+
+12/19/97 (enhancement) Added new Tcl_GetString() procedure that can be used
+in place of Tcl_GetStringFromObj() if the string representation's length
+isn't needed. (BL)
+
+12/18/97 (bug fix) In the opt argument parsing package: if the description 
+had only flags, the "too many arguments" case was not detected. The default
+value was not used for the special "args" ending argument. (DL)
+
+1/7/98 (clean up) Moved everything not absolutly necessary out of init.tcl
+procs now in auto.tcl and package.tcl can be autoloaded if needed. (DL)
+
+1/7/98 (enhancement) tcltest made at install time will search for it's
+init.tcl where it is, even when using virtual path compilation. (DL)
+
+1/8/98 (os bug workaround) when needed, using a replacement for memcmp so 
+string compare "char with high bit set" "char w/o high bit set" returns
+the expected value on all platforms. (DL)
+
+1/8/98 (unix portability/configure) building from .../unix/targetName/ 
+subdirectories and simply using "../configure" should now work fine. (DL)
+
+1/14/98 (enhancement) Added new regular expression package that
+supports AREs, EREs, and BREs.  The new package includes new escape
+characters, meta-syntax, and character classes inside brackets.
+Regexps involving backslashes may behave differently.  (MH)
+*** POTENTIAL INCOMPATIBILITY ***
+
+1/16/98 (os workaround) Under windows, "file volume" was causing chatter
+and/or several seconds of hanging when querying empty floppy drives.
+Changed implementation to call an empirically-derived function that doesn't
+cause this. (CCS)
+
+1/16/98 (enhancement) Converted regular expressions to a Tcl_Obj type so
+their compiled form gets cached automatically.  Reduced NSUBEXP from 100
+to 20. (BW)
+
+1/16/98 (documentation) Change unclear documentation and comments for
+functions like Tcl_TranslateFileName() and Tcl_ExternalToUtfDString().  Now
+it explicitly says they take an uninitialized or free DString.  A DString
+that is "empty" or "not holding anything" could have been interpreted as one
+currently with a zero length, but with a large dynamically allocated buffer.
+(CCS)
+
+----------------- Released 8.1a1, 1/22/98 -----------------------
+
+1/28/98 (new feature) Added a "-direct" optional flag to pkg_mkIndex
+to generate direct loading package indexes (such those you need
+if you use namespaces and plan on using namespace import just after
+package require). pkg_mkIndex still has limitations regarding
+package dependencies but errors are now ignored and with -direct, correct
+package indexes can be generated even if there are dependencies as long 
+as the "package provide" are done early enough in the files. (DL)
+
+1/28/98 (enhancement) Performance tuning of regexp and regsub. (CCS)
+
+1/28/98 (bug fix) regexp and regsub with "-indices" returned the byte-offsets
+of the characters in the UTF-8 representation, not the character offsets
+themselves. (CCS)
+
+1/28/98 (bug fix) "clock format 0 -format %Z -gmt 1" would return the local
+timezone string instead of "GMT" on Solaris and Windows.
+
+1/28/98 (bug fix) Restore tty settings when closing serial device on Unix.
+This is good behavior when closing real serial devices, essential when
+closing the pseudo-device /dev/tty because the user's terminal settings
+would be left useless, in raw mode, when tcl quit. (CCS)
+
+1/28/98 (bug fix) Tcl_OpenCommandChannel() was modifying the contents of the
+argv array passed to it, causing problems for any caller that wanted to
+continue to use the argv array after calling Tcl_OpenCommandChannel(). (CCS)
+
+2/1/98 (bug fix) More bugs with %Z in format string argument to strftime():
+1. Borland always returned empty string.
+2. MSVC always returned the timezone string for the current time, not the
+   timezone string for the specified time.  
+3. With MSVC, "clock format 0 -format %Z -gmt 1" would return "GMT" the first
+   time it was called, but would return the current timezone string on all
+   subsequent calls. (CCS)
+
+2/1/98 (bug fix) "file stat" was broken on Windows.
+1. "file stat" of a root directory (local or network) or a relative path that
+   resolved to a root directory (c:. when in pwd was c:/) was returning error.
+2. "file stat" on a regular file (S_IFREG), the st_mode was sign extended to
+   a negative int if the platform-dependant type "mode_t" was declared as a
+   short instead of an unsigned short.
+3. "file stat" of a network directory, the st_dev was incorrectly reported
+   as the id of the last accessed local drive rather than the id of the
+   network drive. (CCS)
+
+2/1/98 (bug fix) "file attributes" of a relative path that resolved to a
+root directory was returning error. (CCS)
+
+2/1/98 (bug fix) Change error message when "file attribute" could not
+determine the attributes for a file.  Previously it would return different
+error messages on Unix vs.  Windows vs. Mac. (CCS)
+
+2/4/98 (bug fixes) Fixed several instances of bugs where the parser/compiler 
+would reach outside the range of allocated memory. Improved the array
+lookup algorithm in set compilation. (DL)
+
+2/5/98 (change) The TCL_PARSE_PART1 flag for Set/Get(Obj)Var2 C APIs is now
+deprecated and ignored. The part1 is always parsed when the part2 argument
+is NULL. This is to avoid a pattern of errors for extension writers converting
+from string based Tcl_SetVar() to new Tcl_SetObjVar2() and who could easily
+forget to provide the flag and thus get code working for normal variables 
+but not for array elements. The performance hit is minimal. A side effect
+of that change is that is is no longer possible to create scalar variables
+that can't be accessed by tcl scripts because of their invalid name 
+(ending with parenthesis). Likewise it is also parsed and checked to 
+ensure that you don't create array elements of array whose name is a valid 
+array element because they would not be accessible from scripts anyway. 
+Note: There is still duplicate array elements parsing code. (DL)
+*** POTENTIAL INCOMPATIBILITY ***
+
+2/11/98 (bug fix) Sharing objects between interps, such as by "interp
+eval" or "send" could cause a crash later when dereferencing an interp
+that had been deleted, given code such as:
+	set a {set x y}
+	interp create foo
+	interp eval foo $a
+	interp delete foo
+	unset a
+Interp "foo" was gone, but "a" had a internal rep consisting of bytecodes
+containing a dangling pointer to "foo".  Unsetting "a" would attempt to
+return resources back to "foo", causing a crash as random memory was
+accessed.  The lesson is that that if an object's internal rep depends on
+an interp (or any other data structure) it must preserve that data in
+some fashion. (CCS)
+
+2/11/98 (enhancement) The "interp" command was returning inconsistent error
+messages when the specified slave interp could not be found. (CCS)
+
+2/11/98 (bug fix) Result codes like TCL_BREAK and TCL_CONTINUE were not
+propagating through the master/slave interp boundaries, such as "interp
+eval" and "interp alias".  TCL_OK, TCL_ERROR, and non-standard codes like
+teh integer 57 work.  There is still a question as to whether TCL_RETURN
+can/should propagate. (CCS)
+
+2/11/98 (bug fix) TclCompileScript() was derefering memory 1 byte before
+start of the string to compile, looking for ']'. (CCS,DL)
+
+2/11/98 (bug fix) Tcl_Eval2() was derefering memory 1 byte before start
+of the string to eval, looking for ']'. (CCS,DL)
+
+2/11/98 (bug fix) Compiling "set a(b" was running off end of string. (CCS,DL)
+
+2/11/98 (bug fix) Windows initialization code was dereferencing
+uninitialized memory if TCL_LIBRARY environment didn't exist. (CCS)
+
+2/11/98 (bug fix) Windows "registry" command was dereferencing
+uninitialized memory when constructing the $errorCode for a failed
+registry call. (CCS)
+
+2/11/98 (enhancement) Eliminate the TCL_USE_TIMEZONE_VAR definition from
+configure.in, because it was the same information as the already existing
+HAVE_TM_ZONE definition.  The lack of HAVE_TM_ZONE is used to work around a
+Solaris and Windows bug where "clock format [clock sec] -format %Z -gmt 1" 
+produces the local timezone string instead of "GMT". (CCS)
+
+2/11/98 (bug fix) Memleaks and dereferencing of uninitialized memory in
+regexp if an error occurred while compiling a regular expression. (CCS).
+
+2/18/98 (new feature) Added mutexes and thread local storage in order
+to make Tcl thread safe.  For testing purposes, there is a testthread
+command that creates a new thread and an interpreter inside it.  See
+thread.test for examples, but this script-level interface is not fixed.
+Each thread has its own notifier instance to manage its own events,
+and threads can post messages to each other's message queue.
+This uses pthreads on UNIX, and native thread support on other platforms.
+You enable this by configuring with --enable-threads.  Note that at
+this time *Tk* is still not thread safe. Special thanks to
+Richard Hipp: his earlier implementation inspired this work. (BW, SS, JI)
+
+2/18/98 (hidden feature change) The way the env() array is shared among
+interpreters changed.  Updates to env used to trigger write traces in
+other interpreters.  This undocumented feature is no longer implemented.
+Instead, variable tracing is used to keep the C-level environ array in sync
+with the Tcl-level env array. This required adding TCL_TRACE_ARRAY support
+to Tcl_TraceVar2 so that array names works properly. (BW)
+*** POTENTIAL INCOMPATIBILITY ***
+
+2/18/98 (enhancement) Conditional compilation for unix systems (e.g.,
+IRIX, SCO) that use f_bsize instead of st_blksize to determine disk block
+size. (CCS)
+
+2/23/98 (bug fix) Fixed the emulation of polling selects in the threaded
+version of the Unix notifier.  The bug was showing up on a multiprocessor
+as starvation of the notifier thread. (BW)
+
+----------------- Released 8.1a2, Feb 23 1998 -----------------------

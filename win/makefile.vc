@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# SCCS: @(#) makefile.vc 1.82 97/11/20 15:14:01
+# SCCS: @(#) makefile.vc 1.91 98/02/18 15:07:56
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -26,7 +26,7 @@
 #	    library.  This information is optional; if the 16-bit compiler
 #	    is not available, then the 16-bit code will not be built.  
 #	    Tcl will still run without the 16-bit code, but...
-#		A. Under Windows 3.X you will any calls to the exec command
+#		A. Under Windows 3.X any calls to the exec command
 #	           will return an error.
 #		B. A 16-bit program to test the behavior of the exec
 #		   command under NT and 95 will not be built.
@@ -40,21 +40,26 @@ TOOLS16		= c:\msvc
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE	= IX86
 
-# Comment the following line to compile with symbols
-NODEBUG=1
+# Uncomment the following line to compile with debugging symbols:
+#DEBUG=1
 
-# uncomment one of the following lines to compile with TCL_MEM_DEBUG, 
-# TCL_MEM_DEBUG, or TCL_COMPILE_DEBUG
-#DEBUGDEFINES	= -DTCL_MEM_DEBUG
-#DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG
-#DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_STATS
+# Uncomment the following line to compile with thread support
+#THREADDEFINES = -DTCL_THREADS=1
+
+# The following defines can be added to enable various options in the
+# way Tcl is built:
+#
+# TCL_MEM_DEBUG - enable the debugging memory allocator
+# TCL_COMPILE_DEBUG - enable the debugging bytecode compiler
+# TCL_COMPILE_STATS - enable statistics gathering in the bytecode compiler
+#
 #DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 
 ######################################################################
 # Do not modify below this line
 ######################################################################
 
-VERSION = 80
+VERSION = 81
 
 TCLLIB		= tcl$(VERSION).lib
 TCLDLL		= tcl$(VERSION).dll
@@ -76,12 +81,14 @@ TCLSHOBJS = \
 TCLTESTOBJS = \
 	$(TMPDIR)\tclTest.obj \
 	$(TMPDIR)\tclTestObj.obj \
+	$(TMPDIR)\tclThreadTest.obj \
 	$(TMPDIR)\tclWinTest.obj \
 	$(TMPDIR)\testMain.obj
 
 TCLOBJS = \
+	$(TMPDIR)\compile.obj \
+	$(TMPDIR)\exec.obj \
 	$(TMPDIR)\panic.obj \
-	$(TMPDIR)\regexp.obj \
 	$(TMPDIR)\strftime.obj \
 	$(TMPDIR)\tclAlloc.obj \
 	$(TMPDIR)\tclAsync.obj \
@@ -92,9 +99,11 @@ TCLOBJS = \
 	$(TMPDIR)\tclCmdAH.obj \
 	$(TMPDIR)\tclCmdIL.obj \
 	$(TMPDIR)\tclCmdMZ.obj \
+	$(TMPDIR)\tclCompCmds.obj \
 	$(TMPDIR)\tclCompExpr.obj \
 	$(TMPDIR)\tclCompile.obj \
 	$(TMPDIR)\tclDate.obj \
+	$(TMPDIR)\tclEncoding.obj \
 	$(TMPDIR)\tclEnv.obj \
 	$(TMPDIR)\tclEvent.obj \
 	$(TMPDIR)\tclExecute.obj \
@@ -110,6 +119,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclIOSock.obj \
 	$(TMPDIR)\tclIOUtil.obj \
 	$(TMPDIR)\tclLink.obj \
+	$(TMPDIR)\tclLiteral.obj \
 	$(TMPDIR)\tclListObj.obj \
 	$(TMPDIR)\tclLoad.obj \
 	$(TMPDIR)\tclMain.obj \
@@ -117,13 +127,18 @@ TCLOBJS = \
 	$(TMPDIR)\tclNotify.obj \
 	$(TMPDIR)\tclObj.obj \
 	$(TMPDIR)\tclParse.obj \
+	$(TMPDIR)\tclParseExpr.obj \
 	$(TMPDIR)\tclPipe.obj \
 	$(TMPDIR)\tclPkg.obj \
 	$(TMPDIR)\tclPosixStr.obj \
 	$(TMPDIR)\tclPreserve.obj \
 	$(TMPDIR)\tclProc.obj \
+	$(TMPDIR)\tclRegexp.obj \
+	$(TMPDIR)\tclResult.obj \
 	$(TMPDIR)\tclStringObj.obj \
+	$(TMPDIR)\tclThread.obj \
 	$(TMPDIR)\tclTimer.obj \
+	$(TMPDIR)\tclUtf.obj \
 	$(TMPDIR)\tclUtil.obj \
 	$(TMPDIR)\tclVar.obj \
 	$(TMPDIR)\tclWin32Dll.obj \
@@ -137,6 +152,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclWinNotify.obj \
 	$(TMPDIR)\tclWinPipe.obj \
 	$(TMPDIR)\tclWinSock.obj \
+	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj 
 
 cc32		= $(TOOLS32)\bin\cl.exe
@@ -153,7 +169,7 @@ WINDIR          = $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
 TCL_INCLUDES	= -I$(WINDIR) -I$(GENERICDIR)
-TCL_DEFINES	= -D__WIN32__ $(DEBUGDEFINES)
+TCL_DEFINES	= -D__WIN32__ $(DEBUGDEFINES) $(THREADDEFINES)
 
 TCL_CFLAGS	= $(cdebug) $(cflags) $(cvarsdll) $(include32) \
 			$(TCL_INCLUDES) $(TCL_DEFINES)
@@ -165,10 +181,10 @@ DLL16_CFLAGS	= $(cdebug) $(cflags) $(include16) -ALw
 # Link flags
 ######################################################################
 
-!IFDEF NODEBUG
-ldebug = /RELEASE
-!ELSE
+!IF "$(DEBUG)" == "1"
 ldebug = -debug:full -debugtype:cv
+!ELSE
+ldebug = /RELEASE
 !ENDIF
 
 # declarations common to all linker options
@@ -206,10 +222,11 @@ conlibsdll = $(libcdll) $(baselibs)
 # Compile flags
 ######################################################################
 
-!IFDEF NODEBUG
-cdebug = -Oti -Gs -GD
+!IF "$(DEBUG)" == "1"
+#cdebug = -Z7 -Od -WX
+cdebug = -Z7 -Od
 !ELSE
-cdebug = -Z7 -Od -WX
+cdebug = -Oti -Gs -GD
 !ENDIF
 
 # declarations common to all compiler options
