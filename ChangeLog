@@ -1,9 +1,11 @@
 2004-10-27  Don Porter  <dgp@users.sourceforge.net>
 
+        * tests/socket.test (socket-13.1):      Balanced [makeFile] and
+        [removeFile] commands.
+
 	* tests/clock.test:	Correct duplicate test names.
 	* tests/namespace.test:
 	* tests/string.test:
-
 	* tests/io.test (io-50.4):	Use namespace variables.
 
 2004-10-27  David Gravereaux <davygrvy@pobox.com>
