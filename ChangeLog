@@ -1,3 +1,19 @@
+2001-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in: Define new dltest target that
+	simply does a cd to dltest/ before running make.
+	There is no need for the separate configure
+	script that was previously being used.
+	* unix/configure: Regen.
+	* unix/configure.in: Subst into dltest/Makefile.
+	* unix/dltest/Makefile.in: Define LIBS using
+	DL_LIBS, LIBS, and MATH_LIBS variables instead
+	of TCL_LIBS variable from tclConfig.sh.
+	* unix/dltest/README: Update readme to account for new
+	configure free implementation.
+	* unix/dltest/configure: Removed.
+	* unix/dltest/configure.in: Removed.
+
 2001-12-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tcl.h (TCL_STUB_MAGIC): Added cast to force type to be
