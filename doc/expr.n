@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.7 2002/02/15 14:28:47 dkf Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.8 2002/03/21 13:27:59 dkf Exp $
 '\" 
 .so man.macros
 .TH expr n 8.4 Tcl "Tcl Built-In Commands"
@@ -229,7 +229,8 @@ radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
 than \fI0\fR, this is equivalent to \fBatan(\fIy/x\fB)\fR.
 .TP
 \fBceil(\fIarg\fB)\fR
-Returns the smallest integer value not less than \fIarg\fR.
+Returns the smallest integral floating point value (i.e. with a zero
+fractional part) not less than \fIarg\fR.
 .TP
 \fBcos(\fIarg\fB)\fR
 Returns the cosine of \fIarg\fR, measured in radians.
@@ -247,7 +248,8 @@ Returns the exponential of \fIarg\fR, defined as \fIe\fR**\fIarg\fR.
 If the result would cause an overflow, an error is returned.
 .TP
 \fBfloor(\fIarg\fB)\fR
-Returns the largest integral value not greater than \fIarg\fR.
+Returns the largest integral floating point value (i.e. with a zero
+fractional part) not greater than \fIarg\fR.
 .TP
 \fBfmod(\fIx, y\fB)\fR
 Returns the floating-point remainder of the division of \fIx\fR by
