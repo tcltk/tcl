@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.43 2003/03/19 16:51:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.44 2003/03/20 10:03:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2862,7 +2862,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     int contFixIndex;		/* Where the first of the jumps due to a
 				 * group of continuation bodies starts,
 				 * or -1 if there aren't any. */
-    int contFixCount;		/* Number of continuation bodies pointing
+    int contFixCount = 0;	/* Number of continuation bodies pointing
 				 * to the current (or next) real body. */
     int codeOffset;		/* Cache of current bytecode offset. */
     int savedStackDepth = envPtr->currStackDepth;
@@ -3048,7 +3048,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     foundDefault = 0;
     for (i=0 ; i<argc ; i+=2) {
 	int code;		/* Return codes from sub-compiles. */
-	int nextArmFixupIndex;
+	int nextArmFixupIndex = -1;
 
 	/*
 	 * Generate the test for the arm.
