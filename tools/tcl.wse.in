@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=6.01
-  Title=Tcl 8.4 for Windows Installation
+  Title=Tcl 8.5 for Windows Installation
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -12,7 +12,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Disk Label=tcl8.4.2
+  Disk Label=tcl8.5a0
   Disk Filename=setup
   Patch Flags=0000000000000001
   Patch Threshold=85
@@ -42,7 +42,7 @@ item: End Block
 end
 item: Set Variable
   Variable=VER
-  Value=8.4
+  Value=8.5
 end
 item: Set Variable
   Variable=PATCHLEVEL
@@ -960,23 +960,23 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\tk84.lib
-  Destination=%MAINDIR%\lib\tk84.lib
+  Source=${__TKBASEDIR__}\win\release\tk85.lib
+  Destination=%MAINDIR%\lib\tk85.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\tkstub84.lib
-  Destination=%MAINDIR%\lib\tkstub84.lib
+  Source=${__TKBASEDIR__}\win\release\tkstub85.lib
+  Destination=%MAINDIR%\lib\tkstub85.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tcl84.lib
-  Destination=%MAINDIR%\lib\tcl84.lib
+  Source=${__TCLBASEDIR__}\win\release\tcl85.lib
+  Destination=%MAINDIR%\lib\tcl85.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclstub84.lib
-  Destination=%MAINDIR%\lib\tclstub84.lib
+  Source=${__TCLBASEDIR__}\win\release\tclstub85.lib
+  Destination=%MAINDIR%\lib\tclstub85.lib
   Flags=0000000000000010
 end
 item: Install File
@@ -1607,28 +1607,28 @@ item: Install File
   Flags=0010001000000011
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\wish84.exe
-  Destination=%MAINDIR%\bin\wish84.exe
+  Source=${__TKBASEDIR__}\win\release\wish85.exe
+  Destination=%MAINDIR%\bin\wish85.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclsh84.exe
-  Destination=%MAINDIR%\bin\tclsh84.exe
+  Source=${__TCLBASEDIR__}\win\release\tclsh85.exe
+  Destination=%MAINDIR%\bin\tclsh85.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclpip84.dll
-  Destination=%MAINDIR%\bin\tclpip84.dll
+  Source=${__TCLBASEDIR__}\win\release\tclpip85.dll
+  Destination=%MAINDIR%\bin\tclpip85.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tcl84.dll
-  Destination=%MAINDIR%\bin\tcl84.dll
+  Source=${__TCLBASEDIR__}\win\release\tcl85.dll
+  Destination=%MAINDIR%\bin\tcl85.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\tk84.dll
-  Destination=%MAINDIR%\bin\tk84.dll
+  Source=${__TKBASEDIR__}\win\release\tk85.dll
+  Destination=%MAINDIR%\bin\tk85.dll
   Flags=0000000000000010
 end
 item: Install File
@@ -2031,13 +2031,13 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\tools\tcl84.cnt
-  Destination=%MAINDIR%\doc\tcl84.cnt
+  Source=${__TCLBASEDIR__}\tools\tcl85.cnt
+  Destination=%MAINDIR%\doc\tcl85.cnt
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\tools\tcl84.hlp
-  Destination=%MAINDIR%\doc\tcl84.hlp
+  Source=${__TCLBASEDIR__}\tools\tcl85.hlp
+  Destination=%MAINDIR%\doc\tcl85.hlp
   Flags=0000000000000010
 end
 item: End Block
@@ -2070,7 +2070,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\bin\wish84.exe
+  Source=%MAINDIR%\bin\wish85.exe
   Destination=%GROUP%\Wish.lnk
   Working Directory=%MAINDIR%
 end
@@ -2082,7 +2082,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\bin\tclsh84.exe
+  Source=%MAINDIR%\bin\tclsh85.exe
   Destination=%GROUP%\Tclsh.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
@@ -2096,7 +2096,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\doc\tcl84.hlp
+  Source=%MAINDIR%\doc\tcl85.hlp
   Destination=%GROUP%\Tcl Help.lnk
   Working Directory=%MAINDIR%
 end
@@ -2132,7 +2132,7 @@ item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Widget Tour
   Command Line=%MAINDIR%\lib\tk%VER%\demos\widget.tcl
-  Icon Pathname=%MAINDIR%\bin\wish84.exe
+  Icon Pathname=%MAINDIR%\bin\wish85.exe
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2145,7 +2145,7 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Tcl Help
-  Command Line=%MAINDIR%\doc\tcl84.hlp
+  Command Line=%MAINDIR%\doc\tcl85.hlp
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2164,7 +2164,7 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Wish
-  Command Line=%MAINDIR%\bin\wish84.exe
+  Command Line=%MAINDIR%\bin\wish85.exe
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2177,7 +2177,7 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Tclsh
-  Command Line=%MAINDIR%\bin\tclsh84.exe
+  Command Line=%MAINDIR%\bin\tclsh85.exe
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2197,7 +2197,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\DefaultIcon
-  New Value=%MAINDIR%\bin\tk84.dll
+  New Value=%MAINDIR%\bin\tk85.dll
 end
 item: Edit Registry
   Total Keys=1
@@ -2212,7 +2212,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\shell\open\command
-  New Value=%MAINDIRSHORT%\bin\wish84.exe "%%1" %%*
+  New Value=%MAINDIRSHORT%\bin\wish85.exe "%%1" %%*
 end
 item: Edit Registry
   Total Keys=1

@@ -1,3 +1,27 @@
+2003-03-04  Don Porter	<dgp@users.sourceforge.net>
+
+	* README:				Bumped version number of
+	* generic/tcl.h:			Tcl to 8.5a0.
+	* library.init.tcl:
+	* mac/README:
+	* macosx/Tcl.pbproj/project.pbxproc:
+	* tests/basic.test:
+	* tools/configure.in:
+	* tools/tcl.hpj.in:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README:
+	* win/README.binary:
+	* win/configure.in:
+	* win/makefile.bc:
+	* win/makefile.vc:
+	* win/tcl.m4:
+
+	* tools/configure:	autoconf
+	* unix/configure:
+	* win/configure:
+
 2003-03-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.2 TAGGED FOR RELEASE ***

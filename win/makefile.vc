@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.100 2003/03/03 18:14:39 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.101 2003/03/04 23:46:26 dgp Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -155,7 +155,7 @@ PROJECT	= tcl
 !include "rules.vc"
 
 STUBPREFIX = $(PROJECT)stub
-DOTVERSION = 8.4
+DOTVERSION = 8.5
 VERSION = $(DOTVERSION:.=)
 
 DDEDOTVERSION = 1.2

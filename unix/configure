@@ -545,10 +545,10 @@ fi
 
 
 
-TCL_VERSION=8.4
+TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=4
-TCL_PATCH_LEVEL=".2"
+TCL_MINOR_VERSION=5
+TCL_PATCH_LEVEL="a0"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
