@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.40 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.41 2004/04/16 17:33:32 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -398,7 +398,8 @@ given.
 .PP
 \fBTcl_FSUtime\fR replaces the library version of utime.  
 .PP
-For results see 'utime' documentation.  If successful, the function
+This returns 0 on success and -1 on error (as per the 'utime'
+documentation).  If successful, the function
 will update the 'atime' and 'mtime' values of the file given.
 .PP
 \fBTcl_FSFileAttrsGet\fR implements read access for the hookable 'file
@@ -1097,8 +1098,8 @@ typedef int Tcl_FSUtimeProc(
 The access and modification times of the file specified by \fIpathPtr\fR
 should be changed to the values given in the \fItval\fR structure.
 .PP
-The return value is a standard Tcl result indicating whether an error
-occurred in the process.
+The return value should be 0 on success and -1 on an error, as
+with the system utime().
 .SH LINKPROC 
 .PP
 Function to process a \fBTcl_FSLink()\fR call.  Should be implemented
