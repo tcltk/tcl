@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.34 2004/03/04 23:25:14 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.35 2004/03/08 16:34:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -206,10 +206,6 @@ TclParseInit(interp, string, numBytes, parsePtr)
 				 * the first null character. */
     Tcl_Parse *parsePtr;	/* Points to struct to initialize */
 {
-    parsePtr->commentStart = NULL;
-    parsePtr->commentSize = 0;
-    parsePtr->commandStart = NULL;
-    parsePtr->commandSize = 0;
     parsePtr->numWords = 0;
     parsePtr->tokenPtr = parsePtr->staticTokens;
     parsePtr->numTokens = 0;
@@ -288,6 +284,10 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	numBytes = strlen(string);
     }
     TclParseInit(interp, string, numBytes, parsePtr);
+    parsePtr->commentStart = NULL;
+    parsePtr->commentSize = 0;
+    parsePtr->commandStart = NULL;
+    parsePtr->commandSize = 0;
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
@@ -470,9 +470,6 @@ parseWord:
 
     error:
     Tcl_FreeParse(parsePtr);
-    if (parsePtr->commandStart == NULL) {
-	parsePtr->commandStart = string;
-    }
     parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
     return TCL_ERROR;
 }
