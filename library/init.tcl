@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.26 1999/02/11 03:04:46 stanton Exp $
+# RCS: @(#) $Id: init.tcl,v 1.27 1999/03/31 18:58:14 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -372,6 +372,7 @@ proc auto_load_index {} {
 }
 
 # auto_qualify --
+#
 # compute a fully qualified names list for use in the auto_index array.
 # For historical reasons, commands in the global namespace do not have leading
 # :: in the index key. The list has two elements when the command name is
@@ -431,6 +432,7 @@ proc auto_qualify {cmd namespace} {
 }
 
 # auto_import --
+#
 # invoked during "namespace import" to make see if the imported commands
 # reside in an autoloaded library.  If so, the commands are loaded so
 # that they will be available for the import links.  If not, then this
@@ -570,7 +572,12 @@ proc auto_execok name {
 }
 
 }
+# OPTIONAL SUPPORT PROCEDURES
+# In Tcl 8.1 all the code below here has been moved to other files to
+# reduce the size of init.tcl
+
 # auto_reset --
+#
 # Destroy all cached information for auto-loading and auto-execution,
 # so that the information gets recomputed the next time it's needed.
 # Also delete any procedures that are listed in the auto-load index
@@ -594,10 +601,12 @@ proc auto_reset {} {
     catch {unset auto_oldpath}
 }
 
-# tcl_findLibrary
+# tcl_findLibrary --
+#
 #	This is a utility for extensions that searches for a library directory
 #	using a canonical searching algorithm. A side effect is to source
 #	the initialization script and set a global library variable.
+#
 # Arguments:
 # 	basename	Prefix of the directory name, (e.g., "tk")
 #	version		Version number of the package, (e.g., "8.0")
@@ -674,10 +683,6 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     error $msg
 }
 
-
-# OPTIONAL SUPPORT PROCEDURES
-# In Tcl 8.1 all the code below here has been moved to other files to
-# reduce the size of init.tcl
 
 # ----------------------------------------------------------------------
 # auto_mkindex
@@ -824,10 +829,9 @@ if {! [interp issafe]} {
 		$parser invokehidden namespace delete ::
 		$parser invokehidden proc unknown {args} {}
 
-		#
 		# We'll need access to the "namespace" command within the
 		# interp.  Put it back, but move it out of the way.
-		#
+
 		$parser expose namespace
 		$parser invokehidden rename namespace _%@namespace
 		$parser expose eval
@@ -848,13 +852,14 @@ if {! [interp issafe]} {
     }
 
     # auto_mkindex_parser::mkindex --
+    #
     # Used by the "auto_mkindex" command to create a "tclIndex" file for
     # the given Tcl source file.  Executes the commands in the file, and
     # handles things like the "proc" command by adding an entry for the
     # index file.  Returns a string that represents the index file.
     #
     # Arguments: 
-    # file -		Name of Tcl source file to be indexed.
+    #	file	Name of Tcl source file to be indexed.
 
     proc auto_mkindex_parser::mkindex {file} {
 	variable parser
@@ -889,6 +894,7 @@ if {! [interp issafe]} {
     }
 
     # auto_mkindex_parser::hook command
+    #
     # Registers a Tcl command to evaluate when initializing the
     # slave interpreter used by the mkindex parser.
     # The command is evaluated in the master interpreter, and can
@@ -901,6 +907,7 @@ if {! [interp issafe]} {
     }
 
     # auto_mkindex_parser::slavehook command
+    #
     # Registers a Tcl command to evaluate when initializing the
     # slave interpreter used by the mkindex parser.
     # The command is evaluated in the slave interpreter.
@@ -908,10 +915,14 @@ if {! [interp issafe]} {
     proc auto_mkindex_parser::slavehook {cmd} {
 	variable initCommands
 
-	lappend initCommands [list \$parser eval $cmd]
+	# The $parser variable is defined to be the name of the
+	# slave interpreter when this command is used later.
+
+	lappend initCommands "\$parser eval [list $cmd]"
     }
 
     # auto_mkindex_parser::command --
+    #
     # Registers a new command with the "auto_mkindex_parser" interpreter
     # that parses Tcl files.  These commands are fake versions of things
     # like the "proc" command.  When you execute them, they simply write
@@ -923,17 +934,23 @@ if {! [interp issafe]} {
     # could be added to a "tclIndex" file for auto-loading.
     #
     # Arguments:
-    # name -		Name of command recognized in Tcl files.
-    # arglist -		Argument list for command.
-    # body -		Implementation of command to handle indexing.
+    #	name 	Name of command recognized in Tcl files.
+    #	arglist	Argument list for command.
+    #	body 	Implementation of command to handle indexing.
 
     proc auto_mkindex_parser::command {name arglist body} {
 	hook [list auto_mkindex_parser::commandInit $name $arglist $body]
     }
 
     # auto_mkindex_parser::commandInit --
+    #
     # This does the actual work set up by auto_mkindex_parser::command
     # This is called when the interpreter used by the parser is created.
+    #
+    # Arguments:
+    #	name 	Name of command recognized in Tcl files.
+    #	arglist	Argument list for command.
+    #	body 	Implementation of command to handle indexing.
 
     proc auto_mkindex_parser::commandInit {name arglist body} {
 	variable parser
@@ -949,17 +966,28 @@ if {! [interp issafe]} {
 	}
 	proc $fakeName $arglist $body
 
-	#
 	# YUK!  Tcl won't let us alias fully qualified command names,
 	# so we can't handle names like "::itcl::class".  Instead,
 	# we have to build procs with the fully qualified names, and
 	# have the procs point to the aliases.
-	#
+
 	if {[regexp {::} $name]} {
 	    set exportCmd [list _%@namespace export [namespace tail $name]]
 	    $parser eval [list _%@namespace eval $ns $exportCmd]
 	    set alias [namespace tail $fakeName]
-	    $parser invokehidden proc $name {args} [list _%@eval $alias \$args]
+
+	    # The following proc definition does not work if you
+	    # want to tolerate space or something else diabolical
+	    # in the procedure name, (i.e., space in $alias)
+	    # The following does not work:
+	    # 	"_%@eval {$alias} \$args"
+	    # because $alias gets concat'ed to $args.
+	    # The following does not work because $cmd is somehow undefined
+	    #	"set cmd {$alias} \; _%@eval {\$cmd} \$args"
+	    # A gold star to someone that can make test
+	    # autoMkindex-3.3 work properly
+
+	    $parser invokehidden proc $name {args} "_%@eval {$alias} \$args"
 	    $parser alias $alias $fakeName
 	} else {
 	    $parser alias $name $fakeName
