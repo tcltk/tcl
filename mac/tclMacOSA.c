@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.6 1999/12/21 23:58:13 hobbs Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.7 2001/11/23 01:27:57 das Exp $
  */
 
 #define MAC_TCL
@@ -2120,7 +2120,7 @@ tclOSAStore(
 	    return TCL_ERROR;
 	}
 		
-	FSpCreateResFileCompat(&fileSpec,
+	FSpCreateResFileCompatTcl(&fileSpec,
 		'WiSH', 'osas', smSystemScript);	
 	myErr = ResError();
 	
@@ -2132,7 +2132,7 @@ tclOSAStore(
 	    goto rezEvalCleanUp;
 	}
 		
-	fileRef = FSpOpenResFileCompat(&fileSpec, fsRdWrPerm);
+	fileRef = FSpOpenResFileCompatTcl(&fileSpec, fsRdWrPerm);
 	if (fileRef == -1) {
 	    Tcl_AppendResult(interp, "Error reading the file: \"", 
 		    fileName, "\".", NULL);
@@ -2307,7 +2307,7 @@ tclOSALoad(
 	    return TCL_ERROR;
 	}
 			
-	fileRef = FSpOpenResFileCompat(&fileSpec, fsRdPerm);
+	fileRef = FSpOpenResFileCompatTcl(&fileSpec, fsRdPerm);
 	if (fileRef == -1) {
 	    Tcl_AppendResult(interp, "Error reading the file: \"", 
 		    fileName, "\".", NULL);
