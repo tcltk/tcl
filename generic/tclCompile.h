@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.1 2005/03/10 22:32:01 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.2 2005/03/10 23:13:28 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -908,6 +908,10 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
     } \
+    *((int *)((envPtr)->codeNext)) = (int) (i); \
+    (envPtr)->codeNext += 4
+
+#if 0
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i) >> 24); \
     *(envPtr)->codeNext++ = \
@@ -916,6 +920,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 	(unsigned char) ((unsigned int) (i) >>  8); \
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i)      )
+#endif
     
 /*
  * Macros to emit an instruction with signed or unsigned integer operands.
@@ -933,6 +938,11 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 	TclExpandCodeArray(envPtr); \
     } \
     *(envPtr)->codeNext++ = (unsigned char) (op); \
+    *((int *)((envPtr)->codeNext)) = (int) (i); \
+    (envPtr)->codeNext += 4; \
+    TclUpdateStackReqs(op, i, envPtr)
+
+#if 0
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i) >> 24); \
     *(envPtr)->codeNext++ = \
@@ -942,6 +952,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i)      );\
     TclUpdateStackReqs(op, i, envPtr)
+#endif
     
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
@@ -968,11 +979,14 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     *(p)   = (unsigned char) ((unsigned int) (i))
 
 #define TclStoreIntAtPtr(i, p) \
+    *((int *)(p)) = (int) (i)
+    
+#if 0
     *(p)   = (unsigned char) ((unsigned int) (i) >> 24); \
     *(p+1) = (unsigned char) ((unsigned int) (i) >> 16); \
     *(p+2) = (unsigned char) ((unsigned int) (i) >>  8); \
     *(p+3) = (unsigned char) ((unsigned int) (i)      )
-    
+#endif
 /*
  * Macros to update instructions at a particular pc with a new op code
  * and a (signed or unsigned) int operand. The ANSI C "prototypes" for
@@ -1020,16 +1034,22 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 #    endif
 #endif
 
+#define TclGetUInt1AtPtr(p) ((unsigned int) *(p))
+
+#if 0    
 #define TclGetIntAtPtr(p) (((int) TclGetInt1AtPtr(p) << 24) | \
 					    (*((p)+1) << 16) | \
 				  	    (*((p)+2) <<  8) | \
 				  	    (*((p)+3)))
     
-#define TclGetUInt1AtPtr(p) ((unsigned int) *(p))
 #define TclGetUIntAtPtr(p) ((unsigned int) (*(p)     << 24) | \
 					    (*((p)+1) << 16) | \
 					    (*((p)+2) <<  8) | \
 					    (*((p)+3)))
+#else
+#define TclGetIntAtPtr(p)  *((int *)(p))
+#define TclGetUIntAtPtr(p) ((unsigned int) *((int *)(p)))
+#endif
     
 /*
  * Macros used to compute the minimum and maximum of two integers.
