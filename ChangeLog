@@ -1,5 +1,13 @@
 2001-11-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Fixup stack size under OSF1. [Tcl patch 474790]
+
+	* unix/configure: Regen.
+	* unix/tcl.m4: Add HAVE_PTHREAD_ATTR_SETSTACKSIZE define
+	to EXTRA_CFLAGS to adjust initial stack size.
+
+2001-11-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Enable thread support under FreeBSD. [Tcl bug 473708]
 
 	* unix/configure: Regen.
