@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.20 2000/07/25 22:41:05 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.21 2000/08/21 01:37:51 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -3228,6 +3228,11 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
 	case ARRAY_STATISTICS: {
 	    char *stats;
+
+	    if (notArray) {
+		goto error;
+	    }
+
 	    stats = Tcl_HashStats(varPtr->value.tablePtr);
 	    if (stats != NULL) {
 		Tcl_SetResult(interp, stats, TCL_VOLATILE);
