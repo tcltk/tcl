@@ -1,3 +1,11 @@
+1999-03-30    <stanton@scriptics.com>
+
+	* generic/tclInt.h: 
+	* generic/tclLoad.c (TclFinalizeLoad): 
+	* generic/tclEvent.c (Tcl_Finalize): Defer unloading of loadable
+	modules until all exit handlers have been invoked.
+	[Bug: 998, 1273, 1573, 1593]
+
 1999-03-29    <stanton@scriptics.com>
 
 	* generic/tclFileName.c: 
