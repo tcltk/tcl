@@ -1,11 +1,13 @@
 2004-12-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	*** 8.5a2 TAGGED FOR RELEASE ***
+
+	* unix/Makefile.in: add library/{tzdata,msgs} to dist target (kbk)
+
 	* doc/foreach.n: Adjust tabs to be friendlier to some HTML
 	converters. [Bug 1078760]
 
 2004-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	*** 8.5a2 TAGGED FOR RELEASE ***	
 
 	* unix/tclUnixNotfy.c (NotifierThreadProc): init numFdBits
 	[Bug 1079286]
