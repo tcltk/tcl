@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.8 1998/12/02 02:05:28 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.9 1998/12/02 03:16:54 stanton Exp $
  */
 
 #define TCL_TEST
@@ -1557,8 +1557,7 @@ TestevalobjvObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int length, evalGlobal;
-    char *command;
+    int evalGlobal;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "global word ?word ...?");
