@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.19 2004/09/29 22:17:30 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.20 2004/11/11 01:17:51 das Exp $
  */
 
 #include "tclInt.h"
@@ -791,17 +791,9 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 	if ((numAfterLast > 0) && (shift != 0)) {
 	    Tcl_Obj **src, **dst;
 
-	    if (shift < 0) {
-		for (src = elemPtrs + start, dst = src + shift;
-			numAfterLast > 0; numAfterLast--, src++, dst++) {
-		    *dst = *src;
-		}
-	    } else {
-		for (src = elemPtrs + numElems - 1, dst = src + shift;
-			numAfterLast > 0; numAfterLast--, src--, dst--) {
-		    *dst = *src;
-		}
-	    }
+	    src = elemPtrs + start; dst = src + shift;
+	    memmove((VOID*) dst, (VOID*) src, 
+	            (size_t) (numAfterLast * sizeof(Tcl_Obj*)));
 	}
 
 	/*
