@@ -1,3 +1,10 @@
+2003-08-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:	Corrected bug in TIP 90 implementation 
+	* tests/cmdMZ.test:	where the default -errorcode NONE value
+	was not copied into the return options dictionary.  This correction
+	modified one test result.
+
 2003-08-27  David Gravereaux <davygrvy@pobox.com>
 
 	* compat/strftime.c (_fmt): Removed syst array intializer that
