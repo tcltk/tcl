@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70.2.9.2.3 2001/12/04 21:52:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.70.2.9.2.4 2002/11/07 18:50:16 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -518,7 +518,7 @@ typedef struct stat *Tcl_Stat_;
 #define TCL_BREAK	3
 #define TCL_CONTINUE	4
 
-#define TCL_RESULT_SIZE 200
+#define TCL_RESULT_SIZE 20
 
 /*
  * Argument descriptors for math function callbacks in expressions:
