@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.15 2004/08/13 21:39:24 dgp Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.16 2004/11/11 01:16:07 das Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {
@@ -396,7 +396,8 @@ namespace eval ::msgcat::test {
         } else {
 	    set msg [string tolower $loc]
 	}
-	makeFile [list ::msgcat::mcset $loc abc abc-$loc] $msg.msg msgdir
+	makeFile [list ::msgcat::mcset $loc abc abc-$loc] $msg.msg \
+		[file join [temporaryDirectory] msgdir]
     }
     variable count 1
     foreach loc {foo foo_BAR foo_BAR_baz} {
