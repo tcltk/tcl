@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.30 2004/05/17 21:30:13 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.31 2004/05/18 09:29:30 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2915,6 +2915,57 @@ test interp-34.3 {basic test of limits - pure bytecode loop} knownBug {
     interp delete $i
     set msg
 } {1 {command count limit exceeded}}
+test interp-34.4 {limits with callbacks: extending limits} -setup {
+    set i [interp create]
+    set a 0
+    set b 0
+    set c a
+    proc cb1 {} {
+	global c
+	incr ::$c
+    }
+    proc cb2 {newlimit args} {
+	global c i
+	set c b
+	$i limit command -value $newlimit
+    }
+} -body {
+    interp alias $i foo {} cb1
+    set curlim [$i eval info cmdcount]
+    $i limit command -command "cb2 [expr $curlim+100]" \
+	    -value [expr {$curlim+10}]
+    $i eval {for {set i 0} {$i<10} {incr i} {foo}}
+    list $a $b $c
+} -result {6 4 b} -cleanup {
+    interp delete $i
+    rename cb1 {}
+    rename cb2 {}
+}
+test interp-34.5 {limits with callbacks: removing limits} -setup {
+    set i [interp create]
+    set a 0
+    set b 0
+    set c a
+    proc cb1 {} {
+	global c
+	incr ::$c
+    }
+    proc cb2 {newlimit args} {
+	global c i
+	set c b
+	$i limit command -value $newlimit
+    }
+} -body {
+    interp alias $i foo {} cb1
+    set curlim [$i eval info cmdcount]
+    $i limit command -command "cb2 {}" -value [expr {$curlim+10}]
+    $i eval {for {set i 0} {$i<10} {incr i} {foo}}
+    list $a $b $c
+} -result {6 4 b} -cleanup {
+    interp delete $i
+    rename cb1 {}
+    rename cb2 {}
+}
 
 test interp-35.1 {interp limit syntax} -body {
     interp limit
