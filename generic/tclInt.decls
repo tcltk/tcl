@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.21 2000/05/19 21:30:16 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.22 2000/07/26 01:28:49 davidg Exp $
 
 library tcl
 
@@ -797,9 +797,11 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-declare 21 win {
-    void TclpAsyncMark(Tcl_AsyncHandler async)
-}
+
+# removed permanently for 8.4
+#declare 21 win {
+#    void TclpAsyncMark(Tcl_AsyncHandler async)
+#}
 
 # Added in 8.1:
 declare 22 win {
