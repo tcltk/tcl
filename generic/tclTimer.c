@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.5 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6 2002/03/01 06:22:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -174,7 +174,7 @@ InitTimer()
  *	None.
  *
  * Side effects:
- *	Removes the timer and idle event sources.
+ *	Removes the timer and idle event sources and remaining events.
  *
  *----------------------------------------------------------------------
  */
@@ -183,7 +183,19 @@ static void
 TimerExitProc(clientData)
     ClientData clientData;	/* Not used. */
 {
+    ThreadSpecificData *tsdPtr =
+	(ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
+
     Tcl_DeleteEventSource(TimerSetupProc, TimerCheckProc, NULL);
+    if (tsdPtr != NULL) {
+	register TimerHandler *timerHandlerPtr;
+	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
+	while (timerHandlerPtr != NULL) {
+	    tsdPtr->firstTimerHandlerPtr = timerHandlerPtr->nextPtr;
+	    ckfree((char *) timerHandlerPtr);
+	    timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
+	}
+    }
 }
 
 /*
