@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.58 2004/06/29 14:03:46 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.59 2004/07/01 12:07:01 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -185,7 +185,7 @@ SetDefaultLibraryDir(directory)
 	 * multiple times to the same value that's not harmful.
 	 */
 	if (defaultLibraryDirLength != numBytes 
-		|| memcmp(defaultLibraryDir, bytes, numBytes) != 0) {
+		|| memcmp(defaultLibraryDir, bytes, (unsigned)numBytes) != 0) {
 	    Tcl_Panic("Attempt to modify defaultLibraryDir");
 	}
 	return;
