@@ -13,7 +13,7 @@
 #	Adds the following arguments to configure:
 #		--with-tcl=...
 #
-#	Defines the following vars:
+#	Sets the following vars:
 #		TCL_BIN_DIR	Full path to the tclConfig.sh file
 #------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
     if test ! -f $TCL_BIN_DIR/tclConfig.sh; then
 	AC_MSG_ERROR(There is no tclConfig.sh in $TCL_BIN_DIR:  perhaps you did not specify the Tcl *build* directory (not the toplevel Tcl directory) or you forgot to configure Tcl?)
     fi
-    AC_MSG_RESULT([$TCL_BIN_DIR])
+    AC_MSG_RESULT($TCL_BIN_DIR/tclConfig.sh)
 ])
 
 #------------------------------------------------------------------------
@@ -51,7 +51,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 #	Adds the following arguments to configure:
 #		--with-tk=...
 #
-#	Defines the following vars:
+#	Sets the following vars:
 #		TK_BIN_DIR	Full path to the tkConfig.sh file
 #------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 	AC_MSG_ERROR(There is no tkConfig.sh in $TK_BIN_DIR:  perhaps you did not specify the Tk *build* directory (not the toplevel Tk directory) or you forgot to configure Tk?)
     fi
 
-    AC_MSG_RESULT([$TK_BIN_DIR])
+    AC_MSG_RESULT($TK_BIN_DIR/tkConfig.sh)
 ])
 
 #------------------------------------------------------------------------
@@ -89,12 +89,11 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 #
 # Results:
 #
-#	Sets the following vars that should be in tclConfig.sh:
+#	Subst the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
-#	Defines the following vars:
-#		TCL_THREADS
+#
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_LOAD_TCLCONFIG, [
@@ -107,9 +106,15 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
         AC_MSG_RESULT([file not found])
     fi
 
-    if test "$TCL_THREADS" = "1"; then
-	AC_DEFINE(TCL_THREADS)
-    fi
+    # The eval is required to do the TCL_DBGX substitution in the
+    # TCL_LIB_FILE variable.
+
+    eval TCL_LIB_FILE=${TCL_LIB_FILE}
+    eval TCL_LIB_FLAG=${TCL_LIB_FLAG}
+
+    AC_SUBST(TCL_BIN_DIR)
+    AC_SUBST(TCL_SRC_DIR)
+    AC_SUBST(TCL_LIB_FILE)
 ])
 
 #------------------------------------------------------------------------
@@ -138,6 +143,11 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
     else
         AC_MSG_RESULT([could not find $TK_BIN_DIR/tkConfig.sh])
     fi
+
+
+    AC_SUBST(TK_BIN_DIR)
+    AC_SUBST(TK_SRC_DIR)
+    AC_SUBST(TK_LIB_FILE)
 ])
 
 #------------------------------------------------------------------------
@@ -153,7 +163,7 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 #	Adds the following arguments to configure:
 #		--enable-gcc
 #
-#	Defines the following vars:
+#	Sets the following vars:
 #		CC	Command to use for the compiler
 #------------------------------------------------------------------------
 
@@ -162,6 +172,7 @@ AC_DEFUN(SC_ENABLE_GCC, [
 	[ok=$enableval], [ok=no])
     if test "$ok" = "yes"; then
 	CC=gcc
+	AC_PROG_CC
     else
 	CC=cl
     fi
@@ -181,8 +192,11 @@ AC_DEFUN(SC_ENABLE_GCC, [
 #		--enable-shared=yes|no
 #
 #	Defines the following vars:
+#		STATIC_BUILD	Used for building import/export libraries
+#				on Windows.
+#
+#	Sets the following vars:
 #		SHARED_BUILD	Value of 1 or 0
-#		STATIC_BUILD
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_ENABLE_SHARED, [
@@ -223,17 +237,19 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 #
 #	Defines the following vars:
 #		TCL_THREADS
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_ENABLE_THREADS, [
     AC_MSG_CHECKING(for building with threads)
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
 	[tcl_ok=$enableval], [tcl_ok=no])
+
     if test "$tcl_ok" = "yes"; then
 	AC_MSG_RESULT(yes)
+	TCL_THREADS=1
 	AC_DEFINE(TCL_THREADS)
     else
+	TCL_THREADS=0
 	AC_MSG_RESULT(no (default))
     fi
 ])
@@ -269,13 +285,13 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
 
     if test "$tcl_ok" = "yes"; then
-	CFLAGS_DEFAULT='${CFLAGS_DEBUG}'
-	LDFLAGS_DEFAULT='${LDFLAGS_DEBUG}'
+	CFLAGS_DEFAULT="${CFLAGS_DEBUG}"
+	LDFLAGS_DEFAULT="${LDFLAGS_DEBUG}"
 	DBGX=d
 	AC_MSG_RESULT([yes])
     else
-	CFLAGS_DEFAULT='${CFLAGS_OPTIMIZE}'
-	LDFLAGS_DEFAULT='${LDFLAGS_OPTIMIZE}'
+	CFLAGS_DEFAULT="${CFLAGS_OPTIMIZE}"
+	LDFLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
 	DBGX=""
 	AC_MSG_RESULT([no])
     fi

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.9 1999/06/16 22:36:24 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.10 1999/06/16 23:18:11 surles Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -79,6 +79,10 @@ CFLAGS_WARNING = @CFLAGS_WARNING@
 CFLAGS_DEBUG    = @CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 
+# The default switches for optimization or debugging
+LDFLAGS_DEBUG    = @LDFLAGS_DEBUG@
+LDFLAGS_OPTIMIZE = @LDFLAGS_OPTIMIZE@
+
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
 #CFLAGS = 		$(CFLAGS_DEBUG)
@@ -115,6 +119,7 @@ STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 TCLTEST			= tcltest${EXEEXT}
+CAT32			= cat32
 
 @SET_MAKE@
 
@@ -134,6 +139,8 @@ CC		= @CC@
 AC_FLAGS	= @EXTRA_CFLAGS@ @DEFS@
 CPPFLAGS	= @CPPFLAGS@
 LDFLAGS		= @LDFLAGS@
+LDFLAGS_CONSOLE	= @LDFLAGS_CONSOLE@
+LDFLAGS_WINDOW	= @LDFLAGS_WINDOW@
 EXEEXT		= @EXEEXT@
 OBJEXT		= @OBJEXT@
 SHLIB_LD	= @SHLIB_LD@
@@ -271,8 +278,12 @@ doc:
 $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
 
-$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS)
+$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32)
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
+
+$(CAT32): cat.c
+	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+	$(CC) $(CFLAGS) cat32.obj $(CC_EXENAME) -link $(LDFLAGS_CONSOLE)
 
 # The following targets are configured by autoconf to generate either
 # a shared library or static library
@@ -428,8 +439,9 @@ install-libraries:
 install-doc:
 
 test: binaries $(TCLTEST)
-	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
-	    ./tcltest "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS)
+	TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	./$(TCLTEST) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
+	| ./$(CAT32)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
