@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.21 2003/04/12 19:08:54 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.22 2003/04/15 03:43:26 dgp Exp $
  */
 
 #include "tcl.h"
@@ -117,7 +117,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		break;
 	    case 2:		/* native clicks */
 		Tcl_SetWideIntObj( resultPtr,
-				   TclpGetClicks() );
+				   (Tcl_WideInt) TclpGetClicks() );
 		break;
 	    }
 
