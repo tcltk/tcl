@@ -1,3 +1,10 @@
+2001-09-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.h: removed forced #define USE_TCLALLOC 1 for
+	Windows.  This means the native system allocator will be used by
+	default.  This should be binary and source compatible with
+	extensions, as Tcl_Alloc is a properly stubbed function.
+
 2001-09-17  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* generic/tclExecute.c: corrected small bug in [Patch 456668] -
