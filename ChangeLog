@@ -1,5 +1,12 @@
 2002-06-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* unix/tclUnixThrd.c:	Renamed the Tcl_Platform* #defines to
+	* unix/tclUnixPipe.c:	TclOS* because they are only used
+	* unix/tclUnixFile.c:	internally.  Also stopped double-#def
+	* unix/tclUnixFCmd.c:	of TclOSlstat [Bug #566099, post-rename]
+	* unix/tclUnixChan.c:
+	* unix/tclUnixPort.h:
+
 	* doc/string.n: Improved documentation for [string last] along
 	lines described in Bug #574799 so it indicates that the supplied
 	index marks the end of the search space.
