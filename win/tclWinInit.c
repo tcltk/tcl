@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.40 2003/02/27 03:47:09 chengyemao Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.1 2003/08/06 23:50:06 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -58,6 +58,12 @@ typedef struct {
 #ifndef PROCESSOR_ARCHITECTURE_MSIL
 #define PROCESSOR_ARCHITECTURE_MSIL  8
 #endif
+#ifndef PROCESSOR_ARCHITECTURE_AMD64
+#define PROCESSOR_ARCHITECTURE_AMD64 9
+#endif
+#ifndef PROCESSOR_ARCHITECTURE_IA32_ON_WIN64
+#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64 10
+#endif
 #ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
 #define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF
 #endif
@@ -68,14 +74,15 @@ typedef struct {
  */
 
 
-#define NUMPLATFORMS 3
+#define NUMPLATFORMS 4
 static char* platforms[NUMPLATFORMS] = {
-    "Win32s", "Windows 95", "Windows NT"
+    "Win32s", "Windows 95", "Windows NT", "Windows CE"
 };
 
-#define NUMPROCESSORS 9
+#define NUMPROCESSORS 11
 static char* processors[NUMPROCESSORS] = {
-    "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil"
+    "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
+    "amd64", "ia32_on_win64"
 };
 
 /* Used to store the encoding used for binary files */
