@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.15 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.16 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -234,8 +234,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	dirName = Tcl_DStringValue(&dsOrig);
 	/* Make sure we have a trailing directory delimiter */
 	if (dirName[baseLength-1] != '/') {
-	    Tcl_DStringAppend(&dsOrig, "/", 1);
-	    dirName = Tcl_DStringValue(&dsOrig);
+	    dirName = Tcl_DStringAppend(&dsOrig, "/", 1);
 	    baseLength++;
 	}
     }
@@ -333,8 +332,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		struct stat buf;
 		char *nativeEntry;
 		Tcl_DStringSetLength(&ds, nativeDirLen);
-		Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
-		nativeEntry = Tcl_DStringValue(&ds);
+		nativeEntry = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
 		/* 
 		 * The native name of the file is in entryPtr->d_name.
 		 * We can use this below.

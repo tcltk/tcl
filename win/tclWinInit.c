@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.34 2002/01/29 02:19:24 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.35 2002/02/08 02:52:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -698,8 +698,7 @@ TclpFindVariable(name, lengthPtr)
 	 * all the characters after the equal sign.
 	 */
 	
-	Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
-	envUpper = Tcl_DStringValue(&envString);
+	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.33 2002/01/25 21:36:09 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.34 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,7 @@ Tcl_Chdir(dirName)
 }
 
 /* Obsolete */
-CONST char *
+char *
 Tcl_GetCwd(interp, cwdPtr)
     Tcl_Interp *interp;
     Tcl_DString *cwdPtr;
