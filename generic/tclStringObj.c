@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.26 2002/11/13 22:11:41 vincentdarley Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.27 2003/01/17 14:19:52 vincentdarley Exp $ */
 
 #include "tclInt.h"
 
@@ -753,7 +753,6 @@ Tcl_SetObjLength(objPtr, length)
 				 * representation of object, not including
 				 * terminating null byte. */
 {
-    char *new;
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
@@ -762,34 +761,61 @@ Tcl_SetObjLength(objPtr, length)
     SetStringFromAny(NULL, objPtr);
         
     /*
-     * Invalidate the unicode data.
+     * We don't want to invalidate the unicode data if it exists, since
+     * if we are handling a Unicode object, objPtr->bytes may actually be
+     * NULL. Therefore either we must create that entry, or we must
+     * assume the object is being re-used as Unicode.  For efficiency we
+     * do the latter.
      */
 
     stringPtr = GET_STRING(objPtr);
-    stringPtr->numChars = -1;
-    stringPtr->uallocated = 0;
 
-    if (length > (int) stringPtr->allocated) {
+    if (stringPtr->uallocated > 0) {
+	stringPtr->numChars = length;
 
-	/*
-	 * Not enough space in current string. Reallocate the string
-	 * space and free the old string.
-	 */
- 	if (objPtr->bytes != tclEmptyStringRep) {
-	    new = (char *) ckrealloc((char *)objPtr->bytes,
-		    (unsigned)(length+1));
-	} else {
-	    new = (char *) ckalloc((unsigned) (length+1));
-	    if (objPtr->bytes != NULL && objPtr->length != 0) {
- 	    	memcpy((VOID *) new, (VOID *) objPtr->bytes,
- 		    	(size_t) objPtr->length);
- 	    	Tcl_InvalidateStringRep(objPtr);
-	    }
+	if (length > (int) stringPtr->uallocated) {
+	    stringPtr = (String *) ckrealloc((char*) stringPtr,
+		    STRING_SIZE(length));
+	    stringPtr->uallocated = length;
 	}
-	objPtr->bytes = new;
-	stringPtr->allocated = length;
+	/* Ensure the string is NULL-terminated */
+	stringPtr->unicode[length] = 0;
+	
+	if (objPtr->bytes != NULL && (length > objPtr->length)) {
+	    /* 
+	     * There is a utf-8 representation which is too short -- we
+	     * are lengthening the string, and so we must discard it.
+	     */
+	    Tcl_InvalidateStringRep(objPtr);
+	}
+    } else {
+	stringPtr->numChars = -1;
+	stringPtr->uallocated = 0;
+
+	if (length > (int) stringPtr->allocated) {
+	    char *new;
+
+	    /*
+	     * Not enough space in current string. Reallocate the string
+	     * space and free the old string.
+	     */
+	    if (objPtr->bytes != tclEmptyStringRep) {
+		new = (char *) ckrealloc((char *)objPtr->bytes,
+			(unsigned)(length+1));
+	    } else {
+		new = (char *) ckalloc((unsigned) (length+1));
+		if (objPtr->bytes != NULL && objPtr->length != 0) {
+		    memcpy((VOID *) new, (VOID *) objPtr->bytes,
+			    (size_t) objPtr->length);
+		    Tcl_InvalidateStringRep(objPtr);
+		}
+	    }
+	    objPtr->bytes = new;
+	    stringPtr->allocated = length;
+	}
+	
     }
-    
+
     objPtr->length = length;
     if ((objPtr->bytes != NULL) && (objPtr->bytes != tclEmptyStringRep)) {
 	objPtr->bytes[length] = 0;

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.70 2002/09/06 00:20:29 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.71 2003/01/17 14:19:40 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1075,7 +1075,7 @@ DeleteInterpProc(interp)
     }
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {
-	Tcl_DeleteTrace( (Tcl_Interp*) iPtr, (Tcl_Trace) iPtr->tracePtr );
+	Tcl_DeleteTrace((Tcl_Interp*) iPtr, (Tcl_Trace) iPtr->tracePtr);
     }
     if (iPtr->execEnvPtr != NULL) {
 	TclDeleteExecEnv(iPtr->execEnvPtr);
@@ -2420,7 +2420,9 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 	tracePtr = cmdPtr->tracePtr;
 	while (tracePtr != NULL) {
 	    CommandTrace *nextPtr = tracePtr->nextPtr;
-	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
+	    if ((--tracePtr->refCount) <= 0) {
+		ckfree((char*)tracePtr);
+	    }
 	    tracePtr = nextPtr;
 	}
 	cmdPtr->tracePtr = NULL;
@@ -2513,6 +2515,7 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     TclCleanupCommand(cmdPtr);
     return 0;
 }
+
 static char *
 CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     Interp *iPtr;		/* Interpreter containing command. */
@@ -2562,7 +2565,9 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
 	flags |= TCL_TRACE_DESTROYED;
     }
     active.cmdPtr = cmdPtr;
+    
     Tcl_Preserve((ClientData) iPtr);
+    
     for (tracePtr = cmdPtr->tracePtr; tracePtr != NULL;
 	 tracePtr = active.nextTracePtr) {
 	active.nextTracePtr = tracePtr->nextPtr;
@@ -2577,11 +2582,13 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
 	            (Tcl_Command) cmdPtr, oldNamePtr);
 	    oldName = TclGetString(oldNamePtr);
 	}
-	Tcl_Preserve((ClientData) tracePtr);
+	tracePtr->refCount++;
 	(*tracePtr->traceProc)(tracePtr->clientData,
 		(Tcl_Interp *) iPtr, oldName, newName, flags);
 	cmdPtr->flags &= ~tracePtr->flags;
-	Tcl_Release((ClientData) tracePtr);
+	if ((--tracePtr->refCount) <= 0) {
+	    ckfree((char*)tracePtr);
+	}
     }
 
     /*
@@ -2604,7 +2611,6 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     Tcl_Release((ClientData) iPtr);
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -3012,7 +3018,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
         if ((checkTraces) && (command != NULL)) {
             int cmdEpoch = cmdPtr->cmdEpoch;
             cmdPtr->refCount++;
-            /* If the first set of traces modifies/deletes the command or
+            /* 
+             * If the first set of traces modifies/deletes the command or
              * any existing traces, then the set checkTraces to 0 and
              * go through this while loop one more time.
              */
@@ -4797,9 +4804,8 @@ Tcl_CreateObjTrace( interp, level, flags, proc, clientData, delProc )
 
     /* Test if this trace allows inline compilation of commands */
 
-    if ( ! ( flags & TCL_ALLOW_INLINE_COMPILATION ) ) {
-
-	if ( iPtr->tracesForbiddingInline == 0 ) {
+    if (!(flags & TCL_ALLOW_INLINE_COMPILATION)) {
+	if (iPtr->tracesForbiddingInline == 0) {
 
 	    /*
 	     * When the first trace forbidding inline compilation is
@@ -4815,7 +4821,7 @@ Tcl_CreateObjTrace( interp, level, flags, proc, clientData, delProc )
 	    iPtr->compileEpoch++;
 	    iPtr->flags |= DONT_COMPILE_CMDS_INLINE;
 	}
-	++ iPtr->tracesForbiddingInline;
+	iPtr->tracesForbiddingInline++;
     }
     
     tracePtr = (Trace *) ckalloc(sizeof(Trace));
@@ -4998,17 +5004,17 @@ Tcl_DeleteTrace(interp, trace)
 {
     Interp *iPtr = (Interp *) interp;
     Trace *tracePtr = (Trace *) trace;
-    register Trace **tracePtr2 = &( iPtr->tracePtr );
+    register Trace **tracePtr2 = &(iPtr->tracePtr);
 
     /*
      * Locate the trace entry in the interpreter's trace list,
      * and remove it from the list.
      */
 
-    while ( (*tracePtr2) != NULL && (*tracePtr2) != tracePtr ) {
+    while ((*tracePtr2) != NULL && (*tracePtr2) != tracePtr) {
 	tracePtr2 = &((*tracePtr2)->nextPtr);
     }
-    if ( *tracePtr2 == NULL ) {
+    if (*tracePtr2 == NULL) {
 	return;
     }
     (*tracePtr2) = (*tracePtr2)->nextPtr;
@@ -5020,11 +5026,11 @@ Tcl_DeleteTrace(interp, trace)
      * take advantage of it.
      */
 
-    if ( ! (tracePtr->flags & TCL_ALLOW_INLINE_COMPILATION ) ) {
-	-- iPtr->tracesForbiddingInline;
-	if ( iPtr->tracesForbiddingInline == 0 ) {
+    if (!(tracePtr->flags & TCL_ALLOW_INLINE_COMPILATION)) {
+	iPtr->tracesForbiddingInline--;
+	if (iPtr->tracesForbiddingInline == 0) {
 	    iPtr->flags &= ~DONT_COMPILE_CMDS_INLINE;
-	    ++ iPtr->compileEpoch;
+	    iPtr->compileEpoch++;
 	}
     }
 
@@ -5032,13 +5038,13 @@ Tcl_DeleteTrace(interp, trace)
      * Execute any delete callback.
      */
 
-    if ( tracePtr->delProc != NULL ) {
-	( tracePtr->delProc )( tracePtr->clientData );
+    if (tracePtr->delProc != NULL) {
+	(tracePtr->delProc)(tracePtr->clientData);
     }
 
     /* Delete the trace object */
 
-    Tcl_EventuallyFree( (char*) tracePtr, TCL_DYNAMIC);
+    Tcl_EventuallyFree((char*)tracePtr, TCL_DYNAMIC);
 }
 
 /*
