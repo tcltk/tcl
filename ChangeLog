@@ -1,3 +1,12 @@
+2001-09-13  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* win/Makefile.in:
+	* win/configure.in:
+	* win/makefile.bc:
+	* win/makefile.vc:
+	* library/dde/pkgIndex.tcl: Fixed version numbers from bogus tcl
+	  versions to independent versions for dde and registry packages.
+
 2001-09-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): had to adjust fix from

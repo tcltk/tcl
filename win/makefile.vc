@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.64 2001/09/07 02:43:12 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.65 2001/09/14 01:00:59 andreas_kupries Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -99,6 +99,12 @@ STUBPREFIX = $(NAMEPREFIX)stub
 DOTVERSION = 8.4
 VERSION = 84
 
+DDEVERSION = 12
+DDEDOTVERSION = 1.2
+
+REGVERSION = 10
+REGDOTVERSION = 1.0
+
 BINROOT		= .
 !IF "$(NODEBUG)" == "1"
 TMPDIRNAME	= Release
@@ -125,9 +131,9 @@ TCLSH		= $(OUTDIR)\$(NAMEPREFIX)sh$(VERSION)$(DBGX).exe
 TCLSHP		= $(OUTDIR)\$(NAMEPREFIX)shp$(VERSION)$(DBGX).exe
 TCLPIPEDLLNAME	= $(NAMEPREFIX)pip$(VERSION)$(DBGX).dll
 TCLPIPEDLL	= $(OUTDIR)\$(TCLPIPEDLLNAME)
-TCLREGDLLNAME	= $(NAMEPREFIX)reg$(VERSION)$(DBGX).dll
+TCLREGDLLNAME	= $(NAMEPREFIX)reg$(REGVERSION)$(DBGX).dll
 TCLREGDLL	= $(OUTDIR)\$(TCLREGDLLNAME)
-TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(VERSION)$(DBGX).dll
+TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(DDEVERSION)$(DBGX).dll
 TCLDDEDLL	= $(OUTDIR)\$(TCLDDEDLLNAME)
 TCLTEST		= $(OUTDIR)\$(NAMEPREFIX)test.exe
 CAT32		= $(TMPDIR)\cat32.exe
