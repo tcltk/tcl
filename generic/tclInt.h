@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.140 2004/01/13 23:15:03 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.141 2004/01/17 00:28:08 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1909,6 +1909,8 @@ EXTERN int	Tcl_InterpObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_JoinObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LappendObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	Tcl_LassignObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LindexObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
