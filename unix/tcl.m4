@@ -1571,13 +1571,13 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS)
 
 	    SHLIB_CFLAGS="-KPIC"
-    
+
 	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
 			if test "$GCC" = "yes" ; then
-			    if test "`gcc -dumpversion` | awk -F. '{print $1}'" -lt "3" ; then
+			    if test "`gcc -dumpversion | awk -F. '{print [$]1}'`" -lt "3" ; then
 				AC_MSG_WARN([64bit mode not supported with GCC < 3.2 on $system])
 			    else
 				do64bit_ok=yes
@@ -1614,7 +1614,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		SHLIB_LD="$CC -shared"
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		if test "$do64bit" = "yes" ; then
+		if test "$do64bit_ok" = "yes" ; then
 		    # We need to specify -static-libgcc or we need to
 		    # add the path to the sparv9 libgcc.
 		    SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
@@ -1664,7 +1664,7 @@ dnl AC_CHECK_TOOL(AR, ar)
     esac
 
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "no" ; then
-    AC_MSG_WARN("64bit support being disabled -- don\'t know magic for this platform")
+	AC_MSG_WARN([64bit support being disabled -- don't know magic for this platform])
     fi
 
     # Step 4: If pseudo-static linking is in use (see K. B. Kenny, "Dynamic
