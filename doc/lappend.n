@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lappend.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: lappend.n,v 1.2.18.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH lappend n "" Tcl "Tcl Built-In Commands"
@@ -30,6 +30,9 @@ This command provides a relatively efficient way to build up
 large lists.  For example, ``\fBlappend a $b\fR'' is much
 more efficient than ``\fBset a [concat $a [list $b]]\fR'' when
 \fB$a\fR is long.
+
+.SH "SEE ALSO"
+list(n), lindex(n), linsert(n), llength(n), lsort(n), lrange(n)
 
 .SH KEYWORDS
 append, element, list, variable

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.4 1999/12/09 14:43:47 hobbs Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.4.2.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH exec n 7.6 Tcl "Tcl Built-In Commands"
@@ -301,9 +301,7 @@ The \fBexec\fR command is not implemented and does not exist under Macintosh.
 The \fBexec\fR command is fully functional and works as described.
 
 .SH "SEE ALSO"
-open(n)
-.VE
+error(n), open(n)
 
 .SH KEYWORDS
 execute, pipeline, redirection, subprocess
-

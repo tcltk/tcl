@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.9 1999/12/21 23:57:33 hobbs Exp $
+'\" RCS: @(#) $Id: open.n,v 1.9.2.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -108,6 +108,18 @@ If a new file is created as part of opening it, \fIpermissions\fR
 (an integer) is used to set the permissions for the new file in
 conjunction with the process's file mode creation mask.
 \fIPermissions\fR defaults to 0666.
+.PP
+'\" Not versioned as advice applies to all recent versions of Tcl.
+'\" Prior to that, Tcl didn't really support binary files anyway...
+.VS
+Note that if you are going to be reading or writing binary data from
+the channel created by this command, you should use the
+\fBfconfigure\fR command to change the \fB-translation\fR option of
+the channel to \fBbinary\fR before transferring any binary data.  This
+is in contrast to the ``b'' character passed as part of the equivalent
+of the \fIaccess\fR parameter to some versions of the C library
+\fIfopen()\fR function.
+.VE
 .SH "COMMAND PIPELINES"
 .PP
 If the first character of \fIfileName\fR is ``|'' then the
@@ -251,9 +263,11 @@ input, but is redirected from a file, then the above problem does not occur.
 See the PORTABILITY ISSUES section of the \fBexec\fR command for additional
 information not specific to command pipelines about executing
 applications on the various platforms
+
 .SH "SEE ALSO"
-close(n), filename(n), gets(n), read(n), puts(n), exec(n)
-.VE
+file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
+puts(n), exec(n), fopen(1)
+
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,
 pipeline, process, serial

@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: packagens.n,v 1.2 2000/02/10 10:09:18 hobbs Exp $
+'\" RCS: @(#) $Id: packagens.n,v 1.2.2.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH pkg::create n 8.3 Tcl "Tcl Built-In Commands"
@@ -47,6 +47,9 @@ specifies a Tcl library that must be loaded with the
 specified.
 .PP
 At least one \fB\-load\fR or \fB\-source\fR paramter must be given.
+
+.SH "SEE ALSO"
+package(n)
 
 .SH KEYWORDS
 auto-load, index, package, version

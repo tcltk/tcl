@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StrMatch.3,v 1.3 1999/05/22 01:20:11 stanton Exp $
+'\" RCS: @(#) $Id: StrMatch.3,v 1.3.10.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -18,21 +18,18 @@ Tcl_StringMatch, Tcl_StringCaseMatch \- test whether a string matches a pattern
 .sp
 int
 \fBTcl_StringMatch\fR(\fIstring\fR, \fIpattern\fR)
-.VS 8.1
 .sp
-\fBTcl_StringCaseMatch\fR(\fIstring, pattern, nocase\fR)
-.VE 8.1
+int
+\fBTcl_StringCaseMatch\fR(\fIstring\fR, \fIpattern\fR, \fInocase\fR)
 .SH ARGUMENTS
 .AP char *string in
 String to test.
 .AP char *pattern in
 Pattern to match against string.  May contain special
 characters from the set *?\e[].
-.VS 8.1
 .AP int nocase in
 Specifies whether the match should be done case-sensitive (0) or
 case-insensitive (1).
-.VE 8.1
 .BE
 
 .SH DESCRIPTION

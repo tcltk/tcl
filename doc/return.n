@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.2 1998/09/14 18:39:54 stanton Exp $
+'\" RCS: @(#) $Id: return.n,v 1.2.18.1 2001/04/03 22:06:44 hobbs Exp $
 '\" 
 .so man.macros
 .TH return n 7.0 Tcl "Tcl Built-In Commands"
@@ -84,6 +84,9 @@ If the \fB\-errorcode\fR option is specified then \fIcode\fR provides
 a value for the \fBerrorCode\fR variable.
 If the option is not specified then \fBerrorCode\fR will
 default to \fBNONE\fR.
+
+.SH "SEE ALSO"
+break(n), continue(n), error(n), proc(n)
 
 .SH KEYWORDS
 break, continue, error, procedure, return

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: incr.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: incr.n,v 1.2.18.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH incr n "" Tcl "Tcl Built-In Commands"
@@ -26,6 +26,9 @@ integer) is added to the value of variable \fIvarName\fR;  otherwise
 1 is added to \fIvarName\fR.
 The new value is stored as a decimal string in variable \fIvarName\fR
 and also returned as result.
+
+.SH "SEE ALSO"
+expr(n)
 
 .SH KEYWORDS
 add, increment, variable, value

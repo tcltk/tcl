@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: rename.n,v 1.2 1998/09/14 18:39:54 stanton Exp $
+'\" RCS: @(#) $Id: rename.n,v 1.2.18.1 2001/04/03 22:06:44 hobbs Exp $
 '\" 
 .so man.macros
 .TH rename n "" Tcl "Tcl Built-In Commands"
@@ -27,6 +27,9 @@ If \fInewName\fR is an empty string then \fIoldName\fR is deleted.
 If a command is renamed into a different namespace,
 future invocations of it will execute in the new namespace.
 The \fBrename\fR command returns an empty string as result.
+
+.SH "SEE ALSO"
+namespace(n), proc(n)
 
 .SH KEYWORDS
 command, delete, namespace, rename

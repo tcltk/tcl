@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrange.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: lrange.n,v 1.2.18.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH lrange n 7.4 Tcl "Tcl Built-In Commands"
@@ -34,6 +34,9 @@ Note: ``\fBlrange \fIlist first first\fR'' does not always produce the
 same result as ``\fBlindex \fIlist first\fR'' (although it often does
 for simple fields that aren't enclosed in braces); it does, however,
 produce exactly the same results as ``\fBlist [lindex \fIlist first\fB]\fR''
+
+.SH "SEE ALSO"
+lappend(n), lindex(n), linsert(n), list(n), llength(n), lreplace(n)
 
 .SH KEYWORDS
 element, list, range, sublist

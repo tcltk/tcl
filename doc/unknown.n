@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unknown.n,v 1.2 1998/09/14 18:39:56 stanton Exp $
+'\" RCS: @(#) $Id: unknown.n,v 1.2.18.1 2001/04/03 22:06:44 hobbs Exp $
 '\" 
 .so man.macros
 .TH unknown n "" Tcl "Tcl Built-In Commands"
@@ -70,6 +70,9 @@ auto-exec step is skipped.
 Under normal circumstances the return value from \fBunknown\fR
 is the return value from the command that was eventually
 executed.
+
+.SH "SEE ALSO"
+info(n), proc(n)
 
 .SH KEYWORDS
 error, non-existent command

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.4 1999/09/21 04:20:36 hobbs Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.4.2.1 2001/04/03 22:06:44 hobbs Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"
@@ -109,6 +109,9 @@ will return \fB1\fR, and
 }\fR
 .CE
 will return \fB3\fR.
+
+.SH "SEE ALSO"
+for(n), if(n), regexp(n)
 
 .SH KEYWORDS
 switch, match, regular expression

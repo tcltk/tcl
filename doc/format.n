@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.4 1999/11/19 06:33:58 hobbs Exp $
+'\" RCS: @(#) $Id: format.n,v 1.4.2.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -209,6 +209,9 @@ converted as if the \fBl\fR modifier were present (i.e. type
 \fBdouble\fR is used for the internal representation).
 If the \fBh\fR modifier is specified then integer values are truncated
 to \fBshort\fR before conversion.
+
+.SH "SEE ALSO"
+sprintf(3), string(n)
 
 .SH KEYWORDS
 conversion specifier, format, sprintf, string, substitution

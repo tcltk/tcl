@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: proc.n,v 1.2 1998/09/14 18:39:54 stanton Exp $
+'\" RCS: @(#) $Id: proc.n,v 1.2.18.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH proc n "" Tcl "Tcl Built-In Commands"
@@ -69,6 +69,9 @@ invoked, the procedure's return value is the value specified in a
 executed in the procedure's body.
 If an error occurs while executing the procedure
 body, then the procedure-as-a-whole will return that same error.
+
+.SH "SEE ALSO"
+info(n), unknown(n)
 
 .SH KEYWORDS
 argument, procedure

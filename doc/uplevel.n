@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: uplevel.n,v 1.2 1998/09/14 18:39:56 stanton Exp $
+'\" RCS: @(#) $Id: uplevel.n,v 1.2.18.1 2001/04/03 22:06:44 hobbs Exp $
 '\" 
 .so man.macros
 .TH uplevel n "" Tcl "Tcl Built-In Commands"
@@ -74,7 +74,7 @@ Also, \fBuplevel #0\fR evaluates a script
 at top-level in the outermost namespace (the global namespace).
 
 .SH "SEE ALSO"
-namespace(n)
+namespace(n), upvar(n)
 
 .SH KEYWORDS
 context, level, namespace, stack frame, variables

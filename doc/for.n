@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: for.n,v 1.2 1998/09/14 18:39:52 stanton Exp $
+'\" RCS: @(#) $Id: for.n,v 1.2.18.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH for n "" Tcl "Tcl Built-In Commands"
@@ -55,6 +55,9 @@ for {set x 0} {$x<10} {incr x} {
 	puts "x is $x"
 }
 .CE
+
+.SH "SEE ALSO"
+break, continue, foreach, while
 
 .SH KEYWORDS
 for, iteration, looping

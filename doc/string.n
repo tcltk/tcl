@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.13 1999/12/21 23:57:34 hobbs Exp $
+'\" RCS: @(#) $Id: string.n,v 1.13.2.1 2001/04/03 22:06:44 hobbs Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -333,6 +333,9 @@ contiguous range of alphanumeric (Unicode letters or decimal digits)
 or underscore (Unicode connector punctuation) characters, or any
 single character other than these.
 .VE 8.1
+
+.SH "SEE ALSO"
+expr(n), list(n)
 
 .SH KEYWORDS
 case conversion, compare, index, match, pattern, string, word, equal, ctype

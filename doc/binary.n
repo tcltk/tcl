@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.4 2000/04/08 02:35:17 hobbs Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.4.2.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -22,11 +22,11 @@ binary \- Insert and extract fields from binary strings
 .PP
 This command provides facilities for manipulating binary data.  The
 first form, \fBbinary format\fR, creates a binary string from normal
-Tcl values.  For example, given the values 16 and 22, it might produce
-an 8-byte binary string consisting of two 4-byte integers, one for
-each of the numbers.  The second form of the command, 
-\fBbinary scan\fR, does the opposite: it extracts data from a binary
-string and returns it as ordinary Tcl string values.
+Tcl values.  For example, given the values 16 and 22, on a 32 bit
+architecture, it might produce an 8-byte binary string consisting of
+two 4-byte integers, one for each of the numbers.  The second form of
+the command, \fBbinary scan\fR, does the opposite: it extracts data
+from a binary string and returns it as ordinary Tcl string values.
 
 .SH "BINARY FORMAT"
 .PP
@@ -542,7 +542,7 @@ element of the \fBtcl_platform\fR array to decide which type character
 to use when formatting or scanning integers.
 
 .SH "SEE ALSO"
-format, scan, tclvars
+format(n), scan(n), tclvars(n)
 
 .SH KEYWORDS
 binary, format, scan

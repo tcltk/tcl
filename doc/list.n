@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: list.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: list.n,v 1.2.18.1 2001/04/03 22:06:43 hobbs Exp $
 '\" 
 .so man.macros
 .TH list n "" Tcl "Tcl Built-In Commands"
@@ -40,6 +40,10 @@ while \fBconcat\fR with the same arguments will return
 .CS
 \fBa b c d e f {g h}\fR
 .CE
+
+.SH "SEE ALSO"
+lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), lsort(n),
+lrange(n), lreplace(n)
 
 .SH KEYWORDS
 element, list
