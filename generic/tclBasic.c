@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.5 1998/07/01 19:09:11 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.6 1998/07/06 22:13:34 welch Exp $ 
  */
 
 #include "tclInt.h"
@@ -2437,13 +2437,12 @@ Tcl_Eval(interp, string)
 #undef Tcl_EvalObj
 
 int
-Tcl_EvalObj(interp, objPtr, dummy)
+Tcl_EvalObj(interp, objPtr)
     Tcl_Interp *interp;			/* Token for command interpreter
 					 * (returned by a previous call to
 					 * Tcl_CreateInterp). */
     Tcl_Obj *objPtr;			/* Pointer to object containing
 					 * commands to execute. */
-    int dummy;				/* not used */
 {
     register Interp *iPtr = (Interp *) interp;
     int flags;				/* Interp->evalFlags value when the
