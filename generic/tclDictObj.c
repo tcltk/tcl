@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.9 2003/04/29 08:13:41 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10 2003/05/07 15:26:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1648,8 +1648,10 @@ DictInfoCmd(interp, objc, objv)
 	}
     }
     dict = (Dict *)dictPtr->internalRep.otherValuePtr;
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj(Tcl_HashStats(&dict->table), -1));
+    /*
+     * This next cast is actually OK.
+     */
+    Tcl_SetResult(interp, (char *)Tcl_HashStats(&dict->table), TCL_DYNAMIC);
     return TCL_OK;
 }
 
