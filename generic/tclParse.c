@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.24 2003/02/11 18:34:43 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.25 2003/02/16 01:36:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -306,6 +306,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	scanned = TclParseWhiteSpace(src, numBytes, parsePtr, &type);
 	src += scanned; numBytes -= scanned;
 	if (numBytes == 0) {
+	    parsePtr->term = src;
 	    break;
 	}
 	if ((type & terminators) != 0) {
@@ -376,6 +377,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	}
 
 	if (numBytes == 0) {
+	    parsePtr->term = src;
 	    break;
 	}
 	if ((type & terminators) != 0) {
@@ -408,7 +410,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
     if (parsePtr->commandStart == NULL) {
 	parsePtr->commandStart = string;
     }
-    parsePtr->commandSize = parsePtr->term - parsePtr->commandStart;
+    parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
     return TCL_ERROR;
 }
 
@@ -859,10 +861,24 @@ ParseTokens(src, numBytes, mask, parsePtr)
 		}
 		src = nested.commandStart + nested.commandSize;
 		numBytes = parsePtr->end - src;
+
+		/*
+		 * This is equivalent to Tcl_FreeParse(&nested), but
+		 * presumably inlined here for sake of runtime optimization
+		 */
+
 		if (nested.tokenPtr != nested.staticTokens) {
 		    ckfree((char *) nested.tokenPtr);
 		}
-		if ((*nested.term == ']') && !nested.incomplete) {
+
+		/*
+		 * Check for the closing ']' that ends the command
+		 * substitution.  It must have been the last character of
+		 * the parsed command.
+		 */
+
+		if ((nested.term < parsePtr->end) && (*nested.term == ']')
+			&& !nested.incomplete) {
 		    break;
 		}
 		if (numBytes == 0) {

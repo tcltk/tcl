@@ -1,3 +1,18 @@
+2003-02-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_EvalEx):
+	* generic/tclCompExpr.c (CompileSubExpr):
+	* generic/tclCompile.c (TclCompileScript):
+	* generic/tclParse.c (Tcl_ParseCommand, ParseTokens):
+	* generic/tclParseExpr.c (ParsePrimaryExpr):
+	* tests/basic.test (47.1):
+	* tests/main.test (3.4):
+	* tests/misc.test (1.2):
+	* tests/parse.test (6.18):
+	* tests/parseExpr.test (15.35):
+	* tests/subst.test (8.6): Don Porter's fix for bad parsing of
+	nested scripts [Bug 681841].
+
 2003-02-15  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* tests/notify.test (new-file): 
