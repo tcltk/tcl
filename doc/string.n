@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.12 1999/08/09 16:30:35 hobbs Exp $
+'\" RCS: @(#) $Id: string.n,v 1.13 1999/12/21 23:57:34 hobbs Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -32,7 +32,7 @@ the byte length are rare.  In almost all cases, you should use the
 \fBstring length\fR operation.  Refer to the \fBTcl_NumUtfChars\fR
 manual entry for more details on the UTF\-8 representation.
 .TP
-\fBstring compare ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
 .VE 8.1
 Perform a character-by-character comparison of strings \fIstring1\fR and
 \fIstring2\fR.  Returns
@@ -44,7 +44,7 @@ are used in the comparison.  If \fB\-length\fR is negative, it is
 ignored.  If \fB\-nocase\fR is specified, then the strings are
 compared in a case-insensitive manner.
 .TP
-\fBstring equal ?\fB\-nocase\fR? ?\fB-length int\fR? \fIstring1 string2\fR
+\fBstring equal\fR ?\fB\-nocase\fR? ?\fB-length int\fR? \fIstring1 string2\fR
 Perform a character-by-character comparison of strings
 \fIstring1\fR and \fIstring2\fR.  Returns 1 if \fIstring1\fR and
 \fIstring2\fR are identical, or 0 when not.  If \fB\-length\fR is
@@ -203,7 +203,7 @@ affect for later key matches.  For example,
 will return the string \fB01321221\fR.
 .RE
 .TP
-\fBstring match ?\fB\-nocase\fR? \fIpattern\fR \fIstring\fR
+\fBstring match\fR ?\fB\-nocase\fR? \fIpattern\fR \fIstring\fR
 .VE 8.1
 See if \fIpattern\fR matches \fIstring\fR; return 1 if it does, 0
 if it doesn't.  

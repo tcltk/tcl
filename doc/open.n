@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.8 1999/12/09 14:43:47 hobbs Exp $
+'\" RCS: @(#) $Id: open.n,v 1.9 1999/12/21 23:57:33 hobbs Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -154,7 +154,7 @@ time interval between checking for events throughout the Tcl
 interpreter (the smallest value always wins).  Use this option only if
 you want to poll the serial port more often than 10 msec (the default).
 .TP
-\fB\-lasterror
+\fB\-lasterror\fR
 .
 This option is available only on Windows for serial ports, and is
 query only (will only be reported when directly requested).

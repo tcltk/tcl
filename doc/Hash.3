@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.2 1998/09/14 18:39:49 stanton Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.3 1999/12/21 23:57:33 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -193,7 +193,7 @@ overall information about a hash table, such as the number of
 entries it contains, the number of buckets in its hash array,
 and the utilization of the buckets.
 It is the caller's responsibility to free the result string
-by passing it to \fBfree\fR.
+by passing it to \fBckfree\fR.
 .PP
 The header file \fBtcl.h\fR defines the actual data structures
 used to implement hash tables.
