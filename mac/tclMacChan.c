@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.19 2002/11/07 02:13:36 mdejong Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.20 2003/02/21 20:11:35 das Exp $
  */
 
 #include "tclInt.h"
@@ -24,6 +24,7 @@
 #include <FSpCompat.h>
 #include <MoreFiles.h>
 #include <MoreFilesExtras.h>
+#include "tclIO.h"
 
 #ifdef __MSL__
 #include <unix.mac.h>
@@ -1223,4 +1224,94 @@ CommonWatch(
 	    }
 	}
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCutFileChannel --
+ *
+ *	Remove any thread local refs to this channel. See
+ *	Tcl_CutChannel for more info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes thread local list of valid channels.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpCutFileChannel(chan)
+    Tcl_Channel chan;			/* The channel being removed. Must
+                                         * not be referenced in any
+                                         * interpreter. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    Channel *chanPtr = (Channel *) chan;
+    FileState *infoPtr;
+    FileState **nextPtrPtr;
+    int removed = 0;
+
+    if (chanPtr->typePtr != &fileChannelType)
+        return;
+
+    infoPtr = (FileState *) chanPtr->instanceData;
+
+    for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
+	 nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+	if ((*nextPtrPtr) == infoPtr) {
+	    (*nextPtrPtr) = infoPtr->nextPtr;
+	    removed = 1;
+	    break;
+	}
+    }
+
+    /*
+     * This could happen if the channel was created in one thread
+     * and then moved to another without updating the thread
+     * local data in each thread.
+     */
+
+    if (!removed)
+        panic("file info ptr not on thread channel list");
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpSpliceFileChannel --
+ *
+ *	Insert thread local ref for this channel.
+ *	Tcl_SpliceChannel for more info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes thread local list of valid channels.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpSpliceFileChannel(chan)
+    Tcl_Channel chan;			/* The channel being removed. Must
+                                         * not be referenced in any
+                                         * interpreter. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    Channel *chanPtr = (Channel *) chan;
+    FileState *infoPtr;
+
+    if (chanPtr->typePtr != &fileChannelType)
+        return;
+
+    infoPtr = (FileState *) chanPtr->instanceData;
+
+    infoPtr->nextPtr = tsdPtr->firstFilePtr;
+    tsdPtr->firstFilePtr = infoPtr;
 }
