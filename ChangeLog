@@ -1,5 +1,10 @@
 2002-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclCompile.c (TclPrintSource): More CONSTifying.
+	* generic/tclExecute.c (EvalStatsCmd): Object-ify to reduce
+	warnings.  Thanks to 'CoderX2' on the chat for bringing this to my
+	attention...
+
 	* unix/tcl.m4: Forgot to define TCL_WIDE_INT_IS_LONG at the
 	appropriate moment.  I believe this is the cause of [Bug 613117]
 
