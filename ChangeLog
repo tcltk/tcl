@@ -1,3 +1,11 @@
+2004-11-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclResult.c (Tcl_AppendResultVA): Remove call to
+	Tcl_GetStringResult to speed up repeated calls to Tcl_AppendResult
+	with the side effect that code that wants to access interp->result
+	should always call Tcl_GetStringResult first. See [Patch 1041072]
+	discussion for more details.
+
 2004-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
