@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.7 2000/09/28 06:34:56 hobbs Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.8 2000/10/06 21:06:08 hobbs Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -345,7 +345,7 @@ If it is not set to this value \fBTCL_CHANNEL_VERSION_2\fR, then this
 function with either structure, stacked channels must be of the newer
 style to function correctly.
 .PP
-This value can be retried with \fBTcl_ChannelVersion\fR, which returns
+This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
 either \fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
 .VE
 
@@ -376,7 +376,7 @@ implemented by the underlying operating system; for other device types, the
 behavior must be emulated in the channel driver.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelBlockModeProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelBlockModeProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -431,7 +431,7 @@ return a nonzero POSIX error code. In addition, if an error occurs and
 in the interpreter's result.
 .PP
 .VS 8.3.2
-These value can be retried with \fBTcl_ChannelCloseProc\fR or
+These value can be retrieved with \fBTcl_ChannelCloseProc\fR or
 \fBTcl_ChannelClose2Proc\fR, which returns a pointer to the respective
 function.
 .VE
@@ -479,7 +479,7 @@ from the device; then, it should return as much data as it can read without
 blocking.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelInputProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelInputProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -520,7 +520,7 @@ data whatsoever, the function should return -1 with an \fBEAGAIN\fR error
 without writing any data.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelOutputProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelOutputProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -554,7 +554,7 @@ The return value is the new access point or -1 in case of error. If an
 error occurred, the function should not move the access point.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelSeekProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelSeekProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -598,7 +598,7 @@ function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
 error code.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelSetOptionProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelSetOptionProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -638,7 +638,7 @@ field can be NULL, which indicates that this channel type supports no type
 specific options.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelGetOptionProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelGetOptionProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -673,7 +673,7 @@ with other events.  See the description of \fBTcl_QueueEvent\fR for
 details on how to queue an event.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelWatchProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelWatchProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -705,7 +705,7 @@ specified direction, or if the channel implementation does not use
 device handles, the function should return \fBTCL_ERROR\fR.
 .PP
 .VS 8.3.2
-This value can be retried with \fBTcl_ChannelGetHandleProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelGetHandleProc\fR, which returns
 a pointer to the function.
 .VE
 
@@ -721,7 +721,7 @@ typedef int Tcl_DriverFlushProc(
 	ClientData \fIinstanceData\fR);
 .CE
 .PP
-This value can be retried with \fBTcl_ChannelFlushProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelFlushProc\fR, which returns
 a pointer to the function.
 
 .SH HANDLERPROC
@@ -743,7 +743,7 @@ when this channel was created.  The \fIinterestMask\fR is an OR-ed
 combination of \fBTCL_READABLE\fR or \fBTCL_WRITABLE\fR; it indicates what
 type of event occured on this channel.
 .PP
-This value can be retried with \fBTcl_ChannelHandlerProc\fR, which returns
+This value can be retrieved with \fBTcl_ChannelHandlerProc\fR, which returns
 a pointer to the function.
 .VE
 
