@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.20 2001/09/06 03:29:21 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.21 2001/09/06 03:38:48 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -190,7 +190,7 @@
 #define EUSERS		94	/* Too many users (for UFS) */
 #endif
 #ifndef EDQUOT
-#define EDQUOT		49	/* Disc quota exceeded */
+#define EDQUOT		69	/* Disc quota exceeded */
 #endif
 #ifndef ESTALE
 #define ESTALE		151	/* Stale NFS file handle */
