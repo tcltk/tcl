@@ -1,5 +1,12 @@
 2002-07-03  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/pkg1/direct1.tcl: removed
+	* tests/pkg1/pkgIndex.tcl: removed
+	* tests/pkgMkIndex.test:  Imported auxilliary files from tests/pkg1
+	into the test file pkgMkIndex.test itself.  Formatting fixes.
+
+	* unix/Makefile.in: removed tests/pkg/* from `make dist`
+
 	* tests/pkg/circ1.tcl: removed
 	* tests/pkg/circ2.tcl: removed
 	* tests/pkg/circ3.tcl: removed
