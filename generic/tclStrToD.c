@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.4 2005/02/06 03:43:42 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.5 2005/02/22 21:16:11 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -57,7 +57,7 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
 #endif
 
-TCL_DECLARE_MUTEX( initMutex );
+TCL_DECLARE_MUTEX( initMutex )
 
 /* The powers of ten that can be represented exactly as IEEE754 doubles. */
 
