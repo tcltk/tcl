@@ -1,20 +1,21 @@
 '\"
 '\" Copyright (c) 1995-1997 Sun Microsystems, Inc.
 '\" Copyright (c) 1998-2000 by Ajuba Solutions.
+'\" Copyright (c) 2004 ActiveState Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.19 2003/07/16 04:04:40 dgp Exp $
+'\" RCS: @(#) $Id: http.n,v 1.20 2004/05/25 22:56:29 hobbs Exp $
 '\" 
 .so man.macros
-.TH "http" n 2.4 http "Tcl Bundled Packages"
+.TH "http" n 2.5 http "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 http \- Client-side implementation of the HTTP/1.0 protocol.
 .SH SYNOPSIS
-\fBpackage require http ?2.4?\fR
+\fBpackage require http ?2.5?\fR
 .sp
 \fB::http::config \fI?options?\fR
 .sp
@@ -107,6 +108,15 @@ the proxy server and proxy port.  Otherwise the filter should return
 an empty list.  The default filter returns the values of the
 \fB\-proxyhost\fR and \fB\-proxyport\fR settings if they are
 non-empty.
+.TP
+\fB\-urlencoding\fP \fIencoding\fP
+The \fIencoding\fR used for creating the x-url-encoded URLs with
+\fB::http::formatQuery\fR.  The default is \fButf-8\fR, as specified by RFC
+2718.  Prior to http 2.5 this was unspecified, and that behavior can be
+returned by specifying the empty string (\fB{}\fR), although
+\fIiso8859-1\fR is recommended to restore similar behavior but without the
+\fB::http::formatQuery\fR throwing an error processing non-latin-1
+characters.
 .TP
 \fB\-useragent\fP \fIstring\fP
 The value of the User-Agent header in the HTTP request.  The default
