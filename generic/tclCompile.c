@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.52 2003/11/14 20:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.53 2003/11/17 15:23:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -931,7 +931,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 		     */
 		    objIndex = TclRegisterNewLiteral(envPtr, "", 0);
 		    TclEmitPush(objIndex, envPtr);
-		    Tcl_DStringAppend(&deltaList, &delta, 1);
+		    Tcl_DStringAppend(&deltaList, (CONST char *)&delta, 1);
 		    delta = 1;
 		}
 
