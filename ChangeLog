@@ -1,5 +1,13 @@
 2002-06-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/autoMkindex.tcl: removed.
+	* tests/pkg/samename.tcl: removed.
+	* tests/pkg/magicchar.tcl: removed.
+	* tests/pkg/magicchar2.tcl: removed.
+	* tests/autoMkindex.test: Updated auto_mkIndex tests to use
+	[makeFile] and [removeFile] so tests are done in [temporaryDirecotry]
+	where write access is guaranteed.
+
 	* library/tcltest/tcltest.tcl:	Fixed [makeFile] and [viewFile] to
 	* tests/cmdAH.test:		accurately reflect a file's contents.
 	* tests/event.test:		Updated tests that depended on buggy
