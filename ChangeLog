@@ -1,3 +1,21 @@
+1999-06-28    <redman@scriptics.com>
+
+	* generic/tclIndexObj.c:
+	* doc/GetIndex.3:
+	* tests/binary.test:
+	* tests/winDde.test: Applied patch from Peter Hardie (with
+	changes) to fix problem with Tcl_GetIndexFromObj() when the key
+	being passed is the empty string.  It used to match "" and return
+	TCL_OK, but it should have returned TCL_ERROR instead.  Added test
+	case to "binary" and "dde" commands to check the behavior.  Added
+	documentation note as well.
+
+1999-06-26    <redman@scriptics.com>
+
+	* win/tclWinDde.c: Applied patch from Peter Hardie to add poke
+	command to dde.  Also rev'd version of dde package to 1.1.
+	[Bug: 1738]
+
 1999-06-25    <stanton@scriptics.com>
 
 	* tests/reg.test: 
