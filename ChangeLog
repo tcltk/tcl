@@ -1,3 +1,9 @@
+2001-07-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/unixInit.test (unixInit-1.2): Fixed faults reported in
+	Bug#438070 - well, at least enough to work on Solaris - and added
+	comments that should make what is going on in the test clearer.
+
 2001-07-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/util.test: added util-4.6
