@@ -8,7 +8,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclInitScript.h,v 1.13 2001/09/10 21:06:55 dgp Exp $
+ * RCS: @(#) $Id: tclInitScript.h,v 1.14 2004/03/09 12:59:05 vincentdarley Exp $
  */
 
 /*
@@ -78,7 +78,7 @@ tclInit";
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
- * is evaluated in Tcl_Init() prior to the the built-in initialization script
+ * is evaluated in Tcl_Init() prior to the built-in initialization script
  * above.  This variable can be modified by the procedure below.
  */
  

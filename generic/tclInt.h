@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.145 2004/03/04 23:25:10 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.146 2004/03/09 12:59:05 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -238,7 +238,7 @@ typedef struct Namespace {
  *		variables and command have already been destroyed. This bit
  *		allows the namespace resolution code to recognize that the
  *		namespace is "deleted". When the last namespaceName object
- *		in any byte code code unit that refers to the namespace has
+ *		in any byte code unit that refers to the namespace has
  *		been freed (i.e., when the namespace's refCount is 0), the
  *		namespace's storage will be freed.
  */

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.38 2004/01/21 19:59:33 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.39 2004/03/09 12:59:04 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -260,7 +260,7 @@ examples, be remote (e.g. situated on a remote ftp server) or archived
 (e.g. lying inside a .zip archive).  Such registered filesystems provide
 a lookup table of functions to implement all or some of the functionality
 listed here.  Finally, the \fBTcl_FSStat\fR and \fBTcl_FSLstat\fR calls
-abstract away from what the 'struct stat' buffer buffer is actually
+abstract away from what the 'struct stat' buffer is actually
 declared to be, allowing the same code to be used both on systems with
 and systems without support for files larger than 2GB in size.
 .PP

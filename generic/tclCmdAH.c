@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.41 2004/02/04 06:45:30 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.42 2004/03/09 12:59:04 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1079,7 +1079,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 			 * doesn't exist.
 			 */
 			int access;
-			Tcl_Obj *dirPtr = TclPathPart(interp, objv[index], TCL_PATH_DIRNAME);
+			Tcl_Obj *dirPtr = TclPathPart(interp, objv[index], 
+						      TCL_PATH_DIRNAME);
 			if (dirPtr == NULL) {
 			    return TCL_ERROR;
 			}

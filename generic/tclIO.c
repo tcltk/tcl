@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.70 2004/02/02 21:31:21 davygrvy Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.71 2004/03/09 12:59:04 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -4131,7 +4131,7 @@ CommonGetsCleanup(chanPtr, encoding)
  * Tcl_Read --
  *
  *	Reads a given number of bytes from a channel.  EOL and EOF
- *	translation is done on the bytes being read, so the the number
+ *	translation is done on the bytes being read, so the number
  *	of bytes consumed from the channel may not be equal to the
  *	number of bytes stored in the destination buffer.
  *
@@ -4175,7 +4175,7 @@ Tcl_Read(chan, dst, bytesToRead)
  * Tcl_ReadRaw --
  *
  *	Reads a given number of bytes from a channel.  EOL and EOF
- *	translation is done on the bytes being read, so the the number
+ *	translation is done on the bytes being read, so the number
  *	of bytes consumed from the channel may not be equal to the
  *	number of bytes stored in the destination buffer.
  *
@@ -6886,7 +6886,7 @@ UpdateInterest(chanPtr)
 	     * - It reads data into a buffer smaller than the buffer
 	     *   used by Tcl itself.
 	     * - It does not process all events in the event queue, but
-	     *   only only one, at least in some situations.
+	     *   only one, at least in some situations.
 	     *
 	     * In that case we can get into a situation where
 	     *
