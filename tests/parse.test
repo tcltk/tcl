@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.1.2.11 1999/03/26 19:14:03 hershey Exp $
+# RCS: @(#) $Id: parse.test,v 1.1.2.12 1999/04/01 21:56:15 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -141,6 +141,13 @@ test parse-5.8 {Tcl_ParseCommand procedure, junk after close brace} {
 test parse-5.9 {Tcl_ParseCommand procedure, backslash-newline after close brace} {
     testparser "foo {bar}\\\nx" 0
 } {- foo\ \{bar\}\\\nx 3 simple foo 1 text foo 0 simple {{bar}} 1 text bar 0 simple x 1 text x 0 {}}
+test parse-5.10 {Tcl_ParseCommand procedure, multiple deletion of non-static buffer} {
+    # This test is designed to catch bug 1681.
+    list [catch {testparser "a \"\\1\\2\\3\\4\\5\\6\\7\\8\\9\\1\\2\\3\\4\\5\\6\\7\\8" 0} msg] $msg $errorInfo
+} "1 {missing \"} {missing \"
+    (remainder of script: \"\"\\1\\2\\3\\4\\5\\6\\7\\8\\9\\1\\2\\3\\4\\5\\6\\7\\8\")
+    invoked from within
+\"testparser \"a \\\"\\\\1\\\\2\\\\3\\\\4\\\\5\\\\6\\\\7\\\\8\\\\9\\\\1\\\\2\\\\3\\\\4\\\\5\\\\6\\\\7\\\\8\" 0\"}"
 
 test parse-6.1 {ParseTokens procedure, empty word} {
     testparser {""} 0

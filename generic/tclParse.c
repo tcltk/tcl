@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.10 1999/03/10 06:49:20 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.11 1999/04/01 21:56:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -480,6 +480,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
     string[numBytes] = (char) savedChar;
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
     if (parsePtr->commandStart == NULL) {
 	parsePtr->commandStart = string;
@@ -696,6 +697,7 @@ Tcl_FreeParse(parsePtr)
 {
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
 }
 
@@ -732,6 +734,7 @@ TclExpandTokenArray(parsePtr)
 	    (size_t) (parsePtr->tokensAvailable * sizeof(Tcl_Token)));
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
     parsePtr->tokenPtr = newPtr;
     parsePtr->tokensAvailable = newCount;
@@ -1733,6 +1736,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
     error:
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
     return TCL_ERROR;
 }
@@ -1972,6 +1976,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
     error:
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
     return TCL_ERROR;
 }
@@ -2063,6 +2068,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
     error:
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
     return TCL_ERROR;
 }
