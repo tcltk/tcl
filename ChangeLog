@@ -1,3 +1,15 @@
+2000-10-24  Jennifer Hom  <jenn@ajubasolutions.com>
+
+	* tests/all.tcl: Removed support for tcltest 1.0.
+	
+	* tests/tcltest.test:
+	* library/tcltest1.0/tcltest.tcl:
+	* library/tcltest1.0/pkgIndex.tcl:
+	* docs/tcltest.n: Moved tcltest2 code so that it's the standard
+	version of tcltest.  Removed all tcltest2 files
+	(tests/tcltest2.test, library/tcltest1.0/tcltest2.tcl,
+	docs/tcltest2.n). 
+
 2000-10-20  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* win/tclWinFile.c (TclpMatchFilesTypes): made the stat call only
@@ -7,7 +19,7 @@
 2000-10-19  Jennifer Hom  <jenn@ajubasolutions.com>
 
 	* library/tcltest1.0/tcltest2.tcl:
-	* tests/tcltest2.test
+	* tests/tcltest2.test:
 	* doc/tcltest2.n: Code and documentation cleanup.  Modified
 	-verbose to take list of keywords as well as string of letters.
 	Removed Tcl version information from tcltest. Removed
