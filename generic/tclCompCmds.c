@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.56 2004/02/17 20:55:33 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.57 2004/09/22 03:19:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -80,11 +80,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 
     numWords = parsePtr->numWords;
     if (numWords == 1) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"wrong # args: should be \"append varName ?value value ...?\"",
-		-1);
-	return TCL_ERROR;
+        return TCL_OUT_LINE_COMPILE;
     } else if (numWords == 2) {
 	/*
 	 * append varName == set varName

@@ -1,5 +1,9 @@
 2004-09-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompCmds.c:	Tolerate [append] syntax errors
+	* tests/appendComp.test (8.1):	at compile time, and allow runtime
+	to raise the error (or succeed if a redefined [append] allows).
+
 	* generic/tclBasic.c:	Reworked management of the interp
 	* generic/tclCompile.c:	flag ERR_ALREADY_LOGGED, to reduce
 	* generic/tclExecute.c: its exposure.  Still left several
