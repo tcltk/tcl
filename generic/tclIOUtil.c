@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.59 2002/07/18 16:26:03 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.60 2002/07/19 12:31:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -373,7 +373,7 @@ Tcl_FSLinkProc TclpObjLink;
 Tcl_FSListVolumesProc TclpObjListVolumes;	    
 
 /* Define the native filesystem dispatch table */
-Tcl_Filesystem nativeFilesystem = {
+Tcl_Filesystem tclNativeFilesystem = {
     "native",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -422,7 +422,7 @@ Tcl_Filesystem nativeFilesystem = {
  */
 static FilesystemRecord nativeFilesystemRecord = {
     NULL,
-    &nativeFilesystem,
+    &tclNativeFilesystem,
     1,
     NULL
 };
@@ -437,18 +437,25 @@ static FilesystemRecord nativeFilesystemRecord = {
  * filesystems.  Any time it changes, all cached filesystem
  * representations are suspect and must be freed.
  */
-int theFilesystemEpoch = 0;
-/* Stores the linked list of filesystems.*/
+static int theFilesystemEpoch = 0;
+
+/*
+ * Stores the linked list of filesystems.
+ */
 static FilesystemRecord *filesystemList = &nativeFilesystemRecord;
+
 /* 
  * The number of loops which are currently iterating over the linked
  * list.  If this is greater than zero, we can't modify the list.
  */
-int filesystemIteratorsInProgress = 0;
-/* Someone wants to modify the list of filesystems if this is set. */
-int filesystemWantToModify = 0;
+static int filesystemIteratorsInProgress = 0;
 
-Tcl_Condition filesystemOkToModify = NULL;
+/*
+ * Someone wants to modify the list of filesystems if this is set.
+ */
+static int filesystemWantToModify = 0;
+
+static Tcl_Condition filesystemOkToModify = NULL;
 
 TCL_DECLARE_MUTEX(filesystemMutex)
 
@@ -2601,7 +2608,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		tvdlPtr->divertedFile = copyToPtr;
 		/* 
 		 * This is the filesystem we loaded it into.  It is
-		 * almost certainly the nativeFilesystem, but we don't
+		 * almost certainly the tclNativeFilesystem, but we don't
 		 * want to make that assumption.  Since we have a
 		 * reference to 'copyToPtr', we already have a refCount
 		 * on this filesystem, so we don't need to worry about it
@@ -2976,7 +2983,7 @@ Tcl_FSSplitPath(pathPtr, lenPtr)
 
     if (FSGetPathType(pathPtr, &fsPtr, &driveNameLength) 
 	== TCL_PATH_ABSOLUTE) {
-	if (fsPtr == &nativeFilesystem) {
+	if (fsPtr == &tclNativeFilesystem) {
 	    return TclpNativeSplitPath(pathPtr, lenPtr);
 	}
     } else {
@@ -3130,7 +3137,7 @@ Tcl_FSJoinPath(listObj, elements)
 	 */
 	if (*strElt == '\0') continue;
 	
-	if (fsPtr == &nativeFilesystem || fsPtr == NULL) {
+	if (fsPtr == &tclNativeFilesystem || fsPtr == NULL) {
 	    TclpNativeJoinPath(res, strElt);
 	} else {
 	    char separator = '/';
@@ -3234,7 +3241,7 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 	 * save the overhead of the native filesystem returning us
 	 * a list of volumes all the time, it is better.
 	 */
-	if ((fsRecPtr->fsPtr != &nativeFilesystem) && (proc != NULL)) {
+	if ((fsRecPtr->fsPtr != &tclNativeFilesystem) && (proc != NULL)) {
 	    int numVolumes;
 	    Tcl_Obj *thisFsVolumes = (*proc)();
 	    if (thisFsVolumes != NULL) {
@@ -3292,7 +3299,7 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 	type = TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, 
 				     driveNameRef);
 	if ((type == TCL_PATH_ABSOLUTE) && (filesystemPtrPtr != NULL)) {
-	    *filesystemPtrPtr = &nativeFilesystem;
+	    *filesystemPtrPtr = &tclNativeFilesystem;
 	}
     }
     return type;
@@ -4437,11 +4444,11 @@ Tcl_FSGetInternalRep(pathObjPtr, fsPtr)
  *---------------------------------------------------------------------------
  */
 
-CONST char* 
+CONST char *
 Tcl_FSGetNativePath(pathObjPtr)
-    Tcl_Obj* pathObjPtr;
+    Tcl_Obj *pathObjPtr;
 {
-    return (CONST char *)Tcl_FSGetInternalRep(pathObjPtr, &nativeFilesystem);
+    return (CONST char *)Tcl_FSGetInternalRep(pathObjPtr, &tclNativeFilesystem);
 }
 
 /*

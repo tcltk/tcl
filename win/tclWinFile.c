@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.37 2002/07/15 09:53:21 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.38 2002/07/19 12:31:10 dkf Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -161,7 +161,6 @@ static int WinLink(CONST TCHAR* LinkSource, CONST TCHAR* LinkTarget,
 		   int linkAction);
 static int WinSymLinkDirectory(CONST TCHAR* LinkDirectory, 
 			       CONST TCHAR* LinkTarget);
-extern Tcl_Filesystem nativeFilesystem;
 
 
 /*
@@ -464,7 +463,7 @@ WinReadLinkDirectory(LinkDirectory)
 		   (VOID*)reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer,
 		   len);
 	    
-	    retVal = Tcl_FSNewNativePath(&nativeFilesystem, clientData);
+	    retVal = Tcl_FSNewNativePath(&tclNativeFilesystem, clientData);
 	    Tcl_IncrRefCount(retVal);
 	    return retVal;
 	}

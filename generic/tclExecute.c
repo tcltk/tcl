@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.79 2002/07/17 14:23:13 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.80 2002/07/19 12:31:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -403,7 +403,7 @@ static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
  * operand byte.
  */
 
-BuiltinFunc builtinFuncTable[] = {
+BuiltinFunc tclBuiltinFuncTable[] = {
 #ifndef TCL_NO_MATH
     {"acos", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) acos},
     {"asin", 1, {TCL_DOUBLE}, ExprUnaryFunc, (ClientData) asin},
@@ -3567,7 +3567,7 @@ TclExecuteByteCode(interp, codePtr)
 		TRACE(("UNRECOGNIZED BUILTIN FUNC CODE %d\n", opnd));
 		panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
 	    }
-	    mathFuncPtr = &(builtinFuncTable[opnd]);
+	    mathFuncPtr = &(tclBuiltinFuncTable[opnd]);
 	    DECACHE_STACK_INFO();
 	    result = (*mathFuncPtr->proc)(interp, eePtr,
 	            mathFuncPtr->clientData);
@@ -4706,7 +4706,7 @@ GetOpcodeName(pc)
 {
     unsigned char opCode = *pc;
     
-    return instructionTable[opCode].name;
+    return tclInstructionTable[opCode].name;
 }
 #endif /* TCL_COMPILE_DEBUG */
 
@@ -6141,7 +6141,7 @@ EvalStatsCmd(unused, interp, argc, argv)
     for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
         if (statsPtr->instructionCount[i]) {
             fprintf(stdout, "%20s %8ld %6.1f%%\n",
-		    instructionTable[i].name,
+		    tclInstructionTable[i].name,
 		    statsPtr->instructionCount[i],
 		    (statsPtr->instructionCount[i]*100.0) / numInstructions);
         }
@@ -6150,8 +6150,7 @@ EvalStatsCmd(unused, interp, argc, argv)
     fprintf(stdout, "\nInstructions NEVER executed:\n");
     for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
         if (statsPtr->instructionCount[i] == 0) {
-            fprintf(stdout, "%20s\n",
-		    instructionTable[i].name);
+            fprintf(stdout, "%20s\n", tclInstructionTable[i].name);
         }
     }
 
