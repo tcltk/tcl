@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.33 2000/06/02 23:14:46 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.34 2001/08/02 01:19:23 hobbs Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -853,10 +853,8 @@ proc http::formatQuery {args} {
 
     set alphanumeric	a-zA-Z0-9
     regsub -all \[^$alphanumeric\] $string {$formMap(&)} string
-    regsub -all \n $string {\\n} string
-    regsub -all \t $string {\\t} string
     regsub -all {[][{})\\]\)} $string {\\&} string
-    return [subst $string]
+    return [subst -nocommand $string]
 }
 
 # http::ProxyRequired --
