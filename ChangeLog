@@ -1,5 +1,19 @@
 2003-09-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	TIP#112 IMPLEMENTATION
+
+	* generic/tclNamesp.c: Core of implementation.
+	* generic/tclInt.h (Namespace,TclInvalidateNsCmdLookup): Add
+	command list epoch counter and list of ensembles to namespace
+	structure, and define a macro to ease update of the epoch
+	counter.
+	* generic/tclBasic.c (Tcl_CreateObjCommand,etc.): Update epoch
+	counter when list of commands in a namespace changes.
+	* generic/tclObj.c (TclInitObjSubsystem): Register ensemble
+	subcommand type.
+	* tests/namespace.test (42.1-47.6): Tests.
+	* doc/namespace.n: Documentation.
+
 	* library/http/http.tcl (geturl): Correctly check the type of
 	boolean-valued options. [Bug 811170]
 
