@@ -3556,3 +3556,19 @@ can support the [incr Tcl] class structures.  This version will index
 all procedures in a source file, not just those where "proc" starts
 at the beginning of the line.  If you want the old behavior, use the
 auto_mkindex_old procedure. (MMC)
+
+7/24/98 (feature change) Changed the Windows registry key to be
+HKEY_LOCAL_MACHINE\Software\Scriptics\Tcl\8.0, and to store the path
+in the default value instead of "Root".  Also, this key can be
+specified at compile time in case Tcl is being used in a different
+context where it needs an alternate library path from the standard Tcl
+installation. (SS)
+
+7/24/98 (feature change) Changed the search order for init.tcl.  The
+tcl_library variable can now be set before calling Tcl_Init to avoid
+doing any searches.  If it isn't set, then Tcl checks
+env(TCL_LIBRARY), the static value set at compile time, an install
+directory relative to the executable, a source directory relative to
+the executable, and a tk directory relative to the source heirarchy
+containing the executable.  See the comment at the top of
+generic/tclInitScript.h for more details. (SS)
