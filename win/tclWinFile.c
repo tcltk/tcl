@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.16 2001/09/27 00:19:57 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.17 2001/09/27 00:36:16 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -922,7 +922,7 @@ NativeStat(nativePath, statPtr)
 
     dev = -1;
     if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
-	char *p;
+	CONST char *p;
 	DWORD dw;
 	TCHAR *nativeVol;
 	Tcl_DString volString;
