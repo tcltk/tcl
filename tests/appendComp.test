@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: appendComp.test,v 1.5 2001/11/23 01:25:38 das Exp $
+# RCS: @(#) $Id: appendComp.test,v 1.6 2004/05/25 15:33:28 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -198,11 +198,11 @@ test appendComp-4.18 {lappend command} {
     proc foo {} { lappend x {} }
     foo
 } {{}}
-test append-4.19 {lappend command} {
+test appendComp-4.19 {lappend command} {
     proc foo {} { lappend x(0) }
     foo
 } {}
-test append-4.20 {lappend command} {
+test appendComp-4.20 {lappend command} {
     proc foo {} { lappend x(0) abc }
     foo
 } {abc}
