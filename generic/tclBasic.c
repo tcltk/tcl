@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27.6.6 2002/11/26 21:13:52 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.7 2002/11/26 22:15:58 andreas_kupries Exp $
  */
 #include <assert.h>
 #include "tclInt.h"
@@ -4032,15 +4032,6 @@ Tcl_CloneInterp(srcInterp)
         panic("Tcl_CreateInterp: can't create global namespace");
     }
 
-    /*
-     * Initialize support for code compilation and execution. We call
-     * TclCreateExecEnv after initializing namespaces since it tries to
-     * reference a Tcl variable (it links to the Tcl "tcl_traceExec"
-     * variable).
-     */
-
-    iPtr->execEnvPtr = TclCreateExecEnv(interp);
-
 #ifndef TCL_THREAD_LITERALS
     TclInitLiteralTable(&(iPtr->literalTable));
 
@@ -4086,6 +4077,15 @@ Tcl_CloneInterp(srcInterp)
 
     CloneMathFunctions (iPtr, srcIPtr);
     iPtr->flags |= EXPR_INITIALIZED;
+
+    /*
+     * Initialize support for code compilation and execution. We call
+     * TclCreateExecEnv after initializing namespaces since it tries to
+     * reference a Tcl variable (it links to the Tcl "tcl_traceExec"
+     * variable).
+     */
+
+    iPtr->execEnvPtr = TclCreateExecEnv(interp);
 
 #if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
     /*

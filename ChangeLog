@@ -1,3 +1,12 @@
+2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_CloneInterp): Moved 'TclCreateExecEnv'
+	  behind 'CloneNamespace'. This fixes the last leak found. The
+	  function creates a variable 'tcl_traceExec', and links a C
+	  variable to it. Running 'CloneNamespace' afterward overwrites
+	  the pointer, leaking the structure created by
+	  'TclCreateExecEnv'.
+
 2002-11-26  Andreas Kupries  <andreask@activestate.com>
 
 	* tclBasic.c (CloneVariable): The initialization of the refCount
