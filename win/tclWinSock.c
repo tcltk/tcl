@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.20 2001/03/31 05:44:31 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.21 2001/09/20 18:33:37 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -2146,7 +2146,7 @@ SocketThread(LPVOID arg)
 	 */
 
 #ifdef _WIN64
-	SetWindowLongPtr(tsdPtr->hwnd, GWLP_USERDATA, (LONG) tsdPtr);
+	SetWindowLongPtr(tsdPtr->hwnd, GWLP_USERDATA, (LONG_PTR) tsdPtr);
 #else
 	SetWindowLong(tsdPtr->hwnd, GWL_USERDATA, (LONG) tsdPtr);
 #endif
