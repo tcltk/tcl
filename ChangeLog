@@ -5,6 +5,9 @@
 	problem is when someone is statically linking to Tcl and accessing
 	internals from a C++ file and has name mangling issues from the
 	lack of "C" after 'extern' [Patch 1055668].
+	* generic/tclCompile.h: Exchanged use of the EXTERN macro to the
+	new MODULE_SCOPE macro.  Lowered exported internals count by 35.
+	[Patch 1055668]
 
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
