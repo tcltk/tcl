@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.8 2002/05/08 05:58:57 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.9 2002/05/31 23:16:17 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -45,7 +45,7 @@ namespace eval ::tcl::test::main {
     test Tcl_Main-1.1 {
 	Tcl_Main: startup script - normal
     } -constraints {
-	exec
+	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
 	catch {set f [open "|[list [interpreter] script]" r]}
@@ -59,7 +59,7 @@ namespace eval ::tcl::test::main {
     test Tcl_Main-1.2 {
 	Tcl_Main: startup script - can't begin with '-'
     } -constraints {
-	exec
+	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} -script
 	catch {set f [open "|[list [interpreter] -script]" w+]}
@@ -76,7 +76,7 @@ namespace eval ::tcl::test::main {
 	Tcl_Main: encoding of arguments: done by system encoding
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints {
-	exec
+	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
 	catch {set f [open "|[list [interpreter] script \u00c0]" r]}
@@ -92,7 +92,7 @@ namespace eval ::tcl::test::main {
 	Tcl_Main: encoding of arguments: done by system encoding
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints {
-	exec
+	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
 	catch {set f [open "|[list [interpreter] script \u20ac]" r]}
@@ -108,7 +108,7 @@ namespace eval ::tcl::test::main {
 	Tcl_Main: encoding of script name: system encoding loss
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints {
-	exec
+	stdio
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u00c0
 	catch {set f [open "|[list [interpreter] \u00c0]" r]}
@@ -124,7 +124,7 @@ namespace eval ::tcl::test::main {
 	Tcl_Main: encoding of script name: system encoding loss
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints {
-	exec
+	stdio	
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u20ac
 	catch {set f [open "|[list [interpreter] \u20ac]" r]}

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.29 2002/04/16 22:35:19 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.30 2002/05/31 23:16:17 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -5693,7 +5693,7 @@ test io-48.2 {testing readability conditions} {nonBlockFiles} {
     vwait [namespace which -variable x]
     list $x $l
 } {done {called called called called called called called}}
-test io-48.3 {testing readability conditions} {unixOnly nonBlockFiles} {
+test io-48.3 {testing readability conditions} {stdio unixOnly nonBlockFiles} {
     set f [open bar w]
     puts $f abcdefg
     puts $f abcdefg
@@ -6617,7 +6617,7 @@ test io-53.2 {CopyData} {
     }
     set result
 } {0 0 ok}
-test io-53.3 {CopyData: background read underflow} {unixOnly} {
+test io-53.3 {CopyData: background read underflow} {stdio unixOnly} {
     removeFile test1
     removeFile pipe
     set f1 [open pipe w]
@@ -6647,7 +6647,7 @@ test io-53.3 {CopyData: background read underflow} {unixOnly} {
     close $f
     set result
 } "ready line1 line2 {done\n}"
-test io-53.4 {CopyData: background write overflow} {unixOnly} {
+test io-53.4 {CopyData: background write overflow} {stdio unixOnly} {
     set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
     for {set x 0} {$x < 12} {incr x} {
 	append big $big
@@ -6975,7 +6975,7 @@ test io-57.2 {buffered data and file events, read} {
     set result
 } {1 readable 234567890 timer}
         
-test io-58.1 {Tcl_NotifyChannel and error when closing} {unixOrPc} {
+test io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrPc} {
     set out [open script w]
     puts $out {
 	puts "normal message from pipe"
