@@ -356,7 +356,7 @@ Tcl_MutexLock(mutexPtr)
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
 	    /* 
-	     * Double inside master lock check to avoid a race.
+	     * Double inside master lock check to avoid a race condition.
 	     */
     
 	    pmutexPtr = (pthread_mutex_t *)ckalloc(sizeof(pthread_mutex_t));
@@ -374,7 +374,7 @@ Tcl_MutexLock(mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMutexUnlock --
+ * Tcl_MutexUnlock --
  *
  *	This procedure is invoked to unlock a mutex.  The mutex must
  *	have been locked by Tcl_MutexLock.

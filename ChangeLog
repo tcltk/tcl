@@ -1,26 +1,34 @@
+2000-04-24  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier, NotifierThreadProc):
+	added write of 'q' into triggerPipe for notifier in threaded case,
+	so that Tcl doesn't hang when children are still running [Bug: 4139]
+
+	* unix/tclUnixThrd.c (Tcl_MutexLock): minor comment fixes.
+
 2000-04-23  Jim Ingham  <jingham@cygnus.com>
 
-        These changes make some error handling marginally better for Mac sockets.  It is
-        still somewhat flakey, however.
+	These changes make some error handling marginally better for Mac
+	sockets.  It is still somewhat flakey, however.
 
-        * mac/tclMacSock.c (TcpClose): Add timeouts to the close - these don't seem to
-        be honored, however.
-        * Use a separate PB for the release, since an async connect socket will still
-        be using the original buffer.
-        * Make sure TCPRelease returns noErr before freeing the recvBuff.  If the call
-        returns an error, then the buffer is not right.
-        * mac/tclMacSocket.c (CreateSocket): Add timeouts to the async create.  These
-        don't seem to trigger, however.  Sigh...
-        * mac/tclMacSocket.c (WaitForSocketEvent): If an TCP_ASYNC_CONNECT socket errors
-        out, then return EWOULDBLOCK & error out.
-        * mac/tclMacSock.c: (NotifyRoutine) Added a NotifyRoutine for experimenting 
-        with MacTCP.
-            
+	* mac/tclMacSock.c (TcpClose): Add timeouts to the close - these
+	don't seem to be honored, however.
+	Use a separate PB for the release, since an async connect socket
+	will still be using the original buffer.
+	Make sure TCPRelease returns noErr before freeing the recvBuff.
+	If the call returns an error, then the buffer is not right.
+	* mac/tclMacSock.c (CreateSocket): Add timeouts to the async
+	create. These don't seem to trigger, however.  Sigh...
+	* mac/tclMacSock.c (WaitForSocketEvent): If an TCP_ASYNC_CONNECT
+	socket errors out, then return EWOULDBLOCK & error out.
+	* mac/tclMacSock.c (NotifyRoutine): Added a NotifyRoutine for
+	experimenting with MacTCP.
+
 2000-04-22  Jim Ingham <jingham@cygnus.com>
 
-        * library/package.tcl (tclPkgUnknown): Fixed a typo in the Mac package
-        search part of tclPkgUnknown.
-        
+	* library/package.tcl (tclPkgUnknown): Fixed a typo in the Mac package
+	search part of tclPkgUnknown.
+
 2000-04-21  Sandeep Tamhankar <sandeep@scriptics.com>
 
 	* library/http2.1/http.tcl: Fixed a newly introduced bug where if

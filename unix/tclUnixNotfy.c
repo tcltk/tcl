@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.9 2000/04/09 16:04:20 kupries Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.10 2000/04/24 23:32:13 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -264,7 +264,20 @@ Tcl_FinalizeNotifier(clientData)
 	if (triggerPipe < 0) {
 	    panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
 	}
+
+        /*
+	 * Send "q" message to the notifier thread so that it will
+	 * terminate.  The notifier will return from its call to select()
+	 * and notice that a "q" message has arrived, it will then close
+	 * its side of the pipe and terminate its thread.  Note the we can
+	 * not just close the pipe and check for EOF in the notifier
+	 * thread because if a background child process was created with
+	 * exec, select() would not register the EOF on the pipe until the
+	 * child processes had terminated. [Bug: 4139]
+	 */
+	write(triggerPipe, "q", 1);
 	close(triggerPipe);
+
 	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
     }
 
@@ -963,10 +976,10 @@ NotifierThreadProc(clientData)
 		Tcl_ConditionNotify(&tsdPtr->waitCV);
 		if (tsdPtr->onList) {
 		    /*
-		     * Remove the ThreadSpecificData structure of this thread
-		     * from the waiting list. This prevents us from continuously
-		     * spining on select until the other threads runs and
-		     * services the file event.
+		     * Remove the ThreadSpecificData structure of this
+		     * thread from the waiting list. This prevents us from
+		     * continuously spining on select until the other
+		     * threads runs and services the file event.
 		     */
 	    
 		    if (tsdPtr->prevPtr) {
@@ -991,13 +1004,18 @@ NotifierThreadProc(clientData)
 	 * to avoid a race condition we only read one at a time.
 	 */
 
-	if ((masks[index] & bit) && (read(receivePipe, buf, 1) == 0)) {
-	    /*
-	     * Someone closed the write end of the pipe so we need to
-	     * shut down the notifier thread.
-	     */
+	if (masks[index] & bit) {
+	    i = read(receivePipe, buf, 1);
 
-	    break;
+	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {
+		/*
+		 * Someone closed the write end of the pipe or sent us a
+		 * Quit message [Bug: 4139] and then closed the write end
+		 * of the pipe so we need to shut down the notifier thread.
+		 */
+
+		break;
+	    }
 	}
     }
 
