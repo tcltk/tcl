@@ -1,3 +1,9 @@
+2001-08-07  Miguel Sofer <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: Avoid panic when there are extra items in
+	  the tcl stack [Bugs #406709 and 439843, Patch #414470]
+	* tests/foreach.test: test to exercise the patch
+
 2001-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd, Tcl_RegsubObjCmd):
