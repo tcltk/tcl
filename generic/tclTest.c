@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.34 2001/11/23 01:29:07 das Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.35 2002/01/05 22:55:52 dgp Exp $
  */
 
 #define TCL_TEST
@@ -105,6 +105,12 @@ typedef struct TclEncoding {
  */
 
 static int freeCount;
+
+/*
+ * Boolean flag used by the "testsetmainloop" and "testexitmainloop"
+ * commands.
+ */
+static int exitMainLoop = 0;
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -238,6 +244,10 @@ static int		TestMathFunc2 _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, Tcl_Value *args,
 			    Tcl_Value *resultPtr));
 static int		TestmainthreadCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestsetmainloopCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestexitmainloopCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static Tcl_Channel	PretendTclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *filename, char *modeString, int permissions));
@@ -408,7 +418,15 @@ Tcltest_Init(interp)
     Tcl_Interp *interp;		/* Interpreter for application. */
 {
     Tcl_ValueType t3ArgTypes[2];
-	
+
+    Tcl_Obj *listPtr;
+    Tcl_Obj **objv;
+    int objc, index;
+    static char *specialOptions[] = {
+	"-appinitprocerror", "-appinitprocdeleteinterp",
+	"-appinitprocclosestderr", "-appinitprocsetrcfile", (char *) NULL
+    };
+
     if (Tcl_PkgProvide(interp, "Tcltest", TCL_VERSION) == TCL_ERROR) {
         return TCL_ERROR;
     }
@@ -532,6 +550,10 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
+	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
+	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -543,6 +565,42 @@ Tcltest_Init(interp)
     }
 #endif
 
+    /*
+     * Check for special options used in ../tests/main.test
+     */
+
+    listPtr = Tcl_GetVar2Ex(interp, "argv", NULL, TCL_GLOBAL_ONLY);
+    if (listPtr != NULL) {
+        if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    return TCL_ERROR;
+        }
+        if (objc && (Tcl_GetIndexFromObj(NULL, objv[0], specialOptions, NULL,
+		TCL_EXACT, &index) == TCL_OK)) {
+	    switch (index) {
+	        case 0: {
+		    return TCL_ERROR;
+	        }
+	        case 1: {
+		    Tcl_DeleteInterp(interp);
+		    return TCL_ERROR;
+	        }
+	        case 2: {
+		    int mode;
+		    Tcl_UnregisterChannel(interp, 
+			    Tcl_GetChannel(interp, "stderr", &mode));
+		    return TCL_ERROR;
+	        }
+	        case 3: {
+		    if (objc-1) {
+		        Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
+			       objv[1], TCL_GLOBAL_ONLY);
+		    }
+		    return TCL_ERROR;
+	        }
+	    }
+        }
+    }
+	
     /*
      * And finally add any platform specific test commands.
      */
@@ -1932,11 +1990,6 @@ TestinterpdeleteCmd(dummy, interp, argc, argv)
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
                 " path\"", (char *) NULL);
-        return TCL_ERROR;
-    }
-    if (argv[1][0] == '\0') {
-        Tcl_AppendResult(interp, "cannot delete current interpreter",
-                (char *) NULL);
         return TCL_ERROR;
     }
     slaveToDelete = Tcl_GetSlave(interp, argv[1]);
@@ -4163,6 +4216,89 @@ TestmainthreadCmd (dummy, interp, argc, argv)
       Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
       return TCL_ERROR;
   }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MainLoop --
+ *
+ *	A main loop set by TestsetmainloopCmd below.
+ *
+ * Results:
+ * 	None.
+ *
+ * Side effects:
+ *	Event handlers could do anything.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MainLoop()
+{
+    while (!exitMainLoop) {
+	Tcl_DoOneEvent(0);
+    }
+    fprintf(stdout,"Exit MainLoop\n");
+    fflush(stdout);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsetmainloopCmd  --
+ *
+ *	Implements the "testsetmainloop" cmd that is used to test the
+ *	'Tcl_SetMainLoop' API.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetmainloopCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+  exitMainLoop = 0;
+  Tcl_SetMainLoop(MainLoop);
+  return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestexitmainloopCmd  --
+ *
+ *	Implements the "testexitmainloop" cmd that is used to test the
+ *	'Tcl_SetMainLoop' API.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestexitmainloopCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+  exitMainLoop = 1;
+  return TCL_OK;
 }
 
 /*
