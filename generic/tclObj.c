@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.6 2001/10/03 15:25:22 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.7 2001/10/05 08:14:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -59,12 +59,14 @@ static int		SetDoubleFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static int		SetIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
-static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
 static void		UpdateStringOfBoolean _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
+#ifndef TCL_WIDE_INT_IS_LONG
+static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
 static void		UpdateStringOfWideInt _ANSI_ARGS_((Tcl_Obj *objPtr));
+#endif
 
 /*
  * Prototypes for the array hash key methods.
@@ -2025,14 +2027,12 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_WIDE_INT_IS_LONG
 static int
 SetWideIntFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-#ifdef TCL_WIDE_INT_IS_LONG
-    return SetLongFromObj(interp, objPtr);
-#else
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     int length;
@@ -2118,8 +2118,8 @@ SetWideIntFromAny(interp, objPtr)
     objPtr->internalRep.wideValue = newWide;
     objPtr->typePtr = &tclWideIntType;
     return TCL_OK;
-#endif
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2140,6 +2140,7 @@ SetWideIntFromAny(interp, objPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_WIDE_INT_IS_LONG
 static void
 UpdateStringOfWideInt(objPtr)
     register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
@@ -2169,11 +2170,12 @@ UpdateStringOfWideInt(objPtr)
 	start = lltostr(wideVal, buffer+(TCL_INTEGER_SPACE*2+1));
     }
     len = (int)(buffer + (TCL_INTEGER_SPACE*2+1) - start);
-#endif
+#endif /* TCL_PRINTF_SUPPORTS_LL */
     objPtr->bytes = ckalloc((unsigned) len + 1);
     strcpy(objPtr->bytes, start);
     objPtr->length = len;
 }
+#endif /* TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
@@ -2229,7 +2231,7 @@ Tcl_NewWideIntObj(wideValue)
     objPtr->internalRep.wideValue = wideValue;
     objPtr->typePtr = &tclWideIntType;
     return objPtr;
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
 }
 #endif /* if TCL_MEM_DEBUG */
 

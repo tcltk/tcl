@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64.6.5 2001/10/03 15:16:05 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.6 2001/10/05 08:14:56 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1572,6 +1572,9 @@ extern Tcl_ObjType	tclStringType;
 extern Tcl_ObjType	tclArraySearchType;
 extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
+#ifndef TCL_WIDE_INT_IS_LONG
+extern Tcl_ObjType	tclWideIntType;
+#endif
 
 /*
  * Variables denoting the hash key types defined in the core.

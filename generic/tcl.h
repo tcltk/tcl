@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.10 2001/10/04 15:35:58 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.11 2001/10/05 08:14:56 dkf Exp $
  */
 
 #ifndef _TCL
@@ -171,8 +171,14 @@ extern "C" {
 
 
 /*
- * Must #define _before_ any #include of system headers or all hell
- * breaks loose...
+ * Must #define before *any* #include of system headers or all hell
+ * tends to break loose...
+ *
+ * _LARGEFILE64_SOURCE requests the presence (transitional) 64-bit
+ * interface to file operations.
+ *
+ * _ISOC99_SOURCE requests the presence of strtoll() and strtoull() on
+ * some platforms (e.g. glibc2.1-based Linux.)
  */
 #define _LARGEFILE64_SOURCE	1
 #define _ISOC99_SOURCE		1
@@ -341,31 +347,27 @@ typedef int *ClientData;
 #endif
 
 
-#if defined(_LP64) || (defined (__digital__) && defined (__unix__))
 /*
- * Longs are 64-bit, so use them in all appropriate spots.
- */
-#   define TCL_WIDE_INT_IS_LONG
-#   define TCL_FILE_OFFSETS_ARE_LONG
-typedef long		Tcl_WideInt;
-#   else
-/*
- * Type of 64-bit values on 32-bit systems.  FIXME - DKF
- */
-typedef long long	Tcl_WideInt;
-#   define TCL_PRINTF_SUPPORTS_LL /*True on Solaris/SPARC and Linux/glibc2.1*/
-#endif /* _LP64 */
-
-/*
- * Strip the high bits, bearing in mind the sign!
- */
-#define Tcl_WideAsLong(val)	((long)(val))
-/*
- * Sign-extend the top-bit to the full value!
- */
-#define Tcl_LongAsWide(val)	((Tcl_WideInt)(val))
-
-/*
+ * Define Tcl_WideInt to be a type that is (at least) 64-bits wide.
+ *
+ * At the moment, this only works on Unix systems anyway...
+ *
+ * Also defines the following macros:
+ * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on
+ *	a real 64-bit system.)
+ * TCL_FILE_OFFSETS_ARE_LONG - if we should be using longs for file
+ *	offsets; this may occur if either longs are 64-bits or there
+ *	is no transitional large-file interface in the system
+ *	libraries.
+ * TCL_PRINTF_SUPPORTS_LL - if we can do sprintf("%lld",wideVal) safely,
+ *	which controls the feature set supported by [format] and the
+ *	implementation of the wideInt Tcl_ObjType.
+ * Tcl_WideAsLong - forgetful converter from wideInt to long.
+ * Tcl_LongAsWide - sign-extending converter from long to wideInt.
+ *
+ * The following invariant should hold for any long value 'longVal':
+ *	longVal == Tcl_WideAsLong(Tcl_LongAsWide(longVal))
+ *
  * Note on converting between Tcl_WideInt and strings.  This
  * implementation (in tclObj.c) depends on the functions strtoull()
  * and, where sprintf(...,"%lld",...) does not work, lltostr().
@@ -373,7 +375,29 @@ typedef long long	Tcl_WideInt;
  * unusual function on Solaris8 (taking its operating buffer
  * backwards) so any changes you make will need to be done
  * cautiously...
+ *
+ * Naturally, support for [format]ting of wide values is dependent on
+ * TCL_PRINTF_SUPPORTS_LL
  */
+#if defined(_LP64) || defined (__ALPHA) || defined(__alpha)
+/*
+ * Longs are 64-bit, so use them in all appropriate spots.
+ */
+typedef long		Tcl_WideInt;
+#   define TCL_WIDE_INT_IS_LONG
+#   define TCL_FILE_OFFSETS_ARE_LONG
+#   define Tcl_WideAsLong(val)	(val)
+#   define Tcl_LongAsWide(val)	(val)
+#else
+/*
+ * Type of 64-bit values on 32-bit systems.  I think this is the ISO
+ * C99 standard way of writing this type.
+ */
+typedef long long	Tcl_WideInt;
+#   define TCL_PRINTF_SUPPORTS_LL /*True on Solaris/SPARC and Linux/glibc2.1*/
+#   define Tcl_WideAsLong(val)	((long)(val))
+#   define Tcl_LongAsWide(val)	((Tcl_WideInt)(val))
+#endif /* _LP64 */
 
 #ifdef TCL_FILE_OFFSETS_ARE_LONG
 typedef struct stat	Tcl_StatBuf;
