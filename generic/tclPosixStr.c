@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.4 1999/04/16 00:46:52 stanton Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.5 1999/08/21 19:41:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -736,7 +736,7 @@ Tcl_ErrnoMsg(err)
 	case ENOPKG: return "package not installed";
 #endif
 #ifdef ENOPROTOOPT
-	case ENOPROTOOPT: return "bad proocol option";
+	case ENOPROTOOPT: return "bad protocol option";
 #endif
 #ifdef ENOSPC
 	case ENOSPC: return "no space left on device";
