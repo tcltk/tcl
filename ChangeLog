@@ -1,3 +1,8 @@
+2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* tests/namespace.test: added namespace-41.2, a simpler test for
+	[Bug: 231259]
+
 2001-11-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclBinary.c (BINARY_SCAN_MAX_CACHE, Tcl_BinaryObjCmd,
