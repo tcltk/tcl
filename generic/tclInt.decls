@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.49 2002/05/29 00:19:40 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.50 2002/05/29 09:09:57 hobbs Exp $
 
 library tcl
 
@@ -664,6 +664,11 @@ declare 167 generic {
 }
 declare 168 generic {
     Tcl_Obj *TclGetStartupScriptPath(void)
+}
+
+# variant of Tcl_UtfNCmp that takes n as bytes, not chars
+declare 169 generic {
+    int TclpUtfNcmp2(CONST char *s1, CONST char *s2, unsigned long n)
 }
 
 
