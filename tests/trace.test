@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.25 2003/01/17 14:19:55 vincentdarley Exp $
+# RCS: @(#) $Id: trace.test,v 1.26 2003/02/03 20:16:54 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1181,7 +1181,7 @@ test trace-19.1 {trace add command (rename option)} {
     trace add command foo rename traceCommand
     rename foo bar
     set info
-} {foo bar rename}
+} {::foo ::bar rename}
 test trace-19.2 {traces stick with renamed commands} {
     proc foo {} {}
     catch {rename bar {}}
@@ -1189,7 +1189,7 @@ test trace-19.2 {traces stick with renamed commands} {
     rename foo bar
     rename bar foo
     set info
-} {bar foo rename}
+} {::bar ::foo rename}
 test trace-19.2.1 {trace add command rename trace exists} {
     proc foo {} {}
     trace add command foo rename traceCommand
@@ -1223,19 +1223,19 @@ test trace-19.6 {trace add command rename in namespace} {
     trace add command tc::tcfoo rename traceCommand
     rename tc::tcfoo tc::tcbar
     set info
-} {tc::tcfoo tc::tcbar rename}
+} {::tc::tcfoo ::tc::tcbar rename}
 test trace-19.7 {trace add command rename in namespace back again} {
     rename tc::tcbar tc::tcfoo
     set info
-} {tc::tcbar tc::tcfoo rename}
+} {::tc::tcbar ::tc::tcfoo rename}
 test trace-19.8 {trace add command rename in namespace to out of namespace} {
     rename tc::tcfoo tcbar
     set info
-} {tc::tcfoo tcbar rename}
+} {::tc::tcfoo ::tcbar rename}
 test trace-19.9 {trace add command rename back into namespace} {
     rename tcbar tc::tcfoo
     set info
-} {tcbar tc::tcfoo rename}
+} {::tcbar ::tc::tcfoo rename}
 test trace-19.10 {trace add command failed rename doesn't trigger trace} {
     set info {}
     proc foo {} {}
@@ -1246,6 +1246,11 @@ test trace-19.10 {trace add command failed rename doesn't trigger trace} {
 } {}
 catch {rename foo {}}
 catch {rename bar {}}
+test trace-19.11 {trace add command qualifies when renamed in namespace} {
+    set info {}
+    namespace eval tc {rename tcfoo tcbar}
+    set info
+} {::tc::tcfoo ::tc::tcbar rename}
 
 # Make sure it exists again
 proc foo {} {}
@@ -1287,7 +1292,7 @@ test trace-20.4 {trace add command rename followed by delete} {
     set info $infotemp
     unset infotemp
     set info
-} {{foo bar rename} {::bar {} delete}}
+} {{::foo ::bar rename} {::bar {} delete}}
 catch {rename foo {}}
 catch {rename bar {}}
 
@@ -1303,7 +1308,7 @@ test trace-20.5 {trace add command rename and delete} {
     set info $infotemp
     unset infotemp
     set info
-} {{foo bar rename} {::bar {} delete}}
+} {{::foo ::bar rename} {::bar {} delete}}
 
 test trace-20.6 {trace add command rename and delete in subinterp} {
     set tc [interp create]
@@ -1323,7 +1328,7 @@ test trace-20.6 {trace add command rename and delete in subinterp} {
     set info [$tc eval [list set info]]
     interp delete $tc
     set info
-} {{foo bar rename} {::bar {} delete}}
+} {{::foo ::bar rename} {::bar {} delete}}
 
 # I'd like it if this test could give 'foo {} d' as a result,
 # but interp deletion means there is no interp to evaluate
@@ -1356,7 +1361,7 @@ test trace-20.8 {trace delete while trace is active} {
     trace add command foo {rename delete} [list traceDelete foo]
     rename foo bar
     list [set info] [trace info command bar]
-} {{foo bar rename} {}}
+} {{::foo ::bar rename} {}}
 
 test trace-20.9 {rename trace deletes command} {
     set info {}
