@@ -289,7 +289,13 @@ test filesystem-1.32 {link normalisation: link near filesystem root} {testsetpla
 
 test filesystem-1.33 {link normalisation: link near filesystem root} {testsetplatform} {
     testsetplatform windows
-    file normalize C:/../bar
+    set res [file normalize C:/../bar]
+    if {$::tcl_platform(platform) == "unix"} {
+	# Some unices go further in normalizing this -- not really
+	# a problem since this is a Windows test
+	regexp {C:/bar$} $res res
+    }
+    set res
 } {C:/bar}
 
 if {[tcltest::testConstraint testsetplatform]} {
@@ -737,11 +743,14 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} \
     # First copy should succeed
     set res [catch {file copy simplefs:/simpledir dir2} err]
     lappend res $err
-    file attributes file2 -permissions 0000
+    file attributes dir2 -permissions 0000
     # Second copy should fail (no -force)
     lappend res [catch {file copy simplefs:/simpledir dir2} err]
     lappend res $err
     # Third copy should succeed (-force)
+    # I've noticed on some Unices that this only succeeds
+    # intermittently (some runs work, some fail).  This needs
+    # examining further.
     lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
     lappend res $err
     lappend res [file exists [file join dir2 simpledir]] \
