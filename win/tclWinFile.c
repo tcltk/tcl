@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.35 2002/07/12 16:26:05 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.36 2002/07/15 09:01:51 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1962,11 +1962,9 @@ TclpFilesystemPathType(pathObjPtr)
  * TclpObjNormalizePath --
  *
  *	This function scans through a path specification and replaces it,
- *	in place, with a normalized version.  On Windows NT/2000/XP this
- *	means using the 'longname', and expanding any symbolic links
- *	contained within the path.  On Win95/98/ME it means using the
- *	short form of the name (because the APIs to get at the long form
- *	are much too slow).
+ *	in place, with a normalized version.  This means using the
+ *	'longname', and expanding any symbolic links contained within the
+ *	path.
  *
  * Results:
  *	The new 'nextCheckpoint' value, giving as far as we could
