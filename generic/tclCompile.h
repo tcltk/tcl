@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCompile.h,v 1.5 1998/07/28 09:08:40 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclCompile.h,v 1.6 1998/07/29 13:25:58 escoffon Exp $ 
  */
 
 #ifndef _TCLCOMPILATION
@@ -15,6 +15,11 @@
 #ifndef _TCLINT
 #include "tclInt.h"
 #endif /* _TCLINT */
+
+#ifdef BUILD_tcl
+# undef EXPORT
+# define EXPORT DLLEXPORT
+#endif
 
 /*
  *------------------------------------------------------------------------
@@ -1043,5 +1048,7 @@ EXTERN void		TclRegisterAuxDataType _ANSI_ARGS_((AuxDataType *typePtr));
 
 #define MAX_JUMP_DIST   5000
 
-#endif /* _TCLCOMPILATION */
+#undef EXPORT
+#define EXPORT DLLIMPORT
 
+#endif /* _TCLCOMPILATION */
