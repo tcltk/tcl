@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.72 2004/12/24 18:07:01 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73 2005/02/02 23:09:06 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -1051,9 +1051,15 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
     Namespace *nsPtr;		/* Pointer to current namespace. */
 {
     Var *varPtr = framePtr->compiledLocals;
-    ByteCode *codePtr = (ByteCode *)
-	    framePtr->procPtr->bodyPtr->internalRep.otherValuePtr;
+    Tcl_Obj *bodyPtr;
+    ByteCode *codePtr;
     CompiledLocal *localPtr = framePtr->procPtr->firstLocalPtr;
+
+    bodyPtr = framePtr->procPtr->bodyPtr;
+    if (bodyPtr->typePtr != &tclByteCodeType) {
+        Tcl_Panic("body object for proc attached to frame is not a byte code type");
+    }
+    codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
 
     InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
 }
