@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.12 2002/10/03 13:34:32 dkf Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.13 2004/05/18 12:16:02 dkf Exp $
 # 
 
 # Global variables used by these scripts:
@@ -378,6 +378,9 @@ proc macro {name args} {
 	SH {
 	    SHmacro $args
 	}
+	SS {
+	    SHmacro $args subsection
+	}
 	SO {
 	    SHmacro "STANDARD OPTIONS"
 	    set state(nestingLevel) 0
@@ -702,12 +705,12 @@ proc macro2 {name args} {
 
 # SHmacro --
 #
-# Subsection head; handles the .SH macro.
+# Subsection head; handles the .SH and .SS macros.
 #
 # Arguments:
 # name -		Section name.
 
-proc SHmacro {argList} {
+proc SHmacro {argList {style section}} {
     global file state
 
     set args [join $argList " "]
@@ -732,7 +735,11 @@ proc SHmacro {argList} {
 	set state(breakPending) 0
     }
     set state(noFill) 0
-    nextPara 0i
+    if {[string compare "subsection" $style] == 0} {
+	nextPara .25i
+    } else {
+	nextPara 0i
+    }
     font B
     text $args
     font R
