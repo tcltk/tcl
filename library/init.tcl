@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.42 2000/11/23 14:21:59 dkf Exp $
+# RCS: @(#) $Id: init.tcl,v 1.43 2000/12/09 00:11:54 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -509,13 +509,19 @@ proc auto_execok name {
 	# NT includes the 'start' built-in
 	lappend shellBuiltins "start"
     }
+    if {[info exists env(PATHEXT)]} {
+	# Add an initial ; to have the {} extension check first.
+	set execExtensions [split ";$env(PATHEXT)" ";"]
+    } else {
+	set execExtensions [list {} .com .exe .bat]
+    }
 
     if {[lsearch -exact $shellBuiltins $name] != -1} {
 	return [set auto_execs($name) [list $env(COMSPEC) /c $name]]
     }
 
     if {[llength [file split $name]] != 1} {
-	foreach ext {{} .com .exe .bat} {
+	foreach ext $execExtensions {
 	    set file ${name}${ext}
 	    if {[file exists $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]
@@ -545,7 +551,7 @@ proc auto_execok name {
 	# Skip already checked directories
 	if {[info exists checked($dir)] || [string equal {} $dir]} { continue }
 	set checked($dir) {}
-	foreach ext {{} .com .exe .bat} {
+	foreach ext $execExtensions {
 	    set file [file join $dir ${name}${ext}]
 	    if {[file exists $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]
