@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.6 1999/03/10 05:52:54 stanton Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.7 1999/04/15 22:38:48 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2000,6 +2000,14 @@ SocketProc(hwnd, message, wParam, lParam)
 		}
 
 	    } 
+	    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
+		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+		if (error != ERROR_SUCCESS) {
+		    TclWinConvertWSAError(error);
+		    infoPtr->lastError = Tcl_GetErrno();
+		}
+		infoPtr->readyEvents |= FD_WRITE;
+	    }
 	    infoPtr->readyEvents |= event;
 	    break;
 	}

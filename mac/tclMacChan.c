@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.4 1999/03/10 05:52:51 stanton Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.5 1999/04/15 22:38:46 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -87,6 +87,12 @@ typedef struct FileEvent {
 				 * pointer. */
 } FileEvent;
 
+/*
+ * This is defined in tclMacSerial.c.
+ */
+
+EXTERN Tcl_Channel TclMacOpenSerialChannel _ANSI_ARGS_((Tcl_Interp *interp,
+	char *fileName, int *errorCode));
 
 /*
  * Static routines for this file:
@@ -761,13 +767,17 @@ TclpOpenFileChannel(
     int mode;
     char *nativeName;
     Tcl_DString buffer;
-    int errorCode;
+    int errorCode, port = 0;
     
     mode = GetOpenMode(interp, modeString);
     if (mode == -1) {
 	return NULL;
     }
 
+    /* 
+     * Look for the magic cookies that refer to the modem ports.
+     */
+    
     nativeName = Tcl_TranslateFileName(interp, fileName, &buffer);
     if (nativeName == NULL) {
 	return NULL;
@@ -775,7 +785,7 @@ TclpOpenFileChannel(
 
     chan = OpenFileChannel(nativeName, mode, permissions, &errorCode);
     Tcl_DStringFree(&buffer);
-
+    
     if (chan == NULL) {
 	Tcl_SetErrno(errorCode);
 	if (interp != (Tcl_Interp *) NULL) {

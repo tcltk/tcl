@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.4 1999/01/04 19:25:03 rjohnson Exp $
+RCS: @(#) $Id: README,v 1.5 1999/04/15 22:38:46 stanton Exp $
 
 1. Introduction
 ---------------
@@ -144,9 +144,9 @@ available (see below).
 In order to compile Macintosh Tcl you must have the 
 following items:
 
-	CodeWarrior Pro 2 or 3
+	CodeWarrior Pro 2 through 4
 	Mac Tcl 8.0 (source)
-	More Files 1.4.3
+	More Files 1.4.3, or 1.4.9
 
 There are two sets of project files included with the package. The ones
 we use for the release are for CodeWarrior Pro 3, and are not compatible
@@ -181,7 +181,7 @@ Special notes:
 
 * There is a small bug in More Files 1.4.3.  Also you should not use
   MoreFiles 1.4.4 - 1.4.6.  Look in the file named morefiles.doc for
-  more details.
+  more details.  Tcl 8.0.5 is compiled with MoreFiles 1.4.9.
 
 * You may not have the libmoto library which will cause a compile 
   error.  You don't REALLY need it - it can be removed.  Look at the

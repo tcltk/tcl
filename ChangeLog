@@ -1,3 +1,13 @@
+1999-04-15    <stanton@scriptics.com>
+
+	* Merge 8.0.5 changes:
+	    - Mac changes for final release
+	    - Minor fixes to tools configure file
+	
+	* win/tclWinSock.c: Apply patch to allow write access to a socket
+	if FD_WRITE is sent but FD_CONNECT is not.  Some strange problem
+	with either Win32 or a socket driver.  [Bug: 1664 1776]
+
 1999-03-12    <stanton@GASPODE>
 
 	* generic/tcl.h: Changed magic number so it doesn't match the plus
