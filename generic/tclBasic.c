@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.100 2004/05/13 12:59:21 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.101 2004/05/16 20:23:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -918,9 +918,12 @@ Tcl_DeleteInterp(interp)
     
     /*
      * Mark the interpreter as deleted. No further evals will be allowed.
+     * Increase the compileEpoch as a signal to compiled bytecodes.
      */
 
     iPtr->flags |= DELETED;
+    iPtr->compileEpoch++;
+
 
     /*
      * Ensure that the interpreter is eventually deleted.
