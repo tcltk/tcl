@@ -1,3 +1,11 @@
+1999-07-11    <redman@scriptics.com>
+
+	* win/makefile.vc: Since the makefile.vc should continue to work
+	while we're working out bugs/issues in the new TEA-style
+	autoconf/configure/gmake build mechanism for Windows, the version
+	numbers of the Tcl libraries need to remain in sync.  Modified the
+	version numbers in the makefile to reflect the change to 8.2b1.
+
 1999-07-09    <redman@scriptics.com>
 
 	* win/configure.in: Eval DLLSUFFIX, LIBSUFFIX, and EXESUFFIX in
