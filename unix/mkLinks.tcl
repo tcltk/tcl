@@ -41,7 +41,7 @@ if test "$y" != "xyzzyTestingaverylongfilename.foo"; then
 fi
 }
 
-set case_insensitive_test { if test "${CASEINSENSITIVEFS:-}" != "1"; then;} 
+set case_insensitive_test { if test "${CASEINSENSITIVEFS:-}" != "1"; then} 
 set case_insensitive_test_fi {; fi} 
 
 foreach file $argv {
