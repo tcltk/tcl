@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.48 2004/10/26 02:08:39 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.49 2004/10/28 00:04:33 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -18058,7 +18058,7 @@ test clock-7.3 {Julian Day} {
 	-format %Y-%m-%d -gmt true
 } 2000-01-01
 
-test clock-7.3 {Julian Day} {
+test clock-7.3.1 {Julian Day} {
     clock format [clock scan 2488070 -format %J -gmt true] \
 	-format %Y-%m-%d -gmt true
 } 2100-01-01
@@ -34652,14 +34652,14 @@ test clock-30.23 {clock add seconds} {
     set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S} -timezone :UTC]
     list $x1 $x2
 } {{2000-01-01 13:34:56} {2000-01-01 11:34:56}}
-test clock-30.21 {clock add seconds at DST conversion} {
+test clock-30.24 {clock add seconds at DST conversion} {
     set t [clock scan {2004-04-04 01:00:00 -0500} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
 	       -timezone EST5EDT]
     set f1 [clock add $t 3600 seconds -timezone EST5EDT]
     set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
 } {2004-04-04 03:00:00 -0400}
-test clock-30.22 {clock add seconds at DST conversion} {
+test clock-30.25 {clock add seconds at DST conversion} {
     set t [clock scan {2004-10-31 01:00:00 -0400} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
 	       -timezone EST5EDT]
