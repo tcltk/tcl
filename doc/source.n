@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.7 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: source.n,v 1.8 2004/03/17 18:45:49 das Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -20,10 +20,6 @@ source \- Evaluate a file or resource as a Tcl script
 .VS 8.5
 \fBsource\fR \fB\-encoding \fIencodingName fileName\fR
 .VE 8.5
-.sp
-\fBsource\fR \fB\-rsrc \fIresourceName \fR?\fIfileName\fR?
-.sp
-\fBsource\fR \fB\-rsrcid \fIresourceId \fR?\fIfileName\fR?
 .BE
 
 .SH DESCRIPTION
