@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.17 2003/12/17 09:25:26 vasiljevic Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.18 2003/12/17 09:55:11 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -181,7 +181,10 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
      */
     while (*dirSep != 0) {
 	oldDirSep = dirSep;
-        dirSep += 1+FindSplitPos(dirSep+1, '/');
+	if (!first) {
+	    dirSep++;
+	}
+        dirSep += FindSplitPos(dirSep, '/');
 	if (dirSep[0] == 0 || dirSep[1] == 0) {
 	    if (retVal != NULL) {
 		Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
@@ -216,7 +219,7 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 		    retVal = Tcl_NewStringObj(path, dirSep - path);
 		    Tcl_IncrRefCount(retVal);
 		}
-		if (!first) {
+		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
 		    link = Tcl_FSLink(retVal, NULL, 0);
 		    if (link != NULL) {
 			/* Got a link */
@@ -236,7 +239,7 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 			linkStr = Tcl_GetStringFromObj(retVal, &curLen);
 		    }
 		    /* Either way, we now remove the last path element */
-		    while (--curLen > 0) {
+		    while (--curLen >= 0) {
 			if (IsSeparatorOrNull(linkStr[curLen])) {
 			    Tcl_SetObjLength(retVal, curLen);
 			    break;
