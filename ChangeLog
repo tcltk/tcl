@@ -1,3 +1,13 @@
+1999-08-12  Scott Stanton  <stanton@scriptics.com>
+
+	* win/Makefile.in: Added COMPILE_DEBUG_FLAGS macro to make it
+	easier to turn on compiler tracing.
+
+	* tests/parse.test: 
+	* generic/tclParse.c: Fixed bug in Tcl_EvalEx where the termOffset
+	was not being updated in cases where the evaluation returned a non
+	TCL_OK error code. [Bug: 2535]
+
 1999-08-12  Scott Redman  <redman@scriptics.com>
 
 	* win/tclWinSerial.c: Applied patch from Petteri Kettunen to
