@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.134 2002/07/18 15:06:54 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.135 2002/07/18 16:26:02 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -459,7 +459,7 @@ typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
-typedef struct TclLoadHandle_ *TclLoadHandle;
+typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 
 /*
  * Definition of the interface to procedures implementing threads.
@@ -1598,7 +1598,7 @@ typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int recursive, Tcl_Obj **errorPtr));
 typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 			    Tcl_Obj *destPathPtr));
-typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((TclLoadHandle loadHandle));
+typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((Tcl_LoadHandle loadHandle));
 typedef Tcl_Obj* (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
 /* We have to declare the utime structure here. */
 struct utimbuf;
