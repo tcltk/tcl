@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.3 1999/04/16 00:47:34 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.4 1999/04/29 18:14:29 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -309,6 +309,9 @@ test string-11.4 {string tolower} {
 test string-11.5 {string tolower} {
     list [catch {string tolower a b} msg] $msg
 } {1 {wrong # args: should be "string tolower string"}}
+test string-11.6 {string tolower called with badly formed Utf string} {
+    string tolower [bytestring "\u00fcBER"]
+} [bytestring "\u00fcber"]
 
 test string-12.1 {string toupper} {
     string toupper abCDEf
@@ -325,6 +328,9 @@ test string-12.4 {string toupper} {
 test string-12.5 {string toupper} {
     list [catch {string toupper a b} msg] $msg
 } {1 {wrong # args: should be "string toupper string"}}
+test string-12.6 {string toupper called with badly formed Utf string} {
+    string toupper [bytestring "\u00fcber"]
+} [bytestring "\u00fcBER"]
 
 test string-13.1 {string wordend} {
     list [catch {string wordend a} msg] $msg
