@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.34 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.35 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -80,15 +80,63 @@ extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
 
 /* Obsolete */
 int
-Tcl_Stat(path, buf)
+Tcl_Stat(path, oldStyleBuf)
     CONST char *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    struct stat *oldStyleBuf;	/* Filled with results of stat call. */
 {
     int ret;
+    Tcl_StatBuf buf;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSStat(pathPtr,buf);
+    ret = Tcl_FSStat(pathPtr, &buf);
     Tcl_DecrRefCount(pathPtr);
+    if (ret != -1) {
+#ifndef TCL_WIDE_INT_IS_LONG
+#   define OUT_OF_RANGE(x) \
+	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
+	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
+#   define OUT_OF_URANGE(x) \
+	(((Tcl_WideUInt)(x)) > (Tcl_WideUInt)ULONG_MAX)
+
+	/*
+	 * Perform the result-buffer overflow check manually.
+	 *
+	 * Note that ino_t/ino64_t is unsigned...
+	 */
+
+        if (OUT_OF_URANGE(buf.st_ino) || OUT_OF_RANGE(buf.st_size)
+		|| OUT_OF_RANGE(buf.st_blocks)) {
+	    errno = EOVERFLOW;
+	    return -1;
+	}
+
+#   undef OUT_OF_RANGE
+#   undef OUT_OF_URANGE
+#endif /* !TCL_WIDE_INT_IS_LONG */
+
+	/*
+	 * Copy across all supported fields, with possible type
+	 * coercions on those fields that change between the normal
+	 * and lf64 versions of the stat structure (on Solaris at
+	 * least.)  This is slow when the structure sizes coincide,
+	 * but that's what you get for using an obsolete interface.
+	 */
+
+	oldStyleBuf->st_mode    = buf.st_mode;
+	oldStyleBuf->st_ino     = (ino_t) buf.st_ino;
+	oldStyleBuf->st_dev     = buf.st_dev;
+	oldStyleBuf->st_rdev    = buf.st_rdev;
+	oldStyleBuf->st_nlink   = buf.st_nlink;
+	oldStyleBuf->st_uid     = buf.st_uid;
+	oldStyleBuf->st_gid     = buf.st_gid;
+	oldStyleBuf->st_size    = (off_t) buf.st_size;
+	oldStyleBuf->st_atime   = buf.st_atime;
+	oldStyleBuf->st_mtime   = buf.st_mtime;
+	oldStyleBuf->st_ctime   = buf.st_ctime;
+	oldStyleBuf->st_blksize = buf.st_blksize;
+	oldStyleBuf->st_blocks  = (blkcnt_t) buf.st_blocks;
+    }
     return ret;
 }
 
@@ -1150,7 +1198,7 @@ Tcl_FSEvalFile(interp, pathPtr)
 				 * will be performed on this name. */
 {
     int result, length;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
     char *string;
@@ -1334,11 +1382,12 @@ Tcl_PosixError(interp)
 int
 Tcl_FSStat(pathPtr, buf)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     Tcl_Filesystem *fsPtr;
 #ifdef USE_OBSOLETE_FS_HOOKS
     StatProc *statProcPtr;
+    struct stat oldStyleStatBuffer;
     int retVal = -1;
     char *path;
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
@@ -1356,11 +1405,28 @@ Tcl_FSStat(pathPtr, buf)
     Tcl_MutexLock(&obsoleteFsHookMutex);
     statProcPtr = statProcList;
     while ((retVal == -1) && (statProcPtr != NULL)) {
-	retVal = (*statProcPtr->proc)(path, buf);
+	retVal = (*statProcPtr->proc)(path, &oldStyleStatBuffer);
 	statProcPtr = statProcPtr->nextPtr;
     }
     Tcl_MutexUnlock(&obsoleteFsHookMutex);
     if (retVal != -1) {
+	/*
+	 * Note that EOVERFLOW is not a problem here, and these
+	 * assignments should all be widening (if not identity.)
+	 */
+	buf->st_mode = oldStyleStatBuffer.st_mode;
+	buf->st_ino = (Tcl_WideUInt) Tcl_LongAsWide(oldStyleStatBuffer.st_ino);
+	buf->st_dev = oldStyleStatBuffer.st_dev;
+	buf->st_rdev = oldStyleStatBuffer.st_rdev;
+	buf->st_nlink = oldStyleStatBuffer.st_nlink;
+	buf->st_uid = oldStyleStatBuffer.st_uid;
+	buf->st_gid = oldStyleStatBuffer.st_gid;
+	buf->st_size = Tcl_LongAsWide(oldStyleStatBuffer.st_size);
+	buf->st_atime = oldStyleStatBuffer.st_atime;
+	buf->st_mtime = oldStyleStatBuffer.st_mtime;
+	buf->st_ctime = oldStyleStatBuffer.st_ctime;
+	buf->st_blksize = oldStyleStatBuffer.st_blksize;
+	buf->st_blocks = Tcl_LongAsWide(oldStyleStatBuffer.st_blocks);
         return retVal;
     }
 #endif /* USE_OBSOLETE_FS_HOOKS */
@@ -1398,7 +1464,7 @@ Tcl_FSStat(pathPtr, buf)
 int
 Tcl_FSLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
@@ -2165,7 +2231,7 @@ Tcl_FSChdir(pathPtr)
 	    retVal = (*proc)(pathPtr);
 	} else {
 	    /* Fallback on stat-based implementation */
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    /* If the file can be stat'ed and is a directory and
 	     * is readable, then we can chdir. */
 	    if ((Tcl_FSStat(pathPtr, &buf) == 0) 
@@ -3057,7 +3123,7 @@ TclCrossFilesystemCopy(interp, source, target)
 	    /* This is very strange, we checked this above */
 	    Tcl_Close(interp, out);
 	} else {
-	    struct stat sourceStatBuf;
+	    Tcl_StatBuf sourceStatBuf;
 	    struct utimbuf tval;
 	    /* 
 	     * Copy it synchronously.  We might wish to add an

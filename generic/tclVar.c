@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.47 2002/01/25 21:36:09 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.48 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2025,12 +2025,10 @@ TclIncrVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
 				 * TCL_LIST_ELEMENT, TCL_LEAVE_ERR_MSG. */
 {
     register Tcl_Obj *varValuePtr;
-    Tcl_Obj *resultPtr;
     int createdNewObj;		/* Set 1 if var's value object is shared
 				 * so we must increment a copy (i.e. copy
 				 * on write). */
     long i;
-    int result;
 
     varValuePtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
     if (varValuePtr == NULL) {
@@ -2051,24 +2049,46 @@ TclIncrVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
 	createdNewObj = 1;
     }
-    result = Tcl_GetLongFromObj(interp, varValuePtr, &i);
-    if (result != TCL_OK) {
+#ifdef TCL_WIDE_INT_IS_LONG
+    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
 	if (createdNewObj) {
 	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
 	}
 	return NULL;
     }
     Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#else
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else if (varValuePtr->typePtr == &tclIntType) {
+	i = varValuePtr->internalRep.longValue;
+	Tcl_SetIntObj(varValuePtr, i + incrAmount);
+    } else {
+	/*
+	 * Not an integer or wide internal-rep...
+	 */
+	Tcl_WideInt wide;
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	if (wide <= Tcl_LongAsWide(LONG_MAX)
+		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
+	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
+	} else {
+	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	}
+    }
+#endif
 
     /*
      * Store the variable's new value and run any write traces.
      */
     
-    resultPtr = Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, varValuePtr, flags);
-    if (resultPtr == NULL) {
-	return NULL;
-    }
-    return resultPtr;
+    return Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, varValuePtr, flags);
 }
 
 /*
@@ -2105,12 +2125,10 @@ TclIncrIndexedScalar(interp, localIndex, incrAmount)
     long incrAmount;		/* Amount to be added to variable. */
 {
     register Tcl_Obj *varValuePtr;
-    Tcl_Obj *resultPtr;
     int createdNewObj;		/* Set 1 if var's value object is shared
 				 * so we must increment a copy (i.e. copy
 				 * on write). */
     long i;
-    int result;
 
     varValuePtr = TclGetIndexedScalar(interp, localIndex, TCL_LEAVE_ERR_MSG);
     if (varValuePtr == NULL) {
@@ -2132,25 +2150,47 @@ TclIncrIndexedScalar(interp, localIndex, incrAmount)
 	createdNewObj = 1;
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
     }
-    result = Tcl_GetLongFromObj(interp, varValuePtr, &i);
-    if (result != TCL_OK) {
+#ifdef TCL_WIDE_INT_IS_LONG
+    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
 	if (createdNewObj) {
 	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
 	}
 	return NULL;
     }
     Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#else
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else if (varValuePtr->typePtr == &tclIntType) {
+	i = varValuePtr->internalRep.longValue;
+	Tcl_SetIntObj(varValuePtr, i + incrAmount);
+    } else {
+	/*
+	 * Not an integer or wide internal-rep...
+	 */
+	Tcl_WideInt wide;
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	if (wide <= Tcl_LongAsWide(LONG_MAX)
+		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
+	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
+	} else {
+	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	}
+    }
+#endif
 
     /*
      * Store the variable's new value and run any write traces.
      */
     
-    resultPtr = TclSetIndexedScalar(interp, localIndex, varValuePtr,
+    return TclSetIndexedScalar(interp, localIndex, varValuePtr,
 	    TCL_LEAVE_ERR_MSG);
-    if (resultPtr == NULL) {
-	return NULL;
-    }
-    return resultPtr;
 }
 
 /*
@@ -2191,12 +2231,10 @@ TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
     long incrAmount;		/* Amount to be added to variable. */
 {
     register Tcl_Obj *varValuePtr;
-    Tcl_Obj *resultPtr;
     int createdNewObj;		/* Set 1 if var's value object is shared
 				 * so we must increment a copy (i.e. copy
 				 * on write). */
     long i;
-    int result;
 
     varValuePtr = TclGetElementOfIndexedArray(interp, localIndex, elemPtr,
 	    TCL_LEAVE_ERR_MSG);
@@ -2219,25 +2257,47 @@ TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
 	createdNewObj = 1;
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
     }
-    result = Tcl_GetLongFromObj(interp, varValuePtr, &i);
-    if (result != TCL_OK) {
+#ifdef TCL_WIDE_INT_IS_LONG
+    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
 	if (createdNewObj) {
 	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
 	}
 	return NULL;
     }
     Tcl_SetLongObj(varValuePtr, (i + incrAmount));
-    
+#else
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else if (varValuePtr->typePtr == &tclIntType) {
+	i = varValuePtr->internalRep.longValue;
+	Tcl_SetIntObj(varValuePtr, i + incrAmount);
+    } else {
+	/*
+	 * Not an integer or wide internal-rep...
+	 */
+	Tcl_WideInt wide;
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	if (wide <= Tcl_LongAsWide(LONG_MAX)
+		&& wide >= Tcl_LongAsWide(LONG_MIN)) {
+	    Tcl_SetLongObj(varValuePtr, Tcl_WideAsLong(wide) + incrAmount);
+	} else {
+	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+	}
+    }
+#endif
+
     /*
      * Store the variable's new value and run any write traces.
      */
     
-    resultPtr = TclSetElementOfIndexedArray(interp, localIndex, elemPtr,
+    return TclSetElementOfIndexedArray(interp, localIndex, elemPtr,
 	    varValuePtr, TCL_LEAVE_ERR_MSG);
-    if (resultPtr == NULL) {
-	return NULL;
-    }
-    return resultPtr;
 }
 
 /*

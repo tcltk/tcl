@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.20 2002/02/12 14:39:48 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.21 2002/02/15 14:28:50 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -56,6 +56,35 @@
 #   include <dirent.h>
 #endif
 #endif
+
+#ifdef HAVE_STRUCT_DIRENT64
+typedef struct dirent64	Tcl_DirEntry;
+#   define Tcl_PlatformReaddir		readdir64
+#   define Tcl_PlatformReaddir_r	readdir64_r
+#else
+typedef struct dirent	Tcl_DirEntry;
+#   define Tcl_PlatformReaddir		readdir
+#   define Tcl_PlatformReaddir_r	readdir_r
+#endif
+
+#ifdef HAVE_TYPE_OFF64_T
+typedef off64_t		Tcl_SeekOffset;
+#   define Tcl_PlatformSeek		lseek64
+#   define Tcl_PlatformOpen		open64
+#else
+typedef off_t		Tcl_SeekOffset;
+#   define Tcl_PlatformSeek		lseek
+#   define Tcl_PlatformOpen		open
+#endif
+
+#ifdef HAVE_STRUCT_STAT64
+#   define Tcl_PlatformStat		stat64
+#   define Tcl_PlatformLStat		lstat64
+#else
+#   define Tcl_PlatformStat		stat
+#   define Tcl_PlatformLStat		lstat
+#endif
+
 #include <sys/file.h>
 #ifdef HAVE_SYS_SELECT_H
 #   include <sys/select.h>
@@ -501,7 +530,7 @@ typedef pthread_mutex_t TclpMutex;
 EXTERN void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
-EXTERN struct dirent * 	TclpReaddir(DIR *);
+EXTERN Tcl_DirEntry * 	TclpReaddir(DIR *);
 EXTERN struct tm *     	TclpLocaltime(time_t *);
 EXTERN struct tm *     	TclpGmtime(time_t *);
 EXTERN char *          	TclpInetNtoa(struct in_addr);
@@ -509,6 +538,8 @@ EXTERN char *          	TclpInetNtoa(struct in_addr);
 #define localtime(x)	TclpLocaltime(x)
 #define gmtime(x)	TclpGmtime(x)
 #define inet_ntoa(x)	TclpInetNtoa(x)
+#undef Tcl_PlatformReaddir
+#define Tcl_PlatformReaddir(x) TclpReaddir(x)
 #else
 typedef int TclpMutex;
 #define	TclpMutexInit(a)

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.11 2001/12/06 10:59:17 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.12 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1579,7 +1579,11 @@ GetLexeme(infoPtr)
 	startsWithDigit = isdigit(UCHAR(c)); /* INTL: digit */
 	if (startsWithDigit && TclLooksLikeInt(src, -1)) {
 	    errno = 0;
+#ifdef TCL_WIDE_INT_IS_LONG
 	    (void) strtoul(src, &termPtr, 0);
+#else
+	    (void) strtoull(src, &termPtr, 0);
+#endif
 	    if (errno == ERANGE) {
 		if (interp != NULL) {
 		    char *s = "integer value too large to represent";

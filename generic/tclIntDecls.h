@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.37 2002/01/25 22:01:31 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.38 2002/02/15 14:28:49 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -494,9 +494,9 @@ EXTERN void		TclExpandCodeArray _ANSI_ARGS_((void * envPtr));
 /* 165 */
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 /* 166 */
-EXTERN int		TclListObjSetElement _ANSI_ARGS_((Tcl_Interp* interp, 
-				Tcl_Obj* listPtr, int index, 
-				Tcl_Obj* valuePtr));
+EXTERN int		TclListObjSetElement _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * listPtr, 
+				int index, Tcl_Obj * valuePtr));
 /* 167 */
 EXTERN void		TclSetStartupScriptPath _ANSI_ARGS_((
 				Tcl_Obj * pathPtr));
@@ -705,7 +705,7 @@ typedef struct TclIntStubs {
     void * (*tclGetInstructionTable) _ANSI_ARGS_((void)); /* 163 */
     void (*tclExpandCodeArray) _ANSI_ARGS_((void * envPtr)); /* 164 */
     void (*tclpSetInitialEncodings) _ANSI_ARGS_((void)); /* 165 */
-    int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* listPtr, int index, Tcl_Obj* valuePtr)); /* 166 */
+    int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj * valuePtr)); /* 166 */
     void (*tclSetStartupScriptPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 167 */
     Tcl_Obj * (*tclGetStartupScriptPath) _ANSI_ARGS_((void)); /* 168 */
 } TclIntStubs;

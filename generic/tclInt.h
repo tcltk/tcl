@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.79 2002/02/10 20:36:34 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.80 2002/02/15 14:28:49 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -28,11 +28,11 @@
  * needed by stdlib.h in some configurations.
  */
 
-#include <stdio.h>
-
 #ifndef _TCL
 #include "tcl.h"
 #endif
+
+#include <stdio.h>
 
 #include <ctype.h>
 #ifdef NO_LIMITS_H
@@ -1190,7 +1190,7 @@ typedef struct Interp {
 
     /*
      * Information related to procedures and variables. See tclProc.c
-     * and tclvar.c for usage.
+     * and tclVar.c for usage.
      */
 
     int numLevels;		/* Keeps track of how many nested calls to
@@ -1595,6 +1595,9 @@ extern Tcl_ObjType	tclStringType;
 extern Tcl_ObjType	tclArraySearchType;
 extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
+#ifndef TCL_WIDE_INT_IS_LONG
+extern Tcl_ObjType	tclWideIntType;
+#endif
 
 /*
  * Variables denoting the hash key types defined in the core.
@@ -1790,7 +1793,7 @@ EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
@@ -1859,7 +1862,7 @@ EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp, 
 						    Tcl_Obj*pathPtr));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, CONST char *modeString,
 			    int permissions));
@@ -1867,8 +1870,7 @@ EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
-EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
-			    unsigned int size));
+EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr, unsigned int size));
 EXTERN void		TclpReleaseFile _ANSI_ARGS_((TclFile file));
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.67 2002/02/10 20:36:34 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.68 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -622,7 +622,7 @@ TclStubs tclStubs = {
     Tcl_ResetResult, /* 217 */
     Tcl_ScanElement, /* 218 */
     Tcl_ScanCountedElement, /* 219 */
-    Tcl_Seek, /* 220 */
+    Tcl_SeekOld, /* 220 */
     Tcl_ServiceAll, /* 221 */
     Tcl_ServiceEvent, /* 222 */
     Tcl_SetAssocData, /* 223 */
@@ -648,7 +648,7 @@ TclStubs tclStubs = {
     Tcl_SplitPath, /* 243 */
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
-    Tcl_Tell, /* 246 */
+    Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
@@ -888,6 +888,13 @@ TclStubs tclStubs = {
     Tcl_CreateObjTrace, /* 483 */
     Tcl_GetCommandInfoFromToken, /* 484 */
     Tcl_SetCommandInfoFromToken, /* 485 */
+    Tcl_DbNewWideIntObj, /* 486 */
+    Tcl_GetWideIntFromObj, /* 487 */
+    Tcl_NewWideIntObj, /* 488 */
+    Tcl_SetWideIntObj, /* 489 */
+    Tcl_AllocStatBuf, /* 490 */
+    Tcl_Seek, /* 491 */
+    Tcl_Tell, /* 492 */
 };
 
 /* !END!: Do not edit above this line. */

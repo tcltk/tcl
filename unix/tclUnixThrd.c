@@ -24,7 +24,7 @@ typedef struct ThreadSpecificData {
     struct tm   	gtbuf;
     struct tm   	ltbuf;
     struct {
-	struct dirent ent;
+	Tcl_DirEntry ent;
 	char name[PATH_MAX+1];
     } rdbuf;
 } ThreadSpecificData;
@@ -790,14 +790,14 @@ TclpFinalizeCondition(condPtr)
  *----------------------------------------------------------------------
  */
 
-struct dirent *
+Tcl_DirEntry *
 TclpReaddir(DIR * dir)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    struct dirent *ent;
+    Tcl_DirEntry *ent;
 
     ent = &tsdPtr->rdbuf.ent; 
-    if (readdir_r(dir, ent, &ent) != 0) {
+    if (Tcl_PlatformReaddir_r(dir, ent, &ent) != 0) {
 	ent = NULL;
     }
     return ent;

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.82 2002/02/10 20:36:34 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.83 2002/02/15 14:28:48 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -174,7 +174,7 @@ EXTERN int		Tcl_ListObjIndex _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_Obj ** objPtrPtr));
 /* 47 */
 EXTERN int		Tcl_ListObjLength _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * listPtr, int * intPtr));
+				Tcl_Obj * listPtr, int * lengthPtr));
 /* 48 */
 EXTERN int		Tcl_ListObjReplace _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * listPtr, int first, int count, 
@@ -717,8 +717,8 @@ EXTERN int		Tcl_ScanElement _ANSI_ARGS_((CONST char * str,
 EXTERN int		Tcl_ScanCountedElement _ANSI_ARGS_((CONST char * str, 
 				int length, int * flagPtr));
 /* 220 */
-EXTERN int		Tcl_Seek _ANSI_ARGS_((Tcl_Channel chan, int offset, 
-				int mode));
+EXTERN int		Tcl_SeekOld _ANSI_ARGS_((Tcl_Channel chan, 
+				int offset, int mode));
 /* 221 */
 EXTERN int		Tcl_ServiceAll _ANSI_ARGS_((void));
 /* 222 */
@@ -796,7 +796,7 @@ EXTERN void		Tcl_StaticPackage _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN int		Tcl_StringMatch _ANSI_ARGS_((CONST char * str, 
 				CONST char * pattern));
 /* 246 */
-EXTERN int		Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
+EXTERN int		Tcl_TellOld _ANSI_ARGS_((Tcl_Channel chan));
 /* 247 */
 EXTERN int		Tcl_TraceVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * varName, int flags, 
@@ -1415,7 +1415,7 @@ EXTERN int		Tcl_FSMatchInDirectory _ANSI_ARGS_((
 				Tcl_Obj * pathPtr, CONST char * pattern, 
 				Tcl_GlobTypeData * types));
 /* 446 */
-EXTERN Tcl_Obj*		Tcl_FSLink _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+EXTERN Tcl_Obj *	Tcl_FSLink _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				Tcl_Obj * toPtr));
 /* 447 */
 EXTERN int		Tcl_FSRemoveDirectory _ANSI_ARGS_((Tcl_Obj * pathPtr, 
@@ -1425,7 +1425,7 @@ EXTERN int		Tcl_FSRenameFile _ANSI_ARGS_((Tcl_Obj * srcPathPtr,
 				Tcl_Obj * destPathPtr));
 /* 449 */
 EXTERN int		Tcl_FSLstat _ANSI_ARGS_((Tcl_Obj * pathPtr, 
-				struct stat * buf));
+				Tcl_StatBuf * buf));
 /* 450 */
 EXTERN int		Tcl_FSUtime _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				struct utimbuf * tval));
@@ -1442,7 +1442,7 @@ EXTERN CONST char **	Tcl_FSFileAttrStrings _ANSI_ARGS_((Tcl_Obj * pathPtr,
 				Tcl_Obj ** objPtrRef));
 /* 454 */
 EXTERN int		Tcl_FSStat _ANSI_ARGS_((Tcl_Obj * pathPtr, 
-				struct stat * buf));
+				Tcl_StatBuf * buf));
 /* 455 */
 EXTERN int		Tcl_FSAccess _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				int mode));
@@ -1533,6 +1533,26 @@ EXTERN int		Tcl_GetCommandInfoFromToken _ANSI_ARGS_((
 EXTERN int		Tcl_SetCommandInfoFromToken _ANSI_ARGS_((
 				Tcl_Command token, 
 				CONST Tcl_CmdInfo* infoPtr));
+/* 486 */
+EXTERN Tcl_Obj *	Tcl_DbNewWideIntObj _ANSI_ARGS_((
+				Tcl_WideInt wideValue, CONST char * file, 
+				int line));
+/* 487 */
+EXTERN int		Tcl_GetWideIntFromObj _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * objPtr, 
+				Tcl_WideInt * widePtr));
+/* 488 */
+EXTERN Tcl_Obj *	Tcl_NewWideIntObj _ANSI_ARGS_((Tcl_WideInt wideValue));
+/* 489 */
+EXTERN void		Tcl_SetWideIntObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
+				Tcl_WideInt wideValue));
+/* 490 */
+EXTERN Tcl_StatBuf *	Tcl_AllocStatBuf _ANSI_ARGS_((void));
+/* 491 */
+EXTERN Tcl_WideInt	Tcl_Seek _ANSI_ARGS_((Tcl_Channel chan, 
+				Tcl_WideInt offset, int mode));
+/* 492 */
+EXTERN Tcl_WideInt	Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1607,7 +1627,7 @@ typedef struct TclStubs {
     int (*tcl_ListObjAppendElement) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, Tcl_Obj * objPtr)); /* 44 */
     int (*tcl_ListObjGetElements) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * objcPtr, Tcl_Obj *** objvPtr)); /* 45 */
     int (*tcl_ListObjIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj ** objPtrPtr)); /* 46 */
-    int (*tcl_ListObjLength) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * intPtr)); /* 47 */
+    int (*tcl_ListObjLength) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * lengthPtr)); /* 47 */
     int (*tcl_ListObjReplace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int first, int count, int objc, Tcl_Obj *CONST objv[])); /* 48 */
     Tcl_Obj * (*tcl_NewBooleanObj) _ANSI_ARGS_((int boolValue)); /* 49 */
     Tcl_Obj * (*tcl_NewByteArrayObj) _ANSI_ARGS_((CONST unsigned char* bytes, int length)); /* 50 */
@@ -1812,7 +1832,7 @@ typedef struct TclStubs {
     void (*tcl_ResetResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 217 */
     int (*tcl_ScanElement) _ANSI_ARGS_((CONST char * str, int * flagPtr)); /* 218 */
     int (*tcl_ScanCountedElement) _ANSI_ARGS_((CONST char * str, int length, int * flagPtr)); /* 219 */
-    int (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, int offset, int mode)); /* 220 */
+    int (*tcl_SeekOld) _ANSI_ARGS_((Tcl_Channel chan, int offset, int mode)); /* 220 */
     int (*tcl_ServiceAll) _ANSI_ARGS_((void)); /* 221 */
     int (*tcl_ServiceEvent) _ANSI_ARGS_((int flags)); /* 222 */
     void (*tcl_SetAssocData) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 223 */
@@ -1838,7 +1858,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) _ANSI_ARGS_((CONST char * path, int * argcPtr, CONST84 char *** argvPtr)); /* 243 */
     void (*tcl_StaticPackage) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * pkgName, Tcl_PackageInitProc * initProc, Tcl_PackageInitProc * safeInitProc)); /* 244 */
     int (*tcl_StringMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern)); /* 245 */
-    int (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
+    int (*tcl_TellOld) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
     int (*tcl_TraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 247 */
     int (*tcl_TraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 248 */
     char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_DString * bufferPtr)); /* 249 */
@@ -2038,15 +2058,15 @@ typedef struct TclStubs {
     int (*tcl_FSDeleteFile) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 443 */
     int (*tcl_FSLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, CONST char * sym1, CONST char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr, Tcl_FSUnloadFileProc ** unloadProcPtr)); /* 444 */
     int (*tcl_FSMatchInDirectory) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * result, Tcl_Obj * pathPtr, CONST char * pattern, Tcl_GlobTypeData * types)); /* 445 */
-    Tcl_Obj* (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr)); /* 446 */
+    Tcl_Obj * (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr)); /* 446 */
     int (*tcl_FSRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 447 */
     int (*tcl_FSRenameFile) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr)); /* 448 */
-    int (*tcl_FSLstat) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct stat * buf)); /* 449 */
+    int (*tcl_FSLstat) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_StatBuf * buf)); /* 449 */
     int (*tcl_FSUtime) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct utimbuf * tval)); /* 450 */
     int (*tcl_FSFileAttrsGet) _ANSI_ARGS_((Tcl_Interp * interp, int index, Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef)); /* 451 */
     int (*tcl_FSFileAttrsSet) _ANSI_ARGS_((Tcl_Interp * interp, int index, Tcl_Obj * pathPtr, Tcl_Obj * objPtr)); /* 452 */
     CONST char ** (*tcl_FSFileAttrStrings) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef)); /* 453 */
-    int (*tcl_FSStat) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct stat * buf)); /* 454 */
+    int (*tcl_FSStat) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_StatBuf * buf)); /* 454 */
     int (*tcl_FSAccess) _ANSI_ARGS_((Tcl_Obj * pathPtr, int mode)); /* 455 */
     Tcl_Channel (*tcl_FSOpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, CONST char * modeString, int permissions)); /* 456 */
     Tcl_Obj* (*tcl_FSGetCwd) _ANSI_ARGS_((Tcl_Interp * interp)); /* 457 */
@@ -2078,6 +2098,13 @@ typedef struct TclStubs {
     Tcl_Trace (*tcl_CreateObjTrace) _ANSI_ARGS_((Tcl_Interp* interp, int level, int flags, Tcl_CmdObjTraceProc* objProc, ClientData clientData, Tcl_CmdObjTraceDeleteProc* delProc)); /* 483 */
     int (*tcl_GetCommandInfoFromToken) _ANSI_ARGS_((Tcl_Command token, Tcl_CmdInfo* infoPtr)); /* 484 */
     int (*tcl_SetCommandInfoFromToken) _ANSI_ARGS_((Tcl_Command token, CONST Tcl_CmdInfo* infoPtr)); /* 485 */
+    Tcl_Obj * (*tcl_DbNewWideIntObj) _ANSI_ARGS_((Tcl_WideInt wideValue, CONST char * file, int line)); /* 486 */
+    int (*tcl_GetWideIntFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_WideInt * widePtr)); /* 487 */
+    Tcl_Obj * (*tcl_NewWideIntObj) _ANSI_ARGS_((Tcl_WideInt wideValue)); /* 488 */
+    void (*tcl_SetWideIntObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_WideInt wideValue)); /* 489 */
+    Tcl_StatBuf * (*tcl_AllocStatBuf) _ANSI_ARGS_((void)); /* 490 */
+    Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 491 */
+    Tcl_WideInt (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 492 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3001,9 +3028,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_ScanCountedElement \
 	(tclStubsPtr->tcl_ScanCountedElement) /* 219 */
 #endif
-#ifndef Tcl_Seek
-#define Tcl_Seek \
-	(tclStubsPtr->tcl_Seek) /* 220 */
+#ifndef Tcl_SeekOld
+#define Tcl_SeekOld \
+	(tclStubsPtr->tcl_SeekOld) /* 220 */
 #endif
 #ifndef Tcl_ServiceAll
 #define Tcl_ServiceAll \
@@ -3105,9 +3132,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
 #endif
-#ifndef Tcl_Tell
-#define Tcl_Tell \
-	(tclStubsPtr->tcl_Tell) /* 246 */
+#ifndef Tcl_TellOld
+#define Tcl_TellOld \
+	(tclStubsPtr->tcl_TellOld) /* 246 */
 #endif
 #ifndef Tcl_TraceVar
 #define Tcl_TraceVar \
@@ -4061,6 +4088,34 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_SetCommandInfoFromToken
 #define Tcl_SetCommandInfoFromToken \
 	(tclStubsPtr->tcl_SetCommandInfoFromToken) /* 485 */
+#endif
+#ifndef Tcl_DbNewWideIntObj
+#define Tcl_DbNewWideIntObj \
+	(tclStubsPtr->tcl_DbNewWideIntObj) /* 486 */
+#endif
+#ifndef Tcl_GetWideIntFromObj
+#define Tcl_GetWideIntFromObj \
+	(tclStubsPtr->tcl_GetWideIntFromObj) /* 487 */
+#endif
+#ifndef Tcl_NewWideIntObj
+#define Tcl_NewWideIntObj \
+	(tclStubsPtr->tcl_NewWideIntObj) /* 488 */
+#endif
+#ifndef Tcl_SetWideIntObj
+#define Tcl_SetWideIntObj \
+	(tclStubsPtr->tcl_SetWideIntObj) /* 489 */
+#endif
+#ifndef Tcl_AllocStatBuf
+#define Tcl_AllocStatBuf \
+	(tclStubsPtr->tcl_AllocStatBuf) /* 490 */
+#endif
+#ifndef Tcl_Seek
+#define Tcl_Seek \
+	(tclStubsPtr->tcl_Seek) /* 491 */
+#endif
+#ifndef Tcl_Tell
+#define Tcl_Tell \
+	(tclStubsPtr->tcl_Tell) /* 492 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

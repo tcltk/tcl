@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.58 2001/11/25 05:22:19 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.59 2002/02/15 14:28:51 dkf Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -282,7 +282,7 @@ WIN_OBJS = \
 	tclWinTime.$(OBJEXT) 
 
 COMPAT_OBJS = \
-	strftime.$(OBJEXT)
+	strftime.$(OBJEXT) strtoll.$(OBJEXT) strtoull.$(OBJEXT)
 
 PIPE_OBJS = stub16.$(OBJEXT)
 

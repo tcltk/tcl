@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.5 2000/09/07 14:27:48 poenitz Exp $
+'\" RCS: @(#) $Id: format.n,v 1.6 2002/02/15 14:28:47 dkf Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -131,7 +131,10 @@ which must be \fBh\fR or \fBl\fR.
 If it is \fBh\fR it specifies that the numeric value should be
 truncated to a 16-bit value before converting.
 This option is rarely useful.
-The \fBl\fR modifier is ignored.
+.VS 8.4
+If it is \fBl\fR it specifies that the numeric value should be (at
+least) a 64-bit value.
+.VE
 .PP
 The last thing in a conversion specifier is an alphabetic character
 that determines what kind of conversion to perform.

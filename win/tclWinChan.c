@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.19 2002/01/18 14:17:06 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.20 2002/02/15 14:28:51 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -89,8 +89,8 @@ static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 	            	    char *buf, int toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((ClientData instanceData,
 			    CONST char *buf, int toWrite, int *errorCode));
-static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
-			    long offset, int mode, int *errorCode));
+static Tcl_WideInt	FileSeekProc _ANSI_ARGS_((ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -431,17 +431,16 @@ FileCloseProc(instanceData, interp)
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;			/* File state. */
-    long offset;				/* Offset to seek to. */
-    int mode;					/* Relative to where
-                                                 * should we seek? */
-    int *errorCodePtr;				/* To store error code. */
+    ClientData instanceData;	/* File state. */
+    Tcl_WideInt offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? */
+    int *errorCodePtr;		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
-    DWORD newPos;
+    DWORD newPos, newPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -452,13 +451,18 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
         moveMethod = FILE_END;
     }
 
-    newPos = SetFilePointer(infoPtr->handle, offset, NULL, moveMethod);
-    if (newPos == 0xFFFFFFFF) {
-        TclWinConvertError(GetLastError());
-        *errorCodePtr = errno;
-	return -1;
+    newPosHigh = (DWORD)(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
+			    moveMethod);
+    if (newPos == INVALID_SET_FILE_POINTER) {
+	int winError = GetLastError();
+	if (winError != NO_ERROR) {
+	    TclWinConvertError(winError);
+	    *errorCodePtr = errno;
+	    return -1;
+	}
     }
-    return newPos;
+    return ((Tcl_WideInt) newPos) | (((Tcl_WideInt) newPosHigh) << 32);
 }
 
 /*
