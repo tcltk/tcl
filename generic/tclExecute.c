@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.32 2001/09/19 11:59:58 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.33 2001/09/19 18:18:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1044,14 +1044,13 @@ TclExecuteByteCode(interp, codePtr)
 			newPcOffset = rangePtr->continueOffset;
 		    }
 		    result = TCL_OK;
-		    TRACE_WITH_OBJ(("\"%.30s\" => %s, range at %d, new pc %d ",
+		    TRACE(("\"%.30s\" => %s, range at %d, new pc %d ",
 			    O2S(objPtr), StringForResultCode(result),
-			    rangePtr->codeOffset, newPcOffset), valuePtr);
+			    rangePtr->codeOffset, newPcOffset));
 		    break;
 		case CATCH_EXCEPTION_RANGE:
-		    TRACE_WITH_OBJ(("\"%.30s\" => %s ",
-			    O2S(objPtr), StringForResultCode(result)),
-			    valuePtr);
+		    TRACE(("\"%.30s\" => %s ",
+			    O2S(objPtr), StringForResultCode(result)));
 		    Tcl_DecrRefCount(objPtr);
 		    goto processCatch;  /* it will use rangePtr */
 		default:
@@ -2139,8 +2138,19 @@ TclExecuteByteCode(interp, codePtr)
 		    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 		    iResult = memcmp(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
+		} else if ((valuePtr->typePtr == &tclStringType) ||
+			(value2Ptr->typePtr == &tclStringType)) {
+		    /*
+		     * The alternative is to break this into more code
+		     * that does type sensitive comparison, as done in
+		     * Tcl_StringObjCmd.
+		     */
+		    Tcl_UniChar *uni1, *uni2;
+		    uni1 = Tcl_GetUnicodeFromObj(valuePtr, &s1len);
+		    uni2 = Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
+		    iResult = Tcl_UniCharNcmp(uni1, uni2,
+			    (unsigned) ((s1len < s2len) ? s1len : s2len));
 		} else {
-#if 0
 		    /*
 		     * This solution is less mem intensive, but it is
 		     * computationally expensive as the string grows.  The
@@ -2153,18 +2163,6 @@ TclExecuteByteCode(interp, codePtr)
 		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
 		    iResult = Tcl_UtfNcmp(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
-#else
-		    /*
-		     * The alternative is to break this into more code
-		     * that does type sensitive comparison, as done in
-		     * Tcl_StringObjCmd.
-		     */
-		    Tcl_UniChar *uni1, *uni2;
-		    uni1 = Tcl_GetUnicodeFromObj(valuePtr, &s1len);
-		    uni2 = Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-		    iResult = Tcl_UniCharNcmp(uni1, uni2,
-			    (unsigned) ((s1len < s2len) ? s1len : s2len));
-#endif
 		}
 
 		/*
@@ -2273,31 +2271,42 @@ TclExecuteByteCode(interp, codePtr)
 	    {
 		int nocase, match;
 
+		nocase    = TclGetInt1AtPtr(pc+1);
 		valuePtr  = POP_OBJECT();	/* String */
 		value2Ptr = POP_OBJECT();	/* Pattern */
-		objPtr    = POP_OBJECT();	/* Case Sensitivity */
-
-		Tcl_GetBooleanFromObj(interp, objPtr, &nocase);
-		match = Tcl_UniCharCaseMatch(Tcl_GetUnicode(valuePtr),
-			Tcl_GetUnicode(value2Ptr), nocase);
 
 		/*
-		 * Reuse the casePtr object already on stack if possible.
+		 * Check that at least one of the objects
+		 * is Unicode before promoting both.
+		 */
+		if ((valuePtr->typePtr == &tclStringType)
+			|| (value2Ptr->typePtr == &tclStringType)) {
+		    match = Tcl_UniCharCaseMatch(Tcl_GetUnicode(valuePtr),
+			    Tcl_GetUnicode(value2Ptr), nocase);
+		} else {
+		    match = Tcl_StringCaseMatch(Tcl_GetString(valuePtr),
+			    Tcl_GetString(value2Ptr), nocase);
+		}
+
+		/*
+		 * Reuse value2Ptr object already on stack if possible.
 		 */
 
 		TRACE(("%.20s %.20s => %d\n",
 			O2S(valuePtr), O2S(value2Ptr), match));
-		if (Tcl_IsShared(objPtr)) {
+		TclDecrRefCount(valuePtr);
+		if (Tcl_IsShared(value2Ptr)) {
 		    PUSH_OBJECT(Tcl_NewIntObj(match));
-		    TclDecrRefCount(objPtr);
+		    TclDecrRefCount(value2Ptr);
 		} else {	/* reuse the valuePtr object */
-		    Tcl_SetIntObj(objPtr, match);
+		    Tcl_SetIntObj(value2Ptr, match);
 		    ++stackTop; /* valuePtr now on stk top has right r.c. */
 		}
-		TclDecrRefCount(valuePtr);
-		TclDecrRefCount(value2Ptr);
 	    }
-	    ADJUST_PC(1);
+	    /*
+	     * Adjustment is 2 due to the nocase byte
+	     */
+	    ADJUST_PC(2);
 
 	case INST_EQ:
 	case INST_NEQ:
