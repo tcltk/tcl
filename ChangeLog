@@ -1,3 +1,9 @@
+2004-07-07  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript): fix for [Bug 458361]. 
+	Single-word scripts are compiled with an unshared cmdName to avoid
+	shimmering between bytecode and cmdName reps.	
+
 2004-07-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic.tclCmdMZ.c (TclMergeReturnOptions):  Simplified logic and
