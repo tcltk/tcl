@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.36 2004/03/18 18:54:58 rmax Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.37 2004/03/24 21:54:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4880,7 +4880,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		    goto unknownOrAmbiguousSubcommand;
 		}
 		fullName = ensemblePtr->subcommandArrayPtr[i];
-	    } else if (cmp == 1) {
+	    } else if (cmp < 0) {
 		/*
 		 * Because we are searching a sorted table, we can now
 		 * stop searching because we have gone past anything
