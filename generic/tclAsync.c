@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.5 2000/07/26 01:28:35 davidg Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6 2001/08/30 07:50:18 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -72,13 +72,38 @@ typedef struct ThreadSpecificData {
 
     int asyncActive;
 
-#ifdef TCL_THREADS
     Tcl_Mutex asyncMutex;   /* Thread-specific AsyncHandler linked-list lock */
-#endif
 
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeAsync --
+ *
+ *	Finalizes the mutex in the thread local data structure for the
+ *	async subsystem.
+ *
+ * Results:
+ *	None.	
+ *
+ * Side effects:
+ *	Forgets knowledge of the mutex should it have been created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeAsync()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->asyncMutex != NULL) {
+	Tcl_MutexFinalize(&tsdPtr->asyncMutex);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
