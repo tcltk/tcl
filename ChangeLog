@@ -1,3 +1,40 @@
+2001-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclFileName.c (Tcl_FSSplitPath): update to Tcl style
+	guide.
+
+	* generic/tclFCmd.c (FileCopyRename): fixed mem leak in
+	introduction of vfs code where a new Tcl_Obj wasn't freed.
+
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd, Tcl_RegsubObjCmd):
+	reordered the retrieval of arguments to avoid shimmering bug when
+	the pattern and string referenced the same object.
+
+	* unix/configure: regenerated
+	* unix/tcl.m4: added GNU (HURD) configuration target. (brinkmann)
+	[Patch: #442974]
+
+	* win/README: made note of URL for Windows compilation notes
+
+	* win/tclWinThrd.c (TclpFinalizeMutex, TclpFinalizeCondition):
+	added DeleteCriticalSection calls for cleanup [Patch: #419683]
+
+	* unix/tclUnixPipe.c (TclpCreateTempFile): fixed use of tmpnam,
+	which is dangerous. [Patch: #442636] (lim)
+	The use of tmpnam in TclpTempFileName must still be changed.
+
+	* tests/http.test (http-4.14): fixed variable error return.
+	[Bug: 424252]
+
+2001-08-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure: regenerated
+	* win/tcl.m4: fixed DLLSUFFIX definition to always be ${DBGX}.dll.
+	This is necessary for TEA compliant builds that build shared
+	against a static-built Tcl.
+	* win/Makefile.in ($(TCLSH)): added $(TCL_STUB_LIB_FILE) to build
+	target, otherwise it wouldn't get generated in a static build.
+
 2001-08-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Applied patch from SF item
@@ -18,13 +55,31 @@
 	package arguments it receives, not stopping when a package is
 	not found.  [Bug 415273]
 
+2001-08-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIOUtil.c (Tcl_FSMatchInDirectory): corrected
+	uninitialized value.
+
 2001-08-02  Mo DeJong  <mdejong@redhat.com>
+
 	* generic/tclPlatDecls.h:
 	* win/tclWinPort.h:
 	Revert <tchar.h> related changes made to improve
 	Cygwin support on 2001-07-18. This change ended
 	up breaking the VC++ build because of conflicts
 	between Windows APIs and internal Tk APIs.
+
+2001-08-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c: minor casts to eliminate warnings. (lim)
+	[Patch: #440218]
+
+	* tests/parseOld.test: changed some tests that required
+	testwordend to exist to skip in a proper tcltest manner.
+	[Bug: #442663]
+
+	* library/http/http.tcl (http::mapReply): the regsub'ing of \n and
+	\t to escape them was unnecessary.
 
 2001-07-31  Vince Darley <vincentdarley@users.sourceforge.net>
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.15 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.16 2001/08/07 01:00:02 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -331,21 +331,24 @@ Tcl_GetPathType(path)
  */
 
 Tcl_Obj* 
-Tcl_FSSplitPath(Tcl_Obj* pathPtr, int *lenPtr) {
+Tcl_FSSplitPath(pathPtr, lenPtr)
+    Tcl_Obj *pathPtr;		/* Path to split. */
+    int *lenPtr;		/* int to store number of path elements. */
+{
     int argc, i;
-    char** argv;
-    Tcl_Obj* res;
-    
-    Tcl_SplitPath(Tcl_GetString(pathPtr),&argc,&argv);
+    char **argv;
+    Tcl_Obj *resultPtr = Tcl_NewObj();
+
+    Tcl_SplitPath(Tcl_GetString(pathPtr), &argc, &argv);
     if (lenPtr != NULL) {
 	*lenPtr = argc;
     }
-    res = Tcl_NewListObj(0,NULL);
-    for (i=0;i<argc;i++) {
-	Tcl_ListObjAppendElement(NULL, res, Tcl_NewStringObj(argv[i],-1));
+    for (i = 0; i < argc; i++) {
+	Tcl_ListObjAppendElement(NULL, resultPtr,
+		Tcl_NewStringObj(argv[i], -1));
     }
-    ckfree((char*)argv);
-    return res;
+    ckfree((char *) argv);
+    return resultPtr;
 }
 
 /*
