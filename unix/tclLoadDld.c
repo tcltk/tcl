@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.11 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.12 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -60,7 +60,8 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 {
     static int firstTime = 1;
     int returnCode;
-    char *fileName = Tcl_GetString(pathPtr);
+    char *fileName;
+    CONST char *native;
     
     /*
      *  The dld package needs to know the pathname to the tcl binary.
@@ -84,13 +85,30 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 	firstTime = 0;
     }
 
-    if ((returnCode = dld_link(Tcl_GetString(pathPtr))) != 0) {
+    fileName = Tcl_GetString(pathPtr);
+
+    /* 
+     * First try the full path the user gave us.  This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load
+     * using a relative path.
+     */
+    native = Tcl_FSGetNativePath(pathPtr);
+    returnCode = dld_link(native);
+    
+    if (returnCode != 0) {
+	Tcl_DString ds;
+	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	returnCode = dld_link(native);
+	Tcl_DStringFree(&ds);
+    }
+
+    if (returnCode != 0) {
 	Tcl_AppendResult(interp, "couldn't load file \"", 
-			 Tcl_GetString(pathPtr),
-			 "\": ", dld_strerror(returnCode), (char *) NULL);
+			 fileName, "\": ", 
+			 dld_strerror(returnCode), (char *) NULL);
 	return TCL_ERROR;
     }
-    *loadHandle = strcpy(
+    *loadHandle = (Tcl_LoadHandle) strcpy(
 	    (char *) ckalloc((unsigned) (strlen(fileName) + 1)), fileName);
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;

@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadOSF.c,v 1.10 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadOSF.c,v 1.11 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -72,8 +72,28 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     ldr_module_t lm;
     char *pkg;
     char *fileName = Tcl_GetString(pathPtr);
+    CONST char *native;
+
+    /* 
+     * First try the full path the user gave us.  This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load
+     * using a relative path.
+     */
+    native = Tcl_FSGetNativePath(pathPtr);
+    lm = (Tcl_PackageInitProc *) load(native, LDR_NOFLAGS);
+
+    if (lm == LDR_NULL_MODULE) {
+	/* 
+	 * Let the OS loader examine the binary search path for
+	 * whatever string the user gave us which hopefully refers
+	 * to a file on the binary path
+	 */
+	Tcl_DString ds;
+	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	lm = (Tcl_PackageInitProc *) load(native, LDR_NOFLAGS);
+	Tcl_DStringFree(&ds);
+    }
     
-    lm = (Tcl_PackageInitProc *) load(fileName, LDR_NOFLAGS);
     if (lm == LDR_NULL_MODULE) {
 	Tcl_AppendResult(interp, "couldn't load file \"", fileName,
 	    "\": ", Tcl_PosixError (interp), (char *) NULL);

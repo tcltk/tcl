@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.14 2002/07/18 16:26:05 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -49,12 +49,26 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 {
     HINSTANCE handle;
     CONST TCHAR *nativeName;
-    Tcl_DString ds;
 
-    char *fileName = Tcl_GetString(pathPtr);
-    nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
+    /* 
+     * First try the full path the user gave us.  This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load
+     * using a relative path.
+     */
+    nativeName = Tcl_FSGetNativePath(pathPtr);
     handle = (*tclWinProcs->loadLibraryProc)(nativeName);
-    Tcl_DStringFree(&ds);
+    if (handle == NULL) {
+	/* 
+	 * Let the OS loader examine the binary search path for
+	 * whatever string the user gave us which hopefully refers
+	 * to a file on the binary path
+	 */
+	Tcl_DString ds;
+        char *fileName = Tcl_GetString(pathPtr);
+	nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
+	handle = (*tclWinProcs->loadLibraryProc)(nativeName);
+	Tcl_DStringFree(&ds);
+    }
 
     *loadHandle = (Tcl_LoadHandle) handle;
     
@@ -75,7 +89,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 	sprintf(buf, "%d %s", lastError, (char *)lpMsgBuf);
 #endif
 	Tcl_AppendResult(interp, "couldn't load library \"",
-		fileName, "\": ", (char *) NULL);
+			 Tcl_GetString(pathPtr), "\": ", (char *) NULL);
 	/*
 	 * Check for possible DLL errors.  This doesn't work quite right,
 	 * because Windows seems to only return ERROR_MOD_NOT_FOUND for
