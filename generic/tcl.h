@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.16 1998/07/29 11:43:18 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.17 1998/07/29 20:27:59 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -158,18 +158,25 @@
 
 /*
  * Macros used to declare a function to be exported by a DLL.
- * Used by Windows, maps to no-op declarations on non-Windows systems
+ * Used by Windows, maps to no-op declarations on non-Windows systems.
+ * The default build on windows is for a DLL, which causes the DLLIMPORT
+ * and DLLEXPORT macros to be nonempty. To build a static library, the
+ * macro STATIC_BUILD should be defined.
+ * The support follows the convention that a macro called BUILD_xxxx, where
+ * xxxx is the name of a library we are building, is set on the compile line
+ * for sources that are to be placed in the library. See BUILD_tcl in this
+ * file for an example of how the macro is to be used.
  */
 
-#ifdef DLL_BUILD
-# ifdef __WIN32__
+#ifdef __WIN32__
+# ifdef STATIC_BUILD
+#  define DLLIMPORT
+#  define DLLEXPORT
+# else
 #  ifdef _MSC_VER
 #   define DLLIMPORT __declspec(dllimport)
 #   define DLLEXPORT __declspec(dllexport)
 #  endif
-# else
-#  define DLLIMPORT
-#  define DLLEXPORT
 # endif
 #else
 # define DLLIMPORT
