@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.65 2001/09/24 21:10:32 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.66 2001/09/25 16:23:56 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1690,8 +1690,6 @@ EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
 			    int localIndex, int flags));
-EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, long *longPtr));
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *targetName));
 EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((

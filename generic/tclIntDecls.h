@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.27 2001/09/24 21:10:32 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.28 2001/09/25 16:23:56 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -140,7 +140,7 @@ EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp * interp,
 				int localIndex, int flags));
 /* 36 */
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, long * longPtr));
+				CONST char * str, long * longPtr));
 /* 37 */
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 				Tcl_Interp * interp, char * targetName));
@@ -546,7 +546,7 @@ typedef struct TclIntStubs {
     TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
     Tcl_Obj * (*tclGetIndexedScalar) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, int flags)); /* 35 */
-    int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, char * str, long * longPtr)); /* 36 */
+    int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, long * longPtr)); /* 36 */
     int (*tclGetLoadedPackages) _ANSI_ARGS_((Tcl_Interp * interp, char * targetName)); /* 37 */
     int (*tclGetNamespaceForQualName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * qualName, Namespace * cxtNsPtr, int flags, Namespace ** nsPtrPtr, Namespace ** altNsPtrPtr, Namespace ** actualCxtPtrPtr, CONST char ** simpleNamePtr)); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) _ANSI_ARGS_((void)); /* 39 */
