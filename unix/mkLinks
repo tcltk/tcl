@@ -310,6 +310,7 @@ if test -r DString.3; then
     rm -f Tcl_DStringLength.3
     rm -f Tcl_DStringValue.3
     rm -f Tcl_DStringSetLength.3
+    rm -f Tcl_DStringTrunc.3
     rm -f Tcl_DStringFree.3
     rm -f Tcl_DStringResult.3
     rm -f Tcl_DStringGetResult.3
@@ -321,6 +322,7 @@ if test -r DString.3; then
     ln DString.3 Tcl_DStringLength.3
     ln DString.3 Tcl_DStringValue.3
     ln DString.3 Tcl_DStringSetLength.3
+    ln DString.3 Tcl_DStringTrunc.3
     ln DString.3 Tcl_DStringFree.3
     ln DString.3 Tcl_DStringResult.3
     ln DString.3 Tcl_DStringGetResult.3
