@@ -1,3 +1,7 @@
+2002-01-04  Daniel Steffen <das@users.sourceforge.net>
+
+	* mac/tclMacTime.c (TclpGetTZName): fix for daylight savings TZName bug
+
 2002-01-03  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/FileSystem.3:
