@@ -1,5 +1,10 @@
 2005-03-14  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclExecute.c: fixed INST_PUSH1's debugging code (wrong
+	obj ref passed to TRACE_WITH_OBJ).
+
+2005-03-14  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c: fixed INST_RETURN's stack effect in
 	tclInstructionTable (-1 instead of -2)
 
