@@ -1,3 +1,7 @@
+2001-08-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h: Silence warning from Sun compiler. [Bug 454374]
+
 2001-08-30  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: allow cached fully-qualified command names
