@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.118 2003/12/24 04:18:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.119 2004/01/12 03:23:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2275,7 +2275,16 @@ TclExecuteByteCode(interp, codePtr)
 	    int b;
 		
 	    valuePtr = *tosPtr;
-	    if (valuePtr->typePtr == &tclIntType) {
+	    /*
+	     * The following will be partially resolved at compile 
+	     * time and optimised away.
+	     */
+	    if (((sizeof(long) == sizeof(int)) &&
+		         (valuePtr->typePtr == &tclIntType))
+		    || (valuePtr->typePtr == &tclBooleanType)) {
+		b = (int) valuePtr->internalRep.longValue;
+	    } else if ((sizeof(long) != sizeof(int)) &&
+		        (valuePtr->typePtr == &tclIntType)) {
 		b = (valuePtr->internalRep.longValue != 0);
 	    } else if (valuePtr->typePtr == &tclDoubleType) {
 		b = (valuePtr->internalRep.doubleValue != 0.0);
@@ -2293,7 +2302,7 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_F((b? opnd : pcAdjustment), 1, 0);
 #else
 	    if (b) {
-		if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE1)) {
+		if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		    TRACE(("%d => %.20s true, new pc %u\n", opnd, O2S(valuePtr),
 		            (unsigned int)(pc+opnd - codePtr->codeStart)));
 		} else {
@@ -2301,7 +2310,7 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		NEXT_INST_F(opnd, 1, 0);
 	    } else {
-		if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE1)) {
+		if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 		    TRACE(("%d => %.20s false\n", opnd, O2S(valuePtr)));
 		} else {
 		    opnd = pcAdjustment;
@@ -2313,6 +2322,11 @@ TclExecuteByteCode(interp, codePtr)
 #endif
 	}
 	    	    
+    /*
+     * These two instructions are now redundant: the complete logic of the
+     * LOR and LAND is now handled by the expression compiler.
+     */
+
     case INST_LOR:
     case INST_LAND:
     {

@@ -1,3 +1,11 @@
+2004-01-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompExpr.c (CompileLandOrLorExpr): new logic, fewer
+	instructions. As a side effect, the instructions INST_LOR and
+	INST_LAND are now never used.
+	* generic/tclExecute.c (INST_JUMP*): small optimisation; fix a
+	bug in debug code.
+
 2004-01-11  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinThrd.c (Tcl_ConditionNotify): condPtr must be
