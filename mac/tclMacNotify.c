@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacNotify.c,v 1.5 1999/08/05 06:17:51 jingham Exp $
+ * RCS: @(#) $Id: tclMacNotify.c,v 1.6 1999/08/10 04:21:40 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -336,7 +336,7 @@ Tcl_SetTimer(
 {
     /*
      * Allow the notifier to be hooked.  This may not make sense
-     * on Windows, but mirrors the UNIX hook.
+     * on the Mac, but mirrors the UNIX hook.
      */
 
     if (tclStubs.tcl_SetTimer != Tcl_SetTimer) {
@@ -417,7 +417,7 @@ Tcl_WaitForEvent(
 
     /*
      * Allow the notifier to be hooked.  This may not make
-     * sense on windows, but mirrors the UNIX hook.
+     * sense on the Mac, but mirrors the UNIX hook.
      */
 
     if (tclStubs.tcl_WaitForEvent != Tcl_WaitForEvent) {
