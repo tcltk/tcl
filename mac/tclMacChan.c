@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.14 2002/05/20 10:22:33 das Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.15 2002/05/24 21:19:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -115,8 +115,8 @@ static int		FileInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCode));
 static int		FileOutput _ANSI_ARGS_((ClientData instanceData,
 			    CONST char *buf, int toWrite, int *errorCode));
-static Tcl_WideInt	FileSeek _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_WideInt offset, int mode, int *errorCode));
+static int		FileSeek _ANSI_ARGS_((ClientData instanceData,
+			    long offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
 static int		GetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1131,10 +1131,10 @@ FileOutput(
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static int
 FileSeek(
     ClientData instanceData,	/* Unused. */
-    Tcl_WideInt offset,		/* Offset to seek to. */
+    long offset,		/* Offset to seek to. */
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {

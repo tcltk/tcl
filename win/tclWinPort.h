@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.27 2002/02/22 09:04:48 dkf Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.28 2002/05/24 21:19:09 dkf Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -198,6 +198,12 @@
 #endif
 #ifndef EREMOTE
 #define EREMOTE		66	/* The object is remote */
+#endif
+/*
+ * Note that EOVERFLOW is really just a specialist ERANGE...
+ */
+#ifndef EOVERFLOW
+#define EOVERFLOW	ERANGE	/* The object couldn't fit in the datatype */
 #endif
 
 /*

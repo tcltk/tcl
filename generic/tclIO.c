@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.55 2002/04/18 01:51:20 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.56 2002/05/24 21:19:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -123,6 +123,8 @@ static int		FlushChannel _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int calledFromAsyncFlush));
 static Tcl_HashTable *	GetChannelTable _ANSI_ARGS_((Tcl_Interp *interp));
 static int		GetInput _ANSI_ARGS_((Channel *chanPtr));
+static int		HaveVersion _ANSI_ARGS_((Tcl_ChannelType *typePtr,
+				Tcl_ChannelTypeVersion minimumVersion));
 static void		PeekAhead _ANSI_ARGS_((Channel *chanPtr,
 				char **dstEndPtr, GetsState *gsPtr));
 static int		ReadBytes _ANSI_ARGS_((ChannelState *statePtr,
@@ -5332,6 +5334,7 @@ Tcl_Seek(chan, offset, mode)
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int inputBuffered, outputBuffered;
+				/* # bytes held in buffers. */
     int result;			/* Of device driver operations. */
     Tcl_WideInt curPos;		/* Position on the device. */
     int wasAsync;		/* Was the channel nonblocking before the
@@ -5339,7 +5342,7 @@ Tcl_Seek(chan, offset, mode)
                                  * nonblocking mode after the seek. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return -1;
+	return Tcl_LongAsWide(-1);
     }
 
     /*
@@ -5349,7 +5352,9 @@ Tcl_Seek(chan, offset, mode)
      * registered in an interpreter.
      */
 
-    if (CheckForDeadChannel(NULL, statePtr)) return -1;
+    if (CheckForDeadChannel(NULL, statePtr)) {
+	return Tcl_LongAsWide(-1);
+    }
 
     /*
      * This operation should occur at the top of a channel stack.
@@ -5364,7 +5369,7 @@ Tcl_Seek(chan, offset, mode)
 
     if (chanPtr->typePtr->seekProc == (Tcl_DriverSeekProc *) NULL) {
         Tcl_SetErrno(EINVAL);
-        return -1;
+        return Tcl_LongAsWide(-1);
     }
 
     /*
@@ -5377,7 +5382,7 @@ Tcl_Seek(chan, offset, mode)
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
         Tcl_SetErrno(EFAULT);
-        return -1;
+        return Tcl_LongAsWide(-1);
     }
 
     /*
@@ -5416,7 +5421,7 @@ Tcl_Seek(chan, offset, mode)
         wasAsync = 1;
         result = StackSetBlockMode(chanPtr, TCL_MODE_BLOCKING);
 	if (result != 0) {
-	    return -1;
+	    return Tcl_LongAsWide(-1);
 	}
         statePtr->flags &= (~(CHANNEL_NONBLOCKING));
         if (statePtr->flags & BG_FLUSH_SCHEDULED) {
@@ -5438,14 +5443,26 @@ Tcl_Seek(chan, offset, mode)
 
         /*
          * Now seek to the new position in the channel as requested by the
-         * caller.
+         * caller.  Note that we prefer the wideSeekProc if that is
+	 * available and non-NULL...
          */
 
-        curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-		offset, mode, &result);
-        if (curPos == -1) {
-            Tcl_SetErrno(result);
-        }
+	if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
+		chanPtr->typePtr->wideSeekProc != NULL) {
+	    curPos = (chanPtr->typePtr->wideSeekProc) (chanPtr->instanceData,
+		    offset, mode, &result);
+	} else if (offset < Tcl_LongAsWide(LONG_MIN) ||
+		offset > Tcl_LongAsWide(LONG_MAX)) {
+	    Tcl_SetErrno(EOVERFLOW);
+	    curPos = Tcl_LongAsWide(-1);
+	} else {
+	    curPos = Tcl_LongAsWide((chanPtr->typePtr->seekProc) (
+		    chanPtr->instanceData, Tcl_WideAsLong(offset), mode,
+		    &result));
+	    if (curPos == Tcl_LongAsWide(-1)) {
+		Tcl_SetErrno(result);
+	    }
+	}
     }
     
     /*
@@ -5459,7 +5476,7 @@ Tcl_Seek(chan, offset, mode)
         statePtr->flags |= CHANNEL_NONBLOCKING;
         result = StackSetBlockMode(chanPtr, TCL_MODE_NONBLOCKING);
 	if (result != 0) {
-	    return -1;
+	    return Tcl_LongAsWide(-1);
 	}
     }
 
@@ -5491,12 +5508,12 @@ Tcl_Tell(chan)
 {
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
-    int inputBuffered, outputBuffered;
+    int inputBuffered, outputBuffered;	/* # bytes held in buffers. */
     int result;				/* Of calling device driver. */
     Tcl_WideInt curPos;			/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
-	return -1;
+	return Tcl_LongAsWide(-1);
     }
 
     /*
@@ -5507,7 +5524,7 @@ Tcl_Tell(chan)
      */
 
     if (CheckForDeadChannel(NULL, statePtr)) {
-	return -1;
+	return Tcl_LongAsWide(-1);
     }
 
     /*
@@ -5523,7 +5540,7 @@ Tcl_Tell(chan)
 
     if (chanPtr->typePtr->seekProc == (Tcl_DriverSeekProc *) NULL) {
         Tcl_SetErrno(EINVAL);
-        return -1;
+        return Tcl_LongAsWide(-1);
     }
 
     /*
@@ -5536,24 +5553,31 @@ Tcl_Tell(chan)
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
         Tcl_SetErrno(EFAULT);
-        return -1;
+        return Tcl_LongAsWide(-1);
     }
 
     /*
      * Get the current position in the device and compute the position
-     * where the next character will be read or written.
+     * where the next character will be read or written.  Note that we
+     * prefer the wideSeekProc if that is available and non-NULL...
      */
 
-    curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-	    Tcl_LongAsWide(0), SEEK_CUR, &result);
-    if (curPos == -1) {
+    if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
+	    chanPtr->typePtr->wideSeekProc != NULL) {
+	curPos = (chanPtr->typePtr->wideSeekProc) (chanPtr->instanceData,
+		Tcl_LongAsWide(0), SEEK_CUR, &result);
+    } else {
+	curPos = Tcl_LongAsWide((chanPtr->typePtr->seekProc) (
+		chanPtr->instanceData, 0, SEEK_CUR, &result));
+    }
+    if (curPos == Tcl_LongAsWide(-1)) {
         Tcl_SetErrno(result);
-        return -1;
+        return Tcl_LongAsWide(-1);
     }
     if (inputBuffered != 0) {
-        return (curPos - inputBuffered);
+        return curPos - inputBuffered;
     }
-    return (curPos + outputBuffered);
+    return curPos + outputBuffered;
 }
 
 /*
@@ -5562,10 +5586,12 @@ Tcl_Tell(chan)
  * Tcl_SeekOld, Tcl_TellOld --
  *
  *	Backward-compatability versions of the seek/tell interface that
- *	do not support 64-bit offsets.
+ *	do not support 64-bit offsets.  This interface is not documented
+ *	or expected to be supported indefinitely.
  *
  * Results:
- *	As for Tcl_Seek and Tcl_Tell respectively.
+ *	As for Tcl_Seek and Tcl_Tell respectively, except truncated to
+ *	whatever value will fit in an 'int'.
  *
  * Side effects:
  *	As for Tcl_Seek and Tcl_Tell respectively.
@@ -6663,17 +6689,13 @@ Tcl_NotifyChannel(channel, mask)
      */
 
     while (mask && (chanPtr->upChanPtr != ((Channel*) NULL))) {
+	Tcl_DriverHandlerProc* upHandlerProc;
+
         upChanPtr = chanPtr->upChanPtr;
 	upTypePtr = upChanPtr->typePtr;
-
-	if ((Tcl_ChannelVersion(upTypePtr) == TCL_CHANNEL_VERSION_2) &&
-		(Tcl_ChannelHandlerProc(upTypePtr) !=
-			((Tcl_DriverHandlerProc *) NULL))) {
-
-	    Tcl_DriverHandlerProc* handlerProc =
-		Tcl_ChannelHandlerProc(upTypePtr);
-
-	  mask = (*handlerProc) (upChanPtr->instanceData, mask);
+	upHandlerProc = Tcl_ChannelHandlerProc(upTypePtr);
+	if (upHandlerProc != NULL) {
+	    mask = (*upHandlerProc) (upChanPtr->instanceData, mask);
 	}
 
 	/* ELSE:
@@ -8688,7 +8710,7 @@ CONST char *
 Tcl_ChannelName(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->typeName);
+    return chanTypePtr->typeName;
 }
 
 /*
@@ -8699,7 +8721,7 @@ Tcl_ChannelName(chanTypePtr)
  *	Return the of version of the channel type.
  *
  * Results:
- *	TCL_CHANNEL_VERSION_2 or TCL_CHANNEL_VERSION_1.
+ *	One of the TCL_CHANNEL_VERSION_* constants from tcl.h
  *
  * Side effects:
  *	None.
@@ -8713,6 +8735,8 @@ Tcl_ChannelVersion(chanTypePtr)
 {
     if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
 	return TCL_CHANNEL_VERSION_2;
+    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_3) {
+	return TCL_CHANNEL_VERSION_3;
     } else {
 	/*
 	 * In <v2 channel versions, the version field is occupied
@@ -8720,6 +8744,33 @@ Tcl_ChannelVersion(chanTypePtr)
 	 */
 	return TCL_CHANNEL_VERSION_1;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HaveVersion --
+ *
+ *	Return whether a channel type is (at least) of a given version.
+ *
+ * Results:
+ *	True if the minimum version is exceeded by the version actually
+ *	present.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+HaveVersion(chanTypePtr, minimumVersion)
+    Tcl_ChannelType *chanTypePtr;
+    Tcl_ChannelTypeVersion minimumVersion;
+{
+    Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
+
+    return ((int)actualVersion) >= ((int)minimumVersion);
 }
 
 /*
@@ -8735,16 +8786,18 @@ Tcl_ChannelVersion(chanTypePtr)
  * Side effects:
  *	None.
  *
- *----------------------------------------------------------------------
- */
+ *---------------------------------------------------------------------- */
 
 Tcl_DriverBlockModeProc *
 Tcl_ChannelBlockModeProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
-	return (chanTypePtr->blockModeProc);
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
+	return chanTypePtr->blockModeProc;
     } else {
+	/*
+	 * The v1 structure had the blockModeProc in a different place.
+	 */
 	return (Tcl_DriverBlockModeProc *) (chanTypePtr->version);
     }
 }
@@ -8769,7 +8822,7 @@ Tcl_DriverCloseProc *
 Tcl_ChannelCloseProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->closeProc);
+    return chanTypePtr->closeProc;
 }
 
 /*
@@ -8792,7 +8845,7 @@ Tcl_DriverClose2Proc *
 Tcl_ChannelClose2Proc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->close2Proc);
+    return chanTypePtr->close2Proc;
 }
 
 /*
@@ -8815,7 +8868,7 @@ Tcl_DriverInputProc *
 Tcl_ChannelInputProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->inputProc);
+    return chanTypePtr->inputProc;
 }
 
 /*
@@ -8838,7 +8891,7 @@ Tcl_DriverOutputProc *
 Tcl_ChannelOutputProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->outputProc);
+    return chanTypePtr->outputProc;
 }
 
 /*
@@ -8861,7 +8914,7 @@ Tcl_DriverSeekProc *
 Tcl_ChannelSeekProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->seekProc);
+    return chanTypePtr->seekProc;
 }
 
 /*
@@ -8884,7 +8937,7 @@ Tcl_DriverSetOptionProc *
 Tcl_ChannelSetOptionProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->setOptionProc);
+    return chanTypePtr->setOptionProc;
 }
 
 /*
@@ -8907,7 +8960,7 @@ Tcl_DriverGetOptionProc *
 Tcl_ChannelGetOptionProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->getOptionProc);
+    return chanTypePtr->getOptionProc;
 }
 
 /*
@@ -8930,7 +8983,7 @@ Tcl_DriverWatchProc *
 Tcl_ChannelWatchProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->watchProc);
+    return chanTypePtr->watchProc;
 }
 
 /*
@@ -8953,7 +9006,7 @@ Tcl_DriverGetHandleProc *
 Tcl_ChannelGetHandleProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->getHandleProc);
+    return chanTypePtr->getHandleProc;
 }
 
 /*
@@ -8976,7 +9029,11 @@ Tcl_DriverFlushProc *
 Tcl_ChannelFlushProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->flushProc);
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
+	return chanTypePtr->flushProc;
+    } else {
+	return NULL;
+    }
 }
 
 /*
@@ -8999,5 +9056,36 @@ Tcl_DriverHandlerProc *
 Tcl_ChannelHandlerProc(chanTypePtr)
     Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
 {
-    return (chanTypePtr->handlerProc);
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
+	return chanTypePtr->handlerProc;
+    } else {
+	return NULL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelWideSeekProc --
+ *
+ *	Return the Tcl_DriverWideSeekProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverWideSeekProc *
+Tcl_ChannelWideSeekProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
+	return chanTypePtr->wideSeekProc;
+    } else {
+	return NULL;
+    }
 }
