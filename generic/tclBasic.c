@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.4 2003/06/10 19:58:34 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.5 2003/07/18 23:35:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3304,6 +3304,14 @@ Tcl_LogCommandInfo(interp, script, command, length)
 	length = 150;
 	ellipsis = "...";
     }
+    while ( (command[length] & 0xC0) == 0x80 ) {
+	/*
+	 * Back up truncation point so that we don't truncate in the
+	 * middle of a multi-byte character (in UTF-8)
+	 */
+	length--;
+	ellipsis = "...";
+    }
     if (!(iPtr->flags & ERR_IN_PROGRESS)) {
 	sprintf(buffer, "\n    while executing\n\"%.*s%s\"",
 		length, command, ellipsis);
@@ -4562,8 +4570,7 @@ TclObjInvoke(interp, objc, objv, flags)
     int localObjc;		/* Used to invoke "unknown" if the */
     Tcl_Obj **localObjv = NULL;	/* command is not found. */
     register int i;
-    int length, result;
-    char *bytes;
+    int result;
 
     if (interp == (Tcl_Interp *) NULL) {
         return TCL_ERROR;
@@ -4656,29 +4663,41 @@ TclObjInvoke(interp, objc, objv, flags)
     if ((result == TCL_ERROR)
 	    && ((flags & TCL_INVOKE_NO_TRACEBACK) == 0)
 	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
-        Tcl_DString ds;
+	Tcl_Obj *msg;
         
-        Tcl_DStringInit(&ds);
         if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-            Tcl_DStringAppend(&ds, "\n    while invoking\n\"", -1);
+            msg = Tcl_NewStringObj("\n    while invoking\n\"", -1);
         } else {
-            Tcl_DStringAppend(&ds, "\n    invoked from within\n\"", -1);
+            msg = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
         }
+	Tcl_IncrRefCount(msg);
         for (i = 0;  i < objc;  i++) {
-	    bytes = Tcl_GetStringFromObj(objv[i], &length);
-            Tcl_DStringAppend(&ds, bytes, length);
-            if (i < (objc - 1)) {
-                Tcl_DStringAppend(&ds, " ", -1);
-            } else if (Tcl_DStringLength(&ds) > 100) {
-                Tcl_DStringSetLength(&ds, 100);
-                Tcl_DStringAppend(&ds, "...", -1);
-                break;
-            }
+	    CONST char *bytes;
+	    int length;
+
+	    Tcl_AppendObjToObj(msg, objv[i]);
+	    bytes = Tcl_GetStringFromObj(msg, &length);
+	    if (length > 100) {
+		/*
+		 * Back up truncation point so that we don't truncate
+		 * in the middle of a multi-byte character.
+		 */
+		length = 100;
+		while ( (bytes[length] & 0xC0) == 0x80 ) {
+		    length--;
+		}
+		Tcl_SetObjLength(msg, length);
+		Tcl_AppendToObj(msg, "...", -1);
+		break;
+	    }
+	    if (i != (objc - 1)) {
+		Tcl_AppendToObj(msg, " ", -1);
+	    }
         }
-        
-        Tcl_DStringAppend(&ds, "\"", -1);
-        Tcl_AddObjErrorInfo(interp, Tcl_DStringValue(&ds), -1);
-        Tcl_DStringFree(&ds);
+
+	Tcl_AppendToObj(msg, "\"", -1);
+        Tcl_AddObjErrorInfo(interp, Tcl_GetString(msg), -1);
+	Tcl_DecrRefCount(msg);
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
     }
 
