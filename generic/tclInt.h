@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.129 2003/07/22 00:59:58 mdejong Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.130 2003/07/24 18:16:30 mdejong Exp $
  */
 
 #ifndef _TCLINT
@@ -2123,7 +2123,7 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     TclDbNewObj(objPtr, __FILE__, __LINE__);
 
 # define TclDecrRefCount(objPtr) \
-    Tcl_DecrRefCount(objPtr);
+    Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
 
 #elif defined(PURIFY)
 
