@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.1.2.5 1998/11/11 04:54:19 stanton Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.1.2.6 1999/02/01 21:29:55 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -604,12 +604,12 @@ Tcl_UplevelObjCmd(dummy, interp, objc, objv)
      */
 
     if (objc == 1) {
-	result = Tcl_EvalObj(interp, objv[0], 0);
+	result = Tcl_EvalObjEx(interp, objv[0], 0);
     } else {
 	Tcl_Obj *objPtr;
 
 	objPtr = Tcl_ConcatObj(objc, objv);
-	result = Tcl_EvalObj(interp, objPtr, TCL_EVAL_DIRECT);
+	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
 	char msg[32 + TCL_INTEGER_SPACE];
@@ -996,7 +996,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
-    result = Tcl_EvalObj(interp, procPtr->bodyPtr, 0);
+    result = Tcl_EvalObjEx(interp, procPtr->bodyPtr, 0);
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.1.2.2 1998/09/24 23:58:51 stanton Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.1.2.3 1999/02/01 21:29:51 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -130,7 +130,7 @@ Tcl_RecordAndEvalObj(interp, cmdPtr, flags)
     
     objPtr = Tcl_NewListObj(3, list);
     Tcl_IncrRefCount(objPtr);
-    (void) Tcl_EvalObj(interp, objPtr, TCL_EVAL_GLOBAL);
+    (void) Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(objPtr);
 
     /*
@@ -139,7 +139,7 @@ Tcl_RecordAndEvalObj(interp, cmdPtr, flags)
 
     result = TCL_OK;
     if (!(flags & TCL_NO_EVAL)) {
-	result = Tcl_EvalObj(interp, cmdPtr, flags & TCL_EVAL_GLOBAL);
+	result = Tcl_EvalObjEx(interp, cmdPtr, flags & TCL_EVAL_GLOBAL);
     }
     return result;
 }

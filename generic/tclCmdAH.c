@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.7 1998/12/02 21:45:33 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.8 1999/02/01 21:29:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -195,7 +195,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
     match:
     if (body != -1) {
 	armPtr = caseObjv[body - 1];
-	result = Tcl_EvalObj(interp, caseObjv[body], 0);
+	result = Tcl_EvalObjEx(interp, caseObjv[body], 0);
 	if (result == TCL_ERROR) {
 	    char msg[100 + TCL_INTEGER_SPACE];
 	    
@@ -258,7 +258,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	varNamePtr = objv[2];
     }
     
-    result = Tcl_EvalObj(interp, objv[1], 0);
+    result = Tcl_EvalObjEx(interp, objv[1], 0);
     
     if (objc == 3) {
 	if (Tcl_SetObjVar2(interp,
@@ -614,7 +614,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
     }
     
     if (objc == 2) {
-	result = Tcl_EvalObj(interp, objv[1], 0);
+	result = Tcl_EvalObjEx(interp, objv[1], 0);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -623,7 +623,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
     
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
 	Tcl_IncrRefCount(objPtr);
-	result = Tcl_EvalObj(interp, objPtr, 0);
+	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	Tcl_DecrRefCount(objPtr);
     }
     if (result == TCL_ERROR) {
@@ -1552,7 +1552,7 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    result = Tcl_EvalObj(interp, objv[1], 0);
+    result = Tcl_EvalObjEx(interp, objv[1], 0);
     if (result != TCL_OK) {
         if (result == TCL_ERROR) {
             Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
@@ -1567,7 +1567,7 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
         if (!value) {
             break;
         }
-        result = Tcl_EvalObj(interp, objv[4], 0);
+        result = Tcl_EvalObjEx(interp, objv[4], 0);
         if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
             if (result == TCL_ERROR) {
                 char msg[32 + TCL_INTEGER_SPACE];
@@ -1577,7 +1577,7 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
             }
             break;
         }
-        result = Tcl_EvalObj(interp, objv[3], 0);
+        result = Tcl_EvalObjEx(interp, objv[3], 0);
 	if (result == TCL_BREAK) {
             break;
         } else if (result != TCL_OK) {
@@ -1785,7 +1785,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 
-	result = Tcl_EvalObj(interp, bodyPtr, 0);
+	result = Tcl_EvalObjEx(interp, bodyPtr, 0);
 	if (result != TCL_OK) {
 	    if (result == TCL_CONTINUE) {
 		result = TCL_OK;

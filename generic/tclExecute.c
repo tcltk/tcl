@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.7 1998/12/12 01:36:57 lfb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.8 1999/02/01 21:29:51 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -964,7 +964,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_EVAL_STK:
 	    objPtr = POP_OBJECT();
 	    DECACHE_STACK_INFO();
-	    result = Tcl_EvalObj(interp, objPtr, 0);
+	    result = Tcl_EvalObjEx(interp, objPtr, 0);
 	    CACHE_STACK_INFO();
 	    if (result == TCL_OK) {
 		/*

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.10 1999/01/29 00:20:43 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.11 1999/02/01 21:29:48 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1259,6 +1259,16 @@ typedef struct Tcl_EncodingType {
 typedef unsigned short Tcl_UniChar;
 
 /*
+ * Deprecated Tcl procedures:
+ */
+
+#ifndef TCL_NO_DEPRECATED
+#define Tcl_EvalObj(interp,objPtr) Tcl_EvalObjEx((interp),(objPtr),0)
+#define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif
+
+/*
  * Exported Tcl procedures:
  */
 
@@ -1449,13 +1459,13 @@ EXTERN char *		Tcl_ErrnoId _ANSI_ARGS_((void));
 EXTERN char *		Tcl_ErrnoMsg _ANSI_ARGS_((int err));
 EXTERN int		Tcl_Eval _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string));
-EXTERN int		Tcl_Eval2 _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN int		Tcl_EvalEx _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *script, int numBytes, int flags));
 EXTERN int		Tcl_EvalFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *fileName));
 EXTERN int		Tcl_EvalObjv _ANSI_ARGS_ ((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[], int flags));
-EXTERN int		Tcl_EvalObj _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN int		Tcl_EvalObjEx _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int flags));
 EXTERN void		Tcl_EventuallyFree _ANSI_ARGS_((ClientData clientData,
 			    Tcl_FreeProc *freeProc));

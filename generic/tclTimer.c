@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.1.2.2 1998/09/24 23:59:04 stanton Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.1.2.3 1999/02/01 21:29:56 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1032,7 +1032,7 @@ AfterProc(clientData)
     interp = assocPtr->interp;
     Tcl_Preserve((ClientData) interp);
     script = Tcl_GetStringFromObj(afterPtr->commandPtr, &numBytes);
-    result = Tcl_Eval2(interp, script, numBytes, TCL_EVAL_GLOBAL);
+    result = Tcl_EvalEx(interp, script, numBytes, TCL_EVAL_GLOBAL);
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (\"after\" script)");
 	Tcl_BackgroundError(interp);

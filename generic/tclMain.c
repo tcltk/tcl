@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.1.2.2 1998/09/24 23:58:56 stanton Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.1.2.3 1999/02/01 21:29:54 stanton Exp $
  */
 
 #include "tcl.h"
@@ -193,7 +193,7 @@ Tcl_Main(argc, argv, appInitProc)
 		    Tcl_WriteChars(outChannel, "% ", 2);
 		}
 	    } else {
-		code = Tcl_EvalObj(interp, promptCmdPtr, 0);
+		code = Tcl_EvalObjEx(interp, promptCmdPtr, 0);
 		inChannel = Tcl_GetStdChannel(TCL_STDIN);
 		outChannel = Tcl_GetStdChannel(TCL_STDOUT);
 		errChannel = Tcl_GetStdChannel(TCL_STDERR);

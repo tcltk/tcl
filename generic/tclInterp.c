@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.1.2.7 1998/12/12 01:36:59 lfb Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.8 1999/02/01 21:29:53 stanton Exp $
  */
 
 #include <stdio.h>
@@ -2015,11 +2015,11 @@ SlaveEval(interp, slaveInterp, objc, objv)
     Tcl_AllowExceptions(slaveInterp);
 
     if (objc == 1) {
-	result = Tcl_EvalObj(slaveInterp, objv[0], 0);
+	result = Tcl_EvalObjEx(slaveInterp, objv[0], 0);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);
 	Tcl_IncrRefCount(objPtr);
-	result = Tcl_EvalObj(slaveInterp, objPtr, 0);
+	result = Tcl_EvalObjEx(slaveInterp, objPtr, 0);
 	Tcl_DecrRefCount(objPtr);
     }
     TclTransferResult(slaveInterp, result, interp);

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.5 1998/12/12 01:37:00 lfb Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.6 1999/02/01 21:29:54 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2935,7 +2935,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     }
 
     if (objc == 4) {
-        result = Tcl_EvalObj(interp, objv[3], 0);
+        result = Tcl_EvalObjEx(interp, objv[3], 0);
     } else {
         objPtr = Tcl_ConcatObj(objc-3, objv+3);
 
@@ -2944,7 +2944,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
 	 * refcount after eval'ing it.
 	 */
 
-        result = Tcl_EvalObj(interp, objPtr, TCL_EVAL_DIRECT);
+        result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
         char msg[256 + TCL_INTEGER_SPACE];
@@ -3290,7 +3290,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      */
 
     if (objc == 4) {
-        result = Tcl_EvalObj(interp, objv[3], 0);
+        result = Tcl_EvalObjEx(interp, objv[3], 0);
     } else {
 	Tcl_Obj *concatObjv[2];
 	register Tcl_Obj *listPtr, *cmdObjPtr;
@@ -3307,7 +3307,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
 	concatObjv[0] = objv[3];
 	concatObjv[1] = listPtr;
 	cmdObjPtr = Tcl_ConcatObj(2, concatObjv);
-        result = Tcl_EvalObj(interp, cmdObjPtr, TCL_EVAL_DIRECT);
+        result = Tcl_EvalObjEx(interp, cmdObjPtr, TCL_EVAL_DIRECT);
 	Tcl_DecrRefCount(listPtr);    /* we're done with the list object */
     }
     if (result == TCL_ERROR) {

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.8 1998/12/12 01:36:58 lfb Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.9 1999/02/01 21:29:53 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -320,7 +320,7 @@ Tcl_EvalFile(interp, fileName)
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = fileName;
     string = Tcl_GetStringFromObj(objPtr, &length);
-    result = Tcl_Eval2(interp, string, length, 0);
+    result = Tcl_EvalEx(interp, string, length, 0);
     iPtr->scriptFile = oldScriptFile;
 
     if (result == TCL_RETURN) {

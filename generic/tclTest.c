@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.10 1998/12/10 21:57:48 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.11 1999/02/01 21:29:55 stanton Exp $
  */
 
 #define TCL_TEST
@@ -187,7 +187,7 @@ static int		TestdstringCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestencodingObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc, 
 			    Tcl_Obj *CONST objv[]));
-static int		Testeval2ObjCmd _ANSI_ARGS_((ClientData dummy,
+static int		TestevalexObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc, 
 			    Tcl_Obj *CONST objv[]));
 static int		TestevalobjvObjCmd _ANSI_ARGS_((ClientData dummy,
@@ -358,7 +358,7 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testencoding", TestencodingObjCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateObjCommand(interp, "testeval2", Testeval2ObjCmd,
+    Tcl_CreateObjCommand(interp, "testevalex", TestevalexObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testevalobjv", TestevalobjvObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -1462,10 +1462,10 @@ EncodingFreeProc(clientData)
 /*
  *----------------------------------------------------------------------
  *
- * Testeval2ObjCmd --
+ * TestevalexObjCmd --
  *
- *	This procedure implements the "testeval2" command.  It is
- *	used to test Tcl_Eval2.
+ *	This procedure implements the "testevalex" command.  It is
+ *	used to test Tcl_EvalEx.
  *
  * Results:
  *	A standard Tcl result.
@@ -1477,7 +1477,7 @@ EncodingFreeProc(clientData)
  */
 
 static int
-Testeval2ObjCmd(dummy, interp, objc, objv)
+TestevalexObjCmd(dummy, interp, objc, objv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
     int objc;				/* Number of arguments. */
@@ -1490,7 +1490,7 @@ Testeval2ObjCmd(dummy, interp, objc, objv)
     if (objc == 1) {
 	/*
 	 * The command was invoked with no arguments, so just toggle
-	 * the flag that determines whether we use Tcl_Eval2.
+	 * the flag that determines whether we use Tcl_EvalEx.
 	 */
 
 	if (iPtr->flags & USE_EVAL_DIRECT) {
@@ -1520,14 +1520,14 @@ Testeval2ObjCmd(dummy, interp, objc, objv)
 
     /*
      * Note, we have to set the USE_EVAL_DIRECT flag in the interpreter
-     * in addition to calling Tcl_Eval2.  This is needed so that even nested
+     * in addition to calling Tcl_EvalEx.  This is needed so that even nested
      * commands are evaluated directly.
      */
 
     oldFlags = iPtr->flags;
     iPtr->flags |= USE_EVAL_DIRECT;
     string = Tcl_GetStringFromObj(objv[1], &length);
-    code = Tcl_Eval2(interp, string, length, flags); 
+    code = Tcl_EvalEx(interp, string, length, flags); 
     iPtr->flags = (iPtr->flags & ~USE_EVAL_DIRECT)
 	    | (oldFlags & USE_EVAL_DIRECT);
     return code;
@@ -3828,7 +3828,7 @@ TestsaveresultCmd(dummy, interp, objc, objv)
     Tcl_SaveResult(interp, &state);
 
     if (((enum options) index) == RESULT_OBJECT) {
-	result = Tcl_EvalObj(interp, objv[2], 0);
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
     } else {
 	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
     }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.8 1998/11/18 22:34:13 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.9 1999/02/01 21:29:50 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1491,7 +1491,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	}
-	result = Tcl_EvalObj(interp, objv[j], 0);
+	result = Tcl_EvalObjEx(interp, objv[j], 0);
 	if (result == TCL_ERROR) {
 	    char msg[100 + TCL_INTEGER_SPACE];
 
@@ -1552,7 +1552,7 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     i = count;
     TclpGetTime(&start);
     while (i-- > 0) {
-	result = Tcl_EvalObj(interp, objPtr, 0);
+	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -1911,7 +1911,7 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
         if (!value) {
             break;
         }
-        result = Tcl_EvalObj(interp, objv[2], 0);
+        result = Tcl_EvalObjEx(interp, objv[2], 0);
         if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
             if (result == TCL_ERROR) {
                 char msg[32 + TCL_INTEGER_SPACE];

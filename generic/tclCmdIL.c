@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.5 1998/12/23 02:56:22 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.6 1999/02/01 21:29:50 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -229,7 +229,7 @@ Tcl_IfObjCmd(dummy, interp, objc, objv)
 	i++;
 	if (i >= objc) {
 	    if (thenScriptIndex) {
-		return Tcl_EvalObj(interp, objv[thenScriptIndex], 0);
+		return Tcl_EvalObjEx(interp, objv[thenScriptIndex], 0);
 	    }
 	    return TCL_OK;
 	}
@@ -263,9 +263,9 @@ Tcl_IfObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (thenScriptIndex) {
-	return Tcl_EvalObj(interp, objv[thenScriptIndex], 0);
+	return Tcl_EvalObjEx(interp, objv[thenScriptIndex], 0);
     }
-    return Tcl_EvalObj(interp, objv[i], 0);
+    return Tcl_EvalObjEx(interp, objv[i], 0);
 }
 
 /*

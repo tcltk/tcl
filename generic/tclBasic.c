@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.6 1998/12/10 21:21:31 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.7 1999/02/01 21:29:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2483,7 +2483,7 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalObj --
+ * Tcl_EvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are
  *	compiled into bytecodes if necessary.
@@ -2505,10 +2505,8 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_EvalObj
-
 int
-Tcl_EvalObj(interp, objPtr, flags)
+Tcl_EvalObjEx(interp, objPtr, flags)
     Tcl_Interp *interp;			/* Token for command interpreter
 					 * (returned by a previous call to
 					 * Tcl_CreateInterp). */
@@ -2541,7 +2539,7 @@ Tcl_EvalObj(interp, objPtr, flags)
     if ((iPtr->flags & USE_EVAL_DIRECT) || (flags & TCL_EVAL_DIRECT)) {
 	/*
 	 * We're not supposed to use the compiler or byte-code interpreter.
-	 * Let Tcl_Eval2 evaluate the command directly (and probably
+	 * Let Tcl_EvalEx evaluate the command directly (and probably
 	 * more slowly).
 	 */
 
@@ -2549,7 +2547,7 @@ Tcl_EvalObj(interp, objPtr, flags)
 	int length;
 
 	p = Tcl_GetStringFromObj(objPtr, &length);
-	result = Tcl_Eval2(interp, p, length, flags);
+	result = Tcl_EvalEx(interp, p, length, flags);
 	Tcl_DecrRefCount(objPtr);
 	return result;
     }

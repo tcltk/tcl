@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.1.2.5 1998/12/03 04:57:14 stanton Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.1.2.6 1999/02/01 21:29:52 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -6040,7 +6040,7 @@ ChannelEventScriptInvoker(clientData, mask)
      */
     
     Tcl_Preserve((ClientData) interp);
-    result = Tcl_EvalObj(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
+    result = Tcl_EvalObjEx(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
 
     /*
      * On error, cause a background error and remove the channel handler
@@ -6978,7 +6978,7 @@ CopyData(csPtr, mask)
 	if (errObj) {
 	    Tcl_ListObjAppendElement(interp, cmdPtr, errObj);
 	}
-	if (Tcl_EvalObj(interp, cmdPtr, TCL_EVAL_GLOBAL) != TCL_OK) {
+	if (Tcl_EvalObjEx(interp, cmdPtr, TCL_EVAL_GLOBAL) != TCL_OK) {
 	    Tcl_BackgroundError(interp);
 	    result = TCL_ERROR;
 	}

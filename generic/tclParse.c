@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.7 1998/12/02 21:45:42 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.8 1999/02/01 21:29:54 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1174,7 +1174,7 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 		break;
 
 	    case TCL_TOKEN_COMMAND:
-		code = Tcl_Eval2(interp, tokenPtr->start+1, tokenPtr->size-2,
+		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
 			0);
 		if (code != TCL_OK) {
 		    goto error;
@@ -1269,7 +1269,7 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Eval2 --
+ * Tcl_EvalEx --
  *
  *	This procedure evaluates a Tcl script without using the compiler
  *	or byte-code interpreter.  It just parses the script, creates
@@ -1288,7 +1288,7 @@ Tcl_EvalTokens(interp, tokenPtr, count)
  */
 
 int
-Tcl_Eval2(interp, script, numBytes, flags)
+Tcl_EvalEx(interp, script, numBytes, flags)
     Tcl_Interp *interp;		/* Interpreter in which to evaluate the
 				 * script.  Also used for error reporting. */
     char *script;		/* First character of script to evaluate. */
@@ -1482,7 +1482,7 @@ Tcl_Eval(interp, string)
 {
     int code;
 
-    code = Tcl_Eval2(interp, string, -1, 0);
+    code = Tcl_EvalEx(interp, string, -1, 0);
 
     /*
      * For backwards compatibility with old C code that predates the
