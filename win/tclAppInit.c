@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.8 2002/02/21 21:20:08 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.9 2002/09/30 00:08:01 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -29,6 +29,11 @@ extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif /* TCL_TEST */
 
 static void		setargv _ANSI_ARGS_((int *argcPtr, char ***argvPtr));
+static BOOL __stdcall	sigHandler (DWORD fdwCtrlType);
+static Tcl_AsyncProc	asyncExit;
+
+Tcl_AsyncHandler	exitToken;
+DWORD			exitErrorCode;
 
 
 /*
@@ -134,6 +139,12 @@ Tcl_AppInit(interp)
     if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+
+    /*
+     * Install a signal handler to the win32 console tclsh is running in.
+     */
+    SetConsoleCtrlHandler(sigHandler, TRUE); 
+    exitToken = Tcl_AsyncCreate(asyncExit, NULL); 
 
 #ifdef TCL_TEST
     if (Tcltest_Init(interp) == TCL_ERROR) {
@@ -299,3 +310,70 @@ setargv(argcPtr, argvPtr)
     *argcPtr = argc;
     *argvPtr = argv;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * asyncExit --
+ *
+ * 	The AsyncProc for the exitToken.
+ *
+ * Results:
+ * 	doesn't actually return.
+ *
+ * Side effects:
+ * 	tclsh cleanly exits.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+asyncExit (ClientData clientData, Tcl_Interp *interp, int code)
+{
+    Tcl_Exit((int)exitErrorCode);
+
+    /* NOTREACHED */
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * sigHandler --
+ *
+ *	Signal handler for the Win32 OS. Catches Ctrl+C, Ctrl+Break and
+ *	other exits. This is needed so tclsh can do it's real clean-up
+ *	and not an unclean crash terminate.
+ *
+ * Results:
+ *	TRUE.
+ *
+ * Side effects:
+ *	Effects the way the app exits from a signal. This is an
+ *	operating system supplied thread and unsafe to call ANY
+ *	Tcl commands except for Tcl_AsyncMark.
+ *
+ *----------------------------------------------------------------------
+ */
+
+BOOL __stdcall
+sigHandler(DWORD fdwCtrlType)
+{
+    /*
+     * If Tcl is currently executing some bytecode or in the eventloop,
+     * this will cause Tcl to enter asyncExit at the next command
+     * boundry.
+     */
+    exitErrorCode = fdwCtrlType;
+    Tcl_AsyncMark(exitToken);
+
+    /* 
+     * This will cause Tcl_Gets in Tcl_Main() to drop-out with an <EOF> 
+     * should it be blocked on input and our Tcl_AsyncMark didn't grab 
+     * the attention of the interpreter. 
+     */ 
+    CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
+
+    /* indicate to the OS not to call the default terminator */ 
+    return TRUE; 
+} 
