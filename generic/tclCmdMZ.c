@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.11 1999/06/02 01:53:31 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.12 1999/06/03 18:43:30 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -876,21 +876,32 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		/*
 		 * Anything matches at 0 chars, right?
 		 */
+
 		match = 0;
 	    } else if (nocase || ((reqlength > 0) && (reqlength <= length))) {
 		/*
 		 * with -nocase or -length we have to check true char length
 		 * as it could be smaller than expected
 		 */
+
 		length1 = Tcl_NumUtfChars(string1, length1);
 		length2 = Tcl_NumUtfChars(string2, length2);
 		length = (length1 < length2) ? length1 : length2;
+
 		/*
 		 * Do the reqlength check again, against 0 as well for
 		 * the benfit of nocase
 		 */
+
 		if ((reqlength > 0) && (reqlength < length)) {
 		    length = reqlength;
+		} else if (reqlength < 0) {
+		    /*
+		     * The requested length is negative, so we ignore it by
+		     * setting it to the longer of the two lengths.
+		     */
+
+		    reqlength = (length1 > length2) ? length1 : length2;
 		}
 		if (nocase) {
 		    match = Tcl_UtfNcasecmp(string1, string2,
