@@ -1,3 +1,11 @@
+2004-11-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:           Bumped patchlevel to 8.4.9
+	* generic/tcl.h:
+	* tools/tcl.wse.in: 
+	* unix/tcl.spec, unix/configure, unix/configure.in:
+	* win/configure, win/configure.in:
+
 2004-11-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/tcl.m4 (SC_ENABLE_THREADS): Corrected bad check for
