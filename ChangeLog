@@ -1,3 +1,8 @@
+2004-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc: fix for bug #977369 about launching tclsh to
+	generate a tclConfig.sh with the nmake build system
+
 2004-06-23  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/winDde.test (createChildProcess): Added a 200-ms delay
