@@ -98,6 +98,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclPosixStr.obj \
 	$(TMPDIR)\tclPreserve.obj \
 	$(TMPDIR)\tclProc.obj \
+	$(TMPDIR)\tclResolve.obj \
 	$(TMPDIR)\tclStringObj.obj \
 	$(TMPDIR)\tclTimer.obj \
 	$(TMPDIR)\tclUtil.obj \
