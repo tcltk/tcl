@@ -1,3 +1,8 @@
+2004-02-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (TclTraceExecutionObjCmd) 
+	(TclTraceCommandObjCmd): fix possible mem leak in trace info.
+
 2004-02-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:           update patchlevel to 8.4.6
