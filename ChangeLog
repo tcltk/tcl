@@ -1,3 +1,9 @@
+2003-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FileObjCmd): Changed FILE_ prefix for
+	option enumeration to FCMD_ to prevent collision with symbols
+	defined by Cygwin/Mingw32 on NT. [Bug 822528]
+
 2003-10-21   Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/tcltk-man2html.tcl: fixed incorrect html generated for
