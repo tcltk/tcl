@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.24 2004/11/25 11:28:22 dkf Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.25 2004/11/26 20:02:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -521,7 +521,7 @@ DeleteProc(clientData)
  */
 
 static Tcl_Obj *
-ExecuteRemoteObject(riPtr, ddeObjectPtr);
+ExecuteRemoteObject(riPtr, ddeObjectPtr)
     RegisteredInterp *riPtr;	    /* Info about this server. */
     Tcl_Obj *ddeObjectPtr;	    /* The object to execute. */
 {
