@@ -1,3 +1,8 @@
+2004-08-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (MakeCachedEnsembleCommand): Initialize the
+	epoch field cached in the subcommand. [Bug 989298]
+
 2004-08-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/package.tcl (pkg_mkIndex):	Updated [pkg_mkIndex] to
