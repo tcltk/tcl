@@ -1,3 +1,10 @@
+2001-12-03  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: Some install target bugs repaired along with
+	$(TCLSTUBLIB) added to the dependencies rather than implicit through
+	the dde and reg extensions which don't happen to always require it
+	for some build types.
+
 2001-11-30  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclVar.c: Tcl_Preserve'ing VarTrace structures to avoid 
