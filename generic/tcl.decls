@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.72 2002/01/16 06:02:33 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.73 2002/01/17 02:43:19 dgp Exp $
 
 library tcl
 
@@ -947,7 +947,7 @@ declare 269 generic {
     char * Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
 declare 270 generic {
-    char * Tcl_ParseVar(Tcl_Interp *interp, char *str, char **termPtr)
+    CONST char * Tcl_ParseVar(Tcl_Interp *interp, char *str, char **termPtr)
 }
 declare 271 generic {
     CONST char * Tcl_PkgPresent(Tcl_Interp *interp, CONST char *name,
@@ -1269,7 +1269,7 @@ declare 359 generic {
 }
 declare 360 generic {
     int Tcl_ParseBraces (Tcl_Interp *interp, char *string, \
-	    int numBytes, Tcl_Parse *parsePtr,int append, char **termPtr)
+	    int numBytes, Tcl_Parse *parsePtr, int append, char **termPtr)
 }
 declare 361 generic {
     int Tcl_ParseCommand (Tcl_Interp *interp, char *string, int numBytes, \
