@@ -1,3 +1,10 @@
+2002-03-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/README: Update to indicate that Mingw 1.1 is
+	required to build Tcl. Add section describing new
+	msys based build process. Update Cygwin build
+	instructions so users know where to find Mingw 1.1.
+
 2002-03-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinFCmd.c (DoCopyFile): correctly set retval to TCL_OK.
