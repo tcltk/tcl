@@ -198,11 +198,11 @@ format "In location %2\\\\$s we produced %1\\\\$d units" $num $city
 Similarly, positional parameters can be used with \fBscan\fR to
 extract values from internationalized strings.
 
-.SH "SEE ALSO"
-format(n), scan(n), namespace(n), package(n)
-
 .SH CREDITS
 .PP
 The message catalog code was developed by Mark Harrison.
+
+.SH "SEE ALSO"
+format(n), scan(n), namespace(n), package(n)
 .SH KEYWORDS
 internationalization, i18n, localization, l10n, message, text, translation

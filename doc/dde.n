@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: dde.n,v 1.3 1999/06/26 22:41:52 redman Exp $
+'\" RCS: @(#) $Id: dde.n,v 1.4 1999/08/21 19:40:48 hobbs Exp $
 '\" 
 .so man.macros
 .TH dde n 8.1 Tcl "Tcl Built-In Commands"
@@ -48,7 +48,7 @@ set of commands.
 .TP
 \fBdde servername \fR?\fItopic\fR?
 \fBdde servername\fR registers the interpreter as a DDE server with
-the service name TclEval and the topic name specified byt \fItopic\fR.
+the service name \fBTclEval\fR and the topic name specified by \fItopic\fR.
 If no \fItopic\fR is given, \fBdde servername\fR returns the name
 of the current topic or the empty string if it is not registered as a service.
 .TP
@@ -92,10 +92,12 @@ is returned.
 \fBdde eval \fItopic cmd \fR?\fIarg arg ...\fR?
 \fBdde eval\fR evaluates a command and its arguments using the
 interpreter specified by \fItopic\fR. The DDE service must be the
-"TclEval" service.  This command can be used to replace send on Windows.
+\fBTclEval\fR service.  This command can be used to replace send on
+Windows.
 .SH "DDE AND TCL"
-A Tcl interpreter always has a service name of "TclEval". Each
-different interp of all running Tcl applications should a unique
+A Tcl interpreter always has a service name of \fBTclEval\fR.  Each
+different interpreter of all running Tcl applications must be
+given a unique
 name specified by \fBdde servername\fR. Each interp is available as a
 DDE topic only if the \fBdde servername\fR command was used to set the
 name of the topic for each interp. So a \fBdde services TclEval {}\fR
@@ -106,11 +108,11 @@ When Tcl processes a \fBdde execute\fR command, the data for the
 execute is run as a script in the interp named by the topic of the
 \fBdde execute\fR command.
 .PP
-When Tcl processes a \fBdde request\fR command, it returns the value of
-the variable given in the dde command in the context of the interp
-named by the dde topic. Tcl reserves the variable "$TCLEVAL$EXECUTE$RESULT"
-for internal use, and \fBdde request\fR commands for that variable
-will give unpredictable results.
+When Tcl processes a \fBdde request\fR command, it returns the value of the
+variable given in the dde command in the context of the interp named by the
+dde topic. Tcl reserves the variable \fB$TCLEVAL$EXECUTE$RESULT\fR for
+internal use, and \fBdde request\fR commands for that variable will give
+unpredictable results.
 .PP
 An external application which wishes to run a script in Tcl should have
 that script store its result in a variable, run the \fBdde execute\fR
@@ -124,8 +126,7 @@ without adding the \fB&\fR to place the process in the background).
 If for any reason the event queue is not flushed, DDE commands may
 hang until the event queue is flushed.  This can create a deadlock
 situation.
-.SH KEYWORDS
-application, dde, name, remote execution
 .SH "SEE ALSO"
 tk, winfo, send
-
+.SH KEYWORDS
+application, dde, name, remote execution

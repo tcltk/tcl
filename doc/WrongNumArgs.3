@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: WrongNumArgs.3,v 1.2 1998/09/14 18:39:51 stanton Exp $
+'\" RCS: @(#) $Id: WrongNumArgs.3,v 1.3 1999/08/21 19:40:48 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_WrongNumArgs 3 8.0 Tcl "Tcl Library Procedures"
@@ -24,8 +24,7 @@ in its result object.
 .AP int objc in
 Number of leading arguments from \fIobjv\fR to include in error
 message.
-.TP
-Tcl_Obj	*CONST \fIobjv\fR[]	(in)
+.AP Tcl_Obj "*CONST\ objv[]" in
 Arguments to command that had the wrong number of arguments.
 .AP char *message in
 Additional error information to print after leading arguments

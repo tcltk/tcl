@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.3 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.4 1999/08/21 19:40:48 hobbs Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -375,21 +375,23 @@ A safe interpreter is created with exactly the following set of
 built-in commands:
 .DS
 .ta 1.2i 2.4i 3.6i
-\fBafter	append	array	break
-case	catch	clock	close
-concat	continue	eof	error
-eval	expr	fblocked	fileevent
-flush	for	foreach	format
-gets	global	history	if
-incr	info	interp	join
-lappend	lindex	linsert	list
-llength	lower	lrange	lreplace
-lsearch	lsort	package	pid
-proc	puts	read	rename
-return	scan	seek	set
-split	string	subst	switch
-tell	trace	unset	update
-uplevel	upvar	vwait	while\fR
+\fBafter	append	array	binary
+break	case	catch	clock
+close	concat	continue	eof
+error	eval	expr	fblocked
+fcopy	fileevent	flush	for
+foreach	format	gets	global
+history	if	incr	info
+interp	join	lappend	lindex
+linsert	list	llength	lower
+lrange	lreplace	lsearch	lsort
+namespace	package	pid	proc
+puts	read	regexp	regsub
+rename	return	scan	seek
+set	split	string	subst
+switch	tell	trace	unset
+update	uplevel	upvar	variable
+vwait	while\fR
 .DE
 .VS ""  BR
 The following commands are hidden by \fBinterp create\fR when it

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.6 1999/08/19 02:58:34 hobbs Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.7 1999/08/21 19:40:47 hobbs Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -362,7 +362,7 @@ when all calls to \fBTcl_RegisterChannel\fR have been matched by
 corresponding calls to \fBTcl_UnregisterChannel\fR.
 
 .VS 8.1 br
-.SH TCL_READCHARS AND TCL_READ
+.SH "TCL_READCHARS AND TCL_READ"
 .PP
 \fBTcl_ReadChars\fR consumes bytes from \fIchannel\fR, converting the bytes
 to UTF-8 based on the channel's encoding and storing the produced data in 
@@ -411,7 +411,7 @@ of \fBTcl_Read\fR is the number of bytes, up to \fItoRead\fR, written in
 Its contents are valid from the zeroth position up to and excluding the
 position indicated by the return value.  
 
-.SH TCL_GETSOBJ AND TCL_GETS
+.SH "TCL_GETSOBJ AND TCL_GETS"
 .PP
 \fBTcl_GetsObj\fR consumes bytes from \fIchannel\fR, converting the bytes to
 UTF-8 based on the channel's encoding, until a full line of input has been
@@ -438,7 +438,7 @@ of input unavailability.
 characters are appended to the appended to the dynamic string given by
 \fIdsPtr\fR rather than a Tcl object.
 
-.SH TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE
+.SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
 \fBTcl_WriteChars\fR accepts \fIbytesToWrite\fR bytes of character data at
 \fIcharBuf\fR.  The UTF-8 characters in the buffer are converted to the

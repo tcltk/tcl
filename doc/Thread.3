@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.6 1999/05/06 19:14:41 stanton Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.7 1999/08/21 19:40:48 hobbs Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -124,7 +124,7 @@ upon first use.
 The mutexes and condition variables are
 cleaned up by process exit handlers.  Thread local storage is
 reclaimed during \fBTcl_FinalizeThread\fR.
-.SH CREATING THREADS
+.SH "CREATING THREADS"
 The API to create threads is not finalized at this time.
 There are private facilities to create threads that contain a new
 Tcl interpreter, and to send scripts among threads.

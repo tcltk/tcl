@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" RCS: @(#) $Id: resource.n,v 1.4 1999/04/16 00:46:36 stanton Exp $
+'\" RCS: @(#) $Id: resource.n,v 1.5 1999/08/21 19:40:48 hobbs Exp $
 '\" 
 .so man.macros
 .TH resource n 8.0 Tcl "Tcl Built-In Commands"
@@ -145,11 +145,11 @@ always searched or returned in preference to numbers.  For example,
 the \fBresource list\fR command will return names if they exist or
 numbers if the name is NULL.
 
-.SH "SEE ALSO"
-open
-
 .SH "PORTABILITY ISSUES"
 The resource command is only available on Macintosh.
+
+.SH "SEE ALSO"
+open
 
 .SH KEYWORDS
 open, resource
