@@ -1,4 +1,9 @@
-2001-09-13  Miguel Sofer  <msofer@users.sourceforge.net>
+2001-09-17  Miguel Sofer  <msofer@users.sourceforge.net>
+	
+	* generic/tclExecute.c: corrected small bug in [Patch 456668] -
+	the varFramePtr was not restored in one possible exit.
+
+2001-09-17  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* doc/tclvars.n:
 	* generic/tclCompile.c:
