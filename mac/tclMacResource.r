@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.r,v 1.6 2001/12/27 22:46:28 das Exp $
+ * RCS: @(#) $Id: tclMacResource.r,v 1.7 2002/04/23 14:26:42 das Exp $
  */
 
 #include <Types.r>
@@ -38,5 +38,7 @@
  * will load the TEXT resource named "Init".
  */
 
+#ifndef TCLTK_NO_LIBRARY_TEXT_RESOURCES
 #include "tclMacTclCode.r"
+#endif
 
