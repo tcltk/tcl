@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.10 2005/03/15 23:57:04 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.11 2005/03/16 10:07:56 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -180,32 +180,41 @@ typedef struct AuxData {
  */
 
 #if defined(__WIN32_) 
-typedef int TclPSizedInt;
-typedef short TclHalfPSizedInt;
+#define TclPSizedInt      int
+#define TclHalfPSizedInt  short
 #elif defined(__WIN64__)
-typedef Tcl_WideInt TclPSizedInt;
-typedef int TclHalfPSizedInt;
+#define TclPSizedInt      Tcl_WideInt 
+#define TclHalfPSizedInt  int
 #else /* start of NOT WIN */
-#if (SIZEOF_LONG <= SIZEOF_VOID_P)
-typedef long TclPSizedInt;
+#if ((SIZEOF_LONG <= SIZEOF_VOID_P) && (SIZEOF_LONG != SIZEOF_INT))
+#define TclPSizedInt      long
 #elif (SIZEOF_INT <= SIZEOF_VOID_P)
-typedef int TclPSizedInt;
+#define TclPSizedInt      int
+#elif (SIZEOF_SHORT <= SIZEOF_VOID_P)
+#define TclPSizedInt      short
 #else
-typedef short TclPSizedInt;
-Should not happen (this text here to make the compiler barf)
+    Should not happen
+    (this text here to make the compiler barf)
 #endif /* Define TclPSizedInt */
-#if (2*SIZEOF_LONG <= SIZEOF_VOID_P)
-typedef long TclHalfPSizedInt;
+#if ((2*SIZEOF_LONG <= SIZEOF_VOID_P) && (SIZEOF_LONG != SIZEOF_INT))
+#define TclHalfPSizedInt  long
 #elif (2*SIZEOF_INT <= SIZEOF_VOID_P)
-typedef int TclHalfPSizedInt;
+#define TclHalfPSizedInt  int
+#elif (2*SIZEOF_SHORT <= SIZEOF_VOID_P)
+#define TclHalfPSizedInt  short
 #else
-typedef short TclHalfPSizedInt;
+#define NO_HALFP_SIZED_INT    
 #endif /* Define TclHaldPSizedInt */
 #endif
-    
-typedef union TclVMWord {
+
+typedef union TclVMOpnd {
     void *p;
     TclPSizedInt  i;
+} TclVMOpnd;
+
+typedef struct TclVMWord {
+    TclPSizedInt inst;
+    TclVMOpnd    opnd;
 } TclVMWord;
 
 /*
@@ -228,6 +237,27 @@ typedef union TclVMWord {
 #define HP_EXTRACT(full, n, u)\
     (n) = ((full) >> HP_SHIFT);\
     (u) = ((full) &  HP_MASK)
+
+
+    
+#define TclVMGetInstAtPtr(p) (*(p)).inst
+#define TclVMGetOpndAtPtr(p) (*(p)).opnd.i
+
+#define TclVMStoreInstAtPtr(instruction, p) \
+    (*(p)).inst = (TclPSizedInt) (instruction)
+
+#define TclVMStoreOpndAtPtr(operand, p) \
+    (*(p)).opnd.i = (TclPSizedInt) (operand)
+
+
+#define TclVMGetInstAndOpAtPtr(p, instruction, operand) \
+    (instruction) = TclVMGetInstAtPtr(p);\
+    (operand)     = TclVMGetOpndAtPtr(p) 
+
+#define TclVMStoreWordAtPtr(instruction, operand, p)\
+    (*(p)).inst   = (TclPSizedInt) (instruction);\
+    (*(p)).opnd.i = (TclPSizedInt) (operand)
+
 
 
 /*
@@ -965,11 +995,11 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  */
 
 #define TclEmitInst1(op, n, envPtr) \
-    if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) { \
+    if (((envPtr)->codeNext + 1) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
     } \
-    (*(envPtr)->codeNext++).i = (TclPSizedInt) (op);\
-    (*(envPtr)->codeNext++).i = (TclPSizedInt) (n); \
+    TclVMStoreWordAtPtr((op), (n), (envPtr)->codeNext);\
+    (envPtr)->codeNext++;\
     TclUpdateStackReqs((op), (n), envPtr)
 
 #define TclEmitInst2(op, n, u, envPtr)\
@@ -999,9 +1029,6 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  * jumps with the correct distance using the macro TclSetJumpTarget.
  */
 
-#define TclStoreIntAtWPtr(n, p) \
-    (*(p)).i = (TclPSizedInt) (n)
-
 #define TclEmitForwardJump(envPtr, inst, fixOffset) \
    (fixOffset) = (envPtr->codeNext - envPtr->codeStart);\
    TclEmitInst0((inst), (envPtr))
@@ -1010,17 +1037,10 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 {\
     ptrdiff_t jumpDist =\
         (envPtr->codeNext - envPtr->codeStart) - (fixOffset);\
-    TclVMWord *fixPc = envPtr->codeStart + fixOffset + 1;\
-    TclStoreIntAtWPtr(jumpDist, fixPc);\
+    TclVMWord *fixPc = envPtr->codeStart + fixOffset;\
+    TclVMStoreOpndAtPtr(jumpDist, fixPc);\
 }
 
-/*
- * Macro to extract the (instruction, operand) froma given address
- */
-
-#define TclGetInstAndOpAtPtr(pc, inst, op) \
-    (inst) = (*(pc)).i;\
-    (op) = (*(pc+1)).i
 
 /*
  * Macros to update a (signed or unsigned) integer starting at a pointer.

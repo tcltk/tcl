@@ -1,3 +1,10 @@
+2005-03-15 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	Macro reorganisation, preparing to enable the 8+24 version.
+	
 2005-03-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.h:	Corrected mistaken casts to (int) of

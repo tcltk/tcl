@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.6 2005/03/15 19:20:14 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.7 2005/03/16 10:07:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1092,12 +1092,12 @@ TclCompileScript(interp, script, numBytes, envPtr)
 				     * Fix the bytecode length.
 				     */
 				    TclVMWord *fixPtr = envPtr->codeStart
-					    + savedCodeNext + 1;
+					    + savedCodeNext ;
 				    ptrdiff_t fixLen = envPtr->codeNext
 					    - envPtr->codeStart
 					    - savedCodeNext;
 				
-				    TclStoreIntAtWPtr(fixLen, fixPtr);
+				    TclVMStoreOpndAtPtr(fixLen, fixPtr);
 				}				
 				goto finishCommand;
 			    } else if (code == TCL_OUT_LINE_COMPILE) {
@@ -2930,7 +2930,7 @@ TclPrintInstruction(codePtr, pc)
     TclPSizedInt opnd, opnds[2];
     int i, j;
 
-    TclGetInstAndOpAtPtr(pc, opCode, opnd);
+    TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
     instDesc = &tclInstructionTable[opCode];
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
 
@@ -2946,14 +2946,15 @@ TclPrintInstruction(codePtr, pc)
 	    if ((i == 0) && ((opCode == INST_JUMP)
 			     || (opCode == INST_JUMP_TRUE)
 		             || (opCode == INST_JUMP_FALSE))) {
-		fprintf(stdout, "%d  	# pc %u", opnd, (pcOffset + opnd));
+		fprintf(stdout, "%d  	# pc %u", (int) opnd,
+			(unsigned)(pcOffset + opnd));
 	    } else {
-		fprintf(stdout, "%d ", opnd);
+		fprintf(stdout, "%d ", (int) opnd);
 	    }
 	    break;
 	case OPERAND_UINT:
 	    if (opCode == INST_PUSH) {
-		fprintf(stdout, "%u  	# ", opnd);
+		fprintf(stdout, "%u  	# ", (unsigned) opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
 	    } else if ((i == 0) && ((opCode == INST_LOAD_SCALAR)
 				    || (opCode == INST_LOAD_ARRAY)
@@ -2982,11 +2983,11 @@ TclPrintInstruction(codePtr, pc)
 
 	case OPERAND_IDX:
 	    if (opnd >= -1) {
-		fprintf(stdout, "%d ", opnd);
+		fprintf(stdout, "%d ", (int) opnd);
 	    } else if (opnd == -2) {
 		fprintf(stdout, "end ");
 	    } else {
-		fprintf(stdout, "end-%d ", -2-opnd);
+		fprintf(stdout, "end-%d ", (int) (-2-opnd));
             }
 	    break;
 
