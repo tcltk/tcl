@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.30 1999/04/21 21:50:33 rjohnson Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.31 1999/04/30 23:35:41 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -62,6 +62,7 @@ NODEBUG = 1
 #
 #DEBUGDEFINES = -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 #DEBUGDEFINES = -DUSE_TCLALLOC=0
+DEBUGDEFINES = -DTCL_COMPILE_DEBUG
 
 ######################################################################
 # Do not modify below this line

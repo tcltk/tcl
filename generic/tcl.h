@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.42 1999/04/21 21:50:23 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.43 1999/04/30 23:35:40 stanton Exp $
  */
 
 #ifndef _TCL
@@ -45,10 +45,10 @@
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   1
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "8.1"
-#define TCL_PATCH_LEVEL	    "8.1.0"
+#define TCL_PATCH_LEVEL	    "8.1.1"
 
 /*
  * The following definitions set up the proper options for Windows
