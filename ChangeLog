@@ -1,3 +1,7 @@
+2003-04-15  Joe English  <jenglish@users.sourceforge.net>
+	* doc/namespace.n: added example section "SCOPED SCRIPTS",
+	supplied by Kevin Kenny. (Fixes [Bug 219183])
+
 2003-04-15  Kevin Kenny  <kennykb@acm.org>
 
 	* makefile.vc: Updated makefile.vc to conform with Mo DeJong's
