@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.30 2002/04/18 18:05:57 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31 2002/07/15 22:18:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2072,7 +2072,7 @@ Tcl_Var
 Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
     Tcl_Interp *interp;		 /* The interpreter in which to find the
 				  * variable. */
-    char *name;			 /* Variable's name. If it starts with "::",
+    CONST char *name;		 /* Variable's name. If it starts with "::",
 				  * will be looked up in global namespace.
 				  * Else, looked up first in contextNsPtr
 				  * (current namespace if contextNsPtr is

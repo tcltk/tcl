@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.97 2002/07/15 03:48:39 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.98 2002/07/15 22:18:04 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -91,11 +91,11 @@ typedef struct Tcl_ResolvedVarInfo {
 
 
 typedef int (Tcl_ResolveCompiledVarProc) _ANSI_ARGS_((
-    Tcl_Interp* interp, char* name, int length,
+    Tcl_Interp* interp, CONST char* name, int length,
     Tcl_Namespace *context, Tcl_ResolvedVarInfo **rPtr));
 
 typedef int (Tcl_ResolveVarProc) _ANSI_ARGS_((
-    Tcl_Interp* interp, char* name, Tcl_Namespace *context,
+    Tcl_Interp* interp, CONST char* name, Tcl_Namespace *context,
     int flags, Tcl_Var *rPtr));
 
 typedef int (Tcl_ResolveCmdProc) _ANSI_ARGS_((Tcl_Interp* interp,

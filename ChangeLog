@@ -1,3 +1,22 @@
+2002-07-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c: refactorisation to reuse already looked-up Var
+	pointers; definition of three new Tcl_Obj types to cache variable
+	name parsing and lookup for later reuse; modification of internal
+	functions to profit from the caching. 
+	
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclNamesp.c: adding CONST qualifiers to variable names
+	passed to Tcl_FindNamespaceVar and to variable resolvers; adding
+	CONST qualifier to the 'msg' argument to TclLookupVar. Needed to
+	avoid code duplication in the new tclVar.c code.
+
+	* tests/set-old.test:
+	* tests/var.test: slight modification of error messages due to the
+	modifications in the tclVar.c code.
+
 2002-07-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test:	Improved constraints to protect /tmp.	
