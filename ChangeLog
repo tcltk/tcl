@@ -34,7 +34,7 @@
 	Reference implementation of TIP's #22, #33 and #45.  Adds the
 	ability of the [lindex] command to have multiple index arguments,
 	and adds the [lset] command.  Both commands are byte-code compiled.
-	[Patch #471874] (commited by Jeff)
+	[Patch #471874] (work by Kenny, commited by Hobbs)
 
 2001-11-12  David Gravereaux <davygrvy@pobox.com>
 
