@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.6 2001/09/28 14:29:23 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.7 2001/10/04 15:28:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1830,7 +1830,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * string. */
     int formatLen;		/* The length of the format string */
     char *endPtr;		/* Points to the last char in format array */
-    char newFormat[40];		/* A new format specifier is generated here. */
+    char newFormat[41];		/* A new format specifier is generated here. */
     int width;			/* Field width from field specifier, or 0 if
 				 * no width given. */
     int precision;		/* Field precision from field specifier, or 0
@@ -1844,6 +1844,10 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * it's a one-word value. */
     double doubleValue;		/* Used to hold value to pass to sprintf if
 				 * it's a double value. */
+#ifdef TCL_PRINTF_SUPPORTS_LL
+    Tcl_WideInt wideValue;	/* Used to hold value to pass to sprintf if
+				 * it's a 'long long' value. */
+#endif
     int whichValue;		/* Indicates which of intValue, ptrValue,
 				 * or doubleValue has the value to pass to
 				 * sprintf, according to the following
@@ -1853,6 +1857,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define PTR_VALUE 2
 #   define DOUBLE_VALUE 3
 #   define STRING_VALUE 4
+#   define WIDE_VALUE 4
 #   define MAX_FLOAT_SIZE 320
 
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
@@ -1881,6 +1886,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * been set for the current field. */
     int gotZero;		/* Non-zero indicates that a zero flag has
 				 * been seen in the current field. */
+#ifdef TCL_PRINTF_SUPPORTS_LL
+    int useWide;		/* Value to be printed is Tcl_WideInt. */
+#endif
 
     /*
      * This procedure is a bit nasty.  The goal is to use sprintf to
@@ -1910,6 +1918,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 
 	width = precision = noPercent = useShort = 0;
 	gotZero = gotMinus = gotPrecision = 0;
+#ifdef TCL_PRINTF_SUPPORTS_LL
+	useWide = 0;
+#endif
 	whichValue = PTR_VALUE;
 
 	/*
@@ -2053,6 +2064,12 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 	if (*format == 'l') {
+#ifdef TCL_PRINTF_SUPPORTS_LL
+	    useWide = 1;
+	    newPtr[0] = 'l';
+	    newPtr[1] = 'l';
+	    newPtr += 2;
+#endif
 	    format++;
 	} else if (*format == 'h') {
 	    useShort = 1;
@@ -2074,7 +2091,18 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    case 'u':
 	    case 'x':
 	    case 'X':
-		if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
+#ifdef TCL_PRINTF_SUPPORTS_LL
+		if (useWide) {
+		    if (Tcl_GetWideIntFromObj(interp, /* INTL: Tcl source. */
+			    objv[objIndex], &wideValue) != TCL_OK) {
+			goto fmtError;
+		    }
+		    whichValue = WIDE_VALUE;
+		    size = 40 + precision;
+		    break;
+		}
+#endif
+		if (Tcl_GetLongFromObj(interp,	      /* INTL: Tcl source. */
 			objv[objIndex], &intValue) != TCL_OK) {
 		    goto fmtError;
 		}
@@ -2171,6 +2199,12 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		    sprintf(dst, newFormat, doubleValue); /* INTL: user locale. */
 		    break;
 		}
+#ifdef TCL_PRINTF_SUPPORTS_LL
+		case WIDE_VALUE: {
+		    sprintf(dst, newFormat, wideValue);
+		    break;
+		}
+#endif
 		case INT_VALUE: {
 		    if (useShort) {
 			sprintf(dst, newFormat, (short) intValue);
