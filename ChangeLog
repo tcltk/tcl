@@ -52,6 +52,12 @@
 	Tcl_MakeSafe needs to be aware that [clock] may need special
 	handling.  (It appears unlikely that such code actually exists.)
 
+	One incompatibility of note is that if the time zone cannot
+	be determined from the TZ, TCL_TZ environment variables, or
+	from the Windows control panel, so that the C library must be
+	used for date and time conversions, then times outside the
+	range of time_t will fail; they used to return bad data silently.
+
 	Many thanks to all the many people who assisted with testing,
 	debugging, criticism of the specification, and localisation.
 	Deserving of particular mention are Joe English, Clif Flynt, Donal
