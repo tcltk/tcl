@@ -1,3 +1,9 @@
+2001-06-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/interp.n:
+	* doc/unknown.n: updated notes about what is in a safe interp.
+	[Bug #218605]
+
 2001-06-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/event.test (event-11.5): Removed hard-coded port number
