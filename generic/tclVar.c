@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.1 2003/03/24 00:55:16 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.2 2003/04/16 23:31:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1839,17 +1839,9 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
 	createdNewObj = 1;
     }
-#ifdef TCL_WIDE_INT_IS_LONG
-    if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
-	}
-	return NULL;
-    }
-    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
-#else
     if (varValuePtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wide = varValuePtr->internalRep.wideValue;
+	Tcl_WideInt wide;
+	TclGetWide(wide,varValuePtr);
 	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
     } else if (varValuePtr->typePtr == &tclIntType) {
 	i = varValuePtr->internalRep.longValue;
@@ -1872,7 +1864,6 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
 	    Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
 	}
     }
-#endif
 
     /*
      * Store the variable's new value and run any write traces.
