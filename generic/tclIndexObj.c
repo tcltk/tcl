@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.4.10.2 2001/04/03 22:54:37 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.4.10.3 2001/08/30 19:02:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -194,7 +194,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     }
     
     for (entryPtr = tablePtr, i = 0; *entryPtr != NULL; 
-	    entryPtr = (char **) ((size_t) entryPtr + offset), i++) {
+	    entryPtr = (char **) ((char *) entryPtr + offset), i++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == 0) {
 		index = i;
@@ -239,10 +239,10 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev > 1) ? "ambiguous " : "bad ", msg, " \"",
 		key, "\": must be ", *tablePtr, (char *) NULL);
-	for (entryPtr = (char **) ((size_t) tablePtr + offset), count = 0;
+	for (entryPtr = (char **) ((char *) tablePtr + offset), count = 0;
 		*entryPtr != NULL;
-		entryPtr = (char **) ((size_t) entryPtr + offset), count++) {
-	    if ((*((char **) ((size_t) entryPtr + offset))) == NULL) {
+		entryPtr = (char **) ((char *) entryPtr + offset), count++) {
+	    if ((*((char **) ((char *) entryPtr + offset))) == NULL) {
 		Tcl_AppendStringsToObj(resultPtr,
 			(count > 0) ? ", or " : " or ", *entryPtr,
 			(char *) NULL);
