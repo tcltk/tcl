@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.179 2004/05/25 08:37:31 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.180 2004/06/04 20:17:10 dgp Exp $
  */
 
 #ifndef _TCL
@@ -136,6 +136,17 @@ extern "C" {
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
+
+/*
+ * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET,
+ * SEEK_CUR, and SEEK_END, all #define'd by stdio.h .
+ *
+ * Also, many extensions need stdio.h, and they've grown accustomed
+ * to tcl.h providing it for them rather than #include-ing it themselves
+ * as they should, so also for their sake, we keep the #include to be
+ * consistent with prior Tcl releases.
+ */
+#include <stdio.h>
 
 /*
  * Definitions that allow Tcl functions with variable numbers of

@@ -1,3 +1,10 @@
+2004-06-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Restored #include <stdio.h> to tcl.h,
+	rejecting the "fix" for "Bug" 945570.  Tcl_FSSeek() needs the
+	values of SEEK_SET, etc. and too many extensions rely on tcl.h
+	providing stdio.h for them.
+
 2004-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinFile.c (TclpFindExecutable): when using
