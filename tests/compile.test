@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.18 2002/03/15 15:39:07 dkf Exp $
+# RCS: @(#) $Id: compile.test,v 1.19 2002/04/15 17:32:18 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -98,6 +98,15 @@ test compile-3.3 {TclCompileCatchCmd: overagressive compiling [bug 219184]} {
     catch {catch-test error} ::foo
     set ::foo
 } {GOOD}
+test compile-3.4 {TclCompileCatchCmd: bcc'ed [return] is caught} {
+    proc foo {} {
+	set fail [catch {
+	    return 1
+	}] ; # {}	
+	return 2
+    }
+    foo
+} {2}
 
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
