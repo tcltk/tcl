@@ -1,6 +1,12 @@
 2000-04-24  Eric Melski  <ericm@scriptics.com>
 
 	* unix/mkLinks: 
+	* doc/OpenFileChnl.3: Added man entry for Tcl_Ungets [Bug: 1834].
+
+	* unix/mkLinks: 
+	* doc/SourceRCFile.3: Man page for Tcl_SourceRCFile [Bug: 1833].
+
+	* unix/mkLinks: 
 	* doc/ParseCmd.3: Added documentation for Tcl_ParseVar [Bug: 1828].
 
 2000-04-24  Jeff Hobbs  <hobbs@scriptics.com>

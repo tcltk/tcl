@@ -668,6 +668,10 @@ if test -r OpenFileChnl.3; then
     ln OpenFileChnl.3 Tcl_Gets.3
 fi
 if test -r OpenFileChnl.3; then
+    rm -f Tcl_Ungets.3
+    ln OpenFileChnl.3 Tcl_Ungets.3
+fi
+if test -r OpenFileChnl.3; then
     rm -f Tcl_GetsObj.3
     ln OpenFileChnl.3 Tcl_GetsObj.3
 fi

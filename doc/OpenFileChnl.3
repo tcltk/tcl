@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.8 2000/04/14 23:01:52 hobbs Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.9 2000/04/25 00:54:53 ericm Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_Ungets \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -62,6 +62,9 @@ int
 \fBTcl_Gets\fR(\fIchannel, lineRead\fR)
 .sp
 int
+\fBTcl_Ungets\fR(\fIchannel, input, inputLen, addAtEnd\fR)
+.sp
+int
 \fBTcl_WriteObj\fR(\fIchannel, writeObjPtr\fR)
 .sp
 int
@@ -72,7 +75,16 @@ int
 .VE
 .sp
 int
+\fBTcl_Eof\fR(\fIchannel\fR)
+.sp
+int
 \fBTcl_Flush\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_InputBlocked\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_InputBuffered\fR(\fIchannel\fR)
 .sp
 int
 \fBTcl_Seek\fR(\fIchannel, offset, seekMode\fR)
@@ -85,15 +97,6 @@ int
 .sp
 int
 \fBTcl_SetChannelOption\fR(\fIinterp, channel, optionName, newValue\fR)
-.sp
-int
-\fBTcl_Eof\fR(\fIchannel\fR)
-.sp
-int
-\fBTcl_InputBlocked\fR(\fIchannel\fR)
-.sp
-int
-\fBTcl_InputBuffered\fR(\fIchannel\fR)
 .sp
 .SH ARGUMENTS
 .AS Tcl_ChannelType newClientProcPtr in
@@ -193,6 +196,13 @@ New value for the option given by \fIoptionName\fR.
 .VS 8.3
 .AP char *pattern in
 The pattern to match on, passed to Tcl_StringMatch, or NULL.
+.AP char *input in
+The input to add to a channel buffer.
+.AP int inputLen in
+Length of the input
+.AP int addToEnd in
+Flag indicating whether the input should be added to the end or
+beginning of the channel buffer.
 .VE
 .BE
 
@@ -437,6 +447,17 @@ of input unavailability.
 \fBTcl_Gets\fR is the same as \fBTcl_GetsObj\fR except the resulting
 characters are appended to the appended to the dynamic string given by
 \fIdsPtr\fR rather than a Tcl object.
+
+.SH "TCL_UNGETS"
+.PP
+\fBTcl_Ungets\fR is used to add data to the input queue of a channel,
+at either the head or tail of the queue.  \fIInput\fR is a pointer to
+the data that is to be added.  \fIInputLen\fR gives the length of the
+input to add.  \fIAddAtEnd\fR, in non-zero, indicates that the data is
+to be added at the end of queue; otherwise it will be added at the
+head of the queue.  If \fIchannel\fR has a "sticky" EOF set, no data will be
+added to the input queue.  \fBTcl_Ungets\fR returns \fIinputLen\fR or
+-1 if an error occurs.
 
 .SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
