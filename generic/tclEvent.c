@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.8 2000/04/18 23:10:04 hobbs Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.9 2000/11/02 22:04:54 davidg Exp $
  */
 
 #include "tclInt.h"
@@ -97,6 +97,11 @@ typedef struct ThreadSpecificData {
     Tcl_Obj *tclLibraryPath;	/* Path(s) to the Tcl library */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
+
+/*
+ * Common string for the library path for sharing across threads.
+ */
+char *tclLibraryPathStr;
 
 /*
  * Prototypes for procedures referenced only in this file:
@@ -596,6 +601,7 @@ TclSetLibraryPath(pathPtr)
 	Tcl_DecrRefCount(tsdPtr->tclLibraryPath);
     }
     tsdPtr->tclLibraryPath = pathPtr;
+    tclLibraryPathStr = Tcl_GetStringFromObj(pathPtr, NULL);
 }
 
 /*
@@ -619,6 +625,10 @@ Tcl_Obj *
 TclGetLibraryPath()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->tclLibraryPath == NULL) {
+	tsdPtr->tclLibraryPath = Tcl_NewStringObj(tclLibraryPathStr, -1);
+    }
     return tsdPtr->tclLibraryPath;
 }
 
