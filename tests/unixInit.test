@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.38 2004/06/10 22:21:53 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.39 2004/06/11 22:39:29 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -95,7 +95,10 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unixOnly st
 proc getlibpath [list [list program [interpreter]]] {
     set f [open "|[list $program]" w+]
     fconfigure $f -buffering none
-    puts $f {puts $tcl_libPath; exit}
+    puts $f {
+	puts [list $::env(TCL_LIBRARY) [tcl::pkgconfig get scriptdir,runtime]]
+	exit
+    }
     set path [gets $f]
     close $f
     return $path
