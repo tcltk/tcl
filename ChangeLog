@@ -1,5 +1,12 @@
 2003-09-24  Vince Darley  <vincentdarley@users.sourceforge.net>
 
+	* library/package.tcl (tcl::MacPkgUnknown, tcl::MacOSXPkgUnknown):  
+	Minor performance tweaks to reduce the number of [file] invocations.  
+	Meant to improve startup times, at least a little bit.  
+	(The generic equivalent patch was applied on 2003-02-21).
+
+2003-09-24  Vince Darley  <vincentdarley@users.sourceforge.net>
+
 	* trace.test: removed 'knownBug' from a test which doesn't
 	illustrate a bug, just a bad test.
 
