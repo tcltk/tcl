@@ -1,5 +1,20 @@
 2003-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tcl.h: Skip Tcl's define of CHAR,
+	SHORT, and LONG when HAVE_WINNT_IGNORE_VOID
+	is defined. This avoids a bunch of compiler
+	warnings when building with Cygwin or Mingw.
+	* win/configure: Regen.
+	* win/configure.in: Define HAVE_WINNT_IGNORE_VOID
+	when we detect a winnt.h that still defines
+	CHAR, SHORT, and LONG when VOID has already
+	been defined.
+	* win/tcl.m4 (SC_LOAD_TCLCONFIG): Subst the
+	TCL_DEFS loaded from tclConfig.sh so that
+	Tcl defines can make it into the Tk Makefile.
+
+2003-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/configure: Regen.
 	* win/configure.in: Check for typedefs like LPFN_ACCEPT
 	in winsock2.h and define HAVE_NO_LPFN_DECLS if not found.

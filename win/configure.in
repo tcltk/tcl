@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.61 2003/01/13 01:27:51 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.62 2003/01/13 07:01:06 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -167,6 +167,31 @@ AC_TRY_COMPILE([
 if test "$tcl_cv_lpfn_decls" = "no" ; then
     AC_DEFINE(HAVE_NO_LPFN_DECLS, 1,
             [Defined when cygwin/mingw does not support LPFN_ACCEPT and friends.])
+fi
+
+# Check to see if winnt.h defines CHAR, SHORT, and LONG
+# even if VOID has already been #defined. The win32api
+# used by mingw and cygwin is known to do this.
+
+AC_CACHE_CHECK(for winnt.h that ignores VOID define,
+    tcl_cv_winnt_ignore_void,
+AC_TRY_COMPILE([
+#define VOID void
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+],
+[
+  CHAR c;
+  SHORT s;
+  LONG l;
+],
+        tcl_cv_winnt_ignore_void=yes,
+        tcl_cv_winnt_ignore_void=no)
+)
+if test "$tcl_cv_winnt_ignore_void" = "yes" ; then
+    AC_DEFINE(HAVE_WINNT_IGNORE_VOID, 1,
+            [Defined when cygwin/mingw ignores VOID define in winnt.h])
 fi
 
 #--------------------------------------------------------------------
