@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.1.2.3 1999/03/11 18:50:14 hershey Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.1.2.4 1999/03/12 23:28:30 surles Exp $
 
 if {$tcl_platform(platform) != "unix"} {
     puts "skipping: Unix only tests..."
@@ -51,6 +51,14 @@ proc getlibpath "{program [list $tcltest]}" {
     close $f
     return $path
 }
+
+test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} {
+    set origDir [testgetdefenc]
+    testsetdefenc slappy
+    set path [testgetdefenc]
+    testsetdefenc $origDir
+    set path
+} {slappy}
 test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} {
     set path [getlibpath]
 
@@ -63,8 +71,8 @@ test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} {
     set prefix [file dirname [file dirname $tcltest]]
 
     set x {}
-    lappend x [string compare [lindex $path 1] $prefix/$installLib]
-    lappend x [string compare [lindex $path 2] [file dirname $prefix]/$developLib]
+    lappend x [string compare [lindex $path 0] $prefix/$installLib]
+    lappend x [string compare [lindex $path 1] [file dirname $prefix]/$developLib]
     set x
 } {0 0}
 test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} {
@@ -106,7 +114,7 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} {
     file mkdir /tmp/sparkly/lib/tcl[info tclversion]
     close [open /tmp/sparkly/lib/tcl[info tclversion]/init.tcl w]
 
-    set x [lrange [getlibpath /tmp/sparkly/bin/tcltest] 1 2]
+    set x [lrange [getlibpath /tmp/sparkly/bin/tcltest] 0 2]
     file delete -force /tmp/sparkly
     set x
 } [list /tmp/sparkly/lib/tcl[info tclversion] /tmp/tcl[info patchlevel]/library]
