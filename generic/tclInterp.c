@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.17 2002/09/02 20:10:03 hobbs Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.18 2002/09/03 16:31:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1191,6 +1191,7 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 	Command *cmdPtr;
 	
 	Tcl_DecrRefCount(aliasPtr->namePtr);
+	Tcl_DecrRefCount(targetNamePtr);
 	for (i = 0; i < objc; i++) {
 	    Tcl_DecrRefCount(objv[i]);
 	}
