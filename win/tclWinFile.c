@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.7.2.2 2001/09/07 17:10:33 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.7.2.3 2002/10/15 20:25:22 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -688,6 +688,51 @@ TclpChdir(path)
     }
     return 0;
 }
+
+#ifdef __CYGWIN__
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpReadlink --
+ *
+ *     This function replaces the library version of readlink().
+ *
+ * Results:
+ *     The result is a pointer to a string specifying the contents
+ *     of the symbolic link given by 'path', or NULL if the symbolic
+ *     link could not be read.  Storage for the result string is
+ *     allocated in bufferPtr; the caller must call Tcl_DStringFree()
+ *     when the result is no longer needed.
+ *
+ * Side effects:
+ *     See readlink() documentation.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+char *
+TclpReadlink(path, linkPtr)
+    CONST char *path;          /* Path of file to readlink (UTF-8). */
+    Tcl_DString *linkPtr;      /* Uninitialized or free DString filled
+                                * with contents of link (UTF-8). */
+{
+    char link[MAXPATHLEN];
+    int length;
+    char *native;
+    Tcl_DString ds;
+
+    native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
+    length = readlink(native, link, sizeof(link));     /* INTL: Native. */
+    Tcl_DStringFree(&ds);
+    
+    if (length < 0) {
+	return NULL;
+    }
+
+    Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
+    return Tcl_DStringValue(linkPtr);
+}
+#endif /* __CYGWIN__ */
 
 /*
  *----------------------------------------------------------------------
