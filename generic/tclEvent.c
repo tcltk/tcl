@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.4 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.5 1999/04/23 01:57:08 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -779,7 +779,7 @@ TclFindEncodings(argv0)
 	    TclpSetInitialEncodings();
 
 	    /*
-	     * Now convert the native sting back to native string back to UTF.
+	     * Now convert the native string back to UTF.
 	     */
 	     
 	    if (pathPtr != NULL) {
