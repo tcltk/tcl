@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.57 2004/10/06 13:38:53 dkf Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.58 2004/10/06 15:20:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1691,6 +1691,7 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 		break;
 	    case TCL_PATH_RELATIVE:
 		/* Do nothing */
+		break;
             }
             Tcl_DecrRefCount(temp);
 	}
