@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.19 1999/07/02 19:51:29 welch Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.20 1999/07/02 21:59:18 redman Exp $
 
 library tcl
 
@@ -990,7 +990,7 @@ declare 282 generic {
     void Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 283 generic {
-    void Tcl_GetStackedChannel(Tcl_Channel chan)
+    Tcl_Channel Tcl_GetStackedChannel(Tcl_Channel chan)
 }
 # Reserved for future use (8.0.x vs. 8.1)
 #  declare 284 generic {
