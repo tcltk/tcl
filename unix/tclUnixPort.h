@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28 2003/05/13 08:40:31 das Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.29 2003/06/24 08:53:30 mdejong Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -568,6 +568,7 @@ EXTERN char *          	TclpInetNtoa(struct in_addr);
 #define readdir(x)	TclpReaddir(x)
 #define localtime(x)	TclpLocaltime(x)
 #define gmtime(x)	TclpGmtime(x)
+#undef inet_ntoa
 #define inet_ntoa(x)	TclpInetNtoa(x)
 #undef TclOSreaddir
 #define TclOSreaddir(x) TclpReaddir(x)
