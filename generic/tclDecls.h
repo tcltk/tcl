@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.106 2004/11/03 19:13:34 davygrvy Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.107 2004/11/13 00:19:07 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3325,6 +3325,36 @@ EXTERN void		Tcl_LimitGetTime _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN int		Tcl_LimitGetGranularity _ANSI_ARGS_((
 				Tcl_Interp * interp, int type));
 #endif
+#ifndef Tcl_SaveInterpState_TCL_DECLARED
+#define Tcl_SaveInterpState_TCL_DECLARED
+/* 535 */
+EXTERN Tcl_InterpState	Tcl_SaveInterpState _ANSI_ARGS_((Tcl_Interp * interp, 
+				int status));
+#endif
+#ifndef Tcl_RestoreInterpState_TCL_DECLARED
+#define Tcl_RestoreInterpState_TCL_DECLARED
+/* 536 */
+EXTERN int		Tcl_RestoreInterpState _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_InterpState state));
+#endif
+#ifndef Tcl_DiscardInterpState_TCL_DECLARED
+#define Tcl_DiscardInterpState_TCL_DECLARED
+/* 537 */
+EXTERN void		Tcl_DiscardInterpState _ANSI_ARGS_((
+				Tcl_InterpState state));
+#endif
+#ifndef Tcl_SetReturnOptions_TCL_DECLARED
+#define Tcl_SetReturnOptions_TCL_DECLARED
+/* 538 */
+EXTERN int		Tcl_SetReturnOptions _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * options));
+#endif
+#ifndef Tcl_GetReturnOptions_TCL_DECLARED
+#define Tcl_GetReturnOptions_TCL_DECLARED
+/* 539 */
+EXTERN Tcl_Obj *	Tcl_GetReturnOptions _ANSI_ARGS_((
+				Tcl_Interp * interp, int result));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3901,6 +3931,11 @@ typedef struct TclStubs {
     int (*tcl_LimitGetCommands) _ANSI_ARGS_((Tcl_Interp * interp)); /* 532 */
     void (*tcl_LimitGetTime) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Time * timeLimitPtr)); /* 533 */
     int (*tcl_LimitGetGranularity) _ANSI_ARGS_((Tcl_Interp * interp, int type)); /* 534 */
+    Tcl_InterpState (*tcl_SaveInterpState) _ANSI_ARGS_((Tcl_Interp * interp, int status)); /* 535 */
+    int (*tcl_RestoreInterpState) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_InterpState state)); /* 536 */
+    void (*tcl_DiscardInterpState) _ANSI_ARGS_((Tcl_InterpState state)); /* 537 */
+    int (*tcl_SetReturnOptions) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * options)); /* 538 */
+    Tcl_Obj * (*tcl_GetReturnOptions) _ANSI_ARGS_((Tcl_Interp * interp, int result)); /* 539 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6080,6 +6115,26 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_LimitGetGranularity
 #define Tcl_LimitGetGranularity \
 	(tclStubsPtr->tcl_LimitGetGranularity) /* 534 */
+#endif
+#ifndef Tcl_SaveInterpState
+#define Tcl_SaveInterpState \
+	(tclStubsPtr->tcl_SaveInterpState) /* 535 */
+#endif
+#ifndef Tcl_RestoreInterpState
+#define Tcl_RestoreInterpState \
+	(tclStubsPtr->tcl_RestoreInterpState) /* 536 */
+#endif
+#ifndef Tcl_DiscardInterpState
+#define Tcl_DiscardInterpState \
+	(tclStubsPtr->tcl_DiscardInterpState) /* 537 */
+#endif
+#ifndef Tcl_SetReturnOptions
+#define Tcl_SetReturnOptions \
+	(tclStubsPtr->tcl_SetReturnOptions) /* 538 */
+#endif
+#ifndef Tcl_GetReturnOptions
+#define Tcl_GetReturnOptions \
+	(tclStubsPtr->tcl_GetReturnOptions) /* 539 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

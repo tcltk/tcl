@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.104 2004/05/13 12:59:20 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105 2004/11/13 00:19:05 dgp Exp $
 
 library tcl
 
@@ -1908,6 +1908,23 @@ declare 533 generic {
 }
 declare 534 generic {
     int Tcl_LimitGetGranularity(Tcl_Interp *interp, int type)
+}
+# TIP#226 API
+declare 535 generic {
+    Tcl_InterpState Tcl_SaveInterpState(Tcl_Interp *interp, int status)
+}
+declare 536 generic {
+    int Tcl_RestoreInterpState(Tcl_Interp *interp, Tcl_InterpState state)
+}
+declare 537 generic {
+    void Tcl_DiscardInterpState(Tcl_InterpState state)
+}
+# TIP#227 API
+declare 538 generic {
+    int Tcl_SetReturnOptions(Tcl_Interp *interp, Tcl_Obj *options)
+}
+declare 539 generic {
+    Tcl_Obj *Tcl_GetReturnOptions(Tcl_Interp *interp, int result)
 }
 
 ##############################################################################

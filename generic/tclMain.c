@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.29 2004/10/25 17:24:39 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.30 2004/11/13 00:19:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -435,7 +435,7 @@ Tcl_Main(argc, argv, appInitProc)
 	if (code != TCL_OK) {
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {
-		Tcl_Obj *options = TclGetReturnOptions(interp, code);
+		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
 		Tcl_Obj *keyPtr = Tcl_NewStringObj("-errorinfo", -1);
 		Tcl_Obj *valuePtr;
 
@@ -447,7 +447,6 @@ Tcl_Main(argc, argv, appInitProc)
 		    Tcl_WriteObj(errChannel, valuePtr);
 		}
 		Tcl_WriteChars(errChannel, "\n", 1);
-		Tcl_DecrRefCount(options);
 	    }
 	    exitCode = 1;
 	}
