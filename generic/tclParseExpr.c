@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.18 2003/09/12 23:55:34 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.19 2003/10/14 15:44:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2162,19 +2162,12 @@ LogSyntaxError(infoPtr, extraInfo)
     CONST char *extraInfo;	/* String to provide extra information
 				 * about the syntax error. */
 {
-    int numBytes = (infoPtr->lastChar - infoPtr->originalExpr);
-    char buffer[100];
-
-    if (numBytes > 60) {
-	sprintf(buffer, "syntax error in expression \"%.60s...\"",
-		infoPtr->originalExpr);
-    } else {
-	sprintf(buffer, "syntax error in expression \"%.*s\"",
-		numBytes, infoPtr->originalExpr);
-    }
-    Tcl_ResetResult(infoPtr->parsePtr->interp);
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->parsePtr->interp),
-	    buffer, ": ", extraInfo, (char *) NULL);
+    Tcl_Obj *result =
+	    Tcl_NewStringObj("syntax error in expression \"", -1);
+    TclAppendLimitedToObj(result, infoPtr->originalExpr, 
+	    (int)(infoPtr->lastChar - infoPtr->originalExpr), 63, NULL);
+    Tcl_AppendStringsToObj(result, "\": ", extraInfo, (char *) NULL);
+    Tcl_SetObjResult(infoPtr->parsePtr->interp, result);
     infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;
     infoPtr->parsePtr->term = infoPtr->start;
 }

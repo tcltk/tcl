@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.94 2003/09/05 21:52:11 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.95 2003/10/14 15:44:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2712,11 +2712,17 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	}
 	result = Tcl_EvalObjEx(interp, objv[j], 0);
 	if (result == TCL_ERROR) {
-	    char msg[100 + TCL_INTEGER_SPACE];
-
-	    sprintf(msg, "\n    (\"%.50s\" arm line %d)", pattern,
-		    interp->errorLine);
-	    Tcl_AddObjErrorInfo(interp, msg, -1);
+	    Tcl_Obj *msg = Tcl_NewStringObj("\n    (\"", -1);
+	    Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+	    Tcl_IncrRefCount(msg);
+	    Tcl_IncrRefCount(errorLine);
+	    TclAppendLimitedToObj(msg, pattern, -1, 50, "");
+	    Tcl_AppendToObj(msg,"\" arm line ", -1);
+	    Tcl_AppendObjToObj(msg, errorLine);
+	    Tcl_DecrRefCount(errorLine);
+	    Tcl_AppendToObj(msg,")", -1);
+	    TclAppendObjToErrorInfo(interp, msg);
+	    Tcl_DecrRefCount(msg);
 	}
 	return result;
     }
