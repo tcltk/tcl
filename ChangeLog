@@ -1,3 +1,18 @@
+1999-10-12  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclEnv.c: fixed mem leak with putenv and DStrings
+	* doc/Encoding.3: corrected docs
+	* tests/basic.test: updated test cases for 8.3
+	* tests/encoding.test: fixed test case that change system
+	encoding to a double-byte one (this causes a bogus mem read
+	error for purify)
+	* unix/Makefile.in: purify has to use -best-effort to instrument
+	* unix/tclAppInit.c: identified potential mem leak when compiling
+	tcltest (not critical)
+	* unix/tclUnixPipe.c: fixed mem leak in TclpCreateProcess when
+	doing alloc between vfork and execvp.
+	* unix/tclUnixTest.c: fixed mem leak in findexecutable test command
+
 1999-10-05  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* {win,mac,unix,tools,}/README:
