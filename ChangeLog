@@ -1,3 +1,9 @@
+2004-09-29  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_EvalEx):
+	* tests/subst.test (12.1-2): fix for buffer overflow in [subst],
+	[Bug 1036649]
+
 2004-09-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/dltest/Makefile.in (clean): Fixup make clean
