@@ -1,3 +1,14 @@
+2003-07-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/async.test:	Added several tests that demonstrate Tcl
+	* tests/basic.test:	Bug 489537, Tcl's longstanding failure to
+	* tests/dict.test:	properly quote any leading '#' character
+	* tests/dstring.test:	when generating the string rep of a list
+	* tests/list.test:	so that the comment-power of that character
+	* tests/parse.test:	is hidden from any [eval], in order to 
+	* tests/util.test:	satisfy the documentation that [list] does
+	[eval]-safe quoting.
+
 2003-07-24  Reinhard Max  <max@suse.de>
 
         * library/package.tcl: Fixed a typo that broke pkg_mkIndex -verbose.
