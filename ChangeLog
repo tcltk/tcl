@@ -9,6 +9,7 @@
 	Improve the processing of the -constraints option to [test] so that
 	constraint lists can have arbitrary whitespace, and non-lists don't
 	blow things up.  [Bug 495977]
+	Corrected faulty variable initialization. [Bug 534845]
 
 2002-03-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
