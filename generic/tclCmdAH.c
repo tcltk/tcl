@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.35 2003/10/22 08:29:13 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.36 2003/11/10 17:57:21 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1062,7 +1062,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		contents = Tcl_FSLink(objv[index], objv[index+1], linkAction);
 		if (contents == NULL) {
 		    /* 
-		     * We handle two common error cases specially, and
+		     * We handle three common error cases specially, and
 		     * for all other errors, we use the standard posix
 		     * error message.
 		     */
@@ -1071,12 +1071,21 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 				Tcl_GetString(objv[index]), 
 				"\": that path already exists", (char *) NULL);
 		    } else if (errno == ENOENT) {
-			Tcl_AppendResult(interp, "could not create new link \"", 
-				Tcl_GetString(objv[index]), 
-				"\" since target \"", 
-				Tcl_GetString(objv[index+1]), 
-				"\" doesn't exist", 
-				(char *) NULL);
+			if (Tcl_FSAccess(objv[index+1], F_OK) == 0) {
+			    Tcl_AppendResult(interp, 
+			            "could not create new link \"", 
+				    Tcl_GetString(objv[index]), 
+				    "\": no such file or directory", 
+				    (char *) NULL);
+			} else {
+			    Tcl_AppendResult(interp, 
+			            "could not create new link \"", 
+				    Tcl_GetString(objv[index]), 
+				    "\" since target \"", 
+				    Tcl_GetString(objv[index+1]), 
+				    "\" doesn't exist", 
+				    (char *) NULL);
+			}
 		    } else {
 			Tcl_AppendResult(interp, "could not create new link \"", 
 				Tcl_GetString(objv[index]), "\" pointing to \"", 

@@ -1,3 +1,9 @@
+2003-11-10  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclCmdAH.c:
+	* tests/fCmd.test: fix to misleading error message in 'file link'
+	[Bug 836208]
+	
 2003-11-07  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to compiler warning/error with
