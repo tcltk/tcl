@@ -1,3 +1,8 @@
+2005-03-14  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: fixed INST_RETURN's stack effect in
+	tclInstructionTable (-1 instead of -2)
+
 2005-03-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: removed debugging line
