@@ -1,5 +1,11 @@
 2003-02-13  Kevin Kenny  <kennykb@users.sourceforge.net>
 
+	* win/tclWinInit.c: Added conversion from the system encoding
+	to tcl_platform(user), so that it works with non-ASCII7 user names.
+	[Bug 685926]
+	
+2003-02-13  Kevin Kenny  <kennykb@users.sourceforge.net>
+
 	* doc/tclsh.1: Added language to describe the handling of the
 	end-of-file character \u001a embedded in a script file.
 	[Bug 685485]
