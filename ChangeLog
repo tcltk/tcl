@@ -1,3 +1,8 @@
+2003-04-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/CrtMathFnc.3: Functions also have to deal with wide ints,
+	but this was not documented. [Bug 709720]
+
 2003-04-15  Kevin Kenny  <kennykb@acm.org>
 	
 	* win/tclWinTime.c: Corrected use of types to make compilation
