@@ -1,3 +1,16 @@
+2003-01-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to setting modification date
+	in TclCrossFilesystemCopy.  Also added 'panic' in 
+	Tcl_FSGetFileSystemForPath under illegal calling circumstances
+	which lead to hard-to-track-down bugs.
+	
+	* generic/tclTest.c: added test suite code to allow
+	exercising a vfs-crash-on-exit bug in Tcl's finalization caused
+	by the encodings being cleaned up before unloading occurs.
+	* tests/fileSystem.test: added new 'knownBug' test 7.1
+	to demonstrate the crash on exit.
+
 2003-01-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tcl.h: Add TCL_PREFIX_IDENT and
