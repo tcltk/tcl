@@ -1,3 +1,9 @@
+2004-01-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclObj.c (SetBooleanFromAny): Rewrite to do more
+	efficient string->bool conversion.
+	Many other minor whitespace/style fixes to this file too.
+
 2004-01-27  David Gravereaux <davygrvy@pobox.com>
 
 	* win/nmakehlp.c: Use '.\nul' as the sourcefile name instead of
