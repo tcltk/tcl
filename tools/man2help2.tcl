@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.13 2004/05/18 12:16:02 dkf Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.14 2004/07/07 10:55:22 dkf Exp $
 # 
 
 # Global variables used by these scripts:
@@ -570,20 +570,30 @@ proc tab {} {
 # This procedure handles the ".ta" macro, which sets tab stops.
 #
 # Arguments:
-# tabList -	List of tab stops, each consisting of a number
-#			followed by "i" (inch) or "c" (cm).
+# tabList -	List of tab stops in *roff format
 
 proc setTabs {tabList} {
     global file state
 
     set state(tabs) {}
     foreach arg $tabList {
-	set distance [expr {$state(leftMargin) \
-		+ ($state(offset) * $state(nestingLevel)) + [getTwips $arg]}]
-	lappend state(tabs) [expr {round($distance)}]
+	if {[string match +* $arg]} {
+	    set relativeTo [lindex $state(tabs) end]
+	    set arg [string range $arg 1 end]
+	} else {
+	    # Local left margin
+	    set relativeTo [expr {$state(leftMargin) \
+		    + ($state(offset) * $state(nestingLevel))}]
+	}
+	if {[regexp {^\w'(.*)'u$} $arg -> submatch]} {
+	    # Magic factor!
+	    set distance [expr {[string length $submatch] * 86.4}]
+	} else {
+	    set distance [getTwips $arg]
+	}
+	lappend state(tabs) [expr {round($distance + $relativeTo)}]
     }
 }
-
 
 
 # lineBreak --
@@ -678,7 +688,7 @@ proc char {name} {
 	}
 	\\(bu {
 	    textSetup
-	    puts -nonewline $file "·"
+	    puts -nonewline $file "\u00b7"
 	}
 	default {
 	    puts stderr "Unknown character: $name"
@@ -746,19 +756,17 @@ proc SHmacro {argList {style section}} {
     nextPara .5i
 }
 
-
-
 # IPmacro --
 #
 # This procedure is invoked to handle ".IP" macros, which may take any
 # of the following forms:
 #
-# .IP [1]			Translate to a "1Step" state(paragraph).
+# .IP [1]		Translate to a "1Step" state(paragraph).
 # .IP [x] (x > 1)	Translate to a "Step" state(paragraph).
-# .IP				Translate to a "Bullet" state(paragraph).
+# .IP			Translate to a "Bullet" state(paragraph).
 # .IP text count	Translate to a FirstBody state(paragraph) with special
-#					indent and tab stop based on "count", and tab after
-#					"text".
+#			indent and tab stop based on "count", and tab after
+#			"text".
 #
 # Arguments:
 # argList -		List of arguments to the .IP macro.
@@ -769,31 +777,28 @@ proc IPmacro {argList} {
     global file state
 
     set length [llength $argList]
-    if {$length == 0} {
-	newPara 0.5i
-	return
+    foreach {text indent} $argList break
+    if {$length > 2} {
+	puts stderr "Bad .IP macro: .IP [join $argList " "]"
     }
-    if {$length == 1} {
-	newPara 0.5i -0.5i
-	set state(sb) 80
-	setTabs 0.5i
-	formattedText [lindex $argList 0]
-	tab
-	return
-    }
-    if {$length == 2} {
-	set count [lindex $argList 1]
-	set tab [expr $count * 0.1]i
-	newPara $tab -$tab
-	set state(sb) 80
-	setTabs $tab
-	formattedText [lindex $argList 0]
-	tab
-	return
-    }
-    puts stderr "Bad .IP macro: .IP [join $argList " "]"
-}
 
+    if {$length == 0} {
+	set text {\(bu}
+	set indent 5
+    } elseif {$length == 1} {
+	set indent 5
+    }
+    if {$text == {\(bu}} {
+	set text "\u00b7"
+    }
+
+    set tab [expr $indent * 0.1]i
+    newPara $tab -$tab
+    set state(sb) 80
+    setTabs $tab
+    formattedText $text
+    tab
+}
 
 # TPmacro --
 #
@@ -987,4 +992,3 @@ proc decrNestingLevel {} {
 	incr state(nestingLevel) -1
     }
 }
-

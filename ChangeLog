@@ -1,5 +1,8 @@
 2004-07-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tools/man2help2.tcl (setTabs, IPmacro): Added support for the
+	more advanced *roff macros used in Tk's doc/bind.n
+
 	* generic/tclObj.c (TclInitObjSubsystem): Declare all current
 	object types.
 
