@@ -1,3 +1,7 @@
+2003-07-08  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/winFCmd.test: fix for five tests under win98 [Bug 767679]
+
 2003-07-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/array.n: add examples from Welton
