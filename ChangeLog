@@ -1,7 +1,18 @@
+2004-10-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclInt.decls:
+	* unix/tclUnixTime.c (TclpGmtime, TclpLocaltime):
+	* win/tclWinTime.c (TclpGmtime, TclpLocaltime): 
+	Changed type signatures of TclpGmtime and TclpLocaltime
+	to accept CONST TclpTime_t throughout, to avoid any possible
+	confusion in pedantic compilers. [Bug 1001319]
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:  Regenerated.
+	
 2004-10-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd):	Restored missing
-	line from yesterdays' 868486 backport that caused failed alloc's
+	line from yesterdays' 868489 backport that caused failed alloc's
 	on LP64 systems.
 
 	* tests/appendComp.test:	Backport test suite fixes of errors
@@ -19,7 +30,7 @@
 2004-10-26  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Backport a missing bit 
-	                                         of the bug 868486 fix.
+	                                         of the bug 868489 fix.
 	* generic/tclObj.c (SetBooleanFromAny): Backport fix for Bug
 	                                        1026125.
 	* tests/format.test (format-19.1): Additional regression test for
