@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.95 2002/07/29 16:54:41 rmax Exp $
+# RCS: @(#) $Id: configure.in,v 1.96 2002/07/29 23:00:21 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -527,8 +527,6 @@ AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 
 AC_SUBST(DL_OBJS)
-AC_SUBST(CC_SEARCH_FLAGS)
-AC_SUBST(LD_SEARCH_FLAGS)
 
 AC_SUBST(TCL_SHARED_BUILD)
 
