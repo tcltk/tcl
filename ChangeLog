@@ -1,3 +1,13 @@
+2005-02-24  Don Porter  <dgp@users.sourceforge.net>
+
+        * library/tcltest/tcltest.tcl:  Better use of [glob -types] to avoid
+        * tests/tcltest.test:   failed attempts to [source] a directory, and
+        similar matters.  Thanks to "mpettigr".  [Bug 1119798]
+
+        * library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.8
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2005-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/CrtChannel.3 (THREADACTIONPROC): Formatting fix. [Bug 1149605]
