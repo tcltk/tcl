@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.31 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.32 2002/02/27 06:39:16 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1339,10 +1339,11 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
 {
     Tcl_Obj *path = Tcl_NewStringObj(name, -1);
     CONST char *result;
-   
+
     Tcl_IncrRefCount(path);
-    result = Tcl_FSGetTranslatedStringPath(interp,path);
+    result = Tcl_FSGetTranslatedStringPath(interp, path);
     if (result == NULL) {
+	Tcl_DecrRefCount(path);
 	return NULL;
     }
     Tcl_DStringInit(bufferPtr);
