@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.56 2001/09/06 17:51:00 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.57 2001/09/12 16:32:21 msofer Exp $
 
 library tcl
 
@@ -1680,8 +1680,12 @@ declare 479 generic {
 }
 declare 480 generic {
     void Tcl_FSMountsChanged(Tcl_Filesystem *fsPtr)
-}
-		  
+}	  
+# New function due to TIP#56
+#declare 481 generic {
+#    int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr, int count)
+#}
+ 
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are

@@ -1,3 +1,8 @@
+2001-09-12  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tcl.decls: reserved stub #481 for the implementation of
+	[TIP 56]
+
 2001-09-11  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* doc/OpenFileChnl.3: Added documentation for Tcl_WriteRaw and
