@@ -1,3 +1,12 @@
+1999-03-24    <stanton@scriptics.com>
+
+	* tests/execute.test: 
+	* generic/tclExecute.c (TclExecuteByteCode): Fixed expression code
+	that incorrectly returned floating point values for integers if
+	the internal rep happened to be a double.  Now we check to see if
+	the object has a string rep that looks like an integer before
+	using the double internal rep. [Bug: 1516]
+
 1999-03-24    <redman@scriptics.com>
 
 	* generic/tclAlloc.c:

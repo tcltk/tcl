@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.9 1999/02/10 23:31:16 stanton Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.10 1999/03/25 03:55:31 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2058,7 +2058,14 @@ TclExecuteByteCode(interp, codePtr)
 		
 		if (t1Ptr == &tclIntType) {
 		    i  = valuePtr->internalRep.longValue;
-		} else if (t1Ptr == &tclDoubleType) {
+		} else if ((t1Ptr == &tclDoubleType)
+			&& (valuePtr->bytes == NULL)) {
+		    /*
+		     * We can only use the internal rep directly if there is
+		     * no string rep.  Otherwise the string rep might actually
+		     * look like an integer, which is preferred.
+		     */
+
 		    d1 = valuePtr->internalRep.doubleValue;
 		} else {
 		    char *s = Tcl_GetStringFromObj(valuePtr, &length);
@@ -2071,7 +2078,7 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    if (result != TCL_OK) {
 			TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
-			       s, O2S(value2Ptr),
+			       s, O2S(valuePtr),
 			       (valuePtr->typePtr?
 				    valuePtr->typePtr->name : "null")));
 			IllegalExprOperandType(interp, pc, valuePtr);
@@ -2084,7 +2091,14 @@ TclExecuteByteCode(interp, codePtr)
 		
 		if (t2Ptr == &tclIntType) {
 		    i2 = value2Ptr->internalRep.longValue;
-		} else if (t2Ptr == &tclDoubleType) {
+		} else if ((t2Ptr == &tclDoubleType)
+			&& (value2Ptr->bytes == NULL)) {
+		    /*
+		     * We can only use the internal rep directly if there is
+		     * no string rep.  Otherwise the string rep might actually
+		     * look like an integer, which is preferred.
+		     */
+
 		    d2 = value2Ptr->internalRep.doubleValue;
 		} else {
 		    char *s = Tcl_GetStringFromObj(value2Ptr, &length);
@@ -2097,7 +2111,7 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    if (result != TCL_OK) {
 			TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
-			       O2S(valuePtr), s,
+			       O2S(value2Ptr), s,
 			       (value2Ptr->typePtr?
 				    value2Ptr->typePtr->name : "null")));
 			IllegalExprOperandType(interp, pc, value2Ptr);
@@ -2231,7 +2245,8 @@ TclExecuteByteCode(interp, codePtr)
 		
 		valuePtr = stackPtr[stackTop];
 		tPtr = valuePtr->typePtr;
-		if ((tPtr != &tclIntType) && (tPtr != &tclDoubleType)) {
+		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
+			|| (valuePtr->bytes != NULL))) {
 		    char *s = Tcl_GetStringFromObj(valuePtr, &length);
 		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
@@ -2292,7 +2307,8 @@ TclExecuteByteCode(interp, codePtr)
 		
 		valuePtr = POP_OBJECT();
 		tPtr = valuePtr->typePtr;
-		if ((tPtr != &tclIntType) && (tPtr != &tclDoubleType)) {
+		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
+			|| (valuePtr->bytes != NULL))) {
 		    char *s = Tcl_GetStringFromObj(valuePtr, &length);
 		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
@@ -2475,7 +2491,8 @@ TclExecuteByteCode(interp, codePtr)
 		valuePtr = stackPtr[stackTop];
 		tPtr = valuePtr->typePtr;
 		converted = 0;
-		if ((tPtr != &tclIntType) && (tPtr != &tclDoubleType)) {
+		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
+			|| (valuePtr->bytes != NULL))) {
 		    s = Tcl_GetStringFromObj(valuePtr, &length);
 		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
