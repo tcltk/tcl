@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.146 2004/09/10 12:48:36 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.147 2004/09/11 13:45:15 msofer Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1417,61 +1417,79 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_CONCAT1:
 	{
-	    int opnd, length, totalLen = 0;
-	    char * bytes;		
+	    int opnd, length, appendLen = 0;
+	    char *bytes, *p;		
 	    Tcl_Obj **currPtr;
 	    
 	    opnd = TclGetUInt1AtPtr(pc+1);
 
 	    /*
-	     * Peephole optimisation for appending an empty string.
-	     * This enables replacing 'K $x [set x{}]' by '$x[set x{}]'
-	     * for fastest execution.
+	     * Compute the length to be appended.
 	     */
-
-	    if (opnd == 2) {
-		Tcl_GetStringFromObj(*tosPtr, &length);
-		if (length == 0) {
-		    /* Just drop the top item from the stack */
-		    NEXT_INST_F(2, 1, 0);
-		}
-	    }	    
 	    
-            /*
-	     * Concatenate strings (with no separators) from the top
-	     * opnd items on the stack starting with the deepest item.
-	     * First, determine how many characters are needed.
-	     */
-
-	    for (currPtr = tosPtr - (opnd-1); currPtr <= tosPtr; 
+	    for (currPtr = tosPtr - (opnd-2); currPtr <= tosPtr; 
 		     currPtr++) {
 		bytes = Tcl_GetStringFromObj(*currPtr, &length);
 		if (bytes != NULL) {
-		    totalLen += length;
+		    appendLen += length;
 		}
 	    }
 
 	    /*
-	     * Initialize the new append string object by appending the
-	     * strings of the opnd stack objects. Also pop the objects. 
+	     * If nothing is to be appended, just return the first
+	     * object by dropping all the others from the stack; this
+	     * saves both the computation and copy of the string rep
+	     * of the first object, enabling the fast '$x[set x {}]'
+	     * idiom for 'K $x [set x{}]'.
 	     */
 
-	    TclNewObj(objResultPtr);
-	    if (totalLen > 0) {
-		char *p = (char *) ckalloc((unsigned) (totalLen + 1));
-		objResultPtr->bytes = p;
-		objResultPtr->length = totalLen;
-		for (currPtr = tosPtr - (opnd-1); currPtr <= tosPtr; 
-		        currPtr++) {
-		    bytes = Tcl_GetStringFromObj(*currPtr, &length);
-		    if (bytes != NULL) {
-			memcpy((VOID *) p, (VOID *) bytes,
-			       (size_t) length);
-			p += length;
-		    }
-		}
-		*p = '\0';
+	    if (appendLen == 0) {
+		TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+		NEXT_INST_V(2, (opnd-1), 0);
 	    }
+
+	    /*
+	     * If the first object is shared, we need a new obj for
+	     * the result; otherwise, we can reuse the first object.
+	     * In any case, make sure it has enough room to accomodate
+	     * all the concatenated bytes. Note that if it is unshared
+	     * its bytes are already copied by Tcl_SetObjectLength, so
+	     * that we set the loop parameters to avoid copying them
+	     * again: p points to the end of the already copied bytes,
+	     * currPtr to the second object.
+	     */
+	    
+	    objResultPtr = *(tosPtr-(opnd-1));
+	    bytes = Tcl_GetStringFromObj(objResultPtr, &length);
+#if !TCL_COMPILE_DEBUG
+	    if (!Tcl_IsShared(objResultPtr)) {
+		Tcl_SetObjLength(objResultPtr, (length + appendLen));
+		p = TclGetString(objResultPtr) + length;
+		currPtr = tosPtr - (opnd - 2);
+	    } else {
+#endif
+		p = (char *) ckalloc((unsigned) (length + appendLen + 1));
+		TclNewObj(objResultPtr);
+		objResultPtr->bytes = p;
+		objResultPtr->length = length + appendLen;
+		currPtr = tosPtr - (opnd - 1);
+#if !TCL_COMPILE_DEBUG
+	    } 
+#endif
+
+	    /*
+	     * Append the remaining characters.
+	     */
+
+	    for (; currPtr <= tosPtr; currPtr++) {
+		bytes = Tcl_GetStringFromObj(*currPtr, &length);
+		if (bytes != NULL) {
+		    memcpy((VOID *) p, (VOID *) bytes,
+			    (size_t) length);
+		    p += length;
+		}
+	    }
+	    *p = '\0';
 		
 	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	    NEXT_INST_V(2, opnd, 1);
