@@ -1,3 +1,25 @@
+1999-07-26    <redman@scriptics.com>
+
+ 	* tests/tcltest.test:  Need to close the new core file, there
+	seems to be a hang in threaded WinNT if the file isn't closed.
+	Open issue, need to fix that hang.
+
+	* tests/httpold.test:  Add time delay in response from Http server
+	so that test cases can properly detect timeout conditions with
+	threads enabled on multi-CPU WinNT.
+
+	* tests/winFCmd.test:  Test case winFcmd-1.33 was looking for
+	c:\windows, which may not exist.  Instead, create a new directory
+	on c:\ and use it for the test.
+
+	* win/tclWinConsole.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSock.c:  Fix terminating helper threads by holding any
+	mutexes from the primary thread while waiting for the helper
+	thread to terminate.  Without these changes, the test suite hangs
+	on WinNT with 2 CPUs and threads enabled.  Open issue, seems to be
+	a sporadic hang on dual CPU systems still (very rare).
+
 1999-07-26  Jennifer Hom  <jenn@scriptics.com>
 
 	* tests/tcltest.test:

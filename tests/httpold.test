@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: httpold.test,v 1.5 1999/06/26 03:54:14 jenn Exp $
+# RCS: @(#) $Id: httpold.test,v 1.6 1999/07/27 01:42:23 redman Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -79,6 +79,7 @@ proc httpdRead { sock } {
 	if [regexp {(POST|GET|HEAD) ([^?]+)\??([^ ]*) HTTP/1.0} \
 		$line x data(proto) data(url) data(query)] {
 	    set data(state) mime
+	    after 10
 	    httpd_log $sock Query $line
 	} else {
 	    httpdError $sock 400

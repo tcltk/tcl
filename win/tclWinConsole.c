@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.2 1999/04/16 00:48:07 stanton Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.3 1999/07/27 01:42:25 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -486,7 +486,6 @@ ConsoleCloseProc(
 
 	Tcl_MutexLock(&consoleMutex);
 	TerminateThread(consolePtr->readThread, 0);
-	Tcl_MutexUnlock(&consoleMutex);
 
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
@@ -494,6 +493,8 @@ ConsoleCloseProc(
 	 */
 
 	WaitForSingleObject(consolePtr->readThread, INFINITE);
+	Tcl_MutexUnlock(&consoleMutex);
+
 	CloseHandle(consolePtr->readThread);
 	CloseHandle(consolePtr->readable);
 	CloseHandle(consolePtr->startReader);
@@ -522,7 +523,6 @@ ConsoleCloseProc(
 
 	Tcl_MutexLock(&consoleMutex);
 	TerminateThread(consolePtr->writeThread, 0);
-	Tcl_MutexUnlock(&consoleMutex);
 
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
@@ -530,6 +530,8 @@ ConsoleCloseProc(
 	 */
 
 	WaitForSingleObject(consolePtr->writeThread, INFINITE);
+	Tcl_MutexUnlock(&consoleMutex);
+
 	CloseHandle(consolePtr->writeThread);
 	CloseHandle(consolePtr->writable);
 	CloseHandle(consolePtr->startWriter);

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.13 1999/07/22 23:45:53 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.14 1999/07/27 01:42:25 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -583,7 +583,16 @@ SocketThreadExitHandler(clientData)
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr->socketThread != NULL) {
+	Tcl_MutexLock(&socketMutex);
 	TerminateThread(tsdPtr->socketThread, 0);
+
+	/*
+	 * Wait for the thread to terminate.  This ensures that we are
+	 * completely cleaned up before we leave this function. 
+	 */
+	
+	WaitForSingleObject(tsdPtr->socketThread, INFINITE);
+	Tcl_MutexUnlock(&socketMutex);
     }
     if (tsdPtr->hwnd != NULL) {
 	DestroyWindow(tsdPtr->hwnd);

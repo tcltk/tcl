@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.1 1999/07/26 17:59:12 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.2 1999/07/27 01:42:23 redman Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -252,7 +252,8 @@ makeFile {
     package require tcltest
     namespace import ::tcltest::*
     test makecore {make a core file} {
-	open core w
+	set f [open core w]
+	close $f
     } {}
     ::tcltest::cleanupTests
     return

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.6 1999/05/21 18:28:45 redman Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.7 1999/07/27 01:42:25 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -2164,7 +2164,6 @@ PipeClose2Proc(
 
 	    Tcl_MutexLock(&pipeMutex);
 	    TerminateThread(pipePtr->readThread, 0);
-	    Tcl_MutexUnlock(&pipeMutex);
 
 	    /*
 	     * Wait for the thread to terminate.  This ensures that we are
@@ -2172,6 +2171,8 @@ PipeClose2Proc(
 	     */
 
 	    WaitForSingleObject(pipePtr->readThread, INFINITE);
+	    Tcl_MutexUnlock(&pipeMutex);
+
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
 	    CloseHandle(pipePtr->startReader);
@@ -2206,8 +2207,6 @@ PipeClose2Proc(
 
 	    Tcl_MutexLock(&pipeMutex);
 	    TerminateThread(pipePtr->writeThread, 0);
-	    Tcl_MutexUnlock(&pipeMutex);
-
 
 	    /*
 	     * Wait for the thread to terminate.  This ensures that we are
@@ -2215,6 +2214,9 @@ PipeClose2Proc(
 	     */
 
 	    WaitForSingleObject(pipePtr->writeThread, INFINITE);
+	    Tcl_MutexUnlock(&pipeMutex);
+
+
 	    CloseHandle(pipePtr->writeThread);
 	    CloseHandle(pipePtr->writable);
 	    CloseHandle(pipePtr->startWriter);

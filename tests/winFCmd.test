@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.7 1999/07/01 17:36:20 jenn Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.8 1999/07/27 01:42:24 redman Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -297,9 +297,11 @@ test winFCmd-1.33 {TclpRenameFile: After removing dst dir, MoveFile fails} \
 	{pcOnly exdev} {
     file mkdir d:/td1
     testchmod 000 d:/td1
-    set msg [list [catch {testfile mv c:/windows d:/td1} msg] $msg]
+    file mkdir c:/tf1
+    set msg [list [catch {testfile mv c:/tf1 d:/td1} msg] $msg]
     set msg "$msg [file writable d:/td1]"
     file delete d:/td1
+    file delete -force c:/tf1
     set msg
 } {1 EXDEV 0}
 test winFCmd-1.34 {TclpRenameFile: src is dir, dst is not} {pcOnly} {
