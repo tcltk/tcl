@@ -24,6 +24,8 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 	TCL_BIN_DIR_DEFAULT=../../tcl8.3$1/win
     else
 	TCL_BIN_DIR_DEFAULT=../../tcl8.3/win
+    else
+	TCL_BIN_DIR_DEFAULT=../../tcl/win
     fi
     
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.3 binaries from DIR],
@@ -62,6 +64,8 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 	TK_BIN_DIR_DEFAULT=../../tk8.3$1/win
     else
 	TK_BIN_DIR_DEFAULT=../../tk8.3/win
+    else
+	TK_BIN_DIR_DEFAULT=../../tk/win
     fi
     
     AC_ARG_WITH(tk, [  --with-tk=DIR          use Tk 8.3 binaries from DIR],
@@ -449,12 +453,30 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
 
+	#if test "$ac_cv_cygwin" = "yes"; then
+	#    extra_cflags="-mno-cygwin"
+	#    extra_ldflags="-mno-cygwin"
+	#else
+	#    extra_cflags=""
+	#    extra_ldflags=""
+	#fi
+
 	if test "$ac_cv_cygwin" = "yes"; then
-	    extra_cflags="-mno-cygwin"
-	    extra_ldflags="-mno-cygwin"
+	  touch ac$$.c
+	  if ${CC} -c -mwin32 ac$$.c >/dev/null 2>&1; then
+	    case "$extra_cflags" in
+	      *-mwin32*) ;;
+	      *) extra_cflags="-mwin32 $extra_cflags" ;;
+	    esac
+	    case "$extra_ldflags" in
+	      *-mwin32*) ;;
+	      *) extra_ldflags="-mwin32 $extra_ldflags" ;;
+	    esac
+	  fi
+	  rm -f ac$$.o ac$$.c
 	else
-	    extra_cflags=""
-	    extra_ldflags=""
+	  extra_cflags=''
+	  extra_ldflags=''
 	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
@@ -507,14 +529,19 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.
 	#
+	# ORIGINAL COMMENT:
 	# We need to pass -e _WinMain@16 so that ld will use
 	# WinMain() instead of main() as the entry point. We can't
 	# use autoconf to check for this case since it would need
 	# to run an executable and that does not work when
 	# cross compiling. Remove this -e workaround once we
 	# require a gcc that does not have this bug.
+	#
+	# MK NOTE: Tk should use a different mechanism. This causes 
+	# interesting problems, such as wish dying at startup.
+	#LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
-	LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
+	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -688,7 +715,12 @@ AC_DEFUN(SC_PROG_TCLSH, [
     ])
 
     if test -f "$ac_cv_path_tclsh" ; then
-	TCLSH_PROG=$ac_cv_path_tclsh
+	TCLSH_PROG="$ac_cv_path_tclsh"
+	AC_MSG_RESULT($TCLSH_PROG)
+    elif test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
+	# One-tree build.
+	ac_cv_path_tclsh="$TCL_BIN_DIR/tclsh"
+	TCLSH_PROG="$ac_cv_path_tclsh"
 	AC_MSG_RESULT($TCLSH_PROG)
     else
 	AC_MSG_ERROR(No tclsh found in PATH:  $search_path)

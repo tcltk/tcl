@@ -1374,18 +1374,115 @@ echo "$ac_t""$ac_cv_cygwin" 1>&6
 CYGWIN=
 test "$ac_cv_cygwin" = yes && CYGWIN=yes
 
+echo $ac_n "checking for SEH support in compiler""... $ac_c" 1>&6
+echo "configure:1379: checking for SEH support in compiler" >&5
+if eval "test \"`echo '$''{'tcl_cv_seh'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test "$cross_compiling" = yes; then
+  tcl_cv_seh=no
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1387 "configure"
+#include "confdefs.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+int main(int argc, char** argv) {
+    int a, b = 0;
+    __try {
+        a = 666 / b;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+    return 1;
+}
+
+EOF
+if { (eval echo configure:1406: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  tcl_cv_seh=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  tcl_cv_seh=no
+fi
+rm -fr conftest*
+fi
+
+
+fi
+
+echo "$ac_t""$tcl_cv_seh" 1>&6
+if test "$tcl_cv_seh" = "no" ; then
+    cat >> confdefs.h <<\EOF
+#define HAVE_NO_SEH 1
+EOF
+
+fi
+
+#
+# Check to see if the excpt.h include file provided contains the
+# definition for EXCEPTION_DISPOSITION; if not, which is the case
+# with Cygwin's version as of 2002-04-10, define it to be int, 
+# sufficient for getting the current code to work.
+#
+echo $ac_n "checking for EXCEPTION_DISPOSITION support in include files""... $ac_c" 1>&6
+echo "configure:1436: checking for EXCEPTION_DISPOSITION support in include files" >&5
+if eval "test \"`echo '$''{'tcl_cv_eh_disposition'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1441 "configure"
+#include "confdefs.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+int main() {
+
+  EXCEPTION_DISPOSITION x;
+
+; return 0; }
+EOF
+if { (eval echo configure:1454: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  tcl_cv_eh_disposition=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  tcl_cv_eh_disposition=no
+fi
+rm -f conftest*
+
+fi
+
+echo "$ac_t""$tcl_cv_eh_disposition" 1>&6
+if test "$tcl_cv_eh_disposition" = "no" ; then
+    cat >> confdefs.h <<\EOF
+#define EXCEPTION_DISPOSITION int
+EOF
+
+fi
+
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
 #--------------------------------------------------------------------
 
 echo $ac_n "checking for object suffix""... $ac_c" 1>&6
-echo "configure:1383: checking for object suffix" >&5
+echo "configure:1480: checking for object suffix" >&5
 if eval "test \"`echo '$''{'ac_cv_objext'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   rm -f conftest*
 echo 'int i = 1;' > conftest.$ac_ext
-if { (eval echo configure:1389: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1486: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   for ac_file in conftest.*; do
     case $ac_file in
     *.c) ;;
@@ -1403,19 +1500,19 @@ OBJEXT=$ac_cv_objext
 ac_objext=$ac_cv_objext
 
 echo $ac_n "checking for mingw32 environment""... $ac_c" 1>&6
-echo "configure:1407: checking for mingw32 environment" >&5
+echo "configure:1504: checking for mingw32 environment" >&5
 if eval "test \"`echo '$''{'ac_cv_mingw32'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1412 "configure"
+#line 1509 "configure"
 #include "confdefs.h"
 
 int main() {
 return __MINGW32__;
 ; return 0; }
 EOF
-if { (eval echo configure:1419: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1516: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_mingw32=yes
 else
@@ -1434,7 +1531,7 @@ test "$ac_cv_mingw32" = yes && MINGW32=yes
 
 
 echo $ac_n "checking for executable suffix""... $ac_c" 1>&6
-echo "configure:1438: checking for executable suffix" >&5
+echo "configure:1535: checking for executable suffix" >&5
 if eval "test \"`echo '$''{'ac_cv_exeext'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1444,7 +1541,7 @@ else
   rm -f conftest*
   echo 'int main () { return 0; }' > conftest.$ac_ext
   ac_cv_exeext=
-  if { (eval echo configure:1448: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; }; then
+  if { (eval echo configure:1545: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; }; then
     for file in conftest.*; do
       case $file in
       *.c | *.o | *.obj) ;;
@@ -1471,7 +1568,7 @@ ac_exeext=$EXEEXT
 
 
     echo $ac_n "checking for building with threads""... $ac_c" 1>&6
-echo "configure:1475: checking for building with threads" >&5
+echo "configure:1572: checking for building with threads" >&5
     # Check whether --enable-threads or --disable-threads was given.
 if test "${enable_threads+set}" = set; then
   enableval="$enable_threads"
@@ -1502,7 +1599,7 @@ EOF
 
 
     echo $ac_n "checking how to build libraries""... $ac_c" 1>&6
-echo "configure:1506: checking how to build libraries" >&5
+echo "configure:1603: checking how to build libraries" >&5
     # Check whether --enable-shared or --disable-shared was given.
 if test "${enable_shared+set}" = set; then
   enableval="$enable_shared"
@@ -1543,7 +1640,7 @@ EOF
     # Step 0: Enable 64 bit support?
 
     echo $ac_n "checking if 64bit support is requested""... $ac_c" 1>&6
-echo "configure:1547: checking if 64bit support is requested" >&5
+echo "configure:1644: checking if 64bit support is requested" >&5
     # Check whether --enable-64bit or --disable-64bit was given.
 if test "${enable_64bit+set}" = set; then
   enableval="$enable_64bit"
@@ -1560,7 +1657,7 @@ fi
     # Extract the first word of "cygpath", so it can be a program name with args.
 set dummy cygpath; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1564: checking for $ac_word" >&5
+echo "configure:1661: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_CYGPATH'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1597,7 +1694,7 @@ fi
     # set various compiler flags depending on whether we are using gcc or cl
     
     echo $ac_n "checking compiler flags""... $ac_c" 1>&6
-echo "configure:1601: checking compiler flags" >&5
+echo "configure:1698: checking compiler flags" >&5
     if test "${GCC}" = "yes" ; then
 	if test "$do64bit" = "yes" ; then
 	    echo "configure: warning: "64bit mode not supported with GCC on Windows"" 1>&2
@@ -1617,12 +1714,30 @@ echo "configure:1601: checking compiler flags" >&5
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"
 
+	#if test "$ac_cv_cygwin" = "yes"; then
+	#    extra_cflags="-mno-cygwin"
+	#    extra_ldflags="-mno-cygwin"
+	#else
+	#    extra_cflags=""
+	#    extra_ldflags=""
+	#fi
+
 	if test "$ac_cv_cygwin" = "yes"; then
-	    extra_cflags="-mno-cygwin"
-	    extra_ldflags="-mno-cygwin"
+	  touch ac$$.c
+	  if ${CC} -c -mwin32 ac$$.c >/dev/null 2>&1; then
+	    case "$extra_cflags" in
+	      *-mwin32*) ;;
+	      *) extra_cflags="-mwin32 $extra_cflags" ;;
+	    esac
+	    case "$extra_ldflags" in
+	      *-mwin32*) ;;
+	      *) extra_ldflags="-mwin32 $extra_ldflags" ;;
+	    esac
+	  fi
+	  rm -f ac$$.o ac$$.c
 	else
-	    extra_cflags=""
-	    extra_ldflags=""
+	  extra_cflags=''
+	  extra_ldflags=''
 	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
@@ -1675,14 +1790,19 @@ echo "configure:1601: checking compiler flags" >&5
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.
 	#
+	# ORIGINAL COMMENT:
 	# We need to pass -e _WinMain@16 so that ld will use
 	# WinMain() instead of main() as the entry point. We can't
 	# use autoconf to check for this case since it would need
 	# to run an executable and that does not work when
 	# cross compiling. Remove this -e workaround once we
 	# require a gcc that does not have this bug.
+	#
+	# MK NOTE: Tk should use a different mechanism. This causes 
+	# interesting problems, such as wish dying at startup.
+	#LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
-	LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
+	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
     else
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -1787,7 +1907,7 @@ echo "configure:1601: checking compiler flags" >&5
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:1791: checking for build with symbols" >&5
+echo "configure:1911: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -1811,7 +1931,7 @@ fi
 
 
     echo $ac_n "checking for build with memory debugging""... $ac_c" 1>&6
-echo "configure:1815: checking for build with memory debugging" >&5
+echo "configure:1935: checking for build with memory debugging" >&5
     # Check whether --enable-memdebug or --disable-memdebug was given.
 if test "${enable_memdebug+set}" = set; then
   enableval="$enable_memdebug"
@@ -1837,7 +1957,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1841: checking how to run the C preprocessor" >&5
+echo "configure:1961: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1852,13 +1972,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1856 "configure"
+#line 1976 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1862: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1982: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1869,13 +1989,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1873 "configure"
+#line 1993 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1879: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1999: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1886,13 +2006,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1890 "configure"
+#line 2010 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1896: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:2016: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1918,17 +2038,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1922: checking for errno.h" >&5
+echo "configure:2042: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1927 "configure"
+#line 2047 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1932: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:2052: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*

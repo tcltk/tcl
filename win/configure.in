@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.20.2.8 2002/08/20 21:45:32 andreas_kupries Exp $
+# RCS: @(#) $Id: configure.in,v 1.20.2.9 2002/10/15 20:28:04 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -60,6 +60,57 @@ AC_PROG_MAKE_SET
 #--------------------------------------------------------------------
 
 AC_CYGWIN
+
+AC_CACHE_CHECK(for SEH support in compiler,
+    tcl_cv_seh,
+AC_TRY_RUN([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+int main(int argc, char** argv) {
+    int a, b = 0;
+    __try {
+        a = 666 / b;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+    return 1;
+}
+],
+        tcl_cv_seh=yes,
+        tcl_cv_seh=no,
+        tcl_cv_seh=no)
+)
+if test "$tcl_cv_seh" = "no" ; then
+    AC_DEFINE(HAVE_NO_SEH, 1,
+            [Defined when mingw does not support SEH])
+fi
+
+#
+# Check to see if the excpt.h include file provided contains the
+# definition for EXCEPTION_DISPOSITION; if not, which is the case
+# with Cygwin's version as of 2002-04-10, define it to be int, 
+# sufficient for getting the current code to work.
+#
+AC_CACHE_CHECK(for EXCEPTION_DISPOSITION support in include files,
+    tcl_cv_eh_disposition,
+AC_TRY_COMPILE([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+],
+[
+  EXCEPTION_DISPOSITION x;
+],
+        tcl_cv_eh_disposition=yes,
+        tcl_cv_eh_disposition=no)
+)
+if test "$tcl_cv_eh_disposition" = "no" ; then
+    AC_DEFINE(EXCEPTION_DISPOSITION, int,
+            [Defined when cygwin/mingw does not support EXCEPTION DISPOSITION])
+fi
 
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)

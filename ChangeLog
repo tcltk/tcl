@@ -1,3 +1,50 @@
+2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	backport of cygwin build support cobbled together.
+	[Patch #622183] (hobbs, howell, khan, dejong)
+
+	* win/configure: regen.
+	* win/configure.in: Add configure time test for SEH
+	support in the compiler.
+	* win/tcl.m4 (SC_PATH_TCLCONFIG): Support one-tree build.
+	(SC_PATH_TKCONFIG): Likewise.
+	(SC_PROG_TCLSH): Likewise.
+	(SC_CONFIG_CFLAGS): Assume real Cygwin port and remove -mno-cygwin 
+	flags.  Add -mwin32 to extra_cflags and extra_ldflags.
+	Remove ``-e _WinMain@16'' from LDFLAGS_WINDOW.
+
+	* win/tclWinFile.c (TclpReadlink): alternative readlink for cygwin.
+
+	* win/tclWin32Dll.c (ESP, EBP, TclpCheckStackSpace,
+	_except_checkstackspace_handler):
+	* win/tclWinChan.c (ESP, EBP, Tcl_MakeFileChannel,
+	_except_makefilechannel_handler):
+	* win/tclWinFCmd.c (ESP, EBP, DoRenameFile,
+	_except_dorenamefile_handler,
+	DoCopyFile, _except_docopyfile_handler):
+	Implement SEH support under gcc using inline asm.
+	Tcl should now compile with Mingw 1.1. [Patch 525746]
+
+	* generic/tclFileName.c (Tcl_TranslateFileName, TclDoGlob):
+	Convert POSIX to native format for cygwin.
+
+	* generic/tclEnv.c (TclCygwinPutenv): cygwin env handling function.
+	* win/tclWinPort.h (environ, putenv, timezone): Define for Cygwin.
+	(TclpSysAlloc, TclpSysFree, TclpSysRealloc): Use C runtime rather 
+	than Windows API.
+
+	* generic/tclPlatDecls.h (tchar.h): Do not include on Cygwin.
+
+	* win/tclWinSerial.c:
+	* win/tclWinPipe.c:
+	* win/tclWinConsole.c: removed unnecessary dos.h include.
+
+	* win/tclWinThrd.c: removed unnecessary dos.h include.
+	Use problematic CreateThread/ExitThread for compilers that can't
+	do _beginthreadex/_endthreadex.
+
+	* win/tclWinNotify.c: match up to fixes in 8.4.
+
 2002-10-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEnv.c (Tcl_PutEnv): correct possible mem leak.
