@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.5 1998/09/14 18:40:06 stanton Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.5.4.1 1999/03/04 00:59:55 stanton Exp $
  */
 
 #ifndef _MACPORT
@@ -182,19 +182,8 @@ extern char **environ;
  * Prototypes needed for compatability
  */
 
-EXTERN int 	TclMacCreateEnv _ANSI_ARGS_((void));
 EXTERN int	strncasecmp _ANSI_ARGS_((CONST char *s1,
 			    CONST char *s2, size_t n));
-
-/*
- * The following declarations belong in tclInt.h, but depend on platform
- * specific types (e.g. struct tm).
- */
-
-EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((const time_t *tp,
-			    int useGMT));
-EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
-			    const char *format, const struct tm *t));
 
 #define tzset()
 #define TclpGetPid(pid)	    ((unsigned long) (pid))
@@ -206,14 +195,10 @@ EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
  */
 #define lstat(path, bufPtr) TclStat(path, bufPtr)
 
-EXTERN FILE * TclMacFOpenHack _ANSI_ARGS_((const char *path,
-	const char *mode));
 #define fopen(path, mode) TclMacFOpenHack(path, mode)
-EXTERN int TclMacReadlink _ANSI_ARGS_((char *path, char *buf, int size));
 #define readlink(fileName, buffer, size) TclMacReadlink(fileName, buffer, size)
 #ifdef TCL_TEST
 #define chmod(path, mode) TclMacChmod(path, mode)
-EXTERN int	TclMacChmod(char *path, int mode);
 #endif
 
 /*
@@ -253,16 +238,5 @@ void	TclUnsetEnv(CONST char *name);
  */
 
 #define TclpFinalize()
-
-/*
- * The following define should really be in tclInt.h, but tclInt.h does
- * not include tclPort.h, which includes the "struct stat" definition.
- */
-
-EXTERN int              TclpSameFile _ANSI_ARGS_((char *file1, char *file2,
-			    struct stat *sourceStatBufPtr, 
-		            struct stat *destStatBufPtr)) ;
-EXTERN int TclpStat _ANSI_ARGS_ ((CONST char *path, struct stat *buf));
-EXTERN int TclpAccess _ANSI_ARGS_ ((CONST char *path, int mode));
 
 #endif /* _MACPORT */

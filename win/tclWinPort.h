@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.6.4.1 1999/03/03 00:38:47 stanton Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.6.4.2 1999/03/04 00:59:55 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -348,34 +348,18 @@
 /*
  * The following implements the Windows method for exiting the process.
  */
-#define TclPlatformExit(status) exit(status)
 
+#define TclPlatformExit(status) exit(status)
 
 #include "tclPlatDecls.h"
 
 /*
- * The following declarations belong in tclInt.h, but depend on platform
- * specific types (e.g. struct tm).
- */
-
-EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((const time_t *tp,
-			    int useGMT));
-EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
-EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
-			    const char *format, const struct tm *t));
-
-/*
  * The following prototypes and defines replace the Windows versions
- * of POSIX function that various compilier vendors didn't implement 
+ * of POSIX function that various compiler vendors didn't implement 
  * well or consistantly.
  */
 
 #define lstat		TclStat
-
-EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
-			    struct stat *buf));
-EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *path, 
-			    int mode));
 
 #define TclpReleaseFile(file)	ckfree((char *) file)
 
