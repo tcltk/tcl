@@ -1,3 +1,10 @@
+2003-04-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (TclSubstTokens):  Moved declaration of
+	utfCharBytes to beginning of procedure so that it does not go
+	out of scope (get free()d) while append is still pointing to it.
+	[Bugs 703167, 713754]
+
 2003-04-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.

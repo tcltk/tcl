@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.26 2003/03/13 02:48:53 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27 2003/04/02 19:31:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1955,6 +1955,7 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
 	Tcl_Obj *appendObj = NULL;
 	CONST char *append = NULL;
 	int appendByteLength = 0;
+	char utfCharBytes[TCL_UTF_MAX];
 
 	switch (tokenPtr->type) {
 	    case TCL_TOKEN_TEXT:
@@ -1963,7 +1964,6 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
 		break;
 
 	    case TCL_TOKEN_BS: {
-		char utfCharBytes[TCL_UTF_MAX];
 		appendByteLength = Tcl_UtfBackslash(tokenPtr->start,
 			(int *) NULL, utfCharBytes);
 		append = utfCharBytes;
