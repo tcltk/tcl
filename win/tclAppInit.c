@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.16 2004/01/16 02:46:10 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.17 2004/02/01 09:37:49 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -28,12 +28,10 @@ extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif
 #endif /* TCL_TEST */
 
-static void		setargv _ANSI_ARGS_((int *argcPtr, char ***argvPtr));
-static BOOL __stdcall	sigHandler (DWORD fdwCtrlType);
+static BOOL WINAPI	sigHandler (DWORD fdwCtrlType);
 static Tcl_AsyncProc	asyncExit;
 static void		AppInitExitHandler(ClientData clientData);
 
-static char **          argvSave = NULL;
 static Tcl_AsyncHandler exitToken = NULL;
 static DWORD            exitErrorCode = 0;
 
@@ -56,9 +54,9 @@ static DWORD            exitErrorCode = 0;
  */
 
 int
-main(argc, argv)
-    int argc;			/* Number of command-line arguments. */
-    char **argv;		/* Values of command-line arguments. */
+main(
+    int argc,			/* Number of command-line arguments. */
+    char **argv)		/* Values of command-line arguments. */
 {
     /*
      * The following #if block allows you to change the AppInit
@@ -82,29 +80,20 @@ main(argc, argv)
     extern int TCL_LOCAL_MAIN_HOOK _ANSI_ARGS_((int *argc, char ***argv));
 #endif
 
-    char buffer[MAX_PATH +1];
     char *p;
+
     /*
      * Set up the default locale to be standard "C" locale so parsing
      * is performed correctly.
      */
 
     setlocale(LC_ALL, "C");
-    setargv(&argc, &argv);
 
     /*
-     * Save this for later, so we can free it.
-     */
-    argvSave = argv;
-
-    /*
-     * Replace argv[0] with full pathname of executable, and forward
-     * slashes substituted for backslashes.
+     * Forward slash substitute argv[0] for backslashes.
      */
 
-    GetModuleFileName(NULL, buffer, sizeof(buffer));
-    argv[0] = buffer;
-    for (p = buffer; *p != '\0'; p++) {
+    for (p = argv[0]; *p != '\0'; p++) {
 	if (*p == '\\') {
 	    *p = '/';
 	}
@@ -118,7 +107,6 @@ main(argc, argv)
 
     return 0;			/* Needed only to prevent compiler warning. */
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -245,11 +233,6 @@ static void
 AppInitExitHandler(
     ClientData clientData)
 {
-    if (argvSave != NULL) {
-        ckfree((char *)argvSave);
-        argvSave = NULL;
-    }
-
     if (exitToken != NULL) {
         /*
          * This should be safe to do even if we
@@ -258,123 +241,6 @@ AppInitExitHandler(
         Tcl_AsyncDelete(exitToken);
         exitToken = NULL;
     }
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * setargv --
- *
- *	Parse the Windows command line string into argc/argv.  Done here
- *	because we don't trust the builtin argument parser in crt0.
- *	Windows applications are responsible for breaking their command
- *	line into arguments.
- *
- *	2N backslashes + quote -> N backslashes + begin quoted string
- *	2N + 1 backslashes + quote -> literal
- *	N backslashes + non-quote -> literal
- *	quote + quote in a quoted string -> single quote
- *	quote + quote not in quoted string -> empty string
- *	quote -> begin quoted string
- *
- * Results:
- *	Fills argcPtr with the number of arguments and argvPtr with the
- *	array of arguments.
- *
- * Side effects:
- *	Memory allocated.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-setargv(argcPtr, argvPtr)
-    int *argcPtr;		/* Filled with number of argument strings. */
-    char ***argvPtr;		/* Filled with argument strings (malloc'd). */
-{
-    char *cmdLine, *p, *arg, *argSpace;
-    char **argv;
-    int argc, size, inquote, copy, slashes;
-
-    cmdLine = GetCommandLine();	/* INTL: BUG */
-
-    /*
-     * Precompute an overly pessimistic guess at the number of arguments
-     * in the command line by counting non-space spans.
-     */
-
-    size = 2;
-    for (p = cmdLine; *p != '\0'; p++) {
-	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    size++;
-	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
-		p++;
-	    }
-	    if (*p == '\0') {
-		break;
-	    }
-	}
-    }
-    argSpace = (char *) ckalloc(
-	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
-    argv = (char **) argSpace;
-    argSpace += size * sizeof(char *);
-    size--;
-
-    p = cmdLine;
-    for (argc = 0; argc < size; argc++) {
-	argv[argc] = arg = argSpace;
-	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
-	    p++;
-	}
-	if (*p == '\0') {
-	    break;
-	}
-
-	inquote = 0;
-	slashes = 0;
-	while (1) {
-	    copy = 1;
-	    while (*p == '\\') {
-		slashes++;
-		p++;
-	    }
-	    if (*p == '"') {
-		if ((slashes & 1) == 0) {
-		    copy = 0;
-		    if ((inquote) && (p[1] == '"')) {
-			p++;
-			copy = 1;
-		    } else {
-			inquote = !inquote;
-		    }
-                }
-                slashes >>= 1;
-            }
-
-            while (slashes) {
-		*arg = '\\';
-		arg++;
-		slashes--;
-	    }
-
-	    if ((*p == '\0')
-		    || (!inquote && ((*p == ' ') || (*p == '\t')))) { /* INTL: ISO space. */
-		break;
-	    }
-	    if (copy != 0) {
-		*arg = *p;
-		arg++;
-	    }
-	    p++;
-        }
-	*arg = '\0';
-	argSpace = arg + 1;
-    }
-    argv[argc] = NULL;
-
-    *argcPtr = argc;
-    *argvPtr = argv;
 }
 
 /*
@@ -422,7 +288,7 @@ asyncExit (ClientData clientData, Tcl_Interp *interp, int code)
  *----------------------------------------------------------------------
  */
 
-BOOL __stdcall
+BOOL WINAPI
 sigHandler(DWORD fdwCtrlType)
 {
     HANDLE hStdIn;
