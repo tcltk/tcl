@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.56.2.7 2002/02/19 08:29:05 dgp Exp $
+RCS: @(#) $Id: changes,v 1.56.2.8 2002/10/18 20:33:19 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5102,7 +5102,57 @@ return read-only values (dejong)
 2002-02-05 (bug fix) [http::error] called when [::error] intended
 => http 2.4.2 (porter)
 
-2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs (talcott,kupries)
+2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs
+(talcott, kupries)
 
-2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value (hobbs)
+2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value
+(hobbs)
 
+2002-02-25 (bug fix)[514392] use Mac OS X 10.1 dyld APIs that
+have more libdl-like semantics. (steffen)
+
+2002-02-25 (bug fix)[217982] prevent Tcl on Windows from possible crash when
+shutdown from a non-Tcl thread (affected Tkinter).
+
+2002-02-27 (bug fix)[520624] Added code to regonize "/dev/tty" (by name)
+and to not handle it as tty / serial line. (kupries)
+
+2002-03-01 (bug fix)[219283, 523988] fixed iso2022 encoding handling of
+escape change to match RFC 1468 (hobbs)
+
+2002-03-25 (bug fix) updated build support for HP-UX, IRIX64-6.*, SunOS,
+FreeBSD, AIX and Darwin (OS X) targets.
+
+2002-03-28 (bug fix)[219362] passing the correct commandSize to
+TclEvalObjvInternal (knoll)
+
+2002-03-29 (bug fix)[536937] corrected potential double-free of traces on
+variables (hobbs)
+
+2002-04-11 (bug fix) Enabled COFF as well as CV style debug info with
+--enable-symbols on Windows (hobbs)
+
+2002-04-18 (bug fix)[545325] fixed info level to report namespace eval (sofer)
+
+2002-04-26 (bug fix)[548686] corrected interpretation of integers that did
+not look like doubles as booleans (fellows)
+
+2002-05-24 (bug fix)[559376] fix for Windows msvcrt mem leak caused by
+using an env(TZ) setting trick for in clock format -gmt 1. (hobbs)
+
+2002-06-06 (bug fixes) updated utf and env variable handling for OS X.
+(steffen)
+
+2002-07-03 (bug fix)[577033] Fix [tcl_findLibrary] to be sure it sets
+$varName only if a successful library script is found. (porter)
+
+2002-07-05 (bug fix) Convert the format string to UTF8 before calling
+TclpStrftime (max)
+
+2002-10-10 (bug fix) on Windows, only wait during close on writable pipe if
+there was something to write (hobbs)
+
+2002-10-15 (bug fix)[622183] backport of cygwin build support (hobbs,
+howell, khan, dejong)
+
+--- Released 8.3.5, October 18, 2002 --- See ChangeLog for details ---

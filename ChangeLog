@@ -1,3 +1,11 @@
+2002-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	************************
+	****  8.3.5 TAGGED  ****
+	************************
+
+	* changes: updated for 8.3.5 release
+
 2002-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/configure: Regen.
@@ -136,15 +144,15 @@
 
 2002-07-05  Reinhard Max  <max@suse.de>
 
-        * generic/tclClock.c (FormatClock): Convert the format string to
-        UTF8 before calling TclpStrftime, so that non-ASCII characters
-        don't get mangled when the result string is being converted back.
-        * tests/clock.test: Added a test for that.
+	* generic/tclClock.c (FormatClock): Convert the format string to
+	UTF8 before calling TclpStrftime, so that non-ASCII characters
+	don't get mangled when the result string is being converted back.
+	* tests/clock.test: Added a test for that.
 
-2002-07-03  Don Porter  <dgp@users.sourceforge.net>
+2002-07-03  Don Porter	<dgp@users.sourceforge.net>
 
-        * library/auto.tcl: Fix [tcl_findLibrary] to be sure it sets
-        $varName only if a successful library script is found.  [Bug 577033]
+	* library/auto.tcl: Fix [tcl_findLibrary] to be sure it sets
+	$varName only if a successful library script is found.	[Bug 577033]
 
 2002-07-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
