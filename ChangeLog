@@ -2,6 +2,10 @@
 
 	* generic/clock.c: Replaced WIN32 macro with __WIN32__.
 	[Bug 1054357].  Thanks to David Gravereaux for the patch.
+	* win/tclWinFile.c: Removed a long-standing bug that causes
+	incorrect conversion between file time and UTC time if
+	the file time is recorded in a different Daylight Saving Time
+	status than the current one. [Bug 926106]
 	
 2004-10-29  Don Porter  <dgp@users.sourceforge.net>
 
