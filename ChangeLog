@@ -1,5 +1,9 @@
 2003-03-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/Eval.3 (Tcl_EvalObjEx):			Corrected CONST and
+	* doc/ParseCmd.3 (Tcl_EvalTokensStandard):	return type errors
+	in documentation.  [Bug 683994]
+
 	* generic/tclCompCmds.c (TclCompileReturnCmd):  Alternative fix for
 	* generic/tclCompile.c (INST_RETURN):	[Bug 633204] that uses a new
 	* generic/tclCompile.h (INST_RETURN):	bytecode INST_RETURN to
