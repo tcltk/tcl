@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitList.3,v 1.4 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: SplitList.3,v 1.5 2001/09/24 21:10:32 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
@@ -49,10 +49,10 @@ There will be \fI*argcPtr\fR valid entries in the array, followed by
 a NULL entry.
 .AP int argc in
 Number of elements in \fIargv\fR.
-.AP char **argv in
+.AP "char * CONST" *argv in
 Array of strings to merge together into a single list.
 Each string will become a separate element of the list.
-.AP char *src in
+.AP "CONST char" *src in
 String that is to become an element of a list.
 .AP int *flagsPtr in
 Pointer to word to fill in with information about \fIsrc\fR.

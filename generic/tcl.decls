@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.58 2001/09/13 11:56:19 msofer Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.59 2001/09/24 21:10:32 dgp Exp $
 
 library tcl
 
@@ -306,7 +306,7 @@ declare 82 generic {
     int Tcl_CommandComplete(char *cmd)
 }
 declare 83 generic {
-    char * Tcl_Concat(int argc, char **argv)
+    char * Tcl_Concat(int argc, char * CONST *argv)
 }
 declare 84 generic {
     int Tcl_ConvertElement(CONST char *src, char *dst, int flags)
@@ -430,10 +430,12 @@ declare 116 generic {
     void Tcl_DoWhenIdle(Tcl_IdleProc *proc, ClientData clientData)
 }
 declare 117 generic {
-    char * Tcl_DStringAppend(Tcl_DString *dsPtr, CONST char *str, int length)
+    CONST char * Tcl_DStringAppend(Tcl_DString *dsPtr, CONST char *str, \
+	    int length)
 }
 declare 118 generic {
-    char * Tcl_DStringAppendElement(Tcl_DString *dsPtr, CONST char *string)
+    CONST char * Tcl_DStringAppendElement(Tcl_DString *dsPtr, \
+	    CONST char *string)
 }
 declare 119 generic {
     void Tcl_DStringEndSublist(Tcl_DString *dsPtr)
@@ -680,7 +682,7 @@ declare 191 generic {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 generic {
-    char * Tcl_Merge(int argc, char **argv)
+    char * Tcl_Merge(int argc, char * CONST *argv)
 }
 declare 193 generic {
     Tcl_HashEntry * Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)

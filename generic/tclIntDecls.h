@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.26 2001/08/30 08:53:14 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.27 2001/09/24 21:10:32 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -214,7 +214,8 @@ EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp * interp,
 				Var ** arrayPtrPtr));
 /* Slot 59 is reserved */
 /* 60 */
-EXTERN int		TclNeedSpace _ANSI_ARGS_((char * start, char * end));
+EXTERN int		TclNeedSpace _ANSI_ARGS_((CONST char * start, 
+				CONST char * end));
 /* 61 */
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc * procPtr));
 /* 62 */
@@ -429,7 +430,7 @@ EXTERN char *		TclGetEnv _ANSI_ARGS_((CONST char * name,
 				Tcl_DString * valuePtr));
 /* Slot 139 is reserved */
 /* 140 */
-EXTERN int		TclLooksLikeInt _ANSI_ARGS_((char * bytes, 
+EXTERN int		TclLooksLikeInt _ANSI_ARGS_((CONST char * bytes, 
 				int length));
 /* 141 */
 EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -569,7 +570,7 @@ typedef struct TclIntStubs {
     void *reserved57;
     Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
     void *reserved59;
-    int (*tclNeedSpace) _ANSI_ARGS_((char * start, char * end)); /* 60 */
+    int (*tclNeedSpace) _ANSI_ARGS_((CONST char * start, CONST char * end)); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) _ANSI_ARGS_((Proc * procPtr)); /* 61 */
     int (*tclObjCommandComplete) _ANSI_ARGS_((Tcl_Obj * cmdPtr)); /* 62 */
     int (*tclObjInterpProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[])); /* 63 */
@@ -665,7 +666,7 @@ typedef struct TclIntStubs {
     void *reserved137;
     char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
     void *reserved139;
-    int (*tclLooksLikeInt) _ANSI_ARGS_((char * bytes, int length)); /* 140 */
+    int (*tclLooksLikeInt) _ANSI_ARGS_((CONST char * bytes, int length)); /* 140 */
     char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
     int (*tclSetByteCodeFromAny) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData)); /* 142 */
     int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
