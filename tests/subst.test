@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.13 2003/02/16 01:36:32 msofer Exp $
+# RCS: @(#) $Id: subst.test,v 1.13.2.1 2003/03/08 21:43:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -215,6 +215,10 @@ test subst-11.5 {continue in a subst, parse error} {
 test subst-11.6 {continue in a variable subst} {
     subst {foo $var([continue]) bar}
 } {foo  bar}
+
+test subst-bug-685106 {Tcl_SubstObj halts on NULL} {
+    subst [bytestring bar\x00soom]
+} [bytestring bar\x00soom]
 
 # cleanup
 ::tcltest::cleanupTests
