@@ -955,6 +955,19 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    fi
 
 	    ;;
+	QNX-6*)
+	    # QNX RTP
+	    # This may work for all QNX, but it was only reported for v6.
+	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_LD="ld -Bshareable -x"
+	    SHLIB_LD_LIBS=""
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    # dlopen is in -lc on QNX
+	    DL_LIBS=""
+	    LDFLAGS=""
+	    LD_SEARCH_FLAGS=""
+	    ;;
 	RISCos-*)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
