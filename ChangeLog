@@ -1,3 +1,16 @@
+2000-11-03  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* generic/tclStubInit.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls: added Tcl_SetMainLoop proc that allows people
+	to set a main loop that will run for tclsh.
+	* generic/tcl.h: added Tcl_MainLoopProc typedef
+	* generic/tclMain.c (Tcl_SetMainLoop, StdinProc, Prompt): new
+	StdinProc and Prompt static procs and Tcl_SetMainLoop stubs proc.
+	The first two handle a fileevent based prompt (taken from
+	tkMain.c).  Tcl_SetMainLoop enables the interactive setting of a
+	main loop procedure.  This enables Tk to be a loadable package.
+
 2000-11-02  David Gravereaux  <davygrvy@ajubasolutions.com>
 
 	* generic/tclEvent.c: tclLibraryPath Tcl_Obj didn't have a way
