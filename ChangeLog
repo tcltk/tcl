@@ -1,3 +1,23 @@
+2003-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3:
+	* generic/tclIOUtil.c:
+	* generic/tclInt.h:
+	* tests/fileSystem.test:
+	* unix/tclUnixFCmd.c:
+	* unix/tclUnixFile.c:
+	* win/tclWinFile.c: further filesystem optimization, applying
+	[Patch 682500].  In particular, these code examples are
+	faster now:
+	
+        foreach f $flist { if {[file exists $f]} {file stat $f arr;...}}
+            
+        foreach f [glob -dir $dir *] { # action and/or recursion on $f }
+
+        cd $dir
+	foreach f [glob *] { # action and/or recursion on $f }
+	cd ..
+
 2003-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/safe.tcl: code cleanup of eval and string comp use.
