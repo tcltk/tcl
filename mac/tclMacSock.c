@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.4 1999/04/16 00:47:21 stanton Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.5 1999/08/10 04:21:55 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -82,6 +82,9 @@ typedef struct TcpState {
     rdsEntry rdsarray[5+1];	   /* Array used when cleaning out recieve 
 				    * buffers on a closing socket. */
     Tcl_Channel channel;	   /* Channel associated with this socket. */
+    int writeBufferSize;           /* Size of buffer to hold data for
+                                    *  asynchronous writes. */
+    void *writeBuffer;             /* Buffer for async write data. */
     struct TcpState *nextPtr;	   /* The next socket on the global socket
 				    * list. */
 } TcpState;
@@ -1226,8 +1229,26 @@ TcpOutput(
 	    if (toWrite < amount) {
 		amount = toWrite;
 	    }
+
+            /* We need to copy the data, otherwise the caller may overwrite
+             * the buffer in the middle of our asynchronous call
+             */
+             
+            if (amount > statePtr->writeBufferSize) {
+                /* 
+                 * need to grow write buffer 
+                 */
+                 
+                if (statePtr->writeBuffer != (void *) NULL) {
+                    ckfree(statePtr->writeBuffer);
+                }
+                statePtr->writeBuffer = (void *) ckalloc(amount);
+                statePtr->writeBufferSize = amount;
+            }
+            memcpy(statePtr->writeBuffer, buf, amount);
+            statePtr->dataSegment[0].ptr = statePtr->writeBuffer;
+
 	    statePtr->dataSegment[0].length = amount;
-	    statePtr->dataSegment[0].ptr = buf;
 	    statePtr->dataSegment[1].length = 0;
 	    InitMacTCPParamBlock(&statePtr->pb, TCPSend);
 	    statePtr->pb.ioCompletion = completeUPP;
@@ -1496,6 +1517,8 @@ NewSocketInfo(
     statePtr->watchMask = 0;
     statePtr->acceptProc = (Tcl_TcpAcceptProc *) NULL;
     statePtr->acceptProcData = (ClientData) NULL;
+    statePtr->writeBuffer = (void *) NULL;
+    statePtr->writeBufferSize = 0;
     statePtr->nextPtr = tsdPtr->socketList;
     tsdPtr->socketList = statePtr;
     return statePtr;
@@ -1535,6 +1558,11 @@ FreeSocketInfo(
 	    }
 	}
     }
+    
+    if (statePtr->writeBuffer != (void *) NULL) {
+        ckfree(statePtr->writeBuffer);
+    }
+    
     ckfree((char *) statePtr);
 }
 
