@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.32 2002/06/25 08:59:36 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.33 2002/08/05 03:24:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -947,7 +947,7 @@ Tcl_Backslash(src, readPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_Concat(argc, argv)
     int argc;			/* Number of strings to concatenate. */
     CONST char * CONST *argv;	/* Array of strings to concatenate. */
@@ -1878,7 +1878,7 @@ char *
 TclPrecTraceProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *name1;		/* Name of variable. */
+    CONST char *name1;		/* Name of variable. */
     CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
@@ -2124,38 +2124,28 @@ TclLooksLikeInt(bytes, length)
 				 * considered (if they may appear in an 
 				 * integer). */
 {
-    register CONST char *p, *end;
+    register CONST char *p;
+
+    if ((bytes == NULL) && (length > 0)) {
+	Tcl_Panic("TclLooksLikeInt: cannot scan %d bytes from NULL", length);
+    }
 
     if (length < 0) {
-	length = (bytes? strlen(bytes) : 0);
+        length = (bytes? strlen(bytes) : 0);
     }
-    end = (bytes + length);
 
     p = bytes;
-    while ((p < end) && isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	p++;
+    while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
+	length--; p++;
     }
-    if (p == end) {
-	return 0;
+    if (length == 0) {
+        return 0;
     }
-    
     if ((*p == '+') || (*p == '-')) {
-	p++;
+        p++; length--;
     }
-    if ((p == end) || !isdigit(UCHAR(*p))) { /* INTL: digit */
-	return 0;
-    }
-    p++;
-    while ((p < end) && isdigit(UCHAR(*p))) { /* INTL: digit */
-	p++;
-    }
-    if (p == end) {
-	return 1;
-    }
-    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
-	return 1;
-    }
-    return 0;
+
+    return (0 != TclParseInteger(p, length));
 }
 
 /*

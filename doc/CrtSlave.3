@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.7 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.8 2002/08/05 03:24:39 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -73,7 +73,7 @@ Interpreter that contains the target command for an alias.
 Name of target command for alias in \fItargetInterp\fR.
 .AP int argc in
 Count of additional arguments to pass to the alias command.
-.AP "char * CONST" *argv in
+.AP "CONST char * CONST" *argv in
 Vector of strings, the additional arguments to pass to the alias command.
 This storage is owned by the caller.
 .AP int objc in
@@ -91,7 +91,7 @@ for an alias.
 .AP int *argcPtr out
 Pointer to location to store count of additional arguments to be passed to
 the alias. The location is in storage owned by the caller.
-.AP char ***argvPtr out
+.AP "CONST char" ***argvPtr out
 Pointer to location to store a vector of strings, the additional arguments
 to pass to an alias. The location is in storage owned by the caller, the
 vector of strings is owned by the called function.
