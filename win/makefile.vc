@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.41 1999/07/22 21:50:57 redman Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.42 1999/07/22 23:45:53 redman Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -48,7 +48,7 @@ MACHINE	= IX86
 #THREADDEFINES = -DTCL_THREADS=1
 
 # Set NODEBUG to 0 to compile with symbols
-NODEBUG = 0
+NODEBUG = 1
 
 # The following defines can be used to control the amount of debugging
 # code that is added to the compilation.

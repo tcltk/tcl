@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.12 1999/07/21 21:28:59 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.13 1999/07/22 23:45:53 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -23,6 +23,7 @@ static int initialized = 0;
 static int  hostnameInitialized = 0;
 static char hostname[255];	/* This buffer should be big enough for
                                  * hostname plus domain name. */
+
 TCL_DECLARE_MUTEX(socketMutex)
 
 /*
@@ -157,6 +158,7 @@ typedef struct ThreadSpecificData {
     HANDLE readyEvent;      /* Event indicating that a socket event is ready.
 			     * Also used to indicate that the socketThread has
 			     * been initialized and has started. */
+    HANDLE socketListLock;  /* Win32 Event to lock the socketList */
     SocketInfo *socketList;
 } ThreadSpecificData;
 
@@ -448,6 +450,7 @@ InitSockets()
 	tsdPtr->threadId = Tcl_GetCurrentThread();
 	
 	tsdPtr->readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	tsdPtr->socketListLock = CreateEvent(NULL, FALSE, TRUE, NULL);
 	tsdPtr->socketThread = CreateThread(NULL, 8000, SocketThread,
 		tsdPtr, 0, &id);
 	SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST); 
@@ -463,12 +466,9 @@ InitSockets()
 	 * seconds.
 	 */
 	
-	Tcl_MutexUnlock(&socketMutex);
 	if (WaitForSingleObject(tsdPtr->readyEvent, 20000) == WAIT_TIMEOUT) {
-	    Tcl_MutexLock(&socketMutex);
 	    goto unloadLibrary;
 	}
-	Tcl_MutexLock(&socketMutex);
 
 	if (tsdPtr->hwnd == NULL) {
 	    goto unloadLibrary;
@@ -663,6 +663,7 @@ SocketSetupProc(data, flags)
      * Check to see if there is a ready socket.  If so, poll.
      */
 
+    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->readyEvents & infoPtr->watchEvents) {
@@ -670,6 +671,7 @@ SocketSetupProc(data, flags)
 	    break;
 	}
     }
+    SetEvent(tsdPtr->socketListLock);
 }
 
 /*
@@ -708,6 +710,7 @@ SocketCheckProc(data, flags)
      * events).
      */
 
+    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
 	    infoPtr = infoPtr->nextPtr) {
 	if ((infoPtr->readyEvents & infoPtr->watchEvents)
@@ -719,6 +722,7 @@ SocketCheckProc(data, flags)
 	    Tcl_QueueEvent((Tcl_Event *) evPtr, TCL_QUEUE_TAIL);
 	}
     }
+    SetEvent(tsdPtr->socketListLock);
 }
 
 /*
@@ -762,13 +766,15 @@ SocketEventProc(evPtr, flags)
      * Find the specified socket on the socket list.
      */
 
+    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->socket == eventPtr->socket) {
 	    break;
 	}
     }
-
+    SetEvent(tsdPtr->socketListLock);
+    
     /*
      * Discard events that have gone stale.
      */
@@ -934,6 +940,7 @@ TcpCloseProc(instanceData, interp)
      * Remove the socket from socketList.
      */
 
+    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (nextPtrPtr = &(tsdPtr->socketList); (*nextPtrPtr) != NULL;
 	 nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	if ((*nextPtrPtr) == infoPtr) {
@@ -941,7 +948,8 @@ TcpCloseProc(instanceData, interp)
 	    break;
 	}
     }
-
+    SetEvent(tsdPtr->socketListLock);
+    
     ckfree((char *) infoPtr);
     return errorCode;
 }
@@ -980,9 +988,11 @@ NewSocketInfo(socket)
     infoPtr->acceptProc = NULL;
     infoPtr->lastError = 0;
 
+    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     infoPtr->nextPtr = tsdPtr->socketList;
     tsdPtr->socketList = infoPtr;
-
+    SetEvent(tsdPtr->socketListLock);
+    
     return infoPtr;
 }
 
@@ -2102,11 +2112,9 @@ SocketThread(LPVOID arg)
 {
     MSG msg;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)(arg);
-    
-    Tcl_MutexLock(&socketMutex);
+
     tsdPtr->hwnd = CreateWindowA("TclSocket", "TclSocket", 
 	    WS_TILED, 0, 0, 0, 0, NULL, NULL, windowClass.hInstance, NULL);
-    Tcl_MutexUnlock(&socketMutex);
 
     /*
      * Signal the main thread that the window has been created
@@ -2183,13 +2191,12 @@ SocketProc(hwnd, message, wParam, lParam)
 	    error = WSAGETSELECTERROR(lParam);
 	    socket = (SOCKET) wParam;
 
-	    Tcl_MutexLock(&socketMutex);
-	    
 	    /*
 	     * Find the specified socket on the socket list and update its
 	     * eventState flag.
 	     */
 	    
+	    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	    for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
 		 infoPtr = infoPtr->nextPtr) {
 		if (infoPtr->socket == socket) {
@@ -2248,7 +2255,7 @@ SocketProc(hwnd, message, wParam, lParam)
 		    break;
 		}
 	    }
-	    Tcl_MutexUnlock(&socketMutex);
+	    SetEvent(tsdPtr->socketListLock);
 	    break;
 	case SOCKET_SELECT:
 	    infoPtr = (SocketInfo *) lParam;
@@ -2295,22 +2302,27 @@ Tcl_GetHostName()
     WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
 
     Tcl_MutexLock(&socketMutex);
+    InitSockets();
+
     if (hostnameInitialized) {
 	Tcl_MutexUnlock(&socketMutex);
         return hostname;
     }
-
+    Tcl_MutexUnlock(&socketMutex);
+	
     if (TclpHasSockets(NULL) == TCL_OK) {
 	/*
 	 * INTL: bug
 	 */
 
 	if ((*winSock.gethostname)(hostname, sizeof(hostname)) == 0) {
+	    Tcl_MutexLock(&socketMutex);
 	    hostnameInitialized = 1;
 	    Tcl_MutexUnlock(&socketMutex);
 	    return hostname;
 	}
     }
+    Tcl_MutexLock(&socketMutex);
     length = sizeof(hostname);
     if ((*tclWinProcs->getComputerNameProc)(wbuf, &length) != 0) {
 	/*

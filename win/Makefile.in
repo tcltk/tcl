@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.16 1999/07/20 00:11:56 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.17 1999/07/22 23:45:53 redman Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -101,6 +101,8 @@ PATHTYPE		= @PATHTYPE@
 GENERIC_DIR_NATIVE 	= $(shell cygpath $(PATHTYPE) '$(GENERIC_DIR)')
 WIN_DIR_NATIVE	   	= $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
 ROOT_DIR_NATIVE	   	= $(shell cygpath $(PATHTYPE) '$(ROOT_DIR)')
+
+LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
 
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
@@ -443,13 +445,13 @@ install-libraries:
 install-doc:
 
 test: binaries $(TCLTEST)
-	TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLTEST) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	| ./$(CAT32)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
-	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	    ./tcltest
 
 depend:
