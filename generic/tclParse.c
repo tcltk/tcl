@@ -9,11 +9,12 @@
  *	allow scripts to be evaluated directly, without compiling.
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.6 1998/12/02 01:59:35 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.7 1998/12/02 21:45:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -308,7 +309,9 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	}
 	while (1) {
 	    if (src == parsePtr->end) {
-		parsePtr->incomplete = 1;
+		if (nested) {
+		    parsePtr->incomplete = nested;
+		}
 		parsePtr->commentSize = src - parsePtr->commentStart;
 		break;
 	    } else if (*src == '\\') {
@@ -885,7 +888,7 @@ EvalObjv(interp, objc, objv, command, length, flags)
 
 	    if (length < 0) {
 		length = strlen(command);
-	    } else if (length < strlen(command)) {
+	    } else if ((size_t)length < strlen(command)) {
 		commandCopy = (char *) ckalloc((unsigned) (length + 1));
 		strncpy(commandCopy, command, (size_t) length);
 		commandCopy[length] = 0;
