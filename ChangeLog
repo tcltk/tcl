@@ -1,3 +1,16 @@
+2000-10-30  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* unix/tclUnixInit.c: added default encoding map from
+	"ja_JP.eucJP" to "euc-jp". (takahashi)
+
+	* tests/clock.test: corrected clock-2.* test numbering
+
+	* unix/configure.in (SC_TCL_LINK_LIBS): removed code that was
+	commented out (it had been moved to tcl.m4's SC_TCL_LINK_LIBS
+	already).
+
+	* unix/tcl.m4: consolidated gettimeofday check for AIX.
+
 2000-10-27  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* unix/configure.in:
