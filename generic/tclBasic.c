@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.92 2003/10/14 15:44:52 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.93 2003/11/14 20:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3499,9 +3499,10 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     CONST char *p, *next;
     Tcl_Parse parse;
 #define NUM_STATIC_OBJS 20
-    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
+    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv, **objvSpace;
+    int expandStatic[NUM_STATIC_OBJS], *expand;
     Tcl_Token *tokenPtr;
-    int i, code, commandLength, bytesLeft;
+    int i, code, commandLength, bytesLeft, expandRequested;
     CallFrame *savedVarFramePtr;   /* Saves old copy of iPtr->varFramePtr
 				    * in case TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
@@ -3529,7 +3530,8 @@ Tcl_EvalEx(interp, script, numBytes, flags)
      * command from the script and then executes it.
      */
 
-    objv = staticObjArray;
+    objv = objvSpace = staticObjArray;
+    expand = expandStatic;
     p = script;
     bytesLeft = numBytes;
     iPtr->evalFlags = 0;
@@ -3544,23 +3546,87 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    /*
 	     * Generate an array of objects for the words of the command.
 	     */
+	    int objectsNeeded = 0;
     
-	    if (parse.numWords <= NUM_STATIC_OBJS) {
-		objv = staticObjArray;
-	    } else {
-		objv = (Tcl_Obj **) ckalloc((unsigned)
+	    if (parse.numWords > NUM_STATIC_OBJS) {
+		expand = (int *) ckalloc((unsigned)
+		    (parse.numWords * sizeof (int)));
+		objvSpace = (Tcl_Obj **) ckalloc((unsigned)
 		    (parse.numWords * sizeof (Tcl_Obj *)));
 	    }
+	    expandRequested = 0;
+	    objv = objvSpace;
 	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
 		    objectsUsed < parse.numWords;
 		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		code = TclSubstTokens(interp, tokenPtr+1, 
 		            tokenPtr->numComponents, NULL);
-		if (code == TCL_OK) {
-		    objv[objectsUsed] = Tcl_GetObjResult(interp);
-		    Tcl_IncrRefCount(objv[objectsUsed]);
-		} else {
+		if (code != TCL_OK) {
 		    goto error;
+		}
+		objv[objectsUsed] = Tcl_GetObjResult(interp);
+		Tcl_IncrRefCount(objv[objectsUsed]);
+		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		    int numElements;
+
+		    code = Tcl_ListObjLength(interp,
+			    objv[objectsUsed], &numElements);
+		    if (code == TCL_ERROR) {
+			/* Attempt to expand a non-list */
+			Tcl_Obj *msg = 
+				Tcl_NewStringObj("\n    (expanding word ", -1);
+			Tcl_Obj *wordNum = Tcl_NewIntObj(objectsUsed);
+			Tcl_IncrRefCount(wordNum);
+			Tcl_IncrRefCount(msg);
+			Tcl_AppendObjToObj(msg, wordNum);
+			Tcl_DecrRefCount(wordNum);
+			Tcl_AppendToObj(msg, ")", -1);
+			TclAppendObjToErrorInfo(interp, msg);
+			Tcl_DecrRefCount(msg);
+			goto error;
+		    }
+		    expandRequested = 1;
+		    expand[objectsUsed] = 1;
+		    objectsNeeded += (numElements ? numElements : 1);
+		} else {
+		    expand[objectsUsed] = 0;
+		    objectsNeeded++;
+		}
+	    }
+	    if (expandRequested) {
+		/* Some word expansion was requested.  Check for objv resize */
+		Tcl_Obj **copy = objvSpace;
+		int wordIdx = parse.numWords;
+		int objIdx = objectsNeeded - 1;
+
+		if ((parse.numWords > NUM_STATIC_OBJS)
+			|| (objectsNeeded > NUM_STATIC_OBJS)) {
+		    objv = objvSpace = (Tcl_Obj **) ckalloc((unsigned)
+			    (objectsNeeded * sizeof (Tcl_Obj *)));
+		}
+
+		objectsUsed = 0;
+		while (wordIdx--) {
+		    if (expand[wordIdx]) {
+			int numElements;
+			Tcl_Obj **elements, *temp = copy[wordIdx];
+			Tcl_ListObjGetElements(NULL, temp,
+				&numElements, &elements);
+			objectsUsed += numElements;
+			while (numElements--) {
+			    objv[objIdx--] = elements[numElements];
+			    Tcl_IncrRefCount(elements[numElements]);
+			}
+			Tcl_DecrRefCount(temp);
+		    } else {
+			objv[objIdx--] = copy[wordIdx];
+			objectsUsed++;
+		    }
+		}
+		objv += objIdx+1;
+
+		if (copy != staticObjArray) {
+		    ckfree((char *) copy);
 		}
 	    }
     
@@ -3589,9 +3655,17 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 		Tcl_DecrRefCount(objv[i]);
 	    }
 	    objectsUsed = 0;
-	    if (objv != staticObjArray) {
-		ckfree((char *) objv);
-		objv = staticObjArray;
+	    if (objvSpace != staticObjArray) {
+		ckfree((char *) objvSpace);
+		objvSpace = staticObjArray;
+	    }
+	    /* 
+	     * Free expand separately since objvSpace could have been
+	     * reallocated above. 
+	     */
+	    if (expand != expandStatic) {
+		ckfree((char *) expand);
+		expand = expandStatic;
 	    }
 	}
 
@@ -3637,8 +3711,11 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     if (gotParse) {
 	Tcl_FreeParse(&parse);
     }
-    if (objv != staticObjArray) {
-	ckfree((char *) objv);
+    if (objvSpace != staticObjArray) {
+	ckfree((char *) objvSpace);
+    }
+    if (expand != expandStatic) {
+	ckfree((char *) expand);
     }
     iPtr->varFramePtr = savedVarFramePtr;
     return code;

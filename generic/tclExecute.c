@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.113 2003/10/28 22:06:14 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.114 2003/11/14 20:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1078,7 +1078,9 @@ TclExecuteByteCode(interp, codePtr)
     Tcl_WideInt w;
     int isWide;
     register int cleanup;
+    int objc = 0;
     Tcl_Obj *objResultPtr;
+    Tcl_Obj **objv = NULL, **stackObjArray = NULL;
     char *part1, *part2;
     Var *varPtr, *arrayPtr;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -1304,21 +1306,121 @@ TclExecuteByteCode(interp, codePtr)
 	    TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	    NEXT_INST_V(2, opnd, 1);
 	}
-	    
+
+    case INST_LIST_VERIFY:
+	{  
+	    int numElements = 0;
+	    valuePtr = *tosPtr;
+
+	    result = Tcl_ListObjLength(interp, valuePtr, &numElements);
+	    if (result != TCL_OK) {
+		TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
+	        	Tcl_GetObjResult(interp));
+		goto checkForCatch;
+	    }
+	    NEXT_INST_F(1, 0, 0);
+	}
+
+    case INST_INVOKE_EXP:
+	{
+	    int numWords = TclGetUInt4AtPtr(pc+1);
+	    int spaceAvailable = eePtr->endPtr - tosPtr;
+	    unsigned char *deltaPtr, *deltaPtrStart = pc+5;
+	    Tcl_Obj **wordv = tosPtr - (numWords - 1);
+	    int objIdx, wordIdx, wordToExpand = -1;
+
+	    /* 
+	     * Compute number of objects needed to store the 
+	     * command after expansion is complete.
+	     */
+
+	    opnd = objc = numWords;
+	    for (deltaPtr = deltaPtrStart; *deltaPtr; deltaPtr++) {
+		int numElements;
+		wordToExpand += TclGetUInt1AtPtr(deltaPtr);
+		Tcl_ListObjLength(NULL, wordv[wordToExpand], &numElements);
+		objc += numElements - 1;
+	    }
+
+	    /*
+	     * We'll store the expanded command in the stack expansion
+	     * space just above tosPtr, assuming there is room.  Otherwise,
+	     * allocate enough heap storage to store the expanded command.
+	     */
+
+	    objv = stackObjArray = tosPtr + 1;
+	    if (objc > spaceAvailable) {
+		objv = (Tcl_Obj **) ckalloc((unsigned)
+			(objc * sizeof(Tcl_Obj *)));
+	    } else {
+		tosPtr += objc;
+	    }
+
+	    objIdx = 0;
+	    deltaPtr = deltaPtrStart;
+	    wordToExpand = TclGetUInt1AtPtr(deltaPtr) - 1;
+	    for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
+
+		/* 
+		 * Copy words (expanding some) from wordv to objv.
+		 * Note that we do not increment refCounts.  We
+		 * rely on the references in wordv (on the execution
+		 * stack) to be sufficient to keep the values around
+		 * as long as we need them.
+		 */
+
+		if (wordIdx == wordToExpand) {
+		    int i, numElements;
+		    Tcl_Obj **elements, *temp = wordv[wordIdx];
+
+		    /*
+		     * Make sure the list we expand is unshared.
+		     * If it is not shared, then the stack holds the
+		     * only reference to it, and there is no danger
+		     * the list will shimmer to another type (and
+		     * possibly free the elements of the list) before
+		     * we are done with the command evaluation.
+		     */
+
+		    if (Tcl_IsShared(temp)) {
+			Tcl_DecrRefCount(temp);
+			temp = Tcl_DuplicateObj(temp);
+			Tcl_IncrRefCount(temp);
+			wordv[wordIdx] = temp;
+		    }
+		    Tcl_ListObjGetElements(NULL, temp, &numElements, &elements);
+		    for (i=0; i<numElements; i++) {
+			objv[objIdx++] = elements[i];
+		    }
+		    ++deltaPtr;
+		    if (*deltaPtr) {
+			wordToExpand += TclGetUInt1AtPtr(deltaPtr);
+		    } else {
+			wordToExpand = -1;
+		    }
+		} else {
+		    objv[objIdx++] = wordv[wordIdx];
+		}
+	    }
+	    pcAdjustment = (deltaPtr - pc) + 1;
+	    goto doInvocation;
+	}
+
     case INST_INVOKE_STK4:
 	opnd = TclGetUInt4AtPtr(pc+1);
+	objc = opnd;
+	objv = stackObjArray = (tosPtr - (objc-1));
 	pcAdjustment = 5;
 	goto doInvocation;
 
     case INST_INVOKE_STK1:
 	opnd = TclGetUInt1AtPtr(pc+1);
+	objc = opnd;
+	objv = stackObjArray = (tosPtr - (objc-1));
 	pcAdjustment = 2;
 	    
     doInvocation:
 	{
-	    int objc = opnd; /* The number of arguments. */
-	    Tcl_Obj **objv;	 /* The array of argument objects. */
-
 	    /*
 	     * We keep the stack reference count as a (char *), as that
 	     * works nicely as a portable pointer-sized counter.
@@ -1326,14 +1428,6 @@ TclExecuteByteCode(interp, codePtr)
 
 	    char **preservedStackRefCountPtr;
 	    
-	    /* 
-	     * Reference to memory block containing
-	     * objv array (must be kept live throughout
-	     * trace and command invokations.) 
-	     */
-
-	    objv = (tosPtr - (objc-1));
-
 #ifdef TCL_COMPILE_DEBUG
 	    if (tclTraceExec >= 2) {
 		if (traceInstructions) {
@@ -1417,6 +1511,12 @@ TclExecuteByteCode(interp, codePtr)
 	    if (*preservedStackRefCountPtr == (char *) 0) {
 		ckfree((VOID *) preservedStackRefCountPtr);
 	    }	    
+
+	    if (objv != stackObjArray) {
+		ckfree((char *) objv);
+	    } else if (*pc == INST_INVOKE_EXP) {
+		tosPtr -= objc;
+	    }
 
 	    if (result == TCL_OK) {
 		/*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.51 2003/10/14 15:44:52 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.52 2003/11/14 20:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -273,6 +273,10 @@ InstructionDesc tclInstructionTable[] = {
 	/* return TCL_RETURN code. */
     {"expon",		  1,   -1,	    0,	 {OPERAND_NONE}},
 	/* Binary exponentiation operator: push (stknext ** stktop) */
+    {"listverify",	  1,    0,	    0,   {OPERAND_NONE}},
+	/* Test that top of stack is a valid list; error if not */
+    {"invokeExp",   INT_MIN,   INT_MIN,    2, {OPERAND_UINT4, OPERAND_ULIST1}},
+	/* Invoke with expansion: <objc,objv> = expanded <op1,top op1> */
     {0}
 };
 
@@ -843,6 +847,10 @@ TclCompileScript(interp, script, numBytes, envPtr)
 	}
 	gotParse = 1;
 	if (parse.numWords > 0) {
+	    int expand = 0;
+	    unsigned char delta = 1;
+	    Tcl_DString deltaList;
+
 	    /*
 	     * If not the first command, pop the previous command's result
 	     * and, if we're compiling a top level command, update the last
@@ -883,28 +891,57 @@ TclCompileScript(interp, script, numBytes, envPtr)
 		fprintf(stdout, "\n");
 	    }
 #endif
+
 	    /*
-	     * Each iteration of the following loop compiles one word
-	     * from the command.
+	     * Check whether expansion has been requested for any of
+	     * the words
 	     */
-	    
+
+	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
+		    wordIdx < parse.numWords;
+		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
+		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		    expand = 1;
+		    Tcl_DStringInit(&deltaList);
+		    break;
+		}
+	    }
+
 	    envPtr->numCommands++;
 	    currCmdIndex = (envPtr->numCommands - 1);
 	    lastTopLevelCmdIndex = currCmdIndex;
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
 	            (parse.commandStart - envPtr->source), startCodeOffset);
+
+	    /*
+	     * Each iteration of the following loop compiles one word
+	     * from the command.
+	     */
 	    
 	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
-		    wordIdx < parse.numWords;
-		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
+		    wordIdx < parse.numWords; delta++, wordIdx++,
+		    tokenPtr += (tokenPtr->numComponents + 1)) {
+
+		if ((delta == 255)
+			&& (tokenPtr->type != TCL_TOKEN_EXPAND_WORD)) {
+		    /*
+		     * Push an empty list for expansion so our delta
+		     * between expanded words doesn't overflow a byte
+		     */
+		    objIndex = TclRegisterNewLiteral(envPtr, "", 0);
+		    TclEmitPush(objIndex, envPtr);
+		    Tcl_DStringAppend(&deltaList, &delta, 1);
+		    delta = 1;
+		}
+
 		if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		    /*
 		     * If this is the first word and the command has a
 		     * compile procedure, let it compile the command.
 		     */
 
-		    if (wordIdx == 0) {
+		    if ((wordIdx == 0) && !expand) {
 			if (envPtr->procPtr != NULL) {
 			    cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
 			} else {
@@ -987,20 +1024,55 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			goto log;
 		    }
 		}
+		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+
+		    if ((tokenPtr->numComponents == 1)
+			    && (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
+			/*
+			 * The value to be expanded is fully known
+			 * now at compile time.  We can check list
+			 * validity, so we do not have to do so at
+			 * runtime
+			 */
+			int length;
+			Tcl_Obj *testObj = Tcl_NewStringObj(tokenPtr[1].start,
+				tokenPtr[1].size);
+			if (TCL_OK !=
+				Tcl_ListObjLength(NULL, testObj, &length)) {
+			    /*
+			     * Not a valid list, so emit instructions to
+			     * test list validity (and fail) at runtime
+			     */
+			    TclEmitOpcode(INST_LIST_VERIFY, envPtr);
+			}
+		    } else {
+			/* 
+			 * Value to expand unknown until runtime, so
+			 * include a runtime check for valid list
+			 */
+			TclEmitOpcode(INST_LIST_VERIFY, envPtr);
+		    }
+		    Tcl_DStringAppend(&deltaList, (char *)&delta, 1);
+		    delta = 0;
+		}
 	    }
 
 	    /*
 	     * Emit an invoke instruction for the command. We skip this
 	     * if a compile procedure was found for the command.
 	     */
-	    
-	    if (wordIdx > 0) {
+
+	    if (expand) {
+		TclEmitInstInt4(INST_INVOKE_EXP, wordIdx, envPtr);
+		TclEmitImmDeltaList1(&deltaList, envPtr);
+		Tcl_DStringFree(&deltaList);
+	    } else if (wordIdx > 0) {
 		if (wordIdx <= 255) {
 		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
 		} else {
 		    TclEmitInstInt4(INST_INVOKE_STK4, wordIdx, envPtr);
 		}
-	    }
+	    } 
 
 	    /*
 	     * Update the compilation environment structure and record the
@@ -3146,13 +3218,13 @@ TclPrintInstruction(codePtr, pc)
     register InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned int pcOffset = (pc - codeStart);
-    int opnd, i, j;
+    int opnd, i, j, numBytes = 1;
     
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
-	    opnd = TclGetInt1AtPtr(pc+1+i);
+	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
 	    if ((i == 0) && ((opCode == INST_JUMP1)
 			     || (opCode == INST_JUMP_TRUE1)
 		             || (opCode == INST_JUMP_FALSE1))) {
@@ -3162,7 +3234,7 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 	case OPERAND_INT4:
-	    opnd = TclGetInt4AtPtr(pc+1+i);
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if ((i == 0) && ((opCode == INST_JUMP4)
 			     || (opCode == INST_JUMP_TRUE4)
 		             || (opCode == INST_JUMP_FALSE4))) {
@@ -3172,7 +3244,7 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 	case OPERAND_UINT1:
-	    opnd = TclGetUInt1AtPtr(pc+1+i);
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    if ((i == 0) && (opCode == INST_PUSH1)) {
 		fprintf(stdout, "%u  	# ", (unsigned int) opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
@@ -3185,7 +3257,6 @@ TclPrintInstruction(codePtr, pc)
 		if (opnd >= localCt) {
 		    panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
-		    return instDesc->numBytes;
 		}
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
@@ -3202,7 +3273,7 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 	case OPERAND_UINT4:
-	    opnd = TclGetUInt4AtPtr(pc+1+i);
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_PUSH4) {
 		fprintf(stdout, "%u  	# ", opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
@@ -3215,7 +3286,6 @@ TclPrintInstruction(codePtr, pc)
 		if (opnd >= localCt) {
 		    panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
-		    return instDesc->numBytes;
 		}
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
@@ -3231,13 +3301,24 @@ TclPrintInstruction(codePtr, pc)
 		fprintf(stdout, "%u ", (unsigned int) opnd);
 	    }
 	    break;
+
+	case OPERAND_ULIST1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    fprintf(stdout, "{");
+	    while (opnd) {
+		fprintf(stdout, "%u ", opnd);
+	        opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    }
+	    fprintf(stdout, "0}");
+	    break;
+
 	case OPERAND_NONE:
 	default:
 	    break;
 	}
     }
     fprintf(stdout, "\n");
-    return instDesc->numBytes;
+    return numBytes;
 }
 
 /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.32 2003/11/10 17:57:21 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.33 2003/11/14 20:44:46 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2194,7 +2194,7 @@ test fCmd-27.4 {TclFileAttrsCmd - getting one option} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
     set attrs [file attributes foo.tmp]
-    list [catch {eval file attributes foo.tmp [lindex $attrs 0]}] [file delete -force -- foo.tmp]
+    list [catch {file attributes foo.tmp {expand}[lindex $attrs 0]}] [file delete -force -- foo.tmp]
 } {0 {}}
 
 # Find a group that exists on this Unix system, or else skip tests that
@@ -2214,13 +2214,13 @@ test fCmd-27.5 {TclFileAttrsCmd - setting one option} {foundGroup} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
     set attrs [file attributes foo.tmp]
-    list [catch {eval file attributes foo.tmp [lrange $attrs 0 1]} msg] $msg [file delete -force -- foo.tmp]
+    list [catch {file attributes foo.tmp {expand}[lrange $attrs 0 1]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} {foundGroup} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
     set attrs [file attributes foo.tmp]
-    list [catch {eval file attributes foo.tmp [lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
+    list [catch {file attributes foo.tmp {expand}[lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 
 if {[string equal $tcl_platform(platform) "windows"]} {
