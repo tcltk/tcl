@@ -1,3 +1,13 @@
+2003-08-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	TIP #136 IMPLEMENTATION from Simon Geard <simon.geard@ntlworld.com>
+	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Adapted version of Simon's
+	* doc/lrepeat.n:			  patch, updated to the HEAD
+	* tests/lrepeat.test:			  and matching the core style.
+	* generic/tclBasic.c (buildIntCmds):	Splice into core.
+	* generic/tclInt.h: 
+	* doc/list.n:				Cross-reference.
+
 2003-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinInit.c: recognize amd64 and ia32_on_win64 cpus.
