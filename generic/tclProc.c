@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.62 2004/10/18 21:15:42 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.63 2004/10/22 13:48:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1182,20 +1182,20 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 
     if (bodyPtr->typePtr == &tclByteCodeType) {
  	if (((Interp *) *codePtr->interpHandle != iPtr)
- 	        || (codePtr->compileEpoch != iPtr->compileEpoch)
- 	        || (codePtr->nsPtr != nsPtr)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    Tcl_AppendResult(interp,
-                            "a precompiled script jumped interps", NULL);
-                    return TCL_ERROR;
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-                codePtr->nsPtr = nsPtr;
-            } else {
-                (*tclByteCodeType.freeIntRepProc)(bodyPtr);
-                bodyPtr->typePtr = (Tcl_ObjType *) NULL;
-            }
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)
+		|| (codePtr->nsPtr != nsPtr)) {
+	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+		if ((Interp *) *codePtr->interpHandle != iPtr) {
+		    Tcl_AppendResult(interp,
+			    "a precompiled script jumped interps", NULL);
+		    return TCL_ERROR;
+		}
+		codePtr->compileEpoch = iPtr->compileEpoch;
+		codePtr->nsPtr = nsPtr;
+	    } else {
+		bodyPtr->typePtr->freeIntRepProc(bodyPtr);
+		bodyPtr->typePtr = (Tcl_ObjType *) NULL;
+	    }
  	}
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {
