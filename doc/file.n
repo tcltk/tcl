@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.34 2004/05/27 23:35:43 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.35 2004/06/02 14:24:05 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -414,10 +414,12 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 \fBfile volumes\fR
 . 
 Returns the absolute paths to the volumes mounted on the system, as a
-proper Tcl list.  On UNIX, the command will always return "/", since all
+proper Tcl list.  Without any virtual filesystems mounted as root
+volumes, on UNIX, the command will always return "/", since all
 filesystems are locally mounted.
 On Windows, it will return a list of the available local drives
-(e.g. {a:/ c:/}).
+(e.g. {a:/ c:/}).  If any virtual filesystem has mounted additional
+volumes, they will be in the returned list.
 .TP
 \fBfile writable \fIname\fR
 .
