@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.93 2004/01/21 19:59:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.94 2004/01/23 11:03:33 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2628,13 +2628,40 @@ Tcl_FSChdir(pathPtr)
 	     * will have been cached as a result of the
 	     * Tcl_FSGetFileSystemForPath call above anyway).
 	     */
-	    ClientData cd;
 	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	    if (normDirName == NULL) {
 	        return TCL_ERROR;
 	    }
-	    cd = (ClientData) Tcl_FSGetNativePath(pathPtr);
-	    FsUpdateCwd(normDirName, TclNativeDupInternalRep(cd));
+	    if (fsPtr == &tclNativeFilesystem) {
+		/* 
+		 * For the native filesystem, we keep a cache of the
+		 * native representation of the cwd.  But, we want to do
+		 * that for the exact format that is returned by
+		 * 'getcwd' (so that we can later compare the two
+		 * representations for equality), which might not be
+		 * exactly the same char-string as the native
+		 * representation of the fully normalized path (e.g. on
+		 * Windows there's a forward-slash vs backslash
+		 * difference).  Hence we ask for this again here.  On
+		 * Unix it might actually be true that we always have
+		 * the correct form in the native rep in which case we
+		 * could simply use:
+		 * 
+		 * cd = Tcl_FSGetNativePath(pathPtr);
+		 * 
+		 * instead.  This should be examined by someone on
+		 * Unix.
+		 */
+		ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+		ClientData cd;
+
+		/* Assumption we are using a filesystem version 2 */
+		TclFSGetCwdProc2 *proc2 = (TclFSGetCwdProc2*)fsPtr->getCwdProc;
+		cd = (*proc2)(tsdPtr->cwdClientData);
+		FsUpdateCwd(normDirName, TclNativeDupInternalRep(cd));
+	    } else {
+		FsUpdateCwd(normDirName, NULL);
+	    }
 	}
     } else {
 	Tcl_SetErrno(ENOENT);
@@ -4100,7 +4127,7 @@ ClientData
 TclNativeDupInternalRep(clientData)
     ClientData clientData;
 {
-    ClientData copy;
+    char *copy;
     size_t len;
 
     if (clientData == NULL) {
@@ -4120,9 +4147,9 @@ TclNativeDupInternalRep(clientData)
     len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
 #endif
     
-    copy = (ClientData) ckalloc(len);
+    copy = (char *) ckalloc(len);
     memcpy((VOID*)copy, (VOID*)clientData, len);
-    return copy;
+    return (ClientData)copy;
 }
 
 /*

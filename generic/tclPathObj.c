@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.20 2004/01/21 19:59:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.21 2004/01/23 11:04:11 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -216,6 +216,7 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 	if (dirSep[1] == '.') {
 	    if (retVal != NULL) {
 		Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
+		oldDirSep = dirSep;
 	    }
 	  again:
 	    if (IsSeparatorOrNull(dirSep[2])) {
@@ -226,6 +227,7 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 		    Tcl_IncrRefCount(retVal);
 		}
 		dirSep += 2;
+		oldDirSep = dirSep;
 		if (dirSep[0] != 0 && dirSep[1] == '.') {
 		    goto again;
 		}
@@ -269,6 +271,7 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 		    }
 		}
 		dirSep += 3;
+		oldDirSep = dirSep;
 		if (dirSep[0] != 0 && dirSep[1] == '.') {
 		    goto again;
 		}

@@ -1,3 +1,13 @@
+2004-01-22  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileSystem.test: 3 new tests
+	* generic/tclPathObj.c: fix to [Bug 879555] in file normalization. 
+	* doc/filename.n: small clarification to Windows behaviour with
+	filenames like '.....', 'a.....', '.....a'.
+	
+	* generic/tclIOUtil.c: slight improvement to native cwd caching
+	on Windows.
+
 2004-01-21  David Gravereaux <davygrvy@pobox.com>
 
 	* doc/Panic.3:  Mentions of 'panic' and 'panicVA' removed from
@@ -36,10 +46,11 @@
 	conversions.  (3) clarifications to the documentation,
 	particularly regarding the acceptable refCounts of objects.
 	Some new tests added.  Tcl benchmarks show a significant
-	improvement over 8.4.5, and typically a small improvement over
-	8.3.5.  TCL_FILESYSTEM_VERSION_2 introduced, but for internal
-	use only.  There should be no public incompatibilities from
-	these changes.  Thanks to dgp for extensive testing.
+	improvement over 8.4.5, and on Windows typically a small
+	improvement over 8.3.5 (Unix still appears to require
+	optimisation).  TCL_FILESYSTEM_VERSION_2 introduced, but for
+	internal use only.  There should be no public incompatibilities
+	from these changes.  Thanks to dgp for extensive testing.
 	
 2004-01-19  David Gravereaux <davygrvy@pobox.com>
 

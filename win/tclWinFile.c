@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.59 2004/01/21 19:59:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.60 2004/01/23 11:06:00 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2433,9 +2433,18 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		  && (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
 		    Tcl_Obj *to = WinReadLinkDirectory(nativePath);
 		    if (to != NULL) {
-			/* Read the reparse point ok */
-			/* Tcl_GetStringFromObj(to, &pathLen); */
-			nextCheckpoint = 0; /* pathLen */
+			/* 
+			 * Read the reparse point ok.  Now, reparse
+			 * points need not be normalized, otherwise
+			 * we could use: 
+			 * 
+			 * Tcl_GetStringFromObj(to, &pathLen); 
+			 * nextCheckpoint = pathLen
+			 * 
+			 * So, instead we have to start from the
+			 * beginning.
+			 */
+			nextCheckpoint = 0;
 			Tcl_AppendToObj(to, currentPathEndPosition, -1);
 			/* Convert link to forward slashes */
 			for (path = Tcl_GetString(to); *path != 0; path++) {
