@@ -1,5 +1,5 @@
 /* 
- * tclCmdAH.c --
+ * tclTrace.c --
  *
  *	This file contains code to handle most trace management.
  *
@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.1 2003/06/25 23:02:11 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2 2003/06/26 08:43:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -134,6 +134,8 @@ static int	        StringTraceProc _ANSI_ARGS_((ClientData clientData,
 						    int objc,
 						    Tcl_Obj *CONST objv[]));
 static void           StringTraceDeleteProc _ANSI_ARGS_((ClientData clientData));
+static void		DisposeTraceResult _ANSI_ARGS_((int flags,
+			    char *result));
 
 /*
  * The following structure holds the client data for string-based
@@ -2296,4 +2298,678 @@ Tcl_DeleteTrace(interp, trace)
     /* Delete the trace object */
 
     Tcl_EventuallyFree((char*)tracePtr, TCL_DYNAMIC);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclTraceVarExists --
+ *
+ *	This is called from info exists.  We need to trigger read
+ *	and/or array traces because they may end up creating a
+ *	variable that doesn't currently exist.
+ *
+ * Results:
+ *	A pointer to the Var structure, or NULL.
+ *
+ * Side effects:
+ *	May fill in error messages in the interp.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Var *
+TclVarTraceExists(interp, varName)
+    Tcl_Interp *interp;		/* The interpreter */
+    CONST char *varName;	/* The variable name */
+{
+    Var *varPtr;
+    Var *arrayPtr;
+
+    /*
+     * The choice of "create" flag values is delicate here, and
+     * matches the semantics of GetVar.  Things are still not perfect,
+     * however, because if you do "info exists x" you get a varPtr
+     * and therefore trigger traces.  However, if you do 
+     * "info exists x(i)", then you only get a varPtr if x is already
+     * known to be an array.  Otherwise you get NULL, and no trace
+     * is triggered.  This matches Tcl 7.6 semantics.
+     */
+
+    varPtr = TclLookupVar(interp, varName, (char *) NULL,
+            0, "access", /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+
+    if (varPtr == NULL) {
+	return NULL;
+    }
+
+    if ((varPtr->tracePtr != NULL)
+	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+	TclCallVarTraces((Interp *)interp, arrayPtr, varPtr, varName, NULL,
+		TCL_TRACE_READS, /* leaveErrMsg */ 0);
+    }
+
+    /*
+     * If the variable doesn't exist anymore and no-one's using
+     * it, then free up the relevant structures and hash table entries.
+     */
+
+    if (TclIsVarUndefined(varPtr)) {
+	TclCleanupVar(varPtr, arrayPtr);
+	return NULL;
+    }
+
+    return varPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCallVarTraces --
+ *
+ *	This procedure is invoked to find and invoke relevant
+ *	trace procedures associated with a particular operation on
+ *	a variable. This procedure invokes traces both on the
+ *	variable and on its containing array (where relevant).
+ *
+ * Results:
+ *      Returns TCL_OK to indicate normal operation.  Returns TCL_ERROR
+ *      if invocation of a trace procedure indicated an error.  When
+ *      TCL_ERROR is returned and leaveErrMsg is true, then the
+ *      ::errorInfo variable of iPtr has information about the error
+ *      appended to it.
+ *
+ * Side effects:
+ *	Almost anything can happen, depending on trace; this procedure
+ *	itself doesn't have any side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
+    Interp *iPtr;		/* Interpreter containing variable. */
+    register Var *arrayPtr;	/* Pointer to array variable that contains
+				 * the variable, or NULL if the variable
+				 * isn't an element of an array. */
+    Var *varPtr;		/* Variable whose traces are to be
+				 * invoked. */
+    CONST char *part1;
+    CONST char *part2;		/* Variable's two-part name. */
+    int flags;			/* Flags passed to trace procedures:
+				 * indicates what's happening to variable,
+				 * plus other stuff like TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and
+				 * TCL_INTERP_DESTROYED. */
+    CONST int leaveErrMsg;	/* If true, and one of the traces indicates an
+				 * error, then leave an error message and stack
+				 * trace information in *iPTr. */
+{
+    register VarTrace *tracePtr;
+    ActiveVarTrace active;
+    char *result;
+    CONST char *openParen, *p;
+    Tcl_DString nameCopy;
+    int copiedName;
+    int code = TCL_OK;
+    int disposeFlags = 0;
+
+    /*
+     * If there are already similar trace procedures active for the
+     * variable, don't call them again.
+     */
+
+    if (varPtr->flags & VAR_TRACE_ACTIVE) {
+	return code;
+    }
+    varPtr->flags |= VAR_TRACE_ACTIVE;
+    varPtr->refCount++;
+    if (arrayPtr != NULL) {
+	arrayPtr->refCount++;
+    }
+
+    /*
+     * If the variable name hasn't been parsed into array name and
+     * element, do it here.  If there really is an array element,
+     * make a copy of the original name so that NULLs can be
+     * inserted into it to separate the names (can't modify the name
+     * string in place, because the string might get used by the
+     * callbacks we invoke).
+     */
+
+    copiedName = 0;
+    if (part2 == NULL) {
+	for (p = part1; *p ; p++) {
+	    if (*p == '(') {
+		openParen = p;
+		do {
+		    p++;
+		} while (*p != '\0');
+		p--;
+		if (*p == ')') {
+		    int offset = (openParen - part1);
+		    char *newPart1;
+		    Tcl_DStringInit(&nameCopy);
+		    Tcl_DStringAppend(&nameCopy, part1, (p-part1));
+		    newPart1 = Tcl_DStringValue(&nameCopy);
+		    newPart1[offset] = 0;
+		    part1 = newPart1;
+		    part2 = newPart1 + offset + 1;
+		    copiedName = 1;
+		}
+		break;
+	    }
+	}
+    }
+
+    /*
+     * Invoke traces on the array containing the variable, if relevant.
+     */
+
+    result = NULL;
+    active.nextPtr = iPtr->activeVarTracePtr;
+    iPtr->activeVarTracePtr = &active;
+    Tcl_Preserve((ClientData) iPtr);
+    if (arrayPtr != NULL && !(arrayPtr->flags & VAR_TRACE_ACTIVE)) {
+	active.varPtr = arrayPtr;
+	for (tracePtr = arrayPtr->tracePtr;  tracePtr != NULL;
+	     tracePtr = active.nextTracePtr) {
+	    active.nextTracePtr = tracePtr->nextPtr;
+	    if (!(tracePtr->flags & flags)) {
+		continue;
+	    }
+	    Tcl_Preserve((ClientData) tracePtr);
+	    result = (*tracePtr->traceProc)(tracePtr->clientData,
+		    (Tcl_Interp *) iPtr, part1, part2, flags);
+	    if (result != NULL) {
+		if (flags & TCL_TRACE_UNSETS) {
+		    /* Ignore errors in unset traces */
+		    DisposeTraceResult(tracePtr->flags, result);
+		} else {
+	            disposeFlags = tracePtr->flags;
+		    code = TCL_ERROR;
+		}
+	    }
+	    Tcl_Release((ClientData) tracePtr);
+	    if (code == TCL_ERROR) {
+		goto done;
+	    }
+	}
+    }
+
+    /*
+     * Invoke traces on the variable itself.
+     */
+
+    if (flags & TCL_TRACE_UNSETS) {
+	flags |= TCL_TRACE_DESTROYED;
+    }
+    active.varPtr = varPtr;
+    for (tracePtr = varPtr->tracePtr; tracePtr != NULL;
+	 tracePtr = active.nextTracePtr) {
+	active.nextTracePtr = tracePtr->nextPtr;
+	if (!(tracePtr->flags & flags)) {
+	    continue;
+	}
+	Tcl_Preserve((ClientData) tracePtr);
+	result = (*tracePtr->traceProc)(tracePtr->clientData,
+		(Tcl_Interp *) iPtr, part1, part2, flags);
+	if (result != NULL) {
+	    if (flags & TCL_TRACE_UNSETS) {
+		/* Ignore errors in unset traces */
+		DisposeTraceResult(tracePtr->flags, result);
+	    } else {
+		disposeFlags = tracePtr->flags;
+		code = TCL_ERROR;
+	    }
+	}
+	Tcl_Release((ClientData) tracePtr);
+	if (code == TCL_ERROR) {
+	    goto done;
+	}
+    }
+
+    /*
+     * Restore the variable's flags, remove the record of our active
+     * traces, and then return.
+     */
+
+    done:
+    if (code == TCL_ERROR) {
+	if (leaveErrMsg) {
+	    CONST char *type = "";
+	    switch (flags&(TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_ARRAY)) {
+		case TCL_TRACE_READS: {
+		    type = "read";
+		    break;
+		}
+		case TCL_TRACE_WRITES: {
+		    type = "set";
+		    break;
+		}
+		case TCL_TRACE_ARRAY: {
+		    type = "trace array";
+		    break;
+		}
+	    }
+	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
+		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, type,
+			Tcl_GetString((Tcl_Obj *) result));
+	    } else {
+		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, type, result);
+	    }
+	}
+	DisposeTraceResult(disposeFlags,result);
+    }
+
+    if (arrayPtr != NULL) {
+	arrayPtr->refCount--;
+    }
+    if (copiedName) {
+	Tcl_DStringFree(&nameCopy);
+    }
+    varPtr->flags &= ~VAR_TRACE_ACTIVE;
+    varPtr->refCount--;
+    iPtr->activeVarTracePtr = active.nextPtr;
+    Tcl_Release((ClientData) iPtr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DisposeTraceResult--
+ *
+ *	This procedure is called to dispose of the result returned from
+ *	a trace procedure.  The disposal method appropriate to the type
+ *	of result is determined by flags.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The memory allocated for the trace result may be freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DisposeTraceResult(flags, result)
+    int flags;			/* Indicates type of result to determine
+				 * proper disposal method */
+    char *result;		/* The result returned from a trace
+				 * procedure to be disposed */
+{
+    if (flags & TCL_TRACE_RESULT_DYNAMIC) {
+	ckfree(result);
+    } else if (flags & TCL_TRACE_RESULT_OBJECT) {
+	Tcl_DecrRefCount((Tcl_Obj *) result);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UntraceVar --
+ *
+ *	Remove a previously-created trace for a variable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If there exists a trace for the variable given by varName
+ *	with the given flags, proc, and clientData, then that trace
+ *	is removed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_UntraceVar(interp, varName, flags, proc, clientData)
+    Tcl_Interp *interp;		/* Interpreter containing variable. */
+    CONST char *varName;	/* Name of variable; may end with "(index)"
+				 * to signify an array reference. */
+    int flags;			/* OR-ed collection of bits describing
+				 * current trace, including any of
+				 * TCL_TRACE_READS, TCL_TRACE_WRITES,
+				 * TCL_TRACE_UNSETS, TCL_GLOBAL_ONLY
+				 * and TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc;	/* Procedure assocated with trace. */
+    ClientData clientData;	/* Arbitrary argument to pass to proc. */
+{
+    Tcl_UntraceVar2(interp, varName, (char *) NULL, flags, proc, clientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UntraceVar2 --
+ *
+ *	Remove a previously-created trace for a variable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If there exists a trace for the variable given by part1
+ *	and part2 with the given flags, proc, and clientData, then
+ *	that trace is removed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
+    Tcl_Interp *interp;		/* Interpreter containing variable. */
+    CONST char *part1;		/* Name of variable or array. */
+    CONST char *part2;		/* Name of element within array;  NULL means
+				 * trace applies to scalar variable or array
+				 * as-a-whole. */
+    int flags;			/* OR-ed collection of bits describing
+				 * current trace, including any of
+				 * TCL_TRACE_READS, TCL_TRACE_WRITES,
+				 * TCL_TRACE_UNSETS, TCL_GLOBAL_ONLY,
+				 * and TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc;	/* Procedure assocated with trace. */
+    ClientData clientData;	/* Arbitrary argument to pass to proc. */
+{
+    register VarTrace *tracePtr;
+    VarTrace *prevPtr;
+    Var *varPtr, *arrayPtr;
+    Interp *iPtr = (Interp *) interp;
+    ActiveVarTrace *activePtr;
+    int flagMask;
+    
+    /*
+     * Set up a mask to mask out the parts of the flags that we are not
+     * interested in now.
+     */
+    flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
+    varPtr = TclLookupVar(interp, part1, part2, flags & flagMask,
+	    /*msg*/ (char *) NULL,
+	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+    if (varPtr == NULL) {
+	return;
+    }
+
+    /*
+     * Set up a mask to mask out the parts of the flags that we are not
+     * interested in now.
+     */
+    flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
+	TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT; 
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    flagMask |= TCL_TRACE_OLD_STYLE;
+#endif
+    flags &= flagMask;
+    for (tracePtr = varPtr->tracePtr, prevPtr = NULL;  ;
+	 prevPtr = tracePtr, tracePtr = tracePtr->nextPtr) {
+	if (tracePtr == NULL) {
+	    return;
+	}
+	if ((tracePtr->traceProc == proc) && (tracePtr->flags == flags)
+		&& (tracePtr->clientData == clientData)) {
+	    break;
+	}
+    }
+
+    /*
+     * The code below makes it possible to delete traces while traces
+     * are active: it makes sure that the deleted trace won't be
+     * processed by TclCallVarTraces.
+     */
+
+    for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
+	 activePtr = activePtr->nextPtr) {
+	if (activePtr->nextTracePtr == tracePtr) {
+	    activePtr->nextTracePtr = tracePtr->nextPtr;
+	}
+    }
+    if (prevPtr == NULL) {
+	varPtr->tracePtr = tracePtr->nextPtr;
+    } else {
+	prevPtr->nextPtr = tracePtr->nextPtr;
+    }
+    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
+
+    /*
+     * If this is the last trace on the variable, and the variable is
+     * unset and unused, then free up the variable.
+     */
+
+    if (TclIsVarUndefined(varPtr)) {
+	TclCleanupVar(varPtr, (Var *) NULL);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_VarTraceInfo --
+ *
+ *	Return the clientData value associated with a trace on a
+ *	variable.  This procedure can also be used to step through
+ *	all of the traces on a particular variable that have the
+ *	same trace procedure.
+ *
+ * Results:
+ *	The return value is the clientData value associated with
+ *	a trace on the given variable.  Information will only be
+ *	returned for a trace with proc as trace procedure.  If
+ *	the clientData argument is NULL then the first such trace is
+ *	returned;  otherwise, the next relevant one after the one
+ *	given by clientData will be returned.  If the variable
+ *	doesn't exist, or if there are no (more) traces for it,
+ *	then NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData)
+    Tcl_Interp *interp;		/* Interpreter containing variable. */
+    CONST char *varName;	/* Name of variable;  may end with "(index)"
+				 * to signify an array reference. */
+    int flags;			/* OR-ed combo or TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY (can be 0). */
+    Tcl_VarTraceProc *proc;	/* Procedure assocated with trace. */
+    ClientData prevClientData;	/* If non-NULL, gives last value returned
+				 * by this procedure, so this call will
+				 * return the next trace after that one.
+				 * If NULL, this call will return the
+				 * first trace. */
+{
+    return Tcl_VarTraceInfo2(interp, varName, (char *) NULL,
+	    flags, proc, prevClientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_VarTraceInfo2 --
+ *
+ *	Same as Tcl_VarTraceInfo, except takes name in two pieces
+ *	instead of one.
+ *
+ * Results:
+ *	Same as Tcl_VarTraceInfo.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+Tcl_VarTraceInfo2(interp, part1, part2, flags, proc, prevClientData)
+    Tcl_Interp *interp;		/* Interpreter containing variable. */
+    CONST char *part1;		/* Name of variable or array. */
+    CONST char *part2;		/* Name of element within array;  NULL means
+				 * trace applies to scalar variable or array
+				 * as-a-whole. */
+    int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc;	/* Procedure assocated with trace. */
+    ClientData prevClientData;	/* If non-NULL, gives last value returned
+				 * by this procedure, so this call will
+				 * return the next trace after that one.
+				 * If NULL, this call will return the
+				 * first trace. */
+{
+    register VarTrace *tracePtr;
+    Var *varPtr, *arrayPtr;
+
+    varPtr = TclLookupVar(interp, part1, part2,
+	    flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY),
+	    /*msg*/ (char *) NULL,
+	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+    if (varPtr == NULL) {
+	return NULL;
+    }
+
+    /*
+     * Find the relevant trace, if any, and return its clientData.
+     */
+
+    tracePtr = varPtr->tracePtr;
+    if (prevClientData != NULL) {
+	for ( ;  tracePtr != NULL;  tracePtr = tracePtr->nextPtr) {
+	    if ((tracePtr->clientData == prevClientData)
+		    && (tracePtr->traceProc == proc)) {
+		tracePtr = tracePtr->nextPtr;
+		break;
+	    }
+	}
+    }
+    for ( ;  tracePtr != NULL;  tracePtr = tracePtr->nextPtr) {
+	if (tracePtr->traceProc == proc) {
+	    return tracePtr->clientData;
+	}
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_TraceVar --
+ *
+ *	Arrange for reads and/or writes to a variable to cause a
+ *	procedure to be invoked, which can monitor the operations
+ *	and/or change their actions.
+ *
+ * Results:
+ *	A standard Tcl return value.
+ *
+ * Side effects:
+ *	A trace is set up on the variable given by varName, such that
+ *	future references to the variable will be intermediated by
+ *	proc.  See the manual entry for complete details on the calling
+ *	sequence for proc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_TraceVar(interp, varName, flags, proc, clientData)
+    Tcl_Interp *interp;		/* Interpreter in which variable is
+				 * to be traced. */
+    CONST char *varName;	/* Name of variable;  may end with "(index)"
+				 * to signify an array reference. */
+    int flags;			/* OR-ed collection of bits, including any
+				 * of TCL_TRACE_READS, TCL_TRACE_WRITES,
+				 * TCL_TRACE_UNSETS, TCL_GLOBAL_ONLY, and
+				 * TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc;	/* Procedure to call when specified ops are
+				 * invoked upon varName. */
+    ClientData clientData;	/* Arbitrary argument to pass to proc. */
+{
+    return Tcl_TraceVar2(interp, varName, (char *) NULL, 
+	    flags, proc, clientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_TraceVar2 --
+ *
+ *	Arrange for reads and/or writes to a variable to cause a
+ *	procedure to be invoked, which can monitor the operations
+ *	and/or change their actions.
+ *
+ * Results:
+ *	A standard Tcl return value.
+ *
+ * Side effects:
+ *	A trace is set up on the variable given by part1 and part2, such
+ *	that future references to the variable will be intermediated by
+ *	proc.  See the manual entry for complete details on the calling
+ *	sequence for proc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
+    Tcl_Interp *interp;		/* Interpreter in which variable is
+				 * to be traced. */
+    CONST char *part1;		/* Name of scalar variable or array. */
+    CONST char *part2;		/* Name of element within array;  NULL means
+				 * trace applies to scalar variable or array
+				 * as-a-whole. */
+    int flags;			/* OR-ed collection of bits, including any
+				 * of TCL_TRACE_READS, TCL_TRACE_WRITES,
+				 * TCL_TRACE_UNSETS, TCL_GLOBAL_ONLY,
+				 * and TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc;	/* Procedure to call when specified ops are
+				 * invoked upon varName. */
+    ClientData clientData;	/* Arbitrary argument to pass to proc. */
+{
+    Var *varPtr, *arrayPtr;
+    register VarTrace *tracePtr;
+    int flagMask;
+    
+    /* 
+     * We strip 'flags' down to just the parts which are relevant to
+     * TclLookupVar, to avoid conflicts between trace flags and
+     * internal namespace flags such as 'FIND_ONLY_NS'.  This can
+     * now occur since we have trace flags with values 0x1000 and higher.
+     */
+    flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
+    varPtr = TclLookupVar(interp, part1, part2,
+	    (flags & flagMask) | TCL_LEAVE_ERR_MSG,
+	    "trace", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+    if (varPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Check for a nonsense flag combination.  Note that this is a
+     * panic() because there should be no code path that ever sets
+     * both flags.
+     */
+    if ((flags&TCL_TRACE_RESULT_DYNAMIC) && (flags&TCL_TRACE_RESULT_OBJECT)) {
+	panic("bad result flag combination");
+    }
+
+    /*
+     * Set up trace information.
+     */
+
+    flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS | 
+	TCL_TRACE_ARRAY | TCL_TRACE_RESULT_DYNAMIC | TCL_TRACE_RESULT_OBJECT;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    flagMask |= TCL_TRACE_OLD_STYLE;
+#endif
+    tracePtr = (VarTrace *) ckalloc(sizeof(VarTrace));
+    tracePtr->traceProc		= proc;
+    tracePtr->clientData	= clientData;
+    tracePtr->flags		= flags & flagMask;
+    tracePtr->nextPtr		= varPtr->tracePtr;
+    varPtr->tracePtr		= tracePtr;
+    return TCL_OK;
 }
