@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.72 2001/04/04 07:13:52 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.73 2001/04/06 23:29:17 andreas_kupries Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1062,6 +1062,24 @@ checkstubs:
 		match=0; \
 		for j in $(TCL_DECLS); do \
 		    if [ `grep -c $$i $$j` -gt 0 ]; then \
+			match=1; \
+		    fi; \
+		done; \
+		if [ $$match -eq 0 ]; then echo $$i; fi \
+	done
+
+#
+# Target to check that all public APIs which are not command
+# implementations have an entry in section three of the distributed
+# manpages.
+#
+
+checkdoc:
+	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
+		| grep -v 'Cmd$$' | sort -n`; do \
+		match=0; \
+		for j in $(TOP_DIR)/doc/*.3; do \
+		    if [ `grep '\-' $$j | grep -c $$i` -gt 0 ]; then \
 			match=1; \
 		    fi; \
 		done; \
