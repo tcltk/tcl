@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.1 2000/07/27 01:39:22 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.2 2000/08/07 22:04:23 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -474,7 +474,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.1 2000/07/27 01:39:22 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.2 2000/08/07 22:04:23 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -1099,7 +1099,7 @@ dist: $(UNIX_DIR)/configure
 	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
-		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix \
+		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
@@ -1148,7 +1148,7 @@ dist: $(UNIX_DIR)/configure
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.h $(TOP_DIR)/win/*.rc \
-		$(DISTDIR)/win
+		$(TOP_DIR)/win/*.ico $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
