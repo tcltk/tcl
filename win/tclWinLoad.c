@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.6 2000/09/06 22:37:24 hobbs Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.7 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -36,9 +36,9 @@
  */
 
 int
-TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *fileName;		/* Name of the file containing the desired
+    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
     char *sym1, *sym2;		/* Names of two procedures to look up in
 				 * the file's symbol table. */
@@ -53,6 +53,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     TCHAR *nativeName;
     Tcl_DString ds;
 
+    char *fileName = Tcl_GetString(pathPtr);
     nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
     handle = (*tclWinProcs->loadLibraryProc)(nativeName);
     Tcl_DStringFree(&ds);

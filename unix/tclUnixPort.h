@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.17 2001/06/17 03:48:19 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.18 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -483,15 +483,6 @@ extern double strtod();
  */
 
 #define TclpExit		exit
-
-#ifdef TclpStat
-#undef TclpStat
-#endif
-
-EXTERN int		TclpLstat _ANSI_ARGS_((CONST char *path, 
-			    struct stat *buf));
-EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
-			    struct stat *buf));
 
 /*
  * Platform specific mutex definition used by memory allocators.

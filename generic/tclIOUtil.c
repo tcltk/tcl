@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.16 2001/08/23 18:20:50 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.17 2001/08/30 08:53:14 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -71,26 +71,8 @@ extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
 
 /* 
  * The following functions are obsolete string based APIs, and should
- * be removed in a future release.
+ * be removed in a future release (Tcl 9 would be a good time).
  */
-
-/* Obsolete */
-int
-TclStat(path, buf)
-    CONST char *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
-{
-    return Tcl_Stat(path,buf);
-}
-
-/* Obsolete */
-int
-TclAccess(path, mode)
-    CONST char *path;		/* Path of file to access (in current CP). */
-    int mode;                   /* Permission setting. */
-{
-    return Tcl_Access(path, mode);
-}
 
 /* Obsolete */
 int
@@ -187,17 +169,6 @@ Tcl_EvalFile(interp, fileName)
     return ret;
 }
 
-/* Obsolete */
-int
-TclpListVolumes( 
-    Tcl_Interp *interp)		/* Interpreter for returning volume list. */
-{
-    Tcl_Obj *resultPtr = TclpObjListVolumes();
-    Tcl_SetObjResult(interp, resultPtr);
-    Tcl_DecrRefCount(resultPtr);
-    return TCL_OK;
-}
-
 
 /* 
  * The 3 hooks for Stat, Access and OpenFileChannel are obsolete.  The
@@ -207,6 +178,9 @@ TclpListVolumes(
  * from stubs/tclInt.  The only known users of these APIs are prowrap
  * and mktclapp.  New code/extensions should not use them, since they
  * do not provide as full support as the full filesystem API.
+ * 
+ * As soon as prowrap and mktclapp are updated to use the full
+ * filesystem support, I suggest all these hooks are removed.
  */
 #define USE_OBSOLETE_FS_HOOKS
 
@@ -299,8 +273,6 @@ static Tcl_FSCreateInternalRepProc NativeCreateNativeRep;
 static Tcl_FSFileAttrStringsProc NativeFileAttrStrings;
 static Tcl_FSFileAttrsGetProc NativeFileAttrsGet;
 static Tcl_FSFileAttrsSetProc NativeFileAttrsSet;
-static Tcl_FSLoadFileProc NativeLoadFile; 
-static Tcl_FSOpenFileChannelProc NativeOpenFileChannel; 
 static Tcl_FSUtimeProc NativeUtime;
 
 /* 
@@ -345,7 +317,7 @@ static Tcl_Filesystem nativeFilesystem = {
     &NativeFilesystemSeparator,
     &TclpObjStat,
     &TclpObjAccess,
-    &NativeOpenFileChannel,
+    &TclpOpenFileChannel,
     &TclpMatchInDirectory,
     &NativeUtime,
 #ifndef S_IFLNK
@@ -364,7 +336,7 @@ static Tcl_Filesystem nativeFilesystem = {
     &TclpObjCopyFile,
     &TclpObjRenameFile,
     &TclpObjCopyDirectory, 
-    &NativeLoadFile,
+    &TclpLoadFile,
     &TclpUnloadFile,
     &TclpObjGetCwd,
     &TclpObjChdir
@@ -1602,19 +1574,33 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	    if (proc != NULL) {
 		int cwdLen;
 		Tcl_Obj *cwdDir;
+		char *cwdStr;
+#ifdef MAC_TCL
+		char sep = ':';
+#else
+		char sep = '/';
+#endif
 		Tcl_Obj* tmpResultPtr = Tcl_NewListObj(0, NULL);
 		/* 
 		 * We know the cwd is a normalised object which does
-		 * not end in a directory delimiter.
+		 * not end in a directory delimiter, unless the cwd
+		 * is the name of a volume, in which case it will
+		 * end in a delimiter!  We handle this situation here.
+		 * A better test than the '!= sep' might be to simply
+		 * check if 'cwd' is a root volume.
+		 * 
+		 * Note that if we get this wrong, we will strip off
+		 * either too much or too little below, leading to
+		 * wrong answers returned by glob.
 		 */
 		cwdDir = Tcl_DuplicateObj(cwd);
-#ifdef MAC_TCL
-		Tcl_AppendToObj(cwdDir, ":", 1);
-#else
-		Tcl_AppendToObj(cwdDir, "/", 1);
-#endif
-		Tcl_GetStringFromObj(cwdDir, &cwdLen);
 		Tcl_IncrRefCount(cwdDir);
+		cwdStr = Tcl_GetStringFromObj(cwdDir, &cwdLen);
+		if (cwdStr[cwdLen-1] != sep) {
+		    Tcl_AppendToObj(cwdDir, &sep, 1);
+		    cwdLen++;
+		    /* Note: cwdStr may no longer be a valid pointer */
+		}
 		ret = (*proc)(interp, tmpResultPtr, cwdDir, pattern, types);
 		Tcl_DecrRefCount(cwdDir);
 		if (ret == TCL_OK) {
@@ -2636,10 +2622,13 @@ Tcl_FSJoinPath(listObj, elements)
 	int driveNameLength;
 	Tcl_PathType type;
 	char *strElt;
+	int strEltLen;
+	int length;
+	char *ptr;
 	Tcl_Obj *driveName = NULL;
 	
 	Tcl_ListObjIndex(NULL, listObj, i, &elt);
-	strElt = Tcl_GetString(elt);
+	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
 	type = GetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
 	    /* Zero out the current result */
@@ -2653,6 +2642,19 @@ Tcl_FSJoinPath(listObj, elements)
 	    strElt += driveNameLength;
 	}
 	
+	ptr = Tcl_GetStringFromObj(res, &length);
+	
+	/* 
+	 * Strip off any './' before a tilde, unless this is the
+	 * beginning of the path.
+	 */
+	if (length > 0 && strEltLen > 0) {
+	    if ((strElt[0] == '.') && (strElt[1] == '/') 
+	      && (strElt[2] == '~')) {
+		strElt += 2;
+	    }
+	}
+
 	/* 
 	 * A NULL value for fsPtr at this stage basically means
 	 * we're trying to join a relative path onto something
@@ -2664,9 +2666,7 @@ Tcl_FSJoinPath(listObj, elements)
 	if (fsPtr == &nativeFilesystem || fsPtr == NULL) {
 	    TclpNativeJoinPath(res, strElt);
 	} else {
-	    int length;
 	    char separator = '/';
-	    char *ptr;
 	    int needsSep = 0;
 	    
 	    if (fsPtr->filesystemSeparatorProc != NULL) {
@@ -2675,7 +2675,7 @@ Tcl_FSJoinPath(listObj, elements)
 		    separator = Tcl_GetString(sep)[0];
 		}
 	    }
-	    ptr = Tcl_GetStringFromObj(res, &length);
+
 	    if (length > 0 && ptr[length -1] != '/') {
 	        Tcl_AppendToObj(res, &separator, 1);
 		length++;
@@ -3735,6 +3735,17 @@ Tcl_FSGetInternalRep(pathObjPtr, fsPtr)
 	 * to allow this sub-optimal routing.
 	 */
 	Tcl_FSGetFileSystemForPath(pathObjPtr);
+	
+	/* 
+	 * If we fail through here, then the path is probably not a
+	 * valid path in the filesystsem, and is most likely to be a
+	 * use of the empty path "" via a direct call to one of the
+	 * objectified interfaces (e.g. from the Tcl testsuite).
+	 */
+	srcFsPathPtr = (FsPath*) pathObjPtr->internalRep.otherValuePtr;
+	if (srcFsPathPtr->fsRecPtr == NULL) {
+	    return NULL;
+	}
     }
 
     if (fsPtr != srcFsPathPtr->fsRecPtr->fsPtr) {
@@ -3915,6 +3926,11 @@ NativeDupInternalRep(clientData)
  *      Any path object is acceptable to the native filesystem, by
  *      default (we will throw errors when illegal paths are actually
  *      tried to be used).
+ *      
+ *      However, this behavior means the native filesystem must be
+ *      the last filesystem in the lookup list (otherwise it will
+ *      claim all files belong to it, and other filesystems will
+ *      never get a look in).
  *
  * Results:
  *      TCL_OK, to indicate 'yes', -1 to indicate no.
@@ -4262,22 +4278,6 @@ Tcl_FSEqualPaths(firstPtr, secondPtr)
     return 0;
 }
 
-/* Wrappers */
-
-static Tcl_Channel 
-NativeOpenFileChannel(interp, pathPtr, modeString, permissions)
-    Tcl_Interp *interp;
-    Tcl_Obj *pathPtr;
-    char *modeString;
-    int permissions;
-{
-    Tcl_Obj *trans = Tcl_FSGetTranslatedPath(interp, pathPtr);
-    if (trans == NULL) {
-	return NULL;
-    }
-    return TclpOpenFileChannel(interp, Tcl_GetString(trans), modeString, permissions);
-}
-
 /* 
  * utime wants a normalized, NOT native path.  I assume a native
  * version of 'utime' doesn't exist (at least under that name) on NT/2000.
@@ -4302,27 +4302,6 @@ NativeUtime(pathPtr, tval)
 #else
     return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),tval);
 #endif
-}
-
-static int 
-NativeLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
-    Tcl_Interp * interp; 
-    Tcl_Obj *pathPtr;
-    char * sym1;
-    char * sym2; 
-    Tcl_PackageInitProc ** proc1Ptr; 
-    Tcl_PackageInitProc ** proc2Ptr; 
-    ClientData * clientDataPtr;
-{
-    char *path;
-    Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-    if (transPtr == NULL) {
-	path = NULL;
-    } else {
-	path = Tcl_GetString(transPtr);
-    }
-    return TclpLoadFile(interp, path, 
-	    sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr);
 }
 
 /* Everything from here on is contained in this obsolete ifdef */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.4 1999/05/07 20:07:40 stanton Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.5 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -35,9 +35,9 @@
  */
 
 int
-TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *fileName;		/* Name of the file containing the desired
+    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
     char *sym1, *sym2;		/* Names of two procedures to look up in
 				 * the file's symbol table. */

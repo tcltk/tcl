@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.3 1999/04/16 00:48:04 stanton Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.4 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -49,9 +49,9 @@
  */
 
 int
-TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *fileName;		/* Name of the file containing the desired
+    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
     char *sym1, *sym2;		/* Names of two procedures to look up in
 				 * the file's symbol table. */
@@ -64,7 +64,8 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 {
     static int firstTime = 1;
     int returnCode;
-
+    char *fileName = Tcl_GetString(pathPtr);
+    
     /*
      *  The dld package needs to know the pathname to the tcl binary.
      *  If that's not know, return an error.
@@ -87,9 +88,10 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 	firstTime = 0;
     }
 
-    if ((returnCode = dld_link(fileName)) != 0) {
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName,
-	    "\": ", dld_strerror(returnCode), (char *) NULL);
+    if ((returnCode = dld_link(Tcl_GetString(pathPtr)) != 0) {
+	Tcl_AppendResult(interp, "couldn't load file \"", 
+			 Tcl_GetString(pathPtr),
+			 "\": ", dld_strerror(returnCode), (char *) NULL);
 	return TCL_ERROR;
     }
     *proc1Ptr = (Tcl_PackageInitProc *) dld_get_func(sym1);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.4 1999/10/15 04:47:12 jingham Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.5 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include <CodeFragments.h>
@@ -99,7 +99,7 @@ typedef struct CfrgItem CfrgItem;
 int
 TclpLoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    char *fileName,		/* Name of the file containing the desired
+    Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code. */
     char *sym1, char *sym2,	/* Names of two procedures to look up in
 				 * the file's symbol table. */
@@ -122,7 +122,6 @@ TclpLoadFile(
     UInt32 length = kCFragGoesToEOF;
     char packageName[255];
     Str255 errName;
-    Tcl_DString ds;
     char *native;
     
     /*
@@ -134,9 +133,8 @@ TclpLoadFile(
     Tcl_UtfToLower(packageName);
     *(Tcl_UtfAtIndex(packageName, Tcl_NumUtfChars(packageName, -1) - 5)) = 0;
     
-    native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+    native = Tcl_FSGetNativePath(pathPtr);
     err = FSpLocationFromPath(strlen(native), native, &fileSpec);
-    Tcl_DStringFree(&ds);
     
     if (err != noErr) {
 	Tcl_SetResult(interp, "could not locate shared library", TCL_STATIC);
@@ -199,8 +197,9 @@ TclpLoadFile(
 	    kLoadCFrag, &connID, &dummy, errName);
     if (err != fragNoErr) {
 	p2cstr(errName);
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName,
-	    "\": ", errName, (char *) NULL);
+	Tcl_AppendResult(interp, "couldn't load file \"", 
+			 Tcl_GetString(pathPtr),
+			 "\": ", errName, (char *) NULL);
 	return TCL_ERROR;
     }
     

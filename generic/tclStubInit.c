@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.55 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.56 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -47,7 +47,7 @@
 TclIntStubs tclIntStubs = {
     TCL_STUB_MAGIC,
     NULL,
-    TclAccess, /* 0 */
+    NULL, /* 0 */
     TclAccessDeleteProc, /* 1 */
     TclAccessInsertProc, /* 2 */
     TclAllocateFreeObjects, /* 3 */
@@ -131,7 +131,7 @@ TclIntStubs tclIntStubs = {
     TclObjInvokeGlobal, /* 65 */
     TclOpenFileChannelDeleteProc, /* 66 */
     TclOpenFileChannelInsertProc, /* 67 */
-    TclpAccess, /* 68 */
+    NULL, /* 68 */
     TclpAlloc, /* 69 */
     NULL, /* 70 */
     NULL, /* 71 */
@@ -142,8 +142,8 @@ TclIntStubs tclIntStubs = {
     TclpGetSeconds, /* 76 */
     TclpGetTime, /* 77 */
     TclpGetTimeZone, /* 78 */
-    TclpListVolumes, /* 79 */
-    TclpOpenFileChannel, /* 80 */
+    NULL, /* 79 */
+    NULL, /* 80 */
     TclpRealloc, /* 81 */
     NULL, /* 82 */
     NULL, /* 83 */
@@ -158,7 +158,7 @@ TclIntStubs tclIntStubs = {
     TclProcCompileProc, /* 92 */
     TclProcDeleteProc, /* 93 */
     TclProcInterpProc, /* 94 */
-    TclpStat, /* 95 */
+    NULL, /* 95 */
     TclRenameCommand, /* 96 */
     TclResetShadowedCmdRefs, /* 97 */
     TclServiceIdle, /* 98 */
@@ -184,7 +184,7 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 104 */
 #endif /* MAC_TCL */
-    TclStat, /* 105 */
+    NULL, /* 105 */
     TclStatDeleteProc, /* 106 */
     TclStatInsertProc, /* 107 */
     TclTeardownNamespace, /* 108 */
@@ -218,9 +218,9 @@ TclIntStubs tclIntStubs = {
     NULL, /* 136 */
     NULL, /* 137 */
     TclGetEnv, /* 138 */
-    TclpLoadFile, /* 139 */
+    NULL, /* 139 */
     TclLooksLikeInt, /* 140 */
-    NULL, /* 141 */
+    TclpGetCwd, /* 141 */
     TclSetByteCodeFromAny, /* 142 */
     TclAddLiteralObj, /* 143 */
     TclHideLiteral, /* 144 */
@@ -242,13 +242,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
-    TclFileCopyCmd, /* 163 */
-    TclFileRenameCmd, /* 164 */
-    TclFileDeleteCmd, /* 165 */
-    TclFileMakeDirsCmd, /* 166 */
-    TclFileAttrsCmd, /* 167 */
-    TclpTempFileName, /* 168 */
-    TclpSetInitialEncodings, /* 169 */
+    TclpSetInitialEncodings, /* 163 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
