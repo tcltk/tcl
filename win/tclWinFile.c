@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.58 2003/12/16 02:55:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.59 2004/01/21 19:59:34 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1626,6 +1626,8 @@ TclpReadlink(path, linkPtr)
  * TclpGetCwd --
  *
  *	This function replaces the library version of getcwd().
+ *      (Obsolete function, only retained for old extensions which
+ *      may call it directly).
  *
  * Results:
  *	The result is a pointer to a string specifying the current
@@ -2090,19 +2092,56 @@ TclWinResolveShortcut(bufferPtr)
 }
 #endif
 
-Tcl_Obj* 
-TclpObjGetCwd(interp)
-    Tcl_Interp *interp;
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetNativeCwd --
+ *
+ *	This function replaces the library version of getcwd().
+ *
+ * Results:
+ *	The input and output are filesystem paths in native form.  The
+ *	result is either the given clientData, if the working directory
+ *	hasn't changed, or a new clientData (owned by our caller),
+ *	giving the new native path, or NULL if the current directory
+ *	could not be determined.  If NULL is returned, the caller can
+ *	examine the standard posix error codes to determine the cause of
+ *	the problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpGetNativeCwd(clientData)
+    ClientData clientData;
 {
-    Tcl_DString ds;
-    if (TclpGetCwd(interp, &ds) != NULL) {
-	Tcl_Obj *cwdPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(cwdPtr);
-	Tcl_DStringFree(&ds);
-	return cwdPtr;
-    } else {
+    WCHAR buffer[MAX_PATH];
+    
+    if ((*tclWinProcs->getCurrentDirectoryProc)(MAX_PATH, buffer) == 0) {
+	TclWinConvertError(GetLastError());
 	return NULL;
     }
+
+    if (clientData != NULL) {
+        if (tclWinProcs->useWide) {
+	    /* unicode representation when running on NT/2K/XP */
+	    if (wcscmp((CONST WCHAR*)clientData, 
+		       (CONST WCHAR*)buffer) == 0) {
+		return clientData;
+	    }
+	} else {
+	    /* ansi representation when running on 95/98/ME */
+	    if (strcmp((CONST char*)clientData, 
+		       (CONST char*)buffer) == 0) {
+		return clientData;
+	    }
+	}
+    }
+    
+    return TclNativeDupInternalRep((ClientData)buffer);
 }
 
 int 
@@ -2139,7 +2178,11 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 {
     if (toPtr != NULL) {
 	int res;
+#if 0
 	TCHAR* LinkTarget = (TCHAR*)Tcl_FSGetNativePath(toPtr);
+#else
+	TCHAR* LinkTarget = (TCHAR*)Tcl_FSGetNativePath(Tcl_FSGetNormalizedPath(NULL,toPtr));
+#endif
 	TCHAR* LinkSource = (TCHAR*)Tcl_FSGetNativePath(pathPtr);
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
@@ -2180,8 +2223,8 @@ TclpObjLink(pathPtr, toPtr, linkAction)
  *---------------------------------------------------------------------------
  */
 Tcl_Obj*
-TclpFilesystemPathType(pathObjPtr)
-    Tcl_Obj* pathObjPtr;
+TclpFilesystemPathType(pathPtr)
+    Tcl_Obj* pathPtr;
 {
 #define VOL_BUF_SIZE 32
     int found;
@@ -2189,7 +2232,7 @@ TclpFilesystemPathType(pathObjPtr)
     char* firstSeparator;
     CONST char *path;
     
-    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathObjPtr);
+    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
     if (normPath == NULL) return NULL;
     path = Tcl_GetString(normPath);
     if (path == NULL) return NULL;
@@ -2197,7 +2240,7 @@ TclpFilesystemPathType(pathObjPtr)
     firstSeparator = strchr(path, '/');
     if (firstSeparator == NULL) {
 	found = tclWinProcs->getVolumeInformationProc(
-		Tcl_FSGetNativePath(pathObjPtr), NULL, 0, NULL, NULL, 
+		Tcl_FSGetNativePath(pathPtr), NULL, 0, NULL, NULL, 
 		NULL, (WCHAR *)volType, VOL_BUF_SIZE);
     } else {
 	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path+1);
@@ -2221,7 +2264,20 @@ TclpFilesystemPathType(pathObjPtr)
     }
 #undef VOL_BUF_SIZE
 }
-
+/* 
+ * This define can be turned on to experiment with a different way of
+ * normalizing paths (using a different Windows API).  Unfortunately the
+ * new path seems to take almost exactly the same amount of time as the
+ * old path!  The primary time taken by normalization is in
+ * GetFileAttributesEx/FindFirstFile or
+ * GetFileAttributesEx/GetLongPathName.  Conversion to/from native is
+ * not a significant factor at all.
+ * 
+ * Also, since we have to check for symbolic links (reparse points)
+ * then we have to call GetFileAttributes on each path segment anyway,
+ * so there's no benefit to doing anything clever there.
+ */
+/* #define TclNORM_LONG_PATH */
 
 /*
  *---------------------------------------------------------------------------
@@ -2243,7 +2299,6 @@ TclpFilesystemPathType(pathObjPtr)
  *
  *---------------------------------------------------------------------------
  */
-
 int
 TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_Interp *interp;
@@ -2341,7 +2396,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	Tcl_Obj *temp = NULL;
 	int isDrive = 1;
 	Tcl_DString ds;
-
+	
 	currentPathEndPosition = path + nextCheckpoint;
 	if (*currentPathEndPosition == '/') {
 	    currentPathEndPosition++;
@@ -2374,8 +2429,8 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		 * understand.  We therefore don't perform this
 		 * check for drives.
 		 */
-		if (cur != 0 && !isDrive && (data.dwFileAttributes 
-				 & FILE_ATTRIBUTE_REPARSE_POINT)) {
+		if (cur != 0 && !isDrive 
+		  && (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
 		    Tcl_Obj *to = WinReadLinkDirectory(nativePath);
 		    if (to != NULL) {
 			/* Read the reparse point ok */
@@ -2400,6 +2455,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 			continue;
 		    }
 		}
+#ifndef TclNORM_LONG_PATH
 		/*
 		 * Now we convert the tail of the current path to its
 		 * 'long form', and append it to 'dsNorm' which holds
@@ -2435,6 +2491,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 					  (int) (wcslen(nativeName)*sizeof(WCHAR)));
 		    }
 		}
+#endif
 		Tcl_DStringFree(&ds);
 		lastValidPathEnd = currentPathEndPosition;
 		if (cur == 0) {
@@ -2448,6 +2505,26 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    }
 	    currentPathEndPosition++;
 	}
+#ifdef TclNORM_LONG_PATH
+	/* 
+	 * Convert the entire known path to long form.
+	 */
+	if (1) {
+	    WCHAR wpath[MAX_PATH];
+	    DWORD wpathlen;
+	    CONST char *nativePath = Tcl_WinUtfToTChar(path, 
+					lastValidPathEnd - path, &ds);
+	    wpathlen = (*tclWinProcs->getLongPathNameProc)(nativePath, 
+							   (TCHAR*)wpath, 
+							   MAX_PATH);
+	    /* We have to make the drive letter uppercase */
+	    if (wpath[0] >= L'a') {
+		wpath[0] -= (L'a' - L'A');
+	    }
+	    Tcl_DStringAppend(&dsNorm, (TCHAR*)wpath, wpathlen*sizeof(WCHAR));
+	    Tcl_DStringFree(&ds);
+	}
+#endif
     }
     /* Common code path for all Windows platforms */
     nextCheckpoint = currentPathEndPosition - path;
