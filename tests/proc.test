@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.2 1998/09/14 18:40:12 stanton Exp $
+# RCS: @(#) $Id: proc.test,v 1.3 1998/10/05 22:32:11 escoffon Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -161,3 +161,133 @@ catch {eval namespace delete [namespace children :: test_ns_*]}
 catch {rename p ""}
 catch {rename {} ""}
 catch {unset msg}
+
+if {[catch {package require procbodytest}]} {
+    puts "This application couldn't load the \"procbodytest\" package, so I"
+    puts "can't test creation of procs whose bodies have type \"procbody\"."
+    return
+}
+
+catch {rename p ""}
+catch {rename t ""}
+
+# Note that the test require that procedures whose body is used to create
+# procbody objects must be executed before the procbodytest::proc command
+# is executed, so that the Proc struct is populated correctly (CompiledLocals
+# are added at compile time).
+
+test proc-4.1 {TclCreateProc, procbody obj} {
+    catch {
+	proc p x {return "$x:$x"}
+	set rv [p P]
+	procbodytest::proc t x p
+	lappend rv [t T]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {P:P T:T}
+
+test proc-4.2 {TclCreateProc, procbody obj, use compiled locals} {
+    catch {
+	proc p x {
+	    set y [string tolower $x]
+	    return "$x:$y"
+	}
+	set rv [p P]
+	procbodytest::proc t x p
+	lappend rv [t T]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {P:p T:t}
+
+test proc-4.3 {TclCreateProc, procbody obj, too many args} {
+    catch {
+	proc p x {
+	    set y [string tolower $x]
+	    return "$x:$y"
+	}
+	set rv [p P]
+	procbodytest::proc t {x x1 x2} p
+	lappend rv [t T]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {procedure "t": arg list contains 3 entries, precompiled header expects 1}
+
+test proc-4.4 {TclCreateProc, procbody obj, inconsitent arg name} {
+    catch {
+	proc p {x y z} {
+	    set v [join [list $x $y $z]]
+	    set w [string tolower $v]
+	    return "$v:$w"
+	}
+	set rv [p P Q R]
+	procbodytest::proc t {x x1 z} p
+	lappend rv [t S T U]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {procedure "t": formal parameter 1 is inconsistent with precompiled body}
+
+test proc-4.5 {TclCreateProc, procbody obj, inconsitent arg default type} {
+    catch {
+	proc p {x y {z Z}} {
+	    set v [join [list $x $y $z]]
+	    set w [string tolower $v]
+	    return "$v:$w"
+	}
+	set rv [p P Q R]
+	procbodytest::proc t {x y z} p
+	lappend rv [t S T U]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {procedure "t": formal parameter 2 is inconsistent with precompiled body}
+
+test proc-4.6 {TclCreateProc, procbody obj, inconsitent arg default type} {
+    catch {
+	proc p {x y z} {
+	    set v [join [list $x $y $z]]
+	    set w [string tolower $v]
+	    return "$v:$w"
+	}
+	set rv [p P Q R]
+	procbodytest::proc t {x y {z Z}} p
+	lappend rv [t S T U]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {procedure "t": formal parameter 2 is inconsistent with precompiled body}
+
+test proc-4.7 {TclCreateProc, procbody obj, inconsitent arg default value} {
+    catch {
+	proc p {x y {z Z}} {
+	    set v [join [list $x $y $z]]
+	    set w [string tolower $v]
+	    return "$v:$w"
+	}
+	set rv [p P Q R]
+	procbodytest::proc t {x y {z ZZ}} p
+	lappend rv [t S T U]
+	set rv
+    } result
+    catch {rename p ""}
+    catch {rename t ""}
+    set result
+} {procedure "t": formal parameter "z" has default value inconsistent with precompiled body}
+
+catch {rename p ""}
+catch {rename t ""}

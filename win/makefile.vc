@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.16 1998/09/14 18:40:19 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.17 1998/10/05 22:32:12 escoffon Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -103,6 +103,7 @@ TCLSHOBJS = \
 TCLTESTOBJS = \
 	$(TMPDIR)\tclTest.obj \
 	$(TMPDIR)\tclTestObj.obj \
+	$(TMPDIR)\tclTestProcBodyObj.obj \
 	$(TMPDIR)\tclWinTest.obj \
 	$(TMPDIR)\testMain.obj
 

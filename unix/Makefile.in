@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.11 1998/09/23 20:13:41 suresh Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.12 1998/10/05 22:32:11 escoffon Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -224,7 +224,8 @@ ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 
 TCLSH_OBJS = tclAppInit.o
 
-TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclUnixTest.o
+TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
+	tclUnixTest.o
 
 XTTEST_OBJS = tclTest.o tclTestObj.o tclUnixTest.o tclXtNotify.o \
 	tclXtTest.o xtTestInit.o
@@ -292,6 +293,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
+	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c
@@ -401,7 +403,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.11 1998/09/23 20:13:41 suresh Exp $'
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.12 1998/10/05 22:32:11 escoffon Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -742,6 +744,9 @@ tclTest.o: $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c
+
+tclTestProcBodyObj.o: $(GENERIC_DIR)/tclTestProcBodyObj.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c
 
 tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTimer.c
