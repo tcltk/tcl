@@ -1,3 +1,9 @@
+2004-11-22  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix and new test for [Bug 1043129] in
+	* tests/fileSystem.test: the treatment of backslashes in file
+	join on Windows.
+
 2004-11-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/AddErrInfo.3:	Typo corrections (Thanks Daniel South).
