@@ -756,7 +756,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	NetBSD-*|FreeBSD-[[1-2]].*|OpenBSD-*)
 	    # Not available on all versions:  check for include file.
 	    AC_CHECK_HEADER(dlfcn.h, [
-		SHLIB_CFLAGS="-fpic"
+		# NetBSD/SPARC needs -fPIC, -fpic will not do.
+		SHLIB_CFLAGS="-fPIC"
 		SHLIB_LD="ld -Bshareable -x"
 		SHLIB_LD_LIBS=""
 		SHLIB_SUFFIX=".so"
@@ -765,6 +766,18 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		LDFLAGS=""
 		LD_SEARCH_FLAGS=""
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
+		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		AC_MSG_CHECKING(for ELF)
+		AC_EGREP_CPP(yes, [
+#ifdef __ELF__
+	yes
+#endif
+		],
+		    AC_MSG_RESULT(yes)
+		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so',
+		    AC_MSG_RESULT(no)
+		    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
+		)
 	    ], [
 		SHLIB_CFLAGS=""
 		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"

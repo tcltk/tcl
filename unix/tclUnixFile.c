@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.8 1999/12/13 03:05:52 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.9 2000/01/11 22:09:19 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -195,15 +195,15 @@ TclpFindExecutable(argv0)
  */
 
 int
-TclpMatchFilesTypes(
-    Tcl_Interp *interp,		/* Interpreter to receive results. */
-    char *separators,		/* Directory separators to pass to TclDoGlob. */
-    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
-    char *pattern,		/* Pattern to match against. */
-    char *tail,			/* Pointer to end of pattern.  Tail must
+TclpMatchFilesTypes(interp, separators, dirPtr, pattern, tail, types)
+    Tcl_Interp *interp;		/* Interpreter to receive results. */
+    char *separators;		/* Directory separators to pass to TclDoGlob */
+    Tcl_DString *dirPtr;	/* Contains path to directory to search. */
+    char *pattern;		/* Pattern to match against. */
+    char *tail;			/* Pointer to end of pattern.  Tail must
 				 * point to a location in pattern and must
-				 * not be static.*/
-    GlobTypeData *types)	/* Object containing list of acceptable types.
+				 * not be static. */
+    GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. */
 {
     char *native, *fname, *dirName, *patternEnd = tail;
@@ -424,14 +424,14 @@ TclpMatchFilesTypes(
  * 'TclpMatchFilesTypes' instead.
  */
 int
-TclpMatchFiles(
-    Tcl_Interp *interp,		/* Interpreter to receive results. */
-    char *separators,		/* Directory separators to pass to TclDoGlob. */
-    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
-    char *pattern,		/* Pattern to match against. */
-    char *tail)			/* Pointer to end of pattern.  Tail must
+TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
+    Tcl_Interp *interp;		/* Interpreter to receive results. */
+    char *separators;		/* Directory separators to pass to TclDoGlob */
+    Tcl_DString *dirPtr;	/* Contains path to directory to search. */
+    char *pattern;		/* Pattern to match against. */
+    char *tail;			/* Pointer to end of pattern.  Tail must
 				 * point to a location in pattern and must
-				 * not be static.*/
+				 * not be static. */
 {
     return TclpMatchFilesTypes(interp,separators,dirPtr,pattern,tail,NULL);
 }

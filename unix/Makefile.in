@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.51 1999/12/21 23:59:49 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.52 2000/01/11 22:09:18 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.51 1999/12/21 23:59:49 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.52 2000/01/11 22:09:18 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -1046,11 +1046,10 @@ dist: $(UNIX_DIR)/configure
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
 	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
-		$(UNIX_DIR)/aclocal.m4 \
+		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/porting.notes $(UNIX_DIR)/porting.old \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix \
-		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
