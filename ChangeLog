@@ -1,5 +1,11 @@
 2004-04-02  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.c:
+	* generic/tclInt.h: removed the macro TCL_ALIGN() from tclInt.h,
+	replaced by the static macro ALIGN() in tclCompile.c [Bug 926445]
+
+2004-04-02  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.h: removed redundant #ifdef _TCLINT 
 	[Bug 928415], reported by tauvan.
 
