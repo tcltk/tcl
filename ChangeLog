@@ -1,5 +1,12 @@
 2004-05-16  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclBasic.c (Tcl_DeleteInterp):
+	* generic/tclExecute.c (INST_START_CMD): interp deletion now
+	modifies the compileEpoch, eliminating the need for the check for
+	interp deletion in INST_START_CMD.
+
+2004-05-16  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.h:
 	* generic/tclCompile.c:
 	* generic/tclExecute.c: changed implementation of {expand}, last
@@ -45,7 +52,7 @@
 
 2004-05-14  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclExecute.h:
+	* generic/tclExecute.c:
 	* generic/tclCompile.h: the math functions receive a pointer to
 	top of the stack (tosPtr) instead of the execution environment
 	(eePtr). First step towards a change in the execution stack
