@@ -1,5 +1,7 @@
 2004-11-19  Daniel Steffen  <das@users.sourceforge.net>
 
+	*** 8.4.8 TAGGED FOR RELEASE ***
+
 	* macosx/Makefile: 
 	* unix/configure.in: 
 	* unix/tclUnixInit.c (MacOSXGetLibraryPath): changed detection
@@ -12,8 +14,6 @@
 	with -tmpdir arg not set to working dir.
 
 2004-11-18  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.4.8 TAGGED FOR RELEASE ***
 
 	* changes:	Final updates for Tcl 8.4.8 release.
 
