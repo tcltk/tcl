@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.10 2000/04/10 17:19:03 ericm Exp $
+# RCS: @(#) $Id: registry.test,v 1.10.2.1 2002/10/19 01:55:16 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -44,7 +44,7 @@ test registry-1.1 {argument parsing for registry command} {pcOnly} {
 } {1 {wrong # args: should be "registry option ?arg arg ...?"}}
 test registry-1.2 {argument parsing for registry command} {pcOnly} {
     list [catch {registry foo} msg] $msg
-} {1 {bad option "foo": must be delete, get, keys, set, type, or values}}
+} {1 {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}}
 
 test registry-1.3 {argument parsing for registry command} {pcOnly} {
     list [catch {registry d} msg] $msg
@@ -582,21 +582,23 @@ test registry-11.3 {SetValue: failure} {pcOnly nonPortable english} {
     list [catch {registry set {\\mom\HKEY_CLASSES_ROOT\TclFoobar} bar foobar} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 
+test registry-12.1 {BroadcastValue} {pcOnly} {
+    list [catch {registry broadcast} msg] $msg
+} {1 {wrong # args: should be "registry broadcast keyName ?-timeout millisecs?"}}
+test registry-12.2 {BroadcastValue} {pcOnly} {
+    list [catch {registry broadcast "" -time} msg] $msg
+} {1 {wrong # args: should be "registry broadcast keyName ?-timeout millisecs?"}}
+test registry-12.3 {BroadcastValue} {pcOnly} {
+    list [catch {registry broadcast "" - 500} msg] $msg
+} {1 {wrong # args: should be "registry broadcast keyName ?-timeout millisecs?"}}
+test registry-12.4 {BroadcastValue} {pcOnly} {
+    list [catch {registry broadcast {Environment}} msg] $msg
+} {0 {1 0}}
+test registry-12.5 {BroadcastValue} {pcOnly} {
+    list [catch {registry b {}} msg] $msg
+} {0 {1 0}}
 
 # cleanup
 unset hostname
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -11,15 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.11.2.1 2001/04/03 22:54:40 hobbs Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.11.2.2 2002/10/19 01:53:40 hobbs Exp $
  */
 
 #include <tclPort.h>
 #include <stdlib.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
 
 /*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
@@ -163,6 +159,8 @@ static RegWinProcs unicodeProcs = {
  */
 
 static void		AppendSystemError(Tcl_Interp *interp, DWORD error);
+static int		BroadcastValue(Tcl_Interp *interp, int objc,
+			    Tcl_Obj * CONST objv[]);
 static DWORD		ConvertDWORD(DWORD type, DWORD value);
 static int		DeleteKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj);
 static int		DeleteValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
@@ -258,9 +256,13 @@ RegistryObjCmd(
     int index;
     char *errString;
 
-    static char *subcommands[] = { "delete", "get", "keys", "set", "type",
-				   "values", (char *) NULL };
-    enum SubCmdIdx { DeleteIdx, GetIdx, KeysIdx, SetIdx, TypeIdx, ValuesIdx };
+    static char *subcommands[] = {
+	"broadcast", "delete", "get", "keys", "set", "type", "values",
+	(char *) NULL
+    };
+    enum SubCmdIdx {
+	BroadcastIdx, DeleteIdx, GetIdx, KeysIdx, SetIdx, TypeIdx, ValuesIdx
+    };
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, objc, objv, "option ?arg arg ...?");
@@ -273,6 +275,9 @@ RegistryObjCmd(
     }
 
     switch (index) {
+	case BroadcastIdx:		/* broadcast */
+	    return BroadcastValue(interp, objc, objv);
+	    break;
 	case DeleteIdx:			/* delete */
 	    if (objc == 3) {
 		return DeleteKey(interp, objv[2]);
@@ -1292,6 +1297,71 @@ SetValue(
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BroadcastValue --
+ *
+ *	This function broadcasts a WM_SETTINGCHANGE message to indicate
+ *	to other programs that we have changed the contents of a registry
+ *	value.
+ *
+ * Results:
+ *	Returns a normal Tcl result.
+ *
+ * Side effects:
+ *	Will cause other programs to reload their system settings.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BroadcastValue(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj * CONST objv[])	/* Argument values. */
+{
+    DWORD result, sendResult;
+    UINT timeout = 3000;
+    int len;
+    char *str;
+    Tcl_Obj *objPtr;
+
+    if ((objc != 3) && (objc != 5)) {
+	Tcl_WrongNumArgs(interp, 2, objv, "keyName ?-timeout millisecs?");
+	return TCL_ERROR;
+    }
+
+    if (objc > 3) {
+	str = Tcl_GetStringFromObj(objv[3], &len);
+	if ((len < 2) || (*str != '-') || strncmp(str, "-timeout", len)) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "keyName ?-timeout millisecs?");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIntFromObj(interp, objv[4], (int *) &timeout) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+    }
+
+    str = Tcl_GetStringFromObj(objv[2], &len);
+    if (len = 0) {
+	str = NULL;
+    }
+
+    /*
+     * Use the ignore the result.
+     */
+    result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
+	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
+
+    objPtr = Tcl_NewObj();
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj(result));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj(sendResult));
+    Tcl_SetObjResult(interp, objPtr);
+
     return TCL_OK;
 }
 
