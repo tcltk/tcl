@@ -1,3 +1,10 @@
+2003-02-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIO.c (HaveVersion): correctly decl static
+
+	* unix/tclUnixThrd.c (TclpReaddir): reduce size of name string in
+	tsd to NAME_MAX instead of PATH_MAX. [Bug #689100] (waters)
+
 2003-02-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
@@ -9,7 +16,7 @@
 
 	* generic/tclTest.c: cleanup of new 'simplefs' test code, and
 	better documentation.
-	
+
 2003-02-17  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclRenameCommand): fixing error in previous

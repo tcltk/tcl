@@ -25,7 +25,9 @@ typedef struct ThreadSpecificData {
     struct tm   	ltbuf;
     struct {
 	Tcl_DirEntry ent;
-	char name[PATH_MAX+1];
+#ifdef NAME_MAX	 /* if not, dirent *better* have room for name */
+	char name[NAME_MAX+1];
+#endif
     } rdbuf;
 } ThreadSpecificData;
 
@@ -819,7 +821,7 @@ TclpReaddir(DIR * dir)
 #   endif /* HAVE_STRUCT_DIRENT64 */
     if (ent != NULL) {
 	memcpy((VOID *) &tsdPtr->rdbuf.ent, (VOID *) ent,
-		sizeof(Tcl_DirEntry) + sizeof(char) * (PATH_MAX+1));
+		sizeof(&tsdPtr->rdbuf));
 	ent = &tsdPtr->rdbuf.ent;
     }
     Tcl_MutexUnlock(&rdMutex);
