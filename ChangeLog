@@ -1,3 +1,8 @@
+2002-10-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure:                 add workaround for cygwin windres
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): problem. [Patch #624010] (howell)
+
 2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:            updated to 8.3.5 patchlevel

@@ -425,6 +425,31 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
     AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
 
+    # Check for a bug in gcc's windres that causes the
+    # compile to fail when a Windows native path is
+    # passed into windres. The mingw toolchain requires
+    # Windows native paths while Cygwin should work
+    # with both. Avoid the bug by passing a POSIX
+    # path when using the Cygwin toolchain.
+
+    if test "$GCC" = "yes" && test "$CYGPATH" != "echo" ; then
+	conftest=/tmp/conftest.rc
+	echo "STRINGTABLE BEGIN" > $conftest
+	echo "101 \"name\"" >> $conftest
+	echo "END" >> $conftest
+
+	AC_MSG_CHECKING([for Windows native path bug in windres])
+	cyg_conftest=`$CYGPATH $conftest`
+	if AC_TRY_COMMAND($RC -o conftest.res.o $cyg_conftest) ; then
+	    AC_MSG_RESULT([no])
+	else
+	    AC_MSG_RESULT([yes])
+	    CYGPATH=echo
+	fi
+	conftest=
+	cyg_conftest=
+    fi
+
     if test "$CYGPATH" = "echo" || test "$ac_cv_cygwin" = "yes"; then
 	DEPARG='"$<"'
     else
