@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.7 2004/05/30 15:07:29 dkf Exp $
+'\" RCS: @(#) $Id: package.n,v 1.8 2004/06/02 19:14:22 dgp Exp $
 '\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
@@ -90,9 +90,7 @@ provided by a previous \fBpackage provide\fR command.
 If the \fIversion\fR argument is omitted, then the command
 returns the version number that is currently provided, or an
 empty string if no \fBpackage provide\fR command has been
-invoked for \fIpackage\fR in this interpreter.  By convention, package
-names starting with "app-" are reserved for applications that are
-being managed with the package versioning subsystem.
+invoked for \fIpackage\fR in this interpreter.  
 .TP
 \fBpackage require \fR?\fB\-exact\fR? \fIpackage \fR?\fIversion\fR?
 This command is typically invoked by Tcl code that wishes to use
