@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.29 2002/07/11 08:25:24 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.30 2003/01/09 10:38:32 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1367,6 +1367,22 @@ test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} {
     after 1100; # pause a sec to notice change in mtime
     set newmtime [clock seconds]
     set modmtime [file mtime $file $newmtime]
+    expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
+} 1
+test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} {
+    set oldfile $file
+    # introduce some non-ascii characters.
+    append file \u2022
+    file delete -force $file
+    file rename $oldfile $file
+    set mtime [file mtime $file]
+    after 1100; # pause a sec to notice change in mtime
+    set newmtime [clock seconds]
+    set err [catch {file mtime $file $newmtime} modmtime]
+    file rename $file $oldfile
+    if {$err} {
+	error $modmtime
+    }
     expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
 removeFile touch.me
