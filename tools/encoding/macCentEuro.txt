@@ -1,11 +1,28 @@
+#=======================================================================
+#   FTP file name:  CENTEURO.TXT
 #
-#   Name:             MacOS_CentralEurope [to Unicode]
-#   Unicode versions: 1.1, 2.0
-#   Table version:    0.2 (from internal ufrm version <5>)
-#   Date:             15 April 1995
-#   Author:           Peter Edberg <edberg1@applelink.apple.com>
+#   Contents:       Map (external version) from Mac OS Central European
+#                   character set to Unicode 2.1
 #
-#   Copyright (c) 1995 Apple Computer, Inc.  All Rights reserved.
+#   Copyright:      (c) 1995-1999 by Apple Computer, Inc., all rights
+#                   reserved.
+#
+#   Contact:        charsets@apple.com
+#
+#   Changes:
+#
+#       b02  1999-Sep-22    Update contact e-mail address. Matches
+#                           internal utom<b1>, ufrm<b1>, and Text
+#                           Encoding Converter version 1.5.
+#       n05  1998-Feb-05    Update header comments to new format; no
+#                           mapping changes.  Matches internal utom<n3>,
+#                           ufrm<n13>, and Text Encoding Converter
+#                           version 1.3.
+#       n03  1995-Apr-15    First version (after fixing some typos).
+#                           Matches internal ufrm<n5>.
+#
+# Standard header:
+# ----------------
 #
 #   Apple, the Apple logo, and Macintosh are trademarks of Apple
 #   Computer, Inc., registered in the United States and other countries.
@@ -17,53 +34,62 @@
 #   Apple makes no warranty or representation, either express or
 #   implied, with respect to these tables, their quality, accuracy, or
 #   fitness for a particular purpose. In no event will Apple be liable
-#   for direct, indirect, special, incidental, or consequential damages
+#   for direct, indirect, special, incidental, or consequential damages 
 #   resulting from any defect or inaccuracy in this document or the
 #   accompanying tables.
 #
-#   These mapping tables and character lists are preliminary and
-#   subject to change. Updated tables will be available from the
-#   Unicode Inc. ftp site (unicode.org), the Apple Computer ftp site
-#   (ftp.info.apple.com), the Apple Computer World-Wide Web pages
-#   (http://www.info.apple.com), and possibly on diskette from APDA
-#   (Apple's mail-order distribution service for developers).
+#   These mapping tables and character lists are subject to change.
+#   The latest tables should be available from the following:
 #
-#   Format:
-#   -------
+#   <ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/APPLE/>
+#   <ftp://dev.apple.com/devworld/Technical_Documentation/Misc._Standards/>
+#
+#   For general information about Mac OS encodings and these mapping
+#   tables, see the file "README.TXT".
+#
+# Format:
+# -------
 #
 #   Three tab-separated columns;
 #   '#' begins a comment which continues to the end of the line.
-#     Column #1 is the MacOS CentralEurope code (in hex as 0xNN)
-#     Column #2 is the Unicode (in hex as 0xNNNN)
-#     Column #3 is the Unicode name (follows a comment sign, '#')
+#     Column #1 is the Mac OS Central European code (in hex as 0xNN)
+#     Column #2 is the corresponding Unicode (in hex as 0xNNNN)
+#     Column #3 is a comment containing the Unicode name
 #
-#   The entries are in MacOS CentralEurope code order.
+#   The entries are in Mac OS Central European code order.
 #
-#   Notes on MacOS CentralEurope:
-#   -----------------------------
+#   Control character mappings are not shown in this table, following
+#   the conventions of the standard UTC mapping tables. However, the
+#   Mac OS Central European character set uses the standard control
+#   characters at 0x00-0x1F and 0x7F.
 #
-#   This character set is intended to cover the following languages,
-#   which are written in Roman script but using a different set of
-#   accented characters which are not in the standard MacOS Roman
-#   set (MacOS CentralEurope also contains fewer punctuation and
-#   math characters than standard MacOS Roman):
-#   - several Slavic languages (Czech, Polish, Slovak, Slovenian)
-#   - Hungarian
-#   - the languages of the Baltic republics (Estonian, Latvian,
-#     Lithuanian)
+# Notes on Mac OS Central European:
+# ---------------------------------
 #
-#    The MacOS CentralEurope encoding also includes a number of
-#    characters needed for the Mac OS user interface (e.g. ellipsis),
-#    Mac OS localization (bullet for echoing passwords, copyright
-#    sign, etc.), several typographic punctuation symbols, math
-#    symbols, etc. All of the characters in MacOS CentralEurope that
-#    are also in the MacOS Roman encoding are at the same code point
-#    as in MacOS Roman. This improves application compatibility (since
-#    some naughty applications hard-code the MacOS Roman code points
-#    of certain characters).
+#   This character set is intended to cover the following languages:
 #
-#    The MacOS CentralEurope encoding is currently used for the
-#    following MacOS localizations: Czech, Polish, and Hungarian.
+#   Polish, Czech, Slovak, Hungarian, Estonian, Latvian, Lithuanian
+#
+#   These are written in Latin script, but using a different set of
+#   of accented characters than Mac OS Roman. The Mac OS Central
+#   European character set also includes a number of characters
+#   needed for the Mac OS user interface and localization (e.g.
+#   ellipsis, bullet, copyright sign), several typographic
+#   punctuation symbols, math symbols, etc. However, it has a
+#   smaller set of punctuation and symbols than Mac OS Roman. All of
+#   the characters in Mac OS Central European that are also in the
+#   Mac OS Roman character set are at the same code point in both
+#   character sets; this improves application compatibility.
+#
+#   Note: This does not have the same letter repertoire as ISO
+#   8859-2 (Latin-2); each has some accented letters that the other
+#   does not have.
+#
+# Unicode mapping issues and notes:
+# ---------------------------------
+#
+# Details of mapping changes in each version:
+# -------------------------------------------
 #
 ##################
 

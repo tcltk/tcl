@@ -1,11 +1,30 @@
+#=======================================================================
+#   FTP file name:  CROATIAN.TXT
 #
-#   Name:             MacOS_Croatian [to Unicode]
-#   Unicode versions: 1.1, 2.0
-#   Table version:    0.2 (from internal ufrm version <6>)
-#   Date:             15 April 1995
-#   Author:           Peter Edberg <edberg1@applelink.apple.com>
+#   Contents:       Map (external version) from Mac OS Croatian
+#                   character set to Unicode 2.1
 #
-#   Copyright (c) 1995 Apple Computer, Inc.  All Rights reserved.
+#   Copyright:      (c) 1995-1999 by Apple Computer, Inc., all rights
+#                   reserved.
+#
+#   Contact:        charsets@apple.com
+#
+#   Changes:
+#
+#       b02  1999-Sep-22    Encoding changed for Mac OS 8.5; change
+#                           mapping of 0xDB from CURRENCY SIGN to EURO
+#                           SIGN. Update contact e-mail address. Matches
+#                           internal utom<b2>, ufrm<b2>, and Text
+#                           Encoding Converter version 1.5.
+#       n07  1998-Feb-05    Minor update to header comments
+#       n05  1997-Dec-14    Update to match internal utom<5>, ufrm<16>:
+#                           Change standard mapping for 0xBD from U+2126
+#                           to its canonical decomposition, U+03A9.
+#       n03  1995-Apr-15    First version (after fixing some typos).
+#                           Matches internal ufrm<6>.
+#
+# Standard header:
+# ----------------
 #
 #   Apple, the Apple logo, and Macintosh are trademarks of Apple
 #   Computer, Inc., registered in the United States and other countries.
@@ -17,47 +36,88 @@
 #   Apple makes no warranty or representation, either express or
 #   implied, with respect to these tables, their quality, accuracy, or
 #   fitness for a particular purpose. In no event will Apple be liable
-#   for direct, indirect, special, incidental, or consequential damages
+#   for direct, indirect, special, incidental, or consequential damages 
 #   resulting from any defect or inaccuracy in this document or the
 #   accompanying tables.
 #
-#   These mapping tables and character lists are preliminary and
-#   subject to change. Updated tables will be available from the
-#   Unicode Inc. ftp site (unicode.org), the Apple Computer ftp site
-#   (ftp.info.apple.com), the Apple Computer World-Wide Web pages
-#   (http://www.info.apple.com), and possibly on diskette from APDA
-#   (Apple's mail-order distribution service for developers).
+#   These mapping tables and character lists are subject to change.
+#   The latest tables should be available from the following:
 #
-#   Format:
-#   -------
+#   <ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/APPLE/>
+#   <ftp://dev.apple.com/devworld/Technical_Documentation/Misc._Standards/>
+#
+#   For general information about Mac OS encodings and these mapping
+#   tables, see the file "README.TXT".
+#
+# Format:
+# -------
 #
 #   Three tab-separated columns;
 #   '#' begins a comment which continues to the end of the line.
-#     Column #1 is the MacOS Croatian code (in hex as 0xNN)
-#     Column #2 is the Unicode (in hex as 0xNNNN)
-#     Column #3 is the Unicode name (follows a comment sign, '#')
+#     Column #1 is the Mac OS Croatian code (in hex as 0xNN)
+#     Column #2 is the corresponding Unicode (in hex as 0xNNNN)
+#     Column #3 is a comment containing the Unicode name
 #
-#   The entries are in MacOS Croatian code order.
+#   The entries are in Mac OS Croatian code order.
 #
-#   One of these mappings requires the use of a corporate character
-#   (for the Apple logo character). See the file "MacOS-CorpCharList".
-#   NOTE: The graphic image associated with the Apple logo character
-#   is not authorized for use without permission of Apple, and
-#   unauthorized use might constitute trademark infringement.
+#   One of these mappings requires the use of a corporate character.
+#   See the file "CORPCHAR.TXT" and notes below.
 #
-#   Notes on MacOS Croatian:
-#   ------------------------
+#   Control character mappings are not shown in this table, following
+#   the conventions of the standard UTC mapping tables. However, the
+#   Mac OS Roman character set uses the standard control characters at
+#   0x00-0x1F and 0x7F.
 #
-#   The MacOS Croatian encoding shares the script code smRoman
-#   (0) with the standard MacOS Roman encoding. To determine if
+# Notes on Mac OS Croatian:
+# -------------------------
+#
+#	Mac OS Croatian is used for Croatian and Slovene.
+#
+#   The Mac OS Croatian encoding shares the script code smRoman
+#   (0) with the standard Mac OS Roman encoding. To determine if
 #   the Croatian encoding is being used, you must check if the
 #   system region code is 68, verCroatia (or 25, verYugoCroatian,
 #   only used in older systems).
 #
-#   This character set is a variant of standard MacOS Roman
+#   This character set is a variant of standard Mac OS Roman
 #   encoding, adding five accented letter case pairs to handle
 #   Croatian. It has 20 code point differences from standard
-#   MacOS Roman, but only 10 differences in repertoire.
+#   Mac OS Roman, but only 10 differences in repertoire.
+#
+#   Before Mac OS 8.5, code point 0xDB was CURRENCY SIGN, and was
+#   mapped to U+00A4. In Mac OS 8.5 and later versions, code point
+#   0xDB is changed to EURO SIGN and maps to U+20AC; the standard
+#   Apple fonts are updated for Mac OS 8.5 to reflect this. There is
+#   a "currency sign" variant of the Mac OS Croatian encoding that
+#   still maps 0xDB to U+00A4; this can be used for older fonts.
+#   Note: U+20AC is new with Unicode 2.1; for earlier Unicode
+#   versions, Mac OS Croatian 0xDB may be mapped to private-use
+#   character U+F8A0.
+#
+# Unicode mapping issues and notes:
+# ---------------------------------
+#
+#   The following corporate zone Unicode character is used in this
+#   mapping:
+#
+#     0xF8FF  Apple logo
+#
+#   NOTE: The graphic image associated with the Apple logo character
+#   is not authorized for use without permission of Apple, and
+#   unauthorized use might constitute trademark infringement.
+#
+# Details of mapping changes in each version:
+# -------------------------------------------
+#
+#   Changes from version n07 to version b02:
+#
+#   - Encoding changed for Mac OS 8.5; change mapping of 0xDB from
+#   CURRENCY SIGN (U+00A4) to  EURO SIGN (U+20AC).
+#
+#   Changes from version n03 to version n05:
+#
+#   - Change mapping of 0xBD from U+2126 to its canonical
+#     decomposition, U+03A9.
 #
 ##################
 
@@ -218,7 +278,7 @@
 0xBA	0x222B	# INTEGRAL
 0xBB	0x00AA	# FEMININE ORDINAL INDICATOR
 0xBC	0x00BA	# MASCULINE ORDINAL INDICATOR
-0xBD	0x2126	# OHM SIGN
+0xBD	0x03A9	# GREEK CAPITAL LETTER OMEGA
 0xBE	0x017E	# LATIN SMALL LETTER Z WITH CARON
 0xBF	0x00F8	# LATIN SMALL LETTER O WITH STROKE
 0xC0	0x00BF	# INVERTED QUESTION MARK
@@ -248,10 +308,10 @@
 0xD8	0xF8FF	# Apple logo
 0xD9	0x00A9	# COPYRIGHT SIGN
 0xDA	0x2044	# FRACTION SLASH
-0xDB	0x00A4	# CURRENCY SIGN
+0xDB	0x20AC	# EURO SIGN
 0xDC	0x2039	# SINGLE LEFT-POINTING ANGLE QUOTATION MARK
 0xDD	0x203A	# SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
-0xDE	0x00C6	# LATIN CAPITAL LIGATURE AE
+0xDE	0x00C6	# LATIN CAPITAL LETTER AE
 0xDF	0x00BB	# RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
 0xE0	0x2013	# EN DASH
 0xE1	0x00B7	# MIDDLE DOT
@@ -283,5 +343,5 @@
 0xFB	0x02DA	# RING ABOVE
 0xFC	0x00B8	# CEDILLA
 0xFD	0x00CA	# LATIN CAPITAL LETTER E WITH CIRCUMFLEX
-0xFE	0x00E6	# LATIN SMALL LIGATURE AE
+0xFE	0x00E6	# LATIN SMALL LETTER AE
 0xFF	0x02C7	# CARON
