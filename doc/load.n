@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: load.n,v 1.8 2004/02/24 22:58:45 dkf Exp $
+'\" RCS: @(#) $Id: load.n,v 1.9 2004/05/30 14:52:58 dkf Exp $
 '\" 
 .so man.macros
 .TH load n 7.5 Tcl "Tcl Built-In Commands"
@@ -110,7 +110,6 @@ package by that name, and uses it if it is found.  If several
 different files have been \fBload\fRed with different versions of
 the package, Tcl picks the file that was loaded first.
 .VE
-
 .SH "PORTABILITY ISSUES"
 .TP
 \fBWindows\fR\0\0\0\0\0
@@ -121,17 +120,55 @@ type ``dumpbin -imports <dllname>'' in a DOS console to see what the
 library must import.
 When loading a DLL in the current directory, Windows will ignore ``./'' as
 a path specifier and use a search heuristic to find the DLL instead.
-To avoid this, load the DLL with
+To avoid this, load the DLL with:
 .CS
-    load [file join [pwd] mylib.DLL]
+load [file join [pwd] mylib.DLL]
 .CE
-
 .SH BUGS
 .PP
 If the same file is \fBload\fRed by different \fIfileName\fRs, it will
 be loaded into the process's address space multiple times.  The
 behavior of this varies from system to system (some systems may
 detect the redundant loads, others may not).
+.SH EXAMPLE
+The following is a minimal extension:
+.PP
+.CS
+#include <tcl.h>
+#include <stdio.h>
+static int fooCmd(ClientData clientData,
+        Tcl_Interp *interp, int objc, char * CONST objv[]) {
+    printf("called with %d arguments\n", objc);
+    return TCL_OK;
+}
+int Foo_Init(Tcl_Interp *interp) {
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    printf("creating foo command");
+    Tcl_CreateObjCommand(interp, "foo", fooCmd, NULL, NULL);
+    return TCL_OK;
+}
+.CE
+.PP
+When built into a shared/dynamic library with a suitable name
+(e.g. \fBfoo.dll\fR on Windows, \fBlibfoo.so\fR on Solaris and Linux)
+it can then be loaded into Tcl with the following:
+.PP
+.CS
+# Load the extension
+switch $tcl_platform(platform) {
+    windows {
+        \fBload\fR ./foo.dll
+    }
+    unix {
+        \fBload\fR ./libfoo[info sharedlibextension]
+    }
+}
+
+# Now execute the command defined by the extension
+foo
+.CE
 
 .SH "SEE ALSO"
 info sharedlibextension, Tcl_StaticPackage(3), safe(n)
