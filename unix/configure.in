@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.68 2001/06/26 20:13:20 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.69 2001/06/26 20:28:43 mdejong Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -30,7 +30,7 @@ TCL_SRC_DIR=`cd $srcdir/..; pwd`
 # If the user did not set CFLAGS, set it now to keep
 # the AC_PROG_CC macro from adding "-g -O2".
 if test "${CFLAGS+set}" != "set" ; then
-    export CFLAGS=""
+    CFLAGS=""
 fi
 
 AC_PROG_CC
