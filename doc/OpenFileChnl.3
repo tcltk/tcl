@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.28 2004/10/07 15:15:38 dkf Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.29 2004/10/07 15:37:44 dkf Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -108,7 +108,7 @@ int
 \fBTcl_SetChannelOption\fR(\fIinterp, channel, optionName, newValue\fR)
 .sp
 .SH ARGUMENTS
-.AS Tcl_ChannelType newClientProcPtr in/out
+.AS Tcl_DString *channelName in/out
 .AP Tcl_Interp *interp in
 Used for error reporting and to look up a channel registered in it.
 .AP "const char" *fileName in
