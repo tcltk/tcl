@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.26 1999/04/06 01:25:58 welch Exp $
+RCS: @(#) $Id: changes,v 1.1.2.27 1999/04/06 05:50:26 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4208,11 +4208,11 @@ exactly what it gets from the system. (stanton)
 
 3/19/99 (new feature) Added support for --enable-64bit.  For now,
 this is only supported on Solaris 7 64bit (SunOS 5.7) using the Sun
-compiler (redman).
+compiler. (redman)
 
-3/23/99 (bug fix) Fixed fileevents and gets on Windows consoles
-so that non-blocking channels do not block on partial input lines.
-(redman)
+3/23/99 (bug fix) Fixed fileevents and gets on Windows consoles and
+serial devices so that non-blocking channels do not block on partial
+input lines.  (redman)
 
 3/23/99 (bug fix) Added a new Tcl_ServiceModeHook interface.
 This is used on Windows to avoid the various problems that people
@@ -4253,6 +4253,13 @@ macros to just use the name without params. Pass &tclStubs into the
 interp (don't use tclStubsPtr because of collisions with the stubs on
 Solaris). (redman)
 
+3/30/99 (bug fix) Loadable modules are now unloaded at the last
+possible moment during Tcl_Finalize to fix various exit-time crashes.
+(welch)
+
+3/30/99 (bug fix) Tcl no longer calls setlocale().  It looks at
+env(LANG) and env(LC_TYPE) instead.  (stanton)
+
 4/1/99 (bug fix) Fixed the Ultrix multiple symbol definition problem.
 Now, even Tcl includes a copy of the Tcl stub library. (redman)
 
@@ -4277,3 +4284,12 @@ into tclsh, not just wish.  Windows only. (redman)
 4/5/99 (bug fix) Changed safe-tcl so that the encoding command
 is an alias that masks out the "encoding system" subcommand.
 (redman)
+
+4/5/99 (bug fix) Configure patches to improve support for
+OS/390 and BSD/OS 4.*. (stanton)
+
+4/5/99 (bug fix) Fixed crash in the clock command that occurred
+with negative time values in timezones east of GMT. (stanton)
+
+--------------- Released 8.1b3, April 6, 1999 ----------------------
+
