@@ -1,3 +1,9 @@
+2003-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixPort.h:	#ifdef'd out declarations of errno which
+	* tools/man2tcl.c:	are known to cause problems with recent
+				glibc. [Bug 852369]
+
 2003-12-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bumped patch level to 8.4.5.1 to distinguish
