@@ -1,6 +1,6 @@
 Tcl 8.3 for Windows
 
-RCS: @(#) $Id: README,v 1.16.2.1 2001/04/03 22:08:32 hobbs Exp $
+RCS: @(#) $Id: README,v 1.16.2.2 2001/04/06 01:32:53 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -19,7 +19,7 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Tcl 8.3 Source Distribution (plus any patches)
 
-	Visual C++ 4+
+	Visual C++ 5+
 
 In practice, this release is built with Visual C++ 6.0
 
@@ -35,12 +35,7 @@ find them.  Tcl looks in one of following places for the library files:
 
 	1) The path specified in the environment variable "TCL_LIBRARY".
 
-	2) In the lib\tcl8.3 directory under the installation directory
-	   as specified in the registry:
-
-		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.3
-
-	3) Relative to the directory containing the current .exe.
+	2) Relative to the directory containing the current .exe.
 	    Tcl will look for a directory "..\lib\tcl8.3" relative to the
 	    directory containing the currently running .exe.
 
@@ -49,9 +44,6 @@ and tclpip83.dll are on your path, in the system directory, or in the
 directory containing tclsh83.exe.
 
 Note: Tcl no longer provides support for Win32s.
-
-This page includes a lengthy discussion of compiler macros necessary
-when compiling Tcl extensions that will be dynamically loaded.
 
 3. Test suite
 -------------

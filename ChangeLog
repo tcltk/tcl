@@ -1,5 +1,15 @@
 2001-04-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclObj.c (TclAllocateFreeObjects): simplified
+	objSizePlusPadding to use sizeof(Tcl_Obj) (max)
+
+	* win/README:
+	* win/README.binary: removed note about use of registry (hasn't
+	been used for loading since 8.0).
+
+	* win/configure:
+	* win/tcl.m4: added -link50compat
+
 	* mac/tclMacProjects.sea.hqx: fixed accidental swap with Tk
 	project files.
 
