@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.37 1999/06/30 05:51:51 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.38 1999/07/09 21:18:10 wart Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -484,7 +484,7 @@ dltest/Makefile: $(DLTEST_DIR)/configure $(DLTEST_DIR)/Makefile.in tclConfig.sh
 	cd dltest; if test -f configure; then ./configure; else \
 	    $(DLTEST_DIR)/configure; fi
 
-install: all install-binaries install-libraries install-man
+install: all install-binaries install-libraries install-doc
 
 # Note: before running ranlib below, must cd to target directory because
 # some ranlibs write to current directory, and this might not always be
@@ -562,7 +562,7 @@ install-libraries:
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
 	done;
 
-install-man:
+install-doc:
 	@chmod +x $(UNIX_DIR)/mkLinks
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
 	    do \
