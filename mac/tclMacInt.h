@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInt.h,v 1.5 1999/05/11 07:12:19 jingham Exp $
+ * RCS: @(#) $Id: tclMacInt.h,v 1.6 1999/08/16 00:09:18 jingham Exp $
  */
 
 #ifndef _TCLMACINT
@@ -27,10 +27,23 @@
 #pragma export on
 
 /*
- * Defines to control stack behavior
+ * Defines to control stack behavior.
+ *
+ * The Tcl8.2 regexp code is highly recursive for patterns with many
+ * subexpressions.  So we have to increase the stack space to accomodate.
+ * 512 K is good enough for ordinary work, but you need 768 to pass the Tcl
+ * regexp testsuite.
+ *
+ * For the PPC, you need to set the stack space in the Project file.
+ *
  */
 
-#define TCL_MAC_68K_STACK_GROWTH (256*1024)
+#ifdef TCL_TEST
+#	define TCL_MAC_68K_STACK_GROWTH (768*1024)
+#else
+#	define TCL_MAC_68K_STACK_GROWTH (512*1024)
+#endif
+
 #define TCL_MAC_STACK_THRESHOLD 16384
 
 /*
