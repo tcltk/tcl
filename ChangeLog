@@ -3,6 +3,8 @@
 	* tests/clock.test (clock-2.11): Changed the test so that
 	it isn't an infinite loop when run under valgrind on a slow
 	virtual machine.  Thanks to Miguel Sofer for the bug report.
+	Also put in code to restore env(LC_TIME) after tests complete,
+	silencing a warning from 'make TESTFLAGS="-debug 1" test'.
 	
 2004-07-08  Miguel Sofer <msofer@users.sf.net>
 

@@ -10,8 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.32 2004/07/10 20:38:44 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.33 2004/07/10 21:02:28 kennykb Exp $
 
+if { [info exists env(LC_TIME)] } {
+    set oldlctime $env(LC_TIME)
+}
 set env(LC_TIME) POSIX
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -701,6 +704,12 @@ test clock-11.2 {scan of time alone in GMT assumes correct date} {
     set base [clock scan 20040309T235959 -gmt true]
     clock scan "1600" -gmt true -base $base
 } 1078848000
+
+if { [info exists oldlctime] } {
+    set env(LC_TIME) $oldlctime
+} else {
+    unset env(LC_TIME)
+}
 
 # cleanup
 ::tcltest::cleanupTests
