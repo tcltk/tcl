@@ -1,3 +1,21 @@
+2003-03-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Require autoconf 2.57 or newer, see TIP 34
+	for a detailed explanation of why this is good.
+	This will no doubt break the build on some
+	platforms, let the flaming begin.
+
+	* tools/configure: Regen with autoconf 2.57.
+	* tools/configure.in: Require autoconf 2.57.
+	* unix/configure: Regen with autoconf 2.57.
+	* unix/configure.in: Require autoconf 2.57.
+	Apply AC_LIBOBJ changes from patch 529884.
+	* unix/tcl.m4: Ditto.
+	* win/configure: Regen with autoconf 2.57.
+	* win/configure.in: Require autoconf 2.57.
+	Don't subst LIBOBJS since this happens by
+	default, this avoids an autoconf error.
+
 2003-03-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_EvalTokensStandard):
