@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.27 2003/02/04 17:06:49 vincentdarley Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28 2003/02/22 09:23:16 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -928,13 +928,19 @@ Tcl_FinalizeThread()
 	TclFinalizeIOSubsystem();
 	TclFinalizeNotifier();
 	TclFinalizeAsync();
+    }
 
 	/*
 	 * Blow away all thread local storage blocks.
+     *
+     * Note that Tcl API allows creation of threads which do not use any
+     * Tcl interp or other Tcl subsytems. Those threads might, however,
+     * use thread local storage, so we must unconditionally finalize it.
+     *
+     * Fix [Bug #571002]
 	 */
 
 	TclFinalizeThreadData();
-    }
 }
 
 /*
