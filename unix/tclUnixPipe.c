@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.13 2001/07/31 19:12:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.14 2001/08/07 00:42:45 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -186,19 +186,20 @@ TclFile
 TclpCreateTempFile(contents)
     CONST char *contents;	/* String to write into temp file, or NULL. */
 {
-    char fileName[L_tmpnam], *native;
+    char fileName[L_tmpnam + 9], *native;
     Tcl_DString dstring;
     int fd;
 
     /*
-     * Linux says we should use mkstemp, but Solaris prefers tmpnam.
      * We should also check against making more then TMP_MAX of these.
      */
 
-    if (tmpnam(fileName) == NULL) {			/* INTL: Native. */
-	return NULL;
+    strcpy(fileName, P_tmpdir);				/* INTL: Native. */
+    if (fileName[strlen(fileName) - 1] != '/') {
+	strcat(fileName, "/");				/* INTL: Native. */
     }
-    fd = open(fileName, O_RDWR|O_CREAT|O_EXCL, 0666);	/* INTL: Native. */
+    strcat(fileName, "tclXXXXXX");
+    fd = mkstemp(fileName);				/* INTL: Native. */
     if (fd == -1) {
 	return NULL;
     }
@@ -238,7 +239,13 @@ Tcl_Obj*
 TclpTempFileName()
 {
     char fileName[L_tmpnam];
-    
+
+    /*
+     * tmpnam should not be used (see [Patch: #442636]), but mkstemp
+     * doesn't provide just the filename.  The use of this will have
+     * to reconcile that conflict.
+     */
+
     if (tmpnam(fileName) == NULL) {			/* INTL: Native. */
 	return NULL;
     }
