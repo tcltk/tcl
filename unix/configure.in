@@ -3,10 +3,10 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.107 2003/03/04 23:46:19 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.108 2003/03/13 10:39:58 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
-AC_PREREQ(2.13)
+AC_PREREQ(2.57)
 
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
@@ -196,7 +196,8 @@ if test $tcl_ok = yes; then
     AC_MSG_RESULT(yes)
 else
     AC_MSG_RESULT([broken, using substitute])
-    LIBOBJS="$LIBOBJS strstr.o"
+    AC_LIBOBJ([strstr])
+    USE_COMPAT=1
 fi
 
 #--------------------------------------------------------------------
@@ -221,7 +222,8 @@ int main()
 }], , tcl_ok=0, tcl_ok=0)
 if test "$tcl_ok" = 0; then
     test -n "$verbose" && echo "	Adding strtoul.o."
-    LIBOBJS="$LIBOBJS strtoul.o"
+    AC_LIBOBJ([strtoul])
+    USE_COMPAT=1
 fi
 
 #--------------------------------------------------------------------
@@ -245,7 +247,8 @@ int main()
 }], , tcl_ok=0, tcl_ok=0)
 if test "$tcl_ok" = 0; then
     test -n "$verbose" && echo "	Adding strtod.o."
-    LIBOBJS="$LIBOBJS strtod.o"
+    AC_LIBOBJ([strtod])
+    USE_COMPAT=1
 fi
 
 #--------------------------------------------------------------------
@@ -327,7 +330,8 @@ if test "$tcl_ok" = 0; then
     AC_CHECK_LIB(inet, strncasecmp, tcl_ok=1, tcl_ok=0)
 fi
 if test "$tcl_ok" = 0; then
-    LIBOBJS="$LIBOBJS strncasecmp.o"
+    AC_LIBOBJ([strncasecmp])
+    USE_COMPAT=1
 fi
 
 #--------------------------------------------------------------------
