@@ -1,3 +1,7 @@
+2004-11-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Final updates for Tcl 8.4.8 release.
+
 2004-11-18  Reinhard Max  <max@suse.de>
 
         * unix/tcl.m4 (SC_CONFIG_MANPAGES): Applied an improved version of
