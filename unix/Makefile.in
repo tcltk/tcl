@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.106 2002/07/16 22:44:43 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.107 2002/07/16 23:13:07 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1117,7 +1117,9 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 		$(GENERIC_DIR)/tclInt.decls
-	@echo "Warning: run \"make genstubs\" to regenerate tclStubInit.c"
+	@echo "Warning: tclStubInit.c may be out of date."
+	@echo "Developers may want to run \"make genstubs\" to regenerate."
+	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
 	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
