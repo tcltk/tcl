@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.29 2001/12/10 15:44:34 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.30 2001/12/11 19:45:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -256,18 +256,18 @@ InstructionDesc instructionTable[] = {
     {"lappendStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Lappend general variable; value is stktop, then unparsed name */
     {"lindexMulti",	  5,   INT_MIN,   1,   {OPERAND_UINT4}},
-        /* Lindex with generalized args, operand is number of indices.
-         * (operand) entries from stktop are the indices; then list to
-         * process. */
+        /* Lindex with generalized args, operand is number of stacked objs 
+	 * used: (operand-1) entries from stktop are the indices; then list 
+	 * to process. */
     {"over",		  5,   +1,         1,   {OPERAND_UINT4}},
         /* Duplicate the arg-th element from top of stack (TOS=0) */
     {"lsetList",          1,   -2,         0,   {OPERAND_NONE}},
         /* Four-arg version of 'lset'. stktop is old value; next is
          * new element value, next is the index list; pushes new value */
     {"lsetFlat",          5,   INT_MIN,   1,   {OPERAND_UINT4}},
-        /* Three- or >=5-arg version of 'lset'. stktop is old value,
-         * next is new element value; next come objc-2 indices; pushes
-	 * the new value.
+        /* Three- or >=5-arg version of 'lset', operand is number of 
+	 * stacked objs: stktop is old value, next is new element value, next 
+	 * come (operand-2) indices; pushes the new value.
 	 */
     {0}
 };
