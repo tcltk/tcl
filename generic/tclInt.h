@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.128 2003/06/09 22:48:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.129 2003/07/22 00:59:58 mdejong Exp $
  */
 
 #ifndef _TCLINT
@@ -2087,15 +2087,16 @@ EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 #  define TclIncrObjsFreed()
 #endif /* TCL_COMPILE_STATS */
 
-#define TclNewObj(objPtr) \
-    TclAllocObjStorage(objPtr); \
+#ifndef TCL_MEM_DEBUG
+# define TclNewObj(objPtr) \
     TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
     (objPtr)->bytes    = tclEmptyStringRep; \
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL
 
-#define TclDecrRefCount(objPtr) \
+# define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
@@ -2108,27 +2109,22 @@ EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
         TclFreeObjStorage(objPtr); \
 	TclIncrObjsFreed(); \
     }
+#endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_MEM_DEBUG
-#  define TclAllocObjStorage(objPtr) \
-       (objPtr) = (Tcl_Obj *) \
-           Tcl_DbCkalloc(sizeof(Tcl_Obj), __FILE__, __LINE__)
+EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
-#  define TclFreeObjStorage(objPtr) \
-       if ((objPtr)->refCount < -1) { \
-           panic("Reference count for %lx was negative: %s line %d", \
-	           (objPtr), __FILE__, __LINE__); \
-       } \
-       ckfree((char *) (objPtr))
-     
-#  define TclDbNewObj(objPtr, file, line) \
-       (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
-       (objPtr)->refCount = 0; \
-       (objPtr)->bytes    = tclEmptyStringRep; \
-       (objPtr)->length   = 0; \
-       (objPtr)->typePtr  = NULL; \
-       TclIncrObjsAllocated()
-     
+# define TclDbNewObj(objPtr, file, line) \
+    TclIncrObjsAllocated(); \
+    (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
+    TclDbInitNewObj(objPtr);
+
+# define TclNewObj(objPtr) \
+    TclDbNewObj(objPtr, __FILE__, __LINE__);
+
+# define TclDecrRefCount(objPtr) \
+    Tcl_DecrRefCount(objPtr);
+
 #elif defined(PURIFY)
 
 /*
