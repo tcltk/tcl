@@ -1,3 +1,10 @@
+2003-05-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/encoding/gb2312.enc: copy euc-cn.enc over original
+	gb2312.enc.  gb2312.enc appeared to not work as expected, and most
+	uses of gb2312 really mean euc-cn (which may be the cause of the
+	problem). [Bug 557030]
+
 2003-05-15  Daniel Steffen  <das@users.sourceforge.net>
 
 	Implementation of TIP 118:
