@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.47 2004/10/22 14:27:39 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.48 2004/10/26 02:08:39 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -34733,6 +34733,14 @@ test clock-31.4 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	    unset env(TZ)
+	}
+	if { [info exists env(TCL_TZ)] } {
+	    set oldTclTZ $env(TCL_TZ)
+	    unset env(TCL_TZ)
+	}
 	::tcl::clock::ClearCaches
     } \
     -body {
@@ -34741,6 +34749,12 @@ test clock-31.4 {system locale} \
     -cleanup {
 	namespace eval ::tcl::clock {
 	    rename registry {}
+	}
+	if { [info exists oldTclTZ] } {
+	    set env(TCL_TZ) $oldTclTZ
+	}
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
 	}
 	::tcl::clock::ClearCaches
     } \
@@ -34753,6 +34767,14 @@ test clock-31.5 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	    unset env(TZ)
+	}
+	if { [info exists env(TCL_TZ)] } {
+	    set oldTclTZ $env(TCL_TZ)
+	    unset env(TCL_TZ)
+	}
 	::tcl::clock::ClearCaches
     } \
     -body {
@@ -34761,6 +34783,12 @@ test clock-31.5 {system locale} \
     -cleanup {
 	namespace eval ::tcl::clock {
 	    rename registry {}
+	}
+	if { [info exists oldTclTZ] } {
+	    set env(TCL_TZ) $oldTclTZ
+	}
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
 	}
 	::tcl::clock::ClearCaches
     } \
@@ -34773,6 +34801,14 @@ test clock-31.6 {system locale} \
 	namespace eval ::tcl::clock {
 	    namespace import -force ::testClock::registry
 	}
+	if { [info exists env(TZ)] } {
+	    set oldTZ $env(TZ)
+	    unset env(TZ)
+	}
+	if { [info exists env(TCL_TZ)] } {
+	    set oldTclTZ $env(TCL_TZ)
+	    unset env(TCL_TZ)
+	}
 	::tcl::clock::ClearCaches
     } \
     -body {
@@ -34781,6 +34817,12 @@ test clock-31.6 {system locale} \
     -cleanup {
 	namespace eval ::tcl::clock {
 	    rename registry {}
+	}
+	if { [info exists oldTclTZ] } {
+	    set env(TCL_TZ) $oldTclTZ
+	}
+	if { [info exists oldTZ] } {
+	    set env(TZ) $oldTZ
 	}
 	::tcl::clock::ClearCaches
     } \
