@@ -1,7 +1,5 @@
 Debug
 Release
-*.dsp
-*.dsw
 *.opt
 *.ncb
 *.plg
