@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.24 2001/03/31 01:55:37 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.25 2001/04/04 17:35:25 andreas_kupries Exp $
  */
 
 #define TCL_TEST
@@ -235,6 +235,8 @@ static int		TestMathFunc _ANSI_ARGS_((ClientData clientData,
 static int		TestMathFunc2 _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, Tcl_Value *args,
 			    Tcl_Value *resultPtr));
+static int		TestmainthreadCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *filename, char *modeString, int permissions));
 static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((Tcl_Interp *interp,
@@ -452,6 +454,8 @@ Tcltest_Init(interp)
     Tcl_CreateMathFunc(interp, "T2", 0, (Tcl_ValueType *) NULL, TestMathFunc,
 	    (ClientData) 345);
     Tcl_CreateCommand(interp, "teststatproc", TeststatprocCmd, (ClientData) 0,
+	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
@@ -4040,6 +4044,40 @@ TestStatProc3(path, buf)
 {
     buf->st_size = 3456;
     return ((strstr(path, "testStat3%.fil") == NULL) ? -1 : 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestmainthreadCmd  --
+ *
+ *	Implements the "testmainthread" cmd that is used to test the
+ *	'Tcl_GetCurrentThread' API.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestmainthreadCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+  if (argc == 1) {
+      Tcl_Obj *idObj = Tcl_NewLongObj((long)Tcl_GetCurrentThread());
+      Tcl_SetObjResult(interp, idObj);
+      return TCL_OK;
+  } else {
+      Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+      return TCL_ERROR;
+  }
 }
 
 /*
