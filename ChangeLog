@@ -1,5 +1,11 @@
 2003-05-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (TclInvokeObjectCommand):  objv[argc] is no
+	longer set to NULL (Tcl_CreateObjCommand docs already say that it
+	should not be accessed).
+
+	* tests/cmdMZ.test:  Forgot to import [temporaryDirectory].
+
 	* generic/tclObj.c (tclCmdNameType):  Corrected variable use of the
 	otherValuePtr or the twoPtrValue.ptr1 fields to store a
 	(ResolvedCmdName *) as the internal rep.  [Bug 726018].
