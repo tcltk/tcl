@@ -688,7 +688,7 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 	 * current time, including possible overflow situations. [Bug #411603]
 	 */
 
-	TclpGetTime(&now);
+	Tcl_GetTime(&now);
 	ptime.tv_sec = timePtr->sec + now.sec +
 	    (timePtr->usec + now.usec) / 1000000;
 	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
