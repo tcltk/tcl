@@ -21,7 +21,9 @@
 	* generic/tcl.h: Renamed and deprecated #defines moved to within
 	the #ifndef TCL_NO_DEPRECATED block.  This allows us to build Tcl
 	to check for deprecated functions in use, such as panic() and
-	Tcl_Ckalloc().  By request from DKF.
+	Tcl_Ckalloc().  By request from DKF.  Extensions that build
+	with -DTCL_NO_DEPRECATED now have these macros as restricted.
+	***POTENTIAL INCOMPATIBILITY***
 
 	* win/makefile.vc:
 	* win/rules.vc:  Added -DTCL_NO_DEPRECATED usage to makefile.vc.
