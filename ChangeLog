@@ -1,3 +1,15 @@
+2001-09-10  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclInt.decls: Also added 'TclWinFlushDirtyChannels' to
+	  the internal platform specific stub table.
+
+	* win/tclWinFile.c (TclpObjStat): Now added the call to
+	  'TclWinFlushDirtyChannels' to this function. I don't know where
+	  my head was last thursday (2001-09-06), but the call was
+	  actually added to 'TclpObjChdir', i.e. the implementation of
+	  [cd]. Corrected this now. Thanks to Vince Darley for spotting
+	  this.
+
 2001-09-10  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclProc.c:

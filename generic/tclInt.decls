@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.30 2001/08/30 08:53:14 vincentdarley Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.31 2001/09/10 17:17:41 andreas_kupries Exp $
 
 library tcl
 
@@ -838,6 +838,12 @@ declare 25 win {
 }
 declare 26 win {
     void TclWinSetInterfaces(int wide)
+}
+
+# Added in Tcl 8.3.3 / 8.4
+
+declare 27 win {
+    void TclWinFlushDirtyChannels (void)
 }
 
 #########################
