@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.9 2002/07/01 07:52:02 dgp Exp $
+RCS: @(#) $Id: README,v 1.10 2002/08/08 08:55:24 hobbs Exp $
 
 Contents:
 ---------
@@ -20,7 +20,10 @@ file.
 
 You can run the tests in three ways:
 
-    (a) type "make test" in ../unix; this will run all of the tests.
+    (a) type "make test" in ../unix; this will create the tcltest
+	executable and run all of the tests.  At least "make tcltest"
+	must be run to create the tcltest executable for the other
+	options.
 
     (b) type "tcltest <testFile> ?<option> <value>?
 
