@@ -1,3 +1,9 @@
+2005-03-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c (OptCleanupByteCode):	Operands are
+	not ints; they are TclPSizedInts.  Storing them in int type
+	variables loses important bits.
+
 2005-03-22 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.h: fixing bad macro name under VM_USE_PACKED.

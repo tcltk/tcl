@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.11 2005/03/22 23:12:56 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.12 2005/03/23 06:51:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2935,7 +2935,7 @@ TclPrintInstruction(codePtr, pc)
 	    break;	    
         case OPERAND_INT:
 		if ((opCode == INST_STORE) || (opCode == INST_LOAD)) {
-		    fprintf(stdout, "0x%x ", (int) opnd);
+		    fprintf(stdout, "0x%lx ", opnd);
 		    if (opnd & TCL_LIST_ELEMENT) {
 			fprintf(stdout, "(lappend) ");
 		    } else if (opnd & TCL_APPEND_VALUE) {
@@ -3423,7 +3423,8 @@ OptCleanupByteCode(codePtr, auxCount)
 			 
 {
     TclVMWord *pc;
-    int i, j, noops, opCode, opnd;
+    TclPSizedInt opnd;
+    int i, j, noops, opCode;
     unsigned char *pr, *pw, *qr, *qw;
     int oldstart;
 	
