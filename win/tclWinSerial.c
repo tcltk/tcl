@@ -10,12 +10,11 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.9.2.2 2001/04/03 22:54:40 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.9.2.3 2002/10/15 19:38:48 hobbs Exp $
  */
 
 #include "tclWinInt.h"
 
-#include <dos.h>
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
