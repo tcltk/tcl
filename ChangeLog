@@ -1,3 +1,8 @@
+1999-07-12    <jpeek@scriptics.com>
+
+	* doc/re_syntax.n: Removed two notes to myself (oops), cleaned
+	up wording, fixed changebars, made two examples easier to read.
+
 1999-07-11    <redman@scriptics.com>
 
 	* win/makefile.vc: Since the makefile.vc should continue to work
