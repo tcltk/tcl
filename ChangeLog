@@ -1,3 +1,20 @@
+2004-09-26  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* tests/compExpr-old.test:
+	* tests/compExpr.test:
+	* tests/expr.test:
+	* tests/for.test:
+	* tests/if.test:
+	* tests/incr.test:
+	* tests/while.test: 
+	Report compilation errors at runtime, [Patch 103368] by dgp. 
+	
 2004-09-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/dltest/Makefile.in (clean): Fixup make clean
