@@ -14,38 +14,67 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInitScript.h,v 1.3 1998/07/24 13:49:59 surles Exp $ 
+ * SCCS: %Z% $Id: tclInitScript.h,v 1.4 1998/07/24 15:36:40 stanton Exp $ 
  */
 
 /*
- * The following string is the startup script executed in new interpreters.
- * It looks on disk in (way too many) different directories for a script
- * "init.tcl" that is compatible with this version of Tcl.  The init.tcl
- * script does all of the real work of initialization.
+ * In order to find init.tcl during initialization, the following script
+ * is invoked by Tcl_Init().  It looks in several different directories:
+ *
+ *	$tcl_library		- can specify a primary location, if set
+ *				  no other locations will be checked
+ *
+ *	$env(TCL_LIBRARY)	- highest priority so user can always override
+ *				  the search path unless the application has
+ *				  specified an exact directory above
+ *
+ *	$tclDefaultLibrary	- this value is initialized by TclPlatformInit
+ *				  from a static C variable that was set at
+ *				  compile time
+ *
+ *	<executable directory>/../lib/tcl$tcl_version
+ *				- look for a lib/tcl<ver> in a sibling of
+ *				  the bin directory (e.g. /usr/local)
+ *
+ *	<executable directory>/../library
+ *				- look in build directory
+ *
+ *	<executable directory>/../../tcl$tcl_patchLevel/library
+ *				- look for tcl build directory relative
+ *				  to a parallel build directory (e.g. Tk)
+ *
+ * The first directory on this path that contains a valid init.tcl script
+ * will be appended to tcl_pkgPath and set as the value of tcl_library.
+ *
+ * Note that this entire search mechanism can be bypassed by defining an
+ * alternate tclInit procedure before calling Tcl_Init().
  */
 
 static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
   proc tclInit {} {\n\
     global tcl_library tcl_version tcl_patchLevel errorInfo\n\
-    global env tcl_pkgPath\n\
+    global tcl_pkgPath env tclDefaultLibrary\n\
     rename tclInit {}\n\
     set errors {}\n\
     set dirs {}\n\
-    if {[info exists env(TCL_LIBRARY)]} {\n\
-	lappend dirs $env(TCL_LIBRARY)\n\
-    }\n\
-    lappend dirs $tcl_library\n\
-    set parentDir [file dirname [file dirname [info nameofexecutable]]]\n\
-    lappend dirs [file join $parentDir lib/tcl$tcl_version]\n\
-    if {[string match {*[ab]*} $tcl_patchLevel]} {\n\
-	set lib tcl$tcl_patchLevel\n\
+    if {[info exists tcl_library]} {\n\
+	lappend dirs $tcl_library\n\
     } else {\n\
-	set lib tcl$tcl_version\n\
+	if {[info exists env(TCL_LIBRARY)]} {\n\
+	    lappend dirs $env(TCL_LIBRARY)\n\
+	}\n\
+	lappend dirs $tclDefaultLibrary\n\
+	unset tclDefaultLibrary\n\
+	set parentDir [file dirname [file dirname [info nameofexecutable]]]\n\
+	lappend dirs [file join $parentDir lib/tcl$tcl_version]\n\
+	lappend dirs [file join $parentDir library]\n\
+	if {[string match {*[ab]*} $tcl_patchLevel]} {\n\
+	    set ver $tcl_patchLevel\n\
+	} else {\n\
+	    set ver $tcl_version\n\
+	}\n\
+	lappend dirs [file join [file dirname $parentDir] tcl$ver/library]\n\
     }\n\
-    lappend dirs [file join [file dirname [file dirname [pwd]]] $lib/library]\n\
-    lappend dirs [file join [file dirname [pwd]] library]\n\
-    lappend dirs [file join [file dirname $parentDir] $lib/library]\n\
-    lappend dirs [file join $parentDir library]\n\
     foreach i $dirs {\n\
 	set tcl_library $i\n\
 	set tclfile [file join $i init.tcl]\n\
