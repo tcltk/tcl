@@ -5,7 +5,7 @@ README:  Tcl
     Tcl/Tk is also available through NetCVS:
 	http://dev.scriptics.com/software/tcltk/netcvs.html
 
-RCS: @(#) $Id: README,v 1.30 2000/04/26 17:05:01 welch Exp $
+RCS: @(#) $Id: README,v 1.31 2000/04/26 17:31:19 hobbs Exp $
 
 Contents
 --------
@@ -45,14 +45,11 @@ and selling it either in whole or in part.  See the file
 ---------------
 
 Extensive documentation is available at our website.
-The home page for this release is
-	http://dev.scriptics.com/software/8.3.html
-
-Information about new features in 8.3 can be found at
-	http://dev.scriptics.com/software/whatsnew83.html
+The home page for this release, including new features, is
+	http://dev.scriptics.com/software/tcltk/8.3.html
 
 Detailed release notes can be found at
-	http://dev.scriptics.com/software/relnotes/tcl8.3.1
+	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.3.1.txt
 
 Information about Tcl itself can be found at
 	http://dev.scriptics.com/scripting/

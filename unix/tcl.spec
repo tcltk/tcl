@@ -1,4 +1,4 @@
-# $Id: tcl.spec,v 1.3 2000/04/19 08:32:45 hobbs Exp $
+# $Id: tcl.spec,v 1.4 2000/04/26 17:31:21 hobbs Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
 %define version 8.3.1
@@ -11,7 +11,7 @@ Release: 1
 Copyright: BSD
 Group: Development/Languages
 Source: ftp://ftp.scriptics.com/pub/tcl/tcl8_3/tcl%{version}.tar.gz
-URL: http://www.scriptics.com/
+URL: http://dev.scriptics.com/
 Packager: Scriptics Corporation
 Buildroot: /var/tmp/%{name}%{version}
 

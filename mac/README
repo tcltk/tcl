@@ -8,20 +8,20 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.11 2000/02/10 08:39:41 jingham Exp $
+RCS: @(#) $Id: README,v 1.12 2000/04/26 17:31:20 hobbs Exp $
 
 1. Introduction
 ---------------
 
 This is the README file for the Macintosh version of the Tcl
 scripting language.  The home page for the Macintosh releases is
-	http://www.scriptics.com/mac/
+	http://dev.scriptics.com/software/mac/
 
 A summary of what's new in this release is at
-	http://www.scriptics.com/software/whatsnew83.html
+	http://dev.scriptics.com/software/tcltk/8.3.html
 
 A summary of Macintosh-specific features is at
-	http://www.scriptics.com/mac/features.html
+	http://dev.scriptics.com/software/mac/features.html
 
 
 2. The Distribution
@@ -55,7 +55,7 @@ mactcl-source-<version>.sea.hqx
 The "html" subdirectory contains reference documentation in
 in the HTML format.  You may also find these pages at:
 
-	http://www.scriptics.com/man/tcl<version>/contents.html
+	http://dev.scriptics.com/man/tcl<version>/contents.html
 
 3. Compiling Tcl
 ----------------
@@ -70,7 +70,7 @@ following items:
 The included project files should work fine.  However, for
 current release notes please check this page:
 
-	http://www.scriptics.com/support/howto/compile.html#mac
+	http://dev.scriptics.com/doc/howto/compile.html#mac
 
 If you have comments or Bug reports send them to:
 Jim Ingham

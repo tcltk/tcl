@@ -8,11 +8,11 @@ used on the PC or Mac platform too, but they all depend on UNIX
 (POSIX/ANSI C) interfaces and some of them only make sense under UNIX.
 
 Updated forms of the information found in this file is available at:
-    http://www.scriptics.com/support/howto/compile.html#unix
+	http://dev.scriptics.com/doc/howto/compile.html#unix
 
 For information on platforms where Tcl is known to compile, along
 with any porting notes for getting it to work on those platforms, see:
-	http://dev.scriptics.com/services/support/platforms.html
+	http://dev.scriptics.com/software/tcltk/platforms.html
 
 The rest of this file contains instructions on how to do this.  The
 release should compile and run either "out of the box" or with trivial
@@ -22,7 +22,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.10 2000/02/10 08:55:26 hobbs Exp $
+RCS: @(#) $Id: README,v 1.11 2000/04/26 17:31:21 hobbs Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -120,7 +120,10 @@ directory.  You should then see a printout of the test files processed.
 If any errors occur, you'll see a much more substantial printout for
 each error.  See the README file in the "tests" directory for more
 information on the test suite.  Note: don't run the tests as superuser:
-this will cause several of them to fail.
+this will cause several of them to fail.  If a test is failing
+consistently, please send us a bug report with as much detail as you
+can manage.  Please use the online database at
+	http://dev.scriptics.com/ticket/
 
 The Tcl test suite is very sensitive to proper implementation of
 ANSI C library procedures such as sprintf and sscanf.  If the test

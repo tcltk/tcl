@@ -1,10 +1,16 @@
-2000-04-26  Brent Welch <welch@scriptics.com>
-
-	* README: Updating URLs to reference dev.scriptics.com
-
-2000-04-25  Jeff Hobbs  <hobbs@scriptics.com>
+2000-04-26  Jeff Hobbs  <hobbs@scriptics.com>
 
 	8.3.1 RELEASE
+
+	* README:
+	* mac/README:
+	* tools/tcl.wse.in:
+	* unix/README:
+	* unix/tcl.spec:
+	* win/README:
+	* win/README.binary: Updating URLs to reference dev.scriptics.com
+
+2000-04-25  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/Makefile.in:
 	* win/Makefile.in:

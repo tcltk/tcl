@@ -1,6 +1,6 @@
 Tcl/Tk 8.3 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.18 2000/04/19 08:32:46 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.19 2000/04/26 17:31:22 hobbs Exp $ 
 
 1. Introduction
 --------------- 
@@ -23,25 +23,22 @@ Tcl community by Scriptics Corporation.
 ----------------
 
 The official home for Tcl and Tk on the Web is at:
-	http://www.scriptics.com
+	http://dev.scriptics.com
 
 The home page for the Tcl/Tk 8.3 release is
-	http://www.scriptics.com/software/8.3.html
-
-Information about new features in Tcl/Tk 8.3 can be found at
-	http://www.scriptics.com/software/whatsnew83.html
+	http://dev.scriptics.com/software/tcltk/8.3.html
 
 Detailed release notes can be found at
-	http://www.scriptics.com/software/relnotes/tcl8.3.1
+	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.3.1.txt
 
 Information about Tcl itself can be found at
-	http://www.scriptics.com/scripting/
+	http://dev.scriptics.com/scripting/
 
 There are many Tcl books on the market.  Most are listed at
-	http://www.scriptics.com/resource/doc/books/
+	http://dev.scriptics.com/resource/doc/books/
 
 There are notes about compiling Tcl at
-	http://www.scriptics.com/support/howto/compile.html
+	http://dev.scriptics.com/doc/howto/compile.html
 
 3. Installation
 ---------------
@@ -82,9 +79,9 @@ systems.
 6. Reporting Bugs
 -----------------
 If you have comments or bug reports for the Windows version of Tcl,
-please use our on-line bug form at:
+please use our online database at:
 
-	http://www.scriptics.com/support/bugForm.html
+	http://dev.scriptics.com/ticket/
 
 or post them to the newsgroup comp.lang.tcl.
 
@@ -117,7 +114,7 @@ that are commonly encountered by TCL newcomers.
 
 9. Tcl Resource Center
 ----------------------
-Visit http://www.scritics.com/resource/ to see an annotated index of
+Visit http://dev.scritics.com/resource/ to see an annotated index of
 many Tcl resources available on the World Wide Web.  This includes
 papers, books, and FAQs, as well as extensions, applications, binary
 releases, and patches.  You can contribute patches by sending them
