@@ -1,3 +1,28 @@
+2004-07-14  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.h (CHANNEL_INCLOSE):       New flag. Set in
+	* generic/tclIO.c (Tcl_UnregisterChannel): 'Tcl_Close' while the
+	* generic/tclIO.c (Tcl_Close):             close callbacks are
+	  run. Checked in 'Tcl_Close' and 'Tcl_Unregister' to prevent
+	  recursive call of 'close' in the close-callbacks. This is a
+	  possible error made by implementors of virtual filesystems based
+	  on 'tclvfs', thinking that they have to close the channel in the
+	  close handler for the filesystem.
+
+2004-06-14  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c:
+	* generic/tclIO.h:
+	* Not reverting, but #ifdef'ing the changes from May 19, 2004 out
+	  of the core. This removes the ***POTENTIAL INCOMPATIBILITY***
+	  for channel drivers it introduced. This has become possible due
+	  to Expect gaining a BlockModeProc and now handling blockingg and
+	  non-blocking modes correctly. Thus [SF Tcl Bug 943274] is still
+	  fixed if a recent enough version of Expect is used.
+
+	* doc/CrtChannel.3: Added warning about usage of a channel without
+	  a BlockModeProc.
+
 2004-07-15  Andreas Kupries  <andreask@pliers.activestate.com>
 
 	* generic/tclIOCmd.c (Tcl_PutsObjCmd): Added length check to the
@@ -190,8 +215,8 @@
 
 2004-05-19  Andreas Kupries  <andreask@activestate.com>
 
-	* tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
-	* tclIO.h: [SF Tcl Bug 462317], see ChangeLog entry
+	* generic/tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
+	* generic/tclIO.h: [SF Tcl Bug 462317], see ChangeLog entry
 	           2001-09-26. The fix done at that time is incomplete. It
 	           is possible to get around it if the actual read
 	           operation is defered and not executed in the event
@@ -201,6 +226,8 @@
 	           bypass the driver if a read finds that there is no
 	           actual data waiting. The flag is cleared by a short or
 	           full read.
+
+	  ***POTENTIAL INCOMPATIBILITY*** for channel drivers.
 
 2004-05-18  Kevin B. Kenny  <kennykb@acm.org>
 
