@@ -1,6 +1,6 @@
 Tcl 8.4 for Windows
 
-RCS: @(#) $Id: README,v 1.28 2002/11/26 21:56:15 mdejong Exp $
+RCS: @(#) $Id: README,v 1.29 2003/01/13 08:48:10 mdejong Exp $
 
 1. Introduction
 ---------------
@@ -30,7 +30,7 @@ In order to compile Tcl for Windows, you need the following:
 
 	Msys + Mingw 1.1
 
-	http://prdownloads.sourceforge.net/tcl/msys_mingw4.zip
+	http://prdownloads.sourceforge.net/tcl/msys_mingw5.zip
 
 	This Msys + Mingw download is the minimal environment
 	needed to build Tcl/Tk under Windows. It includes a
