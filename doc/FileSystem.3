@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.4 2001/08/30 08:53:14 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.5 2001/09/04 18:06:34 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
@@ -252,8 +252,8 @@ passing it in, or decrementing it.
 path name given by destPathPtr.  If the two paths given lie in the same
 filesystem (according to \fBTcl_FSGetFileSystemForPath\fR) then that
 filesystem's 'copy file' function is called (if it is non-NULL).
-Otherwise the function returns -1 and sets Tcl's errno to the 'EXDEV'
-posix error code (which signifies a 'cross-domain link').
+Otherwise a cross-filesystem copy is attempted using a combination
+of open-r/open-w/fcopy (at the C level).
 .PP
 \fBTcl_FSCopyDirectory\fR attempts to copy the directory given by srcPathPtr to the
 path name given by destPathPtr.  If the two paths given lie in the same
@@ -602,7 +602,6 @@ typedef struct Tcl_Filesystem {
     Tcl_FSCopyDirectoryProc *\fIcopyDirectoryProc\fR;	    
     Tcl_FSLstatProc *\fIlstatProc\fR;	    
     Tcl_FSLoadFileProc *\fIloadFileProc\fR; 
-    Tcl_FSUnloadFileProc *\fIunloadFileProc\fR;	    
     Tcl_FSGetCwdProc *\fIgetCwdProc\fR;     
     Tcl_FSChdirProc *\fIchdirProc\fR;	    
 } Tcl_Filesystem;
@@ -630,8 +629,8 @@ functions (it will use \fITcl_FSCopyFileProc\fR followed by
 implemented there is a further fallback).  However, if a
 \fITcl_FSRenameFile\fR command is issued at the C level, no such
 fallbacks occur.  This is true except for the last five entries in the
-filesystem table (lstat, load, unload, getcwd and chdir) for which
-fallbacks do in fact occur at the C level.
+filesystem table (lstat, load, unload, getcwd and chdir) and copyfile
+for which fallbacks do in fact occur at the C level.
 .PP
 Any functions which take path names in Tcl_Obj form take
 those names in UTF\-8 form.  The filesystem infrastructure API is
@@ -1155,7 +1154,8 @@ typedef int Tcl_FSLoadFileProc(
 	char * \fIsym2\fR, 
 	Tcl_PackageInitProc ** \fIproc1Ptr\fR, 
 	Tcl_PackageInitProc ** \fIproc2Ptr\fR, 
-	ClientData * \fIclientDataPtr\fR);
+	ClientData * \fIclientDataPtr\fR,
+	Tcl_FSUnloadFileProc * \fIunloadProcPtr\fR);
 .CE
 .PP
 Returns a standard Tcl completion code.  If an error occurs, an error
@@ -1163,8 +1163,10 @@ message is left in the interp's result.  The function dynamically loads
 a binary code file into memory and returns the addresses of two
 procedures within that file, if they are defined.  On a successful
 load, the \fIclientDataPtr\fR should be filled with a token for 
-the dynamically loaded file which will be passed back to 
-the Tcl_FSUnloadFileProc to unload the file. 
+the dynamically loaded file, and the \fIunloadProcPtr\fR should be
+filled in with the address of a procedure.  The procedure will be
+called with the given clientData as its only parameter when Tcl 
+needs to unload the file.
 .PP
 .SH UNLOADFILEPROC	    
 .PP

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.5 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.6 2001/09/04 18:06:34 vincentdarley Exp $
  */
 
 #include <CodeFragments.h>
@@ -107,9 +107,13 @@ TclpLoadFile(
     Tcl_PackageInitProc **proc2Ptr,
 				/* Where to return the addresses corresponding
 				 * to sym1 and sym2. */
-    ClientData *clientDataPtr)	/* Filled with token for dynamically loaded
+    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
-				 * TclpUnloadFile() to unload the file. */
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr)
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for
+				 * this file. */
 {
     CFragConnectionID connID;
     Ptr dummy;
@@ -221,6 +225,7 @@ TclpLoadFile(
     }
     
     *clientDataPtr = (ClientData) connID;
+    *unloadProcPtr = &TclpUnloadFile;
     
     return TCL_OK;
 }

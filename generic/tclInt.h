@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.62 2001/09/01 00:51:31 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.63 2001/09/04 18:06:34 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1804,7 +1804,8 @@ EXTERN int              TclpLoadFile _ANSI_ARGS_((Tcl_Interp *interp,
 				Tcl_Obj *pathPtr, char *sym1, char *sym2, 
 				Tcl_PackageInitProc **proc1Ptr,
 				Tcl_PackageInitProc **proc2Ptr, 
-				ClientData *clientDataPtr));
+				ClientData *clientDataPtr,
+				Tcl_FSUnloadFileProc **unloadProcPtr));
 EXTERN Tcl_Obj*		TclpObjListVolumes _ANSI_ARGS_((void));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
 EXTERN void		TclpMasterUnlock _ANSI_ARGS_((void));
@@ -1814,8 +1815,6 @@ EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int              TclpObjNormalizePath _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *pathPtr, int nextCheckpoint));
 EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
-EXTERN Tcl_PathType     Tcl_FSGetPathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
-			    Tcl_Filesystem **fsPtrPtr, int *driveNameLengthPtr));
 EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix, 
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -1831,10 +1830,14 @@ EXTERN int		TclpObjRemoveDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr,
 				int recursive, Tcl_Obj **errorPtr));
 EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
 				Tcl_Obj *destPathPtr));
-EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, char *pattern, Tcl_GlobTypeData *types));
+EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, 
+			        Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, 
+				char *pattern, Tcl_GlobTypeData *types));
 EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp, 
+						    Tcl_Obj*pathPtr));
 EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, char *modeString,

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.10 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.11 2001/09/04 18:06:34 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -381,9 +381,26 @@ test fCmd-5.9 {TclFileDeleteCmd: is directory} {notRoot} {
 } {0}
 test fCmd-5.10 {TclFileDeleteCmd: TclpRemoveDirectory fails} {notRoot} {
     cleanup
-    file mkdir td1/td2
+    file mkdir [file join td1 td2]
     list [catch {file delete td1} msg] $msg
 } {1 {error deleting "td1": directory not empty}}
+test fCmd-5.11 {TclFileDeleteCmd: TclpRemoveDirectory with cwd inside} {notRoot} {
+    cleanup
+    set dir [pwd]
+    file mkdir [file join td1 td2]
+    cd [file join td1 td2]
+    set res [list [catch {file delete -force [file dirname [pwd]]} msg]]
+    cd $dir
+    lappend res [file exists td1] $msg
+} {0 0 {}}
+test fCmd-5.12 {TclFileDeleteCmd: TclpRemoveDirectory with bad perms} {unixOnly} {
+    cleanup
+    file mkdir [file join td1 td2]
+    #exec chmod u-rwx [file join td1 td2]
+    file attributes [file join td1 td2] -permissions u+rwx
+    set res [list [catch {file delete -force td1} msg]]
+    lappend res [file exists td1] $msg
+} {0 0 {}}
 
 test fCmd-6.1 {CopyRenameOneFile: bad source} {notRoot} {
     # can't test this, because it's caught by FileCopyRename
