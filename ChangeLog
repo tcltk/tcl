@@ -1,3 +1,8 @@
+2005-03-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/makefile.vc: clarify necessary defined vars that can come
+	from MSVC or the Platform SDK.
+
 2005-03-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/string.n: Minor typo. [Bug 1158247]
