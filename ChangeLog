@@ -1,3 +1,8 @@
+2002-02-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinNotify.c (Tcl_FinalizeNotifier): backported fix for
+	[Bug #217982] which also affected Tkinter [Python Bug #216289]
+
 2002-02-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclLoadDyld.c: updated to use Mac OS X 10.1 dyld APIs that     
@@ -16,7 +21,7 @@
 	* tests/scan.test:
 	* generic/tclScan.c (Tcl_ScanObjCmd): corrected scan 0x... %x
 	handling that didn't accept the 0x as a prelude to a base 16
-	number.  [Bug #495213]
+	number.	 [Bug #495213]
 
 2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
@@ -29,9 +34,9 @@
 
 2002-02-05  Don Porter <dgp@users.sourceforge.net>
 
-        * library/http/http.tcl:
-        * library/http/pkgIndex.tcl:  Corrected use of http::error when
-        ::error was intended.  Bump to http 2.4.2.
+	* library/http/http.tcl:
+	* library/http/pkgIndex.tcl:  Corrected use of http::error when
+	::error was intended.  Bump to http 2.4.2.
 
 2002-02-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
@@ -55,11 +60,11 @@
 	* tests/socket.test: Update tests to account for -eofchar
 	and -translation option changes.
 
-2002-01-24  Jeff Hobbs  <jeffh@ActiveState.com>
+2002-01-24  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* library/http/pkgIndex.tcl:
 	* library/http/http.tcl: don't add port in default case to handle
-	broken servers.  http bumped to 2.4.1  [Bug #504508]
+	broken servers.	 http bumped to 2.4.1  [Bug #504508]
 
 2002-01-21  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
@@ -92,7 +97,7 @@
 	  line and later sets it into the interp result when we are done
 	  with reading.
 
-2001-12-28  Jeff Hobbs  <jeffh@ActiveState.com>
+2001-12-28  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* library/init.tcl (auto_execok): make sure env(COMSPEC) on
 	Windows is executed with the right case, as it may otherwise fail
@@ -136,11 +141,11 @@
 	when dealing with test sequences that run more than 2**31
 	microseconds. [Bug 478847]
 	
-2001-11-09  Don Porter  <dgp@users.sourceforge.net>
+2001-11-09  Don Porter	<dgp@users.sourceforge.net>
 
-        * tests/var.test:
-        * generic/tclVar.c: Corrected bug in [global] when dealing
-        with variable names matching :*.  [Bug 480176]
+	* tests/var.test:
+	* generic/tclVar.c: Corrected bug in [global] when dealing
+	with variable names matching :*.  [Bug 480176]
 
 2001-11-06  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 

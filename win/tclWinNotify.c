@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.5.10.2 2001/09/20 18:50:24 hobbs Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.5.10.3 2002/02/25 23:36:49 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -142,6 +142,20 @@ Tcl_FinalizeNotifier(clientData)
     ClientData clientData;	/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+
+    /*
+     * Only finalize the notifier if a notifier was installed in the
+     * current thread; there is a route in which this is not
+     * guaranteed to be true (when tclWin32Dll.c:DllMain() is called
+     * with the flag DLL_PROCESS_DETACH by the OS, which could be
+     * doing so from a thread that's never previously been involved
+     * with Tcl, e.g. the task manager) so this check is important.
+     *
+     * Fixes Bug #217982 reported by Hugh Vu and Gene Leache.
+     */
+    if (tsdPtr == NULL) {
+	return;
+    }
 
     DeleteCriticalSection(&tsdPtr->crit);
     CloseHandle(tsdPtr->event);
