@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.91 2003/12/24 04:18:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.92 2004/01/09 15:22:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -629,7 +629,7 @@ FsUpdateCwd(cwdObj)
 void
 TclFinalizeFilesystem()
 {
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr;
+    FilesystemRecord *fsRecPtr;
 
     /* 
      * Assumption that only one thread is active now.  Otherwise
@@ -649,7 +649,7 @@ TclFinalizeFilesystem()
 
     fsRecPtr = filesystemList;
     while (fsRecPtr != NULL) {
-        tmpFsRecPtr = filesystemList->nextPtr;
+	FilesystemRecord *tmpFsRecPtr = fsRecPtr->nextPtr;
         if (fsRecPtr->fileRefCount <= 0) {
             /* The native filesystem is static, so we don't free it */
             if (fsRecPtr != &nativeFilesystemRecord) {
