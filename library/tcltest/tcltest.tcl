@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.79 2003/03/19 21:57:57 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.80 2003/03/26 22:55:41 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1842,6 +1842,13 @@ proc tcltest::test {name description args} {
     variable testLevel
     variable coreModTime
     DebugPuts 3 "test $name $args"
+    DebugDo 1 {
+	variable TestNames
+	catch {
+	    puts "test name '$name' re-used; prior use in $TestNames($name)"
+	}
+	set TestNames($name) [info script]
+    }
 
     FillFilesExisted
     incr testLevel
