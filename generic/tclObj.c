@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.10 2001/10/15 10:52:39 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.11 2001/10/15 10:55:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2169,7 +2169,7 @@ UpdateStringOfWideInt(objPtr)
     register Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
 
 #ifdef TCL_PRINTF_SUPPORTS_LL
-    sprintf(buffer, "%" TCL_LL_FORMAT "d", wideVal);
+    sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
     len = strlen(start = buffer);
 #else
     buffer[TCL_INTEGER_SPACE*2+1] = '\0';
