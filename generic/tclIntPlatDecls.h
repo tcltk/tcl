@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.3 1999/03/12 23:29:16 surles Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.4 1999/03/14 18:56:09 stanton Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -66,8 +66,8 @@ EXTERN void		TclWinConvertError _ANSI_ARGS_((DWORD errCode));
 /* 1 */
 EXTERN void		TclWinConvertWSAError _ANSI_ARGS_((DWORD errCode));
 /* 2 */
-EXTERN struct servent *	 TclWinGetServByName _ANSI_ARGS_((const char * nm, 
-				const char * proto));
+EXTERN struct servent *	 TclWinGetServByName _ANSI_ARGS_((CONST char * nm, 
+				CONST char * proto));
 /* 3 */
 EXTERN int		TclWinGetSockOpt _ANSI_ARGS_((SOCKET s, int level, 
 				int optname, char FAR * optval, 
@@ -79,7 +79,7 @@ EXTERN HINSTANCE	TclWinGetTclInstance _ANSI_ARGS_((void));
 EXTERN u_short		TclWinNToHS _ANSI_ARGS_((u_short ns));
 /* 7 */
 EXTERN int		TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level, 
-				int optname, const char FAR * optval, 
+				int optname, CONST char FAR * optval, 
 				int optlen));
 /* 8 */
 EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
@@ -154,14 +154,14 @@ EXTERN OSErr		FSpFindFolder _ANSI_ARGS_((short vRefNum,
 /* 7 */
 EXTERN void		GetGlobalMouse _ANSI_ARGS_((Point * mouse));
 /* 8 */
-EXTERN pascal OSErr	FSpGetDirectoryID _ANSI_ARGS_((const FSSpec * spec, 
+EXTERN pascal OSErr	FSpGetDirectoryID _ANSI_ARGS_((CONST FSSpec * spec, 
 				long * theDirID, Boolean * isDirectory));
 /* 9 */
 EXTERN pascal short	FSpOpenResFileCompat _ANSI_ARGS_((
-				const FSSpec * spec, SignedByte permission));
+				CONST FSSpec * spec, SignedByte permission));
 /* 10 */
 EXTERN pascal void	FSpCreateResFileCompat _ANSI_ARGS_((
-				const FSSpec * spec, OSType creator, 
+				CONST FSSpec * spec, OSType creator, 
 				OSType fileType, ScriptCode scriptTag));
 /* 11 */
 EXTERN int		FSpLocationFromPath _ANSI_ARGS_((int length, 
@@ -194,8 +194,8 @@ EXTERN short		TclMacUnRegisterResourceFork _ANSI_ARGS_((
 /* 22 */
 EXTERN int		TclMacCreateEnv _ANSI_ARGS_((void));
 /* 23 */
-EXTERN FILE *		TclMacFOpenHack _ANSI_ARGS_((const char * path, 
-				const char * mode));
+EXTERN FILE *		TclMacFOpenHack _ANSI_ARGS_((CONST char * path, 
+				CONST char * mode));
 /* Slot 24 is reserved */
 /* 25 */
 EXTERN int		TclMacChmod _ANSI_ARGS_((char * path, int mode));
@@ -220,12 +220,12 @@ typedef struct TclIntPlatStubs {
 #ifdef __WIN32__
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
     void (*tclWinConvertWSAError) _ANSI_ARGS_((DWORD errCode)); /* 1 */
-    struct servent * (*tclWinGetServByName) _ANSI_ARGS_((const char * nm, const char * proto)); /* 2 */
+    struct servent * (*tclWinGetServByName) _ANSI_ARGS_((CONST char * nm, CONST char * proto)); /* 2 */
     int (*tclWinGetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, char FAR * optval, int FAR * optlen)); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) _ANSI_ARGS_((void)); /* 4 */
     void *reserved5;
     u_short (*tclWinNToHS) _ANSI_ARGS_((u_short ns)); /* 6 */
-    int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, const char FAR * optval, int optlen)); /* 7 */
+    int (*tclWinSetSockOpt) _ANSI_ARGS_((SOCKET s, int level, int optname, CONST char FAR * optval, int optlen)); /* 7 */
     unsigned long (*tclpGetPid) _ANSI_ARGS_((Tcl_Pid pid)); /* 8 */
     int (*tclWinGetPlatformId) _ANSI_ARGS_((void)); /* 9 */
     int (*tclWinSynchSpawn) _ANSI_ARGS_((void * args, int type, void ** trans, Tcl_Pid * pidPtr)); /* 10 */
@@ -255,9 +255,9 @@ typedef struct TclIntPlatStubs {
     int (*fSpSetDefaultDir) _ANSI_ARGS_((FSSpecPtr theSpec)); /* 5 */
     OSErr (*fSpFindFolder) _ANSI_ARGS_((short vRefNum, OSType folderType, Boolean createFolder, FSSpec * spec)); /* 6 */
     void (*getGlobalMouse) _ANSI_ARGS_((Point * mouse)); /* 7 */
-    pascal OSErr (*fSpGetDirectoryID) _ANSI_ARGS_((const FSSpec * spec, long * theDirID, Boolean * isDirectory)); /* 8 */
-    pascal short (*fSpOpenResFileCompat) _ANSI_ARGS_((const FSSpec * spec, SignedByte permission)); /* 9 */
-    pascal void (*fSpCreateResFileCompat) _ANSI_ARGS_((const FSSpec * spec, OSType creator, OSType fileType, ScriptCode scriptTag)); /* 10 */
+    pascal OSErr (*fSpGetDirectoryID) _ANSI_ARGS_((CONST FSSpec * spec, long * theDirID, Boolean * isDirectory)); /* 8 */
+    pascal short (*fSpOpenResFileCompat) _ANSI_ARGS_((CONST FSSpec * spec, SignedByte permission)); /* 9 */
+    pascal void (*fSpCreateResFileCompat) _ANSI_ARGS_((CONST FSSpec * spec, OSType creator, OSType fileType, ScriptCode scriptTag)); /* 10 */
     int (*fSpLocationFromPath) _ANSI_ARGS_((int length, CONST char * path, FSSpecPtr theSpec)); /* 11 */
     OSErr (*fSpPathFromLocation) _ANSI_ARGS_((FSSpecPtr theSpec, int * length, Handle * fullPath)); /* 12 */
     void (*tclMacExitHandler) _ANSI_ARGS_((void)); /* 13 */
@@ -270,7 +270,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacRegisterResourceFork) _ANSI_ARGS_((short fileRef, Tcl_Obj * tokenPtr, int insert)); /* 20 */
     short (*tclMacUnRegisterResourceFork) _ANSI_ARGS_((char * tokenPtr, Tcl_Obj * resultPtr)); /* 21 */
     int (*tclMacCreateEnv) _ANSI_ARGS_((void)); /* 22 */
-    FILE * (*tclMacFOpenHack) _ANSI_ARGS_((const char * path, const char * mode)); /* 23 */
+    FILE * (*tclMacFOpenHack) _ANSI_ARGS_((CONST char * path, CONST char * mode)); /* 23 */
     void *reserved24;
     int (*tclMacChmod) _ANSI_ARGS_((char * path, int mode)); /* 25 */
 #endif /* MAC_TCL */

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntStubs.c,v 1.3.2.3 1999/03/12 23:29:17 surles Exp $
+ * RCS: @(#) $Id: tclIntStubs.c,v 1.3.2.4 1999/03/14 18:56:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1202,8 +1202,8 @@ size_t
 TclpStrftime(s, maxsize, format, t)
     char * s;
     size_t maxsize;
-    const char * format;
-    const struct tm * t;
+    CONST char * format;
+    CONST struct tm * t;
 {
     return (tclIntStubsPtr->tclpStrftime)(s, maxsize, format, t);
 }
@@ -1258,3 +1258,4 @@ TclLooksLikeInt(bytes, length)
 
 
 /* !END!: Do not edit above this line. */
+

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.6 1999/03/14 01:53:04 rjohnson Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.7 1999/03/14 18:56:07 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -35,7 +35,7 @@ EXTERN char *		Tcl_PkgRequireEx _ANSI_ARGS_((Tcl_Interp * interp,
 				char * name, char * version, int exact, 
 				ClientData * clientDataPtr));
 /* 2 */
-EXTERN void		panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
+EXTERN void		Tcl_Panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
 /* 3 */
 EXTERN char *		Tcl_Alloc _ANSI_ARGS_((unsigned int size));
 /* 4 */
@@ -869,7 +869,8 @@ EXTERN int		Tcl_VarEvalVA _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN Tcl_Pid		Tcl_WaitPid _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, 
 				int options));
 /* 278 */
-EXTERN void		panicVA _ANSI_ARGS_((char * format, va_list argList));
+EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format, 
+				va_list argList));
 /* 279 */
 EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
 				int * patchLevel, int * type));
@@ -1060,7 +1061,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, ClientData clientData)); /* 0 */
     char * (*tcl_PkgRequireEx) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact, ClientData * clientDataPtr)); /* 1 */
-    void (*panic) _ANSI_ARGS_(TCL_VARARGS(char *,format)); /* 2 */
+    void (*tcl_Panic) _ANSI_ARGS_(TCL_VARARGS(char *,format)); /* 2 */
     char * (*tcl_Alloc) _ANSI_ARGS_((unsigned int size)); /* 3 */
     void (*tcl_Free) _ANSI_ARGS_((char * ptr)); /* 4 */
     char * (*tcl_Realloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 5 */
@@ -1360,7 +1361,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorCodeVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 275 */
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
-    void (*panicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
+    void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
     void *reserved280;
     void *reserved281;
@@ -1443,9 +1444,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr) \
 	(tclStubsPtr->tcl_PkgRequireEx)(interp, name, version, exact, clientDataPtr) /* 1 */
 #endif
-#ifndef panic
-#define panic \
-	(tclStubsPtr->panic) /* 2 */
+#ifndef Tcl_Panic
+#define Tcl_Panic \
+	(tclStubsPtr->tcl_Panic) /* 2 */
 #endif
 #ifndef Tcl_Alloc
 #define Tcl_Alloc(size) \
@@ -2550,9 +2551,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_WaitPid(pid, statPtr, options) \
 	(tclStubsPtr->tcl_WaitPid)(pid, statPtr, options) /* 277 */
 #endif
-#ifndef panicVA
-#define panicVA(format, argList) \
-	(tclStubsPtr->panicVA)(format, argList) /* 278 */
+#ifndef Tcl_PanicVA
+#define Tcl_PanicVA(format, argList) \
+	(tclStubsPtr->tcl_PanicVA)(format, argList) /* 278 */
 #endif
 #ifndef Tcl_GetVersion
 #define Tcl_GetVersion(major, minor, patchLevel, type) \

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.3 1999/03/12 23:29:16 surles Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.4 1999/03/14 18:56:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -136,8 +136,8 @@ TclWinConvertWSAError(errCode)
 /* Slot 2 */
 struct servent *
 TclWinGetServByName(nm, proto)
-    const char * nm;
-    const char * proto;
+    CONST char * nm;
+    CONST char * proto;
 {
     return (tclIntPlatStubsPtr->tclWinGetServByName)(nm, proto);
 }
@@ -176,7 +176,7 @@ TclWinSetSockOpt(s, level, optname, optval, optlen)
     SOCKET s;
     int level;
     int optname;
-    const char FAR * optval;
+    CONST char FAR * optval;
     int optlen;
 {
     return (tclIntPlatStubsPtr->tclWinSetSockOpt)(s, level, optname, optval, optlen);
@@ -415,7 +415,7 @@ GetGlobalMouse(mouse)
 /* Slot 8 */
 pascal OSErr
 FSpGetDirectoryID(spec, theDirID, isDirectory)
-    const FSSpec * spec;
+    CONST FSSpec * spec;
     long * theDirID;
     Boolean * isDirectory;
 {
@@ -425,7 +425,7 @@ FSpGetDirectoryID(spec, theDirID, isDirectory)
 /* Slot 9 */
 pascal short
 FSpOpenResFileCompat(spec, permission)
-    const FSSpec * spec;
+    CONST FSSpec * spec;
     SignedByte permission;
 {
     return (tclIntPlatStubsPtr->fSpOpenResFileCompat)(spec, permission);
@@ -434,7 +434,7 @@ FSpOpenResFileCompat(spec, permission)
 /* Slot 10 */
 pascal void
 FSpCreateResFileCompat(spec, creator, fileType, scriptTag)
-    const FSSpec * spec;
+    CONST FSSpec * spec;
     OSType creator;
     OSType fileType;
     ScriptCode scriptTag;
@@ -546,8 +546,8 @@ TclMacCreateEnv()
 /* Slot 23 */
 FILE *
 TclMacFOpenHack(path, mode)
-    const char * path;
-    const char * mode;
+    CONST char * path;
+    CONST char * mode;
 {
     return (tclIntPlatStubsPtr->tclMacFOpenHack)(path, mode);
 }

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.3.2.2 1999/03/11 01:50:29 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.3.2.3 1999/03/14 18:56:08 stanton Exp $
 
 library tcl
 
@@ -503,8 +503,8 @@ declare 133 generic {
     struct tm *	TclpGetDate(TclpTime_t time, int useGMT)
 }
 declare 134 generic {
-    size_t TclpStrftime(char *s, size_t maxsize, const char *format, \
-	    const struct tm *t)
+    size_t TclpStrftime(char *s, size_t maxsize, CONST char *format, \
+	    CONST struct tm *t)
 }
 declare 135 generic {
     int TclpCheckStackSpace(void)
@@ -571,15 +571,15 @@ declare 7 mac {
 # however.  The first set are from the MoreFiles package.
 
 declare 8 mac {
-    pascal OSErr FSpGetDirectoryID(const FSSpec *spec, long *theDirID, \
+    pascal OSErr FSpGetDirectoryID(CONST FSSpec *spec, long *theDirID, \
 	    Boolean *isDirectory)
 }
 declare 9 mac {
-    pascal short FSpOpenResFileCompat(const FSSpec *spec, \
+    pascal short FSpOpenResFileCompat(CONST FSSpec *spec, \
 	    SignedByte permission)
 }
 declare 10 mac {
-    pascal void FSpCreateResFileCompat(const FSSpec *spec, OSType creator, \
+    pascal void FSpCreateResFileCompat(CONST FSSpec *spec, OSType creator, \
 	    OSType fileType, ScriptCode scriptTag)
 }
 
@@ -628,7 +628,7 @@ declare 22 mac {
     int TclMacCreateEnv(void)
 }
 declare 23 mac {
-    FILE * TclMacFOpenHack(const char *path, const char *mode)
+    FILE * TclMacFOpenHack(CONST char *path, CONST char *mode)
 }
 # Replaced in 8.1 by TclpReadLink:
 #  declare 24 mac {
@@ -648,8 +648,8 @@ declare 1 win {
     void TclWinConvertWSAError(DWORD errCode)
 }
 declare 2 win {
-    struct servent * TclWinGetServByName(const char *nm, \
-	    const char *proto)
+    struct servent * TclWinGetServByName(CONST char *nm, \
+	    CONST char *proto)
 }
 declare 3 win {
     int TclWinGetSockOpt(SOCKET s, int level, int optname, \
@@ -667,7 +667,7 @@ declare 6 win {
 }
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname, \
-	    const char FAR * optval, int optlen)
+	    CONST char FAR * optval, int optlen)
 }
 declare 8 win {
     unsigned long TclpGetPid(Tcl_Pid pid)

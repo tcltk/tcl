@@ -1,3 +1,16 @@
+/*
+ * tclPlatDecls.h --
+ *
+ *	Declarations of platform specific Tcl APIs.
+ *
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * All rights reserved.
+ *
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.3.2.3 1999/03/14 18:56:10 stanton Exp $
+ */
+
+#ifndef _TCLPLATDECLS
+#define _TCLPLATDECLS
 
 /* !BEGIN!: Do not edit below this line. */
 
@@ -105,3 +118,7 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
+
+#endif /* _TCLPLATDECLS */
+
+

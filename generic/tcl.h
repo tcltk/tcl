@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.17 1999/03/12 23:00:59 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.18 1999/03/14 18:56:07 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1292,6 +1292,9 @@ typedef unsigned short Tcl_UniChar;
 /*
  * The following constant is used to test for older versions of Tcl
  * in the stubs tables.
+ *
+ * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
+ * value since the stubs tables don't match.
  */
 
 #define TCL_STUB_MAGIC 0xFCA3BACF

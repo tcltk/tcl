@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.5 1999/03/12 23:29:18 surles Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.6 1999/03/14 18:56:11 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -47,7 +47,7 @@ TclStubs tclStubs = {
     &tclStubHooks,
     Tcl_PkgProvideEx, /* 0 */
     Tcl_PkgRequireEx, /* 1 */
-    panic, /* 2 */
+    Tcl_Panic, /* 2 */
     Tcl_Alloc, /* 3 */
     Tcl_Free, /* 4 */
     Tcl_Realloc, /* 5 */
@@ -347,7 +347,7 @@ TclStubs tclStubs = {
     Tcl_SetErrorCodeVA, /* 275 */
     Tcl_VarEvalVA, /* 276 */
     Tcl_WaitPid, /* 277 */
-    panicVA, /* 278 */
+    Tcl_PanicVA, /* 278 */
     Tcl_GetVersion, /* 279 */
     NULL, /* 280 */
     NULL, /* 281 */

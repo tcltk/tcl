@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.3.2.5 1999/03/12 23:29:18 surles Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.3.2.6 1999/03/14 18:56:11 stanton Exp $
  */
 
 #include "tcl.h"
@@ -76,14 +76,14 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
 
 /* Slot 2 */
 void
-panic TCL_VARARGS_DEF(char *,format)
+Tcl_Panic TCL_VARARGS_DEF(char *,format)
 {
     char * var;
     va_list argList;
 
     var = (char *) TCL_VARARGS_START(char *,format,argList);
 
-    (tclStubsPtr->panicVA)(var, argList);
+    (tclStubsPtr->tcl_PanicVA)(var, argList);
     va_end(argList);
 }
 
@@ -2695,11 +2695,11 @@ Tcl_WaitPid(pid, statPtr, options)
 
 /* Slot 278 */
 void
-panicVA(format, argList)
+Tcl_PanicVA(format, argList)
     char * format;
     va_list argList;
 {
-    (tclStubsPtr->panicVA)(format, argList);
+    (tclStubsPtr->tcl_PanicVA)(format, argList);
 }
 
 /* Slot 279 */

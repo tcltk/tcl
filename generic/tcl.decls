@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.5 1999/03/12 23:29:11 surles Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.6 1999/03/14 18:56:06 stanton Exp $
 
 library tcl
 
@@ -35,7 +35,7 @@ declare 1 generic {
 	    int exact, ClientData *clientDataPtr)
 }
 declare 2 generic {
-    void panic(char *format, ...)
+    void Tcl_Panic(char *format, ...)
 }
 declare 3 generic {
     char * Tcl_Alloc(unsigned int size)
@@ -959,7 +959,7 @@ declare 277 generic {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
 declare 278 generic {
-    void panicVA(char *format, va_list argList)
+    void Tcl_PanicVA(char *format, va_list argList)
 }
 declare 279 generic {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)

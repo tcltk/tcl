@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.3 1999/03/12 23:29:15 surles Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.4 1999/03/14 18:56:09 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -422,7 +422,7 @@ EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
 EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((TclpTime_t time, int useGMT));
 /* 134 */
 EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize, 
-				const char * format, const struct tm * t));
+				CONST char * format, CONST struct tm * t));
 /* 135 */
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 /* Slot 136 is reserved */
@@ -579,7 +579,7 @@ typedef struct TclIntStubs {
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
     struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
-    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, const char * format, const struct tm * t)); /* 134 */
+    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t)); /* 134 */
     int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
     void *reserved136;
     int (*tclpChdir) _ANSI_ARGS_((CONST char * dirName)); /* 137 */
@@ -1124,4 +1124,3 @@ extern TclIntStubs *tclIntStubsPtr;
 /* !END!: Do not edit above this line. */
 
 #endif /* _TCLINTDECLS */
-
