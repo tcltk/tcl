@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.126 2004/05/13 12:59:22 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.127 2004/05/14 19:15:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -345,25 +345,25 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 static int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    ByteCode *codePtr));
 static int		ExprAbsFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprBinaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprCallMathFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, int objc, Tcl_Obj **objv));
+			    int objc, Tcl_Obj **objv));
 static int		ExprDoubleFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprIntFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprRandFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprRoundFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprSrandFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprUnaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 static int		ExprWideFunc _ANSI_ARGS_((Tcl_Interp *interp,
-			    ExecEnv *eePtr, ClientData clientData));
+			    Tcl_Obj **tosPtr, ClientData clientData));
 #ifdef TCL_COMPILE_STATS
 static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
@@ -4075,13 +4075,12 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_Panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
 	    }
 	    mathFuncPtr = &(tclBuiltinFuncTable[opnd]);
-	    DECACHE_STACK_INFO();
-	    result = (*mathFuncPtr->proc)(interp, eePtr,
+	    result = (*mathFuncPtr->proc)(interp, tosPtr,
 	            mathFuncPtr->clientData);
-	    CACHE_STACK_INFO();
 	    if (result != TCL_OK) {
 		goto checkForCatch;
 	    }
+	    tosPtr -= (mathFuncPtr->numArgs - 1);
 	    TRACE_WITH_OBJ(("%d => ", opnd), *tosPtr);
 	}
 	NEXT_INST_F(2, 0, 0);
@@ -4100,12 +4099,11 @@ TclExecuteByteCode(interp, codePtr)
 				* name is objv[0]. */
 
 	    objv = (tosPtr - (objc-1)); /* "objv[0]" */
-	    DECACHE_STACK_INFO();
-	    result = ExprCallMathFunc(interp, eePtr, objc, objv);
-	    CACHE_STACK_INFO();
+	    result = ExprCallMathFunc(interp, objc, objv);
 	    if (result != TCL_OK) {
 		goto checkForCatch;
 	    }
+	    tosPtr = objv;
 	    TRACE_WITH_OBJ(("%d => ", objc), *tosPtr);
 	}
 	NEXT_INST_F(2, 0, 0);
@@ -5243,29 +5241,19 @@ VerifyExprObjType(interp, objPtr)
  */
 
 static int
-ExprUnaryFunc(interp, eePtr, clientData)
+ExprUnaryFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Contains the address of a procedure that
 				 * takes one double argument and returns a
 				 * double result. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     register Tcl_Obj *valuePtr;
     double d, dResult;
-    int result;
     
     double (*func) _ANSI_ARGS_((double)) =
 	(double (*)_ANSI_ARGS_((double))) clientData;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the function's argument from the evaluation stack. Convert it
@@ -5275,8 +5263,7 @@ ExprUnaryFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
 
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
 
     GET_DOUBLE_VALUE(d, valuePtr, valuePtr->typePtr);
@@ -5285,8 +5272,7 @@ ExprUnaryFunc(interp, eePtr, clientData)
     dResult = (*func)(d);
     if ((errno != 0) || IS_NAN(dResult) || IS_INF(dResult)) {
 	TclExprFloatError(interp, dResult);
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
     
     /*
@@ -5294,41 +5280,24 @@ ExprUnaryFunc(interp, eePtr, clientData)
      */
 
     PUSH_OBJECT(Tcl_NewDoubleObj(dResult));
-    
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprBinaryFunc(interp, eePtr, clientData)
+ExprBinaryFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Contains the address of a procedure that
 				 * takes two double arguments and
 				 * returns a double result. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     register Tcl_Obj *valuePtr, *value2Ptr;
     double d1, d2, dResult;
-    int result;
     
     double (*func) _ANSI_ARGS_((double, double))
 	= (double (*)_ANSI_ARGS_((double, double))) clientData;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the function's two arguments from the evaluation stack. Convert
@@ -5340,8 +5309,7 @@ ExprBinaryFunc(interp, eePtr, clientData)
 
     if ((VerifyExprObjType(interp, valuePtr) != TCL_OK) ||
 	    (VerifyExprObjType(interp, value2Ptr) != TCL_OK)) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
 
     GET_DOUBLE_VALUE(d1, valuePtr, valuePtr->typePtr);
@@ -5351,8 +5319,7 @@ ExprBinaryFunc(interp, eePtr, clientData)
     dResult = (*func)(d1, d2);
     if ((errno != 0) || IS_NAN(dResult) || IS_INF(dResult)) {
 	TclExprFloatError(interp, dResult);
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
 
     /*
@@ -5360,38 +5327,21 @@ ExprBinaryFunc(interp, eePtr, clientData)
      */
 
     PUSH_OBJECT(Tcl_NewDoubleObj(dResult));
-    
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
     TclDecrRefCount(valuePtr);
     TclDecrRefCount(value2Ptr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprAbsFunc(interp, eePtr, clientData)
+ExprAbsFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     register Tcl_Obj *valuePtr;
     long i, iResult;
     double d, dResult;
-    int result;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the argument from the evaluation stack.
@@ -5400,8 +5350,7 @@ ExprAbsFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
 
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
 
     /*
@@ -5417,8 +5366,7 @@ ExprAbsFunc(interp, eePtr, clientData)
 		        "integer value too large to represent", -1);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
-		result = TCL_ERROR;
-		goto done;
+		return TCL_ERROR;
 	    }
 	} else {
 	    iResult = i;
@@ -5435,8 +5383,7 @@ ExprAbsFunc(interp, eePtr, clientData)
 		        "integer value too large to represent", -1);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
-		result = TCL_ERROR;
-		goto done;
+		return TCL_ERROR;
 	    }
 	} else {
 	    wResult = w;
@@ -5451,41 +5398,24 @@ ExprAbsFunc(interp, eePtr, clientData)
 	}
 	if (IS_NAN(dResult) || IS_INF(dResult)) {
 	    TclExprFloatError(interp, dResult);
-	    result = TCL_ERROR;
-	    goto done;
+	    return TCL_ERROR;
 	}
 	PUSH_OBJECT(Tcl_NewDoubleObj(dResult));
     }
 
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprDoubleFunc(interp, eePtr, clientData)
+ExprDoubleFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     register Tcl_Obj *valuePtr;
     double dResult;
-    int result;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the argument from the evaluation stack.
@@ -5494,8 +5424,7 @@ ExprDoubleFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
 
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
 
     GET_DOUBLE_VALUE(dResult, valuePtr, valuePtr->typePtr);
@@ -5506,36 +5435,20 @@ ExprDoubleFunc(interp, eePtr, clientData)
 
     PUSH_OBJECT(Tcl_NewDoubleObj(dResult));
 
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprIntFunc(interp, eePtr, clientData)
+ExprIntFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     register Tcl_Obj *valuePtr;
     long iResult;
     double d;
-    int result;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the argument from the evaluation stack.
@@ -5544,8 +5457,7 @@ ExprIntFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
     
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
     
     if (valuePtr->typePtr == &tclIntType) {
@@ -5562,8 +5474,7 @@ ExprIntFunc(interp, eePtr, clientData)
 		        "integer value too large to represent", -1);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
-		result = TCL_ERROR;
-		goto done;
+		return TCL_ERROR;
 	    }
 	} else {
 	    if (d > (double) LONG_MAX) {
@@ -5572,8 +5483,7 @@ ExprIntFunc(interp, eePtr, clientData)
 	}
 	if (IS_NAN(d) || IS_INF(d)) {
 	    TclExprFloatError(interp, d);
-	    result = TCL_ERROR;
-	    goto done;
+	    return TCL_ERROR;
 	}
 	iResult = (long) d;
     }
@@ -5583,37 +5493,20 @@ ExprIntFunc(interp, eePtr, clientData)
      */
     
     PUSH_OBJECT(Tcl_NewLongObj(iResult));
-
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprWideFunc(interp, eePtr, clientData)
+ExprWideFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     register Tcl_Obj *valuePtr;
     Tcl_WideInt wResult;
     double d;
-    int result;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the argument from the evaluation stack.
@@ -5622,8 +5515,7 @@ ExprWideFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
     
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
     
     if (valuePtr->typePtr == &tclWideIntType) {
@@ -5640,8 +5532,7 @@ ExprWideFunc(interp, eePtr, clientData)
 		        "integer value too large to represent", -1);
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
-		result = TCL_ERROR;
-		goto done;
+		return TCL_ERROR;
 	    }
 	} else {
 	    if (d > Tcl_WideAsDouble(LLONG_MAX)) {
@@ -5650,8 +5541,7 @@ ExprWideFunc(interp, eePtr, clientData)
 	}
 	if (IS_NAN(d) || IS_INF(d)) {
 	    TclExprFloatError(interp, d);
-	    result = TCL_ERROR;
-	    goto done;
+	    return TCL_ERROR;
 	}
 	wResult = Tcl_DoubleAsWide(d);
     }
@@ -5661,26 +5551,17 @@ ExprWideFunc(interp, eePtr, clientData)
      */
     
     PUSH_OBJECT(Tcl_NewWideIntObj(wResult));
-
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprRandFunc(interp, eePtr, clientData)
+ExprRandFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     Interp *iPtr = (Interp *) interp;
     double dResult;
     long tmp;			/* Algorithm assumes at least 32 bits.
@@ -5705,12 +5586,6 @@ ExprRandFunc(interp, eePtr, clientData)
 	    iPtr->randSeed ^= 123459876;
 	}
     }
-    
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-    
-    CACHE_STACK_INFO();
 
     /*
      * Generate the random number using the linear congruential
@@ -5763,35 +5638,19 @@ ExprRandFunc(interp, eePtr, clientData)
      */
 
     PUSH_OBJECT(Tcl_NewDoubleObj(dResult));
-    
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    DECACHE_STACK_INFO();
     return TCL_OK;
 }
 
 static int
-ExprRoundFunc(interp, eePtr, clientData)
+ExprRoundFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     Tcl_Obj *valuePtr;
     long iResult;
     double d, temp;
-    int result;
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-
-    result = TCL_OK;
-    CACHE_STACK_INFO();
 
     /*
      * Pop the argument from the evaluation stack.
@@ -5800,8 +5659,7 @@ ExprRoundFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
 
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
     
     if (valuePtr->typePtr == &tclIntType) {
@@ -5822,8 +5680,7 @@ ExprRoundFunc(interp, eePtr, clientData)
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent",
 			(char *) NULL);
-		result = TCL_ERROR;
-		goto done;
+		return TCL_ERROR;
 	    }
 	    temp = (long) (d - 0.5);
 	} else {
@@ -5834,8 +5691,7 @@ ExprRoundFunc(interp, eePtr, clientData)
 	}
 	if (IS_NAN(temp) || IS_INF(temp)) {
 	    TclExprFloatError(interp, temp);
-	    result = TCL_ERROR;
-	    goto done;
+	    return TCL_ERROR;
 	}
 	iResult = (long) temp;
     }
@@ -5852,28 +5708,19 @@ ExprRoundFunc(interp, eePtr, clientData)
 
     done:
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-    return result;
+    return TCL_OK;
 }
 
 static int
-ExprSrandFunc(interp, eePtr, clientData)
+ExprSrandFunc(interp, tosPtr, clientData)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
+    Tcl_Obj **tosPtr;		/* Points to top of evaluation stack. */
     ClientData clientData;	/* Ignored. */
 {
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *valuePtr;
     long i = 0;			/* Initialized to avoid compiler warning. */
-
-    /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-    
-    CACHE_STACK_INFO();
 
     /*
      * Pop the argument from the evaluation stack.  Use the value
@@ -5883,7 +5730,7 @@ ExprSrandFunc(interp, eePtr, clientData)
     valuePtr = POP_OBJECT();
 
     if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	goto badValue;
+	return TCL_ERROR;
     }
 
     if (valuePtr->typePtr == &tclIntType) {
@@ -5898,9 +5745,6 @@ ExprSrandFunc(interp, eePtr, clientData)
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"can't use floating-point value as argument to srand",
 		(char *) NULL);
-	badValue:
-	TclDecrRefCount(valuePtr);
-	DECACHE_STACK_INFO();
 	return TCL_ERROR;
     }
     
@@ -5923,9 +5767,7 @@ ExprSrandFunc(interp, eePtr, clientData)
      */
     
     TclDecrRefCount(valuePtr);
-    DECACHE_STACK_INFO();
-
-    ExprRandFunc(interp, eePtr, clientData);
+    ExprRandFunc(interp, tosPtr, clientData);
     return TCL_OK;
 }
 
@@ -5941,8 +5783,8 @@ ExprSrandFunc(interp, eePtr, clientData)
  *	TCL_OK is returned if all went well and the function's value
  *	was computed successfully. If an error occurred, TCL_ERROR
  *	is returned and an error message is left in the interpreter's
- *	result.	After a successful return this procedure pushes a Tcl object
- *	holding the result. 
+ *	result.	After a successful return this procedure pops its
+ *      objc arguments and pushes a Tcl object holding the result. 
  *
  * Side effects:
  *	None, unless the called math function has side effects.
@@ -5951,18 +5793,15 @@ ExprSrandFunc(interp, eePtr, clientData)
  */
 
 static int
-ExprCallMathFunc(interp, eePtr, objc, objv)
+ExprCallMathFunc(interp, objc, objv)
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * function. */
-    ExecEnv *eePtr;		/* Points to the environment for executing
-				 * the function. */
     int objc;			/* Number of arguments. The function name is
 				 * the 0-th argument. */
     Tcl_Obj **objv;		/* The array of arguments. The function name
 				 * is objv[0]. */
 {
     Interp *iPtr = (Interp *) interp;
-    register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation stack. */
     char *funcName;
     Tcl_HashEntry *hPtr;
     MathFunc *mathFuncPtr;	/* Information about math function. */
@@ -5976,12 +5815,6 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     Tcl_ResetResult(interp);
 
     /*
-     * Set stackPtr and stackTop from eePtr.
-     */
-    
-    CACHE_STACK_INFO();
-
-    /*
      * Look up the MathFunc record for the function.
      */
 
@@ -5990,15 +5823,13 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     if (hPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"unknown math function \"", funcName, "\"", (char *) NULL);
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
     mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
     if (mathFuncPtr->numArgs != (objc-1)) {
 	Tcl_Panic("ExprCallMathFunc: expected number of args %d != actual number %d",
 	        mathFuncPtr->numArgs, objc);
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
 
     /*
@@ -6011,8 +5842,7 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
 	valuePtr = objv[j];
 
 	if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	    result = TCL_ERROR;
-	    goto done;
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -6067,7 +5897,7 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     result = (*mathFuncPtr->proc)(mathFuncPtr->clientData, interp, args,
 	    &funcResult);
     if (result != TCL_OK) {
-	goto done;
+	return result;
     }
 
     /*
@@ -6075,7 +5905,7 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
      */
 
     for (k = 0; k < objc; k++) {
-	valuePtr = POP_OBJECT();
+	valuePtr = objv[k];
 	TclDecrRefCount(valuePtr);
     }
     
@@ -6084,25 +5914,19 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
      */
     
     if (funcResult.type == TCL_INT) {
-	PUSH_OBJECT(Tcl_NewLongObj(funcResult.intValue));
+	objv[0] = Tcl_NewLongObj(funcResult.intValue);
     } else if (funcResult.type == TCL_WIDE_INT) {
-	PUSH_OBJECT(Tcl_NewWideIntObj(funcResult.wideValue));
+	objv[0] = Tcl_NewWideIntObj(funcResult.wideValue);
     } else {
 	d = funcResult.doubleValue;
 	if (IS_NAN(d) || IS_INF(d)) {
 	    TclExprFloatError(interp, d);
-	    result = TCL_ERROR;
-	    goto done;
+	    return TCL_ERROR;
 	}
-	PUSH_OBJECT(Tcl_NewDoubleObj(d));
+	objv[0] = Tcl_NewDoubleObj(d);
     }
-
-    /*
-     * Reflect the change to stackTop back in eePtr.
-     */
-
-    done:
-    DECACHE_STACK_INFO();
+    Tcl_IncrRefCount(objv[0]);
+    
     return result;
 }
 
