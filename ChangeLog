@@ -1,3 +1,15 @@
+2002-07-30  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Revert incorrect RANLIB related changed added
+	to support OS X.
+	
+	* unix/Makefile.in: Don't try to conditionally
+	run RANLIB in the Makefile.
+	* unix/configure: Regen.
+	* unix/configure.in: Remove incorrect setting
+	of MAKE_LIB and set RANLIB to : when building
+	a shared library.
+
 2002-07-24  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure.in: backport of corrected fix for [Bug 529801]:

@@ -6144,11 +6144,8 @@ TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
 if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     TCL_SHLIB_CFLAGS="${SHLIB_CFLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
-    if test "x$DL_OBJS" = "xtclLoadAout.o"; then
-	MAKE_LIB="\${STLIB_LD} \$@ \${OBJS}"
-    else
-	MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \$@ \${OBJS} ${SHLIB_LD_LIBS}"
-    fi
+    MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \$@ \${OBJS} ${SHLIB_LD_LIBS}"
+    RANLIB=:
 else
     case $system in
         BSD/OS*)
@@ -6164,9 +6161,6 @@ else
     TCL_SHLIB_CFLAGS=""
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
     MAKE_LIB="\${STLIB_LD} \$@ \${OBJS}"
-    if test "x$DL_OBJS" = "xtclLoadDyld.o"; then
-	MAKE_LIB="${MAKE_LIB} ; \${RANLIB} \$@"
-    fi
 fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
