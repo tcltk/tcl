@@ -1,3 +1,8 @@
+2004-04-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixFCmd.c (TclpObjNormalizePath):  Corrected improper
+	positioning of returned checkpoint.  [Bug 941108]
+
 2004-04-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/open.n, doc/close.n: Updated (thanks to David Welton) to be
