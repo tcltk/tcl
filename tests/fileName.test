@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.9 2000/09/29 01:12:15 hobbs Exp $
+# RCS: @(#) $Id: fileName.test,v 1.9.4.1 2001/05/15 20:03:05 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1475,13 +1475,13 @@ test filename-16.4 {windows specific globbing} {pcOnly} {
     glob c:/
 } c:/
 test filename-16.5 {windows specific globbing} {pcOnly} {
-    glob c:*Test
+    glob c:*bTest
 } c:globTest
 test filename-16.6 {windows specific globbing} {pcOnly} {
-    glob c:\\\\*Test
+    glob c:\\\\*bTest
 } c:/globTest
 test filename-16.7 {windows specific globbing} {pcOnly} {
-    glob c:/*Test
+    glob c:/*bTest
 } c:/globTest
 test filename-16.8 {windows specific globbing} {pcOnly} {
     lsort [glob c:globTest/*.bat]
