@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.40 2002/07/25 22:06:35 jenglish Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.41 2002/08/05 03:24:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -798,7 +798,7 @@ TclProcInterpProc(clientData, interp, argc, argv)
 				 * invoked. */
     int argc;			/* Count of number of arguments to this
 				 * procedure. */
-    register char **argv;	/* Argument values. */
+    register CONST char **argv;	/* Argument values. */
 {
     register Tcl_Obj *objPtr;
     register int i;

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.62 2002/07/27 01:44:24 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.63 2002/08/05 03:24:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -43,13 +43,13 @@ static CONST char *isArrayElement =	"name refers to an element in an array";
  */
 
 static int		CallVarTraces _ANSI_ARGS_((Interp *iPtr, Var *arrayPtr,
-			    Var *varPtr, char *part1, CONST char *part2,
+			    Var *varPtr, CONST char *part1, CONST char *part2,
 			    int flags, CONST int leaveErrMsg));
 static void		CleanupVar _ANSI_ARGS_((Var *varPtr,
 			    Var *arrayPtr));
 static void		DeleteSearches _ANSI_ARGS_((Var *arrayVarPtr));
 static void		DeleteArray _ANSI_ARGS_((Interp *iPtr,
-			    char *arrayName, Var *varPtr, int flags));
+			    CONST char *arrayName, Var *varPtr, int flags));
 static void		DisposeTraceResult _ANSI_ARGS_((int flags,
 			    char *result));
 static int              ObjMakeUpvar _ANSI_ARGS_((Tcl_Interp *interp, 
@@ -182,7 +182,7 @@ Var *
 TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
         arrayPtrPtr)
     Tcl_Interp *interp;		/* Interpreter to use for lookup. */
-    register char *part1;	/* If part2 isn't NULL, this is the name of
+    CONST char *part1;	        /* If part2 isn't NULL, this is the name of
 				 * an array. Otherwise, this
 				 * is a full variable name that could
 				 * include a parenthesized array element. */
@@ -206,19 +206,21 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     Var *varPtr;
     CONST char *elName;		/* Name of array element or NULL; may be
 				 * same as part2, or may be openParen+1. */
-    char *openParen, *closeParen;
+    int openParen, closeParen;
                                 /* If this procedure parses a name into
-				 * array and index, these point to the
-				 * parens around the index.  Otherwise they
-				 * are NULL. These are needed to restore
-				 * the parens after parsing the name. */
-    register char *p;
+				 * array and index, these are the offsets to 
+				 * the parens around the index.  Otherwise 
+				 * they are -1. */
+    register CONST char *p;
     CONST char *errMsg = NULL;
     int index;
+#define VAR_NAME_BUF_SIZE 26
+    char buffer[VAR_NAME_BUF_SIZE];
+    char *newVarName = buffer;
 
     varPtr = NULL;
     *arrayPtrPtr = NULL;
-    openParen = closeParen = NULL;
+    openParen = closeParen = -1;
 
     /*
      * Parse part1 into array name and index.
@@ -233,7 +235,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     elName = part2;
     for (p = part1; *p ; p++) {
 	if (*p == '(') {
-	    openParen = p;
+	    openParen = p - part1;
 	    do {
 		p++;
 	    } while (*p != '\0');
@@ -245,15 +247,22 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		    }
 		    return NULL;
 		}
-		closeParen = p;
-		*openParen = 0;
-		*closeParen = 0;
-		elName = openParen+1;
+		closeParen = p - part1;
 	    } else {
-		openParen = NULL;
+		openParen = -1;
 	    }
 	    break;
 	}
+    }
+    if (openParen != -1) {
+	if (closeParen >= VAR_NAME_BUF_SIZE) {
+	    newVarName = ckalloc((unsigned int) (closeParen+1));
+	}
+	memcpy(newVarName, part1, (unsigned int) closeParen);
+	newVarName[openParen] = '\0';
+	newVarName[closeParen] = '\0';
+	part1 = newVarName;
+	elName = newVarName + openParen + 1;
     }
 
     varPtr = TclLookupSimpleVar(interp, part1, flags, 
@@ -272,12 +281,13 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		    msg, createPart1, createPart2, varPtr);
 	}
     }
-
-    if (openParen != NULL) {
-        *openParen = '(';
-	*closeParen = ')';
+    if (newVarName != buffer) {
+	ckfree(newVarName);
     }
+
     return varPtr;
+	
+#undef VAR_NAME_BUF_SIZE
 }
 
 /*
@@ -969,7 +979,7 @@ CONST char *
 Tcl_GetVar(interp, varName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
-    char *varName;		/* Name of a variable in interp. */
+    CONST char *varName;	/* Name of a variable in interp. */
     int flags;			/* OR-ed combination of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
 				 * bits. */
@@ -1004,7 +1014,7 @@ CONST char *
 Tcl_GetVar2(interp, part1, part2, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be looked up. */
-    char *part1;		/* Name of an array (if part2 is non-NULL)
+    CONST char *part1;		/* Name of an array (if part2 is non-NULL)
 				 * or the name of a variable. */
     CONST char *part2;		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
@@ -1048,7 +1058,7 @@ Tcl_Obj *
 Tcl_GetVar2Ex(interp, part1, part2, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be looked up. */
-    char *part1;		/* Name of an array (if part2 is non-NULL)
+    CONST char *part1;		/* Name of an array (if part2 is non-NULL)
 				 * or the name of a variable. */
     CONST char *part2;		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
@@ -1159,7 +1169,7 @@ TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2, flags)
     register Var *varPtr;       /* The variable to be read.*/
     Var *arrayPtr;              /* NULL for scalar variables, pointer to
 				 * the containing array otherwise. */
-    char *part1;		/* Name of an array (if part2 is non-NULL)
+    CONST char *part1;		/* Name of an array (if part2 is non-NULL)
 				 * or the name of a variable. */
     CONST char *part2;		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
@@ -1291,7 +1301,7 @@ CONST char *
 Tcl_SetVar(interp, varName, newValue, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
-    char *varName;		/* Name of a variable in interp. */
+    CONST char *varName;	/* Name of a variable in interp. */
     CONST char *newValue;	/* New value for varName. */
     int flags;			/* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY,
@@ -1332,7 +1342,7 @@ CONST char *
 Tcl_SetVar2(interp, part1, part2, newValue, flags)
     Tcl_Interp *interp;         /* Command interpreter in which variable is
                                  * to be looked up. */
-    char *part1;                /* If part2 is NULL, this is name of scalar
+    CONST char *part1;          /* If part2 is NULL, this is name of scalar
                                  * variable. Otherwise it is the name of
                                  * an array. */
     CONST char *part2;		/* Name of an element within an array, or
@@ -1405,7 +1415,7 @@ Tcl_Obj *
 Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be found. */
-    char *part1;		/* Name of an array (if part2 is non-NULL)
+    CONST char *part1;		/* Name of an array (if part2 is non-NULL)
 				 * or the name of a variable. */
     CONST char *part2;		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
@@ -1516,7 +1526,7 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 				 * to be looked up. */
     register Var *varPtr;
     Var *arrayPtr;
-    char *part1;		/* Name of an array (if part2 is non-NULL)
+    CONST char *part1;		/* Name of an array (if part2 is non-NULL)
 				 * or the name of a variable. */
     CONST char *part2;		/* If non-NULL, gives the name of an element
 				 * in the array part1. */
@@ -1772,7 +1782,7 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
 				 * to be found. */
     Var *varPtr;
     Var *arrayPtr;
-    char *part1;		/* Points to an object holding the name of
+    CONST char *part1;		/* Points to an object holding the name of
 				 * an array (if part2 is non-NULL) or the
 				 * name of a variable. */
     CONST char *part2;		/* If non-null, points to an object holding
@@ -1877,7 +1887,7 @@ int
 Tcl_UnsetVar(interp, varName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
-    char *varName;		/* Name of a variable in interp.  May be
+    CONST char *varName;	/* Name of a variable in interp.  May be
 				 * either a scalar name or an array name
 				 * or an element in an array. */
     int flags;			/* OR-ed combination of any of
@@ -1912,7 +1922,7 @@ int
 Tcl_UnsetVar2(interp, part1, part2, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
-    char *part1;		/* Name of variable or array. */
+    CONST char *part1;		/* Name of variable or array. */
     CONST char *part2;		/* Name of element within array or NULL. */
     int flags;			/* OR-ed combination of any of
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
@@ -2124,7 +2134,7 @@ int
 Tcl_TraceVar(interp, varName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter in which variable is
 				 * to be traced. */
-    char *varName;		/* Name of variable;  may end with "(index)"
+    CONST char *varName;	/* Name of variable;  may end with "(index)"
 				 * to signify an array reference. */
     int flags;			/* OR-ed collection of bits, including any
 				 * of TCL_TRACE_READS, TCL_TRACE_WRITES,
@@ -2163,7 +2173,7 @@ int
 Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter in which variable is
 				 * to be traced. */
-    char *part1;		/* Name of scalar variable or array. */
+    CONST char *part1;		/* Name of scalar variable or array. */
     CONST char *part2;		/* Name of element within array;  NULL means
 				 * trace applies to scalar variable or array
 				 * as-a-whole. */
@@ -2241,7 +2251,7 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
 void
 Tcl_UntraceVar(interp, varName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *varName;		/* Name of variable; may end with "(index)"
+    CONST char *varName;	/* Name of variable; may end with "(index)"
 				 * to signify an array reference. */
     int flags;			/* OR-ed collection of bits describing
 				 * current trace, including any of
@@ -2275,7 +2285,7 @@ Tcl_UntraceVar(interp, varName, flags, proc, clientData)
 void
 Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *part1;		/* Name of variable or array. */
+    CONST char *part1;		/* Name of variable or array. */
     CONST char *part2;		/* Name of element within array;  NULL means
 				 * trace applies to scalar variable or array
 				 * as-a-whole. */
@@ -2386,7 +2396,7 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
 ClientData
 Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *varName;		/* Name of variable;  may end with "(index)"
+    CONST char *varName;	/* Name of variable;  may end with "(index)"
 				 * to signify an array reference. */
     int flags;			/* OR-ed combo or TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY (can be 0). */
@@ -2421,7 +2431,7 @@ Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData)
 ClientData
 Tcl_VarTraceInfo2(interp, part1, part2, flags, proc, prevClientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *part1;		/* Name of variable or array. */
+    CONST char *part1;		/* Name of variable or array. */
     CONST char *part2;		/* Name of element within array;  NULL means
 				 * trace applies to scalar variable or array
 				 * as-a-whole. */
@@ -3581,7 +3591,7 @@ Tcl_UpVar(interp, frameName, varName, localName, flags)
 				 * to be looked up. */
     CONST char *frameName;	/* Name of the frame containing the source
 				 * variable, such as "1" or "#0". */
-    char *varName;		/* Name of a variable in interp to link to.
+    CONST char *varName;	/* Name of a variable in interp to link to.
 				 * May be either a scalar name or an
 				 * element in an array. */
     CONST char *localName;	/* Name of link variable. */
@@ -3618,7 +3628,7 @@ Tcl_UpVar2(interp, frameName, part1, part2, localName, flags)
 				 * for error messages too. */
     CONST char *frameName;	/* Name of the frame containing the source
 				 * variable, such as "1" or "#0". */
-    char *part1;
+    CONST char *part1;
     CONST char *part2;		/* Two parts of source variable name to
 				 * link to. */
     CONST char *localName;	/* Name of link variable. */
@@ -4058,7 +4068,7 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 				 * isn't an element of an array. */
     Var *varPtr;		/* Variable whose traces are to be
 				 * invoked. */
-    char *part1;
+    CONST char *part1;
     CONST char *part2;		/* Variable's two-part name. */
     int flags;			/* Flags passed to trace procedures:
 				 * indicates what's happening to variable,
@@ -4071,7 +4081,8 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 {
     register VarTrace *tracePtr;
     ActiveVarTrace active;
-    char *result, *openParen, *p;
+    char *result;
+    CONST char *openParen, *p;
     Tcl_DString nameCopy;
     int copiedName;
     int code = TCL_OK;
@@ -4111,11 +4122,13 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 		p--;
 		if (*p == ')') {
 		    int offset = (openParen - part1);
+		    char *newPart1;
 		    Tcl_DStringInit(&nameCopy);
 		    Tcl_DStringAppend(&nameCopy, part1, (p-part1));
-		    part2 = Tcl_DStringValue(&nameCopy) + offset + 1;
-		    part1 = Tcl_DStringValue(&nameCopy);
-		    part1[offset] = 0;
+		    newPart1 = Tcl_DStringValue(&nameCopy);
+		    newPart1[offset] = 0;
+		    part1 = newPart1;
+		    part2 = newPart1 + offset + 1;
 		    copiedName = 1;
 		}
 		break;
@@ -4727,7 +4740,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 static void
 DeleteArray(iPtr, arrayName, varPtr, flags)
     Interp *iPtr;			/* Interpreter containing array. */
-    char *arrayName;			/* Name of array (used for trace
+    CONST char *arrayName;	        /* Name of array (used for trace
 					 * callbacks). */
     Var *varPtr;			/* Pointer to variable structure. */
     int flags;				/* Flags to pass to CallVarTraces:
@@ -4886,7 +4899,7 @@ VarErrMsg(interp, part1, part2, operation, reason)
 Var *
 TclVarTraceExists(interp, varName)
     Tcl_Interp *interp;		/* The interpreter */
-    char *varName;		/* The variable name */
+    CONST char *varName;	/* The variable name */
 {
     Var *varPtr;
     Var *arrayPtr;

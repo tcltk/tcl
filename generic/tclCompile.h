@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.29 2002/07/19 12:31:09 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.30 2002/08/05 03:24:40 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -724,7 +724,7 @@ extern AuxDataType		tclForeachInfoType;
  */
 
 EXTERN int		TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[], char *command, int length,
+			    Tcl_Obj *CONST objv[], CONST char *command, int length,
 			    int flags));
 EXTERN int              TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
 
@@ -750,13 +750,13 @@ EXTERN int		TclCompileCmdWord _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileExpr _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *script, int numBytes,
+			    CONST char *script, int numBytes,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileExprWords _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileScript _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *script, int numBytes, int nested,
+			    CONST char *script, int numBytes, int nested,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
@@ -834,6 +834,15 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  * inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
+
+/*
+ * Form of TclRegisterLiteral with onHeap == 0.
+ * In that case, it is safe to cast away CONSTness, and it
+ * is cleanest to do that here, all in one place.
+ */
+
+#define TclRegisterNewLiteral(envPtr, bytes, length) \
+	TclRegisterLiteral(envPtr, (char *)(bytes), length, /*onHeap*/ 0)
 
 /*
  * Macro used to update the stack requirements.

@@ -8,9 +8,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.6 2001/11/21 02:36:21 hobbs Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.7 2002/08/05 03:24:41 dgp Exp $
  */
 
+#define USE_COMPAT_CONST
 #include "tclWinInt.h"
 
 /*

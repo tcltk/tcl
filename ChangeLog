@@ -1,3 +1,48 @@
+2002-08-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/CmdCmplt.3:	Applied Patch 585105 to fully CONST-ify
+	* doc/Concat.3:		all remaining public interfaces of Tcl.
+	* doc/CrtCommand.3:	Notably, the parser no longer writes on 
+	* doc/CrtSlave.3:	the string it is parsing, so it is no
+	* doc/CrtTrace.3:	longer necessary for Tcl_Eval() to be
+	* doc/Eval.3:		given a writable string.  Also, the
+	* doc/ExprLong.3:	refactoring of the Tcl_*Var* routines
+	* doc/LinkVar.3:	by Miguel Sofer is included, so that the
+	* doc/ParseCmd.3:	"part1" argument for them no longer needs
+	* doc/SetVar.3:		to be writable either.
+	* doc/TraceVar.3:
+	* doc/UpVar.3:		Compatibility support has been enhanced so
+	* generic/tcl.decls	that a #define of USE_NON_CONST will remove
+	* generic/tcl.h		all possible source incompatibilities with
+	* generic/tclBasic.c	the 8.3 version of the header file(s).
+	* generic/tclCmdMZ.c	The new #define of USE_COMPAT_CONST now does
+	* generic/tclCompCmds.c	what USE_NON_CONST used to do -- disable
+	* generic/tclCompExpr.c only those new CONST's that introduce
+	* generic/tclCompile.c	irreconcilable incompatibilities.
+	* generic/tclCompile.h
+	* generic/tclDecls.h	Several bugs are also fixed by this patch.
+	* generic/tclEnv.c	[Bugs 584051,580433] [Patches 585105,582429]
+	* generic/tclEvent.c	
+	* generic/tclInt.decls
+	* generic/tclInt.h
+	* generic/tclIntDecls.h
+	* generic/tclInterp.c
+	* generic/tclLink.c
+	* generic/tclObj.c
+	* generic/tclParse.c
+	* generic/tclParseExpr.c
+	* generic/tclProc.c
+	* generic/tclTest.c
+	* generic/tclUtf.c
+	* generic/tclUtil.c
+	* generic/tclVar.c
+	* mac/tclMacTest.c
+	* tests/expr-old.test
+	* tests/parseExpr.test
+	* unix/tclUnixTest.c
+	* unix/tclXtTest.c
+	* win/tclWinTest.c
+
 2002-08-01  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: bugfix (reading freed memory). Testsuite

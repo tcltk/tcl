@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.73 2002/06/19 22:38:39 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.74 2002/08/05 03:24:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -113,11 +113,11 @@ static Tcl_TraceTypeObjCmd* traceSubCmds[] = {
  */
 static int              CallTraceProcedure _ANSI_ARGS_((Tcl_Interp *interp,
                             Trace *tracePtr, Command *cmdPtr,
-                            char *command, int numChars,
+                            CONST char *command, int numChars,
                             int objc, Tcl_Obj *CONST objv[]));
 static char *		TraceVarProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, CONST char *name2,
-			    int flags));
+			    Tcl_Interp *interp, CONST char *name1, 
+                            CONST char *name2, int flags));
 static void		TraceCommandProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, CONST char *oldName,
                             CONST char *newName, int flags));
@@ -4001,7 +4001,7 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 int 
 TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code, traceFlags, objc, objv)
     Tcl_Interp *interp;		/* The current interpreter. */
-    char *command;              /* Pointer to beginning of the current 
+    CONST char *command;        /* Pointer to beginning of the current 
 				 * command string. */
     int numChars;               /* The number of characters in 'command' 
 				 * which are part of the command string. */
@@ -4081,7 +4081,7 @@ TclCheckExecutionTraces(interp, command, numChars, cmdPtr, code, traceFlags, obj
 int 
 TclCheckInterpTraces(interp, command, numChars, cmdPtr, code, traceFlags, objc, objv)
     Tcl_Interp *interp;		/* The current interpreter. */
-    char *command;              /* Pointer to beginning of the current 
+    CONST char *command;        /* Pointer to beginning of the current 
 				 * command string. */
     int numChars;               /* The number of characters in 'command' 
 				 * which are part of the command string. */
@@ -4186,7 +4186,7 @@ CallTraceProcedure(interp, tracePtr, cmdPtr, command, numChars, objc, objv)
     Tcl_Interp *interp;		/* The current interpreter. */
     register Trace *tracePtr;	/* Describes the trace procedure to call. */
     Command *cmdPtr;		/* Points to command's Command struct. */
-    char *command;		/* Points to the first character of the
+    CONST char *command;	/* Points to the first character of the
 				 * command's source before substitutions. */
     int numChars;		/* The number of characters in the
 				 * command's source. */
@@ -4417,7 +4417,7 @@ static char *
 TraceVarProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Information about the variable trace. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *name1;		/* Name of variable or array. */
+    CONST char *name1;		/* Name of variable or array. */
     CONST char *name2;		/* Name of element within array;  NULL means
 				 * scalar variable is being referenced. */
     int flags;			/* OR-ed bits giving operation and other
