@@ -9,13 +9,14 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.6 2004/02/01 10:28:18 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.7 2004/02/10 22:04:04 davygrvy Exp $
  * ----------------------------------------------------------------------------
  */
 #include <windows.h>
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "kernel32.lib")
 #include <stdio.h>
+#include <math.h>
 
 /* protos */
 int CheckForCompilerFeature (const char *option);
@@ -345,7 +346,10 @@ GrepForDefine (const char *file, const char *string)
 		fclose(f);
 		/* add 1 past first double quote char. "8.5" */
 		d1 = atof(s3 + 1);		  /*    8.5  */
-		return ((int) (d1 * 10) & 0xFF);  /*    85   */
+		while (floor(d1) != d1) {
+		    d1 *= 10.0;
+		}
+		return ((int) d1);		  /*    85   */
 	    }
 	}
     } while (!feof(f));
