@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.18 2002/05/08 23:48:23 davygrvy Exp $
+'\" RCS: @(#) $Id: file.n,v 1.19 2002/06/20 00:50:48 jenglish Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -36,9 +36,9 @@ doesn't exist or its access time cannot be queried or set then an error is
 generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
-.br
+.TP
 \fBfile attributes \fIname\fR ?\fBoption\fR?
-.br
+.TP
 \fBfile attributes \fIname\fR ?\fBoption value option value...\fR?
 .RS
 This subcommand returns or sets platform specific values associated
@@ -88,7 +88,7 @@ is determined using the same rules as for \fBstring match\fR.
 .VE
 .TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
-.br
+.TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .RS
 The first form makes a copy of the file or directory \fIsource\fR under
@@ -226,6 +226,7 @@ under Windows or AppleScript on the Macintosh.
 .TP
 \fBfile normalize \fIname\fR
 .
+.RS
 Returns a unique normalised path representation for the file-system 
 object (file, directory, link, etc), whose string value can be used as 
 a unique identifier for it.  A normalized path is one which has all '../', './' 
@@ -245,6 +246,7 @@ operating systems (95/98) and new Windows operating systems
 (NT/2000/XP).  This is necessary because the APIs  
 to produce a long normalized path in older operating systems are 
 unfortunately very slow.
+.RE
 .TP
 \fBfile owned \fIname\fR 
 .
@@ -299,7 +301,7 @@ Returns all of the characters in \fIname\fR up to but not including the
 last ``.'' character in the last component of name.  If the last
 component of \fIname\fR doesn't contain a dot, then returns \fIname\fR.
 .TP
-\fBfile separator ?\fIname\fR?
+\fBfile separator\fR ?\fIname\fR?
 .
 If no argument is given, returns the character which is used to separate 
 path segments for native files on this platform.  If a path is given,
@@ -322,7 +324,7 @@ unless they are needed ensure that an element is unambiguously relative.
 For example, under Unix
 .RS
 .CS
-\fBfile split /foo/~bar/baz\fR
+file split /foo/~bar/baz
 .CE
 returns \fB/\0\0foo\0\0./~bar\0\0baz\fR to ensure that later commands
 that use the third component do not attempt to perform tilde
