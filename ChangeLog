@@ -5,8 +5,10 @@
 	I reversed the logic to not assume, and use when is by explicitly
 	needing to add runtimes that support it such as Borland.
 
-	* generic/tcl.h:  Borland compatibility change so ClientData was
-	properly typed as a void*
+	* generic/tcl.h:
+	* generic/tclPlatDecls.h:  Borland compatibility change so
+	ClientData was properly typed as a void* and TCHAR would not be
+	defined twice.
 
 2001-09-04  Don Porter  <dgp@users.sourceforge.net>
 
