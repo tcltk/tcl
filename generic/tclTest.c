@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.17.2.3 2001/09/20 01:13:03 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.17.2.3.2.1 2002/11/26 19:48:58 andreas_kupries Exp $
  */
 
 #define TCL_TEST
@@ -282,6 +282,10 @@ static int		TestChannelCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestChannelEventCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 
+static int		TestCloneCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int argc, char **argv));
+
 /*
  * External (platform specific) initialization routine, these declarations
  * explicitly don't use EXTERN since this code does not get compiled
@@ -430,6 +434,11 @@ Tcltest_Init(interp)
 	    (ClientData) 345);
     Tcl_CreateCommand(interp, "teststatproc", TeststatprocCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
+
+    Tcl_CreateCommand(interp, "testclone", TestCloneCmd, (ClientData) 0,
+	    (Tcl_CmdDeleteProc *) NULL);
+
+
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -4822,4 +4831,40 @@ TestChannelEventCmd(dummy, interp, argc, argv)
     Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of ",
             "add, delete, list, set, or removeall", (char *) NULL);
     return TCL_ERROR;
+}
+
+
+static int
+TestCloneCmd (clientData, interp, argc, argv)
+     ClientData clientData;
+     Tcl_Interp *interp;
+     int argc;
+     char **argv;
+{
+  static Tcl_Interp* clone; /* The clone to use.
+			     */
+  /* Syntax:
+   * testclone create
+   * testclone eval script
+   * testclone destroy
+   */
+
+  char* cmd = argv [1];
+  unsigned int length = strlen(cmd);
+
+  if (cmd [0] == 'c' && 0 == strncmp (argv [1], "create", length)) {
+      clone = Tcl_CloneInterp (interp);
+      return TCL_OK;
+  } else if (cmd [0] == 'd' && 0 == strncmp (argv [1], "destroy", length)) {
+      Tcl_DeleteInterp (clone);
+      clone = NULL;
+      return TCL_OK;
+  } else if (cmd [0] == 'e' && 0 == strncmp (argv [1], "eval", length)) {
+    int res = Tcl_Eval (clone, argv [2]);
+    TclTransferResult(clone, res, interp);
+    return res;
+  }
+  Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of ",
+            "create, eval, or destroy", (char *) NULL);
+  return TCL_ERROR;
 }

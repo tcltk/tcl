@@ -12,9 +12,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27.6.4 2002/11/07 19:04:59 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.5 2002/11/26 19:48:49 andreas_kupries Exp $
  */
-
+#include <assert.h>
 #include "tclInt.h"
 #include "tclCompile.h"
 #ifndef TCL_GENERIC_ONLY
@@ -3835,4 +3835,803 @@ void Tcl_GetVersion(majorV, minorV, patchLevelV, type)
         *type = TCL_RELEASE_LEVEL;
     }
 }
+
  
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CloneInterp --
+ *
+ *	Create a new TCL command interpreter as a clone of an existing
+ *	interpreter.
+ *
+ * Results:
+ *	The return value is a token for the interpreter, which may be
+ *	used in calls to procedures like Tcl_CreateCmd, Tcl_Eval, or
+ *	Tcl_DeleteInterp.
+ *
+ * Side effects:
+ *	The command interpreter is initialized with structural equivalents
+ *	of the variables and commands of the source interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+/*
+ * Structures used for handling the fixup of ImportRef's across
+ * namespaces.  This operation is global acrosss all namespaces in the
+ * interp, and thus can be done only after all namespaces have been
+ * traversed.
+ */
+
+/*
+ * Associate original and clone for all commands which have an
+ * ImportRef list, i.e. commands which are imported somewhere.
+ */
+
+typedef struct IRFixupCmdAssoc {
+  struct IRFixupCmdAssoc* nextPtr;
+  Command*                original;
+  Command*                clone;
+} IRFixupCmdAssoc;
+
+typedef struct IRFixupVarAssoc {
+  struct IRFixupVarAssoc* nextPtr;
+  Var*                    original;
+  Var*                    clone;
+} IRFixupVarAssoc;
+
+/*
+ * Remember the commands which are imported.
+ */
+
+typedef struct IRFixupImported {
+  struct IRFixupImported* nextPtr;
+  ImportedCmdData*        icPtr;
+} IRFixupImported;
+
+typedef struct IRFixupVar {
+  struct IRFixupVar* nextPtr;
+  Var*               varPtr;
+} IRFixupVar;
+
+/*
+ * All data/context required for the fixup, recursively handed down to
+ * the namespace and command clone functions, for filling it out.
+ */
+
+typedef struct IRFixup {
+  IRFixupImported* imported;
+  IRFixupCmdAssoc* exported;
+  IRFixupVar*      varImported;
+  IRFixupVarAssoc* varExported;
+} IRFixup;
+
+
+static void CloneMathFunctions _ANSI_ARGS_((Interp* iPtr, Interp* srcIPtr));
+#if 0
+static void ListMathFunctions _ANSI_ARGS_ ((Interp* iPtr, CONST char* mark));
+#endif
+
+static void CloneNamespace _ANSI_ARGS_((Interp* interp, Namespace* ns,
+					Namespace* srcNs, IRFixup* fixup));
+	    
+static void CloneVariable _ANSI_ARGS_ ((Interp* interp, Namespace* ns,
+					Var* varSrcPtr, CONST char* varName,
+					IRFixup* fixup));
+
+static Tcl_HashTable* CloneArrayVariable _ANSI_ARGS_ ((Interp* interp,
+						       Var* varSrcPtr));
+
+static void CloneCommand _ANSI_ARGS_ ((Interp* interp, Namespace* ns,
+				       Command* cmdSrcPtr, CONST char* cmdName,
+				       IRFixup* fixup));
+
+static void CloneFixupImports _ANSI_ARGS_ ((IRFixup* fixup));
+static void CloneFixupVars    _ANSI_ARGS_ ((IRFixup* fixup));
+
+
+#define GetHashKeyString(hPtr) Tcl_GetHashKey ((hPtr->tablePtr),(hPtr))
+
+
+Tcl_Interp *
+Tcl_CloneInterp(srcInterp)
+     Tcl_Interp* srcInterp;
+{
+    Interp *srcIPtr = (Interp*) srcInterp;
+    Interp *iPtr;
+    Tcl_Interp *interp;
+    IRFixup fixup;
+
+#ifndef TCL_THREAD_LITERALS
+#ifdef TCL_COMPILE_STATS
+    ByteCodeStats *statsPtr;
+#endif /* TCL_COMPILE_STATS */
+#endif /* TCL_THREAD_LITERALS */
+
+    fixup.imported    = NULL;
+    fixup.exported    = NULL;
+    fixup.varImported = NULL;
+    fixup.varExported = NULL;
+
+    TclInitSubsystems(NULL);
+
+    /*
+     * Panic if someone updated the CallFrame structure without
+     * also updating the Tcl_CallFrame structure (or vice versa).
+     */  
+
+    if (sizeof(Tcl_CallFrame) != sizeof(CallFrame)) {
+	/*NOTREACHED*/
+        panic("Tcl_CallFrame and CallFrame are not the same size");
+    }
+
+    /*
+     * Initialize support for namespaces and create the global namespace
+     * (whose name is ""; an alias is "::"). This also initializes the
+     * Tcl object type table and other object management code.
+     */
+
+    iPtr = (Interp *) ckalloc(sizeof(Interp));
+    interp = (Tcl_Interp *) iPtr;
+
+    iPtr->result		= iPtr->resultSpace;
+    iPtr->freeProc		= NULL;
+    iPtr->errorLine		= 0;
+    iPtr->objResultPtr		= Tcl_NewObj();
+    Tcl_IncrRefCount(iPtr->objResultPtr);
+    iPtr->handle		= TclHandleCreate(iPtr);
+    iPtr->globalNsPtr		= NULL;
+    iPtr->hiddenCmdTablePtr	= NULL;
+    iPtr->interpInfo		= NULL;
+    Tcl_InitHashTable(&iPtr->mathFuncTable, TCL_STRING_KEYS);
+
+    iPtr->numLevels = 0;
+    iPtr->maxNestingDepth = 1000;
+    iPtr->framePtr = NULL;
+    iPtr->varFramePtr = NULL;
+    iPtr->activeTracePtr = NULL;
+    iPtr->returnCode = TCL_OK;
+    iPtr->errorInfo = NULL;
+    iPtr->errorCode = NULL;
+
+    iPtr->appendResult = NULL;
+    iPtr->appendAvl = 0;
+    iPtr->appendUsed = 0;
+
+    Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
+
+    iPtr->packageUnknown = NULL;
+    if (srcIPtr->packageUnknown) {
+      unsigned int len = 1 + strlen(srcIPtr->packageUnknown);
+      iPtr->packageUnknown = (char*) ckalloc (len);
+      memcpy (iPtr->packageUnknown, srcIPtr->packageUnknown, len);
+    }
+
+
+    iPtr->cmdCount = 0;
+    iPtr->termOffset = 0;
+    iPtr->compileEpoch = 0;
+    iPtr->compiledProcPtr = NULL;
+    iPtr->resolverPtr = NULL;
+    iPtr->evalFlags = 0;
+    iPtr->scriptFile = NULL;
+    iPtr->flags = 0;
+    iPtr->tracePtr = NULL;
+    iPtr->assocData = (Tcl_HashTable *) NULL;
+    iPtr->execEnvPtr = NULL;	      /* set after namespaces initialized */
+    iPtr->emptyObjPtr = Tcl_NewObj(); /* another empty object */
+    Tcl_IncrRefCount(iPtr->emptyObjPtr);
+    iPtr->resultSpace[0] = 0;
+
+    iPtr->globalNsPtr = NULL;	/* force creation of global ns below */
+    iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
+	    (ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL);
+    if (iPtr->globalNsPtr == NULL) {
+        panic("Tcl_CreateInterp: can't create global namespace");
+    }
+
+    /*
+     * Initialize support for code compilation and execution. We call
+     * TclCreateExecEnv after initializing namespaces since it tries to
+     * reference a Tcl variable (it links to the Tcl "tcl_traceExec"
+     * variable).
+     */
+
+    iPtr->execEnvPtr = TclCreateExecEnv(interp);
+
+#ifndef TCL_THREAD_LITERALS
+    TclInitLiteralTable(&(iPtr->literalTable));
+
+    /*
+     * Initialize the compilation and execution statistics kept for this
+     * interpreter.
+     */
+
+#ifdef TCL_COMPILE_STATS
+    statsPtr = &(iPtr->stats);
+    (VOID *) memset(statsPtr, 0, sizeof(ByteCodeStats));
+#endif /* TCL_COMPILE_STATS */    
+#endif
+
+    /*
+     * Initialise the stub table pointer.
+     */
+
+    iPtr->stubTable = &tclStubs;
+
+    /*
+     * Clone all the commands and procedures in the source interpreter.
+     * Duplicate the namespace structure as we go. This also enforces
+     * the compilation of procedure bodies which are not yet compiled.
+     *
+     * Limitation: For C-based 'commands' with a non-NULL client data
+     * we do not know how to handle this. For the moment we simply
+     * copy the pointer. In the future commands may need a duplication
+     * method which is able to handle their client data.
+     *
+     * For proc's we know the structure of the client data and how to
+     * clone it. So we do. This is also at the heart of the issue of
+     * sharing bytecode information between interpreters.
+     */
+
+    CloneNamespace    (iPtr, iPtr->globalNsPtr, srcIPtr->globalNsPtr, &fixup);
+    CloneFixupImports (&fixup);
+    CloneFixupVars    (&fixup);
+
+    /*
+     * Clone the math functions registered in the source interp.
+     */
+
+    CloneMathFunctions (iPtr, srcIPtr);
+    iPtr->flags |= EXPR_INITIALIZED;
+
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
+    /*
+     * Do Multiple/Safe Interps Tcl init stuff
+     */
+
+    TclInterpInit(interp);
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
+
+    /*
+     * We used to create the "errorInfo" and "errorCode" global vars at this
+     * point because so much of the Tcl implementation assumes they already
+     * exist. This is not quite enough, however, since they can be unset
+     * at any time.
+     *
+     * There are 2 choices:
+     *    + Check every place where a GetVar of those is used 
+     *      and the NULL result is not checked (like in tclLoad.c)
+     *    + Make SetVar,... NULL friendly
+     * We choose the second option because :
+     *    + It is easy and low cost to check for NULL pointer before
+     *      calling strlen()
+     *    + It can be helpfull to other people using those API
+     *    + Passing a NULL value to those closest 'meaning' is empty string
+     *      (specially with the new objects where 0 bytes strings are ok)
+     * So the following init is commented out:              -- dl
+     *
+     * (void) Tcl_SetVar2((Tcl_Interp *)iPtr, "errorInfo", (char *) NULL,
+     *       "", TCL_GLOBAL_ONLY);
+     * (void) Tcl_SetVar2((Tcl_Interp *)iPtr, "errorCode", (char *) NULL,
+     *       "NONE", TCL_GLOBAL_ONLY);
+     */
+
+#ifndef TCL_GENERIC_ONLY
+    TclSetupEnv(interp);
+#endif
+
+    /*
+     * The variable 'tcl_platform', etc. already exist. They were
+     * created as part of the general cloning process in
+     * CloneNamespace. Only 'env' is special.
+     */
+
+    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
+    Tcl_TraceVar2(interp, "tcl_precision", (char *) NULL,
+	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    TclPrecTraceProc, (ClientData) NULL);
+    TclpSetVariables(interp);
+
+    /*
+     * Register Tcl's version number.
+     */
+
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) &tclStubs);
+    
+#ifdef Tcl_InitStubs
+#undef Tcl_InitStubs
+#endif
+    Tcl_InitStubs(interp, TCL_VERSION, 1);
+    return interp;
+}
+
+
+static void
+CloneMathFunctions (iPtr, srcIPtr)
+     Interp* iPtr;
+     Interp* srcIPtr;
+{
+    Tcl_HashSearch math;
+    Tcl_HashEntry* hPtr;
+    Tcl_HashEntry* hPtrNew;
+    MathFunc *mathFuncPtr;
+    MathFunc *mathFuncPtrNew;
+    char* funcName;
+
+    for (hPtr = Tcl_FirstHashEntry (&srcIPtr->mathFuncTable, &math);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry (&math)) {
+
+        mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
+	funcName    = GetHashKeyString (hPtr);
+
+	Tcl_CreateMathFunc((Tcl_Interp *) iPtr,
+			   funcName,
+			   mathFuncPtr->numArgs,
+			   mathFuncPtr->argTypes,
+			   mathFuncPtr->proc,
+			   mathFuncPtr->clientData);
+
+	hPtrNew = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
+
+	if (hPtrNew == NULL) {
+	    panic("Tcl_CreateInterp: Tcl_CreateMathFunc incorrectly registered '%s'", funcName);
+	    return;
+	}
+	mathFuncPtrNew = (MathFunc *) Tcl_GetHashValue(hPtrNew);
+	mathFuncPtrNew->builtinFuncIndex = mathFuncPtr->builtinFuncIndex;
+    }
+}
+
+
+static void
+CloneNamespace (interp, ns, srcNs, fixup)
+     Interp* interp;
+     Namespace* ns;
+     Namespace* srcNs;
+     IRFixup* fixup;
+{
+    /*
+     * Assumes that 'ns' is an empty namespace, and makes it
+     * structurally identical to the source namespace. To this end it
+     * copies the variables, commands, procedures, and then recurses
+     * down to the children of the namespace.
+     */
+
+    Tcl_HashSearch children;
+    Tcl_HashEntry* hPtr;
+    Tcl_DString    childName;
+    Namespace*     childPtr;
+    Namespace*     childSrcPtr;
+
+    Tcl_HashSearch variables;
+    Var*           varSrcPtr;
+
+    Tcl_HashSearch commands;
+    Command*       cmdSrcPtr;
+
+    /*
+     * Phase I. Clone variables and their contents.
+     */
+
+    for (hPtr = Tcl_FirstHashEntry (&srcNs->varTable, &variables);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry (&variables)) {
+
+        varSrcPtr = (Var *) Tcl_GetHashValue (hPtr);
+	/* assert varSrcPtr->hPtr  == hPtr */
+	/* assert varSrcPtr->nsPtr == srcNs */
+
+	CloneVariable (interp, ns, varSrcPtr,
+		       GetHashKeyString (hPtr),
+		       fixup);
+    }
+
+    /*
+     * Phase II. Clone commands, especially procedures.
+     */
+
+    for (hPtr = Tcl_FirstHashEntry (&srcNs->cmdTable, &commands);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry (&commands)) {
+
+        cmdSrcPtr = (Command *) Tcl_GetHashValue (hPtr);
+
+	CloneCommand (interp, ns, cmdSrcPtr,
+		      GetHashKeyString (hPtr),
+		      fixup);
+    }
+
+    /*
+     * Phase III. Recurse down into the children.
+     */
+
+    for (hPtr = Tcl_FirstHashEntry (&srcNs->childTable, &children);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry (&children)) {
+
+        childSrcPtr = (Namespace *) Tcl_GetHashValue (hPtr);
+
+	/* Create fully qualified name for cloned child */
+
+	Tcl_DStringInit   (&childName);
+	Tcl_DStringAppend (&childName, srcNs->fullName, -1);
+	if (srcNs->name [0] != '\0') {
+	  Tcl_DStringAppend (&childName, "::", -1);
+	}
+	Tcl_DStringAppend (&childName, childSrcPtr->name, -1);
+
+	childPtr = (Namespace *) Tcl_CreateNamespace((Tcl_Interp*) interp,
+			Tcl_DStringValue (&childName),
+			(ClientData) childSrcPtr->clientData,
+			(Tcl_NamespaceDeleteProc *) childSrcPtr->deleteProc);
+	CloneNamespace (interp, childPtr, childSrcPtr, fixup);
+    }
+}
+
+
+static void
+CloneVariable (interp, ns, varSrcPtr, varName, fixup)
+     Interp* interp;
+     Namespace* ns;
+     Var* varSrcPtr;
+     CONST char* varName;
+     IRFixup* fixup;
+{
+    int new;
+    Var* varNew = (Var*) ckalloc (sizeof (Var));
+
+    varNew->hPtr      = Tcl_CreateHashEntry(&ns->varTable, varName, &new);
+    Tcl_SetHashValue (varNew->hPtr, varNew);
+
+    varNew->nsPtr     = ns;
+    varNew->tracePtr  = NULL; /* Traces are not cloned */
+    varNew->searchPtr = NULL;
+    varNew->refCount  = 1;    /* Namespace variable */
+    varNew->name      = NULL; /* Variable contained in hashtable of namespace. */
+    varNew->flags     = varSrcPtr->flags;
+
+    if (varSrcPtr->flags & VAR_SCALAR) {
+        /*
+	 * We share the object used as the contents of the scalar
+	 * variable. Therefore we have one additional reference to
+	 * remember.
+	 *
+	 * FUTURE: Does not work for cloning across threads.
+	 */
+
+        varNew->value.objPtr = varSrcPtr->value.objPtr;
+	if (varNew->value.objPtr) {
+	  Tcl_IncrRefCount (varNew->value.objPtr);
+	}
+    } else if (varSrcPtr->flags & VAR_LINK) {
+
+        /* Remember variable for fixup later on */
+
+        IRFixupVar* fix = (IRFixupVar*) ckalloc (sizeof (IRFixupVar));
+
+        varNew->value.linkPtr = varSrcPtr->value.linkPtr;
+	fix->nextPtr = fixup->varImported;
+	fix->varPtr  = varNew;
+	fixup->varImported = fix;
+
+    } else if (varSrcPtr->flags & VAR_ARRAY) {
+        /*
+	 * We have to duplicate all elements of the array.
+	 */
+
+        varNew->value.tablePtr = CloneArrayVariable (interp, varSrcPtr);
+    } else {
+        panic ("CloneVariable: Unknown type of variable");
+    }
+
+    /*
+     * Possibly exported to other namespaces,
+     * remember for fixup. This can be off a
+     * bit because of active traces, but only
+     * overeach variables which are not
+     * exported, it will never miss exported
+     * ones.
+     */
+    if (varSrcPtr->refCount > 1) {
+        IRFixupVarAssoc* fix = (IRFixupVarAssoc*) ckalloc (sizeof (IRFixupVarAssoc));
+
+	fix->nextPtr  = fixup->varExported;
+	fix->original = varSrcPtr;
+	fix->clone    = varNew;
+	fixup->varExported = fix;
+    }
+}
+
+
+static Tcl_HashTable*
+CloneArrayVariable (interp, varSrcPtr)
+     Interp* interp;
+     Var* varSrcPtr;
+{
+    Tcl_HashTable* tablePtr = (Tcl_HashTable *) ckalloc (sizeof (Tcl_HashTable));
+    Tcl_HashSearch items;
+    Tcl_HashEntry* hPtr;
+    int new;
+    Var* varNew;
+    Var* itemVar;
+    char* varName;
+
+    Tcl_InitHashTable (tablePtr, TCL_STRING_KEYS);
+
+    for (hPtr = Tcl_FirstHashEntry (varSrcPtr->value.tablePtr, &items);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry (&items)) {
+
+        itemVar = (Var *) Tcl_GetHashValue (hPtr);
+	varNew = (Var*) ckalloc (sizeof (Var));
+
+	if (itemVar->flags & VAR_SCALAR) {
+	    /*
+	     * We share the object used as the contents of the scalar
+	     * variable. Therefore we have one additional reference to
+	     * remember.
+	     *
+	     * FUTURE: Does not work for cloning across threads.
+	     */
+
+	    varNew->value.objPtr = itemVar->value.objPtr;
+	    Tcl_IncrRefCount (varNew->value.objPtr);
+	} else if (itemVar->flags & VAR_LINK) {
+	    panic ("CloneArrayVariable: Unable to clone links");
+	} else if (itemVar->flags & VAR_ARRAY) {
+	    panic ("CloneArrayVariable: Illegal nesting of array in array");
+	} else {
+	    panic ("CloneArrayVariable: Unknown type of variable");
+	}
+
+	varName = GetHashKeyString (hPtr);
+
+	varNew->hPtr      = Tcl_CreateHashEntry(tablePtr, varName, &new);
+	Tcl_SetHashValue (varNew->hPtr, varNew);
+
+	varNew->nsPtr     = NULL; /* Array element */
+	varNew->tracePtr  = NULL; /* Traces are not cloned */
+	varNew->searchPtr = NULL;
+	varNew->refCount  = 0;    /* Array element */
+	varNew->name      = NULL; /* Variable contained in hashtable of array. */
+	varNew->flags     = itemVar->flags;
+    }
+
+    return tablePtr;
+}
+
+
+static void
+CloneCommand (interp, ns, cmdSrcPtr, cmdName, fixup)
+     Interp* interp;
+     Namespace* ns;
+     Command* cmdSrcPtr;
+     CONST char* cmdName;
+     IRFixup* fixup;
+{
+    int new;
+    Command* cmdNew = (Command *) ckalloc (sizeof (Command));
+
+    cmdNew->hPtr          = Tcl_CreateHashEntry(&ns->cmdTable, cmdName, &new);
+    Tcl_SetHashValue (cmdNew->hPtr, cmdNew);
+
+    cmdNew->nsPtr         = ns;
+    cmdNew->cmdEpoch      = cmdSrcPtr->cmdEpoch;
+    cmdNew->compileProc   = cmdSrcPtr->compileProc;
+    cmdNew->objProc       = cmdSrcPtr->objProc;
+    cmdNew->objClientData = cmdSrcPtr->objClientData; /* NOTE limitations */
+    cmdNew->proc          = cmdSrcPtr->proc;
+    cmdNew->clientData    = cmdSrcPtr->clientData; /* NOTE limitations */
+    cmdNew->deleteProc    = cmdSrcPtr->deleteProc;
+    cmdNew->deleteData    = cmdSrcPtr->deleteData; /* NOTE limitations */
+    cmdNew->deleted       = 0;
+    cmdNew->importRefPtr  = NULL;
+
+    if (cmdSrcPtr->importRefPtr) {
+        /*
+         * Remember commands imported somewhere else, ie. exported
+         * from their native namespace. After the base cloning is
+         * complete we have to create their import ref lists and use
+         * the 'fixup' information to do so.
+	 */
+
+        IRFixupCmdAssoc* irfa = (IRFixupCmdAssoc *) ckalloc (sizeof (IRFixupCmdAssoc));
+	irfa->nextPtr   = fixup->exported;
+	irfa->original  = cmdSrcPtr;
+	irfa->clone     = cmdNew;
+	fixup->exported = irfa;
+    }
+
+    /*
+     * Special cases where we know how to handle client data beyond simple copying.
+     */
+
+    if  (cmdNew->objProc == TclInvokeStringCommand) {
+        cmdNew->objClientData = (ClientData) cmdNew;
+    }
+    if  (cmdNew->proc == TclInvokeObjectCommand) {
+        cmdNew->clientData = (ClientData) cmdNew;
+    }
+    if (cmdNew->objProc == TclInvokeImportedCmd) {
+        /*
+	 * Clone the ImportedCmdData structure.
+	 *
+	 * Note that this means that we have to fix up the ImportRef's
+	 * in the real command too. To this end we remember these
+	 * commands in global fixup context given to us.
+	 */
+
+        IRFixupImported* irfi = (IRFixupImported *) ckalloc (sizeof (IRFixupImported));
+
+        ImportedCmdData* orig = (ImportedCmdData *) cmdNew->objClientData;
+	ImportedCmdData* new  = (ImportedCmdData *) ckalloc (sizeof (ImportedCmdData));
+
+	new->selfPtr = cmdNew;
+	new->realCmdPtr = orig->realCmdPtr;	/* FIXUP in second pass */
+	cmdNew->objClientData = (ClientData) new;
+	cmdNew->deleteData    = (ClientData) new;
+
+	irfi->nextPtr   = fixup->imported;
+	irfi->icPtr     = new;
+	fixup->imported = irfi;
+    }
+
+
+    if  (cmdNew->objProc == TclObjInterpProc) {
+        Proc *procPtr = TclCloneProc (interp, ns,
+				      (Proc *) cmdSrcPtr->objClientData);
+
+	/*assert (strcmp (cmdName, "foo") != 0);*/
+
+	cmdNew->objClientData = procPtr;
+	cmdNew->clientData    = procPtr;
+	cmdNew->deleteData    = procPtr;
+	procPtr->cmdPtr       = cmdNew;
+    }
+
+    /* The cloned command will be referenced by the hashtable, but not by CmdName objects. ...
+     * CmdName objects in the bytecode refer to the Command in the master and will switch
+     * during execution ...
+     */
+    cmdNew->refCount  = 1;
+}
+
+
+static Command*
+CloneFixupFindClone (exported, cmd)
+     IRFixupCmdAssoc* exported;
+     Command* cmd;
+{
+    while (exported) {
+        if (exported->original == cmd) {
+	    return exported->clone;
+	}
+	exported = exported->nextPtr;
+    }
+    panic ("Unable to find clone for command to fixup");
+    return NULL;
+}
+
+static Var*
+CloneFixupFindCloneVar (exported, var)
+     IRFixupVarAssoc* exported;
+     Var* var;
+{
+    while (exported) {
+        if (exported->original == var) {
+	    return exported->clone;
+	}
+	exported = exported->nextPtr;
+    }
+    panic ("Unable to find clone for variable to fixup");
+    return NULL;
+}
+
+static void
+CloneFixupImports  (fixup)
+     IRFixup* fixup;
+{
+    IRFixupImported* irfi;
+    IRFixupCmdAssoc* irfa;
+    ImportRef*       newref;
+    Command*         cloneReal;
+
+    /*
+     * Fixup ImportedCmdData structures and generate the associated
+     * ImportRef structures. Free the fixup data.
+     */
+
+    for (irfi = fixup->imported;
+	 irfi;
+	 fixup->imported = irfi->nextPtr,
+	   ckfree ((char*) irfi),
+	   irfi = fixup->imported) {
+
+        cloneReal = CloneFixupFindClone (fixup->exported,
+			 /* cloneOrig */ irfi->icPtr->realCmdPtr);
+
+	irfi->icPtr->realCmdPtr = cloneReal;
+
+	newref = (ImportRef *) ckalloc (sizeof (ImportRef));
+
+	newref->importedCmdPtr = irfi->icPtr->selfPtr;
+	newref->nextPtr        = NULL;
+
+	cloneReal->importRefPtr = newref;
+    }
+
+    /* Free transient data */
+
+    for (irfa = fixup->exported;
+	 irfa;
+	 fixup->exported = irfa->nextPtr,
+	   ckfree ((char*) irfa),
+	   irfa = fixup->exported) {
+    }
+}
+
+static void
+CloneFixupVars  (fixup)
+     IRFixup* fixup;
+{
+    IRFixupVar*      irfi;
+    IRFixupVarAssoc* irfa;
+    Var*            cloneReal;
+
+    /*
+     * Fixup Var structures and increment the
+     * refcount in the exported variables.
+     * Free the fixup data.
+     */
+
+    for (irfi = fixup->varImported;
+	 irfi;
+	 fixup->varImported = irfi->nextPtr,
+	   ckfree ((char*) irfi),
+	   irfi = fixup->varImported) {
+
+        cloneReal = CloneFixupFindCloneVar (fixup->varExported,
+					    /* cloneOrig */ irfi->varPtr->value.linkPtr);
+
+	cloneReal->refCount ++;
+	irfi->varPtr->value.linkPtr = cloneReal;
+    }
+
+    /* Free transient data */
+
+    for (irfa = fixup->varExported;
+	 irfa;
+	 fixup->varExported = irfa->nextPtr,
+	   ckfree ((char*) irfa),
+	   irfa = fixup->varExported) {
+    }
+}
+
+#if 0
+static void
+ListMathFunctions (iPtr,mark)
+     Interp* iPtr;
+     CONST char* mark;
+{
+    Tcl_HashSearch math;
+    Tcl_HashEntry* hPtr;
+    MathFunc *mathFuncPtr;
+    char* funcName;
+
+    printf ("--- %s --------------------\n", mark); fflush (stdout);
+    for (hPtr = Tcl_FirstHashEntry (&iPtr->mathFuncTable, &math);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry (&math)) {
+
+        mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
+	funcName    = GetHashKeyString (hPtr);
+
+	printf("%p list/math %p (%s) @%d, %p\n", iPtr, mathFuncPtr, funcName, mathFuncPtr->builtinFuncIndex, mathFuncPtr->proc);fflush (stdout);
+    }
+}
+#endif

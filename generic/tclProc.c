@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.23.6.2 2001/12/05 18:22:26 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.23.6.3 2002/11/26 19:48:57 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1297,4 +1297,120 @@ ProcBodyUpdateString(objPtr)
     Tcl_Obj *objPtr;		/* the object to update */
 {
     panic("called ProcBodyUpdateString");
+}
+
+
+
+Proc*
+TclCloneProc (interp, nsPtr, procSrcPtr)
+     Interp *interp;
+     Namespace *nsPtr;
+     Proc *procSrcPtr;
+{
+    /* Assume:
+     *
+     * interp = target interp, where to create the proc.
+     * nsPtr  = target namespace.
+     * cmdPtr field in new proc is set by caller.
+     */
+
+    CompiledLocal* src;
+    CompiledLocal* new;
+    CompiledLocal* last;
+
+    Tcl_Obj * newBody;
+    ByteCode* bcPtr;
+    int result;
+
+    Proc * procNew = (Proc *) ckalloc (sizeof (Proc));
+
+    procNew->iPtr = (Interp *) interp;
+    procNew->refCount = 1; /* Present in cmd table, not active */
+    procNew->numArgs = procSrcPtr->numArgs;
+
+    /*
+     * And now the complex operation: Share as much of the bytecode for
+     * the procedure as possible. Compile the procedure if necessary.
+     * Compile environment is the source interp, as this is the only one
+     * where we know that the environment is complete.
+     */
+
+    result = TclProcCompileProc((Tcl_Interp*) procSrcPtr->iPtr, procSrcPtr,
+				procSrcPtr->bodyPtr, procSrcPtr->cmdPtr->nsPtr,
+				"body of proc",
+				Tcl_GetHashKey (procSrcPtr->cmdPtr->hPtr->tablePtr,
+						procSrcPtr->cmdPtr->hPtr));
+    if (result != TCL_OK) {
+      return NULL;
+    }
+
+    procNew->numCompiledLocals = procSrcPtr->numCompiledLocals;
+
+    if (!procSrcPtr->firstLocalPtr) {
+        procNew->firstLocalPtr = NULL;
+        procNew->lastLocalPtr = NULL;
+    } else {
+        for (last = NULL, src = procSrcPtr->firstLocalPtr;
+	     src != NULL;
+	     src = src->nextPtr) {
+
+	    size_t size = sizeof (CompiledLocal) - sizeof(src->name) + src->nameLength+1;
+
+	    new = (CompiledLocal *) ckalloc (size);
+	    memcpy (new, src, size);
+
+	    new->nextPtr = NULL;
+	    if (new->defValuePtr) {
+	        Tcl_IncrRefCount (new->defValuePtr);
+	    }
+	    if (last != NULL) {
+	        last->nextPtr = new;
+	    }
+	    if (src->resolveInfo) {
+	        new->resolveInfo = (Tcl_ResolvedVarInfo *) ckalloc (sizeof (Tcl_ResolvedVarInfo));
+		memcpy (new->resolveInfo, src->resolveInfo, sizeof (Tcl_ResolvedVarInfo));
+	    } else {
+	        new->resolveInfo = src->resolveInfo;
+	    }
+
+	    if (src == procSrcPtr->firstLocalPtr) procNew->firstLocalPtr = new;
+	    if (src == procSrcPtr->lastLocalPtr)  procNew->lastLocalPtr = new;
+	    last = new;
+	}
+    }
+
+    /*
+     * Now that we have the bytecode we can create a Tcl_Obj,
+     * containing a duplicate of the unshareable part and
+     * referencing the shared part. This becomes the body for the
+     * cloned proc.
+     */
+
+    procNew->bodyPtr  = newBody = Tcl_NewObj ();
+
+    newBody->refCount = 1;
+    newBody->typePtr  = procSrcPtr->bodyPtr->typePtr;
+    newBody->length   = procSrcPtr->bodyPtr->length;
+    newBody->bytes    = (char*) ckalloc ((unsigned int) procSrcPtr->bodyPtr->length+1);
+
+    memcpy (newBody->bytes, procSrcPtr->bodyPtr->bytes,
+	    (unsigned int) procSrcPtr->bodyPtr->length+1);
+
+    bcPtr = newBody->internalRep.otherValuePtr = ckalloc (sizeof (ByteCode));
+
+    memcpy (newBody->internalRep.otherValuePtr,
+	    procSrcPtr->bodyPtr->internalRep.otherValuePtr,
+	    sizeof (ByteCode));
+
+    bcPtr->interpHandle = TclHandlePreserve (interp->handle);
+    bcPtr->nsPtr = nsPtr;
+    bcPtr->source = newBody->bytes;
+    bcPtr->procPtr = procNew;
+
+    bcPtr->bcDataPtr->refCount ++;
+    bcPtr->compileEpoch = interp->compileEpoch;
+    bcPtr->nsEpoch = nsPtr->resolverEpoch;
+    bcPtr->refCount = 1;
+
+    return procNew;
 }

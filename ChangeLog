@@ -1,3 +1,41 @@
+2002-11-08  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclProc.c (TclCloneProc): Helper for Tcl_CloneInterp. 
+
+	* generic/tclBasic.c: Line 3843ff: New Tcl_CloneInterp public API.
+
+2002-11-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclProc.c (TclCloneProc): See below. New function.
+
+	* generic/tclBasic.c: Tcl_Clone... functions. New. Tcl_CloneInterp
+	  is main entry into this.
+
+2002-11-07  Andreas Kupries  <andreask@activestate.com>
+
+	* Part of work on more sharing of bytecode information between
+	  structurally equivalent interpreters.
+
+	* generic/tclCompile.c (EncodeCmdLocMap): Operate on ByteCodeData
+	  instead of ByteCode.
+	  (TclCleanupByteCode): Deref to ByteCodeData in numerous places.
+	  (TclInitByteCodeObj): s.a.
+	  (TclPrintByteCodeObj): s.a.
+	  (TclPrintInstruction): s.a.
+	  (RecordByteCodeStats): s.a.
+
+	* generic/tclLiteral.c (TclReleaseLiteral): s.a.
+
+	* generic/tclCompile.h: Split struct ByteCode into two
+	  structures. The new structure carries the shareable bytrecode
+	  information and is named 'ByteCodeData'.
+
+	* generic/tclExecute.c (GetExceptRangeForPc): s.a.
+	  (TclExecuteByteCode): s.a.
+	  (PrintByteCodeInfo): s.a.
+	  (ValidatePcAndStackTop): s.a.
+	  (GetSrcInfoForPc): s.a.
+
 2002-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (EvalStatsCmd): obj-ify evalstats command,

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.5 2002/11/07 19:05:02 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.6 2002/11/26 19:48:56 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1618,6 +1618,8 @@ EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp *interp,
 			    Namespace *nsPtr, char *procName,
 			    Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr,
 			    Proc **procPtrPtr));
+EXTERN Proc*		TclCloneProc _ANSI_ARGS_((Interp *interp,
+			    Namespace *nsPtr, Proc *procSrcPtr));
 EXTERN void		TclDeleteCompiledLocalVars _ANSI_ARGS_((
 			    Interp *iPtr, CallFrame *framePtr));
 EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp *iPtr,
@@ -1855,6 +1857,10 @@ EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace *nsPtr));
 EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 			    int result, Tcl_Interp *targetInterp));
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
+
+EXTERN int		TclInvokeImportedCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 
 /*
  *----------------------------------------------------------------

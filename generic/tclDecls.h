@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.34.2.2 2001/08/28 00:12:43 hobbs Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.34.2.2.2.1 2002/11/26 19:48:52 andreas_kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1281,6 +1281,96 @@ EXTERN Tcl_DriverFlushProc * Tcl_ChannelFlushProc _ANSI_ARGS_((
 /* 411 */
 EXTERN Tcl_DriverHandlerProc * Tcl_ChannelHandlerProc _ANSI_ARGS_((
 				Tcl_ChannelType * chanTypePtr));
+/* Slot 412 is reserved */
+/* Slot 413 is reserved */
+/* Slot 414 is reserved */
+/* Slot 415 is reserved */
+/* Slot 416 is reserved */
+/* Slot 417 is reserved */
+/* Slot 418 is reserved */
+/* Slot 419 is reserved */
+/* Slot 420 is reserved */
+/* Slot 421 is reserved */
+/* Slot 422 is reserved */
+/* Slot 423 is reserved */
+/* Slot 424 is reserved */
+/* Slot 425 is reserved */
+/* Slot 426 is reserved */
+/* Slot 427 is reserved */
+/* Slot 428 is reserved */
+/* Slot 429 is reserved */
+/* Slot 430 is reserved */
+/* Slot 431 is reserved */
+/* Slot 432 is reserved */
+/* Slot 433 is reserved */
+/* Slot 434 is reserved */
+/* Slot 435 is reserved */
+/* Slot 436 is reserved */
+/* Slot 437 is reserved */
+/* Slot 438 is reserved */
+/* Slot 439 is reserved */
+/* Slot 440 is reserved */
+/* Slot 441 is reserved */
+/* Slot 442 is reserved */
+/* Slot 443 is reserved */
+/* Slot 444 is reserved */
+/* Slot 445 is reserved */
+/* Slot 446 is reserved */
+/* Slot 447 is reserved */
+/* Slot 448 is reserved */
+/* Slot 449 is reserved */
+/* Slot 450 is reserved */
+/* Slot 451 is reserved */
+/* Slot 452 is reserved */
+/* Slot 453 is reserved */
+/* Slot 454 is reserved */
+/* Slot 455 is reserved */
+/* Slot 456 is reserved */
+/* Slot 457 is reserved */
+/* Slot 458 is reserved */
+/* Slot 459 is reserved */
+/* Slot 460 is reserved */
+/* Slot 461 is reserved */
+/* Slot 462 is reserved */
+/* Slot 463 is reserved */
+/* Slot 464 is reserved */
+/* Slot 465 is reserved */
+/* Slot 466 is reserved */
+/* Slot 467 is reserved */
+/* Slot 468 is reserved */
+/* Slot 469 is reserved */
+/* Slot 470 is reserved */
+/* Slot 471 is reserved */
+/* Slot 472 is reserved */
+/* Slot 473 is reserved */
+/* Slot 474 is reserved */
+/* Slot 475 is reserved */
+/* Slot 476 is reserved */
+/* Slot 477 is reserved */
+/* Slot 478 is reserved */
+/* Slot 479 is reserved */
+/* Slot 480 is reserved */
+/* Slot 481 is reserved */
+/* Slot 482 is reserved */
+/* Slot 483 is reserved */
+/* Slot 484 is reserved */
+/* Slot 485 is reserved */
+/* Slot 486 is reserved */
+/* Slot 487 is reserved */
+/* Slot 488 is reserved */
+/* Slot 489 is reserved */
+/* Slot 490 is reserved */
+/* Slot 491 is reserved */
+/* Slot 492 is reserved */
+/* Slot 493 is reserved */
+/* Slot 494 is reserved */
+/* Slot 495 is reserved */
+/* Slot 496 is reserved */
+/* Slot 497 is reserved */
+/* Slot 498 is reserved */
+/* Slot 499 is reserved */
+/* 500 */
+EXTERN Tcl_Interp *	Tcl_CloneInterp _ANSI_ARGS_((Tcl_Interp* srcInterp));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1760,6 +1850,95 @@ typedef struct TclStubs {
     Tcl_DriverGetHandleProc * (*tcl_ChannelGetHandleProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 409 */
     Tcl_DriverFlushProc * (*tcl_ChannelFlushProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 410 */
     Tcl_DriverHandlerProc * (*tcl_ChannelHandlerProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 411 */
+    void *reserved412;
+    void *reserved413;
+    void *reserved414;
+    void *reserved415;
+    void *reserved416;
+    void *reserved417;
+    void *reserved418;
+    void *reserved419;
+    void *reserved420;
+    void *reserved421;
+    void *reserved422;
+    void *reserved423;
+    void *reserved424;
+    void *reserved425;
+    void *reserved426;
+    void *reserved427;
+    void *reserved428;
+    void *reserved429;
+    void *reserved430;
+    void *reserved431;
+    void *reserved432;
+    void *reserved433;
+    void *reserved434;
+    void *reserved435;
+    void *reserved436;
+    void *reserved437;
+    void *reserved438;
+    void *reserved439;
+    void *reserved440;
+    void *reserved441;
+    void *reserved442;
+    void *reserved443;
+    void *reserved444;
+    void *reserved445;
+    void *reserved446;
+    void *reserved447;
+    void *reserved448;
+    void *reserved449;
+    void *reserved450;
+    void *reserved451;
+    void *reserved452;
+    void *reserved453;
+    void *reserved454;
+    void *reserved455;
+    void *reserved456;
+    void *reserved457;
+    void *reserved458;
+    void *reserved459;
+    void *reserved460;
+    void *reserved461;
+    void *reserved462;
+    void *reserved463;
+    void *reserved464;
+    void *reserved465;
+    void *reserved466;
+    void *reserved467;
+    void *reserved468;
+    void *reserved469;
+    void *reserved470;
+    void *reserved471;
+    void *reserved472;
+    void *reserved473;
+    void *reserved474;
+    void *reserved475;
+    void *reserved476;
+    void *reserved477;
+    void *reserved478;
+    void *reserved479;
+    void *reserved480;
+    void *reserved481;
+    void *reserved482;
+    void *reserved483;
+    void *reserved484;
+    void *reserved485;
+    void *reserved486;
+    void *reserved487;
+    void *reserved488;
+    void *reserved489;
+    void *reserved490;
+    void *reserved491;
+    void *reserved492;
+    void *reserved493;
+    void *reserved494;
+    void *reserved495;
+    void *reserved496;
+    void *reserved497;
+    void *reserved498;
+    void *reserved499;
+    Tcl_Interp * (*tcl_CloneInterp) _ANSI_ARGS_((Tcl_Interp* srcInterp)); /* 500 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3455,6 +3634,98 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ChannelHandlerProc
 #define Tcl_ChannelHandlerProc \
 	(tclStubsPtr->tcl_ChannelHandlerProc) /* 411 */
+#endif
+/* Slot 412 is reserved */
+/* Slot 413 is reserved */
+/* Slot 414 is reserved */
+/* Slot 415 is reserved */
+/* Slot 416 is reserved */
+/* Slot 417 is reserved */
+/* Slot 418 is reserved */
+/* Slot 419 is reserved */
+/* Slot 420 is reserved */
+/* Slot 421 is reserved */
+/* Slot 422 is reserved */
+/* Slot 423 is reserved */
+/* Slot 424 is reserved */
+/* Slot 425 is reserved */
+/* Slot 426 is reserved */
+/* Slot 427 is reserved */
+/* Slot 428 is reserved */
+/* Slot 429 is reserved */
+/* Slot 430 is reserved */
+/* Slot 431 is reserved */
+/* Slot 432 is reserved */
+/* Slot 433 is reserved */
+/* Slot 434 is reserved */
+/* Slot 435 is reserved */
+/* Slot 436 is reserved */
+/* Slot 437 is reserved */
+/* Slot 438 is reserved */
+/* Slot 439 is reserved */
+/* Slot 440 is reserved */
+/* Slot 441 is reserved */
+/* Slot 442 is reserved */
+/* Slot 443 is reserved */
+/* Slot 444 is reserved */
+/* Slot 445 is reserved */
+/* Slot 446 is reserved */
+/* Slot 447 is reserved */
+/* Slot 448 is reserved */
+/* Slot 449 is reserved */
+/* Slot 450 is reserved */
+/* Slot 451 is reserved */
+/* Slot 452 is reserved */
+/* Slot 453 is reserved */
+/* Slot 454 is reserved */
+/* Slot 455 is reserved */
+/* Slot 456 is reserved */
+/* Slot 457 is reserved */
+/* Slot 458 is reserved */
+/* Slot 459 is reserved */
+/* Slot 460 is reserved */
+/* Slot 461 is reserved */
+/* Slot 462 is reserved */
+/* Slot 463 is reserved */
+/* Slot 464 is reserved */
+/* Slot 465 is reserved */
+/* Slot 466 is reserved */
+/* Slot 467 is reserved */
+/* Slot 468 is reserved */
+/* Slot 469 is reserved */
+/* Slot 470 is reserved */
+/* Slot 471 is reserved */
+/* Slot 472 is reserved */
+/* Slot 473 is reserved */
+/* Slot 474 is reserved */
+/* Slot 475 is reserved */
+/* Slot 476 is reserved */
+/* Slot 477 is reserved */
+/* Slot 478 is reserved */
+/* Slot 479 is reserved */
+/* Slot 480 is reserved */
+/* Slot 481 is reserved */
+/* Slot 482 is reserved */
+/* Slot 483 is reserved */
+/* Slot 484 is reserved */
+/* Slot 485 is reserved */
+/* Slot 486 is reserved */
+/* Slot 487 is reserved */
+/* Slot 488 is reserved */
+/* Slot 489 is reserved */
+/* Slot 490 is reserved */
+/* Slot 491 is reserved */
+/* Slot 492 is reserved */
+/* Slot 493 is reserved */
+/* Slot 494 is reserved */
+/* Slot 495 is reserved */
+/* Slot 496 is reserved */
+/* Slot 497 is reserved */
+/* Slot 498 is reserved */
+/* Slot 499 is reserved */
+#ifndef Tcl_CloneInterp
+#define Tcl_CloneInterp \
+	(tclStubsPtr->tcl_CloneInterp) /* 500 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

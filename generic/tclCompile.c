@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.5 2002/11/07 19:05:00 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.6 2002/11/26 19:48:50 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -220,7 +220,7 @@ InstructionDesc instructionTable[] = {
 static void		DupByteCodeInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr));
 static unsigned char *	EncodeCmdLocMap _ANSI_ARGS_((
-			    CompileEnv *envPtr, ByteCode *codePtr,
+			    CompileEnv *envPtr, ByteCodeData *bcDataPtr,
 			    unsigned char *startPtr));
 static void		EnterCmdExtentData _ANSI_ARGS_((
     			    CompileEnv *envPtr, int cmdNumber,
@@ -507,12 +507,8 @@ void
 TclCleanupByteCode(codePtr)
     register ByteCode *codePtr;	/* Points to the ByteCode to free. */
 {
-    Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
-    int numLitObjects = codePtr->numLitObjects;
-    int numAuxDataItems = codePtr->numAuxDataItems;
-    register Tcl_Obj **objArrayPtr;
-    register AuxData *auxDataPtr;
-    int i;
+    Tcl_Interp *interp               = (Tcl_Interp *) *codePtr->interpHandle;
+    register ByteCodeData *bcDataPtr = codePtr->bcDataPtr;
 
 #ifdef TCL_COMPILE_STATS
     if (interp != NULL) {
@@ -525,25 +521,25 @@ TclCleanupByteCode(codePtr)
 	int lifetimeSec, lifetimeMicroSec, log2;
 
 	statsPtr->numByteCodesFreed++;
-	statsPtr->currentSrcBytes -= (double) codePtr->numSrcBytes;
-	statsPtr->currentByteCodeBytes -= (double) codePtr->structureSize;
+	statsPtr->currentSrcBytes -= (double) bcDataPtr->numSrcBytes;
+	statsPtr->currentByteCodeBytes -= (double) bcDataPtr->structureSize;
 
-	statsPtr->currentInstBytes   -= (double) codePtr->numCodeBytes;
+	statsPtr->currentInstBytes   -= (double) bcDataPtr->numCodeBytes;
 	statsPtr->currentLitBytes    -=
-		(double) (codePtr->numLitObjects * sizeof(Tcl_Obj *)); 
+		(double) (bcDataPtr->numLitObjects * sizeof(Tcl_Obj *)); 
 	statsPtr->currentExceptBytes -=
-		(double) (codePtr->numExceptRanges * sizeof(ExceptionRange));
+		(double) (bcDataPtr->numExceptRanges * sizeof(ExceptionRange));
 	statsPtr->currentAuxBytes    -=
-		(double) (codePtr->numAuxDataItems * sizeof(AuxData));
-	statsPtr->currentCmdMapBytes -= (double) codePtr->numCmdLocBytes;
+		(double) (bcDataPtr->numAuxDataItems * sizeof(AuxData));
+	statsPtr->currentCmdMapBytes -= (double) bcDataPtr->numCmdLocBytes;
 
 	TclpGetTime(&destroyTime);
-	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
+	lifetimeSec = destroyTime.sec - bcDataPtr->createTime.sec;
 	if (lifetimeSec > 2000) {	/* avoid overflow */
 	    lifetimeSec = 2000;
 	}
 	lifetimeMicroSec =
-	    1000000*lifetimeSec + (destroyTime.usec - codePtr->createTime.usec);
+	    1000000*lifetimeSec + (destroyTime.usec - bcDataPtr->createTime.usec);
 	
 	log2 = TclLog2(lifetimeMicroSec);
 	if (log2 > 31) {
@@ -553,63 +549,82 @@ TclCleanupByteCode(codePtr)
     }
 #endif /* TCL_COMPILE_STATS */
 
-    /*
-     * A single heap object holds the ByteCode structure and its code,
-     * object, command location, and auxiliary data arrays. This means we
-     * only need to 1) decrement the ref counts of the LiteralEntry's in
-     * its literal array, 2) call the free procs for the auxiliary data
-     * items, and 3) free the ByteCode structure's heap object.
-     *
-     * The case for TCL_BYTECODE_PRECOMPILED (precompiled ByteCodes,
-     * like those generated from tbcload) is special, as they doesn't
-     * make use of the global literal table.  They instead maintain
-     * private references to their literals which must be decremented.
-     */
+    bcDataPtr->refCount --;
+    if (bcDataPtr->refCount <= 0) {
+        int numLitObjects = bcDataPtr->numLitObjects;
+	int numAuxDataItems = bcDataPtr->numAuxDataItems;
+	register Tcl_Obj **objArrayPtr;
+	register AuxData *auxDataPtr;
+	int i;
 
-    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-	register Tcl_Obj *objPtr;
- 
-	objArrayPtr = codePtr->objArrayPtr;
-	for (i = 0;  i < numLitObjects;  i++) {
-	    objPtr = *objArrayPtr;
-	    if (objPtr) {
-		Tcl_DecrRefCount(objPtr);
-	    }
-	    objArrayPtr++;
-	}
-	codePtr->numLitObjects = 0;
-    } else if (interp != NULL) {
-	/*
-	 * If the interp has already been freed, then Tcl will have already 
-	 * forcefully released all the literals used by ByteCodes compiled
-	 * with respect to that interp.
+        /*
+	 * NEW: The auxiliary data and literal arrays can be shared. We
+	 * decr the refcount of that object, and do the following only if
+	 * that counter reached zero == bytecode data was not shared with
+	 * other interpreters.
 	 */
-	 
-	objArrayPtr = codePtr->objArrayPtr;
-	for (i = 0;  i < numLitObjects;  i++) {
-	    /*
-	     * TclReleaseLiteral sets a ByteCode's object array entry NULL to
-	     * indicate that it has already freed the literal.
-	     */
-	    
-	    if (*objArrayPtr != NULL) {
-		TclReleaseLiteral(interp, *objArrayPtr);
+
+	/*
+	 * A single heap object holds the ByteCode structure and its code,
+	 * object, command location, and auxiliary data arrays. This means we
+	 * only need to 1) decrement the ref counts of the LiteralEntry's in
+	 * its literal array, 2) call the free procs for the auxiliary data
+	 * items, and 3) free the ByteCode structure's heap object.
+	 *
+	 * The case for TCL_BYTECODE_PRECOMPILED (precompiled ByteCodes,
+	 * like those generated from tbcload) is special, as they doesn't
+	 * make use of the global literal table.  They instead maintain
+	 * private references to their literals which must be decremented.
+	 */
+
+	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+	    register Tcl_Obj *objPtr;
+ 
+	    objArrayPtr = bcDataPtr->objArrayPtr;
+	    for (i = 0;  i < numLitObjects;  i++) {
+	        objPtr = *objArrayPtr;
+		if (objPtr) {
+		    Tcl_DecrRefCount(objPtr);
+		}
+		objArrayPtr++;
 	    }
-	    objArrayPtr++;
+	    bcDataPtr->numLitObjects = 0;
+	} else if (interp != NULL) {
+	    /*
+	     * If the interp has already been freed, then Tcl will have already 
+	     * forcefully released all the literals used by ByteCodes compiled
+	     * with respect to that interp.
+	     */
+	 
+	    objArrayPtr = bcDataPtr->objArrayPtr;
+	    for (i = 0;  i < numLitObjects;  i++) {
+	        /*
+		 * TclReleaseLiteral sets a ByteCode's object array entry NULL to
+		 * indicate that it has already freed the literal.
+		 */
+	    
+	        if (*objArrayPtr != NULL) {
+		    TclReleaseLiteral(interp, *objArrayPtr);
+		}
+		objArrayPtr++;
+	    }
 	}
-    }
     
-    auxDataPtr = codePtr->auxDataArrayPtr;
-    for (i = 0;  i < numAuxDataItems;  i++) {
-	if (auxDataPtr->type->freeProc != NULL) {
-	    (*auxDataPtr->type->freeProc)(auxDataPtr->clientData);
+	auxDataPtr = bcDataPtr->auxDataArrayPtr;
+	for (i = 0;  i < numAuxDataItems;  i++) {
+	    if (auxDataPtr->type->freeProc != NULL) {
+	        (*auxDataPtr->type->freeProc)(auxDataPtr->clientData);
+	    }
+	    auxDataPtr++;
 	}
-	auxDataPtr++;
+
+	ckfree ((char*) bcDataPtr);
     }
 
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1483,6 +1498,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 				  * which to create a ByteCode structure. */
 {
     register ByteCode *codePtr;
+    register ByteCodeData *bcDataPtr;
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
     size_t auxDataArrayBytes, structureSize;
     register unsigned char *p;
@@ -1504,7 +1520,7 @@ TclInitByteCodeObj(objPtr, envPtr)
      * Compute the total number of bytes needed for this bytecode.
      */
 
-    structureSize = sizeof(ByteCode);
+    structureSize = sizeof(ByteCodeData);
     structureSize += TCL_ALIGN(codeBytes);        /* align object array */
     structureSize += TCL_ALIGN(objArrayBytes);    /* align exc range arr */
     structureSize += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
@@ -1516,9 +1532,13 @@ TclInitByteCodeObj(objPtr, envPtr)
     } else {
         namespacePtr = envPtr->iPtr->globalNsPtr;
     }
-    
+
+    codePtr = (ByteCode *) ckalloc(sizeof (ByteCode));;
+
     p = (unsigned char *) ckalloc((size_t) structureSize);
-    codePtr = (ByteCode *) p;
+    bcDataPtr = (ByteCodeData *) p;
+
+    codePtr->bcDataPtr = bcDataPtr;
     codePtr->interpHandle = TclHandlePreserve(iPtr->handle);
     codePtr->compileEpoch = iPtr->compileEpoch;
     codePtr->nsPtr = namespacePtr;
@@ -1528,46 +1548,47 @@ TclInitByteCodeObj(objPtr, envPtr)
     codePtr->source = envPtr->source;
     codePtr->procPtr = envPtr->procPtr;
 
-    codePtr->numCommands = envPtr->numCommands;
-    codePtr->numSrcBytes = envPtr->numSrcBytes;
-    codePtr->numCodeBytes = codeBytes;
-    codePtr->numLitObjects = numLitObjects;
-    codePtr->numExceptRanges = envPtr->exceptArrayNext;
-    codePtr->numAuxDataItems = envPtr->auxDataArrayNext;
-    codePtr->numCmdLocBytes = cmdLocBytes;
-    codePtr->maxExceptDepth = envPtr->maxExceptDepth;
-    codePtr->maxStackDepth = envPtr->maxStackDepth;
+    bcDataPtr->refCount = 1;
+    bcDataPtr->numCommands = envPtr->numCommands;
+    bcDataPtr->numSrcBytes = envPtr->numSrcBytes;
+    bcDataPtr->numCodeBytes = codeBytes;
+    bcDataPtr->numLitObjects = numLitObjects;
+    bcDataPtr->numExceptRanges = envPtr->exceptArrayNext;
+    bcDataPtr->numAuxDataItems = envPtr->auxDataArrayNext;
+    bcDataPtr->numCmdLocBytes = cmdLocBytes;
+    bcDataPtr->maxExceptDepth = envPtr->maxExceptDepth;
+    bcDataPtr->maxStackDepth = envPtr->maxStackDepth;
     
-    p += sizeof(ByteCode);
-    codePtr->codeStart = p;
+    p += sizeof(ByteCodeData);
+    bcDataPtr->codeStart = p;
     memcpy((VOID *) p, (VOID *) envPtr->codeStart, (size_t) codeBytes);
     
     p += TCL_ALIGN(codeBytes);	      /* align object array */
-    codePtr->objArrayPtr = (Tcl_Obj **) p;
+    bcDataPtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	bcDataPtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
     }
 
     p += TCL_ALIGN(objArrayBytes);    /* align exception range array */
     if (exceptArrayBytes > 0) {
-	codePtr->exceptArrayPtr = (ExceptionRange *) p;
+	bcDataPtr->exceptArrayPtr = (ExceptionRange *) p;
 	memcpy((VOID *) p, (VOID *) envPtr->exceptArrayPtr,
 	        (size_t) exceptArrayBytes);
     } else {
-	codePtr->exceptArrayPtr = NULL;
+	bcDataPtr->exceptArrayPtr = NULL;
     }
     
     p += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
     if (auxDataArrayBytes > 0) {
-	codePtr->auxDataArrayPtr = (AuxData *) p;
+	bcDataPtr->auxDataArrayPtr = (AuxData *) p;
 	memcpy((VOID *) p, (VOID *) envPtr->auxDataArrayPtr,
 	        (size_t) auxDataArrayBytes);
     } else {
-	codePtr->auxDataArrayPtr = NULL;
+	bcDataPtr->auxDataArrayPtr = NULL;
     }
 
     p += auxDataArrayBytes;
-    nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
+    nextPtr = EncodeCmdLocMap(envPtr, bcDataPtr, (unsigned char *) p);
 #ifdef TCL_COMPILE_DEBUG
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {	
 	panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
@@ -1580,9 +1601,9 @@ TclInitByteCodeObj(objPtr, envPtr)
      */
 
 #ifdef TCL_COMPILE_STATS
-    codePtr->structureSize = structureSize
+    bcDataPtr->structureSize = structureSize
 	    - (sizeof(size_t) + sizeof(Tcl_Time));
-    TclpGetTime(&(codePtr->createTime));
+    TclpGetTime(&(bcDataPtr->createTime));
     
     RecordByteCodeStats(codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -2776,11 +2797,11 @@ GetCmdLocEncodingSize(envPtr)
  */
 
 static unsigned char *
-EncodeCmdLocMap(envPtr, codePtr, startPtr)
+EncodeCmdLocMap(envPtr, bcDataPtr, startPtr)
      CompileEnv *envPtr;	/* Points to compilation environment
 				 * structure containing the CmdLocation
 				 * structure to encode. */
-     ByteCode *codePtr;		/* ByteCode in which to encode envPtr's
+     ByteCodeData *bcDataPtr;		/* ByteCode in which to encode envPtr's
 				 * command location information. */
      unsigned char *startPtr;	/* Points to the first byte in codePtr's
 				 * memory block where the location
@@ -2796,7 +2817,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
      * Encode the code offset for each command as a sequence of deltas.
      */
 
-    codePtr->codeDeltaStart = p;
+    bcDataPtr->codeDeltaStart = p;
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = (mapPtr[i].codeOffset - prevOffset);
@@ -2818,7 +2839,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
      * Encode the code length for each command.
      */
 
-    codePtr->codeLengthStart = p;
+    bcDataPtr->codeLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
 	codeLen = mapPtr[i].numCodeBytes;
 	if (codeLen < 0) {
@@ -2838,7 +2859,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
      * Encode the source offset for each command as a sequence of deltas.
      */
 
-    codePtr->srcDeltaStart = p;
+    bcDataPtr->srcDeltaStart = p;
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	srcDelta = (mapPtr[i].srcOffset - prevOffset);
@@ -2858,7 +2879,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
      * Encode the source length for each command.
      */
 
-    codePtr->srcLengthStart = p;
+    bcDataPtr->srcLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
 	srcLen = mapPtr[i].numSrcBytes;
 	if (srcLen < 0) {
@@ -2901,6 +2922,8 @@ TclPrintByteCodeObj(interp, objPtr)
     Tcl_Obj *objPtr;		/* The bytecode object to disassemble. */
 {
     ByteCode* codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+    ByteCodeData* bcDataPtr = codePtr->bcDataPtr;
+
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -2911,9 +2934,9 @@ TclPrintByteCodeObj(interp, objPtr)
 	return;			/* already freed */
     }
 
-    codeStart = codePtr->codeStart;
-    codeLimit = (codeStart + codePtr->numCodeBytes);
-    numCmds = codePtr->numCommands;
+    codeStart = bcDataPtr->codeStart;
+    codeLimit = (codeStart + bcDataPtr->numCodeBytes);
+    numCmds = bcDataPtr->numCommands;
 
     /*
      * Print header lines describing the ByteCode.
@@ -2925,27 +2948,27 @@ TclPrintByteCodeObj(interp, objPtr)
 	    iPtr->compileEpoch);
     fprintf(stdout, "  Source ");
     TclPrintSource(stdout, codePtr->source,
-	    TclMin(codePtr->numSrcBytes, 55));
+	    TclMin(bcDataPtr->numSrcBytes, 55));
     fprintf(stdout, "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
-	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
-	    codePtr->numLitObjects, codePtr->numAuxDataItems,
-	    codePtr->maxStackDepth,
+	    numCmds, bcDataPtr->numSrcBytes, bcDataPtr->numCodeBytes,
+	    bcDataPtr->numLitObjects, bcDataPtr->numAuxDataItems,
+	    bcDataPtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
-	    (codePtr->numSrcBytes?
-	            ((float)codePtr->structureSize)/((float)codePtr->numSrcBytes) : 0.0));
+	    (bcDataPtr->numSrcBytes?
+	            ((float)bcDataPtr->structureSize)/((float)bcDataPtr->numSrcBytes) : 0.0));
 #else
 	    0.0);
 #endif
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout,
 	    "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
-	    codePtr->structureSize,
+	    bcDataPtr->structureSize,
 	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
-	    codePtr->numCodeBytes,
-	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (codePtr->numExceptRanges * sizeof(ExceptionRange)),
-	    (codePtr->numAuxDataItems * sizeof(AuxData)),
-	    codePtr->numCmdLocBytes);
+	    bcDataPtr->numCodeBytes,
+	    (bcDataPtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (bcDataPtr->numExceptRanges * sizeof(ExceptionRange)),
+	    (bcDataPtr->numAuxDataItems * sizeof(AuxData)),
+	    bcDataPtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
     
     /*
@@ -2985,11 +3008,11 @@ TclPrintByteCodeObj(interp, objPtr)
      * Print the ExceptionRange array.
      */
 
-    if (codePtr->numExceptRanges > 0) {
+    if (bcDataPtr->numExceptRanges > 0) {
 	fprintf(stdout, "  Exception ranges %d, depth %d:\n",
-	        codePtr->numExceptRanges, codePtr->maxExceptDepth);
-	for (i = 0;  i < codePtr->numExceptRanges;  i++) {
-	    ExceptionRange *rangePtr = &(codePtr->exceptArrayPtr[i]);
+	        bcDataPtr->numExceptRanges, bcDataPtr->maxExceptDepth);
+	for (i = 0;  i < bcDataPtr->numExceptRanges;  i++) {
+	    ExceptionRange *rangePtr = &(bcDataPtr->exceptArrayPtr[i]);
 	    fprintf(stdout, "      %d: level %d, %s, pc %d-%d, ",
 		    i, rangePtr->nestingLevel,
 		    ((rangePtr->type == LOOP_EXCEPTION_RANGE)
@@ -3031,10 +3054,10 @@ TclPrintByteCodeObj(interp, objPtr)
      */
 
     fprintf(stdout, "  Commands %d:", numCmds);
-    codeDeltaNext = codePtr->codeDeltaStart;
-    codeLengthNext = codePtr->codeLengthStart;
-    srcDeltaNext  = codePtr->srcDeltaStart;
-    srcLengthNext = codePtr->srcLengthStart;
+    codeDeltaNext = bcDataPtr->codeDeltaStart;
+    codeLengthNext = bcDataPtr->codeLengthStart;
+    srcDeltaNext  = bcDataPtr->srcDeltaStart;
+    srcLengthNext = bcDataPtr->srcLengthStart;
     codeOffset = srcOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	if ((unsigned int) (*codeDeltaNext) == (unsigned int) 0xFF) {
@@ -3090,9 +3113,9 @@ TclPrintByteCodeObj(interp, objPtr)
      * the code length here.
      */
 
-    codeDeltaNext = codePtr->codeDeltaStart;
-    srcDeltaNext  = codePtr->srcDeltaStart;
-    srcLengthNext = codePtr->srcLengthStart;
+    codeDeltaNext = bcDataPtr->codeDeltaStart;
+    srcDeltaNext  = bcDataPtr->srcDeltaStart;
+    srcLengthNext = bcDataPtr->srcLengthStart;
     codeOffset = srcOffset = 0;
     pc = codeStart;
     for (i = 0;  i < numCmds;  i++) {
@@ -3174,10 +3197,11 @@ TclPrintInstruction(codePtr, pc)
     ByteCode* codePtr;		/* Bytecode containing the instruction. */
     unsigned char *pc;		/* Points to first byte of instruction. */
 {
+    ByteCodeData *bcDataPtr = codePtr->bcDataPtr;
     Proc *procPtr = codePtr->procPtr;
     unsigned char opCode = *pc;
     register InstructionDesc *instDesc = &instructionTable[opCode];
-    unsigned char *codeStart = codePtr->codeStart;
+    unsigned char *codeStart = bcDataPtr->codeStart;
     unsigned int pcOffset = (pc - codeStart);
     int opnd, i, j;
     
@@ -3208,7 +3232,7 @@ TclPrintInstruction(codePtr, pc)
 	    opnd = TclGetUInt1AtPtr(pc+1+i);
 	    if ((i == 0) && (opCode == INST_PUSH1)) {
 		fprintf(stdout, "%u  	# ", (unsigned int) opnd);
-		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
+		TclPrintObject(stdout, bcDataPtr->objArrayPtr[opnd], 40);
 	    } else if ((i == 0) && ((opCode == INST_LOAD_SCALAR1)
 				    || (opCode == INST_LOAD_ARRAY1)
 				    || (opCode == INST_STORE_SCALAR1)
@@ -3238,7 +3262,7 @@ TclPrintInstruction(codePtr, pc)
 	    opnd = TclGetUInt4AtPtr(pc+1+i);
 	    if (opCode == INST_PUSH4) {
 		fprintf(stdout, "%u  	# ", opnd);
-		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
+		TclPrintObject(stdout, bcDataPtr->objArrayPtr[opnd], 40);
 	    } else if ((i == 0) && ((opCode == INST_LOAD_SCALAR4)
 				    || (opCode == INST_LOAD_ARRAY4)
 				    || (opCode == INST_STORE_SCALAR4)
@@ -3398,6 +3422,7 @@ RecordByteCodeStats(codePtr)
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
     register ByteCodeStats *statsPtr = &(iPtr->stats);
 #endif
+    register ByteCodeData  *bcDataPtr = codePtr->bcDataPtr;
 
 #ifdef TCL_COMPILE_DEBUG_VERBOSE
     char *ell = "";
@@ -3411,21 +3436,21 @@ RecordByteCodeStats(codePtr)
 #endif
 
     statsPtr->numCompilations++;
-    statsPtr->totalSrcBytes        += (double) codePtr->numSrcBytes;
-    statsPtr->totalByteCodeBytes   += (double) codePtr->structureSize;
-    statsPtr->currentSrcBytes      += (double) codePtr->numSrcBytes;
-    statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
+    statsPtr->totalSrcBytes        += (double) bcDataPtr->numSrcBytes;
+    statsPtr->totalByteCodeBytes   += (double) bcDataPtr->structureSize;
+    statsPtr->currentSrcBytes      += (double) bcDataPtr->numSrcBytes;
+    statsPtr->currentByteCodeBytes += (double) bcDataPtr->structureSize;
     
-    statsPtr->srcCount[TclLog2((int)codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2((int)codePtr->structureSize)]++;
+    statsPtr->srcCount[TclLog2((int)bcDataPtr->numSrcBytes)]++;
+    statsPtr->byteCodeCount[TclLog2((int)bcDataPtr->structureSize)]++;
 
-    statsPtr->currentInstBytes   += (double) codePtr->numCodeBytes;
+    statsPtr->currentInstBytes   += (double) bcDataPtr->numCodeBytes;
     statsPtr->currentLitBytes    +=
-	    (double) (codePtr->numLitObjects * sizeof(Tcl_Obj *)); 
+	    (double) (bcDataPtr->numLitObjects * sizeof(Tcl_Obj *)); 
     statsPtr->currentExceptBytes +=
-	    (double) (codePtr->numExceptRanges * sizeof(ExceptionRange));
+	    (double) (bcDataPtr->numExceptRanges * sizeof(ExceptionRange));
     statsPtr->currentAuxBytes    +=
-            (double) (codePtr->numAuxDataItems * sizeof(AuxData));
-    statsPtr->currentCmdMapBytes += (double) codePtr->numCmdLocBytes;
+            (double) (bcDataPtr->numAuxDataItems * sizeof(AuxData));
+    statsPtr->currentCmdMapBytes += (double) bcDataPtr->numCmdLocBytes;
 }
 #endif /* TCL_COMPILE_STATS */

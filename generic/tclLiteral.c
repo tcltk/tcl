@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.2 2002/11/07 19:05:04 hobbs Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.2.3.2.3 2002/11/26 19:48:57 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -92,12 +92,14 @@ TclGlobalLiteralTable()
     return &(tsdPtr->literalTable);
 }
 
+#ifdef TCL_COMPILE_STATS
 ByteCodeStats *
 TclGlobalByteCodeStats()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     return &(tsdPtr->stats);
 }
+#endif
 #endif
 
 /*
@@ -239,13 +241,13 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 				 * bytes and ownership is passed to this
 				 * procedure. */
 {
-    Interp *iPtr = envPtr->iPtr;
 #ifdef TCL_THREAD_LITERALS
     LiteralTable *globalTablePtr = TclGlobalLiteralTable();
 #ifdef TCL_COMPILE_STATS
     ByteCodeStats *statsPtr = TclGlobalByteCodeStats();
 #endif
 #else
+    Interp *iPtr = envPtr->iPtr;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
 #ifdef TCL_COMPILE_STATS
     ByteCodeStats *statsPtr = &(iPtr->stats);
@@ -761,7 +763,7 @@ TclReleaseLiteral(interp, objPtr)
 #endif
 #endif
     register LiteralEntry *entryPtr, *prevPtr;
-    ByteCode* codePtr;
+    ByteCodeData* codePtr;
     char *bytes;
     int length, index;
 
@@ -807,7 +809,7 @@ TclReleaseLiteral(interp, objPtr)
 		 */
 	    
 		if (objPtr->typePtr == &tclByteCodeType) {
-		    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+		    codePtr = ((ByteCode *) objPtr->internalRep.otherValuePtr)->bcDataPtr;
 		    if ((codePtr->numLitObjects == 1)
 		            && (codePtr->objArrayPtr[0] == objPtr)) {			
 			codePtr->objArrayPtr[0] = NULL;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.6 2002/11/07 19:03:41 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.7 2002/11/26 19:48:53 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -193,14 +193,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #define TRACE(a) \
     if (traceInstructions) { \
         fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, stackTop, \
-	       (unsigned int)(pc - codePtr->codeStart), \
+	       (unsigned int)(pc - bcDataPtr->codeStart), \
 	       GetOpcodeName(pc)); \
 	printf a; \
     }
 #define TRACE_WITH_OBJ(a, objPtr) \
     if (traceInstructions) { \
         fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, stackTop, \
-	       (unsigned int)(pc - codePtr->codeStart), \
+	       (unsigned int)(pc - bcDataPtr->codeStart), \
 	       GetOpcodeName(pc)); \
 	printf a; \
         TclPrintObject(stdout, (objPtr), 30); \
@@ -253,7 +253,7 @@ static void		FreeCmdNameInternalRep _ANSI_ARGS_((
 static char *		GetOpcodeName _ANSI_ARGS_((unsigned char *pc));
 #endif
 static ExceptionRange *	GetExceptRangeForPc _ANSI_ARGS_((unsigned char *pc,
-			    int catchOnly, ByteCode* codePtr));
+			    int catchOnly, ByteCodeData* bcDataPtr));
 static char *		GetSrcInfoForPc _ANSI_ARGS_((unsigned char *pc,
         		    ByteCode* codePtr, int *lengthPtr));
 static void		GrowEvaluationStack _ANSI_ARGS_((ExecEnv *eePtr));
@@ -577,11 +577,12 @@ typedef struct rsData {
         rsData *rsPtr = (rsData *) &stackPtr[stackTop + 1];\
         \
         codePtr = rsPtr->codePtr;\
+        bcDataPtr = codePtr->bcDataPtr;\
         objPtr = rsPtr->objPtr;\
         pc = rsPtr->pc;\
         initStackTop = rsPtr->initStackTop;\
         catchTop = rsPtr->catchTop;\
-        catchStackPtr = (int *) &stackPtr[initStackTop - (codePtr->maxExceptDepth) + 1];\
+        catchStackPtr = (int *) &stackPtr[initStackTop - (bcDataPtr->maxExceptDepth) + 1];\
     }
 #endif /* TCL_NO_RECURSE */
 
@@ -617,7 +618,8 @@ TclExecuteByteCode(interp, codePtr)
     				/* Cached evaluation stack base pointer. */
     register int stackTop = eePtr->stackTop;
     				/* Cached top index of evaluation stack. */
-    register unsigned char *pc = codePtr->codeStart;
+    register ByteCodeData *bcDataPtr = codePtr->bcDataPtr;
+    register unsigned char *pc = bcDataPtr->codeStart;
 				/* The current program counter. */
     int opnd;			/* Current instruction's operand byte. */
     int pcAdjustment;		/* Hold pc adjustment after instruction. */
@@ -664,12 +666,12 @@ TclExecuteByteCode(interp, codePtr)
      */
 
  startInternalRecursionHere: 
-    pc = codePtr->codeStart;
+    pc = bcDataPtr->codeStart;
     result = TCL_OK;
     length = stackTop + sizeof(rsData) 
-	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth + 3)*sizeof(Tcl_Obj *);
+	    + (bcDataPtr->maxStackDepth + bcDataPtr->maxExceptDepth + 3)*sizeof(Tcl_Obj *);
 #else
-    length = stackTop + (codePtr->maxStackDepth + codePtr->maxExceptDepth)*sizeof(Tcl_Obj *);
+    length = stackTop + (bcDataPtr->maxStackDepth + bcDataPtr->maxExceptDepth)*sizeof(Tcl_Obj *);
 #endif
 
     while (length > eePtr->stackEnd) {
@@ -678,7 +680,7 @@ TclExecuteByteCode(interp, codePtr)
     }
     catchStackPtr = (int *) &stackPtr[stackTop + 1];
     catchTop = -1;
-    stackTop += (codePtr->maxExceptDepth);
+    stackTop += (bcDataPtr->maxExceptDepth);
     initStackTop = stackTop;
 
 
@@ -730,7 +732,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		if (stackTop > initStackTop) goto abnormalReturn;
 		fprintf(stderr, "\nTclExecuteByteCode: done instruction at pc %u: stack top %d < entry stack top %d\n",
-			(unsigned int)(pc - codePtr->codeStart),
+			(unsigned int)(pc - bcDataPtr->codeStart),
 			(unsigned int) stackTop,
 			(unsigned int) initStackTop);
 		panic("TclExecuteByteCode execution failure: end stack top < start stack top");
@@ -746,16 +748,16 @@ TclExecuteByteCode(interp, codePtr)
 	    
 	case INST_PUSH1:
 #ifdef TCL_COMPILE_DEBUG
-	    valuePtr = codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)];
+	    valuePtr = bcDataPtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)];
 	    PUSH_OBJECT(valuePtr);
 	    TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), valuePtr);
 #else
-	    PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
+	    PUSH_OBJECT(bcDataPtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
 #endif /* TCL_COMPILE_DEBUG */
 	    ADJUST_PC(2);
 	    
 	case INST_PUSH4:
-	    valuePtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
+	    valuePtr = bcDataPtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
 	    PUSH_OBJECT(valuePtr);
 	    TRACE_WITH_OBJ(("%u => ", TclGetUInt4AtPtr(pc+1)), valuePtr);
 	    ADJUST_PC(5);
@@ -935,7 +937,7 @@ TclExecuteByteCode(interp, codePtr)
 		    } else {
 			fprintf(stdout, "%d: (%u) invoking ",
 			        iPtr->numLevels,
-				(unsigned int)(pc - codePtr->codeStart));
+				(unsigned int)(pc - bcDataPtr->codeStart));
 		    }
 		    for (i = 0;  i < objc;  i++) {
 			TclPrintObject(stdout, objv[i], 15);
@@ -946,7 +948,7 @@ TclExecuteByteCode(interp, codePtr)
 #else /* TCL_COMPILE_DEBUG */
 		    fprintf(stdout, "%d: (%u) invoking %s\n",
 			    iPtr->numLevels,
-		            (unsigned int)(pc - codePtr->codeStart),
+		            (unsigned int)(pc - bcDataPtr->codeStart),
 			    Tcl_GetString(objv[0]));
 #endif /*TCL_COMPILE_DEBUG*/
 		}
@@ -1023,10 +1025,11 @@ TclExecuteByteCode(interp, codePtr)
 
 		    oldCodePtr = codePtr;
 		    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+		    bcDataPtr = codePtr->bcDataPtr;
 		    
 		    stackPtr[++stackTop] = (Tcl_Obj *) preservedStack;
 		    stackPtr[++stackTop] = (Tcl_Obj *) pcAdjustment;
-		    stackPtr[++stackTop] = (Tcl_Obj *) codePtr->numSrcBytes;
+		    stackPtr[++stackTop] = (Tcl_Obj *) bcDataPtr->numSrcBytes;
 		    stackPtr[++stackTop] = (Tcl_Obj *) iPtr->evalFlags;
 		    iPtr->evalFlags = 0;
 		    codePtr->refCount++;
@@ -1199,7 +1202,7 @@ TclExecuteByteCode(interp, codePtr)
 		     * execution and return the TCL_BREAK or TCL_CONTINUE.
 		     */
 		    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0,
-			    codePtr);
+			    bcDataPtr);
 		    if (rangePtr == NULL) {
 		        TRACE(("%u => ... after \"%.20s\", no encl. loop or catch, returning %s\n",
 		                objc, cmdNameBuf,
@@ -1233,7 +1236,7 @@ TclExecuteByteCode(interp, codePtr)
 			panic("TclExecuteByteCode: bad ExceptionRange type\n");
 		    }
 		    result = TCL_OK;
-		    pc = (codePtr->codeStart + newPcOffset);
+		    pc = (bcDataPtr->codeStart + newPcOffset);
 		    continue;	/* restart outer instruction loop at pc */
 		    
 		case TCL_ERROR:
@@ -1276,8 +1279,9 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    oldCodePtr = codePtr;
 	    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	    bcDataPtr = codePtr->bcDataPtr;
 
-	    stackPtr[++stackTop] = (Tcl_Obj *) codePtr->numSrcBytes;
+	    stackPtr[++stackTop] = (Tcl_Obj *) bcDataPtr->numSrcBytes;
 	    stackPtr[++stackTop] = (Tcl_Obj *) iPtr->evalFlags;
 	    iPtr->evalFlags = 0;
 	    stackPtr[++stackTop] = (Tcl_Obj *) iPtr->cmdCount;
@@ -1332,7 +1336,7 @@ TclExecuteByteCode(interp, codePtr)
 				      * to avoid compiler warning. */
 
 		rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0,
-			codePtr);
+			bcDataPtr);
 		if (rangePtr == NULL) {
 		    TRACE(("\"%.30s\" => no encl. loop or catch, returning %s\n",
 			    O2S(objPtr), StringForResultCode(result)));
@@ -1366,7 +1370,7 @@ TclExecuteByteCode(interp, codePtr)
 		    panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
 		}
 		Tcl_DecrRefCount(objPtr);
-		pc = (codePtr->codeStart + newPcOffset);
+		pc = (bcDataPtr->codeStart + newPcOffset);
 		continue;	/* restart outer instruction loop at pc */
 	    } else { /* eval returned TCL_ERROR, TCL_RETURN, unknown code */
 		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
@@ -1393,6 +1397,7 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_ResetResult(interp);
 		oldCodePtr = codePtr;
 		codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+		bcDataPtr = codePtr->bcDataPtr;
 		codePtr->refCount++;
 		RS_PUSH(2);
 		goto startInternalRecursionHere;
@@ -1948,7 +1953,7 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_DEBUG
 	    opnd = TclGetInt1AtPtr(pc+1);
 	    TRACE(("%d => new pc %u\n", opnd,
-		   (unsigned int)(pc + opnd - codePtr->codeStart)));
+		   (unsigned int)(pc + opnd - bcDataPtr->codeStart)));
 	    pc += opnd;
 #else
 	    pc += TclGetInt1AtPtr(pc+1);
@@ -1958,7 +1963,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_JUMP4:
 	    opnd = TclGetInt4AtPtr(pc+1);
 	    TRACE(("%d => new pc %u\n", opnd,
-		   (unsigned int)(pc + opnd - codePtr->codeStart)));
+		   (unsigned int)(pc + opnd - bcDataPtr->codeStart)));
 	    ADJUST_PC(opnd);
 
 	case INST_JUMP_TRUE4:
@@ -1991,7 +1996,7 @@ TclExecuteByteCode(interp, codePtr)
 		if (b) {
 		    TRACE(("%d => %.20s true, new pc %u\n",
 			    opnd, O2S(valuePtr),
-		            (unsigned int)(pc+opnd - codePtr->codeStart)));
+		            (unsigned int)(pc+opnd - bcDataPtr->codeStart)));
 		    TclDecrRefCount(valuePtr);
 		    ADJUST_PC(opnd);
 		} else {
@@ -2035,7 +2040,7 @@ TclExecuteByteCode(interp, codePtr)
 		} else {
 		    TRACE(("%d => %.20s false, new pc %u\n",
 			   opnd, O2S(valuePtr),
-			   (unsigned int)(pc + opnd - codePtr->codeStart)));
+			   (unsigned int)(pc + opnd - bcDataPtr->codeStart)));
 		    TclDecrRefCount(valuePtr);
 		    ADJUST_PC(opnd);
 		}
@@ -2985,7 +2990,7 @@ TclExecuteByteCode(interp, codePtr)
 	     */
 
 	    Tcl_ResetResult(interp);
-	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
+	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, bcDataPtr);
 	    if (rangePtr == NULL) {
 		TRACE(("=> no encl. loop or catch, returning TCL_BREAK\n"));
 		result = TCL_BREAK;
@@ -3004,7 +3009,7 @@ TclExecuteByteCode(interp, codePtr)
 	    default:
 		panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
 	    }
-	    pc = (codePtr->codeStart + rangePtr->breakOffset);
+	    pc = (bcDataPtr->codeStart + rangePtr->breakOffset);
 	    continue;	/* restart outer instruction loop at pc */
 
 	case INST_CONTINUE:
@@ -3017,7 +3022,7 @@ TclExecuteByteCode(interp, codePtr)
 	     */
 
 	    Tcl_ResetResult(interp);
-	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
+	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, bcDataPtr);
 	    if (rangePtr == NULL) {
 		TRACE(("=> no encl. loop or catch, returning TCL_CONTINUE\n"));
 		result = TCL_CONTINUE;
@@ -3041,7 +3046,7 @@ TclExecuteByteCode(interp, codePtr)
 	    default:
 		panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
 	    }
-	    pc = (codePtr->codeStart + rangePtr->continueOffset);
+	    pc = (bcDataPtr->codeStart + rangePtr->continueOffset);
 	    continue;	/* restart outer instruction loop at pc */
 
 	case INST_FOREACH_START4:
@@ -3053,7 +3058,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		ForeachInfo *infoPtr = (ForeachInfo *)
-		    codePtr->auxDataArrayPtr[opnd].clientData;
+		    bcDataPtr->auxDataArrayPtr[opnd].clientData;
 		int iterTmpIndex = infoPtr->loopCtTemp;
 		Var *compiledLocals = iPtr->varFramePtr->compiledLocals;
 		Var *iterVarPtr = &(compiledLocals[iterTmpIndex]);
@@ -3081,7 +3086,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		ForeachInfo *infoPtr = (ForeachInfo *)
-		        codePtr->auxDataArrayPtr[opnd].clientData;
+		        bcDataPtr->auxDataArrayPtr[opnd].clientData;
 		ForeachVarList *varListPtr;
 		int numLists = infoPtr->numLists;
 		Var *compiledLocals = iPtr->varFramePtr->compiledLocals;
@@ -3246,7 +3251,7 @@ TclExecuteByteCode(interp, codePtr)
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
         }
-	rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 1, codePtr);
+	rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 1, bcDataPtr);
 	if (rangePtr == NULL) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
@@ -3278,7 +3283,7 @@ TclExecuteByteCode(interp, codePtr)
 	        (unsigned int)(rangePtr->catchOffset));
 	}
 #endif	
-	pc = (codePtr->codeStart + rangePtr->catchOffset);
+	pc = (bcDataPtr->codeStart + rangePtr->catchOffset);
 	continue;		/* restart the execution loop at pc */
     } /* end of infinite loop dispatching on instructions */
 
@@ -3298,7 +3303,7 @@ TclExecuteByteCode(interp, codePtr)
      */
 
     done:
-    stackTop -= codePtr->maxExceptDepth;
+    stackTop -= bcDataPtr->maxExceptDepth;
 #if TCL_NO_RECURSE
     if (currentDepth--) {
 	/* 
@@ -3324,6 +3329,7 @@ TclExecuteByteCode(interp, codePtr)
     return result;
 }
 
+
 #ifdef TCL_COMPILE_DEBUG
 /*
  *----------------------------------------------------------------------
@@ -3348,6 +3354,7 @@ PrintByteCodeInfo(codePtr)
     register ByteCode *codePtr;	/* The bytecode whose summary is printed
 				 * to stdout. */
 {
+    register ByteCodeData *bcDataPtr = codePtr->bcDataPtr;
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
@@ -3360,24 +3367,24 @@ PrintByteCodeInfo(codePtr)
     TclPrintSource(stdout, codePtr->source, 60);
 
     fprintf(stdout, "\n  Cmds %d, src %d, inst %u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
-            codePtr->numCommands, codePtr->numSrcBytes,
-	    codePtr->numCodeBytes, codePtr->numLitObjects,
-	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
+            bcDataPtr->numCommands, bcDataPtr->numSrcBytes,
+	    bcDataPtr->numCodeBytes, bcDataPtr->numLitObjects,
+	    bcDataPtr->numAuxDataItems, bcDataPtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
-	    (codePtr->numSrcBytes?
-	            ((float)codePtr->structureSize)/((float)codePtr->numSrcBytes) : 0.0));
+	    (bcDataPtr->numSrcBytes?
+	            ((float)bcDataPtr->structureSize)/((float)bcDataPtr->numSrcBytes) : 0.0));
 #else
 	    0.0);
 #endif
 #ifdef TCL_COMPILE_STATS
     fprintf(stdout, "  Code %d = header %d+inst %d+litObj %d+exc %d+aux %d+cmdMap %d\n",
-	    codePtr->structureSize,
+	    bcDataPtr->structureSize,
 	    (sizeof(ByteCode) - (sizeof(size_t) + sizeof(Tcl_Time))),
-	    codePtr->numCodeBytes,
-	    (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
-	    (codePtr->numExceptRanges * sizeof(ExceptionRange)),
-	    (codePtr->numAuxDataItems * sizeof(AuxData)),
-	    codePtr->numCmdLocBytes);
+	    bcDataPtr->numCodeBytes,
+	    (bcDataPtr->numLitObjects * sizeof(Tcl_Obj *)),
+	    (bcDataPtr->numExceptRanges * sizeof(ExceptionRange)),
+	    (bcDataPtr->numAuxDataItems * sizeof(AuxData)),
+	    bcDataPtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
 	fprintf(stdout,
@@ -3421,10 +3428,11 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound,
     int stackLowerBound;	/* Smallest legal value for stackTop. */
     int stackUpperBound;	/* Greatest legal value for stackTop. */
 {
-    unsigned int relativePc = (unsigned int) (pc - codePtr->codeStart);
-    unsigned int codeStart = (unsigned int) codePtr->codeStart;
+    register ByteCodeData *bcDataPtr = codePtr->bcDataPtr;
+    unsigned int relativePc = (unsigned int) (pc - bcDataPtr->codeStart);
+    unsigned int codeStart = (unsigned int) bcDataPtr->codeStart;
     unsigned int codeEnd = (unsigned int)
-	    (codePtr->codeStart + codePtr->numCodeBytes);
+	    (bcDataPtr->codeStart + bcDataPtr->numCodeBytes);
     unsigned char opCode = *pc;
 
     if (((unsigned int) pc < codeStart) || ((unsigned int) pc > codeEnd)) {
@@ -3626,8 +3634,9 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
 				 * length of the command's source should be
 				 * stored. If NULL, no length is stored. */
 {
-    register int pcOffset = (pc - codePtr->codeStart);
-    int numCmds = codePtr->numCommands;
+    register ByteCodeData *bcDataPtr = codePtr->bcDataPtr;
+    register int pcOffset = (pc - bcDataPtr->codeStart);
+    int numCmds = bcDataPtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
     int codeOffset, codeLen, codeEnd, srcOffset, srcLen, delta, i;
@@ -3635,7 +3644,7 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
     int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
 
-    if ((pcOffset < 0) || (pcOffset >= codePtr->numCodeBytes)) {
+    if ((pcOffset < 0) || (pcOffset >= bcDataPtr->numCodeBytes)) {
 	return NULL;
     }
 
@@ -3645,10 +3654,10 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
      * pcOffset.
      */
 
-    codeDeltaNext = codePtr->codeDeltaStart;
-    codeLengthNext = codePtr->codeLengthStart;
-    srcDeltaNext  = codePtr->srcDeltaStart;
-    srcLengthNext = codePtr->srcLengthStart;
+    codeDeltaNext = bcDataPtr->codeDeltaStart;
+    codeLengthNext = bcDataPtr->codeLengthStart;
+    srcDeltaNext  = bcDataPtr->srcDeltaStart;
+    srcLengthNext = bcDataPtr->srcLengthStart;
     codeOffset = srcOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	if ((unsigned int) (*codeDeltaNext) == (unsigned int) 0xFF) {
@@ -3738,7 +3747,7 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
  */
 
 static ExceptionRange *
-GetExceptRangeForPc(pc, catchOnly, codePtr)
+GetExceptRangeForPc(pc, catchOnly, bcDataPtr)
     unsigned char *pc;		/* The program counter value for which to
 				 * search for a closest enclosing exception
 				 * range. This points to a bytecode
@@ -3747,21 +3756,21 @@ GetExceptRangeForPc(pc, catchOnly, codePtr)
 				 * ExceptionRanges in search. If nonzero
 				 * consider only catch ranges (and ignore
 				 * any closer loop ranges). */
-    ByteCode* codePtr;		/* Points to the ByteCode in which to search
+    ByteCodeData* bcDataPtr;		/* Points to the ByteCode in which to search
 				 * for the enclosing ExceptionRange. */
 {
     ExceptionRange *rangeArrayPtr;
-    int numRanges = codePtr->numExceptRanges;
+    int numRanges = bcDataPtr->numExceptRanges;
     register ExceptionRange *rangePtr;
-    int pcOffset = (pc - codePtr->codeStart);
+    int pcOffset = (pc - bcDataPtr->codeStart);
     register int i, level;
 
     if (numRanges == 0) {
 	return NULL;
     }
-    rangeArrayPtr = codePtr->exceptArrayPtr;
+    rangeArrayPtr = bcDataPtr->exceptArrayPtr;
 
-    for (level = codePtr->maxExceptDepth;  level >= 0;  level--) {
+    for (level = bcDataPtr->maxExceptDepth;  level >= 0;  level--) {
 	for (i = 0;  i < numRanges;  i++) {
 	    rangePtr = &(rangeArrayPtr[i]);
 	    if (rangePtr->nestingLevel == level) {
@@ -5998,7 +6007,7 @@ TclEvalByteCodeFromObj(interp, objPtr, flags)
      */
 
     iPtr->numLevels++;
-    numSrcBytes = codePtr->numSrcBytes;
+    numSrcBytes = codePtr->bcDataPtr->numSrcBytes;
 
     if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	/*

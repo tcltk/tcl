@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33.2.2.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.33.2.2.2.2 2002/11/26 19:48:48 andreas_kupries Exp $
 
 library tcl
 
@@ -1651,6 +1651,11 @@ declare 411 generic {
 #declare 476 generic {
 #    char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
 #}
+
+declare 500 generic {
+    Tcl_Interp * Tcl_CloneInterp (Tcl_Interp* srcInterp)
+}
+
 
 ##############################################################################
 

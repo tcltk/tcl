@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.11.10.1.2.2 2002/11/07 19:05:02 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.11.10.1.2.3 2002/11/26 19:48:52 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -286,6 +286,14 @@ typedef struct CompileEnv {
  * object is allocated to hold the ByteCode structure immediately followed
  * by the code bytes, the literal object array, the ExceptionRange array,
  * the CmdLocation map, and the compilation AuxData array.
+ *
+ * This has changed here. ByteCode is now fixed-length, and all
+ * variable-length data now resides in the structure
+ * ByteCodeData. This new structure can be shared between
+ * interpreters, if the namespace context of the code is structurally
+ * equivalent. Current only the Tcl_InterpClone () API knows that
+ * context are equivalent. IOW, only this function will currently
+ * actually create shared structures.
  */
 
 /*
@@ -294,25 +302,9 @@ typedef struct CompileEnv {
  */
 #define TCL_BYTECODE_PRECOMPILED		0x0001
 
-typedef struct ByteCode {
-    TclHandle interpHandle;	/* Handle for interpreter containing the
-				 * compiled code.  Commands and their compile
-				 * procs are specific to an interpreter so the
-				 * code emitted will depend on the
-				 * interpreter. */
-    Namespace *nsPtr;		/* Namespace context in which this code
-				 * was compiled. If the code is executed
-				 * if a different namespace, it must be
-				 * recompiled. */
-    char *source;		/* The source string from which this
-				 * ByteCode was compiled. Note that this
-				 * pointer is not owned by the ByteCode and
-				 * must not be freed or modified by it. */
-    Proc *procPtr;		/* If the ByteCode was compiled from a
-				 * procedure body, this is a pointer to its
-				 * Proc structure; otherwise NULL. This
-				 * pointer is also not owned by the ByteCode
-				 * and must not be freed by it. */
+typedef struct ByteCodeData {
+    int refCount;               /* Number of ByteCode structures sharing
+				 * this information. */
     unsigned char *codeStart;	/* Points to the first byte of the code.
 				 * This is just after the final ByteCode
 				 * member cmdMapPtr. */
@@ -360,25 +352,10 @@ typedef struct ByteCode {
 				 * are always positive. This sequence is
 				 * just after the last byte in the source
 				 * delta sequence. */
-    size_t structureSize;	/* Number of bytes in the ByteCode structure
+    size_t structureSize;	/* Number of bytes in the ByteCodeData structure
 				 * itself. Does not include heap space for
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
-    int compileEpoch;		/* Value of iPtr->compileEpoch when this
-				 * ByteCode was compiled. Used to invalidate
-				 * code when, e.g., commands with compile
-				 * procs are redefined. */
-    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
-				 * ByteCode was compiled. Used to invalidate
-				 * code when new namespace resolution rules
-				 * are put into effect. */
-    int refCount;		/* Reference count: set 1 when created
-				 * plus 1 for each execution of the code
-				 * currently active. This structure can be
-				 * freed when refCount becomes zero. */
-    unsigned int flags;		/* flags describing state for the codebyte.
-                                 * this variable holds ORed values from the
-                                 * TCL_BYTECODE_ masks defined above */
     int numCommands;		/* Number of commands compiled. */
     int numSrcBytes;		/* Number of source bytes compiled. */
     int numCodeBytes;		/* Number of code bytes. */
@@ -395,6 +372,51 @@ typedef struct ByteCode {
     Tcl_Time createTime;	/* Absolute time when the ByteCode was
 				 * created. */
 #endif /* TCL_COMPILE_STATS */
+
+    /* Behind the last field we will find the actual bytecode, table of
+     * literals, etc. See the pointers above for a complete enumeration
+     * of the data, and how to reach it. */
+} ByteCodeData;
+
+
+typedef struct ByteCode {
+    TclHandle interpHandle;	/* Handle for interpreter containing the
+				 * compiled code.  Commands and their compile
+				 * procs are specific to an interpreter so the
+				 * code emitted will depend on the
+				 * interpreter. */
+    Namespace *nsPtr;		/* Namespace context in which this code
+				 * was compiled. If the code is executed
+				 * if a different namespace, it must be
+				 * recompiled. */
+    char *source;		/* The source string from which this
+				 * ByteCode was compiled. Note that this
+				 * pointer is not owned by the ByteCode and
+				 * must not be freed or modified by it. */
+    Proc *procPtr;		/* If the ByteCode was compiled from a
+				 * procedure body, this is a pointer to its
+				 * Proc structure; otherwise NULL. This
+				 * pointer is also not owned by the ByteCode
+				 * and must not be freed by it. */
+    ByteCodeData *bcDataPtr;    /* The actual bytecode and meta-information
+				 * about it is reachable through this pointer.
+				 * This allows sharing of the structure in
+				 * cloned interpreters. */
+    int compileEpoch;		/* Value of iPtr->compileEpoch when this
+				 * ByteCode was compiled. Used to invalidate
+				 * code when, e.g., commands with compile
+				 * procs are redefined. */
+    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+				 * ByteCode was compiled. Used to invalidate
+				 * code when new namespace resolution rules
+				 * are put into effect. */
+    int refCount;		/* Reference count: set 1 when created
+				 * plus 1 for each execution of the code
+				 * currently active. This structure can be
+				 * freed when refCount becomes zero. */
+    unsigned int flags;		/* flags describing state for the codebyte.
+                                 * this variable holds ORed values from the
+                                 * TCL_BYTECODE_ masks defined above */
 } ByteCode;
 
 /*

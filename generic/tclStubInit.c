@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35.2.7.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.35.2.7.2.2 2002/11/26 19:48:58 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1170,6 +1170,95 @@ TclStubs tclStubs = {
     Tcl_ChannelGetHandleProc, /* 409 */
     Tcl_ChannelFlushProc, /* 410 */
     Tcl_ChannelHandlerProc, /* 411 */
+    NULL, /* 412 */
+    NULL, /* 413 */
+    NULL, /* 414 */
+    NULL, /* 415 */
+    NULL, /* 416 */
+    NULL, /* 417 */
+    NULL, /* 418 */
+    NULL, /* 419 */
+    NULL, /* 420 */
+    NULL, /* 421 */
+    NULL, /* 422 */
+    NULL, /* 423 */
+    NULL, /* 424 */
+    NULL, /* 425 */
+    NULL, /* 426 */
+    NULL, /* 427 */
+    NULL, /* 428 */
+    NULL, /* 429 */
+    NULL, /* 430 */
+    NULL, /* 431 */
+    NULL, /* 432 */
+    NULL, /* 433 */
+    NULL, /* 434 */
+    NULL, /* 435 */
+    NULL, /* 436 */
+    NULL, /* 437 */
+    NULL, /* 438 */
+    NULL, /* 439 */
+    NULL, /* 440 */
+    NULL, /* 441 */
+    NULL, /* 442 */
+    NULL, /* 443 */
+    NULL, /* 444 */
+    NULL, /* 445 */
+    NULL, /* 446 */
+    NULL, /* 447 */
+    NULL, /* 448 */
+    NULL, /* 449 */
+    NULL, /* 450 */
+    NULL, /* 451 */
+    NULL, /* 452 */
+    NULL, /* 453 */
+    NULL, /* 454 */
+    NULL, /* 455 */
+    NULL, /* 456 */
+    NULL, /* 457 */
+    NULL, /* 458 */
+    NULL, /* 459 */
+    NULL, /* 460 */
+    NULL, /* 461 */
+    NULL, /* 462 */
+    NULL, /* 463 */
+    NULL, /* 464 */
+    NULL, /* 465 */
+    NULL, /* 466 */
+    NULL, /* 467 */
+    NULL, /* 468 */
+    NULL, /* 469 */
+    NULL, /* 470 */
+    NULL, /* 471 */
+    NULL, /* 472 */
+    NULL, /* 473 */
+    NULL, /* 474 */
+    NULL, /* 475 */
+    NULL, /* 476 */
+    NULL, /* 477 */
+    NULL, /* 478 */
+    NULL, /* 479 */
+    NULL, /* 480 */
+    NULL, /* 481 */
+    NULL, /* 482 */
+    NULL, /* 483 */
+    NULL, /* 484 */
+    NULL, /* 485 */
+    NULL, /* 486 */
+    NULL, /* 487 */
+    NULL, /* 488 */
+    NULL, /* 489 */
+    NULL, /* 490 */
+    NULL, /* 491 */
+    NULL, /* 492 */
+    NULL, /* 493 */
+    NULL, /* 494 */
+    NULL, /* 495 */
+    NULL, /* 496 */
+    NULL, /* 497 */
+    NULL, /* 498 */
+    NULL, /* 499 */
+    Tcl_CloneInterp, /* 500 */
 };
 
 /* !END!: Do not edit above this line. */
