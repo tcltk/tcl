@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.71 2005/01/19 23:15:25 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.72 2005/03/09 10:20:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2756,6 +2756,7 @@ TclGetNamespaceFromObj(interp, objPtr, nsPtrPtr)
  *	    namespace code arg
  *	    namespace current
  *	    namespace delete ?name name...?
+ *	    namespace ensemble subcommand ?arg...?
  *	    namespace eval name arg ?arg...?
  *	    namespace exists name
  *	    namespace export ?-clear? ?pattern pattern...?
