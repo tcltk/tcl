@@ -533,7 +533,7 @@ fi
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=4
-TCL_PATCH_LEVEL="a2"
+TCL_PATCH_LEVEL="a3"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 if test "${prefix}" = "NONE"; then
@@ -1237,7 +1237,7 @@ echo "configure:1195: checking whether $ld_prog supports -shared option" >&5
 	SHLIB_LD="link -dll -nologo"
 	SHLIB_LD_LIBS="user32.lib advapi32.lib"
 	LIBS="user32.lib advapi32.lib"
-	LIBS_GUI="gdi32.lib comdlg32.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib"
 	AR="lib -nologo"
 	STLIB_LD="lib -nologo"
 	RC="rc"
