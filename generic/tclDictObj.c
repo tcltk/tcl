@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.6 2003/04/07 13:52:52 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.7 2003/04/16 23:33:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1712,7 +1712,6 @@ DictIncrCmd(interp, objc, objv)
 	}
 	if (valuePtr == NULL) {
 	    valuePtr = Tcl_NewLongObj(incrValue);
-#ifndef TCL_WIDE_INT_IS_LONG
 	} else if (valuePtr->typePtr == &tclWideIntType) {
 	    Tcl_GetWideIntFromObj(NULL, valuePtr, &wValue);
 	    if (Tcl_IsShared(valuePtr)) {
@@ -1724,7 +1723,6 @@ DictIncrCmd(interp, objc, objv)
 		}
 		goto valueAlreadyInDictionary;
 	    }
-#endif /* !TCL_WIDE_INT_IS_LONG */
 	} else if (valuePtr->typePtr == &tclIntType) {
 	    Tcl_GetLongFromObj(NULL, valuePtr, &lValue);
 	    if (Tcl_IsShared(valuePtr)) {
