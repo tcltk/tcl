@@ -1,3 +1,8 @@
+2001-09-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode): fixed missing comma
+	in debug macro.
+
 2001-09-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/ExprLongObj.3: Fixed error in documentation of argument type
