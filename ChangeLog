@@ -1,3 +1,8 @@
+2003-07-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/rules.vc: Added a missing $(OPTDEFINES) which broke the
+	build if STATS=memdbg was specified.
+	
 2003-07-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdIL.c (SortCompare): Cleared up confusing error
