@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.17 2003/03/07 22:03:43 mdejong Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.18 2003/10/07 14:58:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -392,18 +392,14 @@ test iocmd-12.1 {POSIX open access modes: RDONLY} {
     string compare $x \
 	"{Two lines: this one} 1 [list [format "channel \"%s\" wasn't opened for writing" $f]]"
 } 0
-test iocmd-12.2 {POSIX open access modes: RDONLY} {
+test iocmd-12.2 {POSIX open access modes: RDONLY} -match regexp -body {
     removeFile test3
-    set msg [list [catch {open $path(test3) RDONLY} msg] $msg]
-    regsub [file join {} $path(test3)] $msg "test3" msg
-	string tolower $msg
-} {1 {couldn't open "test3": no such file or directory}}
-test iocmd-12.3 {POSIX open access modes: WRONLY} {
+    open $path(test3) RDONLY
+} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
+test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
     removeFile test3
-    set msg [list [catch {open $path(test3) WRONLY} msg] $msg]
-    regsub [file join {} $path(test3)] $msg "test3" msg
-	string tolower $msg
-} {1 {couldn't open "test3": no such file or directory}}
+    open $path(test3) WRONLY
+} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
 #
 # Test 13.4 relies on assigning the same channel name twice.
 #
@@ -426,12 +422,10 @@ test iocmd-12.4 {POSIX open access modes: WRONLY} {unixOnly} {
     set y [list 1 [format "channel \"%s\" wasn't opened for reading" $f] abzzy]
     string compare $x $y
 } 0
-test iocmd-12.5 {POSIX open access modes: RDWR} {
+test iocmd-12.5 {POSIX open access modes: RDWR} -match regexp -body {
     removeFile test3
-    set msg [list [catch {open $path(test3) RDWR} msg] $msg]
-    regsub [file join {} $path(test3)] $msg "test3" msg
-	string tolower $msg
-} {1 {couldn't open "test3": no such file or directory}}
+    open $path(test3) RDWR
+} -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
 test iocmd-12.6 {POSIX open access modes: errors} {
     concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$errorInfo
 } "1 unmatched open brace in list
