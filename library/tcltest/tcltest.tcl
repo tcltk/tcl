@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.78.2.4 2003/07/16 14:31:35 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.78.2.5 2003/07/18 21:01:32 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1605,26 +1605,16 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
     if {!$ignoreOutput} {
 	set outData {}
 	set errData {}
-	set callerHasPuts [llength [uplevel 1 {
-		::info commands [::namespace current]::puts
-	}]]
-	if {$callerHasPuts} {
-	    uplevel 1 [list ::rename puts [namespace current]::Replace::Puts]
-	} else {
-	    interp alias {} [namespace current]::Replace::Puts {} ::puts
-	}
-	uplevel 1 [list ::namespace import [namespace origin Replace::puts]]
+	rename ::puts [namespace current]::Replace::Puts
+	namespace eval :: \
+		[list namespace import [namespace origin Replace::puts]]
 	namespace import Replace::puts
     }
     set result [uplevel 1 $script]
     if {!$ignoreOutput} {
 	namespace forget puts
-	uplevel 1 ::namespace forget puts
-	if {$callerHasPuts} {
-	    uplevel 1 [list ::rename [namespace current]::Replace::Puts puts]
-	} else {
-	    interp alias {} [namespace current]::Replace::Puts {}
-	}
+	namespace eval :: namespace forget puts
+	rename [namespace current]::Replace::Puts ::puts
     }
     return $result
 }
