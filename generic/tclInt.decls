@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.20.2.6 2001/10/17 19:29:25 das Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.20.2.7 2002/05/24 19:36:29 hobbs Exp $
 
 library tcl
 
@@ -503,7 +503,7 @@ declare 133 generic {
 }
 declare 134 generic {
     size_t TclpStrftime(char *s, size_t maxsize, CONST char *format, \
-	    CONST struct tm *t)
+	    CONST struct tm *t, int useGMT)
 }
 declare 135 generic {
     int TclpCheckStackSpace(void)

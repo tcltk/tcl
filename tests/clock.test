@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.13.2.3 2001/10/18 20:17:17 hobbs Exp $
+# RCS: @(#) $Id: clock.test,v 1.13.2.4 2002/05/24 19:36:29 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -427,6 +427,19 @@ test clock-8.1 {clock scan midnight/gmt range bug 413397} {
 	    [clock format [clock scan year -base $5amPST -gmt 1] -format $fmt]
 } {12/31 12/31}
 
+set ::tcltest::testConstraints(needPST) \
+	[regexp {^(Pacific.*|P[DS]T)$} [clock format 1 -format %Z]]
+test clock-9.1 {%s gmt testing} {needPST} {
+    # We need PST to guarantee the difference value below.
+    set s 100000
+    set a [clock format $s -format %s -gmt 0]
+    set b [clock format $s -format %s -gmt 1]
+    # This should be the offset in seconds between current locale and GMT.
+    # This didn't seem to be correctly on Windows until the fix for
+    # Bug #559376, which fiddled with env(TZ) when -gmt 1 was used.
+    # It's hard-coded to check P[SD]T now. (8 hours)
+    set c [expr {$b-$a}]
+} {28800}
 
 # cleanup
 ::tcltest::cleanupTests

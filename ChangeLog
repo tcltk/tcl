@@ -1,3 +1,16 @@
+2002-05-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/clock.test: added clock-9.1
+	* compat/strftime.c:
+	* generic/tclClock.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* unix/tclUnixTime.c: fix for Windows msvcrt mem leak caused by
+	using an env(TZ) setting trick for in clock format -gmt 1.  This
+	also makes %s seem to work correctly with -gmt 1 as well as
+	making it a lot faster by avoid the env(TZ) hack.  TclpStrftime
+	now takes useGMT as an arg.  [Bug #559376]
+
 2002-05-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* mac/tclMacChan.c: use MSL provided creator type if available

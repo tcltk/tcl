@@ -8,7 +8,9 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * RCS: @(#) $Id: strftime.c,v 1.7.2.1 2001/10/17 19:29:24 das Exp $
+ * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
+ *
+ * RCS: @(#) $Id: strftime.c,v 1.7.2.2 2002/05/24 19:36:28 hobbs Exp $
  */
 
 /*
@@ -45,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.7.2.1 2001/10/17 19:29:24 das Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.7.2.2 2002/05/24 19:36:28 hobbs Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -69,6 +71,12 @@ typedef struct {
     const char *t_fmt_ampm;
 } _TimeLocale;
  
+/*
+ * This is the C locale default.  On Windows, if we wanted to make this
+ * localized, we would use GetLocaleInfo to get the correct values.
+ * It may be acceptable to do localization of month/day names, as the
+ * numerical values would be considered the locale-independent versions.
+ */
 static const _TimeLocale _DefaultTimeLocale = 
 {
     {
@@ -97,6 +105,7 @@ static const _TimeLocale _DefaultTimeLocale =
 
 static const _TimeLocale *_CurrentTimeLocale = &_DefaultTimeLocale;
 
+static int isGMT;
 static size_t gsize;
 static char *pt;
 static int		 _add _ANSI_ARGS_((const char* str));
@@ -106,11 +115,12 @@ static size_t		_fmt _ANSI_ARGS_((const char *format,
 			    const struct tm *t));
 
 size_t
-TclpStrftime(s, maxsize, format, t)
+TclpStrftime(s, maxsize, format, t, useGMT)
     char *s;
     size_t maxsize;
     const char *format;
     const struct tm *t;
+    int useGMT;
 {
     if (format[0] == '%' && format[1] == 'Q') {
 	/* Format as a stardate */
@@ -122,6 +132,11 @@ TclpStrftime(s, maxsize, format, t)
 	return(strlen(s));
     }
 
+    isGMT = useGMT;
+    /*
+     * We may be able to skip this for useGMT, but it should be harmless.
+     * -- hobbs
+     */
     tzset();
 
     pt = s;
@@ -144,6 +159,20 @@ _fmt(format, t)
     const char *format;
     const struct tm *t;
 {
+#ifdef WIN32
+#define BUF_SIZ 256
+    TCHAR buf[BUF_SIZ];
+    SYSTEMTIME syst = {
+	t->tm_year + 1900,
+	t->tm_mon + 1,
+	t->tm_wday,
+	t->tm_mday,
+	t->tm_hour,
+	t->tm_min,
+	t->tm_sec,
+	0,
+    };
+#endif
     for (; *format; ++format) {
 	if (*format == '%') {
 	    ++format;
@@ -186,10 +215,6 @@ _fmt(format, t)
 		case 'C':
 		    if (!_conv((t->tm_year + TM_YEAR_BASE) / 100,
 			    2, '0'))
-			return(0);
-		    continue;
-		case 'c':
-		    if (!_fmt(_CurrentTimeLocale->d_t_fmt, t))
 			return(0);
 		    continue;
 		case 'D':
@@ -307,6 +332,38 @@ _fmt(format, t)
 		    if (!_conv(t->tm_wday, 1, '0'))
 			return(0);
 		    continue;
+#ifdef WIN32
+		/*
+		 * To properly handle the localized time routines on Windows,
+		 * we must make use of the special localized calls.
+		 */
+		case 'c':
+		    if (!GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE,
+			    &syst, NULL, buf, BUF_SIZ) || !_add(buf)
+			    || !_add(" ")) {
+			return(0);
+		    }
+		    /*
+		     * %c is created with LONGDATE + " " + TIME on Windows,
+		     * so continue to %X case here.
+		     */
+		case 'X':
+		    if (!GetTimeFormat(LOCALE_USER_DEFAULT, 0,
+			    &syst, NULL, buf, BUF_SIZ) || !_add(buf)) {
+			return(0);
+		    }
+		    continue;
+		case 'x':
+		    if (!GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE,
+			    &syst, NULL, buf, BUF_SIZ) || !_add(buf)) {
+			return(0);
+		    }
+		    continue;
+#else
+		case 'c':
+		    if (!_fmt(_CurrentTimeLocale->d_t_fmt, t))
+			return(0);
+		    continue;
 		case 'x':
 		    if (!_fmt(_CurrentTimeLocale->d_fmt, t))
 			return(0);
@@ -315,6 +372,7 @@ _fmt(format, t)
 		    if (!_fmt(_CurrentTimeLocale->t_fmt, t))
 			return(0);
 		    continue;
+#endif
 		case 'y':
 		    if (!_conv((t->tm_year + TM_YEAR_BASE) % 100,
 			    2, '0'))
@@ -325,7 +383,7 @@ _fmt(format, t)
 			return(0);
 		    continue;
 		case 'Z': {
-		    char *name = TclpGetTZName(t->tm_isdst);
+		    char *name = (isGMT ? "GMT" : TclpGetTZName(t->tm_isdst));
 		    if (name && !_add(name)) {
 			return 0;
 		    }
