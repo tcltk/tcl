@@ -1,3 +1,18 @@
+2002-05-07  David Gravereaux <davygrvy@pobox.com>
+
+	-- Changes from Peter Spjuth <peter.spjuth@space.se>
+	* tools/man2tcl.c: Increased line buffer size and a bail-out if
+	that should ever be over-run.
+	* tools/man2help.tcl: Include Courier New font in rtf header.
+	* tools/man2help2.tcl: Improved handling of CS/CE fields.  Use
+	Courier New for code samples and indent better.
+
+	* doc/file.n:
+	* doc/TraceCmd.3:  winhelp conversion tools where understand a '
+	as the first character on a line as an unknown macro.  Not
+	knowing how to repair tools/man2tcl.c, I decided to rearrange
+	the text in the docs instead.
+
 2002-05-07  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: fix to similar segfault when using 
