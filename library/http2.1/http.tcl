@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.20 2000/01/11 22:09:10 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.21 2000/02/01 11:48:31 hobbs Exp $
 
 package provide http 2.2	;# This uses Tcl namespaces
 
@@ -341,7 +341,7 @@ proc http::geturl { url args } {
 	    puts $s "Content-Type: $state(-type)"
 	    puts $s ""
 	    fconfigure $s -translation {auto binary}
-	    puts $s $state(-query)
+	    puts -nonewline $s $state(-query)
 	} else {
 	    puts $s ""
 	}

@@ -5,7 +5,7 @@
 # These procedures use a callback interface to avoid using vwait,
 # which is not defined in the safe base.
 #
-# RCS: @(#) $Id: http.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
+# RCS: @(#) $Id: http.tcl,v 1.4 2000/02/01 11:48:30 hobbs Exp $
 #
 # See the http.n man page for documentation
 
@@ -181,7 +181,7 @@ proc http_get { url args } {
 	puts $s "Content-Type: application/x-www-form-urlencoded"
 	puts $s ""
 	fconfigure $s -translation {auto binary}
-	puts $s $state(-query)
+	puts -nonewline $s $state(-query)
     } else {
 	puts $s ""
     }
