@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.61 2001/09/27 00:19:57 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.62 2001/09/27 20:32:35 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -833,12 +833,13 @@ EXTERN void		Tcl_UpdateLinkedVar _ANSI_ARGS_((Tcl_Interp * interp,
 				char * varName));
 /* 258 */
 EXTERN int		Tcl_UpVar _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * frameName, char * varName, 
-				char * localName, int flags));
+				CONST char * frameName, char * varName, 
+				CONST char * localName, int flags));
 /* 259 */
 EXTERN int		Tcl_UpVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * frameName, char * part1, char * part2, 
-				char * localName, int flags));
+				CONST char * frameName, char * part1, 
+				char * part2, CONST char * localName, 
+				int flags));
 /* 260 */
 EXTERN int		Tcl_VarEval _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp));
 /* 261 */
@@ -1822,8 +1823,8 @@ typedef struct TclStubs {
     void (*tcl_UntraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 255 */
     void (*tcl_UntraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 256 */
     void (*tcl_UpdateLinkedVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 257 */
-    int (*tcl_UpVar) _ANSI_ARGS_((Tcl_Interp * interp, char * frameName, char * varName, char * localName, int flags)); /* 258 */
-    int (*tcl_UpVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * frameName, char * part1, char * part2, char * localName, int flags)); /* 259 */
+    int (*tcl_UpVar) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * frameName, char * varName, CONST char * localName, int flags)); /* 258 */
+    int (*tcl_UpVar2) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * frameName, char * part1, char * part2, CONST char * localName, int flags)); /* 259 */
     int (*tcl_VarEval) _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp)); /* 260 */
     ClientData (*tcl_VarTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 261 */
     ClientData (*tcl_VarTraceInfo2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 262 */

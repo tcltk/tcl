@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.37 2001/09/25 14:34:53 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.38 2001/09/27 20:32:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,7 @@ static void		DeleteArray _ANSI_ARGS_((Interp *iPtr,
 static int		MakeUpvar _ANSI_ARGS_((
 			    Interp *iPtr, CallFrame *framePtr,
 			    char *otherP1, char *otherP2, int otherFlags,
-			    char *myName, int myFlags));
+			    CONST char *myName, int myFlags));
 static Var *		NewVar _ANSI_ARGS_((void));
 static ArraySearch *	ParseSearchId _ANSI_ARGS_((Tcl_Interp *interp,
 			    Var *varPtr, char *varName, Tcl_Obj *handleObj));
@@ -3605,7 +3605,7 @@ MakeUpvar(iPtr, framePtr, otherP1, otherP2, otherFlags, myName, myFlags)
     char *otherP1, *otherP2;	/* Two-part name of variable in framePtr. */
     int otherFlags;		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of "other" variable. */
-    char *myName;		/* Name of variable which will refer to
+    CONST char *myName;		/* Name of variable which will refer to
 				 * otherP1/otherP2. Must be a scalar. */
     int myFlags;		/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of myName. */
@@ -3800,12 +3800,12 @@ int
 Tcl_UpVar(interp, frameName, varName, localName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
-    char *frameName;		/* Name of the frame containing the source
+    CONST char *frameName;	/* Name of the frame containing the source
 				 * variable, such as "1" or "#0". */
     char *varName;		/* Name of a variable in interp to link to.
 				 * May be either a scalar name or an
 				 * element in an array. */
-    char *localName;		/* Name of link variable. */
+    CONST char *localName;	/* Name of link variable. */
     int flags;			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of localName. */
 {
@@ -3873,11 +3873,11 @@ int
 Tcl_UpVar2(interp, frameName, part1, part2, localName, flags)
     Tcl_Interp *interp;		/* Interpreter containing variables.  Used
 				 * for error messages too. */
-    char *frameName;		/* Name of the frame containing the source
+    CONST char *frameName;	/* Name of the frame containing the source
 				 * variable, such as "1" or "#0". */
     char *part1, *part2;	/* Two parts of source variable name to
 				 * link to. */
-    char *localName;		/* Name of link variable. */
+    CONST char *localName;	/* Name of link variable. */
     int flags;			/* 0, TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY:
 				 * indicates scope of localName. */
 {
