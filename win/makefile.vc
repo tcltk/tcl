@@ -1,4 +1,4 @@
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # makefile.vc --
 #
 #	Microsoft Visual C++ makefile for use with nmake.exe v1.62+ (VC++ 5.0+)
@@ -11,9 +11,9 @@
 # Copyright (c) 2001 ActiveState Corporation.
 # Copyright (c) 2001 Tomasoft Engineering.
 #
-#--------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.70 2001/11/08 21:32:23 davygrvy Exp $
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# RCS: @(#) $Id: makefile.vc,v 1.71 2001/11/10 04:11:15 davygrvy Exp $
+#------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
 MSG = ^
@@ -22,7 +22,7 @@ the environment.  Jump to this line to read the new instructions.
 !error $(MSG)
 !endif
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # HOW TO USE this makefile:
 #
 # 1)  It is now necessary to have MSVCDir set in the environment.  This is used
@@ -72,8 +72,9 @@ the environment.  Jump to this line to read the new instructions.
 #			   using libcmt(d) as the C runtime [by default] to
 #			   msvcrt(d). This is useful for static embedding
 #			   support.
-#		linkexten = Effects the static option only to switch tclshXX.exe
-#			   to have the dde and reg extension linked inside it.
+#		linkexten = Effects the static option only to switch
+#			   tclshXX.exe to have the dde and reg extension linked
+#			   inside it.
 #		threads =  Turns on full multithreading support.
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
@@ -96,9 +97,12 @@ the environment.  Jump to this line to read the new instructions.
 #	TMP_DIR=<path>
 #	OUT_DIR=<path>
 #		Hooks to allow the intermediate and output directories to be
-#		changed.  $(OUT_DIR) is assumed to be $(BINROOT)\(Release|Debug)
-#		based on if symbols are requested.  $(TMP_DIR) will de 
-#		$(OUT_DIR)\<buildtype> by default.
+#		changed.  $(OUT_DIR) is assumed to be 
+#		$(BINROOT)\(Release|Debug) based on if symbols are requested.
+#		$(TMP_DIR) will de $(OUT_DIR)\<buildtype> by default.
+#
+#	TESTPAT=<file>
+#		Reads the tests requested to be run from this file.
 #
 # 5)  Examples:
 #
@@ -121,19 +125,19 @@ the environment.  Jump to this line to read the new instructions.
 #     I've found the following batchfile useful for building everything:
 #
 #	if "%MSVCDir%" == "" call c:\progra~1\micros~1\vc98\bin\vcvars32.bat
-#	INSTALLDIR=C:\tclTestArea
-#	nmake -nologo -f makefile.vc release winhelp
-#	nmake -nologo -f makefile.vc release OPTS=static,linkexten
-#	nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt
-#	nmake -nologo -f makefile.vc core OPTS=static,threads
-#	nmake -nologo -f makefile.vc core OPTS=static,msvcrt,threads
-#	nmake -nologo -f makefile.vc shell OPTS=threads
+#	set INSTALLDIR=C:\tclTestArea
+#	nmake -nologo -f makefile.vc %1 release winhelp
+#	nmake -nologo -f makefile.vc %1 release OPTS=static,linkexten
+#	nmake -nologo -f makefile.vc %1 core dlls OPTS=static,msvcrt
+#	nmake -nologo -f makefile.vc %1 core OPTS=static,threads
+#	nmake -nologo -f makefile.vc %1 core OPTS=static,msvcrt,threads
+#	nmake -nologo -f makefile.vc %1 shell OPTS=threads
 #	pause
 #
 #
-#--------------------------------------------------------------------------------
-#================================================================================
-#################################################################################
+#------------------------------------------------------------------------------
+#==============================================================================
+###############################################################################
 
 
 #    //==================================================================\\
@@ -143,9 +147,9 @@ the environment.  Jump to this line to read the new instructions.
 #    \\==================================================================//
 
 
-#################################################################################
-#================================================================================
-#--------------------------------------------------------------------------------
+###############################################################################
+#==============================================================================
+#------------------------------------------------------------------------------
 PROJECT	= tcl
 !include "rules.vc"
 
@@ -185,7 +189,7 @@ TCLHLP		= $(OUT_DIR)\$(TCLHLPBASE).hlp
 TCLHLPCNT	= $(OUT_DIR)\$(TCLHLPBASE).cnt
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
-CAT32		= $(TMP_DIR)\cat32.exe
+CAT32		= $(OUT_DIR)\cat32.exe
 RMDIR		= .\rmd.bat
 MKDIR		= .\mkd.bat
 RM		= del
@@ -304,9 +308,10 @@ TOOLSDIR	= $(ROOT)\tools
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
 TCL_DEFINES	= $(OPTDEFINES)
 
-######################################################################
+
+#---------------------------------------------------------------------
 # Compile flags
-######################################################################
+#---------------------------------------------------------------------
 
 !if !$(DEBUG)
 # This cranks the optimization level to maximize speed
@@ -334,9 +339,10 @@ BASE_CLFAGS	= $(cdebug) $(cflags) $(crt) $(TCL_INCLUDES)
 TCL_CFLAGS	= $(BASE_CLFAGS) $(TCL_DEFINES)
 CON_CFLAGS	= $(cdebug) $(cflags) $(crt) -DCONSOLE
 
-######################################################################
+
+#---------------------------------------------------------------------
 # Link flags
-######################################################################
+#---------------------------------------------------------------------
 
 !if $(DEBUG)
 ldebug	= -debug:full -debugtype:cv
@@ -364,9 +370,19 @@ guilflags = $(lflags) -subsystem:windows -entry:WinMainCRTStartup
 baselibs   = kernel32.lib advapi32.lib user32.lib
 winlibs	   = $(baselibs) gdi32.lib
 
-######################################################################
+
+#---------------------------------------------------------------------
+# TclTest flags
+#---------------------------------------------------------------------
+
+!IF "$(TESTPAT)" != ""
+TESTFLAGS = -file $(TESTPAT)
+!ENDIF
+
+
+#---------------------------------------------------------------------
 # Project specific targets
-######################################################################
+#---------------------------------------------------------------------
 
 release:    setup $(TCLSH) dlls
 core:	    setup $(TCLLIB)
@@ -376,9 +392,16 @@ all:	    setup $(TCLSH) dlls $(CAT32)
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
 plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
 install:    install-binaries install-libraries
-test:	    setup $(TCLTEST) dlls $(CAT32)
+
+
+test: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLTEST) $(ROOT)/tests/all.tcl
+!if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
+	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS)
+!else
+	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS) > tests.log
+	type tests.log | more
+!endif
 
 setup:
 	@$(MKDIR) $(TMP_DIR)
@@ -418,7 +441,8 @@ $**
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
-	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj $(baselibs)
+	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj \
+		$(baselibs)
 
 
 !if $(STATIC_BUILD)
@@ -445,7 +469,8 @@ $(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?
-	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj $(baselibs)
+	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
+		$(baselibs)
 
 install-binaries: $(TCLSH)
 	$(MKDIR) "$(BIN_INSTALL_DIR)"
@@ -471,27 +496,36 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
 	@echo installing http1.0
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
-	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
-	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
+	-@copy "$(ROOT)\library\http1.0\http.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http1.0"
+	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http1.0"
 	@echo installing http2.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.4"
-	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.4"
-	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.4"
+	-@copy "$(ROOT)\library\http\http.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http2.4"
+	-@copy "$(ROOT)\library\http\pkgIndex.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http2.4"
 	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt\optparse.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\opt0.4"
 	@echo installing msgcat1.2
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
-	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
-	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
+	-@copy "$(ROOT)\library\msgcat\msgcat.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
+	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
 	@echo installing $(TCLDDEDLLNAME)
 !if $(STATIC_BUILD)
 	-@copy "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)"
 !else
 	-@$(MKDIR) "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
 	-@copy "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
-	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
+	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
 !endif
 	@echo installing $(TCLREGDLLNAME)
 !if $(STATIC_BUILD)
@@ -499,11 +533,13 @@ install-libraries:
 !else
 	-@$(MKDIR) "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
 	-@copy "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
-	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
+	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
 !endif
 	@echo installing encoding files
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
-	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"
+	-@copy "$(ROOT)\library\encoding\*.enc" \
+		"$(SCRIPT_INSTALL_DIR)\encoding"
 	@echo installing library files
 	-@copy "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)"
@@ -518,41 +554,52 @@ install-libraries:
 	-@copy "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)"
 
-#
+
+#---------------------------------------------------------------------
 # Regenerate the stubs files.
-#
+#---------------------------------------------------------------------
 
 genstubs:
 	tclsh$(VERSION) $(ROOT)\tools\genStubs.tcl $(GENERICDIR) \
 		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
 
-#
+
+#---------------------------------------------------------------------
 # Regenerate the windows help files.
-#
+#---------------------------------------------------------------------
 
 MAN2TCL		= $(TOOLSDIR)\man2tcl
 TCLRTF		= $(TOOLSDIR)\tcl.rtf
 MAN2HELP	= $(TOOLSDIR)\man2help.tcl
+TCLHPJ		= $(TOOLSDIR)\tcl.hpj
 
 winhelp: $(TCLHLP)
 
 $(TCLHLP): $(TCLRTF)
 	cd $(TOOLSDIR)
-	start /wait hcrtf.exe -xn tcl.hpj
+	start /wait hcrtf.exe -x tcl.hpj
 	cd $(MAKEDIR)
 	copy $(TOOLSDIR)\$(TCLHLPBASE).hlp $(OUT_DIR)
 	copy $(TOOLSDIR)\$(TCLHLPBASE).cnt $(OUT_DIR)
 
+$(TCLHPJ): $(TCLHPJ).in
+	copy $(TCLHPJ).in $(TCLHPJ)
+
 $(MAN2TCL).exe: $(MAN2TCL).obj 
 	cd $(TOOLSDIR)
 	$(cc32) -nologo -G4 -ML -O2 $(MAN2TCL).c
+	cd $(MAKEDIR)
 
 $(TCLRTF): $(MAN2TCL).exe $(TCLSH)
 	cd $(TOOLSDIR)
-	..\win\$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc ../../tk$(DOTVERSION)/doc
-#
+	..\win\$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc \
+		../../tk$(DOTVERSION)/doc
+	cd $(MAKEDIR)
+
+
+#---------------------------------------------------------------------
 # Special case object file targets
-#
+#---------------------------------------------------------------------
 
 $(TMP_DIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) -Fo$(TMP_DIR)\ $?
@@ -601,7 +648,9 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(cdebug) $(cflags) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 
+#---------------------------------------------------------------------
 # Dedependency rules
+#---------------------------------------------------------------------
 
 $(GENERICDIR)\regcomp.c: \
 	$(GENERICDIR)\regguts.h \
@@ -622,9 +671,10 @@ $(GENERICDIR)\regfree.c: $(GENERICDIR)\regguts.h
 $(GENERICDIR)\regfronts.c: $(GENERICDIR)\regguts.h
 $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 
-#
+
+#---------------------------------------------------------------------
 # Implicit rules
-#
+#---------------------------------------------------------------------
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
     $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
@@ -644,6 +694,11 @@ $<
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
 	$(rc32) -fo $@ -r -i $(GENERICDIR) $(include32) -D__WIN32__ \
 		$(TCL_DEFINES) -d DEBUG=$(DEBUG) $<
+
+
+#---------------------------------------------------------------------
+# Clean up
+#---------------------------------------------------------------------
 
 clean:
 	-@$(RM) $(OUT_DIR)\*.exp 

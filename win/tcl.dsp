@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) External Target" 0x0106
 
-CFG=tcl - Win32 Debug
+CFG=tcl - Win32 Debug Static
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,12 +13,14 @@ CFG=tcl - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "tcl.mak" CFG="tcl - Win32 Debug"
+!MESSAGE NMAKE /f "tcl.mak" CFG="tcl - Win32 Debug Static"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
 !MESSAGE "tcl - Win32 Release" (based on "Win32 (x86) External Target")
 !MESSAGE "tcl - Win32 Debug" (based on "Win32 (x86) External Target")
+!MESSAGE "tcl - Win32 Debug Static" (based on "Win32 (x86) External Target")
+!MESSAGE "tcl - Win32 Release Static" (based on "Win32 (x86) External Target")
 !MESSAGE 
 
 # Begin Project
@@ -32,7 +34,7 @@ CFG=tcl - Win32 Debug
 # PROP BASE Use_Debug_Libraries 0
 # PROP BASE Output_Dir "Release"
 # PROP BASE Intermediate_Dir "Release\tcl_Dynamic"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=none"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=none MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Release\tclsh84.exe"
 # PROP BASE Bsc_Name ""
@@ -41,7 +43,7 @@ CFG=tcl - Win32 Debug
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release\tcl_Dynamic"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=none MSVCDIR=X"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=none MSVCDIR=IDE"
 # PROP Rebuild_Opt "-a"
 # PROP Target_File "Release\tclsh84.exe"
 # PROP Bsc_Name ""
@@ -53,7 +55,7 @@ CFG=tcl - Win32 Debug
 # PROP BASE Use_Debug_Libraries 1
 # PROP BASE Output_Dir "Debug"
 # PROP BASE Intermediate_Dir "Debug\tcl_Dynamic"
-# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols MSVCDIR=IDE"
 # PROP BASE Rebuild_Opt "-a"
 # PROP BASE Target_File "Debug\tclsh84d.exe"
 # PROP BASE Bsc_Name ""
@@ -62,9 +64,51 @@ CFG=tcl - Win32 Debug
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug\tcl_Dynamic"
-# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols MSVCDIR=X"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols MSVCDIR=IDE"
 # PROP Rebuild_Opt "-a"
 # PROP Target_File "Debug\tclsh84d.exe"
+# PROP Bsc_Name ""
+# PROP Target_Dir ""
+
+!ELSEIF  "$(CFG)" == "tcl - Win32 Debug Static"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "Debug"
+# PROP BASE Intermediate_Dir "Debug\tcl_Static"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols,static MSVCDIR=IDE"
+# PROP BASE Rebuild_Opt "-a"
+# PROP BASE Target_File "Debug\tclsh84d.exe"
+# PROP BASE Bsc_Name ""
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Debug"
+# PROP Intermediate_Dir "Debug\tcl_Static"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=symbols,static MSVCDIR=IDE"
+# PROP Rebuild_Opt "-a"
+# PROP Target_File "Debug\tclsh84sd.exe"
+# PROP Bsc_Name ""
+# PROP Target_Dir ""
+
+!ELSEIF  "$(CFG)" == "tcl - Win32 Release Static"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "Release"
+# PROP BASE Intermediate_Dir "Release\tcl_Static"
+# PROP BASE Cmd_Line "nmake -nologo -f makefile.vc OPTS=static MSVCDIR=IDE"
+# PROP BASE Rebuild_Opt "-a"
+# PROP BASE Target_File "Release\tclsh84.exe"
+# PROP BASE Bsc_Name ""
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release"
+# PROP Intermediate_Dir "Release\tcl_Static"
+# PROP Cmd_Line "nmake -nologo -f makefile.vc OPTS=static MSVCDIR=IDE"
+# PROP Rebuild_Opt "-a"
+# PROP Target_File "Release\tclsh84s.exe"
 # PROP Bsc_Name ""
 # PROP Target_Dir ""
 
@@ -74,10 +118,16 @@ CFG=tcl - Win32 Debug
 
 # Name "tcl - Win32 Release"
 # Name "tcl - Win32 Debug"
+# Name "tcl - Win32 Debug Static"
+# Name "tcl - Win32 Release Static"
 
 !IF  "$(CFG)" == "tcl - Win32 Release"
 
 !ELSEIF  "$(CFG)" == "tcl - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "tcl - Win32 Debug Static"
+
+!ELSEIF  "$(CFG)" == "tcl - Win32 Release Static"
 
 !ENDIF 
 
