@@ -1,3 +1,8 @@
+2001-10-18  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to bug in Tcl_FSChdir shown up
+	by recent tclkit builds.
+	
 2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixPipe.c (PipeInputProc, PipeOutputProc): do immediate
