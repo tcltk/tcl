@@ -1,3 +1,9 @@
+2004-10-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdIL.c (InfoGlobalsCmd): 
+	* tests/info.test (info-8.4): Strip leading global-namespace
+	specifiers from the pattern argument. [Bug 1057461]
+
 2004-10-30  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/clock.c: Replaced WIN32 macro with __WIN32__.
