@@ -1,3 +1,10 @@
+2000-04-09  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/tclUnixThrd.c (Tcl_CreateThread): moved TCL_THREADS ifdef
+	inside of func as it is declared for non-threads builds as well.
+	In the non-threads case, it always returns TCL_ERROR (couldn't
+	create thread).
+
 2000-04-08  Andreas Kupries <a.kupries@westend.com>
 
 	* Overall change: Definition of a public API for the creation of

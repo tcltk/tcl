@@ -54,7 +54,6 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 
 
 
-#ifdef TCL_THREADS
 
 /*
  *----------------------------------------------------------------------
@@ -82,6 +81,7 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     int flags;				/* Flags controlling behaviour of
 					 * the new thread */
 {
+#ifdef TCL_THREADS
     pthread_attr_t attr;
     int result;
 
@@ -128,8 +128,12 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     }
     pthread_attr_destroy(&attr);
     return result;
+#else
+    return TCL_ERROR;
+#endif /* TCL_THREADS */
 }
 
+#ifdef TCL_THREADS
 /*
  *----------------------------------------------------------------------
  *
