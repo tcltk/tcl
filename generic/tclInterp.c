@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.37 2004/06/11 21:33:41 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.38 2004/06/11 21:55:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -52,13 +52,17 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	lappend dirs $tcl_library\n\
     } else {\n\
 	if {[info exists env(TCL_LIBRARY)]} {\n\
+	    set env(TCL_LIBRARY) [file join [pwd] $env(TCL_LIBRARY)]\n\
 	    lappend dirs $env(TCL_LIBRARY)\n\
 	}\n\
 	catch {\n\
 	    lappend dirs $tclDefaultLibrary\n\
 	    unset tclDefaultLibrary\n\
 	}\n\
-        set dirs [concat $dirs $tcl_libPath]\n\
+	catch {\n\
+            set dirs [concat $dirs $tcl_libPath]\n\
+	}\n\
+	lappend dirs [::tcl::pkgconfig get scriptdir,runtime]\n\
     }\n\
     foreach i $dirs {\n\
 	set tcl_library $i\n\
