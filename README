@@ -1,10 +1,10 @@
 Tcl
 
-SCCS: %Z% $Id: README,v 1.5 1998/07/06 22:11:44 welch Exp $ 
+SCCS: %Z% $Id: README,v 1.6 1998/07/20 16:55:10 welch Exp $ 
 
 0. Preface
 ----------
-This is a pre-release of 8.0.3, tcl_patchLevel "8.0.3-2"
+This is a pre-release of 8.0.3, tcl_patchLevel "8.0.3-3"
 we expect the 8.0.3 release to continue to change with the adoption
 of more patches, etc.  This release is being made early to help
 with the Consortium CD project.  Please do not advertise or

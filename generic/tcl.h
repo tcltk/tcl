@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.10 1998/07/06 22:21:25 welch Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.11 1998/07/20 16:54:16 welch Exp $ 
  */
 
 #ifndef _TCL
@@ -41,7 +41,7 @@
 #define TCL_RELEASE_SERIAL  3
 
 #define TCL_VERSION	    "8.0"
-#define TCL_PATCH_LEVEL	    "8.0.3-2"
+#define TCL_PATCH_LEVEL	    "8.0.3-3"
 
 /*
  * The following definitions set up the proper options for Windows
