@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.24 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: var.test,v 1.25 2004/05/19 20:33:11 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -24,7 +24,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
-testConstraint testsetnoerr [info commands testsetnoerr]
+testConstraint testsetnoerr [llength [info commands testsetnoerr]]
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
