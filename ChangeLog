@@ -1,3 +1,9 @@
+2000-10-20  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* win/tclWinFile.c (TclpMatchFilesTypes): made the stat call only
+	occur when necessary (for 'glob' command).  Significantly speeds
+	up glob command from 8.3. [BUG: 6216]
+
 2000-10-19  Jennifer Hom  <jenn@ajubasolutions.com>
 
 	* library/tcltest1.0/tcltest2.tcl:
