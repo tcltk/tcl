@@ -1,5 +1,7 @@
 2004-10-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/string.n (map): Rewrote to clarify that we don't just map
+	single characters. [Bug 1048005]
 	* doc/info.n (procs): Clarified that the pattern argument may have
 	namespace separators in it. [Bug 1047928]
 
