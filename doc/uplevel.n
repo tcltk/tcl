@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: uplevel.n,v 1.3 2000/09/07 14:27:52 poenitz Exp $
+'\" RCS: @(#) $Id: uplevel.n,v 1.4 2004/05/17 22:31:31 dkf Exp $
 '\" 
 .so man.macros
 .TH uplevel n "" Tcl "Tcl Built-In Commands"
@@ -72,6 +72,26 @@ describing a command that is either
 the outermost procedure call or the outermost \fBnamespace eval\fR command.
 Also, \fBuplevel #0\fR evaluates a script
 at top-level in the outermost namespace (the global namespace).
+.SH EXAMPLE
+As stated above, the \fBuplevel\fR command is useful for creating new
+control constructs.  This example shows how (without error handling)
+it can be used to create a \fBdo\fR command that is the counterpart of
+\fBwhile\fR except for always performing the test after running the
+loop body:
+.CS
+proc do {body while condition} {
+    if {$while ne "while"} {
+        error "required word missing"
+    }
+    set conditionCmd [list expr $condition]
+    while {1} {
+        uplevel 1 $body
+        if {![uplevel 1 $conditionCmd]} {
+            break
+        }
+    }
+}
+.CE
 
 .SH "SEE ALSO"
 namespace(n), upvar(n)
