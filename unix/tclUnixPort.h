@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.7 1999/03/30 01:55:56 redman Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.8 1999/04/06 02:05:38 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -43,7 +43,9 @@
 #endif
 #include <pwd.h>
 #include <signal.h>
-#include <sys/param.h>
+#ifdef HAVE_SYS_PARAM_H
+#   include <sys/param.h>
+#endif
 #include <sys/types.h>
 #ifdef USE_DIRENT2_H
 #   include "../compat/dirent2.h"

@@ -1,3 +1,17 @@
+1999-04-05    <stanton@scriptics.com>
+
+	* tests/io.test: Minor test cleanup.
+
+	* generic/tclEncoding.c (Tcl_CreateEncoding): Minor lint to make
+	it easier to compile on Digital-unix. [Bug: 1659]
+
+	* unix/configure.in: 
+	* unix/tclUnixPort.h: Applied patch for OS/390 to handle lack of
+	sys/param.h. [Bug: 1725]
+
+	* unix/configure.in: Fixed BSD/OS 4.* configuration to support
+	shared libraries properly. [Bug: 1730]
+	
 1999-04-05    <redman@scriptics.com>
 
 	* tests/safe.test:

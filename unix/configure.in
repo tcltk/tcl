@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.1.2.14 1999/03/26 19:46:27 suresh Exp $
+# RCS: @(#) $Id: configure.in,v 1.1.2.15 1999/04/06 02:05:38 stanton Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
@@ -184,7 +184,9 @@ if test $tcl_ok = 0; then
 fi
 AC_CHECK_HEADER(sys/wait.h, , AC_DEFINE(NO_SYS_WAIT_H))
 AC_CHECK_HEADER(dlfcn.h, , AC_DEFINE(NO_DLFCN_H))
-AC_HAVE_HEADERS(unistd.h)
+
+# OS/390 lacks sys/param.h (and doesn't need it, by chance).
+AC_HAVE_HEADERS(unistd.h sys/param.h)
 
 #---------------------------------------------------------------------------
 #	Determine which interface to use to talk to the serial port.
@@ -778,7 +780,7 @@ case $system in
 	TCL_NEEDS_EXP_FILE=1
 	TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
 	;;
-    BSD/OS-2.1*|BSD/OS-3*|BSD/OS-4*)
+    BSD/OS-2.1*|BSD/OS-3*)
 	SHLIB_CFLAGS=""
 	SHLIB_LD="shlicc -r"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -786,6 +788,16 @@ case $system in
 	DL_OBJS="tclLoadDl.o"
 	DL_LIBS="-ldl"
 	LD_FLAGS=""
+	LD_SEARCH_FLAGS=""
+	;;
+    BSD/OS-4.*)
+	SHLIB_CFLAGS="-export-dynamic -fPIC"
+	SHLIB_LD="cc -shared"
+	SHLIB_LD_LIBS='${LIBS}'
+	SHLIB_SUFFIX=".so"
+	DL_OBJS="tclLoadDl.o"
+	DL_LIBS="-ldl"
+	LD_FLAGS="-export-dynamic"
 	LD_SEARCH_FLAGS=""
 	;;
     dgux*)
