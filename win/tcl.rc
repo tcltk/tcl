@@ -1,4 +1,4 @@
-// RCS: @(#) $Id: tcl.rc,v 1.4 1999/04/30 22:45:05 stanton Exp $
+// RCS: @(#) $Id: tcl.rc,v 1.5 2000/04/18 23:26:45 redman Exp $
 //
 // Version
 //
@@ -27,7 +27,7 @@ BEGIN
             VALUE "OriginalFilename", "tcl" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) ".dll\0"
             VALUE "CompanyName", "Scriptics Corporation\0"
             VALUE "FileVersion", TCL_PATCH_LEVEL
-            VALUE "LegalCopyright", "Copyright (c) 1999 by Scriptics Corporation\0"
+            VALUE "LegalCopyright", "Copyright (c) 2000 by Scriptics Corporation\0"
             VALUE "ProductName", "Tcl " TCL_VERSION " for Windows\0"
             VALUE "ProductVersion", TCL_PATCH_LEVEL
         END		    

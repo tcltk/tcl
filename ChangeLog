@@ -1,3 +1,11 @@
+2000-04-18    <redman@scriptics.com>
+
+	* win/Makefile.in:
+	* win/tcl.rc:
+	* win/tclsh.rc:
+	* win/tclsh.ico:  Modified copyright dates in Windows resource
+	files.  Added an icon for tclsh.exe.
+
 2000-04-17  Brent Welch <welch@scriptics.com>
 
 	* generic/tcl.h, generic/tclThreadTest.c, unix/tclUnixThrd.c,
