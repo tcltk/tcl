@@ -1,7 +1,9 @@
 2004-05-10  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c (BuildCommandLine): Moved non-obvious appending
-	logic to outside the loop and added commentary for its purpose.
+	logic to outside the loop and added commentary for its purpose. Also
+	use the existence of contents in the linePtr rather than the scratch
+	DString post the append, as this more clear.
 
 	(TclpCreateProcess): When under NT, with no console, and executing a
 	DOS application, the path priming does not need an ending space as
