@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17.2.3 2004/03/31 18:51:01 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.17.2.4 2004/08/13 21:45:16 dgp Exp $
 
 package require Tcl 8.2
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.3.2
+package provide msgcat 1.3.3
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -227,7 +227,12 @@ proc msgcat::mclocale {args} {
     }
 
     if {$len == 1} {
-	set Locale [string tolower [lindex $args 0]]
+	set newLocale [lindex $args 0]
+	if {$newLocale ne [file tail $newLocale]} {
+	    return -code error "invalid newLocale value \"$newLocale\":\
+		    could be path to unsafe code."
+	}
+	set Locale [string tolower $newLocale]
 	set Loclist {}
 	set word ""
 	foreach part [split $Locale _] {
