@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30 2003/01/26 05:59:38 mdejong Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.31 2003/12/13 02:07:05 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -445,8 +445,8 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
-    DWORD newPos, newPosHigh;
-    DWORD oldPos, oldPosHigh;
+    LONG newPos, newPosHigh;
+    LONG oldPos, oldPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -460,8 +460,8 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     /*
      * Save our current place in case we need to roll-back the seek.
      */
-    oldPosHigh = (DWORD)0;
-    oldPos = SetFilePointer(infoPtr->handle, (LONG)0, &oldPosHigh,
+    oldPosHigh = 0;
+    oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh,
 	    FILE_CURRENT);
     if (oldPos == INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -472,8 +472,8 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
 	}
     }
 
-    newPosHigh = (DWORD)(offset < 0 ? -1 : 0);
-    newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
+    newPosHigh = (offset < 0 ? -1 : 0);
+    newPos = SetFilePointer(infoPtr->handle, offset, &newPosHigh,
 			    moveMethod);
     if (newPos == INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
@@ -489,7 +489,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
      */
     if (newPosHigh != 0) {
 	*errorCodePtr = EOVERFLOW;
-	SetFilePointer(infoPtr->handle, (LONG)oldPos, &oldPosHigh, FILE_BEGIN);
+	SetFilePointer(infoPtr->handle, oldPos, &oldPosHigh, FILE_BEGIN);
 	return -1;
     }
     return (int) newPos;
@@ -522,7 +522,7 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
-    DWORD newPos, newPosHigh;
+    LONG newPos, newPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -533,8 +533,8 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
         moveMethod = FILE_END;
     }
 
-    newPosHigh = (DWORD)(offset >> 32);
-    newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
+    newPosHigh = (LONG)(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset), &newPosHigh,
 			    moveMethod);
     if (newPos == INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
