@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.9 1999/06/30 17:47:28 welch Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.10 1999/07/02 19:51:29 welch Exp $
  */
 
 #include "tclInt.h"
@@ -204,7 +204,7 @@ typedef struct Channel {
     CopyState *csPtr;		/* State of background copy, or NULL. */
     struct Channel* supercedes; /* Refers to channel this one was stacked upon.
 				   This reference is NULL for normal channels.
-				   See Tcl_ReplaceChannel. */
+				   See Tcl_StackChannel. */
 
 } Channel;
     
@@ -1352,7 +1352,7 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ReplaceChannel --
+ * Tcl_StackChannel --
  *
  *	Replaces an entry in the hash table for a Tcl_Channel
  *	record. The replacement is a new channel with same name,
@@ -1365,16 +1365,21 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
  *	"Trf-Patch for filtering channels"
  *
  * Results:
- *	Returns the new Tcl_Channel.
+ *	Returns the new Tcl_Channel, which actually contains the
+ *      saved information about prevChan.
  *
  * Side effects:
- *	See above.
+ *    A new channel structure is allocated and linked below
+ *    the existing channel.  The channel operations and client
+ *    data of the existing channel are copied down to the newly
+ *    created channel, and the current channel has its operations
+ *    replaced by the new typePtr.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_Channel
-Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
+Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     Tcl_Interp*      interp;       /* The interpreter we are working in */
     Tcl_ChannelType *typePtr;	   /* The channel type record for the new
 				    * channel. */
@@ -1385,27 +1390,43 @@ Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
     Tcl_Channel      prevChan;	   /* The channel structure to replace */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel            *chanPtr, *pt, *prevPt;
+    Channel            *chanPtr, *pt;
 
     /*
-     * Find the given channel in the list of all channels, compute enough
-     * information to allow easy removal after the conditions are met.
+     * AK, 06/30/1999
+     *
+     * Tcl_StackChannel differs from Tcl_ReplaceChannel of the
+     * original "Trf" patch. Instead of seeing the
+     * newly created structure as the *new* channel to cover the specified
+     * one use it to *save* the current state of the specified channel and
+     * then reinitialize the current structure for the given transformation.
+     *
+     * Advantages:
+     * - No splicing into the (thread-)global list of channels (or the per-
+     *   interp hash-tables).
+     * - Users of the C-API still have valid channel references even after
+     *   the call to this procedure.
+     *
+     * Disadvantages:
+     * - Untested code.
      */
 
-    prevPt = (Channel*) NULL;
+    /*
+     * Find the given channel in the list of all channels.
+     */
+
     pt     = (Channel*) tsdPtr->firstChanPtr;
 
     while (pt != (Channel *) prevChan) {
-	prevPt = pt;
-	pt     = pt->nextChanPtr;
+	pt = pt->nextChanPtr;
     }
 
     /*
-     * 'pt == prevChan' now
+     * 'pt == prevChan' now (or NULL, if not found).
      */
 
     if (!pt) {
-	return (Tcl_Channel) NULL;
+        return (Tcl_Channel) NULL;
     }
 
     /*
@@ -1422,94 +1443,167 @@ Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
      */
 
     if ((mask & Tcl_GetChannelMode (prevChan)) == 0) {
-	return (Tcl_Channel) NULL;
+        return (Tcl_Channel) NULL;
     }
 
     chanPtr = (Channel *) ckalloc((unsigned) sizeof(Channel));
-    chanPtr->flags = mask;
 
     /*
-     * Set the channel up initially in no Input translation mode and
-     * no Output translation mode.
+     * Save some of the current state into the new structure,
+     * reinitialize the parts which will stay with the transformation.
+     *
+     * Remarks:
+     * - We cannot discard the buffers, and they cannot be used from the
+     *   transformation placed later into the 'pt' structure. Save them,
+     *   and believe that Tcl_SetChannelOption (buffering, none) will do
+     *   the right thing.
+     * - encoding and EOL-translation control information is initialized
+     *   to values for 'binary'. This is later reinforced via
+     *   Tcl_SetChanneloption to get the handling of flags and the event
+     *   system right.
+     * - The 'interestMask' of the saved channel is cleared, but the
+     *   transformations WatchProc is used to establish the connection
+     *   between transformation and underlying channel. This should
+     *   reestablish the correct mask.
+     * - TTO = Transform Takes Over.   The hidden channel no longer
+     *         needs to perform this function.
      */
-
-    chanPtr->inputTranslation = TCL_TRANSLATE_LF;
-    chanPtr->outputTranslation = TCL_TRANSLATE_LF;
-    chanPtr->inEofChar = 0;
-    chanPtr->outEofChar = 0;
-
-    chanPtr->unreportedError = 0;
-    chanPtr->instanceData = instanceData;
-    chanPtr->typePtr = typePtr;
-    chanPtr->refCount = 0;
-    chanPtr->closeCbPtr = (CloseCallback *) NULL;
-    chanPtr->curOutPtr = (ChannelBuffer *) NULL;
-    chanPtr->outQueueHead = (ChannelBuffer *) NULL;
-    chanPtr->outQueueTail = (ChannelBuffer *) NULL;
-    chanPtr->saveInBufPtr = (ChannelBuffer *) NULL;
-    chanPtr->inQueueHead = (ChannelBuffer *) NULL;
-    chanPtr->inQueueTail = (ChannelBuffer *) NULL;
-    chanPtr->chPtr = (ChannelHandler *) NULL;
-    chanPtr->interestMask = 0;
-    chanPtr->scriptRecordPtr = (EventScriptRecord *) NULL;
-    chanPtr->bufSize = CHANNELBUFFER_DEFAULT_SIZE;
-    chanPtr->timer = NULL;
-    chanPtr->csPtr = NULL;
-
-    /* 06/12/1998: New for Tcl 8.1
-     *
-     * Take over the encoding from the superceded channel, so that it will be
-     * executed in the future despite the replacement, and at the proper time
-     * (*after* / *before* our transformation, depending on the direction of
-     * the dataflow).
-     *
-     * *Important*
-     * The I/O functionality of the filtering channel has to use 'Tcl_Read' to
-     * get at the underlying information. This will circumvent the de/encoder
-     * stage [*] in the superceded channel and removes the need to trouble
-     * ourselves with 'ByteArray's too.
-     *
-     * [*] I'm talking about the conversion between UNICODE and other
-     *     representations, like ASCII.
-     */
-
-    chanPtr->encoding=Tcl_GetEncoding(interp,Tcl_GetEncodingName(pt->encoding));
-    chanPtr->inputEncodingState  = pt->inputEncodingState;
-    chanPtr->inputEncodingFlags  = pt->inputEncodingFlags;
-    chanPtr->outputEncodingState = pt->outputEncodingState;
-    chanPtr->outputEncodingFlags = pt->outputEncodingFlags;
-
-    chanPtr->outputStage = NULL;
-
-    if ((chanPtr->encoding != NULL) && (chanPtr->flags & TCL_WRITABLE)) {
-    chanPtr->outputStage = (char *)
-	ckalloc((unsigned) (chanPtr->bufSize + 2));
-    }
-
-    chanPtr->supercedes = (Channel*) prevChan;
 
     chanPtr->channelName = (char *) ckalloc (strlen(pt->channelName)+1);
     strcpy (chanPtr->channelName, pt->channelName);
 
+    chanPtr->flags               = pt->flags;           /* Save */
+
+    chanPtr->encoding            = (Tcl_Encoding) NULL; /* == 'binary' */
+    chanPtr->inputEncodingState  = (Tcl_EncodingState) NULL;
+    chanPtr->inputEncodingFlags  = TCL_ENCODING_START;
+    chanPtr->outputEncodingState = (Tcl_EncodingState) NULL;
+    chanPtr->outputEncodingFlags = TCL_ENCODING_START;
+
+    chanPtr->inputTranslation    = TCL_TRANSLATE_LF; /* == 'binary' */
+    chanPtr->outputTranslation   = TCL_TRANSLATE_LF; /* == 'binary' */
+    chanPtr->inEofChar           = pt->inEofChar;         /* Save */
+    chanPtr->outEofChar          = pt->outEofChar;        /* Save */
+
+    chanPtr->unreportedError     = pt->unreportedError;   /* Save */
+    chanPtr->instanceData        = pt->instanceData;      /* Save */
+    chanPtr->typePtr             = pt->typePtr;           /* Save */
+    chanPtr->refCount            = 0;   /* None, as the structure is covered */
+    chanPtr->closeCbPtr          = (CloseCallback*) NULL; /* TTO */
+
+    chanPtr->outputStage         = (char*) NULL;
+    chanPtr->curOutPtr           = pt->curOutPtr;    /* Save */
+    chanPtr->outQueueHead        = pt->outQueueHead; /* Save */
+    chanPtr->outQueueTail        = pt->outQueueTail; /* Save */
+    chanPtr->saveInBufPtr        = pt->saveInBufPtr; /* Save */
+    chanPtr->inQueueHead         = pt->outQueueHead; /* Save */
+    chanPtr->inQueueTail         = pt->inQueueTail;  /* Save */
+
+    chanPtr->chPtr               = (ChannelHandler *) NULL;  /* TTO */
+    chanPtr->interestMask        = 0;
+    chanPtr->nextChanPtr         = (Channel*) NULL;     /* Is not in list! */
+    chanPtr->scriptRecordPtr     = (EventScriptRecord *) NULL; /* TTO */
+    chanPtr->bufSize             = CHANNELBUFFER_DEFAULT_SIZE;
+    chanPtr->timer               = (Tcl_TimerToken) NULL;      /* TTO */
+    chanPtr->csPtr               = (CopyState*) NULL;          /* TTO */
+
     /*
-     * Link the new channel into the same spot in the per-interp
-     * channel list as the old channel was.
+     * Place new block at the head of a possibly existing list of previously
+     * stacked channels, then do the missing initializations of translation
+     * and buffer system.
      */
 
-    if (prevPt) {
-	prevPt->nextChanPtr = chanPtr;
-    } else {
-	tsdPtr->firstChanPtr = chanPtr;
+    chanPtr->supercedes          = pt->supercedes;
+
+    Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
+	"-translation", "binary");
+    Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
+	"-buffering",   "none");
+
+    /*
+     * Save accomplished, now reinitialize the (old) structure for the
+     * transformation.
+     *
+     * - The information about encoding and eol-translation is taken
+     *   without change.  There is no need to fiddle with
+     *   refCount et. al.
+     */
+
+    pt->flags               = mask;
+
+    /*
+     * EDITORS NOTE:  all the lines with "take it as is" should get
+     * deleted once this code has been debugged.
+     */
+
+    /* pt->encoding,            take it as is */
+    /* pt->inputEncodingState,  take it as is */
+    /* pt->inputEncodingFlags,  take it as is */
+    /* pt->outputEncodingState, take it as is */
+    /* pt->outputEncodingFlags, take it as is */
+
+    /* pt->inputTranslation,    take it as is */
+    /* pt->outputTranslation,   take it as is */
+
+    /*
+     * No special EOF character, that condition is determined by the
+     * old channel
+     */
+
+    pt->inEofChar           = 0;
+    pt->outEofChar          = 0;
+
+    pt->unreportedError     = 0; /* No errors yet */
+    pt->instanceData        = instanceData; /* Transformation state */
+    pt->typePtr             = typePtr;      /* Transformation type */
+    /* pt->refCount,            take it as it is */
+    /* pt->closeCbPtr,          take it as it is */
+
+    /* pt->outputStage,         take it as it is */
+    pt->curOutPtr           = (ChannelBuffer *) NULL;
+    pt->outQueueHead        = (ChannelBuffer *) NULL;
+    pt->outQueueTail        = (ChannelBuffer *) NULL;
+    pt->saveInBufPtr        = (ChannelBuffer *) NULL;
+    pt->inQueueHead         = (ChannelBuffer *) NULL;
+    pt->inQueueTail         = (ChannelBuffer *) NULL;
+
+    /* pt->chPtr,               take it as it is */
+    /* pt->interestMask,        take it as it is */
+    /* pt->nextChanPtr,         take it as it is */
+    /* pt->scriptRecordPtr,     take it as it is */
+    pt->bufSize             = CHANNELBUFFER_DEFAULT_SIZE;
+    /* pt->timer,               take it as it is */
+    /* pt->csPtr,               take it as it is */
+
+    /*
+     * Have the transformation reference the new structure containing
+     * the saved channel.
+     */
+
+    pt->supercedes          = chanPtr;
+
+    /*
+     * Don't forget to reinitialize the output buffer used for encodings.
+     */
+
+    if ((chanPtr->encoding != NULL) && (chanPtr->flags & TCL_WRITABLE)) {
+        chanPtr->outputStage = (char *)
+	    ckalloc((unsigned) (chanPtr->bufSize + 2));
     }
 
-    chanPtr->nextChanPtr = pt->nextChanPtr;
-
     /*
-     * The following call replaces the hash table mapping from name
-     * to channel with a pointer to the new channel.
+     * Event handling: If the information in the old channel shows
+     * that there was interest in some events call the 'WatchProc'
+     * of the transformation to establish the proper connection
+     * between them.
      */
 
-    Tcl_RegisterChannel (interp, (Tcl_Channel) chanPtr);
+    if (pt->interestMask) {
+        int interest = pt->interestMask;
+
+	pt->interestMask = 0;
+        (pt->typePtr->watchProc) (pt->instanceData, interest);
+    }
 
     /*
      * The superceded channel is effectively unregistered
@@ -1518,7 +1612,6 @@ Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
      * Don't add the following code:
      *
      * chanPtr->supercedes->refCount --;
-     *
      */
 
     return (Tcl_Channel) chanPtr;
@@ -1527,12 +1620,12 @@ Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UndoReplaceChannel --
+ * Tcl_UnstackChannel --
  *
  *	Unstacks an entry in the hash table for a Tcl_Channel
- *	record. This is the reverse to 'Tcl_ReplaceChannel'.
+ *	record. This is the reverse to 'Tcl_StackChannel'.
  *	The old, superceded channel is uncovered and re-registered
- *	in the appropriate datastructures.
+ *	in the appropriate data structures.
  *
  * Results:
  *	Returns the old Tcl_Channel, i.e. the one which was stacked over.
@@ -1544,55 +1637,188 @@ Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
  */
 
 void
-Tcl_UndoReplaceChannel (interp, chan)
-Tcl_Interp* interp; /* The interpreter we are working in */
-Tcl_Channel chan;   /* The channel to unstack */
+Tcl_UnstackChannel (interp, chan)
+    Tcl_Interp* interp; /* The interpreter we are working in */
+    Tcl_Channel chan;   /* The channel to unstack */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel* chanPtr = (Channel*) chan;
 
     if (chanPtr->supercedes != (Channel*) NULL) {
-	Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
-	Tcl_HashEntry *hPtr;	/* Search variable. */
-	int new;		/* Is the hash entry new or does it exist? */
-
-	/*
-	 * Insert the channel we were stacked upon back into
-	 * the list of open channels. Place it back into the hashtable too.
-	 * Correct 'refCount', as this actually unregisters 'chan'.
+        /*
+	 * Instead of manipulating the per-thread / per-interp list/hashtable
+	 * of registered channels we wind down the state of the transformation,
+	 * and then restore the state of underlying channel into the old
+	 * structure.
 	 */
 
-	chanPtr->supercedes->nextChanPtr = tsdPtr->firstChanPtr;
-	tsdPtr->firstChanPtr             = chanPtr->supercedes;
-
-	hTblPtr = GetChannelTable (interp);
-	hPtr    = Tcl_CreateHashEntry (hTblPtr, chanPtr->channelName, &new);
-
-	Tcl_SetHashValue(hPtr, (ClientData) chanPtr->supercedes);
-	chanPtr->refCount --;
+	Tcl_DString ds; /* storage to copy option information */
+        Channel    top; /* Save area for current transformation */
+	Channel*   chanDownPtr = chanPtr->supercedes;
+	int interest;   /* interest mask of transformation before destruct. */
 
 	/*
-	 * The superceded channel is effectively registered again
-	 * Don't add the following code because we didn't
-	 * decremented the reference count at replace time.
+	 * Event handling: Disallow the delivery of events from the
+	 * old, now uncovered channel to the transformation.
 	 *
-	 * chanPtr->supercedes->refCount ++;
-	 *
+	 * This is done before everything else to avoid problems
+	 * after our heavy-duty shuffling of pointers around.
 	 */
+
+	interest = chanPtr->interestMask;
+        (chanPtr->typePtr->watchProc) (chanPtr->instanceData, 0);
+
+	/*
+	 * Save the transformation, then restore the old channel from the
+	 * first structure downstream. The overall effect is that
+	 * transformation and underlying channel swapped places, and the
+	 * transformation is cut loose from the stack. Without the latter
+	 * a Tcl_Close on the transformation would be impossible, as that
+	 * procedure will free the structure, making 'top' unusable.
+	 *
+	 * Beware, same information must not take part in the swap,
+	 * use correction code to ensure this.
+	 */
+
+	memcpy ((void*) &top,         (void*) chanPtr,     sizeof (Channel));
+	memcpy ((void*) &chanPtr,     (void*) chanDownPtr, sizeof (Channel));
+	top.supercedes = (Channel*) NULL;
+	memcpy ((void*) &chanDownPtr, (void*) &top,        sizeof (Channel));
+
+	chanPtr->refCount        = chanDownPtr->refCount;
+	chanPtr->closeCbPtr      = chanDownPtr->closeCbPtr;
+	chanPtr->chPtr           = chanDownPtr->chPtr;
+	chanPtr->nextChanPtr     = chanDownPtr->nextChanPtr;
+	chanPtr->scriptRecordPtr = chanDownPtr->scriptRecordPtr;
+	chanPtr->timer           = chanDownPtr->timer;
+	chanPtr->csPtr           = chanDownPtr->csPtr;
+
+	chanDownPtr->refCount        = 0;
+	chanDownPtr->closeCbPtr      = (CloseCallback*) NULL;
+	chanDownPtr->chPtr           = (ChannelHandler*) NULL;
+	chanDownPtr->nextChanPtr     = (Channel*) NULL;
+	chanDownPtr->scriptRecordPtr = (EventScriptRecord*) NULL;
+	chanDownPtr->timer           = (Tcl_TimerToken) NULL;
+	chanDownPtr->csPtr           = (CopyState*) NULL;
+
+	/*
+	 * Now it is possible to wind down the transformation (in 'top'),
+	 * especially to copy the current encoding and translation control
+	 * information down.
+	 */
+	
+	/*
+	 * Move the currently active encoding from the transformation
+	 * to the now uncovered channel. We assume here that this
+	 * channel uses 'encoding binary' (==> encoding == NULL, etc.
+	 * This allows us to simply copy the pointers without having to
+	 * think about refcounts and deallocation of the old encoding.
+	 */
+
+	chanPtr->encoding            = chanDownPtr->encoding;
+	chanPtr->inputEncodingState  = chanDownPtr->inputEncodingState;
+	chanPtr->inputEncodingFlags  = chanDownPtr->inputEncodingFlags;
+	chanPtr->outputEncodingState = chanDownPtr->outputEncodingState;
+	chanPtr->outputEncodingFlags = chanDownPtr->outputEncodingFlags;
+
+	/*
+	 * Prevent the accidential removal of the encoding during
+	 * the destruction of the transformation channel.
+	 */
+
+	chanDownPtr->encoding            = (Tcl_Encoding) NULL;
+	chanDownPtr->inputEncodingState  = (Tcl_EncodingState) NULL;
+	chanDownPtr->inputEncodingFlags  = TCL_ENCODING_START;
+	chanDownPtr->outputEncodingState = (Tcl_EncodingState) NULL;
+	chanDownPtr->outputEncodingFlags = TCL_ENCODING_START;
+
+	/*
+	 * And don't forget to reenable the EOL-translation used by the
+	 * transformation. Using a DString to do this *is* a bit awkward,
+	 * but still the best way to handle the complexities here, like
+	 * flag manipulation and event system.
+	 */
+
+	Tcl_DStringInit (&ds);
+	Tcl_GetChannelOption (interp, (Tcl_Channel) chanDownPtr,
+            "-translation", &ds);
+	Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
+	    "-translation", ds.string);
+
+	Tcl_DStringSetLength (&ds, 0);
+
+	Tcl_GetChannelOption (interp, (Tcl_Channel) chanDownPtr,
+	    "-buffering", &ds);
+	Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
+	    "-buffering", ds.string);
+
+	Tcl_DStringFree (&ds);
+
+	/*
+	 * Now a little trick: Add the transformation structure to the
+	 * per-thread list of existing channels (which it never were
+	 * part of so far), or Tcl_Close/FlushChannel will panic
+	 * ("damaged channel list").
+	 *
+	 * Afterward do a regular close upon the transformation.
+	 * This may cause flushing of data into the old channel (if the
+	 * transformation remembered its own channel in itself).
+	 *
+	 * We know that its refCount dropped to 0.
+	 */
+
+	chanDownPtr->nextChanPtr = tsdPtr->firstChanPtr;
+	tsdPtr->firstChanPtr     = chanDownPtr;
+
+	Tcl_Close (interp, (Tcl_Channel)chanDownPtr);
+
+	/*
+	 * Event handling: If the information from the now destroyed
+	 * transformation shows that there was interest in some events
+	 * call the 'WatchProc' of the now uncovered channel to renew
+	 * that interest with underlying channels or the driver.
+	 */
+
+	if (interest) {
+	    chanPtr->interestMask = 0;
+	    (chanPtr->typePtr->watchProc) (chanPtr->instanceData,
+		interest);
+	}
+
+    } else {
+        /* This channel does not cover another one.
+	 * Simply do a close, if necessary.
+	 */
+
+        if (chanPtr->refCount == 0) {
+	    Tcl_Close (interp, chan);
+	}
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetStackedChannel --
+ *
+ *	Determines wether the specified channel is stacked upon another.
+ *
+ * Results:
+ *	NULL if the channel is not stacked upon another one, or a reference
+ *	to the channel it is stacked upon. This reference can be used in
+ *	queries, but modification is not allowed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-    /*
-     * Disconnect the channels, then do a regular close upon the
-     * stacked one, the filtering channel. This may cause flushing
-     * of data into the superceded channel (if the filtering channel
-     * ('chan') remembered its parent in itself).
-     */
-
-    chanPtr->supercedes = NULL;
-
-    if (chanPtr->refCount == 0) {
-	Tcl_Close (interp, chan);
-    }
+Tcl_Channel
+Tcl_GetStackedChannel(Tcl_Channel chan)
+{
+  Channel* chanPtr = (Channel*) chan;
+  return (Tcl_Channel) chanPtr->supercedes;
 }
 
 /*
@@ -7902,3 +8128,4 @@ SetBlockMode(interp, chanPtr, mode)
     }
     return TCL_OK;
 }
+

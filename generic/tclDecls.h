@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.18 1999/06/30 17:47:28 welch Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.19 1999/07/02 19:51:29 welch Exp $
  */
 
 #ifndef _TCLDECLS
@@ -904,14 +904,15 @@ EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor,
 /* 280 */
 EXTERN void		Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp * interp));
 /* 281 */
-EXTERN Tcl_Channel	Tcl_ReplaceChannel _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN Tcl_Channel	Tcl_StackChannel _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_ChannelType * typePtr, 
 				ClientData instanceData, int mask, 
 				Tcl_Channel prevChan));
 /* 282 */
-EXTERN void		Tcl_UndoReplaceChannel _ANSI_ARGS_((
+EXTERN void		Tcl_UnstackChannel _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Channel chan));
-/* Slot 283 is reserved */
+/* 283 */
+EXTERN Tcl_Channel	Tcl_GetStackedChannel _ANSI_ARGS_((Tcl_Channel chan));
 /* Slot 284 is reserved */
 /* Slot 285 is reserved */
 /* 286 */
