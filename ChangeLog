@@ -1,3 +1,11 @@
+2004-05-17  Kevin B. Kenny  <kennykb.@acm.org>
+
+	* generic/tclInt.decls:      Restored TclpTime_t kludge to all
+	* generic/tclIntPlatDecls.h: places where it appeared before the
+	* unix/tclUnixPort.h         changes of 14 May, because use of
+	* unix/tclUnixTime.h         native time_t in its place requires
+	* win/tclWinTime.h:          the 8.5 header reforms.  [Bug #955146]
+	
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/OpenFileChnl.3: Documented type of 'offset' argument to
