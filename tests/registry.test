@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.1.2.7 1999/03/24 02:49:36 hershey Exp $
+# RCS: @(#) $Id: registry.test,v 1.1.2.8 1999/04/01 21:56:03 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -29,9 +29,8 @@ if {$tcl_platform(platform) == "windows"} {
 
 # determine the current locale
 set old [testlocale all]
-if {[testlocale all ""] == "English_United States.1252"} {
-    # error messages from registry package are already localized.
-
+if {![string compare [testlocale all ""] "English_United States.1252"]} {
+	# error messages from registry package are already localized.
     set ::tcltest::testConfig(english) 1
 }
 testlocale all $old
@@ -151,7 +150,15 @@ test registry-2.8 {DeleteKey: failure} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
 } {}
-
+test registry-2.9 {DeleteKey: unicode} {pcOnly} {
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test\u00c7bar\\a
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test\u00c7bar\\b
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar\\test\u00c7bar
+    set result [registry keys HKEY_CLASSES_ROOT\\TclFoobar]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} {}
 
 test registry-3.1 {DeleteValue} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
@@ -173,7 +180,15 @@ test registry-3.3 {DeleteValue: bad value} {pcOnly english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } {1 {unable to delete value "test1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
-
+test registry-3.4 {DeleteValue: Unicode} {pcOnly} {
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz \u00c7test1 blort
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz test2 blat
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz \u00c7test1
+    set result [registry values HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} test2
 
 test registry-4.1 {GetKeyNames: bad key} {pcOnly english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
@@ -217,6 +232,24 @@ test registry-4.6 {GetKeyNames: names with spaces} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } {{baz bar} blat}
+test registry-4.7 {GetKeyNames: Unicode} {pcOnly english} {
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz\u00c7bar
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar b*]]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} "baz\u00c7bar blat"
+test registry-4.8 {GetKeyNames: Unicode} {pcOnly} {
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz\u30b7bar
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
+    registry set HKEY_CLASSES_ROOT\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar b*]]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} "baz\u30b7bar blat"
 
 test registry-5.1 {GetType} {pcOnly english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
@@ -289,6 +322,12 @@ test registry-5.12 {GetType} {pcOnly} {
 test registry-5.13 {GetType: unknown types} {pcOnly} {
     registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 24
     set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} 24
+test registry-5.14 {GetType: Unicode} {pcOnly} {
+    registry set HKEY_CLASSES_ROOT\\TclFoobar va\u00c7l1 1 24
+    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar va\u00c7l1]
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } 24
@@ -386,6 +425,30 @@ test registry-6.16 {GetValue: unknown types} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } 1
+test registry-6.17 {GetValue: Unicode value names} {pcOnly} {
+    registry set HKEY_CLASSES_ROOT\\TclFoobar val\u00c71 foobar multi_sz
+    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val\u00c71]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} foobar
+test registry-6.18 {GetValue: values with Unicode strings} {pcOnly} {
+    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
+    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} "foo ba\u30b7r baz"
+test registry-6.19 {GetValue: values with Unicode strings} {pcOnly english} {
+    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u00c7r baz} multi_sz
+    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} "foo ba\u00c7r baz"
+test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} {pcOnly} {
+    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u0000r baz} multi_sz
+    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
+    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    set result
+} "foo ba r baz"
 
 test registry-7.1 {GetValueNames: bad key} {pcOnly english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
@@ -440,7 +503,9 @@ test registry-7.7 {GetValueNames: names with spaces} {pcOnly} {
 } {{baz bar} blat}
 
 test registry-8.1 {OpenSubKey} {pcOnly nonPortable english} {
-    list [catch {registry keys {\\petrouchka\HKEY_LOCAL_MACHINE}} msg] $msg
+    # This test will only succeed if the current user does not have registry
+    # access on the specified machine.
+    list [catch {registry keys {\\mom\HKEY_LOCAL_MACHINE}} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 test registry-8.2 {OpenSubKey} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
@@ -511,7 +576,9 @@ test registry-11.2 {SetValue: modification} {pcOnly} {
     set result [registry get HKEY_CLASSES_ROOT\\TclFoobar\\baz blat]
 } frob
 test registry-11.3 {SetValue: failure} {pcOnly nonPortable english} {
-    list [catch {registry set {\\petrouchka\HKEY_CLASSES_ROOT\TclFoobar} bar foobar} msg] $msg
+    # This test will only succeed if the current user does not have registry
+    # access on the specified machine.
+    list [catch {registry set {\\mom\HKEY_CLASSES_ROOT\TclFoobar} bar foobar} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 
 
@@ -519,6 +586,7 @@ test registry-11.3 {SetValue: failure} {pcOnly nonPortable english} {
 unset hostname
 ::tcltest::cleanupTests
 return
+
 
 
 
