@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.41 1999/06/15 20:44:36 wart Exp $
+# RCS: @(#) $Id: configure.in,v 1.42 1999/06/16 02:20:41 wart Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
@@ -473,12 +473,8 @@ SC_BLOCKING_STYLE
 #	building libtcl as a shared library instead of a static library.
 #--------------------------------------------------------------------
 
-if test "$TCL_SHARED_LIB_SUFFIX" = "" ; then
-    TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}${SHLIB_SUFFIX}'
-fi
-if test "$TCL_UNSHARED_LIB_SUFFIX" = "" ; then
-    TCL_UNSHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
-fi
+TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
+TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 
 SC_ENABLE_SHARED
 
