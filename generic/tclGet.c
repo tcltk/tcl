@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.9 2004/04/06 22:25:51 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.9.2.1 2005/02/02 15:53:24 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -220,11 +220,11 @@ Tcl_GetDouble(interp, string, doublePtr)
 				 * in a form acceptable to strtod. */
     double *doublePtr;		/* Place to store converted result. */
 {
-    char *end;
+    CONST char *end;
     double d;
 
     errno = 0;
-    d = strtod(string, &end); /* INTL: Tcl source. */
+    d = TclStrToD(string, &end); /* INTL: Tcl source. */
     if (end == string) {
 	badDouble:
         if (interp != (Tcl_Interp *) NULL) {

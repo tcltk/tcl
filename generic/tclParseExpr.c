@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23 2004/10/08 15:39:55 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.1 2005/02/02 15:53:27 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1666,14 +1666,15 @@ GetLexeme(infoPtr)
 	     * so we can set an terminating NULL to keep strtod from
 	     * scanning too far.
 	     */
-	    char *startPtr, *termPtr;
+	    char *startPtr;
+	    CONST char *termPtr;
 	    double doubleValue;
 	    Tcl_DString toParse;
 
 	    errno = 0;
 	    Tcl_DStringInit(&toParse);
 	    startPtr = Tcl_DStringAppend(&toParse, src, length);
-	    doubleValue = strtod(startPtr, &termPtr);
+	    doubleValue = TclStrToD(startPtr, &termPtr);
 	    Tcl_DStringFree(&toParse);
 	    if (termPtr != startPtr) {
 		if (errno != 0) {

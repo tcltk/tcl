@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.4 2005/01/20 19:13:22 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.5 2005/02/02 15:53:26 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1742,6 +1742,14 @@ MODULE_SCOPE char *	tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 MODULE_SCOPE Tcl_NotifierProcs tclOriginalNotifier;
 
+/* TIP #233 (Virtualized Time)
+ * Data for the time hooks, if any.
+ */
+
+MODULE_SCOPE Tcl_GetTimeProc*   tclGetTimeProcPtr;
+MODULE_SCOPE Tcl_ScaleTimeProc* tclScaleTimeProcPtr;
+MODULE_SCOPE ClientData         tclTimeClientData;
+
 /*
  * Variables denoting the Tcl object types defined in the core.
  */
@@ -1969,10 +1977,6 @@ MODULE_SCOPE Tcl_Obj*	TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr,
 MODULE_SCOPE int	TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 MODULE_SCOPE Tcl_Obj *	TclPathPart _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *pathPtr, Tcl_PathPart portion));
-MODULE_SCOPE void	TclpCutFileChannel _ANSI_ARGS_((Tcl_Channel chan));
-MODULE_SCOPE void	TclpCutSockChannel _ANSI_ARGS_((Tcl_Channel chan));
-MODULE_SCOPE void	TclpSpliceFileChannel _ANSI_ARGS_((Tcl_Channel chan));
-MODULE_SCOPE void	TclpSpliceSockChannel _ANSI_ARGS_((Tcl_Channel chan));
 MODULE_SCOPE void	TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
 MODULE_SCOPE char *	TclpReadlink _ANSI_ARGS_((CONST char *fileName,
@@ -2006,6 +2010,8 @@ MODULE_SCOPE void	TclSetProcessGlobalValue _ANSI_ARGS_ ((
 			    Tcl_Encoding encoding));
 MODULE_SCOPE VOID	TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
+MODULE_SCOPE double	TclStrToD _ANSI_ARGS_((CONST char* string,
+					       CONST char** endPtr));
 MODULE_SCOPE int	TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    int *tokensLeftPtr));

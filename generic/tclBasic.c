@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.2 2005/01/20 19:12:35 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.3 2005/02/02 15:53:15 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3882,11 +3882,29 @@ Tcl_ExprLong(interp, string, ptr)
 	    /*
 	     * Store an integer based on the expression result.
 	     */
-	    
+
 	    if (resultPtr->typePtr == &tclIntType) {
 		*ptr = resultPtr->internalRep.longValue;
 	    } else if (resultPtr->typePtr == &tclDoubleType) {
 		*ptr = (long) resultPtr->internalRep.doubleValue;
+	    } else if (resultPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
+		/*
+		 * See Tcl_GetIntFromObj for conversion comments.
+		 */
+		Tcl_WideInt w = resultPtr->internalRep.wideValue;
+		if ((w >= -(Tcl_WideInt)(ULONG_MAX))
+			&& (w <= (Tcl_WideInt)(ULONG_MAX))) {
+		    *ptr = Tcl_WideAsLong(w);
+		} else {
+		    Tcl_SetResult(interp,
+			    "integer value too large to represent as non-long integer",
+			    TCL_STATIC);
+		    result = TCL_ERROR;
+		}
+#else
+		*ptr = resultPtr->internalRep.longValue;
+#endif
 	    } else {
 		Tcl_SetResult(interp,
 		        "expression didn't have numeric value", TCL_STATIC);
@@ -3932,11 +3950,29 @@ Tcl_ExprDouble(interp, string, ptr)
 	    /*
 	     * Store a double  based on the expression result.
 	     */
-	    
+
 	    if (resultPtr->typePtr == &tclIntType) {
 		*ptr = (double) resultPtr->internalRep.longValue;
 	    } else if (resultPtr->typePtr == &tclDoubleType) {
 		*ptr = resultPtr->internalRep.doubleValue;
+	    } else if (resultPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
+		/*
+		 * See Tcl_GetIntFromObj for conversion comments.
+		 */
+		Tcl_WideInt w = resultPtr->internalRep.wideValue;
+		if ((w >= -(Tcl_WideInt)(ULONG_MAX))
+			&& (w <= (Tcl_WideInt)(ULONG_MAX))) {
+		    *ptr = (double) Tcl_WideAsLong(w);
+		} else {
+		    Tcl_SetResult(interp,
+			    "integer value too large to represent as non-long integer",
+			    TCL_STATIC);
+		    result = TCL_ERROR;
+		}
+#else
+		*ptr = (double) resultPtr->internalRep.longValue;
+#endif
 	    } else {
 		Tcl_SetResult(interp,
 		        "expression didn't have numeric value", TCL_STATIC);
@@ -3982,11 +4018,17 @@ Tcl_ExprBoolean(interp, string, ptr)
 	    /*
 	     * Store a boolean based on the expression result.
 	     */
-	    
+
 	    if (resultPtr->typePtr == &tclIntType) {
 		*ptr = (resultPtr->internalRep.longValue != 0);
 	    } else if (resultPtr->typePtr == &tclDoubleType) {
 		*ptr = (resultPtr->internalRep.doubleValue != 0.0);
+	    } else if (resultPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
+		*ptr = (resultPtr->internalRep.wideValue != 0);
+#else
+		*ptr = (resultPtr->internalRep.longValue != 0);
+#endif
 	    } else {
 		result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
 	    }
@@ -4642,7 +4684,7 @@ Tcl_AllowExceptions(interp)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetVersion
+ * Tcl_GetVersion --
  *
  *	Get the Tcl major, minor, and patchlevel version numbers and
  *      the release type.  A patch is a release type TCL_FINAL_RELEASE

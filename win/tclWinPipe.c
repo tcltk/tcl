@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.53 2004/12/01 23:18:55 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.53.2.1 2005/02/02 15:54:04 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -205,6 +205,9 @@ static void		ProcExitHandler(ClientData clientData);
 static int		TempFileName(WCHAR name[MAX_PATH]);
 static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 
+static void             PipeThreadActionProc _ANSI_ARGS_ ((
+			   ClientData instanceData, int action));
+
 /*
  * This structure describes the channel type structure for command pipe
  * based IO.
@@ -212,7 +215,7 @@ static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 
 static Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     TCL_CLOSE2PROC,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
@@ -225,6 +228,8 @@ static Tcl_ChannelType pipeChannelType = {
     PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    NULL,                       /* wide seek proc */
+    PipeThreadActionProc,       /* thread action proc */
 };
 
 /*
@@ -1696,6 +1701,7 @@ TclpCreateCommandChannel(
     infoPtr->writeBuf = 0;
     infoPtr->writeBufLen = 0;
     infoPtr->writeError = 0;
+    infoPtr->channel = (Tcl_Channel) NULL;
 
     /*
      * Use one of the fds associated with the channel as the
@@ -2977,7 +2983,10 @@ PipeReaderThread(LPVOID arg)
 	 */
 
 	Tcl_MutexLock(&pipeMutex);
-	Tcl_ThreadAlert(infoPtr->threadId);
+	if (infoPtr->threadId != NULL) {
+	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    Tcl_ThreadAlert(infoPtr->threadId);
+	}
 	Tcl_MutexUnlock(&pipeMutex);
     }
 
@@ -3065,10 +3074,60 @@ PipeWriterThread(LPVOID arg)
 	 */
 
 	Tcl_MutexLock(&pipeMutex);
-	Tcl_ThreadAlert(infoPtr->threadId);
+	if (infoPtr->threadId != NULL) {
+	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    Tcl_ThreadAlert(infoPtr->threadId);
+	}
 	Tcl_MutexUnlock(&pipeMutex);
     }
 
     return 0;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PipeThreadActionProc --
+ *
+ *	Insert or remove any thread local refs to this channel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes thread local list of valid channels.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static void
+PipeThreadActionProc (instanceData, action)
+     ClientData instanceData;
+     int action;
+{
+    PipeInfo *infoPtr = (PipeInfo *) instanceData;
+
+    /* We do not access firstPipePtr in the thread structures. This is
+     * not for all pipes managed by the thread, but only those we are
+     * watching. Removal of the filevent handlers before transfer thus
+     * takes care of this structure.
+     */
+
+    Tcl_MutexLock(&pipeMutex);
+    if (action == TCL_CHANNEL_THREAD_INSERT) {
+        /* We can't copy the thread information from the channel when
+	 * the channel is created. At this time the channel back
+	 * pointer has not been set yet. However in that case the
+	 * threadId has already been set by TclpCreateCommandChannel
+	 * itself, so the structure is still good.
+	 */
+
+        PipeInit ();
+        if (infoPtr->channel != NULL) {
+	    infoPtr->threadId = Tcl_GetChannelThread (infoPtr->channel);
+	}
+    } else {
+	infoPtr->threadId = NULL;
+    }
+    Tcl_MutexUnlock(&pipeMutex);
+}

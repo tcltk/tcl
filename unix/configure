@@ -7269,7 +7269,7 @@ rm -f conftest*
 		;;
 	    esac
 	    ;;
-	Rhapsody-*|Darwin-*)
+	Darwin-*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
 	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -install_name \${DYLIB_INSTALL_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr 0xa000000"
@@ -7279,7 +7279,7 @@ rm -f conftest*
 	    DL_OBJS="tclLoadDyld.o"
 	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
-	    LDFLAGS="$LDFLAGS -prebind"
+	    LDFLAGS="$LDFLAGS -prebind -Wl,-search_paths_first"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-Os"
@@ -7514,8 +7514,16 @@ _ACEOF
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
 			if test "$GCC" = "yes" ; then
-			    { echo "$as_me:$LINENO: WARNING: \"64bit mode not supported with GCC on $system\"" >&5
-echo "$as_me: WARNING: \"64bit mode not supported with GCC on $system\"" >&2;}
+			    if test "`gcc -dumpversion | awk -F. '{print $1}'`" -lt "3" ; then
+				{ echo "$as_me:$LINENO: WARNING: 64bit mode not supported with GCC < 3.2 on $system" >&5
+echo "$as_me: WARNING: 64bit mode not supported with GCC < 3.2 on $system" >&2;}
+			    else
+				do64bit_ok=yes
+				CFLAGS="$CFLAGS -m64 -mcpu=v9"
+				LDFLAGS="$LDFLAGS -m64 -mcpu=v9"
+				SHLIB_CFLAGS="-fPIC"
+				SHLIB_LD_FLAGS=""
+			    fi
 			else
 			    do64bit_ok=yes
 			    if test "$do64bitVIS" = "yes" ; then
@@ -7527,8 +7535,8 @@ echo "$as_me: WARNING: \"64bit mode not supported with GCC on $system\"" >&2;}
 			    fi
 			fi
 		else
-		    { echo "$as_me:$LINENO: WARNING: \"64bit mode only supported sparcv9 system\"" >&5
-echo "$as_me: WARNING: \"64bit mode only supported sparcv9 system\"" >&2;}
+		    { echo "$as_me:$LINENO: WARNING: 64bit mode only supported sparcv9 system" >&5
+echo "$as_me: WARNING: 64bit mode only supported sparcv9 system" >&2;}
 		fi
 	    fi
 
@@ -7543,6 +7551,15 @@ echo "$as_me: WARNING: \"64bit mode only supported sparcv9 system\"" >&2;}
 		SHLIB_LD="$CC -shared"
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+		if test "$do64bit_ok" = "yes" ; then
+		    # We need to specify -static-libgcc or we need to
+		    # add the path to the sparv9 libgcc.
+		    SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
+		    # for finding sparcv9 libgcc, get the regular libgcc
+		    # path, remove so name and append 'sparcv9'
+		    #v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
+		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		fi
 	    else
 		SHLIB_LD="/usr/ccs/bin/ld -G -z text"
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
@@ -7620,8 +7637,8 @@ echo "${ECHO_T}$found" >&6
     esac
 
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "no" ; then
-	{ echo "$as_me:$LINENO: WARNING: \"64bit support being disabled -- don\'t know magic for this platform\"" >&5
-echo "$as_me: WARNING: \"64bit support being disabled -- don\'t know magic for this platform\"" >&2;}
+	{ echo "$as_me:$LINENO: WARNING: 64bit support being disabled -- don't know magic for this platform" >&5
+echo "$as_me: WARNING: 64bit support being disabled -- don't know magic for this platform" >&2;}
     fi
 
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "yes" ; then
@@ -7877,7 +7894,7 @@ fi;
 		    ;;
 		NetBSD-*|FreeBSD-*)
 		    ;;
-		Rhapsody-*|Darwin-*)
+		Darwin-*)
 		    ;;
 		RISCos-*)
 		    ;;
@@ -13461,7 +13478,10 @@ echo "${ECHO_T}standard shared library" >&6
 
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
-# so that the backslashes quoting the DBX braces are dropped.
+# since on some platforms TCL_LIB_FILE contains shell escapes.
+# (See also: TCL_TRIM_DOTS).
+
+eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
 # Note:  in the following variable, it's important to use the absolute
 # path name of the Tcl directory rather than "..":  this is because
@@ -13524,7 +13544,10 @@ fi
 #--------------------------------------------------------------------
 
 # Replace ${VERSION} with contents of ${TCL_VERSION}
+# double-eval to account for TCL_TRIM_DOTS.
+#
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
+eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"

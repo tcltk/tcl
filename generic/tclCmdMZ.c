@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.115 2004/10/21 15:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.115.2.1 2005/02/02 15:53:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1505,7 +1505,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			}
 		    }
 		    errno = 0;
-		    strtod(string1, &stop); /* INTL: Tcl source. */
+		    TclStrToD(string1, (CONST char **) &stop); /* INTL: Tcl source. */
 		    if (errno == ERANGE) {
 			/*
 			 * if (errno == ERANGE), then it was an over/underflow

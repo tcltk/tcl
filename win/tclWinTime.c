@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.28 2004/09/07 17:39:00 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.28.2.1 2005/02/02 15:54:07 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -138,6 +138,17 @@ static Tcl_WideInt		AccumulateSample _ANSI_ARGS_((
 			    Tcl_WideInt perfCounter,
 			    Tcl_WideUInt fileTime
 			));
+
+static void NativeScaleTime _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
+static void NativeGetTime   _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
+
+/* TIP #233 (Virtualized Time)
+ * Data for the time hooks, if any.
+ */
+
+Tcl_GetTimeProc*   tclGetTimeProcPtr    = NativeGetTime;
+Tcl_ScaleTimeProc* tclScaleTimeProcPtr  = NativeScaleTime;
+ClientData         tclTimeClientData    = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -160,7 +171,8 @@ unsigned long
 TclpGetSeconds()
 {
     Tcl_Time t;
-    Tcl_GetTime( &t );
+    /* Tcl_GetTime inlined */
+    (*tclGetTimeProcPtr) (&t, tclTimeClientData);
     return t.sec;
 }
 
@@ -195,7 +207,9 @@ TclpGetClicks()
     Tcl_Time now;		/* Current Tcl time */
     unsigned long retval;	/* Value to return */
 
-    Tcl_GetTime( &now );
+    /* Tcl_GetTime inlined */
+    (*tclGetTimeProcPtr) (&now, tclTimeClientData);
+
     retval = ( now.sec * 1000000 ) + now.usec;
     return retval;
 
@@ -257,6 +271,64 @@ TclpGetTimeZone (currentTime)
 void
 Tcl_GetTime(timePtr)
     Tcl_Time *timePtr;		/* Location to store time information. */
+{
+    (*tclGetTimeProcPtr) (timePtr, tclTimeClientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeScaleTime --
+ *
+ *	TIP #233
+ *	Scale from virtual time to the real-time. For native scaling the
+ *	relationship is 1:1 and nothing has to be done.
+ *
+ * Results:
+ *	Scales the time in timePtr.
+ *
+ * Side effects:
+ *	See above.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NativeScaleTime (timePtr, clientData)
+     Tcl_Time*  timePtr;
+     ClientData clientData;
+{
+  /* Native scale is 1:1. Nothing is done */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeGetTime --
+ *
+ *	TIP #233
+ *	Gets the current system time in seconds and microseconds
+ *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
+ *
+ * Results:
+ *	Returns the current time in timePtr.
+ *
+ * Side effects:
+ *	On the first call, initializes a set of static variables to
+ *	keep track of the base value of the performance counter, the
+ *	corresponding wall clock (obtained through ftime) and the
+ *	frequency of the performance counter.  Also spins a thread
+ *	whose function is to wake up periodically and monitor these
+ *	values, adjusting them as necessary to correct for drift
+ *	in the performance counter's oscillator.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NativeGetTime (timePtr, clientData)
+     Tcl_Time*  timePtr;
+     ClientData clientData;
 {
 	
     struct timeb t;
@@ -1182,3 +1254,67 @@ TclpLocaltime( timePtr )
      */
     return localtime( timePtr );
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetTimeProc --
+ *
+ *      TIP #233 (Virtualized Time)
+ *	Registers two handlers for the virtualization of Tcl's
+ *	access to time information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remembers the handlers, alters core behaviour.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetTimeProc (getProc, scaleProc, clientData)
+     Tcl_GetTimeProc*   getProc;
+     Tcl_ScaleTimeProc* scaleProc;
+     ClientData         clientData;
+{
+    tclGetTimeProcPtr   = getProc;
+    tclScaleTimeProcPtr = scaleProc;
+    tclTimeClientData   = clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_QueryTimeProc --
+ *
+ *      TIP #233 (Virtualized Time)
+ *	Query which time handlers are registered.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_QueryTimeProc (getProc, scaleProc, clientData)
+     Tcl_GetTimeProc**   getProc;
+     Tcl_ScaleTimeProc** scaleProc;
+     ClientData*         clientData;
+{
+    if (getProc) {
+        *getProc    = tclGetTimeProcPtr;
+    }
+    if (scaleProc) {
+        *scaleProc  = tclScaleTimeProcPtr;
+    }
+    if (clientData) {
+        *clientData = tclTimeClientData;
+    }
+}
+

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.22 2004/11/03 22:12:51 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.22.2.1 2005/02/02 15:53:30 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -961,8 +961,12 @@ testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
-    testexprlong
+    testexprlong 4+1
 } {This is a result: 5}
+#Check for [Bug 1109484]
+test expr-old-37.2 {Tcl_ExprLong handles wide ints gracefully} testexprlong {
+    testexprlong wide(1)+2
+} {This is a result: 3}
 
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} testexprstring {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \

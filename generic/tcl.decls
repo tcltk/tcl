@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105.2.4 2005/01/20 19:12:29 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.105.2.5 2005/02/02 15:53:14 kennykb Exp $
 
 library tcl
 
@@ -1973,19 +1973,34 @@ declare 551 generic {
     int Tcl_GetEnsembleNamespace(Tcl_Interp *interp, Tcl_Command token,
 	    Tcl_Namespace **namespacePtrPtr)
 }
+# TIP#233 (Virtualized Time)
+declare 552 generic {
+    void Tcl_SetTimeProc (Tcl_GetTimeProc* getProc,
+	    Tcl_ScaleTimeProc* scaleProc,
+	    ClientData clientData)
+}
+declare 553 generic {
+    void Tcl_QueryTimeProc (Tcl_GetTimeProc** getProc,
+	    Tcl_ScaleTimeProc** scaleProc,
+	    ClientData* clientData)
+}
+# TIP#218 (Driver Thread Actions) davygrvy/akupries ChannelType ver 4
+declare 554 generic {
+    Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(Tcl_ChannelType *chanTypePtr)
+}
 
 # TIP #237:
 
-declare 552 generic {
+declare 555 generic {
     Tcl_Obj* Tcl_NewBignumObj( mp_int* value )
 }
-declare 553 generic {
+declare 556 generic {
     Tcl_Obj* Tcl_DbNewBignumObj( mp_int* value, CONST char* file, int line )
 }
-declare 554 generic {
+declare 557 generic {
     void Tcl_SetBignumObj( Tcl_Obj* obj, mp_int* value )
 }
-declare 555 generic {
+declare 558 generic {
     int Tcl_GetBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
 

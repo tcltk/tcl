@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.50 2004/10/07 15:15:37 dkf Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.50.2.1 2005/02/02 15:53:12 kennykb Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -228,6 +228,17 @@ The base path on to which to join the given elements.  May be NULL.
 The number of elements in \fIobjv\fR.
 .AP "Tcl_Obj *const" objv[] in
 The elements to join to the given base path.
+.AP Tcl_Obj *linkNamePtr in
+The name of the link to be created or read.
+.AP Tcl_Obj *toPtr in
+What the link called \fIlinkNamePtr\fR should be linked to, or NULL if
+the symbolic link specified by \fIlinkNamePtr\fR is to be read.
+.AP int linkAction in
+OR-ed combination of flags indicating what kind of link should be
+created (will be ignored if \fItoPtr\fR is NULL). Valid bits to set
+are \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
+When both flags are set and the underlying filesystem can do either,
+symbolic links are preferred.
 .BE
 
 .SH DESCRIPTION

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.22 2004/09/27 14:31:20 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.22.2.1 2005/02/02 15:54:02 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -45,6 +45,17 @@ static char* lastTZ = NULL;	/* Holds the last setting of the
 
 static void SetTZIfNecessary _ANSI_ARGS_((void));
 static void CleanupMemory _ANSI_ARGS_((ClientData));
+
+static void NativeScaleTime _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
+static void NativeGetTime   _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
+
+/* TIP #233 (Virtualized Time)
+ * Data for the time hooks, if any.
+ */
+
+Tcl_GetTimeProc*   tclGetTimeProcPtr    = NativeGetTime;
+Tcl_ScaleTimeProc* tclScaleTimeProcPtr  = NativeScaleTime;
+ClientData         tclTimeClientData    = NULL;
 
 /*
  *-----------------------------------------------------------------------------
@@ -92,18 +103,22 @@ unsigned long
 TclpGetClicks()
 {
     unsigned long now;
-#ifdef NO_GETTOD
-    struct tms dummy;
-#else
-    struct timeval date;
-    struct timezone tz;
-#endif
 
 #ifdef NO_GETTOD
-    now = (unsigned long) times(&dummy);
+    if (tclGetTimeProcPtr != NativeGetTime) {
+        Tcl_Time time;
+        (*tclGetTimeProcPtr) (&time, tclTimeClientData);
+	now = time.sec*1000000 + time.usec;
+    } else {
+        /* A semi-NativeGetTime, specialized to clicks */
+        struct tms dummy;
+        now = (unsigned long) times(&dummy);
+    }
 #else
-    gettimeofday(&date, &tz);
-    now = date.tv_sec*1000000 + date.tv_usec;
+    Tcl_Time time;
+
+    (*tclGetTimeProcPtr) (&time, tclTimeClientData);
+    now = time.sec*1000000 + time.usec;
 #endif
 
     return now;
@@ -235,6 +250,9 @@ TclpGetTimeZone (currentTime)
  *	Gets the current system time in seconds and microseconds
  *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
  *
+ *	This function is hooked, allowing users to specify their
+ *	own virtual system time.
+ *
  * Results:
  *	Returns the current time in timePtr.
  *
@@ -248,12 +266,7 @@ void
 Tcl_GetTime(timePtr)
     Tcl_Time *timePtr;		/* Location to store time information. */
 {
-    struct timeval tv;
-    struct timezone tz;
-    
-    (void) gettimeofday(&tv, &tz);
-    timePtr->sec = tv.tv_sec;
-    timePtr->usec = tv.tv_usec;
+    (*tclGetTimeProcPtr) (timePtr, tclTimeClientData);
 }
 
 /*
@@ -384,7 +397,126 @@ TclpLocaltime_unix( timePtr )
 {
     return TclpLocaltime( timePtr );
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetTimeProc --
+ *
+ *      TIP #233 (Virtualized Time)
+ *	Registers two handlers for the virtualization of Tcl's
+ *	access to time information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remembers the handlers, alters core behaviour.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void
+Tcl_SetTimeProc (getProc, scaleProc, clientData)
+     Tcl_GetTimeProc*   getProc;
+     Tcl_ScaleTimeProc* scaleProc;
+     ClientData         clientData;
+{
+    tclGetTimeProcPtr   = getProc;
+    tclScaleTimeProcPtr = scaleProc;
+    tclTimeClientData   = clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_QueryTimeProc --
+ *
+ *      TIP #233 (Virtualized Time)
+ *	Query which time handlers are registered.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_QueryTimeProc (getProc, scaleProc, clientData)
+     Tcl_GetTimeProc**   getProc;
+     Tcl_ScaleTimeProc** scaleProc;
+     ClientData*         clientData;
+{
+    if (getProc) {
+        *getProc    = tclGetTimeProcPtr;
+    }
+    if (scaleProc) {
+        *scaleProc  = tclScaleTimeProcPtr;
+    }
+    if (clientData) {
+        *clientData = tclTimeClientData;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeScaleTime --
+ *
+ *	TIP #233
+ *	Scale from virtual time to the real-time. For native scaling the
+ *	relationship is 1:1 and nothing has to be done.
+ *
+ * Results:
+ *	Scales the time in timePtr.
+ *
+ * Side effects:
+ *	See above.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NativeScaleTime (timePtr, clientData)
+     Tcl_Time*  timePtr;
+     ClientData clientData;
+{
+  /* Native scale is 1:1. Nothing is done */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeGetTime --
+ *
+ *	TIP #233
+ *	Gets the current system time in seconds and microseconds
+ *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
+ *
+ * Results:
+ *	Returns the current time in timePtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NativeGetTime (timePtr, clientData)
+     Tcl_Time*  timePtr;
+     ClientData clientData;
+{
+    struct timeval tv;
+    struct timezone tz;
+
+    (void) gettimeofday(&tv, &tz);
+    timePtr->sec  = tv.tv_sec;
+    timePtr->usec = tv.tv_usec;
+}
 /*
  *----------------------------------------------------------------------
  *

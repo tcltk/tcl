@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.84.2.4 2005/01/20 19:14:43 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84.2.5 2005/02/02 15:54:02 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -267,6 +267,7 @@ GENERIC_OBJS = \
 	tclResult.$(OBJEXT) \
 	tclScan.$(OBJEXT) \
 	tclStringObj.$(OBJEXT) \
+	tclStrToD.$(OBJEXT) \
 	tclStubInit.$(OBJEXT) \
 	tclStubLib.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
@@ -284,6 +285,7 @@ TOMMATH_OBJS = \
 	bncore.${OBJEXT} \
 	bn_reverse.${OBJEXT} \
 	bn_fast_s_mp_mul_digs.${OBJEXT} \
+	bn_fast_s_mp_sqr.${OBJEXT} \
 	bn_mp_add.${OBJEXT} \
 	bn_mp_add_d.${OBJEXT} \
 	bn_mp_clamp.${OBJEXT} \
@@ -305,6 +307,7 @@ TOMMATH_OBJS = \
 	bn_mp_init_multi.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
 	bn_mp_karatsuba_mul.${OBJEXT} \
+	bn_mp_karatsuba_sqr.$(OBJEXT) \
 	bn_mp_lshd.${OBJEXT} \
 	bn_mp_mod.${OBJEXT} \
 	bn_mp_mod_2d.${OBJEXT} \
@@ -316,13 +319,17 @@ TOMMATH_OBJS = \
 	bn_mp_radix_smap.${OBJEXT} \
 	bn_mp_read_radix.${OBJEXT} \
 	bn_mp_rshd.${OBJEXT} \
+	bn_mp_set.${OBJEXT} \
+	bn_mp_sqr.${OBJEXT} \
 	bn_mp_sub.${OBJEXT} \
 	bn_mp_sub_d.${OBJEXT} \
 	bn_mp_toom_mul.${OBJEXT} \
+	bn_mp_toom_sqr.${OBJEXT} \
 	bn_mp_toradix_n.${OBJEXT} \
 	bn_mp_zero.${OBJEXT} \
 	bn_s_mp_add.${OBJEXT} \
 	bn_s_mp_mul_digs.${OBJEXT} \
+	bn_s_mp_sqr.${OBJEXT} \
 	bn_s_mp_sub.${OBJEXT}
 
 

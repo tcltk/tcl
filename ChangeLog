@@ -1,3 +1,123 @@
+2005-02-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]  Merged with HEAD as of today.
+	
+	* generic/tclInt.decls: 
+	    Changed numbers of new stubs to resolve a conflict.
+	* generic/tclInt.h:
+	    Added new TclStrToD routine that replaces the native
+	    'strtod' throughout Tcl.
+	* generic/tclCmdMZ (Tcl_StringObjCmd):
+	* generic/tclGet.c (Tcl_GetDouble):
+	* generic/tclObj.c (SetBooleanFromAny, SetDoubleFromAny):
+	* generic/tclParseExpr.c (GetLexeme):
+	* generic/tclScan.c (Tcl_ScanObjCmd):
+	    Replaced all uses of the native 'strtod' with a TclStrToD
+	    routine that performs correct rounding and handles denormals.
+	* generic/tclStrToD.c: (new file)
+	    New scanning function for extracting 'double' from a string
+	    that rounds correctly, and handles denormals and infinities.
+
+	These changes represent a partial implementation of TIP #132.
+	Output conversion of floating point numbers, and proper handling
+	of infinities within expressions, still need to be addressed.
+	
+2005-02-01  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclExecute.c (TclCompEvalObj): Removed stray statement
+        left behind in prior code reorganization.
+
+2005-01-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure:	autoconf-2.57
+
+2005-01-30  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/configure.in: Restored two double-evals that were
+	removed in the DBGX purge; these are still needed on some
+	platforms to account for TCL_TRIM_DOTS.  [Bug 1112654]
+
+	* unix/configure: NOT REGENERATED: only have autoconf 2.59 here,
+	need to find someone with autoconf 2.57.
+
+2005-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure, unix/tcl.m4: add solaris 64-bit gcc build
+	support. [Bug 1021871]
+
+2005-01-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/expr-old.test (expr-old-37.2): Added test for [Bug 1109484]
+
+2005-01-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_ExprBoolean, Tcl_ExprDouble) 
+	(Tcl_ExprLong): Fix to recognize Tcl_WideInt type. [Bug 1109484]
+
+2005-01-26  Andreas Kupries <andreask@activestate.com>
+
+	TIP#218 IMPLEMENTATION
+
+	* generic/tclDecls.h:	Regenerated from tcl.decls.
+	* generic/tclStubInit.c:	
+
+	* doc/CrtChannel.3:	Documentation of extended API,
+	* generic/tcl.decls:	extended testsuite, and
+	* generic/tcl.h:	implementation. Removal of old
+	* generic/tclIO.c:	driver-specific TclpCut/Splice
+	* generic/tclInt.h:	functions. Replaced with generic
+	* tests/io.test:	thread-action calls through the
+	* unix/tclUnixChan.c:	new hooks. Update of all builtin
+	* unix/tclUnixPipe.c:	channel drivers to version 4.
+	* unix/tclUnixSock.c:	Windows drivers extended to 
+	* win/tclWinChan.c:	manage thread state in a thread
+	* win/tclWinConsole.c:	action handler.
+	* win/tclWinPipe.c:	
+	* win/tclWinSerial.c:	
+	* win/tclWinSock.c:	
+
+2005-01-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl:	Updated [auto_reset] to clear auto-loaded
+	commands in namespaces other than :: and to clear auto-loaded commands
+	that do not happen to be procs.  [Bug 1101670]
+	***POTENTIAL INCOMPATIBILITY***
+
+2005-01-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): fixed bug with static build linking to
+	dynamic library in /usr/lib etc instead of linking to static library
+	earlier in search path. [Tcl Bug 956908]
+	Removed obsolete references to Rhapsody. 
+	* unix/configure: autoconf-2.57
+
+2005-01-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclStubInit.c: Regenerated the stubs support code from
+	* generic/tclDecls.h:    the modified tcl.decls (TIP #233, see below).
+
+	* doc/GetTime.3:       Implemented TIP #233, i.e. the
+	* generic/tcl.decls:   'Virtualization of Tcl's Sense of Time'.
+	* generic/tcl.h:       Declared, implemented, and documented the
+	* generic/tclInt.h:    specified new API functions. Moved the
+	* unix/tclUnixEvent.c: native (OS) access to time information
+	* unix/tclUnixNotfy.c: into standard handler functions. Inserted
+	* unix/tclUnixTime.c:  hooks calling on the handlers where native
+	* win/tclWinNotify.c:  access was done before, and where scaling
+	* win/tclWinTime.c:    between domains (real/virtual) is required.
+
+2005-01-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclThread.c: Typo police. Fixed some nits
+	* generic/tclCmdAH.c:  in header comments of functions.
+	* generic/tclBasic.c:  (Missing --).
+	* generic/tclFileName.c:
+
+2005-01-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/FileSystem.3: Add missing ARGUMENTS section definitions for
+	arguments to Tcl_FSLink. [Bug 1106272]
+
 2005-01-21  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]

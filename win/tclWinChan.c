@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.37.2.1 2005/01/20 14:53:42 kennykb Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.37.2.2 2005/02/02 15:54:03 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -97,7 +97,9 @@ static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
-			    int mask));
+		            int mask));
+static void             FileThreadActionProc _ANSI_ARGS_ ((
+			   ClientData instanceData, int action));
 
 /*
  * This structure describes the channel type structure for file based IO.
@@ -105,7 +107,7 @@ static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_3,	/* v3 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
@@ -119,6 +121,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* Wide seek proc. */
+    FileThreadActionProc,	/* Thread action proc. */
 };
 
 #if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
@@ -430,11 +433,11 @@ FileCloseProc(instanceData, interp)
 	if (infoPtr == fileInfoPtr) {
             /*
              * This channel exists on the thread local list. It should
-             * have been removed by an earlier call to TclpCutFileChannel,
+             * have been removed by an earlier Threadaction call,
              * but do that now since just deallocating fileInfoPtr would
              * leave an deallocated pointer on the thread local list.
              */
-            TclpCutFileChannel(fileInfoPtr->channel);
+	    FileThreadActionProc(fileInfoPtr,TCL_CHANNEL_THREAD_REMOVE);
             break;
         }
     }
@@ -1307,8 +1310,11 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
     }
 
     infoPtr = (FileInfo *) ckalloc((unsigned) sizeof(FileInfo));
-    infoPtr->nextPtr = tsdPtr->firstFilePtr;
-    tsdPtr->firstFilePtr = infoPtr;
+    /* TIP #218. Removed the code inserting the new structure
+     * into the global list. This is now handled in the thread
+     * action callbacks, and only there.
+     */
+    infoPtr->nextPtr = NULL;
     infoPtr->validMask = permissions;
     infoPtr->watchMask = 0;
     infoPtr->flags = appendMode;
@@ -1373,10 +1379,9 @@ TclWinFlushDirtyChannels ()
 /*
  *----------------------------------------------------------------------
  *
- * TclpCutFileChannel --
+ * FileThreadActionProc --
  *
- *	Remove any thread local refs to this channel. See
- *	See Tcl_CutChannel for more info.
+ *	Insert or remove any thread local refs to this channel.
  *
  * Results:
  *	None.
@@ -1387,77 +1392,38 @@ TclWinFlushDirtyChannels ()
  *----------------------------------------------------------------------
  */
 
-void
-TclpCutFileChannel(chan)
-    Tcl_Channel chan;			/* The channel being removed. Must
-					 * not be referenced in any
-					 * interpreter. */
+static void
+FileThreadActionProc (instanceData, action)
+     ClientData instanceData;
+     int action;
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr = (Channel *) chan;
-    FileInfo *infoPtr;
-    FileInfo **nextPtrPtr;
-    int removed = 0;
+    FileInfo *infoPtr = (FileInfo *) instanceData;
 
-    if (chanPtr->typePtr != &fileChannelType) {
-	return;
-    }
+    if (action == TCL_CHANNEL_THREAD_INSERT) {
+        infoPtr->nextPtr = tsdPtr->firstFilePtr;
+	tsdPtr->firstFilePtr = infoPtr;
+    } else {
+        FileInfo **nextPtrPtr;
+	int removed = 0;
 
-    infoPtr = (FileInfo *) chanPtr->instanceData;
+	for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
+	     nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+	    if ((*nextPtrPtr) == infoPtr) {
+	        (*nextPtrPtr) = infoPtr->nextPtr;
+		removed = 1;
+		break;
+	    }
+	}
 
-    for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-	    nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
-	if ((*nextPtrPtr) == infoPtr) {
-	    (*nextPtrPtr) = infoPtr->nextPtr;
-	    removed = 1;
-	    break;
+	/*
+	 * This could happen if the channel was created in one thread
+	 * and then moved to another without updating the thread
+	 * local data in each thread.
+	 */
+
+	if (!removed) {
+	    Tcl_Panic("file info ptr not on thread channel list");
 	}
     }
-
-    /*
-     * This could happen if the channel was created in one thread
-     * and then moved to another without updating the thread
-     * local data in each thread.
-     */
-
-    if (!removed) {
-	Tcl_Panic("file info ptr not on thread channel list");
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpSpliceFileChannel --
- *
- *	Insert thread local ref for this channel.
- *	See Tcl_SpliceChannel for more info.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Changes thread local list of valid channels.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpSpliceFileChannel(chan)
-    Tcl_Channel chan;			/* The channel being removed. Must
-					 * not be referenced in any
-					 * interpreter. */
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr = (Channel *) chan;
-    FileInfo *infoPtr;
-
-    if (chanPtr->typePtr != &fileChannelType) {
-	return;
-    }
-
-    infoPtr = (FileInfo *) chanPtr->instanceData;
-
-    infoPtr->nextPtr = tsdPtr->firstFilePtr;
-    tsdPtr->firstFilePtr = infoPtr;
 }
