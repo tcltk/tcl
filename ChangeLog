@@ -1,3 +1,10 @@
+1999-05-18    <stanton@scriptics.com>
+
+	* win/tclWinChan.c: Modified initialization code to avoid
+	inherenting closed or invalid channels.  If the standard input is
+	anything other than a console, file, serial port, or pipe, then we
+	fall back to the standard Tk window console.
+
 1999-05-14    <stanton@scriptics.com>
 
 	* generic/tclCmdAH.c (Tcl_ForObjCmd): Fixed crash caused by
