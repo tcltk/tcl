@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.23 2002/06/10 17:41:52 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.24 2002/06/27 12:27:35 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1692,7 +1692,6 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    nextCheckpoint = currentPathEndPosition - path;
 	} else if (cur == 0) {
 	    /* Reached end of string */
-	    /* nextCheckpoint = pathLen; */
 	    break;
 	}
 	currentPathEndPosition++;
@@ -1705,6 +1704,14 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
      * have 'realpath'.
      */
 #ifndef NO_REALPATH
+    /* 
+     * If we only had '/foo' or '/' then we never increment nextCheckpoint
+     * and we don't need or want to go through 'Realpath'.  Also, on some
+     * platforms, passing an empty string to 'Realpath' will give us the
+     * normalized pwd, which is not what we want at all!
+     */
+    if (nextCheckpoint == 0) return 0;
+    
     nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
     if (Realpath(nativePath, normPath) != NULL) {
 	/* 
