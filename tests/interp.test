@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.38 2004/05/27 15:05:28 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.39 2004/08/02 20:55:38 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1490,6 +1490,19 @@ test interp-20.48 {interp hide vs namespaces} {
     interp delete a
     set l
 } {1 {cannot use namespace qualifiers in hidden command token (rename)}}
+test interp-20.49 {interp invokehidden -namespace} -setup {
+    set script [makeFile {
+	set x [namespace current]
+    } script]
+    interp create -safe slave
+} -body {
+    slave invokehidden -namespace ::foo source $script
+    slave eval {set ::foo::x}
+} -cleanup {
+    interp delete slave
+    removeFile script
+} -result ::foo
+
 
 test interp-21.1 {interp hidden} {
     interp hidden {}

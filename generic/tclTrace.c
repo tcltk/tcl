@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.10 2004/05/13 12:59:23 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.11 2004/08/02 20:55:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2973,7 +2973,7 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
     /* 
      * We strip 'flags' down to just the parts which are relevant to
      * TclLookupVar, to avoid conflicts between trace flags and
-     * internal namespace flags such as 'FIND_ONLY_NS'.  This can
+     * internal namespace flags such as 'TCL_FIND_ONLY_NS'.  This can
      * now occur since we have trace flags with values 0x1000 and higher.
      */
     flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
