@@ -25,9 +25,7 @@ typedef struct ThreadSpecificData {
     struct tm   	ltbuf;
     struct {
 	Tcl_DirEntry ent;
-#ifdef NAME_MAX	 /* if not, dirent *better* have room for name */
-	char name[NAME_MAX+1];
-#endif
+	char name[MAXNAMLEN+1];
     } rdbuf;
 } ThreadSpecificData;
 
