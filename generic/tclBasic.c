@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.41 2001/11/20 22:47:58 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.42 2001/11/21 17:17:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2323,7 +2323,7 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 	tracePtr = cmdPtr->tracePtr;
 	while (tracePtr != NULL) {
 	    CommandTrace *nextPtr = tracePtr->nextPtr;
-	    ckfree((char *) tracePtr);
+	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    tracePtr = nextPtr;
 	}
 	cmdPtr->tracePtr = NULL;
@@ -2458,6 +2458,7 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     iPtr->activeCmdTracePtr = &active;
 
     active.cmdPtr = cmdPtr;
+    Tcl_Preserve((ClientData) iPtr);
     for (tracePtr = cmdPtr->tracePtr; tracePtr != NULL;
 	 tracePtr = active.nextTracePtr) {
 	active.nextTracePtr = tracePtr->nextPtr;
@@ -2469,9 +2470,11 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
 	    oldName = Tcl_GetCommandName((Tcl_Interp *) iPtr, 
 					 (Tcl_Command) cmdPtr);
 	}
+	Tcl_Preserve((ClientData) tracePtr);
 	(*tracePtr->traceProc)(tracePtr->clientData,
 		(Tcl_Interp *) iPtr, oldName, newName, flags);
 	cmdPtr->flags &= ~tracePtr->flags;
+	Tcl_Release((ClientData) tracePtr);
     }
 
     /*
@@ -2482,6 +2485,7 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
     cmdPtr->refCount--;
     iPtr->activeCmdTracePtr = active.nextPtr;
+    Tcl_Release((ClientData) iPtr);
     return result;
 }
 
