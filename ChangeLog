@@ -1,3 +1,8 @@
+2004-06-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/fileSystem.test: Minor correction to new fileSystem-9.X
+	tests so that they clean up temporary directories correctly.
+
 2004-06-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/filename.n: clarified behaviour concerning trailing
