@@ -8,11 +8,27 @@
 
 2002-02-20  David Gravereaux <davygrvy@pobox.com>
 
-	* win/makefile.vc: Added the pentium errata switches to $(cflags)
-	which should have already been there according to the MSDN docs
-	regarding the infamous FDIV bug from `97.  Added profiling to
-	$(lflags) and also removed the explict -entry option as the default
-	works without special work.
+	* win/buildall.vc.bat:
+	* win/makefile.vc:
+	* win/rules.vc: General clean-ups.  Added compiler and linker tests
+	for a) the pentium 0x0F errata, b) optimizing (not all have this),
+	and c) linker v6 section alignment confusion.  All these are tested
+	first to make sure any D4002 or LNK1117 warnings aren't displayed.
+	The pentium 0x0F errata is a recommended switch.  The v5 linker's
+	section alignment default is 512, but the v6 linker was changed
+	to 4096 in an attempt to speed loading on Win98.  I changed the
+	default to always be 512 across both linkers, unless linking
+	statically, then 4096 is used for the claimed speed effect. Using
+	a 512 alignment saves 12k bytes of dead space in the DLL.
+
+	Added IA64 B-stepping errata switch when the compiler supports it.
+
+	Added profiling to $(lflags) when requested and also removed the
+	explict -entry option as the default works fine as is.
+
+	Removed win/tclWinInit.c from the special case section to let it
+	use the common implicit rule as the $(EXTFLAGS) macro it had was
+	never referenced anywhere.
 
 2002-02-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
