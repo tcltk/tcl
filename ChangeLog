@@ -1,3 +1,12 @@
+2004-02-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	IMPLEMENTATION OF TIP#100 FROM GEORGIOS PETASIS
+	* generic/tclLoad.c (Tcl_UnloadObjCmd): Implementation.
+	* tests/unload.test:			Test suite.
+	* unix/dltest/pkgua.c:			Helper for test suite.
+	* doc/unload.n:				Documentation.
+	Also assorted changes (mostly small) to several other files.
+
 2004-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/regc_locale.c (cclass): Buffer was having its size reset
