@@ -1,3 +1,13 @@
+2002-06-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/tclUnixPort.h (EOVERFLOW): Added code to define it if it
+	wasn't previously defined.  Also some other general tidying and
+	adding of comments.  [Tcl bugs 563122, 564595]
+	* compat/tclErrno.h: Added definition for EOVERFLOW copied from
+	Solaris headers; I've been unable to find any uses of EFTYPE,
+	which was the error code previously occupying the slot, in Tcl, or
+	any definition of it in the Solaris headers.
+
 2002-06-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/dltest/Makefile.in: Remove hard coded CFLAGS=-g
