@@ -7,11 +7,12 @@
  *
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.11 1998/08/10 17:18:18 rjohnson Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.12 1998/08/10 17:21:31 rjohnson Exp $ 
  */
 
 #include "tclInt.h"

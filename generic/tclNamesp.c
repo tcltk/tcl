@@ -9,16 +9,12 @@
  *
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1997 Sun Microsystems, Inc.
- *
- * Originally implemented by
- *   Michael J. McLennan
- *   Bell Labs Innovations for Lucent Technologies
- *   mmclennan@lucent.com
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclNamesp.c 1.29 97/08/04 09:32:38
+ * SCCS: %Z% $Id: tclNamesp.c,v 1.6 1998/08/10 17:21:41 rjohnson Exp $ 
  */
 
 #include "tclInt.h"
