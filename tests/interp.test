@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.29 2004/05/14 15:38:56 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.30 2004/05/17 21:30:13 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2842,8 +2842,7 @@ test interp-31.1 {alias invocation scope} {
     set result
 } ok
 
-test interp-32.1 { parent's working directory should
-                   be inherited by a child interp } {
+test interp-32.1 {parent's working directory should be inherited by a child interp} {
     cd [temporaryDirectory]
     set parent [pwd]
     set i [interp create]
@@ -2872,7 +2871,7 @@ test interp-33.1 {refCounting for target words of alias [Bug 730244]} {
     $i eval alias
 } this
 
-test interp-34.1 {basic test of limits - calling commands} {
+test interp-34.1 {basic test of limits - calling commands} -body {
     set i [interp create]
     $i eval {
 	proc foobar {} {
@@ -2883,11 +2882,11 @@ test interp-34.1 {basic test of limits - calling commands} {
 	}
     }
     $i limit command -value 1000
-    set msg [list [catch {$i eval foobar} msg] $msg]
+    $i eval foobar
+} -returnCodes error -result {command count limit exceeded} -cleanup {
     interp delete $i
-    set msg
-} {1 {command count limit exceeded}}
-test interp-34.2 {basic test of limits - bytecoded commands} knownBug {
+}
+test interp-34.2 {basic test of limits - bytecoded commands} -body {
     set i [interp create]
     $i eval {
 	proc foobar {} {
@@ -2898,10 +2897,10 @@ test interp-34.2 {basic test of limits - bytecoded commands} knownBug {
 	}
     }
     $i limit command -value 1000
-    set msg [list [catch {$i eval foobar} msg] $msg]
+    $i eval foobar
+} -returnCodes error -result {command count limit exceeded} -cleanup {
     interp delete $i
-    set msg
-} {1 {command count limit exceeded}}
+}
 test interp-34.3 {basic test of limits - pure bytecode loop} knownBug {
     set i [interp create]
     $i eval {
@@ -3044,6 +3043,13 @@ test interp-35.21 {interp limit syntax} -body {
 } -cleanup {
     interp delete $i
 } -returnCodes error -result {milliseconds must be at least 0}
+test interp-35.22 {interp time limits normalize milliseconds} -body {
+    set i [interp create]
+    interp limit $i time -seconds 1 -millis 1500
+    list [$i limit time -seconds] [$i limit time -millis]
+} -cleanup {
+    interp delete $i
+} -result {2 500}
 
 # cleanup
 foreach i [interp slaves] {
