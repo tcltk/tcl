@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.90 2004/05/26 15:18:24 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.91 2004/05/26 16:25:00 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -2418,7 +2418,6 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# then add current file to failFile list if any tests in this
 	# file failed
 
-	incr numTestFiles
 	if {$currentFailure \
 		&& ([lsearch -exact $failFiles $testFileName] == -1)} {
 	    lappend failFiles $testFileName
