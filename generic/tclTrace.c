@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.3 2003/07/02 13:26:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.4 2003/07/16 08:26:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -222,7 +222,6 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    return (traceSubCmds[typeIndex])(interp, optionIndex, objc, objv);
-	    break;
 	}
 	case TRACE_INFO: {
 	    /* 
