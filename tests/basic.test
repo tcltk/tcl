@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.25.2.4 2004/07/28 16:28:21 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.25.2.5 2004/10/26 20:14:32 dgp Exp $
 #
 
 package require tcltest 2
@@ -24,6 +24,7 @@ namespace import -force ::tcltest::*
 testConstraint testcmdtoken [llength [info commands testcmdtoken]]
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 testConstraint testcreatecommand [llength [info commands testcreatecommand]]
+testConstraint testevalex [llength [info commands testevalex]]
 testConstraint exec [llength [info commands exec]]
 
 # This variable needs to be changed when the major or minor version number for
@@ -658,6 +659,25 @@ test basic-47.1 {Tcl_EvalEx: check for missing close-bracket} -body {
     subst {a[set b [format cd]}
 } -returnCodes error -result {missing close-bracket}
 
+test basic-49.1 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
+    set ::x global
+    namespace eval ns {
+        variable x namespace
+        testevalex {set x changed} global
+        set ::result [list $::x $x]
+    } 
+    namespace delete ns
+    set ::result
+} {changed namespace}
+test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
+    set ::x global
+    namespace eval ns {
+        variable x namespace
+        testevalex {set ::context $x} global
+    }
+    namespace delete ns
+    set ::context
+} {global}
 
 # cleanup
 catch {eval namespace delete [namespace children :: test_ns_*]}
