@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.25 2001/11/16 20:55:40 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.26 2001/11/16 23:40:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -52,10 +52,12 @@ static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
 
 static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
-#ifndef HAVE_LANGINFO
 /*
  * The following table is used to map from Unix locale strings to
- * encoding files.
+ * encoding files.  If HAVE_LANGINFO is defined, then this is a fallback
+ * table when the result from nl_langinfo isn't a recognized encoding.
+ * Otherwise this is the first list checked for a mapping from env
+ * encoding to Tcl encoding name.
  */
 
 typedef struct LocaleTable {
@@ -64,6 +66,9 @@ typedef struct LocaleTable {
 } LocaleTable;
 
 static CONST LocaleTable localeTable[] = {
+#ifdef HAVE_LANGINFO
+    {"gb2312-1980",	"gb2312"},
+#else
     {"ja_JP.SJIS",	"shiftjis"},
     {"ja_JP.EUC",	"euc-jp"},
     {"ja_JP.eucJP",     "euc-jp"},
@@ -98,10 +103,9 @@ static CONST LocaleTable localeTable[] = {
     {"ru_SU",		"iso8859-5"},		
 
     {"zh",		"cp936"},
-
+#endif /* !HAVE_LANGINFO */
     {NULL, NULL}
 };
-#endif /* !HAVE_LANGINFO */
 
 /*
  *---------------------------------------------------------------------------
@@ -409,6 +413,7 @@ TclpSetInitialEncodings()
 	 */
 #ifdef HAVE_LANGINFO
 	Tcl_DString ds;
+	int code;
 
 	setlocale(LC_CTYPE,"");
 	Tcl_DStringInit(&ds);
@@ -437,7 +442,17 @@ TclpSetInitialEncodings()
 	    Tcl_DStringSetLength(&ds, 0);
 	    Tcl_DStringAppend(&ds, "iso8859-1", -1);
 	}
-	if (Tcl_SetSystemEncoding(NULL, encoding) != TCL_OK) {
+	code = Tcl_SetSystemEncoding(NULL, encoding);
+	if (code != TCL_OK) {
+	    for (i = 0; localeTable[i].lang != NULL; i++) {
+		if (strcmp(localeTable[i].lang, encoding) == 0) {
+		    encoding = localeTable[i].encoding;
+		    code = Tcl_SetSystemEncoding(NULL, encoding);
+		    break;
+		}
+	    }
+	}
+	if (code != TCL_OK) {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {
 		char msg[100];
