@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.6 1999/08/21 19:40:47 hobbs Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.7 1999/10/13 00:32:05 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -21,14 +21,14 @@ Tcl_Encoding
 void
 \fBTcl_FreeEncoding\fR(\fIencoding\fR)
 .sp
-void 
+char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
 int
 \fBTcl_ExternalToUtf\fR(\fIinterp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, 
 	dstCharsPtr\fR)
 .sp
-void 
+char * 
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
 int
@@ -178,7 +178,7 @@ specified \fIencoding\fR into UTF-8.  The converted bytes are stored in
 call \fBTcl_DStringFree\fR to free any information stored in \fIdstPtr\fR.
 When converting, if any of the characters in the source buffer cannot be
 represented in the target encoding, a default fallback character will be
-used.  
+used.  The return value is a pointer to the value stored in the DString.
 .PP
 \fBTcl_ExternalToUtf\fR converts a source buffer \fIsrc\fR from the specified
 \fIencoding\fR into UTF-8.  Up to \fIsrcLen\fR bytes are converted from the
@@ -215,7 +215,8 @@ into the specified \fIencoding\fR.  The converted bytes are stored in
 NULL.  The caller should eventually call \fBTcl_DStringFree\fR to free any
 information stored in \fIdstPtr\fR.  When converting, if any of the
 characters in the source buffer cannot be represented in the target
-encoding, a default fallback character will be used.  
+encoding, a default fallback character will be used.  The return value is
+a pointer to the value stored in the DString.
 .PP
 \fBTcl_UtfToExternal\fR converts a source buffer \fIsrc\fR from UTF-8 into
 the specified \fIencoding\fR.  Up to \fIsrcLen\fR bytes are converted from
