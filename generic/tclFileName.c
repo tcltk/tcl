@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.48 2004/03/09 12:54:02 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.49 2004/03/09 12:57:25 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1746,8 +1746,11 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		Tcl_DStringAppend(&pref, last, first+pathlength-last);
 		pathOrDir = Tcl_NewStringObj(first, last-first-1);
 		/* 
-		 * We must ensure there's at least one path separator
-		 * in the prefix, even if it's just "/" or "C:/".
+		 * We must ensure that we haven't cut off too much,
+		 * and turned a valid path like '/' or 'C:/' into
+		 * an incorrect path like '' or 'C:'.  The way we
+		 * do this is to add a separator if there are none
+		 * presently in the prefix.
 		 */
 		if (strpbrk(Tcl_GetString(pathOrDir), "\\/") == NULL) {
 		    Tcl_AppendToObj(pathOrDir, last-1, 1); 
