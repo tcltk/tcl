@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.176 2004/03/31 18:13:24 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.177 2004/04/25 20:15:57 dgp Exp $
  */
 
 #ifndef _TCL
@@ -136,12 +136,6 @@ extern "C" {
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-
-#ifndef BUFSIZ
-#   include <stdio.h>
-#endif
-
 
 /*
  * Definitions that allow Tcl functions with variable numbers of
