@@ -11,12 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.9 2004/04/28 13:11:35 msofer Exp $
+# RCS: @(#) $Id: upvar.test,v 1.10 2004/05/19 10:46:27 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testupvar [llength [info commands testupvar]]
 
 test upvar-1.1 {reading variables with upvar} {
     proc p1 {a b} {set c 22; set d 33; p2}
@@ -342,81 +344,67 @@ test upvar-8.11 {upvar will not create a variable that looks like an array} -bod
     upvar 0 upvarArray(elem) upvarArrayElemAlias(elem)
 } -returnCodes 1 -match glob -result *
 
-if {[info commands testupvar] != {}} {
-    test upvar-9.1 {Tcl_UpVar2 procedure} {
-	list [catch {testupvar xyz a {} x global} msg] $msg
-    } {1 {bad level "xyz"}}
-    test upvar-9.2 {Tcl_UpVar2 procedure} {
-	catch {unset a}
-	catch {unset x}
-	set a 44
-	list [catch {testupvar #0 a 1 x global} msg] $msg
-    } {1 {can't access "a(1)": variable isn't array}}
-    test upvar-9.3 {Tcl_UpVar2 procedure} {
-	proc foo {} {
-	    testupvar 1 a {} x local
-	    set x
-	}
-	catch {unset a}
-	catch {unset x}
-	set a 44
-	foo
-    } {44}
-    test upvar-9.4 {Tcl_UpVar2 procedure} {
-	proc foo {} {
-	    testupvar 1 a {} _up_ global
-	    list [catch {set x} msg] $msg
-	}
-	catch {unset a}
-	catch {unset _up_}
-	set a 44
-	concat [foo] $_up_
-    } {1 {can't read "x": no such variable} 44}
-    test upvar-9.5 {Tcl_UpVar2 procedure} {
-	proc foo {} {
-	    testupvar 1 a b x local
-	    set x
-	}
-	catch {unset a}
-	catch {unset x}
-	set a(b) 1234
-	foo
-    } {1234}
-    test upvar-9.6 {Tcl_UpVar procedure} {
-	proc foo {} {
-	    testupvar 1 a x local
-	    set x
-	}
-	catch {unset a}
-	catch {unset x}
-	set a xyzzy
-	foo
-    } {xyzzy}
-    test upvar-9.7 {Tcl_UpVar procedure} {
-	proc foo {} {
-	    testupvar #0 a(b) x local
-	    set x
-	}
-	catch {unset a}
-	catch {unset x}
-	set a(b) 1234
-	foo
-    } {1234}
-}
+test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
+    list [catch {testupvar xyz a {} x global} msg] $msg
+} {1 {bad level "xyz"}}
+test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
+    catch {unset a}
+    catch {unset x}
+    set a 44
+    list [catch "testupvar #0 a 1 x global" msg] $msg
+} {1 {can't access "a(1)": variable isn't array}}
+test upvar-9.3 {Tcl_UpVar2 procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a {} x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a 44
+    foo
+} {44}
+test upvar-9.4 {Tcl_UpVar2 procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a {} _up_ global
+	list [catch {set x} msg] $msg
+    }
+    catch {unset a}
+    catch {unset _up_}
+    set a 44
+    concat [foo] $_up_
+} {1 {can't read "x": no such variable} 44}
+test upvar-9.5 {Tcl_UpVar2 procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a b x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a(b) 1234
+    foo
+} {1234}
+test upvar-9.6 {Tcl_UpVar procedure} testupvar {
+    proc foo {} {
+	testupvar 1 a x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a xyzzy
+    foo
+} {xyzzy}
+test upvar-9.7 {Tcl_UpVar procedure} testupvar {
+    proc foo {} {
+	testupvar #0 a(b) x local
+	set x
+    }
+    catch {unset a}
+    catch {unset x}
+    set a(b) 1234
+    foo
+} {1234}
 catch {unset a}
 
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
