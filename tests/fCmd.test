@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.23 2002/08/08 10:41:22 hobbs Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.24 2002/08/16 13:58:39 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2365,6 +2365,10 @@ test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
     cd [workingDirectory]
     set res
 } [lsort [list abc.link abc.dir abc2.dir]]
+
+test fCmd-29.1 {weird memory corruption fault} {
+    catch {set res [open [file join ~a_totally_bogus_user_id/foo bar]]}
+} 1
 
 cd [temporaryDirectory]
 file delete -force abc.link
