@@ -1,3 +1,9 @@
+2002-02-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* compat/strtod.c (strtod): simplified #includes
+	* compat/strtol.c (strtol): gather result in a long before returning
+	as a long: necessary on platforms where sizeof(int) != sizeof(long).
+
 2002-02-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclLoadDyld.c: updated to use Mac OS X 10.1 dyld APIs that
