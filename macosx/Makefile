@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.7 2003/07/19 01:37:13 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.8 2003/09/25 05:34:07 das Exp $
 #
 ########################################################################################################
 
@@ -131,7 +131,7 @@ build-${PROJECT}: ${OBJ_DIR}/Makefile
 # symolic link hackery to trick
 # 'make install INSTALL_ROOT=${OBJ_DIR}'
 # into building Tcl.framework and tclsh in ${SYMROOT}
-	cd ${OBJ_DIR}; mkdir -p $(dir ./${INSTALL_PATH}) $(dir ./${BINDIR}); \
+	cd ${OBJ_DIR}; mkdir -p $(dir ./${INSTALL_PATH}) $(dir ./${BINDIR}) ${SYMROOT}; \
 	rm -f ./${INSTALL_PATH}; ln -fs ${SYMROOT} ./${INSTALL_PATH}; \
 	rm -f ./${BINDIR}; ln -fs ${SYMROOT} ./${BINDIR}; \
 	ln -fs ${OBJ_DIR}/tcltest ${SYMROOT}
@@ -164,8 +164,8 @@ endif
 ifeq (${INSTALL_BUILD},1)
 ifeq (${EMBEDDED_BUILD},1)
 # if we are embedding frameworks, don't install tclsh
-	rm -f "${INSTALL_ROOT}/${BINDIR}/${TCLSH}"
-	-rmdir -p "${INSTALL_ROOT}/${BINDIR}" 2>&-
+	rm -f "${INSTALL_ROOT}${BINDIR}/${TCLSH}"
+	-rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&-
 else
 # redo prebinding
 	cd ${INSTALL_ROOT}; \
@@ -175,8 +175,7 @@ else
 	if [ -n "$${RM_USRLIB:-}" ]; then rm -f usr/lib; rmdir -p usr 2>&-; fi; \
 	if [ -n "$${RM_SYSTEM:-}" ]; then rm -f System; fi
 # install tclsh symbolic link
-	mkdir -p ${INSTALL_ROOT}/usr/bin && \
-	ln -fs ${TCLSH} ${INSTALL_ROOT}/${BINDIR}/tclsh
+	ln -fs ${TCLSH} ${INSTALL_ROOT}${BINDIR}/tclsh
 ifeq (${BUILD_STYLE},Deployment)
 ifneq (${INSTALL_MANPAGES},)
 # install manpages
