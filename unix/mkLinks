@@ -457,6 +457,9 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSRegister.3
     rm -f Tcl_FSUnregister.3
     rm -f Tcl_FSData.3
+    rm -f Tcl_FSMountsChanged.3
+    rm -f Tcl_FSGetFileSystemForPath.3
+    rm -f Tcl_FSGetPathType.3
     rm -f Tcl_FSCopyFile.3
     rm -f Tcl_FSCopyDirectory.3
     rm -f Tcl_FSCreateDirectory.3
@@ -494,6 +497,9 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSRegister.3
     ln FileSystem.3 Tcl_FSUnregister.3
     ln FileSystem.3 Tcl_FSData.3
+    ln FileSystem.3 Tcl_FSMountsChanged.3
+    ln FileSystem.3 Tcl_FSGetFileSystemForPath.3
+    ln FileSystem.3 Tcl_FSGetPathType.3
     ln FileSystem.3 Tcl_FSCopyFile.3
     ln FileSystem.3 Tcl_FSCopyDirectory.3
     ln FileSystem.3 Tcl_FSCreateDirectory.3
