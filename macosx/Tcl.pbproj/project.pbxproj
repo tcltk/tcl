@@ -274,6 +274,7 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 				F5F24FB8016ECAFC01DC9062,
 				F5F24FB9016ECAFC01DC9062,
 				F5F24FBA016ECAFC01DC9062,
+				F9FED5C7047C7D1B006F146B,
 				F5F24FBB016ECAFC01DC9062,
 				F5F24FD3016ECB4901DC9062,
 				F5F24FBC016ECAFC01DC9062,
@@ -354,6 +355,7 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 		00E2F859016E92B00ACA28DC = {
 			children = (
 				F5A1836F018242A501DC9062,
+				F9FED5C6047C7CEC006F146B,
 			);
 			isa = PBXGroup;
 			name = Sources;
@@ -1559,6 +1561,29 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 			name = word.tcl;
 			path = ../library/word.tcl;
 			refType = 2;
+		};
+//F50
+//F51
+//F52
+//F53
+//F54
+//F90
+//F91
+//F92
+//F93
+//F94
+		F9FED5C6047C7CEC006F146B = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			path = tclMacOSXFCmd.c;
+			refType = 4;
+		};
+		F9FED5C7047C7D1B006F146B = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = tclPathObj.c;
+			path = /Users/steffen/Documents/Development/TclTk/HEAD/tcl/generic/tclPathObj.c;
+			refType = 0;
 		};
 	};
 	rootObject = 00E2F845016E82EB0ACA28DC;
