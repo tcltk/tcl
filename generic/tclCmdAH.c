@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.40 2004/01/21 19:59:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.41 2004/02/04 06:45:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1568,12 +1568,14 @@ StoreStatData(interp, varName, statPtr)
 
     /*
      * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
+     *
+     * Might be a better idea to call Tcl_SetVar2Ex() instead so we
+     * don't have to make assumptions that might go wrong later.
      */
 #define STORE_ARY(fieldName, object) \
     Tcl_SetStringObj(field, (fieldName), -1); \
     value = (object); \
     if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG) == NULL) { \
-	Tcl_DecrRefCount(varName); \
 	Tcl_DecrRefCount(field); \
 	Tcl_DecrRefCount(value); \
 	return TCL_ERROR; \
