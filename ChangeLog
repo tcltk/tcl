@@ -1,8 +1,16 @@
+2000-02-05  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/httpd: improved query support in test httpd to handle fix
+	in http.tcl. [Bug: 4089 change 2000-02-01]
+
+	* unix/README: fixed notes about --enable-shared and add note
+	about --disable-shared.
+
 2000-02-03  Eric Melski <ericm@scriptics.com>
 
 	* doc/Package.n:
-	* doc/packagens.n: Renamed Package.n -> packagens.n because NT is stupid
-	and can't deal with case-sensitive names.  GET A REAL OS!
+	* doc/packagens.n: Renamed Package.n -> packagens.n because NT is
+	stupid and can't deal with case-sensitive names!
 
 2000-02-02  Jeff Hobbs  <hobbs@scriptics.com>
 
