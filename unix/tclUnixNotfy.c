@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.5 2004/11/24 19:49:35 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.6 2004/11/24 20:19:22 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -769,8 +769,6 @@ Tcl_WaitForEvent(timePtr)
     
 #else
     tsdPtr->readyMasks = tsdPtr->checkMasks;
-    memcpy((VOID *) tsdPtr->readyMasks, (VOID *) tsdPtr->checkMasks,
-	    sizeof( SelectMasks ) );
     numFound = select( tsdPtr->numFdBits,
 		       &(tsdPtr->readyMasks.readable),
 		       &(tsdPtr->readyMasks.writable),
