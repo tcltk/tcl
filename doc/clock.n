@@ -9,7 +9,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.6 2000/01/13 23:30:52 ericm Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.7 2000/01/13 23:40:36 ericm Exp $
 '\" 
 .so man.macros
 .TH clock n 8.3 Tcl "Tcl Built-In Commands"
@@ -153,13 +153,19 @@ a 24-hour clock.
 \fIdate\fR
 A specific month and day with optional year.  The
 acceptable formats are \fImm/dd\fR?\fI/yy\fR?, \fImonthname dd\fR
-?, \fIyy\fR?, \fIdd monthname \fR?\fIyy\fR? and \fIday, dd monthname
-yy\fR.  The default year is the current year.  If the year is less
+?, \fIyy\fR?, \fIdd monthname \fR?\fIyy\fR?, \fIday, dd monthname
+yy\fR, \fI?CC?yymmdd\fR, \fI?CC?yy-mm-dd\fR, \fIdd-monthname-?CC?yy\fR.
+The default year is the current year.  If the year is less
 .VS
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so
 an error may result if these years are used.
 .VE
+.TP
+\fIISO 8601 point-in-time\fR
+An ISO 8601 point-in-time specification, such as \fICCyymmddThhmmss\fR, where
+T is the literal T, \fICCyymmdd hhmmss\fR, or 
+\fICCyymmddThh:mm:ss\fR.
 .TP
 \fIrelative time\fR
 A specification relative to the current time.  The format is \fInumber
@@ -186,7 +192,14 @@ Daylight savings time correction is applied only when the relative time
 is specified in units of days or more, ie, days, weeks, fortnights, months or
 years.  This means that when crossing the daylight savings time boundary,
 different results will be given for \fBclock scan "1 day"\fR and
-\fBclock scan "24 hours"\fR.
+\fBclock scan "24 hours"\fR:
+.CS
+.ta 6c
+\fB% clock scan "1 day" -base [clock scan 1999-10-31]
+941443200
+% clock scan "24 hours" -base [clock scan 1999-10-31]
+941439600\fR
+.CE
 .RE
 .TP
 \fBclock seconds\fR
