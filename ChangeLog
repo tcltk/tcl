@@ -1,3 +1,38 @@
+2000-09-06  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* generic/tcl.h:
+	* library/tcltest1.0/tcltest.tcl:
+	* tools/tcl.wse.in: 
+	* tools/tcltk-man2html.tcl:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure.in: updated patchlevel to 8.4a2
+
+	* unix/tclUnixPipe.c (TclpCreateProcess): Removed WNOHANG from
+	Tcl_WaitPid call in error case of process creation on Unix, as it
+	would lead to defunct processes. [Bug: 6148]
+
+	* tests/string.test: extended string repeat tests
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): changed STR_REPEAT to
+	preallocate the full space of the final string, avoided repeated
+	appends.
+
+	* doc/source.n:
+	* doc/Eval.3: added extra note about how to safe use ^Z in code,
+	as it is now a cross-platform (was just Windows) EOF char.
+
+2000-09-05  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclHash.c: fixed pedantic warning of incorrectly placed
+	#endif
+
+	* generic/tclExecute.c (TclExecuteByteCode): INST_STR_INDEX fixed
+	pedantic cast warning.
+	Corrected support for building with -DTCL_COMPILE_STATS.
+	Added efficiency check of object equality.
+
 2000-08-29  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclStringObj.c: Applied patch from Gerhard Hintermayer
