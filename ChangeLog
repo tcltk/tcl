@@ -1,3 +1,12 @@
+2001-08-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Applied patch from SF item
+	  [442665] to fix the bug reported by it.
+
+2001-07-18  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* doc/bgerror.n: Fixed Tk! Bug #415757.
+
 2001-07-18  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIO.c: Aftermath to [SF #427196]. Squash empty buffers
