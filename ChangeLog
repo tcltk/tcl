@@ -1,3 +1,10 @@
+2002-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWinFCmd.c (DoRenameFile, DoCopyFile, DoDeleteFile,
+	DoRemoveJustDirectory): Make sure we don't pass NULL or ""
+	as a path name to Win32 API functions since this was
+	crashing under Windows 98.
+
 2002-03-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:
