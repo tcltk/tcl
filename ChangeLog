@@ -1,3 +1,9 @@
+2002-06-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/dltest/Makefile.in: Remove hard coded CFLAGS=-g
+	and add CFLAGS_DEBUG, CFLAGS_OPTIMIZE, and
+	CFLAGS_DEFAULT varaibles. [Tcl bug 565488]
+
 2002-06-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/tcltest.test:  Corrections to test suite so that tests
