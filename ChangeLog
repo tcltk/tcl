@@ -1,5 +1,8 @@
 2003-01-31  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/tcltest.test: Cleaned up management of file/directory
+	creation/deletion to improve "-debug 1" output.  [Bug 675614]
+
 	* tests/main.test: Stopped main.test from deleting existing file.
 	Test suite should not delete files that already exist. [Bug 675660]
 

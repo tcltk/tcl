@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.35 2002/09/22 18:19:26 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.36 2003/01/31 22:10:24 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -70,8 +70,8 @@ proc slave {msgVar args} {
     interp create [namespace current]::i
     # Fake the slave interp into dumping output to a file
     i eval {namespace eval ::tcltest {}}
-    i eval "set tcltest::outputChannel \[open [makeFile {} output] w]"
-    i eval "set tcltest::errorChannel \[open [makeFile {} error] w]"
+    i eval "set tcltest::outputChannel \[open [set of [makeFile {} output]] w]"
+    i eval "set tcltest::errorChannel \[open [set ef [makeFile {} error]] w]"
     i eval [list set argv0 [lindex $args 0]]
     i eval [list set argv [lrange $args 1 end]]
     i eval [list package ifneeded tcltest [package provide tcltest] \
@@ -86,12 +86,14 @@ if $code {
 }
     i eval {close $tcltest::outputChannel}
     interp delete [namespace current]::i
-    set f [open [file join [temporaryDirectory] output]]
+    set f [open $of]
     set msg [read -nonewline $f]
     close $f
-    set f [open [file join [temporaryDirectory] error]]
+    set f [open $ef]
     set err [read -nonewline $f]
     close $f
+    removeFile output
+    removeFile error
     if {[string length $err]} {
 	set code 1
 	append msg \n$err
@@ -380,7 +382,7 @@ test tcltest-6.3 {tcltest -errfile a.tmp} {unixOrPc unixExecs} {
 	    $result1 $result2 [file exists a.tmp] [file delete a.tmp]
 } {1 0 1 0 1 {}}
 test tcltest-6.4 {tcltest -outfile a.tmp -errfile b.tmp} {unixOrPc unixExecs} {
-    slave msg printerror.tcl -outfile a.tmp -errfile b.tmp
+    slave msg $printerror -outfile a.tmp -errfile b.tmp
     set result1 [catch {exec grep "a test" a.tmp}]
     set result2 [catch {exec grep "a really" b.tmp}]
     list [regexp "a test" $msg] [regexp "a really" $msg] \
@@ -422,6 +424,7 @@ test tcltest-6.6 {tcltest::errorFile (implicit errorChannel)} {
     -match regexp
     -cleanup {
 	errorFile $of
+	removeFile efile
     }
 }
 test tcltest-6.7 {tcltest::outputChannel - retrieval} {
@@ -457,6 +460,7 @@ test tcltest-6.8 {tcltest::outputFile (implicit outputFile)} {
     -match regexp
     -cleanup {
 	outputFile $of
+	removeFile efile
     }
 }
 
@@ -505,17 +509,18 @@ test tcltest-7.6 {tcltest::debug} {
 	set ::tcltest::debug $old
     }
 }
+removeFile test.tcl
 
 # directory tests
 
-makeFile {
+set a [makeFile {
     package require tcltest
     tcltest::makeFile {} a.tmp
     puts [tcltest::outputChannel] "testdir: [tcltest::testsDirectory]"
     exit
-} a.tcl
+} a.tcl]
 
-makeFile {} thisdirectoryisafile  
+set tdiaf [makeFile {} thisdirectoryisafile]
 
 set normaldirectory [makeDirectory normaldirectory]
 if {$::tcl_platform(platform) == "macintosh"} {
@@ -525,14 +530,14 @@ set normaldirectory [file normalize $normaldirectory]
 # -tmpdir, [temporaryDirectory]
 test tcltest-8.1 {tcltest a.tcl -tmpdir a} {unixOrPc} {
     file delete -force thisdirectorydoesnotexist
-    slave msg a.tcl -tmpdir thisdirectorydoesnotexist
+    slave msg $a -tmpdir thisdirectorydoesnotexist
     list [file exists [file join thisdirectorydoesnotexist a.tmp]] \
 	    [file delete -force thisdirectorydoesnotexist] 
 } {1 {}}
 test tcltest-8.2 {tcltest a.tcl -tmpdir thisdirectoryisafile} {
     -constraints unixOrPc
     -body {
-	slave msg a.tcl -tmpdir thisdirectoryisafile
+	slave msg $a -tmpdir $tdiaf
 	set msg
     }
     -result {*not a directory*}
@@ -557,17 +562,17 @@ switch $tcl_platform(platform) {
 }
 
 test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {unixOnly nonRoot} {
-    slave msg a.tcl -tmpdir $notReadableDir 
+    slave msg $a -tmpdir $notReadableDir 
     string match {*not readable*} $msg
 } {1}
 
 test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {unixOrPc nonRoot} {
-    slave msg a.tcl -tmpdir $notWriteableDir
+    slave msg $a -tmpdir $notWriteableDir
     string match {*not writeable*} $msg
 } {1}
 
 test tcltest-8.5 {tcltest a.tcl -tmpdir normaldirectory} {unixOrPc} {
-    slave msg a.tcl -tmpdir $normaldirectory
+    slave msg $a -tmpdir $normaldirectory
     # The join is necessary because the message can be split on multiple lines
     list [file exists [file join $normaldirectory a.tmp]] \
 	    [file delete [file join $normaldirectory a.tmp]] 
@@ -607,23 +612,23 @@ cd [temporaryDirectory]
 # -testdir, [testsDirectory]
 test tcltest-8.10 {tcltest a.tcl -testdir thisdirectorydoesnotexist} {unixOrPc} {
     file delete -force thisdirectorydoesnotexist
-    slave msg a.tcl -testdir thisdirectorydoesnotexist
+    slave msg $a -testdir thisdirectorydoesnotexist
     string match "*does not exist*" $msg
 } {1}
 
 test tcltest-8.11 {tcltest a.tcl -testdir thisdirectoryisafile} {unixOrPc} {
-    slave msg a.tcl -testdir thisdirectoryisafile
+    slave msg $a -testdir $tdiaf
     string match "*not a directory*" $msg 
 } {1}
 
 test tcltest-8.12 {tcltest a.tcl -testdir notReadableDir} {unixOnly nonRoot} {
-    slave msg a.tcl -testdir $notReadableDir 
+    slave msg $a -testdir $notReadableDir 
     string match {*not readable*} $msg
 } {1}
 
 
 test tcltest-8.13 {tcltest a.tcl -testdir normaldirectory} {unixOrPc} {
-    slave msg a.tcl -testdir $normaldirectory
+    slave msg $a -testdir $normaldirectory
     # The join is necessary because the message can be split on multiple lines
     list [string first "testdir: $normaldirectory" [join $msg]] \
 	    [file exists [file join [temporaryDirectory] a.tmp]] \
@@ -689,6 +694,9 @@ switch $tcl_platform(platform) {
 }
 
 file delete -force $notReadableDir $notWriteableDir
+removeFile a.tcl
+removeFile thisdirectoryisafile
+removeDirectory normaldirectory
 
 # -file, -notfile, [matchFiles], [skipFiles]
 test tcltest-9.1 {-file a*.tcl} {unixOrPc} {
@@ -728,7 +736,7 @@ test tcltest-9.4 {skipFiles} {
 }
 
 # -preservecore, [preserveCore]
-makeFile {
+set mc [makeFile {
     package require tcltest
     namespace import ::tcltest::test
     test makecore {make a core file} {
@@ -737,27 +745,27 @@ makeFile {
     } {}
     ::tcltest::cleanupTests
     return
-} makecore.tcl
+} makecore.tcl]
 
 cd [temporaryDirectory]
 test tcltest-10.1 {-preservecore 0} {unixOrPc} {
-    slave msg makecore.tcl -preservecore 0
+    slave msg $mc -preservecore 0
     file delete core
     regexp "Core file produced" $msg
 } {0}
 test tcltest-10.2 {-preservecore 1} {unixOrPc} {
-    slave msg makecore.tcl -preservecore 1
+    slave msg $mc -preservecore 1
     file delete core
     regexp "Core file produced" $msg
 } {1}
 test tcltest-10.3 {-preservecore 2} {unixOrPc} {
-    slave msg makecore.tcl -preservecore 2
+    slave msg $mc -preservecore 2
     file delete core
     list [regexp "Core file produced" $msg] [regexp "Moving file to" $msg] \
 	    [regexp "core-" $msg] [file delete core-makecore]
 } {1 1 1 {}}
 test tcltest-10.4 {-preservecore 3} {unixOrPc} {
-    slave msg makecore.tcl -preservecore 3
+    slave msg $mc -preservecore 3
     file delete core
     list [regexp "Core file produced" $msg] [regexp "Moving file to" $msg] \
 	    [regexp "core-" $msg] [file delete core-makecore]
@@ -776,6 +784,7 @@ test tcltest-10.4 {-preservecore 3} {unixOrPc} {
 #    }
 #    -result {foo foo}
 #}
+removeFile makecore.tcl
 
 # -load, -loadfile, [loadScript], [loadFile]
 set contents { 
@@ -787,13 +796,13 @@ set contents {
 set loadfile [makeFile $contents load.tcl]
 
 test tcltest-12.1 {-load xxx} {unixOrPc} {
-    slave msg load.tcl -load xxx
+    slave msg $loadfile -load xxx
     set msg
 } {xxx}
 
 # Using child process because of -debug usage.
 test tcltest-12.2 {-loadfile load.tcl} {unixOrPc} {
-    catch {exec [interpreter] load.tcl -debug 2 -loadfile load.tcl} msg
+    catch {exec [interpreter] $loadfile -debug 2 -loadfile $loadfile} msg
     list \
 	    [regexp {tcltest} [join [list $msg] [split $msg \n]]] \
 	    [regexp {loadScript} [join [list $msg] [split $msg \n]]]
@@ -824,7 +833,7 @@ test tcltest-12.4 {loadFile} {
     -body {
 	set f1 [loadScript]
 	set f2 [loadFile]
-	set f3 [loadFile load.tcl]
+	set f3 [loadFile $loadfile]
 	set f4 [loadScript]
 	set f5 [loadFile]
 	list $f1 $f2 $f3 $f4 $f5
@@ -835,6 +844,7 @@ test tcltest-12.4 {loadFile} {
 	set ::tcltest::loadFile $oldf
     }
 }
+removeFile load.tcl
 
 # [interpreter]
 test tcltest-13.1 {interpreter} {
@@ -855,21 +865,21 @@ test tcltest-13.1 {interpreter} {
 }
 
 # -singleproc, [singleProcess]
-makeDirectory singleprocdir
+set spd [makeDirectory singleprocdir]
 makeFile {
     set foo 1
-} [file join singleprocdir single1.test]
+} single1.test $spd
 
 makeFile {
     unset foo
-} [file join singleprocdir single2.test]
+} single2.test $spd
 
 set allfile [makeFile {
     package require tcltest
     namespace import tcltest::*
     testsDirectory [file join [temporaryDirectory] singleprocdir]
     runAllTests
-} [file join singleprocdir all-single.tcl]]
+} all-single.tcl $spd]
 cd [workingDirectory]
 
 test tcltest-14.1 {-singleproc - single process} {
@@ -908,46 +918,49 @@ test tcltest-14.3 {singleProcess} {
 	set ::tcltest::singleProcess $old
     }
 }
+removeFile single1.test $spd
+removeFile single2.test $spd
+removeDirectory singleprocdir
 
 # -asidefromdir, -relateddir, [matchDirectories], [skipDirectories]
 
 # Before running these tests, need to set up test subdirectories with their own
 # all.tcl files.
 
-makeDirectory dirtestdir
-makeDirectory [file join dirtestdir dirtestdir2.1]
-makeDirectory [file join dirtestdir dirtestdir2.2]
-makeDirectory [file join dirtestdir dirtestdir2.3]
+set dtd [makeDirectory dirtestdir]
+set dtd1 [makeDirectory dirtestdir2.1 $dtd]
+set dtd2 [makeDirectory dirtestdir2.2 $dtd]
+set dtd3 [makeDirectory dirtestdir2.3 $dtd]
 makeFile {
     package require tcltest
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] dirtestdir]
     runAllTests
-} [file join dirtestdir all.tcl]
+} all.tcl $dtd
 makeFile {
     package require tcltest
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] dirtestdir dirtestdir2.1]
     runAllTests
-} [file join dirtestdir dirtestdir2.1 all.tcl]
+} all.tcl $dtd1
 makeFile {
     package require tcltest
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory]  dirtestdir dirtestdir2.2]
     runAllTests
-} [file join dirtestdir dirtestdir2.2 all.tcl]
+} all.tcl $dtd2
 makeFile {
     package require tcltest
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] dirtestdir dirtestdir2.3]
     runAllTests
-} [file join dirtestdir dirtestdir2.3 all.tcl]
+} all.tcl $dtd3
 
 test tcltest-15.1 {basic directory walking} {
     -constraints {unixOrPc}
     -body {
 	if {[slave msg \
-		[file join [temporaryDirectory] dirtestdir all.tcl] \
+		[file join $dtd all.tcl] \
 		-tmpdir [temporaryDirectory]] == 1} {
 	    error $msg
 	}
@@ -961,7 +974,7 @@ test tcltest-15.2 {-asidefromdir} {
     -constraints {unixOrPc}
     -body {
 	if {[slave msg \
-		[file join [temporaryDirectory] dirtestdir all.tcl] \
+		[file join $dtd all.tcl] \
 		-asidefromdir dirtestdir2.3 \
 		-tmpdir [temporaryDirectory]] == 1} {
 	    error $msg
@@ -979,7 +992,7 @@ test tcltest-15.3 {-relateddir, non-existent dir} {
     -constraints {unixOrPc}
     -body {
 	if {[slave msg \
-		[file join [temporaryDirectory] dirtestdir all.tcl] \
+		[file join $dtd all.tcl] \
 		-relateddir [file join [temporaryDirectory] dirtestdir0] \
 		-tmpdir [temporaryDirectory]] == 1} {
 	    error $msg
@@ -994,7 +1007,7 @@ test tcltest-15.4 {-relateddir, subdir} {
     -constraints {unixOrPc}
     -body {
 	if {[slave msg \
-		[file join [temporaryDirectory] dirtestdir all.tcl] \
+		[file join $dtd all.tcl] \
 		-relateddir dirtestdir2.1 -tmpdir [temporaryDirectory]] == 1} {
 	    error $msg
 	}
@@ -1007,7 +1020,7 @@ test tcltest-15.5 {-relateddir, -asidefromdir} {
     -constraints {unixOrPc}
     -body {
 	if {[slave msg \
-		[file join [temporaryDirectory] dirtestdir all.tcl] \
+		[file join $dtd all.tcl] \
 		-relateddir "dirtestdir2.1 dirtestdir2.2" \
 		-asidefromdir dirtestdir2.2 \
 		-tmpdir [temporaryDirectory]] == 1} {
@@ -1052,6 +1065,10 @@ test tcltest-15.7 {skipDirectories} {
     }
     -result {{} foo foo}
 }
+removeDirectory dirtestdir2.3 $dtd
+removeDirectory dirtestdir2.2 $dtd
+removeDirectory dirtestdir2.1 $dtd
+removeDirectory dirtestdir
 
 # TCLTEST_OPTIONS
 test tcltest-19.1 {TCLTEST_OPTIONS default} {
@@ -1092,12 +1109,13 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} {
 cd [temporaryDirectory]
 # PrintError
 test tcltest-20.1 {PrintError} {unixOrPc} {
-    set result [slave msg printerror.tcl]
+    set result [slave msg $printerror]
     list $result [regexp "Error:  a really short string" $msg] \
 	    [regexp "     \"quotes\"" $msg] [regexp "    \"Path" $msg] \
 	    [regexp "    \"Really" $msg] [regexp Problem $msg]
 } {1 1 1 1 1 1}
 cd [workingDirectory]
+removeFile printerror.tcl
 
 # test::test
 test tcltest-21.0 {name and desc but no args specified} -setup {
@@ -1300,19 +1318,19 @@ test tcltest-21.12 {
 # test all.tcl usage (runAllTests); simulate .test file failure, as well as
 # crashes to determine whether or not these errors are logged.
 
-makeDirectory alltestdir
+set atd [makeDirectory alltestdir]
 makeFile {
     package require tcltest
     namespace import -force tcltest::*
     testsDirectory [file join [temporaryDirectory] alltestdir]
     runAllTests
-} [file join alltestdir all.tcl]
+} all.tcl $atd
 makeFile {
     exit 1
-} [file join alltestdir exit.test]
+} exit.test $atd
 makeFile {
     error "throw an error"
-} [file join alltestdir error.test]
+} error.test $atd
 makeFile {
     package require tcltest
     namespace import -force tcltest::*
@@ -1321,7 +1339,7 @@ makeFile {
 	-result {1}
     }
     cleanupTests
-} [file join alltestdir test.test]
+} test.test $atd
 
 # Must use a child process because stdout/stderr parsing can't be
 # duplicated in slave interp.
@@ -1329,12 +1347,13 @@ test tcltest-22.1 {runAllTests} {
     -constraints {unixOrPc}
     -body {
 	exec [interpreter] \
-		[file join [temporaryDirectory] alltestdir all.tcl] \
+		[file join $atd all.tcl] \
 		-verbose t -tmpdir [temporaryDirectory]
     }
     -match regexp
     -result "Test files exiting with errors:.*error.test.*exit.test"
 }
+removeDirectory alltestdir
 
 # makeFile, removeFile, makeDirectory, removeDirectory, viewFile
 test tcltest-23.1 {makeFile} {
@@ -1392,15 +1411,16 @@ test tcltest-23.3 {makeDirectory} {
     -result {1 1}
 }
 test tcltest-23.4 {removeDirectory} {
-    -body {
-	set mfdir [file join [temporaryDirectory] mfdir]
-	file mkdir $mfdir
-	file mkdir [file join [temporaryDirectory] t1]
-	file mkdir [file join [temporaryDirectory] $mfdir t2]
+    -setup {
+	set mfdir [makeDirectory mfdir]
+	makeDirectory t1
+	makeDirectory t2 $mfdir
 	if {![file exists $mfdir] || \
 		![file exists [file join [temporaryDirectory] $mfdir t2]]} {
-	    return "setup failed - directory not created"
+	    error "setup failed - directory not created"
 	}
+    }
+    -body {
 	removeDirectory t1
 	removeDirectory t2 $mfdir
 	list [file exists [file join [temporaryDirectory] t1]] \
@@ -1419,6 +1439,7 @@ test tcltest-23.5 {viewFile} {
     -result {foobar foobarbaz}
     -cleanup {
 	file delete -force $mfdir
+	removeFile t1.tmp
     }
 }
 
@@ -1701,6 +1722,7 @@ test tcltest-25.3 {
 	    error foo
 	}
 } -match glob -output {*generated error; Return code was: 1*}
+
 
 cleanupTests
 }
