@@ -13,7 +13,8 @@
 #		--with-tcl=...
 #
 #	Defines the following vars:
-#		TCL_BIN_DIR	Full path to the tclConfig.sh file
+#		TCL_BIN_DIR	Full path to the directory containing
+#				the tclConfig.sh file
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_PATH_TCLCONFIG, [
@@ -106,80 +107,81 @@ fi
 #		--with-tk=...
 #
 #	Defines the following vars:
-#		TK_BIN_DIR	Full path to the tkConfig.sh file
+#		TK_BIN_DIR	Full path to the directory containing
+#				the tkConfig.sh file
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_PATH_TKCONFIG, [
-#
-# Ok, lets find the tk configuration
-# First, look for one uninstalled.
-# the alternative search directory is invoked by --with-tk
-#
+    #
+    # Ok, lets find the tk configuration
+    # First, look for one uninstalled.
+    # the alternative search directory is invoked by --with-tk
+    #
 
-if test x"${no_tk}" = x ; then
-  # we reset no_tk in case something fails here
-  no_tk=true
-  AC_ARG_WITH(tk, [  --with-tk               directory containing tk configuration (tkConfig.sh)],
-         with_tkconfig=${withval})
-  AC_MSG_CHECKING([for Tk configuration])
-  AC_CACHE_VAL(ac_cv_c_tkconfig,[
+    if test x"${no_tk}" = x ; then
+	# we reset no_tk in case something fails here
+	no_tk=true
+	AC_ARG_WITH(tk, [  --with-tk               directory containing tk configuration (tkConfig.sh)],
+		with_tkconfig=${withval})
+	AC_MSG_CHECKING([for Tk configuration])
+	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
-  # First check to see if --with-tkconfig was specified.
-  if test x"${with_tkconfig}" != x ; then
-    if test -f "${with_tkconfig}/tkConfig.sh" ; then
-      ac_cv_c_tkconfig=`(cd ${with_tkconfig}; pwd)`
-    else
-      AC_MSG_ERROR([${with_tkconfig} directory doesn't contain tkConfig.sh])
+	    # First check to see if --with-tkconfig was specified.
+	    if test x"${with_tkconfig}" != x ; then
+		if test -f "${with_tkconfig}/tkConfig.sh" ; then
+		    ac_cv_c_tkconfig=`(cd ${with_tkconfig}; pwd)`
+		else
+		    AC_MSG_ERROR([${with_tkconfig} directory doesn't contain tkConfig.sh])
+		fi
+	    fi
+
+	    # then check for a private Tk library
+	    if test x"${ac_cv_c_tkconfig}" = x ; then
+		for i in \
+			../tk \
+			`ls -dr ../tk[[8-9]].[[0-9]]* 2>/dev/null` \
+			../../tk \
+			`ls -dr ../../tk[[8-9]].[[0-9]]* 2>/dev/null` \
+			../../../tk \
+			`ls -dr ../../../tk[[8-9]].[[0-9]]* 2>/dev/null` ; do
+		    if test -f "$i/unix/tkConfig.sh" ; then
+			ac_cv_c_tkconfig=`(cd $i/unix; pwd)`
+			break
+		    fi
+		done
+	    fi
+	    # check in a few common install locations
+	    if test x"${ac_cv_c_tkconfig}" = x ; then
+		for i in `ls -d ${prefix}/lib 2>/dev/null` \
+			`ls -d /usr/local/lib 2>/dev/null` ; do
+		    if test -f "$i/tkConfig.sh" ; then
+			ac_cv_c_tkconfig=`(cd $i; pwd)`
+			break
+		    fi
+		done
+	    fi
+	    # check in a few other private locations
+	    if test x"${ac_cv_c_tkconfig}" = x ; then
+		for i in \
+			${srcdir}/../tk \
+			`ls -dr ${srcdir}/../tk[[8-9]].[[0-9]]* 2>/dev/null` ; do
+		    if test -f "$i/unix/tkConfig.sh" ; then
+			ac_cv_c_tkconfig=`(cd $i/unix; pwd)`
+			break
+		    fi
+		done
+	    fi
+	])
+	if test x"${ac_cv_c_tkconfig}" = x ; then
+	    TK_BIN_DIR="# no Tk configs found"
+	    AC_MSG_WARN(Can't find Tk configuration definitions)
+	    exit 0
+	else
+	    no_tk=
+	    TK_BIN_DIR=${ac_cv_c_tkconfig}
+	    AC_MSG_RESULT(found $TK_BIN_DIR/tkConfig.sh)
+	fi
     fi
-  fi
-
-  # then check for a private Tk library
-  if test x"${ac_cv_c_tkconfig}" = x ; then
-    for i in \
-                ../tk \
-                `ls -dr ../tk[[8-9]].[[0-9]]* 2>/dev/null` \
-                ../../tk \
-                `ls -dr ../../tk[[8-9]].[[0-9]]* 2>/dev/null` \
-                ../../../tk \
-                `ls -dr ../../../tk[[8-9]].[[0-9]]* 2>/dev/null` ; do
-      if test -f "$i/unix/tkConfig.sh" ; then
-        ac_cv_c_tkconfig=`(cd $i/unix; pwd)`
-        break
-      fi
-    done
-  fi
-  # check in a few common install locations
-  if test x"${ac_cv_c_tkconfig}" = x ; then
-    for i in `ls -d ${prefix}/lib 2>/dev/null` \
-	     `ls -d /usr/local/lib 2>/dev/null` ; do
-      if test -f "$i/tkConfig.sh" ; then
-        ac_cv_c_tkconfig=`(cd $i; pwd)`
-        break
-      fi
-    done
-  fi
-  # check in a few other private locations
-  if test x"${ac_cv_c_tkconfig}" = x ; then
-    for i in \
-                ${srcdir}/../tk \
-                `ls -dr ${srcdir}/../tk[[8-9]].[[0-9]]* 2>/dev/null` ; do
-      if test -f "$i/unix/tkConfig.sh" ; then
-        ac_cv_c_tkconfig=`(cd $i/unix; pwd)`
-        break
-      fi
-    done
-  fi
-  ])
-  if test x"${ac_cv_c_tkconfig}" = x ; then
-    TK_BIN_DIR="# no Tk configs found"
-    AC_MSG_WARN(Can't find Tk configuration definitions)
-    exit 0
-  else
-    no_tk=
-    TK_BIN_DIR=${ac_cv_c_tkconfig}
-    AC_MSG_RESULT(found $TK_BIN_DIR/tkConfig.sh)
-  fi
-fi
 
 ])
 
@@ -416,613 +418,6 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	DBGX=""
 	AC_MSG_RESULT([no])
     fi
-])
-
-#--------------------------------------------------------------------
-# SC_SERIAL_PORT
-#
-#	Determine which interface to use to talk to the serial port.
-#	Note that #include lines must begin in leftmost column for
-#	some compilers to recognize them as preprocessor directives.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Defines only one of the following vars:
-#		USE_TERMIOS
-#		USE_TERMIO
-#		USE_SGTTY
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_SERIAL_PORT, [
-    AC_MSG_CHECKING([termios vs. termio vs. sgtty])
-
-    AC_TRY_RUN([
-#include <termios.h>
-
-main()
-{
-    struct termios t;
-    if (tcgetattr(0, &t) == 0) {
-	cfsetospeed(&t, 0);
-	t.c_cflag |= PARENB | PARODD | CSIZE | CSTOPB;
-	return 0;
-    }
-    return 1;
-}], tk_ok=termios, tk_ok=no, tk_ok=no)
-
-    if test $tk_ok = termios; then
-	AC_DEFINE(USE_TERMIOS)
-    else
-	AC_TRY_RUN([
-#include <termio.h>
-
-main()
-{
-    struct termio t;
-    if (ioctl(0, TCGETA, &t) == 0) {
-	t.c_cflag |= CBAUD | PARENB | PARODD | CSIZE | CSTOPB;
-	return 0;
-    }
-    return 1;
-    }], tk_ok=termio, tk_ok=no, tk_ok=no)
-
-    if test $tk_ok = termio; then
-	AC_DEFINE(USE_TERMIO)
-    else
-	AC_TRY_RUN([
-#include <sgtty.h>
-
-main()
-{
-    struct sgttyb t;
-    if (ioctl(0, TIOCGETP, &t) == 0) {
-	t.sg_ospeed = 0;
-	t.sg_flags |= ODDP | EVENP | RAW;
-	return 0;
-    }
-    return 1;
-}], tk_ok=sgtty, tk_ok=none, tk_ok=none)
-    if test $tk_ok = sgtty; then
-	AC_DEFINE(USE_SGTTY)
-    fi
-    fi
-    fi
-    AC_MSG_RESULT($tk_ok)
-])
-
-#--------------------------------------------------------------------
-# SC_MISSING_POSIX_HEADERS
-#
-#	Supply substitutes for missing POSIX header files.  Special
-#	notes:
-#	    - stdlib.h doesn't define strtol, strtoul, or
-#	      strtod insome versions of SunOS
-#	    - some versions of string.h don't declare procedures such
-#	      as strstr
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Defines some of the following vars:
-#		NO_DIRENT_H
-#		NO_ERRNO_H
-#		NO_VALUES_H
-#		NO_LIMITS_H
-#		NO_STDLIB_H
-#		NO_STRING_H
-#		NO_SYS_WAIT_H
-#		NO_DLFCN_H
-#		HAVE_UNISTD_H
-#		HAVE_SYS_PARAM_H
-#
-#		HAVE_STRING_H ?
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_MISSING_POSIX_HEADERS, [
-
-    AC_MSG_CHECKING(dirent.h)
-    AC_TRY_LINK([#include <sys/types.h>
-#include <dirent.h>], [
-#ifndef _POSIX_SOURCE
-#   ifdef __Lynx__
-	/*
-	 * Generate compilation error to make the test fail:  Lynx headers
-	 * are only valid if really in the POSIX environment.
-	 */
-
-	missing_procedure();
-#   endif
-#endif
-DIR *d;
-struct dirent *entryPtr;
-char *p;
-d = opendir("foobar");
-entryPtr = readdir(d);
-p = entryPtr->d_name;
-closedir(d);
-], tcl_ok=yes, tcl_ok=no)
-
-    if test $tcl_ok = no; then
-	AC_DEFINE(NO_DIRENT_H)
-    fi
-
-    AC_MSG_RESULT($tcl_ok)
-    AC_CHECK_HEADER(errno.h, , AC_DEFINE(NO_ERRNO_H))
-    AC_CHECK_HEADER(float.h, , AC_DEFINE(NO_FLOAT_H))
-    AC_CHECK_HEADER(values.h, , AC_DEFINE(NO_VALUES_H))
-    AC_CHECK_HEADER(limits.h, , AC_DEFINE(NO_LIMITS_H))
-    AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
-    AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
-    AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
-    AC_EGREP_HEADER(strtod, stdlib.h, , tcl_ok=0)
-    if test $tcl_ok = 0; then
-	AC_DEFINE(NO_STDLIB_H)
-    fi
-    AC_CHECK_HEADER(string.h, tcl_ok=1, tcl_ok=0)
-    AC_EGREP_HEADER(strstr, string.h, , tcl_ok=0)
-    AC_EGREP_HEADER(strerror, string.h, , tcl_ok=0)
-
-    # See also memmove check below for a place where NO_STRING_H can be
-    # set and why.
-
-    if test $tcl_ok = 0; then
-	AC_DEFINE(NO_STRING_H)
-    fi
-
-    AC_CHECK_HEADER(sys/wait.h, , AC_DEFINE(NO_SYS_WAIT_H))
-    AC_CHECK_HEADER(dlfcn.h, , AC_DEFINE(NO_DLFCN_H))
-
-    # OS/390 lacks sys/param.h (and doesn't need it, by chance).
-
-    AC_HAVE_HEADERS(unistd.h sys/param.h)
-
-])
-
-#--------------------------------------------------------------------
-# SC_PATH_X
-#
-#	Locate the X11 header files and the X11 library archive.  Try
-#	the ac_path_x macro first, but if it doesn't find the X stuff
-#	(e.g. because there's no xmkmf program) then check through
-#	a list of possible directories.  Under some conditions the
-#	autoconf macro will return an include directory that contains
-#	no include files, so double-check its result just to be safe.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Sets the the following vars:
-#		XINCLUDES
-#		XLIBSW
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_PATH_X, [
-    AC_PATH_X
-    not_really_there=""
-    if test "$no_x" = ""; then
-	if test "$x_includes" = ""; then
-	    AC_TRY_CPP([#include <X11/XIntrinsic.h>], , not_really_there="yes")
-	else
-	    if test ! -r $x_includes/X11/Intrinsic.h; then
-		not_really_there="yes"
-	    fi
-	fi
-    fi
-    if test "$no_x" = "yes" -o "$not_really_there" = "yes"; then
-	AC_MSG_CHECKING(for X11 header files)
-	XINCLUDES="# no special path needed"
-	AC_TRY_CPP([#include <X11/Intrinsic.h>], , XINCLUDES="nope")
-	if test "$XINCLUDES" = nope; then
-	    dirs="/usr/unsupported/include /usr/local/include /usr/X386/include /usr/X11R6/include /usr/X11R5/include /usr/include/X11R5 /usr/include/X11R4 /usr/openwin/include /usr/X11/include /usr/sww/include"
-	    for i in $dirs ; do
-		if test -r $i/X11/Intrinsic.h; then
-		    AC_MSG_RESULT($i)
-		    XINCLUDES=" -I$i"
-		    break
-		fi
-	    done
-	fi
-    else
-	if test "$x_includes" != ""; then
-	    XINCLUDES=-I$x_includes
-	else
-	    XINCLUDES="# no special path needed"
-	fi
-    fi
-    if test "$XINCLUDES" = nope; then
-	AC_MSG_RESULT(couldn't find any!)
-	XINCLUDES="# no include files found"
-    fi
-
-    if test "$no_x" = yes; then
-	AC_MSG_CHECKING(for X11 libraries)
-	XLIBSW=nope
-	dirs="/usr/unsupported/lib /usr/local/lib /usr/X386/lib /usr/X11R6/lib /usr/X11R5/lib /usr/lib/X11R5 /usr/lib/X11R4 /usr/openwin/lib /usr/X11/lib /usr/sww/X11/lib"
-	for i in $dirs ; do
-	    if test -r $i/libX11.a -o -r $i/libX11.so -o -r $i/libX11.sl; then
-		AC_MSG_RESULT($i)
-		XLIBSW="-L$i -lX11"
-		x_libraries="$i"
-		break
-	    fi
-	done
-    else
-	if test "$x_libraries" = ""; then
-	    XLIBSW=-lX11
-	else
-	    XLIBSW="-L$x_libraries -lX11"
-	fi
-    fi
-    if test "$XLIBSW" = nope ; then
-	AC_CHECK_LIB(Xwindow, XCreateWindow, XLIBSW=-lXwindow)
-    fi
-    if test "$XLIBSW" = nope ; then
-	AC_MSG_RESULT(couldn't find any!  Using -lX11.)
-	XLIBSW=-lX11
-    fi
-])
-#--------------------------------------------------------------------
-# SC_BLOCKING_STYLE
-#
-#	The statements below check for systems where POSIX-style
-#	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented. 
-#	On these systems (mostly older ones), use the old BSD-style
-#	FIONBIO approach instead.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Defines some of the following vars:
-#		HAVE_SYS_IOCTL_H
-#		HAVE_SYS_FILIO_H
-#		USE_FIONBIO
-#		O_NONBLOCK
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_BLOCKING_STYLE, [
-    AC_CHECK_HEADERS(sys/ioctl.h)
-    AC_CHECK_HEADERS(sys/filio.h)
-    AC_MSG_CHECKING([FIONBIO vs. O_NONBLOCK for nonblocking I/O])
-    if test -f /usr/lib/NextStep/software_version; then
-	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
-    else
-	system=`uname -s`-`uname -r`
-	if test "$?" -ne 0 ; then
-	    system=unknown
-	else
-	    # Special check for weird MP-RAS system (uname returns weird
-	    # results, and the version is kept in special file).
-	
-	    if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
-		system=MP-RAS-`awk '{print $3}' /etc/.relid'`
-	    fi
-	    if test "`uname -s`" = "AIX" ; then
-		system=AIX-`uname -v`.`uname -r`
-	    fi
-	fi
-    fi
-    case $system in
-	# There used to be code here to use FIONBIO under AIX.  However, it
-	# was reported that FIONBIO doesn't work under AIX 3.2.5.  Since
-	# using O_NONBLOCK seems fine under AIX 4.*, I removed the FIONBIO
-	# code (JO, 5/31/97).
-
-	OSF*)
-	    AC_DEFINE(USE_FIONBIO)
-	    AC_MSG_RESULT(FIONBIO)
-	    ;;
-	SunOS-4*)
-	    AC_DEFINE(USE_FIONBIO)
-	    AC_MSG_RESULT(FIONBIO)
-	    ;;
-	ULTRIX-4.*)
-	    AC_DEFINE(USE_FIONBIO)
-	    AC_MSG_RESULT(FIONBIO)
-	    ;;
-	*)
-	    AC_MSG_RESULT(O_NONBLOCK)
-	    ;;
-    esac
-])
-
-#--------------------------------------------------------------------
-# SC_HAVE_VFORK
-#
-#	Check to see whether the system provides a vfork kernel call.
-#	If not, then use fork instead.  Also, check for a problem with
-#	vforks and signals that can cause core dumps if a vforked child
-#	resets a signal handler.  If the problem exists, then use fork
-#	instead of vfork.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Defines some of the following vars:
-#		vfork (=fork)
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_HAVE_VFORK, [
-    AC_TYPE_SIGNAL()
-    AC_CHECK_FUNC(vfork, tcl_ok=1, tcl_ok=0)
-    if test "$tcl_ok" = 1; then
-	AC_MSG_CHECKING([vfork/signal bug]);
-	AC_TRY_RUN([
-#include <stdio.h>
-#include <signal.h>
-#include <sys/wait.h>
-int gotSignal = 0;
-sigProc(sig)
-    int sig;
-{
-    gotSignal = 1;
-}
-main()
-{
-    int pid, sts;
-    (void) signal(SIGCHLD, sigProc);
-    pid = vfork();
-    if (pid <  0) {
-	exit(1);
-    } else if (pid == 0) {
-	(void) signal(SIGCHLD, SIG_DFL);
-	_exit(0);
-    } else {
-	(void) wait(&sts);
-    }
-    exit((gotSignal) ? 0 : 1);
-}], tcl_ok=1, tcl_ok=0, tcl_ok=0)
-
-	if test "$tcl_ok" = 1; then
-	    AC_MSG_RESULT(ok)
-	else
-	    AC_MSG_RESULT([buggy, using fork instead])
-	fi
-    fi
-    rm -f core
-    if test "$tcl_ok" = 0; then
-	AC_DEFINE(vfork, fork)
-    fi
-])
-
-#--------------------------------------------------------------------
-# SC_TIME_HANLDER
-#
-#	Checks how the system deals with time.h, what time structures
-#	are used on the system, and what fields the structures have.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Defines some of the following vars:
-#		USE_DELTA_FOR_TZ
-#		HAVE_TM_GMTOFF
-#		HAVE_TM_TZADJ
-#		HAVE_TIMEZONE_VAR
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_TIME_HANDLER, [
-    AC_CHECK_HEADERS(sys/time.h)
-    AC_HEADER_TIME
-    AC_STRUCT_TIMEZONE
-
-    AC_MSG_CHECKING([tm_tzadj in struct tm])
-    AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_tzadj;],
-	    [AC_DEFINE(HAVE_TM_TZADJ)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
-
-    AC_MSG_CHECKING([tm_gmtoff in struct tm])
-    AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
-	    [AC_DEFINE(HAVE_TM_GMTOFF)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
-
-    #
-    # Its important to include time.h in this check, as some systems
-    # (like convex) have timezone functions, etc.
-    #
-    have_timezone=no
-    AC_MSG_CHECKING([long timezone variable])
-    AC_TRY_COMPILE([#include <time.h>],
-	    [extern long timezone;
-	    timezone += 1;
-	    exit (0);],
-	    [have_timezone=yes
-	    AC_DEFINE(HAVE_TIMEZONE_VAR)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
-
-    #
-    # On some systems (eg IRIX 6.2), timezone is a time_t and not a long.
-    #
-    if test "$have_timezone" = no; then
-    AC_MSG_CHECKING([time_t timezone variable])
-    AC_TRY_COMPILE([#include <time.h>],
-	    [extern time_t timezone;
-	    timezone += 1;
-	    exit (0);],
-	    [AC_DEFINE(HAVE_TIMEZONE_VAR)
-	    AC_MSG_RESULT(yes)],
-	    AC_MSG_RESULT(no))
-    fi
-
-    #
-    # AIX does not have a timezone field in struct tm. When the AIX bsd
-    # library is used, the timezone global and the gettimeofday methods are
-    # to be avoided for timezone deduction instead, we deduce the timezone
-    # by comparing the localtime result on a known GMT value.
-    #
-
-    if test "`uname -s`" = "AIX" ; then
-	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
-	if test $libbsd = yes; then
-	    AC_DEFINE(USE_DELTA_FOR_TZ)
-	fi
-    fi
-])
-
-#--------------------------------------------------------------------
-# SC_BUGGY_STRTOD
-#
-#	Under Solaris 2.4, strtod returns the wrong value for the
-#	terminating character under some conditions.  Check for this
-#	and if the problem exists use a substitute procedure
-#	"fixstrtod" (provided by Tcl) that corrects the error.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Might defines some of the following vars:
-#		strtod (=fixstrtod)
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_BUGGY_STRTOD, [
-    AC_CHECK_FUNC(strtod, tk_strtod=1, tk_strtod=0)
-    if test "$tk_strtod" = 1; then
-	AC_MSG_CHECKING([for Solaris 2.4 strtod bug])
-	AC_TRY_RUN([
-	    extern double strtod();
-	    int main()
-	    {
-		char *string = "NaN";
-		char *term;
-		strtod(string, &term);
-		if ((term != string) && (term[-1] == 0)) {
-		    exit(1);
-		}
-		exit(0);
-	    }], tk_ok=1, tk_ok=0, tk_ok=0)
-	if test "$tk_ok" = 1; then
-	    AC_MSG_RESULT(ok)
-	else
-	    AC_MSG_RESULT(buggy)
-	    AC_DEFINE(strtod, fixstrtod)
-	fi
-    fi
-])
-
-#--------------------------------------------------------------------
-# SC_TCL_LINK_LIBS
-#
-#	Search for the libraries needed to link the Tcl shell.
-#	Things like the math library (-lm) and socket stuff (-lsocket vs.
-#	-lnsl) are dealt with here.
-#
-# Arguments:
-#	Requires the following vars to be set in the Makefile:
-#		DL_LIBS
-#		LIBS
-#		MATH_LIBS
-#	
-# Results:
-#
-#	Subst's the following var:
-#		TCL_LIBS
-#		MATH_LIBS
-#
-#	Might append to the following vars:
-#		LIBS
-#
-#	Might define the following vars:
-#		HAVE_NET_ERRNO_H
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_TCL_LINK_LIBS, [
-    #--------------------------------------------------------------------
-    # On a few very rare systems, all of the libm.a stuff is
-    # already in libc.a.  Set compiler flags accordingly.
-    # Also, Linux requires the "ieee" library for math to work
-    # right (and it must appear before "-lm").
-    #--------------------------------------------------------------------
-
-    AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
-    AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
-
-    #--------------------------------------------------------------------
-    # On AIX systems, libbsd.a has to be linked in to support
-    # non-blocking file IO.  This library has to be linked in after
-    # the MATH_LIBS or it breaks the pow() function.  The way to
-    # insure proper sequencing, is to add it to the tail of MATH_LIBS.
-    # This library also supplies gettimeofday.
-    #--------------------------------------------------------------------
-
-    libbsd=no
-    if test "`uname -s`" = "AIX" ; then
-	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
-	if test $libbsd = yes; then
-	    MATH_LIBS="$MATH_LIBS -lbsd"
-	fi
-    fi
-
-
-    #--------------------------------------------------------------------
-    # Interactive UNIX requires -linet instead of -lsocket, plus it
-    # needs net/errno.h to define the socket-related error codes.
-    #--------------------------------------------------------------------
-
-    AC_CHECK_LIB(inet, main, [LIBS="$LIBS -linet"])
-    AC_CHECK_HEADER(net/errno.h, AC_DEFINE(HAVE_NET_ERRNO_H))
-
-    #--------------------------------------------------------------------
-    #	Check for the existence of the -lsocket and -lnsl libraries.
-    #	The order here is important, so that they end up in the right
-    #	order in the command line generated by make.  Here are some
-    #	special considerations:
-    #	1. Use "connect" and "accept" to check for -lsocket, and
-    #	   "gethostbyname" to check for -lnsl.
-    #	2. Use each function name only once:  can't redo a check because
-    #	   autoconf caches the results of the last check and won't redo it.
-    #	3. Use -lnsl and -lsocket only if they supply procedures that
-    #	   aren't already present in the normal libraries.  This is because
-    #	   IRIX 5.2 has libraries, but they aren't needed and they're
-    #	   bogus:  they goof up name resolution if used.
-    #	4. On some SVR4 systems, can't use -lsocket without -lnsl too.
-    #	   To get around this problem, check for both libraries together
-    #	   if -lsocket doesn't work by itself.
-    #--------------------------------------------------------------------
-
-    tcl_checkBoth=0
-    AC_CHECK_FUNC(connect, tcl_checkSocket=0, tcl_checkSocket=1)
-    if test "$tcl_checkSocket" = 1; then
-	AC_CHECK_LIB(socket, main, LIBS="$LIBS -lsocket", tcl_checkBoth=1)
-    fi
-    if test "$tcl_checkBoth" = 1; then
-	tk_oldLibs=$LIBS
-	LIBS="$LIBS -lsocket -lnsl"
-	AC_CHECK_FUNC(accept, tcl_checkNsl=0, [LIBS=$tk_oldLibs])
-    fi
-    AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, main,
-	    [LIBS="$LIBS -lnsl"]))
-    
-    # Don't perform the eval of the libraries here because DL_LIBS
-    # won't be set until we call SC_CONFIG_CFLAGS
-
-    TCL_LIBS='${DL_LIBS} ${LIBS} ${MATH_LIBS}'
-    AC_SUBST(TCL_LIBS)
-    AC_SUBST(MATH_LIBS)
 ])
 
 #--------------------------------------------------------------------
@@ -1682,4 +1077,611 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_SUBST(DL_LIBS)
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
+])
+
+#--------------------------------------------------------------------
+# SC_SERIAL_PORT
+#
+#	Determine which interface to use to talk to the serial port.
+#	Note that #include lines must begin in leftmost column for
+#	some compilers to recognize them as preprocessor directives.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Defines only one of the following vars:
+#		USE_TERMIOS
+#		USE_TERMIO
+#		USE_SGTTY
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_SERIAL_PORT, [
+    AC_MSG_CHECKING([termios vs. termio vs. sgtty])
+
+    AC_TRY_RUN([
+#include <termios.h>
+
+main()
+{
+    struct termios t;
+    if (tcgetattr(0, &t) == 0) {
+	cfsetospeed(&t, 0);
+	t.c_cflag |= PARENB | PARODD | CSIZE | CSTOPB;
+	return 0;
+    }
+    return 1;
+}], tk_ok=termios, tk_ok=no, tk_ok=no)
+
+    if test $tk_ok = termios; then
+	AC_DEFINE(USE_TERMIOS)
+    else
+	AC_TRY_RUN([
+#include <termio.h>
+
+main()
+{
+    struct termio t;
+    if (ioctl(0, TCGETA, &t) == 0) {
+	t.c_cflag |= CBAUD | PARENB | PARODD | CSIZE | CSTOPB;
+	return 0;
+    }
+    return 1;
+    }], tk_ok=termio, tk_ok=no, tk_ok=no)
+
+    if test $tk_ok = termio; then
+	AC_DEFINE(USE_TERMIO)
+    else
+	AC_TRY_RUN([
+#include <sgtty.h>
+
+main()
+{
+    struct sgttyb t;
+    if (ioctl(0, TIOCGETP, &t) == 0) {
+	t.sg_ospeed = 0;
+	t.sg_flags |= ODDP | EVENP | RAW;
+	return 0;
+    }
+    return 1;
+}], tk_ok=sgtty, tk_ok=none, tk_ok=none)
+    if test $tk_ok = sgtty; then
+	AC_DEFINE(USE_SGTTY)
+    fi
+    fi
+    fi
+    AC_MSG_RESULT($tk_ok)
+])
+
+#--------------------------------------------------------------------
+# SC_MISSING_POSIX_HEADERS
+#
+#	Supply substitutes for missing POSIX header files.  Special
+#	notes:
+#	    - stdlib.h doesn't define strtol, strtoul, or
+#	      strtod insome versions of SunOS
+#	    - some versions of string.h don't declare procedures such
+#	      as strstr
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Defines some of the following vars:
+#		NO_DIRENT_H
+#		NO_ERRNO_H
+#		NO_VALUES_H
+#		NO_LIMITS_H
+#		NO_STDLIB_H
+#		NO_STRING_H
+#		NO_SYS_WAIT_H
+#		NO_DLFCN_H
+#		HAVE_UNISTD_H
+#		HAVE_SYS_PARAM_H
+#
+#		HAVE_STRING_H ?
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_MISSING_POSIX_HEADERS, [
+
+    AC_MSG_CHECKING(dirent.h)
+    AC_TRY_LINK([#include <sys/types.h>
+#include <dirent.h>], [
+#ifndef _POSIX_SOURCE
+#   ifdef __Lynx__
+	/*
+	 * Generate compilation error to make the test fail:  Lynx headers
+	 * are only valid if really in the POSIX environment.
+	 */
+
+	missing_procedure();
+#   endif
+#endif
+DIR *d;
+struct dirent *entryPtr;
+char *p;
+d = opendir("foobar");
+entryPtr = readdir(d);
+p = entryPtr->d_name;
+closedir(d);
+], tcl_ok=yes, tcl_ok=no)
+
+    if test $tcl_ok = no; then
+	AC_DEFINE(NO_DIRENT_H)
+    fi
+
+    AC_MSG_RESULT($tcl_ok)
+    AC_CHECK_HEADER(errno.h, , AC_DEFINE(NO_ERRNO_H))
+    AC_CHECK_HEADER(float.h, , AC_DEFINE(NO_FLOAT_H))
+    AC_CHECK_HEADER(values.h, , AC_DEFINE(NO_VALUES_H))
+    AC_CHECK_HEADER(limits.h, , AC_DEFINE(NO_LIMITS_H))
+    AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
+    AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
+    AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
+    AC_EGREP_HEADER(strtod, stdlib.h, , tcl_ok=0)
+    if test $tcl_ok = 0; then
+	AC_DEFINE(NO_STDLIB_H)
+    fi
+    AC_CHECK_HEADER(string.h, tcl_ok=1, tcl_ok=0)
+    AC_EGREP_HEADER(strstr, string.h, , tcl_ok=0)
+    AC_EGREP_HEADER(strerror, string.h, , tcl_ok=0)
+
+    # See also memmove check below for a place where NO_STRING_H can be
+    # set and why.
+
+    if test $tcl_ok = 0; then
+	AC_DEFINE(NO_STRING_H)
+    fi
+
+    AC_CHECK_HEADER(sys/wait.h, , AC_DEFINE(NO_SYS_WAIT_H))
+    AC_CHECK_HEADER(dlfcn.h, , AC_DEFINE(NO_DLFCN_H))
+
+    # OS/390 lacks sys/param.h (and doesn't need it, by chance).
+
+    AC_HAVE_HEADERS(unistd.h sys/param.h)
+
+])
+
+#--------------------------------------------------------------------
+# SC_PATH_X
+#
+#	Locate the X11 header files and the X11 library archive.  Try
+#	the ac_path_x macro first, but if it doesn't find the X stuff
+#	(e.g. because there's no xmkmf program) then check through
+#	a list of possible directories.  Under some conditions the
+#	autoconf macro will return an include directory that contains
+#	no include files, so double-check its result just to be safe.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Sets the the following vars:
+#		XINCLUDES
+#		XLIBSW
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_PATH_X, [
+    AC_PATH_X
+    not_really_there=""
+    if test "$no_x" = ""; then
+	if test "$x_includes" = ""; then
+	    AC_TRY_CPP([#include <X11/XIntrinsic.h>], , not_really_there="yes")
+	else
+	    if test ! -r $x_includes/X11/Intrinsic.h; then
+		not_really_there="yes"
+	    fi
+	fi
+    fi
+    if test "$no_x" = "yes" -o "$not_really_there" = "yes"; then
+	AC_MSG_CHECKING(for X11 header files)
+	XINCLUDES="# no special path needed"
+	AC_TRY_CPP([#include <X11/Intrinsic.h>], , XINCLUDES="nope")
+	if test "$XINCLUDES" = nope; then
+	    dirs="/usr/unsupported/include /usr/local/include /usr/X386/include /usr/X11R6/include /usr/X11R5/include /usr/include/X11R5 /usr/include/X11R4 /usr/openwin/include /usr/X11/include /usr/sww/include"
+	    for i in $dirs ; do
+		if test -r $i/X11/Intrinsic.h; then
+		    AC_MSG_RESULT($i)
+		    XINCLUDES=" -I$i"
+		    break
+		fi
+	    done
+	fi
+    else
+	if test "$x_includes" != ""; then
+	    XINCLUDES=-I$x_includes
+	else
+	    XINCLUDES="# no special path needed"
+	fi
+    fi
+    if test "$XINCLUDES" = nope; then
+	AC_MSG_RESULT(couldn't find any!)
+	XINCLUDES="# no include files found"
+    fi
+
+    if test "$no_x" = yes; then
+	AC_MSG_CHECKING(for X11 libraries)
+	XLIBSW=nope
+	dirs="/usr/unsupported/lib /usr/local/lib /usr/X386/lib /usr/X11R6/lib /usr/X11R5/lib /usr/lib/X11R5 /usr/lib/X11R4 /usr/openwin/lib /usr/X11/lib /usr/sww/X11/lib"
+	for i in $dirs ; do
+	    if test -r $i/libX11.a -o -r $i/libX11.so -o -r $i/libX11.sl; then
+		AC_MSG_RESULT($i)
+		XLIBSW="-L$i -lX11"
+		x_libraries="$i"
+		break
+	    fi
+	done
+    else
+	if test "$x_libraries" = ""; then
+	    XLIBSW=-lX11
+	else
+	    XLIBSW="-L$x_libraries -lX11"
+	fi
+    fi
+    if test "$XLIBSW" = nope ; then
+	AC_CHECK_LIB(Xwindow, XCreateWindow, XLIBSW=-lXwindow)
+    fi
+    if test "$XLIBSW" = nope ; then
+	AC_MSG_RESULT(couldn't find any!  Using -lX11.)
+	XLIBSW=-lX11
+    fi
+])
+#--------------------------------------------------------------------
+# SC_BLOCKING_STYLE
+#
+#	The statements below check for systems where POSIX-style
+#	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented. 
+#	On these systems (mostly older ones), use the old BSD-style
+#	FIONBIO approach instead.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Defines some of the following vars:
+#		HAVE_SYS_IOCTL_H
+#		HAVE_SYS_FILIO_H
+#		USE_FIONBIO
+#		O_NONBLOCK
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_BLOCKING_STYLE, [
+    AC_CHECK_HEADERS(sys/ioctl.h)
+    AC_CHECK_HEADERS(sys/filio.h)
+    AC_MSG_CHECKING([FIONBIO vs. O_NONBLOCK for nonblocking I/O])
+    if test -f /usr/lib/NextStep/software_version; then
+	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
+    else
+	system=`uname -s`-`uname -r`
+	if test "$?" -ne 0 ; then
+	    system=unknown
+	else
+	    # Special check for weird MP-RAS system (uname returns weird
+	    # results, and the version is kept in special file).
+	
+	    if test -r /etc/.relid -a "X`uname -n`" = "X`uname -s`" ; then
+		system=MP-RAS-`awk '{print $3}' /etc/.relid'`
+	    fi
+	    if test "`uname -s`" = "AIX" ; then
+		system=AIX-`uname -v`.`uname -r`
+	    fi
+	fi
+    fi
+    case $system in
+	# There used to be code here to use FIONBIO under AIX.  However, it
+	# was reported that FIONBIO doesn't work under AIX 3.2.5.  Since
+	# using O_NONBLOCK seems fine under AIX 4.*, I removed the FIONBIO
+	# code (JO, 5/31/97).
+
+	OSF*)
+	    AC_DEFINE(USE_FIONBIO)
+	    AC_MSG_RESULT(FIONBIO)
+	    ;;
+	SunOS-4*)
+	    AC_DEFINE(USE_FIONBIO)
+	    AC_MSG_RESULT(FIONBIO)
+	    ;;
+	ULTRIX-4.*)
+	    AC_DEFINE(USE_FIONBIO)
+	    AC_MSG_RESULT(FIONBIO)
+	    ;;
+	*)
+	    AC_MSG_RESULT(O_NONBLOCK)
+	    ;;
+    esac
+])
+
+#--------------------------------------------------------------------
+# SC_HAVE_VFORK
+#
+#	Check to see whether the system provides a vfork kernel call.
+#	If not, then use fork instead.  Also, check for a problem with
+#	vforks and signals that can cause core dumps if a vforked child
+#	resets a signal handler.  If the problem exists, then use fork
+#	instead of vfork.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Defines some of the following vars:
+#		vfork (=fork)
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_HAVE_VFORK, [
+    AC_TYPE_SIGNAL()
+    AC_CHECK_FUNC(vfork, tcl_ok=1, tcl_ok=0)
+    if test "$tcl_ok" = 1; then
+	AC_MSG_CHECKING([vfork/signal bug]);
+	AC_TRY_RUN([
+#include <stdio.h>
+#include <signal.h>
+#include <sys/wait.h>
+int gotSignal = 0;
+sigProc(sig)
+    int sig;
+{
+    gotSignal = 1;
+}
+main()
+{
+    int pid, sts;
+    (void) signal(SIGCHLD, sigProc);
+    pid = vfork();
+    if (pid <  0) {
+	exit(1);
+    } else if (pid == 0) {
+	(void) signal(SIGCHLD, SIG_DFL);
+	_exit(0);
+    } else {
+	(void) wait(&sts);
+    }
+    exit((gotSignal) ? 0 : 1);
+}], tcl_ok=1, tcl_ok=0, tcl_ok=0)
+
+	if test "$tcl_ok" = 1; then
+	    AC_MSG_RESULT(ok)
+	else
+	    AC_MSG_RESULT([buggy, using fork instead])
+	fi
+    fi
+    rm -f core
+    if test "$tcl_ok" = 0; then
+	AC_DEFINE(vfork, fork)
+    fi
+])
+
+#--------------------------------------------------------------------
+# SC_TIME_HANLDER
+#
+#	Checks how the system deals with time.h, what time structures
+#	are used on the system, and what fields the structures have.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Defines some of the following vars:
+#		USE_DELTA_FOR_TZ
+#		HAVE_TM_GMTOFF
+#		HAVE_TM_TZADJ
+#		HAVE_TIMEZONE_VAR
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TIME_HANDLER, [
+    AC_CHECK_HEADERS(sys/time.h)
+    AC_HEADER_TIME
+    AC_STRUCT_TIMEZONE
+
+    AC_MSG_CHECKING([tm_tzadj in struct tm])
+    AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_tzadj;],
+	    [AC_DEFINE(HAVE_TM_TZADJ)
+	    AC_MSG_RESULT(yes)],
+	    AC_MSG_RESULT(no))
+
+    AC_MSG_CHECKING([tm_gmtoff in struct tm])
+    AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_gmtoff;],
+	    [AC_DEFINE(HAVE_TM_GMTOFF)
+	    AC_MSG_RESULT(yes)],
+	    AC_MSG_RESULT(no))
+
+    #
+    # Its important to include time.h in this check, as some systems
+    # (like convex) have timezone functions, etc.
+    #
+    have_timezone=no
+    AC_MSG_CHECKING([long timezone variable])
+    AC_TRY_COMPILE([#include <time.h>],
+	    [extern long timezone;
+	    timezone += 1;
+	    exit (0);],
+	    [have_timezone=yes
+	    AC_DEFINE(HAVE_TIMEZONE_VAR)
+	    AC_MSG_RESULT(yes)],
+	    AC_MSG_RESULT(no))
+
+    #
+    # On some systems (eg IRIX 6.2), timezone is a time_t and not a long.
+    #
+    if test "$have_timezone" = no; then
+    AC_MSG_CHECKING([time_t timezone variable])
+    AC_TRY_COMPILE([#include <time.h>],
+	    [extern time_t timezone;
+	    timezone += 1;
+	    exit (0);],
+	    [AC_DEFINE(HAVE_TIMEZONE_VAR)
+	    AC_MSG_RESULT(yes)],
+	    AC_MSG_RESULT(no))
+    fi
+
+    #
+    # AIX does not have a timezone field in struct tm. When the AIX bsd
+    # library is used, the timezone global and the gettimeofday methods are
+    # to be avoided for timezone deduction instead, we deduce the timezone
+    # by comparing the localtime result on a known GMT value.
+    #
+
+    if test "`uname -s`" = "AIX" ; then
+	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
+	if test $libbsd = yes; then
+	    AC_DEFINE(USE_DELTA_FOR_TZ)
+	fi
+    fi
+])
+
+#--------------------------------------------------------------------
+# SC_BUGGY_STRTOD
+#
+#	Under Solaris 2.4, strtod returns the wrong value for the
+#	terminating character under some conditions.  Check for this
+#	and if the problem exists use a substitute procedure
+#	"fixstrtod" (provided by Tcl) that corrects the error.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Might defines some of the following vars:
+#		strtod (=fixstrtod)
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_BUGGY_STRTOD, [
+    AC_CHECK_FUNC(strtod, tk_strtod=1, tk_strtod=0)
+    if test "$tk_strtod" = 1; then
+	AC_MSG_CHECKING([for Solaris 2.4 strtod bug])
+	AC_TRY_RUN([
+	    extern double strtod();
+	    int main()
+	    {
+		char *string = "NaN";
+		char *term;
+		strtod(string, &term);
+		if ((term != string) && (term[-1] == 0)) {
+		    exit(1);
+		}
+		exit(0);
+	    }], tk_ok=1, tk_ok=0, tk_ok=0)
+	if test "$tk_ok" = 1; then
+	    AC_MSG_RESULT(ok)
+	else
+	    AC_MSG_RESULT(buggy)
+	    AC_DEFINE(strtod, fixstrtod)
+	fi
+    fi
+])
+
+#--------------------------------------------------------------------
+# SC_TCL_LINK_LIBS
+#
+#	Search for the libraries needed to link the Tcl shell.
+#	Things like the math library (-lm) and socket stuff (-lsocket vs.
+#	-lnsl) are dealt with here.
+#
+# Arguments:
+#	Requires the following vars to be set in the Makefile:
+#		DL_LIBS
+#		LIBS
+#		MATH_LIBS
+#	
+# Results:
+#
+#	Subst's the following var:
+#		TCL_LIBS
+#		MATH_LIBS
+#
+#	Might append to the following vars:
+#		LIBS
+#
+#	Might define the following vars:
+#		HAVE_NET_ERRNO_H
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_LINK_LIBS, [
+    #--------------------------------------------------------------------
+    # On a few very rare systems, all of the libm.a stuff is
+    # already in libc.a.  Set compiler flags accordingly.
+    # Also, Linux requires the "ieee" library for math to work
+    # right (and it must appear before "-lm").
+    #--------------------------------------------------------------------
+
+    AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
+    AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
+
+    #--------------------------------------------------------------------
+    # On AIX systems, libbsd.a has to be linked in to support
+    # non-blocking file IO.  This library has to be linked in after
+    # the MATH_LIBS or it breaks the pow() function.  The way to
+    # insure proper sequencing, is to add it to the tail of MATH_LIBS.
+    # This library also supplies gettimeofday.
+    #--------------------------------------------------------------------
+
+    libbsd=no
+    if test "`uname -s`" = "AIX" ; then
+	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
+	if test $libbsd = yes; then
+	    MATH_LIBS="$MATH_LIBS -lbsd"
+	fi
+    fi
+
+
+    #--------------------------------------------------------------------
+    # Interactive UNIX requires -linet instead of -lsocket, plus it
+    # needs net/errno.h to define the socket-related error codes.
+    #--------------------------------------------------------------------
+
+    AC_CHECK_LIB(inet, main, [LIBS="$LIBS -linet"])
+    AC_CHECK_HEADER(net/errno.h, AC_DEFINE(HAVE_NET_ERRNO_H))
+
+    #--------------------------------------------------------------------
+    #	Check for the existence of the -lsocket and -lnsl libraries.
+    #	The order here is important, so that they end up in the right
+    #	order in the command line generated by make.  Here are some
+    #	special considerations:
+    #	1. Use "connect" and "accept" to check for -lsocket, and
+    #	   "gethostbyname" to check for -lnsl.
+    #	2. Use each function name only once:  can't redo a check because
+    #	   autoconf caches the results of the last check and won't redo it.
+    #	3. Use -lnsl and -lsocket only if they supply procedures that
+    #	   aren't already present in the normal libraries.  This is because
+    #	   IRIX 5.2 has libraries, but they aren't needed and they're
+    #	   bogus:  they goof up name resolution if used.
+    #	4. On some SVR4 systems, can't use -lsocket without -lnsl too.
+    #	   To get around this problem, check for both libraries together
+    #	   if -lsocket doesn't work by itself.
+    #--------------------------------------------------------------------
+
+    tcl_checkBoth=0
+    AC_CHECK_FUNC(connect, tcl_checkSocket=0, tcl_checkSocket=1)
+    if test "$tcl_checkSocket" = 1; then
+	AC_CHECK_LIB(socket, main, LIBS="$LIBS -lsocket", tcl_checkBoth=1)
+    fi
+    if test "$tcl_checkBoth" = 1; then
+	tk_oldLibs=$LIBS
+	LIBS="$LIBS -lsocket -lnsl"
+	AC_CHECK_FUNC(accept, tcl_checkNsl=0, [LIBS=$tk_oldLibs])
+    fi
+    AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, main,
+	    [LIBS="$LIBS -lnsl"]))
+    
+    # Don't perform the eval of the libraries here because DL_LIBS
+    # won't be set until we call SC_CONFIG_CFLAGS
+
+    TCL_LIBS='${DL_LIBS} ${LIBS} ${MATH_LIBS}'
+    AC_SUBST(TCL_LIBS)
+    AC_SUBST(MATH_LIBS)
 ])
