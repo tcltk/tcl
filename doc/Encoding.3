@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.1.2.3 1998/12/10 00:49:44 stanton Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.1.2.4 1999/03/12 23:47:00 surles Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -46,6 +46,15 @@ void
 .sp
 Tcl_Encoding
 \fBTcl_CreateEncoding\fR(\fItypePtr\fR)
+
+.sp
+char *
+\fBTcl_GetDefaultEncodingDir\fR(\fIvoid\fR)
+.sp
+void
+\fBTcl_SetDefaultEncodingDir\fR(\fIpath\fR)
+
+
 .SH ARGUMENTS
 .AS Tcl_EncodingState *dstWrotePtr
 .AP Tcl_Interp *interp in
@@ -108,6 +117,8 @@ Filled with the number of characters that correspond to the number of bytes
 stored in the output buffer.  May be NULL.
 .AP Tcl_EncodingType *typePtr in
 Structure that defines a new type of encoding.  
+.AP char *path in
+A path to the location of the encoding file.  
 .BE
 .SH INTRODUCTION
 .PP
@@ -323,6 +334,13 @@ This \fIfreeProc\fR function is called when the encoding is deleted.  The
 \fIclientData\fR parameter is the same as the \fIclientData\fR field
 specified to \fBTcl_CreateEncoding\fR when the encoding was created.  
 .PP
+
+\fBTcl_GetDefaultEncodingDir\fR and \fBTcl_SetDefaultEncodingDir\fR
+access and set the directory to use when locating the default encoding
+files.  If this value is not NULL, the \fBTclpInitLibraryPath\fR routine
+appends the path to the head of the search path, and uses this path as
+the first place to look into when trying to locate the encoding file.
+
 .SH ENCODING FILES
 Space would prohibit precompiling into Tcl every possible encoding
 algorithm, so many encodings are stored on disk as dynamically-loadable
