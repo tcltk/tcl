@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.1 2003/05/20 18:33:30 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.79.2.2 2003/07/21 17:30:46 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5839,3 +5839,44 @@ encoding for the original.  Most uses of gb2312 really mean euc-cn.
 problem when compiling on Windows and using Microsoft's runtime.
 
 --- Released 8.4.3, May 20, 2003 --- See ChangeLog for details ---
+
+2003-05-23 (bug fix)[726018] reverted internals change to the
+'cmdName' Tcl_ObjType that broke several extensions (TclBlend, e4graph...)
+in the 8.4.3 release.
+
+2003-06-10 (bug fix)[495830] stop eval of bytecode in deleted interp.
+
+2003-06-17 (bug fix) corrections to regexp when matching emtpy string.
+
+2003-06-25 (bug fix)[748957] -*ieee compiler flags for Tru64 builds.
+
+2003-07-11 (bug fix) [pkg_mkIndex] indexes provided packages, not indexed ones.
+
+2003-07-15 (feature enhancment) MacOSX build system rewrite.
+
+2003-07-15 (bug fix)[771613] corrected segfault in [if] (buffer overflow)
+
+2003-07-16 (bug fix)[756791] corrected assumption that Tcl_Free == free
+
+2003-07-16 (feature enhancment) -DTCL_UTF_MAX=6 compile option forces 
+internal UCS-4 representation of Unicode.
+
+2003-07-16 (bug fix)[767578] 64-bit corrections in thread notifier.
+
+2003-07-16 (bug fix)[759607] Safe Base tests normalized paths.
+
+2003-07-16 (feature enhancement)[Patch 679315] improved Cygwin path support
+
+2003-07-18 (bug fix)[706359] corrected broken -output option of [tcltest::test]
+=> tcltest 2.4.4
+
+2003-07-18 (bug fix)[753315] MT-safety of VFS records.
+
+2003-07-18 (bug fix)[759888] support for user:pass in URL by [http::geturl]
+=> http 2.4.4
+
+Improved documentation, new tests, and some code cleanup.
+[655300, 720634, 735364, 748700, 756112, 756744, 756951, 758488, 760768,
+763312, 769895, 771539, 771840, 771947, 771949, 772333]
+
+--- Released 8.4.4, July 22, 2003 --- See ChangeLog for details ---
