@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.6 1998/07/14 10:34:43 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclProc.c,v 1.7 1998/07/15 11:08:17 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -694,6 +694,9 @@ TclObjInterpProc(clientData, interp, objc, objv)
      * different interpreter, we recompile it. Note that compiling the body
      * might increase procPtr->numCompiledLocals if new local variables are
      * found while compiling.
+     *
+     * Precompiled procedure bodies, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
      */
 
     if (bodyPtr->typePtr == &tclByteCodeType) {
@@ -701,8 +704,15 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	
 	if ((codePtr->iPtr != iPtr)
 	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    tclByteCodeType.freeIntRepProc(bodyPtr);
-	    bodyPtr->typePtr = (Tcl_ObjType *) NULL;
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if (codePtr->iPtr != iPtr) {
+                    panic("TclObjInterpProc: compiled body jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                tclByteCodeType.freeIntRepProc(bodyPtr);
+                bodyPtr->typePtr = (Tcl_ObjType *) NULL;
+            }
 	}
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {

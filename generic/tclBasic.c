@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.7 1998/07/06 22:37:35 welch Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.8 1998/07/15 11:09:11 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -2508,6 +2508,9 @@ Tcl_EvalObj(interp, objPtr)
      * necessary, convert the object to be a ByteCode object and compile it.
      * Also, if the code was compiled in/for a different interpreter,
      * we recompile it.
+     *
+     * Precompiled objects, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
      */
 
     if (objPtr->typePtr == &tclByteCodeType) {
@@ -2515,7 +2518,14 @@ Tcl_EvalObj(interp, objPtr)
 	
 	if ((codePtr->iPtr != iPtr)
 	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    tclByteCodeType.freeIntRepProc(objPtr);
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if (codePtr->iPtr != iPtr) {
+                    panic("Tcl_EvalObj: compiled script jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                tclByteCodeType.freeIntRepProc(objPtr);
+            }
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
@@ -3432,6 +3442,10 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
      * necessary, convert the object to be a ByteCode object and compile it.
      * Also, if the code was compiled in/for a different interpreter, we
      * recompile it.
+     *
+     * Precompiled expressions, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
+     *
      * THIS FAILS IF THE OBJECT'S STRING REP HAS A NULL BYTE.
      */
 
@@ -3439,8 +3453,15 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if ((codePtr->iPtr != iPtr)
 	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    tclByteCodeType.freeIntRepProc(objPtr);
-	    objPtr->typePtr = (Tcl_ObjType *) NULL;
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if (codePtr->iPtr != iPtr) {
+                    panic("Tcl_ExprObj: compiled expression jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                tclByteCodeType.freeIntRepProc(objPtr);
+                objPtr->typePtr = (Tcl_ObjType *) NULL;
+            }
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
