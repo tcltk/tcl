@@ -1,3 +1,10 @@
+2005-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in: remove SHLIB_LD_FLAGS (only for AIX, inlined
+	* unix/tcl.m4:      into SHLIB_LD).  Combine AIX-* and AIX-5
+	* unix/configure:   branches in SC_CONFIG_CFLAGS.
+	Correct gcc builds for AIX-4+ and HP-UX-11.  autoconf-2.59 gen'd.
+
 2005-02-11  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/basic.test (basic-26.3): new test
