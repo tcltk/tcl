@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.198 2004/11/13 00:19:09 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.199 2004/11/15 21:47:22 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1471,6 +1471,10 @@ typedef struct Interp {
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
+ *
+ * WARNING: For the sake of some extensions that have made use of former
+ * internal values, do not re-use the flag values 2 (formerly ERR_IN_PROGRESS)
+ * or 8 (formerly ERROR_CODE_SET).
  */
 
 #define DELETED				    1
