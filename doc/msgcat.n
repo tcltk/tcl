@@ -48,7 +48,6 @@ the message catalog.
 Use of the message catalog is optional by any application
 or package, but is encouraged if the application or package
 wishes to be enabled for multi-lingual applications.
-
 .SH COMMANDS
 .TP
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
@@ -136,7 +135,6 @@ string.  The \fB::msgcat::mcunknown\fR procedure is invoked at the
 same stack context as the call to \fB::msgcat::mc\fR.  The return value
 of \fB::msgcat::mcunknown\fR is used as the return value for the call
 to \fB::msgcat::mc\fR.  
-
 .SH "LOCALE SPECIFICATION"
 .PP
 The locale is specified to \fBmsgcat\fR by a locale string
@@ -176,7 +174,6 @@ en_GB_Funky, the locales ``en_GB_Funky'', ``en_GB'', ``en'' and ``''
 are searched in order until a matching translation
 string is found.  If no translation string is available, then
 \fB::msgcat::unknown\fR is called.
-
 .SH "NAMESPACES AND MESSAGE CATALOGS"
 .PP
 Strings stored in the message catalog are stored relative
@@ -227,7 +224,6 @@ will print
 :: message1; ::foo message2; ::foo message3
 :: message1; ::foo message2; ::foo::bar message3
 .CE
-
 .SH "LOCATION AND FORMAT OF MESSAGE FILES"
 .PP
 Message files can be located in any directory, subject
@@ -258,7 +254,6 @@ namespace eval ::mypackage {
     ::msgcat::mcset es "Free Beer!" "Cerveza Gracias!"
 }
 .CE
-
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
 .PP
 If a package is installed into a subdirectory of the
@@ -276,7 +271,6 @@ initialization script:
 # load language files, stored in msgs subdirectory
 ::msgcat::mcload [file join [file dirname [info script]] msgs]
 .CE
-
 .SH "POSITIONAL CODES FOR FORMAT AND SCAN COMMANDS"
 .PP
 It is possible that a message string used as an argument
