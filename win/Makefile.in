@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.76 2004/04/06 22:25:57 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.77 2004/06/14 22:14:12 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -437,8 +437,8 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY)\" \
 		-DCFG_RUNTIME_INCDIR=\"$(includedir)\" \
 		-DCFG_RUNTIME_DOCDIR=\"$(mandir)\" \
-		\
-		-DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
+		-DBUILD_tcl \
+		@DEPARG@ $(CC_OBJNAME)
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported
