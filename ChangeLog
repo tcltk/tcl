@@ -3,8 +3,6 @@
 	* tests/uplevel.test: added 6.1 to test [uplevel] with shadowed
 	commands [Bug 524383]
 
-2002-08-08  Miguel Sofer  <msofer@users.sourceforge.net>
-
 	* tests/subst.test: added 5.8-10 as further tests for [Bug 495207] 
 
 2002-08-08  Don Porter  <dgp@users.sourceforge.net>
@@ -12,6 +10,8 @@
 	* tests/README: Noted removal of defs.tcl.
 
 2002-08-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/lsearch.n: corrected lsearch docs to use -inline in examples.
 
 	*** 8.4b2 TAGGED FOR RELEASE ***
 
