@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.36 2004/04/06 22:25:54 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.37 2004/07/12 01:09:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1914,6 +1914,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 	    Tcl_FreeParse(&parse);
 	    if (errMsg != NULL) {
 		if (code != TCL_BREAK) {
+		    Tcl_DecrRefCount(result);
 		    Tcl_SetObjResult(interp, errMsg);
 		    Tcl_DecrRefCount(errMsg);
 		    return NULL;
