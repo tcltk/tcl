@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.58 2002/12/06 23:22:59 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.59 2003/02/18 02:25:45 hobbs Exp $
 
 library tcl
 
@@ -688,6 +688,13 @@ declare 171 generic {
 
 declare 172 generic {
     int TclInThreadExit(void)
+}
+
+# added for 8.4.2
+
+declare 173 generic {
+    int TclUniCharMatch (CONST Tcl_UniChar *string, int strLen, \
+	    CONST Tcl_UniChar *pattern, int ptnLen, int nocase)
 }
 
 ##############################################################################

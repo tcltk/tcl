@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.35 2002/11/19 02:34:50 hobbs Exp $
+# RCS: @(#) $Id: string.test,v 1.36 2003/02/18 02:25:45 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -895,7 +895,40 @@ test string-11.51 {string match; *, -nocase and UTF-8} {
     string match -nocase [binary format I 717316707] \
 	    [binary format I 2028036707]
 } 1
-
+test string-11.52 {string match, null char in string} {
+    set out ""
+    set ptn "*abc*"
+    foreach elem [list "\u0000@abc" "@abc" "\u0000@abc\u0000" "blahabcblah"] {
+	lappend out [string match $ptn $elem]
+    }
+    set out
+} {1 1 1 1}
+test string-11.53 {string match, null char in pattern} {
+    set out ""
+    foreach {ptn elem} [list \
+	    "*\u0000abc\u0000"  "\u0000abc\u0000" \
+	    "*\u0000abc\u0000"  "\u0000abc\u0000ef" \
+	    "*\u0000abc\u0000*" "\u0000abc\u0000ef" \
+	    "*\u0000abc\u0000"  "@\u0000abc\u0000ef" \
+	    "*\u0000abc\u0000*"  "@\u0000abc\u0000ef" \
+	    ] {
+	lappend out [string match $ptn $elem]
+    }
+    set out
+} {1 0 1 0 1}
+test string-11.54 {string match, failure} {
+    set longString ""
+    for {set i 0} {$i < 10} {incr i} {
+	append longString "abcdefghijklmnopqrstuvwxy\u0000z01234567890123"
+    }
+    string first $longString 123
+    list [string match *cba* $longString] \
+	    [string match *a*l*\u0000* $longString] \
+	    [string match *a*l*\u0000*123 $longString] \
+	    [string match *a*l*\u0000*123* $longString] \
+	    [string match *a*l*\u0000*cba* $longString] \
+	    [string match *===* $longString]
+} {0 1 1 1 0 0}
 
 test string-12.1 {string range} {
     list [catch {string range} msg] $msg
