@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.12 2001/10/18 14:19:39 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.13 2001/10/23 13:14:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2164,7 +2164,7 @@ UpdateStringOfWideInt(objPtr)
     register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
 {
     char buffer[TCL_INTEGER_SPACE+2];
-    register int len;
+    register unsigned len;
     register Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
 
     sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);

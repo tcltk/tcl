@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.7 2001/10/22 15:20:33 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.8 2001/10/23 13:14:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -349,7 +349,7 @@ UpdateStringOfIndex(objPtr)
 {
     IndexRep *indexRep = (IndexRep *) objPtr->internalRep.otherValuePtr;
     register char *buf;
-    register int len;
+    register unsigned len;
     register char *indexStr = EXPAND_OF(indexRep);
 
     len = strlen(indexStr);
