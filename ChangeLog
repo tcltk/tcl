@@ -1,3 +1,10 @@
+2004-11-16  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.h:
+	* unix/configure.in: changed HAVE_CONFIG_H to HAVE_TCL_CONFIG_H.
+
+	* unix/configure: autoconf-2.57
+
 2004-11-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Added comment warning that the old
