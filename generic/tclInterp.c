@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.31 2004/05/19 21:56:37 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.32 2004/05/20 13:04:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2846,6 +2846,80 @@ Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
 	    ckfree((char *) handlerPtr);
 	}
 	return;
+    }
+}
+
+void
+TclLimitRemoveAllHandlers(interp)
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+    LimitHandler *handlerPtr, *nextHandlerPtr;
+
+    /*
+     * Delete all command-limit handlers.
+     */
+
+    for (handlerPtr=iPtr->limit.cmdHandlers, iPtr->limit.cmdHandlers=NULL;
+	    handlerPtr!=NULL; handlerPtr=nextHandlerPtr) {
+	nextHandlerPtr = handlerPtr->nextPtr;
+
+	/*
+	 * Do not delete here if it has already been marked for deletion.
+	 */
+
+	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
+	    continue;
+	}
+	handlerPtr->flags |= LIMIT_HANDLER_DELETED;
+	handlerPtr->prevPtr = NULL;
+	handlerPtr->nextPtr = NULL;
+
+	/*
+	 * If nothing is currently executing the handler, delete its
+	 * client data and the overall handler structure now.
+	 * Otherwise it will all go away when the handler returns.
+	 */
+
+	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
+	    if (handlerPtr->deleteProc != NULL) {
+		(handlerPtr->deleteProc)(handlerPtr->clientData);
+	    }
+	    ckfree((char *) handlerPtr);
+	}
+    }
+
+    /*
+     * Delete all time-limit handlers.
+     */
+
+    for (handlerPtr=iPtr->limit.timeHandlers, iPtr->limit.timeHandlers=NULL;
+	    handlerPtr!=NULL; handlerPtr=nextHandlerPtr) {
+	nextHandlerPtr = handlerPtr->nextPtr;
+
+	/*
+	 * Do not delete here if it has already been marked for deletion.
+	 */
+
+	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
+	    continue;
+	}
+	handlerPtr->flags |= LIMIT_HANDLER_DELETED;
+	handlerPtr->prevPtr = NULL;
+	handlerPtr->nextPtr = NULL;
+
+	/*
+	 * If nothing is currently executing the handler, delete its
+	 * client data and the overall handler structure now.
+	 * Otherwise it will all go away when the handler returns.
+	 */
+
+	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
+	    if (handlerPtr->deleteProc != NULL) {
+		(handlerPtr->deleteProc)(handlerPtr->clientData);
+	    }
+	    ckfree((char *) handlerPtr);
+	}
     }
 }
 

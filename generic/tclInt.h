@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.160 2004/05/13 20:31:08 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.161 2004/05/20 13:04:11 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1714,6 +1714,8 @@ EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
+EXTERN void		TclDecommissionLimitCallbacks _ANSI_ARGS_((
+			    Tcl_Interp *interp));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1751,6 +1753,7 @@ EXTERN void             TclInitEmbeddedConfigurationInformation
                             _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		TclInitEncodingSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitIOSubsystem _ANSI_ARGS_((void));
+EXTERN void		TclInitLimitSupport _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		TclInitNamespaceSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitNotifier _ANSI_ARGS_((void));
 EXTERN void		TclInitObjSubsystem _ANSI_ARGS_((void));
@@ -1759,7 +1762,8 @@ EXTERN int		TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 			    int len));
 EXTERN int              TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int* result));
-EXTERN void		TclInitLimitSupport _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN void		TclLimitRemoveAllHandlers _ANSI_ARGS_((
+			    Tcl_Interp *interp));
 EXTERN Tcl_Obj *	TclLindexList _ANSI_ARGS_((Tcl_Interp* interp,
 						   Tcl_Obj* listPtr,
 						   Tcl_Obj* argPtr ));
