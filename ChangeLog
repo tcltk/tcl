@@ -1,5 +1,9 @@
 2001-09-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclIO.c (ChannelTimerProc):  Added Tcl_Preserve()
+	and Tcl_Release() to fix segfault introduced by the 2001-09-26
+	changes.  [Bug 465494]
+
 	* doc/TCL_MEM_DEBUG.3:  Updated out-of-date reference to
 	#define GUARD_SIZE.
 
