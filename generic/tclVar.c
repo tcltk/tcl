@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.67 2002/09/05 20:21:06 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.68 2002/10/17 17:41:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3093,7 +3093,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
 	    mode = OPT_GLOB;
 	    
-	    if ((objc < 3) && (objc > 5)) {
+	    if ((objc < 3) || (objc > 5)) {
   	        Tcl_WrongNumArgs(interp, 2, objv,
 			"arrayName ?mode? ?pattern?");
 		return TCL_ERROR;
