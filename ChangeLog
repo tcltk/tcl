@@ -1,5 +1,19 @@
 2000-01-28  Eric Melski  <ericm@scriptics.com>
 
+	* tests/pkg/magicchar2.tcl: 
+	* tests/autoMkindex.test: Test for auto loader fix (bug #2480).
+
+	* library/init.tcl: auto_load was using [info commands $name] to
+	determine if a given command was available; if the command name
+	had * or [] it, this would fail because info commands uses
+	glob-style matching.  This is fixed.  (Bug #2480).
+
+	* tests/pkg/spacename.tcl: 
+	* tests/pkgMkIndex.test: Tests for fix for bug #2360.
+
+	* library/package.tcl: Fixed to extract only the first element of
+	the list returned by auto_qualify (bug #2360).
+
 	* tests/pkg/magicchar.tcl: 
 	* tests/autoMkindex.test: Test for fix for bug #2611.
 

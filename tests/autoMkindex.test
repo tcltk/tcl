@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: autoMkindex.test,v 1.9 2000/01/28 16:38:34 ericm Exp $
+# RCS: @(#) $Id: autoMkindex.test,v 1.10 2000/01/29 00:12:46 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -198,6 +198,18 @@ test autoMkindex-5.1 {escape magic tcl chars in general code} {
     }
     set result
 } {set auto_index(testProc) [list source [file join $dir pkg magicchar.tcl]]}
+test autoMkindex-5.2 {correctly locate auto loaded procs with []} {
+    file delete tclIndex
+    set res {}
+    if { ![catch {auto_mkindex . pkg/magicchar2.tcl}] } {
+	# Make a slave interp to test the autoloading
+	set c [interp create]
+	$c eval {lappend auto_path [pwd]}
+	set res [$c eval {catch {{[magic mojo proc]}}}]
+	interp delete $c
+    }
+    set res
+} 0
 
 # Clean up.
 
