@@ -1,3 +1,9 @@
+2001-09-04  David Gravereaux <davygrvy@pobox.com>
+
+	* tclWinThrd.c:  Revisited _beginthreadex() stuff.  Instead of assuming
+	a c-runtime implimentation of _beginethreadex normal, I reversed the logic
+	to not assume, and use when is.
+
 2001-09-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* compat/strtod.c (strtod):  Fixed failure to handle expressions
