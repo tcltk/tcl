@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.19 2002/10/14 22:25:10 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.20 2003/01/14 02:06:11 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -409,7 +409,7 @@ TclUnsetEnv(name)
      */
 
 #ifdef USE_PUTENV
-    string = ckalloc(length+2);
+    string = ckalloc((unsigned int) length+2);
     memcpy((VOID *) string, (VOID *) name, (size_t) length);
     string[length] = '=';
     string[length+1] = '\0';
