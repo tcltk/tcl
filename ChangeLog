@@ -1,3 +1,8 @@
+2001-10-22  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFCmd.c: fix to stop test suite from hanging process
+	under some versions of WinNT. [Bug #466102] (Kevin Kenny)
+	
 2001-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/clock.test (clock-8.1): 
