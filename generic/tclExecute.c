@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.109 2003/09/23 18:38:05 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.110 2003/10/04 16:12:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1057,7 +1057,6 @@ TclExecuteByteCode(interp, codePtr)
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
     				/* Points to the execution environment. */
-    long *catchStackPtr;        /* start of the catch stack */
     int catchTop = -1;
     register Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
     register unsigned char *pc = codePtr->codeStart;
@@ -1065,6 +1064,7 @@ TclExecuteByteCode(interp, codePtr)
     int opnd;			/* Current instruction's operand byte(s). */
     int pcAdjustment;		/* Hold pc adjustment after instruction. */
     int initStackTop;           /* Stack top at start of execution. */
+    int initCatchTop;           /* Catch stack top at start of execution. */
     ExceptionRange *rangePtr;	/* Points to closest loop or catch exception
 				 * range enclosing the pc. Used by various
 				 * instructions and processCatch to
@@ -1097,13 +1097,14 @@ TclExecuteByteCode(interp, codePtr)
      * Make sure the execution stack is large enough to execute this ByteCode.
      */
 
-    catchStackPtr = (long *)(eePtr->tosPtr + 1);
-    while ((catchStackPtr + codePtr->maxExceptDepth + codePtr->maxStackDepth) 
-	    > (long *) eePtr->endPtr) {
+    initCatchTop = eePtr->tosPtr - eePtr->stackPtr;
+    catchTop = initCatchTop;
+    tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
+
+    while ((tosPtr + codePtr->maxStackDepth) > eePtr->endPtr) {
         GrowEvaluationStack(eePtr); 
-        catchStackPtr = (long *)(eePtr->tosPtr + 1);
+	tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
     }
-    tosPtr = (Tcl_Obj **) (catchStackPtr + codePtr->maxExceptDepth - 1);
     initStackTop = tosPtr - eePtr->stackPtr;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -4076,15 +4077,15 @@ TclExecuteByteCode(interp, codePtr)
 	 * equal to the operand. Push the current stack depth onto the
 	 * special catch stack.
 	 */
-	catchStackPtr[++catchTop] = (tosPtr - eePtr->stackPtr);
+	eePtr->stackPtr[++catchTop] = (Tcl_Obj *) (tosPtr - eePtr->stackPtr);
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-	       TclGetUInt4AtPtr(pc+1), catchTop, tosPtr - eePtr->stackPtr));
+	       TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1), tosPtr - eePtr->stackPtr));
 	NEXT_INST_F(5, 0, 0);
 
     case INST_END_CATCH:
 	catchTop--;
 	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", catchTop));
+	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
 	    
     case INST_PUSH_RESULT:
@@ -4236,7 +4237,7 @@ TclExecuteByteCode(interp, codePtr)
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
     }
-    if (catchTop == -1) {
+    if (catchTop == initCatchTop) {
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
 	    fprintf(stdout, "   ... no enclosing catch, returning %s\n",
@@ -4271,14 +4272,15 @@ TclExecuteByteCode(interp, codePtr)
      */
 
  processCatch:
-    while (tosPtr > catchStackPtr[catchTop] + eePtr->stackPtr) {
+    while (tosPtr > (int) (eePtr->stackPtr[catchTop]) + eePtr->stackPtr) {
 	valuePtr = POP_OBJECT();
 	TclDecrRefCount(valuePtr);
     }
 #ifdef TCL_COMPILE_DEBUG
     if (traceInstructions) {
 	fprintf(stdout, "  ... found catch at %d, catchTop=%d, unwound to %d, new pc %u\n",
-	        rangePtr->codeOffset, catchTop, (int) catchStackPtr[catchTop],
+	        rangePtr->codeOffset, (catchTop - initCatchTop - 1), 
+		(int) eePtr->stackPtr[catchTop],
 	        (unsigned int)(rangePtr->catchOffset));
     }
 #endif	
@@ -4308,13 +4310,8 @@ TclExecuteByteCode(interp, codePtr)
 		    (unsigned int) initStackTop);
 	    panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	}
+	eePtr->tosPtr = initTosPtr - codePtr->maxExceptDepth;
     }
-	
-    /*
-     * Free the catch stack array if malloc'ed storage was used.
-     */
-	    
-    eePtr->tosPtr = (Tcl_Obj **) (catchStackPtr - 1);
     return result;
 }
 

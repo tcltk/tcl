@@ -1,3 +1,9 @@
+2003-10-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TEBC):
+	* tests/execute.test (execute-8.2): fix for [Bug 816641] - faulty
+	execution and catch stack management.
+
 2003-10-03  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclBasic.c:   Fixed error in ref count management of command
