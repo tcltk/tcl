@@ -562,6 +562,10 @@ if test -r GetStdChan.3; then
     ln GetStdChan.3 Tcl_GetStdChannel.3
     ln GetStdChan.3 Tcl_SetStdChannel.3
 fi
+if test -r GetTime.3; then
+    rm -f Tcl_GetTime.3
+    ln GetTime.3 Tcl_GetTime.3
+fi
 if test -r GetVersion.3; then
     rm -f Tcl_GetVersion.3
     ln GetVersion.3 Tcl_GetVersion.3
