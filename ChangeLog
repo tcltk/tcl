@@ -1,5 +1,8 @@
 1998-12-02    <stanton@GASPODE>
 
+	* generic/regc_color.c (subcolor): Added check for error case to
+	avoid an out of bounds array reference.
+
 	* generic/tclCmdAH.c (Tcl_EncodingObjCmd): Changed to avoid using
 	Tcl_DStringResult because it is not binary clean.
 
