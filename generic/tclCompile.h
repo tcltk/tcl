@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.19 2005/03/22 23:12:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.20 2005/03/23 00:44:25 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -1136,7 +1136,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 /* This test maybe should be distributed, so that it isn't performed for every
  * INST? */
 #define TclEmitInst1(op, n, envPtr) \
-    if (TclIsJump(op) && \
+    if (TclInstIsJump(op) && \
             (abs((TclPSizedInt)(n)) > HPINT_MAX)) \
         Tcl_Panic("Oversize jump.");\
     if (((envPtr)->codeNext + 1) > (envPtr)->codeEnd) { \

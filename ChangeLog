@@ -1,5 +1,9 @@
 2005-03-22 Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.h: fixing bad macro name under VM_USE_PACKED.
+
+2005-03-22 Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompCmds.c:
 	* generic/tclCompile.c:
 	* generic/tclCompile.h:
