@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.1.2.2 1998/09/24 23:59:53 stanton Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.1.2.3 1998/09/30 23:58:16 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -365,11 +365,12 @@ typedef float *TCHAR;
  * use by tclAlloc.c.
  */
 
-#define TclpSysAlloc(size, isBin)	((void*)GlobalAlloc(GMEM_FIXED, \
-					    (DWORD)size))
-#define TclpSysFree(ptr)		(GlobalFree((HGLOBAL)ptr))
-#define TclpSysRealloc(ptr, size)	((void*)GlobalReAlloc((HGLOBAL)ptr, \
-					    (DWORD)size, 0))
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+					    (DWORD)0, (DWORD)size))
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+					    (DWORD)0, (HGLOBAL)ptr))
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
 /*
  * The following declarations belong in tclInt.h, but depend on platform
