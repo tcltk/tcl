@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6.4.2 2004/09/08 23:02:49 dgp Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.6.4.3 2005/01/24 21:45:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -309,7 +309,7 @@ TclRememberMutex(mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MutexFinalize
+ * Tcl_MutexFinalize --
  *
  *      Finalize a single mutex and remove it from the
  *	list of remembered objects.
@@ -382,7 +382,7 @@ TclRememberCondition(condPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ConditionFinalize
+ * Tcl_ConditionFinalize --
  *
  *      Finalize a single condition variable and remove it from the
  *	list of remembered objects.

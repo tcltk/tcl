@@ -1,3 +1,84 @@
+2005-01-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclStubInit.c: Regenerated the stubs support code from
+	* generic/tclDecls.h:    the modified tcl.decls (TIP #233, see below).
+
+	* doc/GetTime.3:       Implemented TIP #233, i.e. the
+	* generic/tcl.decls:   'Virtualization of Tcl's Sense of Time'.
+	* generic/tcl.h:       Declared, implemented, and documented the
+	* generic/tclInt.h:    specified new API functions. Moved the
+	* unix/tclUnixEvent.c: native (OS) access to time information
+	* unix/tclUnixNotfy.c: into standard handler functions. Inserted
+	* unix/tclUnixTime.c:  hooks calling on the handlers where native
+	* win/tclWinNotify.c:  access was done before, and where scaling
+	* win/tclWinTime.c:    between domains (real/virtual) is required.
+
+2005-01-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclThread.c: Typo police. Fixed some nits
+	* generic/tclCmdAH.c:  in header comments of functions.
+	* generic/tclBasic.c:  (Missing --).
+	* generic/tclFileName.c:
+
+2005-01-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/FileSystem.3: Add missing ARGUMENTS section definitions for
+	arguments to Tcl_FSLink. [Bug 1106272]
+
+2005-01-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	TIP#235 IMPLEMENTATION
+
+	* doc/Ensemble.3: Documentation for the new public API.
+	* generic/tclNamesp.c (Tcl_CreateEnsemble,...): Rename of
+	* generic/tcl.decls:		existing API into TIPped form.
+
+2005-01-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWinChan.c (FileCloseProc): Invoke TclpCutFileChannel() to
+	remove a FileInfo from the thread local list before deallocating
+	it.  This should have been done via an earlier call to
+	Tcl_CutChannel, but I was running into a crash in the next call to
+	Tcl_CutChannel during the IO finalization stage.
+
+2005-01-18  Kevin Kenny  <kennykb@acm.org>
+
+	* library/tzdata/GMT+0:
+	* library/tzdata/GMT-0:
+	* library/tzdata/GMT0:
+	* library/tzdata/Greenwich:
+	* library/tzdata/Navajo:
+	* library/tzdata/Universal:
+	* library/tzdata/Zulu:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/America/Rosario:
+	* library/tzdata/Asia/Jerusalem:
+	* library/tzdata/Brazil/Acre:
+	Routine update per Olson's tzdata2005c.  Removed links to links
+	(Greenwich in several aliases; Navajo; Acre). Updated Paraguayan
+	DST rules and "best guess" at this year's Israeli rules.
+
+2005-01-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix for glob failure on Windows shares
+	[Bug 1100542].
+
+	* doc/pkgMkIndex.n: added documentation that 'pkg_mkIndex -lazy' is 
+	not a good idea. [Bug 1101678]
+
+2005-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/compile.test (compile-17.1): Document known issue with
+	binding time of compiled command interpretations in [expr].
+
+	* generic/tclIOUtil.c (TclFSFileAttrIndex): New helper function so
+	that we don't need to hard-code attribute indexes. [Bug 1100671]
+
+2005-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/string.n: Removed the term 'set' from the documentation of
+	the [string trim] commands, as it caused confusion.
+
 2005-01-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tcl.m4 (SC_PATH_{TCL,TK}CONFIG): Added code to detect the

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.19 2005/01/12 21:36:24 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.20 2005/01/24 21:44:41 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1782,6 +1782,14 @@ MODULE_SCOPE char *	tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 MODULE_SCOPE Tcl_NotifierProcs tclOriginalNotifier;
 
+/* TIP #233 (Virtualized Time)
+ * Data for the time hooks, if any.
+ */
+
+MODULE_SCOPE Tcl_GetTimeProc*   tclGetTimeProcPtr;
+MODULE_SCOPE Tcl_ScaleTimeProc* tclScaleTimeProcPtr;
+MODULE_SCOPE ClientData         tclTimeClientData;
+
 /*
  * Variables denoting the Tcl object types defined in the core.
  */
@@ -1926,6 +1934,8 @@ MODULE_SCOPE void	TclFinalizeAsync _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
+MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
+			    CONST char *attributeName, int *indexPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE int        TclGetNamespaceFromObj _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -2113,41 +2123,6 @@ MODULE_SCOPE int	TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 MODULE_SCOPE int	TclpUtime _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    struct utimbuf *tval));
-/*
- * These declarations ought to be exposed in a TIP (i.e. gain a '_' in
- * their names and move to tcl.decls).
- */
-MODULE_SCOPE int	TclIsEnsemble _ANSI_ARGS_((Command *cmdPtr));
-MODULE_SCOPE Tcl_Command TclMakeEnsembleCmd _ANSI_ARGS_((
-			    Tcl_Interp *interp, CONST char *name,
-			    Tcl_Namespace *namespacePtr, int flags));
-MODULE_SCOPE Tcl_Command TclFindEnsemble _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *cmdNameObj, int flags));
-MODULE_SCOPE int	TclSetEnsembleSubcommandList _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Obj *subcmdList));
-MODULE_SCOPE int	TclSetEnsembleMappingDict _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Obj *mapDict));
-MODULE_SCOPE int	TclSetEnsembleUnknownHandler _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Obj *unknownList));
-MODULE_SCOPE int	TclSetEnsembleFlags _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Command token, int flags));
-MODULE_SCOPE int	TclGetEnsembleSubcommandList _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Obj **subcmdList));
-MODULE_SCOPE int	TclGetEnsembleMappingDict _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Obj **mapDict));
-MODULE_SCOPE int	TclGetEnsembleUnknownHandler _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Obj **unknownList));
-MODULE_SCOPE int	TclGetEnsembleFlags _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Command token, int *flags));
-MODULE_SCOPE int	TclGetEnsembleNamespace _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command token,
-			    Tcl_Namespace **namespacePtrPtr));
 
 /*
  *----------------------------------------------------------------

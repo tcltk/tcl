@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.19 2005/01/12 21:35:57 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.20 2005/01/24 21:44:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3121,7 +3121,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	}
 	if (!(flags & TCL_EVAL_INVOKE) &&
 		(iPtr->ensembleRewrite.sourceObjs != NULL) &&
-		!TclIsEnsemble(cmdPtr)) {
+		!Tcl_IsEnsemble((Tcl_Command) cmdPtr)) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	}
 	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
@@ -4699,7 +4699,7 @@ Tcl_AllowExceptions(interp)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetVersion
+ * Tcl_GetVersion --
  *
  *	Get the Tcl major, minor, and patchlevel version numbers and
  *      the release type.  A patch is a release type TCL_FINAL_RELEASE

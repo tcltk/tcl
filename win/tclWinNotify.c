@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.4 2004/04/09 20:58:20 dgp Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.5 2005/01/24 21:45:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -444,7 +444,17 @@ Tcl_WaitForEvent(
      */
 
     if (timePtr) {
-	timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+        /* TIP #233 (Virtualized Time). Convert virtual domain delay
+	 * to real-time.
+	 */
+
+        Tcl_Time myTime;
+        myTime.sec  = timePtr->sec;
+	myTime.usec = timePtr->usec;
+
+	(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+
+	timeout = myTime.sec * 1000 + myTime.usec / 1000;
     } else {
 	timeout = INFINITE;
     }
@@ -544,15 +554,24 @@ Tcl_Sleep(ms)
 
     Tcl_Time now;		/* Current wall clock time */
     Tcl_Time desired;		/* Desired wakeup time */
-    DWORD sleepTime = ms;	/* Time to sleep */
+    Tcl_Time vdelay;            /* Time to sleep, for scaling virtual -> real */
+    DWORD sleepTime;		/* Time to sleep, real-time */
+
+    vdelay.sec  = ms / 1000;
+    vdelay.usec = (ms % 1000) * 1000;
 
     Tcl_GetTime( &now );
-    desired.sec = now.sec + ( ms / 1000 );
-    desired.usec = now.usec + 1000 * ( ms % 1000 );
+    desired.sec  = now.sec  + vdelay.sec;
+    desired.usec = now.usec + vdelay.usec;
     if ( desired.usec > 1000000 ) {
 	++desired.sec;
 	desired.usec -= 1000000;
     }
+
+    /* TIP #233: Scale delay from virtual to real-time */
+
+    (*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+    sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
 	
     for ( ; ; ) {
 	Sleep( sleepTime );
@@ -563,8 +582,12 @@ Tcl_Sleep(ms)
 	     && ( now.usec >= desired.usec ) ) {
 	    break;
 	}
-	sleepTime = ( ( 1000 * ( desired.sec - now.sec ) )
-		      + ( ( desired.usec - now.usec ) / 1000 ) );
+
+	vdelay.sec  = desired.sec  - now.sec;
+	vdelay.usec = desired.usec - now.usec;
+
+	(*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
     }
 
 }

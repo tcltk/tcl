@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.14 2004/12/09 23:00:36 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.15 2005/01/24 21:44:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2293,6 +2293,83 @@ Tcl_FSFileAttrStrings(pathPtr, objPtrRef)
 /*
  *----------------------------------------------------------------------
  *
+ * TclFSFileAttrIndex --
+ *
+ *	Helper function for converting an attribute name to an index
+ *	into the attribute table.
+ *
+ * Results:
+ *	Tcl result code, index written to *indexPtr on result==TCL_OK
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclFSFileAttrIndex(pathPtr, attributeName, indexPtr)
+    Tcl_Obj *pathPtr;			/* File whose attributes are to be
+					 * indexed into. */
+    CONST char *attributeName;		/* The attribute being looked for. */
+    int *indexPtr;			/* Where to write the found index. */
+{
+    Tcl_Obj *listObj = NULL;
+    CONST char **attrTable;
+
+    /*
+     * Get the attribute table for the file.
+     */
+
+    attrTable = Tcl_FSFileAttrStrings(pathPtr, &listObj);
+    if (listObj != NULL) {
+	Tcl_IncrRefCount(listObj);
+    }
+
+    if (attrTable != NULL) {
+	/*
+	 * It's a constant attribute table, so use T_GIFO.
+	 */
+
+	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
+	int result;
+
+	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
+		indexPtr);
+	TclDecrRefCount(tmpObj);
+	if (listObj != NULL) {
+	    TclDecrRefCount(listObj);
+	}
+	return result;
+    } else if (listObj != NULL) {
+	/*
+	 * It's a non-constant attribute list, so do a literal search.
+	 */
+
+        int i, objc;
+	Tcl_Obj **objv;
+
+	if (Tcl_ListObjGetElements(NULL, listObj, &objc, &objv) != TCL_OK) {
+	    TclDecrRefCount(listObj);
+	    return TCL_ERROR;
+	}
+	for (i=0 ; i<objc ; i++) {
+	    if (!strcmp(attributeName, TclGetString(objv[i]))) {
+		TclDecrRefCount(listObj);
+		*indexPtr = i;
+		return TCL_OK;
+	    }
+	}
+	TclDecrRefCount(listObj);
+	return TCL_ERROR;
+    } else {
+	return TCL_ERROR;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_FSFileAttrsGet --
  *
  *	This procedure implements read access for the hookable 'file
@@ -2952,8 +3029,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	    return -1;
 	}
 	
-	if (TclCrossFilesystemCopy(interp, pathPtr, 
-				   copyToPtr) == TCL_OK) {
+	if (TclCrossFilesystemCopy(interp, pathPtr, copyToPtr) == TCL_OK) {
 	    Tcl_LoadHandle newLoadHandle = NULL;
 	    ClientData newClientData = NULL;
 	    Tcl_FSUnloadFileProc *newUnloadProcPtr = NULL;
@@ -2970,9 +3046,13 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 	     * we just do this directly, like this:
 	     */
 	    
+	    int index;
 	    Tcl_Obj* perm = Tcl_NewStringObj("0700",-1);
 	    Tcl_IncrRefCount(perm);
-	    Tcl_FSFileAttrsSet(NULL, 2, copyToPtr, perm);
+	    if (TclFSFileAttrIndex(copyToPtr, "-permissions",
+		    &index) == TCL_OK) {
+		Tcl_FSFileAttrsSet(NULL, index, copyToPtr, perm);
+	    }
 	    Tcl_DecrRefCount(perm);
 #endif
 	    

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.9 2004/10/28 18:46:27 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.10 2005/01/24 21:44:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1933,7 +1933,7 @@ static int
 DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting
 				 * (e.g. unmatched brace). */
-    Tcl_Obj *matchesObj;		/* Unshared list object in which to place all
+    Tcl_Obj *matchesObj;	/* Unshared list object in which to place all
 				 * resulting filenames. Caller allocates and
 				 * deallocates; DoGlob must not touch the
 				 * refCount of this object. */
@@ -2259,6 +2259,14 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 		    Tcl_DStringLength(&append));
 	} else {
 	    joinedPtr = Tcl_DuplicateObj(pathPtr);
+	    if (strchr(separators, Tcl_DStringValue(&append)[0]) == NULL) {
+		/* The current prefix must end in a separator */
+		int len;
+		CONST char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+		if (strchr(separators, joined[len-1]) == NULL) {
+		    Tcl_AppendToObj(joinedPtr, "/", 1);
+		}
+	    }
 	    Tcl_AppendToObj(joinedPtr, Tcl_DStringValue(&append),
 		    Tcl_DStringLength(&append));
 	}
@@ -2279,6 +2287,14 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 	joinedPtr = TclNewFSPathObj(pathPtr, pattern, p-pattern);
     } else {
 	joinedPtr = Tcl_DuplicateObj(pathPtr);
+	if (strchr(separators, pattern[0]) == NULL) {
+	    /* The current prefix must end in a separator */
+	    int len;
+	    CONST char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
+	    if (strchr(separators, joined[len-1]) == NULL) {
+		Tcl_AppendToObj(joinedPtr, "/", 1);
+	    }
+	}
 	Tcl_AppendToObj(joinedPtr, pattern, p-pattern);
     }
 
@@ -2292,7 +2308,7 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_AllocStatBuf
+ * Tcl_AllocStatBuf --
  *
  *     This procedure allocates a Tcl_StatBuf on the heap.  It exists
  *     so that extensions may be used unchanged on systems where

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.11 2004/12/09 23:00:31 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.12 2005/01/24 21:44:32 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3355,6 +3355,103 @@ EXTERN int		Tcl_SetReturnOptions _ANSI_ARGS_((
 EXTERN Tcl_Obj *	Tcl_GetReturnOptions _ANSI_ARGS_((
 				Tcl_Interp * interp, int result));
 #endif
+#ifndef Tcl_IsEnsemble_TCL_DECLARED
+#define Tcl_IsEnsemble_TCL_DECLARED
+/* 540 */
+EXTERN int		Tcl_IsEnsemble _ANSI_ARGS_((Tcl_Command token));
+#endif
+#ifndef Tcl_CreateEnsemble_TCL_DECLARED
+#define Tcl_CreateEnsemble_TCL_DECLARED
+/* 541 */
+EXTERN Tcl_Command	Tcl_CreateEnsemble _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, 
+				Tcl_Namespace * namespacePtr, int flags));
+#endif
+#ifndef Tcl_FindEnsemble_TCL_DECLARED
+#define Tcl_FindEnsemble_TCL_DECLARED
+/* 542 */
+EXTERN Tcl_Command	Tcl_FindEnsemble _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * cmdNameObj, int flags));
+#endif
+#ifndef Tcl_SetEnsembleSubcommandList_TCL_DECLARED
+#define Tcl_SetEnsembleSubcommandList_TCL_DECLARED
+/* 543 */
+EXTERN int		Tcl_SetEnsembleSubcommandList _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj * subcmdList));
+#endif
+#ifndef Tcl_SetEnsembleMappingDict_TCL_DECLARED
+#define Tcl_SetEnsembleMappingDict_TCL_DECLARED
+/* 544 */
+EXTERN int		Tcl_SetEnsembleMappingDict _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj * mapDict));
+#endif
+#ifndef Tcl_SetEnsembleUnknownHandler_TCL_DECLARED
+#define Tcl_SetEnsembleUnknownHandler_TCL_DECLARED
+/* 545 */
+EXTERN int		Tcl_SetEnsembleUnknownHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj * unknownList));
+#endif
+#ifndef Tcl_SetEnsembleFlags_TCL_DECLARED
+#define Tcl_SetEnsembleFlags_TCL_DECLARED
+/* 546 */
+EXTERN int		Tcl_SetEnsembleFlags _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				int flags));
+#endif
+#ifndef Tcl_GetEnsembleSubcommandList_TCL_DECLARED
+#define Tcl_GetEnsembleSubcommandList_TCL_DECLARED
+/* 547 */
+EXTERN int		Tcl_GetEnsembleSubcommandList _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj ** subcmdListPtr));
+#endif
+#ifndef Tcl_GetEnsembleMappingDict_TCL_DECLARED
+#define Tcl_GetEnsembleMappingDict_TCL_DECLARED
+/* 548 */
+EXTERN int		Tcl_GetEnsembleMappingDict _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj ** mapDictPtr));
+#endif
+#ifndef Tcl_GetEnsembleUnknownHandler_TCL_DECLARED
+#define Tcl_GetEnsembleUnknownHandler_TCL_DECLARED
+/* 549 */
+EXTERN int		Tcl_GetEnsembleUnknownHandler _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Obj ** unknownListPtr));
+#endif
+#ifndef Tcl_GetEnsembleFlags_TCL_DECLARED
+#define Tcl_GetEnsembleFlags_TCL_DECLARED
+/* 550 */
+EXTERN int		Tcl_GetEnsembleFlags _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				int * flagsPtr));
+#endif
+#ifndef Tcl_GetEnsembleNamespace_TCL_DECLARED
+#define Tcl_GetEnsembleNamespace_TCL_DECLARED
+/* 551 */
+EXTERN int		Tcl_GetEnsembleNamespace _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Command token, 
+				Tcl_Namespace ** namespacePtrPtr));
+#endif
+#ifndef Tcl_SetTimeProc_TCL_DECLARED
+#define Tcl_SetTimeProc_TCL_DECLARED
+/* 552 */
+EXTERN void		Tcl_SetTimeProc _ANSI_ARGS_((
+				Tcl_GetTimeProc* getProc, 
+				Tcl_ScaleTimeProc* scaleProc, 
+				ClientData clientData));
+#endif
+#ifndef Tcl_QueryTimeProc_TCL_DECLARED
+#define Tcl_QueryTimeProc_TCL_DECLARED
+/* 553 */
+EXTERN void		Tcl_QueryTimeProc _ANSI_ARGS_((
+				Tcl_GetTimeProc** getProc, 
+				Tcl_ScaleTimeProc** scaleProc, 
+				ClientData* clientData));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3936,6 +4033,20 @@ typedef struct TclStubs {
     void (*tcl_DiscardInterpState) _ANSI_ARGS_((Tcl_InterpState state)); /* 537 */
     int (*tcl_SetReturnOptions) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * options)); /* 538 */
     Tcl_Obj * (*tcl_GetReturnOptions) _ANSI_ARGS_((Tcl_Interp * interp, int result)); /* 539 */
+    int (*tcl_IsEnsemble) _ANSI_ARGS_((Tcl_Command token)); /* 540 */
+    Tcl_Command (*tcl_CreateEnsemble) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_Namespace * namespacePtr, int flags)); /* 541 */
+    Tcl_Command (*tcl_FindEnsemble) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * cmdNameObj, int flags)); /* 542 */
+    int (*tcl_SetEnsembleSubcommandList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * subcmdList)); /* 543 */
+    int (*tcl_SetEnsembleMappingDict) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * mapDict)); /* 544 */
+    int (*tcl_SetEnsembleUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * unknownList)); /* 545 */
+    int (*tcl_SetEnsembleFlags) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, int flags)); /* 546 */
+    int (*tcl_GetEnsembleSubcommandList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** subcmdListPtr)); /* 547 */
+    int (*tcl_GetEnsembleMappingDict) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** mapDictPtr)); /* 548 */
+    int (*tcl_GetEnsembleUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** unknownListPtr)); /* 549 */
+    int (*tcl_GetEnsembleFlags) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, int * flagsPtr)); /* 550 */
+    int (*tcl_GetEnsembleNamespace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Namespace ** namespacePtrPtr)); /* 551 */
+    void (*tcl_SetTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc* getProc, Tcl_ScaleTimeProc* scaleProc, ClientData clientData)); /* 552 */
+    void (*tcl_QueryTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc** getProc, Tcl_ScaleTimeProc** scaleProc, ClientData* clientData)); /* 553 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6135,6 +6246,62 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetReturnOptions
 #define Tcl_GetReturnOptions \
 	(tclStubsPtr->tcl_GetReturnOptions) /* 539 */
+#endif
+#ifndef Tcl_IsEnsemble
+#define Tcl_IsEnsemble \
+	(tclStubsPtr->tcl_IsEnsemble) /* 540 */
+#endif
+#ifndef Tcl_CreateEnsemble
+#define Tcl_CreateEnsemble \
+	(tclStubsPtr->tcl_CreateEnsemble) /* 541 */
+#endif
+#ifndef Tcl_FindEnsemble
+#define Tcl_FindEnsemble \
+	(tclStubsPtr->tcl_FindEnsemble) /* 542 */
+#endif
+#ifndef Tcl_SetEnsembleSubcommandList
+#define Tcl_SetEnsembleSubcommandList \
+	(tclStubsPtr->tcl_SetEnsembleSubcommandList) /* 543 */
+#endif
+#ifndef Tcl_SetEnsembleMappingDict
+#define Tcl_SetEnsembleMappingDict \
+	(tclStubsPtr->tcl_SetEnsembleMappingDict) /* 544 */
+#endif
+#ifndef Tcl_SetEnsembleUnknownHandler
+#define Tcl_SetEnsembleUnknownHandler \
+	(tclStubsPtr->tcl_SetEnsembleUnknownHandler) /* 545 */
+#endif
+#ifndef Tcl_SetEnsembleFlags
+#define Tcl_SetEnsembleFlags \
+	(tclStubsPtr->tcl_SetEnsembleFlags) /* 546 */
+#endif
+#ifndef Tcl_GetEnsembleSubcommandList
+#define Tcl_GetEnsembleSubcommandList \
+	(tclStubsPtr->tcl_GetEnsembleSubcommandList) /* 547 */
+#endif
+#ifndef Tcl_GetEnsembleMappingDict
+#define Tcl_GetEnsembleMappingDict \
+	(tclStubsPtr->tcl_GetEnsembleMappingDict) /* 548 */
+#endif
+#ifndef Tcl_GetEnsembleUnknownHandler
+#define Tcl_GetEnsembleUnknownHandler \
+	(tclStubsPtr->tcl_GetEnsembleUnknownHandler) /* 549 */
+#endif
+#ifndef Tcl_GetEnsembleFlags
+#define Tcl_GetEnsembleFlags \
+	(tclStubsPtr->tcl_GetEnsembleFlags) /* 550 */
+#endif
+#ifndef Tcl_GetEnsembleNamespace
+#define Tcl_GetEnsembleNamespace \
+	(tclStubsPtr->tcl_GetEnsembleNamespace) /* 551 */
+#endif
+#ifndef Tcl_SetTimeProc
+#define Tcl_SetTimeProc \
+	(tclStubsPtr->tcl_SetTimeProc) /* 552 */
+#endif
+#ifndef Tcl_QueryTimeProc
+#define Tcl_QueryTimeProc \
+	(tclStubsPtr->tcl_QueryTimeProc) /* 553 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

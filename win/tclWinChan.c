@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.4 2004/10/28 18:47:38 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.5 2005/01/24 21:45:50 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -395,6 +395,8 @@ FileCloseProc(instanceData, interp)
     Tcl_Interp *interp;			/* Not used. */
 {
     FileInfo *fileInfoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr;
+    ThreadSpecificData *tsdPtr;
     int errorCode = 0;
 
     /*
@@ -419,6 +421,23 @@ FileCloseProc(instanceData, interp)
 	}
     }
 
+    /*
+     * See if this FileInfo* is still on the thread local list.
+     */
+    tsdPtr = TCL_TSD_INIT(&dataKey);
+    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL; 
+	    infoPtr = infoPtr->nextPtr) {
+	if (infoPtr == fileInfoPtr) {
+            /*
+             * This channel exists on the thread local list. It should
+             * have been removed by an earlier call to TclpCutFileChannel,
+             * but do that now since just deallocating fileInfoPtr would
+             * leave an deallocated pointer on the thread local list.
+             */
+            TclpCutFileChannel(fileInfoPtr->channel);
+            break;
+        }
+    }
     ckfree((char *)fileInfoPtr);
     return errorCode;
 }

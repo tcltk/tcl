@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.9 2004/12/09 23:00:30 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.10 2005/01/24 21:44:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -374,7 +374,7 @@ Tcl_ConcatObjCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ContinueObjCmd -
+ * Tcl_ContinueObjCmd --
  *
  *	This procedure is invoked to process the "continue" Tcl command.
  *	See the user documentation for details on what it does.

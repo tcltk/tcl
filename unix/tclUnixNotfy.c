@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.5 2004/12/09 23:01:35 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.6 2005/01/24 21:45:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -652,11 +652,17 @@ Tcl_WaitForEvent(timePtr)
 {
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
-    struct timeval timeout, *timeoutPtr;
     int mask;
+    Tcl_Time myTime;
 #ifdef TCL_THREADS
     int waitForFiles;
+    Tcl_Time *myTimePtr;
 #else
+    /* Impl. notes: timeout & timeoutPtr are used if, and only if
+     * threads are not enabled. They are the arguments for the regular
+     * select() used when the core is not thread-enabled. */
+
+    struct timeval timeout, *timeoutPtr;
     int numFound;
 #endif
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -672,9 +678,23 @@ Tcl_WaitForEvent(timePtr)
      */
 
     if (timePtr) {
-	timeout.tv_sec = timePtr->sec;
-	timeout.tv_usec = timePtr->usec;
-	timeoutPtr = &timeout;
+	/* TIP #233 (Virtualized Time). Is virtual time in effect ?
+	 * And do we actually have something to scale ? If yes to both
+	 * then we call the handler to do this scaling */
+
+        myTime.sec  = timePtr->sec;
+	myTime.usec = timePtr->usec;
+
+	(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+
+#ifdef TCL_THREADS
+	myTimePtr = &myTime;
+#else
+	timeout.tv_sec  = myTime.sec;
+	timeout.tv_usec = myTime.usec;
+	timeoutPtr      = &timeout;
+#endif
+
 #ifndef TCL_THREADS
     } else if (tsdPtr->numFdBits == 0) {
 	/*
@@ -688,7 +708,11 @@ Tcl_WaitForEvent(timePtr)
 	return -1;
 #endif
     } else {
+#ifdef TCL_THREADS
+        myTimePtr  = NULL;
+#else
 	timeoutPtr = NULL;
+#endif
     }
 
 #ifdef TCL_THREADS
@@ -700,7 +724,7 @@ Tcl_WaitForEvent(timePtr)
     Tcl_MutexLock(&notifierMutex);
 
     waitForFiles = (tsdPtr->numFdBits > 0);
-    if (timePtr != NULL && timePtr->sec == 0 && timePtr->usec == 0) {
+    if (myTimePtr != NULL && myTimePtr->sec == 0 && myTimePtr->usec == 0) {
 	/*
 	 * Cannot emulate a polling select with a polling condition variable.
 	 * Instead, pretend to wait for files and tell the notifier
@@ -711,7 +735,7 @@ Tcl_WaitForEvent(timePtr)
 
 	waitForFiles = 1;
 	tsdPtr->pollState = POLL_WANT;
-	timePtr = NULL;
+	myTimePtr = NULL;
     } else {
 	tsdPtr->pollState = 0;
     }
@@ -740,7 +764,7 @@ Tcl_WaitForEvent(timePtr)
     FD_ZERO( &(tsdPtr->readyMasks.exceptional) );
 
     if (!tsdPtr->eventReady) {
-        Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+        Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, myTimePtr);
     }
     tsdPtr->eventReady = 0;
 
