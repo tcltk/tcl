@@ -1030,6 +1030,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=${__TKBASEDIR__}\generic\tkPlatDecls.h
+  Destination=%MAINDIR%\include\tkPlatDecls.h
+  Flags=0000000000000010
+end
+item: Install File
   Source=${__TKBASEDIR__}\generic\tkIntXlibDecls.h
   Destination=%MAINDIR%\include\tkIntXlibDecls.h
   Flags=0000000000000010
@@ -1042,6 +1047,11 @@ end
 item: Install File
   Source=${__TCLBASEDIR__}\generic\tclDecls.h
   Destination=%MAINDIR%\include\tclDecls.h
+  Flags=0000000000000010
+end
+item: Install File
+  Source=${__TCLBASEDIR__}\generic\tclPlatDecls.h
+  Destination=%MAINDIR%\include\tclPlatDecls.h
   Flags=0000000000000010
 end
 item: End Block
