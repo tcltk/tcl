@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.56 2004/06/17 22:13:00 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.57 2004/06/18 13:42:42 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -159,29 +159,44 @@ SetDefaultLibraryDir(directory)
 	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
 
     Tcl_IncrRefCount(directory);
-    if (NULL == *savedDirectoryPtr) {
-	/* First call in this thread, set up the thread exit handler */
+    if (*savedDirectoryPtr == NULL) {
+	/*
+	 * First call in this thread, set up the thread exit handler
+	 */
 	Tcl_CreateThreadExitHandler(FreeThreadDefaultLibraryDir,
 		(ClientData) savedDirectoryPtr);
     } else {
-	/* Called SetDLD after a previous SetDLD or GetDLD in this thread ?! */
+	/*
+	 * Called SetDLD after a previous SetDLD or GetDLD in this thread ?!
+	 */
 	Tcl_DecrRefCount(*savedDirectoryPtr);
     }
     *savedDirectoryPtr = directory;
 
-    /* No Mutex protection, as the only caller is already in TclpInitLock */
+    /*
+     * No Mutex protection, as the only caller is already in TclpInitLock
+     */
 
     bytes = Tcl_GetStringFromObj(directory, &numBytes);
-    if (NULL == defaultLibraryDir) {
-	/* First call from any thread; set up exit handler */
-	Tcl_CreateExitHandler(FreeDefaultLibraryDir, NULL);
-    } else {
-	if ((defaultLibraryDirLength != numBytes) 
-		|| (0 != strcmp(defaultLibraryDir, bytes, numBytes))) {
-	    Tcl_Panic("Attempt to overwrite defaultLibraryDir");
+    if (defaultLibraryDir != NULL) {
+	/*
+	 * This function has been called before.  We only ever want to
+	 * set up the default library directory once, but if it is set
+	 * multiple times to the same value that's not harmful.
+	 */
+	if (defaultLibraryDirLength != numBytes 
+		|| memcmp(defaultLibraryDir, bytes, numBytes) != 0) {
+	    Tcl_Panic("Attempt to modify defaultLibraryDir");
 	}
 	return;
     }
+
+    /*
+     * First call from any thread; set up exit handler
+     */
+
+    Tcl_CreateExitHandler(FreeDefaultLibraryDir, NULL);
+
     defaultLibraryDirLength = numBytes;
     defaultLibraryDir = ckalloc((unsigned int) numBytes + 1);
     memcpy(defaultLibraryDir, bytes, (unsigned int) numBytes + 1);
