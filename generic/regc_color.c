@@ -308,7 +308,9 @@ pchr c;
 
 	co = GETCOLOR(cm, c);
 	sco = newsub(cm, co);
-
+	if (sco == COLORLESS) {
+		return COLORLESS;
+	}
 	if (co == sco)		/* already in an open subcolor */
 		return co;	/* rest is redundant */
 	cm->cd[co].nchrs--;
