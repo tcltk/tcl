@@ -11,6 +11,11 @@
 
 2000-04-09  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* tests/reg.test (matchexpected): corrected tests to use tcltest
+	constraint types to skip certain tests.
+
+	* generic/tclBasic.c (Tcl_SetCommandInfo): comment fix
+
 	* unix/tclUnixThrd.c (Tcl_CreateThread): moved TCL_THREADS ifdef
 	inside of func as it is declared for non-threads builds as well.
 	In the non-threads case, it always returns TCL_ERROR (couldn't
