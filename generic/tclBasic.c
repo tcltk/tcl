@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.49 2002/02/28 00:38:09 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.50 2002/03/01 06:22:48 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4734,6 +4734,7 @@ Tcl_CreateObjTrace( interp, level, flags, proc, clientData, delProc )
     tracePtr->clientData	= clientData;
     tracePtr->delProc           = delProc;
     tracePtr->nextPtr		= iPtr->tracePtr;
+    tracePtr->flags		= flags;
     iPtr->tracePtr		= tracePtr;
 
     return (Tcl_Trace) tracePtr;
