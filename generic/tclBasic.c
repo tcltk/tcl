@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.71 2003/01/17 14:19:40 vincentdarley Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.72 2003/02/03 20:16:52 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1918,6 +1918,8 @@ TclRenameCommand(interp, oldName, newName)
     Command *cmdPtr;
     Tcl_HashEntry *hPtr, *oldHPtr;
     int new, result;
+    Tcl_Obj* oldFullName;
+    Tcl_DString newFullName;
 
     /*
      * Find the existing command. An error is returned if cmdName can't
@@ -1934,6 +1936,9 @@ TclRenameCommand(interp, oldName, newName)
 	return TCL_ERROR;
     }
     cmdNsPtr = cmdPtr->nsPtr;
+    oldFullName = Tcl_NewObj();
+    Tcl_IncrRefCount( oldFullName );
+    Tcl_GetCommandFullName( interp, cmd, oldFullName );
 
     /*
      * If the new command name is NULL or empty, delete the command. Do this
@@ -1967,7 +1972,6 @@ TclRenameCommand(interp, oldName, newName)
 		 "\": command already exists", (char *) NULL);
         return TCL_ERROR;
     }
-
 
     /*
      * Warning: any changes done in the code here are likely
@@ -2006,9 +2010,26 @@ TclRenameCommand(interp, oldName, newName)
      * Therefore increment the reference count for cmdPtr so that
      * it's Command structure is freed only towards the end of this
      * function by calling TclCleanupCommand.
+     *
+     * The trace procedure needs to get a fully qualified name for
+     * old and new commands [Tcl bug #651271], or else there's no way
+     * for the trace procedure to get the namespace from which the old
+     * command is being renamed!
      */
+
+    Tcl_DStringInit( &newFullName );
+    Tcl_DStringAppend( &newFullName, newNsPtr->fullName, -1 );
+    if ( newNsPtr != iPtr->globalNsPtr ) {
+	Tcl_DStringAppend( &newFullName, "::", 2 );
+    }
+    Tcl_DStringAppend( &newFullName, newTail, -1 );
     cmdPtr->refCount++;
-    CallCommandTraces(iPtr,cmdPtr,oldName,newName,TCL_TRACE_RENAME);
+    CallCommandTraces( iPtr, cmdPtr,
+		       Tcl_GetString( oldFullName ),
+		       Tcl_DStringValue( &newFullName ),
+		       TCL_TRACE_RENAME);
+    Tcl_DecrRefCount( oldFullName );
+    Tcl_DStringFree( &newFullName );
 
     /*
      * The new command name is okay, so remove the command from its
@@ -2305,7 +2326,7 @@ Tcl_GetCommandFullName(interp, command, objPtr)
 	if (cmdPtr->hPtr != NULL) {
 	    name = Tcl_GetHashKey(cmdPtr->hPtr->tablePtr, cmdPtr->hPtr);
 	    Tcl_AppendToObj(objPtr, name, -1);
-	}
+	} 
     }
 }
 
