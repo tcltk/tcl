@@ -1,3 +1,8 @@
+2003-05-13  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIOUtil.c: ensure cd is thread-safe.
+	[Bug #710642] (vasiljevic)
+
 2003-05-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclEvent.c (Tcl_Finalize): Removed unused variable to
