@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.28 2004/10/06 14:59:02 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.29 2004/10/19 21:54:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -642,7 +642,6 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		 * cross-filesystem copy.  We do this through our Tcl
 		 * library.
 		 */
-		Tcl_SavedResult savedResult;
 		Tcl_Obj *copyCommand = Tcl_NewListObj(0,NULL);
 		Tcl_IncrRefCount(copyCommand);
 		Tcl_ListObjAppendElement(interp, copyCommand, 
@@ -656,7 +655,6 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		}
 		Tcl_ListObjAppendElement(interp, copyCommand, source);
 		Tcl_ListObjAppendElement(interp, copyCommand, target);
-		Tcl_SaveResult(interp, &savedResult);
 		result = Tcl_EvalObjEx(interp, copyCommand, 
 				       TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
 		Tcl_DecrRefCount(copyCommand);
@@ -666,11 +664,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		     * We will pass on the Tcl error message and
 		     * can ensure this by setting errfile to NULL
 		     */
-		    Tcl_DiscardResult(&savedResult);
 		    errfile = NULL;
-		} else {
-		    /* The copy was successful */
-		    Tcl_RestoreResult(interp, &savedResult);
 		}
 	    } else {
 		errfile = errorBuffer;

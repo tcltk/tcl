@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.48 2004/10/15 04:01:29 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.49 2004/10/19 21:54:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -291,11 +291,8 @@ HandleBgErrors(clientData)
              */
 
             if (Tcl_IsSafe(interp)) {
-		Tcl_SavedResult save;
-		
-		Tcl_SaveResult(interp, &save);
+		Tcl_ResetResult(interp);
                 TclObjInvoke(interp, 2, objv, TCL_INVOKE_HIDDEN);
-		Tcl_RestoreResult(interp, &save);
             } else {
 
 		/*
