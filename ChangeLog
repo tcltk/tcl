@@ -1,3 +1,9 @@
+2000-06-27  Eric Melski  <ericm@scriptics.com>
+
+	* tests/stringObj.test: Tweaked tests to avoid hardcoded
+	high-ASCII characters (which will fail in multibyte locales);
+	instead used \uXXXX syntax. [Bug: 3842].
+
 2000-06-26  Eric Melski  <ericm@scriptics.com>
 
 	* doc/package.n: Corrected information about [package forget]
