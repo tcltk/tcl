@@ -60,6 +60,11 @@
 	eliminating any need for mutex protection around [clock scan].
 	Also, changed the Makefiles so that 'make gendate' is
 	available on Windows as well as Unix.
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Removed some grubby
+	* generic/tclObj.c (SetBooleanFromAny):  work-around code
+					         that was needed only
+	                                         because of Bug 868489.
 	
 2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
 
