@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.2 1999/04/16 00:46:55 stanton Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.3 1999/04/29 00:04:41 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -73,7 +73,57 @@ CONST unsigned char totalBytes[256] = {
 #endif
 };
 
+/*
+ * Procedures used only in this module.
+ */
+
+static int UtfCount _ANSI_ARGS_((int ch));
+
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_UniCharToUtf --
+ *
+ *	Store the given Tcl_UniChar as a sequence of UTF-8 bytes in the
+ *	Utf character "ch".
+ *
+ * Results:
+ *	The return values is the number of bytes in the Utf character "ch".
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+ 
+static int
+UtfCount(ch)
+    int ch;			/* The Tcl_UniChar whose size is returned. */
+{
+    if ((ch > 0) && (ch < UNICODE_SELF)) {
+	return 1;
+    }
+    if (ch <= 0x7FF) {
+	return 2;
+    }
+    if (ch <= 0xFFFF) {
+	return 3;
+    }
+#if TCL_UTF_MAX > 3
+    if (ch <= 0x1FFFFF) {
+	return 4;
+    }
+    if (ch <= 0x3FFFFFF) {
+	return 5;
+    }
+    if (ch <= 0x7FFFFFFF) {
+	return 6;
+    }
+#endif
+    return 3;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -849,17 +899,32 @@ int
 Tcl_UtfToUpper(str)
     char *str;			/* String to convert in place. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch, upChar;
     char *src, *dst;
-    
+    int bytes;
+
     /*
      * Iterate over the string until we hit the terminating null.
      */
 
     src = dst = str;
     while (*src) {
-	src += Tcl_UtfToUniChar(src, &ch);
-	dst += Tcl_UniCharToUtf(Tcl_UniCharToUpper(ch), dst);
+        bytes = Tcl_UtfToUniChar(src, &ch);
+	upChar = Tcl_UniCharToUpper(ch);
+
+	/*
+	 * To keep badly formed Utf strings from getting inflated by
+	 * the conversion (thereby causing a segfault), only copy the
+	 * upper case char to dst if its size is <= the original char.
+	 */
+	
+	if (bytes < UtfCount(upChar)) {
+	    memcpy(dst, src, (size_t) bytes);
+	    dst += bytes;
+	} else {
+	    dst += Tcl_UniCharToUtf(upChar, dst);
+	}
+	src += bytes;
     }
     *dst = '\0';
     return (dst - str);
@@ -887,8 +952,9 @@ int
 Tcl_UtfToLower(str)
     char *str;			/* String to convert in place. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch, lowChar;
     char *src, *dst;
+    int bytes;
     
     /*
      * Iterate over the string until we hit the terminating null.
@@ -896,8 +962,22 @@ Tcl_UtfToLower(str)
 
     src = dst = str;
     while (*src) {
-	src += Tcl_UtfToUniChar(src, &ch);
-	dst += Tcl_UniCharToUtf(Tcl_UniCharToLower(ch), dst);
+	bytes = Tcl_UtfToUniChar(src, &ch);
+	lowChar = Tcl_UniCharToLower(ch);
+
+	/*
+	 * To keep badly formed Utf strings from getting inflated by
+	 * the conversion (thereby causing a segfault), only copy the
+	 * lower case char to dst if its size is <= the original char.
+	 */
+	
+	if (bytes < UtfCount(lowChar)) {
+	    memcpy(dst, src, (size_t) bytes);
+	    dst += bytes;
+	} else {
+	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	}
+	src += bytes;
     }
     *dst = '\0';
     return (dst - str);
