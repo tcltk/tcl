@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.206 2004/12/11 14:41:46 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.207 2004/12/14 21:11:46 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -775,13 +775,13 @@ typedef struct AssocData {
 typedef struct CallFrame {
     Namespace *nsPtr;		/* Points to the namespace used to resolve
 				 * commands and global variables. */
-    int isProcCallFrame;	/* If nonzero, the frame was pushed to
-				 * execute a Tcl procedure and may have
-				 * local vars. If 0, the frame was pushed
-				 * to execute a namespace command and var
-				 * references are treated as references to
-				 * namespace vars; varTablePtr and
-				 * compiledLocals are ignored. */
+    int isProcCallFrame;	/* If 0, the frame was pushed to execute a
+				 * namespace command and var references are
+				 * treated as references to namespace vars;
+				 * varTablePtr and compiledLocals are ignored.
+				 * If FRAME_IS_PROC is set, the frame was
+				 * pushed to execute a Tcl procedure and may
+				 * have local vars. */
     int objc;			/* This and objv below describe the
 				 * arguments for this procedure call. */
     Tcl_Obj *CONST *objv;	/* Array of argument objects. */
@@ -817,6 +817,8 @@ typedef struct CallFrame {
 				 * emits code that refers to these variables
 				 * using an index into this array. */
 } CallFrame;
+
+#define FRAME_IS_PROC 0x1
 
 /*
  *----------------------------------------------------------------
