@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.20 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: io.test,v 1.21 2001/09/11 17:30:44 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2653,8 +2653,8 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
 	    incr c
 	}
     }
-    set ss [socket -server accept 2828]
-    set cs [socket [info hostname] 2828]
+    set ss [socket -server accept 0]
+    set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     vwait x
     fconfigure $cs -blocking off
     writelots $cs $l
@@ -2671,12 +2671,12 @@ test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotM
     catch {interp delete y}
     interp create x
     interp create y
-    set s [socket -server accept 2828]
+    set s [socket -server accept 0]
     proc accept {s a p} {
 	puts $s hello
 	close $s
     }
-    set c [socket [info hostname] 2828]
+    set c [socket [info hostname] [lindex [fconfigure $s -sockname] 2]]
     interp share {} $c x
     interp share {} $c y
     close $c
@@ -6232,27 +6232,27 @@ test io-51.1 {Test old socket deletion on Macintosh} {socket} {
 	close $s
 	set wait done
     }
-    set ss [socket -server accept 2831]
+    set ss [socket -server accept 0]
     set wait ""
-    set cs [socket [info hostname] 2831]
+    set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     vwait wait
     lappend result [gets $cs]
     close $cs
 
     set wait ""
-    set cs [socket [info hostname] 2831]
+    set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     vwait wait
     lappend result [gets $cs]
     close $cs
 
     set wait ""
-    set cs [socket [info hostname] 2831]
+    set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     vwait wait
     lappend result [gets $cs]
     close $cs
 
     set wait ""
-    set cs [socket [info hostname] 2831]
+    set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     vwait wait
     lappend result [gets $cs]
     close $cs
@@ -6579,9 +6579,9 @@ proc FcopyTestDone {bytes {error {}}} {
 }
 
 test io-53.5 {CopyData: error during fcopy} {socket} {
-    set listen [socket -server FcopyTestAccept 2828]
+    set listen [socket -server FcopyTestAccept 0]
     set in [open $thisScript]	;# 126 K
-    set out [socket 127.0.0.1 2828]
+    set out [socket 127.0.0.1 [lindex [fconfigure $listen -sockname] 2]]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
     fcopy $in $out -command FcopyTestDone
@@ -6630,14 +6630,14 @@ test io-54.1 {Recursive channel events} {socket} {
 	}
 	incr x
     }
-    set ss [socket -server accept 2828]
+    set ss [socket -server accept 0]
 
     # We need to delay on some systems until the creation of the
     # server socket completes.
 
     set done 0
     for {set i 0} {$i < 10} {incr i} {
-	if {![catch {set cs [socket [info hostname] 2828]}]} {
+	if {![catch {set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]}]} {
 	    set done 1
 	    break
 	}
@@ -6665,7 +6665,7 @@ test io-54.1 {Recursive channel events} {socket} {
 test io-54.2 {Testing for busy-wait in recursive channel events} {socket} {
     set accept {}
     set after {}
-    set s [socket -server accept 3939]
+    set s [socket -server accept 0]
     proc accept {s a p} {
 	global counter accept
 
@@ -6693,9 +6693,9 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket} {
 	set accept {}
     }
     proc producer {} {
-	global writer
+	global writer s
 
-	set writer [socket 127.0.0.1 3939]
+	set writer [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
 	fconfigure $writer -buffering line
 	puts -nonewline $writer hello
 	flush $writer
@@ -6756,8 +6756,8 @@ test io-57.1 {buffered data and file events, gets} {
     proc accept {sock args} {
 	set ::s2 $sock
     }
-    set server [socket -server accept 4040]
-    set s [socket 127.0.0.1 4040]
+    set server [socket -server accept 0]
+    set s [socket 127.0.0.1 [lindex [fconfigure $server -sockname] 2]]
     vwait s2
     update
     fileevent $s2 readable {lappend result readable}
@@ -6777,8 +6777,8 @@ test io-57.2 {buffered data and file events, read} {
     proc accept {sock args} {
 	set ::s2 $sock
     }
-    set server [socket -server accept 4041]
-    set s [socket 127.0.0.1 4041]
+    set server [socket -server accept 0]
+    set s [socket 127.0.0.1 [lindex [fconfigure $server -sockname] 2]]
     vwait s2
     update
     fileevent $s2 readable {lappend result readable}
