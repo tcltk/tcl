@@ -1,3 +1,8 @@
+2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/tcl.m4:    Updated the OpenBSD configuration and regenerated
+	* unix/configure: the configure script.
+	
 2005-03-14  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fixed INST_PUSH1's debugging code (wrong
