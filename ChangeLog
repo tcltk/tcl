@@ -1,3 +1,9 @@
+2004-07-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEvent.c (Tcl_Finalize):	Re-organized Tcl_Finalize
+	so that Tcl_ExitProc's that call Tcl_Finalize recursively do not
+	cause deadlock.  [Patch 999084 fixes Tk Bug 714956]
+
 2004-07-30  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure:

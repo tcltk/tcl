@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.8 2004/07/21 01:30:57 hobbs Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28.2.9 2004/07/30 15:15:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -783,6 +783,29 @@ void
 Tcl_Finalize()
 {
     ExitHandler *exitPtr;
+    
+    /*
+     * Invoke exit handlers first.
+     */
+
+    Tcl_MutexLock(&exitMutex);
+    inFinalize = 1;
+    for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
+	/*
+	 * Be careful to remove the handler from the list before
+	 * invoking its callback.  This protects us against
+	 * double-freeing if the callback should call
+	 * Tcl_DeleteExitHandler on itself.
+	 */
+
+	firstExitPtr = exitPtr->nextPtr;
+	Tcl_MutexUnlock(&exitMutex);
+	(*exitPtr->proc)(exitPtr->clientData);
+	ckfree((char *) exitPtr);
+	Tcl_MutexLock(&exitMutex);
+    }    
+    firstExitPtr = NULL;
+    Tcl_MutexUnlock(&exitMutex);
 
     TclpInitLock();
     if (subsystemsInitialized != 0) {
@@ -794,29 +817,6 @@ Tcl_Finalize()
 	 */
 
 	(void) TCL_TSD_INIT(&dataKey);
-
-	/*
-	 * Invoke exit handlers first.
-	 */
-
-	Tcl_MutexLock(&exitMutex);
-	inFinalize = 1;
-	for (exitPtr = firstExitPtr; exitPtr != NULL; exitPtr = firstExitPtr) {
-	    /*
-	     * Be careful to remove the handler from the list before
-	     * invoking its callback.  This protects us against
-	     * double-freeing if the callback should call
-	     * Tcl_DeleteExitHandler on itself.
-	     */
-
-	    firstExitPtr = exitPtr->nextPtr;
-	    Tcl_MutexUnlock(&exitMutex);
-	    (*exitPtr->proc)(exitPtr->clientData);
-	    ckfree((char *) exitPtr);
-	    Tcl_MutexLock(&exitMutex);
-	}    
-	firstExitPtr = NULL;
-	Tcl_MutexUnlock(&exitMutex);
 
 	/*
 	 * Clean up after the current thread now, after exit handlers.
