@@ -27,6 +27,7 @@ namespace eval ::tcl::test::fileSystem {
 	file delete -force [file join dir.file linkinside.file]
     }
 
+cd [tcltest::temporaryDirectory]
 makeFile "test file" gorp.file
 makeDirectory dir.file
 makeFile "test file in directory" [file join dir.file inside.file]
