@@ -1,5 +1,19 @@
 2002-06-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclBasic.c: 
+	* generic/tclCompCmds.c:
+	* generic/tclInt.h: reverted the new compilation functions;
+	replaced by a more general approach described below.
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c: made *all* compiled variable access
+	attempts create an indexed variable - even get or incr without
+	previous set. This allows indexed access to local variables that
+	are created and set at runtime, for example by [global], [upvar],
+	[variable], [regexp], [regsub].
+
+2002-06-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* doc/global.n:
 	* doc/info.n:
 	* test/info.test:

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.29 2002/06/11 13:22:36 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.30 2002/06/11 15:42:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1117,59 +1117,6 @@ FreeForeachInfo(clientData)
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileGlobalCmd --
- *
- *	Procedure called to reserve the local variables for the 
- *      "global" command. The command itself is *not* compiled.
- *
- * Results:
- *      Always returns TCL_OUT_LINE_COMPILE.
- *
- * Side effects:
- *      Indexed local variables are added to the environment.
- *
- *----------------------------------------------------------------------
- */
-int
-TclCompileGlobalCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
-{
-    Tcl_Token *varTokenPtr;
-    int i, numWords;
-    char *varName, *tail;
-    
-    if (envPtr->procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
-    }
-    numWords = parsePtr->numWords;
-    
-    varTokenPtr = parsePtr->tokenPtr
-	+ (parsePtr->tokenPtr->numComponents + 1);
-    for (i = 1; i < numWords; i++) {
-	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    varName = varTokenPtr[1].start;
-	    tail = varName + varTokenPtr[1].size - 1;
-	    if ((*tail == ')') || (tail < varName)) continue;
-	    while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
-		tail--;
-	    }
-	    if ((*tail == ':') && (tail > varName)) {
-		tail++;
-	    }
-	    (void) TclFindCompiledLocal(tail, (tail-varName+1),
-		    /*create*/ 1, /*flags*/ 0, envPtr->procPtr);
-	    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	}
-    }
-    return TCL_OUT_LINE_COMPILE;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclCompileIfCmd --
  *
  *	Procedure called to compile the "if" command.
@@ -1587,7 +1534,8 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
-    code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
+    code = TclPushVarName(interp, varTokenPtr, envPtr, 
+	    (TCL_NO_LARGE_INDEX | TCL_CREATE_VAR),
 	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
@@ -2125,8 +2073,8 @@ TclCompileLsetCmd( interp, parsePtr, envPtr )
 
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
-    result = TclPushVarName( interp, varTokenPtr, envPtr, 0,
-			     &localIndex, &simpleVarName, &isScalar );
+    result = TclPushVarName( interp, varTokenPtr, envPtr, 
+            TCL_CREATE_VAR, &localIndex, &simpleVarName, &isScalar );
     if (result != TCL_OK) {
 	return result;
     }
@@ -2576,8 +2524,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
-    code = TclPushVarName(interp, varTokenPtr, envPtr,
-	    (isAssignment ? TCL_CREATE_VAR : 0),
+    code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
@@ -2898,72 +2845,6 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileUpvarCmd --
- *
- *	Procedure called to reserve the local variables for the 
- *      "upvar" command. The command itself is *not* compiled.
- *
- * Results:
- *      Always returns TCL_OUT_LINE_COMPILE.
- *
- * Side effects:
- *      Indexed local variables are added to the environment.
- *
- *----------------------------------------------------------------------
- */
-int
-TclCompileUpvarCmd(interp, parsePtr, envPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
-				 * command created by Tcl_ParseCommand. */
-    CompileEnv *envPtr;		/* Holds resulting instructions. */
-{
-    Tcl_Token *varTokenPtr;
-    int i, numWords;
-    char *varName, *tail;
-    
-    if (envPtr->procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
-    }
-
-    numWords = parsePtr->numWords;
-    
-    varTokenPtr = parsePtr->tokenPtr
-	+ (parsePtr->tokenPtr->numComponents + 1);
-    varName = varTokenPtr[1].start;
-    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-    i = 2;
-
-    if ((*varName == '#') || (isdigit(UCHAR(*varName)))) {	
-	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	i++;
-    }
-	
-    for (; i < numWords; i += 2) {
-	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    varName = varTokenPtr[1].start;
-	    tail = varName + varTokenPtr[1].size - 1;
-	    if ((*tail == ')') || (tail < varName)) {
-		break;
-	    }
-	    while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
-		tail--;
-	    }
-	    if (tail != varName) {
-		break;
-	    }
-	    (void) TclFindCompiledLocal(tail, (tail-varName+1),
-		    /*create*/ 1, /*flags*/ 0, envPtr->procPtr);
-	    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	}
-    }
-    return TCL_OUT_LINE_COMPILE;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * TclCompileVariableCmd --
  *
  *	Procedure called to reserve the local variables for the 
@@ -3262,7 +3143,7 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     Tcl_Token *varTokenPtr;	/* Points to a variable token. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
     int flags;			/* takes TCL_CREATE_VAR or
-				 * TCL_LARGE_INDEX_OK */
+				 * TCL_NO_LARGE_INDEX */
     int *localIndexPtr;		/* must not be NULL */
     int *simpleVarNamePtr;	/* must not be NULL */
     int *isScalarPtr;		/* must not be NULL */
