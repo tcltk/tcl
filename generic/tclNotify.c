@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11 2003/02/15 20:24:10 kennykb Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.2.1 2004/07/15 21:20:25 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -137,7 +137,15 @@ TclInitNotifier()
  *
  * Side effects:
  *	Removes the notifier associated with the current thread from
- *	the global notifier list.
+ *	the global notifier list. This is done only if the notifier
+ *	was initialized for this thread by call to TclInitNotifier().
+ *	This is always true for threads which have been seeded with
+ *	an Tcl interpreter, since the call to Tcl_CreateInterp will,
+ *	among other things, call TclInitializeSubsystems() and this
+ *	one will, in turn, call the TclInitNotifier() for the thread.
+ *	For threads created without the Tcl interpreter, though,
+ *	nobody is explicitly nor implicitly calling the TclInitNotifier
+ *	hence, TclFinalizeNotifier should not be performed at all.
  *
  *----------------------------------------------------------------------
  */
@@ -148,6 +156,10 @@ TclFinalizeNotifier()
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ThreadSpecificData **prevPtrPtr;
     Tcl_Event *evPtr, *hold;
+
+    if (tsdPtr->threadId == (Tcl_ThreadId)0) {
+        return; /* Notifier not initialized for the current thread */
+    }
 
     Tcl_MutexLock(&(tsdPtr->queueMutex));
     for (evPtr = tsdPtr->firstEventPtr; evPtr != (Tcl_Event *) NULL; ) {
