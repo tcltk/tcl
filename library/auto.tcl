@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.1.2.6 1999/02/10 23:31:20 stanton Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.1.2.7 1999/02/11 03:15:40 stanton Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -165,6 +165,7 @@ proc auto_mkindex {dir args} {
     if {$args == ""} {
 	set args *.tcl
     }
+
     auto_mkindex_parser::init
     foreach file [eval glob $args] {
         if {[catch {auto_mkindex_parser::mkindex $file} msg] == 0} {
@@ -251,9 +252,11 @@ namespace eval auto_mkindex_parser {
     variable contextStack ""    ;# stack of namespace scopes
     variable imports ""         ;# keeps track of all imported cmds
     variable initCommands ""    ;# list of commands that create aliases
+
     proc init {} {
 	variable parser
 	variable initCommands
+
 	if {![interp issafe]} {
 	    set parser [interp create -safe]
 	    $parser hide info
@@ -349,7 +352,7 @@ proc auto_mkindex_parser::hook {cmd} {
 proc auto_mkindex_parser::slavehook {cmd} {
     variable initCommands
 
-    lappend initCommands "\$parser eval [list $cmd]"
+    lappend initCommands [list \$parser eval $cmd]
 }
 
 # auto_mkindex_parser::command --
@@ -400,7 +403,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
         set exportCmd [list _%@namespace export [namespace tail $name]]
         $parser eval [list _%@namespace eval $ns $exportCmd]
         set alias [namespace tail $fakeName]
-        $parser invokehidden proc $name {args} "_%@eval $alias \$args"
+        $parser invokehidden proc $name {args} [list _%@eval $alias \$args]
         $parser alias $alias $fakeName
     } else {
         $parser alias $name $fakeName
@@ -451,8 +454,37 @@ proc auto_mkindex_parser::fullname {name} {
 auto_mkindex_parser::command proc {name args} {
     variable index
     variable scriptFile
-    append index "set [list auto_index([fullname $name])]"
-    append index " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+    append index [list set auto_index([fullname $name])] \
+	    " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+}
+
+# Conditionally add support for Tcl byte code files.  There are some
+# tricky details here.  First, we need to get the tbcload library
+# initialized in the current interpreter.  We cannot load tbcload into the
+# slave until we have done so because it needs access to the tcl_patchLevel
+# variable.  Second, because the package index file may defer loading the
+# library until we invoke a command, we need to explicitly invoke auto_load
+# to force it to be loaded.  This should be a noop if the package has
+# already been loaded
+
+auto_mkindex_parser::hook {
+    if {![catch {package require tbcload}]} {
+	if {[info commands tbcload::bcproc] == ""} {
+	    auto_load tbcload::bcproc
+	}
+	load {} tbcload $auto_mkindex_parser::parser
+
+	# AUTO MKINDEX:  tbcload::bcproc name arglist body
+	# Adds an entry to the auto index list for the given pre-compiled
+	# procedure name.  
+
+	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
+	    variable index
+	    variable scriptFile
+	    append index [list set auto_index([fullname $name])] \
+		    " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+	}
+    }
 }
 
 # AUTO MKINDEX:  namespace eval name command ?arg arg...?
@@ -477,11 +509,7 @@ auto_mkindex_parser::command namespace {op args} {
             set args [lrange $args 1 end]
 
             set contextStack [linsert $contextStack 0 $name]
-            if {[llength $args] == 1} {
-                $parser eval [lindex $args 0]
-            } else {
-                eval $parser eval $args
-            }
+	    $parser eval [list _%@namespace eval $name] $args
             set contextStack [lrange $contextStack 1 end]
         }
         import {
