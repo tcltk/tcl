@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.16 2001/10/18 01:01:15 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.17 2001/12/11 02:42:41 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -423,7 +423,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
     }
 
-    joinThisError = (errorFile == outputFile);
+    joinThisError = errorFile && (errorFile == outputFile);
     pid = fork();
     if (pid == 0) {
 	fd = GetFd(errPipeOut);
