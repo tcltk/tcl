@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.105 2003/04/11 16:00:07 vincentdarley Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.106 2003/04/15 16:40:35 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -357,7 +357,8 @@ crt = -MTd
 !endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
-BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) -DTCL_DBGX=$(DBGX)
+BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) \
+			-DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\"
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CLFAGS) $(OPTDEFINES)
 
