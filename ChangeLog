@@ -1,3 +1,11 @@
+2002-02-20  Don Porter <dgp@users.sourceforge.net>
+
+	* generic/tcl.decls (Tcl_RegExpRange,Tcl_GetIndexFromObjStruct):
+	Overlooked a few source incompatibilities.  Now using CONST84.
+	* generic/tclDecls.h: make genstubs
+	* generic/tcl.h (Tcl_CmdObjTraceProc): silence warning from Sun
+	Workshop compiler.
+
 2002-02-20  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Added the pentium errata switches to $(cflags)
