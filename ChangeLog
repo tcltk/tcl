@@ -1,3 +1,22 @@
+2001-05-19  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* Note that "tclbench" (see project "tcllib") was extended with
+	  performance benchmarks for [fcopy] too.
+
+	* doc/fcopy.n: Updated to reflect the extended behaviour of 'fcopy'.
+
+	* tests/io.test: Added tests 'io-52.9', 'io-52.10' and 'io-52.11'
+	  to test the handling of encodings by 'fcopy' / 'TclCopychannel'
+	  [Bug #209210].
+
+	* generic/tclIO.c: Split of both 'Tcl_ReadChars' and
+	  'Tcl_WriteChars' into a public error checking and an internal
+	  working part. The public functions now use the new internal
+	  ones. The new functions are 'DoReadChars' and 'DoWriteChars'.
+	  Extended 'CopyData' to use the new functions 'DoXChars' when
+	  required by the encodings on the input and output channels
+	  [Bug #209210].
+
 2001-05-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/history.tcl (tcl::HistAdd): prevent empty calls from
@@ -210,7 +229,7 @@
 	Darley's changes to command tracing were added.  A const has been
 	added to the type signature of one of the parameters to
 	Tcl_CommandTraceProc.
-	
+
 2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
 	* unix/tclUnixTime.c: Altered code to use memcpy instead of
 	structure assigments in an effort to achieve better K&R
@@ -220,7 +239,7 @@
 
 	* unix/tclUnixTime.c: Fixed silly typo in calls to 'gmtime' and
 	'localtime' that broke the Linux build.
-	
+
 2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
 
 	* unix/tclLoadShl.c: Added DYNAMIC_PATH to the load flags so that
