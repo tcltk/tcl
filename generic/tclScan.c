@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.3 1999/10/29 03:04:00 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.4 1999/10/29 04:34:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -284,7 +284,6 @@ ValidateFormat(interp, format, numVars, totalSubs)
     for (i = 0; i < nspace; i++) {
 	nassign[i] = 0;
     }
-    //memset(nassign, 0, nspace * sizeof(int));
 
     objIndex = gotXpg = gotSequential = 0;
 
@@ -441,8 +440,6 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		for (i = nspace-STATIC_LIST_SIZE; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
-		//memset((VOID *) nassign[nspace-STATIC_LIST_SIZE], 0,
-		//	STATIC_LIST_SIZE * sizeof(int));
 	    }
 	    nassign[objIndex]++;
 	    objIndex++;
