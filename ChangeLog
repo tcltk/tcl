@@ -1,3 +1,11 @@
+2002-02-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/format.n: Updated docs to list the specification.
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Made behaviour on 64-bit
+	platforms correctly meet the specification, that %d works with the
+	native word-sized integer, instead of trying to guess (wrongly)
+	from the value being passed.
+
 2002-02-19  Don Porter <dgp@users.sourceforge.net>
 
 	* changes: First draft of updated changes for 8.4a4 release.
