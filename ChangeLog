@@ -1,3 +1,16 @@
+1999-03-08    <stanton@GASPODE>
+
+	* win/tclWinInt.h:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclIntPlatStubs.c:
+	* generic/tclIntStubs.c:
+	* generic/tclStubInit.c:
+	* generic/tclInt.decls: Removed initialization and finalization
+	routines from the stub table since these should never be called by
+	an extension.
+
 1999-03-06    <stanton@GASPODE>
 
 	* unix/Makefile.in: 
@@ -31,7 +44,7 @@
 	      executables have a different search strategy for dynamically
 	      loadable stub-enabled extensions than executables using
 	      shared libraries.  This effects extensions which load other
-	      libraries in turnq.
+	      libraries in turn.
 
 	* generic/tclCompile.h:
 	* generic/tclStubInit.c:

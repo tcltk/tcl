@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.23.4.3 1999/03/06 21:19:58 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.23.4.4 1999/03/08 22:25:29 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1478,6 +1478,19 @@ extern long		tclObjsFreed;
  */
 
 extern char *		tclEmptyStringRep;
+
+/*
+ *----------------------------------------------------------------
+ * Declarations of procedures that are not accessible by way of
+ * the stubs tables.
+ *----------------------------------------------------------------
+ */
+
+EXTERN void	TclFinalizeCompExecEnv _ANSI_ARGS_((void));
+EXTERN void	TclFinalizeEnvironment _ANSI_ARGS_((void));
+EXTERN void	TclFinalizeExecEnv _ANSI_ARGS_((void));
+EXTERN void	TclInitNamespaces _ANSI_ARGS_((void));
+EXTERN void	TclpFinalize _ANSI_ARGS_((void));
 
 /*
  *----------------------------------------------------------------

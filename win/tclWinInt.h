@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.5.4.1 1999/03/04 00:59:04 stanton Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.5.4.2 1999/03/08 22:25:31 stanton Exp $
  */
 
 #ifndef _TCLWININT
@@ -43,10 +43,12 @@
 #define VER_PLATFORM_WIN32_WINDOWS 1
 #endif
 
-EXTERN int		TclWinGetPlatformId(void);
+/*
+ * Declarations of functions that are not accessible by way of the
+ * stubs table.
+ */
+
 EXTERN void		TclWinInit(HINSTANCE hInst);
-EXTERN int		TclWinSynchSpawn(void *args, int type, void **trans,
-				      Tcl_Pid *pidPtr);
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT
