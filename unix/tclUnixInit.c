@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.37 2003/11/18 23:29:47 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.38 2004/02/17 23:50:39 hobbs Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -172,6 +172,20 @@ TclpInitPlatform()
 #else		
     tclPlatform = TCL_PLATFORM_UNIX;
 #endif
+
+    /*
+     * Make sure, that the standard FDs exist. [Bug 772288]
+     */
+
+    if (TclOSseek(0, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+	open("/dev/null", O_RDONLY);
+    }
+    if (TclOSseek(1, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+	open("/dev/null", O_WRONLY);
+    }
+    if (TclOSseek(2, (Tcl_SeekOffset) 0, SEEK_CUR) == -1 && errno == EBADF) {
+	open("/dev/null", O_WRONLY);
+    }
 
     /*
      * The code below causes SIGPIPE (broken pipe) errors to
