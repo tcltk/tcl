@@ -21,7 +21,7 @@
 	native stdout handle.  Added a new WriteFile() test to	make sure
 	it's really valid.  This OS bug doesn't affect the shells.  Only
 	-subsystem:windows (aka WinMain) application that dynamically
-	load tclXX.dll
+	load tclXX.dll [BUG: 5971]
 
 2000-07-17  Eric Melski  <ericm@scriptics.com>
 
