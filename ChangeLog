@@ -1,3 +1,11 @@
+2003-12-09  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFile.c: fix to NT file permissions code [Bug 855923]
+	* tests/winFile.test: added tests for NT file permissions - patch
+	and test scripts supplied by Benny.
+	
+	* tests/winFCmd.test: fixed one test for when not running in C:/
+	
 2003-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclBinary.c (DeleteScanNumberCache, ScanNumber): Made
