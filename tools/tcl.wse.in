@@ -24,7 +24,7 @@ item: Global
   Variable Default2=C:\WINDOWS\SYSTEM
   Variable Flags2=00001000
   Variable Name3=_ODBC32_
-  Variable Default3=C:\PROGRA~1\Wise\Runtime\ODBC30
+  Variable Default3=${__WISE__}\Wise\Runtime\ODBC30
   Variable Flags3=00001000
   Variable Name4=_WISE_
   Variable Default4=${__WISE__}

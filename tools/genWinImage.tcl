@@ -5,7 +5,7 @@
 # Copyright (c) 1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: genWinImage.tcl,v 1.1.2.1 1999/03/26 00:23:25 suresh Exp $
+# RCS: @(#) $Id: genWinImage.tcl,v 1.1.2.2 1999/03/26 00:29:20 suresh Exp $
 
 
 # This file is insensitive to the directory from which it is invoked.
@@ -110,6 +110,8 @@ proc genWinImage::generateInstallers {} {
     if {[catch {exec [file native $wise32ProgFilePath] \
 	    /c tcl.wse} errMsg]} {
 	puts stderr "ERROR: $errMsg"
+    } else {
+	puts "\"TCL.EXE\" created."
     }
 
     return
