@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.23 2004/10/08 22:44:49 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.24 2004/10/11 19:58:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2720,7 +2720,7 @@ DictFilterCmd(interp, objc, objv)
  *
  *	This function implements the "dict update" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#323 for the formal specification.
+ *	TIP#212 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2844,7 +2844,7 @@ DictUpdateCmd(interp, objc, objv)
  *
  *	This function implements the "dict with" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#323 for the formal specification.
+ *	TIP#212 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
