@@ -1,5 +1,16 @@
 2002-01-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/basic.test (basic-39.4): Greatly simplified test while
+	still leaving it so that it crashes when run without the fix to
+	the [foreach] implementation.
+	* generic/tclCmdAH.c (Tcl_ForeachObjCmd): Stopped Bug #494348 from
+	happening by not trying to be so clever with cacheing; if nothing
+	untoward is happening anyway, the less efficient technique will
+	only add a few instruction cycles (one function call and a few
+	derefs/assigns per list per iteration, with no change in the
+	number of tests) and if something odd *is* going on, the code is
+	now far more robust.
+
 	* tests/basic.test (basic-39.4): Reproducable script from Bug #494348
 
 2002-01-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
