@@ -6,8 +6,10 @@
 #   MAKE specific syntax is allowed in this file.
 #
 ###############################################################################
-# RCS: @(#) $Id: mkbc32.mif,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+# RCS: @(#) $Id: mkbc32.mif,v 1.1.2.2 2001/09/09 04:20:04 davygrvy Exp $
 ###############################################################################
 
 TOOLSET	    = bc32
 MAKECMD	    = make.exe -s -N $(MAKEFLAGS) -f makefile.bc
+
+SYM	    =

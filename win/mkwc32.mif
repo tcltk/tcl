@@ -6,11 +6,13 @@
 #   WMAKE specific syntax is allowed in this file.
 #
 ###############################################################################
-# RCS: @(#) $Id: mkwc32.mif,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+# RCS: @(#) $Id: mkwc32.mif,v 1.1.2.2 2001/09/09 04:20:04 davygrvy Exp $
 ###############################################################################
 
 TOOLSET	    = wc32
 MAKECMD	    = wmake.exe -h -ms $(__MAKEOPTS__) -f makefile.wc
+
+SYM	    = .SYMBOLIC
 
 !ifdef __LOADDLL__
 !  loaddll $(TOOLSETwc32)\bin\wcc386   wccd386
@@ -20,13 +22,9 @@ MAKECMD	    = wmake.exe -h -ms $(__MAKEOPTS__) -f makefile.wc
 !endif
 
 
-.BEFORE
-	@echo Thank you for choosing Tcl.
-
 .AFTER
-	@color 4
+	@echo.
 	@echo Thank you for choosing Tcl.
-	@color
 
 .ERROR
 	@echo lalala

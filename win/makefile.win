@@ -1,16 +1,22 @@
 #==============================================================================
 #   The Tcl/Tk SuperDuty Win32 Common-Denominator Makefile Multiplexor for:
 #
-#	Microsoft NMAKE  v1.62+
-#	Borland MAKE     v5.2
-#	Watcom WMAKE     v11.0
+#	    Microsoft NMAKE  v1.62+	[MSVC++ v5+]
+#	    Borland MAKE     v5.2	[Borland C++ Builder 5.5]
+#	    Watcom WMAKE     v11.0	[OpenWatcom]
 #
 #   Tool specific syntax is NOT allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: makefile.win,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+# RCS: @(#) $Id: makefile.win,v 1.1.2.2 2001/09/09 04:20:04 davygrvy Exp $
 #==============================================================================
 
+
+#==============================================
+#  Load the user info.
+#==============================================
+
+!include "mkconfig.mif"
 
 #==============================================
 # Within what context are we ?
@@ -37,35 +43,38 @@
 !endif
 
 #==============================================
-#  Load the user info.
-#==============================================
-
-!include "mkconfig.mif"
-
-#==============================================
 #  Targets.
 #==============================================
 
-all: .SYMBOLIC
+all : $(SYM)
 	@echo doing all target
 
-nonthreadedcore:
+nonthreadedcore : $(SYM)
 	$(MAKECMD) core
 
-threadedcore:
+threadedcore : $(SYM)
 	$(MAKECMD) TCL_THREADS=1 core
 
-minicore:
+minicore : $(SYM)
 	$(MAKECMD) TCL_GENERIC_ONLY=1 core
 
-utils:
+staticcore : $(SYM)
+	$(MAKECMD) STATIC_BUILD=1 core
+
+ministaticcore : $(SYM)
+	$(MAKECMD) STATIC_BUILD=1 TCL_GENERIC_ONLY=1 core
+
+ministaticthreadedcore : $(SYM)
+	$(MAKECMD) STATIC_BUILD=1 TCL_GENERIC_ONLY=1 TCL_THREADS=1 core
+
+dlls : $(SYM)
 	$(MAKECMD) dde
 	$(MAKECMD) registry
 
-docs:
+docs : $(SYM)
 	$(MAKECMD) winhelp
 
-cvsupdate:
+cvsupdate : $(SYM)
 	cd ..
 	set CVS_RSH=$(CVS_RSH)
 	$(CVSCMD) update

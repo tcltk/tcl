@@ -1,13 +1,116 @@
-###############################################################################
+#==============================================================================
 #
 #   Make information file for the Microsoft Visual C++ 32-bit tools.
 #
 #
 #   NMAKE specific syntax is allowed in this file.
 #
-###############################################################################
-# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
-###############################################################################
+#==============================================================================
+# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.2 2001/09/09 04:20:04 davygrvy Exp $
+#==============================================================================
 
 TOOLSET	    = vc32
 MAKECMD	    = nmake.exe -nologo /$(MAKEFLAGS) -f makefile.vc
+
+SYM	    =
+
+rc32	    = rc
+cc32	    = cl
+link32	    = link
+lib32	    = lib
+cvtres32    = cvtres
+
+# Win95 doesn't support "&" on command line
+#MkDest=@for %d in ($(PLATFORM) $(ObjDir)) do $(COMSPEC) /c if not exist %d md %d
+
+
+#==============================================
+# Are the tools in the path already?
+#==============================================
+
+!if !defined(MSVCDIR)
+!if     $(TOOLSETvc32VER) == 5
+vcvars	    = "$(TOOLSETvc32)\vc\bin\vcvars32.bat"
+!elseif $(TOOLSETvc32VER) == 6
+vcvars	    = "$(TOOLSETvc32)\vc98\bin\vcvars32.bat"
+!endif
+
+!if [$(vcvars)] != 0
+!endif
+
+!else
+!message Microsoft Visual C++ tools are in the path.
+!endif
+
+#==============================================
+# Test for compiler features
+#==============================================
+
+!if [ cl -nologo -c -ZI -Zs -TC nul 2>&1 | find /c "D4002" > nul ] != 0
+!message compiler has edit and continue
+!else
+!message compiler doesn't have edit and continue
+!endif
+
+!if [ cl -nologo -c -Ox -Zs -TC nul 2>&1 | find /c "D4002" > nul ] != 0
+!message compiler has optimizations
+!else
+!message compiler doesn't have optimizations
+!endif
+
+#==============================================
+# a bug fix needed for VC++ 6.0's nmake tool.
+#
+# Reset the version *string* back to the integer
+# it's supposed to be.  More entries will have
+# to be made here for all subsiquent nmake
+# releases until Microsoft fixes it.
+#
+# Please log your displeasure with their product
+# by sending an email to blackhole@microsoft.com
+#
+_NMAKE_VER  = $(_NMAKE_VER:6.00.8168.0=600)
+#==============================================
+
+
+#clean:
+# $(MkDest)
+#!if "$(OS)" == "Windows_NT"
+# del /q $(ObjDir)\*.obj \
+#        $(ObjDir)\*.out \
+#        $(ObjDir)\*.h   \
+#        $(ObjDir)\*.dbg \
+#        $(ObjDir)\*.ocx \
+#        $(ObjDir)\*.log \
+#        $(ObjDir)\*.lib \
+#        $(ObjDir)\*.exe \
+#        $(ObjDir)\*.dll \
+#        $(ObjDir)\*.map \
+#        $(ObjDir)\*.res \
+#        $(ObjDir)\*.rc  \
+#        $(ObjDir)\*.bin \
+#        $(ObjDir)\*.lst \
+#        $(ObjDir)\*.blt \
+#        $(ObjDir)\*.hlp \
+#        $(ObjDir)\*.srl \
+#        $(ObjDir)\*.exp >NUL 2>NUL
+#!else  # Win95 doesn't support "2>" on command line, multiple files on a Del command, or /q
+# erase  $(ObjDir)\*.obj >NUL
+# erase  $(ObjDir)\*.out >NUL
+# erase  $(ObjDir)\*.h   >NUL
+# erase  $(ObjDir)\*.dbg >NUL
+# erase  $(ObjDir)\*.ocx >NUL
+# erase  $(ObjDir)\*.log >NUL
+# erase  $(ObjDir)\*.lib >NUL
+# erase  $(ObjDir)\*.exe >NUL
+# erase  $(ObjDir)\*.dll >NUL
+# erase  $(ObjDir)\*.map >NUL
+# erase  $(ObjDir)\*.res >NUL
+# erase  $(ObjDir)\*.rc  >NUL
+# erase  $(ObjDir)\*.bin >NUL
+# erase  $(ObjDir)\*.lst >NUL
+# erase  $(ObjDir)\*.blt >NUL
+# erase  $(ObjDir)\*.hlp >NUL
+# erase  $(ObjDir)\*.srl >NUL
+# erase  $(ObjDir)\*.exp >NUL
+#!endif  # OS == Windows_NT
