@@ -3,10 +3,15 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.73 2003/04/14 02:36:58 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.74 2003/04/18 20:02:27 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
+
+# The following define is needed when building with Cygwin since newer
+# versions of autoconf incorrectly set SHELL to /bin/bash instead of
+# /bin/sh. The bash shell seems to suffer from some strange failures.
+SHELL=/bin/sh
 
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
