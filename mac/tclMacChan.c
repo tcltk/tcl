@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.18 2002/10/09 11:54:16 das Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.19 2002/11/07 02:13:36 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -425,7 +425,7 @@ StdIOClose(
      */
 
     fd = (int) ((FileState*)instanceData)->fileRef;
-    if (!TclInExit()) {
+    if (!TclInThreadExit()) {
 	if (fd == 0) {
 	    tsdPtr->stdinChannel = NULL;
 	} else if (fd == 1) {

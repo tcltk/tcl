@@ -1,5 +1,21 @@
 2002-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclEvent.c (TclInExit, TclInThreadExit):
+	Split out functionality of TclInExit to make it
+	clear which one should be called in each situation.
+	* generic/tclInt.decls: Declare TclInThreadExit.
+	* generic/tclIntDecls.h: Regen.
+	* generic/tclStubInit.c: Regen.
+	* mac/tclMacChan.c (StdIOClose):
+	* unix/tclUnixChan.c (FileCloseProc):
+	* win/tclWinChan.c (FileCloseProc):
+	* win/tclWinConsole.c (ConsoleCloseProc):
+	* win/tclWinPipe.c (TclpCloseFile):
+	* win/tclWinSerial.c (SerialCloseProc): Invoke the
+	new TclInThreadExit method instead of TclInExit.
+
+2002-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/configure: Regen.
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Generate a fatal
 	configure error if no ar program can be found on the
