@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.14 2004/08/02 20:55:36 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.15 2004/09/14 17:45:36 msofer Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -85,17 +85,17 @@ slave interpreters, and to share or transfer
 channels between interpreters.  It can have any of several forms, depending
 on the \fIoption\fR argument:
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcCmd\fR
+\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcToken\fR
 Returns a Tcl list whose elements are the \fItargetCmd\fR and
-\fIarg\fRs associated with the alias named \fIsrcCmd\fR
-(all of these are the values specified when the alias was
-created; it is possible that the actual source command in the
-slave is different from \fIsrcCmd\fR if it was renamed).
+\fIarg\fRs associated with the alias represented by \fIsrcToken\fR
+(this is the value returned when the alias was
+created; it is possible that the name of the source command in the
+slave is different from \fIsrcToken\fR).
 .TP
-\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcCmd\fR \fB{}\fR
-Deletes the alias for \fIsrcCmd\fR in the slave interpreter identified by
+\fBinterp\fR \fBalias\fR \fIsrcPath\fR \fIsrcToken\fR \fB{}\fR
+Deletes the alias for \fIsrcToken\fR in the slave interpreter identified by
 \fIsrcPath\fR.
-\fIsrcCmd\fR refers to the name under which the alias
+\fIsrcToken\fR refers to the value returned when the alias
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
@@ -121,11 +121,17 @@ already exist; it is not created by this command.
 The alias arranges for the given target command to be invoked
 in the target interpreter whenever the given source command is
 invoked in the source interpreter.  See ALIAS INVOCATION below for
-more details.
+more details. 
+The command returns a token that uniquely identifies the command created
+\fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
+does not have to be equal to \fIsrcCmd\fR.
 .TP
 \fBinterp\fR \fBaliases \fR?\fIpath\fR?
-This command returns a Tcl list of the names of all the source commands for
-aliases defined in the interpreter identified by \fIpath\fR.
+This command returns a Tcl list of the tokens of all the source commands for
+aliases defined in the interpreter identified by \fIpath\fR. The tokens
+correspond to the values returned when 
+the aliases were created (which may not be the same 
+as the current names of the commands).
 .TP
 \fBinterp\fR \fBcreate \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
 Creates a slave interpreter identified by \fIpath\fR and a new command,
@@ -296,22 +302,21 @@ and the \fIarg\fRs determine the exact behavior of the command.
 The valid forms of this command are:
 .TP
 \fIslave \fBaliases\fR
-Returns a Tcl list whose elements are the names of all the
-aliases in \fIslave\fR.  The names returned are the \fIsrcCmd\fR
-values used when the aliases were created (which may not be the same
-as the current names of the commands, if they have been
-renamed).
+Returns a Tcl list whose elements are the tokens of all the
+aliases in \fIslave\fR.  The tokens correspond to the values returned when
+the aliases were created (which may not be the same 
+as the current names of the commands).
 .TP
-\fIslave \fBalias \fIsrcCmd\fR
+\fIslave \fBalias \fIsrcToken\fR
 Returns a Tcl list whose elements are the \fItargetCmd\fR and
-\fIarg\fRs associated with the alias named \fIsrcCmd\fR
-(all of these are the values specified when the alias was
+\fIarg\fRs associated with the alias represented by \fIsrcToken\fR
+(this is the value returned when the alias was
 created; it is possible that the actual source command in the
-slave is different from \fIsrcCmd\fR if it was renamed).
+slave is different from \fIsrcToken\fR).
 .TP
-\fIslave \fBalias \fIsrcCmd \fB{}\fR
-Deletes the alias for \fIsrcCmd\fR in the slave interpreter.
-\fIsrcCmd\fR refers to the name under which the alias
+\fIslave \fBalias \fIsrcToken \fB{}\fR
+Deletes the alias for \fIsrcToken\fR in the slave interpreter.
+\fIsrcToken\fR refers to the value returned when the alias
 was created;  if the source command has been renamed, the renamed
 command will be deleted.
 .TP
@@ -322,6 +327,9 @@ The \fIarg\fR arguments will be passed to \fItargetCmd\fR as additional
 arguments, prepended before any arguments passed in the invocation of
 \fIsrcCmd\fR.
 See ALIAS INVOCATION below for details.
+The command returns a token that uniquely identifies the command created
+\fIsrcCmd\fR, even if the command is renamed afterwards. The token may but
+does not have to be equal to \fIsrcCmd\fR.
 .TP
 \fIslave \fBeval \fIarg \fR?\fIarg ..\fR?
 This command concatenates all of the \fIarg\fR arguments in
