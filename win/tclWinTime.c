@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.7 2000/12/10 03:25:38 hobbs Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.8 2001/09/06 11:48:44 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -307,12 +307,15 @@ TclpGetTime(timePtr)
 				/* Current estimated time, expressed
 				 * as 100-ns ticks since the Windows epoch */
 
-	static const LARGE_INTEGER posixEpoch = { 0xD53E8000, 0x019DB1DE };
+	static LARGE_INTEGER posixEpoch;
 				/* Posix epoch expressed as 100-ns ticks
 				 * since the windows epoch */
 
 	LONGLONG usecSincePosixEpoch;
 				/* Current microseconds since Posix epoch */
+
+	posixEpoch.LowPart = 0xD53E8000;
+	posixEpoch.HighPart = 0x019DB1DE;
 
 	EnterCriticalSection( &timeInfo.cs );
 
