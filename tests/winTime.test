@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winTime.test,v 1.9 2003/04/12 19:08:55 kennykb Exp $
+# RCS: @(#) $Id: winTime.test,v 1.10 2004/06/23 15:36:59 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -22,13 +22,13 @@ testConstraint testwinclock [llength [info commands testwinclock]]
 # The next two tests will crash on Windows if the check for negative
 # clock values is not done properly.
 
-test winTime-1.1 {TclpGetDate} {pcOnly} {
+test winTime-1.1 {TclpGetDate} {win} {
     set ::env(TZ) JST-9
     set result [clock format -1 -format %Y]
     unset ::env(TZ)
     set result
 } {1970}
-test winTime-1.2 {TclpGetDate} {pcOnly} {
+test winTime-1.2 {TclpGetDate} {win} {
     set ::env(TZ) PST8
     set result [clock format 1 -format %Y]
     unset ::env(TZ)

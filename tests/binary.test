@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.17 2004/05/20 21:04:04 dkf Exp $
+# RCS: @(#) $Id: binary.test,v 1.18 2004/06/23 15:36:55 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1388,7 +1388,7 @@ test binary-40.1 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
 } {1 -NaN}
-test binary-40.3 {ScanNumber: floating point overflow} {littleEndian pcOnly} {
+test binary-40.3 {ScanNumber: floating point overflow} {littleEndian win} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff f1 arg1]
     if {[string equal $arg1 -1.\#QNAN] || [string equal $arg1 -NAN]} {
@@ -1401,7 +1401,7 @@ test binary-40.4 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
 } {1 -NaN}
-test binary-40.6 {ScanNumber: floating point overflow} {littleEndian pcOnly} {
+test binary-40.6 {ScanNumber: floating point overflow} {littleEndian win} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1]
     if {[string equal $arg1 -1.\#QNAN] || [string equal $arg1 -NAN]} {
@@ -1695,7 +1695,7 @@ test binary-51.11 {Tcl_BinaryObjCmd: format} {} {
 test binary-51.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable bigEndian} {
     binary format Q NaN
 } \x7f\xff\xff\xff\xff\xff\xff\xff
-test binary-51.13 {Tcl_BinaryObjCmd: float overflow} {nonPortable macOnly} {
+test binary-51.13 {Tcl_BinaryObjCmd: float overflow} {nonPortable mac} {
     binary format Q NaN
 } \x7f\xf8\x02\xa0\x00\x00\x00\x00
 test binary-51.14 {Tcl_BinaryObjCmd: format} {

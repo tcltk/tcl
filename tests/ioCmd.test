@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.20 2004/03/17 18:14:18 das Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.21 2004/06/23 15:36:57 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -311,14 +311,14 @@ test iocmd-8.17 {fconfigure command / tcp channel} {nonPortable} {
 	regsub -all {can([^:])+: } $r {} r;
 	set r
 } 1
-test iocmd-8.18 {fconfigure command / unix tty channel} {nonPortable unixOnly} {
+test iocmd-8.18 {fconfigure command / unix tty channel} {nonPortable unix} {
 	# might fail if /dev/ttya is unavailable
 	set tty [open /dev/ttya]
 	set r [list [catch {fconfigure $tty -blah blih} msg] $msg];
 	close $tty;
 	set r;
 } {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, or -mode}}
-test iocmd-8.19 {fconfigure command / win tty channel} {nonPortable pcOnly} {
+test iocmd-8.19 {fconfigure command / win tty channel} {nonPortable win} {
 	# might fail if com1 is unavailable
 	set tty [open com1]
 	set r [list [catch {fconfigure $tty -blah blih} msg] $msg];
@@ -394,7 +394,7 @@ test iocmd-12.3 {POSIX open access modes: WRONLY} -match regexp -body {
 #
 # Test 13.4 relies on assigning the same channel name twice.
 #
-test iocmd-12.4 {POSIX open access modes: WRONLY} {unixOnly} {
+test iocmd-12.4 {POSIX open access modes: WRONLY} {unix} {
     file delete $path(test3)
     set f [open $path(test3) w]
     fconfigure $f -eofchar {}

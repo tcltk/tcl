@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.18 2004/05/19 20:15:31 dkf Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.19 2004/06/23 15:36:56 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -915,7 +915,7 @@ test expr-old-36.6 {ExprLooksLikeInt procedure} {
     set x {	-22}
     list [catch {expr {$x+1}} msg] $msg
 } {0 -21}
-test expr-old-36.7 {ExprLooksLikeInt procedure} {nonPortable unixOnly} {
+test expr-old-36.7 {ExprLooksLikeInt procedure} {nonPortable unix} {
     list [catch {expr nan} msg] $msg
 } {1 {domain error: argument not in valid range}}
 test expr-old-36.8 {ExprLooksLikeInt procedure} {
@@ -924,7 +924,7 @@ test expr-old-36.8 {ExprLooksLikeInt procedure} {
 test expr-old-36.9 {ExprLooksLikeInt procedure} {
     list [catch {expr 24E1} msg] $msg
 } {0 240.0}
-test expr-old-36.10 {ExprLooksLikeInt procedure} {nonPortable unixOnly} {
+test expr-old-36.10 {ExprLooksLikeInt procedure} {nonPortable unix} {
     list [catch {expr 78e} msg] $msg
 } {1 {syntax error in expression "78e"}}
 

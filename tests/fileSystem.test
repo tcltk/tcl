@@ -107,7 +107,7 @@ test filesystem-1.1 {link normalisation} {hasLinks} {
    string equal [file normalize dir.dir] [file normalize dir.link]
 } {0}
 
-test filesystem-1.2 {link normalisation} {hasLinks unixOnly} {
+test filesystem-1.2 {link normalisation} {hasLinks unix} {
     testPathEqual [file normalize [file join gorp.file foo]] \
      [file normalize [file join link.file foo]]
 } {1}
@@ -132,7 +132,7 @@ test filesystem-1.6 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.file]]
 } {0}
 
-test filesystem-1.7 {link normalisation} {hasLinks unixOnly} {
+test filesystem-1.7 {link normalisation} {hasLinks unix} {
     testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
      [file normalize [file join dir.dir inside.file foo]]
 } {1}
@@ -142,14 +142,14 @@ test filesystem-1.8 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
-test filesystem-1.9 {link normalisation} {unixOnly hasLinks} {
+test filesystem-1.9 {link normalisation} {unix hasLinks} {
     file delete -force dir.link
     file link dir.link [file nativename dir.dir]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
 } {1}
 
-test filesystem-1.10 {link normalisation: double link} {unixOnly hasLinks} {
+test filesystem-1.10 {link normalisation: double link} {unix hasLinks} {
     file link dir2.link dir.link
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
@@ -157,7 +157,7 @@ test filesystem-1.10 {link normalisation: double link} {unixOnly hasLinks} {
 
 makeDirectory dir2.file
 
-test filesystem-1.11 {link normalisation: double link, back in tree} {unixOnly hasLinks} {
+test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
     file link [file join dir2.file dir2.link] [file join .. dir2.link]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
@@ -173,65 +173,65 @@ test filesystem-1.12 {file new native path} {} {
     expr 1
 } {1}
 
-test filesystem-1.13 {file normalisation} {winOnly} {
+test filesystem-1.13 {file normalisation} {win} {
     # This used to be broken
     file normalize C:/thislongnamedoesntexist
 } {C:/thislongnamedoesntexist}
 
-test filesystem-1.14 {file normalisation} {winOnly} {
+test filesystem-1.14 {file normalisation} {win} {
     # This used to be broken
     file normalize c:/
 } {C:/}
 
-test filesystem-1.15 {file normalisation} {winOnly} {
+test filesystem-1.15 {file normalisation} {win} {
     file normalize c:/../
 } {C:/}
 
-test filesystem-1.16 {file normalisation} {winOnly} {
+test filesystem-1.16 {file normalisation} {win} {
     file normalize c:/.
 } {C:/}
 
-test filesystem-1.17 {file normalisation} {winOnly} {
+test filesystem-1.17 {file normalisation} {win} {
     file normalize c:/..
 } {C:/}
 
-test filesystem-1.17.1 {file normalisation} {winOnly} {
+test filesystem-1.17.1 {file normalisation} {win} {
     file normalize c:\\..
 } {C:/}
 
-test filesystem-1.18 {file normalisation} {winOnly} {
+test filesystem-1.18 {file normalisation} {win} {
     file normalize c:/./
 } {C:/}
 
-test filesystem-1.19 {file normalisation} {winOnly unusedDrive} {
+test filesystem-1.19 {file normalisation} {win unusedDrive} {
     file normalize ${drive}:/./../../..
 } "${drive}:/"
 
-test filesystem-1.20 {file normalisation} {winOnly} {
+test filesystem-1.20 {file normalisation} {win} {
     file normalize //name/foo/../
 } {//name/foo}
 
-test filesystem-1.21 {file normalisation} {winOnly} {
+test filesystem-1.21 {file normalisation} {win} {
     file normalize C:///foo/./
 } {C:/foo}
 
-test filesystem-1.22 {file normalisation} {winOnly} {
+test filesystem-1.22 {file normalisation} {win} {
     file normalize //name/foo/.
 } {//name/foo}
 
-test filesystem-1.23 {file normalisation} {winOnly} {
+test filesystem-1.23 {file normalisation} {win} {
     file normalize c:/./foo
 } {C:/foo}
 
-test filesystem-1.24 {file normalisation} {winOnly unusedDrive} {
+test filesystem-1.24 {file normalisation} {win unusedDrive} {
     file normalize ${drive}:/./../../../a
 } "${drive}:/a"
 
-test filesystem-1.25 {file normalisation} {winOnly unusedDrive} {
+test filesystem-1.25 {file normalisation} {win unusedDrive} {
     file normalize ${drive}:/./.././../../a
 } "${drive}:/a"
 
-test filesystem-1.25.1 {file normalisation} {winOnly unusedDrive} {
+test filesystem-1.25.1 {file normalisation} {win unusedDrive} {
     file normalize ${drive}:/./.././..\\..\\a\\bb
 } "${drive}:/a/bb"
 
@@ -377,7 +377,7 @@ test filesystem-1.37 {file normalisation with '/./'} {
 } {ok}
 
 test filesystem-1.38 {file normalisation with volume relative} \
-  {winOnly moreThanOneDrive} {
+  {win moreThanOneDrive} {
     set path "[string range [lindex $drives 0] 0 1]foo"
     set dir [pwd]
     cd [lindex $drives 1]
@@ -386,7 +386,7 @@ test filesystem-1.38 {file normalisation with volume relative} \
     set res
 } "[lindex $drives 0]foo"
 
-test filesystem-1.39 {file normalisation with volume relative} {winOnly} {
+test filesystem-1.39 {file normalisation with volume relative} {win} {
     set drv C:/
     set dir [lindex [glob -type d -dir $drv *] 0]
     set old [pwd]
@@ -411,7 +411,7 @@ test filesystem-1.40 {file normalisation with repeated separators} {
     }
 } {ok}
 
-test filesystem-1.41 {file normalisation with repeated separators} {winOnly} {
+test filesystem-1.41 {file normalisation with repeated separators} {win} {
     set a [file norm foo\\\\\\bar]
     set b [file norm foo/bar]
     
@@ -422,7 +422,7 @@ test filesystem-1.41 {file normalisation with repeated separators} {winOnly} {
     }
 } {ok}
 
-test filesystem-2.0 {new native path} {unixOnly} {
+test filesystem-2.0 {new native path} {unix} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
        catch {file readlink $f}
    }
@@ -805,7 +805,7 @@ test filesystem-7.4 {cross-filesystem file copy with -force} \
 } {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
 
 test filesystem-7.5 {cross-filesystem file copy with -force} \
-  {testsimplefilesystem unixOnly} {
+  {testsimplefilesystem unix} {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
     set fout [open [file join simplefile] w]
@@ -860,7 +860,7 @@ test filesystem-7.6 {cross-filesystem dir copy with -force} \
 } {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
 
 test filesystem-7.7 {cross-filesystem dir copy with -force} \
-  {testsimplefilesystem unixOnly} {
+  {testsimplefilesystem unix} {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
     file delete -force simpledir
