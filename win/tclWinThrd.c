@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.9 2000/05/02 22:02:38 kupries Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.10 2000/05/09 19:13:55 kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -260,6 +260,7 @@ TclpInitLock()
 	 * more threads that create interpreters in parallel.
 	 */
 	init = 1;
+	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
     }
@@ -322,6 +323,7 @@ TclpMasterLock()
 	 * more threads that create interpreters in parallel.
 	 */
 	init = 1;
+	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
     }

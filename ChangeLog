@@ -1,3 +1,9 @@
+2000-05-09  Andreas Kupries  <a.kupries@westend.com>
+	operating as proxy for David Gravereaux <davygrvy@pobox.com>
+	
+	* win/tclWinThrd.c (TclpInitLock, TclpMasterLock): Added missing
+	  initialization of joinLock.
+
 2000-05-08  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/expr.n:
