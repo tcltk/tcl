@@ -1,9 +1,14 @@
 2004-03-31  Don Porter	<dgp@users.sourceforge.net>
 
-	* library/msgcat/msgcat.tcl ([mcset]):	Corrected [mcset] to be able
-	* library/msgcat/pkgIndex.tcl:	to successfully set a translation to
+	* doc/msgcat.n: Clarified message catalog file encodings. [Bug 811457]
+	* library/msgcat/msgcat.tcl ([mcset], [ConvertLocale], [Init]):
+	Corrected [mcset] to be able to successfully set a translation to
 	the empty string.  [mcset $loc $src {}] was incorrectly set the
-	$loc translation of $src back to $src.  Bump to msgcat 1.3.2.
+	$loc translation of $src back to $src.  Also changed [ConvertLocale]
+	to minimally require a non-empty "language" part in the locale value.
+	If not, an error raised prompts [Init] to keep looking for a valid
+	locale value, or ultimately fall back on the "C" locale. [Bug 811461].
+	* library/msgcat/pkgIndex.tcl:	Bump to msgcat 1.3.2.
 
 2004-03-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
