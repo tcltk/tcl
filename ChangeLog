@@ -1,3 +1,9 @@
+2001-12-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/tcl.m4 (SC_PATH_TCLCONFIG, SC_PATH_TKCONFIG):
+	Search for config file using exec_prefix instead of
+	prefix when no --with-tcl or --with-tk argument is used. [Bug 492418]
+
 2001-12-21  Daniel Steffen <das@users.sourceforge.net>
 
 	* unix/tcl.m4: fixed incorrect SHLIB_LD_LIBS
