@@ -1,3 +1,11 @@
+2004-07-23  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/SetVar.3:
+	* generic/tclTest.c (TestseterrorcodeCmd):
+	* generic/tclVar.c (TclPtrSetVar):
+	* tests/result.test (result-4.*, result-5.*): [Bug 1008314]
+	detected and fixed by dgp.
+
 2004-08-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/msgcat/msgcat.tcl:	Added checks to prevent [mclocale]
