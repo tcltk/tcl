@@ -2642,6 +2642,42 @@ AC_DEFUN(SC_TCL_CFG_ENCODING, [
 	    [What encoding should be used for embedded configuration info?])
     fi])
 
+#--------------------------------------------------------------------
+# SC_TCL_CHECK_BROKEN_FUNC
+#
+#	Declare the encoding to use for embedded configuration information.
+#
+# Arguments:
+#	funcName - function to test for
+#	advancedTest - the advanced test to run if the function is present
+#
+# Results:
+#	Might cause compatability versions of the function to be used.
+#	Might affect the following vars:
+#		USE_COMPAT	(implicit)
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_CHECK_BROKEN_FUNC,[
+    AC_CHECK_FUNC($1, tcl_ok=1, tcl_ok=0)
+    if test ["$tcl_ok"] = 1; then
+	AC_MSG_CHECKING([proper ]$1[ implementation])
+	AC_CACHE_VAL([tcl_cv_]$1[_unbroken],
+	    AC_TRY_RUN([[int main() {]$2[}]],[tcl_cv_]$1[_unbroken]=ok,
+		[tcl_cv_]$1[_unbroken]=broken,[tcl_cv_]$1[_unbroken]=unknown))
+	AC_MSG_RESULT([$tcl_cv_]$1[_unbroken])
+	if test ["$tcl_cv_]$1[_unbroken"] = "ok"; then
+	    tcl_ok=1
+	else
+	    tcl_ok=0
+	fi
+    fi
+    if test ["$tcl_ok"] = 1; then
+	AC_LIBOBJ($1)
+	USE_COMPAT=1
+    fi])
+
+
 # Local Variables:
 # mode: autoconf
 # End:
