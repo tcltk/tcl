@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.31 2001/09/20 01:00:10 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.31.2.1 2001/09/25 10:24:07 dkf Exp $
  */
 
 #define TCL_TEST
@@ -284,13 +284,13 @@ static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
 static int		TeststaticpkgCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		PretendTclpStat _ANSI_ARGS_((CONST char *path,
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 static int		TestStatProc1 _ANSI_ARGS_((CONST char *path,
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 static int		TestStatProc2 _ANSI_ARGS_((CONST char *path,
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 static int		TestStatProc3 _ANSI_ARGS_((CONST char *path,
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 static int		TeststatprocCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TesttranslatefilenameCmd _ANSI_ARGS_((ClientData dummy,
@@ -4085,7 +4085,7 @@ TeststatprocCmd (dummy, interp, argc, argv)
 
 static int PretendTclpStat(path, buf)
     CONST char *path;
-    struct stat *buf;
+    Tcl_StatBuf *buf;
 {
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
@@ -4103,7 +4103,7 @@ static int PretendTclpStat(path, buf)
 static int
 TestStatProc1(path, buf)
     CONST char *path;
-    struct stat *buf;
+    Tcl_StatBuf *buf;
 {
     buf->st_size = 1234;
     return ((strstr(path, "testStat1%.fil") == NULL) ? -1 : 0);
@@ -4113,7 +4113,7 @@ TestStatProc1(path, buf)
 static int
 TestStatProc2(path, buf)
     CONST char *path;
-    struct stat *buf;
+    Tcl_StatBuf *buf;
 {
     buf->st_size = 2345;
     return ((strstr(path, "testStat2%.fil") == NULL) ? -1 : 0);
@@ -4123,7 +4123,7 @@ TestStatProc2(path, buf)
 static int
 TestStatProc3(path, buf)
     CONST char *path;
-    struct stat *buf;
+    Tcl_StatBuf *buf;
 {
     buf->st_size = 3456;
     return ((strstr(path, "testStat3%.fil") == NULL) ? -1 : 0);
@@ -5340,7 +5340,7 @@ TestReport(cmd, path, arg2)
 static int
 TestReportStat(path, buf)
     Tcl_Obj *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     TestReport("stat",path, NULL);
     return Tcl_FSStat(TestReportGetNativePath(path),buf);
@@ -5348,7 +5348,7 @@ TestReportStat(path, buf)
 static int
 TestReportLstat(path, buf)
     Tcl_Obj *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     TestReport("lstat",path, NULL);
     return Tcl_FSLstat(TestReportGetNativePath(path),buf);

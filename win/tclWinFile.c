@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.15 2001/09/10 17:17:41 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.15.4.1 2001/09/25 10:24:07 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -31,7 +31,7 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
 static int NativeAccess(TCHAR *path, int mode);
-static int NativeStat(TCHAR *path, struct stat *statPtr);
+static int NativeStat(TCHAR *path, Tcl_StatBuf *statPtr);
 static int NativeIsExec(TCHAR *path);
 
 
@@ -338,7 +338,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		typeOk = 0;
 	    }
 	} else {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (attr & FILE_ATTRIBUTE_HIDDEN) {
 		/* If invisible */
@@ -828,7 +828,7 @@ TclpGetCwd(interp, bufferPtr)
 int 
 TclpObjStat(pathPtr, statPtr)
     Tcl_Obj *pathPtr;          /* Path of file to stat */
-    struct stat *statPtr;      /* Filled with results of stat call. */
+    Tcl_StatBuf *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_Obj *transPtr;
     /*
@@ -879,7 +879,7 @@ TclpObjStat(pathPtr, statPtr)
 static int 
 NativeStat(nativePath, statPtr)
     TCHAR *nativePath;          /* Path of file to stat */
-    struct stat *statPtr;      /* Filled with results of stat call. */
+    Tcl_StatBuf *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_DString ds;
     WIN32_FIND_DATAT data;
@@ -1143,7 +1143,7 @@ TclpObjAccess(pathPtr, mode)
 int 
 TclpObjLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;
-    struct stat *buf; 
+    Tcl_StatBuf *buf; 
 {
     return TclpObjStat(pathPtr,buf);
 }

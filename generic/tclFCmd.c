@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.13 2001/09/08 14:05:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.1 2001/09/25 10:24:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ FileCopyRename(interp, objc, objv, copyFlag)
 				 * rename them. */
 {
     int i, result, force;
-    struct stat statBuf; 
+    Tcl_StatBuf statBuf; 
     Tcl_Obj *target;
 
     i = FileForceOption(interp, objc - 2, objv + 2, &force);
@@ -229,7 +229,7 @@ TclFileMakeDirsCmd(interp, objc, objv)
     int result, i, j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
 
     errfile = NULL;
 
@@ -333,7 +333,7 @@ TclFileDeleteCmd(interp, objc, objv)
     result = TCL_OK;
 
     for ( ; i < objc; i++) {
-	struct stat statBuf;
+	Tcl_StatBuf statBuf;
 
 	errfile = objv[i];
 	if (Tcl_FSConvertToPathType(interp, objv[i]) != TCL_OK) {
@@ -448,7 +448,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 {
     int result;
     Tcl_Obj *errfile, *errorBuffer;
-    struct stat sourceStatBuf, targetStatBuf;
+    Tcl_StatBuf sourceStatBuf, targetStatBuf;
 
     if (Tcl_FSConvertToPathType(interp, source) != TCL_OK) {
 	return TCL_ERROR;

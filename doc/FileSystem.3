@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.6 2001/09/08 14:05:09 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.6.6.1 2001/09/25 10:24:06 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo \- procedures to interact with any filesystem
+Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo, Tcl_AllocStatBuf \- procedures to interact with any filesystem
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -125,6 +125,9 @@ char*
 .sp
 Tcl_Obj*
 \fBTcl_FSFileSystemInfo\fR(\fIpathPtr\fR)
+.sp
+Tcl_StatBuf*
+\fBTcl_AllocStatBuf\fR()
 .SH ARGUMENTS
 .AS Tcl_Filesystem *fsPtr in
 .AP Tcl_Filesystem *fsPtr in
@@ -544,6 +547,12 @@ further categorization of files.
 A valid list object is returned, unless the path object is not
 recognized, when NULL will be returned.
 .PP
+\fBTcl_AllocStatBuf\fR allocates a \fITcl_StatBuf\fR on the system
+heap (which may be deallocated by being passed to \fBckfree\fR.)  This
+allows extensions to invoke \fBTcl_FSStat\fR and \fBTcl_FSLStat\fR
+without being dependent on the size of the buffer.  That in turn
+depends on the flags used to build Tcl.
+.PP
 
 .SH TCL_FILESYSTEM
 .PP
@@ -797,7 +806,7 @@ See the documentation of '
 .CS
 typedef int Tcl_FSStatProc(
 	Tcl_Obj *\fIpathPtr\fR,
-	struct stat *\fIstatPtr\fR);
+	Tcl_StatBuf *\fIstatPtr\fR);
 .CE
 .PP
 The \fBTcl_FSStatProc\fR fills the stat structure \fIstatPtr\fR with
@@ -1071,7 +1080,7 @@ it need only be implemented if a filesystem can differentiate between
 .CS
 typedef int Tcl_FSLstatProc(
 	Tcl_Obj *\fIpathPtr\fR, 
-	struct stat *\fIstatPtr\fR);
+	Tcl_StatBuf *\fIstatPtr\fR);
 .CE
 .PP
 The behavior of this function is very similar to that of the 
@@ -1221,5 +1230,3 @@ directory to the value specified in \fIpathPtr\fR. The function returns
 
 .SH KEYWORDS
 stat access filesystem vfs
-
-

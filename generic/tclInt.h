@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64 2001/09/08 14:05:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.1 2001/09/25 10:24:07 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -752,7 +752,7 @@ EXTERN void		TclHandleRelease _ANSI_ARGS_((TclHandle handle));
 typedef struct {
     char *command;		/* String containing previously-executed
 				 * command. */
-    int bytesAvl;		/* Total # of bytes available at *event (not
+    Tcl_Length bytesAvl;	/* Total # of bytes available at *event (not
 				 * all are necessarily in use now). */
 } HistoryEvent;
 
@@ -764,11 +764,11 @@ typedef struct {
  */
 
 typedef struct HistoryRev {
-    int firstIndex;		/* Index of the first byte to replace in
+    Tcl_Length firstIndex;	/* Index of the first byte to replace in
 				 * current history event. */
-    int lastIndex;		/* Index of last byte to replace in
+    Tcl_Length lastIndex;	/* Index of last byte to replace in
 				 * current history event. */
-    int newSize;		/* Number of bytes in newBytes. */
+    Tcl_Length newSize;		/* Number of bytes in newBytes. */
     char *newBytes;		/* Replacement for the range given by
 				 * firstIndex and lastIndex (malloced). */
     struct HistoryRev *nextPtr;	/* Next in chain of revisions to apply, or
@@ -1185,7 +1185,7 @@ typedef struct Interp {
 
     /*
      * Information related to procedures and variables. See tclProc.c
-     * and tclvar.c for usage.
+     * and tclVar.c for usage.
      */
 
     int numLevels;		/* Keeps track of how many nested calls to
@@ -1222,9 +1222,9 @@ typedef struct Interp {
     char *appendResult;		/* Storage space for results generated
 				 * by Tcl_AppendResult.	 Malloc-ed.  NULL
 				 * means not yet allocated. */
-    int appendAvl;		/* Total amount of space available at
+    Tcl_Length appendAvl;	/* Total amount of space available at
 				 * partialResult. */
-    int appendUsed;		/* Number of non-null bytes currently
+    Tcl_Length appendUsed;	/* Number of non-null bytes currently
 				 * stored at partialResult. */
 
     /*
@@ -1524,7 +1524,7 @@ typedef struct TclpTime_t_ *TclpTime_t;
  *----------------------------------------------------------------
  */
 
-typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, struct stat *buf));
+typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, Tcl_StatBuf *buf));
 typedef int (TclAccessProc_) _ANSI_ARGS_((CONST char *path, int mode));
 typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
 	char *fileName, char *modeString,
@@ -1770,8 +1770,8 @@ EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-			    struct stat *buf));
-EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
+			    Tcl_StatBuf *buf));
+EXTERN char *		TclpAlloc _ANSI_ARGS_((Tcl_Length size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
 EXTERN void		TclpExit _ANSI_ARGS_((int status));
@@ -1840,7 +1840,7 @@ EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp, 
 						    Tcl_Obj*pathPtr));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, char *modeString,
 			    int permissions));
@@ -1849,7 +1849,7 @@ EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
 EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
-			    unsigned int size));
+			    Tcl_Length size));
 EXTERN void		TclpReleaseFile _ANSI_ARGS_((TclFile file));
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16 2001/09/20 01:03:08 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.1 2001/09/25 10:24:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -26,10 +26,10 @@ static int		CheckAccess _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int mode));
 static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_FSStatProc *statProc,
-			    struct stat *statPtr));
+			    Tcl_StatBuf *statPtr));
 static char *		GetTypeFromMode _ANSI_ARGS_((int mode));
 static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *varName, struct stat *statPtr));
+			    char *varName, Tcl_StatBuf *statPtr));
 
 /*
  *----------------------------------------------------------------------
@@ -823,7 +823,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 
     switch ((enum options) index) {
     	case FILE_ATIME: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
 	    if ((objc < 3) || (objc > 4)) {
@@ -917,7 +917,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
     	case FILE_ISDIRECTORY: {
 	    int value;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 
 	    if (objc != 3) {
 		goto only3Args;
@@ -931,7 +931,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
     	case FILE_ISFILE: {
 	    int value;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
     	    if (objc != 3) {
     	    	goto only3Args;
@@ -956,7 +956,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
     	case FILE_LSTAT: {
 	    char *varName;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 
     	    if (objc != 4) {
     	    	Tcl_WrongNumArgs(interp, 2, objv, "name varName");
@@ -969,7 +969,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return StoreStatData(interp, varName, &buf);
 	}
 	case FILE_MTIME: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
 	    if ((objc < 3) || (objc > 4)) {
@@ -1044,7 +1044,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FILE_OWNED: {
 	    int value;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (objc != 3) {
 		goto only3Args;
@@ -1164,7 +1164,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
 	case FILE_SIZE: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (objc != 3) {
 		goto only3Args;
@@ -1184,7 +1184,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FILE_STAT: {
 	    char *varName;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (objc != 4) {
 	    	Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
@@ -1253,7 +1253,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
 	case FILE_TYPE: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 
 	    if (objc != 3) {
 	    	goto only3Args;
@@ -1350,7 +1350,7 @@ GetStatBuf(interp, objPtr, statProc, statPtr)
     Tcl_Obj *objPtr;		/* Path name to examine. */
     Tcl_FSStatProc *statProc;	/* Either stat() or lstat() depending on
 				 * desired behavior. */
-    struct stat *statPtr;	/* Filled with info about file obtained by
+    Tcl_StatBuf *statPtr;	/* Filled with info about file obtained by
 				 * calling (*statProc)(). */
 {
     int status;
@@ -1396,7 +1396,7 @@ StoreStatData(interp, varName, statPtr)
     Tcl_Interp *interp;			/* Interpreter for error reports. */
     char *varName;			/* Name of associative array variable
 					 * in which to store stat results. */
-    struct stat *statPtr;		/* Pointer to buffer containing
+    Tcl_StatBuf *statPtr;		/* Pointer to buffer containing
 					 * stat data to store in varName. */
 {
     char string[TCL_INTEGER_SPACE];

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20 2001/09/08 14:05:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.1 2001/09/25 10:24:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -79,7 +79,7 @@ extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
 int
 Tcl_Stat(path, buf)
     CONST char *path;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
@@ -1147,7 +1147,7 @@ Tcl_FSEvalFile(interp, fileName)
 				 * will be performed on this name. */
 {
     int result, length;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
     char *string;
@@ -1331,7 +1331,7 @@ Tcl_PosixError(interp)
 int
 Tcl_FSStat(pathPtr, buf)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     Tcl_Filesystem *fsPtr;
 #ifdef USE_OBSOLETE_FS_HOOKS
@@ -1397,7 +1397,7 @@ Tcl_FSStat(pathPtr, buf)
 int
 Tcl_FSLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
-    struct stat *buf;		/* Filled with results of stat call. */
+    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
 {
     Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
@@ -2170,7 +2170,7 @@ Tcl_FSChdir(pathPtr)
 	    retVal = (*proc)(pathPtr);
 	} else {
 	    /* Fallback on stat-based implementation */
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    /* If the file can be stat'ed and is a directory and
 	     * is readable, then we can chdir. */
 	    if ((Tcl_FSStat(pathPtr, &buf) == 0) 
@@ -3028,7 +3028,7 @@ TclCrossFilesystemCopy(interp, source, target)
 	    /* This is very strange, we checked this above */
 	    Tcl_Close(interp, out);
 	} else {
-	    struct stat sourceStatBuf;
+	    Tcl_StatBuf sourceStatBuf;
 	    struct utimbuf tval;
 	    /* 
 	     * Copy it synchronously.  We might wish to add an

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.31 2001/09/10 17:17:41 andreas_kupries Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.31.4.1 2001/09/25 10:24:07 dkf Exp $
 
 library tcl
 
@@ -274,7 +274,7 @@ declare 67 generic {
 #    int TclpAccess(CONST char *path, int mode)
 #}
 declare 69 generic {
-    char * TclpAlloc(unsigned int size)
+    char * TclpAlloc(Tcl_Length size)
 }
 #declare 70 generic {
 #    int TclpCopyFile(CONST char *source, CONST char *dest)
@@ -314,7 +314,7 @@ declare 78 generic {
 #	    char *modeString, int permissions)
 #}
 declare 81 generic {
-    char * TclpRealloc(char *ptr, unsigned int size)
+    char * TclpRealloc(char *ptr, Tcl_Length size)
 }
 #declare 82 generic {
 #    int TclpRemoveDirectory(CONST char *path, int recursive, \
@@ -368,7 +368,7 @@ declare 94 generic {
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 95 generic {
-#    int TclpStat(CONST char *path, struct stat *buf)
+#    int TclpStat(CONST char *path, Tcl_StatBuf *buf)
 #}
 declare 96 generic {
     int TclRenameCommand(Tcl_Interp *interp, char *oldName, char *newName)
@@ -402,7 +402,7 @@ declare 104 {unix win} {
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 generic {
-#    int TclStat(CONST char *path, struct stat *buf)
+#    int TclStat(CONST char *path, Tcl_StatBuf *buf)
 #}
 declare 106 generic {
     int TclStatDeleteProc(TclStatProc_ *proc)

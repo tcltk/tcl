@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.12.6.1 2001/09/25 10:24:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ TclpFindExecutable(argv0)
 				 * (native). */
 {
     CONST char *name, *p;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     int length;
     Tcl_DString buffer, nameString;
 
@@ -111,13 +111,13 @@ TclpFindExecutable(argv0)
 	name = Tcl_DStringAppend(&buffer, argv0, -1);
 
 	/*
-	 * INTL: The following calls to access() and stat() should not be
+	 * INTL: The following calls to access() and stat64() should not be
 	 * converted to Tclp routines because they need to operate on native
 	 * strings directly.
 	 */
 
-	if ((access(name, X_OK) == 0)		/* INTL: Native. */
-		&& (stat(name, &statBuf) == 0)	/* INTL: Native. */
+	if ((access(name, X_OK) == 0)			/* INTL: Native. */
+		&& (stat64(name, &statBuf) == 0)	/* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
@@ -204,7 +204,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     char *native, *fname, *dirName;
     DIR *d;
     Tcl_DString ds;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     int matchHidden;
     int nativeDirLen;
     int result = TCL_OK;
@@ -257,7 +257,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
     native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
 
-    if ((stat(native, &statBuf) != 0)		/* INTL: UTF-8. */
+    if ((stat64(native, &statBuf) != 0)		/* INTL: UTF-8. */
 	    || !S_ISDIR(statBuf.st_mode)) {
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DStringFree(&ds);
@@ -331,7 +331,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringAppend(&dsOrig, utf, -1);
 	    fname = Tcl_DStringValue(&dsOrig);
 	    if (types != NULL) {
-		struct stat buf;
+		Tcl_StatBuf buf;
 		char *nativeEntry;
 		Tcl_DStringSetLength(&ds, nativeDirLen);
 		Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
@@ -342,13 +342,13 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		 */
 		
 		if (types->perm != 0) {
-		    if (stat(nativeEntry, &buf) != 0) {
+		    if (stat64(nativeEntry, &buf) != 0) {
 			/* 
 			 * Either the file has disappeared between the
-			 * 'readdir' call and the 'stat' call, or
+			 * 'readdir' call and the 'stat64' call, or
 			 * the file is a link to a file which doesn't
 			 * exist (which we could ascertain with
-			 * lstat), or there is some other strange
+			 * lstat64), or there is some other strange
 			 * problem.  In all these cases, we define this
 			 * to mean the file does not match any defined
 			 * permission, and therefore it is not 
@@ -376,8 +376,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		}
 		if (typeOk && (types->type != 0)) {
 		    if (types->perm == 0) {
-			/* We haven't yet done a stat on the file */
-			if (stat(nativeEntry, &buf) != 0) {
+			/* We haven't yet done a stat64 on the file */
+			if (stat64(nativeEntry, &buf) != 0) {
 			    /* Posix error occurred */
 			    typeOk = 0;
 			}
@@ -407,7 +407,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			    typeOk = 0;
 #ifdef S_ISLNK
 			    if (types->type & TCL_GLOB_TYPE_LINK) {
-				if (lstat(nativeEntry, &buf) == 0) {
+				if (lstat64(nativeEntry, &buf) == 0) {
 				    if (S_ISLNK(buf.st_mode)) {
 				        typeOk = 1;
 				    }
@@ -538,13 +538,13 @@ TclpObjChdir(pathPtr)
  *
  * TclpObjLstat --
  *
- *	This function replaces the library version of lstat().
+ *	This function replaces the library version of lstat64().
  *
  * Results:
- *	See lstat() documentation.
+ *	See lstat64() documentation.
  *
  * Side effects:
- *	See lstat() documentation.
+ *	See lstat64() documentation.
  *
  *----------------------------------------------------------------------
  */
@@ -552,13 +552,13 @@ TclpObjChdir(pathPtr)
 int 
 TclpObjLstat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
     char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
-	return lstat(path, bufPtr);
+	return lstat64(path, bufPtr);
     }
 }
 
@@ -670,13 +670,13 @@ TclpReadlink(path, linkPtr)
  *
  * TclpObjStat --
  *
- *	This function replaces the library version of stat().
+ *	This function replaces the library version of stat64().
  *
  * Results:
- *	See stat() documentation.
+ *	See stat64() documentation.
  *
  * Side effects:
- *	See stat() documentation.
+ *	See stat64() documentation.
  *
  *----------------------------------------------------------------------
  */
@@ -684,13 +684,13 @@ TclpReadlink(path, linkPtr)
 int 
 TclpObjStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
     char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
-	return stat(path, bufPtr);
+	return stat64(path, bufPtr);
     }
 }
 

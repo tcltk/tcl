@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.58.2.1 2001/09/24 15:46:50 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.58.2.2 2001/09/25 10:24:06 dkf Exp $
 
 library tcl
 
@@ -1300,7 +1300,7 @@ declare 367 generic {
    int Tcl_Access(CONST char *path, int mode)
 }
 declare 368 generic {
-    int Tcl_Stat(CONST char *path, struct stat *bufPtr)
+    int Tcl_Stat(CONST char *path, Tcl_StatBuf *bufPtr)
 }
 declare 369 generic {
     int Tcl_UtfNcmp(CONST char *s1, CONST char *s2, Tcl_Length n)
@@ -1587,7 +1587,7 @@ declare 448 generic {
     int	Tcl_FSRenameFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
 }
 declare 449 generic {
-    int	Tcl_FSLstat(Tcl_Obj *pathPtr, struct stat *buf)
+    int	Tcl_FSLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
 }
 declare 450 generic {
     int Tcl_FSUtime(Tcl_Obj *pathPtr, struct utimbuf *tval)
@@ -1606,7 +1606,7 @@ declare 453 generic {
     char** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
 }
 declare 454 generic {
-    int Tcl_FSStat(Tcl_Obj *pathPtr, struct stat *buf)
+    int Tcl_FSStat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
 }
 declare 455 generic {
     int Tcl_FSAccess(Tcl_Obj *pathPtr, int mode)
@@ -1692,7 +1692,26 @@ declare 480 generic {
 declare 481 generic {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr, int count)
 }
- 
+
+### New functions on 64-bit dev branch ###
+declare 482 generic {
+    Tcl_Obj * Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
+				  CONST char *file, int line)
+}
+declare 483 generic {
+    int Tcl_GetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			      Tcl_WideInt *widePtr)
+}
+declare 484 generic {
+    Tcl_Obj * Tcl_NewWideIntObj(Tcl_WideInt wideValue)
+}
+declare 485 generic {
+    void Tcl_SetWideIntObj(Tcl_Obj *objPtr, Tcl_WideInt wideValue)
+}
+declare 486 generic {
+    Tcl_StatBuf * Tcl_AllocStatBuf(void)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
