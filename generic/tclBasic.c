@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.25 2000/03/31 08:52:03 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.26 2000/04/10 00:27:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2025,7 +2025,7 @@ Tcl_SetCommandInfo(interp, cmdName, infoPtr)
     Tcl_Interp *interp;			/* Interpreter in which to look
 					 * for command. */
     char *cmdName;			/* Name of desired command. */
-    Tcl_CmdInfo *infoPtr;		/* Where to find store information
+    Tcl_CmdInfo *infoPtr;		/* Where to find information
 					 * to store in the command. */
 {
     Tcl_Command cmd;
