@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.3 1999/04/16 00:48:09 stanton Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.4 1999/07/02 06:05:39 welch Exp $
  */
 
 #include "tclWinInt.h"
@@ -251,6 +251,16 @@ Tcl_SetTimer(
     UINT timeout;
 
     /*
+     * Allow the notifier to be hooked.  This may not make sense
+     * on Windows, but mirrors the UNIX hook.
+     */
+
+    if (tclStubs.tcl_SetTimer != Tcl_SetTimer) {
+	tclStubs.tcl_SetTimer(timePtr);
+	return;
+    }
+
+    /*
      * We only need to set up an interval timer if we're being called
      * from an external event loop.  If we don't have a window handle
      * then we just return immediately and let Tcl_WaitForEvent handle
@@ -405,6 +415,15 @@ Tcl_WaitForEvent(
     MSG msg;
     DWORD timeout, result;
     int status;
+
+    /*
+     * Allow the notifier to be hooked.  This may not make
+     * sense on windows, but mirrors the UNIX hook.
+     */
+
+    if (tclStubs.tcl_WaitForEvent != Tcl_WaitForEvent) {
+	return tclStubs.tcl_WaitForEvent(timePtr);
+    }
 
     /*
      * Compute the timeout in milliseconds.
