@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.2 2001/09/27 10:21:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2159,7 +2159,7 @@ UpdateStringOfWideInt(objPtr)
     }
     len = (int)(buffer + (TCL_INTEGER_SPACE*2+1) - start);
     objPtr->bytes = ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, buffer);
+    strcpy(objPtr->bytes, start);
     objPtr->length = len;
 }
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.7.6.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.7.6.3 2001/09/27 10:21:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1718,7 +1718,7 @@ BinaryProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     *srcReadPtr = srcLen;
     *dstWrotePtr = srcLen;
     *dstCharsPtr = srcLen;
-    for ( ; --srcLen >= 0; ) {
+    for ( ; srcLen-- > 0; ) {
 	*dst++ = *src++;
     }
     return result;

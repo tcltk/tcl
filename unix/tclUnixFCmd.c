@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.3 2001/09/26 14:23:11 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.4 2001/09/27 10:21:32 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -230,7 +230,7 @@ DoRenameFile(src, dst)
     if (errno == EINVAL) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
 	DIR *dirPtr;
-	struct dirent *dirEntPtr;
+	struct dirent *dirEntPtr;			/* Not 64-bit aware */
 
 	if ((realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
@@ -779,7 +779,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     CONST char *source, *errfile;
     int result;
     Tcl_Length sourceLen, targetLen;
-    struct dirent *dirEntPtr;
+    struct dirent *dirEntPtr;				/* Not 64-bit aware */
     DIR *dirPtr;
 
     errfile = NULL;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.3 2001/09/26 14:23:09 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.4 2001/09/27 10:21:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1175,7 +1175,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_size);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), buf.st_size);
 	    return TCL_OK;
 	}
 	case FILE_SPLIT: {
@@ -1403,63 +1403,42 @@ StoreStatData(interp, varName, statPtr)
     Tcl_StatBuf *statPtr;		/* Pointer to buffer containing
 					 * stat data to store in varName. */
 {
-    char string[TCL_INTEGER_SPACE];
+    Tcl_Obj *var = Tcl_NewStringObj(varName, -1);
+    Tcl_Obj *field = Tcl_NewObj();
+    Tcl_Obj *value;
+    register unsigned short mode;
 
-    TclFormatInt(string, (long) statPtr->st_dev);
-    if (Tcl_SetVar2(interp, varName, "dev", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
+    /*
+     * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
+     */
+#define STORE_ARY(fieldName, object) \
+    Tcl_SetStringObj(field, (fieldName), -1); \
+    value = (object); \
+    if (Tcl_ObjSetVar2(interp,var,field,value,TCL_LEAVE_ERR_MSG) == NULL) { \
+	Tcl_DecrRefCount(var); \
+	Tcl_DecrRefCount(field); \
+	Tcl_DecrRefCount(value); \
+	return TCL_ERROR; \
     }
-    TclFormatInt(string, (long) statPtr->st_ino);
-    if (Tcl_SetVar2(interp, varName, "ino", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (unsigned short) statPtr->st_mode);
-    if (Tcl_SetVar2(interp, varName, "mode", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_nlink);
-    if (Tcl_SetVar2(interp, varName, "nlink", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_uid);
-    if (Tcl_SetVar2(interp, varName, "uid", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_gid);
-    if (Tcl_SetVar2(interp, varName, "gid", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    sprintf(string, "%lu", (unsigned long) statPtr->st_size);
-    if (Tcl_SetVar2(interp, varName, "size", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_atime);
-    if (Tcl_SetVar2(interp, varName, "atime", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_mtime);
-    if (Tcl_SetVar2(interp, varName, "mtime", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_ctime);
-    if (Tcl_SetVar2(interp, varName, "ctime", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    if (Tcl_SetVar2(interp, varName, "type",
-	    GetTypeFromMode((unsigned short) statPtr->st_mode), 
-	    TCL_LEAVE_ERR_MSG) == NULL) {
-	return TCL_ERROR;
-    }
+
+    Tcl_IncrRefCount(var);
+    Tcl_IncrRefCount(field);
+    STORE_ARY("dev",   Tcl_NewLongObj((long)statPtr->st_dev));
+    STORE_ARY("ino",   Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+    STORE_ARY("nlink", Tcl_NewLongObj((long)statPtr->st_nlink));
+    STORE_ARY("uid",   Tcl_NewLongObj((long)statPtr->st_uid));
+    STORE_ARY("gid",   Tcl_NewLongObj((long)statPtr->st_gid));
+    STORE_ARY("size",  Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+#ifdef HAVE_ST_BLOCKS
+    STORE_ARY("blocks",Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+#endif
+    STORE_ARY("atime", Tcl_NewLongObj((long)statPtr->st_atime));
+    STORE_ARY("mtime", Tcl_NewLongObj((long)statPtr->st_mtime));
+    STORE_ARY("ctime", Tcl_NewLongObj((long)statPtr->st_ctime));
+    mode = (unsigned short) statPtr->st_mode;
+    STORE_ARY("mode",  Tcl_NewIntObj(mode));
+    STORE_ARY("type",  Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+#undef STORE_ARY
     return TCL_OK;
 }
 
