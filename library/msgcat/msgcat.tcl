@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.14 2002/06/17 05:37:39 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.15 2002/06/17 16:37:11 dgp Exp $
 
 package require Tcl 8.2
 package provide msgcat 1.3
@@ -32,18 +32,130 @@ namespace eval msgcat {
 
     # Map of language codes used in Windows registry to those of ISO-639
     array set WinRegToISO639 {
-	0409 en_US 0809 en_UK 43c gd 83c ga 01 ar 02 bg 03 ca 04 zh 05
-	cs 06 da 07 de 08 el 0a es 0b fi 0c fr 0d he 0e hu 0f is 10 it
-	11 ja 12 ko 13 da 14 no 15 pl 16 pt 17 rm 18 ro 19 ru 1a hr
-	1b sk 1c sq 1d sv 1e th 1f tr 20 ur 21 id 22 uk 23 be 24 sl
-	25 et 26 lv 27 lt 28 tg 29 fa 2a vi 2b hy 2c az 2d eu 2e wen
-	2f mk 30 bnt 31 ts 33 ven 34 xh 35 zu 36 af 37 ka 38 fo 39 hi
-	3a mt 3b se 3d yi 3e ms 3f kk 40 ky 41 sw 42 tk 43 uz 44 tt
-	45 bn 46 pa 47 gu 48 or 49 ta 4a te 4b kn 4c ml 4d as 4e mr
-	4f sa 50 mn 51 bo 52 cy 53 km 54 lo 55 my 56 gl 57 kok 58 mni
-	59 sd 5a syr 5b si 5c chr 5d iu 5e am 5f ber 60 ks 61 ne 62 fy
-	63 ps 64 tl 65 div 66 bin 67 ful 68 ha 69 nic 6a yo 70 ibo
-	71 kau 72 om 73 ti 74 gn 75 cpe 76 la 77 so 78 sit 79 pap
+        01 ar 0401 ar_SA 0801 ar_IQ 0c01 ar_EG 1001 ar_LY 1401 ar_DZ
+              1801 ar_MA 1c01 ar_TN 2001 ar_OM 2401 ar_YE 2801 ar_SY
+              2c01 ar_JO 3001 ar_LB 3401 ar_KW 3801 ar_AE 3c01 ar_BH
+              4001 ar_QA
+        02 bg 0402 bg_BG
+        03 ca 0403 ca_ES
+        04 zh 0404 zh_TW 0804 zh_CN 0c04 zh_HK 1004 zh_SG 1404 zh_MO
+        05 cs 0405 cs_CZ
+        06 da 0406 da_DK
+        07 de 0407 de_DE 0807 de_CH 0c07 de_AT 1007 de_LU 1407 de_LI
+        08 el 0408 el_GR
+        09 en 0409 en_US 0809 en_GB 0c09 en_AU 1009 en_CA 1409 en_NZ
+              1809 en_IE 1c09 en_ZA 2009 en_JM 2409 en_GD 2809 en_BZ
+              2c09 en_TT 3009 en_ZW 3409 en_PH
+        0a es 040a es_ES 080a es_MX 0c0a es_ES@modern 100a es_GT 140a es_CR
+              180a es_PA 1c0a es_DO 200a es_VE 240a es_CO 280a es_PE
+              2c0a es_AR 300a es_EC 340a es_CL 380a es_UY 3c0a es_PY
+              400a es_BO 440a es_SV 480a es_HN 4c0a es_NI 500a es_PR
+        0b fi 040b fi_FI
+        0c fr 040c fr_FR 080c fr_BE 0c0c fr_CA 100c fr_CH 140c fr_LU
+              180c fr_MC
+        0d he 040d he_IL
+        0e hu 040e hu_HU
+        0f is 040f is_IS
+        10 it 0410 it_IT 0810 it_CH
+        11 ja 0411 ja_JP
+        12 ko 0412 ko_KR
+        13 nl 0413 nl_NL 0813 nl_BE
+        14 no 0414 no_NO 0814 nn_NO
+        15 pl 0415 pl_PL
+        16 pt 0416 pt_BR 0816 pt_PT
+        17 rm 0417 rm_CH
+        18 ro 0418 ro_RO
+        19 ru
+        1a hr 041a hr_HR 081a sr_YU 0c1a sr_YU@cyrillic
+        1b sk 041b sk_SK
+        1c sq 041c sq_AL
+        1d sv 041d sv_SE 081d sv_FI
+        1e th 041e th_TH
+        1f tr 041f tr_TR
+        20 ur 0420 ur_PK 0820 ur_IN
+        21 id 0421 id_ID
+        22 uk 0422 uk_UA
+        23 be 0423 be_BY
+        24 sl 0424 sl_SI
+        25 et 0425 et_EE
+        26 lv 0426 lv_LV
+        27 lt 0427 lt_LT
+        28 tg 0428 tg_TJ
+        29 fa 0429 fa_IR
+        2a vi 042a vi_VN
+        2b hy 042b hy_AM
+        2c az 042c az_AZ@latin 082c az_AZ@cyrillic
+        2d eu
+        2e wen 042e wen_DE
+        2f mk 042f mk_MK
+        30 bnt 0430 bnt_TZ
+        31 ts 0431 ts_ZA
+        33 ven 0433 ven_ZA
+        34 xh 0434 xh_ZA
+        35 zu 0435 zu_ZA
+        36 af 0436 af_ZA
+        37 ka 0437 ka_GE
+        38 fo 0438 fo_FO
+        39 hi 0439 hi_IN
+        3a mt 043a mt_MT
+        3b se 043b se_NO
+        043c gd_UK 083c ga_IE
+        3d yi 043d yi_IL
+        3e ms 043e ms_MY 083e ms_BN
+        3f kk 043f kk_KZ
+        40 ky 0440 ky_KG
+        41 sw 0441 sw_KE
+        42 tk 0442 tk_TM
+        43 uz 0443 uz_UZ@latin 0843 uz_UZ@cyrillic
+        44 tt 0444 tt_RU
+        45 bn 0445 bn_IN
+        46 pa 0446 pa_IN
+        47 gu 0447 gu_IN
+        48 or 0448 or_IN
+        49 ta
+        4a te 044a te_IN
+        4b kn 044b kn_IN
+        4c ml 044c ml_IN
+        4d as 044d as_IN
+        4e mr 044e mr_IN
+        4f sa 044f sa_IN
+        50 mn
+        51 bo 0451 bo_CN
+        52 cy 0452 cy_GB
+        53 km 0453 km_KH
+        54 lo 0454 lo_LA
+        55 my 0455 my_MM
+        56 gl 0456 gl_ES
+        57 kok 0457 kok_IN
+        58 mni 0458 mni_IN
+        59 sd
+        5a syr 045a syr_TR
+        5b si 045b si_LK
+        5c chr 045c chr_US
+        5d iu 045d iu_CA
+        5e am 045e am_ET
+        5f ber 045f ber_MA
+        60 ks 0460 ks_PK 0860 ks_IN
+        61 ne 0461 ne_NP 0861 ne_IN
+        62 fy 0462 fy_NL
+        63 ps
+        64 tl 0464 tl_PH
+        65 div 0465 div_MV
+        66 bin 0466 bin_NG
+        67 ful 0467 ful_NG
+        68 ha 0468 ha_NG
+        69 nic 0469 nic_NG
+        6a yo 046a yo_NG
+        70 ibo 0470 ibo_NG
+        71 kau 0471 kau_NG
+        72 om 0472 om_ET
+        73 ti 0473 ti_ET
+        74 gn 0474 gn_PY
+        75 cpe 0475 cpe_US
+        76 la 0476 la_VA
+        77 so 0477 so_SO
+        78 sit 0478 sit_CN
+        79 pap 0479 pap_AN
     }
 }
 
@@ -315,7 +427,7 @@ proc msgcat::Init {} {
     set key {HKEY_CURRENT_USER\Control Panel\International}
     if {[catch {package require registry}] \
 	    || [catch {registry get $key "locale"} locale]} {
-        mclocale "C"
+        mclocale C
 	return
     }
     #
@@ -330,7 +442,7 @@ proc msgcat::Init {} {
     variable WinRegToISO639
     set locale [string tolower $locale]
     while {[string length $locale]} {
-        if {![catch {mclocale $WinRegToISO639($locale)}]} {
+        if {![catch {mclocale [ConvertLocale $WinRegToISO639($locale)]}]} {
 	    return
 	}
 	set locale [string range $locale 1 end]
