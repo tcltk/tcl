@@ -986,6 +986,12 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	SunOS-5.[[0-6]]*)
+
+	    # Note: If _REENTRANT isn't defined, then Solaris
+	    # won't define thread-safe library routines.
+
+	    AC_DEFINE(_REENTRANT)
+
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
 
@@ -1000,6 +1006,12 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    ;;
 	SunOS-5*)
+
+	    # Note: If _REENTRANT isn't defined, then Solaris
+	    # won't define thread-safe library routines.
+
+	    AC_DEFINE(_REENTRANT)
+
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
 	    LDFLAGS=""
@@ -1622,6 +1634,8 @@ AC_DEFUN(SC_TIME_HANDLER, [
     AC_CHECK_HEADERS(sys/time.h)
     AC_HEADER_TIME
     AC_STRUCT_TIMEZONE
+
+    AC_CHECK_FUNCS(gmtime_r localtime_r)
 
     AC_MSG_CHECKING([tm_tzadj in struct tm])
     AC_TRY_COMPILE([#include <time.h>], [struct tm tm; tm.tm_tzadj;],
