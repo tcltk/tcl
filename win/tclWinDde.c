@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.21 2004/09/01 17:40:39 hobbs Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.22 2004/10/06 14:10:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -322,13 +322,15 @@ DdeSetServerName(
     Tcl_DStringInit(&dString);
     actualName = name;
 
-    if (! exactName )
-    {
-	    r = DdeGetServicesList(interp, "TclEval", NULL);
-        if (r == TCL_OK)
-	        srvListPtr = Tcl_GetObjResult(interp);
-	    if (r == TCL_OK)
-	        r = Tcl_ListObjGetElements(interp, srvListPtr, &srvCount, &srvPtrPtr);
+    if (!exactName) {
+	r = DdeGetServicesList(interp, "TclEval", NULL);
+	if (r == TCL_OK) {
+	    srvListPtr = Tcl_GetObjResult(interp);
+	}
+	if (r == TCL_OK) {
+	    r = Tcl_ListObjGetElements(interp, srvListPtr, &srvCount,
+		    &srvPtrPtr);
+	}
         if (r != TCL_OK) {
             OutputDebugString(Tcl_GetStringResult(interp));
             return NULL;
@@ -362,8 +364,7 @@ DdeSetServerName(
 		Tcl_Obj* namePtr;
 		
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
-		if (strcmp(actualName, Tcl_GetString(namePtr)) == 0)
-		{
+		if (strcmp(actualName, Tcl_GetString(namePtr)) == 0) {
 		    suffix++;
 		    break;
 		}
@@ -380,8 +381,9 @@ DdeSetServerName(
     riPtr->name = ckalloc((unsigned int) strlen(actualName) + 1);
     riPtr->nextPtr = tsdPtr->interpListPtr;
     riPtr->handlerPtr = handlerPtr;
-    if (riPtr->handlerPtr != NULL)
+    if (riPtr->handlerPtr != NULL) {
 	Tcl_IncrRefCount(riPtr->handlerPtr);
+    }
     tsdPtr->interpListPtr = riPtr;
     strcpy(riPtr->name, actualName);
 
@@ -478,8 +480,9 @@ DeleteProc(clientData)
 	}
     }
     ckfree(riPtr->name);
-    if (riPtr->handlerPtr)
+    if (riPtr->handlerPtr) {
 	Tcl_DecrRefCount(riPtr->handlerPtr);
+    }
     Tcl_EventuallyFree(clientData, TCL_DYNAMIC);
 }
 
@@ -543,12 +546,14 @@ ExecuteRemoteObject(
     if (result == TCL_ERROR) {
 	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorCode", NULL,
 		TCL_GLOBAL_ONLY);
-	if (errorObjPtr)
+	if (errorObjPtr) {
 	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
+	}
 	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorInfo", NULL,
 		TCL_GLOBAL_ONLY);
-	if (errorObjPtr)
+	if (errorObjPtr) {
 	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
+	}
     }
 
     return returnPackagePtr;
@@ -1054,12 +1059,15 @@ DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
     DdeCreateClient(&es);
     EnumWindows(DdeEnumWindowsCallback, (LPARAM)&es);
     
-    if (IsWindow(es.hwnd))
+    if (IsWindow(es.hwnd)) {
         DestroyWindow(es.hwnd);
-    if (es.service != (ATOM)NULL)
+    }
+    if (es.service != (ATOM)NULL) {
 	GlobalDeleteAtom(es.service);
-    if (es.topic != (ATOM)NULL)
+    }
+    if (es.topic != (ATOM)NULL) {
 	GlobalDeleteAtom(es.topic);
+    }
     return es.result;
 }
 
@@ -1578,8 +1586,9 @@ Tcl_DdeObjCmd(
 			
 			objPtr = Tcl_GetVar2Ex(sendInterp, "errorCode", NULL,
 				TCL_GLOBAL_ONLY);
-			if (objPtr)
+			if (objPtr) {
 			    Tcl_SetObjErrorCode(interp, objPtr);
+			}
 		    }
 		    Tcl_SetObjResult(interp, Tcl_GetObjResult(sendInterp));
 		}
