@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.3.12.2 2001/09/26 14:23:10 dkf Exp $
+ * CVS: $Id: tclIOGT.c,v 1.3.12.3 2001/09/27 14:07:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -29,10 +29,10 @@ static int		TransformCloseProc _ANSI_ARGS_ ((
 				ClientData instanceData, Tcl_Interp* interp));
 static int		TransformInputProc _ANSI_ARGS_ ((
 				ClientData instanceData, char* buf,
-				Tcl_Length toRead, int* errorCodePtr));
+				int toRead, int* errorCodePtr));
 static int		TransformOutputProc _ANSI_ARGS_ ((
 				ClientData instanceData, char* buf,
-				Tcl_Length toWrite, int* errorCodePtr));
+				int toWrite, int* errorCodePtr));
 static Tcl_WideInt	TransformSeekProc _ANSI_ARGS_ ((
 				ClientData instanceData, Tcl_WideInt offset,
 				int mode, int* errorCodePtr));
@@ -68,8 +68,7 @@ typedef struct TransformChannelData TransformChannelData;
 static int		ExecuteCallback _ANSI_ARGS_ ((
 				TransformChannelData* ctrl, Tcl_Interp* interp,
 				unsigned char* op, unsigned char* buf,
-				Tcl_Length bufLen, int transmit,
-				int preserve));
+				int bufLen, int transmit, int preserve));
 
 /*
  * Action codes to give to 'ExecuteCallback' (argument 'transmit')
@@ -116,11 +115,11 @@ typedef struct ResultBuffer ResultBuffer;
 
 static void		ResultClear  _ANSI_ARGS_ ((ResultBuffer* r));
 static void		ResultInit   _ANSI_ARGS_ ((ResultBuffer* r));
-static Tcl_Length	ResultLength _ANSI_ARGS_ ((ResultBuffer* r));
-static Tcl_Length	ResultCopy   _ANSI_ARGS_ ((ResultBuffer* r,
-				unsigned char* buf, Tcl_Length toRead));
+static int		ResultLength _ANSI_ARGS_ ((ResultBuffer* r));
+static int		ResultCopy   _ANSI_ARGS_ ((ResultBuffer* r,
+				unsigned char* buf, int toRead));
 static void		ResultAdd    _ANSI_ARGS_ ((ResultBuffer* r,
-				unsigned char* buf, Tcl_Length toWrite));
+				unsigned char* buf, int toWrite));
 
 /*
  * This structure describes the channel type structure for tcl based
@@ -157,8 +156,8 @@ static Tcl_ChannelType transformChannelType = {
 
 struct ResultBuffer {
     unsigned char* buf;       /* Reference to the buffer area */
-    Tcl_Length     allocated; /* Allocated size of the buffer area */
-    Tcl_Length     used;      /* Number of bytes in the buffer, <= allocated */
+    int		   allocated; /* Allocated size of the buffer area */
+    int		   used;      /* Number of bytes in the buffer, <= allocated */
 };
 
 /*
@@ -358,11 +357,11 @@ TclChannelTransform(interp, chan, cmdObjPtr)
 
 static int
 ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
-    TransformChannelData* dataPtr;     /* Transformation with the callback */
+    TransformChannelData* dataPtr;  /* Transformation with the callback */
     Tcl_Interp*           interp;   /* Current interpreter, possibly NULL */
     unsigned char*        op;       /* Operation invoking the callback */
     unsigned char*        buf;      /* Buffer to give to the script. */
-    Tcl_Length		  bufLen;   /* Ands its length */
+    int			  bufLen;   /* Ands its length */
     int                   transmit; /* Flag, determines whether the result
 				     * of the callback is sent to the
 				     * underlying channel or not. */
@@ -379,7 +378,7 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
      */
 
     Tcl_Obj* resObj;		    /* See below, switch (transmit) */
-    Tcl_Length resLen;
+    int resLen;
     unsigned char* resBuf;
     Tcl_SavedResult ciSave;
     int res = TCL_OK;
@@ -461,13 +460,13 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
 	    resObj = Tcl_GetObjResult(dataPtr->interp);
 	    resBuf = (unsigned char*) Tcl_GetByteArrayFromObj(resObj, &resLen);
 	    Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self),
-		    (char*) resBuf, (int)resLen);
+		    (char*) resBuf, resLen);
 	    break;
 
 	case TRANSMIT_SELF:
 	    resObj = Tcl_GetObjResult (dataPtr->interp);
 	    resBuf = (unsigned char*) Tcl_GetByteArrayFromObj(resObj, &resLen);
-	    Tcl_WriteRaw(dataPtr->self, (char*) resBuf, (int)resLen);
+	    Tcl_WriteRaw(dataPtr->self, (char*) resBuf, resLen);
 	    break;
 
 	case TRANSMIT_IBUF:
@@ -640,7 +639,7 @@ static int
 TransformInputProc (instanceData, buf, toRead, errorCodePtr)
     ClientData instanceData;
     char*      buf;
-    Tcl_Length toRead;
+    int	       toRead;
     int*       errorCodePtr;
 {
     TransformChannelData* dataPtr = (TransformChannelData*) instanceData;
@@ -763,8 +762,7 @@ TransformInputProc (instanceData, buf, toRead, errorCodePtr)
 	 */
 
 	res = ExecuteCallback (dataPtr, NO_INTERP, A_READ,
-		UCHARP (buf), (Tcl_Length)read, TRANSMIT_IBUF,
-		P_PRESERVE);
+		UCHARP (buf), read, TRANSMIT_IBUF, P_PRESERVE);
 
 	if (res != TCL_OK) {
 	    *errorCodePtr = EINVAL;
@@ -796,7 +794,7 @@ static int
 TransformOutputProc (instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;
     char*      buf;
-    Tcl_Length toWrite;
+    int	       toWrite;
     int*       errorCodePtr;
 {
     TransformChannelData* dataPtr = (TransformChannelData*) instanceData;
@@ -1242,7 +1240,7 @@ ResultInit (r)
  *------------------------------------------------------*
  */
 
-static Tcl_Length
+static int
 ResultLength (r)
     ResultBuffer* r; /* The structure to query */
 {
@@ -1269,11 +1267,11 @@ ResultLength (r)
  *------------------------------------------------------*
  */
 
-static Tcl_Length
+static int
 ResultCopy (r, buf, toRead)
     ResultBuffer*  r;      /* The buffer to read from */
     unsigned char* buf;    /* The buffer to copy into */
-    Tcl_Length     toRead; /* Number of requested bytes */
+    int		   toRead; /* Number of requested bytes */
 {
     if (r->used == 0) {
         /* Nothing to copy in the case of an empty buffer.
@@ -1336,7 +1334,7 @@ static void
 ResultAdd (r, buf, toWrite)
     ResultBuffer*  r;       /* The buffer to extend */
     unsigned char* buf;     /* The buffer to read from */
-    Tcl_Length	   toWrite; /* The number of bytes in 'buf' */
+    int		   toWrite; /* The number of bytes in 'buf' */
 {
     if ((r->used + toWrite) > r->allocated) {
         /* Extension of the internal buffer is required.
