@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.9 2005/03/19 18:26:40 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.10 2005/03/20 00:23:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -96,17 +96,14 @@ int tclTraceExec = 0;
 /*
  * Mapping from expression instruction opcodes to strings; used for error
  * messages. Note that these entries must match the order and number of the
- * expression opcodes (e.g., INST_LOR) in tclCompile.h.
- *
- * Does not include the string for INST_EXPON (and beyond), as that is
- * disjoint for backward-compatability reasons
+ * expression opcodes (e.g., INST_LNOT) in tclCompile.h.
  */
 
 static CONST char *operatorStrings[] = {
-    "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
-    "+", "-", "*", "/", "%", "+", "-", "~", "!",
-    "BUILTIN FUNCTION", "FUNCTION",
-    "", "", "", "", "", "", "", "", "eq", "ne"
+    "==", "!=", "<", ">=", ">", "<=", "eq", "ne", "in", "ni",
+    "!", "!!", "|", "^", "&", "<<", ">>", "+", "-", "*", "/", "%",
+    "+", "-", "~", "**", "BUILTIN FUNCTION", "FUNCTION",
+    ""
 };
 
 /*
@@ -3835,6 +3832,7 @@ TclExecuteByteCode(interp, codePtr)
 	    
     case INST_UMINUS:
     case INST_LNOT:
+    case INST_LYES:
     {
 	/*
 	 * The operand must be numeric or a boolean string as
@@ -3900,26 +3898,31 @@ TclExecuteByteCode(interp, codePtr)
 	    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 		i = valuePtr->internalRep.longValue;
 		objResultPtr = Tcl_NewLongObj(
-		    (inst == INST_UMINUS)? -i : !i);
+		    (inst == INST_UMINUS)? -i :
+		        ((inst == INST_LNOT)? !i : !!i));
 		TRACE_WITH_OBJ(("%ld => ", i), objResultPtr);
 	    } else if (tPtr == &tclWideIntType) {
 		TclGetWide(w,valuePtr);
 		if (inst == INST_UMINUS) {
 		    objResultPtr = Tcl_NewWideIntObj(-w);
-		} else {
+		} else if (inst == INST_LNOT) {
 		    objResultPtr = Tcl_NewLongObj(w == W0);
+		} else {
+		    objResultPtr = Tcl_NewLongObj(w != W0);
 		}
 		TRACE_WITH_OBJ((LLD" => ", w), objResultPtr);
 	    } else {
 		d = valuePtr->internalRep.doubleValue;
 		if (inst == INST_UMINUS) {
 		    objResultPtr = Tcl_NewDoubleObj(-d);
-		} else {
+		} else if (inst == INST_LNOT) {
 		    /*
 		     * Should be able to use "!d", but apparently
 		     * some compilers can't handle it.
 		     */
-		    objResultPtr = Tcl_NewLongObj((d==0.0)? 1 : 0);
+		    objResultPtr = Tcl_NewLongObj(d==0.0);
+		} else {
+		    objResultPtr = Tcl_NewLongObj(d!=0.0);
 		}
 		TRACE_WITH_OBJ(("%.6g => ", d), objResultPtr);
 	    }
@@ -3930,27 +3933,31 @@ TclExecuteByteCode(interp, codePtr)
 	     */
 	    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 		i = valuePtr->internalRep.longValue;
-		Tcl_SetLongObj(valuePtr,
-	                (inst == INST_UMINUS)? -i : !i);
+		Tcl_SetLongObj(valuePtr,(inst == INST_UMINUS)? -i :
+		        ((inst == INST_LNOT)? !i : !!i));
 		TRACE_WITH_OBJ(("%ld => ", i), valuePtr);
 	    } else if (tPtr == &tclWideIntType) {
 		TclGetWide(w,valuePtr);
 		if (inst == INST_UMINUS) {
 		    Tcl_SetWideIntObj(valuePtr, -w);
+		} else if (inst == INST_LNOT) {
+		    objResultPtr = Tcl_NewLongObj(w == W0);
 		} else {
-		    Tcl_SetLongObj(valuePtr, w == W0);
+		    Tcl_SetLongObj(valuePtr, w != W0);
 		}
 		TRACE_WITH_OBJ((LLD" => ", w), valuePtr);
 	    } else {
 		d = valuePtr->internalRep.doubleValue;
 		if (inst == INST_UMINUS) {
 		    Tcl_SetDoubleObj(valuePtr, -d);
-		} else {
+		} else if (inst == INST_LNOT) {
 		    /*
 		     * Should be able to use "!d", but apparently
 		     * some compilers can't handle it.
 		     */
-		    Tcl_SetLongObj(valuePtr, (d==0.0)? 1 : 0);
+		    Tcl_SetLongObj(valuePtr, (d==0.0));
+		} else {
+		    Tcl_SetLongObj(valuePtr, (d!=0.0));
 		}
 		TRACE_WITH_OBJ(("%.6g => ", d), valuePtr);
 	    }
@@ -4487,26 +4494,6 @@ TclExecuteByteCode(interp, codePtr)
 	NEXT_INST_F(1, 1);
     }
 
-    case INST_PUSH_RESULT:
-	objResultPtr = Tcl_GetObjResult(interp);
-	TRACE_WITH_OBJ(("=> "), objResultPtr);
-
-	/*
-	 * See the comments at INST_INVOKE_STK
-	 */
-	{
-	    Tcl_Obj *newObjResultPtr;
-	    TclNewObj(newObjResultPtr);
-	    Tcl_IncrRefCount(newObjResultPtr);
-	    iPtr->objResultPtr = newObjResultPtr;
-	}
-
-	NEXT_INST_F(0, -1);
-
-    case INST_PUSH_RETURN_CODE:
-	objResultPtr = Tcl_NewLongObj(result);
-	TRACE(("=> %u\n", result));
-	NEXT_INST_F(0, 1);
 
     default:
 	Tcl_Panic("TclExecuteByteCode: unrecognized opCode %u", inst);
@@ -4918,9 +4905,6 @@ IllegalExprOperandType(interp, pc, opndPtr)
 {
     int opCode = TclVMGetInstAtPtr(pc);
     CONST char *operator = operatorStrings[opCode - FIRST_OPERATOR_INST ];
-    if (opCode == INST_EXPON) {
-	operator = "**";
-    }
 
     Tcl_SetObjResult(interp, Tcl_NewObj()); 
     if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {

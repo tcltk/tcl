@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.14 2005/03/19 18:26:40 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.15 2005/03/20 00:23:18 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -575,24 +575,9 @@ typedef struct ByteCode {
 } ByteCode;
 
 /*
- * Opcodes for the Tcl bytecode instructions. These must correspond to
- * the entries in the table of instruction descriptions,
- * tclInstructionTable, in tclCompile.c. Also, the order and number of
- * the expression opcodes (e.g., INST_LOR) must match the entries in
- * the array operatorStrings in tclExecute.c.
- */
-
-/* Opcodes 0 to 7 */
-#define INST_DONE			0
-#define INST_PUSH			1
-#define INST_POP			2
-#define INST_DUP			3
-#define INST_CONCAT			4
-#define INST_INVOKE_STK		        5
-#define INST_EVAL_STK			6
-#define INST_EXPR_STK			7
-
-/* These should not collide with any of TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
+ * Flag values for the variable-access opcodes
+ *
+ * These should not collide with any of TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
  * TCL_TRACE_READS, TCL_LEAVE_ERR_MSG.
  *
  * NOTE: the code for INST_INSTR depends on these two being 1 and 2.
@@ -600,118 +585,130 @@ typedef struct ByteCode {
 
 #define VM_VAR_OMIT_PUSH             0x01 
 #define VM_VAR_ARRAY                 0x02 
-
 #define VM_STORE_FLAGS_FILTER  (~(VM_VAR_OMIT_PUSH|VM_VAR_ARRAY))
 
-/* Opcodes 8 to 17 */
-#define INST_LOAD		         8  /* Replaces 7 INST_LOAD* */
-#define INST_STORE                      13  /* Replaces 13 INST_STORE* and  
-					     * INST_(L?)APPEND* */
-#define INST_INCR                       18  /* Replaces 10 INST_INCR* */ 
-
-
-/* Opcodes 18 to 27 */
-
-/* Opcodes 28 to 30 */
-#define INST_JUMP			28
-#define INST_JUMP_TRUE			29
-#define INST_JUMP_FALSE		        30
-
-/* Opcodes 31 to 53 */
-#define FIRST_OPERATOR_INST             31
-#define INST_BITOR			31
-#define INST_BITXOR			32
-#define INST_BITAND			33
-#define INST_EQ				34
-#define INST_NEQ			35
-#define INST_LT				36
-#define INST_GT				37
-#define INST_LE				38
-#define INST_GE				39
-#define INST_LSHIFT			40
-#define INST_RSHIFT			41
-#define INST_ADD			42
-#define INST_SUB			43
-#define INST_MULT			44
-#define INST_DIV			45
-#define INST_MOD			46
-#define INST_UPLUS			47
-#define INST_UMINUS			48
-#define INST_BITNOT			49
-#define INST_LNOT			50
-#define INST_CALL_BUILTIN_FUNC		51
-#define INST_CALL_FUNC			52
-#define INST_TRY_CVT_TO_NUMERIC		53
-
-/* Opcodes 54 to 55 */
-#define INST_BREAK			54
-#define INST_CONTINUE			55
-
-/* Opcodes 56 to 57 */
-#define INST_FOREACH_START		56
-#define INST_FOREACH_STEP		57
-
-/* Opcodes 58 to 61 */
-#define INST_BEGIN_CATCH		58
-#define INST_END_CATCH			59
-#define INST_PUSH_RESULT		60
-#define INST_PUSH_RETURN_CODE		61
-
-/* Opcodes 62 to 67 */
-#define INST_STR_EQ			62
-#define INST_STR_NEQ			63
-#define INST_STR_CMP			64
-#define INST_STR_LEN			65
-#define INST_STR_INDEX			66
-#define INST_STR_MATCH			67
-
-/* Opcodes 68 to 70 */
-#define INST_LIST			68
-#define INST_LIST_INDEX			69
-#define INST_LIST_LENGTH		70
-
-/* TIP #22 - LINDEX operator with flat arg list */
-
-#define INST_LIST_INDEX_MULTI		79
-
 /*
- * TIP #33 - 'lset' command.  Code gen also required a Forth-like
- *	     OVER operation.
+ * Opcodes for the Tcl bytecode instructions. These must correspond to
+ * the entries in the table of instruction descriptions,
+ * tclInstructionTable, in tclCompile.c. Also, the order and number of
+ * the expression opcodes (e.g., INST_BITOR) must match the entries in
+ * the array operatorStrings in tclExecute.c.
+ *
+ * NOTE: the numbering is carefully designed to simplify the code of the
+ * optimiser, by letting the numbering provide information on the opcode's
+ * properties. A more robust implementation could incorporate that info in the 
+ * tclInstructionTable. The important property is that ops that are logical
+ * opposites (eg '<' and '>=') have numbers (2n) and (2n+1).
  */
 
-#define INST_OVER			80
-#define INST_LSET_LIST			81
-#define INST_LSET_FLAT			82
+/* Opcodes for termination.*/
+#define INST_DONE			0
+#define INST_RETURN			1
 
-/* TIP#90 - 'return' command. */
+/* Opcodes for stack management */
+#define INST_PUSH			2
+#define INST_POP			3
+#define INST_DUP			4
+#define INST_OVER			5
 
-#define INST_RETURN			83
+/* Opcodes for command building and invocation*/
+#define INST_CONCAT			6
+#define INST_INVOKE_STK		        7
+#define INST_EVAL_STK			8
+#define INST_EXPR_STK			9
+#define INST_EXPAND_START               10
+#define INST_EXPAND_STKTOP              11
+#define INST_INVOKE_EXPANDED            12
+#define INST_START_CMD                  13
 
-/* TIP#123 - exponentiation operator. */
-
-#define INST_EXPON			84
-
-/* TIP #157 - {expand}... language syntax support. */
-
-#define INST_EXPAND_START               85
-#define INST_EXPAND_STKTOP              86
-#define INST_INVOKE_EXPANDED            87
+/* Opcodes for variable access. */
+#define INST_LOAD		        14  
+#define INST_STORE                      15  					    
+#define INST_INCR                       16   
 
 /*
- * TIP #57 - 'lassign' command.  Code generation requires immediate
- *	     LINDEX and LRANGE operators.
+ * Opcodes for flow control
+ *
+ * These opcodes are either control sequences, jumps, or perform comparisons
+ * and jump-if-true. As the latter, as well as the conditional jumps, can be
+ * negated, it is important to number them so that opposites are (2n) and
+ * (2n+1) - so that the optimiser can negate them by flipping one bit (^1).
+ *
+ * It is also important that the comparisons immediately precede the other
+ * math operators, as the [expr] compiler relies on that property.
  */
 
-#define INST_LIST_INDEX_IMM		88
-#define INST_LIST_RANGE_IMM		89
+#define INST_BREAK			17
+#define INST_CONTINUE			18
 
-#define INST_START_CMD                  90
+#define INST_FOREACH_START		19
+#define INST_FOREACH_STEP		20
 
-#define INST_LIST_IN			91
-#define INST_LIST_NOT_IN		92
+#define INST_BEGIN_CATCH		21
+#define INST_END_CATCH			22
+
+#define INST_JUMP			23
+
+#define INST_JUMP_TRUE			24
+#define INST_JUMP_FALSE		        25
+
+#define FIRST_OPERATOR_INST             26
+
+#define INST_EQ				26
+#define INST_NEQ			27
+
+#define INST_LT				28
+#define INST_GE				29
+
+#define INST_GT				30
+#define INST_LE				31
+
+#define INST_STR_EQ			32
+#define INST_STR_NEQ			33
+
+#define INST_LIST_IN			34
+#define INST_LIST_NOT_IN		35
+
+#define TclInstIsBoolJump(op) ((op<=35) && (op>=24))
+	
+/* Opcodes for the remaining operators */
+#define INST_LNOT			36 /* Keep these at (2n)(2n+1) */
+#define INST_LYES		        37
+#define INST_BITOR			38
+#define INST_BITXOR			39
+#define INST_BITAND			40
+#define INST_LSHIFT			41
+#define INST_RSHIFT			42
+#define INST_ADD			43
+#define INST_SUB			44
+#define INST_MULT			45
+#define INST_DIV			46
+#define INST_MOD			47
+#define INST_UPLUS			48
+#define INST_UMINUS			49
+#define INST_BITNOT			50
+#define INST_EXPON			51
+
+#define INST_CALL_BUILTIN_FUNC		52
+#define INST_CALL_FUNC			53
+#define INST_TRY_CVT_TO_NUMERIC		54
+
+#define INST_STR_CMP			55
+#define INST_STR_LEN			56
+#define INST_STR_INDEX			57
+#define INST_STR_MATCH			58
+
+#define INST_LIST			59
+#define INST_LIST_INDEX			60
+#define INST_LIST_LENGTH		61
+#define INST_LIST_INDEX_MULTI		62
+#define INST_LSET_LIST			63
+#define INST_LSET_FLAT			64
+#define INST_LIST_INDEX_IMM		65
+#define INST_LIST_RANGE_IMM		66
 
 /* The last opcode */
-#define LAST_INST_OPCODE		92
+#define LAST_INST_OPCODE		66
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
@@ -736,6 +733,18 @@ typedef enum InstOperandType {
 				 * integer, but displayed differently.) */
 } InstOperandType;
 
+/*
+ * Types assumed for the Tcl_Obj that the instructions may consume and leave
+ * on the stack. Input for the optimiser.
+ */
+
+typedef enum InstIOType {
+    B,                          /* Boolean (0/1) */
+    I,                          /* Integer       */
+    N,                          /* Number        */
+    A,                          /* Any type.     */
+    V                           /* None (void)   */   
+} InstIOType;
 
 typedef struct InstructionDesc {
     char *name;			/* Name of instruction. */
@@ -744,6 +753,10 @@ typedef struct InstructionDesc {
 				 * computations. The value INT_MIN signals
 				 * that the instruction's worst case effect
 				 * is (1-opnd1).*/
+    InstIOType input;           /* Type assumed for the elements taken off the
+				 * stack; if several types, state the weakest */
+    InstIOType result;          /* Guaranteed type of the result pushed onto
+				 * the stack. */
     int numOperands;		/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
