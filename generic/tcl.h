@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.159 2003/07/16 22:03:52 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.160 2003/07/18 02:02:02 das Exp $
  */
 
 #ifndef _TCL
@@ -47,8 +47,7 @@ extern "C" {
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
- * macosx/Tcl.pbproj/project.pbxproj
- * 			(7 LOC total, 2 LOC patch)
+ * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 2 LOC
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
