@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.74 2002/10/22 19:17:19 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.75 2002/11/07 02:19:16 mdejong Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5664,3 +5664,8 @@ dirs to tcl_pkgPath: @executable_path/../Frameworks and
 in DYLD_FRAMEWORK_PATH (if set). (steffen)
 
 --- Released 8.4.1, October 22, 2002 --- See ChangeLog for details ---
+
+2001-11-6 (feature enhancement) added new TclInThreadExit function to
+test for thread exit vs whole process exit condition. The TclInExit
+function now correctly returns 1 during Tcl_Finalize processing. (mdejong)
+        *** POTENTIAL INCOMPATIBILITY ***
