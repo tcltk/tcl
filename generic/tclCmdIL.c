@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.37 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.38 2002/01/23 20:46:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1074,7 +1074,7 @@ InfoHostnameCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *name;
+    CONST char *name;
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         return TCL_ERROR;

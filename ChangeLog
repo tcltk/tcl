@@ -1,3 +1,21 @@
+2002-01-23  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/GetHostName.3:
+	* doc/GetOpnFl.3:
+	* doc/OpenTcp.3:
+	* tcl.decls (Tcl_GetHostName,Tcl_GetOpenFile,Tcl_OpenTcpClient,
+	  Tcl_OpenTclServer):
+	* mac/tclMacSock.c (CreateSocket,Tcl_OpenTcpClient,Tcl_OpenTcpServer,
+	  Tcl_GetHostName,GetHostFromString):
+	* unix/tclUnixChan.c (CreateSocket,CreateSocketAddress,
+	  Tcl_OpenTcpClient,Tcl_OpenTcpServer,Tcl_GetOpenFile):
+	* unix/tclUnixSock.c (Tcl_GetHostName):
+	* win/tclWinSock.c (CreateSocket,CreateSocketAddress,
+	  Tcl_OpenTcpClient,Tcl_OpenTcpServer,Tcl_GetHostName):
+	Updated socket interfaces according to TIP 27.
+	* generic/tclCmdIL.c (InfoHostnameCmd): Updated callers.
+	* generic/tclDecls.h: make genstubs
+
 2002-01-21  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclLoadNone.c: TclpLoadFile() didn't match proto of
