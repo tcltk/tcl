@@ -108,7 +108,7 @@
 	data type Tcl_StatBuf relies on config information.  For now,
 	disabled the use of the tclConfig.h file until its full impact
 	on Tcl's interface can be assessed.
-	
+
 	* unix/configure:	autoconf-2.57
 
 	* generic/tcl.h:	Moved the #include "tclConfig.h" out of
@@ -210,7 +210,7 @@
 	* unix/Makefile.in: include tclConfig.h from tcl.h and install it
 	as a public header. Normalized compiler include path order to 
 	-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR}.
-	
+
 	* unix/dltest/Makefile.in: add ${BUILD_DIR}/.. to include path
 	to pick up tclConfig.h.
 
@@ -228,7 +228,7 @@
 	* generic/tclInt.h:
 
 	* unix/configure:       generated
-	
+
 2004-11-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/config.h.in:	Allow configure to put all the C #defs into
@@ -253,7 +253,7 @@
 	* doc/dict.n:
 	* doc/tm.n:
 	* doc/upvar.n: fixed *roff errors uncovered by running 'make html'.
-	
+
 	* tools/tcltk-man2html.tcl: added faked support for bullet point
 	lists, i.e. *nroff ".IP \(bu" syntax.
 
@@ -338,15 +338,15 @@
 	* library/clock.tcl (FreeScan): Fixed a bug where scanning
 	"Monday" with a base time other than midnight incorrectly carried
 	the base time forward.
-	
+
 	* test/clock.test (clock-33.{5,5a}): Made the test failure more
 	informative.
-	
+
 	* tests/clock.test (clock-34.{28,44,45,46}): Removed 'knownBug'
 	constraints from tests that no longer fail.
 
 	Thanks to Don Porter for reporting these.
-					
+
 2004-11-03  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tcl.h:		Moved the preprocessor logic
@@ -409,10 +409,10 @@
 	* library/tzdata/America/Cuiaba: Change to DST rules for
 	* library/tzdata/America/Havana: autumn of 2004. 
 	[ftp://elsie.nci.nih.gov/pub/tzdata2004g.tar.gz]
-	
+
 	* tools/tclZIC.tcl: Updated to be compatible with recent
 	changes in library/clock.tcl.
-	
+
 2004-11-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFile.c: Simplify TclpUtime to use Tcl_FSGetNativePath, 
@@ -439,7 +439,7 @@
 	reference to 'utime'.
 	* tests/cmdAH.test (cmdAH-24.12): Added test case for the
 	above bug.
-	
+
 2004-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Make INST_EQ and
@@ -470,7 +470,7 @@
 	incorrect conversion between file time and UTC time if
 	the file time is recorded in a different Daylight Saving Time
 	status than the current one. [Bug 926106]
-	
+
 2004-10-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Correct reaction to errors in the
@@ -514,8 +514,8 @@
 
 2004-10-27  Don Porter  <dgp@users.sourceforge.net>
 
-        * tests/socket.test (socket-13.1):      Balanced [makeFile] and
-        [removeFile] commands.
+	* tests/socket.test (socket-13.1):      Balanced [makeFile] and
+	[removeFile] commands.
 
 	* tests/clock.test:	Correct duplicate test names.
 	* tests/namespace.test:
@@ -562,7 +562,7 @@
 	* library/tm.tcl: Even found bugs, these have been corrected.
 
 2004-10-26  Kevin Kenny <kennykb@acm.org>
-	
+
 	* tests/format.test (format-19.1): Additional regression test for
 	                                   Bug 868489.
 
@@ -587,12 +587,12 @@
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c (Tcl_SubstObj):	Fix for failed subst-12.3 test.
-        * tests/subst.test (subst-12.3-5):      More tests for Bug 1036649.
+	* tests/subst.test (subst-12.3-5):      More tests for Bug 1036649.
 
-        * unix/Makefile.in (install-libraries): Updated the installation
-        of the http, msgcat, and tcltest packages to install as Tcl Modules
+	* unix/Makefile.in (install-libraries): Updated the installation
+	of the http, msgcat, and tcltest packages to install as Tcl Modules
 	on Unix systems.  Other platform Makefiles still need updating.
-        [Patch 1054370]
+	[Patch 1054370]
 
 	* tests/basic.test:	Added missing constraints.
 	* tests/compile.test:
@@ -621,7 +621,7 @@
 	override the time zone that we're trying to establish with
 	the simulated registry.
 	Both problems reported as [Bug 1054101].
-	
+
 2004-10-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/string.n (map): Rewrote to clarify that we don't just map
@@ -707,7 +707,7 @@
 	both bugs.
 	Thanks to Todd M. Helfter <tmh@jumpgate.itsp.purdue.edu> for
 	finding these bugs.
-	
+
 2004-10-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TclCompEvalObj, Tcl_ExprObj): 
@@ -757,7 +757,7 @@
 	* generic/tclClock.c: together, make it roughly twice as fast
 	* generic/tclInt.h:   while all tests in the test suite
 	* library/clock.tcl:  continue to pass.
-	
+
 2004-10-20  Andreas Kupries <andreask@activestate.com>
 
 	* win/Makefile.in (install-msgs):   Fixed a problem with the
@@ -880,7 +880,7 @@
 	* library/tzdata/America/Argentina/Mendoza:
 	* library/tzdata/America/Argentina/San_Juan:
 	Synchronized to Olson's 'tzdata2004e'.
-	
+
 2004-10-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP#201 AND TIP#212 IMPLEMENTATIONS
@@ -1039,7 +1039,7 @@
 	comparison of [clock scan] results with the :localtime time zone.
 	Now that [clock scan] uses the current time zone instead, the
 	antibug caused several tests to fail. [Bug 1038554]
-	
+
 2004-10-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclParseExpr.c (GetLexeme): Ensure that the 'eq' and
@@ -1089,19 +1089,19 @@
 	* generic/tclCmdMZ.c (TclProcessReturn):    the errorCode value.
 	* tests/error.test (error-6.4-9):
 
-        * generic/tclNamespace.c (TclTeardownNamespace): Tcl_Obj-ified
-        * tests/namespace.test (namespace-8.5,6):       the save/restore
-        of ::errorInfo and ::errorCode during global namespace teardown.
-        Revised the comment to clarify why this is done, and added tests
-        that will fail if this is not done.
+	* generic/tclNamespace.c (TclTeardownNamespace): Tcl_Obj-ified
+	* tests/namespace.test (namespace-8.5,6):	the save/restore
+	of ::errorInfo and ::errorCode during global namespace teardown.
+	Revised the comment to clarify why this is done, and added tests
+	that will fail if this is not done.
 
-        * generic/tclResult.c (TclTransferResult):      Added safety
-        checks so that unexpected undefined ::errorInfo or ::errorCode
-        will not lead to a segfault.
+	* generic/tclResult.c (TclTransferResult):	Added safety
+	checks so that unexpected undefined ::errorInfo or ::errorCode
+	will not lead to a segfault.
 
-        * generic/tclTrace.c (TclCallVarTraces):     Save/restore the flag
-        * tests/var.test (var-16.1):    values that define part of the
-        interpreter state during variable traces.  [Bug 1038021].
+	* generic/tclTrace.c (TclCallVarTraces):     Save/restore the flag
+	* tests/var.test (var-16.1):	values that define part of the
+	interpreter state during variable traces.  [Bug 1038021].
 
 2004-09-30  Miguel Sofer <msofer@users.sf.net>
 
@@ -1207,10 +1207,10 @@
 	* generic/tclObj.c (SetBooleanFromAny):  work-around code
 					         that was needed only
 	                                         because of Bug 868489.
-	
+
 	* generic/tclBasic.c (TclObjInvoke): Removed three unused
 	variables to silence a compiler warning in VC++.
-	
+
 2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3: fix to small typo.
@@ -1231,7 +1231,7 @@
 	* tests/incr.test:
 	* tests/while.test: 
 	Report compilation errors at runtime, [Patch 1033689] by dgp. 
-	
+
 2004-09-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/dltest/Makefile.in (clean): Fixup make clean
@@ -1272,7 +1272,7 @@
 	to Asia/Jerusalem were in the comments only.) [Routine
 	maintenance - no bug] Spanish-language description of the
 	change at http://www.presidencia.gub.uy/decretos/2004091502.htm
-	
+
 2004-09-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompCmds.c:	Tolerate [append] syntax errors
@@ -1305,7 +1305,7 @@
 2004-09-19  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdAH.c: removed outdated comment [Bug 1029518].
-	
+
 2004-09-18  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclAppInit.c: Dde package can load into a safe interp.
@@ -1340,7 +1340,7 @@
 	* generic/tclGetDate.y: of yacc to build the parser, eliminating
 	* generic/tclInt.h:     all the complicated hackery involving
 	* unix/Makefile.in:     'sed' postprocessing.  Rebuilt the parser.
-	
+
 2004-09-14  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ClockOldscanObjCmd): Silenced a compiler
@@ -1350,7 +1350,7 @@
 	its 'yy' variables and then do the remaining work inside
 	clock.tcl. But, as I said on 2004-09-08, that's a job for
 	another day.  [Bug 1027993]
-	
+
 2004-09-10  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/interp.n:
@@ -1415,7 +1415,7 @@
 	* library/clock.tcl: Fixed a bug where %z always put a plus
 	sign on the time zone in :localtime.
 	* tests/clock.test: Added test case for the above bug.
-	
+
 2004-09-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_CONCAT1): added a peephole
@@ -1460,7 +1460,7 @@
 	Added regression test case for the bug where month was scanned
 	incorrectly in -timezone :localtime. [Bug 1023779] Added 
 	regression test case for %k at the zero hour.
-	
+
 2004-09-07  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: some quoting needed to be removed as it was
@@ -1493,7 +1493,7 @@
 	Win64 - assuming that HAL vendors now do a better job of
 	keeping the performance counters synchronized among CPU's.
 	[Bug 1020445]
-	
+
 2004-09-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/tclvars.n, doc/tcltest.n, doc/tclsh.1, doc/safe.n, doc/expr.n:
@@ -1623,7 +1623,7 @@
 	CET in excruciating detail to deal with systems that lack the
 	Posix defaults for DST changes (and to be formally correct with
 	the change dates for CET).
-	
+
 2004-08-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclScan.c (Tcl_ScanObjCmd, ValidateFormat): Ensure that
@@ -1636,7 +1636,7 @@
 	locales.
 	* tests/clock.test (clock-37.1): Removed now-unused 'needPST'
 	constraint and the comments that refer to it.
-	
+
 2004-08-18  Andreas Kupries  <andreask@activestate.com>
 
 	* library/init.tcl: Integrated TIP #189. We source a separate file
@@ -1660,7 +1660,7 @@
 
 	* tests/httpd (httpdRespond): Corrected an abuse of the [clock]
 	command that caused test failures for some values of [clock clicks].
-	
+
 	* doc/clock.n
 	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_HideUnsafeCommands):
 	* generic/tclClock.c (all):
@@ -1728,9 +1728,9 @@
 
 2004-08-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
-        * unix/tclUnixThrd.c (TclpThreadCreate): changed handling of
-        the returned thread ID since broken on 64-bit systems (Cray).
-        Thanks to Rob Ratcliff for reporting the bug.
+	* unix/tclUnixThrd.c (TclpThreadCreate): changed handling of
+	the returned thread ID since broken on 64-bit systems (Cray).
+	Thanks to Rob Ratcliff for reporting the bug.
 
 2004-08-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -2420,7 +2420,7 @@
 	* generic/tclIOUtil.c: partially corrected [Bug 932314].
 	  Also, corrected return values of Tcl_FSChdir() to 
 	  reflect those of the underlying platform-specific call.
-  	  Originally, return codes were mixed with those of Tcl.
+	  Originally, return codes were mixed with those of Tcl.
 
 2004-06-08  Miguel Sofer <msofer@users.sf.net>
 
@@ -2984,8 +2984,9 @@
 	* generic/tclIOUtil.c: remove some compiler warnings on MacOS X.
 
 2004-05-07  Chengye Mao <chengye.geo@yahoo.com>
-        * win/tclWinPipe.c: refixed bug 789040 re-entered in rev 1.41.
-        Let's be careful and don't re-enter previously fixed bugs.
+
+	* win/tclWinPipe.c: refixed bug 789040 re-entered in rev 1.41.
+	Let's be careful and don't re-enter previously fixed bugs.
 
 2004-05-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -3380,12 +3381,12 @@
 	Updated internals to make use of [dict]s to store message catalog
 	data and to use [source -encoding utf-8] to access catalog files.
 	Thanks to Michael Sclenker.  [Patch 875055, RFE 811459]
-        Corrected [mcset] to be able to successfully set a translation to
-        the empty string.  [mcset $loc $src {}] was incorrectly set the
-        $loc translation of $src back to $src.  Also changed [ConvertLocale]
-        to minimally require a non-empty "language" part in the locale value.
-        If not, an error raised prompts [Init] to keep looking for a valid
-        locale value, or ultimately fall back on the "C" locale. [Bug 811461].
+	Corrected [mcset] to be able to successfully set a translation to
+	the empty string.  [mcset $loc $src {}] was incorrectly set the
+	$loc translation of $src back to $src.	Also changed [ConvertLocale]
+	to minimally require a non-empty "language" part in the locale value.
+	If not, an error raised prompts [Init] to keep looking for a valid
+	locale value, or ultimately fall back on the "C" locale. [Bug 811461].
 	* library/msgcat/pkgIndex.tcl:	Bump to msgcat 1.4.1.  
 
 2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
