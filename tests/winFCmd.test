@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.13 2001/09/05 08:21:18 vincentdarley Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.14 2001/09/20 00:58:51 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -679,11 +679,12 @@ test winFCmd-7.7 {TraverseWinTree: append \ to source if necessary} {pcOnly} {
     contents td2/tf1
 } {tf1}    
 test winFCmd-7.8 {TraverseWinTree: append \ to source if necessary} {95 cdrom} {
-    list [catch {testfile rmdir $cdrom/} msg] $msg
-} "1 {$cdrom\\ EEXIST}"
+    # cdrom can return either d:\ or D:/, but we only care about the errcode
+    list [catch {testfile rmdir $cdrom/} msg] [lindex $msg 1]
+} {1 EEXIST}
 test winFCmd-7.9 {TraverseWinTree: append \ to source if necessary} {nt cdrom} {
-    list [catch {testfile rmdir $cdrom/} msg] $msg
-} "1 {$cdrom\\ EACCES}"
+    list [catch {testfile rmdir $cdrom/} msg]  [lindex $msg 1]
+} {1 EACCES}
 test winFCmd-7.10 {TraverseWinTree: can't read directory: handle == INVALID} \
 	{pcOnly} {
     # can't make it happen
@@ -993,15 +994,3 @@ test winFCmd-15.10 {SetWinFileAttributes - failing} {pcOnly cdrom} {
 cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
