@@ -1,3 +1,9 @@
+2003-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/TclUtf.c (Tcl_UniCharNcasecmp):       Corrected failure to
+        * tests/utf.test (utf-25.*):    properly compare Unicode strings of
+        different case in a case insensitive manner.  [Bug 699042]
+
 2003-03-06  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd):
