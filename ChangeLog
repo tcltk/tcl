@@ -1,3 +1,8 @@
+2002-07-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Minor fixes to make
+	this file compile with SunPro CC...
+
 2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: modified to do variable lookup explicitly,
