@@ -1,3 +1,11 @@
+2000-02-08  Eric Melski  <ericm@scriptics.com>
+
+	* tests/clock.test: Added tests for "next monthname" constructs.
+	* generic/tclDate.c: 
+	* generic/tclGetDate.y (Message): Added a grammar rule for "next
+	monthname" so that we can handle "next january" and similar
+	constructs (bug #4146).
+
 2000-02-08  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* README:
@@ -28,6 +36,12 @@
 
 	* unix/README: fixed notes about --enable-shared and add note
 	about --disable-shared.
+
+2000-02-07  Eric Melski  <ericm@scriptics.com>
+
+	* tests/package.test: 
+	* library/tclIndex: 
+	* library/package.tcl: Renamed ::package namespace to ::pkg.
 
 2000-02-04  Eric Melski  <ericm@scriptics.com>
 

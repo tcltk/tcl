@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.13 2000/01/14 22:15:51 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.14 2000/02/09 03:56:24 ericm Exp $
  */
 
 %{
@@ -91,8 +91,10 @@ static char     *yyInput;
 static DSTMODE  yyDSTmode;
 static time_t   yyDayOrdinal;
 static time_t   yyDayNumber;
+static time_t   yyMonthOrdinal;
 static int      yyHaveDate;
 static int      yyHaveDay;
+static int      yyHaveOrdinalMonth;
 static int      yyHaveRel;
 static int      yyHaveTime;
 static int      yyHaveZone;
@@ -121,6 +123,8 @@ static int	Convert _ANSI_ARGS_((time_t Month, time_t Day, time_t Year,
 static time_t	DSTcorrect _ANSI_ARGS_((time_t Start, time_t Future));
 static time_t	NamedDay _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
 		    time_t DayNumber));
+static time_t   NamedMonth _ANSI_ARGS_((time_t Start, time_t MonthOrdinal,
+                    time_t MonthNumber));
 static int	RelativeMonth _ANSI_ARGS_((time_t Start, time_t RelMonth,
 		    time_t *TimePtr));
 static int	RelativeDay _ANSI_ARGS_((time_t Start, time_t RelDay,
@@ -160,6 +164,9 @@ item    : time {
         }
         | date {
             yyHaveDate++;
+        }
+        | ordMonth {
+            yyHaveOrdinalMonth++;
         }
         | day {
             yyHaveDay++;
@@ -287,7 +294,7 @@ date    : tUNUMBER '/' tUNUMBER {
             yyMonth = $2;
             yyDay = $1;
         }
-	| tEPOCH {
+        | tEPOCH {
 	    yyMonth = 1;
 	    yyDay = 1;
 	    yyYear = EPOCH;
@@ -297,6 +304,16 @@ date    : tUNUMBER '/' tUNUMBER {
             yyDay = $1;
             yyYear = $3;
         }
+        ;
+
+ordMonth: tNEXT tMONTH {
+	    yyMonthOrdinal = 1;
+	    yyMonth = $2;
+	}
+        | tNEXT tUNUMBER tMONTH {
+	    yyMonthOrdinal = $2;
+	    yyMonth = $3;
+	}
         ;
 
 iso     : tISOBASE tZONE tISOBASE {
@@ -724,6 +741,35 @@ NamedDay(Start, DayOrdinal, DayNumber)
     return DSTcorrect(Start, now);
 }
 
+static time_t
+NamedMonth(Start, MonthOrdinal, MonthNumber)
+    time_t Start;
+    time_t MonthOrdinal;
+    time_t MonthNumber;
+{
+    struct tm *tm;
+    time_t now;
+    int result;
+    
+    now = Start;
+    tm = TclpGetDate((TclpTime_t)&now, 0);
+    /* To compute the next n'th month, we use this alg:
+     * add n to year value
+     * if currentMonth < requestedMonth decrement year value by 1 (so that
+     *  doing next february from january gives us february of the current year)
+     * set day to 1, time to 0
+     */
+    tm->tm_year += MonthOrdinal;
+    if (tm->tm_mon < MonthNumber - 1) {
+	tm->tm_year--;
+    }
+    result = Convert(MonthNumber, (time_t) 1, tm->tm_year + TM_YEAR_BASE,
+	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now);
+    if (result < 0) {
+	return 0;
+    }
+    return DSTcorrect(Start, now);
+}
 
 static int
 RelativeMonth(Start, RelMonth, TimePtr)
@@ -1016,12 +1062,13 @@ TclGetDate(p, now, zone, timePtr)
 
     yyHaveDate = 0;
     yyHaveDay = 0;
+    yyHaveOrdinalMonth = 0;
     yyHaveRel = 0;
     yyHaveTime = 0;
     yyHaveZone = 0;
 
     if (yyparse() || yyHaveTime > 1 || yyHaveZone > 1 || yyHaveDate > 1 ||
-	    yyHaveDay > 1) {
+	    yyHaveDay > 1 || yyHaveOrdinalMonth > 1) {
         return -1;
     }
     
@@ -1074,6 +1121,11 @@ TclGetDate(p, now, zone, timePtr)
         Start += tod;
     }
 
+    if (yyHaveOrdinalMonth) {
+	tod = NamedMonth(Start, yyMonthOrdinal, yyMonth);
+	Start += tod;
+    }
+    
     *timePtr = Start;
     return 0;
 }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.15 2000/01/14 22:15:51 ericm Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.16 2000/02/09 03:56:24 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -74,8 +74,10 @@ static char     *TclDateInput;
 static DSTMODE  TclDateDSTmode;
 static time_t   TclDateDayOrdinal;
 static time_t   TclDateDayNumber;
+static time_t   TclDateMonthOrdinal;
 static int      TclDateHaveDate;
 static int      TclDateHaveDay;
+static int      TclDateHaveOrdinalMonth;
 static int      TclDateHaveRel;
 static int      TclDateHaveTime;
 static int      TclDateHaveZone;
@@ -104,6 +106,8 @@ static int	Convert _ANSI_ARGS_((time_t Month, time_t Day, time_t Year,
 static time_t	DSTcorrect _ANSI_ARGS_((time_t Start, time_t Future));
 static time_t	NamedDay _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
 		    time_t DayNumber));
+static time_t   NamedMonth _ANSI_ARGS_((time_t Start, time_t MonthOrdinal,
+                    time_t MonthNumber));
 static int	RelativeMonth _ANSI_ARGS_((time_t Start, time_t RelMonth,
 		    time_t *TimePtr));
 static int	RelativeDay _ANSI_ARGS_((time_t Start, time_t RelDay,
@@ -522,6 +526,35 @@ NamedDay(Start, DayOrdinal, DayNumber)
     return DSTcorrect(Start, now);
 }
 
+static time_t
+NamedMonth(Start, MonthOrdinal, MonthNumber)
+    time_t Start;
+    time_t MonthOrdinal;
+    time_t MonthNumber;
+{
+    struct tm *tm;
+    time_t now;
+    int result;
+    
+    now = Start;
+    tm = TclpGetDate((TclpTime_t)&now, 0);
+    /* To compute the next n'th month, we use this alg:
+     * add n to year value
+     * if currentMonth < requestedMonth decrement year value by 1 (so that
+     *  doing next february from january gives us february of the current year)
+     * set day to 1, time to 0
+     */
+    tm->tm_year += MonthOrdinal;
+    if (tm->tm_mon < MonthNumber - 1) {
+	tm->tm_year--;
+    }
+    result = Convert(MonthNumber, (time_t) 1, tm->tm_year + TM_YEAR_BASE,
+	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now);
+    if (result < 0) {
+	return 0;
+    }
+    return DSTcorrect(Start, now);
+}
 
 static int
 RelativeMonth(Start, RelMonth, TimePtr)
@@ -814,12 +847,13 @@ TclGetDate(p, now, zone, timePtr)
 
     TclDateHaveDate = 0;
     TclDateHaveDay = 0;
+    TclDateHaveOrdinalMonth = 0;
     TclDateHaveRel = 0;
     TclDateHaveTime = 0;
     TclDateHaveZone = 0;
 
     if (TclDateparse() || TclDateHaveTime > 1 || TclDateHaveZone > 1 || TclDateHaveDate > 1 ||
-	    TclDateHaveDay > 1) {
+	    TclDateHaveDay > 1 || TclDateHaveOrdinalMonth > 1) {
         return -1;
     }
     
@@ -872,6 +906,11 @@ TclGetDate(p, now, zone, timePtr)
         Start += tod;
     }
 
+    if (TclDateHaveOrdinalMonth) {
+	tod = NamedMonth(Start, TclDateMonthOrdinal, TclDateMonth);
+	Start += tod;
+    }
+    
     *timePtr = Start;
     return 0;
 }
@@ -880,23 +919,21 @@ static CONST TclDatetabelem TclDateexca[] ={
 	0, -1,
 	-2, 0,
 	};
-# define YYNPROD 53
-# define YYLAST 259
+# define YYNPROD 56
+# define YYLAST 261
 static CONST TclDatetabelem TclDateact[]={
 
-    23,    40,    22,    34,    26,    35,    24,    26,    36,    24,
-    53,    42,    55,    25,    52,    80,    25,    79,    26,    31,
-    24,    30,    59,    48,    75,    74,    73,    25,    49,    72,
-    71,    70,    28,    69,    67,    50,    47,    46,    45,    39,
-    37,    60,    77,    44,    78,    66,    43,    63,    58,    20,
-    65,    64,    54,    38,    61,    10,     9,     8,     7,     6,
-     5,    33,     4,     3,     2,     1,    18,     0,     0,    41,
-     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-    51,     0,     0,     0,     0,     0,     0,     0,     0,    56,
-     0,     0,    57,     0,    76,     0,     0,     0,     0,     0,
-     0,     0,     0,    68,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+    24,    39,    23,    35,    55,    83,    40,    27,    54,    25,
+    36,    41,    59,    37,    57,    27,    26,    25,    27,    32,
+    25,    31,    62,    50,    26,    82,    78,    26,    51,    77,
+    76,    75,    29,    74,    73,    72,    70,    52,    49,    48,
+    47,    44,    38,    63,    80,    46,    45,    81,    69,    21,
+    66,    61,    68,    67,    56,    43,    64,    11,    10,     9,
+     8,     7,    34,     6,     5,     4,     3,     2,    42,     1,
+    20,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+     0,    53,     0,     0,     0,     0,     0,     0,     0,     0,
+     0,    58,     0,     0,    60,     0,     0,    79,     0,     0,
+     0,     0,     0,     0,     0,     0,     0,    71,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
@@ -905,64 +942,67 @@ static CONST TclDatetabelem TclDateact[]={
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,     0,    17,    13,     0,     0,     0,
-    15,    26,    21,    24,     0,    11,    12,    16,     0,    14,
-    25,    19,    29,     0,     0,    27,     0,    32,    26,     0,
-    24,     0,     0,     0,     0,     0,     0,    25,     0,     0,
-     0,     0,     0,     0,     0,     0,     0,    62,    62 };
+     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+     0,     0,     0,     0,     0,    19,    14,     0,     0,     0,
+    16,    27,    22,    25,     0,    12,    13,    17,     0,    15,
+    26,    18,    30,     0,     0,    28,     0,    33,    27,     0,
+    25,     0,     0,     0,     0,     0,     0,    26,     0,     0,
+     0,     0,     0,     0,     0,     0,     0,     0,     0,    65,
+    65 };
 static CONST TclDatetabelem TclDatepact[]={
 
 -10000000,   -43,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,
--10000000,   -26,  -268,-10000000,  -264,  -228,-10000000,     9,  -229,  -257,
-  -214,  -230,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,  -231,-10000000,
-  -232,  -240,  -233,  -214,-10000000,  -258,-10000000,     8,-10000000,  -246,
--10000000,-10000000,  -260,-10000000,-10000000,     2,    -4,     0,     6,     5,
--10000000,-10000000,-10000000,   -13,  -234,-10000000,  -214,-10000000,  -235,-10000000,
-  -237,  -238,-10000000,  -239,  -242,  -243,  -244,-10000000,-10000000,-10000000,
--10000000,    -3,-10000000,-10000000,-10000000,   -14,-10000000,  -251,  -253,-10000000,
--10000000 };
+-10000000,-10000000,   -26,  -268,-10000000,  -259,  -226,-10000000,  -257,    11,
+  -227,  -212,  -228,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,  -229,
+-10000000,  -230,  -240,  -231,  -212,-10000000,  -264,-10000000,    10,-10000000,
+-10000000,  -249,-10000000,-10000000,  -246,-10000000,-10000000,     5,    -2,     3,
+     8,     7,-10000000,-10000000,-10000000,   -10,  -232,-10000000,-10000000,-10000000,
+  -212,  -233,-10000000,  -234,  -235,-10000000,  -237,  -238,  -239,  -242,
+-10000000,-10000000,-10000000,-10000000,    -1,-10000000,-10000000,-10000000,   -11,-10000000,
+  -243,  -263,-10000000,-10000000 };
 static CONST TclDatetabelem TclDatepgo[]={
 
-     0,    49,    46,    66,    22,    65,    64,    63,    62,    60,
-    59,    58,    57,    56,    55 };
+     0,    49,    46,    70,    22,    69,    67,    66,    65,    64,
+    63,    61,    60,    59,    58,    57 };
 static CONST TclDatetabelem TclDater1[]={
 
      0,     5,     5,     6,     6,     6,     6,     6,     6,     6,
-     6,     7,     7,     7,     7,     7,     8,     8,     8,    10,
-    10,    10,    10,    10,     9,     9,     9,     9,     9,     9,
-     9,     9,     9,     9,    12,    12,    12,    13,    11,    11,
-    11,    11,    11,     3,     3,     1,     1,     1,     2,     2,
-    14,     4,     4 };
+     6,     6,     7,     7,     7,     7,     7,     8,     8,     8,
+    11,    11,    11,    11,    11,     9,     9,     9,     9,     9,
+     9,     9,     9,     9,     9,    10,    10,    13,    13,    13,
+    14,    12,    12,    12,    12,    12,     3,     3,     1,     1,
+     1,     2,     2,    15,     4,     4 };
 static CONST TclDatetabelem TclDater2[]={
 
      0,     0,     4,     3,     3,     3,     3,     3,     3,     3,
-     2,     5,     9,    11,    13,    15,     5,     3,     3,     3,
-     5,     5,     7,     5,     7,    11,     3,    11,    11,     5,
-     9,     5,     3,     7,     7,    15,     5,     9,     9,     7,
-     5,     7,     5,     3,     3,     3,     3,     3,     3,     1,
-     3,     1,     3 };
+     3,     2,     5,     9,    11,    13,    15,     5,     3,     3,
+     3,     5,     5,     7,     5,     7,    11,     3,    11,    11,
+     5,     9,     5,     3,     7,     5,     7,     7,    15,     5,
+     9,     9,     7,     5,     7,     5,     3,     3,     3,     3,
+     3,     3,     1,     3,     1,     3 };
 static CONST TclDatetabelem TclDatechk[]={
 
 -10000000,    -5,    -6,    -7,    -8,    -9,   -10,   -11,   -12,   -13,
-   -14,   268,   269,   259,   272,   263,   270,   258,    -3,   274,
-    -1,   265,    45,    43,   266,   273,   264,   261,    58,   258,
-    47,    45,   263,    -1,   271,   269,   272,   268,    44,   268,
-   258,    -1,   268,    -2,   257,   268,   268,   268,   263,   268,
-   268,    -2,   272,   268,    44,   258,    -1,    -1,    46,    -4,
-    45,    58,   261,    47,    45,    45,    58,   268,    -2,   268,
-   268,   268,   268,   268,   268,   268,    -4,    45,    58,   268,
-   268 };
+   -14,   -15,   268,   269,   259,   272,   263,   270,   274,   258,
+    -3,    -1,   265,    45,    43,   266,   273,   264,   261,    58,
+   258,    47,    45,   263,    -1,   271,   269,   272,   268,   258,
+   263,   268,    -1,    44,   268,    -2,   257,   268,   268,   268,
+   263,   268,   268,    -2,   272,   268,    44,   263,    -1,   258,
+    -1,    46,    -4,    45,    58,   261,    47,    45,    45,    58,
+   268,    -2,   268,   268,   268,   268,   268,   268,   268,    -4,
+    45,    58,   268,   268 };
 static CONST TclDatetabelem TclDatedef[]={
 
      1,    -2,     2,     3,     4,     5,     6,     7,     8,     9,
-    10,    50,    17,    18,    26,     0,    32,    19,     0,     0,
-    49,     0,    43,    44,    45,    46,    47,    11,     0,    21,
-     0,     0,    31,    49,    16,     0,    36,    29,    20,     0,
-    23,    40,     0,    42,    48,     0,    51,    24,     0,     0,
-    33,    39,    34,     0,     0,    22,    49,    41,     0,    12,
-     0,     0,    52,     0,     0,     0,     0,    30,    38,    37,
-    13,    51,    25,    27,    28,     0,    14,     0,     0,    15,
-    35 };
+    10,    11,    53,    18,    19,    27,     0,    33,     0,    20,
+     0,    52,     0,    46,    47,    48,    49,    50,    12,     0,
+    22,     0,     0,    32,    52,    17,     0,    39,    30,    24,
+    35,     0,    43,    21,     0,    45,    51,     0,    54,    25,
+     0,     0,    34,    42,    37,     0,     0,    36,    44,    23,
+    52,     0,    13,     0,     0,    55,     0,     0,     0,     0,
+    31,    41,    40,    14,    54,    26,    28,    29,     0,    15,
+     0,     0,    16,    38 };
 typedef struct
 #ifdef __cplusplus
 	TclDatetoktype
@@ -1005,6 +1045,7 @@ char * TclDatereds[] =
 	"item : time",
 	"item : zone",
 	"item : date",
+	"item : ordMonth",
 	"item : day",
 	"item : relspec",
 	"item : iso",
@@ -1033,6 +1074,8 @@ char * TclDatereds[] =
 	"date : tUNUMBER tMONTH",
 	"date : tEPOCH",
 	"date : tUNUMBER tMONTH tUNUMBER",
+	"ordMonth : tNEXT tMONTH",
+	"ordMonth : tNEXT tUNUMBER tMONTH",
 	"iso : tISOBASE tZONE tISOBASE",
 	"iso : tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER",
 	"iso : tISOBASE tISOBASE",
@@ -1591,46 +1634,49 @@ case 5:{
             TclDateHaveDate++;
         } break;
 case 6:{
-            TclDateHaveDay++;
+            TclDateHaveOrdinalMonth++;
         } break;
 case 7:{
-            TclDateHaveRel++;
+            TclDateHaveDay++;
         } break;
 case 8:{
+            TclDateHaveRel++;
+        } break;
+case 9:{
 	    TclDateHaveTime++;
 	    TclDateHaveDate++;
 	} break;
-case 9:{
+case 10:{
 	    TclDateHaveTime++;
 	    TclDateHaveDate++;
 	    TclDateHaveRel++;
         } break;
-case 11:{
+case 12:{
             TclDateHour = TclDatepvt[-1].Number;
             TclDateMinutes = 0;
             TclDateSeconds = 0;
             TclDateMeridian = TclDatepvt[-0].Meridian;
         } break;
-case 12:{
+case 13:{
             TclDateHour = TclDatepvt[-3].Number;
             TclDateMinutes = TclDatepvt[-1].Number;
             TclDateSeconds = 0;
             TclDateMeridian = TclDatepvt[-0].Meridian;
         } break;
-case 13:{
+case 14:{
             TclDateHour = TclDatepvt[-4].Number;
             TclDateMinutes = TclDatepvt[-2].Number;
             TclDateMeridian = MER24;
             TclDateDSTmode = DSToff;
             TclDateTimezone = (TclDatepvt[-0].Number % 100 + (TclDatepvt[-0].Number / 100) * 60);
         } break;
-case 14:{
+case 15:{
             TclDateHour = TclDatepvt[-5].Number;
             TclDateMinutes = TclDatepvt[-3].Number;
             TclDateSeconds = TclDatepvt[-1].Number;
             TclDateMeridian = TclDatepvt[-0].Meridian;
         } break;
-case 15:{
+case 16:{
             TclDateHour = TclDatepvt[-6].Number;
             TclDateMinutes = TclDatepvt[-4].Number;
             TclDateSeconds = TclDatepvt[-2].Number;
@@ -1638,86 +1684,94 @@ case 15:{
             TclDateDSTmode = DSToff;
             TclDateTimezone = (TclDatepvt[-0].Number % 100 + (TclDatepvt[-0].Number / 100) * 60);
         } break;
-case 16:{
+case 17:{
             TclDateTimezone = TclDatepvt[-1].Number;
             TclDateDSTmode = DSTon;
         } break;
-case 17:{
+case 18:{
             TclDateTimezone = TclDatepvt[-0].Number;
             TclDateDSTmode = DSToff;
         } break;
-case 18:{
+case 19:{
             TclDateTimezone = TclDatepvt[-0].Number;
             TclDateDSTmode = DSTon;
         } break;
-case 19:{
+case 20:{
             TclDateDayOrdinal = 1;
             TclDateDayNumber = TclDatepvt[-0].Number;
         } break;
-case 20:{
+case 21:{
             TclDateDayOrdinal = 1;
             TclDateDayNumber = TclDatepvt[-1].Number;
         } break;
-case 21:{
+case 22:{
             TclDateDayOrdinal = TclDatepvt[-1].Number;
             TclDateDayNumber = TclDatepvt[-0].Number;
         } break;
-case 22:{
+case 23:{
             TclDateDayOrdinal = TclDatepvt[-2].Number * TclDatepvt[-1].Number;
             TclDateDayNumber = TclDatepvt[-0].Number;
         } break;
-case 23:{
+case 24:{
             TclDateDayOrdinal = 2;
             TclDateDayNumber = TclDatepvt[-0].Number;
         } break;
-case 24:{
+case 25:{
             TclDateMonth = TclDatepvt[-2].Number;
             TclDateDay = TclDatepvt[-0].Number;
         } break;
-case 25:{
+case 26:{
             TclDateMonth = TclDatepvt[-4].Number;
             TclDateDay = TclDatepvt[-2].Number;
             TclDateYear = TclDatepvt[-0].Number;
         } break;
-case 26:{
+case 27:{
 	    TclDateYear = TclDatepvt[-0].Number / 10000;
 	    TclDateMonth = (TclDatepvt[-0].Number % 10000)/100;
 	    TclDateDay = TclDatepvt[-0].Number % 100;
 	} break;
-case 27:{
+case 28:{
 	    TclDateDay = TclDatepvt[-4].Number;
 	    TclDateMonth = TclDatepvt[-2].Number;
 	    TclDateYear = TclDatepvt[-0].Number;
 	} break;
-case 28:{
+case 29:{
             TclDateMonth = TclDatepvt[-2].Number;
             TclDateDay = TclDatepvt[-0].Number;
             TclDateYear = TclDatepvt[-4].Number;
         } break;
-case 29:{
+case 30:{
             TclDateMonth = TclDatepvt[-1].Number;
             TclDateDay = TclDatepvt[-0].Number;
         } break;
-case 30:{
+case 31:{
             TclDateMonth = TclDatepvt[-3].Number;
             TclDateDay = TclDatepvt[-2].Number;
             TclDateYear = TclDatepvt[-0].Number;
         } break;
-case 31:{
+case 32:{
             TclDateMonth = TclDatepvt[-0].Number;
             TclDateDay = TclDatepvt[-1].Number;
         } break;
-case 32:{
+case 33:{
 	    TclDateMonth = 1;
 	    TclDateDay = 1;
 	    TclDateYear = EPOCH;
 	} break;
-case 33:{
+case 34:{
             TclDateMonth = TclDatepvt[-1].Number;
             TclDateDay = TclDatepvt[-2].Number;
             TclDateYear = TclDatepvt[-0].Number;
         } break;
-case 34:{
+case 35:{
+	    TclDateMonthOrdinal = 1;
+	    TclDateMonth = TclDatepvt[-0].Number;
+	} break;
+case 36:{
+	    TclDateMonthOrdinal = TclDatepvt[-1].Number;
+	    TclDateMonth = TclDatepvt[-0].Number;
+	} break;
+case 37:{
             if (TclDatepvt[-1].Number != HOUR(- 7)) YYABORT;
 	    TclDateYear = TclDatepvt[-2].Number / 10000;
 	    TclDateMonth = (TclDatepvt[-2].Number % 10000)/100;
@@ -1726,7 +1780,7 @@ case 34:{
 	    TclDateMinutes = (TclDatepvt[-0].Number % 10000)/100;
 	    TclDateSeconds = TclDatepvt[-0].Number % 100;
         } break;
-case 35:{
+case 38:{
             if (TclDatepvt[-5].Number != HOUR(- 7)) YYABORT;
 	    TclDateYear = TclDatepvt[-6].Number / 10000;
 	    TclDateMonth = (TclDatepvt[-6].Number % 10000)/100;
@@ -1735,7 +1789,7 @@ case 35:{
 	    TclDateMinutes = TclDatepvt[-2].Number;
 	    TclDateSeconds = TclDatepvt[-0].Number;
         } break;
-case 36:{
+case 39:{
 	    TclDateYear = TclDatepvt[-1].Number / 10000;
 	    TclDateMonth = (TclDatepvt[-1].Number % 10000)/100;
 	    TclDateDay = TclDatepvt[-1].Number % 100;
@@ -1743,7 +1797,7 @@ case 36:{
 	    TclDateMinutes = (TclDatepvt[-0].Number % 10000)/100;
 	    TclDateSeconds = TclDatepvt[-0].Number % 100;
         } break;
-case 37:{
+case 40:{
             /*
 	     * Offset computed year by -377 so that the returned years will
 	     * be in a range accessible with a 32 bit clock seconds value
@@ -1754,19 +1808,19 @@ case 37:{
 	    TclDateRelDay += ((TclDatepvt[-2].Number%1000)*(365 + IsLeapYear(TclDateYear)))/1000;
 	    TclDateRelSeconds += TclDatepvt[-0].Number * 144 * 60;
         } break;
-case 38:{ *TclDateRelPointer += TclDatepvt[-3].Number * TclDatepvt[-2].Number * TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
-case 39:{ *TclDateRelPointer += TclDatepvt[-2].Number * TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
-case 40:{ *TclDateRelPointer += TclDatepvt[-0].Number; } break;
-case 41:{ *TclDateRelPointer += TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
-case 42:{ *TclDateRelPointer += TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
-case 43:{ TclDateval.Number = -1; } break;
-case 44:{ TclDateval.Number =  1; } break;
-case 45:{ TclDateval.Number = TclDatepvt[-0].Number; TclDateRelPointer = &TclDateRelSeconds; } break;
-case 46:{ TclDateval.Number = TclDatepvt[-0].Number; TclDateRelPointer = &TclDateRelDay; } break;
-case 47:{ TclDateval.Number = TclDatepvt[-0].Number; TclDateRelPointer = &TclDateRelMonth; } break;
-case 48:{ TclDateval.Number = -1; } break;
-case 49:{ TclDateval.Number = 1; } break;
-case 50:{
+case 41:{ *TclDateRelPointer += TclDatepvt[-3].Number * TclDatepvt[-2].Number * TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
+case 42:{ *TclDateRelPointer += TclDatepvt[-2].Number * TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
+case 43:{ *TclDateRelPointer += TclDatepvt[-0].Number; } break;
+case 44:{ *TclDateRelPointer += TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
+case 45:{ *TclDateRelPointer += TclDatepvt[-1].Number * TclDatepvt[-0].Number; } break;
+case 46:{ TclDateval.Number = -1; } break;
+case 47:{ TclDateval.Number =  1; } break;
+case 48:{ TclDateval.Number = TclDatepvt[-0].Number; TclDateRelPointer = &TclDateRelSeconds; } break;
+case 49:{ TclDateval.Number = TclDatepvt[-0].Number; TclDateRelPointer = &TclDateRelDay; } break;
+case 50:{ TclDateval.Number = TclDatepvt[-0].Number; TclDateRelPointer = &TclDateRelMonth; } break;
+case 51:{ TclDateval.Number = -1; } break;
+case 52:{ TclDateval.Number = 1; } break;
+case 53:{
 	if (TclDateHaveTime && TclDateHaveDate && !TclDateHaveRel) {
 	    TclDateYear = TclDatepvt[-0].Number;
 	} else {
@@ -1782,10 +1836,10 @@ case 50:{
 	    TclDateMeridian = MER24;
 	}
     } break;
-case 51:{
+case 54:{
             TclDateval.Meridian = MER24;
         } break;
-case 52:{
+case 55:{
             TclDateval.Meridian = TclDatepvt[-0].Meridian;
         } break;
 	}
