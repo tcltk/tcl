@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.33 2004/05/19 20:29:17 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.34 2004/05/19 21:56:37 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2898,7 +2898,7 @@ test interp-34.2 {basic test of limits - bytecoded commands} -body {
 } -returnCodes error -result {command count limit exceeded} -cleanup {
     interp delete $i
 }
-test interp-34.3 {basic test of limits - pure bytecode loop} knownBug {
+test interp-34.3 {basic test of limits - pure bytecode loop} -body {
     set i [interp create]
     $i eval {
 	proc foobar {} {
@@ -2907,11 +2907,12 @@ test interp-34.3 {basic test of limits - pure bytecode loop} knownBug {
 	    }
 	}
     }
-    $i limit command -value 1000
-    set msg [list [catch {$i eval foobar} msg] $msg]
+    # We use a time limit here; command limits don't trap this case
+    $i limit time -seconds [expr {[clock seconds]+2}]
+    $i eval foobar
+} -returnCodes error -result {time limit exceeded} -cleanup {
     interp delete $i
-    set msg
-} {1 {command count limit exceeded}}
+}
 test interp-34.4 {limits with callbacks: extending limits} -setup {
     set i [interp create]
     set a 0
