@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.52 2004/11/30 19:34:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.53 2004/12/01 23:18:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1211,11 +1211,7 @@ TclpCreateProcess(
 		Tcl_DString pipeDll;
 		Tcl_DStringInit(&pipeDll);
 		Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
-
-		/* For safety, just in case the app didn't call it first */
-		Tcl_FindExecutable(NULL);
-
-		tclExePtr = Tcl_NewStringObj(Tcl_GetNameOfExecutable(), -1);
+		tclExePtr = TclGetObjNameOfExecutable();
 		start = Tcl_GetStringFromObj(tclExePtr, &i);
 		for (end = start + (i-1); end > start; end--) {
 		    if (*end == '/') {
