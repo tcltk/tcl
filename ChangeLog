@@ -1,3 +1,21 @@
+2003-01-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Fix mingw build problems and compiler warnings.
+
+	* generic/tcl.h: Add if defined(__MINGW32__)
+	check to code that sets the TCL_WIDE_INT_TYPE
+	and TCL_LL_MODIFIER.
+	* generic/tclClock.c (FormatClock): Don't
+	define savedTimeZone and savedTZEnv if
+	we are not going to use them.
+	* generic/tclEnv.c: Add cast to avoid warning.
+	* win/tclWinChan.c: Use DWORD instead of int
+	to avoid compiler warning.
+	* win/tclWinThrd.c: Only define allocLock,
+	allocLockPtr, and dataKey when TCL_THREADS
+	is defined. This avoid a compiler warning
+	about unused variables.
+
 2003-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Update msys + mingw URL, the
