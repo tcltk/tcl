@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.15 2001/08/22 01:29:18 hobbs Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.16 2001/08/22 23:55:27 hobbs Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -314,21 +314,21 @@ test tcltest-6.1 {tcltest -outfile, -errfile defaults} {
     -result {a test.*a really}
     -match regexp
 }
-test tcltest-6.2 {tcltest -outfile a.tmp} {unixOrPc} {
+test tcltest-6.2 {tcltest -outfile a.tmp} {unixOrPc unixExecs} {
     catch {exec $::tcltest::tcltest printerror.tcl -outfile a.tmp} msg
     set result1 [catch {exec grep "a test" a.tmp}]
     set result2 [catch {exec grep "a really" a.tmp}]
     list [regexp "a test" $msg] [regexp "a really" $msg] \
 	    $result1 $result2 [file exists a.tmp] [file delete a.tmp] 
 } {0 1 0 1 1 {}}
-test tcltest-6.3 {tcltest -errfile a.tmp} {unixOrPc} {
+test tcltest-6.3 {tcltest -errfile a.tmp} {unixOrPc unixExecs} {
     catch {exec $::tcltest::tcltest printerror.tcl -errfile a.tmp} msg
     set result1 [catch {exec grep "a test" a.tmp}]
     set result2 [catch {exec grep "a really" a.tmp}]
     list [regexp "a test" $msg] [regexp "a really" $msg] \
 	    $result1 $result2 [file exists a.tmp] [file delete a.tmp]
 } {1 0 1 0 1 {}}
-test tcltest-6.4 {tcltest -outfile a.tmp -errfile b.tmp} {unixOrPc} {
+test tcltest-6.4 {tcltest -outfile a.tmp -errfile b.tmp} {unixOrPc unixExecs} {
     catch {exec $::tcltest::tcltest printerror.tcl -outfile a.tmp -errfile b.tmp} msg
     set result1 [catch {exec grep "a test" a.tmp}]
     set result2 [catch {exec grep "a really" b.tmp}]
