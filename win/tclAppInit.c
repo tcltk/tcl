@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.15 2003/10/14 22:48:06 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.16 2004/01/16 02:46:10 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -180,7 +180,7 @@ Tcl_AppInit(interp)
             Procbodytest_SafeInit);
 #endif /* TCL_TEST */
 
-#if defined(STATIC_BUILD) && defined(TCL_USE_STATIC_PACKAGES)
+#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
     {
 	extern Tcl_PackageInitProc Registry_Init;
 	extern Tcl_PackageInitProc Dde_Init;
