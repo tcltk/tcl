@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.1.2.7 1999/04/02 22:30:42 hershey Exp $
+# RCS: @(#) $Id: safe.test,v 1.1.2.8 1999/04/06 00:43:17 redman Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -84,7 +84,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} {
     set l [lsort [a aliases]]
     safe::interpDelete a
     set l
-} {exit file load source}
+} {encoding exit file load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} {
     catch {safe::interpDelete a}
     safe::interpCreate a
@@ -442,6 +442,73 @@ test safe-10.4 {testing nested statics loading / -nestedloadok} {
 
 
 }
+
+test safe-11.1 {testing safe encoding} {
+    set i [safe::interpCreate]
+    list \
+	    [catch {interp eval $i encoding} msg] \
+	    $msg \
+	    [safe::interpDelete $i];
+} {1 {wrong # args: should be "encoding option ?arg ...?"} {}}
+
+test safe-11.2 {testing safe encoding} {
+    set i [safe::interpCreate]
+    list \
+	    [catch {interp eval $i encoding system cp775} msg] \
+	    $msg \
+	    [safe::interpDelete $i];
+} {1 {wrong # args: should be "encoding system"} {}}
+
+test safe-11.3 {testing safe encoding} {
+    set i [safe::interpCreate]
+    set result [catch {
+	string match [encoding system] [interp eval $i encoding system]
+    } msg]
+    list $result $msg [safe::interpDelete $i]
+} {0 1 {}}
+
+test safe-11.4 {testing safe encoding} {
+    set i [safe::interpCreate]
+    set result [catch {
+	string match [encoding names] [interp eval $i encoding names]
+    } msg]
+    list $result $msg  [safe::interpDelete $i]
+} {0 1 {}}
+
+test safe-11.5 {testing safe encoding} {
+    set i [safe::interpCreate]
+    list \
+	    [catch {interp eval $i encoding convertfrom cp1258 foobar} msg] \
+	    $msg \
+	    [safe::interpDelete $i];
+} {0 foobar {}}
+
+
+test safe-11.6 {testing safe encoding} {
+    set i [safe::interpCreate]
+    list \
+	    [catch {interp eval $i encoding convertto cp1258 foobar} msg] \
+	    $msg \
+	    [safe::interpDelete $i];
+} {0 foobar {}}
+
+test safe-11.7 {testing safe encoding} {
+    set i [safe::interpCreate]
+    list \
+	    [catch {interp eval $i encoding convertfrom} msg] \
+	    $msg \
+	    [safe::interpDelete $i];
+} {1 {wrong # args: should be "encoding convertfrom ?encoding? data"} {}}
+
+
+test safe-11.8 {testing safe encoding} {
+    set i [safe::interpCreate]
+    list \
+	    [catch {interp eval $i encoding convertto} msg] \
+	    $msg \
+	    [safe::interpDelete $i];
+} {1 {wrong # args: should be "encoding convertto ?encoding? data"} {}}
+
 
 # cleanup
 ::tcltest::cleanupTests

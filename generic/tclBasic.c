@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.14 1999/04/02 00:54:16 redman Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.15 1999/04/06 00:43:16 redman Exp $
  */
 
 #include "tclInt.h"
@@ -80,7 +80,7 @@ static CmdInfo builtInCmds[] = {
     {"continue",	(Tcl_CmdProc *) NULL,	Tcl_ContinueObjCmd,
         TclCompileContinueCmd,		1},
     {"encoding",	(Tcl_CmdProc *) NULL,	Tcl_EncodingObjCmd,
-        (CompileProc *) NULL,		1},
+        (CompileProc *) NULL,		0},
     {"error",		(Tcl_CmdProc *) NULL,	Tcl_ErrorObjCmd,
         (CompileProc *) NULL,		1},
     {"eval",		(Tcl_CmdProc *) NULL,	Tcl_EvalObjCmd,

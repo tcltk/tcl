@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.1.2.3 1998/12/02 20:08:06 welch Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.1.2.4 1999/04/06 00:43:17 redman Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -439,6 +439,13 @@ proc ::safe::interpAddToAccessPath {slave path} {
 	# absolute paths.
 	::interp alias $slave source {} [namespace current]::AliasSource $slave
 	::interp alias $slave load {} [namespace current]::AliasLoad $slave
+
+	# This alias lets the slave use the encoding names, convertfrom,
+	# convertto, and system, but not "encoding system <name>" to set
+	# the system encoding.
+
+	::interp alias $slave encoding {} [namespace current]::AliasEncoding \
+		$slave
 
 	# This alias lets the slave have access to a subset of the 'file'
 	# command functionality.
@@ -882,6 +889,43 @@ proc ::safe::setLogCmd {args} {
 	append pat )\$
 	::interp alias $slave $alias {}\
 		[namespace current]::Subset $slave $target $pat
+    }
+
+    # AliasEncoding is the target of the "encoding" alias in safe interpreters.
+
+    proc AliasEncoding {slave args} {
+
+	set argc [llength $args];
+
+	set okpat "^(name.*|convert.*)\$"
+	set subcommand [lindex $args 0]
+
+	if {[regexp $okpat $subcommand]} {
+	    return [eval ::interp invokehidden $slave encoding $subcommand \
+		    [lrange $args 1 end]]
+	}
+
+	if {[string match $subcommand system]} {
+	    if {$argc == 1} {
+		# passed all the tests , lets source it:
+		if {[catch {::interp invokehidden \
+			$slave encoding system} msg]} {
+		    Log $slave $msg;
+		    return -code error "script error";
+		}
+	    } else {
+		set msg "wrong # args: should be \"encoding system\"";
+		Log $slave $msg;
+		error $msg;
+	    }
+	} else {
+	    set msg "wrong # args: should be \"encoding option ?arg ...?\"";
+	    Log $slave $msg;
+	    error $msg;
+	}
+	
+	
+	return $msg
     }
 
 }
