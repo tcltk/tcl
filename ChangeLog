@@ -1,3 +1,9 @@
+2002-07-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclVar.c (TclLookupVar): removed early returns that
+	prevented the parens from being restored. also removed goto label
+	as it was not necessary.
+
 2002-07-24  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: 
