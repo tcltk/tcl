@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.38 1999/01/12 02:50:33 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.39 1999/01/29 00:32:14 rjohnson Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3695,3 +3695,5 @@ Thanks to Kevin Kenny for this fix.  (SS)
 
 1/11/98 (bug fix)  On HP, "info sharedlibextension" was returning 
 empty string on static apps.  It now always returns ".sl".  (RJ)
+
+1/28/99 (configure change) Now support -pipe option on gcc.  (RJ)
