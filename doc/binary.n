@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.19 2004/06/15 22:22:37 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.20 2004/08/31 15:19:35 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -22,7 +22,7 @@ binary \- Insert and extract fields from binary strings
 .PP
 This command provides facilities for manipulating binary data.  The
 first form, \fBbinary format\fR, creates a binary string from normal
-Tcl values.  For example, given the values 16 and 22, on a 32 bit
+Tcl values.  For example, given the values 16 and 22, on a 32-bit
 architecture, it might produce an 8-byte binary string consisting of
 two 4-byte integers, one for each of the numbers.  The second form of
 the command, \fBbinary scan\fR, does the opposite: it extracts data
@@ -700,7 +700,7 @@ floating point representations.
 .IP \fBx\fR 5
 Moves the cursor forward \fIcount\fR bytes in \fIstring\fR.  If
 \fIcount\fR is \fB*\fR or is larger than the number of bytes after the
-current cursor cursor position, then the cursor is positioned after
+current cursor position, then the cursor is positioned after
 the last byte in \fIstring\fR.  If \fIcount\fR is omitted, then the
 cursor is moved forward one byte.  Note that this type does not
 consume an argument.  For example,

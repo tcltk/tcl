@@ -46,7 +46,7 @@ is synonymous with \fBclock milliseconds\fR (see below).  This
 usage is obsolete, and \fBclock milliseconds\fR is to be
 considered the preferred way of obtaining a count of milliseconds.
 .sp
-It the \fI-option\fR argument is \fI-microseconds\fR, then the command
+If the \fI-option\fR argument is \fI-microseconds\fR, then the command
 is synonymous with \fBclock microseconds\fR (see below).  This
 usage is obsolete, and \fBclock microseconds\fR is to be
 considered the preferred way of obtaining a count of microseconds.
@@ -728,10 +728,10 @@ that give the rules for various locales.  A complete list
 of the location names is too lengthy to be listed here.
 On most Tcl installations, the definitions of the locations
 are to be found in named files in the directory
-"\fI/no_backup/tools/lib/tcl8.5/clock/tzdata\fR".  On some Unix systems, these
+ "\fI/no_backup/tools/lib/tcl8.5/clock/tzdata\fR".  On some Unix systems, these
 files are omitted, and the definitions are instead
 obtained from system files in "\fI/usr/share/zoneinfo\fR",
-"\fI/usr/share/lib/zoneinfo\fR" or "\fI/usr/local/etc/zoneinfo\fR".
+ "\fI/usr/share/lib/zoneinfo\fR" or "\fI/usr/local/etc/zoneinfo\fR".
 As a special case, the name \fB:localtime\fR refers to
 the local time zone as defined by the C library.
 .PP
@@ -794,9 +794,12 @@ a 24-hour clock.
 .TP
 \fIdate\fR
 A specific month and day with optional year.  The
-acceptable formats are "\fBmm/dd?/yy?\fR", "\fBmonthname dd?, yy?\fR",
-"\fBday, dd monthname ?yy?\fR", "\fBdd monthname yy\fR",
-"\fB?CC?yymmdd\fR", and "\fBdd-monthname-?CC?yy\fR.
+acceptable formats are "\fBmm/dd\fR?\fB/yy\fR?",
+ "\fBmonthname dd\fR?\fB, yy\fR?",
+ "\fBday, dd monthname \fR?\fByy\fR?",
+ "\fBdd monthname yy\fR",
+ "?\fBCC\fR?\fByymmdd\fR", and
+ "\fBdd-monthname-\fR?\fBCC\fR?\fByy\fR".
 The default year is the current year.  If the year is less
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so
@@ -827,7 +830,7 @@ differences and the correct date is given when going from the end
 of a long month to a short month.
 .PP
 Daylight savings time correction is applied only when the relative time
-is specified in units of days or more, ie, days, weeks, fortnights, months or
+is specified in units of days or more, i.e.\ days, weeks, fortnights, months or
 years.  This means that when crossing the daylight savings time boundary,
 different results will be given for \fBclock scan "1 day"\fR and
 \fBclock scan "24 hours"\fR:
@@ -841,4 +844,3 @@ different results will be given for \fBclock scan "1 day"\fR and
 msgcat
 .SH "COPYRIGHT"
 Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
-
