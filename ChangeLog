@@ -1,3 +1,14 @@
+2002-05-08    David Gravereaux <davygrvy@pobox.com>
+
+	* doc/file.n:
+	* tools/man2tcl.c:
+	* tools/man2help2.tcl:  Thanks to Peter Spjuth
+	<peter.spjuth@space.se>, again.  My prior fix for
+	single-quote macro mis-understanding was wrong.	 Reverted to
+	reimpliment the 'macro2' proc which handles single-quote macros
+	and restored file.n text arrangement to avoid single-quotes on
+	the first line.  Sorry for all the confusion.
+
 2002-05-08  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/man2tcl.c:
