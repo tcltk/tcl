@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.51 2004/09/10 18:15:25 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.52 2004/09/10 18:19:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1859,7 +1859,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * Determine the context namespace nsPtr in which to start the primary
      * search.  If the qualName name starts with a "::" or TCL_GLOBAL_ONLY
      * was specified, search from the global namespace. Otherwise, use the
-     * given namespace given in cxtNsPtr, or if that is NULL, use the current
+     * namespace given in cxtNsPtr, or if that is NULL, use the current
      * namespace context. Note that we always treat two or more
      * adjacent ":"s as a namespace separator.
      */
