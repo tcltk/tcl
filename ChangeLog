@@ -1,5 +1,7 @@
 2002-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclCmdAH.c (StoreStatData): corrected mem leak.
+
 	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): prevent obj leak in
 	remedial regsub case.
 
