@@ -41,7 +41,7 @@
 int compile _ANSI_ARGS_((regex_t *, CONST chr *, size_t, int));
 static VOID moresubs _ANSI_ARGS_((struct vars *, int));
 static int freev _ANSI_ARGS_((struct vars *, int));
-static VOID makescan _ANSI_ARGS_((struct vars *, struct nfa *));
+static VOID makesearch _ANSI_ARGS_((struct vars *, struct nfa *));
 static struct subre *parse _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *));
 static struct subre *parsebranch _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, int));
 static VOID parseqatom _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, struct subre *));
@@ -65,14 +65,15 @@ static VOID optst _ANSI_ARGS_((struct vars *, struct subre *));
 static int numst _ANSI_ARGS_((struct subre *, int));
 static VOID markst _ANSI_ARGS_((struct subre *));
 static VOID cleanst _ANSI_ARGS_((struct vars *));
-static int nfatree _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
-static int nfanode _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
+static long nfatree _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
+static long nfanode _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
 static int newlacon _ANSI_ARGS_((struct vars *, struct state *, struct state *, int));
 static VOID freelacons _ANSI_ARGS_((struct subre *, int));
 static VOID rfree _ANSI_ARGS_((regex_t *));
 static VOID dump _ANSI_ARGS_((regex_t *, FILE *));
 static VOID dumpst _ANSI_ARGS_((struct subre *, FILE *, int));
-static VOID stdump _ANSI_ARGS_((struct subre *, FILE *, int, int));
+static VOID stdump _ANSI_ARGS_((struct subre *, FILE *, int));
+static char *stid _ANSI_ARGS_((struct subre *, char *, size_t));
 /* === regc_lex.c === */
 static VOID lexstart _ANSI_ARGS_((struct vars *));
 static VOID prefixes _ANSI_ARGS_((struct vars *));
@@ -138,7 +139,7 @@ static VOID dupnfa _ANSI_ARGS_((struct nfa *, struct state *, struct state *, st
 static VOID duptraverse _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
 static VOID cleartraverse _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID specialcolors _ANSI_ARGS_((struct nfa *));
-static int optimize _ANSI_ARGS_((struct nfa *, FILE *));
+static long optimize _ANSI_ARGS_((struct nfa *, FILE *));
 static VOID pullback _ANSI_ARGS_((struct nfa *, FILE *));
 static int pull _ANSI_ARGS_((struct nfa *, struct arc *));
 static VOID pushfwd _ANSI_ARGS_((struct nfa *, FILE *));
@@ -152,7 +153,7 @@ static int unempty _ANSI_ARGS_((struct nfa *, struct arc *));
 static VOID cleanup _ANSI_ARGS_((struct nfa *));
 static VOID markreachable _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *));
 static VOID markcanreach _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *));
-static int analyze _ANSI_ARGS_((struct nfa *));
+static long analyze _ANSI_ARGS_((struct nfa *));
 static VOID compact _ANSI_ARGS_((struct nfa *, struct cnfa *));
 static VOID carcsort _ANSI_ARGS_((struct carc *, struct carc *));
 static VOID freecnfa _ANSI_ARGS_((struct cnfa *));
@@ -229,7 +230,6 @@ struct vars {
 	struct subre *lacons;	/* lookahead-constraint vector */
 	int nlacons;		/* size of lacons */
 	int usedshorter;	/* used short-preferring quantifiers */
-	int unmatchable;	/* can never match */
 };
 
 /* parsing macros; most know that `v' is the struct vars pointer */
@@ -382,36 +382,37 @@ int flags;
 	specialcolors(v->nfa);
 	CNOERR();
 	if (debug != NULL) {
+		fprintf(debug, "\n\n\n========= RAW ==========\n");
 		dumpnfa(v->nfa, debug);
 		dumpst(v->tree, debug, 1);
 	}
 	v->usedshorter = 0;
-	v->unmatchable = 0;
 	optst(v, v->tree);
 	v->ntree = numst(v->tree, 1);
 	markst(v->tree);
 	cleanst(v);
 	if (debug != NULL) {
+		fprintf(debug, "\n\n\n========= TREE FIXED ==========\n");
 		fprintf(debug, "-->\n");
 		dumpst(v->tree, debug, 1);
 	}
 
 	/* build compacted NFAs for tree, lacons, fast search */
 	re->re_info |= nfatree(v, v->tree, debug);
-	if (debug != NULL) {
-		fprintf(debug, "---->\n");
-		dumpst(v->tree, debug, 1);
+	CNOERR();
+	assert(v->nlacons == 0 || v->lacons != NULL);
+	for (i = 1; i < v->nlacons; i++) {
+		if (debug != NULL)
+			fprintf(debug, "\n\n\n========= LA%d ==========\n", i);
+		nfanode(v, &v->lacons[i], debug);
 	}
 	CNOERR();
-	if (re->re_info&REG_UIMPOSSIBLE)
-		v->unmatchable = 1;
-	assert(v->nlacons == 0 || v->lacons != NULL);
-	for (i = 1; i < v->nlacons; i++)
-		nfanode(v, &v->lacons[i], debug);
-	CNOERR();
+	if (debug != NULL)
+		fprintf(debug, "\n\n\n========= SEARCH ==========\n");
+	/* can sacrifice main NFA now, so use it as work area */
 	(DISCARD)optimize(v->nfa, debug);
 	CNOERR();
-	makescan(v, v->nfa);
+	makesearch(v, v->nfa);
 	CNOERR();
 	compact(v->nfa, &g->search);
 	CNOERR();
@@ -431,7 +432,6 @@ int flags;
 	v->lacons = NULL;
 	g->nlacons = v->nlacons;
 	g->usedshorter = v->usedshorter;
-	g->unmatchable = v->unmatchable;
 
 	if (flags&REG_DUMP)
 		dump(re, stdout);
@@ -507,12 +507,12 @@ int err;
 }
 
 /*
- - makescan - turn an NFA into a fast-scan NFA (implicit prepend of .*?)
+ - makesearch - turn an NFA into a fast-scan NFA (implicit prepend of .*?)
  * NFA must have been optimize()d already.
- ^ static VOID makescan(struct vars *, struct nfa *);
+ ^ static VOID makesearch(struct vars *, struct nfa *);
  */
 static VOID
-makescan(v, nfa)
+makesearch(v, nfa)
 struct vars *v;
 struct nfa *nfa;
 {
@@ -1907,9 +1907,9 @@ struct vars *v;
 
 /*
  - nfatree - turn a subRE subtree into a tree of compacted NFAs
- ^ static int nfatree(struct vars *, struct subre *, FILE *);
+ ^ static long nfatree(struct vars *, struct subre *, FILE *);
  */
-static int			/* optimize results from top node */
+static long			/* optimize results from top node */
 nfatree(v, t, f)
 struct vars *v;
 struct subre *t;
@@ -1927,19 +1927,23 @@ FILE *f;			/* for debug output */
 
 /*
  - nfanode - do one NFA for nfatree
- ^ static int nfanode(struct vars *, struct subre *, FILE *);
+ ^ static long nfanode(struct vars *, struct subre *, FILE *);
  */
-static int			/* optimize results */
+static long			/* optimize results */
 nfanode(v, t, f)
 struct vars *v;
 struct subre *t;
 FILE *f;			/* for debug output */
 {
 	struct nfa *nfa;
-	int ret = 0;
+	long ret = 0;
+ 	char idbuf[50];
 
 	assert(t->begin != NULL);
 
+	if (f != NULL)
+		fprintf(f, "\n\n\n========= TREE NODE %s ==========\n",
+						stid(t, idbuf, sizeof(idbuf)));
 	nfa = newnfa(v, v->cm, v->nfa);
 	NOERRZ();
 	dupnfa(nfa, t->begin, t->end, nfa->init, nfa->final);
@@ -2061,20 +2065,22 @@ FILE *f;
 		fprintf(f, "bad guts magic number (0x%x not 0x%x)\n", g->magic,
 								GUTSMAGIC);
 
-	fprintf(f, "nsub %d, info 0%o, csize %d, ntree %d, usedshort %d\n", 
+	fprintf(f, "\n\n\n========= DUMP ==========\n");
+	fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d, usedshort %d\n", 
 		re->re_nsub, re->re_info, re->re_csize, g->ntree,
 		g->usedshorter);
 
 	dumpcolors(&g->cmap, f);
 	if (!NULLCNFA(g->search)) {
-		printf("search:\n");
+		printf("\nsearch:\n");
 		dumpcnfa(&g->search, f);
 	}
 	for (i = 1; i < g->nlacons; i++) {
-		fprintf(f, "la%d (%s):\n", i,
+		fprintf(f, "\nla%d (%s):\n", i,
 				(g->lacons[i].subno) ? "positive" : "negative");
 		dumpcnfa(&g->lacons[i].cnfa, f);
 	}
+	fprintf(f, "\n");
 	dumpst(g->tree, f, 0);
 #endif
 }
@@ -2092,59 +2098,79 @@ int nfapresent;			/* is the original NFA still around? */
 	if (t == NULL)
 		fprintf(f, "null tree\n");
 	else
-		stdump(t, f, nfapresent, 0);
+		stdump(t, f, nfapresent);
 	fflush(f);
 }
 
 /*
  - stdump - recursive guts of dumpst
- ^ static VOID stdump(struct subre *, FILE *, int, int);
+ ^ static VOID stdump(struct subre *, FILE *, int);
  */
 static VOID
-stdump(t, f, nfapresent, level)
+stdump(t, f, nfapresent)
 struct subre *t;
 FILE *f;
 int nfapresent;			/* is the original NFA still around? */
-int level;
 {
 	int i;
-#	define	RTSEP	"  "
+	char idbuf[50];
 
-	for (i = 0; i < level; i++)
-		fprintf(f, RTSEP);
-	fprintf(f, "%c (", t->op);
+	fprintf(f, "%s. `%c'", stid(t, idbuf, sizeof(idbuf)), t->op);
 	if (t->flags&LONGER)
-		fprintf(f, "L");
+		fprintf(f, " longest");
 	if (t->flags&SHORTER)
-		fprintf(f, "S");
+		fprintf(f, " shortest");
 	if (t->flags&MIXED)
-		fprintf(f, "M");
+		fprintf(f, " hasmixed");
 	if (t->flags&CAP)
-		fprintf(f, "c");
+		fprintf(f, " hascapture");
 	if (t->flags&BACKR)
-		fprintf(f, "b");
+		fprintf(f, " hasbackref");
 	if (!(t->flags&INUSE))
-		fprintf(f, "!u");
-	fprintf(f, ") r%d", t->retry);
+		fprintf(f, " UNUSED");
 	if (t->subno != 0)
-		fprintf(f, " #%d", t->subno);
+		fprintf(f, " (#%d)", t->subno);
 	if (t->min != 1 || t->max != 1) {
-		fprintf(f, "{%d,", t->min);
+		fprintf(f, " {%d,", t->min);
 		if (t->max != INFINITY)
 			fprintf(f, "%d", t->max);
 		fprintf(f, "}");
 	}
 	if (nfapresent)
 		fprintf(f, " %ld-%ld", (long)t->begin->no, (long)t->end->no);
-	if (!NULLCNFA(t->cnfa))
-		fprintf(f, ":");
-	fprintf(f, "\n");
 	if (t->left != NULL)
-		stdump(t->left, f, nfapresent, level+1);
-	if (!NULLCNFA(t->cnfa))
-		dumpcnfa(&t->cnfa, f);
+		fprintf(f, " L:%s", stid(t->left, idbuf, sizeof(idbuf)));
 	if (t->right != NULL)
-		stdump(t->right, f, nfapresent, level+1);
+		fprintf(f, " R:%s", stid(t->right, idbuf, sizeof(idbuf)));
+	if (!NULLCNFA(t->cnfa)) {
+		fprintf(f, "\n");
+		dumpcnfa(&t->cnfa, f);
+		fprintf(f, "\n");
+	}
+	if (t->left != NULL)
+		stdump(t->left, f, nfapresent);
+	if (t->right != NULL)
+		stdump(t->right, f, nfapresent);
+}
+
+/*
+ - stid - identify a subtree node for dumping
+ ^ static char *stid(struct subre *, char *, size_t);
+ */
+static char *			/* points to buf or constant string */
+stid(t, buf, bufsize)
+struct subre *t;
+char *buf;
+size_t bufsize;
+{
+	/* big enough for hex int or decimal t->retry? */
+	if (bufsize < sizeof(int)*2 + 3 || bufsize < sizeof(t->retry)*3 + 1)
+		return "unable";
+	if (t->retry != 0)
+		sprintf(buf, "%d", t->retry);
+	else
+		sprintf(buf, "0x%x", (int)t);	/* may lose bits, that's okay */
+	return buf;
 }
 
 #include "regc_lex.c"

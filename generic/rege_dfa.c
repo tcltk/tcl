@@ -503,7 +503,7 @@ chr *start;			/* where the attempt got started */
 	}
 
 	if (!sawlacons) {		/* lookahead conds. always cache miss */
-		FDEBUG(("c%d[%d]->%d\n", css - d->ssets, co, p - d->ssets));
+		FDEBUG(("c%d[%d]->c%d\n", css - d->ssets, co, p - d->ssets));
 		css->outs[co] = p;
 		css->inchain[co] = p->ins;
 		p->ins.ss = css;

@@ -703,9 +703,9 @@ struct nfa *nfa;
 
 /*
  - optimize - optimize an NFA
- ^ static int optimize(struct nfa *, FILE *);
+ ^ static long optimize(struct nfa *, FILE *);
  */
-static int			/* re_info bits */
+static long			/* re_info bits */
 optimize(nfa, f)
 struct nfa *nfa;
 FILE *f;			/* for debug output; NULL none */
@@ -1187,9 +1187,9 @@ struct state *mark;		/* the value to mark with */
 
 /*
  - analyze - ascertain potentially-useful facts about an optimized NFA
- ^ static int analyze(struct nfa *);
+ ^ static long analyze(struct nfa *);
  */
-static int			/* re_info bits to be ORed in */
+static long			/* re_info bits to be ORed in */
 analyze(nfa)
 struct nfa *nfa;
 {

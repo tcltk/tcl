@@ -401,7 +401,7 @@ struct guts {
 	int magic;
 #		define	GUTSMAGIC	0xfed9
 	int cflags;		/* copy of compile flags */
-	int info;		/* copy of re_info */
+	long info;		/* copy of re_info */
 	size_t nsub;		/* copy of re_nsub */
 	struct subre *tree;
 	struct cnfa search;	/* for fast preliminary search */
@@ -411,5 +411,4 @@ struct guts {
 	struct subre *lacons;	/* lookahead-constraint vector */
 	int nlacons;		/* size of lacons */
 	int usedshorter;	/* used non-greedy quantifiers? */
-	int unmatchable;	/* cannot match anything? */
 };

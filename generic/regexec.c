@@ -172,7 +172,7 @@ int flags;
 	register struct vars *v = &var;
 	int st;
 	size_t n;
-	int complications;
+	int backref;
 #	define	LOCALMAT	20
 	regmatch_t mat[LOCALMAT];
 #	define	LOCALMEM	40
@@ -189,16 +189,14 @@ int flags;
 	v->g = (struct guts *)re->re_guts;
 	if ((v->g->cflags&REG_EXPECT) && details == NULL)
 		return REG_INVARG;
-	if (v->g->unmatchable)
+	if (v->g->info&REG_UIMPOSSIBLE)
 		return REG_NOMATCH;
-	complications = (v->g->info&REG_UBACKREF) ? 1 : 0;
-	if (v->g->usedshorter)
-		complications = 1;
+	backref = (v->g->info&REG_UBACKREF) ? 1 : 0;
 	v->eflags = flags;
 	if (v->g->cflags&REG_NOSUB)
 		nmatch = 0;		/* override client */
 	v->nmatch = nmatch;
-	if (complications && v->nmatch < v->g->nsub + 1) {
+	if (backref && v->nmatch < v->g->nsub + 1) {
 		/* need work area bigger than what user gave us */
 		if (v->g->nsub + 1 <= LOCALMAT)
 			v->pmatch = mat;
@@ -214,7 +212,8 @@ int flags;
 	v->start = (chr *)string;
 	v->stop = (chr *)string + len;
 	v->err = 0;
-	if (complications) {
+	if (backref) {
+		/* need retry memory */
 		assert(v->g->ntree >= 0);
 		n = (size_t)v->g->ntree;
 		if (n <= LOCALMEM)
@@ -231,7 +230,7 @@ int flags;
 
 	/* do it */
 	assert(v->g->tree != NULL);
-	if (complications)
+	if (backref)
 		st = cfind(v, &v->g->tree->cnfa, &v->g->cmap);
 	else
 		st = find(v, &v->g->tree->cnfa, &v->g->cmap);
@@ -266,11 +265,12 @@ struct colormap *cm;
 	struct smalldfa sa;
 	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
 	chr *begin;
-	chr *end = NULL;
+	chr *end;
 	chr *cold;
 	chr *open;		/* open and close of range of possible starts */
 	chr *close;
 	int hitend;
+	int shorter = (v->g->tree->flags&SHORTER) ? 1 : 0;
 
 	if (ISERR()) {		/* should be newdfa() failure */
 		if (d != NULL)
@@ -311,7 +311,11 @@ struct colormap *cm;
 	MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
 	for (begin = open; begin <= close; begin++) {
 		MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
-		end = longest(v, d, begin, v->stop, &hitend);
+		if (shorter)
+			end = shortest(v, d, begin, begin, v->stop,
+							(chr **)NULL, &hitend);
+		else
+			end = longest(v, d, begin, v->stop, &hitend);
 		if (hitend && cold == NULL)
 			cold = begin;
 		if (end != NULL)
@@ -328,7 +332,7 @@ struct colormap *cm;
 		if (cold != NULL)
 			v->details->rm_extend.rm_so = OFF(cold);
 		else
-			v->details->rm_extend.rm_eo = OFF(v->stop);
+			v->details->rm_extend.rm_so = OFF(v->stop);
 		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
 	}
 	if (v->nmatch > 1) {
@@ -591,6 +595,8 @@ chr *end;			/* end of same */
 	struct dfa *d2;
 	chr *mid;
 	int i;
+	int shorter = (t->left->flags&SHORTER) ? 1 : 0;
+	chr *stop = (shorter) ? end : begin;
 
 	assert(t->op == '.');
 	assert(t->left != NULL && t->left->cnfa.nstates > 0);
@@ -606,7 +612,11 @@ chr *end;			/* end of same */
 	}
 
 	/* pick a tentative midpoint */
-	mid = longest(v, d, begin, end, (int *)NULL);
+	if (shorter)
+		mid = shortest(v, d, begin, begin, end, (chr **)NULL,
+								(int *)NULL);
+	else
+		mid = longest(v, d, begin, end, (int *)NULL);
 	if (mid == NULL) {
 		freedfa(d);
 		freedfa(d2);
@@ -617,14 +627,18 @@ chr *end;			/* end of same */
 	/* iterate until satisfaction or failure */
 	while (longest(v, d2, mid, end, (int *)NULL) != end) {
 		/* that midpoint didn't work, find a new one */
-		if (mid == begin) {
+		if (mid == stop) {
 			/* all possibilities exhausted! */
 			MDEBUG(("no midpoint!\n"));
 			freedfa(d);
 			freedfa(d2);
 			return REG_ASSERT;
 		}
-		mid = longest(v, d, begin, mid-1, (int *)NULL);
+		if (shorter)
+			mid = shortest(v, d, begin, mid+1, end, (chr **)NULL,
+								(int *)NULL);
+		else
+			mid = longest(v, d, begin, mid-1, (int *)NULL);
 		if (mid == NULL) {
 			/* failed to find a new one! */
 			MDEBUG(("failed midpoint!\n"));
