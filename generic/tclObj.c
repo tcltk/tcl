@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.73.2.2 2005/04/02 21:45:37 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.73.2.3 2005/04/03 23:42:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -833,7 +833,7 @@ TclFreeObj(objPtr)
     }
 
     if (ObjDeletePending(context)) {
-	TclPushObjToDelete(context, objPtr);
+	PushObjToDelete(context, objPtr);
     } else {
 	if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
 	    ObjDeletionLock(context);

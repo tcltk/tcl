@@ -1,5 +1,8 @@
 2005-04-02  Miguel Sofer <msofer@users.sf.net>
 
+	*** FROM HEAD ***
+	* generic/tclVar.c: converted a few function calls to macros.	
+	
 	* generic/tclInt.h:
 	* generic/tclObj.c: Change in TclDecrRefCount and TclFreeObj, to
 	speed up the freeing of simple Tcl_Obj [Patch 1174551]
