@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacBOAAppInit.c,v 1.3 1999/04/16 00:47:19 stanton Exp $
+ * RCS: @(#) $Id: tclMacBOAAppInit.c,v 1.4 2001/06/08 20:06:11 dgp Exp $
  */
 
 #include "tcl.h"
@@ -75,6 +75,7 @@ main(
 {
     char *newArgv[3];
     
+    TclMacSetPanic();
     if (MacintoshInit()  != TCL_OK) {
 	Tcl_Exit(1);
     }
