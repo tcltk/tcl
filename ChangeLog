@@ -1,3 +1,7 @@
+2004-07-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4.7 TAGGED FOR RELEASE ***
+
 2004-07-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclThreadAlloc.c: Moved the tclInt.h include to provide
@@ -316,17 +320,14 @@
 
 	* generic/tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem
 	* generic/tclIO.h: as [SF Tcl Bug 462317], see ChangeLog entry
-	           2001-09-26. The fix done at that time is incomplete. It
-	           is possible to get around it if the actual read
-	           operation is defered and not executed in the event
-	           handler itself. Instead of tracking if we are in an
-	           read caused by a synthesized fileevent we now track if
-	           the OS has delivered a true event = actual data and
-	           bypass the driver if a read finds that there is no
-	           actual data waiting. The flag is cleared by a short or
-	           full read.
-
-	  ***POTENTIAL INCOMPATIBILITY*** for channel drivers.
+	2001-09-26. The fix done at that time is incomplete. It is
+	possible to get around it if the actual read operation is defered
+	and not executed in the event handler itself. Instead of tracking
+	if we are in an read caused by a synthesized fileevent we now
+	track if the OS has delivered a true event = actual data and
+	bypass the driver if a read finds that there is no actual data
+	waiting. The flag is cleared by a short or full read.
+	[[this bug amended 2004-07-14]]
 
 2004-05-18  Kevin B. Kenny  <kennykb@acm.org>
 
