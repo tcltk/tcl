@@ -1,12 +1,19 @@
 Tcl
 
-SCCS: %Z% $Id: README,v 1.6 1998/07/20 16:55:10 welch Exp $ 
+SCCS: %Z% $Id: README,v 1.7 1998/07/29 22:24:29 welch Exp $ 
 
 0. Preface
 ----------
-This is a pre-release of 8.0.3, tcl_patchLevel "8.0.3-3"
-we expect the 8.0.3 release to continue to change with the adoption
-of more patches, etc.  This release is being made early to help
+This is a pre-release of 8.0.3, tcl_patchLevel "8.0.3-4"
+This is close, but not final.  There are two major bugs we
+plan to fix before 8.0.3 goes final:
+1. On UNIX, socket I/O is not properly retried after signals.
+2. On Windows, keyboard traversal events from Alt-key sequences
+are not properly handled.  In particular, if you select the
+system menu Close command from the keyboard, you do not get
+the WM_DELETE_WINDOW protocol event.
+
+This release is being made early to help
 with the Consortium CD project.  Please do not advertise or
 circulate this release widely.  If you have problems, please figure
 out a fix and include a patch or a lot of detail, then send 
@@ -22,8 +29,10 @@ save and reload compiled byte-codes.
 3. Miscellaneous bug fixes to windows socket code.
 4. Various bug fixes derived from Victor Dukhovni's "jumbo" patch described
 on http://www.scriptics.com/resource/download/patches/tcl80p2/
-5. Patches to support [incr Tcl].  We expect changes in this area.
+5. Patches to support [incr Tcl].
 6. More enhancements, including a new implementation of pkg_mkIndex.
+7. A new implementation of auto_mkindex to support [incr Tcl] classes.
+8. New IMPORT/EXPORT macros to facilitate building DLL's on windows.
 
  
 1. Introduction
