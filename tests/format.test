@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.8 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: format.test,v 1.9 2001/08/23 13:57:08 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -22,11 +22,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # fail.  Someday I hope this code shouldn't be necessary (code added
 # 9/9/91).
 
-set roundOffBug 0
-if {"[format %7.1e  68.514]" == "6.8e+01"} {
-    puts stdout "Note: this system has a sprintf round-off bug, some tests skipped\n"
-    set roundOffBug 1
-}
+set ::tcltest::testConstraints(roundOffBug) \
+	[expr {"[format %7.1e  68.514]" != "6.8e+01"}]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -134,20 +131,18 @@ test format-4.1 {e and f formats} {eformat} {
 test format-4.2 {e and f formats} {eformat} {
     format "%20e %20e %20e %20e" 34.2e12 68.514 -.125 -16000. .000053
 } {        3.420000e+13         6.851400e+01        -1.250000e-01        -1.600000e+04}
-if {!$roundOffBug} {
-    test format-4.3 {e and f formats} {eformat} {
-	format "%.1e %.1e %.1e %.1e" 34.2e12 68.514 -.126 -16000. .000053
-    } {3.4e+13 6.9e+01 -1.3e-01 -1.6e+04}
-    test format-4.4 {e and f formats} {eformat} {
-	format "%020e %020e %020e %020e" 34.2e12 68.514 -.126 -16000. .000053
-    } {000000003.420000e+13 000000006.851400e+01 -00000001.260000e-01 -00000001.600000e+04}
-    test format-4.5 {e and f formats} {eformat} {
-	format "%7.1e %7.1e %7.1e %7.1e" 34.2e12 68.514 -.126 -16000. .000053
-    } {3.4e+13 6.9e+01 -1.3e-01 -1.6e+04}
-    test format-4.6 {e and f formats} {
-	format "%f %f %f %f" 34.2e12 68.514 -.125 -16000. .000053
-    } {34200000000000.000000 68.514000 -0.125000 -16000.000000}
-}
+test format-4.3 {e and f formats} {eformat roundOffBug} {
+    format "%.1e %.1e %.1e %.1e" 34.2e12 68.514 -.126 -16000. .000053
+} {3.4e+13 6.9e+01 -1.3e-01 -1.6e+04}
+test format-4.4 {e and f formats} {eformat roundOffBug} {
+    format "%020e %020e %020e %020e" 34.2e12 68.514 -.126 -16000. .000053
+} {000000003.420000e+13 000000006.851400e+01 -00000001.260000e-01 -00000001.600000e+04}
+test format-4.5 {e and f formats} {eformat roundOffBug} {
+    format "%7.1e %7.1e %7.1e %7.1e" 34.2e12 68.514 -.126 -16000. .000053
+} {3.4e+13 6.9e+01 -1.3e-01 -1.6e+04}
+test format-4.6 {e and f formats roundOffBug} {
+    format "%f %f %f %f" 34.2e12 68.514 -.125 -16000. .000053
+} {34200000000000.000000 68.514000 -0.125000 -16000.000000}
 test format-4.7 {e and f formats} {nonPortable} {
     format "%.4f %.4f %.4f %.4f %.4f" 34.2e12 68.514 -.125 -16000. .000053
 } {34200000000000.0000 68.5140 -0.1250 -16000.0000 0.0001}
@@ -499,15 +494,3 @@ catch {unset c}
 catch {unset d}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
