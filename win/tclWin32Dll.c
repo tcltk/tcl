@@ -104,72 +104,105 @@ DllMain(hInst, reason, reserved)
     DWORD reason;		/* Reason this function is being called. */
     LPVOID reserved;		/* Not used. */
 {
-    OSVERSIONINFO os;
-
     switch (reason) {
     case DLL_PROCESS_ATTACH:
-
-	/*
-	 * Registration of UT need to be done only once for first
-	 * attaching process.  At that time set the tclWin32s flag
-	 * to indicate if the DLL is executing under Win32s or not.
-	 */
-
 	if (tclProcessesAttached++) {
 	    return FALSE;         /* Not the first initialization. */
 	}
 
-	tclInstance = hInst;
-	os.dwOSVersionInfoSize = sizeof(os);
-	GetVersionEx(&os);
-	tclPlatformId = os.dwPlatformId;
-
-	/*
-	 * The following code stops Windows 3.x from automatically putting 
-	 * up Sharing Violation dialogs, e.g, when someone tries to
-	 * access a file that is locked or a drive with no disk in it.
-	 * Tcl already returns the appropriate error to the caller, and they 
-	 * can decide to put up their own dialog in response to that failure.  
-	 *
-	 * Under 95 and NT, the system doesn't automatically put up dialogs 
-	 * when the above operations fail.
-	 */
-
-	if (tclPlatformId == VER_PLATFORM_WIN32s) {
-	    SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
-	}
-
+	TclWinInit(hInst);
 	return TRUE;
 
     case DLL_PROCESS_DETACH:
 
 	tclProcessesAttached--;
 	if (tclProcessesAttached == 0) {
-
-	    /*
-	     * Unregister the Tcl thunk.
-	     */
-
-	    if (UTUnRegister != NULL) {
-		UTUnRegister(hInst);
-	    }
-
-	    /*
-	     * Cleanup any dynamically loaded libraries.
-	     */
-
-	    UnloadLibraries();
-
-            /*
-             * And finally finalize our use of Tcl.
-             */
-
             Tcl_Finalize();
 	}
 	break;
     }
 
     return TRUE; 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinInit --
+ *
+ *	This function initializes the internal state of the tcl library.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the 16-bit thunking library, and the tclPlatformId
+ *	variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclWinInit(hInst)
+    HINSTANCE hInst;		/* Library instance handle. */
+{
+    OSVERSIONINFO os;
+
+    tclInstance = hInst;
+    os.dwOSVersionInfoSize = sizeof(os);
+    GetVersionEx(&os);
+    tclPlatformId = os.dwPlatformId;
+
+    /*
+     * The following code stops Windows 3.x from automatically putting 
+     * up Sharing Violation dialogs, e.g, when someone tries to
+     * access a file that is locked or a drive with no disk in it.
+     * Tcl already returns the appropriate error to the caller, and they 
+     * can decide to put up their own dialog in response to that failure.  
+     *
+     * Under 95 and NT, the system doesn't automatically put up dialogs 
+     * when the above operations fail.
+     */
+
+    if (tclPlatformId == VER_PLATFORM_WIN32s) {
+	SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalize --
+ *
+ *	Clean up the Windows specific library state.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unloads any DLLs and cleans up the thunking library, if
+ *	necessary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFinalize()
+{
+    /*
+     * Unregister the Tcl thunk.
+     */
+
+    if (UTUnRegister != NULL) {
+	UTUnRegister(tclInstance);
+	UTUnRegister = NULL;
+    }
+
+    /*
+     * Cleanup any dynamically loaded libraries.
+     */
+
+    UnloadLibraries();
 }
 
 /*
