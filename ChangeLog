@@ -1,3 +1,238 @@
+2000-09-27  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* generic/tcl.decls:
+	* generic/tclIO.c: updated Tcl_IsChannelShared,
+	Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel,
+	Tcl_IsChannelExisting, and Tcl_ClearChannelHandlers to conform to
+	the new stacked channel implementation.  Their stub slots were
+	also moved to give preference to the new 8.3.2 stub functions.
+	This will cause an incompatability with 8.4a1 only.
+	(StopCopy): fixed a bug introduced by a partial fix in 8.3.2 that
+	didn't set nonBlocking correctly when resetting the flags for the
+	write side.  [Bug: 6261]
+
+	* doc/ChnlStack.3:
+	* doc/CrtChannel.3:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclDecls.h:
+	* generic/tclIO.c:
+	* generic/tclIO.h:
+	* generic/tclIOGT.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclTest.c:
+	* tests/iogt.test:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
+	* win/tclConfig.sh.in:
+	* win/tclWinChan.c:
+	* win/tclWinConsole.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSerial.c:
+	* win/tclWinSock.c: Up-port of changes made in 8.3.2 to 8.4a2 code
+	base.  Most of these changes relate to the rewrite of the stacked
+	channel implementation, with a few config related fixes.
+
+	Following is an asynchronous include of the applicable ChangeLog
+	entries from 8.3.2.
+
+2000-08-07  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/ChnlStack.3:
+	* doc/CrtChannel.3: updated the docs to be aware of the
+	TCL_CHANNEL_VERSION_2 style of Tcl channels.
+
+	* generic/tclIO.c (Tcl_CreateChannel): added assertion to verify
+	that the new channel versioning will be binary compatible with
+	older channel drivers.
+
+2000-08-05  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIOGT.c (TclChannelTransform): fixed segfault that
+	would occur when transforming a channel with a proc that did not
+	yet exist. (Kupries)
+
+	* generic/tclTest.c (TestChannelCmd): added some lint init'ing of
+	statePtr and chan vars.
+
+2000-07-26  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* merged core-8-3-1-io-rewrite back into core-8-3-1-branch.
+	The core-8-3-1-io-rewrite branch should now be considered defunct.
+
+	* generic/tclStubInit.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclIO.c: moved the Tcl_Channel* macros from tcl.h to
+	tclIO.c and made them proper stubbed functions.  These are:
+	Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc,
+	Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc,
+	Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc,
+	Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc,
+	Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc,
+	and Tcl_ChannelHandlerProc.  These should be used to access the
+	Tcl_ChannelType structure instead of direct pointer dereferencing.
+
+	* tests/iogt.test: added RCS string, marked tests 2.* to be
+	unixOnly due to underlying system differences.
+
+2000-07-25 Andreas Kupries <a.kupries@westend.com>
+
+	* tests/iogt.test: (line 866f) New tests iogt-6.[01], highlighting
+ 	  buffering trouble when stacking and unstacking transformations.
+	  iogt-6.0 is solved, see the changes below. iogt-6.1 remains, for
+ 	  now, due to the perceived complexity of solutions.
+
+	* generic/tclIO.h: (line 139f) struct Channel, added a buffer
+	  queue, to hold data pushed back when stacking a transformation.
+
+	* generic/tclIO.c:
+	  (line 91f, line 7434f) New internal function 'CopyBuffer'.
+	  Derived from 'CopyAndTranslateBuffer', with translation
+	  removed.
+	  (line 1025f, line 1212f): Initialization of new queue.
+	  (line 1164f, Tcl_StackChannel): Pushback of input queue.
+	  (line 1293f, Tcl_UnstackChannel): Discard input and pushback.
+	  (line 3748f, Tcl_ReadRaw): Modified to use data in the push back
+	  area before going to the driver. Uses 'CopyBuffer', s.a.
+	  (line 4702f, GetInput): Modified to use data in the push back
+	  area before going to the driver.
+ 	  (line 4867f, Tcl_Seek): Modified to take pushback of the topmost
+	  channel in a stack into account.
+	  (line 5620f, Tcl_InputBuffered): See above. Added
+	  'Tcl_ChannelBuffered'. Analogue to 'Tcl_InputBuffered' but for
+	  the buffer area in the channel.
+
+	* generic/tcl.decls: New public API 'Tcl_ChannelBuffered'. S.a.
+
+2000-07-17  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc: added tclIOGT.c to objects list to compile.
+
+	* generic/tclStubInit.c:
+	* generic/tclIntDecls.h:
+	* generic/tclInt.decls: commented out internal decls for
+	TclTestChannelCmd and TclTestChannelEventCmd as they were moved to
+	tclTest.c.  Added new decls for TclChannelEventScriptInvoker and
+	TclChannelTransform.
+
+	* generic/tclIO.c (CloseChannel): stopped masking out of the
+	TCL_READABLE|TCL_WRITABLE bits from the state flags in
+	CloseChannel, instead adding extra intelligence to
+	CheckChannelErrors with a new CHANNEL_RAW_MODE bit for special
+	behavior when called from Raw channel APIs.
+
+2000-07-13  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (StackSetBlockMode): moved set of chanPtr
+	outside of blockModeProc check to avoid infinite loop when
+	blockModeProc was NULL (Kupries).  updated TransformSeekProc to
+	not call Tcl_Seek directly (Kupries).
+
+	* win/tclWinChan.c: updated fileChannelType to v2 channel struct
+	* win/tclWinConsole.c: updated consoleChannelType to v2 channel struct
+	* win/tclWinPipe.c: updated pipeChannelType to v2 channel struct
+	* win/tclWinSerial.c: updated serialChannelType to v2 channel struct
+	* win/tclWinSock.c: updated tcpChannelType to v2 channel struct
+
+2000-07-11  Brent Welch	<welch@ajubasolutions.com>
+
+	* win/tclConfig.sh.in (TCL_LIBS): Cleaned up unix-specific
+	autoconf variables.
+
+2000-07-11  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/iogt.test: made tests [345].0 not run by default as they
+	were failing in the new design, but I'm not convinced that the
+	returned result isn't correct.
+
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tcl.decls: added Tcl_GetTopChannel C API that returns
+	the current top channel of a channel stack.  Tcl_GetChannel was
+	changed earlier to return the bottommost channel of a stack
+	because that is the one that is guaranteed to stay around the
+	longest, and this was needed to compensate for certain
+	operations that want to look at the state of the main channel.
+	Most channel APIs already compensate for grabbing the top, so it
+	shouldn't be needed often.
+
+	* generic/tclIO.c (Tcl_StackChannel, Tcl_UnstackChannel): Added
+	flushing of buffers (Kupries), removed use of DownChannel macro,
+	added Tcl_GetTopChannel public API to get to the top channel of
+	the channel stack (necessary for TLS).  Rewrote Tcl_NotifyChannel
+	for new channel design (Kupries).  Did some code cleanup in the
+	transform code.  tclIO.c must still be broken into bits (separate
+	out test code and giot code, create tclIO.h).
+
+2000-07-10  Andreas Kupries <a.kupries@westend.com>
+
+	* tests/iogt.test: Reverted some earlier changes as a fix by Jeff
+	  revived the original and correct behaviour. IOW, the tests showed
+	  a genuine error and I didn't see it :(.
+
+	* generic/tclIO.c (Tcl_Read|Write_Raw): Changed to directly use
+ 	  the drivers and not DoRead|DoWrite. The latter use the buffering
+ 	  system, encoding and eol-translation and this wreaks havoc with
+ 	  the data going through the transformations. Both procedures use
+ 	  CheckForchannelErrors and let it believe that there is no
+ 	  background copy in progress or else stacked channels could not
+	  be used for that.
+
+	* generic/tclIO.c (TclCopyChannel, CopyData): Moved access to the
+ 	  topmost channel from the first to the second procedure to make
+ 	  the decision about that at the last possible time (Callbacks can
+ 	  change the stacking).
+
+	test suite: failures of iogt-[345].0
+	
+2000-07-06  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/iogt.test: new tests for stacked channel stuff based off
+	new 'testchannel transform|unstack' code (Kupries IOGT extension).
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclDecls.h:
+	* generic/tclStubsInit.c:
+	* generic/tclIO.c: complete rewrite of Tcl Channel code for
+	stacked channels.  Channels are now designed to work in a more
+	stacked fashion with a shared ChannelState data structure.
+
+2000-06-02  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (CloseChannel): removed the &ing out of
+	(TCL_READABLE|TCL_WRITABLE) from the flags, as CloseChannel does
+	this on the next pass through for the top channel, and it appeared
+	to be causing hangs by not allowing the final flush.
+
+2000-06-01  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (CloseChannel): Rewrote CloseChannel code to
+	unstack a channel during the close process.  Fixed a refcount bug
+	in Tcl_UnstackChannel.  [Bug: 5623]
+	(CloseChannel): further extended CloseChannel in the stacked case
+	to effect certain operations on the next channel that would have
+	been done in Tcl_Close.  Also added CHANNEL_CLOSED and removed
+	(TCL_READABLE|TCL_WRITABLE) bits from chanPtr->flags.  Changed
+	final reset of the WatchProc to check the chanDownPtr's (next)
+	interestMask.
+
+	******************************************************
+	** END OF ASYNCHRONOUS UP-PORT LOG (8.3.2 -> 8.4a2) **
+	******************************************************
+
+2000-09-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/socket.test: removed doTestsWithRemoteServer constraint
+	from socket-12.*.  It requires 'exec', not a remote server.
+	Cleaned up some coding errors.
+
 2000-09-20  Jennifer Hom  <jenn@ajubasolutions.com>
 
 	* library/tcltest1.0/pkgIndex.tcl: Updated to load tcltest 2.0.
