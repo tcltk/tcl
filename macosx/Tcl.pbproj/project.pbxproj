@@ -177,7 +177,8 @@
 	<key>CFBundleExecutable</key>
 	<string>Tcl</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Tcl Library</string>
+	<string>Tcl Library 8.4, Copyright © 2002 Tcl Core Team.
+MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright © 2001-2002, Apple Computer, Inc.</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
@@ -185,15 +186,15 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Tcl Library 8.4b3</string>
+	<string>Tcl Library 8.4</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>libtcl8.4b3</string>
+	<string>8.4.0</string>
 	<key>CFBundleSignature</key>
 	<string>Tcl </string>
 	<key>CFBundleVersion</key>
-	<string>8.4b3</string>
+	<string>8.4.0</string>
 </dict>
 </plist>
 ";
