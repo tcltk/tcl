@@ -1,3 +1,8 @@
+2004-06-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclHash.c (RebuildTable): Move declaration of variable
+	so it is only declared when it is used. [Bug 969068]
+
 2004-06-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/lsearch.n: Added correct option to example. [Bug 968219]
