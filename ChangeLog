@@ -2,7 +2,7 @@
 
 	* generic/tclCompile.c (TclCompileScript): corrected possible
 	segfault when a compilation returns TCL_OUTLINE_COMPILE after
-	having grown the compile environment.
+	having grown the compile environment [Bug 925121].
 
 2004-03-27  Miguel Sofer <msofer@users.sf.net>
 
