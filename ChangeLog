@@ -1,18 +1,16 @@
 2005-04-01  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c:
-	* generic/tclInt.h: ExecEnv now stores two Tcl_Obj* pointing to
-	the constants "0" and "1", for use by TEBC. 
-
-2005-04-01  Miguel Sofer <msofer@users.sf.net>
-
-	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclObj.c:
-	* generic/tclStringObj.c: defined new internal macros for creating
-	and setting frequently used obj types (int,long, wideInt, double,
+	* generic/tclStringObj.c: 
+	(1) defined new internal macros for creating and setting
+	frequently used obj types (int,long, wideInt, double,
 	string). Changed TEBC to use eg 'TclNewIntObj(objPtr, i)' to avoid
-	the function call in 'objPtr = Tcl_NewIntObj(i)'
+	the function call in 'objPtr = Tcl_NewIntObj(i)' 
+	(2) ExecEnv now stores two Tcl_Obj* pointing to the constants "0"
+	and "1", for use by TEBC. 
+	(3) slight reduction in cost of INST_START_CMD
 
 2005-03-31  Miguel Sofer <msofer@users.sf.net>
 

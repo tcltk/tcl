@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.175 2005/04/01 16:18:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.176 2005/04/01 19:08:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -209,7 +209,8 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     tosPtr = eePtr->tosPtr
 
 #define DECACHE_STACK_INFO() \
-    eePtr->tosPtr = tosPtr
+    eePtr->tosPtr = tosPtr;\
+    checkInterp = 1
 
 
 /*
@@ -1096,7 +1097,7 @@ TclCompEvalObj(interp, objPtr)
  *
  *----------------------------------------------------------------------
  */
- 
+
 static int
 TclExecuteByteCode(interp, codePtr)
     Tcl_Interp *interp;		/* Token for command interpreter. */
@@ -1131,7 +1132,9 @@ TclExecuteByteCode(interp, codePtr)
     int instructionCount = 0;	/* Counter that is used to work out
 				 * when to call Tcl_AsyncReady() */
     Tcl_Obj *expandNestList = NULL;
-
+    int checkInterp = 0;        /* Indicates when a check of interp readyness
+				 * is necessary. Set by DECACHE_STACK_INFO() */
+    
     /*
      * Transfer variables - needed only between opcodes, but not
      * while executing an instruction.
@@ -1407,13 +1410,32 @@ TclExecuteByteCode(interp, codePtr)
 	 * Remark that if the interpreter is marked for deletion
 	 * its compileEpoch is modified, so that the epoch
 	 * check also verifies that the interp is not deleted.
+	 * If no outside call has been made since the last check, it is safe
+	 * to omit the check.
 	 */
 
 	iPtr->cmdCount++;
-	if (((codePtr->compileEpoch == iPtr->compileEpoch)
-		    && (codePtr->nsEpoch == namespacePtr->resolverEpoch))
-		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	if (!checkInterp ||
+		(((codePtr->compileEpoch == iPtr->compileEpoch)
+			&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
+			|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED))) {
+#if !TCL_COMPILE_DEBUG
+	    /*
+	     * Peephole optimisations: check if there are several
+	     * INST_START_CMD in a row. Many commands start by pushing a
+	     * literal argument or command name; optimise that case too.
+	     */
+	    
+	    while (*(pc += 5) == INST_START_CMD) {
+		iPtr->cmdCount++;
+	    }
+	    if (*pc == INST_PUSH1) {
+		goto instPush1Peephole;
+	    }	    	    
+	    NEXT_INST_F(0, 0, 0);
+#else
 	    NEXT_INST_F(5, 0, 0);
+#endif
 	} else {
 	    char *bytes;
 	    int length, opnd;
