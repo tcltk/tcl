@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.16 2003/06/25 23:02:11 dkf Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.17 2003/08/29 17:43:24 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -137,7 +137,7 @@ test cmdMZ-return-2.9 {return option handling} -body {
 } -returnCodes 10 -result {}
 test cmdMZ-return-2.10 {return option handling} {
     list [catch {return -level 0 -code error} -> foo] [dictSort $foo]
-} {1 {-code 1 -errorinfo {
+} {1 {-code 1 -errorcode NONE -errorinfo {
     while executing
 "return -level 0 -code error"} -errorline 1 -level 0}}
 test cmdMZ-return-2.11 {return option handling} {
