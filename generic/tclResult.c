@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.20 2004/10/24 22:25:13 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.21 2004/10/25 20:24:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1186,14 +1186,15 @@ TclProcessReturn(interp, code, level, returnOpts)
     }
 
     if (code == TCL_ERROR) {
+	if (iPtr->errorInfo) {
+	    Tcl_DecrRefCount(iPtr->errorInfo);
+	    iPtr->errorInfo = NULL;
+	}
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO], &valuePtr);
 	if (valuePtr != NULL) {
 	    int infoLen;
 	    (void) Tcl_GetStringFromObj(valuePtr, &infoLen);
 	    if (infoLen) {
-		if (iPtr->errorInfo) {
-		    Tcl_DecrRefCount(iPtr->errorInfo);
-		}
 		iPtr->errorInfo = valuePtr;
 		Tcl_IncrRefCount(iPtr->errorInfo);
 		iPtr->flags |= ERR_ALREADY_LOGGED;
