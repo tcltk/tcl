@@ -1,3 +1,11 @@
+2004-12-10  Miguel Sofer <msofer@users.sf.net>
+	* generic/tclCompile.c (TclInitCompiledLocals):
+	* generic/tclCompile.h:
+	* generic/tclInt.h:
+	* generic/tclProc.c (TclObjInterpProc, TclCreateProc): optimised
+	loops that initialise a proc's arguments and compiled local
+	variables, removing tests from inner loops.
+
 2004-12-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInt.h: Move ensemble API decls here from tclNamesp.c

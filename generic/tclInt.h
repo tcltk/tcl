@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.204 2004/12/10 00:16:55 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.205 2004/12/10 13:09:14 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -510,6 +510,7 @@ typedef struct Var {
 #define VAR_ARGUMENT		0x100
 #define VAR_TEMPORARY		0x200
 #define VAR_RESOLVED		0x400	
+#define VAR_IS_ARGS             0x800
 
 /*
  * Macros to ensure that various flag bits are set properly for variables.
