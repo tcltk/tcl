@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.10 2004/10/08 21:10:36 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.11 2004/10/08 22:44:49 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -959,14 +959,14 @@ test dict-21.11 {dict update command} {
     dict update a b v1 d v2 {
 	dict set a f g
     }
-    getOrder a b d f
+    getOrder $a b d f
 } {b c d e f g 3}
 test dict-21.12 {dict update command} {
     set a {b c d e}
     dict update a b v1 d v2 f v3 {
 	set v3 g
     }
-    getOrder a b d f
+    getOrder $a b d f
 } {b c d e f g 3}
 
 test dict-22.1 {dict with command} -body {
@@ -976,12 +976,12 @@ test dict-22.2 {dict with command} -body {
     dict with v
 } -returnCodes 1 -result {wrong # args: should be "dict with dictVar ?key ...? script"}
 test dict-22.3 {dict with command} -body {
-    catch {unset v}
+    unset -nocomplain v
     dict with v {error "in body"}
 } -returnCodes 1 -result {can't read "v": no such variable}
 test dict-22.4 {dict with command} {
     set a {b c d e}
-    catch {unset b d}
+    unset -nocomplain b d
     set result [list [info exist b] [info exist d]]
     dict with a {
 	lappend result [info exist b] [info exist d] $b $d
@@ -1009,7 +1009,7 @@ test dict-22.7 {dict with command} {
     dict with a {
 	dict unset a b
     }
-    getOrder a b d
+    getOrder $a b d
 } {b c d e 2}
 test dict-22.8 {dict with command} {
     set a [dict create b c]
