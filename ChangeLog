@@ -1,3 +1,29 @@
+1999-03-10    <stanton@GASPODE>
+
+	* generic/tcl.h: 
+	* generic/tcl.decls: Changed Tcl_ReleaseType from an enum to
+	macros so it can be used in .rc files.
+	Added Tcl_GetString.
+
+	* mac/tclMacNotify.c:
+	* generic/tclNotify.c:
+	* generic/tclInt.h: 
+	* win/tclWinNotify.c: 
+	* generic/tcl.h: Renamed Tcl_AlertNotifier to TclpAlertNotifier.
+
+	* generic/tclInt.decls: Added TclWinAddProcess to make it possible
+	for expect to use Tcl_WaitForPid().  This patch is from Gordon
+	Chaffee. 
+
+	* mac/tclMacPort.h: 
+	* win/tclWinInit.c: 
+	* unix/tclUnixPort.h: 
+	* generic/tclAsync.c: Added TclpAsyncMark to fix bug in async
+	handling on Windows where async events don't wake up the event
+	loop.  This patch comes from Gordon Chaffee.
+
+	* generic/tcl.decls: Fixed declarations of reserved slots.
+	
 1999-03-10    <redman@scriptic.com>
 
 	* generic/tclCompile.h: Ensure that the ByteCode struct is binary
