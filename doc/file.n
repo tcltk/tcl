@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.33 2004/05/18 12:30:35 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.34 2004/05/27 23:35:43 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -429,6 +429,43 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 .
 These commands always operate using the real user and group identifiers,
 not the effective ones. 
+.SH EXAMPLES
+This procedure shows how to search for C files in a given directory
+that have a correspondingly-named object file in the current
+directory:
+.CS
+proc findMatchingCFiles {dir} {
+    set files {}
+    switch $::tcl_platform(platform) {
+        windows {
+            set ext .obj
+        }
+        unix {
+            set ext .o
+        }
+    }
+    foreach file [glob -nocomplain -directory $dir *.c] {
+        set objectFile [file tail [file rootname $file]]$ext
+        if {[file exists $objectFile]} {
+            lappend files $file
+        }
+    }
+    return $files
+}
+.CE
+.PP
+Rename a file and leave a symbolic link pointing from the old location
+to the new place:
+.CS
+set oldName foobar.txt
+set newName foo/bar.txt
+# Make sure that where we're going to move to exists...
+if {![file isdirectory [file dirname $newName]]} {
+    file mkdir [file dirname $newName]
+}
+file rename $oldName $newName
+file link -symbolic $oldName $newName
+.CE
 
 .SH "SEE ALSO"
 filename(n), open(n), close(n), eof(n), gets(n), tell(n), seek(n),
