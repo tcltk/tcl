@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.49 2001/05/15 21:30:46 hobbs Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.50 2001/05/30 08:57:06 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1366,6 +1366,15 @@ EXTERN Tcl_ThreadId	Tcl_GetChannelThread _ANSI_ARGS_((
 /* 434 */
 EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				int * lengthPtr));
+/* 435 */
+EXTERN int		Tcl_GetMathFuncInfo _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, int * numArgsPtr, 
+				Tcl_ValueType ** argTypesPtr, 
+				Tcl_MathProc ** procPtr, 
+				ClientData * clientDataPtr));
+/* 436 */
+EXTERN Tcl_Obj *	Tcl_ListMathFuncs _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * pattern));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1868,6 +1877,8 @@ typedef struct TclStubs {
     int (*tcl_AttemptSetObjLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) _ANSI_ARGS_((Tcl_Channel channel)); /* 433 */
     Tcl_UniChar * (*tcl_GetUnicodeFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 434 */
+    int (*tcl_GetMathFuncInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, int * numArgsPtr, Tcl_ValueType ** argTypesPtr, Tcl_MathProc ** procPtr, ClientData * clientDataPtr)); /* 435 */
+    Tcl_Obj * (*tcl_ListMathFuncs) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * pattern)); /* 436 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3655,6 +3666,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetUnicodeFromObj
 #define Tcl_GetUnicodeFromObj \
 	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 434 */
+#endif
+#ifndef Tcl_GetMathFuncInfo
+#define Tcl_GetMathFuncInfo \
+	(tclStubsPtr->tcl_GetMathFuncInfo) /* 435 */
+#endif
+#ifndef Tcl_ListMathFuncs
+#define Tcl_ListMathFuncs \
+	(tclStubsPtr->tcl_ListMathFuncs) /* 436 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
