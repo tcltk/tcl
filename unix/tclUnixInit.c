@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.28 2001/11/20 09:24:55 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.29 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -236,10 +236,10 @@ CONST char *path;		/* Path to the executable in native
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
-    char *str;
+    CONST char *str;
     Tcl_DString buffer, ds;
     int pathc;
-    char **pathv;
+    CONST char **pathv;
     char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
 
     Tcl_DStringInit(&ds);
@@ -679,7 +679,7 @@ TclpSetVariables(interp)
     struct utsname name;
 #endif
     int unameOK;
-    char *user;
+    CONST char *user;
     Tcl_DString ds;
 
     Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, TCL_GLOBAL_ONLY);
@@ -688,7 +688,7 @@ TclpSetVariables(interp)
     unameOK = 0;
 #ifndef NO_UNAME
     if (uname(&name) >= 0) {
-	char *native;
+	CONST char *native;
 	
 	unameOK = 1;
 
@@ -863,14 +863,14 @@ Tcl_SourceRCFile(interp)
     Tcl_Interp *interp;		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
-    char *fileName;
+    CONST char *fileName;
     Tcl_Channel errChannel;
 
     fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
 
     if (fileName != NULL) {
         Tcl_Channel c;
-	char *fullName;
+	CONST char *fullName;
 
         Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);

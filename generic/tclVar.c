@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.45 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.46 2002/01/25 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -474,7 +474,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetVar(interp, varName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
@@ -509,7 +509,7 @@ Tcl_GetVar(interp, varName, flags)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetVar2(interp, part1, part2, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be looked up. */
@@ -1063,12 +1063,12 @@ Tcl_SetObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_SetVar(interp, varName, newValue, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
 				 * to be looked up. */
     char *varName;		/* Name of a variable in interp. */
-    char *newValue;		/* New value for varName. */
+    CONST char *newValue;	/* New value for varName. */
     int flags;			/* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY, TCL_APPEND_VALUE,
@@ -1104,7 +1104,7 @@ Tcl_SetVar(interp, varName, newValue, flags)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_SetVar2(interp, part1, part2, newValue, flags)
     Tcl_Interp *interp;         /* Command interpreter in which variable is
                                  * to be looked up. */
@@ -1113,7 +1113,7 @@ Tcl_SetVar2(interp, part1, part2, newValue, flags)
                                  * an array. */
     char *part2;                /* Name of an element within an array, or
 				 * NULL. */
-    char *newValue;             /* New value for variable. */
+    CONST char *newValue;       /* New value for variable. */
     int flags;                  /* Various flags that tell how to set value:
 				 * any of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY, TCL_APPEND_VALUE,

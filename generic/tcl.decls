@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.77 2002/01/23 20:46:01 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.78 2002/01/25 20:40:55 dgp Exp $
 
 library tcl
 
@@ -306,7 +306,7 @@ declare 82 generic {
     int Tcl_CommandComplete(char *cmd)
 }
 declare 83 generic {
-    char * Tcl_Concat(int argc, char * CONST *argv)
+    char * Tcl_Concat(int argc, CONST char * CONST *argv)
 }
 declare 84 generic {
     int Tcl_ConvertElement(CONST char *src, char *dst, int flags)
@@ -624,13 +624,14 @@ declare 173 generic {
     Tcl_Channel Tcl_GetStdChannel(int type)
 }
 declare 174 generic {
-    char * Tcl_GetStringResult(Tcl_Interp *interp)
+    CONST char * Tcl_GetStringResult(Tcl_Interp *interp)
 }
 declare 175 generic {
-    char * Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags)
+    CONST char * Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags)
 }
 declare 176 generic {
-    char * Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags)
+    CONST char * Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, \
+	    int flags)
 }
 declare 177 generic {
     int Tcl_GlobalEval(Tcl_Interp *interp, char *command)
@@ -662,7 +663,8 @@ declare 185 generic {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 generic {
-    char * Tcl_JoinPath(int argc, char **argv, Tcl_DString *resultPtr)
+    CONST char * Tcl_JoinPath(int argc, CONST char * CONST *argv,
+	    Tcl_DString *resultPtr)
 }
 declare 187 generic {
     int Tcl_LinkVar(Tcl_Interp *interp, char *varName, char *addr, int type)
@@ -683,7 +685,7 @@ declare 191 generic {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 generic {
-    char * Tcl_Merge(int argc, char * CONST *argv)
+    char * Tcl_Merge(int argc, CONST char * CONST *argv)
 }
 declare 193 generic {
     Tcl_HashEntry * Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
@@ -701,7 +703,7 @@ declare 196 generic {
 }
 declare 197 {unix win} {
     Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc, \
-	    char **argv, int flags)
+	    CONST char **argv, int flags)
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
 declare 198 generic {
@@ -833,12 +835,12 @@ declare 236 generic {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
 declare 237 generic {
-    char * Tcl_SetVar(Tcl_Interp *interp, char *varName, char *newValue, \
-	    int flags)
+    CONST char * Tcl_SetVar(Tcl_Interp *interp, char *varName, \
+	    CONST char *newValue, int flags)
 }
 declare 238 generic {
-    char * Tcl_SetVar2(Tcl_Interp *interp, char *part1, char *part2, \
-	    char *newValue, int flags)
+    CONST char * Tcl_SetVar2(Tcl_Interp *interp, char *part1, char *part2, \
+	    CONST char *newValue, int flags)
 }
 declare 239 generic {
     CONST char * Tcl_SignalId(int sig)
@@ -851,11 +853,11 @@ declare 241 generic {
 }
 declare 242 generic {
     int Tcl_SplitList(Tcl_Interp *interp, CONST char *listStr, int *argcPtr, \
-	    char ***argvPtr)
+	    CONST char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 generic {
-    void Tcl_SplitPath(CONST char *path, int *argcPtr, char ***argvPtr)
+    void Tcl_SplitPath(CONST char *path, int *argcPtr, CONST char ***argvPtr)
 }
 declare 244 generic {
     void Tcl_StaticPackage(Tcl_Interp *interp, CONST char *pkgName, \
@@ -876,7 +878,7 @@ declare 248 generic {
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 249 generic {
-    char * Tcl_TranslateFileName(Tcl_Interp *interp, char *name, \
+    CONST char * Tcl_TranslateFileName(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_DString *bufferPtr)
 }
 declare 250 generic {
@@ -1060,8 +1062,8 @@ declare 295 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 generic {
-    char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, CONST char *src, \
-	    int srcLen, Tcl_DString *dsPtr)
+    CONST char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, \
+	    CONST char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 297 generic {
     void Tcl_FinalizeThread(void)
@@ -1079,7 +1081,7 @@ declare 301 generic {
     Tcl_Encoding Tcl_GetEncoding(Tcl_Interp *interp, CONST char *name)
 }
 declare 302 generic {
-    char * Tcl_GetEncodingName(Tcl_Encoding encoding)
+    CONST char * Tcl_GetEncodingName(Tcl_Encoding encoding)
 }
 declare 303 generic {
     void Tcl_GetEncodingNames(Tcl_Interp *interp)
@@ -1182,8 +1184,8 @@ declare 332 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 generic {
-    char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, CONST char *src, \
-	    int srcLen, Tcl_DString *dsPtr)
+    CONST char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, \
+	    CONST char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 334 generic {
     int Tcl_UtfToLower(char *src)
@@ -1207,10 +1209,10 @@ declare 340 generic {
     char * Tcl_GetString(Tcl_Obj *objPtr)
 }
 declare 341 generic {
-    char * Tcl_GetDefaultEncodingDir(void)
+    CONST char * Tcl_GetDefaultEncodingDir(void)
 }
 declare 342 generic {
-    void Tcl_SetDefaultEncodingDir(char *path)
+    void Tcl_SetDefaultEncodingDir(CONST char *path)
 }
 declare 343 generic {
     void Tcl_AlertNotifier(ClientData clientData)
@@ -1573,7 +1575,7 @@ declare 444 generic {
 declare 445 generic {
     int	Tcl_FSMatchInDirectory(Tcl_Interp *interp, Tcl_Obj * result, \
 		    Tcl_Obj *pathPtr, \
-		    char * pattern, Tcl_GlobTypeData * types)
+		    CONST char * pattern, Tcl_GlobTypeData * types)
 }
 declare 446 generic {
     Tcl_Obj*	Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr)
@@ -1733,13 +1735,13 @@ declare 1 mac {
     char * Tcl_MacConvertTextResource(Handle resource)
 }
 declare 2 mac {
-    int Tcl_MacEvalResource(Tcl_Interp *interp, char *resourceName, \
-	    int resourceNumber, char *fileName)
+    int Tcl_MacEvalResource(Tcl_Interp *interp, CONST char *resourceName, \
+	    int resourceNumber, CONST char *fileName)
 }
 declare 3 mac {
     Handle Tcl_MacFindResource(Tcl_Interp *interp, long resourceType, \
-	    char *resourceName, int resourceNumber, char *resFileRef, \
-	    int * releaseIt)
+	    CONST char *resourceName, int resourceNumber, \
+	    CONST char *resFileRef, int * releaseIt)
 }
 
 # These routines support the new OSType object type (i.e. the packed 4

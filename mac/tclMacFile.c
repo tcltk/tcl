@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.14 2002/01/18 03:22:52 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.15 2002/01/25 20:40:56 dgp Exp $
  */
 
 /*
@@ -128,7 +128,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive errors. */
     Tcl_Obj *resultPtr;		/* List object to lappend results. */
     Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
@@ -541,7 +541,7 @@ TclpObjGetCwd(interp)
     }
 }
 
-char *
+CONST char *
 TclpGetCwd(
     Tcl_Interp *interp,		/* If non-NULL, used for error reporting. */
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled

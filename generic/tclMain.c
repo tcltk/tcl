@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.16 2002/01/07 17:54:52 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.17 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tcl.h"
@@ -242,7 +242,14 @@ Tcl_Main(argc, argv, appInitProc)
 	    argv++;
 	}
     }
-    args = Tcl_Merge(argc-1, argv+1);
+
+    /*
+     * The CONST casting is safe, and better we do it here than force
+     * all callers of Tcl_Main to do it.  (Those callers are likely
+     * in a main() that can't easily change its signature.)
+     */
+    
+    args = Tcl_Merge(argc-1, (CONST char **)argv+1);
     Tcl_ExternalToUtfDString(NULL, args, -1, &argString);
     Tcl_SetVar(interp, "argv", Tcl_DStringValue(&argString), TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&argString);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.27 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.28 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -70,7 +70,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
  * Prototypes for local procedures defined in this file:
  */
 
-static char *		DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
+static CONST char *	DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *user, Tcl_DString *resultPtr));
 static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
 			    Tcl_DString *resultPtr, int offset, 
@@ -554,7 +554,7 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
     CONST char *path;		/* Pointer to string containing a path. */
     int *argcPtr;		/* Pointer to location to fill in with
 				 * the number of elements in the path. */
-    char ***argvPtr;		/* Pointer to place to store pointer to array
+    CONST char ***argvPtr;	/* Pointer to place to store pointer to array
 				 * of pointers to path elements. */
 {
     Tcl_Obj *resultPtr = NULL;  /* Needed only to prevent gcc warnings. */
@@ -585,7 +585,7 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
      * the list plus the argv pointers and the terminating NULL pointer.
      */
 
-    *argvPtr = (char **) ckalloc((unsigned)
+    *argvPtr = (CONST char **) ckalloc((unsigned)
 	    ((((*argcPtr) + 1) * sizeof(char *)) + size));
 
     /*
@@ -1268,10 +1268,10 @@ TclpNativeJoinPath(prefix, joining)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_JoinPath(argc, argv, resultPtr)
     int argc;
-    char **argv;
+    CONST char * CONST *argv;
     Tcl_DString *resultPtr;	/* Pointer to previously initialized DString */
 {
     int i, len;
@@ -1326,57 +1326,34 @@ Tcl_JoinPath(argc, argv, resultPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
 				 * message (if necessary). */
-    char *name;			/* File name, which may begin with "~" (to
+    CONST char *name;		/* File name, which may begin with "~" (to
 				 * indicate current user's home directory) or
 				 * "~<user>" (to indicate any user's home
 				 * directory). */
     Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
 				 * with name after tilde substitution. */
 {
-    /*
-     * Handle tilde substitutions, if needed.
-     */
-    if (name[0] == '~') {
-	int argc, length;
-	char **argv;
-	Tcl_DString temp;
-
-	Tcl_SplitPath(name, &argc, (char ***) &argv);
-	
-	/*
-	 * Strip the trailing ':' off of a Mac path before passing the user
-	 * name to DoTildeSubst.
-	 */
-
-	if (tclPlatform == TCL_PLATFORM_MAC) {
-	    length = strlen(argv[0]);
-	    argv[0][length-1] = '\0';
-	}
-	
-	Tcl_DStringInit(&temp);
-	argv[0] = DoTildeSubst(interp, argv[0]+1, &temp);
-	if (argv[0] == NULL) {
-	    Tcl_DStringFree(&temp);
-	    ckfree((char *)argv);
-	    return NULL;
-	}
-	Tcl_DStringInit(bufferPtr);
-	Tcl_JoinPath(argc, argv, bufferPtr);
-	Tcl_DStringFree(&temp);
-	ckfree((char*)argv);
-    } else {
-	Tcl_DStringInit(bufferPtr);
-	Tcl_JoinPath(1, &name, bufferPtr);
+    Tcl_Obj *path = Tcl_NewStringObj(name, -1);
+    CONST char *result;
+   
+    Tcl_IncrRefCount(path);
+    result = Tcl_FSGetTranslatedStringPath(interp,path);
+    if (result == NULL) {
+	return NULL;
     }
+    Tcl_DStringInit(bufferPtr);
+    Tcl_DStringAppend(bufferPtr, result, -1);
+    Tcl_DecrRefCount(path);
 
     /*
      * Convert forward slashes to backslashes in Windows paths because
      * some system interfaces don't accept forward slashes.
      */
+
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 	register char *p;
 	for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
@@ -1480,7 +1457,7 @@ TclGetExtension(name)
  *----------------------------------------------------------------------
  */
 
-static char *
+static CONST char *
 DoTildeSubst(interp, user, resultPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
 				 * message (if necessary). */
@@ -1489,7 +1466,7 @@ DoTildeSubst(interp, user, resultPtr)
     Tcl_DString *resultPtr;	/* Initialized DString filled with name
 				 * after tilde substitution. */
 {
-    char *dir;
+    CONST char *dir;
 
     if (*user == '\0') {
 	Tcl_DString dirString;
@@ -1515,7 +1492,7 @@ DoTildeSubst(interp, user, resultPtr)
 	    return NULL;
 	}
     }
-    return resultPtr->string;
+    return Tcl_DStringValue(resultPtr);
 }
 
 /*
@@ -1968,7 +1945,8 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 				 * May be NULL. */
 {
     char *separators;
-    char *head, *tail, *start;
+    CONST char *head;
+    char *tail, *start;
     char c;
     int result, prefixLen;
     Tcl_DString buffer;

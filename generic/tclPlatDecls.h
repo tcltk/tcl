@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.12 2001/09/09 22:45:13 davygrvy Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.13 2002/01/25 20:40:55 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -49,12 +49,12 @@ EXTERN char *		Tcl_MacConvertTextResource _ANSI_ARGS_((
 				Handle resource));
 /* 2 */
 EXTERN int		Tcl_MacEvalResource _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * resourceName, int resourceNumber, 
-				char * fileName));
+				CONST char * resourceName, 
+				int resourceNumber, CONST char * fileName));
 /* 3 */
 EXTERN Handle		Tcl_MacFindResource _ANSI_ARGS_((Tcl_Interp * interp, 
-				long resourceType, char * resourceName, 
-				int resourceNumber, char * resFileRef, 
+				long resourceType, CONST char * resourceName, 
+				int resourceNumber, CONST char * resFileRef, 
 				int * releaseIt));
 /* 4 */
 EXTERN int		Tcl_GetOSTypeFromObj _ANSI_ARGS_((
@@ -84,8 +84,8 @@ typedef struct TclPlatStubs {
 #ifdef MAC_TCL
     void (*tcl_MacSetEventProc) _ANSI_ARGS_((Tcl_MacConvertEventPtr procPtr)); /* 0 */
     char * (*tcl_MacConvertTextResource) _ANSI_ARGS_((Handle resource)); /* 1 */
-    int (*tcl_MacEvalResource) _ANSI_ARGS_((Tcl_Interp * interp, char * resourceName, int resourceNumber, char * fileName)); /* 2 */
-    Handle (*tcl_MacFindResource) _ANSI_ARGS_((Tcl_Interp * interp, long resourceType, char * resourceName, int resourceNumber, char * resFileRef, int * releaseIt)); /* 3 */
+    int (*tcl_MacEvalResource) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * resourceName, int resourceNumber, CONST char * fileName)); /* 2 */
+    Handle (*tcl_MacFindResource) _ANSI_ARGS_((Tcl_Interp * interp, long resourceType, CONST char * resourceName, int resourceNumber, CONST char * resFileRef, int * releaseIt)); /* 3 */
     int (*tcl_GetOSTypeFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, OSType * osTypePtr)); /* 4 */
     void (*tcl_SetOSTypeObj) _ANSI_ARGS_((Tcl_Obj * objPtr, OSType osType)); /* 5 */
     Tcl_Obj * (*tcl_NewOSTypeObj) _ANSI_ARGS_((OSType osType)); /* 6 */
