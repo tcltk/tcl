@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.109 2003/06/17 20:36:20 vincentdarley Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.110 2003/06/25 23:02:11 dkf Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -287,6 +287,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclThreadAlloc.obj \
 	$(TMP_DIR)\tclThreadJoin.obj \
 	$(TMP_DIR)\tclTimer.obj \
+	$(TMP_DIR)\tclTrace.obj \
 	$(TMP_DIR)\tclUtf.obj \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
