@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.9 2000/11/02 22:04:54 davidg Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.10 2000/11/02 23:34:34 davidg Exp $
  */
 
 #include "tclInt.h"
@@ -601,6 +601,11 @@ TclSetLibraryPath(pathPtr)
 	Tcl_DecrRefCount(tsdPtr->tclLibraryPath);
     }
     tsdPtr->tclLibraryPath = pathPtr;
+
+    /*
+     *  No mutex locking is needed here as up the stack we're within
+     *  TclpInitLock().
+     */
     tclLibraryPathStr = Tcl_GetStringFromObj(pathPtr, NULL);
 }
 
@@ -627,7 +632,14 @@ TclGetLibraryPath()
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tsdPtr->tclLibraryPath == NULL) {
+	/*
+	 * Grab the shared string and place it into a new thread specific
+	 * Tcl_Obj.
+	 */
 	tsdPtr->tclLibraryPath = Tcl_NewStringObj(tclLibraryPathStr, -1);
+
+	/* take ownership */
+	Tcl_IncrRefCount(tsdPtr->tclLibraryPath);
     }
     return tsdPtr->tclLibraryPath;
 }
