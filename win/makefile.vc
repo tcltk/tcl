@@ -30,12 +30,16 @@
 #	           will return an error.
 #		B. A 16-bit program to test the behavior of the exec
 #		   command under NT and 95 will not be built.
+# INSTALLDIR = where the install- targets should copy the binaries and
+#	    support files
 #
 
 ROOT		= ..
 TOOLS32		= c:\progra~1\devstudio\vc
 TOOLS32_rc	= c:\progra~1\devstudio\sharedide
 TOOLS16		= c:\msvc
+
+INSTALLDIR	= c:\progra~1\Tcl
 
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE	= IX86
@@ -54,6 +58,7 @@ NODEBUG = 1
 # Do not modify below this line
 ######################################################################
 
+DOTVERSION = 8.0
 VERSION = 80
 
 !IF "$(NODEBUG)" == "1"
@@ -80,6 +85,11 @@ TCLTEST		= $(OUTDIR)\tcltest.exe
 DUMPEXTS	= $(TMPDIR)\dumpexts.exe
 CAT16		= $(TMPDIR)\cat16.exe
 CAT32		= $(TMPDIR)\cat32.exe
+
+LIB_INSTALL_DIR	= $(INSTALLDIR)\lib
+BIN_INSTALL_DIR	= $(INSTALLDIR)\bin
+SCRIPT_INSTALL_DIR	= $(INSTALLDIR)\lib\tcl$(DOTVERSION)
+INCLUDE_INSTALL_DIR	= $(INSTALLDIR)\include
 
 TCLSHOBJS = \
 	$(TMPDIR)\tclAppInit.obj
@@ -255,6 +265,7 @@ dlls:	    setup $(TCL16DLL) $(TCLPIPEDLL) $(TCLREGDLL)
 all:	    setup $(TCLSH) dlls $(CAT16) $(CAT32) 
 tcltest:    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
+install:    install-binaries install-libraries
 test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32) 
 	$(TCLTEST) <<
 		cd ../tests
@@ -357,6 +368,36 @@ $(TMPDIR)\plugin.def: $(DUMPEXTS) $(TCLOBJS)
 	$(DUMPEXTS) -o $@ $(TCLPLUGINDLLNAME) @<<
 $(TCLOBJS)
 <<
+
+install-binaries: $(TCLSH)
+	@mkd $(BIN_INSTALL_DIR)
+	@mkd $(LIB_INSTALL_DIR)
+	@echo installing $(TCLDLLNAME)
+	@copy $(TCLDLL) $(BIN_INSTALL_DIR)
+	@echo installing $(TCLSH)
+	@copy $(TCLSH) $(BIN_INSTALL_DIR)
+
+install-libraries:
+	@mkd $(LIB_INSTALL_DIR)
+	@mkd $(INCLUDE_INSTALL_DIR)
+	@mkd $(SCRIPT_INSTALL_DIR)
+	@mkd $(SCRIPT_INSTALL_DIR)\http1.0
+	@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
+	@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
+	@mkd $(SCRIPT_INSTALL_DIR)\http2.0
+	@copy $(ROOT)\library\http2.0\http.tcl $(SCRIPT_INSTALL_DIR)\http2.0
+	@copy $(ROOT)\library\http2.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http2.0
+	@mkd $(SCRIPT_INSTALL_DIR)\opt0.1
+	@copy $(ROOT)\library\opt0.1\optparse.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
+	@copy $(ROOT)\library\opt0.1\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
+	@copy $(GENERICDIR)\tcl.h $(INCLUDE_INSTALL_DIR)
+	@copy $(ROOT)\library\history.tcl $(SCRIPT_INSTALL_DIR)
+	@copy $(ROOT)\library\init.tcl $(SCRIPT_INSTALL_DIR)
+	@copy $(ROOT)\library\ldAout.tcl $(SCRIPT_INSTALL_DIR)
+	@copy $(ROOT)\library\parray.tcl $(SCRIPT_INSTALL_DIR)
+	@copy $(ROOT)\library\safe.tcl $(SCRIPT_INSTALL_DIR)
+	@copy $(ROOT)\library\tclIndex $(SCRIPT_INSTALL_DIR)
+	@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
 
 #
 # Special case object file targets
