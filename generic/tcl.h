@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.87 2001/04/02 01:59:25 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.88 2001/04/04 16:07:20 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -1817,8 +1817,8 @@ typedef unsigned short Tcl_UniChar;
  * linked into an application.
  */
 
-EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *version, int exact));
+EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *version, int exact));
 
 #ifndef USE_TCL_STUBS
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.6 1999/05/03 19:19:03 stanton Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.7 2001/04/04 16:07:20 kennykb Exp $
  */
 
 #include <math.h>
@@ -125,7 +125,7 @@ typedef struct ByteArray {
 
 Tcl_Obj *
 Tcl_NewByteArrayObj(bytes, length)
-    unsigned char *bytes;	/* The array of bytes used to initialize
+    CONST unsigned char *bytes;	/* The array of bytes used to initialize
 				 * the new object. */
     int length;			/* Length of the array of bytes, which must
 				 * be >= 0. */
@@ -137,7 +137,7 @@ Tcl_NewByteArrayObj(bytes, length)
 
 Tcl_Obj *
 Tcl_NewByteArrayObj(bytes, length)
-    unsigned char *bytes;	/* The array of bytes used to initialize
+    CONST unsigned char *bytes;	/* The array of bytes used to initialize
 				 * the new object. */
     int length;			/* Length of the array of bytes, which must
 				 * be >= 0. */
@@ -180,11 +180,11 @@ Tcl_NewByteArrayObj(bytes, length)
 
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(bytes, length, file, line)
-    unsigned char *bytes;	/* The array of bytes used to initialize
+    CONST unsigned char *bytes;	/* The array of bytes used to initialize
 				 * the new object. */
     int length;			/* Length of the array of bytes, which must
 				 * be >= 0. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -200,11 +200,11 @@ Tcl_DbNewByteArrayObj(bytes, length, file, line)
 
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(bytes, length, file, line)
-    unsigned char *bytes;	/* The array of bytes used to initialize
+    CONST unsigned char *bytes;	/* The array of bytes used to initialize
 				 * the new object. */
     int length;			/* Length of the array of bytes, which must
 				 * be >= 0. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -234,7 +234,7 @@ Tcl_DbNewByteArrayObj(bytes, length, file, line)
 void
 Tcl_SetByteArrayObj(objPtr, bytes, length)
     Tcl_Obj *objPtr;		/* Object to initialize as a ByteArray. */
-    unsigned char *bytes;	/* The array of bytes to use as the new
+    CONST unsigned char *bytes;	/* The array of bytes to use as the new
 				 * value. */
     int length;			/* Length of the array of bytes, which must
 				 * be >= 0. */

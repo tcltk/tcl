@@ -1,3 +1,23 @@
+2001-04-05  Kevin Kenny <kennykb@acm.org>
+
+	* doc/ByteArrObj.3:
+	* doc/DumpActiveMemory.3:
+	* doc/InitStubs.3:
+	* doc/PkgRequire.3:
+	* doc/StringObj.3:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclBinary.c:
+	* generic/tclCkalloc.c:
+	* generic/tclDecls.h:
+	* generic/tclListObj.c:
+	* generic/tclObj.c:
+	* generic/tclPkg.c:
+	* generic/tclStringObj.c:
+	* generic/tclStubLib.c:
+	  (TIP#27) Changed a number of Tcl API's to accept "CONST char*"
+	  in place of simple "char*". (kennykb) [Patch #404026]
+
 2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclListObj.c (Tcl_SetListObj): set objPtr->length = 0 in

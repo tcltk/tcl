@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.8 2001/04/04 07:14:16 hobbs Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.9 2001/04/04 16:07:21 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -147,7 +147,7 @@ Tcl_Obj *
 Tcl_DbNewListObj(objc, objv, file, line)
     int objc;			/* Count of objects referenced by objv. */
     Tcl_Obj *CONST objv[];	/* An array of pointers to Tcl objects. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */
@@ -186,7 +186,7 @@ Tcl_Obj *
 Tcl_DbNewListObj(objc, objv, file, line)
     int objc;			/* Count of objects referenced by objv. */
     Tcl_Obj *CONST objv[];	/* An array of pointers to Tcl objects. */
-    char *file;			/* The name of the source file calling this
+    CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
 				 * for debugging. */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.46 2001/03/30 23:06:39 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.47 2001/04/04 16:07:20 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -27,13 +27,13 @@
  */
 
 /* 0 */
-EXTERN int		Tcl_PkgProvideEx _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * name, char * version, 
+EXTERN int		Tcl_PkgProvideEx _ANSI_ARGS_((Tcl_Interp* interp, 
+				CONST char* name, CONST char* version, 
 				ClientData clientData));
 /* 1 */
-EXTERN char *		Tcl_PkgRequireEx _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * name, char * version, int exact, 
-				ClientData * clientDataPtr));
+EXTERN CONST char *	Tcl_PkgRequireEx _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, CONST char * version, 
+				int exact, ClientData * clientDataPtr));
 /* 2 */
 EXTERN void		Tcl_Panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
 /* 3 */
@@ -45,13 +45,14 @@ EXTERN char *		Tcl_Realloc _ANSI_ARGS_((char * ptr,
 				unsigned int size));
 /* 6 */
 EXTERN char *		Tcl_DbCkalloc _ANSI_ARGS_((unsigned int size, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 7 */
-EXTERN int		Tcl_DbCkfree _ANSI_ARGS_((char * ptr, char * file, 
-				int line));
+EXTERN int		Tcl_DbCkfree _ANSI_ARGS_((char * ptr, 
+				CONST char * file, int line));
 /* 8 */
 EXTERN char *		Tcl_DbCkrealloc _ANSI_ARGS_((char * ptr, 
-				unsigned int size, char * file, int line));
+				unsigned int size, CONST char * file, 
+				int line));
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 9 */
 EXTERN void		Tcl_CreateFileHandler _ANSI_ARGS_((int fd, int mask, 
@@ -73,8 +74,8 @@ EXTERN int		Tcl_AppendAllObjTypes _ANSI_ARGS_((
 /* 15 */
 EXTERN void		Tcl_AppendStringsToObj _ANSI_ARGS_(TCL_VARARGS(Tcl_Obj *,objPtr));
 /* 16 */
-EXTERN void		Tcl_AppendToObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				char * bytes, int length));
+EXTERN void		Tcl_AppendToObj _ANSI_ARGS_((Tcl_Obj* objPtr, 
+				CONST char* bytes, int length));
 /* 17 */
 EXTERN Tcl_Obj *	Tcl_ConcatObj _ANSI_ARGS_((int objc, 
 				Tcl_Obj *CONST objv[]));
@@ -83,34 +84,36 @@ EXTERN int		Tcl_ConvertToType _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_Obj * objPtr, Tcl_ObjType * typePtr));
 /* 19 */
 EXTERN void		Tcl_DbDecrRefCount _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 20 */
 EXTERN void		Tcl_DbIncrRefCount _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 21 */
 EXTERN int		Tcl_DbIsShared _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 22 */
 EXTERN Tcl_Obj *	Tcl_DbNewBooleanObj _ANSI_ARGS_((int boolValue, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 23 */
 EXTERN Tcl_Obj *	Tcl_DbNewByteArrayObj _ANSI_ARGS_((
-				unsigned char * bytes, int length, 
-				char * file, int line));
+				CONST unsigned char * bytes, int length, 
+				CONST char * file, int line));
 /* 24 */
 EXTERN Tcl_Obj *	Tcl_DbNewDoubleObj _ANSI_ARGS_((double doubleValue, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 25 */
 EXTERN Tcl_Obj *	Tcl_DbNewListObj _ANSI_ARGS_((int objc, 
-				Tcl_Obj *CONST objv[], char * file, int line));
+				Tcl_Obj *CONST * objv, CONST char * file, 
+				int line));
 /* 26 */
 EXTERN Tcl_Obj *	Tcl_DbNewLongObj _ANSI_ARGS_((long longValue, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 27 */
-EXTERN Tcl_Obj *	Tcl_DbNewObj _ANSI_ARGS_((char * file, int line));
+EXTERN Tcl_Obj *	Tcl_DbNewObj _ANSI_ARGS_((CONST char * file, 
+				int line));
 /* 28 */
 EXTERN Tcl_Obj *	Tcl_DbNewStringObj _ANSI_ARGS_((CONST char * bytes, 
-				int length, char * file, int line));
+				int length, CONST char * file, int line));
 /* 29 */
 EXTERN Tcl_Obj *	Tcl_DuplicateObj _ANSI_ARGS_((Tcl_Obj * objPtr));
 /* 30 */
@@ -180,7 +183,7 @@ EXTERN int		Tcl_ListObjReplace _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN Tcl_Obj *	Tcl_NewBooleanObj _ANSI_ARGS_((int boolValue));
 /* 50 */
 EXTERN Tcl_Obj *	Tcl_NewByteArrayObj _ANSI_ARGS_((
-				unsigned char * bytes, int length));
+				CONST unsigned char* bytes, int length));
 /* 51 */
 EXTERN Tcl_Obj *	Tcl_NewDoubleObj _ANSI_ARGS_((double doubleValue));
 /* 52 */
@@ -203,7 +206,7 @@ EXTERN unsigned char *	Tcl_SetByteArrayLength _ANSI_ARGS_((Tcl_Obj * objPtr,
 				int length));
 /* 59 */
 EXTERN void		Tcl_SetByteArrayObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				unsigned char * bytes, int length));
+				CONST unsigned char * bytes, int length));
 /* 60 */
 EXTERN void		Tcl_SetDoubleObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				double doubleValue));
@@ -220,8 +223,8 @@ EXTERN void		Tcl_SetLongObj _ANSI_ARGS_((Tcl_Obj * objPtr,
 EXTERN void		Tcl_SetObjLength _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				int length));
 /* 65 */
-EXTERN void		Tcl_SetStringObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				char * bytes, int length));
+EXTERN void		Tcl_SetStringObj _ANSI_ARGS_((Tcl_Obj* objPtr, 
+				CONST char* bytes, int length));
 /* 66 */
 EXTERN void		Tcl_AddErrorInfo _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * message));
@@ -851,9 +854,10 @@ EXTERN void		Tcl_WrongNumArgs _ANSI_ARGS_((Tcl_Interp * interp,
 				int objc, Tcl_Obj *CONST objv[], 
 				char * message));
 /* 265 */
-EXTERN int		Tcl_DumpActiveMemory _ANSI_ARGS_((char * fileName));
+EXTERN int		Tcl_DumpActiveMemory _ANSI_ARGS_((
+				CONST char * fileName));
 /* 266 */
-EXTERN void		Tcl_ValidateAllMemory _ANSI_ARGS_((char * file, 
+EXTERN void		Tcl_ValidateAllMemory _ANSI_ARGS_((CONST char * file, 
 				int line));
 /* 267 */
 EXTERN void		Tcl_AppendResultVA _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -867,18 +871,20 @@ EXTERN char *		Tcl_HashStats _ANSI_ARGS_((Tcl_HashTable * tablePtr));
 EXTERN char *		Tcl_ParseVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * str, char ** termPtr));
 /* 271 */
-EXTERN char *		Tcl_PkgPresent _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * name, char * version, int exact));
+EXTERN CONST char *	Tcl_PkgPresent _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, CONST char * version, 
+				int exact));
 /* 272 */
-EXTERN char *		Tcl_PkgPresentEx _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * name, char * version, int exact, 
-				ClientData * clientDataPtr));
+EXTERN CONST char *	Tcl_PkgPresentEx _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, CONST char * version, 
+				int exact, ClientData * clientDataPtr));
 /* 273 */
 EXTERN int		Tcl_PkgProvide _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * name, char * version));
+				CONST char * name, CONST char * version));
 /* 274 */
-EXTERN char *		Tcl_PkgRequire _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * name, char * version, int exact));
+EXTERN CONST char *	Tcl_PkgRequire _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * name, CONST char * version, 
+				int exact));
 /* 275 */
 EXTERN void		Tcl_SetErrorCodeVA _ANSI_ARGS_((Tcl_Interp * interp, 
 				va_list argList));
@@ -1184,11 +1190,11 @@ EXTERN int		Tcl_RegExpExecObj _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN void		Tcl_RegExpGetInfo _ANSI_ARGS_((Tcl_RegExp regexp, 
 				Tcl_RegExpInfo * infoPtr));
 /* 378 */
-EXTERN Tcl_Obj *	Tcl_NewUnicodeObj _ANSI_ARGS_((Tcl_UniChar * unicode, 
-				int numChars));
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj _ANSI_ARGS_((
+				CONST Tcl_UniChar * unicode, int numChars));
 /* 379 */
 EXTERN void		Tcl_SetUnicodeObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				Tcl_UniChar * unicode, int numChars));
+				CONST Tcl_UniChar * unicode, int numChars));
 /* 380 */
 EXTERN int		Tcl_GetCharLength _ANSI_ARGS_((Tcl_Obj * objPtr));
 /* 381 */
@@ -1201,7 +1207,7 @@ EXTERN Tcl_Obj *	Tcl_GetRange _ANSI_ARGS_((Tcl_Obj * objPtr,
 				int first, int last));
 /* 384 */
 EXTERN void		Tcl_AppendUnicodeToObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
-				Tcl_UniChar * unicode, int length));
+				CONST Tcl_UniChar * unicode, int length));
 /* 385 */
 EXTERN int		Tcl_RegExpMatchObj _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * stringObj, Tcl_Obj * patternObj));
@@ -1364,15 +1370,15 @@ typedef struct TclStubs {
     int magic;
     struct TclStubHooks *hooks;
 
-    int (*tcl_PkgProvideEx) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, ClientData clientData)); /* 0 */
-    char * (*tcl_PkgRequireEx) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact, ClientData * clientDataPtr)); /* 1 */
+    int (*tcl_PkgProvideEx) _ANSI_ARGS_((Tcl_Interp* interp, CONST char* name, CONST char* version, ClientData clientData)); /* 0 */
+    CONST char * (*tcl_PkgRequireEx) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr)); /* 1 */
     void (*tcl_Panic) _ANSI_ARGS_(TCL_VARARGS(char *,format)); /* 2 */
     char * (*tcl_Alloc) _ANSI_ARGS_((unsigned int size)); /* 3 */
     void (*tcl_Free) _ANSI_ARGS_((char * ptr)); /* 4 */
     char * (*tcl_Realloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 5 */
-    char * (*tcl_DbCkalloc) _ANSI_ARGS_((unsigned int size, char * file, int line)); /* 6 */
-    int (*tcl_DbCkfree) _ANSI_ARGS_((char * ptr, char * file, int line)); /* 7 */
-    char * (*tcl_DbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, char * file, int line)); /* 8 */
+    char * (*tcl_DbCkalloc) _ANSI_ARGS_((unsigned int size, CONST char * file, int line)); /* 6 */
+    int (*tcl_DbCkfree) _ANSI_ARGS_((char * ptr, CONST char * file, int line)); /* 7 */
+    char * (*tcl_DbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, CONST char * file, int line)); /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) _ANSI_ARGS_((int fd, int mask, Tcl_FileProc * proc, ClientData clientData)); /* 9 */
 #endif /* UNIX */
@@ -1396,19 +1402,19 @@ typedef struct TclStubs {
     int (*tcl_WaitForEvent) _ANSI_ARGS_((Tcl_Time * timePtr)); /* 13 */
     int (*tcl_AppendAllObjTypes) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 14 */
     void (*tcl_AppendStringsToObj) _ANSI_ARGS_(TCL_VARARGS(Tcl_Obj *,objPtr)); /* 15 */
-    void (*tcl_AppendToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, char * bytes, int length)); /* 16 */
+    void (*tcl_AppendToObj) _ANSI_ARGS_((Tcl_Obj* objPtr, CONST char* bytes, int length)); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) _ANSI_ARGS_((int objc, Tcl_Obj *CONST objv[])); /* 17 */
     int (*tcl_ConvertToType) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_ObjType * typePtr)); /* 18 */
-    void (*tcl_DbDecrRefCount) _ANSI_ARGS_((Tcl_Obj * objPtr, char * file, int line)); /* 19 */
-    void (*tcl_DbIncrRefCount) _ANSI_ARGS_((Tcl_Obj * objPtr, char * file, int line)); /* 20 */
-    int (*tcl_DbIsShared) _ANSI_ARGS_((Tcl_Obj * objPtr, char * file, int line)); /* 21 */
-    Tcl_Obj * (*tcl_DbNewBooleanObj) _ANSI_ARGS_((int boolValue, char * file, int line)); /* 22 */
-    Tcl_Obj * (*tcl_DbNewByteArrayObj) _ANSI_ARGS_((unsigned char * bytes, int length, char * file, int line)); /* 23 */
-    Tcl_Obj * (*tcl_DbNewDoubleObj) _ANSI_ARGS_((double doubleValue, char * file, int line)); /* 24 */
-    Tcl_Obj * (*tcl_DbNewListObj) _ANSI_ARGS_((int objc, Tcl_Obj *CONST objv[], char * file, int line)); /* 25 */
-    Tcl_Obj * (*tcl_DbNewLongObj) _ANSI_ARGS_((long longValue, char * file, int line)); /* 26 */
-    Tcl_Obj * (*tcl_DbNewObj) _ANSI_ARGS_((char * file, int line)); /* 27 */
-    Tcl_Obj * (*tcl_DbNewStringObj) _ANSI_ARGS_((CONST char * bytes, int length, char * file, int line)); /* 28 */
+    void (*tcl_DbDecrRefCount) _ANSI_ARGS_((Tcl_Obj * objPtr, CONST char * file, int line)); /* 19 */
+    void (*tcl_DbIncrRefCount) _ANSI_ARGS_((Tcl_Obj * objPtr, CONST char * file, int line)); /* 20 */
+    int (*tcl_DbIsShared) _ANSI_ARGS_((Tcl_Obj * objPtr, CONST char * file, int line)); /* 21 */
+    Tcl_Obj * (*tcl_DbNewBooleanObj) _ANSI_ARGS_((int boolValue, CONST char * file, int line)); /* 22 */
+    Tcl_Obj * (*tcl_DbNewByteArrayObj) _ANSI_ARGS_((CONST unsigned char * bytes, int length, CONST char * file, int line)); /* 23 */
+    Tcl_Obj * (*tcl_DbNewDoubleObj) _ANSI_ARGS_((double doubleValue, CONST char * file, int line)); /* 24 */
+    Tcl_Obj * (*tcl_DbNewListObj) _ANSI_ARGS_((int objc, Tcl_Obj *CONST * objv, CONST char * file, int line)); /* 25 */
+    Tcl_Obj * (*tcl_DbNewLongObj) _ANSI_ARGS_((long longValue, CONST char * file, int line)); /* 26 */
+    Tcl_Obj * (*tcl_DbNewObj) _ANSI_ARGS_((CONST char * file, int line)); /* 27 */
+    Tcl_Obj * (*tcl_DbNewStringObj) _ANSI_ARGS_((CONST char * bytes, int length, CONST char * file, int line)); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 29 */
     void (*tclFreeObj) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 30 */
     int (*tcl_GetBoolean) _ANSI_ARGS_((Tcl_Interp * interp, char * str, int * boolPtr)); /* 31 */
@@ -1430,7 +1436,7 @@ typedef struct TclStubs {
     int (*tcl_ListObjLength) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * intPtr)); /* 47 */
     int (*tcl_ListObjReplace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int first, int count, int objc, Tcl_Obj *CONST objv[])); /* 48 */
     Tcl_Obj * (*tcl_NewBooleanObj) _ANSI_ARGS_((int boolValue)); /* 49 */
-    Tcl_Obj * (*tcl_NewByteArrayObj) _ANSI_ARGS_((unsigned char * bytes, int length)); /* 50 */
+    Tcl_Obj * (*tcl_NewByteArrayObj) _ANSI_ARGS_((CONST unsigned char* bytes, int length)); /* 50 */
     Tcl_Obj * (*tcl_NewDoubleObj) _ANSI_ARGS_((double doubleValue)); /* 51 */
     Tcl_Obj * (*tcl_NewIntObj) _ANSI_ARGS_((int intValue)); /* 52 */
     Tcl_Obj * (*tcl_NewListObj) _ANSI_ARGS_((int objc, Tcl_Obj *CONST objv[])); /* 53 */
@@ -1439,13 +1445,13 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewStringObj) _ANSI_ARGS_((CONST char * bytes, int length)); /* 56 */
     void (*tcl_SetBooleanObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int boolValue)); /* 57 */
     unsigned char * (*tcl_SetByteArrayLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 58 */
-    void (*tcl_SetByteArrayObj) _ANSI_ARGS_((Tcl_Obj * objPtr, unsigned char * bytes, int length)); /* 59 */
+    void (*tcl_SetByteArrayObj) _ANSI_ARGS_((Tcl_Obj * objPtr, CONST unsigned char * bytes, int length)); /* 59 */
     void (*tcl_SetDoubleObj) _ANSI_ARGS_((Tcl_Obj * objPtr, double doubleValue)); /* 60 */
     void (*tcl_SetIntObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int intValue)); /* 61 */
     void (*tcl_SetListObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int objc, Tcl_Obj *CONST objv[])); /* 62 */
     void (*tcl_SetLongObj) _ANSI_ARGS_((Tcl_Obj * objPtr, long longValue)); /* 63 */
     void (*tcl_SetObjLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 64 */
-    void (*tcl_SetStringObj) _ANSI_ARGS_((Tcl_Obj * objPtr, char * bytes, int length)); /* 65 */
+    void (*tcl_SetStringObj) _ANSI_ARGS_((Tcl_Obj* objPtr, CONST char* bytes, int length)); /* 65 */
     void (*tcl_AddErrorInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * message)); /* 66 */
     void (*tcl_AddObjErrorInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * message, int length)); /* 67 */
     void (*tcl_AllowExceptions) _ANSI_ARGS_((Tcl_Interp * interp)); /* 68 */
@@ -1677,16 +1683,16 @@ typedef struct TclStubs {
     ClientData (*tcl_VarTraceInfo2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 262 */
     int (*tcl_Write) _ANSI_ARGS_((Tcl_Channel chan, char * s, int slen)); /* 263 */
     void (*tcl_WrongNumArgs) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], char * message)); /* 264 */
-    int (*tcl_DumpActiveMemory) _ANSI_ARGS_((char * fileName)); /* 265 */
-    void (*tcl_ValidateAllMemory) _ANSI_ARGS_((char * file, int line)); /* 266 */
+    int (*tcl_DumpActiveMemory) _ANSI_ARGS_((CONST char * fileName)); /* 265 */
+    void (*tcl_ValidateAllMemory) _ANSI_ARGS_((CONST char * file, int line)); /* 266 */
     void (*tcl_AppendResultVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 267 */
     void (*tcl_AppendStringsToObjVA) _ANSI_ARGS_((Tcl_Obj * objPtr, va_list argList)); /* 268 */
     char * (*tcl_HashStats) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 269 */
     char * (*tcl_ParseVar) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char ** termPtr)); /* 270 */
-    char * (*tcl_PkgPresent) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact)); /* 271 */
-    char * (*tcl_PkgPresentEx) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact, ClientData * clientDataPtr)); /* 272 */
-    int (*tcl_PkgProvide) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version)); /* 273 */
-    char * (*tcl_PkgRequire) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact)); /* 274 */
+    CONST char * (*tcl_PkgPresent) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact)); /* 271 */
+    CONST char * (*tcl_PkgPresentEx) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr)); /* 272 */
+    int (*tcl_PkgProvide) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version)); /* 273 */
+    CONST char * (*tcl_PkgRequire) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact)); /* 274 */
     void (*tcl_SetErrorCodeVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 275 */
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
@@ -1798,13 +1804,13 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) _ANSI_ARGS_((int ch)); /* 375 */
     int (*tcl_RegExpExecObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_RegExp regexp, Tcl_Obj * objPtr, int offset, int nmatches, int flags)); /* 376 */
     void (*tcl_RegExpGetInfo) _ANSI_ARGS_((Tcl_RegExp regexp, Tcl_RegExpInfo * infoPtr)); /* 377 */
-    Tcl_Obj * (*tcl_NewUnicodeObj) _ANSI_ARGS_((Tcl_UniChar * unicode, int numChars)); /* 378 */
-    void (*tcl_SetUnicodeObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_UniChar * unicode, int numChars)); /* 379 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) _ANSI_ARGS_((CONST Tcl_UniChar * unicode, int numChars)); /* 378 */
+    void (*tcl_SetUnicodeObj) _ANSI_ARGS_((Tcl_Obj * objPtr, CONST Tcl_UniChar * unicode, int numChars)); /* 379 */
     int (*tcl_GetCharLength) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 380 */
     Tcl_UniChar (*tcl_GetUniChar) _ANSI_ARGS_((Tcl_Obj * objPtr, int index)); /* 381 */
     Tcl_UniChar * (*tcl_GetUnicode) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 382 */
     Tcl_Obj * (*tcl_GetRange) _ANSI_ARGS_((Tcl_Obj * objPtr, int first, int last)); /* 383 */
-    void (*tcl_AppendUnicodeToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_UniChar * unicode, int length)); /* 384 */
+    void (*tcl_AppendUnicodeToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, CONST Tcl_UniChar * unicode, int length)); /* 384 */
     int (*tcl_RegExpMatchObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * stringObj, Tcl_Obj * patternObj)); /* 385 */
     void (*tcl_SetNotifier) _ANSI_ARGS_((Tcl_NotifierProcs * notifierProcPtr)); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) _ANSI_ARGS_((void)); /* 387 */
