@@ -1,3 +1,13 @@
+2002-03-28  David Gravereaux <davygrvy@pobox.com>
+	* tools/feather.bmp:
+	* tools/man2help.tcl:
+	* tools/man2help2.tcl:
+	* win/makefile.vc: More winhelp target fixups.  Added a feather
+	bitmap to the non-scrollable area and changed the color to be
+	yellow from a plain white.  The colors can be whatever we want
+	them to be, but thought I would start with something bold.
+	[Bug 527941]
+
 2002-03-27  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/man2help.tcl:
