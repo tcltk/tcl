@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.4 2000/04/11 21:16:18 ericm Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.4.2.1 2000/08/03 21:40:15 ericm Exp $
 
 package provide msgcat 1.0
 
@@ -170,16 +170,23 @@ proc msgcat::mcset {locale src {dest ""}} {
 #	be found for a string.  This routine is intended to be replaced
 #	by an application specific routine for error reporting
 #	purposes.  The default behavior is to return the source string.  
+#	If additional args are specified, the format command will be used
+#	to work them into the traslated string.
 #
 # Arguments:
 #	locale		The current locale.
 #	src		The string to be translated.
+#	args		Args to pass to the format command
 #
 # Results:
 #	Returns the translated value.
 
-proc msgcat::mcunknown {locale src} {
-    return $src
+proc msgcat::mcunknown {locale src args} {
+    if {[llength $args]} {
+	return [eval [list format $src] $args]
+    } else {
+	return $src
+    }
 }
 
 # Initialize the default locale
