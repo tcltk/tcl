@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.10 2004/05/10 22:10:35 dkf Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.11 2004/05/11 09:08:49 dkf Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -208,12 +208,22 @@ modifiers are ignored when converting real values (i.e. type
 If the end of the input string is reached before any conversions have been
 performed and no variables are given, an empty string is returned.
 .SH EXAMPLES
-Parse a \fIHH:MM\fR time string:
+Parse a simple color specification of the form \fI#RRGGBB\fR using
+hexadecimal conversions with field sizes:
+.CS
+set string "#08D03F"
+scan $string "#%2x%2x%2x" r g b
+.CE
+
+Parse a \fIHH:MM\fR time string, noting that this avoids problems with
+octal numbers by forcing interpretation as decimals (if we did not
+care, we would use the \fB%i\fR conversion instead):
 .CS
 set string "08:08"   ;# *Not* octal!
 if {[scan $string "%d:%d" hours minutes] != 2} {
     error "not a valid time string"
 }
+# We have to understand numeric ranges ourselves...
 if {$minutes < 0 || $minutes > 59} {
     error "invalid number of minutes"
 }
@@ -231,7 +241,8 @@ while {[scan $string %s%n word length] == 2} {
 }
 .CE
 
-Parse a simple coordinate string, checking that it is complete:
+Parse a simple coordinate string, checking that it is complete by
+looking for the terminating character explicitly:
 .CS
 set string "(5.2,-4e-2)"
 # Note that the spaces before the literal parts of
