@@ -1,5 +1,16 @@
 2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* README:           bumped version to 8.4.3
+	* generic/tcl.h:
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* tools/tcl.wse.in:
+	* unix/configure:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure:
+	* win/configure.in:
+
 	* doc/socket.n: nroff font handling correction.
 
 	* library/encoding/gb2312-raw.enc (new): This is the original
