@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.15 2002/01/05 22:55:52 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.16 2002/01/07 17:54:52 dgp Exp $
  */
 
 #include "tcl.h"
@@ -175,7 +175,12 @@ void TclSetStartupScriptFileName(fileName)
  */
 CONST char *TclGetStartupScriptFileName()
 {
-    return Tcl_GetString(TclGetStartupScriptPath());
+    Tcl_Obj *pathPtr = TclGetStartupScriptPath();
+
+    if (pathPtr == NULL) {
+	return NULL;
+    }
+    return Tcl_GetString(pathPtr);
 }
 
 

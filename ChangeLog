@@ -1,5 +1,9 @@
-2002-01-05  Don Porter <dgp@users.sourceforge.net>
+2002-01-07  Don Porter <dgp@users.sourceforge.net>
 
+	* generic/tclMain.c:  Bug fix: neglected the NULL case in
+	TclGetStartupScriptFileName().  Broke Tk/wish.
+
+2002-01-05  Don Porter <dgp@users.sourceforge.net>
 	* doc/Tcl_Main.3:
 	* generic/tclMain.c:  Substantial rewrite and expanded documentation
 	of Tcl_Main to correct a number of bugs and flaws:
