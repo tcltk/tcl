@@ -1,5 +1,17 @@
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
+        * generic/tclFileName.c:  Fix to Windows glob where the pattern is
+        * generic/tclIOUtil.c:    a volume relative path or a network
+        * tests/fileName.test:    share [Bug 898238]. On windows 'glob'
+        * tests/fileSystem.test:  will now return the results of 
+        'glob /foo/bar' and 'glob \\foo\\bar' as 'C:/foo/bar', i.e. a 
+        correct absolute path (rather than a volume relative path).
+
+        Note that the test suite does not test commands like 
+        'glob //Machine/Shared/*' (on a network share).  
+
+2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
+
         * generic/tclPathObj.c:   Fix to filename bugs recently
         * tests/fileName.test:    introduced [Bug 918320].
 

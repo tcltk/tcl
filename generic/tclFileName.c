@@ -10,12 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.50 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.51 2004/03/30 15:35:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclRegexp.h"
+#include "tclFilesystem.h" /* For TclGetPathType() */
 
 /*
  * The following variable is set in the TclPlatformInit call to one
@@ -253,7 +254,7 @@ Tcl_GetPathType(path)
 
 Tcl_PathType
 TclpGetNativePathType(pathPtr, driveNameLengthPtr, driveNameRef)
-    Tcl_Obj *pathPtr;      /* Native path of interest */
+    Tcl_Obj *pathPtr;         /* Native path of interest */
     int *driveNameLengthPtr;  /* Returns length of drive, if non-NULL
                                * and path was absolute */
     Tcl_Obj **driveNameRef;   
@@ -1634,6 +1635,53 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	    }
 	    tail = p;
 	    Tcl_IncrRefCount(pathPrefix);
+	} else if (pathPrefix == NULL && (tail[0] == '/' 
+                      || (tail[0] == '\\' && tail[1] == '\\'))) {
+            int driveNameLen;
+            Tcl_Obj *driveName;
+            Tcl_Obj *temp = Tcl_NewStringObj(tail, -1);
+            Tcl_IncrRefCount(temp);
+            
+            switch (TclGetPathType(temp, NULL, &driveNameLen, &driveName)) {
+                case TCL_PATH_VOLUME_RELATIVE: {
+                    /* 
+                     * Volume relative path which is equivalent to a path in
+                     * the root of the cwd's volume.  We will actually return
+                     * non-volume-relative paths here. i.e. 'glob /foo*' will
+                     * return 'C:/foobar'.  This is much the same as globbing
+                     * for a path with '\\' will return one with '/' on Windows.
+                     */
+                    Tcl_Obj *cwd = Tcl_FSGetCwd(interp);
+                    if (cwd == NULL) {
+                        Tcl_DecrRefCount(temp);
+                        if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
+                            return TCL_OK;
+                        } else {
+                            return TCL_ERROR;
+                        }
+                    }
+                    pathPrefix = Tcl_NewStringObj(Tcl_GetString(cwd), 3);
+                    Tcl_DecrRefCount(cwd);
+                    if (tail[0] == '/') {
+                        tail++;
+                    } else {
+                        tail+=2;
+                    }
+                    Tcl_IncrRefCount(pathPrefix);
+                    break;
+                }
+                case TCL_PATH_ABSOLUTE: {
+                    /* 
+                     * Absolute, possibly network path //Machine/Share.
+                     * Use that as the path prefix (it already has a
+                     * refCount).
+                     */
+                    pathPrefix = driveName;
+                    tail += driveNameLen;
+                    break;
+                }
+            }
+            Tcl_DecrRefCount(temp);
 	}
 	/* 
 	 * ':' no longer needed as a separator. It is only relevant
