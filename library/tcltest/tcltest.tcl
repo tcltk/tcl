@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.17 1999/10/21 02:17:43 hobbs Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.18 1999/10/29 03:04:16 hobbs Exp $
 
 package provide tcltest 1.0
 
@@ -1698,23 +1698,22 @@ proc ::tcltest::makeFile {contents name} {
     
     DebugPuts 3 "::tcltest::makeFile: putting $contents into $name"
 
-    set fd [open [file join $::tcltest::temporaryDirectory $name] w]
+    set fullName [file join $::tcltest::temporaryDirectory $name]
+    set fd [open $fullName w]
 
     fconfigure $fd -translation lf
 
-    if {[string equal \
-	    [string index $contents [expr {[string length $contents] - 1}]] \
-	    "\n"]} {
+    if {[string equal [string index $contents end] "\n"]} {
 	puts -nonewline $fd $contents
     } else {
 	puts $fd $contents
     }
     close $fd
 
-    set fullName [file join [pwd] $name]
     if {[lsearch -exact $::tcltest::filesMade $fullName] == -1} {
 	lappend ::tcltest::filesMade $fullName
     }
+    return $fullName
 }
 
 # ::tcltest::removeFile --
