@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.4 1998/10/06 02:59:04 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.5 1998/10/06 20:39:31 rjohnson Exp $
  */
 
 #ifndef _TCLINT
@@ -1796,10 +1796,6 @@ EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
 		            int numPids, Tcl_Pid *pidPtr,
 			    Tcl_Channel errorChan));
 EXTERN void		TclCleanupCommand _ANSI_ARGS_((Command *cmdPtr));
-EXTERN char *		TclConvertToNative _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_DString *bufferPtr));
-EXTERN char *		TclConvertToNetwork _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_DString *bufferPtr));
 EXTERN int		TclCopyAndCollapse _ANSI_ARGS_((int count,
 			    CONST char *src, char *dst));
 EXTERN int		TclCopyChannel _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1874,7 +1870,6 @@ EXTERN char *		TclGetEnv _ANSI_ARGS_((CONST char *name,
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char *name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
-EXTERN int		TclGetIdleGeneration _ANSI_ARGS_((void));
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
@@ -1902,10 +1897,8 @@ EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp *interp,
 		            int argc, char **argv, int flags));
 EXTERN int		TclGuessPackageName _ANSI_ARGS_((char *fileName,
 			    Tcl_DString *bufPtr));
-EXTERN int              TclHasPipes _ANSI_ARGS_((void));
 EXTERN int		TclHideUnsafeCommands _ANSI_ARGS_((
     			    Tcl_Interp *interp));
-EXTERN int		TclIdlePending _ANSI_ARGS_((void));
 EXTERN int		TclInExit _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclIncrElementOfIndexedArray _ANSI_ARGS_((
                             Tcl_Interp *interp, int localIndex,
@@ -1946,8 +1939,6 @@ EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *part1, char *part2, int flags, char *msg,
 			    int createPart1, int createPart2,
 			    Var **arrayPtrPtr));
-EXTERN int		TclMakeFileTable _ANSI_ARGS_((Tcl_Interp *interp,
-                            int noStdio));
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN int		TclNeedSpace _ANSI_ARGS_((char *start, char *end));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
