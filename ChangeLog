@@ -1,3 +1,10 @@
+2003-03-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lsearch.n:	Altered documentation of -ascii options so
+	* doc/lsort.n:		they don't specify that they operate on
+				ASCII strings, which they never did
+				anyway.  [Bug #703807]
+
 2003-03-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Only add the modifier
