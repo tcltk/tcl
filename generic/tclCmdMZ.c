@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.61 2002/02/22 14:52:45 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.62 2002/02/27 06:39:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -584,14 +584,16 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	     * regsub behavior for "" matches between each character.
 	     * 'string map' skips the "" case.
 	     */
-	    resultPtr = Tcl_NewUnicodeObj(wstring, 0);
-	    Tcl_IncrRefCount(resultPtr);
-	    for (; wstring < wend; wstring++) {
-		Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
-		Tcl_AppendUnicodeToObj(resultPtr, wstring, 1);
-		numMatches++;
+	    if (wstring < wend) {
+		resultPtr = Tcl_NewUnicodeObj(wstring, 0);
+		Tcl_IncrRefCount(resultPtr);
+		for (; wstring < wend; wstring++) {
+		    Tcl_AppendUnicodeToObj(resultPtr, wsubspec, wsublen);
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring, 1);
+		    numMatches++;
+		}
+		wlen = 0;
 	    }
-	    wlen = 0;
 	} else {
 	    wsrclc = Tcl_UniCharToLower(*wsrc);
 	    for (p = wfirstChar = wstring; wstring < wend; wstring++) {
@@ -776,7 +778,6 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 * On zero matches, just ignore the offset, since it shouldn't
 	 * matter to us in this case, and the user may have skewed it.
 	 */
-	/*Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);*/
 	resultPtr = objv[1];
 	Tcl_IncrRefCount(resultPtr);
     } else if (offset < wlen) {

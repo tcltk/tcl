@@ -1,5 +1,13 @@
 2002-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): prevent obj leak in
+	remedial regsub case.
+
+	* generic/tclFileName.c (Tcl_TranslateFileName): decr refcount for
+	error case to prevent mem leak.
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): removed extra obj allocation.
+
 	* unix/tclUnixSock.c (Tcl_GetHostName): added an extra
 	gethostbyname check to guard against failure with truncated names
 	returned by uname.
