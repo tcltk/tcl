@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.43 2003/10/23 18:00:10 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.44 2003/11/18 23:13:33 davygrvy Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1785,6 +1785,9 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
     if (native == NULL) {
 	return NULL;
     }
+#ifdef DJGPP
+	mode |= O_BINARY;
+#endif		
     fd = TclOSopen(native, mode, permissions);
 #ifdef SUPPORTS_TTY
     ctl_tty = (strcmp (native, "/dev/tty") == 0);
