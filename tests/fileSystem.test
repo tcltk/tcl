@@ -31,6 +31,14 @@ makeFile "test file" gorp.file
 makeDirectory dir.file
 makeFile "test file in directory" [file join dir.file inside.file]
 
+proc testPathEqual {one two} {
+    if {[string equal $one $two]} {
+	return 1
+    } else {
+	return "not equal: $one $two"
+    }
+}
+
 if {[catch {
     file link link.file gorp.file 
     file link \
@@ -55,22 +63,22 @@ test filesystem-1.1 {link normalisation} {hasLinks} {
 } {0}
 
 test filesystem-1.2 {link normalisation} {hasLinks macOrUnix} {
-   string equal [file normalize [file join gorp.file foo]] \
+    testPathEqual [file normalize [file join gorp.file foo]] \
      [file normalize [file join link.file foo]]
 } {1}
 
 test filesystem-1.3 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file foo]] \
+    testPathEqual [file normalize [file join dir.file foo]] \
      [file normalize [file join dir.link foo]]
 } {1}
 
 test filesystem-1.4 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file inside.file]] \
+    testPathEqual [file normalize [file join dir.file inside.file]] \
      [file normalize [file join dir.link inside.file]]
 } {1}
 
 test filesystem-1.5 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file linkinside.file]] \
+    testPathEqual [file normalize [file join dir.file linkinside.file]] \
      [file normalize [file join dir.file linkinside.file]]
 } {1}
 
@@ -80,7 +88,7 @@ test filesystem-1.6 {link normalisation} {hasLinks} {
 } {0}
 
 test filesystem-1.7 {link normalisation} {hasLinks macOrUnix} {
-   string equal [file normalize [file join dir.link linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
      [file normalize [file join dir.file inside.file foo]]
 } {1}
 
@@ -92,13 +100,13 @@ test filesystem-1.8 {link normalisation} {hasLinks} {
 test filesystem-1.9 {link normalisation} {macOrUnix hasLinks} {
     file delete -force dir.link
     file link dir.link [file nativename dir.file]
-    string equal [file normalize [file join dir.file linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.file linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
 } {1}
 
 test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
     file link dir2.link dir.link
-    string equal [file normalize [file join dir.file linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.file linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
 } {1}
 
@@ -106,7 +114,7 @@ makeDirectory dir2.file
 
 test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
     file link [file join dir2.file dir2.link] dir2.link
-    string equal [file normalize [file join dir.file linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.file linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
 } {1}
 
