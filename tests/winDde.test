@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.12 2002/07/10 11:56:45 dgp Exp $
+# RCS: @(#) $Id: winDde.test,v 1.13 2003/01/16 20:51:57 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -163,6 +163,10 @@ test winDde-5.3 {check for bad arguments} {pcOnly} {
     catch {dde execute -foo "" "" ""} result
     set result
 } {wrong # args: should be "dde execute ?-async? serviceName topicName value"}
+
+test winDde-5.4 {DDE eval bad arguments} {pcOnly} {
+    list [catch {dde eval "" "foo"} msg] $msg
+} {1 {invalid service name ""}}
 
 #cleanup
 file delete -force $::scriptName
