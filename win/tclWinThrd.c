@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.31 2004/06/22 13:09:01 vasiljevic Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.32 2004/07/19 19:19:07 vasiljevic Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,8 +25,9 @@
 
 static CRITICAL_SECTION masterLock;
 static int init = 0;
-#define MASTER_LOCK  EnterCriticalSection(&masterLock)
-#define MASTER_UNLOCK  LeaveCriticalSection(&masterLock)
+#define MASTER_LOCK TclpMasterLock()
+#define MASTER_UNLOCK TclpMasterUnlock()
+
 
 /*
  * This is the master lock used to serialize initialization and finalization
@@ -427,6 +428,7 @@ TclFinalizeLock ()
 {
     MASTER_LOCK;
     DeleteCriticalSection(&joinLock);
+    /* Destroy the critical section that we are holding! */
     DeleteCriticalSection(&masterLock);
     init = 0;
 #ifdef TCL_THREADS
@@ -435,7 +437,7 @@ TclFinalizeLock ()
 	allocOnce = 0;
     }
 #endif
-    /* Destroy the critical section that we are holding. */
+    /* Destroy the critical section that we are holding! */
     DeleteCriticalSection(&initLock);
 }
 
