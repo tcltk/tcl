@@ -1,3 +1,9 @@
+2003-10-14  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:
+	* tests/regexp.test: fix to [Bug 823524] in regsub; added three
+	new tests.
+
 2003-10-14  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (TclAppendObjToErrorInfo):	New internal routine
