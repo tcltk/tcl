@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.16 1999/03/10 05:52:46 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.17 1999/03/10 22:55:51 redman Exp $
  */
 
 #include "tclInt.h"
@@ -4153,3 +4153,42 @@ Tcl_AllowExceptions(interp)
     iPtr->evalFlags |= TCL_ALLOW_EXCEPTIONS;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetVersion
+ *
+ *	Get the Tcl major, minor, and patchlevel version numbers and
+ *      the release type.  A patch is a release type TCL_FINAL_RELEASE
+ *      with a patchLevel > 0.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void Tcl_GetVersion(major, minor, patchLevel, type)
+    int *major;
+    int *minor;
+    int *patchLevel;
+    Tcl_ReleaseType *type;
+{
+    if (major != NULL) {
+        *major = TCL_MAJOR_VERSION;
+    }
+    if (minor != NULL) {
+        *minor = TCL_MINOR_VERSION;
+    }
+    if (patchLevel != NULL) {
+        *patchLevel = TCL_RELEASE_SERIAL;
+    }
+    if (type != NULL) {
+        *type = TCL_RELEASE_LEVEL;
+    }
+}
+ 

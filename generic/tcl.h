@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.35 1999/03/10 06:12:55 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.36 1999/03/10 22:55:51 redman Exp $
  */
 
 #ifndef _TCL
@@ -31,17 +31,18 @@
  * win/README.binary
  * mac/README
  *
- * The release level should be  0 for alpha, 1 for beta, and 2 for
- * final/patch.  The release serial value is the number that follows the
- * "a", "b", or "p" in the patch level; for example, if the patch level
- * is 7.6b2, TCL_RELEASE_SERIAL is 2.  It restarts at 1 whenever the
- * release level is changed, except for the final release which is 0
- * (the first patch will start at 1).
  */
+
+
+typedef enum {
+    TCL_ALPHA_RELEASE = 0,
+    TCL_BETA_RELEASE = 1,
+    TCL_FINAL_RELEASE = 2
+} Tcl_ReleaseType;
 
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   0
-#define TCL_RELEASE_LEVEL   2
+#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
 #define TCL_RELEASE_SERIAL  5
 
 #define TCL_VERSION	    "8.0"
@@ -1097,9 +1098,13 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  * Public functions that are not accessible via the stubs table.
  */
 
-EXTERN void		Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN void		Tcl_Main _ANSI_ARGS_((int argc, char **argv,
-			    Tcl_AppInitProc *appInitProc));
+EXTERN void Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
+	Tcl_AppInitProc *appInitProc));
+EXTERN void Tcl_GetVersion _ANSI_ARGS_((int *major, 
+        int *minor, int *patchLevel, Tcl_ReleaseType *type));
+
+
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility.
