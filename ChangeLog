@@ -1,3 +1,23 @@
+2004-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (Tcl_LimitSetTime, TimeLimitCallback):
+	(TclLimitRemoveAllHandlers, TclInitLimitSupport): Set a timer
+	event to trigger when the time limit runs out. All the time limit
+	actually does is check to see if the time limit has been exceeded,
+	but this is enough to fix [Bug 1085023].
+	* generic/tclInt.h (struct Interp): Added a field to hold the token
+	for the timer event handler associated with the current time limit.
+	* generic/tclEvent.c (Tcl_UpdateObjCmd, Tcl_VwaitObjCmd): Add
+	error message when limit exceeded.
+	* tests/interp.test (interp-34.[89]): Check that time limits
+	handle the two cases reported in [Bug 1085023]
+
+	* generic/tclTimer.c (TclCreateAbsoluteTimerHandler): New internal
+	function that allows setting a timer handler that will be
+	triggered at (or after) a specific time instead of at some number
+	of milliseconds in the future. This is a candidate for future
+	exposure via a TIP.
+
 2004-12-15  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
