@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.21 2004/10/29 15:39:05 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.22 2004/11/25 16:37:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -449,6 +449,17 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
     register IndexRep *indexRep;
     Interp *iPtr = (Interp *) interp;
     char *elementStr;
+#ifndef AVOID_HACKS_FOR_ITCL
+    int isFirst = 1;			/* Special flag used to inhibit the
+					 * treating of the first word as a
+					 * list element so the hacky way Itcl
+					 * does error message generation for
+					 * ensembles will still work.
+					 * [Bug 1066837] */
+#define MAY_QUOTE_WORD (!isFirst)
+#else /* !AVOID_HACKS_FOR_ITCL */
+#define MAY_QUOTE_WORD 1
+#endif /* AVOID_HACKS_FOR_ITCL */
 
     TclNewObj(objPtr);
     Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
@@ -480,7 +491,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 		elementStr = Tcl_GetStringFromObj(
 			iPtr->ensembleRewrite.sourceObjs[i], &elemLen);
 		len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
-		if (len != elemLen) {
+		if (MAY_QUOTE_WORD && len != elemLen) {
 		    char *quotedElementStr = ckalloc((unsigned) len);
 		    len = Tcl_ConvertCountedElement(elementStr, elemLen,
 			    quotedElementStr, flags);
@@ -489,6 +500,9 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 		} else {
 		    Tcl_AppendToObj(objPtr, elementStr, elemLen);
 		}
+#ifndef AVOID_HACKS_FOR_ITCL
+		isFirst = 0;
+#endif /* AVOID_HACKS_FOR_ITCL */
 
 		/*
 		 * Add a space if the word is not the last one (which
@@ -525,7 +539,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 
 	    elementStr = Tcl_GetStringFromObj(objv[i], &elemLen);
 	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
-	    if (len != elemLen) {
+	    if (MAY_QUOTE_WORD && len != elemLen) {
 		char *quotedElementStr = ckalloc((unsigned) len);
 		len = Tcl_ConvertCountedElement(elementStr, elemLen,
 			quotedElementStr, flags);
@@ -535,6 +549,9 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
 	}
+#ifndef AVOID_HACKS_FOR_ITCL
+	isFirst = 0;
+#endif /* AVOID_HACKS_FOR_ITCL */
 
 	/*
 	 * Append a space character (" ") if there is more text to follow
@@ -556,4 +573,5 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
     }
     Tcl_AppendStringsToObj(objPtr, "\"", (char *) NULL);
     Tcl_SetObjResult(interp, objPtr);
+#undef MAY_QUOTE_WORD
 }
