@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.22 2001/10/10 01:05:08 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.23 2001/10/15 17:36:29 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -395,7 +395,8 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 				if (*root == '/') {
 				    char *c;
 				    int gotColon = 0;
-				    *driveNameRef = Tcl_NewStringObj(root + 1, end - root -1);
+				    *driveNameRef = Tcl_NewStringObj(root + 1,
+					    end - root -1);
 				    c = Tcl_GetString(*driveNameRef);
 				    while (*c != '\0') {
 					if (*c == '/') {
@@ -405,12 +406,14 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 					c++;
 				    }
 				    /* 
-				     * If there is no colon, we have just a volume name
-				     * so we must add a colon so it is an absolute path.
+				     * If there is no colon, we have just a
+				     * volume name so we must add a colon so
+				     * it is an absolute path.
 				     */
 				    if (gotColon == 0) {
 				        Tcl_AppendToObj(*driveNameRef, ":", 1);
-				    } else if ((gotColon > 1) && (*(c-1) == ':')) {
+				    } else if ((gotColon > 1) &&
+					    (*(c-1) == ':')) {
 					/* We have an extra colon */
 				        Tcl_SetObjLength(*driveNameRef, 
 						c - Tcl_GetString(*driveNameRef) - 1);
@@ -448,8 +451,8 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 		if ((rootEnd != path) && (driveNameLengthPtr != NULL)) {
 		    *driveNameLengthPtr = rootEnd - path;
 		    if (driveNameRef != NULL) {
-			*driveNameRef = Tcl_NewStringObj(Tcl_DStringValue(&ds), 
-							 Tcl_DStringLength(&ds));
+			*driveNameRef = Tcl_NewStringObj(Tcl_DStringValue(&ds),
+				Tcl_DStringLength(&ds));
 			Tcl_IncrRefCount(*driveNameRef);
 		    }
 		}
@@ -848,7 +851,6 @@ SplitMacPath(path)
 	    } else {
 		Tcl_RegExpRange(re, 10, &start, &end);
 		if (start) {
-
 		    /*
 		     * Normal Unix style paths.
 		     */
@@ -858,7 +860,6 @@ SplitMacPath(path)
 		} else {
 		    Tcl_RegExpRange(re, 12, &start, &end);
 		    if (start) {
-
 			/*
 			 * Normal Mac style paths.
 			 */
@@ -931,7 +932,8 @@ SplitMacPath(path)
 	    length = p - elementStart;
 	    if (length == 1) {
 		while (*p == ':') {
-		    Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("::",2));
+		    Tcl_ListObjAppendElement(NULL, result,
+			    Tcl_NewStringObj("::", 2));
 		    elementStart = p++;
 		}
 	    } else {
@@ -945,23 +947,23 @@ SplitMacPath(path)
 		    length--;
 		}
 		Tcl_ListObjAppendElement(NULL, result, 
-					 Tcl_NewStringObj(elementStart, length));
+			Tcl_NewStringObj(elementStart, length));
 		elementStart = p++;
 	    }
 	}
 	if (elementStart[0] != ':') {
 	    if (elementStart[0] != '\0') {
 		Tcl_ListObjAppendElement(NULL, result, 
-					 Tcl_NewStringObj(elementStart, -1));
+			Tcl_NewStringObj(elementStart, -1));
 	    }
 	} else {
 	    if (elementStart[1] != '\0' || elementStart == path) {
 		if ((elementStart[1] != '~') && (elementStart[1] != '\0')
-		  && (strchr(elementStart+1, '/') == NULL)) {
+			&& (strchr(elementStart+1, '/') == NULL)) {
 		    elementStart++;
 		}
 		Tcl_ListObjAppendElement(NULL, result, 
-					 Tcl_NewStringObj(elementStart, -1));
+			Tcl_NewStringObj(elementStart, -1));
 	    }
 	}
     } else {
@@ -1031,15 +1033,15 @@ Tcl_FSJoinToPath(basePtr, objc, objv)
     Tcl_Obj *lobj, *ret;
 
     if (basePtr == NULL) {
-	lobj = Tcl_NewListObj(0,NULL);
+	lobj = Tcl_NewListObj(0, NULL);
     } else {
-	lobj = Tcl_NewListObj(1,&basePtr);
+	lobj = Tcl_NewListObj(1, &basePtr);
     }
     
     for (i = 0; i<objc;i++) {
 	Tcl_ListObjAppendElement(NULL, lobj, objv[i]);
     }
-    ret = Tcl_FSJoinPath(lobj,-1);
+    ret = Tcl_FSJoinPath(lobj, -1);
     Tcl_DecrRefCount(lobj);
     return ret;
 }
@@ -1090,7 +1092,6 @@ TclpNativeJoinPath(prefix, joining)
 
     switch (tclPlatform) {
         case TCL_PLATFORM_UNIX:
-
 	    /*
 	     * Append a separator if needed.
 	     */
@@ -1152,10 +1153,8 @@ TclpNativeJoinPath(prefix, joining)
 		    while ((p[1] == '/') || (p[1] == '\\')) {
 			p++;
 		    }
-		    if (p[1] != '\0') {
-			if (needsSep) {
-			    *dest++ = '/';
-			}
+		    if ((p[1] != '\0') && needsSep) {
+			*dest++ = '/';
 		    }
 		} else {
 		    *dest++ = *p;
@@ -1273,29 +1272,30 @@ char *
 Tcl_JoinPath(argc, argv, resultPtr)
     int argc;
     char **argv;
-    Tcl_DString *resultPtr;	/* Pointer to previously initialized DString. */
+    Tcl_DString *resultPtr;	/* Pointer to previously initialized DString */
 {
     int i, len;
     Tcl_Obj *listObj = Tcl_NewObj();
     Tcl_Obj *resultObj;
     char *resultStr;
-    
+
     /* Build the list of paths */
     for (i = 0; i < argc; i++) {
-        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(argv[i],-1));
+        Tcl_ListObjAppendElement(NULL, listObj,
+		Tcl_NewStringObj(argv[i], -1));
     }
-    
+
     /* Ask the objectified code to join the paths */
     Tcl_IncrRefCount(listObj);
     resultObj = Tcl_FSJoinPath(listObj, argc);
     Tcl_IncrRefCount(resultObj);
     Tcl_DecrRefCount(listObj);
-    
+
     /* Store the result */
     resultStr = Tcl_GetStringFromObj(resultObj, &len);
     Tcl_DStringAppend(resultPtr, resultStr, len);
     Tcl_DecrRefCount(resultObj);
-    
+
     /* Return a pointer to the result */
     return Tcl_DStringValue(resultPtr);
 }
@@ -1444,8 +1444,7 @@ TclGetExtension(name)
 	    break;
     }
     p = strrchr(name, '.');
-    if ((p != NULL) && (lastSep != NULL)
-	    && (lastSep > p)) {
+    if ((p != NULL) && (lastSep != NULL) && (lastSep > p)) {
 	p = NULL;
     }
 
