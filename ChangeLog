@@ -1,6 +1,15 @@
 2000-04-25  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/configure: Regen.
+	* unix/tcl.m4: Subst TCL_THREADS into tclConfig.sh.
+	* unix/tclConfig.sh.in: Add TCL_THREADS variable.
+	* win/configure: Regen.
+	* win/tcl.m4: Subst TCL_THREADS into tclConfig.sh.
+	* win/tclConfig.sh.in: Add TCL_THREADS variable.
+
+2000-04-25  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/configure: Regen.
 	* unix/configure.in: Use $@ in MAKE_LIB and MAKE_STUB_LIB
 	commands instead of using a delayed subst variable. Replace
 	instances of STUB_LIB_FILE with TCL_STUB_LIB_FILE.
