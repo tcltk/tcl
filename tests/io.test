@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.1.2.6 1998/12/03 04:57:15 stanton Exp $
+# RCS: @(#) $Id: io.test,v 1.1.2.7 1998/12/10 18:27:07 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -5009,7 +5009,7 @@ test io-39.18 {Tcl_SetChannelOption, setting read mode independently} \
     proc accept {s a p} {close $s}
     set s1 [socket -server accept 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket localhost $port]
+    set s2 [socket 127.0.0.1 $port]
     update
     fconfigure $s2 -translation {auto lf}
     set modes [fconfigure $s2 -translation]
@@ -5022,7 +5022,7 @@ test io-39.19 {Tcl_SetChannelOption, setting read mode independently} \
     proc accept {s a p} {close $s}
     set s1 [socket -server accept 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket localhost $port]
+    set s2 [socket 127.0.0.1 $port]
     update
     fconfigure $s2 -translation {auto crlf}
     set modes [fconfigure $s2 -translation]
@@ -5035,7 +5035,7 @@ test io-39.20 {Tcl_SetChannelOption, setting read mode independently} \
     proc accept {s a p} {close $s}
     set s1 [socket -server accept 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket localhost $port]
+    set s2 [socket 127.0.0.1 $port]
     update
     fconfigure $s2 -translation {auto cr}
     set modes [fconfigure $s2 -translation]
@@ -5048,7 +5048,7 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     proc accept {s a p} {close $s}
     set s1 [socket -server accept 0]
     set port [lindex [fconfigure $s1 -sockname] 2]
-    set s2 [socket localhost $port]
+    set s2 [socket 127.0.0.1 $port]
     update
     fconfigure $s2 -translation {auto auto}
     set modes [fconfigure $s2 -translation]
@@ -6535,7 +6535,7 @@ proc FcopyTestDone {bytes {error {}}} {
 test io-53.5 {CopyData: error during fcopy} {socket} {
     set listen [socket -server FcopyTestAccept 2828]
     set in [open [info script]]	;# 126 K
-    set out [socket localhost 2828]
+    set out [socket 127.0.0.1 2828]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
     fcopy $in $out -command FcopyTestDone
@@ -6649,7 +6649,7 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket} {
     proc producer {} {
 	global writer
 
-	set writer [socket localhost 3939]
+	set writer [socket 127.0.0.1 3939]
 	fconfigure $writer -buffering line
 	puts -nonewline $writer hello
 	flush $writer
@@ -6711,7 +6711,7 @@ test io-57.1 {buffered data and file events, gets} {
 	set ::s2 $sock
     }
     set server [socket -server accept 4040]
-    set s [socket localhost 4040]
+    set s [socket 127.0.0.1 4040]
     vwait s2
     update
     fileevent $s2 readable {lappend result readable}
@@ -6732,7 +6732,7 @@ test io-57.2 {buffered data and file events, read} {
 	set ::s2 $sock
     }
     set server [socket -server accept 4041]
-    set s [socket localhost 4041]
+    set s [socket 127.0.0.1 4041]
     vwait s2
     update
     fileevent $s2 readable {lappend result readable}

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.1.2.2 1998/09/24 23:59:28 stanton Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.1.2.3 1998/12/10 18:27:09 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -250,7 +250,7 @@ proc iocmdSSETUP {} {
 	set srv [socket -server iocmdSRV 0];
 	set port [lindex [fconfigure $srv -sockname] 2];
 	proc iocmdSRV {sock ip port} {close $sock}
-	set cli [socket localhost $port];
+	set cli [socket 127.0.0.1 $port];
   }
 }
 proc iocmdSSHTDWN {} {
