@@ -8,15 +8,23 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.18 2004/10/21 15:19:47 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.19 2004/10/21 17:07:32 dgp Exp $
  */
 
 #include "tclInt.h"
+
+/* Indices of the standard return options dictionary keys */
+enum returnKeys {
+    KEY_CODE,	KEY_ERRORCODE,	KEY_ERRORINFO,	KEY_ERRORLINE,
+    KEY_LEVEL,	KEY_OPTIONS,	KEY_LAST
+};
 
 /*
  * Function prototypes for local procedures in this file:
  */
 
+static Tcl_Obj **	GetKeys();
+static void		ReleaseKeys _ANSI_ARGS_((ClientData clientData));
 static void             ResetObjResult _ANSI_ARGS_((Interp *iPtr));
 static void		SetupAppendBuffer _ANSI_ARGS_((Interp *iPtr,
 			    int newSpace));
@@ -907,6 +915,10 @@ Tcl_ResetResult(interp)
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
+    if (iPtr->returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = NULL;
+    }
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 }
 
@@ -1063,6 +1075,79 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * GetKeys --
+ *
+ *	Returns a Tcl_Obj * array of the standard keys used in the
+ *	return options dictionary.
+ *
+ *	Broadly sharing one copy of these key values helps with both
+ *	memory efficiency and dictionary lookup times.
+ *
+ * Results:
+ *	A Tcl_Obj * array.
+ *
+ * Side effects:
+ * 	First time called in a thread, creates the keys (allocating
+ * 	memory) and arranges for their cleanup at thread exit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj **
+GetKeys()
+{
+    static Tcl_ThreadDataKey returnKeysKey;
+    Tcl_Obj **keys = Tcl_GetThreadData(&returnKeysKey,
+	    (int) (KEY_LAST * sizeof(Tcl_Obj *)));
+    if (keys[0] == NULL) {
+	/* First call in this thread, create the keys... */
+	int i;
+	keys[KEY_CODE]		 = Tcl_NewStringObj("-code", -1);
+	keys[KEY_ERRORCODE]	 = Tcl_NewStringObj("-errorcode", -1);
+	keys[KEY_ERRORINFO]	 = Tcl_NewStringObj("-errorinfo", -1);
+	keys[KEY_ERRORLINE]	 = Tcl_NewStringObj("-errorline", -1);
+	keys[KEY_LEVEL]		 = Tcl_NewStringObj("-level", -1);
+	keys[KEY_OPTIONS]	 = Tcl_NewStringObj("-options", -1);
+	for (i = KEY_CODE; i < KEY_LAST; i++) {
+	    Tcl_IncrRefCount(keys[i]);
+	}
+	/* ... and arrange for their clenaup. */
+	Tcl_CreateThreadExitHandler(ReleaseKeys, (ClientData) keys);
+    }
+    return keys;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseKeys --
+ *
+ *	Called as a thread exit handler to cleanup return options
+ *	dictionary keys.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ * 	Frees memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReleaseKeys(clientData)
+    ClientData clientData;
+{
+    Tcl_Obj **keys = (Tcl_Obj **)clientData;
+    int i;
+    for (i = KEY_CODE; i < KEY_LAST; i++) {
+	Tcl_DecrRefCount(keys[i]);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclProcessReturn --
  *
  *	Does the work of the [return] command based on the code,
@@ -1079,6 +1164,7 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
  *
  *----------------------------------------------------------------------
  */
+
 int
 TclProcessReturn(interp, code, level, returnOpts)
     Tcl_Interp *interp;
@@ -1088,6 +1174,7 @@ TclProcessReturn(interp, code, level, returnOpts)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *valuePtr;
+    Tcl_Obj **keys = GetKeys();
 
     /* Store the merged return options */
     if (iPtr->returnOpts != returnOpts) {
@@ -1099,8 +1186,7 @@ TclProcessReturn(interp, code, level, returnOpts)
     }
 
     if (code == TCL_ERROR) {
-	Tcl_DictObjGet(NULL, iPtr->returnOpts,
-		iPtr->returnErrorinfoKey, &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO], &valuePtr);
 	if (valuePtr != NULL) {
 	    int infoLen;
 	    (void) Tcl_GetStringFromObj(valuePtr, &infoLen);
@@ -1113,16 +1199,14 @@ TclProcessReturn(interp, code, level, returnOpts)
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
 	}
-	Tcl_DictObjGet(NULL, iPtr->returnOpts,
-		iPtr->returnErrorcodeKey, &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE], &valuePtr);
 	if (valuePtr != NULL) {
 	    Tcl_SetObjErrorCode(interp, valuePtr);
 	} else {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
 	}
 
-	Tcl_DictObjGet(NULL, iPtr->returnOpts,
-		iPtr->returnErrorlineKey, &valuePtr);
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORLINE], &valuePtr);
 	if (valuePtr != NULL) {
 	    Tcl_GetIntFromObj(NULL, valuePtr, &iPtr->errorLine);
 	}
@@ -1167,18 +1251,18 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
     int *levelPtr;		/* If not NULL, points to space where the
 				 * -level value should be written */
 {
-    Interp *iPtr = (Interp *) interp;
     int code=TCL_OK;
     int level = 1;
     Tcl_Obj *valuePtr;
     Tcl_Obj *returnOpts = Tcl_NewObj();
+    Tcl_Obj **keys = GetKeys();
 
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	int optLen;
 	CONST char *opt = Tcl_GetStringFromObj(objv[0], &optLen);
 	int compareLen;
-	CONST char *compare = Tcl_GetStringFromObj(
-		iPtr->returnOptionsKey, &compareLen);
+	CONST char *compare =
+		Tcl_GetStringFromObj(keys[KEY_OPTIONS], &compareLen);
 
 	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
 	    Tcl_DictSearch search;
@@ -1202,10 +1286,10 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
 	    }
 
-	    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnOptionsKey, &valuePtr);
+	    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_OPTIONS], &valuePtr);
 	    if (valuePtr != NULL) {
 		dict = valuePtr;
-		Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnOptionsKey);
+		Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_OPTIONS]);
 		goto nestedOptions;
 	    }
 
@@ -1215,7 +1299,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
     }
 
     /* Check for bogus -code value */
-    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnCodeKey, &valuePtr);
+    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
     if ((valuePtr != NULL) 
 	    && (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code))) {
 	static CONST char *returnCodes[] = {
@@ -1232,11 +1316,11 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		    "continue, or an integer", (char *) NULL);
 	    goto error;
 	}
-	Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnCodeKey);
+	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_CODE]);
     }
 
     /* Check for bogus -level value */
-    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnLevelKey, &valuePtr);
+    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_LEVEL], &valuePtr);
     if (valuePtr != NULL) {
 	if ((TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level)) 
 		|| (level < 0)) {
@@ -1247,7 +1331,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		TclGetString(valuePtr), "\"", (char *) NULL);
 	    goto error;
 	}
-	Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnLevelKey);
+	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_LEVEL]);
     }
 
     /* 
@@ -1301,6 +1385,7 @@ TclGetReturnOptions(interp, result)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *options;
+    Tcl_Obj **keys = GetKeys();
 
     if (iPtr->returnOpts) {
 	options = Tcl_DuplicateObj(iPtr->returnOpts);
@@ -1309,15 +1394,15 @@ TclGetReturnOptions(interp, result)
     }
 
     if (result == TCL_RETURN) {
-	Tcl_DictObjPut(NULL, options,
-		iPtr->returnCodeKey, Tcl_NewIntObj(iPtr->returnCode));
-	Tcl_DictObjPut(NULL, options,
-		iPtr->returnLevelKey, Tcl_NewIntObj(iPtr->returnLevel));
+	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
+		Tcl_NewIntObj(iPtr->returnCode));
+	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
+		Tcl_NewIntObj(iPtr->returnLevel));
     } else {
-	Tcl_DictObjPut(NULL, options,
-		iPtr->returnCodeKey, Tcl_NewIntObj(result));
-	Tcl_DictObjPut(NULL, options,
-		iPtr->returnLevelKey, Tcl_NewIntObj(0));
+	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
+		Tcl_NewIntObj(result));
+	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
+		Tcl_NewIntObj(0));
     }
 
     if (result == TCL_ERROR) {
@@ -1325,11 +1410,9 @@ TclGetReturnOptions(interp, result)
 	 * When result was an error, fill in any missing values
 	 * for -errorinfo, -errorcode, and -errorline
 	 */
-	Tcl_DictObjPut(NULL, options,
-		iPtr->returnErrorinfoKey, iPtr->errorInfo);
-	Tcl_DictObjPut(NULL, options,
-		iPtr->returnErrorcodeKey, iPtr->errorCode);
-	Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORCODE], iPtr->errorCode);
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
 		Tcl_NewIntObj(iPtr->errorLine));
     }
     return options;
