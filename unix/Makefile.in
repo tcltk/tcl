@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.13 1998/10/20 20:01:23 rjohnson Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.14 1998/12/02 01:42:52 welch Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -403,7 +403,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.13 1998/10/20 20:01:23 rjohnson Exp $'
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.14 1998/12/02 01:42:52 welch Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -890,6 +890,9 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/all $(TOP_DIR)/tests/*.tcl \
 		$(TOP_DIR)/tests/defs $(DISTDIR)/tests
+	mkdir $(DISTDIR)/tests/pkg
+	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests/pkg
+	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(TOP_DIR)/tests/pkg
 	mkdir $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.h $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
@@ -953,7 +956,9 @@ allpatch: dist
 # programs found only in the Tcl group's tool workspace.
 #
 
-macdist: dist
+macdist: dist machtml
+
+machtml:
 	rm -f $(DISTDIR)/mac/tclMacProjects.sea.hqx
 	tclsh $(TOOL_DIR)/man2html.tcl $(DISTDIR)/tmp ../.. tcl$(VERSION)
 	mv $(DISTDIR)/tmp/tcl$(VERSION) $(DISTDIR)/html
