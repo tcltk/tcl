@@ -4,6 +4,8 @@
 	* generic/tclPathObj.c: 
 	* generic/tclFileSystem.h: overlooked one function which
 	was duplicated, so this is now shared between modules.
+	* win/tclWinFile.c: allow this file to compile with VC++ 5.2 again
+	since Mingw build fixes broke that.
 	
 2003-04-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
