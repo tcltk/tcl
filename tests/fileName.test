@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.1.2.6 1999/03/26 19:13:59 hershey Exp $
+# RCS: @(#) $Id: fileName.test,v 1.1.2.7 1999/04/05 23:14:18 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -1032,11 +1032,11 @@ test filename-10.22 {Tcl_TranslateFileName} {
 
 testsetplatform $platform
 
-test filename-10.23 {Tcl_TranslateFileName} {nonPortable unixOnly} {
+test filename-10.23 {Tcl_TranslateFileName} {unixOnly nonPortable} {
     # this test fails if ~ouster is not /home/ouster
     list [catch {testtranslatefilename ~ouster} msg] $msg
 } {0 /home/ouster}
-test filename-10.24 {Tcl_TranslateFileName} {nonPortable unixOnly} {
+test filename-10.24 {Tcl_TranslateFileName} {unixOnly nonPortable} {
     # this test fails if ~ouster is not /home/ouster
     list [catch {testtranslatefilename ~ouster/foo} msg] $msg
 } {0 /home/ouster/foo}
@@ -1379,26 +1379,27 @@ test filename-16.11 {windows specific globbing} {pcOnly} {
     lsort [glob c:\\\\globTest\\\\*.bat]
 } {c:/globTest/x1.BAT c:/globTest/y1.Bat c:/globTest/z1.bat}
 
-catch {
+test filename-16.12 {windows specific globbing} {pcOnly} {
+    cd //[info hostname]/c
     removeDirectory globTest
     makeDirectory globTest
     close [open globTest/x1.BAT w]
     close [open globTest/y1.Bat w]
     close [open globTest/z1.bat w]
-}
-
-# the following tests rely upon the //gaspode/d directory's existence
-set ::tcltest::testConfig(gaspodeExists) [expr {[catch {cd //gaspode/d}] == 0}]
-
-test filename-16.12 {windows specific globbing} {pcOnly nonPortable gaspodeExists} {
-    glob //gaspode/d/*Test
-} //gaspode/d/globTest
-test filename-16.13 {windows specific globbing} {pcOnly nonPortable gaspodeExists} {
-    glob {\\\\gaspode\\d\\*Test}
-} //gaspode/d/globTest
+    glob //[info hostname]/c/*Test
+} //[info hostname]/c/globTest
+test filename-16.13 {windows specific globbing} {pcOnly} {
+    cd //[info hostname]/c
+    removeDirectory globTest
+    makeDirectory globTest
+    close [open globTest/x1.BAT w]
+    close [open globTest/y1.Bat w]
+    close [open globTest/z1.bat w]
+    glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
+} //[info hostname]/c/globTest
 
 # cleanup
-removeDirectory globTest
+file delete -force //[info hostname]/c/globTest
 cd $temp
 set env(HOME) $oldhome
 testsetplatform $platform
