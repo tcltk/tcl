@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.136 2004/05/21 09:39:28 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.137 2004/05/21 21:31:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2520,12 +2520,12 @@ TclExecuteByteCode(interp, codePtr)
 	char *s;
 	Tcl_ObjType *t1Ptr, *t2Ptr;
 	Tcl_Obj *valuePtr, *value2Ptr;
+	Tcl_WideInt w;
 	
 	value2Ptr = *tosPtr;
 	valuePtr  = *(tosPtr - 1);
 	t1Ptr = valuePtr->typePtr;
 	t2Ptr = value2Ptr->typePtr;
-	Tcl_WideInt w;
 
 	if ((t1Ptr == &tclIntType) || (t1Ptr == &tclBooleanType)) {
 	    i1 = (valuePtr->internalRep.longValue != 0);
@@ -3095,9 +3095,9 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 	int index, length;
 	char *bytes;
-	bytes = NULL; /* lint */
 	Tcl_Obj *valuePtr, *value2Ptr;
 	
+	bytes = NULL; /* lint */
 	value2Ptr = *tosPtr;
 	valuePtr = *(tosPtr - 1);
 

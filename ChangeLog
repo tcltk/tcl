@@ -1,3 +1,8 @@
+2004-05-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Move a few
+	declarations a short distance so pre-C99 compilers can cope.
+
 2004-05-21  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): reorganised TEBC
