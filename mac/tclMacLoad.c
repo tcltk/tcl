@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.13 2002/07/17 20:00:46 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.14 2002/07/18 15:04:53 vincentdarley Exp $
  */
 
 #include <CodeFragments.h>
@@ -77,6 +77,15 @@ struct CfrgItem {
 };
 typedef struct CfrgItem CfrgItem;
 
+/*
+ * On MacOS, old shared libraries which contain many code fragments
+ * cannot, it seems, be loaded in one go.  We need to look provide
+ * the name of a code fragment while we load.  Since with the
+ * separation of the 'load' and 'findsymbol' be do not necessarily
+ * know a symbol name at load time, we have to store some further
+ * information in a structure like this so we can ensure we load
+ * properly in 'findsymbol' if the first attempts didn't work.
+ */
 typedef struct TclMacLoadInfo {
     int loaded;
     CFragConnectionID connID;
@@ -90,7 +99,7 @@ static int TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo,
 /*
  *----------------------------------------------------------------------
  *
- * TclLoadFile --
+ * TclpDlopen --
  *
  *	This procedure is called to carry out dynamic loading of binary
  *	code for the Macintosh.  This implementation is based on the
@@ -147,6 +156,12 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
 }
+
+/* 
+ * See the comments about 'struct TclMacLoadInfo' above. This
+ * function ensures the appropriate library or symbol is
+ * loaded.
+ */
 static int
 TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo, 
 	  CONST char *sym /* native */) 
@@ -239,6 +254,21 @@ TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo,
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindSymbol --
+ *
+ *	Looks up a symbol, by name, through a handle associated with
+ *	a previously loaded piece of code (shared library).
+ *
+ * Results:
+ *	Returns a pointer to the function associated with 'symbol' if
+ *	it is found.  Otherwise returns NULL and may leave an error
+ *	message in the interp's result.
+ *
+ *----------------------------------------------------------------------
+ */
 Tcl_PackageInitProc*
 TclpFindSymbol(interp, loadHandle, symbol) 
     Tcl_Interp *interp;
@@ -300,13 +330,13 @@ TclpFindSymbol(interp, loadHandle, symbol)
  */
 
 void
-TclpUnloadFile(clientData)
-    ClientData clientData;	/* ClientData returned by a previous call
-				 * to TclpLoadFile().  The clientData is 
+TclpUnloadFile(loadHandle)
+    TclLoadHandle loadHandle;	/* loadHandle returned by a previous call
+				 * to TclpDlopen().  The loadHandle is 
 				 * a token that represents the loaded 
 				 * file. */
 {
-    TclMacLoadInfo *loadInfo = (TclMacLoadInfo *)clientData;
+    TclMacLoadInfo *loadInfo = (TclMacLoadInfo *)loadHandle;
     if (loadInfo->loaded) {
 	CloseConnection((CFragConnectionID*) &(loadInfo->connID));
     }
