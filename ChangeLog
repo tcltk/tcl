@@ -1,3 +1,11 @@
+2001-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/clock.test (clock-8.1): 
+	* generic/tclDate.c (RelativeMonth): 
+	* generic/tclGetDate.y (RelativeMonth): corrected off-by-one-day
+	error in clock scan with relative months and years during swing
+	hours. [Bug #413397, Patch #414024] (lavana)
+
 2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixPipe.c (PipeInputProc, PipeOutputProc): do immediate
@@ -547,23 +555,26 @@
 	* generic/tclPlatDecls.h:
 	* generic/tclStubInit.c:  regen'd tables.
 
-	* generic/tclAsync.c:  Brought source to match -r1.6 on the HEAD branch.
+	* generic/tclAsync.c: Brought source to match -r1.6 on the HEAD
+	branch.
 
 	* generic/tclEvent.c:
-	* generic/tclInt.h: Added prototype to and use of new TclFinalizeAsync()
-	found in tclAsync.c.
+	* generic/tclInt.h: Added prototype to and use of new
+	TclFinalizeAsync() found in tclAsync.c.
 
 	* unix/tclUnixPort.h:
 	* mac/tclMacPort.h: removed #defines for TclpAsyncMark.
 
-	* win/tclWinInit.c:  Removed the TclpAsyncMark function and the thread ID
-	saving that was going on in TclpInitPlatform(). [the old hack]
+	* win/tclWinInit.c: Removed the TclpAsyncMark function and the
+	thread ID saving that was going on in TclpInitPlatform(). [the old
+	hack]
 
-	* win/tclWinThread.c:  TclpFinalizeCondition() and TclpFinalizeMutex()
-	are now properly returning the old CriticalSection handle to the system.
-	Tcl_CreateThread() is now decrementing its handle reference, so the
-	system will recover resources when the thread closes (doh!).  These
-	changes are all already up on the HEAD.
+	* win/tclWinThread.c: TclpFinalizeCondition() and
+	TclpFinalizeMutex() are now properly returning the old
+	CriticalSection handle to the system.  Tcl_CreateThread() is now
+	decrementing its handle reference, so the system will recover
+	resources when the thread closes (doh!).  These changes are all
+	already up on the HEAD.
 
 	* doc/Async.3:  matches HEAD.
 
