@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.24.2.1 2003/03/19 22:53:16 msofer Exp $
+# RCS: @(#) $Id: compile.test,v 1.24.2.2 2004/03/15 20:34:13 msofer Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -124,7 +124,7 @@ test compile-3.5 {TclCompileCatchCmd: recover from error, [Bug 705406]} {
 	}   
     }
     list [catch foo msg] $msg
-} {1 {invalid command name "a"}}
+} {0 1}
 
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
