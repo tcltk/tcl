@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.11 2005/01/28 01:50:26 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.12 2005/02/10 18:58:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4003,8 +4003,25 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 		(objPtr->bytes == NULL) /* ...without a string rep */) {
 	    register List *listRepPtr =
 		(List *) objPtr->internalRep.twoPtrValue.ptr1;
-	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
-		    listRepPtr->elements, flags);
+	    int i, objc = listRepPtr->elemCount;
+#define TEOE_PREALLOC 10
+	    Tcl_Obj *staticObjv[TEOE_PREALLOC], **objv = staticObjv;
+
+	    if (objc > TEOE_PREALLOC) {
+		objv = (Tcl_Obj **) ckalloc(objc*sizeof(Tcl_Obj *));
+	    }
+#undef TEOE_PREALLOC
+	    for (i=0; i < objc; i++) {
+		objv[i] = listRepPtr->elements[i];
+		Tcl_IncrRefCount(objv[i]);
+	    }
+	    result = Tcl_EvalObjv(interp, objc, objv, flags);
+	    for (i=0; i < objc; i++) {
+		TclDecrRefCount(objv[i]);
+	    }
+	    if (objv != staticObjv) {
+		ckfree((char *) objv);
+	    }
 	} else {
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
