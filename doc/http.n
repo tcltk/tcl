@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.6 1999/11/19 06:33:59 hobbs Exp $
+'\" RCS: @(#) $Id: http.n,v 1.7 1999/11/19 23:08:29 hobbs Exp $
 '\" 
 .so man.macros
 .TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
@@ -14,7 +14,7 @@
 .SH NAME
 Http \- Client-side implementation of the HTTP/1.0 protocol.
 .SH SYNOPSIS
-\fBpackage require http ?2.1?\fP
+\fBpackage require http ?2.2?\fP
 .sp
 \fB::http::config \fI?options?\fR
 .sp
