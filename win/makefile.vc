@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.117 2004/01/15 23:08:44 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.118 2004/01/15 23:23:13 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -94,11 +94,13 @@ the environment.  Jump to this line to read the new instructions.
 #		memdbg   = Enables the debugging memory allocator.
 #		compdbg  = Enables byte compilation logging.
 #
-#	CHECKS=nodep,none
+#	CHECKS=nodep,fullwarn,none
 #		Sets special macros for checking compatability.
 #
 #		nodep	 = Turns off compatability macros to ensure the core
 #			    isn't being built with deprecated functions. 
+#		fullwarn = Builds with full compiler and link warnings enabled.
+#			    Very verbose.
 #
 #	MACHINE=(IX86|IA64|ALPHA)
 #		Set the machine type used for the compiler, linker, and
