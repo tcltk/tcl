@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.58 2003/12/24 04:18:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.59 2004/01/17 00:28:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2018,6 +2018,102 @@ Tcl_JoinObjCmd(dummy, interp, objc, objv)
 	}
 	Tcl_AppendToObj(resObjPtr, bytes, length);
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LassignObjCmd --
+ *
+ *	This object-based procedure is invoked to process the "lassign" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+    /* ARGSUSED */
+int
+Tcl_LassignObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    Tcl_Obj *valueObj;		/* Value to assign to variable, as read from
+				 * the list object or created in the emptyObj
+				 * variable. */
+    Tcl_Obj *emptyObj = NULL;	/* If non-NULL, an empty object created for
+				 * being assigned to variables once we have
+				 * run out of values from the list object. */
+    Tcl_Obj **listObjv;		/* The contents of the list. */
+    int listObjc;		/* The length of the list. */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list varname ?varname ...?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * First assign values out of the list to variables.
+     */
+
+    for (i=0 ; i+2<objc ; i++) {
+	/*
+	 * We do this each time round the loop because that is robust
+	 * against shimmering nasties.
+	 */
+	if (Tcl_ListObjIndex(interp, objv[1], i, &valueObj) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (valueObj == NULL) {
+	    if (emptyObj == NULL) {
+		TclNewObj(emptyObj);
+		Tcl_IncrRefCount(emptyObj);
+	    }
+	    valueObj = emptyObj;
+	}
+	if (Tcl_ObjSetVar2(interp, objv[i+2], NULL, valueObj,
+		TCL_LEAVE_ERR_MSG) == NULL) {
+	    if (emptyObj != NULL) {
+		Tcl_DecrRefCount(emptyObj);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+    if (emptyObj != NULL) {
+	Tcl_DecrRefCount(emptyObj);
+    }
+
+    /*
+     * Now place a list of any values left over into the interpreter
+     * result.
+     *
+     * First, figure out how many values were not assigned by getting
+     * the length of the list.  Note that I do not expect this
+     * operation to fail.
+     */
+
+    if (Tcl_ListObjGetElements(interp, objv[1],
+	    &listObjc, &listObjv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (listObjc > objc-2) {
+	/*
+	 * OK, there were left-overs.  Make a list of them and slap
+	 * that back in the interpreter result.
+	 */
+	Tcl_SetObjResult(interp,
+		Tcl_NewListObj(listObjc - objc + 2, listObjv + objc - 2));
+    }
+
     return TCL_OK;
 }
 
