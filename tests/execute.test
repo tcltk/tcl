@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.17 2004/04/29 20:40:14 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.18 2004/05/25 17:17:38 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -713,13 +713,17 @@ test execute-7.34 {Wide int handling} {longIs32bit} {
     expr {wide(0x1) * 1024 * 1024 * 1024 * 1024}
 } 1099511627776
 
-test execute-8.1 {Stack protection} {
+test execute-8.1 {Stack protection} -setup {
     # If [Bug #804681] has not been properly
     # taken care of, this should segfault
     proc whatever args {llength $args}
     trace add variable ::errorInfo {write unset} whatever
-    catch {expr {1+9/0}}
-} 1
+} -body {
+    expr {1+9/0}
+} -cleanup {
+    trace remove variable ::errorInfo {write unset} whatever
+    rename whatever {}
+} -returnCodes error -match glob -result *
 
 test execute-8.2 {Stack restoration} -body {
     # Test for [Bug #816641], correct restoration
