@@ -1,5 +1,23 @@
 2002-07-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclExecute.c, generic/tclCompile.c, generic/tclBasic.c: 
+	* generic/tclCompile.h (builtinFuncTable, instructionTable): Added
+	prefix to these symbols because they are visible outside the Tcl
+	library.
+
+	* generic/tclCompExpr.c (operatorTable): 
+	* unix/tclUnixTime.c (tmKey):
+	* generic/tclIOUtil.c (theFilesystemEpoch, filesystemWantToModify,
+	filesystemIteratorsInProgress, filesystemOkToModify): Made these
+	variables static.
+
+	* unix/tclUnixFile.c:		Renamed nativeFilesystem to
+	* win/tclWinFile.c:		tclNativeFilesystem and declared
+	* generic/tclIOUtil.c:		it properly in tclInt.h
+	* generic/tclInt.h: 
+
+	* generic/tclUtf.c (totalBytes): Made this array static and const.
+
 	* generic/tclParse.c (typeTable): Made this array static and const.
 	(Tcl_ParseBraces): Simplified error handling case so that scans
 	are only performed when needed, and flags are simpler too.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.28 2002/06/28 21:24:19 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.29 2002/07/19 12:31:09 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -392,11 +392,11 @@ typedef struct ByteCode {
 } ByteCode;
 
 /*
- * Opcodes for the Tcl bytecode instructions. These must correspond to the
- * entries in the table of instruction descriptions, instructionTable, in
- * tclCompile.c. Also, the order and number of the expression opcodes
- * (e.g., INST_LOR) must match the entries in the array operatorStrings in
- * tclExecute.c.
+ * Opcodes for the Tcl bytecode instructions. These must correspond to
+ * the entries in the table of instruction descriptions,
+ * tclInstructionTable, in tclCompile.c. Also, the order and number of
+ * the expression opcodes (e.g., INST_LOR) must match the entries in
+ * the array operatorStrings in tclExecute.c.
  */
 
 /* Opcodes 0 to 9 */
@@ -566,12 +566,12 @@ typedef struct InstructionDesc {
 				/* The type of each operand. */
 } InstructionDesc;
 
-extern InstructionDesc instructionTable[];
+extern InstructionDesc tclInstructionTable[];
 
 /*
  * Definitions of the values of the INST_CALL_BUILTIN_FUNC instruction's
  * operand byte. Each value denotes a builtin Tcl math function. These
- * values must correspond to the entries in the builtinFuncTable array
+ * values must correspond to the entries in the tclBuiltinFuncTable array
  * below and to the values stored in the tclInt.h MathFunc structure's
  * builtinFuncIndex field.
  */
@@ -624,7 +624,7 @@ typedef struct {
 				 * function when invoking it. */
 } BuiltinFunc;
 
-extern BuiltinFunc builtinFuncTable[];
+extern BuiltinFunc tclBuiltinFuncTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
@@ -846,7 +846,7 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 
 #define TclUpdateStackReqs(op, i, envPtr) \
     {\
-	int delta = instructionTable[(op)].stackEffect;\
+	int delta = tclInstructionTable[(op)].stackEffect;\
 	if (delta) {\
 	    if (delta < 0) {\
 		if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\

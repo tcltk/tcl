@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.26 2002/05/30 03:27:09 hobbs Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.27 2002/07/19 12:31:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -61,8 +61,8 @@
  * The following structures are used when mapping between Unicode (UCS-2)
  * and UTF-8.
  */
- 
-CONST unsigned char totalBytes[256] = {
+
+static CONST unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
