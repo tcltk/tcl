@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.92 2002/08/05 03:24:39 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.93 2002/08/05 15:01:03 dgp Exp $
 
 library tcl
 
@@ -306,7 +306,7 @@ declare 82 generic {
     int Tcl_CommandComplete(CONST char *cmd)
 }
 declare 83 generic {
-    CONST84_RETURN char * Tcl_Concat(int argc, CONST84 char * CONST *argv)
+    char * Tcl_Concat(int argc, CONST84 char * CONST *argv)
 }
 declare 84 generic {
     int Tcl_ConvertElement(CONST char *src, char *dst, int flags)

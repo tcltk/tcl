@@ -1,3 +1,9 @@
+2002-08-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.decls:	Restored Tcl_Concat to return (char *).  Like
+	* generic/tclDecls.h:	Tcl_Merge, it transfers ownership of a dynamic
+	* generic/tclUtil.c:	allocated string to the caller.
+
 2002-08-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/CmdCmplt.3:	Applied Patch 585105 to fully CONST-ify
