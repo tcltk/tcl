@@ -1,7 +1,12 @@
 2002-06-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
-	* generic/tclExecute.c: reverting an accidental modificationin the
-	last commit.
+	* doc/namespace.n: added description of [namepace forget]
+	behaviour for unqualified patterns [Bug 559268]
+
+2002-06-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: reverting an accidental modification in
+	the last commit.
 	
 2002-06-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
