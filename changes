@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.52 1999/12/22 20:00:24 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.53 2000/01/14 00:20:42 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4735,31 +4735,59 @@ command to Windows to query the last error received on a serial socket.
 have DST
 
 1999-12-03 (feature enhancement) improved error message in bad octal cases
-and improper use of comments.
+and improper use of comments. (hobbs)
 
 1999-12-07 (bug fix) fixed Tcl_ScanCountedElement to not step
 beyond the end of the counted string
 
 1999-12-09 (feature enhancement) removed all references to 16 bit
-compatibility code for Windows
+compatibility code for Windows (hobbs)
 
-1999-12-10 (bug fix) removed check for vfork - Tcl now uses only fork in exec.
+1999-12-10 (bug fix) removed check for vfork - Tcl now uses only fork in
+exec. (hobbs)
 
 1999-12-10 (optimization) changed Tcl_ConcatObj to return a list
 object when it receives all pure list objects as input (used by 'concat'),
 added optimizations in Tcl_EvalObjEx for pure list case, and optimized
 INST_TRY_CVT_TO_NUMERIC in TclExecuteByteCode for boolean objects.
+(oakley, hobbs)
 
 1999-12-12 (feature enhancement) enhanced glob command with -type, -path,
--directory and -join switches.
+-directory and -join switches. (darley, hobbs)
 
 1999-12-21 (bug fix) changed CreateThread to _beginthreadex and
-ExitThread to _endthreadex to prevent 4K mem leak
+ExitThread to _endthreadex to prevent 4K mem leak (gravereaux)
 
 1999-12-21 (bug fix) fixed applescript for I18N
 
-1999-12-21 (feature enhancement) added -unique option to lsort
+1999-12-21 (feature enhancement) added -unique option to lsort (hobbs)
 
 1999-12-21 (bug fix) changed thread ids to longs (for 64bit systems)
 
 --- Released 8.3b1, December 22, 1999 --- See ChangeLog for details ---
+
+2000-01-10 (feature enhancement) clock scan now supports the common
+ISO 8601 date/time formats.  See docs for details. (melski)
+
+2000-01-10 (bug fix) prevented \ooo substitution from accepting
+non-octal digits [Bug: 3975] (hobbs)
+
+2000-01-11 (bug fix) fixed improper handling of DST by clock when
+using relative times (like "1 month" or "tomorrow"). (melski)
+
+2000-01-12 (bug fix) improved build support for Tru64 v5, NetBSD
+and Reliant Unix (hobbs)
+
+2000-01-12 (bug fix) made imported commands also import their
+compile procedure (duffin)
+
+2000-01-12 (bug fix) fixed 'info procs ::namesp::*' behavior to return
+procs in a namespace (dejong)
+
+2000-01-12 (feature enhancement) added support for setting permissions
+symbolicly (like chmod) in [file attributes $file -permissions ...] (schoebel)
+
+2000-01-13 (bug fix) fixed lsort -dictionary problem when sorting
+characters between 'Z' and 'a' (flawed upper/lower comparison logic) (melski)
+
+--- Released 8.3b2, January 13, 2000 --- See ChangeLog for details ---

@@ -1,3 +1,18 @@
+2000-01-13  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* changes: updated changes file to reflect 8.3b2 mods
+
+	* README:
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* win/README.binary:
+	* win/configure.in: updated to patchlevel 8.3b2
+
+	* generic/regexec.c: added var initialization to prevent compiler
+	warning
+
 2000-01-13  Eric Melski  <ericm@scriptics.com>
 
 	* tests/cmdIL.test: Added tests for lsort -dictionary with
@@ -40,10 +55,13 @@
 	* tests/info.test:
 	* generic/tclCmdIL.c: fixed 'info procs ::namesp::*' behavior (Dejong)
 
+	* generic/tclNamesp.c: made imported commands also import their
+	compile proc [Bug: 2100]
+
 	* tests/expr.test:
 	* unix/Makefile.in:
 	* unix/configure.in:
-	* unix/tcl.m4: strtod bug on Tru64 [Bug: 3378]
+	* unix/tcl.m4: recognize strtod bug on Tru64 v5.0 [Bug: 3378]
 	and added tests to prevent unnecessary chmod +x in sources while
 	installing, as well as more intelligent setsockopt/gethostbyname
 	checks [Bug: 3366, 3389]

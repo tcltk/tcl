@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.61 2000/01/11 22:08:59 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.62 2000/01/14 00:20:46 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -45,7 +45,7 @@ extern "C" {
  * win/makefile.vc	(not patchlevel) 2 LOC
  * win/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
  * README		(sections 0 and 2)
- * mac/README		(2 LOC)
+ * mac/README		(2 LOC, not patchlevel)
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/README		(not patchlevel) (part (h))
@@ -58,10 +58,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   3
 #define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "8.3"
-#define TCL_PATCH_LEVEL	    "8.3b1"
+#define TCL_PATCH_LEVEL	    "8.3b2"
 
 /*
  * The following definitions set up the proper options for Windows

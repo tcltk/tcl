@@ -265,7 +265,7 @@ struct colormap *cm;
 	struct dfa *s;
 	struct dfa *d;
 	chr *begin;
-	chr *end;
+	chr *end = NULL;
 	chr *cold;
 	chr *open;		/* open and close of range of possible starts */
 	chr *close;

@@ -2192,7 +2192,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\shell\open\command
-  New Value=%MAINDIRSHORT%\bin\wish83.exe "%%1"
+  New Value=%MAINDIRSHORT%\bin\wish83.exe "%%1" %%*
 end
 item: Edit Registry
   Total Keys=1

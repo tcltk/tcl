@@ -1585,8 +1585,8 @@ AC_DEFUN(SC_BUGGY_STRTOD, [
 		if ((term != string) && (term[-1] == 0)) {
 		    exit(1);
 		}
-		value = strtod(string, &term);
-		if (term == (string+1)) {
+		value = strtod(spaceString, &term);
+		if (term == (spaceString+1)) {
 		    exit(1);
 		}
 		exit(0);
