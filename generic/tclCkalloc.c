@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.17 2002/08/01 18:32:53 mdejong Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.18 2002/08/20 18:33:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -128,9 +128,9 @@ static int ckallocInit = 0;
  */
 
 static int		CheckmemCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, char *argv[]));
+			    Tcl_Interp *interp, int argc, CONST char *argv[]));
 static int		MemoryCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, char **argv));
+			    Tcl_Interp *interp, int argc, CONST char **argv));
 static void		ValidateMemory _ANSI_ARGS_((
 			    struct mem_header *memHeaderP, CONST char *file,
 			    int line, int nukeGuards));
@@ -781,7 +781,7 @@ MemoryCmd (clientData, interp, argc, argv)
     ClientData  clientData;
     Tcl_Interp *interp;
     int         argc;
-    char      **argv;
+    CONST char  **argv;
 {
     CONST char *fileName;
     Tcl_DString buffer;
@@ -933,7 +933,7 @@ CheckmemCmd(clientData, interp, argc, argv)
     ClientData clientData;		/* Not used. */
     Tcl_Interp *interp;			/* Interpreter for evaluation. */
     int argc;				/* Number of arguments. */
-    char *argv[];			/* String values of arguments. */
+    CONST char *argv[];			/* String values of arguments. */
 {
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
