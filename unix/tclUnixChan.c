@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.25 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.26 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1307,7 +1307,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 {
     int fd, seekFlag, mode, channelPermissions;
     FileState *fsPtr;
-    char *native, *translation;
+    CONST char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_ChannelType *channelTypePtr;
 #ifdef DEPRECATED

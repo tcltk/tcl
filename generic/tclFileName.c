@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.26 2002/01/17 03:03:11 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.27 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1548,7 +1548,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *typePtr, *resultPtr, *look;
     Tcl_Obj *pathOrDir = NULL;
     Tcl_DString prefix;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-directory", "-join", "-nocomplain", "-path", "-tails", 
 	"-types", "--", NULL
     };

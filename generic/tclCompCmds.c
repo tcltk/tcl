@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.19 2001/12/11 19:45:52 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.20 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2402,7 +2402,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     int index;
     int code;
     
-    static char *options[] = {
+    static CONST char *options[] = {
 	"bytelength",	"compare",	"equal",	"first",
 	"index",	"is",		"last",		"length",
 	"map",		"match",	"range",	"repeat",
