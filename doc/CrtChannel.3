@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.8 2000/10/06 21:06:08 hobbs Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.9 2001/03/30 23:06:39 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -30,6 +30,11 @@ char *
 .sp
 int
 \fBTcl_GetChannelHandle\fR(\fIchannel, direction, handlePtr\fR)
+.sp
+.VS 8.4
+Tcl_ThreadId
+\fBTcl_GetChannelThread\fR(\fIchannel\fR)
+.VE
 .sp
 int
 \fBTcl_GetChannelBufferSize\fR(\fIchannel\fR)
@@ -215,6 +220,12 @@ the channel does not have a device handle for the specified direction,
 then \fBTCL_ERROR\fR is returned instead.  Different channel drivers
 will return different types of handle.  Refer to the manual entries
 for each driver to determine what type of handle is returned.
+.VS 8.4
+.PP
+\fBTcl_GetChannelThread\fR returns the id of the thread currently managing
+the specified \fIchannel\fR. This allows channel drivers to send their file
+events to the correct event queue even for a multi-threaded core.
+.VE
 .PP
 \fBTcl_GetChannelMode\fR returns an OR-ed combination of \fBTCL_READABLE\fR
 and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input

@@ -165,6 +165,7 @@ if test -r CrtChannel.3; then
     rm -f Tcl_SpliceChannel.3
     rm -f Tcl_IsChannelExisting.3
     rm -f Tcl_ClearChannelHandlers.3
+    rm -f Tcl_GetChannelThread.3
     ln CrtChannel.3 Tcl_CreateChannel.3
     ln CrtChannel.3 Tcl_GetChannelInstanceData.3
     ln CrtChannel.3 Tcl_GetChannelType.3
@@ -195,6 +196,7 @@ if test -r CrtChannel.3; then
     ln CrtChannel.3 Tcl_SpliceChannel.3
     ln CrtChannel.3 Tcl_IsChannelExisting.3
     ln CrtChannel.3 Tcl_ClearChannelHandlers.3
+    ln CrtChannel.3 Tcl_GetChannelThread.3
 fi
 if test -r CrtChnlHdlr.3; then
     rm -f Tcl_CreateChannelHandler.3

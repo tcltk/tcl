@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.45 2001/03/26 22:16:54 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.46 2001/03/30 23:06:39 andreas_kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1350,6 +1350,9 @@ EXTERN char *		Tcl_AttemptDbCkrealloc _ANSI_ARGS_((char * ptr,
 /* 432 */
 EXTERN int		Tcl_AttemptSetObjLength _ANSI_ARGS_((
 				Tcl_Obj * objPtr, int length));
+/* 433 */
+EXTERN Tcl_ThreadId	Tcl_GetChannelThread _ANSI_ARGS_((
+				Tcl_Channel channel));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1850,6 +1853,7 @@ typedef struct TclStubs {
     char * (*tcl_AttemptRealloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 430 */
     char * (*tcl_AttemptDbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, char * file, int line)); /* 431 */
     int (*tcl_AttemptSetObjLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 432 */
+    Tcl_ThreadId (*tcl_GetChannelThread) _ANSI_ARGS_((Tcl_Channel channel)); /* 433 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3629,6 +3633,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_AttemptSetObjLength
 #define Tcl_AttemptSetObjLength \
 	(tclStubsPtr->tcl_AttemptSetObjLength) /* 432 */
+#endif
+#ifndef Tcl_GetChannelThread
+#define Tcl_GetChannelThread \
+	(tclStubsPtr->tcl_GetChannelThread) /* 433 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

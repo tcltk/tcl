@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.43 2001/01/18 19:09:55 andreas_kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.44 2001/03/30 23:06:39 andreas_kupries Exp $
 
 library tcl
 
@@ -1500,6 +1500,9 @@ declare 431 generic {
 }
 declare 432 generic {
     int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
+}
+declare 433 generic {
+    Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
 }
 
 ##############################################################################
