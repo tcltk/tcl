@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.13 2003/02/25 16:18:54 msofer Exp $
+# RCS: @(#) $Id: execute.test,v 1.13.2.1 2003/09/19 18:43:00 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -712,6 +712,14 @@ test execute-7.33 {Wide int handling} {longIs32bit} {
 test execute-7.34 {Wide int handling} {longIs32bit} {
     expr {wide(0x1) * 1024 * 1024 * 1024 * 1024}
 } 1099511627776
+
+test execute-8.1 {Stack protection} {
+    # If [Bug #804681] has not been properly
+    # taken care of, this should segfault
+    proc whatever args {llength $args}
+    trace add variable ::errorInfo {write unset} whatever
+    catch {expr {1+9/0}}
+} 1
 
 # cleanup
 if {[info commands testobj] != {}} {
