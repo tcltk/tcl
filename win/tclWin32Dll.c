@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.28 2003/10/13 16:48:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.29 2003/12/21 21:58:43 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -232,6 +232,9 @@ DllEntryPoint(hInst, reason, reserved)
  *
  * Side effects:
  *	Establishes 32-to-16 bit thunk and initializes sockets library.
+ *	This might call some sycronization functions, but MSDN
+ *	documentation states: "Waiting on synchronization objects in
+ *	DllMain can cause a deadlock."
  *
  *----------------------------------------------------------------------
  */
@@ -247,8 +250,16 @@ DllMain(hInst, reason, reserved)
 	return TRUE;
 
     case DLL_PROCESS_DETACH:
-	if (hInst == hInstance) {
-	    Tcl_Finalize();
+	/*
+	 * Protect the call to Tcl_Finalize.  The OS could be unloading
+	 * us from an exception handler and the state of the stack might
+	 * be unstable.
+	 */
+
+	__try {
+  	    Tcl_Finalize();
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+	    /* empty handler body. */
 	}
 	break;
     }
