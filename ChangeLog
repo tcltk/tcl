@@ -1,5 +1,9 @@
 2000-11-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* library/package.tcl (tclPkgUnknown,tclMacPkgSearch): 
+	* library/safe.tcl (AddSubDirs): [glob] uses -directory instead of
+	unsafe [file join] to fix Bug #123313
+
 	* generic/tclIndexObj.c:
 	* generic/tclTestObj.c (TestindexobjCmd): Changed internal
 	representation of index objects to fix Bug #119082; fix shouldn't
