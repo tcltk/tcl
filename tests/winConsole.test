@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winConsole.test,v 1.5 2000/04/10 17:19:06 ericm Exp $
+# RCS: @(#) $Id: winConsole.test,v 1.6 2003/11/14 20:44:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -39,7 +39,7 @@ test winConsole-1.1 {Console file channel: non-blocking gets} \
 
     #cleanup the fileevent
     fileevent stdin readable {}
-    eval fconfigure stdin $oldmode
+    fconfigure stdin {expand}$oldmode
 
     set result
 

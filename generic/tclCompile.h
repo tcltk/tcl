@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.38 2003/09/15 09:46:22 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.39 2003/11/14 20:44:44 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -526,8 +526,11 @@ typedef struct ByteCode {
 
 #define INST_EXPON			99 /* TIP#123 - exponentiation */
 
+#define INST_LIST_VERIFY		100
+#define INST_INVOKE_EXP			101
+
 /* The last opcode */
-#define LAST_INST_OPCODE        	99
+#define LAST_INST_OPCODE        	101
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
@@ -545,7 +548,8 @@ typedef enum InstOperandType {
     OPERAND_INT1,		/* One byte signed integer. */
     OPERAND_INT4,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
-    OPERAND_UINT4		/* Four byte unsigned integer. */
+    OPERAND_UINT4,		/* Four byte unsigned integer. */
+    OPERAND_ULIST1		/* List of one byte unsigned integers. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -927,6 +931,25 @@ EXTERN int		TclCompileVariableCmd _ANSI_ARGS_((
     *(envPtr)->codeNext++ = \
         (unsigned char) ((unsigned int) (i)      );\
     TclUpdateStackReqs(op, i, envPtr)
+
+/*
+ * Macro to emit an immediate list of index deltas in the code stream. 
+ * The ANSI C "prototypes" for this macro is:
+ *
+ * EXTERN void	TclEmitImmList1 _ANSI_ARGS_((Tcl_Obj *listPtr,
+ *		    CompileEnv *envPtr));
+ */
+
+#define TclEmitImmDeltaList1(listPtr, envPtr)                          \
+    {                                                                  \
+	int numBytes = Tcl_DStringLength(listPtr) + 1;                 \
+        while (((envPtr)->codeNext + numBytes) > (envPtr)->codeEnd) {  \
+	    TclExpandCodeArray(envPtr);                                \
+        }                                                              \
+        memcpy((VOID *) (envPtr)->codeNext,                            \
+		(VOID *)Tcl_DStringValue(listPtr), (size_t) numBytes); \
+	(envPtr)->codeNext += numBytes;                                \
+    }
     
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the

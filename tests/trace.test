@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.32 2003/09/29 21:28:09 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.33 2003/11/14 20:44:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1346,7 +1346,7 @@ test trace-20.7 {trace add command delete in subinterp while being deleted} {
 } {}
 
 proc traceDelete {cmd old new op} {
-    eval trace remove command $cmd [lindex [trace info command $cmd] 0]
+    trace remove command $cmd {expand}[lindex [trace info command $cmd] 0]
     global info
     set info [list $old $new $op]
 }
@@ -1602,7 +1602,7 @@ test trace-23.3 {recursive(3) trace execution: enter, leave, enterstep, leaveste
 {factorial 3} 0 6 leave}
 
 proc traceDelete {cmd args} {
-    eval trace remove execution $cmd [lindex [trace info execution $cmd] 0]
+    trace remove execution $cmd {expand}[lindex [trace info execution $cmd] 0]
     global info
     set info $args
 }
