@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.116 2004/01/15 22:20:38 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.117 2004/01/15 23:08:44 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -356,7 +356,14 @@ cdebug	= -Z7 -WX -Od
 !endif
 
 ### Declarations common to all compiler options
-cflags = -nologo -c -W3 -YX -Fp$(TMP_DIR)^\
+cflags = -nologo -c -YX -Fp$(TMP_DIR)^\
+
+!if $(FULLWARNINGS)
+cflags = $(cflags) -W4
+!else
+cflags = $(cflags) -W3
+!endif
+
 
 !if $(PENT_0F_ERRATA)
 cflags = $(cflags) -QI0f
@@ -400,6 +407,10 @@ ldebug	= -release -opt:ref -opt:icf,3
 
 ### Declarations common to all linker options
 lflags	= -nologo -machine:$(MACHINE) $(ldebug)
+
+!if $(FULLWARNINGS)
+lflags = $(lflags) -warn:3
+!endif
 
 !if $(PROFILE)
 lflags	= $(lflags) -profile
