@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.13 2001/07/24 19:47:02 mdejong Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.14 2001/08/07 00:43:02 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -479,6 +479,7 @@ TclpFinalizeMutex(mutexPtr)
 {
     CRITICAL_SECTION *csPtr = *(CRITICAL_SECTION **)mutexPtr;
     if (csPtr != NULL) {
+	DeleteCriticalSection(csPtr);
 	ckfree((char *)csPtr);
 	*mutexPtr = NULL;
     }
@@ -947,6 +948,7 @@ TclpFinalizeCondition(condPtr)
      */
 
     if (winCondPtr != NULL) {
+	DeleteCriticalSection(&winCondPtr->condLock);
 	ckfree((char *)winCondPtr);
 	*condPtr = NULL;
     }
