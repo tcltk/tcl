@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.10 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.11 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 /*
@@ -146,14 +146,14 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     OSType okType = 0;
     OSType okCreator = 0;
     Tcl_DString dsOrig;
-    char *fileName2;
+    Tcl_Obj *fileNamePtr;
 
-    fileName2 = Tcl_FSGetTranslatedPath(interp, pathPtr);
-    if (fileName2 == NULL) {
+    fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
+    if (fileNamePtr == NULL) {
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&dsOrig);
-    Tcl_DStringAppend(&dsOrig, fileName2, -1);
+    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
     baseLength = Tcl_DStringLength(&dsOrig);
 
     /*
@@ -241,6 +241,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    typeOk = 0;
 		}
 	    } else {
+		struct stat buf;
+
 		if (pb.hFileInfo.ioFlFndrInfo.fdFlags & kIsInvisible) {
 		    /* If invisible */
 		    if ((types->perm == 0) || 
@@ -268,12 +270,14 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    }
 		}
 		if (typeOk == 1 && types->type != 0) {
-		    struct stat buf;
-		    /*
-		     * We must match at least one flag to be listed
-		     */
-		    typeOk = 0;
-		    if (TclpLstat(fname, &buf) >= 0) {
+		    if (types->perm == 0) {
+			/* We haven't yet done a stat on the file */
+			if (TclpStat(fname, &buf) != 0) {
+			    /* Posix error occurred */
+			    typeOk = 0;
+			}
+		    }
+		    if (typeOk) {
 			/*
 			 * In order bcdpfls as in 'find -t'
 			 */
@@ -288,19 +292,24 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				    S_ISFIFO(buf.st_mode)) ||
 			    ((types->type & TCL_GLOB_TYPE_FILE) &&
 				    S_ISREG(buf.st_mode))
-#ifdef S_ISLNK
-			    || ((types->type & TCL_GLOB_TYPE_LINK) &&
-				    S_ISLNK(buf.st_mode))
-#endif
-#ifdef S_ISSOCK
+    #ifdef S_ISSOCK
 			    || ((types->type & TCL_GLOB_TYPE_SOCK) &&
 				    S_ISSOCK(buf.st_mode))
-#endif
+    #endif
 			    ) {
-			    typeOk = 1;
+			    /* Do nothing -- this file is ok */
+			} else {
+			    typeOk = 0;
+    #ifdef S_ISLNK
+			    if (types->type & TCL_GLOB_TYPE_LINK) {
+				if (TclpLstat(fname, &buf) == 0) {
+				    if (S_ISLNK(buf.st_mode)) {
+					typeOk = 1;
+				    }
+				}
+			    }
+    #endif
 			}
-		    } else {
-			/* Posix error occurred */
 		    }
 		}
 		if (typeOk && (
@@ -1090,15 +1099,25 @@ TclpTempFileName()
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjReadlink(pathPtr)
+TclpObjLink(pathPtr, toPtr)
     Tcl_Obj *pathPtr;
+    Tcl_Obj *toPtr;
 {
-    Tcl_DString ds;
     Tcl_Obj* link = NULL;
-    if (TclpReadlink(Tcl_FSGetTranslatedPath(NULL, pathPtr), &ds) != NULL) {
-	link = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(link);
-	Tcl_DStringFree(&ds);
+
+    if (toPtr != NULL) {
+	return NULL;
+    } else {
+	Tcl_DString ds;
+	Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (transPtr == NULL) {
+	    return NULL;
+	}
+	if (TclpReadlink(Tcl_GetString(transPtr), &ds) != NULL) {
+	    link = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    Tcl_IncrRefCount(link);
+	    Tcl_DStringFree(&ds);
+	}
     }
     return link;
 }

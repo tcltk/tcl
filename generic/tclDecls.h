@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.53 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.54 2001/08/23 17:37:07 vincentdarley Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1401,7 +1401,8 @@ EXTERN int		Tcl_FSMatchInDirectory _ANSI_ARGS_((
 				Tcl_Obj * pathPtr, char * pattern, 
 				Tcl_GlobTypeData * types));
 /* 446 */
-EXTERN Tcl_Obj*		Tcl_FSReadlink _ANSI_ARGS_((Tcl_Obj * pathPtr));
+EXTERN Tcl_Obj*		Tcl_FSLink _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+				Tcl_Obj * toPtr));
 /* 447 */
 EXTERN int		Tcl_FSRemoveDirectory _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				int recursive, Tcl_Obj ** errorPtr));
@@ -1461,7 +1462,7 @@ EXTERN Tcl_Obj*		Tcl_FSJoinToPath _ANSI_ARGS_((Tcl_Obj * basePtr,
 EXTERN ClientData	Tcl_FSGetInternalRep _ANSI_ARGS_((
 				Tcl_Obj* pathObjPtr, Tcl_Filesystem * fsPtr));
 /* 466 */
-EXTERN char*		Tcl_FSGetTranslatedPath _ANSI_ARGS_((
+EXTERN Tcl_Obj*		Tcl_FSGetTranslatedPath _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj* pathPtr));
 /* 467 */
 EXTERN int		Tcl_FSEvalFile _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -1478,7 +1479,7 @@ EXTERN Tcl_Obj*		Tcl_FSFileSystemInfo _ANSI_ARGS_((
 /* 471 */
 EXTERN Tcl_Obj*		Tcl_FSPathSeparator _ANSI_ARGS_((Tcl_Obj* pathObjPtr));
 /* 472 */
-EXTERN int		Tcl_FSListVolumes _ANSI_ARGS_((Tcl_Interp * interp));
+EXTERN Tcl_Obj*		Tcl_FSListVolumes _ANSI_ARGS_((void));
 /* 473 */
 EXTERN int		Tcl_FSRegister _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Filesystem * fsPtr));
@@ -1486,6 +1487,9 @@ EXTERN int		Tcl_FSRegister _ANSI_ARGS_((ClientData clientData,
 EXTERN int		Tcl_FSUnregister _ANSI_ARGS_((Tcl_Filesystem * fsPtr));
 /* 475 */
 EXTERN ClientData	Tcl_FSData _ANSI_ARGS_((Tcl_Filesystem * fsPtr));
+/* 476 */
+EXTERN char*		Tcl_FSGetTranslatedStringPath _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj* pathPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1991,7 +1995,7 @@ typedef struct TclStubs {
     int (*tcl_FSDeleteFile) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 443 */
     int (*tcl_FSLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr, Tcl_FSUnloadFileProc ** unloadProcPtr)); /* 444 */
     int (*tcl_FSMatchInDirectory) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * result, Tcl_Obj * pathPtr, char * pattern, Tcl_GlobTypeData * types)); /* 445 */
-    Tcl_Obj* (*tcl_FSReadlink) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 446 */
+    Tcl_Obj* (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr)); /* 446 */
     int (*tcl_FSRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 447 */
     int (*tcl_FSRenameFile) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr)); /* 448 */
     int (*tcl_FSLstat) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct stat * buf)); /* 449 */
@@ -2011,16 +2015,17 @@ typedef struct TclStubs {
     Tcl_Obj* (*tcl_FSGetNormalizedPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathObjPtr)); /* 463 */
     Tcl_Obj* (*tcl_FSJoinToPath) _ANSI_ARGS_((Tcl_Obj * basePtr, int objc, Tcl_Obj *CONST objv[])); /* 464 */
     ClientData (*tcl_FSGetInternalRep) _ANSI_ARGS_((Tcl_Obj* pathObjPtr, Tcl_Filesystem * fsPtr)); /* 465 */
-    char* (*tcl_FSGetTranslatedPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 466 */
+    Tcl_Obj* (*tcl_FSGetTranslatedPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 466 */
     int (*tcl_FSEvalFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * fileName)); /* 467 */
     Tcl_Obj* (*tcl_FSNewNativePath) _ANSI_ARGS_((Tcl_Obj* fromFilesystem, ClientData clientData)); /* 468 */
     char* (*tcl_FSGetNativePath) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 469 */
     Tcl_Obj* (*tcl_FSFileSystemInfo) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 470 */
     Tcl_Obj* (*tcl_FSPathSeparator) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 471 */
-    int (*tcl_FSListVolumes) _ANSI_ARGS_((Tcl_Interp * interp)); /* 472 */
+    Tcl_Obj* (*tcl_FSListVolumes) _ANSI_ARGS_((void)); /* 472 */
     int (*tcl_FSRegister) _ANSI_ARGS_((ClientData clientData, Tcl_Filesystem * fsPtr)); /* 473 */
     int (*tcl_FSUnregister) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 474 */
     ClientData (*tcl_FSData) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 475 */
+    char* (*tcl_FSGetTranslatedStringPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 476 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3845,9 +3850,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_FSMatchInDirectory \
 	(tclStubsPtr->tcl_FSMatchInDirectory) /* 445 */
 #endif
-#ifndef Tcl_FSReadlink
-#define Tcl_FSReadlink \
-	(tclStubsPtr->tcl_FSReadlink) /* 446 */
+#ifndef Tcl_FSLink
+#define Tcl_FSLink \
+	(tclStubsPtr->tcl_FSLink) /* 446 */
 #endif
 #ifndef Tcl_FSRemoveDirectory
 #define Tcl_FSRemoveDirectory \
@@ -3964,6 +3969,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_FSData
 #define Tcl_FSData \
 	(tclStubsPtr->tcl_FSData) /* 475 */
+#endif
+#ifndef Tcl_FSGetTranslatedStringPath
+#define Tcl_FSGetTranslatedStringPath \
+	(tclStubsPtr->tcl_FSGetTranslatedStringPath) /* 476 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

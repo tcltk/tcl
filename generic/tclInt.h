@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.58 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.59 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1486,9 +1486,9 @@ typedef struct List {
  */
 
 typedef int (TclGetFileAttrProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	int objIndex, CONST char *fileName, Tcl_Obj **attrObjPtrPtr));
+	int objIndex, Tcl_Obj *fileName, Tcl_Obj **attrObjPtrPtr));
 typedef int (TclSetFileAttrProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	int objIndex, CONST char *fileName, Tcl_Obj *attrObjPtr));
+	int objIndex, Tcl_Obj *fileName, Tcl_Obj *attrObjPtr));
 
 typedef struct TclFileAttrProcs {
     TclGetFileAttrProc *getProc;	/* The procedure for getting attrs. */
@@ -1805,6 +1805,7 @@ EXTERN void		TclpInitLock _ANSI_ARGS_((void));
 EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
 EXTERN int		TclpListVolumes _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN Tcl_Obj*		TclpObjListVolumes _ANSI_ARGS_((void));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
 EXTERN void		TclpMasterUnlock _ANSI_ARGS_((void));
 EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1813,6 +1814,14 @@ EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int              TclpObjNormalizePath _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *pathPtr, int nextCheckpoint));
 EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN Tcl_PathType     Tcl_FSGetPathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
+			    Tcl_Filesystem **fsPtrPtr, int *driveNameLengthPtr));
+EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix, 
+							char *joining));
+EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+							 int *lenPtr));
+EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
+			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int		TclpObjDeleteFile _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN int		TclpObjCopyDirectory _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
 				Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr));
@@ -1826,7 +1835,7 @@ EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *resul
 EXTERN int		TclpChdir _ANSI_ARGS_((CONST char *dirName));
 EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp *interp, Tcl_DString *bufferPtr));
 EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN Tcl_Obj*		TclpObjReadlink _ANSI_ARGS_((Tcl_Obj *pathPtr));
+EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,

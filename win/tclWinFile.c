@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.11 2001/07/31 19:12:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.12 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -126,7 +126,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     BOOL found;
     Tcl_DString ds;
     Tcl_DString dsOrig;
-    char *fileName;
+    Tcl_Obj *fileNamePtr;
     TCHAR *nativeName;
     int matchSpecialDots;
     
@@ -136,12 +136,12 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
      * separator character.
      */
 
-    fileName = Tcl_FSGetTranslatedPath(interp, pathPtr);
-    if (fileName == NULL) {
+    fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
+    if (fileNamePtr == NULL) {
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&dsOrig);
-    Tcl_DStringAppend(&dsOrig, fileName, -1);
+    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
 
     dirLength = Tcl_DStringLength(&dsOrig);
     Tcl_DStringInit(&dirString);
@@ -333,6 +333,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		typeOk = 0;
 	    }
 	} else {
+	    struct stat buf;
+	    
 	    if (attr & FILE_ATTRIBUTE_HIDDEN) {
 		/* If invisible */
 		if ((types->perm == 0) || 
@@ -360,12 +362,14 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		}
 	    }
 	    if (typeOk && types->type != 0) {
-		struct stat buf;
-		/*
-		 * We must match at least one flag to be listed
-		 */
-		typeOk = 0;
-		if (TclpLstat(fname, &buf) >= 0) {
+		if (types->perm == 0) {
+		    /* We haven't yet done a stat on the file */
+		    if (TclpStat(fname, &buf) != 0) {
+			/* Posix error occurred */
+			typeOk = 0;
+		    }
+		}
+		if (typeOk) {
 		    /*
 		     * In order bcdpfls as in 'find -t'
 		     */
@@ -380,19 +384,24 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				S_ISFIFO(buf.st_mode)) ||
 			((types->type & TCL_GLOB_TYPE_FILE) &&
 				S_ISREG(buf.st_mode))
-#ifdef S_ISLNK
-			|| ((types->type & TCL_GLOB_TYPE_LINK) &&
-				S_ISLNK(buf.st_mode))
-#endif
 #ifdef S_ISSOCK
 			|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
 				S_ISSOCK(buf.st_mode))
 #endif
 			) {
-			typeOk = 1;
+			/* Do nothing -- this file is ok */
+		    } else {
+			typeOk = 0;
+#ifdef S_ISLNK
+			if (types->type & TCL_GLOB_TYPE_LINK) {
+			    if (TclpLstat(fname, &buf) == 0) {
+				if (S_ISLNK(buf.st_mode)) {
+				    typeOk = 1;
+				}
+			    }
+			}
+#endif
 		    }
-		} else {
-		    /* Posix error occurred */
 		}
 	    }		
 	} 
@@ -824,13 +833,15 @@ TclpObjStat(pathPtr, statPtr)
     TCHAR *nativePart;
     char *p, *fullPath;
     int dev, mode;
-
+    Tcl_Obj *transPtr;
+    
     /*
      * Eliminate file names containing wildcard characters, or subsequent 
      * call to FindFirstFile() will expand them, matching some other file.
      */
 
-    if (strpbrk(Tcl_FSGetTranslatedPath(NULL, pathPtr), "?*") != NULL) {
+    transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+    if (transPtr == NULL || (strpbrk(Tcl_GetString(transPtr), "?*") != NULL)) {
 	Tcl_SetErrno(ENOENT);
 	return -1;
     }
@@ -907,7 +918,7 @@ TclpObjStat(pathPtr, statPtr)
     attr = data.a.dwFileAttributes;
     mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
     mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD | S_IWRITE;
-    p = strrchr(Tcl_FSGetTranslatedPath(NULL, pathPtr), '.');
+    p = strrchr(Tcl_GetString(transPtr), '.');
     if (p != NULL) {
 	if ((lstrcmpiA(p, ".exe") == 0) 
 		|| (lstrcmpiA(p, ".com") == 0) 
@@ -1140,7 +1151,7 @@ TclpObjAccess(pathPtr, mode)
 	    
 	    return 0;
 	}
-	p = strrchr(Tcl_FSGetTranslatedPath(NULL, pathPtr), '.');
+	p = strrchr(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), '.');
 	if (p != NULL) {
 	    p++;
 	    if ((stricmp(p, "exe") == 0)
@@ -1170,15 +1181,21 @@ TclpObjLstat(pathPtr, buf)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjReadlink(pathPtr)
+TclpObjLink(pathPtr, toPtr)
     Tcl_Obj *pathPtr;
+    Tcl_Obj *toPtr;
 {
-    Tcl_DString ds;
     Tcl_Obj* link = NULL;
-    if (TclpReadlink(Tcl_FSGetTranslatedPath(NULL, pathPtr), &ds) != NULL) {
-	link = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(link);
-	Tcl_DStringFree(&ds);
+
+    if (toPtr != NULL) {
+	return NULL;
+    } else {
+	Tcl_DString ds;
+	if (TclpReadlink(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), &ds) != NULL) {
+	    link = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    Tcl_IncrRefCount(link);
+	    Tcl_DStringFree(&ds);
+	}
     }
     return link;
 }
