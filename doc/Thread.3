@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.14 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.15 2004/03/17 18:14:12 das Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -107,9 +107,9 @@ marked thread to exit and join it.
 .PP
 Restrictions: On some unix systems the pthread-library does not
 contain the functionality to specify the stacksize of a thread. The
-specified value for the stacksize is ignored on these systems. Both
-Windows and Macintosh currently do not support joinable threads. This
-flag value is therefore ignored on these platforms.
+specified value for the stacksize is ignored on these systems.
+Windows currently does not support joinable threads. This
+flag value is therefore ignored on this platform.
 .VE
 .PP
 Tcl does provide \fBTcl_ExitThread\fR and \fBTcl_FinalizeThread\fR

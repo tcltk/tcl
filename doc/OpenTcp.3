@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenTcp.3,v 1.4 2002/01/23 20:46:01 dgp Exp $
+'\" RCS: @(#) $Id: OpenTcp.3,v 1.5 2004/03/17 18:14:12 das Exp $
 .so man.macros
 .TH Tcl_OpenTcpClient 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -168,8 +168,7 @@ replacement for the standard channel.
 .PP
 On Unix platforms, the socket handle is a Unix file descriptor as
 returned by the \fBsocket\fR system call.  On the Windows platform, the
-socket handle is a \fBSOCKET\fR as defined in the WinSock API.  On the
-Macintosh platform, the socket handle is a \fBStreamPtr\fR.
+socket handle is a \fBSOCKET\fR as defined in the WinSock API.
 .VE
 
 .SH "SEE ALSO"

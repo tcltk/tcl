@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.16 2003/08/25 21:04:57 dkf Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.17 2004/03/17 18:14:18 das Exp $
 
 package require Tcl 8
 
@@ -122,7 +122,7 @@ proc genStubs::hooks {names} {
 # Arguments:
 #	index		The index number of the interface.
 #	platform	The platform the interface belongs to.  Should be one
-#			of generic, win, unix, or mac, or macosx or aqua or x11.
+#			of generic, win, unix, or macosx or aqua or x11.
 #	decl		The C function declaration, or {} for an undefined
 #			entry.
 #
@@ -221,11 +221,8 @@ proc genStubs::addPlatformGuard {plat text} {
 	    return "#ifdef __WIN32__\n${text}#endif /* __WIN32__ */\n"
 	}
 	unix {
-	    return "#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */\n${text}#endif /* UNIX */\n"
+	    return "#if !defined(__WIN32__) /* UNIX */\n${text}#endif /* UNIX */\n"
 	}		    
-	mac {
-	    return "#ifdef MAC_TCL\n${text}#endif /* MAC_TCL */\n"
-	}
 	macosx {
 	    return "#ifdef MAC_OSX_TCL\n${text}#endif /* MAC_OSX_TCL */\n"
 	}
@@ -233,7 +230,7 @@ proc genStubs::addPlatformGuard {plat text} {
 	    return "#ifdef MAC_OSX_TK\n${text}#endif /* MAC_OSX_TK */\n"
 	}
 	x11 {
-	    return "#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK)) /* X11 */\n${text}#endif /* X11 */\n"
+	    return "#if !(defined(__WIN32__) || defined(MAC_OSX_TK)) /* X11 */\n${text}#endif /* X11 */\n"
 	}
     }
     return "$text"
@@ -615,7 +612,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		append text [$slotProc $name $stubs($name,generic,$i) $i]
 		set emit 1
 	    } elseif {[llength $slots] > 0} {
-		foreach plat {unix win mac} {
+		foreach plat {unix win} {
 		    if {[info exists stubs($name,$plat,$i)]} {
 			append text [addPlatformGuard $plat \
 				[$slotProc $name $stubs($name,$plat,$i) $i]]
@@ -658,7 +655,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 	
     } else {
 	# Emit separate stubs blocks per platform
-	foreach plat {unix win mac} {
+	foreach plat {unix win} {
 	    if {[info exists stubs($name,$plat,lastNum)]} {
 		set lastNum $stubs($name,$plat,lastNum)
 		set temp {}

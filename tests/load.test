@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: load.test,v 1.11 2003/02/01 23:37:29 kennykb Exp $
+# RCS: @(#) $Id: load.test,v 1.12 2004/03/17 18:14:18 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -19,12 +19,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Figure out what extension is used for shared libraries on this
 # platform.
-
-if {$tcl_platform(platform) == "macintosh"} {
-    puts "can't run dynamic library tests on macintosh machines"
-    ::tcltest::cleanupTests
-    return
-}
 
 # Tests require the existence of one of the DLLs in the dltest directory.
 set ext [info sharedlibextension]

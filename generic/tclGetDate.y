@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.20 2004/03/10 16:01:26 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.21 2004/03/17 18:14:13 das Exp $
  */
 
 %{
@@ -33,15 +33,9 @@
 #include "tclInt.h"
 #include "tclPort.h"
 
-#if defined(MAC_TCL) && !defined(TCL_MAC_USE_MSL_EPOCH)
-#   define EPOCH           1904
-#   define START_OF_TIME   1904
-#   define END_OF_TIME     2039
-#else
-#   define EPOCH           1970
-#   define START_OF_TIME   1902
-#   define END_OF_TIME     2037
-#endif
+#define EPOCH           1970
+#define START_OF_TIME   1902
+#define END_OF_TIME     2037
 
 /*
  * The offset of tm_year of struct tm returned by localtime, gmtime, etc.

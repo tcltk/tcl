@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: safe.n,v 1.4 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: safe.n,v 1.5 2004/03/17 18:14:12 das Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
@@ -290,8 +290,7 @@ for the \fBsource\fR and \fBload\fR aliases provided to the slave
 are path in the form of 
 \fB[file join \fR\fItoken filename\fR\fB]\fR (ie, when using the
 native file path formats: \fItoken\fR\fB/\fR\fIfilename\fR
-on Unix, \fItoken\fR\fB\\\fIfilename\fR on Windows, 
-and \fItoken\fR\fB:\fR\fIfilename\fR on the Mac),
+on Unix and \fItoken\fR\fB\\\fIfilename\fR on Windows),
 where \fItoken\fR is representing one of the directories 
 of the \fIaccessPath\fR list and \fIfilename\fR is
 one file in that directory (no sub directories access are allowed).
