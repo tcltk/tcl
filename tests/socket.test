@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.19 2001/09/20 12:08:37 dkf Exp $
+# RCS: @(#) $Id: socket.test,v 1.20 2001/10/12 19:45:08 hobbs Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -837,11 +837,10 @@ test socket-7.2 {testing socket specific options} {socket stdio} {
     set p [fconfigure $s -sockname]
     close $s
     close $f
-    set l ""
-    lappend l [llength $p]
-    lappend l [lindex $p 0]
-    lappend l [expr [lindex $p 2] == $listen]
-} {3 127.0.0.1 0}
+    list [llength $p] \
+	    [regexp {^(127\.0\.0\.1|0\.0\.0\.0)$} [lindex $p 0]] \
+	    [expr {[lindex $p 2] == $listen}]
+} {3 1 0}
 test socket-7.3 {testing socket specific options} {socket} {
     set s [socket -server accept 0]
     set l [fconfigure $s]
