@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.13 2000/10/06 23:46:06 davidg Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.14 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -653,10 +653,10 @@ FileGetHandleProc(instanceData, direction, handlePtr)
  */
 
 Tcl_Channel
-TclpOpenFileChannel(interp, fileName, modeString, permissions)
+TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;			/* Name of file to open. */
+    Tcl_Obj *pathPtr;			/* Name of file to open. */
     char *modeString;			/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;			/* If the open involves creating a
@@ -667,7 +667,6 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
     int seekFlag, mode, channelPermissions;
     DWORD accessMode, createMode, shareMode, flags, consoleParams, type;
     TCHAR *nativeName;
-    Tcl_DString ds, buffer;
     DCB dcb;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -679,12 +678,11 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
         return NULL;
     }
 
-    if (Tcl_TranslateFileName(interp, fileName, &ds) == NULL) {
+    nativeName = (TCHAR*) Tcl_FSGetNativePath(pathPtr);
+    if (nativeName == NULL) {
 	return NULL;
     }
-    nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(&ds), 
-	    Tcl_DStringLength(&ds), &buffer);
-
+    
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
 	case O_RDONLY:
 	    accessMode = GENERIC_READ;
@@ -766,10 +764,10 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	}
         TclWinConvertError(err);
 	if (interp != (Tcl_Interp *) NULL) {
-            Tcl_AppendResult(interp, "couldn't open \"", fileName, "\": ",
+            Tcl_AppendResult(interp, "couldn't open \"", 
+			     Tcl_GetString(pathPtr), "\": ",
 			     Tcl_PosixError(interp), (char *) NULL);
         }
-        Tcl_DStringFree(&buffer);
         return NULL;
     }
     
@@ -828,13 +826,11 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	 */
 	
 	channel = NULL;
-	Tcl_AppendResult(interp, "couldn't open \"", fileName, "\": ",
-		"bad file type", (char *) NULL);
+	Tcl_AppendResult(interp, "couldn't open \"", 
+			 Tcl_GetString(pathPtr), "\": ",
+			 "bad file type", (char *) NULL);
 	break;
     }
-
-    Tcl_DStringFree(&buffer);
-    Tcl_DStringFree(&ds);
 
     if (channel != NULL) {
 	if (seekFlag) {

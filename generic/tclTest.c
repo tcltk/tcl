@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.27 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.28 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -167,6 +167,8 @@ static void		SpecialFree _ANSI_ARGS_((char *blockPtr));
 static int		StaticInitProc _ANSI_ARGS_((Tcl_Interp *interp));
 static int		TestaccessprocCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		PretendTclpAccess _ANSI_ARGS_((CONST char *path,
+			   int mode));
 static int		TestAccessProc1 _ANSI_ARGS_((CONST char *path,
 			   int mode));
 static int		TestAccessProc2 _ANSI_ARGS_((CONST char *path,
@@ -212,7 +214,7 @@ static int		TestexprparserObjCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestexprstringCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestfileCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int argc, char **argv));
+			    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 static int		TestfeventCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestgetassocdataCmd _ANSI_ARGS_((ClientData dummy,
@@ -237,6 +239,8 @@ static int		TestMathFunc2 _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Value *resultPtr));
 static int		TestmainthreadCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static Tcl_Channel	PretendTclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *filename, char *modeString, int permissions));
 static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *filename, char *modeString, int permissions));
 static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((Tcl_Interp *interp,
@@ -279,6 +283,8 @@ static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
 			    int objc, Tcl_Obj *CONST objv[]));
 static int		TeststaticpkgCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		PretendTclpStat _ANSI_ARGS_((CONST char *path,
+			    struct stat *buf));
 static int		TestStatProc1 _ANSI_ARGS_((CONST char *path,
 			    struct stat *buf));
 static int		TestStatProc2 _ANSI_ARGS_((CONST char *path,
@@ -466,7 +472,7 @@ Tcltest_Init(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testfevent", TestfeventCmd, (ClientData) 0,
             (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "testfile", TestfileCmd,
+    Tcl_CreateObjCommand(interp, "testfile", TestfileCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -3445,11 +3451,12 @@ static int
 TestfileCmd(dummy, interp, argc, argv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
-    int argc;				/* Number of arguments. */
-    char **argv;			/* Argument strings. */
+    int argc;			/* Number of arguments. */
+    Tcl_Obj *CONST argv[];	/* The argument objects. */
 {
     int force, i, j, result;
-    Tcl_DString error, name[2];
+    Tcl_Obj *error = NULL;
+    char *subcmd;
     
     if (argc < 3) {
 	return TCL_ERROR;
@@ -3457,54 +3464,51 @@ TestfileCmd(dummy, interp, argc, argv)
 
     force = 0;
     i = 2;
-    if (strcmp(argv[2], "-force") == 0) {
+    if (strcmp(Tcl_GetString(argv[2]), "-force") == 0) {
         force = 1;
 	i = 3;
     }
-
-    Tcl_DStringInit(&name[0]);
-    Tcl_DStringInit(&name[1]);
-    Tcl_DStringInit(&error);
 
     if (argc - i > 2) {
 	return TCL_ERROR;
     }
 
     for (j = i; j < argc; j++) {
-        argv[j] = Tcl_TranslateFileName(interp, argv[j], &name[j - i]);
-	if (argv[j] == NULL) {
+        if (Tcl_FSGetTranslatedPath(interp, argv[j]) == NULL) {
 	    return TCL_ERROR;
 	}
     }
 
-    if (strcmp(argv[1], "mv") == 0) {
-	result = TclpRenameFile(argv[i], argv[i + 1]);
-    } else if (strcmp(argv[1], "cp") == 0) {
-        result = TclpCopyFile(argv[i], argv[i + 1]);
-    } else if (strcmp(argv[1], "rm") == 0) {
-        result = TclpDeleteFile(argv[i]);
-    } else if (strcmp(argv[1], "mkdir") == 0) {
-        result = TclpCreateDirectory(argv[i]);
-    } else if (strcmp(argv[1], "cpdir") == 0) {
-        result = TclpCopyDirectory(argv[i], argv[i + 1], &error);
-    } else if (strcmp(argv[1], "rmdir") == 0) {
-        result = TclpRemoveDirectory(argv[i], force, &error);
+    subcmd = Tcl_GetString(argv[1]);
+    
+    if (strcmp(subcmd, "mv") == 0) {
+	result = TclpObjRenameFile(argv[i], argv[i + 1]);
+    } else if (strcmp(subcmd, "cp") == 0) {
+        result = TclpObjCopyFile(argv[i], argv[i + 1]);
+    } else if (strcmp(subcmd, "rm") == 0) {
+        result = TclpObjDeleteFile(argv[i]);
+    } else if (strcmp(subcmd, "mkdir") == 0) {
+        result = TclpObjCreateDirectory(argv[i]);
+    } else if (strcmp(subcmd, "cpdir") == 0) {
+        result = TclpObjCopyDirectory(argv[i], argv[i + 1], &error);
+    } else if (strcmp(subcmd, "rmdir") == 0) {
+        result = TclpObjRemoveDirectory(argv[i], force, &error);
     } else {
         result = TCL_ERROR;
 	goto end;
     }
 	
     if (result != TCL_OK) {
-	if (Tcl_DStringValue(&error)[0] != '\0') {
-	    Tcl_AppendResult(interp, Tcl_DStringValue(&error), " ", NULL);
+	if (error != NULL) {
+	    if (Tcl_GetString(error)[0] != '\0') {
+		Tcl_AppendResult(interp, Tcl_GetString(error), " ", NULL);
+	    }
+	    Tcl_DecrRefCount(error);
 	}
 	Tcl_AppendResult(interp, Tcl_ErrnoId(), (char *) NULL);
     }
 
     end:
-    Tcl_DStringFree(&error);
-    Tcl_DStringFree(&name[0]);
-    Tcl_DStringFree(&name[1]);
 
     return result;
 }
@@ -4040,7 +4044,7 @@ TeststatprocCmd (dummy, interp, argc, argv)
     }
 
     if (strcmp(argv[2], "TclpStat") == 0) {
-	proc = TclpStat;
+	proc = PretendTclpStat;
     } else if (strcmp(argv[2], "TestStatProc1") == 0) {
 	proc = TestStatProc1;
     } else if (strcmp(argv[2], "TestStatProc2") == 0) {
@@ -4056,7 +4060,7 @@ TeststatprocCmd (dummy, interp, argc, argv)
     }
 
     if (strcmp(argv[1], "insert") == 0) {
-	if (proc == TclpStat) {
+	if (proc == PretendTclpStat) {
 	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
 		   "must be ",
 		   "TestStatProc1, TestStatProc2, or TestStatProc3",
@@ -4080,11 +4084,23 @@ TeststatprocCmd (dummy, interp, argc, argv)
     return retVal;
 }
 
+static int PretendTclpStat(path, buf)
+    CONST char *path;
+    struct stat *buf;
+{
+    int ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSStat(pathPtr, buf);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
+}
+
 /* Be careful in the compares in these tests, since the Macintosh puts a  
  * leading : in the beginning of non-absolute paths before passing them 
  * into the file command procedures.
  */
- 
+
 static int
 TestStatProc1(path, buf)
     CONST char *path;
@@ -4182,7 +4198,7 @@ TestaccessprocCmd (dummy, interp, argc, argv)
     }
 
     if (strcmp(argv[2], "TclpAccess") == 0) {
-	proc = TclpAccess;
+	proc = PretendTclpAccess;
     } else if (strcmp(argv[2], "TestAccessProc1") == 0) {
 	proc = TestAccessProc1;
     } else if (strcmp(argv[2], "TestAccessProc2") == 0) {
@@ -4198,7 +4214,7 @@ TestaccessprocCmd (dummy, interp, argc, argv)
     }
 
     if (strcmp(argv[1], "insert") == 0) {
-	if (proc == TclpAccess) {
+	if (proc == PretendTclpAccess) {
 	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
 		   "must be ",
 		   "TestAccessProc1, TestAccessProc2, or TestAccessProc3",
@@ -4222,6 +4238,17 @@ TestaccessprocCmd (dummy, interp, argc, argv)
     return retVal;
 }
 
+static int PretendTclpAccess(path, mode)
+    CONST char *path;
+    int mode;
+{
+    int ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSAccess(pathPtr, mode);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
+}
 
 static int
 TestAccessProc1(path, mode)
@@ -4283,7 +4310,7 @@ TestopenfilechannelprocCmd (dummy, interp, argc, argv)
     }
 
     if (strcmp(argv[2], "TclpOpenFileChannel") == 0) {
-	proc = TclpOpenFileChannel;
+	proc = PretendTclpOpenFileChannel;
     } else if (strcmp(argv[2], "TestOpenFileChannelProc1") == 0) {
 	proc = TestOpenFileChannelProc1;
     } else if (strcmp(argv[2], "TestOpenFileChannelProc2") == 0) {
@@ -4300,7 +4327,7 @@ TestopenfilechannelprocCmd (dummy, interp, argc, argv)
     }
 
     if (strcmp(argv[1], "insert") == 0) {
-	if (proc == TclpOpenFileChannel) {
+	if (proc == PretendTclpOpenFileChannel) {
 	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
 		   "must be ",
 		   "TestOpenFileChannelProc1, TestOpenFileChannelProc2, or ",
@@ -4325,6 +4352,24 @@ TestopenfilechannelprocCmd (dummy, interp, argc, argv)
     return retVal;
 }
 
+static Tcl_Channel
+PretendTclpOpenFileChannel(interp, fileName, modeString, permissions)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
+					 * can be NULL. */
+    char *fileName;                     /* Name of file to open. */
+    char *modeString;                   /* A list of POSIX open modes or
+					 * a string such as "rw". */
+    int permissions;                    /* If the open involves creating a
+					 * file, with what modes to create
+					 * it? */
+{
+    Tcl_Channel ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName, -1);
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
+}
 
 static Tcl_Channel
 TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
@@ -4337,18 +4382,18 @@ TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-	char *expectname="testOpenFileChannel1%.fil";
+    char *expectname="testOpenFileChannel1%.fil";
     Tcl_DString ds;
     
-	Tcl_DStringInit(&ds);
-	Tcl_JoinPath(1, &expectname, &ds);
+    Tcl_DStringInit(&ds);
+    Tcl_JoinPath(1, &expectname, &ds);
 
     if (!strcmp(Tcl_DStringValue(&ds), fileName)) {
-    Tcl_DStringFree(&ds);
-	return (TclpOpenFileChannel(interp, "__testOpenFileChannel1%__.fil",
+	Tcl_DStringFree(&ds);
+	return (PretendTclpOpenFileChannel(interp, "__testOpenFileChannel1%__.fil",
 		modeString, permissions));
     } else {
-    Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&ds);
 	return (NULL);
     }
 }
@@ -4365,18 +4410,18 @@ TestOpenFileChannelProc2(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-	char *expectname="testOpenFileChannel2%.fil";
+    char *expectname="testOpenFileChannel2%.fil";
     Tcl_DString ds;
     
-	Tcl_DStringInit(&ds);
-	Tcl_JoinPath(1, &expectname, &ds);
+    Tcl_DStringInit(&ds);
+    Tcl_JoinPath(1, &expectname, &ds);
 
     if (!strcmp(Tcl_DStringValue(&ds), fileName)) {
-    Tcl_DStringFree(&ds);
-	return (TclpOpenFileChannel(interp, "__testOpenFileChannel2%__.fil",
+	Tcl_DStringFree(&ds);
+	return (PretendTclpOpenFileChannel(interp, "__testOpenFileChannel2%__.fil",
 		modeString, permissions));
     } else {
-    Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&ds);
 	return (NULL);
     }
 }
@@ -4393,18 +4438,18 @@ TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-	char *expectname="testOpenFileChannel3%.fil";
+    char *expectname="testOpenFileChannel3%.fil";
     Tcl_DString ds;
     
-	Tcl_DStringInit(&ds);
-	Tcl_JoinPath(1, &expectname, &ds);
+    Tcl_DStringInit(&ds);
+    Tcl_JoinPath(1, &expectname, &ds);
 
     if (!strcmp(Tcl_DStringValue(&ds), fileName)) {
-    Tcl_DStringFree(&ds);
-	return (TclpOpenFileChannel(interp, "__testOpenFileChannel3%__.fil",
+	Tcl_DStringFree(&ds);
+	return (PretendTclpOpenFileChannel(interp, "__testOpenFileChannel3%__.fil",
 		modeString, permissions));
     } else {
-    Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&ds);
 	return (NULL);
     }
 }

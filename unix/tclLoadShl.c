@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.4 2001/04/09 23:09:58 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.5 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include <dl.h>
@@ -47,9 +47,9 @@
  */
 
 int
-TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *fileName;		/* Name of the file containing the desired
+    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
     char *sym1, *sym2;		/* Names of two procedures to look up in
 				 * the file's symbol table. */
@@ -62,7 +62,8 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 {
     shl_t handle;
     Tcl_DString newName;
-
+    char *fileName = Tcl_GetString(pathPtr);
+    
     /*
      * The flags below used to be BIND_IMMEDIATE; they were changed at
      * the suggestion of Wolfgang Kechel (wolfgang@prs.de): "This

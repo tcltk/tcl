@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.4 2000/03/27 18:34:32 ericm Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.5 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -136,9 +136,9 @@ static void UnlinkSymbolTable _ANSI_ARGS_((void));
  */
 
 int
-TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *fileName;		/* Name of the file containing the desired
+    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
     char *sym1, *sym2;		/* Names of two procedures to look up in
 				 * the file's symbol table. */
@@ -189,13 +189,13 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
   Tcl_DStringAppend (&linkCommandBuf, " -G 0 ", -1);
 #endif
   Tcl_DStringAppend (&linkCommandBuf, " -u TclLoadDictionary_", -1);
-  TclGuessPackageName(fileName, &linkCommandBuf);
+  TclGuessPackageName(Tcl_GetString(pathPtr), &linkCommandBuf);
   Tcl_DStringAppend (&linkCommandBuf, " -A ", -1);
   Tcl_DStringAppend (&linkCommandBuf, inputSymbolTable, -1);
   Tcl_DStringAppend (&linkCommandBuf, " -N -T XXXXXXXX ", -1);
-  Tcl_DStringAppend (&linkCommandBuf, fileName, -1);
+  Tcl_DStringAppend (&linkCommandBuf, Tcl_GetString(pathPtr), -1);
   Tcl_DStringAppend (&linkCommandBuf, " ", -1);
-  if (FindLibraries (interp, fileName, &linkCommandBuf) != TCL_OK) {
+  if (FindLibraries (interp, Tcl_GetString(pathPtr), &linkCommandBuf) != TCL_OK) {
     Tcl_DStringFree (&linkCommandBuf);
     return TCL_ERROR;
   }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.18 2001/08/23 18:20:50 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.19 2001/08/30 08:53:14 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1110,7 +1110,7 @@ TclpNativeJoinPath(prefix, joining)
 	     * exactly one separator inbetween (unless the object we're
 	     * adding contains multiple contiguous colons, all of which
 	     * we must add).  Also if an object is just ':' we don't
-	     * both to add it unless it's the very first element.
+	     * bother to add it unless it's the very first element.
 	     */
 
 #ifdef MAC_UNDERSTANDS_UNIX_PATHS
@@ -1184,7 +1184,9 @@ TclpNativeJoinPath(prefix, joining)
  *
  * Tcl_JoinPath --
  *
- *	Combine a list of paths in a platform specific manner.
+ *	Combine a list of paths in a platform specific manner.  The
+ *	function 'Tcl_FSJoinPath' should be used in preference where
+ *	possible.
  *
  * Results:
  *	Appends the joined path to the end of the specified 
@@ -1203,225 +1205,28 @@ Tcl_JoinPath(argc, argv, resultPtr)
     char **argv;
     Tcl_DString *resultPtr;	/* Pointer to previously initialized DString. */
 {
-    int oldLength, length, i, needsSep;
-    char c, *dest;
-    CONST char *p;
-    Tcl_PathType type = TCL_PATH_ABSOLUTE;
-
-    oldLength = Tcl_DStringLength(resultPtr);
-
-    switch (tclPlatform) {
-   	case TCL_PLATFORM_UNIX:
-	    for (i = 0; i < argc; i++) {
-		p = argv[i];
-		/*
-		 * If the path is absolute, reset the result buffer.
-		 * Consume any duplicate leading slashes or a ./ in
-		 * front of a tilde prefixed path that isn't at the
-		 * beginning of the path.
-		 */
-
-#ifdef __QNX__
-		/*
-		 * Check for QNX //<node id> prefix
-		 */
-		if (*p && (strlen(p) > 3) && (p[0] == '/') && (p[1] == '/')
-			&& isdigit(UCHAR(p[2]))) { /* INTL: digit */
-		    p += 3;
-		    while (isdigit(UCHAR(*p))) { /* INTL: digit */
-			++p;
-		    }
-		}
-#endif
-		if (*p == '/') {
-		    Tcl_DStringSetLength(resultPtr, oldLength);
-		    Tcl_DStringAppend(resultPtr, "/", 1);
-		    while (*p == '/') {
-			p++;
-		    }
-		} else if (*p == '~') {
-		    Tcl_DStringSetLength(resultPtr, oldLength);
-		} else if ((Tcl_DStringLength(resultPtr) != oldLength)
-			&& (p[0] == '.') && (p[1] == '/')
-			&& (p[2] == '~')) {
-		    p += 2;
-		}
-
-		if (*p == '\0') {
-		    continue;
-		}
-
-		/*
-		 * Append a separator if needed.
-		 */
-
-		length = Tcl_DStringLength(resultPtr);
-		if ((length != oldLength)
-			&& (Tcl_DStringValue(resultPtr)[length-1] != '/')) {
-		    Tcl_DStringAppend(resultPtr, "/", 1);
-		    length++;
-		}
-
-		/*
-		 * Append the element, eliminating duplicate and trailing
-		 * slashes.
-		 */
-
-		Tcl_DStringSetLength(resultPtr, (int) (length + strlen(p)));
-		dest = Tcl_DStringValue(resultPtr) + length;
-		for (; *p != '\0'; p++) {
-		    if (*p == '/') {
-			while (p[1] == '/') {
-			    p++;
-			}
-			if (p[1] != '\0') {
-			    *dest++ = '/';
-			}
-		    } else {
-			*dest++ = *p;
-		    }
-		}
-		length = dest - Tcl_DStringValue(resultPtr);
-		Tcl_DStringSetLength(resultPtr, length);
-	    }
-	    break;
-
-	case TCL_PLATFORM_WINDOWS:
-	    /*
-	     * Iterate over all of the components.  If a component is
-	     * absolute, then reset the result and start building the
-	     * path from the current component on.
-	     */
-
-	    for (i = 0; i < argc; i++) {
-		p = ExtractWinRoot(argv[i], resultPtr, oldLength, &type);
-		length = Tcl_DStringLength(resultPtr);
-		
-		/*
-		 * If the pointer didn't move, then this is a relative path
-		 * or a tilde prefixed path.
-		 */
-
-		if (p == argv[i]) {
-		    /*
-		     * Remove the ./ from tilde prefixed elements unless
-		     * it is the first component.
-		     */
-
-		    if ((length != oldLength)
-			    && (p[0] == '.')
-			    && ((p[1] == '/') || (p[1] == '\\'))
-			    && (p[2] == '~')) {
-			p += 2;
-		    } else if (*p == '~') {
-			Tcl_DStringSetLength(resultPtr, oldLength);
-			length = oldLength;
-		    }
-		}
-
-		if (*p != '\0') {
-		    /*
-		     * Check to see if we need to append a separator.
-		     */
-
-		    
-		    if (length != oldLength) {
-			c = Tcl_DStringValue(resultPtr)[length-1];
-			if ((c != '/') && (c != ':')) {
-			    Tcl_DStringAppend(resultPtr, "/", 1);
-			}
-		    }
-
-		    /*
-		     * Append the element, eliminating duplicate and
-		     * trailing slashes.
-		     */
-
-		    length = Tcl_DStringLength(resultPtr);
-		    Tcl_DStringSetLength(resultPtr, (int) (length + strlen(p)));
-		    dest = Tcl_DStringValue(resultPtr) + length;
-		    for (; *p != '\0'; p++) {
-			if ((*p == '/') || (*p == '\\')) {
-			    while ((p[1] == '/') || (p[1] == '\\')) {
-				p++;
-			    }
-			    if (p[1] != '\0') {
-				*dest++ = '/';
-			    }
-			} else {
-			    *dest++ = *p;
-			}
-		    }
-		    length = dest - Tcl_DStringValue(resultPtr);
-		    Tcl_DStringSetLength(resultPtr, length);
-		}
-	    }
-	    break;
-
-	case TCL_PLATFORM_MAC:
-	    needsSep = 1;
-	    for (i = 0; i < argc; i++) {
-		Tcl_Obj *splitPtr;
-		Tcl_Obj *eltPtr;
-		int eltLen;
-		int splitIndex = 0;
-		int splitElements;
-		
-		splitPtr = SplitMacPath(argv[i]);
-		
-		Tcl_ListObjLength(NULL, splitPtr, &splitElements);
-		if (splitElements == 0) {
-		    Tcl_DecrRefCount(splitPtr);
-		    continue;
-		}
-		
-		Tcl_ListObjIndex(NULL, splitPtr, 0, &eltPtr);
-		p = Tcl_GetStringFromObj(eltPtr, &eltLen);
-		if ((eltLen != 0) && (*p != ':') && (strchr(p, ':') != NULL)) {
-		    Tcl_DStringSetLength(resultPtr, oldLength);
-		    length = strlen(p);
-		    Tcl_DStringAppend(resultPtr, p, eltLen);
-		    needsSep = 0;
-		    splitIndex++;
-		}
-		
-		/*
-		 * Now append the rest of the path elements, skipping
-		 * : unless it is the first element of the path, and
-		 * watching out for :: et al. so we don't end up with
-		 * too many colons in the result.
-		 */
-
-		for (; splitIndex < splitElements; splitIndex++) {
-		    Tcl_ListObjIndex(NULL, splitPtr, splitIndex, &eltPtr);
-		    p = Tcl_GetStringFromObj(eltPtr, &eltLen);
-		    if (p[0] == ':' && p[1] == '\0') {
-			if (Tcl_DStringLength(resultPtr) != oldLength) {
-			    p++;
-			} else {
-			    needsSep = 0;
-			}
-		    } else {
-			c = p[1];
-			if (*p == ':') {
-			    if (!needsSep) {
-				p++;
-			    }
-			} else {
-			    if (needsSep) {
-				Tcl_DStringAppend(resultPtr, ":", 1);
-			    }
-			}
-			needsSep = (c == ':') ? 0 : 1;
-		    }
-		    length = strlen(p);
-		    Tcl_DStringAppend(resultPtr, p, length);
-		}
-		Tcl_DecrRefCount(splitPtr);
-	    }
-	    break;
-			       
+    int i, len;
+    Tcl_Obj *listObj = Tcl_NewObj();
+    Tcl_Obj *resultObj;
+    char *resultStr;
+    
+    /* Build the list of paths */
+    for (i = 0; i < argc; i++) {
+        Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(argv[i],-1));
     }
+    
+    /* Ask the objectified code to join the paths */
+    Tcl_IncrRefCount(listObj);
+    resultObj = Tcl_FSJoinPath(listObj, argc);
+    Tcl_IncrRefCount(resultObj);
+    Tcl_DecrRefCount(listObj);
+    
+    /* Store the result */
+    resultStr = Tcl_GetStringFromObj(resultObj, &len);
+    Tcl_DStringAppend(resultPtr, resultStr, len);
+    Tcl_DecrRefCount(resultObj);
+    
+    /* Return a pointer to the result */
     return Tcl_DStringValue(resultPtr);
 }
 

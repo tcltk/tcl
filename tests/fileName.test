@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.12 2001/08/23 17:37:08 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.13 2001/08/30 08:53:15 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -304,6 +304,26 @@ test filename-4.18 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split foo/bar~/baz
 } {foo bar~ baz}
+test filename-4.19 {Tcl_SplitPath} {
+    set oldDir [pwd]
+    set res [catch {
+	file mkdir tildetmp
+	set nastydir [file join tildetmp ./~tilde]
+	file mkdir $nastydir
+	set norm [file normalize $nastydir]
+	cd tildetmp
+	cd ./~tilde
+	glob -nocomplain *
+	set idx [string first tildetmp $norm]
+	set norm [string range $norm $idx end]
+	# fix path away so all platforms are the same
+	regsub -all ":" $norm "/" norm
+	file delete -force $nastydir
+	set norm
+    } err]
+    cd $oldDir
+    list $res $err
+} {0 tildetmp/~tilde}
 
 test filename-5.1 {Tcl_SplitPath: mac} {testsetplatform} {
     testsetplatform mac
@@ -1367,6 +1387,20 @@ test filename-11.43 {Tcl_GlobCmd} {
 test filename-11.44 {Tcl_GlobCmd} {
     list [catch {glob -tails -path hello -directory hello *} msg] $msg
 } {1 {"-directory" cannot be used with "-path"}}
+test filename-11.45 {Tcl_GlobCmd on root volume} {
+    set res1 ""
+    set res2 ""
+    catch {
+	set res1 [glob -dir [lindex [file volumes] 0] -tails *]
+    }
+    catch {
+	set tmpd [pwd]
+	cd [lindex [file volumes] 0]
+	set res2 [glob *]
+	cd $tmpd
+    }
+    expr {$res1 == $res2}
+} {1}
 
 file rename $horribleglobname globTest
 set globname globTest
