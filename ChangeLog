@@ -1,3 +1,12 @@
+2004-12-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c (TclSetProcessGlobalValue):  Handle the case
+	where a ProcessGlobalValue might be assigned to itself.
+
+	* generic/tclEncoding.c (MakeFileMap):	Correct refcounting errors
+	managing values returned by TclPathPart (with refCount of 1!) that
+	led to a memory leak.  [Bug 1077474].
+
 2004-12-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix and new tests for [Bug 1074671] to
