@@ -1,11 +1,19 @@
+2004-05-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/fileSystem.test (filesystem-1.39): replace 'file volumes'
+	* tests/fileName.test (filename-12.9,10):  lindex with direct C:/
+	hard-coded because A:/ was being used and that is empty for most.
+
+	* tests/winFCmd.test (winFCmd-16.12): test volumerelative $HOME
+
 2004-05-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclAlloc.c:		Make sure Tclp*Alloc* routines get
 	* generic/tclInt.h:		declared in the TCL_MEM_DEBUG and
 	* generic/tclThreadAlloc.c:	TCL_THREADS configuration. [Bug 947564]
 
-        * tests/tcltest.test:   Test corrections for Mac OSX.  Thanks
-        to Steven Abner (tauvan).  [Bug 947440]
+	* tests/tcltest.test:	Test corrections for Mac OSX.  Thanks
+	to Steven Abner (tauvan).  [Bug 947440]
 
 2004-05-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
