@@ -272,14 +272,14 @@ pcolor co;
 		while (cm->max > WHITE && UNUSEDCOLOR(&cm->cd[cm->max]))
 			cm->max--;
 		assert(cm->max >= 0);
-		while (cm->free > cm->max)
+		while ((size_t)cm->free > cm->max)
 			cm->free = cm->cd[cm->free].sub;
 		if (cm->free > 0) {
 			assert(cm->free < cm->max);
 			pco = cm->free;
 			nco = cm->cd[pco].sub;
 			while (nco > 0)
-				if (nco > cm->max) {
+				if ((size_t)nco > cm->max) {
 					/* take this one out of freelist */
 					nco = cm->cd[nco].sub;
 					cm->cd[pco].sub = nco;
