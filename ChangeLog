@@ -8,6 +8,7 @@
 	* unix/Makefile.in:
 	* unix/configure.in:
 	* unix/tcl.m4: Added support for MacOSX / Darwin
+	* unix/configure: Autoconf
 
 	* unix/mkLinks:
 	* unix/mkLinks.tcl: Added check for case-insensitive
@@ -26,6 +27,11 @@
 
 	* tests/trace.test (trace-18.1): Added test to demonstrate
 	  memory corruption problems.  [Bug 219393].
+
+	* unix/mkLinks: 'make mklinks' for Tcl_SetMainLoop.
+
+	* unix/Makefile.in (dist: target):  Removed copy of files
+	  matching mac/*.exp; no such files.
 
 2001-10-15  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 

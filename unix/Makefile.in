@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.7 2001/10/16 06:44:09 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.8 2001/10/16 21:38:08 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -488,7 +488,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.7 2001/10/16 06:44:09 das Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.8 2001/10/16 21:38:08 dgp Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -1190,7 +1190,7 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.exp $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
+	cp -p $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/unix/dltest

@@ -33,7 +33,6 @@ if test "$y" != "xyzzyTestingaverylongfilename.foo"; then
     CASEINSENSITIVEFS=1
 fi
 
-
 if test -r Access.3; then
     rm -f Tcl_Access.3
     rm -f Tcl_Stat.3
@@ -871,6 +870,10 @@ if test -r StringObj.3; then
     ln StringObj.3 Tcl_AppendObjToObj.3
     ln StringObj.3 Tcl_SetObjLength.3
     ln StringObj.3 Tcl_ConcatObj.3
+fi
+if test -r Tcl_Main.3; then
+    rm -f Tcl_SetMainLoop.3
+    ln Tcl_Main.3 Tcl_SetMainLoop.3
 fi
 if test -r Thread.3; then
     rm -f Tcl_ConditionNotify.3
