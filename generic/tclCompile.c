@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.42 2003/02/16 01:36:32 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43 2003/02/19 14:33:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1448,10 +1448,9 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     CompileEnv *envPtr;		/* Holds the resulting instructions. */
 {
     Tcl_Token *wordPtr;
-    int range, numBytes, i, code;
+    int numBytes, i, code;
     CONST char *script;
 
-    range = -1;
     code = TCL_OK;
 
     /*
