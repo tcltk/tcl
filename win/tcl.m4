@@ -513,6 +513,12 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	LDFLAGS_CONSOLE="-link -subsystem:console ${lflags}"
 	LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
     fi
+
+    # DL_LIBS is empty, but then we match the Unix version
+    AC_SUBST(DL_LIBS)
+    AC_SUBST(CFLAGS_DEBUG)
+    AC_SUBST(CFLAGS_OPTIMIZE)
+    AC_SUBST(CFLAGS_WARNING)
 ])
 
 #------------------------------------------------------------------------
