@@ -1,3 +1,8 @@
+2002-07-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c (TclObjLookupVar): leak fix and improved
+	comments. 
+
 2002-07-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclVar.c (TclLookupVar): removed early returns that
