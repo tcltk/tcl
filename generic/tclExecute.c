@@ -2736,9 +2736,6 @@ TclExecuteByteCode(interp, codePtr)
 		if (oldValuePtr == NULL) {
 		    iterVarPtr->value.objPtr = Tcl_NewLongObj(-1);
 		    Tcl_IncrRefCount(iterVarPtr->value.objPtr);
-		    if (oldValuePtr != NULL) {
-			Tcl_DecrRefCount(oldValuePtr);
-		    }
 		} else {
 		    Tcl_SetLongObj(oldValuePtr, -1);
 		}
