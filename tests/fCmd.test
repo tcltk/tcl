@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.26.2.3 2003/10/06 17:27:00 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.26.2.4 2003/10/07 15:57:36 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -94,6 +94,8 @@ proc contents {file} {
     close $f
     set r
 }
+
+cd [temporaryDirectory]
 
 set ::tcltest::testConstraints(fileSharing) 0
 set ::tcltest::testConstraints(notFileSharing) 1
@@ -2225,6 +2227,7 @@ test fCmd-28.3 {file link} {
 test fCmd-28.4 {file link} {
     list [catch {file link -abc b c} msg] $msg
 } {1 {bad switch "-abc": must be -symbolic or -hard}}
+cd [workingDirectory]
 
 makeDirectory abc.dir
 makeDirectory abc2.dir

@@ -1,5 +1,9 @@
 2003-10-07  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/fCmd.test:	Run tests with the [temporaryDirectory] as
+	the current directory, so that tests can depend on ability to write
+	files.  [Bug 575837]
+
 	* doc/OpenFileChnl.3:	Updated Tcl_Tell and Tcl_Seek documentation
 	to reflect that they now return Tcl_WideInt (TIP 72) [Bug 787537]
 
