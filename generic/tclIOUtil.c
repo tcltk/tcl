@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.19 2001/09/06 17:51:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20 2001/09/08 14:05:09 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -47,8 +47,6 @@ static Tcl_PathType     FSGetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
 static Tcl_PathType     GetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
 			    Tcl_Filesystem **filesystemPtrPtr, 
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
-static int              CrossFilesystemCopy _ANSI_ARGS_((Tcl_Obj *source, 
-							 Tcl_Obj *target));
 
 /*
  * Define the 'path' object type, which Tcl uses to represent
@@ -2282,11 +2280,12 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		return -1;
 	    }
 	    
-	    if (CrossFilesystemCopy(pathPtr, copyToPtr) == TCL_OK) {
+	    if (TclCrossFilesystemCopy(interp, pathPtr, 
+				       copyToPtr) == TCL_OK) {
 		/* 
 		 * Do we need to set appropriate permissions 
 		 * on the file?  This may be required on some
-		 * systems.  On Unix we could do loop over
+		 * systems.  On Unix we could loop over
 		 * the file attributes, and set any that are
 		 * called "-permissions" to 0777.  Or directly:
 		 * 
@@ -2991,16 +2990,13 @@ Tcl_FSCopyFile(srcPathPtr, destPathPtr)
     if (retVal == -1) {
 	Tcl_SetErrno(EXDEV);
     }
-    if ((retVal != TCL_OK) && (errno == EXDEV)) {
-        retVal = CrossFilesystemCopy(srcPathPtr, destPathPtr);
-    }
     return retVal;
 }
 
 /*
  *---------------------------------------------------------------------------
  *
- * CrossFilesystemCopy --
+ * TclCrossFilesystemCopy --
  *
  *	Helper for above function, and for Tcl_FSLoadFile, to copy
  *	files from one filesystem to another.  This function will
@@ -3014,22 +3010,23 @@ Tcl_FSCopyFile(srcPathPtr, destPathPtr)
  *
  *---------------------------------------------------------------------------
  */
-static int 
-CrossFilesystemCopy(source, target) 
+int 
+TclCrossFilesystemCopy(interp, source, target) 
+    Tcl_Interp *interp; /* For error messages */
     Tcl_Obj *source;	/* Pathname of file to be copied (UTF-8). */
     Tcl_Obj *target;	/* Pathname of file to copy to (UTF-8). */
 {
     int result = TCL_ERROR;
     int prot = 0666;
     
-    Tcl_Channel out = Tcl_FSOpenFileChannel(NULL, target, "w", prot);
+    Tcl_Channel out = Tcl_FSOpenFileChannel(interp, target, "w", prot);
     if (out != NULL) {
 	/* It looks like we can copy it over */
-	Tcl_Channel in = Tcl_FSOpenFileChannel(NULL, source, 
+	Tcl_Channel in = Tcl_FSOpenFileChannel(interp, source, 
 					       "r", prot);
 	if (in == NULL) {
 	    /* This is very strange, we checked this above */
-	    Tcl_Close(NULL, out);
+	    Tcl_Close(interp, out);
 	} else {
 	    struct stat sourceStatBuf;
 	    struct utimbuf tval;
@@ -3038,18 +3035,18 @@ CrossFilesystemCopy(source, target)
 	     * asynchronous option to support vfs's which are
 	     * slow (e.g. network sockets).
 	     */
-	    Tcl_SetChannelOption(NULL, in, "-translation", "binary");
-	    Tcl_SetChannelOption(NULL, out, "-translation", "binary");
+	    Tcl_SetChannelOption(interp, in, "-translation", "binary");
+	    Tcl_SetChannelOption(interp, out, "-translation", "binary");
 	    
-	    if (TclCopyChannel(NULL, in, out, -1, NULL) == TCL_OK) {
+	    if (TclCopyChannel(interp, in, out, -1, NULL) == TCL_OK) {
 		result = TCL_OK;
 	    }
 	    /* 
 	     * If the copy failed, assume that copy channel left
 	     * a good error message.
 	     */
-	    Tcl_Close(NULL, in);
-	    Tcl_Close(NULL, out);
+	    Tcl_Close(interp, in);
+	    Tcl_Close(interp, out);
 	    
 	    /* Set modification date of copied file */
 	    if (Tcl_FSLstat(source, &sourceStatBuf) != 0) {
