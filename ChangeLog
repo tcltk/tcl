@@ -1,3 +1,14 @@
+1999-04-02    <redman@scriptics.com>
+
+	* doc/dde.n:
+	* tools/tcl.wse.in:
+	* win/makefile.vc:
+	* win/pkgIndex.tcl:
+	* win/tclWinDde.c:  Add new DDE package, code removed from Tk now
+	separated into its own package.  Changed DDE-based send code into
+	"dde eval" command.  Can be loaded into tclsh (not just wish).
+	Windows only.
+
 1999-04-02    <stanton@scriptics.com>
 
 	* tests/expr.test: 

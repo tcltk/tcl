@@ -1552,6 +1552,16 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=${__TCLBASEDIR__}\win\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\dde1.0\pkgIndex.tcl
+  Flags=0000000000000010
+end
+item: Install File
+  Source=${__TCLBASEDIR__}\win\release\tcldde81.dll
+  Destination=%MAINDIR%\lib\tcl%VER%\dde1.0\tcldde81.dll
+  Flags=0000000000000010
+end
+item: Install File
   Source=C:\WINNT\SYSTEM32\Msvcrt.dll
   Destination=%MAINDIR%\bin\msvcrt.dll
   Flags=0010001000000011

@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.22 1999/04/01 21:52:58 redman Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.23 1999/04/02 23:48:33 redman Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -101,6 +101,8 @@ TCLPIPEDLLNAME	= $(NAMEPREFIX)pip$(VERSION)$(DBGX).dll
 TCLPIPEDLL	= $(OUTDIR)\$(TCLPIPEDLLNAME)
 TCLREGDLLNAME	= $(NAMEPREFIX)reg$(VERSION)$(DBGX).dll
 TCLREGDLL	= $(OUTDIR)\$(TCLREGDLLNAME)
+TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(VERSION)$(DBGX).dll
+TCLDDEDLL	= $(OUTDIR)\$(TCLDDEDLLNAME)
 TCLTEST		= $(OUTDIR)\$(NAMEPREFIX)test.exe
 DUMPEXTS	= $(TMPDIR)\dumpexts.exe
 CAT16		= $(TMPDIR)\cat16.exe
@@ -314,7 +316,7 @@ cvarsdll   = $(cvars) -MDd
 ######################################################################
 
 release:    setup $(TCLSH) dlls
-dlls:	    setup $(TCL16DLL) $(TCLPIPEDLL) $(TCLREGDLL)
+dlls:	    setup $(TCL16DLL) $(TCLPIPEDLL) $(TCLREGDLL) $(TCLDDEDLL)
 all:	    setup $(TCLSH) dlls $(CAT16) $(CAT32) 
 tcltest:    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
@@ -401,6 +403,11 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMPDIR)\stub16.obj $(guilibs)
 
+$(TCLDDEDLL): $(TMPDIR)\tclWinDde.obj $(TCLSTUBLIB)
+	set LIB="$(TOOLS32)\lib"
+	$(link32) $(ldebug) $(dlllflags) -out:$@ $(TMPDIR)\tclWinDde.obj \
+		$(conlibsdll) $(TCLSTUBLIB)
+
 $(TCLREGDLL): $(TMPDIR)\tclWinReg.obj $(TCLSTUBLIB)
 	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $(TMPDIR)\tclWinReg.obj \
@@ -439,7 +446,9 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLREGDLLNAME)
 	@copy "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)"
-	echo installing $(TCLSTUBLIBNAME)
+	@echo installing $(TCLDDEDLLNAME)
+	@copy "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)"
+	@echo installing $(TCLSTUBLIBNAME)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
 
 install-libraries:
@@ -449,6 +458,7 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
 	@copy << "$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
 package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]] registry"
+package ifneeded dde 1.0 "load [list [file join $$dir .. $(TCLDDEDLLNAME)]] dde"
 <<
 	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
@@ -465,6 +475,7 @@ package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]]
 	-@copy "$(ROOT)\library\parray.tcl"  "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\safe.tcl"    "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\tclIndex"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\package.tcl" "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\word.tcl"    "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\auto.tcl"    "$(SCRIPT_INSTALL_DIR)"
 
@@ -501,6 +512,9 @@ $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 # The following objects should be built using the stub interfaces
 
 $(TMPDIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
+	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -Fo$@ $?
+
+$(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
 	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -Fo$@ $?
 
 # The following objects are part of the stub library and should not
