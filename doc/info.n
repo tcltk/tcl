@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8 2002/06/11 13:22:35 msofer Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.2.1 2004/02/13 01:29:16 hobbs Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -200,6 +200,8 @@ If \fIpattern\fR is a qualified name,
 the resulting list of variable names
 has each matching namespace variable qualified with the name
 of its namespace.
+Note that a currently-visible variable may not yet "exist" if it has not
+been set (e.g. a variable declared but not set by \fBvariable\fR).
 
 .SH "SEE ALSO"
 global(n), proc(n)
