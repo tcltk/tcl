@@ -1,3 +1,7 @@
+2005-02-06  David N. Welton  <davidw@dedasys.com>
+
+	* doc/Thread.3: One-word grammar fix.
+
 2005-02-05  David N. Welton  <davidw@dedasys.com>
 
 	* doc/Thread.3: Fixed sentence describing flags for
