@@ -11,6 +11,9 @@
 
 2001-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinPipe.c (PipeClose2Proc): constrained the mutex lock to
+	just the TerminateThread call and waiting for termination. (jsmith)
+
 	* generic/tclCmdMZ.c: Removed extra copy of the SCAN_* macros
 	#defined in generic/tclScan.c. (porter) [Bug 441230]
 
