@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.3 2003/05/11 01:23:13 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.4 2003/05/13 22:55:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -100,7 +100,7 @@ static Tcl_Obj*  TclFSNormalizeAbsolutePath
 
 static FilesystemRecord* FsGetIterator(void);
 static void FsReleaseIterator(void);
-
+static void FsThrExitProc(ClientData cd);
 
 /* 
  * These form part of the native filesystem support.  They are needed
