@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.41 2003/01/26 05:59:37 mdejong Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42 2003/02/21 02:36:27 hobbs Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -294,6 +294,10 @@ static int		TtySetOptionProc _ANSI_ARGS_((ClientData instanceData,
 #endif	/* SUPPORTS_TTY */
 static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
 			    int *errorCodePtr));
+static Tcl_Channel	MakeTcpClientChannelMode _ANSI_ARGS_(
+			    (ClientData tcpSocket,
+			    int mode));
+
 
 /*
  * This structure describes the channel type structure for file based IO:
@@ -1916,10 +1920,7 @@ Tcl_MakeFileChannel(handle, mode)
 #endif /* SUPPORTS_TTY */
     if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (VOID *)&socketType,
 		   &argLength) == 0  &&	 socketType == SOCK_STREAM) {
-	/*
-	 * The mode parameter gets lost here, unfortunately.
-	 */
-	return Tcl_MakeTcpClientChannel((ClientData) fd);
+	return MakeTcpClientChannelMode((ClientData) fd, mode);
     } else {
 	channelTypePtr = &fileChannelType;
 	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
@@ -2765,6 +2766,32 @@ Tcl_Channel
 Tcl_MakeTcpClientChannel(sock)
     ClientData sock;		/* The socket to wrap up into a channel. */
 {
+    return MakeTcpClientChannelMode(sock, (TCL_READABLE | TCL_WRITABLE));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakeTcpClientChannelMode --
+ *
+ *	Creates a Tcl_Channel from an existing client TCP socket
+ *	with given mode.
+ *
+ * Results:
+ *	The Tcl_Channel wrapped around the preexisting TCP socket.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Channel
+MakeTcpClientChannelMode(sock, mode)
+    ClientData sock;		/* The socket to wrap up into a channel. */
+    int mode;			/* ORed combination of TCL_READABLE and
+				 * TCL_WRITABLE to indicate file mode. */
+{
     TcpState *statePtr;
     char channelName[16 + TCL_INTEGER_SPACE];
 
@@ -2777,7 +2804,7 @@ Tcl_MakeTcpClientChannel(sock)
     sprintf(channelName, "sock%d", statePtr->fd);
 
     statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) statePtr, (TCL_READABLE | TCL_WRITABLE));
+	    (ClientData) statePtr, mode);
     if (Tcl_SetChannelOption((Tcl_Interp *) NULL, statePtr->channel,
 	    "-translation", "auto crlf") == TCL_ERROR) {
 	Tcl_Close((Tcl_Interp *) NULL, statePtr->channel);
