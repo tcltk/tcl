@@ -4,7 +4,7 @@ by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.1.2.6 1999/03/17 21:29:58 stanton Exp $
+RCS: @(#) $Id: README,v 1.1.2.7 1999/03/25 00:31:22 rjohnson Exp $
 
 1. Introduction
 ---------------
@@ -36,10 +36,7 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Tcl 8.1 Source Distribution (plus any patches)
 
-	Borland C++ 4.52 (both 16-bit and 32-bit compilers)
-	  or
 	Visual C++ 2.x/4.x/5.x
-	Visual C++ 1.5 (to build tcl1680.dll for Win32s support of exec)
 
 In practice, the 8.1.a2 release is built with Visual C++ 5.0
 
@@ -60,19 +57,17 @@ find them.  Tcl looks in one of three places for the library files:
 	2) In the lib\tcl8.1 directory under the installation directory
 	   as specified in the registry:
 
-		For Windows NT & 95:
-		    HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.1
-
-		For Win32s:
-		    HKEY_CLASSES_ROOT\SOFTWARE\Scriptics\Tcl\8.1\
+		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.1
 
 	3) Relative to the directory containing the current .exe.
 	    Tcl will look for a directory "..\lib\tcl8.1" relative to the
 	    directory containing the currently running .exe.
 
 Note that in order to run tclsh81.exe, you must ensure that tcl81.dll
-and tclpip81.dll (plus tcl1681.dll under Win32s) are on your path, in
-the system directory, or in the directory containing tclsh81.exe.
+and tclpip81.dll are on your path, in the system directory, or in the 
+directory containing tclsh81.exe.
+
+Note: Tcl no longer provides support for Win32s.
 
 4. Building Extensions
 ----------------------
