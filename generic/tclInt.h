@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.138 2003/11/03 12:49:31 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.139 2003/12/24 04:20:05 davygrvy Exp $
  */
 
 #ifndef _TCLINT
@@ -2163,7 +2163,7 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
  */
 
 #  define TclAllocObjStorage(objPtr) \
-       (objPtr) = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj))
+       (objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorage(objPtr) \
        ckfree((char *) (objPtr))
