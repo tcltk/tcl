@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.51 1999/07/02 06:04:26 welch Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.52 1999/07/16 01:52:24 redman Exp $
  */
 
 #ifndef _TCL
@@ -54,7 +54,7 @@ extern "C" {
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   1
+#define TCL_MINOR_VERSION   2
 #define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
 #define TCL_RELEASE_SERIAL  1
 
