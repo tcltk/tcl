@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70.2.5 2001/08/30 15:43:31 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.70.2.6 2001/09/19 16:56:35 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -89,14 +89,6 @@ extern "C" {
 #	define USE_PROTOTYPE 1
 #   endif
 
-/*
- * Under Windows we need to call Tcl_Alloc in all cases to avoid competing
- * C run-time library issues.
- */
-
-#   ifndef USE_TCLALLOC
-#	define USE_TCLALLOC 1
-#   endif
 #endif /* __WIN32__ */
 
 /*
