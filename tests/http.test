@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.10 1999/07/02 06:05:11 welch Exp $
+# RCS: @(#) $Id: http.test,v 1.11 1999/07/07 02:28:57 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -265,12 +265,12 @@ test http-4.10 {http::Event} {
     set token [http::geturl $url -progress myProgress]
     http::size $token
 } {111}
-test http-4.11 {http::Event} {
+test http-4.11 {http::Event} nonPortable {
     set token [http::geturl $url -timeout 1 -command {#}]
     http::reset $token
     http::status $token
 } {reset}
-test http-4.12 {http::Event} {
+test http-4.12 {http::Event} nonPortable {
     set token [http::geturl $url?timeout=10 -timeout 1 -command {#}]
     http::wait $token
     http::status $token
