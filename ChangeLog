@@ -1,3 +1,10 @@
+2004-01-30  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: Use the -GZ compiler switch when building for
+	symbols.  This is supposed to emulate the release build better to
+	avoid hiding problems that only show themselves in a release
+	build.
+
 2004-01-29  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to [Bug 883143] in file normalization
