@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.7 2001/04/04 16:07:20 kennykb Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.8 2001/08/23 14:22:49 dkf Exp $
  */
 
 #include <math.h>
@@ -1393,7 +1393,7 @@ FormatNumber(interp, type, src, cursorPtr)
     Tcl_Obj *src;		/* Number to format. */
     unsigned char **cursorPtr;	/* Pointer to index into destination buffer. */
 {
-    int value;
+    long value;
     double dvalue;
 
     if ((type == 'd') || (type == 'f')) {
@@ -1426,7 +1426,7 @@ FormatNumber(interp, type, src, cursorPtr)
 	    *cursorPtr += sizeof(float);
 	}
     } else {
-	if (Tcl_GetIntFromObj(interp, src, &value) != TCL_OK) {
+	if (Tcl_GetLongFromObj(interp, src, &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (type == 'c') {
