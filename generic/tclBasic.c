@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.74 2003/02/18 02:22:33 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75 2003/02/18 02:37:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1965,7 +1965,6 @@ TclRenameCommand(interp, oldName, newName)
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		 "can't rename to \"", newName, "\": bad command name",
     	    	 (char *) NULL);
-	Tcl_DecrRefCount( oldFullName );
 	result = TCL_ERROR;
 	goto done;
     }
