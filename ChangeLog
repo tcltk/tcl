@@ -1,3 +1,8 @@
+2004-09-07  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: some quoting needed to be removed as it was
+	breaking with VC7. [Bug 1023150]
+
 2004-09-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n: Documented the default -format, and changed
