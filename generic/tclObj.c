@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.39 2002/08/14 17:31:43 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.40 2002/08/24 01:29:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -684,18 +684,22 @@ TclFreeObj(objPtr)
      * Tcl_Obj structs we maintain.
      */
 
-    Tcl_MutexLock(&tclObjMutex);
 #if defined(TCL_MEM_DEBUG) || defined(PURIFY)
+    Tcl_MutexLock(&tclObjMutex);
     ckfree((char *) objPtr);
-#else
+    Tcl_MutexUnlock(&tclObjMutex);
+#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC) 
+    TclThreadFreeObj(objPtr); 
+#else 
+    Tcl_MutexLock(&tclObjMutex);
     objPtr->internalRep.otherValuePtr = (VOID *) tclFreeObjList;
     tclFreeObjList = objPtr;
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_MEM_DEBUG */
 
 #ifdef TCL_COMPILE_STATS
     tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&tclObjMutex);
 }
 
 /*
