@@ -1,3 +1,15 @@
+2003-11-03  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c
+	* generic/tclInt.h: added comments and re-arranged code to
+	clarify distinction between Tcl_LoadHandle, ClientData for
+	'load'ed code, and point out limitations of the design 
+	introduced with Tcl 8.4.
+	
+	* unix/tclUnixFile.c: fix to memory leak
+	
+	* generic/tclCmdIL.c: removed warning on Windows.
+	
 2003-11-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Check for sensible list

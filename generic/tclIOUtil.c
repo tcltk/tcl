@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.87 2003/10/14 15:44:52 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.88 2003/11/03 12:49:31 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2490,11 +2490,11 @@ Tcl_FSChdir(pathPtr)
  *	defined.  The appropriate function for the filesystem to which
  *	pathPtr belongs will be called.
  *	
- *	Note that the native filesystem doesn't actually assume
- *	'pathPtr' is a path.  Rather it assumes filename is either
- *	a path or just the name of a file which can be found somewhere
- *	in the environment's loadable path.  This behaviour is not
- *	very compatible with virtual filesystems (and has other problems
+ *	Note that the native filesystem doesn't actually assume 'pathPtr'
+ *	is a path.  Rather it assumes pathPtr is either a path or just
+ *	the name (tail) of a file which can be found somewhere in the
+ *	environment's loadable path.  This behaviour is not very
+ *	compatible with virtual filesystems (and has other problems
  *	documented in the load man-page), so it is advised that full
  *	paths are always used.
  *
@@ -2524,6 +2524,88 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for
+				 * this file. */
+{
+    CONST char *symbols[] = { sym1, sym2 };
+    Tcl_PackageInitProc **procPtrs[] = { proc1Ptr, proc2Ptr };
+    ClientData clientData;
+    int res;
+    
+    res = TclLoadFile(interp, pathPtr, 2, symbols, procPtrs, 
+		      handlePtr, &clientData, unloadProcPtr);
+    
+    /* 
+     * Due to an unfortunate mis-design in Tcl 8.4 fs, when loading a
+     * shared library, we don't keep the loadHandle (for TclpFindSymbol)
+     * and the clientData (for the unloadProc) separately.  In fact we
+     * effectively throw away the loadHandle and only use the clientData.
+     * It just so happens, for the native filesystem only, that these two
+     * are identical.
+     * 
+     * This also means that the signatures Tcl_FSUnloadFileProc and
+     * Tcl_FSLoadFileProc are both misleading.
+     */
+    *handlePtr = (Tcl_LoadHandle) clientData;
+    return res;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLoadFile --
+ *
+ *	Dynamically loads a binary code file into memory and returns the
+ *	addresses of a number of given procedures within that file, if
+ *	they are defined.  The appropriate function for the filesystem to
+ *	which pathPtr belongs will be called.
+ *	
+ *	Note that the native filesystem doesn't actually assume 'pathPtr'
+ *	is a path.  Rather it assumes pathPtr is either a path or just
+ *	the name (tail) of a file which can be found somewhere in the
+ *	environment's loadable path.  This behaviour is not very
+ *	compatible with virtual filesystems (and has other problems
+ *	documented in the load man-page), so it is advised that full
+ *	paths are always used.
+ *	
+ *	This function is currently private to Tcl.  It may be exported in
+ *	the future and its interface fixed (but we should clean up the
+ *	loadHandle/clientData confusion at that time -- see the above
+ *	comments in Tcl_FSLoadFile for details).  For a public function,
+ *	see Tcl_FSLoadFile.
+ *
+ * Results:
+ *	A standard Tcl completion code.  If an error occurs, an error
+ *	message is left in the interp's result.
+ *
+ * Side effects:
+ *	New code suddenly appears in memory.  This may later be
+ *	unloaded by passing the clientData to the unloadProc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclLoadFile(interp, pathPtr, symc, symbols, procPtrs, 
+	    handlePtr, clientDataPtr, unloadProcPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
+				 * code. */
+    int symc;                   /* Number of symbols/procPtrs in the
+                                 * next two arrays. */
+    CONST char *symbols[];	/* Names of procedures to look up in
+				 * the file's symbol table. */
+    Tcl_PackageInitProc **procPtrs[];
+				/* Where to return the addresses
+				 * corresponding to symbols[].  */
+    Tcl_LoadHandle *handlePtr;	/* Filled with token for shared
+                              	 * library information which can be
+                              	 * used in TclpFindSymbol. */
+    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * file which will be passed back to 
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr;	
                                 /* Filled with address of Tcl_FSUnloadFileProc
                                  * function which should be used for
                                  * this file. */
@@ -2532,6 +2614,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     if (fsPtr != NULL) {
 	Tcl_FSLoadFileProc *proc = fsPtr->loadFileProc;
 	if (proc != NULL) {
+	    int i;
 	    int retVal = (*proc)(interp, pathPtr, handlePtr, unloadProcPtr);
 	    if (retVal != TCL_OK) {
 		return retVal;
@@ -2539,12 +2622,14 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 	    if (*handlePtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    if (sym1 != NULL) {
-	        *proc1Ptr = TclpFindSymbol(interp, *handlePtr, sym1);
+	    for (i = 0;i < symc;i++) {
+	        if (symbols[i] != NULL) {
+	            *procPtrs[i] = TclpFindSymbol(interp, *handlePtr, 
+						  symbols[i]);
+	        }
 	    }
-	    if (sym2 != NULL) {
-	        *proc2Ptr = TclpFindSymbol(interp, *handlePtr, sym2);
-	    }
+	    /* Copy this across, since both are equal for the native fs */
+	    *clientDataPtr = (ClientData)*handlePtr;
 	    return retVal;
 	} else {
 	    Tcl_Filesystem *copyFsPtr;
@@ -2584,6 +2669,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 	    if (TclCrossFilesystemCopy(interp, pathPtr, 
 				       copyToPtr) == TCL_OK) {
 		Tcl_LoadHandle newLoadHandle = NULL;
+		ClientData newClientData = NULL;
 		Tcl_FSUnloadFileProc *newUnloadProcPtr = NULL;
 		FsDivertLoad *tvdlPtr;
 		int retVal;
@@ -2611,10 +2697,10 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		 */
 		Tcl_ResetResult(interp);
 		
-		retVal = Tcl_FSLoadFile(interp, copyToPtr, sym1, sym2,
-					proc1Ptr, proc2Ptr, 
-					&newLoadHandle,
-					&newUnloadProcPtr);
+		retVal = TclLoadFile(interp, copyToPtr, symc, symbols, 
+				     procPtrs, &newLoadHandle, 
+				     &newClientData,
+				     &newUnloadProcPtr);
 	        if (retVal != TCL_OK) {
 		    /* The file didn't load successfully */
 		    Tcl_FSDeleteFile(copyToPtr);
@@ -2637,6 +2723,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		     * and unload proc ptr.
 		     */
 		    (*handlePtr) = newLoadHandle;
+		    (*clientDataPtr) = newClientData;
 		    (*unloadProcPtr) = newUnloadProcPtr;
 		    return TCL_OK;
 		}
@@ -2683,7 +2770,8 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		}
 
 		copyToPtr = NULL;
-		(*handlePtr) = (Tcl_LoadHandle) tvdlPtr;
+		(*handlePtr) = newLoadHandle;
+		(*clientDataPtr) = (ClientData)tvdlPtr;
 		(*unloadProcPtr) = &FSUnloadTempFile;
 		return retVal;
 	    } else {
