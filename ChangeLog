@@ -1,3 +1,12 @@
+2004-11-02  Kevin Kenny  <kennykb@acm.org>
+
+	* library/tzdata/America/Cuiaba: Change to DST rules for
+	* library/tzdata/America/Havana: autumn of 2004. 
+	[ftp://elsie.nci.nih.gov/pub/tzdata2004g.tar.gz]
+	
+	* tools/tclZIC.tcl: Updated to be compatible with recent
+	changes in library/clock.tcl.
+	
 2004-11-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFile.c: Simplify TclpUtime to use Tcl_FSGetNativePath, 
