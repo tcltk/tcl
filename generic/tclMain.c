@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.27 2004/06/11 21:30:08 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.28 2004/10/15 04:01:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -438,7 +438,8 @@ Tcl_Main(argc, argv, appInitProc)
 
 		/*
 		 * The following statement guarantees that the errorInfo
-		 * variable is set properly.
+		 * variable is set properly when the error has to do with
+		 * the opening or reading of the file.
 		 */
 
 		Tcl_AddErrorInfo(interp, "");
