@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.18 2000/08/30 01:43:00 ericm Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.19 2000/09/14 18:42:31 ericm Exp $ */
 
 #include "tclInt.h"
 
@@ -113,42 +113,35 @@ typedef struct String {
  *
  * When growing strings (during an append, for example), the following growth
  * algorithm is used:
- *	if (oldSpace + appendLength < TCL_GROWTH_LARGE_STRING) {
- *	    newSpace = 2 * (oldSpace + appendLength)
- *	} else {
- *	    newSpace = (2 * appendLength) + TCL_GROWTH_MIN_ALLOC + oldSpace
- *	}
  *
- * This allows more efficient use of memory for large strings; if the
- * doubling algorithm were used after TCL_GROWTH_LARGE_STRING, the
- * maximum string size in Tcl would be about 1/2 the size of available
- * memory.  With this adaptive algorithm, effectively all of available memory
- * can be allocated.
+ *   Attempt to allocate 2 * (originalLength + appendLength)
+ *   On failure:
+ *	attempt to allocate originalLength + 2*appendLength +
+ *			TCL_GROWTH_MIN_ALLOC 
  *
+ * This algorithm allows very good performance, as it rapidly increases the
+ * memory allocated for a given string, which minimizes the number of
+ * reallocations that must be performed.  However, using only the doubling
+ * algorithm can lead to a significant waste of memory.  In particular, it
+ * may fail even when there is sufficient memory available to complete the
+ * append request (but there is not 2 * totalLength memory available).  So when
+ * the doubling fails (because there is not enough memory available), the
+ * algorithm requests a smaller amount of memory, which is still enough to
+ * cover the request, but which hopefully will be less than the total available
+ * memory.
+ * 
  * The addition of TCL_GROWTH_MIN_ALLOC allows for efficient handling
  * of very small appends.  Without this extra slush factor, a sequence
  * of several small appends would cause several memory allocations.
  * As long as TCL_GROWTH_MIN_ALLOC is a reasonable size, we can
  * avoid that behavior.
  *
- * We do NOT use TCL_GROWTH_MIN_ALLOC for strings smaller than
- * TCL_GROWTH_LARGE_STRING simply because we want our small strings
- * to stay small; an allocation of TCL_GROWTH_MIN_ALLOC for a string
- * that is only a few bytes long is wasteful.
- *
  * The growth algorithm can be tuned by adjusting the following parameters:
  *
- * TCL_GROWTH_LARGE_STRING	Cutoff point, in bytes, at which to switch
- *				from the doubling algorithm to the adaptive.
- *				algorithm.  Default is 1048576 (1 megabyte)
- * TCL_GROWTH_MIN_ALLOC		Additional space, in bytes, to allocate with
- *				each allocation for strings larger than
- *				TCL_GROWTH_LARGE_STRING.
+ * TCL_GROWTH_MIN_ALLOC		Additional space, in bytes, to allocate when
+ *				the double allocation has failed.
  *				Default is 1024 (1 kilobyte).
  */
-#ifndef TCL_GROWTH_LARGE_STRING
-#define TCL_GROWTH_LARGE_STRING	1048576
-#endif
 #ifndef TCL_GROWTH_MIN_ALLOC
 #define TCL_GROWTH_MIN_ALLOC	1024
 #endif
@@ -715,10 +708,7 @@ Tcl_SetObjLength(objPtr, length)
  	if (objPtr->bytes != tclEmptyStringRep) {
 	    new = (char *) ckrealloc((char *)objPtr->bytes,
 		    (unsigned)(length+1));
- 	} else {
-	    new = NULL;
- 	}
- 	if (new == NULL) {
+	} else {
 	    new = (char *) ckalloc((unsigned) (length+1));
 	    if (objPtr->bytes != NULL && objPtr->length != 0) {
  	    	memcpy((VOID *) new, (VOID *) objPtr->bytes,
@@ -734,6 +724,88 @@ Tcl_SetObjLength(objPtr, length)
     if ((objPtr->bytes != NULL) && (objPtr->bytes != tclEmptyStringRep)) {
 	objPtr->bytes[length] = 0;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AttemptSetObjLength --
+ *
+ *	This procedure changes the length of the string representation
+ *	of an object.  It uses the attempt* (non-panic'ing) memory allocators.
+ *
+ * Results:
+ *	1 if the requested memory was allocated, 0 otherwise.
+ *
+ * Side effects:
+ *	If the size of objPtr's string representation is greater than
+ *	length, then it is reduced to length and a new terminating null
+ *	byte is stored in the strength.  If the length of the string
+ *	representation is greater than length, the storage space is
+ *	reallocated to the given length; a null byte is stored at the
+ *	end, but other bytes past the end of the original string
+ *	representation are undefined.  The object's internal
+ *	representation is changed to "expendable string".
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_AttemptSetObjLength(objPtr, length)
+    register Tcl_Obj *objPtr;	/* Pointer to object.  This object must
+				 * not currently be shared. */
+    register int length;	/* Number of bytes desired for string
+				 * representation of object, not including
+				 * terminating null byte. */
+{
+    char *new;
+    String *stringPtr;
+
+    if (Tcl_IsShared(objPtr)) {
+	panic("Tcl_AttemptSetObjLength called with shared object");
+    }
+    SetStringFromAny(NULL, objPtr);
+        
+    /*
+     * Invalidate the unicode data.
+     */
+
+    stringPtr = GET_STRING(objPtr);
+    stringPtr->numChars = -1;
+    stringPtr->uallocated = 0;
+
+    if (length > (int) stringPtr->allocated) {
+
+	/*
+	 * Not enough space in current string. Reallocate the string
+	 * space and free the old string.
+	 */
+ 	if (objPtr->bytes != tclEmptyStringRep) {
+	    new = (char *) attemptckrealloc((char *)objPtr->bytes,
+		    (unsigned)(length+1));
+	    if (new == NULL) {
+		return 0;
+	    }
+ 	} else {
+	    new = (char *) attemptckalloc((unsigned) (length+1));
+	    if (new == NULL) {
+		return 0;
+	    }
+	    if (objPtr->bytes != NULL && objPtr->length != 0) {
+ 	    	memcpy((VOID *) new, (VOID *) objPtr->bytes,
+ 		    	(size_t) objPtr->length);
+ 	    	Tcl_InvalidateStringRep(objPtr);
+	    }
+	}
+	objPtr->bytes = new;
+	stringPtr->allocated = length;
+    }
+    
+    objPtr->length = length;
+    if ((objPtr->bytes != NULL) && (objPtr->bytes != tclEmptyStringRep)) {
+	objPtr->bytes[length] = 0;
+    }
+    return 1;
 }
 
 /*
@@ -1016,7 +1088,7 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
     Tcl_UniChar *unicode;     /* String to append. */
     int appendNumChars;	      /* Number of chars of "unicode" to append. */
 {
-    String *stringPtr;
+    String *stringPtr, *tmpString;
     size_t numChars;
 
     if (appendNumChars < 0) {
@@ -1034,19 +1106,25 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
 
     /*
      * If not enough space has been allocated for the unicode rep,
-     * reallocate the internal rep object with additional space.  See the
-     * "TCL STRING GROWTH ALGORITHM" comment at the top of this file for an
-     * explanation of the growth algorithm.
+     * reallocate the internal rep object with additional space.  First try to
+     * double the required allocation; if that fails, try a more modest
+     * increase.  See the "TCL STRING GROWTH ALGORITHM" comment at the top of
+     * this file for an explanation of this growth algorithm.
      */
 
     numChars = stringPtr->numChars + appendNumChars;
 
     if (numChars >= stringPtr->uallocated) {
- 	stringPtr->uallocated = numChars +
-	    (numChars >= TCL_GROWTH_LARGE_STRING ?
-		    (2 * appendNumChars) + TCL_GROWTH_MIN_ALLOC : numChars);
-	stringPtr = (String *) ckrealloc((char*)stringPtr,
+ 	stringPtr->uallocated = 2 * numChars;
+	tmpString = (String *) attemptckrealloc((char *)stringPtr,
 		STRING_SIZE(stringPtr->uallocated));
+	if (tmpString == NULL) {
+	    stringPtr->uallocated =
+		numChars + appendNumChars + TCL_GROWTH_MIN_ALLOC;
+	    tmpString = (String *) ckrealloc((char *)stringPtr,
+		    STRING_SIZE(stringPtr->uallocated));
+	}
+	stringPtr = tmpString;
 	SET_STRING(objPtr, stringPtr);
     }
 
@@ -1193,14 +1271,16 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
 
 	/*
 	 * There isn't currently enough space in the string representation
-	 * so allocate additional space.  See the "TCL STRING GROWTH ALGORITHM"
-	 * comment at the top of this file for an explanation of the growth
-	 * algorithm.
+	 * so allocate additional space.  First, try to double the length
+	 * required.  If that fails, try a more modest allocation.  See the
+	 * "TCL STRING GROWTH ALGORITHM" comment at the top of this file for an
+	 * explanation of this growth algorithm.
 	 */
 
-	Tcl_SetObjLength(objPtr, newLength +
-		(newLength >= TCL_GROWTH_LARGE_STRING ?
-			(2 * numBytes) + TCL_GROWTH_MIN_ALLOC : newLength));
+	if (Tcl_AttemptSetObjLength(objPtr, 2 * newLength) == 0) {
+	    Tcl_SetObjLength(objPtr,
+		    newLength + numBytes + TCL_GROWTH_MIN_ALLOC);
+	}
     } else {
 
 	/*
@@ -1242,7 +1322,7 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
 {
 #define STATIC_LIST_SIZE 16
     String *stringPtr;
-    int newLength, oldLength;
+    int newLength, oldLength, attemptLength;
     register char *string, *dst;
     char *static_list[STATIC_LIST_SIZE];
     char **args = static_list;
@@ -1299,19 +1379,23 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
 	 * There isn't currently enough space in the string
 	 * representation, so allocate additional space.  If the current
 	 * string representation isn't empty (i.e. it looks like we're
-	 * doing a series of appends) then the growth algorithm described in
-	 * the "TCL STRING GROWTH ALGORITHM" comment at the top of this file is
-	 * used to determine how much memory to allocate.  Otherwise, exactly
-	 * enough memory is allocated.
+	 * doing a series of appends) then try to allocate extra space to
+	 * accomodate future growth: first try to double the required memory;
+	 * if that fails, try a more modest allocation.  See the "TCL STRING
+	 * GROWTH ALGORITHM" comment at the top of this file for an explanation
+	 * of this growth algorithm.  Otherwise, if the current string
+	 * representation is empty, exactly enough memory is allocated.
 	 */
 
 	if (oldLength == 0) {
 	    Tcl_SetObjLength(objPtr, newLength);
-	} else if (oldLength < TCL_GROWTH_LARGE_STRING) {
-	    Tcl_SetObjLength(objPtr, 2 * (oldLength + newLength));
 	} else {
-	    Tcl_SetObjLength(objPtr,
-		    oldLength + (2 * newLength) + TCL_GROWTH_MIN_ALLOC);
+	    attemptLength = 2 * (oldLength + newLength);
+	    if (Tcl_AttemptSetObjLength(objPtr, attemptLength) == 0) {
+		attemptLength = oldLength + (2 * newLength) +
+		    TCL_GROWTH_MIN_ALLOC;
+		Tcl_SetObjLength(objPtr, attemptLength);
+	    }
 	}
     }
 

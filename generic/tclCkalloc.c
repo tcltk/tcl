@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.8 2000/04/27 01:47:01 ericm Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.9 2000/09/14 18:42:30 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -593,12 +593,21 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 #undef Tcl_Alloc
 #undef Tcl_Free
 #undef Tcl_Realloc
+#undef Tcl_AttemptAlloc
+#undef Tcl_AttemptRealloc
 
 char *
 Tcl_Alloc(size)
     unsigned int size;
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
+}
+
+char *
+Tcl_AttemptAlloc(size)
+    unsigned int size;
+{
+    return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
 
 void
@@ -614,6 +623,13 @@ Tcl_Realloc(ptr, size)
     unsigned int size;
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
+}
+char *
+Tcl_AttemptRealloc(ptr, size)
+    char *ptr;
+    unsigned int size;
+{
+    return Tcl_AttemptDbCkrealloc(ptr, size, "unknown", 0);
 }
 
 /*
@@ -875,6 +891,38 @@ Tcl_DbCkalloc(size, file, line)
     }
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AttemptAlloc --
+ *     Interface to TclpAlloc when TCL_MEM_DEBUG is disabled.  It does not
+ *     check that memory was actually allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_AttemptAlloc (size)
+    unsigned int size;
+{
+    char *result;
+
+    result = TclpAlloc(size);
+    return result;
+}
+
+char *
+Tcl_AttemptDbCkalloc(size, file, line)
+    unsigned int size;
+    char        *file;
+    int          line;
+{
+    char *result;
+
+    result = (char *) TclpAlloc(size);
+    return result;
+}
 
 
 /*
@@ -917,6 +965,40 @@ Tcl_DbCkrealloc(ptr, size, file, line)
         fflush(stdout);
         panic("unable to realloc %d bytes, %s line %d", size, file, line);
     }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AttemptRealloc --
+ *     Interface to TclpRealloc when TCL_MEM_DEBUG is disabled.  It does 
+ *     not check that memory was actually allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_AttemptRealloc(ptr, size)
+    char *ptr;
+    unsigned int size;
+{
+    char *result;
+
+    result = TclpRealloc(ptr, size);
+    return result;
+}
+
+char *
+Tcl_AttemptDbCkrealloc(ptr, size, file, line)
+    char *ptr;
+    unsigned int size;
+    char *file;
+    int line;
+{
+    char *result;
+
+    result = (char *) TclpRealloc(ptr, size);
     return result;
 }
 
