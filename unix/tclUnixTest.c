@@ -423,8 +423,10 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
     oldName = tclExecutableName;
     tclExecutableName = NULL;
     Tcl_FindExecutable(argv[1]);
-    Tcl_SetResult(interp, tclExecutableName, TCL_DYNAMIC);
-    ckfree(tclExecutableName);
+    if (tclExecutableName != NULL) {
+	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
+	ckfree(tclExecutableName);
+    }
     tclExecutableName = oldName;
     return TCL_OK;
 }
