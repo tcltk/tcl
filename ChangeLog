@@ -1,3 +1,19 @@
+2001-07-05  Mo DeJong  <mdejong@redhat.com>
+
+	* win/Makefile.in: Subst DEPARG directly instead
+	of relying on a variable. This will make Cygwin
+	build faster since an extra exec will be avoided.
+	* win/configure: Regen.
+	* win/configure.in: Subst DEPARG.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Move AC_MSG_CHECKING
+	after the AC_CHECK_PROG so that status messages do
+	not get mixed together. Set DEPARG based on the
+	results of the cygpath check so that we avoid using
+	an extra exec when it is not needed. Use ac_cv_cygwin
+	status flag instead of looking at the output of
+	gcc -v, which works in the case where -mno-cygwin is
+	set in the CFLAGS.
+
 2001-07-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:
