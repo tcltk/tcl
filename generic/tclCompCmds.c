@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.6 1998/10/06 21:24:26 stanton Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.7 1998/12/01 23:33:39 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -424,7 +424,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
             Tcl_AddObjErrorInfo(interp,
 	            "\n    (\"for\" initial command)", -1);
         }
-	goto error;
+	goto done;
     }
     maxDepth = envPtr->maxStackDepth;
     TclEmitOpcode(INST_POP, envPtr);
@@ -440,7 +440,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
             Tcl_AddObjErrorInfo(interp,
 		    "\n    (\"for\" test expression)", -1);
         }
-	goto error;
+	goto done;
     }
     maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
@@ -461,7 +461,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 		    interp->errorLine);
             Tcl_AddObjErrorInfo(interp, buffer, -1);
         }
-	goto error;
+	goto done;
     }
     maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     envPtr->exceptArrayPtr[bodyRange].numCodeBytes =
@@ -484,7 +484,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	    Tcl_AddObjErrorInfo(interp,
 	            "\n    (\"for\" loop-end command)", -1);
 	}
-	goto error;
+	goto done;
     }
     maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     envPtr->exceptArrayPtr[nextRange].numCodeBytes =
@@ -554,11 +554,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     if (maxDepth == 0) {
 	maxDepth = 1;
     }
-    envPtr->maxStackDepth = maxDepth;
-    envPtr->exceptDepth--;
-    return TCL_OK;
+    code = TCL_OK;
 
-    error:
+    done:
     envPtr->maxStackDepth = maxDepth;
     envPtr->exceptDepth--;
     return code;
@@ -661,6 +659,14 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     }
     
     /*
+     * Set the exception stack depth.
+     */ 
+
+    envPtr->exceptDepth++;
+    envPtr->maxExceptDepth =
+	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
+
+    /*
      * Break up each var list and set the varcList and varvList arrays.
      * Don't compile the foreach inline if any var name needs substitutions
      * or isn't a scalar, or if any var list needs substitutions.
@@ -756,9 +762,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Evaluate then store each value list in the associated temporary.
      */
 
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
     range = TclCreateExceptRange(LOOP_EXCEPTION, envPtr);
     
     loopIndex = 0;
