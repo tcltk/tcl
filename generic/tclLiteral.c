@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.6 1999/05/06 02:34:42 hershey Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.7 1999/08/05 16:56:45 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -269,9 +269,12 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     }
 
     if (TclLooksLikeInt(bytes, length)) {
-	if (TclGetLong((Tcl_Interp *) NULL, bytes, &n) == TCL_OK) {
+	/*
+	 * From here we use the objPtr, because it is NULL terminated
+	 */
+	if (TclGetLong((Tcl_Interp *) NULL, objPtr->bytes, &n) == TCL_OK) {
 	    TclFormatInt(buf, n);
-	    if (strcmp(bytes, buf) == 0) {
+	    if (strcmp(objPtr->bytes, buf) == 0) {
 		objPtr->internalRep.longValue = n;
 		objPtr->typePtr = &tclIntType;
 	    }
