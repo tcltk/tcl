@@ -1,3 +1,11 @@
+2004-02-01  David Gravereaux <davygrvy@pobox.com>
+
+	* tests/winPipe.test: more pass-thru commandline verifications.
+	* win/tclWinPipe.c (BuildCommandLine): Special case quoting for
+	'{' not required by the c-runtimes's _setargv().
+	* win/tclAppInit.c: Removed our custom setargv() in favor of
+	the one provided by the c-runtime. [Bug 672938]
+
 2004-01-30  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Use the -GZ compiler switch when building for
