@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.28 1999/04/22 22:57:07 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.29 1999/05/13 01:50:32 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1181,26 +1181,6 @@ typedef struct Interp {
 				 * partialResult. */
     int appendUsed;		/* Number of non-null bytes currently
 				 * stored at partialResult. */
-
-    /*
-     * A cache of compiled regular expressions.	 See Tcl_RegExpCompile
-     * in tclUtil.c for details.  THIS CACHE IS OBSOLETE and is only
-     * retained for backward compatibility with Tcl_RegExpCompile.
-     * New code should use the object interface so the Tcl_Obj caches
-     * the compiled expression.
-     */
-
-#define NUM_REGEXPS 5
-    char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled
-				 * regular expression patterns.	 NULL
-				 * means that this slot isn't used.
-				 * Malloc-ed. */
-    int patLengths[NUM_REGEXPS];/* Number of non-null characters in
-				 * corresponding entry in patterns.
-				 * -1 means entry isn't used. */
-    struct TclRegexp *regexps[NUM_REGEXPS];
-				/* Compiled forms of above strings.  Also
-				 * malloc-ed, or NULL if not in use yet. */
 
     /*
      * Information about packages.  Used only in tclPkg.c.

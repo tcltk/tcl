@@ -1,3 +1,23 @@
+1999-05-12    <stanton@scriptics.com>
+
+	* doc/tclsh.1: Updated references to rc script names to accurately
+	reflect the platform differences on Windows.
+
+	* tests/regexp.test: 
+	* generic/tclInt.h: 
+	* generic/tclBasic.c: 
+	* generic/tclRegexp.h:
+	* generic/tclRegexp.c: Replaced the per-interpreter regexp cache
+	with a per-thread cache.  Changed the Regexp object to take
+	advantage of this extra cache.  Added a reference count to the
+	TclRegexp type so regexps can be shared by multiple objects.
+	Removed the per-interp regexp cache from the interpreter.  Now
+	regexps can be used with no need for an interpreter. [Bug: 1063]
+
+	* win/tclWinInit.c (TclpSetVariables): Avoid calling GetUserName
+	if the value can be determined from the USERNAME environment
+	variable.  GetUserName is very slow.
+
 1999-05-07    <stanton@scriptics.com>
 
 	* win/winDumpExts.c: 

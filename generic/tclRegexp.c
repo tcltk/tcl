@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.2 1999/04/16 00:46:52 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.3 1999/05/13 01:50:32 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -61,16 +61,41 @@
  */
 
 /*
+ * Thread local storage used to maintain a per-thread cache of compiled
+ * regular expressions.
+ */
+
+#define NUM_REGEXPS 5
+
+typedef struct ThreadSpecificData {
+    int initialized;		/* Set to 1 when the module is initialized. */
+    char *patterns[NUM_REGEXPS];/* Strings corresponding to compiled
+				 * regular expression patterns.	 NULL
+				 * means that this slot isn't used.
+				 * Malloc-ed. */
+    int patLengths[NUM_REGEXPS];/* Number of non-null characters in
+				 * corresponding entry in patterns.
+				 * -1 means entry isn't used. */
+    struct TclRegexp *regexps[NUM_REGEXPS];
+				/* Compiled forms of above strings.  Also
+				 * malloc-ed, or NULL if not in use yet. */
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
+/*
  * Declarations for functions used only in this file.
  */
 
-static void		DupRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
-			    Tcl_Obj *copyPtr));
-static void		FreeRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *regexpPtr));
-static int		SetRegexpFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr));
 static TclRegexp *	CompileRegexp _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, int length, int flags));
+static void		DupRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr));
+static void		FinalizeRegexp _ANSI_ARGS_((ClientData clientData));
+static void		FreeRegexp _ANSI_ARGS_((TclRegexp *regexpPtr));
+static void		FreeRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+static int		SetRegexpFromAny _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
 
 /*
  * The regular expression Tcl object type.  This serves as a cache
@@ -111,71 +136,13 @@ Tcl_ObjType tclRegexpType = {
 
 Tcl_RegExp
 Tcl_RegExpCompile(interp, string)
-    Tcl_Interp *interp;			/* For use in error reporting. */
-    char *string;			/* String for which to produce
-					 * compiled regular expression. */
+    Tcl_Interp *interp;		/* For use in error reporting and
+				 * to access the interp regexp cache. */
+    char *string;		/* String for which to produce
+				 * compiled regular expression. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int i, length;
-    TclRegexp *result;
-
-    length = strlen(string);
-    for (i = 0; i < NUM_REGEXPS; i++) {
-	if ((length == iPtr->patLengths[i])
-		&& (strcmp(string, iPtr->patterns[i]) == 0)) {
-	    /*
-	     * Move the matched pattern to the first slot in the
-	     * cache and shift the other patterns down one position.
-	     */
-
-	    if (i != 0) {
-		int j;
-		char *cachedString;
-
-		cachedString = iPtr->patterns[i];
-		result = iPtr->regexps[i];
-		for (j = i-1; j >= 0; j--) {
-		    iPtr->patterns[j+1] = iPtr->patterns[j];
-		    iPtr->patLengths[j+1] = iPtr->patLengths[j];
-		    iPtr->regexps[j+1] = iPtr->regexps[j];
-		}
-		iPtr->patterns[0] = cachedString;
-		iPtr->patLengths[0] = length;
-		iPtr->regexps[0] = result;
-	    }
-	    return (Tcl_RegExp) iPtr->regexps[0];
-	}
-    }
-
-    /*
-     * No match in the cache.  Compile the string and add it to the
-     * cache.
-     */
-
-    result = CompileRegexp(interp, string, length, REG_ADVANCED);
-    if (!result) {
-	return NULL;
-    }
-
-    /*
-     * We successfully compiled the expression, so add it to the cache.
-     */
-
-    if (iPtr->patterns[NUM_REGEXPS-1] != NULL) {
-	ckfree(iPtr->patterns[NUM_REGEXPS-1]);
-	TclReFree(&(iPtr->regexps[NUM_REGEXPS-1]->re));
-	ckfree((char *) iPtr->regexps[NUM_REGEXPS-1]);
-    }
-    for (i = NUM_REGEXPS - 2; i >= 0; i--) {
-	iPtr->patterns[i+1] = iPtr->patterns[i];
-	iPtr->patLengths[i+1] = iPtr->patLengths[i];
-	iPtr->regexps[i+1] = iPtr->regexps[i];
-    }
-    iPtr->patterns[0] = (char *) ckalloc((unsigned) (length+1));
-    strcpy(iPtr->patterns[0], string);
-    iPtr->patLengths[0] = length;
-    iPtr->regexps[0] = result;
-    return (Tcl_RegExp) result;
+    return (Tcl_RegExp) CompileRegexp(interp, string, strlen(string),
+	    REG_ADVANCED);
 }
 
 /*
@@ -479,7 +446,8 @@ TclRegExpMatchObj(interp, string, patObj)
 
 Tcl_RegExp
 Tcl_GetRegExpFromObj(interp, objPtr, flags)
-    Tcl_Interp *interp;		/* For use in error reporting. */
+    Tcl_Interp *interp;		/* For use in error reporting, and to access
+				 * the interp regexp cache. */
     Tcl_Obj *objPtr;		/* Object whose string rep contains regular
 				 * expression pattern.  Internal rep will be
 				 * changed to compiled form of this regular
@@ -496,10 +464,19 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
 
     if ((typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
 	pattern = Tcl_GetStringFromObj(objPtr, &length);
+
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
 	if (regexpPtr == NULL) {
 	    return NULL;
 	}
+
+	/*
+	 * Add a reference to the regexp so it will persist even if it is
+	 * pushed out of the current thread's regexp cache.  This reference
+	 * will be removed when the object's internal rep is freed.
+	 */
+
+	regexpPtr->refCount++;
 
 	/*
 	 * Free the old representation and set our type.
@@ -653,11 +630,13 @@ FreeRegexpInternalRep(objPtr)
 {
     TclRegexp *regexpRepPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
-    TclReFree(&regexpRepPtr->re);
-    if (regexpRepPtr->matches) {
-	ckfree((char *) regexpRepPtr->matches);
+    /*
+     * If this is the last reference to the regexp, free it.
+     */
+
+    if (--(regexpRepPtr->refCount) <= 0) {
+	FreeRegexp(regexpRepPtr);
     }
-    ckfree((char *) regexpRepPtr);
 }
 
 /*
@@ -665,14 +644,14 @@ FreeRegexpInternalRep(objPtr)
  *
  * DupRegexpInternalRep --
  *
- *	It is way too hairy to copy a regular expression, so we punt
- *	and revert the object back to a vanilla string. 
+ *	We copy the reference to the compiled regexp and bump its
+ *	reference count.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Changes the type back to string.
+ *	Increments the reference count of the regexp.
  *
  *----------------------------------------------------------------------
  */
@@ -682,8 +661,10 @@ DupRegexpInternalRep(srcPtr, copyPtr)
     Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
 {
-    copyPtr->internalRep.longValue = (long)copyPtr->length;
-    copyPtr->typePtr = &tclStringType;
+    TclRegexp *regexpPtr = (TclRegexp *) srcPtr->internalRep.otherValuePtr;
+    regexpPtr->refCount++;
+    copyPtr->internalRep.otherValuePtr = srcPtr->internalRep.otherValuePtr;
+    copyPtr->typePtr = &tclRegexpType;
 }
 
 /*
@@ -700,8 +681,8 @@ DupRegexpInternalRep(srcPtr, copyPtr)
  *	unless "interp" is NULL.
  *
  * Side effects:
- *	If no error occurs, a regular expression is stored as "objPtr"s internal
- *	representation.
+ *	If no error occurs, a regular expression is stored as "objPtr"s
+ *	internal representation.
  *
  *----------------------------------------------------------------------
  */
@@ -722,7 +703,9 @@ SetRegexpFromAny(interp, objPtr)
  *
  * CompileRegexp --
  *
- *	Attempt to compile the given regexp pattern
+ *	Attempt to compile the given regexp pattern.  If the compiled
+ *	regular expression can be found in the per-thread cache, it
+ *	will be used instead of compiling a new copy.
  *
  * Results:
  *	The return value is a pointer to a newly allocated TclRegexp
@@ -731,7 +714,8 @@ SetRegexpFromAny(interp, objPtr)
  *	left in the interp's result.
  *
  * Side effects:
- *	Memory allocated.
+ *	The thread-local regexp cache is updated and a new TclRegexp may
+ *	be allocated.
  *
  *----------------------------------------------------------------------
  */
@@ -747,8 +731,58 @@ CompileRegexp(interp, string, length, flags)
     Tcl_UniChar *uniString;
     int numChars;
     Tcl_DString stringBuf;
-    int status;
+    int status, i;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+ 
+    if (!tsdPtr->initialized) {
+	tsdPtr->initialized = 1;
+	Tcl_CreateThreadExitHandler(FinalizeRegexp, NULL);
+    }
 
+    /*
+     * This routine maintains a second-level regular expression cache in
+     * addition to the per-object regexp cache.  The per-thread cache is needed
+     * to handle the case where for various reasons the object is lost between
+     * invocations of the regexp command, but the literal pattern is the same.
+     */
+
+    /*
+     * Check the per-thread compiled regexp cache.  We can only reuse
+     * a regexp if it has the same pattern and the same flags.
+     */
+
+    for (i = 0; i < NUM_REGEXPS; i++) {
+	if ((length == tsdPtr->patLengths[i])
+		&& (tsdPtr->regexps[i]->flags == flags)
+		&& (strcmp(string, tsdPtr->patterns[i]) == 0)) {
+	    /*
+	     * Move the matched pattern to the first slot in the
+	     * cache and shift the other patterns down one position.
+	     */
+
+	    if (i != 0) {
+		int j;
+		char *cachedString;
+
+		cachedString = tsdPtr->patterns[i];
+		regexpPtr = tsdPtr->regexps[i];
+		for (j = i-1; j >= 0; j--) {
+		    tsdPtr->patterns[j+1] = tsdPtr->patterns[j];
+		    tsdPtr->patLengths[j+1] = tsdPtr->patLengths[j];
+		    tsdPtr->regexps[j+1] = tsdPtr->regexps[j];
+		}
+		tsdPtr->patterns[0] = cachedString;
+		tsdPtr->patLengths[0] = length;
+		tsdPtr->regexps[0] = regexpPtr;
+	    }
+	    return tsdPtr->regexps[0];
+	}
+    }
+
+    /*
+     * This is a new expression, so compile it and add it to the cache.
+     */
+    
     regexpPtr = (TclRegexp *) ckalloc(sizeof(TclRegexp));
 
     /*
@@ -771,6 +805,7 @@ CompileRegexp(interp, string, length, flags)
 	/*
 	 * Clean up and report errors in the interpreter, if possible.
 	 */
+
 	ckfree((char *)regexpPtr);
 	if (interp) {
 	    TclRegError(interp,
@@ -788,5 +823,94 @@ CompileRegexp(interp, string, length, flags)
     regexpPtr->matches = (regmatch_t *) ckalloc(
 	    sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
+    /*
+     * Initialize the refcount to one initially, since it is in the cache.
+     */
+
+    regexpPtr->refCount = 1;
+
+    /*
+     * Free the last regexp, if necessary, and make room at the head of the
+     * list for the new regexp.
+     */
+
+    if (tsdPtr->patterns[NUM_REGEXPS-1] != NULL) {
+	TclRegexp *oldRegexpPtr = tsdPtr->regexps[NUM_REGEXPS-1];
+	if (--(oldRegexpPtr->refCount) <= 0) {
+	    FreeRegexp(oldRegexpPtr);
+	}
+	ckfree(tsdPtr->patterns[NUM_REGEXPS-1]);
+    }
+    for (i = NUM_REGEXPS - 2; i >= 0; i--) {
+	tsdPtr->patterns[i+1] = tsdPtr->patterns[i];
+	tsdPtr->patLengths[i+1] = tsdPtr->patLengths[i];
+	tsdPtr->regexps[i+1] = tsdPtr->regexps[i];
+    }
+    tsdPtr->patterns[0] = (char *) ckalloc((unsigned) (length+1));
+    strcpy(tsdPtr->patterns[0], string);
+    tsdPtr->patLengths[0] = length;
+    tsdPtr->regexps[0] = regexpPtr;
+
     return regexpPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeRegexp --
+ *
+ *	Release the storage associated with a TclRegexp.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeRegexp(regexpPtr)
+    TclRegexp *regexpPtr;	/* Compiled regular expression to free. */
+{
+    TclReFree(&regexpPtr->re);
+    if (regexpPtr->matches) {
+	ckfree((char *) regexpPtr->matches);
+    }
+    ckfree((char *) regexpPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FinalizeRegexp --
+ *
+ *	Release the storage associated with the per-thread regexp
+ *	cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FinalizeRegexp(clientData)
+    ClientData clientData;	/* Not used. */
+{
+    int i;
+    TclRegexp *regexpPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    for (i = 0; (i < NUM_REGEXPS) && (tsdPtr->patterns[i] != NULL); i++) {
+	regexpPtr = tsdPtr->regexps[i];
+	if (--(regexpPtr->refCount) <= 0) {
+	    FreeRegexp(regexpPtr);
+	}
+	ckfree(tsdPtr->patterns[i]);
+    }
 }
