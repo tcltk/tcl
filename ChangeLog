@@ -1,5 +1,9 @@
 2004-10-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/cmdAH.test (cmdAH-8.45): Removed broken test constraint.
+	It didn't do what it was intended to do, and it implied the other
+	correct constraint. [Bug 1053908]
+
 	* generic/tclCmdIL.c (InfoGlobalsCmd): 
 	* tests/info.test (info-8.4): Strip leading global-namespace
 	specifiers from the pattern argument. [Bug 1057461]
