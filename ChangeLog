@@ -23,6 +23,9 @@
 	C++ compilers to fix linkage issues.  Submitted by Don Porter and
 	Paul Duffin.
 
+	* generic/tclRegexp.c: Fix bug when the regexp cache is empty
+	and an empty pattern is used in regexp ( such as {} or "" ).s
+
 1999-05-18    <stanton@scriptics.com>
 
 	* win/tclWinChan.c: Modified initialization code to avoid
