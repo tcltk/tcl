@@ -1,3 +1,11 @@
+2004-10-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/basic.test:	Added missing constraints.
+	* tests/compile.test:
+	* tests/fileSystem.test:
+
+	* tests/init.test (init-2.8):	Updated to not rely on http package.
+
 2004-10-26  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
