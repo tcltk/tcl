@@ -1,3 +1,10 @@
+2003-08-27  David Gravereaux <davygrvy@pobox.com>
+
+	* compat/strftime.c (_fmt): Removed syst array intializer that
+	couldn't take variables within it under the watcom compiler:
+	'Initializers must be constant'.  I believe Borland has this
+	strictness as well.  VC++ must be non-standard about this.
+
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/util.test: Added new tests for remaining TclNeedSpace()
