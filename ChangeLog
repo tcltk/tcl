@@ -1,3 +1,26 @@
+2000-03-19  Sandeep Tamhankar <sandeep@scriptics.com>
+
+	* library/http2.1/http.tcl: Added -querychannel option and altered
+	some of Brent's modifications to allow asynchronous posts (via
+	-command).  Also modified -queryprogress so that it calls the
+	query callback as <callback> <token> <total size> <current size>
+	to be consistent with -progress.  Added -queryblocksize option
+	with default 8192 bytes for post blocksize.  Fixed a bunch of
+	potential memory leaks for the case when geturl receives bad args
+	or can't open a socket, etc.  Overall, the package really rocks
+	now.
+
+	* doc/http.n: Added -queryblocksize, -querychannel, and
+	-queryprogress.  Also, changed the description of -blocksize,
+	which states that the -progress callback will be called for each
+	block, to now qualify that with an "if -progress is specified".
+
+	* tests/http.test: Added a querychannel test for synchronous and
+	asynchronous posts, altered the queryprogress test such that the
+	callback conforms to the -progress format.  Also, had to use the
+	-queryblocksize option to do the post 16K at a time to match
+	Brent's expected results (and to test that -queryblocksize works).
+
 2000-03-15  Brent Welch <welch@scriptics.com>
 
 	* library/http2.1/http.tcl: Added -queryprogress callback to

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.22 2000/03/17 02:15:06 welch Exp $
+# RCS: @(#) $Id: http.tcl,v 1.23 2000/03/19 22:32:26 sandeep Exp $
 
 package provide http 2.3	;# This uses Tcl namespaces
 
@@ -172,7 +172,6 @@ proc http::reset { token {why reset} } {
     variable $token
     upvar 0 $token state
     set state(status) $why
-    set state(querydone) $why
     catch {fileevent $state(sock) readable {}}
     catch {fileevent $state(sock) writable {}}
     Finish $token
@@ -215,6 +214,7 @@ proc http::geturl { url args } {
 
     array set state {
 	-blocksize 	8192
+	-queryblocksize 8192
 	-validate 	0
 	-headers 	{}
 	-timeout 	0
@@ -229,7 +229,8 @@ proc http::geturl { url args } {
 	status		""
     }
     set options {-blocksize -channel -command -handler -headers \
-		-progress -query -queryprogress -validate -timeout -type}
+	    -progress -query -queryblocksize -querychannel -queryprogress\
+	    -validate -timeout -type}
     set usage [join $options ", "]
     regsub -all -- - $options {} options
     set pat ^-([join $options |])$
@@ -239,15 +240,31 @@ proc http::geturl { url args } {
 	    if {[info exists state($flag)] && \
 		    [string is integer -strict $state($flag)] && \
 		    ![string is integer -strict $value]} {
+		unset $token
 		return -code error "Bad value for $flag ($value), must be integer"
 	    }
 	    set state($flag) $value
 	} else {
+	    unset $token
 	    return -code error "Unknown option $flag, can be: $usage"
 	}
     }
+
+    # Make sure -query and -querychannel aren't both specified
+    if {[info exists state(-query)] && [info exists state(-querychannel)]} {
+	unset $token
+	return -code error "Can't combine -query and -querychannel options!"
+    }
+
+    # Set a variable with whether or not we have a querychannel, because
+    # we need to do special logic later if it does exist, and we don't
+    # want to do a lot of [info exists...]
+    set isQueryChannel [info exists state(-querychannel)]
+    set isQuery [info exists state(-query)]
+
     if {![regexp -nocase {^(([^:]*)://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
 	    x prefix proto host y port srvurl]} {
+	unset $token
 	error "Unsupported URL: $url"
     }
     if {[string length $proto] == 0} {
@@ -255,6 +272,7 @@ proc http::geturl { url args } {
 	set url ${proto}://$url
     }
     if {![info exists urlTypes($proto)]} {
+	unset $token
 	return -code error "unsupported url type \"$proto\""
     }
     set defport [lindex $urlTypes($proto) 0]
@@ -291,9 +309,15 @@ proc http::geturl { url args } {
 
     if {[info exists phost] && [string length $phost]} {
 	set srvurl $url
-	set s [eval $defcmd $async {$phost $pport}]
+	set conStat [catch {eval $defcmd $async {$phost $pport}} s]
     } else {
-	set s [eval $defcmd $async {$host $port}]
+	set conStat [catch {eval $defcmd $async {$host $port}} s]
+    }
+    if {$conStat} {
+	# something went wrong, so unset the state array and propagate the
+	# error to the caller
+	Finish $token $s
+	return $token
     }
     set state(sock) $s
 
@@ -317,16 +341,28 @@ proc http::geturl { url args } {
     # is already in non-blocking mode in that case.
 
     catch {fconfigure $s -blocking off}
-    set len 0
     set how GET
-    if {[info exists state(-query)]} {
-	set len [string length $state(-query)]
-	if {$len > 0} {
+    set state(querylength) 0
+    if {$isQuery} {
+	set state(querylength) [string length $state(-query)]
+	if {$state(querylength) > 0} {
 	    set how POST
+	    set contDone 0
+	} else {
+	    # there's no query data
+	    unset state(-query)
+	    set isQuery 0
 	}
     } elseif {$state(-validate)} {
 	set how HEAD
+    } elseif {$isQueryChannel} {
+	set how POST
+	# The query channel must be blocking for the async Write to
+	# work properly.
+	fconfigure $state(-querychannel) -blocking 1
+	set contDone 0
     }
+
     if {[catch {
 	puts $s "$how $srvurl HTTP/1.0"
 	puts $s "Accept: $http(-accept)"
@@ -335,31 +371,37 @@ proc http::geturl { url args } {
 	foreach {key value} $state(-headers) {
 	    regsub -all \[\n\r\]  $value {} value
 	    set key [string trim $key]
+	    if {[string equal $key "Content-Length"]} {
+		set contDone 1
+		set state(querylength) $value
+	    }
 	    if {[string length $key]} {
 		puts $s "$key: $value"
 	    }
 	}
-	if {$len > 0} {
-	    puts $s "Content-Length: $len"
+	if {$isQueryChannel && $state(querylength)==0} {
+	    # Try to determine size of data in channel
+	    if {[catch {seek $state(-querychannel) 0 end}]} {
+		Finish $token "Unable to determine size of querychannel data"
+		return $token
+	    }
+	    set state(querylength) [tell $state(-querychannel)]
+	    seek $state(-querychannel) 0
+	}
+		
+	if {$isQuery || $isQueryChannel} {
 	    puts $s "Content-Type: $state(-type)"
+	    if {!$contDone} {
+		puts $s "Content-Length: $state(querylength)"
+	    }
 	    puts $s ""
 	    fconfigure $s -translation {auto binary}
-
-	    # If a timeout is specified or a queryprogress callback is specified
-	    # we do the post in the background
-	    
-	    if {$state(-timeout) > 0 || [string length $state(-queryprogress)]} {
-		fileevent $s writable \
-			[list http::Write $token $state(-query) $state(-queryprogress)]
-		WaitPost $token
-	    } else {
-		puts -nonewline $s $state(-query)
-	    }
+	    fileevent $s writable [list http::Write $token]
 	} else {
 	    puts $s ""
+	    flush $s
+	    fileevent $s readable [list http::Event $token]
 	}
-	flush $s
-	fileevent $s readable [list http::Event $token]
     } err]} {
 	# The socket probably was never connected, or the connection
 	# dropped later.
@@ -369,6 +411,8 @@ proc http::geturl { url args } {
     }
 
     if {! [info exists state(-command)]} {
+	# geturl does EVERYTHING asynchronously, so if the user
+	# calls it synchronously, we just do a wait here.
 	wait $token
     }
     return $token
@@ -433,7 +477,8 @@ proc http::cleanup {token} {
  proc http::Connect {token} {
     variable $token
     upvar 0 $token state
-    if {[eof $state(sock)]} {
+    if {[eof $state(sock)] || \
+	[string length [fconfigure $state(sock) -error]]} {
 	set state(status) ioerror
     } else {
 	set state(status) connect
@@ -446,45 +491,55 @@ proc http::cleanup {token} {
 #
 # Arguments
 #	token	The token for the connection
-#	query	The query data to write to the connection
-#	queryprogress	The callback, if any, to make after each block
 #
 # Side Effects
 #	Write the socket and handle callbacks.
 
-proc http::Write {token query queryprogress} {
+proc http::Write {token} {
     variable $token
     upvar 0 $token state
     set s $state(sock)
+    
     if {![info exist state(queryoffset)]} {
 	set state(queryoffset) 0
-	set state(querylength) [string length $query]
     }
-    set chunksize 16384
-
     # Output a block.  Tcl will buffer this if the socket blocks
-
-    if {$state(querylength) < $chunksize} {
-	set chunksize $state(querylength)
-    }
+    
     if {[catch {
 	
 	# Catch I/O errors on dead sockets
 
-	puts -nonewline $s [string range $query $state(queryoffset) \
-		[incr state(queryoffset) $chunksize]]
+	if {[info exists state(-query)]} {
+	    set outStr [string range $state(-query) $state(queryoffset) \
+		[incr state(queryoffset) $state(-queryblocksize)]]
+	} else {
+	    # querychannel
+	    set outStr [read $state(-querychannel) $state(-queryblocksize)]
+	    incr state(queryoffset) $state(-queryblocksize)
+	}
+	puts -nonewline $s $outStr
 	
-	if {[string length $queryprogress]} {
-	    eval $queryprogress [list $token $state(queryoffset) $state(querylength)]
+	if {$state(querylength)>0 && \
+		$state(queryoffset) >= $state(querylength)} {
+	    set state(queryoffset) $state(querylength)
 	}
 
-	if {$state(queryoffset) >= $state(querylength)} {
+	if {[string length $state(-queryprogress)]} {
+	    eval $state(-queryprogress) [list $token $state(querylength)\
+		    $state(queryoffset)]
+	}
+	
+	if {($state(querylength)>0 && \
+		$state(queryoffset) >= $state(querylength)) || \
+		([info exists state(-querychannel)] && \
+		    [eof $state(-querychannel)])} {
 	    fileevent $s writable {}
-	    set state(querydone) ok
+	    flush $s
+	    fileevent $s readable [list http::Event $token]
 	}
     } err]} {
-	set state(querydone) $err
 	fileevent $s writable {}
+	Finish $token $err
     }
 }
 
@@ -662,30 +717,6 @@ proc http::wait {token} {
     return $state(status)
 }
 
-# http::WaitPost --
-#
-#	Wait for the post data to be written out
-#
-# Arguments:
-#	token	Connection token.
-#
-# Results:
-#        The status after the wait.
-
-proc http::WaitPost {token} {
-    variable $token
-    upvar 0 $token state
-
-    # We must wait on the original variable name, not the upvar alias
-    vwait $token\(querydone)
-    if {[string compare $state(querydone) ok] != 0} {
-	# throw an error to unwind geturl
-	return -code error $state(querydone)
-    } else {
-	return $state(querydone)
-    }
-}
-
 # http::formatQuery --
 #
 #	See documentaion for details.
@@ -695,6 +726,7 @@ proc http::WaitPost {token} {
 #
 # Arguments:
 #	args	A list of name-value pairs.
+#
 # Results:
 #        TODO
 

@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.15 2000/03/17 02:15:18 welch Exp $
+# RCS: @(#) $Id: http.test,v 1.16 2000/03/19 22:32:26 sandeep Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -194,14 +194,48 @@ test http-3.10 {http::geturl queryprogress} {
 
     proc postProgress {token x y} {
 	global postProgress
-	lappend postProgress $x
+	lappend postProgress $y
     }
     set postProgress {}
     set t [http::geturl $posturl -query $query \
-	    -queryprogress postProgress]
+	    -queryprogress postProgress -queryblocksize 16384]
     http::wait $t
     list [http::status $t] [string length $query] $postProgress [http::data $t]
-} {ok 122879 {16384 32768 49152 65536 81920 98304 114688 131072} {Got 122879 bytes}}
+} {ok 122879 {16384 32768 49152 65536 81920 98304 114688 122879} {Got 122879 bytes}}
+
+test http-3.11 {http::geturl querychannel with -command} {
+    set query foo=bar
+    set sep ""
+    set i 0
+    # Create about 120K of query data
+    while {$i < 14} {
+	incr i
+	append query $sep$query
+	set sep &
+    }
+    ::tcltest::makeFile $query outdata
+    set fp [open outdata]
+
+    proc asyncCB {token} {
+	global postResult
+	lappend postResult [http::data $token]
+    }
+    set postResult [list ]
+    set t [http::geturl $posturl -querychannel $fp]
+    http::wait $t
+    set testRes [list [http::status $t] [string length $query] [http::data $t]]
+
+    # Now do async
+    http::cleanup $t
+    close $fp
+    set fp [open outdata]
+    set t [http::geturl $posturl -querychannel $fp -command asyncCB]
+    set postResult [list PostStart]
+    http::wait $t
+
+    lappend testRes [http::status $t] $postResult
+    set testRes
+} {ok 122879 {Got 122880 bytes} ok {PostStart {Got 122880 bytes}}}
 
 
 test http-4.1 {http::Event} {

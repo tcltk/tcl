@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.8 1999/11/19 23:10:17 hobbs Exp $
+'\" RCS: @(#) $Id: http.n,v 1.9 2000/03/19 22:32:25 sandeep Exp $
 '\" 
 .so man.macros
 .TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
@@ -129,7 +129,7 @@ At most
 \fIsize\fR
 bytes are read at once.  After each block, a call to the
 \fB\-progress\fR
-callback is made.
+callback is made (if that option is specified).
 .TP
 \fB\-channel\fP \fIname\fP
 Copy the URL contents to channel \fIname\fR instead of saving it in
@@ -204,6 +204,28 @@ This flag causes \fB::http::geturl\fR to do a POST request that passes the
 \fIquery\fR to the server. The \fIquery\fR must be a x-url-encoding
 formatted query.  The \fB::http::formatQuery\fR procedure can be used to
 do the formatting.
+.TP
+\fB\-queryblocksize\fP \fIsize\fP
+The blocksize used when posting query data to the URL.
+At most 
+\fIsize\fR
+bytes are written at once.  After each block, a call to the
+\fB\-queryprogress\fR
+callback is made (if that option is specified).
+.TP
+\fB\-querychannel\fP \fIchannelID\fP
+This flag causes \fB::http::geturl\fR to do a POST request that passes the
+data contained in \fIchannelID\fR to the server. The data contained in \fIchannelID\fR must be a x-url-encoding
+formatted query unless the \fB\-type\fP option below is used.
+If a Content-Length header is not specified via the \fB\-headers\fR options,
+\fB::http::geturl\fR attempts to determine the size of the post data
+in order to create that header.  If it is
+unable to determine the size, it returns an error.
+.TP
+\fB\-queryprogress\fP \fIcallback\fP
+The \fIcallback\fR is made after each transfer of data to the URL
+(i.e. POST) and acts exactly like the \fB\-progress\fR option (the
+callback format is the same).
 .TP
 \fB\-timeout\fP \fImilliseconds\fP
 If \fImilliseconds\fR is non-zero, then \fB::http::geturl\fR sets up a timeout
