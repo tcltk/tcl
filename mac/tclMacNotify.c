@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacNotify.c,v 1.4 1999/07/02 06:04:55 welch Exp $
+ * RCS: @(#) $Id: tclMacNotify.c,v 1.5 1999/08/05 06:17:51 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -41,6 +41,13 @@ extern pascal QHdrPtr GetEventQueue(void)
 #pragma import list GetEventQueue
 #define GetEvQHdr() GetEventQueue()
 #endif
+
+/*
+ * Need this for replacing Tcl_SetTimer and Tcl_WaitForEvent defined 
+ * in THIS file with ones defined in the stub table.
+ */
+ 
+extern TclStubs tclStubs;
 
 /*
  * The follwing static indicates whether this module has been initialized.
