@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.54 2003/11/01 01:31:21 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.55 2003/12/15 00:49:38 davygrvy Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -706,11 +706,7 @@ EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize,
 				CONST char * format, CONST struct tm * t, 
 				int useGMT));
 #endif
-#ifndef TclpCheckStackSpace_TCL_DECLARED
-#define TclpCheckStackSpace_TCL_DECLARED
-/* 135 */
-EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
-#endif
+/* Slot 135 is reserved */
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
 #ifndef TclGetEnv_TCL_DECLARED
@@ -1125,7 +1121,7 @@ typedef struct TclIntStubs {
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
     struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
     size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t, int useGMT)); /* 134 */
-    int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
+    void *reserved135;
     void *reserved136;
     void *reserved137;
     CONST84_RETURN char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
@@ -1644,10 +1640,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclpStrftime \
 	(tclIntStubsPtr->tclpStrftime) /* 134 */
 #endif
-#ifndef TclpCheckStackSpace
-#define TclpCheckStackSpace \
-	(tclIntStubsPtr->tclpCheckStackSpace) /* 135 */
-#endif
+/* Slot 135 is reserved */
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
 #ifndef TclGetEnv
