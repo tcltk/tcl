@@ -1,3 +1,13 @@
+2001-04-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/mkLinks: Updated to contain the new manpage.
+
+	* doc/Environment.3: New manpage, describes Tcl_PutEnv
+	  [Bug #219171]. 
+
+	* doc/Macintosh.3: New manpage describing the macintosh specific
+	  parts of the public API [Bug #219169].
+
 2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
@@ -10,7 +20,7 @@
 
 	* generic/tclTest.c:
 	* tests/io.tests: TIP #10 followup correcting a problem with the
-	  original patch because of the lacck of 'testthread id' for a
+	  original patch because of the lack of 'testthread id' for a
 	  non-threaded compilation.
 
 2001-04-04  Kevin Kenny <kennykb@acm.org>
