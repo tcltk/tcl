@@ -1,3 +1,10 @@
+2003-11-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c (TclFindEncodings):	Normalize the path
+	of the executable before passing to TclpInitLibraryPath() to avoid
+	buggy handling of paths containing "..".  [Bug 832657]
+	* tests/unixInit.test (unixInit-2.10): New test for fixed bug.
+
 2003-11-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: added 'test' target.
