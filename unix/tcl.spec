@@ -1,4 +1,4 @@
-# $Id: tcl.spec,v 1.2 2000/03/24 23:15:29 ericm Exp $
+# $Id: tcl.spec,v 1.1 2000/02/14 22:40:56 ericm Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
 %define version 8.3.0
@@ -43,11 +43,9 @@ rm -rf $RPM_BUILD_ROOT
 # then to create the files list for tk, uncomment tk, comment out tcl,
 # then rm -rf $RPM_BUILD_ROOT then rpm --short-circuit -bi then redo a find,
 # and remove the files in specific directories which suffice by themselves.
-%files
+%files -n tcl
 %defattr(-,root,root)
 %{directory}/lib
 %{directory}/bin
 %{directory}/include
-%{directory}/man/man1
-%{directory}/man/man3
-%{directory}/man/mann
+%{directory}/man

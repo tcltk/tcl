@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.4 2000/03/27 18:34:32 ericm Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.3 1999/04/16 00:48:04 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -262,10 +262,10 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 
 #if defined(__mips) || defined(mips)
   status = lseek (relocatedFd,
-	  (off_t) N_TXTOFF (relocatedHead.ex_f, relocatedHead.ex_o),
-	  SEEK_SET);
+		  N_TXTOFF (relocatedHead.ex_f, relocatedHead.ex_o),
+		  SEEK_SET);
 #else
-  status = lseek (relocatedFd, (off_t) N_TXTOFF (relocatedHead), SEEK_SET);
+  status = lseek (relocatedFd, N_TXTOFF (relocatedHead), SEEK_SET);
 #endif
   if (status < 0) {
     goto ioError;

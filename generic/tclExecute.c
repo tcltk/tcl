@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10 2000/03/27 22:18:55 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.9 1999/12/12 02:26:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1779,39 +1779,30 @@ TclExecuteByteCode(interp, codePtr)
 		valuePtr  = POP_OBJECT();
 		t1Ptr = valuePtr->typePtr;
 		t2Ptr = value2Ptr->typePtr;
-
-		/*
-		 * We only want to coerce numeric validation if
-		 * neither type is NULL.  A NULL type means the arg is
-		 * essentially an empty object ("", {} or [list]).
-		 */
-		if (!((((t1Ptr == NULL) && (valuePtr->bytes == NULL))
-			|| (valuePtr->bytes && (valuePtr->length == 0)))
-			|| (((t2Ptr == NULL) && (value2Ptr->bytes == NULL))
-				|| (value2Ptr->bytes && (value2Ptr->length == 0))))) {
-		    if ((t1Ptr != &tclIntType) && (t1Ptr != &tclDoubleType)) {
-			s1 = Tcl_GetStringFromObj(valuePtr, &length);
-			if (TclLooksLikeInt(s1, length)) {
-			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-				    valuePtr, &i);
-			} else {
-			    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-				    valuePtr, &d1);
-			}
-			t1Ptr = valuePtr->typePtr;
+		
+		if ((t1Ptr != &tclIntType) && (t1Ptr != &tclDoubleType)) {
+		    s1 = Tcl_GetStringFromObj(valuePtr, &length);
+		    if (TclLooksLikeInt(s1, length)) {
+			(void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
+				valuePtr, &i);
+		    } else {
+			(void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
+				valuePtr, &d1);
 		    }
-		    if ((t2Ptr != &tclIntType) && (t2Ptr != &tclDoubleType)) {
-			s2 = Tcl_GetStringFromObj(value2Ptr, &length);
-			if (TclLooksLikeInt(s2, length)) {
-			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-				    value2Ptr, &i2);
-			} else {
-			    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-				    value2Ptr, &d2);
-			}
-			t2Ptr = value2Ptr->typePtr;
-		    }
+		    t1Ptr = valuePtr->typePtr;
 		}
+		if ((t2Ptr != &tclIntType) && (t2Ptr != &tclDoubleType)) {
+		    s2 = Tcl_GetStringFromObj(value2Ptr, &length);
+		    if (TclLooksLikeInt(s2, length)) {
+			(void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
+				value2Ptr, &i2);
+		    } else {
+			(void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
+				value2Ptr, &d2);
+		    }
+		    t2Ptr = value2Ptr->typePtr;
+		}
+
 		if (((t1Ptr != &tclIntType) && (t1Ptr != &tclDoubleType))
 		        || ((t2Ptr != &tclIntType) && (t2Ptr != &tclDoubleType))) {
 		    /*
