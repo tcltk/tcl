@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.29 2003/03/14 16:28:07 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.30 2003/04/08 22:55:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -559,7 +559,7 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     
     if (objc >= 3) {		/* process the optional info argument */
 	info = Tcl_GetStringFromObj(objv[2], &infoLen);
-	if (*info != 0) {
+	if (infoLen > 0) {
 	    Tcl_AddObjErrorInfo(interp, info, infoLen);
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
