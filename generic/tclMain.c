@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.11 2000/11/03 20:30:27 hobbs Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.12 2001/04/04 23:26:03 dgp Exp $
  */
 
 #include "tcl.h"
@@ -404,7 +404,8 @@ Tcl_Main(argc, argv, appInitProc)
  */
 
 void
-Tcl_SetMainLoop(Tcl_MainLoopProc *proc)
+Tcl_SetMainLoop(proc)
+    Tcl_MainLoopProc *proc;
 {
     mainLoopProc = proc;
 }
