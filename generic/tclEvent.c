@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.50 2004/10/24 22:25:12 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.51 2004/11/13 00:19:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -20,8 +20,8 @@
 /*
  * The data structure below is used to report background errors.  One
  * such structure is allocated for each error;  it holds information
- * about the interpreter and the error until bgerror can be invoked
- * later as an idle handler.
+ * about the interpreter and the error until an idle handler command
+ * can be invoked.
  */
 
 typedef struct BgError {
@@ -42,6 +42,7 @@ typedef struct BgError {
 
 typedef struct ErrAssocData {
     Tcl_Interp *interp;		/* Interpreter in which error occurred. */
+    Tcl_Obj *cmdPrefix;		/* First word(s) of the handler command */
     BgError *firstBgPtr;	/* First in list of all background errors
 				 * waiting to be processed for this
 				 * interpreter (NULL if none). */
@@ -142,9 +143,9 @@ static char *		VwaitVarProc _ANSI_ARGS_((ClientData clientData,
  *	None.
  *
  * Side effects:
- *	The command "bgerror" is invoked later as an idle handler to
- *	process the error, passing it the error message.  If that fails,
- *	then an error message is output on stderr.
+ *	A handler command is invoked later as an idle handler to
+ *	process the error, passing it the interp result and return
+ *	options.  
  *
  *----------------------------------------------------------------------
  */
@@ -160,27 +161,13 @@ Tcl_BackgroundError(interp)
     errPtr = (BgError *) ckalloc(sizeof(BgError));
     errPtr->errorMsg = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(errPtr->errorMsg);
-    errPtr->returnOpts = TclGetReturnOptions(interp, TCL_ERROR);
+    errPtr->returnOpts = Tcl_GetReturnOptions(interp, TCL_ERROR);
     Tcl_IncrRefCount(errPtr->returnOpts);
     errPtr->nextPtr = NULL;
 
+    (void) TclGetBgErrorHandler(interp);
     assocPtr = (ErrAssocData *) Tcl_GetAssocData(interp, "tclBgError",
 	    (Tcl_InterpDeleteProc **) NULL);
-    if (assocPtr == NULL) {
-
-	/*
-	 * This is the first time a background error has occurred in
-	 * this interpreter.  Create associated data to keep track of
-	 * pending error reports.
-	 */
-
-	assocPtr = (ErrAssocData *) ckalloc(sizeof(ErrAssocData));
-	assocPtr->interp = interp;
-	assocPtr->firstBgPtr = NULL;
-	assocPtr->lastBgPtr = NULL;
-	Tcl_SetAssocData(interp, "tclBgError", BgErrorDeleteProc,
-		(ClientData) assocPtr);
-    }
     if (assocPtr->firstBgPtr == NULL) {
 	assocPtr->firstBgPtr = errPtr;
 	Tcl_DoWhenIdle(HandleBgErrors, (ClientData) assocPtr);
@@ -203,7 +190,7 @@ Tcl_BackgroundError(interp)
  *	None.
  *
  * Side effects:
- *	Depends on what actions "bgerror" takes for the errors.
+ *	Depends on what actions the handler command takes for the errors.
  *
  *----------------------------------------------------------------------
  */
@@ -215,7 +202,6 @@ HandleBgErrors(clientData)
     ErrAssocData *assocPtr = (ErrAssocData *) clientData;
     Tcl_Interp *interp = assocPtr->interp;
     BgError *errPtr;
-    Tcl_Obj *objv[2];
 
     /*
      * Not bothering to save/restore the interp state.  Assume that
@@ -224,109 +210,29 @@ HandleBgErrors(clientData)
      * Tcl_DoOneEvent() that could lead us here.
      */
 
-    objv[0] = Tcl_NewStringObj("bgerror", -1);
-    Tcl_IncrRefCount(objv[0]);
-
     Tcl_Preserve((ClientData) assocPtr);
     Tcl_Preserve((ClientData) interp);
     while (assocPtr->firstBgPtr != NULL) {
-	int code;
-	Tcl_Obj *keyPtr, *valuePtr;
+	int code, prefixObjc;
+	Tcl_Obj **prefixObjv, **tempObjv;
+
 	errPtr = assocPtr->firstBgPtr;
 
-	/*
-	 * Restore important state variables to what they were at
-	 * the time the error occurred.
-	 *
-	 * Need to set the variables, not the interp fields, because
-	 * Tcl_EvalObjv() calls Tcl_ResetResult() which would destroy
-	 * anything we write to the interp fields.
-	 */
-
-	keyPtr = Tcl_NewStringObj("-errorcode", -1);
-	Tcl_IncrRefCount(keyPtr);
-	Tcl_DictObjGet(NULL, errPtr->returnOpts, keyPtr, &valuePtr);
-	Tcl_DecrRefCount(keyPtr);
-	if (valuePtr) {
-	    Tcl_SetVar2Ex(interp, "errorCode", NULL,
-		    valuePtr, TCL_GLOBAL_ONLY);
-	}
-	keyPtr = Tcl_NewStringObj("-errorinfo", -1);
-	Tcl_IncrRefCount(keyPtr);
-	Tcl_DictObjGet(NULL, errPtr->returnOpts, keyPtr, &valuePtr);
-	Tcl_DecrRefCount(keyPtr);
-	if (valuePtr) {
-	    Tcl_SetVar2Ex(interp, "errorInfo", NULL,
-		    valuePtr, TCL_GLOBAL_ONLY);
-	}
-
-	/*
-	 * Create and invoke the bgerror command.
-	 */
-
-	objv[1] = errPtr->errorMsg;
-	Tcl_IncrRefCount(objv[1]);
-	
+	Tcl_IncrRefCount(assocPtr->cmdPrefix);
+	Tcl_ListObjGetElements(NULL, assocPtr->cmdPrefix,
+		&prefixObjc, &prefixObjv);
+	tempObjv = (Tcl_Obj **) ckalloc((prefixObjc+2)*sizeof(Tcl_Obj *));
+	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
+	tempObjv[prefixObjc] = errPtr->errorMsg;
+	tempObjv[prefixObjc+1] = errPtr->returnOpts;
 	Tcl_AllowExceptions(interp);
-	code = Tcl_EvalObjv(interp, 2, objv, TCL_EVAL_GLOBAL);
-	if (code == TCL_ERROR) {
-
-            /*
-             * If the interpreter is safe, we look for a hidden command
-             * named "bgerror" and call that with the error information.
-             * Otherwise, simply ignore the error. The rationale is that
-             * this could be an error caused by a malicious applet trying
-             * to cause an infinite barrage of error messages. The hidden
-             * "bgerror" command can be used by a security policy to
-             * interpose on such attacks and e.g. kill the applet after a
-             * few attempts.
-             */
-
-            if (Tcl_IsSafe(interp)) {
-		Tcl_ResetResult(interp);
-                TclObjInvoke(interp, 2, objv, TCL_INVOKE_HIDDEN);
-            } else {
-
-		/*
-		 * We have to get the error output channel at the latest
-		 * possible time, because the eval (above) might have
-		 * changed the channel.
-		 */
-            
-		Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
-		if (errChannel != (Tcl_Channel) NULL) {
-		    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
-
-		    Tcl_IncrRefCount(resultPtr);
-		    if (Tcl_FindCommand(interp, "bgerror",
-			    NULL, TCL_GLOBAL_ONLY) == NULL) {
-			if (valuePtr) {
-			    Tcl_WriteObj(errChannel, valuePtr);
-			}
-			Tcl_WriteChars(errChannel, "\n", -1);
-                    } else {
-			Tcl_WriteChars(errChannel,
-				"bgerror failed to handle background error.\n",
-				-1);
-			Tcl_WriteChars(errChannel, "    Original error: ", -1);
-			Tcl_WriteObj(errChannel, errPtr->errorMsg);
-			Tcl_WriteChars(errChannel, "\n", -1);
-			Tcl_WriteChars(errChannel,
-				"    Error in bgerror: ", -1);
-			Tcl_WriteObj(errChannel, resultPtr);
-			Tcl_WriteChars(errChannel, "\n", -1);
-                    }
-		    Tcl_DecrRefCount(resultPtr);
-                    Tcl_Flush(errChannel);
-		}
-	    }
-	}
+	code = Tcl_EvalObjv(interp, prefixObjc+2, tempObjv, TCL_EVAL_GLOBAL);
 
 	/*
 	 * Discard the command and the information about the error report.
 	 */
 
-	Tcl_DecrRefCount(objv[1]);
+	Tcl_DecrRefCount(assocPtr->cmdPrefix);
 	Tcl_DecrRefCount(errPtr->errorMsg);
 	Tcl_DecrRefCount(errPtr->returnOpts);
 	assocPtr->firstBgPtr = errPtr->nextPtr;
@@ -339,9 +245,29 @@ HandleBgErrors(clientData)
 	     */
 	    break;
 	}
-        
-    }
+	if ((code == TCL_ERROR) && !Tcl_IsSafe(interp)) {
+	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
+	    if (errChannel != (Tcl_Channel) NULL) {
+		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
+		Tcl_Obj *keyPtr = Tcl_NewStringObj("-errorinfo", -1);
+		Tcl_Obj *valuePtr;
 
+		Tcl_IncrRefCount(keyPtr);
+		Tcl_DictObjGet(NULL, options, keyPtr, &valuePtr);
+		Tcl_DecrRefCount(keyPtr);
+
+		Tcl_WriteChars(errChannel,
+			"error in background error handler:\n", -1);
+		if (valuePtr) {
+		    Tcl_WriteObj(errChannel, valuePtr);
+		} else {
+		    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+		}
+		Tcl_WriteChars(errChannel, "\n", 1);
+                Tcl_Flush(errChannel);
+	    }
+	}
+    }
     /* Cleanup any error reports we didn't do (due to a TCL_BREAK) */
     while (assocPtr->firstBgPtr != NULL) {
 	errPtr = assocPtr->firstBgPtr;
@@ -352,10 +278,200 @@ HandleBgErrors(clientData)
     }
 
     assocPtr->lastBgPtr = NULL;
-    Tcl_DecrRefCount(objv[0]);
-
     Tcl_Release((ClientData) interp);
     Tcl_Release((ClientData) assocPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDefaultBgErrorHandlerObjCmd --
+ *
+ *	This procedure is invoked to process the "::tcl::Bgerror" Tcl
+ *	command.  It is the default handler command registered with
+ *	[interp bgerror] for the sake of compatibility with older Tcl
+ *	releases.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	Depends on what actions the "bgerror" command takes for the errors.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclDefaultBgErrorHandlerObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;           /* Not used. */
+    Tcl_Interp *interp;         /* Current interpreter. */
+    int objc;                   /* Number of arguments. */
+    Tcl_Obj *CONST objv[];      /* Argument objects. */
+{
+    Tcl_Obj *keyPtr, *valuePtr;
+    Tcl_Obj *tempObjv[2];
+    int code;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "msg options");
+	return TCL_ERROR;
+    }
+
+    /*
+     * Restore important state variables to what they were at
+     * the time the error occurred.
+     *
+     * Need to set the variables, not the interp fields, because
+     * Tcl_EvalObjv() calls Tcl_ResetResult() which would destroy
+     * anything we write to the interp fields.
+     */
+
+    keyPtr = Tcl_NewStringObj("-errorcode", -1);
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    if (valuePtr) {
+	Tcl_SetVar2Ex(interp, "errorCode", NULL, valuePtr, TCL_GLOBAL_ONLY);
+    }
+
+    keyPtr = Tcl_NewStringObj("-errorinfo", -1);
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    if (valuePtr) {
+	Tcl_SetVar2Ex(interp, "errorInfo", NULL, valuePtr, TCL_GLOBAL_ONLY);
+    }
+
+    /* Create and invoke the bgerror command. */
+
+    tempObjv[0] = Tcl_NewStringObj("bgerror", -1);
+    Tcl_IncrRefCount(tempObjv[0]);
+    tempObjv[1] = objv[1];
+    Tcl_AllowExceptions(interp);
+    code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
+    if (code == TCL_ERROR) {
+        /*
+         * If the interpreter is safe, we look for a hidden command
+         * named "bgerror" and call that with the error information.
+         * Otherwise, simply ignore the error. The rationale is that
+         * this could be an error caused by a malicious applet trying
+         * to cause an infinite barrage of error messages. The hidden
+         * "bgerror" command can be used by a security policy to
+         * interpose on such attacks and e.g. kill the applet after a
+         * few attempts.
+         */
+	if (Tcl_IsSafe(interp)) {
+	    Tcl_ResetResult(interp);
+	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
+	} else {
+	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
+	    if (errChannel != (Tcl_Channel) NULL) {
+		Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
+
+		Tcl_IncrRefCount(resultPtr);
+		if (Tcl_FindCommand(interp, "bgerror",
+			    NULL, TCL_GLOBAL_ONLY) == NULL) {
+		    if (valuePtr) {
+			Tcl_WriteObj(errChannel, valuePtr);
+			Tcl_WriteChars(errChannel, "\n", -1);
+		    }
+                } else {
+		    Tcl_WriteChars(errChannel,
+			    "bgerror failed to handle background error.\n", -1);
+		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
+		    Tcl_WriteObj(errChannel, objv[1]);
+		    Tcl_WriteChars(errChannel, "\n", -1);
+		    Tcl_WriteChars(errChannel,
+				"    Error in bgerror: ", -1);
+		    Tcl_WriteObj(errChannel, resultPtr);
+		    Tcl_WriteChars(errChannel, "\n", -1);
+                }
+		Tcl_DecrRefCount(resultPtr);
+                Tcl_Flush(errChannel);
+	    }
+	}
+	code = TCL_OK;
+    }
+    Tcl_DecrRefCount(tempObjv[0]);
+    Tcl_ResetResult(interp);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetBgErrorHandler --
+ *
+ *	This procedure sets the command prefix to be used to handle
+ *	background errors in interp.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Error handler is registered.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclSetBgErrorHandler(interp, cmdPrefix)
+    Tcl_Interp *interp;
+    Tcl_Obj *cmdPrefix;
+{
+    ErrAssocData *assocPtr = (ErrAssocData *) Tcl_GetAssocData(interp,
+	    "tclBgError", (Tcl_InterpDeleteProc **) NULL);
+
+    if (cmdPrefix == NULL) {
+	Tcl_Panic("TclSetBgErrorHandler: NULL cmdPrefix argument");
+    }
+    if (assocPtr == NULL) {
+	/* First access: initialize */
+	assocPtr = (ErrAssocData *) ckalloc(sizeof(ErrAssocData));
+	assocPtr->interp = interp;
+	assocPtr->cmdPrefix = NULL;
+	assocPtr->firstBgPtr = NULL;
+	assocPtr->lastBgPtr = NULL;
+	Tcl_SetAssocData(interp, "tclBgError", BgErrorDeleteProc,
+		(ClientData) assocPtr);
+    }
+    if (assocPtr->cmdPrefix) {
+	Tcl_DecrRefCount(assocPtr->cmdPrefix);
+    }
+    assocPtr->cmdPrefix = cmdPrefix;
+    Tcl_IncrRefCount(assocPtr->cmdPrefix);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetBgErrorHandler --
+ *
+ *	This procedure retrieves the command prefix currently used
+ *	to handle background errors in interp.
+ *
+ * Results:
+ *	A (Tcl_Obj *) to a list of words (command prefix).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetBgErrorHandler(interp)
+    Tcl_Interp *interp;
+{
+    ErrAssocData *assocPtr = (ErrAssocData *) Tcl_GetAssocData(interp,
+	    "tclBgError", (Tcl_InterpDeleteProc **) NULL);
+
+    if (assocPtr == NULL) {
+	TclSetBgErrorHandler(interp, Tcl_NewStringObj("::tcl::Bgerror", -1));
+	assocPtr = (ErrAssocData *) Tcl_GetAssocData(interp,
+	    "tclBgError", (Tcl_InterpDeleteProc **) NULL);
+    }
+    return assocPtr->cmdPrefix;
 }
 
 /*
@@ -394,6 +510,7 @@ BgErrorDeleteProc(clientData, interp)
 	ckfree((char *) errPtr);
     }
     Tcl_CancelIdleCall(HandleBgErrors, (ClientData) assocPtr);
+    Tcl_DecrRefCount(assocPtr->cmdPrefix);
     Tcl_EventuallyFree((ClientData) assocPtr, TCL_DYNAMIC);
 }
 

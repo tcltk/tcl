@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.21 2004/10/25 20:24:13 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.22 2004/11/13 00:19:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -31,7 +31,7 @@ static void		SetupAppendBuffer _ANSI_ARGS_((Interp *iPtr,
 
 /*
  *  This structure is used to take a snapshot of the interpreter
- *  state in TclSaveInterpState.  You can snapshot the state,
+ *  state in Tcl_SaveInterpState.  You can snapshot the state,
  *  execute a command, and then back up to the result or the
  *  error that was previously in progress.
  */
@@ -50,7 +50,7 @@ typedef struct InterpState {
 /*
  *----------------------------------------------------------------------
  *
- * TclSaveInterpState --
+ * Tcl_SaveInterpState --
  *
  *      Fills a token with a snapshot of the current state of the
  *      interpreter.  The snapshot can be restored at any point by
@@ -69,8 +69,8 @@ typedef struct InterpState {
  *----------------------------------------------------------------------
  */
 
-TclInterpState
-TclSaveInterpState(interp, status)
+Tcl_InterpState
+Tcl_SaveInterpState(interp, status)
     Tcl_Interp* interp;     /* Interpreter's state to be saved */
     int status;             /* status code for current operation */
 {
@@ -95,20 +95,20 @@ TclSaveInterpState(interp, status)
     }
     statePtr->objResult = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(statePtr->objResult);
-    return (TclInterpState) statePtr;
+    return (Tcl_InterpState) statePtr;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclRestoreInterpState --
+ * Tcl_RestoreInterpState --
  *
  *      Accepts an interp and a token previously returned by
- *      TclSaveInterpState.  Restore the state of the interp
- *      to what it was at the time of the TclSaveInterpState call.
+ *      Tcl_SaveInterpState.  Restore the state of the interp
+ *      to what it was at the time of the Tcl_SaveInterpState call.
  *
  * Results:
- *	Returns the status value originally passed in to TclSaveInterpState.
+ *	Returns the status value originally passed in to Tcl_SaveInterpState.
  *
  * Side effects:
  *	Restores the interp state and frees memory held by token.
@@ -117,9 +117,9 @@ TclSaveInterpState(interp, status)
  */
 
 int
-TclRestoreInterpState(interp, state)
+Tcl_RestoreInterpState(interp, state)
     Tcl_Interp* interp;		/* Interpreter's state to be restored*/
-    TclInterpState state;	/* saved interpreter state */
+    Tcl_InterpState state;	/* saved interpreter state */
 {
     Interp *iPtr = (Interp *)interp;
     InterpState *statePtr = (InterpState *)state;
@@ -152,16 +152,16 @@ TclRestoreInterpState(interp, state)
 	Tcl_IncrRefCount(iPtr->returnOpts);
     }
     Tcl_SetObjResult(interp, statePtr->objResult);
-    TclDiscardInterpState(state);
+    Tcl_DiscardInterpState(state);
     return status;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclDiscardInterpState --
+ * Tcl_DiscardInterpState --
  *
- *      Accepts a token previously returned by TclSaveInterpState.
+ *      Accepts a token previously returned by Tcl_SaveInterpState.
  *      Frees the memory it uses.
  *
  * Results:
@@ -174,8 +174,8 @@ TclRestoreInterpState(interp, state)
  */
 
 void
-TclDiscardInterpState(state)
-    TclInterpState state;	/* saved interpreter state */
+Tcl_DiscardInterpState(state)
+    Tcl_InterpState state;	/* saved interpreter state */
 {
     InterpState *statePtr = (InterpState *)state;
 
@@ -1366,7 +1366,7 @@ error:
 /*
  *-------------------------------------------------------------------------
  *
- * TclGetReturnOptions --
+ * Tcl_GetReturnOptions --
  *
  *	Packs up the interp state into a dictionary of return options.
  *
@@ -1380,7 +1380,7 @@ error:
  */
 
 Tcl_Obj *
-TclGetReturnOptions(interp, result)
+Tcl_GetReturnOptions(interp, result)
     Tcl_Interp *interp;
     int result;
 {
@@ -1423,7 +1423,7 @@ TclGetReturnOptions(interp, result)
 /*
  *-------------------------------------------------------------------------
  *
- * TclSetReturnOptions --
+ * Tcl_SetReturnOptions --
  *
  *	Accepts an interp and a  dictionary of return options, and sets
  *	the return options of the interp to match the dictionary.
@@ -1441,7 +1441,7 @@ TclGetReturnOptions(interp, result)
  */
 
 int
-TclSetReturnOptions(interp, options)
+Tcl_SetReturnOptions(interp, options)
     Tcl_Interp *interp;
     Tcl_Obj *options;
 {
@@ -1513,8 +1513,8 @@ TclTransferResult(sourceInterp, result, targetInterp)
 	return;
     }
 
-    TclSetReturnOptions(targetInterp,
-	    TclGetReturnOptions(sourceInterp, result));
+    Tcl_SetReturnOptions(targetInterp,
+	    Tcl_GetReturnOptions(sourceInterp, result));
     iPtr->flags &= ~(ERR_ALREADY_LOGGED);
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);
