@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.36 2004/01/21 19:59:33 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.37 2004/01/26 13:33:59 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2340,7 +2340,9 @@ test fCmd-28.12 {file link: cd into a link} {linkDirectory} {
     # (on windows the former, on unix the latter, I believe)
     if {([file normalize $up] != [file normalize $orig]) \
       && ([file normalize $up] != [file normalize [file dirname abc.dir]])} {
-	set res "wrong directory with 'cd $link ; cd ..'"
+	set res "wrong directory with 'cd abc.link ; cd ..': \
+	  \"[file normalize $up]\" should be \"[file normalize $orig]\" or\
+	  \"[file normalize [file dirname abc.dir]]\""
     } else {
 	set res "ok"
     }
