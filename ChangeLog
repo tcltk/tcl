@@ -1,3 +1,11 @@
+2004-06-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c: Static TclFindEncodings -> FindEncodings.
+	* generic/tclInt.h:	Updated TclpFindExecutable() so that failed
+	* generic/tclUtil.c:	attempts to find the executable are saved
+	* unix/tclUnixFile.c:	just as successful finds are.  [Patch 966053]
+	* unix/tclUnixTest.c:
+
 2004-06-18  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/winFCmd.test (winFCmd-16.12): Changed test to
