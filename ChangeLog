@@ -1,3 +1,19 @@
+2002-02-12  David Gravereaux <davygrvy@pobox.com>
+
+	* djgpp/ (new directory)
+	* djgpp/Makefile (new):
+	* unix/tclAppInit.c:
+	* unix/tclMtherr.c:
+	* unix/tclUnixFCmd.c:
+	* unix/tclUnixFile.c:
+	* unix/tclUnixInit.c:
+	* unix/tclUnixPort.h:  Early stage of DJGPP support for building
+	Tcl on DOS.  Dynamic loading isn't working, yet.  Requires watt32
+	for the TCP/IP stack.  No autoconf, yet.  Barely tested, but
+	makes a working exe that runs Tcl in protected-mode, flat memory.
+	[exec] and pipes will need the most work as multi-tasking on DOS
+	has to be carefully.
+
 2002-02-10  Kevin Kenny  <kennykb@acm.org>
 
 	* doc/CrtObjCmd.3:

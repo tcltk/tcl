@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.15 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.16 2002/02/12 14:24:27 davygrvy Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -349,6 +349,7 @@ DoCopyFile(src, dst)
     }
 
     switch ((int) (srcStatBuf.st_mode & S_IFMT)) {
+#ifndef DJGPP
         case S_IFLNK: {
 	    char link[MAXPATHLEN];
 	    int length;
@@ -363,6 +364,7 @@ DoCopyFile(src, dst)
 	    }
 	    break;
 	}
+#endif
         case S_IFBLK:
         case S_IFCHR: {
 	    if (mknod(dst, srcStatBuf.st_mode,		/* INTL: Native. */

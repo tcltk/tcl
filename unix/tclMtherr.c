@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMtherr.c,v 1.4 2001/11/23 01:40:13 das Exp $
+ * RCS: @(#) $Id: tclMtherr.c,v 1.5 2002/02/12 14:23:57 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -35,9 +35,11 @@ extern int errno;			/* Use errno from tclExecute.c. */
  */
 
 #ifndef NEED_MATHERR
+#ifndef DJGPP
 struct exception {
     int type;
 };
+#endif
 #define DOMAIN 0
 #define SING 0
 #endif
