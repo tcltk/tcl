@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.6 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.7 2002/10/18 23:58:18 hobbs Exp $
 '\" 
 .so man.macros
 .TH registry n 1.0 registry "Tcl Bundled Packages"
@@ -49,6 +49,24 @@ registry key names separated by backslash (\fB\e\fR) characters.
 \fIOption\fR indicates what to do with the registry key name.  Any
 unique abbreviation for \fIoption\fR is acceptable.  The valid options
 are:
+.TP
+.VS 8.4
+\fBregistry broadcast \fIkeyName\fR ?\fI-timeout milliseconds\fR?
+.
+Sends a broadcast message to the system and running programs to notify them
+of certain updates.  This is necessary to propagate changes to key registry
+keys like Environment.  The timeout specifies the amount of time, in
+milliseconds, to wait for applications to respond to the broadcast message.
+It defaults to 3000.  The following example demonstrates how to add a path
+to the global Environment and notify applications of the change without
+reguiring a logoff/logon step (assumes admin privileges):
+.CS
+set regPath {HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment}
+set curPath [registry get $regPath "Path"]
+registry set $regPath "Path" "$curPath;$addPath"
+registry broadcast "Environment"
+.CE
+.VE 8.4
 .TP
 \fBregistry delete \fIkeyName\fR ?\fIvalueName\fR?
 .
