@@ -1,3 +1,12 @@
+2001-09-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/util.test (util-8.1): Test derived from code to detect the
+	problem, but the test always works in the C locale, so beware if
+	you are maintaining the code.
+	* generic/tclUtil.c (TclNeedSpace): Rewrote to be UTF-8 aware.
+	[Bug 411825, but not that patch which would have added extra
+	spaces if there was a real non-ASCII space involved. ]
+
 2001-09-18 Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* generic/tclIOCmd.c (Tcl_PutsObjCmd): Rewritten to have saner and
