@@ -105,6 +105,13 @@ of any number of characters other than the per-cent sign ('\fI%\fR')
 interspersed with any number of \fIformat groups\fR, which are two-character
 sequences beginning with the per-cent sign.  The permissible format groups,
 and their interpretation, are described under \fBFORMAT GROUPS\fR.
+On \fBclock format\fR, the default format is
+.CS
+%a %b %d %H:%M:%S %z %Y
+.CE
+On \fBclock scan\fR, the lack of a \fI-format\fR option indicates that
+a "free format scan" is requested; see \fBFREE FORM SCAN\fR for a
+description of what happens.
 .TP
 \fB-gmt\fR boolean
 If \fIboolean\fR is true, specifies that a time specified to \fBclock add\fR,
