@@ -1,5 +1,8 @@
 2003-07-23  Daniel Steffen  <das@users.sourceforge.net>
 
+	* unix/Makefile.in: changes to html-tcl & html-tk
+	targets for compatibility with non-gnu makes.
+
 	* unix/Makefile.in: added macosx/README to dist target.
 
 2003-07-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
