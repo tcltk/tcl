@@ -1,3 +1,7 @@
+2005-03-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/FileSystem.3: Defined loadHandle argument. [Bug 1172401]
+
 2005-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tcl.m4, win/configure: do not require cygpath in macros to
