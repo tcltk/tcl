@@ -159,7 +159,7 @@
 
 	* tests/binary.test: 
 	* generic/tclBinary.c (DupByteArrayInternalRep): Fixed bug where
-	type was not being set in duplicated object. 
+	type was not being set in duplicated object. [Bug: 1975, 2047]
 
 1999-04-30    <stanton@scriptics.com>
 	
