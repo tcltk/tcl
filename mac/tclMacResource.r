@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.r,v 1.3 1999/04/16 00:47:21 stanton Exp $
+ * RCS: @(#) $Id: tclMacResource.r,v 1.4 1999/08/16 00:09:30 jingham Exp $
  */
 
 #include <Types.r>
@@ -44,14 +44,14 @@ resource 'vers' (1) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	TCL_PATCH_LEVEL ", by Ray Johnson © Sun Microsystems"
+	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham © Scriptics Inc."
 };
 
 resource 'vers' (2) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	"Simple Tcl Shell " TCL_PATCH_LEVEL " © 1996"
+	"Simple Tcl Shell " TCL_PATCH_LEVEL " © 1996 - 1999"
 };
 
 

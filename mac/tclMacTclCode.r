@@ -34,3 +34,4 @@ read 'TEXT' (TCL_LIBRARY_RESOURCES + 1, "Auto", purgeable) "::library:auto.tcl";
 read 'TEXT' (TCL_LIBRARY_RESOURCES + 2, "Package", purgeable,preload) "::library:package.tcl";
 read 'TEXT' (TCL_LIBRARY_RESOURCES + 3, "History", purgeable) "::library:history.tcl";
 read 'TEXT' (TCL_LIBRARY_RESOURCES + 4, "Word", purgeable,preload) "::library:word.tcl";
+read 'TEXT' (TCL_LIBRARY_RESOURCES + 5, "Parray", purgeable,preload) "::library:parray.tcl";
