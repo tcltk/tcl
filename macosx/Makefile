@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.4 2003/09/25 05:34:18 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.5 2003/10/01 14:34:16 das Exp $
 #
 ########################################################################################################
 
@@ -26,7 +26,7 @@ BINDIR			?= ${PREFIX}/bin
 MANDIR			?= ${PREFIX}/man
 
 # set to non-empty value to install manpages in addition to html help:
-INSTALL_MANPAGES ?= 
+INSTALL_MANPAGES 	?= 
 
 TCL_PACKAGE_PATH	?= "~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl \
 			    ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks \
@@ -168,7 +168,7 @@ ifeq (${EMBEDDED_BUILD},1)
 	-rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&-
 else
 # redo prebinding
-	cd ${INSTALL_ROOT}; \
+	cd ${INSTALL_ROOT}/; \
 	if [ ! -d usr/lib ]; then mkdir -p usr; ln -fs /usr/lib usr/; RM_USRLIB=1; fi; \
 	if [ ! -d System ]; then ln -fs /System .; RM_SYSTEM=1; fi; \
 	redo_prebinding -r . "./${BINDIR}/${TCLSH}"; \
