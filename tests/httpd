@@ -8,6 +8,8 @@
 #
 # SCCS: @(#) httpd 1.2 98/02/20 14:51:59
 
+#set httpLog 1
+
 proc httpd_init {{port 8015}} {
     socket -server httpdAccept $port
 }
@@ -45,8 +47,8 @@ proc httpdAccept {newsock ipaddr port} {
 proc httpdRead { sock } {
     upvar #0 httpd$sock data
 
-    set readCount [gets $sock line]
     if {![info exists data(state)]} {
+	set readCount [gets $sock line]
 	if [regexp {(POST|GET|HEAD) ([^?]+)\??([^ ]*) HTTP/1.0} \
 		$line x data(proto) data(url) data(query)] {
 	    set data(state) mime
@@ -57,12 +59,18 @@ proc httpdRead { sock } {
 	    httpdSockDone $sock
 	}
 	return
-    }
-    # Extra check to handle -1,query,POST case, where we may see eof,
-    # although the data is there, just without a final newline.  A proper
-    # server would handle this better.
-    if {[regexp {Content-Length: (\d+)} $line match length]} {
-	set data(length) $length
+    } elseif {$data(state) == "mime"} {
+	set readCount [gets $sock line]
+	if {[regexp {Content-Length: (\d+)} $line match length]} {
+	    set data(length) $length
+	}
+    } elseif {$data(state) == "query"} {
+	if {![info exist data(length_orig)]} {
+	    set data(length_orig) $data(length)
+	}
+	set line [read $sock $data(length)]
+	set readCount [string length $line]
+	incr data(length) -$readCount
     }
 
     # string compare $readCount 0 maps -1 to -1, 0 to 0, and > 0 to 1
@@ -88,18 +96,17 @@ proc httpdRead { sock } {
 	    }
 	}
 	-1,query,POST	{
-	    if {[info exists data(length)]} {
-		append data(query) [read $sock $data(length)]
-		httpdRespond $sock
-		return
-	    }
 	    httpd_log $sock Error "unexpected eof on <$data(url)> request"
 	    httpdError $sock 404
 	    httpdSockDone $sock
 	}
 	1,query,POST	{
 	    append data(query) $line
-	    httpdRespond $sock
+	    if {$data(length) <= 0} {
+		set data(length) $data(length_orig)
+		httpdRespond $sock
+	    }
+puts stderr "Post Dispatch"
 	}
 	default {
 	    if [eof $sock] {
@@ -124,24 +131,31 @@ proc httpdRespond { sock } {
     global httpd bindata port
     upvar #0 httpd$sock data
 
-    if {[string match *binary* $data(url)]} {
-	set html "$bindata[info hostname]:$port$data(url)"
-	set type application/octet-stream
-    } else {
-	set type text/html
+    switch -glob -- $data(url) {
+	*binary* {
+	    set html "$bindata[info hostname]:$port$data(url)"
+	    set type application/octet-stream
+	}
+	*post* {
+	    set html "Got [string length $data(query)] bytes"
+	    set type text/plain
+	}
+	default {
+	    set type text/html
 
-	set html "<html><head><title>HTTP/1.0 TEST</title></head><body>
+	    set html "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
 <h2>$data(proto) $data(url)</h2>
 "
-	if {[info exists data(query)] && [string length $data(query)]} {
-	    append html "<h2>Query</h2>\n<dl>\n"
-	    foreach {key value} [split $data(query) &=] {
-		append html "<dt>$key<dd>$value\n"
+	    if {[info exists data(query)] && [string length $data(query)]} {
+		append html "<h2>Query</h2>\n<dl>\n"
+		foreach {key value} [split $data(query) &=] {
+		    append html "<dt>$key<dd>$value\n"
+		}
+		append html </dl>\n
 	    }
-	    append html </dl>\n
+	    append html </body></html>
 	}
-	append html </body></html>
     }
 
     if {$data(proto) == "HEAD"} {

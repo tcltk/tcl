@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.14 1999/11/22 20:15:04 welch Exp $
+# RCS: @(#) $Id: http.test,v 1.15 2000/03/17 02:15:18 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -121,6 +121,7 @@ test http-3.3 {http::geturl} {
 set tail /a/b/c
 set url [info hostname]:$port/a/b/c
 set binurl [info hostname]:$port/binary
+set posturl [info hostname]:$port/post
 
 test http-3.4 {http::geturl} {
     set token [http::geturl $url]
@@ -179,6 +180,28 @@ test http-3.9 {http::geturl} {
     set token [http::geturl $url -validate 1]
     http::code $token
 } "HTTP/1.0 200 OK"
+
+test http-3.10 {http::geturl queryprogress} {
+    set query foo=bar
+    set sep ""
+    set i 0
+    # Create about 120K of query data
+    while {$i < 14} {
+	incr i
+	append query $sep$query
+	set sep &
+    }
+
+    proc postProgress {token x y} {
+	global postProgress
+	lappend postProgress $x
+    }
+    set postProgress {}
+    set t [http::geturl $posturl -query $query \
+	    -queryprogress postProgress]
+    http::wait $t
+    list [http::status $t] [string length $query] $postProgress [http::data $t]
+} {ok 122879 {16384 32768 49152 65536 81920 98304 114688 131072} {Got 122879 bytes}}
 
 
 test http-4.1 {http::Event} {
