@@ -1,3 +1,7 @@
+2002-07-04  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* tests/basic.test: Same issue as below; fixed [Bug 575817]
+	
 2002-07-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* All the bugs below are instances of the same problem: The
