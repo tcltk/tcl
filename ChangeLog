@@ -1,5 +1,7 @@
 2004-05-25  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/http.test:	Clear away the custom [bgerror] when done.
+	* tests/io.test:	Take care to use namespace variables.
 	* tests/autoMkindex.test (autoMkindex-5.2): Use variable "result"
 	that gets cleaned up.
 	* tests/exec.test:	Clean up the "path" array.
