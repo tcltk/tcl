@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.178 2004/05/13 12:59:21 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.179 2004/05/25 08:37:31 dkf Exp $
  */
 
 #ifndef _TCL
@@ -923,7 +923,8 @@ typedef struct Tcl_CmdInfo {
     Tcl_Namespace *namespacePtr; /* Points to the namespace that contains
 				  * this command. Note that Tcl_SetCmdInfo
 				  * will not change a command's namespace;
-				  * use Tcl_RenameCommand to do that. */
+				  * use TclRenameCommand or Tcl_Eval (of
+				  * 'rename') to do that. */
 
 } Tcl_CmdInfo;
 

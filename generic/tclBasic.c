@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.102 2004/05/20 13:04:11 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.103 2004/05/25 08:37:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2127,7 +2127,7 @@ TclRenameCommand(interp, oldName, newName)
  *
  *	Modifies various information about a Tcl command. Note that
  *	this procedure will not change a command's namespace; use
- *	Tcl_RenameCommand to do that. Also, the isNativeObjectProc
+ *	TclRenameCommand to do that. Also, the isNativeObjectProc
  *	member of *infoPtr is ignored.
  *
  * Results:
@@ -2166,7 +2166,7 @@ Tcl_SetCommandInfo(interp, cmdName, infoPtr)
  *
  *	Modifies various information about a Tcl command. Note that
  *	this procedure will not change a command's namespace; use
- *	Tcl_RenameCommand to do that. Also, the isNativeObjectProc
+ *	TclRenameCommand to do that. Also, the isNativeObjectProc
  *	member of *infoPtr is ignored.
  *
  * Results:
