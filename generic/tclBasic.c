@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.19.2.1 1999/05/14 18:26:10 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.19.2.2 1999/05/17 18:11:00 surles Exp $
  */
 
 #include "tclInt.h"
@@ -528,6 +528,19 @@ Tcl_CreateInterp()
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    TclPrecTraceProc, (ClientData) NULL);
     TclpSetVariables(interp);
+
+#ifdef TCL_THREADS
+    /*
+     * The existence of the "threaded" element of the tcl_platform array indicates
+     * that this particular Tcl shell has been compiled with threads turned on.
+     * Using "info exists tcl_platform(threaded)" a Tcl script can introspect on the 
+     * interpreter level of thread safety.
+     */
+
+
+    Tcl_SetVar2(interp, "tcl_platform", "threaded", "1",
+	    TCL_GLOBAL_ONLY);
+#endif
 
     /*
      * Register Tcl's version number.
