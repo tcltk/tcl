@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.3 2001/10/19 15:45:22 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.4 2001/10/19 16:50:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -345,8 +345,8 @@ UpdateStringOfIndex(objPtr)
     len = strlen(indexStr);
     buf = (char *) ckalloc(len + 1);
     memcpy(buf, indexStr, len+1);
-    indexPtr->bytes = buf;
-    indexPtr->length = len;
+    objPtr->bytes = buf;
+    objPtr->length = len;
 }
 
 /*
@@ -454,7 +454,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 	
 	if (objv[i]->typePtr == &tclIndexType) {
 	    indexRep = (IndexRep *) objv[i]->internalRep.otherValuePtr;
-	    Tcl_AppendStringToObj(objPtr, EXPAND_OF(indexRep), (char *) NULL);
+	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (char *) NULL);
 	} else {
 	    Tcl_AppendStringsToObj(objPtr, Tcl_GetString(objv[i]),
 		    (char *) NULL);
