@@ -1865,3 +1865,8 @@
 
 	* tclWin32Dll.c: removed TclpFinalize, cleanup of merges
 
+	* tclIO.c: added fix for Kupries' trf patch [Bug: 2386]
+
+	* tclParse.c: fixed bug in info complete regarding nested square
+	brackets [Bug: 2382, 2466]
+	
