@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.126 2003/04/28 12:34:27 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127 2003/05/05 20:54:40 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1206,12 +1206,9 @@ typedef struct Interp {
     ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for
 				 * interp, or NULL if no active traces. */
-    int returnCode;		/* Completion code to return if current
-				 * procedure exits with TCL_RETURN code. */
-    char *errorInfo;		/* Value to store in errorInfo if returnCode
-				 * is TCL_ERROR.  Malloc'ed, may be NULL */
-    char *errorCode;		/* Value to store in errorCode if returnCode
-				 * is TCL_ERROR.  Malloc'ed, may be NULL */
+    int unused2;		/* No longer used (was returnCode) */
+    char *unused3;		/* No longer used (was errorInfo) */
+    char *unused4;		/* No longer used (was errorCode) */
 
     /*
      * Information used by Tcl_AppendResult to keep track of partial
@@ -1305,6 +1302,18 @@ typedef struct Interp {
     int tracesForbiddingInline; /* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
 				 * compilation */
+
+    /* Fields used to manage extensible return options (TIP 90) */
+    Tcl_Obj *returnOpts;	/* A dictionary holding the options to the
+				 * last [return] command */
+    Tcl_Obj *defaultReturnOpts; /* Default [return] options */
+    Tcl_Obj *returnCodeKey;	/* holds "-code" */
+    Tcl_Obj *returnErrorcodeKey;	/* holds "-errorcode" */
+    Tcl_Obj *returnErrorinfoKey;	/* holds "-errorinfo" */
+    Tcl_Obj *returnErrorlineKey;	/* holds "-errorline" */
+    Tcl_Obj *returnLevelKey;	/* holds "-level" */
+    Tcl_Obj *returnOptionsKey;	/* holds "-options" */
+
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.

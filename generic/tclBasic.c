@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.80 2003/05/05 16:48:54 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.81 2003/05/05 20:54:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -337,9 +337,27 @@ Tcl_CreateInterp()
     iPtr->framePtr = NULL;
     iPtr->varFramePtr = NULL;
     iPtr->activeVarTracePtr = NULL;
-    iPtr->returnCode = TCL_OK;
-    iPtr->errorInfo = NULL;
-    iPtr->errorCode = NULL;
+
+    iPtr->returnCodeKey = Tcl_NewStringObj("-code",-1);
+    Tcl_IncrRefCount(iPtr->returnCodeKey);
+    iPtr->returnErrorcodeKey = Tcl_NewStringObj("-errorcode",-1);
+    Tcl_IncrRefCount(iPtr->returnErrorcodeKey);
+    iPtr->returnErrorinfoKey = Tcl_NewStringObj("-errorinfo",-1);
+    Tcl_IncrRefCount(iPtr->returnErrorinfoKey);
+    iPtr->returnErrorlineKey = Tcl_NewStringObj("-errorline",-1);
+    Tcl_IncrRefCount(iPtr->returnErrorlineKey);
+    iPtr->returnLevelKey = Tcl_NewStringObj("-level",-1);
+    Tcl_IncrRefCount(iPtr->returnLevelKey);
+    iPtr->returnOptionsKey = Tcl_NewStringObj("-options",-1);
+    Tcl_IncrRefCount(iPtr->returnOptionsKey);
+    iPtr->defaultReturnOpts = Tcl_NewDictObj();
+    Tcl_DictObjPut(NULL, iPtr->defaultReturnOpts,
+	    iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
+    Tcl_DictObjPut(NULL, iPtr->defaultReturnOpts,
+	    iPtr->returnLevelKey, Tcl_NewIntObj(1));
+    Tcl_IncrRefCount(iPtr->defaultReturnOpts);
+    iPtr->returnOpts = iPtr->defaultReturnOpts;
+    Tcl_IncrRefCount(iPtr->returnOpts);
 
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
@@ -1062,14 +1080,14 @@ DeleteInterpProc(interp)
     interp->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
-    if (iPtr->errorInfo != NULL) {
-	ckfree(iPtr->errorInfo);
-        iPtr->errorInfo = NULL;
-    }
-    if (iPtr->errorCode != NULL) {
-	ckfree(iPtr->errorCode);
-        iPtr->errorCode = NULL;
-    }
+    Tcl_DecrRefCount(iPtr->returnOpts);
+    Tcl_DecrRefCount(iPtr->defaultReturnOpts);
+    Tcl_DecrRefCount(iPtr->returnCodeKey);
+    Tcl_DecrRefCount(iPtr->returnErrorcodeKey);
+    Tcl_DecrRefCount(iPtr->returnErrorinfoKey);
+    Tcl_DecrRefCount(iPtr->returnErrorlineKey);
+    Tcl_DecrRefCount(iPtr->returnLevelKey);
+    Tcl_DecrRefCount(iPtr->returnOptionsKey);
     if (iPtr->appendResult != NULL) {
 	ckfree(iPtr->appendResult);
         iPtr->appendResult = NULL;

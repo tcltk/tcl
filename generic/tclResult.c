@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.5 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6 2003/05/05 20:54:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1046,7 +1046,12 @@ TclTransferResult(sourceInterp, result, targetInterp)
 	((Interp *) targetInterp)->flags |= (ERR_IN_PROGRESS | ERROR_CODE_SET);
     }
 
-    ((Interp *) targetInterp)->returnCode = ((Interp *) sourceInterp)->returnCode;
+    /* This may need examination for safety */
+    Tcl_DecrRefCount( ((Interp *) targetInterp)->returnOpts );
+    ((Interp *) targetInterp)->returnOpts = 
+	    ((Interp *) sourceInterp)->returnOpts;
+    Tcl_IncrRefCount( ((Interp *) targetInterp)->returnOpts );
+
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);
 }
