@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.20 2002/07/18 13:37:46 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.21 2002/07/29 00:25:50 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1805,6 +1805,32 @@ test trace-25.11 {delete command during enter and enterstep traces} {
     list $err $info [trace info execution foo]
 } {{invalid command name "foo"} {{foo 1} enter} {unknown command "foo"}}
 
+test trace-26.1 {trace targetCmd when invoked through an alias} {
+    proc foo {args} {
+	set b $args
+    }
+    set info {}
+    trace add execution foo enter [list traceExecute foo]
+    interp alias {} bar {} foo 1
+    bar 2
+    trace remove execution foo enter [list traceExecute foo]
+    set info
+} {{foo {foo 1 2} enter}}
+test trace-26.2 {trace targetCmd when invoked through an alias} {
+    proc foo {args} {
+	set b $args
+    }
+    set info {}
+    trace add execution foo enter [list traceExecute foo]
+    interp create child
+    interp alias child bar {} foo 1
+    child eval bar 2
+    interp delete child
+    trace remove execution foo enter [list traceExecute foo]
+    set info
+} {{foo {foo 1 2} enter}}
+
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}
@@ -1814,3 +1840,4 @@ catch {rename bar {}}
 # cleanup
 ::tcltest::cleanupTests
 return
+
