@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.143 2004/08/18 19:59:09 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.144 2004/08/26 16:01:29 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -77,6 +77,9 @@ MANN_INSTALL_DIR	= $(MAN_INSTALL_DIR)/mann
 
 # Package search path.
 TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
+
+# Tcl Module default path roots (TIP189).
+TCL_MODULE_PATH		=
 
 # Libraries built with optimization switches have this additional extension
 TCL_DBGX		= @TCL_DBGX@
@@ -691,6 +694,11 @@ install-libraries: libraries install-tzdata install-msgs
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
 	done;
+	@if [ -n "$(TCL_MODULE_PATH)" -a -e $(TOP_DIR)/library/tm.tcl ]; then \
+	    echo "Customizing tcl module path"; \
+	    echo "::tcl::tm::roots {$(TCL_MODULE_PATH)}" >> \
+	        $(SCRIPT_INSTALL_DIR)/tm.tcl; \
+	fi
 
 install-tzdata:
 	@echo "Installing time zone data"

@@ -1,3 +1,10 @@
+2004-08-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in: added customization of default module path roots
+	via TCL_MODULE_PATH makefile variable.
+	* macosx/Makefile: add platform standard locations to default
+	module path roots. [Patch 94288]
+
 2004-08-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/timer.test (timer-10.1):	Test for Bug 1016167.
