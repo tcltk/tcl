@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.23 2001/08/27 02:14:08 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.24 2001/09/06 21:05:56 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -292,11 +292,14 @@ test unixInit-3.2 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     unset env(LC_ALL)
     catch {set env(LC_ALL) $oldlc_all}
 
-    switch $tcl_platform(os) {
-	HP-UX {set expectedEncoding shiftjis}
-	default {set expectedEncoding euc-jp}
+    set validEncodings [list euc-jp]
+    if {[string match HP-UX $tcl_platform(os)]} {
+	# Some older HP-UX systems need us to accept this as valid
+	# Bug 453883 reports that newer HP-UX systems report euc-jp
+	# like everybody else.
+	lappend validEncodings shiftjis
     }
-    string compare $enc $expectedEncoding
+    expr {[lsearch -exact $validEncodings $enc] < 0}
 } 0
     
 test unixInit-4.1 {TclpSetVariables} {unixOnly} {
