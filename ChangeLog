@@ -1,3 +1,10 @@
+2000-11-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* library/init.tcl (unknown): Added specific level parameters to
+	  all uplevel invokations to boost performance; didn't dare touch
+	  the "namespace inscope" stuff though, since it looks sensitive
+	  to me!  Should fix Bug #123217, though testing is tricky...
+
 2000-11-21  Andreas Kupries  <a.kupries@westend.com>
 
 	* All of the changes below are described in TIP #7 ~ Specification
