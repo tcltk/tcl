@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Santiago)]} {
+    loadTimeZoneFile America/Santiago
+}
+set tzdata(:Chile/Continental) $TZData(:America/Santiago)

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.39 2004/08/02 20:55:38 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.40 2004/08/18 19:59:08 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1693,17 +1693,17 @@ test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
     set l ""
     lappend l [lsort [interp hidden a]]
     a alias bar bar
-    lappend l [interp aliases a]
+    lappend l [lsort [interp aliases a]]
     lappend l [lsort [interp hidden a]]
     a hide bar
-    lappend l [interp aliases a]
+    lappend l [lsort [interp aliases a]]
     lappend l [lsort [interp hidden a]]
     a alias bar {}
     lappend l [interp aliases a]
     lappend l [lsort [interp hidden a]]
     interp delete a
     set l
-} {{cd encoding exec exit fconfigure file glob load open pwd socket source} bar {cd encoding exec exit fconfigure file glob load open pwd socket source} bar {bar cd encoding exec exit fconfigure file glob load open pwd socket source} {} {cd encoding exec exit fconfigure file glob load open pwd socket source}} 
+} {{cd encoding exec exit fconfigure file glob load open pwd socket source} {bar clock} {cd encoding exec exit fconfigure file glob load open pwd socket source} {bar clock} {bar cd encoding exec exit fconfigure file glob load open pwd socket source} clock {cd encoding exec exit fconfigure file glob load open pwd socket source}} 
 
 test interp-24.1 {result resetting on error} {
     catch {interp delete a}

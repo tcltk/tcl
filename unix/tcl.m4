@@ -2209,7 +2209,7 @@ AC_DEFUN(SC_TIME_HANDLER, [
     AC_HEADER_TIME
     AC_STRUCT_TIMEZONE
 
-    AC_CHECK_FUNCS(gmtime_r localtime_r)
+    AC_CHECK_FUNCS(gmtime_r localtime_r mktime)
 
     AC_MSG_CHECKING([tm_tzadj in struct tm])
     AC_CACHE_VAL(tcl_cv_member_tm_tzadj,

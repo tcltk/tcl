@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Phoenix)]} {
+    loadTimeZoneFile America/Phoenix
+}
+set tzdata(:MST) $TZData(:America/Phoenix)

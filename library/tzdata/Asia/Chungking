@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Asia/Chongqing)]} {
+    loadTimeZoneFile Asia/Chongqing
+}
+set tzdata(:Asia/Chungking) $TZData(:Asia/Chongqing)

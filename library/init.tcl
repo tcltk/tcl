@@ -3,11 +3,12 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.63 2004/06/16 21:20:42 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.64 2004/08/18 19:59:00 kennykb Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
+# Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -742,4 +743,39 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     }
     return
+}
+
+# Set up the 'clock' ensemble
+
+if { ![interp issafe] } {
+
+    namespace eval ::tcl::clock \
+	[list variable TclLibDir [file dirname [info script]]]
+
+    namespace eval ::tcl::clock {
+	namespace ensemble create -command ::clock \
+	    -subcommands {
+		add clicks format 
+		microseconds milliseconds 
+		scan seconds
+	    }
+	
+	# Auto-loading stub for 'clock.tcl'
+	
+	proc add args {
+	    variable TclLibDir
+	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
+	    return [uplevel 1 [info level 0]]
+	}
+	proc format args {
+	    variable TclLibDir
+	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
+	    return [uplevel 1 [info level 0]]
+	}
+	proc scan args {
+	    variable TclLibDir
+	    source -encoding utf-8 [file join $TclLibDir clock.tcl]
+	    return [uplevel 1 [info level 0]]
+	}
+    }
 }

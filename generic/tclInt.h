@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.171 2004/08/02 20:55:37 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.172 2004/08/18 19:58:59 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1958,7 +1958,19 @@ EXTERN int	Tcl_CatchObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_CdObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-EXTERN int	Tcl_ClockObjCmd _ANSI_ARGS_((ClientData clientData,
+EXTERN int	TclClockClicksObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockMicrosecondsObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockMillisecondsObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockSecondsObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockLocaltimeObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockMktimeObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockOldscanObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_CloseObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));

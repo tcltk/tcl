@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.16 2004/08/04 09:00:25 dkf Exp $
+# RCS: @(#) $Id: safe.test,v 1.17 2004/08/18 19:59:08 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -62,13 +62,13 @@ test safe-2.2 {creating interpreters, should have no aliases} {
     safe::interpDelete a
     set l
 } ""
-test safe-2.3 {creating safe interpreters, should have no aliases} {
+test safe-2.3 {creating safe interpreters, should have no unexpected aliases} {
     catch {safe::interpDelete a}
     interp create a -safe
     set l [a aliases]
     interp delete a
     set l
-} ""
+} {clock}
 
 test safe-3.1 {calling safe::interpInit is safe} {
     catch {safe::interpDelete a}
@@ -84,7 +84,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} {
     set l [lsort [a aliases]]
     safe::interpDelete a
     set l
-} {encoding exit file load source}
+} {clock encoding exit file load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} {
     catch {safe::interpDelete a}
     safe::interpCreate a
