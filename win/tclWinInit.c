@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.32 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.33 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -335,7 +335,7 @@ AppendEnvironment(
     Tcl_Obj *objPtr;
     char *str;
     Tcl_DString ds;
-    char **pathv;
+    CONST char **pathv;
 
     /*
      * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
@@ -370,7 +370,7 @@ AppendEnvironment(
 	     * version string.
 	     */
 	    
-	    pathv[pathc - 1] = (char *) (lib + 4);
+	    pathv[pathc - 1] = (lib + 4);
 	    Tcl_DStringInit(&ds);
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
