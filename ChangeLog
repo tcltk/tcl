@@ -1,3 +1,8 @@
+2002-07-03  Don Porter  <dgp@users.sourceforge.net>
+
+        * library/auto.tcl: Fix [tcl_findLibrary] to be sure it sets
+        $varName only if a successful library script is found.  [Bug 577033]
+
 2002-07-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileCatchCmd): return
