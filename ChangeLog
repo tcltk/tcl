@@ -1,3 +1,12 @@
+2004-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.5a2 TAGGED FOR RELEASE ***	
+
+	* unix/tclUnixNotfy.c (NotifierThreadProc): init numFdBits
+	[Bug 1079286]
+
+	* doc/error.n, doc/SaveResult.3, doc/Thread.3: minor nroff typos
+
 2004-12-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/safe.test:	Trim auto_path to improve performance [1080039]
