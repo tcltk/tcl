@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.6.2.2 1999/05/18 17:40:28 redman Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.6.2.3 1999/05/18 22:36:27 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -939,7 +939,7 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	 * trouble with the MS DevStudio debugger.
 	 */
 	
-	channel = NULL
+	channel = NULL;
 	break;
 
     }
