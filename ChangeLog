@@ -1,5 +1,9 @@
 2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
+	* unix/mkLinks: Regenerated.
+	* doc/RegConfig.3: Added documentation for the new public API
+	  function.
+
 	* This commit addresses the following topics from the comments at
 	  SF item 507083:
 

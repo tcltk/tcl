@@ -869,6 +869,10 @@ if test -r RecordEval.3; then
     rm -f Tcl_RecordAndEval.3
     ln RecordEval.3 Tcl_RecordAndEval.3
 fi
+if test -r RegConfig.3; then
+    rm -f Tcl_RegisterConfig.3
+    ln RegConfig.3 Tcl_RegisterConfig.3
+fi
 if test -r RegExp.3; then
     rm -f Tcl_RegExpMatch.3
     rm -f Tcl_RegExpCompile.3
