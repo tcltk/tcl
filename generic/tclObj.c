@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.45 2003/04/16 23:33:44 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46 2003/05/12 19:32:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2992,8 +2992,7 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
-    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->internalRep.otherValuePtr = (VOID *) resPtr;
     objPtr->typePtr = &tclCmdNameType;
 }
 
@@ -3075,8 +3074,7 @@ DupCmdNameInternalRep(srcPtr, copyPtr)
     register ResolvedCmdName *resPtr =
         (ResolvedCmdName *) srcPtr->internalRep.otherValuePtr;
 
-    copyPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
-    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    copyPtr->internalRep.otherValuePtr = (VOID *) resPtr;
     if (resPtr != NULL) {
         resPtr->refCount++;
     }
@@ -3171,8 +3169,7 @@ SetCmdNameFromAny(interp, objPtr)
 	objPtr->typePtr->freeIntRepProc(objPtr);
     }
     
-    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->internalRep.otherValuePtr = (VOID *) resPtr;
     objPtr->typePtr = &tclCmdNameType;
     return TCL_OK;
 }
