@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.73 2002/01/17 02:43:19 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.74 2002/01/17 03:03:11 dgp Exp $
 
 library tcl
 
@@ -750,18 +750,19 @@ declare 211 generic {
     void Tcl_RegisterObjType(Tcl_ObjType *typePtr)
 }
 declare 212 generic {
-    Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, char *string)
+    Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, CONST char *string)
 }
 declare 213 generic {
     int Tcl_RegExpExec(Tcl_Interp *interp, Tcl_RegExp regexp, \
 	    CONST char *str, CONST char *start)
 }
 declare 214 generic {
-    int Tcl_RegExpMatch(Tcl_Interp *interp, char *str, char *pattern)
+    int Tcl_RegExpMatch(Tcl_Interp *interp, CONST char *str, \
+	    CONST char *pattern)
 }
 declare 215 generic {
-    void Tcl_RegExpRange(Tcl_RegExp regexp, int index, char **startPtr, \
-	    char **endPtr)
+    void Tcl_RegExpRange(Tcl_RegExp regexp, int index, \
+	    CONST char **startPtr, CONST char **endPtr)
 }
 declare 216 generic {
     void Tcl_Release(ClientData clientData)
@@ -1153,7 +1154,7 @@ declare 324 generic {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 generic {
-    char * Tcl_UtfAtIndex(CONST char *src, int index)
+    CONST char * Tcl_UtfAtIndex(CONST char *src, int index)
 }
 declare 326 generic {
     int Tcl_UtfCharComplete(CONST char *src, int len)
@@ -1162,16 +1163,16 @@ declare 327 generic {
     int Tcl_UtfBackslash(CONST char *src, int *readPtr, char *dst)
 }
 declare 328 generic {
-    char * Tcl_UtfFindFirst(CONST char *src, int ch)
+    CONST char * Tcl_UtfFindFirst(CONST char *src, int ch)
 }
 declare 329 generic {
-    char * Tcl_UtfFindLast(CONST char *src, int ch)
+    CONST char * Tcl_UtfFindLast(CONST char *src, int ch)
 }
 declare 330 generic {
-    char * Tcl_UtfNext(CONST char *src)
+    CONST char * Tcl_UtfNext(CONST char *src)
 }
 declare 331 generic {
-    char * Tcl_UtfPrev(CONST char *src, CONST char *start)
+    CONST char * Tcl_UtfPrev(CONST char *src, CONST char *start)
 }
 declare 332 generic {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding, \
@@ -1238,19 +1239,19 @@ declare 351 generic {
     int Tcl_UniCharIsWordChar(int ch)
 }
 declare 352 generic {
-    int Tcl_UniCharLen(Tcl_UniChar *str)
+    int Tcl_UniCharLen(CONST Tcl_UniChar *str)
 }
 declare 353 generic {
     int Tcl_UniCharNcmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,\
     unsigned long n)
 }
 declare 354 generic {
-    char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, int numChars, \
- 	    Tcl_DString *dsPtr)
+    CONST char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, \
+	    int numChars, Tcl_DString *dsPtr)
 }
 declare 355 generic {
-    Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, int length, \
-	    Tcl_DString *dsPtr)
+    CONST Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, \
+	    int length, Tcl_DString *dsPtr)
 }
 declare 356 generic {
     Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj, int flags)

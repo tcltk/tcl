@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.73 2002/01/17 02:43:19 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.74 2002/01/17 03:03:11 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -692,17 +692,18 @@ EXTERN void		Tcl_RegisterObjType _ANSI_ARGS_((
 				Tcl_ObjType * typePtr));
 /* 212 */
 EXTERN Tcl_RegExp	Tcl_RegExpCompile _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string));
+				CONST char * string));
 /* 213 */
 EXTERN int		Tcl_RegExpExec _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_RegExp regexp, CONST char * str, 
 				CONST char * start));
 /* 214 */
 EXTERN int		Tcl_RegExpMatch _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, char * pattern));
+				CONST char * str, CONST char * pattern));
 /* 215 */
 EXTERN void		Tcl_RegExpRange _ANSI_ARGS_((Tcl_RegExp regexp, 
-				int index, char ** startPtr, char ** endPtr));
+				int index, CONST char ** startPtr, 
+				CONST char ** endPtr));
 /* 216 */
 EXTERN void		Tcl_Release _ANSI_ARGS_((ClientData clientData));
 /* 217 */
@@ -1041,7 +1042,7 @@ EXTERN Tcl_UniChar	Tcl_UniCharToUpper _ANSI_ARGS_((int ch));
 /* 324 */
 EXTERN int		Tcl_UniCharToUtf _ANSI_ARGS_((int ch, char * buf));
 /* 325 */
-EXTERN char *		Tcl_UtfAtIndex _ANSI_ARGS_((CONST char * src, 
+EXTERN CONST char *	Tcl_UtfAtIndex _ANSI_ARGS_((CONST char * src, 
 				int index));
 /* 326 */
 EXTERN int		Tcl_UtfCharComplete _ANSI_ARGS_((CONST char * src, 
@@ -1050,15 +1051,15 @@ EXTERN int		Tcl_UtfCharComplete _ANSI_ARGS_((CONST char * src,
 EXTERN int		Tcl_UtfBackslash _ANSI_ARGS_((CONST char * src, 
 				int * readPtr, char * dst));
 /* 328 */
-EXTERN char *		Tcl_UtfFindFirst _ANSI_ARGS_((CONST char * src, 
+EXTERN CONST char *	Tcl_UtfFindFirst _ANSI_ARGS_((CONST char * src, 
 				int ch));
 /* 329 */
-EXTERN char *		Tcl_UtfFindLast _ANSI_ARGS_((CONST char * src, 
+EXTERN CONST char *	Tcl_UtfFindLast _ANSI_ARGS_((CONST char * src, 
 				int ch));
 /* 330 */
-EXTERN char *		Tcl_UtfNext _ANSI_ARGS_((CONST char * src));
+EXTERN CONST char *	Tcl_UtfNext _ANSI_ARGS_((CONST char * src));
 /* 331 */
-EXTERN char *		Tcl_UtfPrev _ANSI_ARGS_((CONST char * src, 
+EXTERN CONST char *	Tcl_UtfPrev _ANSI_ARGS_((CONST char * src, 
 				CONST char * start));
 /* 332 */
 EXTERN int		Tcl_UtfToExternal _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -1111,16 +1112,16 @@ EXTERN int		Tcl_UniCharIsUpper _ANSI_ARGS_((int ch));
 /* 351 */
 EXTERN int		Tcl_UniCharIsWordChar _ANSI_ARGS_((int ch));
 /* 352 */
-EXTERN int		Tcl_UniCharLen _ANSI_ARGS_((Tcl_UniChar * str));
+EXTERN int		Tcl_UniCharLen _ANSI_ARGS_((CONST Tcl_UniChar * str));
 /* 353 */
 EXTERN int		Tcl_UniCharNcmp _ANSI_ARGS_((CONST Tcl_UniChar * cs, 
 				CONST Tcl_UniChar * ct, unsigned long n));
 /* 354 */
-EXTERN char *		Tcl_UniCharToUtfDString _ANSI_ARGS_((
+EXTERN CONST char *	Tcl_UniCharToUtfDString _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int numChars, 
 				Tcl_DString * dsPtr));
 /* 355 */
-EXTERN Tcl_UniChar *	Tcl_UtfToUniCharDString _ANSI_ARGS_((
+EXTERN CONST Tcl_UniChar * Tcl_UtfToUniCharDString _ANSI_ARGS_((
 				CONST char * string, int length, 
 				Tcl_DString * dsPtr));
 /* 356 */
@@ -1784,10 +1785,10 @@ typedef struct TclStubs {
     int (*tcl_RecordAndEvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * cmdPtr, int flags)); /* 209 */
     void (*tcl_RegisterChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 210 */
     void (*tcl_RegisterObjType) _ANSI_ARGS_((Tcl_ObjType * typePtr)); /* 211 */
-    Tcl_RegExp (*tcl_RegExpCompile) _ANSI_ARGS_((Tcl_Interp * interp, char * string)); /* 212 */
+    Tcl_RegExp (*tcl_RegExpCompile) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * string)); /* 212 */
     int (*tcl_RegExpExec) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_RegExp regexp, CONST char * str, CONST char * start)); /* 213 */
-    int (*tcl_RegExpMatch) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char * pattern)); /* 214 */
-    void (*tcl_RegExpRange) _ANSI_ARGS_((Tcl_RegExp regexp, int index, char ** startPtr, char ** endPtr)); /* 215 */
+    int (*tcl_RegExpMatch) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CONST char * pattern)); /* 214 */
+    void (*tcl_RegExpRange) _ANSI_ARGS_((Tcl_RegExp regexp, int index, CONST char ** startPtr, CONST char ** endPtr)); /* 215 */
     void (*tcl_Release) _ANSI_ARGS_((ClientData clientData)); /* 216 */
     void (*tcl_ResetResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 217 */
     int (*tcl_ScanElement) _ANSI_ARGS_((CONST char * str, int * flagPtr)); /* 218 */
@@ -1897,13 +1898,13 @@ typedef struct TclStubs {
     Tcl_UniChar (*tcl_UniCharToTitle) _ANSI_ARGS_((int ch)); /* 322 */
     Tcl_UniChar (*tcl_UniCharToUpper) _ANSI_ARGS_((int ch)); /* 323 */
     int (*tcl_UniCharToUtf) _ANSI_ARGS_((int ch, char * buf)); /* 324 */
-    char * (*tcl_UtfAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 325 */
+    CONST char * (*tcl_UtfAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 325 */
     int (*tcl_UtfCharComplete) _ANSI_ARGS_((CONST char * src, int len)); /* 326 */
     int (*tcl_UtfBackslash) _ANSI_ARGS_((CONST char * src, int * readPtr, char * dst)); /* 327 */
-    char * (*tcl_UtfFindFirst) _ANSI_ARGS_((CONST char * src, int ch)); /* 328 */
-    char * (*tcl_UtfFindLast) _ANSI_ARGS_((CONST char * src, int ch)); /* 329 */
-    char * (*tcl_UtfNext) _ANSI_ARGS_((CONST char * src)); /* 330 */
-    char * (*tcl_UtfPrev) _ANSI_ARGS_((CONST char * src, CONST char * start)); /* 331 */
+    CONST char * (*tcl_UtfFindFirst) _ANSI_ARGS_((CONST char * src, int ch)); /* 328 */
+    CONST char * (*tcl_UtfFindLast) _ANSI_ARGS_((CONST char * src, int ch)); /* 329 */
+    CONST char * (*tcl_UtfNext) _ANSI_ARGS_((CONST char * src)); /* 330 */
+    CONST char * (*tcl_UtfPrev) _ANSI_ARGS_((CONST char * src, CONST char * start)); /* 331 */
     int (*tcl_UtfToExternal) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 332 */
     char * (*tcl_UtfToExternalDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 333 */
     int (*tcl_UtfToLower) _ANSI_ARGS_((char * src)); /* 334 */
@@ -1924,10 +1925,10 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsSpace) _ANSI_ARGS_((int ch)); /* 349 */
     int (*tcl_UniCharIsUpper) _ANSI_ARGS_((int ch)); /* 350 */
     int (*tcl_UniCharIsWordChar) _ANSI_ARGS_((int ch)); /* 351 */
-    int (*tcl_UniCharLen) _ANSI_ARGS_((Tcl_UniChar * str)); /* 352 */
+    int (*tcl_UniCharLen) _ANSI_ARGS_((CONST Tcl_UniChar * str)); /* 352 */
     int (*tcl_UniCharNcmp) _ANSI_ARGS_((CONST Tcl_UniChar * cs, CONST Tcl_UniChar * ct, unsigned long n)); /* 353 */
-    char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
-    Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
+    CONST char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
+    CONST Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * patObj, int flags)); /* 356 */
     Tcl_Obj * (*tcl_EvalTokens) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Token * tokenPtr, int count)); /* 357 */
     void (*tcl_FreeParse) _ANSI_ARGS_((Tcl_Parse * parsePtr)); /* 358 */

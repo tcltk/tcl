@@ -8,6 +8,25 @@
 
 2002-01-16  Don Porter <dgp@users.sourceforge.net>
 
+	* doc/RegExp.3:
+	* doc/Utf.3:
+	* generic/tcl.decls:
+	* generic/tclInt.decls:
+	* generic/tclRegexp.c:
+	* generic/tclUtf.c:  Updated APIs in generic/tclUtf.c and
+	generic/tclRegexp.c according to the guidelines of TIP 27.
+	[Patch 471509]
+
+	* generic/regc_locale.c (element,cclass):
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd):
+	* generic/tclFileName.c (TclpGetNativePathType,SplitMacPath):
+	* generic/tclIO.c (ReadChars):
+	* mac/tclMacLoad.c (TclpLoadFile):
+	* win/tclWinFile.c (TclpGetUserHome): Updated callers.
+
+	* generic/tclDecls.h: 
+	* generic/tclIntDecls.h: make genstubs
+
 	* doc/ParseCmd.3 (Tcl_ParseVar):
 	* generic/tcl.decls (Tcl_ParseVar):
 	* generic/tclParse.c (Tcl_ParseVar):
