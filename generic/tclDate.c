@@ -16,15 +16,9 @@
 #include "tclInt.h"
 #include "tclPort.h"
 
-#if defined(MAC_TCL) && !defined(TCL_MAC_USE_MSL_EPOCH)
-#   define EPOCH           1904
-#   define START_OF_TIME   1904
-#   define END_OF_TIME     2039
-#else
-#   define EPOCH           1970
-#   define START_OF_TIME   1902
-#   define END_OF_TIME     2037
-#endif
+#define EPOCH           1970
+#define START_OF_TIME   1902
+#define END_OF_TIME     2037
 
 /*
  * The offset of tm_year of struct tm returned by localtime, gmtime, etc.

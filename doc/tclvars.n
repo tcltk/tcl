@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.14 2004/02/06 00:01:25 davygrvy Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.15 2004/03/17 18:14:12 das Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -48,64 +48,6 @@ same as unsetting it as this is the behavior of the underlying Windows OS.
 It should be noted that relying on an existing and empty environment variable
 won't work on windows and is discouraged for cross-platform usage.
 .VE
-.RE
-.RS
-On the Macintosh, the environment variable is constructed by Tcl as no
-global environment variable exists.  The environment variables that
-are created for Tcl include:
-.TP
-\fBLOGIN\fR
-This holds the Chooser name of the Macintosh.
-.TP
-\fBUSER\fR
-This also holds the Chooser name of the Macintosh.
-.TP
-\fBSYS_FOLDER\fR
-The path to the system directory.
-.TP
-\fBAPPLE_M_FOLDER\fR
-The path to the Apple Menu directory.
-.TP
-\fBCP_FOLDER\fR
-The path to the control panels directory.
-.TP
-\fBDESK_FOLDER\fR
-The path to the desk top directory.
-.TP
-\fBEXT_FOLDER\fR
-The path to the system extensions directory.
-.TP
-\fBPREF_FOLDER\fR
-The path to the preferences directory.
-.TP
-\fBPRINT_MON_FOLDER\fR
-The path to the print monitor directory.
-.TP
-\fBSHARED_TRASH_FOLDER\fR
-The path to the network trash directory.
-.TP
-\fBTRASH_FOLDER\fR
-The path to the trash directory.
-.TP
-\fBSTART_UP_FOLDER\fR
-The path to the start up directory.
-.TP
-\fBHOME\fR
-The path to the application's default directory.
-.PP
-You can also create your own environment variables for the Macintosh.
-A file named  \fITcl Environment Variables\fR may be placed in the
-preferences folder in the Mac system folder.  Each line of this file
-should be of the form \fIVAR_NAME=var_data\fR.
-.PP
-The last alternative is to place environment variables in a 'STR#' 
-resource named \fITcl Environment Variables\fR of the application.  This
-is considered a little more ``Mac like'' than a Unix style Environment
-Variable file.  Each entry in the 'STR#' resource has the same format
-as above.  The source code file \fItclMacEnv.c\fR contains the
-implementation of the env mechanisms.  This file contains many
-#define's that allow customization of the env mechanisms to fit your
-applications needs.
 .RE
 .TP
 \fBerrorCode\fR
@@ -270,7 +212,7 @@ is the value returned by \fBuname -m\fR.
 .TP
 \fBos\fR 
 The name of the operating system running on this machine,
-such as \fBWindows 95\fR, \fBWindows NT\fR, \fBMacOS\fR, or \fBSunOS\fR.
+such as \fBWindows 95\fR, \fBWindows NT\fR, or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
 On Windows 95 and Windows 98, the value returned will be \fBWindows
 95\fR to provide better backwards compatibility to Windows 95; to
@@ -283,7 +225,7 @@ Windows 95, the version will be 4.0; on Windows 98, the version will
 be 4.10.
 .TP
 \fBplatform\fR
-Either \fBwindows\fR, \fBmacintosh\fR, or \fBunix\fR.  This identifies the
+Either \fBwindows\fR, or \fBunix\fR.  This identifies the
 general operating environment of the machine.
 .TP
 \fBthreaded\fR
@@ -294,7 +236,7 @@ was compiled with threads enabled.
 This identifies the
 current user based on the login information available on the platform.
 This comes from the USER or LOGNAME environment variable on Unix,
-and the value from GetUserName on Windows and Macintosh.
+and the value from GetUserName on Windows.
 .TP
 \fBwordSize\fR
 .VS 8.4
@@ -329,15 +271,6 @@ initialization, then the Tcl startup code will check for the existence
 of this file and \fBsource\fR it if it exists.  For example, for \fBwish\fR
 the variable is set to \fB~/.wishrc\fR for Unix and \fB~/wishrc.tcl\fR
 for Windows.
-.TP
-\fBtcl_rcRsrcName\fR
-This variable is only used on Macintosh systems.  The variable is used
-during initialization to indicate the name of a user-specific
-\fBTEXT\fR resource located in the application or extension resource
-forks.  If it is set by application-specific initialization, then the
-Tcl startup code will check for the existence of this resource and
-\fBsource\fR it if it exists.  For example, the Macintosh \fBwish\fR
-application has the variable is set to \fBtclshrc\fR.
 .TP
 \fBtcl_traceCompile\fR
 The value of this variable can be set to control

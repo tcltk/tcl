@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.87 2004/02/18 01:41:42 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.88 2004/03/17 18:14:14 das Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1263,9 +1263,6 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer unixExecs {
 	set code 1
-        if {[string equal macintosh $::tcl_platform(platform)]} {
-	    set code 0
-        }
         if {[string equal windows $::tcl_platform(platform)]} {
 	    if {[catch {
 	        set file _tcl_test_remove_me.txt

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.37 2003/10/07 21:45:38 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.38 2004/03/17 18:14:17 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -205,7 +205,7 @@ test cmdAH-6.2 {Tcl_FileObjCmd: volumes} {
 		set result 1
 	}
 } {1}
-test cmdAH-6.3 {Tcl_FileObjCmd: volumes} {macOrUnix} {
+test cmdAH-6.3 {Tcl_FileObjCmd: volumes} {unixOnly} {
     set volumeList [file volumes]
     catch [list glob -nocomplain [lindex $volumeList 0]*]
 } {0}
@@ -248,10 +248,6 @@ test cmdAH-8.3 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname {}
 } .
-test cmdAH-8.4 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    file dirname {}
-} :
 test cmdAH-8.5 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform win
     file dirname {}
@@ -260,10 +256,6 @@ test cmdAH-8.6 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     file dirname .def
 } .
-test cmdAH-8.7 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    file dirname a
-} :
 test cmdAH-8.8 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform win
     file dirname a
@@ -340,50 +332,6 @@ test cmdAH-8.26 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform windows
     list [catch {file dirname {//foo/bar}} msg] $msg
 } {0 //foo/bar}
-test cmdAH-8.27 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname :} msg] $msg
-} {0 :}
-test cmdAH-8.28 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname :Foo} msg] $msg
-} {0 :}
-test cmdAH-8.29 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname Foo:} msg] $msg
-} {0 Foo:}
-test cmdAH-8.30 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname Foo:bar} msg] $msg
-} {0 Foo:}
-test cmdAH-8.31 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname :Foo:bar} msg] $msg
-} {0 :Foo}
-test cmdAH-8.32 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname ::} msg] $msg
-} {0 :}
-test cmdAH-8.33 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname :::} msg] $msg
-} {0 ::}
-test cmdAH-8.34 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname /foo/bar/} msg] $msg
-} {0 foo:}
-test cmdAH-8.35 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname /foo/bar} msg] $msg
-} {0 foo:}
-test cmdAH-8.36 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname /foo} msg] $msg
-} {0 foo:}
-test cmdAH-8.37 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname foo} msg] $msg
-} {0 :}
 test cmdAH-8.38 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     list [catch {file dirname ~/foo} msg] $msg
@@ -392,18 +340,6 @@ test cmdAH-8.39 {Tcl_FileObjCmd: dirname} testsetplatform {
     testsetplatform unix
     list [catch {file dirname ~bar/foo} msg] $msg
 } {0 ~bar}
-test cmdAH-8.40 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname ~bar/foo} msg] $msg
-} {0 ~bar:}
-test cmdAH-8.41 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname ~/foo} msg] $msg
-} {0 ~:}
-test cmdAH-8.42 {Tcl_FileObjCmd: dirname} testsetplatform {
-    testsetplatform mac
-    list [catch {file dirname ~:baz} msg] $msg
-} {0 ~:}
 test cmdAH-8.43 {Tcl_FileObjCmd: dirname} testsetplatform {
     global env
     set temp $env(HOME)
@@ -431,15 +367,6 @@ test cmdAH-8.45 {Tcl_FileObjCmd: dirname} testsetplatform {
     set env(HOME) $temp
     set result
 } {0 /homewontexist}
-test cmdAH-8.46 {Tcl_FileObjCmd: dirname} testsetplatform {
-    global env
-    set temp $env(HOME)
-    set env(HOME) "/home/test"
-    testsetplatform mac
-    set result [list [catch {file dirname ~} msg] $msg]
-    set env(HOME) $temp
-    set result
-} {0 home:}
 
 # tail
 
@@ -455,10 +382,6 @@ test cmdAH-9.3 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail {}
 } {}
-test cmdAH-9.4 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail {}
-} {}
 test cmdAH-9.5 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform win
     file tail {}
@@ -467,10 +390,6 @@ test cmdAH-9.6 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail .def
 } .def
-test cmdAH-9.7 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail a
-} a
 test cmdAH-9.8 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform win
     file tail a
@@ -547,66 +466,6 @@ test cmdAH-9.26 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform windows
     file tail {//foo/bar}
 } {}
-test cmdAH-9.27 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail :
-} :
-test cmdAH-9.28 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail :Foo
-} Foo
-test cmdAH-9.29 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail Foo:
-} {}
-test cmdAH-9.30 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail Foo:bar
-} bar
-test cmdAH-9.31 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail :Foo:bar
-} bar
-test cmdAH-9.32 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail ::
-} ::
-test cmdAH-9.33 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail :::
-} ::
-test cmdAH-9.34 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail /foo/bar/
-} bar
-test cmdAH-9.35 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail /foo/bar
-} bar
-test cmdAH-9.36 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail /foo
-} {}
-test cmdAH-9.37 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail foo
-} foo
-test cmdAH-9.38 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail ~:foo
-} foo
-test cmdAH-9.39 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail ~bar:foo
-} foo
-test cmdAH-9.40 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail ~bar/foo
-} foo
-test cmdAH-9.41 {Tcl_FileObjCmd: tail} testsetplatform {
-    testsetplatform mac
-    file tail ~/foo
-} foo
 test cmdAH-9.42 {Tcl_FileObjCmd: tail} testsetplatform {
     global env
     set temp $env(HOME)
@@ -630,15 +489,6 @@ test cmdAH-9.44 {Tcl_FileObjCmd: tail} testsetplatform {
     set temp $env(HOME)
     set env(HOME) "/home/test"
     testsetplatform windows
-    set result [file tail ~]
-    set env(HOME) $temp
-    set result
-} test
-test cmdAH-9.45 {Tcl_FileObjCmd: tail} testsetplatform {
-    global env
-    set temp $env(HOME)
-    set env(HOME) "/home/test"
-    testsetplatform mac
     set result [file tail ~]
     set env(HOME) $temp
     set result
@@ -710,54 +560,6 @@ test cmdAH-10.10 {Tcl_FileObjCmd: rootname} testsetplatform {
     testsetplatform unix
     file rootname a/b.c/
 } a/b.c/
-test cmdAH-10.11 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file ro foo
-} foo
-test cmdAH-10.12 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname {}
-} {}
-test cmdAH-10.13 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname foo.
-} foo
-test cmdAH-10.14 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname .foo
-} {}
-test cmdAH-10.15 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname abc.def
-} abc
-test cmdAH-10.16 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname abc.def.ghi
-} abc.def
-test cmdAH-10.17 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname a:b:c.d
-} a:b:c
-test cmdAH-10.18 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname a:b.c:d
-} a:b.c:d
-test cmdAH-10.19 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname a/b/c.d
-} a/b/c
-test cmdAH-10.20 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname a/b.c/d
-} a/b.c/d
-test cmdAH-10.21 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname /a.b
-} /a
-test cmdAH-10.22 {Tcl_FileObjCmd: rootname} testsetplatform {
-    testsetplatform mac
-    file rootname foo.c:
-} foo.c:
 test cmdAH-10.23 {Tcl_FileObjCmd: rootname} testsetplatform {
     testsetplatform windows
     file rootname {}
@@ -860,54 +662,6 @@ test cmdAH-11.10 {Tcl_FileObjCmd: extension} testsetplatform {
     testsetplatform unix
     file extension a/b.c/
 } {}
-test cmdAH-11.11 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file ext foo
-} {}
-test cmdAH-11.12 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension {}
-} {}
-test cmdAH-11.13 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension foo.
-} .
-test cmdAH-11.14 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension .foo
-} .foo
-test cmdAH-11.15 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension abc.def
-} .def
-test cmdAH-11.16 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension abc.def.ghi
-} .ghi
-test cmdAH-11.17 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension a:b:c.d
-} .d
-test cmdAH-11.18 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension a:b.c:d
-} {}
-test cmdAH-11.19 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension a/b/c.d
-} .d
-test cmdAH-11.20 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension a/b.c/d
-} {}
-test cmdAH-11.21 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension /a.b
-} .b
-test cmdAH-11.22 {Tcl_FileObjCmd: extension} testsetplatform {
-    testsetplatform mac
-    file extension foo.c:
-} {}
 test cmdAH-11.23 {Tcl_FileObjCmd: extension} testsetplatform {
     testsetplatform windows
     file extension {}
@@ -958,7 +712,7 @@ test cmdAH-11.34 {Tcl_FileObjCmd: extension} testsetplatform {
 } {}
 set num 35
 foreach value {a..b a...b a.c..b ..b} result {.b .b .b .b} {
-    foreach p {unix mac windows} {
+    foreach p {unix windows} {
 ;	test cmdAH-11.$num {Tcl_FileObjCmd: extension} testsetplatform "
 	    testsetplatform $p
 	    file extension $value
@@ -1088,13 +842,6 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly testchmod} {
     file exe $gorpfile
 } 1
 
-test cmdAH-18.4 {Tcl_FileObjCmd: executable} {macOnly testchmod} {
-    # On mac, the only executable files are of type APPL.
-
-    set x [file exe $gorpfile]
-    file attrib $gorpfile -type APPL
-    lappend x [file exe $gorpfile]
-} {0 1}
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} {winOnly testchmod} {
     # On pc, must be a .exe, .com, etc.
 
@@ -1145,10 +892,6 @@ test cmdAH-19.7 {Tcl_FileObjCmd: nativename} testsetplatform {
     testsetplatform windows
     list [catch {file nativename a/b} msg] $msg [testsetplatform $platform]
 } {0 {a\b} {}}
-test cmdAH-19.8 {Tcl_FileObjCmd: nativename} testsetplatform {
-    testsetplatform mac
-    list [catch {file nativename a/b} msg] $msg [testsetplatform $platform]
-} {0 :a:b {}}
 
 test cmdAH-19.9 {Tcl_FileObjCmd: ~ : exists} {
     file exists ~nOsUcHuSeR
@@ -1409,14 +1152,14 @@ test cmdAH-24.5 {Tcl_FileObjCmd: mtime} {
 test cmdAH-24.7 {Tcl_FileObjCmd: mtime} {
     list [catch {file mtime $file notint} msg] $msg
 } {1 {expected integer but got "notint"}}
-test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} macOrUnix {
+test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} unixOnly {
     set mtime [file mtime $file]
     after 1100; # pause a sec to notice change in mtime
     set newmtime [clock seconds]
     set modmtime [file mtime $file $newmtime]
     expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
-test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} macOrUnix {
+test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} unixOnly {
     set oldfile $file
     # introduce some non-ascii characters.
     append file \u2022
@@ -1489,10 +1232,6 @@ test cmdAH-26.2 {Tcl_FileObjCmd: readlink} {unixOnly nonPortable} {
     file readlink $linkfile
 } $gorpfile
 test cmdAH-26.3 {Tcl_FileObjCmd: readlink errors} {unixOnly nonPortable} {
-    list [catch {file readlink _bogus_} msg] [string tolower $msg] \
-	    [string tolower $errorCode]
-} {1 {could not readlink "_bogus_": no such file or directory} {posix enoent {no such file or directory}}}
-test cmdAH-26.4 {Tcl_FileObjCmd: readlink errors} {macOnly nonPortable} {
     list [catch {file readlink _bogus_} msg] [string tolower $msg] \
 	    [string tolower $errorCode]
 } {1 {could not readlink "_bogus_": no such file or directory} {posix enoent {no such file or directory}}}

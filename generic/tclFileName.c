@@ -10,58 +10,16 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.49 2004/03/09 12:57:25 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.50 2004/03/17 18:14:13 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclRegexp.h"
 
-/* 
- * This define is used to activate Tcl's interpretation of Unix-style
- * paths (containing forward slashes, '.' and '..') on MacOS.  A 
- * side-effect of this is that some paths become ambiguous.
- */
-#define MAC_UNDERSTANDS_UNIX_PATHS
-
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-/*
- * The following regular expression matches the root portion of a Macintosh
- * absolute path.  It will match degenerate Unix-style paths, tilde paths,
- * Unix-style paths, and Mac paths.  The various subexpressions in this
- * can be summarised as follows: ^(/..|~user/unix|~user:mac|/unix|mac:dir).
- * The subexpression indices which match the root portions, are as follows:
- * 
- * degenerate unix-style: 2
- * unix-tilde: 5
- * mac-tilde: 7
- * unix-style: 9 (or 10 to cut off the irrelevant header).
- * mac: 12
- * 
- */
-
-#define MAC_ROOT_PATTERN "^((/+([.][.]?/+)*([.][.]?)?)|(~[^:/]*)(/[^:]*)?|(~[^:]*)(:.*)?|/+([.][.]?/+)*([^:/]+)(/[^:]*)?|([^:]+):.*)$"
-
-/*
- * The following variables are used to hold precompiled regular expressions
- * for use in filename matching.
- */
-
-typedef struct ThreadSpecificData {
-    int initialized;
-    Tcl_Obj *macRootPatternPtr;
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-
-static void		FileNameCleanup _ANSI_ARGS_((ClientData clientData));
-static void		FileNameInit _ANSI_ARGS_((void));
-
-#endif
-
 /*
  * The following variable is set in the TclPlatformInit call to one
- * of: TCL_PLATFORM_UNIX, TCL_PLATFORM_MAC, or TCL_PLATFORM_WINDOWS.
+ * of: TCL_PLATFORM_UNIX or TCL_PLATFORM_WINDOWS.
  */
 
 TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
@@ -76,68 +34,12 @@ static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
 			    Tcl_DString *resultPtr, int offset, 
 			    Tcl_PathType *typePtr));
 static int		SkipToChar _ANSI_ARGS_((char **stringPtr, int match));
-static Tcl_Obj*		SplitMacPath _ANSI_ARGS_((CONST char *path));
 static Tcl_Obj*		SplitWinPath _ANSI_ARGS_((CONST char *path));
 static Tcl_Obj*		SplitUnixPath _ANSI_ARGS_((CONST char *path));
 static int              DoGlob _ANSI_ARGS_((Tcl_Interp *interp, 
 			    char *separators, Tcl_Obj *pathPtr, 
 			    int flags, char *pattern, Tcl_GlobTypeData *types));
 
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-
-/*
- *----------------------------------------------------------------------
- *
- * FileNameInit --
- *
- *	This procedure initializes the patterns used by this module.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Compiles the regular expressions.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FileNameInit()
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    if (!tsdPtr->initialized) {
-	tsdPtr->initialized = 1;
-	tsdPtr->macRootPatternPtr = Tcl_NewStringObj(MAC_ROOT_PATTERN, -1);
-	Tcl_CreateThreadExitHandler(FileNameCleanup, NULL);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FileNameCleanup --
- *
- *	This procedure is a Tcl_ExitProc used to clean up the static
- *	data structures used in this file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Deallocates storage used by the procedures in this file.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FileNameCleanup(clientData)
-    ClientData clientData;	/* Not used. */
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_DecrRefCount(tsdPtr->macRootPatternPtr);
-    tsdPtr->initialized = 0;
-}
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -406,88 +308,6 @@ TclpGetNativePathType(pathPtr, driveNameLengthPtr, driveNameRef)
 		}
 		break;
 	    }
-	    case TCL_PLATFORM_MAC:
-		if (path[0] == ':') {
-		    type = TCL_PATH_RELATIVE;
-		} else {
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-		    ThreadSpecificData *tsdPtr;
-		    Tcl_RegExp re;
-
-		    tsdPtr = TCL_TSD_INIT(&dataKey);
-
-		    /*
-		     * Since we have eliminated the easy cases, use the
-		     * root pattern to look for the other types.
-		     */
-
-		    FileNameInit();
-		    re = Tcl_GetRegExpFromObj(NULL, tsdPtr->macRootPatternPtr,
-			    REG_ADVANCED);
-
-		    if (!Tcl_RegExpExec(NULL, re, path, path)) {
-			type = TCL_PATH_RELATIVE;
-		    } else {
-			CONST char *root, *end;
-			Tcl_RegExpRange(re, 2, &root, &end);
-			if (root != NULL) {
-			    type = TCL_PATH_RELATIVE;
-			} else {
-			    if (driveNameLengthPtr != NULL) {
-				Tcl_RegExpRange(re, 0, &root, &end);
-				*driveNameLengthPtr = end - root;
-			    }
-			    if (driveNameRef != NULL) {
-				if (*root == '/') {
-				    char *c;
-				    int gotColon = 0;
-				    *driveNameRef = Tcl_NewStringObj(root + 1,
-					    end - root -1);
-				    c = Tcl_GetString(*driveNameRef);
-				    while (*c != '\0') {
-					if (*c == '/') {
-					    gotColon++;
-					    *c = ':';
-					}
-					c++;
-				    }
-				    /* 
-				     * If there is no colon, we have just a
-				     * volume name so we must add a colon so
-				     * it is an absolute path.
-				     */
-				    if (gotColon == 0) {
-				        Tcl_AppendToObj(*driveNameRef, ":", 1);
-				    } else if ((gotColon > 1) &&
-					    (*(c-1) == ':')) {
-					/* We have an extra colon */
-				        Tcl_SetObjLength(*driveNameRef, 
-					  c - Tcl_GetString(*driveNameRef) - 1);
-				    }
-				}
-			    }
-			}
-		    }
-#else
-		    if (path[0] == '~') {
-		    } else if (path[0] == ':') {
-			type = TCL_PATH_RELATIVE;
-		    } else {
-			char *colonPos = strchr(path,':');
-			if (colonPos == NULL) {
-			    type = TCL_PATH_RELATIVE;
-			} else {
-			}
-		    }
-		    if (type == TCL_PATH_ABSOLUTE) {
-			if (driveNameLengthPtr != NULL) {
-			    *driveNameLengthPtr = strlen(path);
-			}
-		    }
-#endif
-		}
-		break;
-	    
 	    case TCL_PLATFORM_WINDOWS: {
 		Tcl_DString ds;
 		CONST char *rootEnd;
@@ -552,10 +372,6 @@ TclpNativeSplitPath(pathPtr, lenPtr)
 
 	case TCL_PLATFORM_WINDOWS:
 	    resultPtr = SplitWinPath(Tcl_GetString(pathPtr));
-	    break;
-	    
-	case TCL_PLATFORM_MAC:
-	    resultPtr = SplitMacPath(Tcl_GetString(pathPtr));
 	    break;
     }
 
@@ -813,246 +629,6 @@ SplitWinPath(path)
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * SplitMacPath --
- *
- *	This routine is used by Tcl_(FS)SplitPath to handle splitting
- *	Macintosh paths.
- *
- * Results:
- *	Returns a newly allocated Tcl list object.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_Obj*
-SplitMacPath(path)
-    CONST char *path;		/* Pointer to string containing a path. */
-{
-    int isMac = 0;		/* 1 if is Mac-style, 0 if Unix-style path. */
-    int length;
-    CONST char *p, *elementStart;
-    Tcl_Obj *result;
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-    Tcl_RegExp re;
-    int i;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-#endif
-    
-    result = Tcl_NewObj();
-    
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-    /*
-     * Initialize the path name parser for Macintosh path names.
-     */
-
-    FileNameInit();
-
-    /*
-     * Match the root portion of a Mac path name.
-     */
-
-    i = 0;			/* Needed only to prevent gcc warnings. */
-
-    re = Tcl_GetRegExpFromObj(NULL, tsdPtr->macRootPatternPtr, REG_ADVANCED);
-
-    if (Tcl_RegExpExec(NULL, re, path, path) == 1) {
-	CONST char *start, *end;
-	Tcl_Obj *nextElt;
-
-	/*
-	 * Treat degenerate absolute paths like / and /../.. as
-	 * Mac relative file names for lack of anything else to do.
-	 */
-
-	Tcl_RegExpRange(re, 2, &start, &end);
-	if (start) {
-	    Tcl_Obj *elt = Tcl_NewStringObj(":", 1);
-	    Tcl_RegExpRange(re, 0, &start, &end);
-	    Tcl_AppendToObj(elt, path, end - start);
-	    Tcl_ListObjAppendElement(NULL, result, elt);
-	    return result;
-	}
-
-	Tcl_RegExpRange(re, 5, &start, &end);
-	if (start) {
-	    /*
-	     * Unix-style tilde prefixed paths.
-	     */
-
-	    isMac = 0;
-	    i = 5;
-	} else {
-	    Tcl_RegExpRange(re, 7, &start, &end);
-	    if (start) {
-		/*
-		 * Mac-style tilde prefixed paths.
-		 */
-
-		isMac = 1;
-		i = 7;
-	    } else {
-		Tcl_RegExpRange(re, 10, &start, &end);
-		if (start) {
-		    /*
-		     * Normal Unix style paths.
-		     */
-
-		    isMac = 0;
-		    i = 10;
-		} else {
-		    Tcl_RegExpRange(re, 12, &start, &end);
-		    if (start) {
-			/*
-			 * Normal Mac style paths.
-			 */
-
-			isMac = 1;
-			i = 12;
-		    }
-		}
-	    }
-	}
-	Tcl_RegExpRange(re, i, &start, &end);
-	length = end - start;
-
-	/*
-	 * Append the element and terminate it with a : 
-	 */
-
-	nextElt = Tcl_NewStringObj(start, length);
-	Tcl_AppendToObj(nextElt, ":", 1);
-	Tcl_ListObjAppendElement(NULL, result, nextElt);
-	p = end;
-    } else {
-	isMac = (strchr(path, ':') != NULL);
-	p = path;
-    }
-#else
-    if ((path[0] != ':') && (path[0] == '~' || (strchr(path,':') != NULL))) {
-	CONST char *end;
-	Tcl_Obj *nextElt;
-
-	isMac = 1;
-	
-	end = strchr(path,':');
-	if (end == NULL) {
-	    length = strlen(path);
-	} else {
-	    length = end - path;
-	}
-
-	/*
-	 * Append the element and terminate it with a :
-	 */
-
-	nextElt = Tcl_NewStringObj(path, length);
-	Tcl_AppendToObj(nextElt, ":", 1);
-	Tcl_ListObjAppendElement(NULL, result, nextElt);
-	p = path + length;
-    } else {
-	isMac = (strchr(path, ':') != NULL);
-	isMac = 1;
-	p = path;
-    }
-#endif
-    
-    if (isMac) {
-
-	/*
-	 * p is pointing at the first colon in the path.  There
-	 * will always be one, since this is a Mac-style path.
-	 * (This is no longer true if MAC_UNDERSTANDS_UNIX_PATHS 
-	 * is false, so we must check whether 'p' points to the
-	 * end of the string.)
-	 */
-	elementStart = p;
-	if (*p == ':') {
-	    p++;
-	}
-	
-	while ((p = strchr(p, ':')) != NULL) {
-	    length = p - elementStart;
-	    if (length == 1) {
-		while (*p == ':') {
-		    Tcl_ListObjAppendElement(NULL, result,
-			    Tcl_NewStringObj("::", 2));
-		    elementStart = p++;
-		}
-	    } else {
-		/*
-		 * If this is a simple component, drop the leading colon.
-		 */
-
-		if ((elementStart[1] != '~')
-			&& (strchr(elementStart+1, '/') == NULL)) {
-		    elementStart++;
-		    length--;
-		}
-		Tcl_ListObjAppendElement(NULL, result, 
-			Tcl_NewStringObj(elementStart, length));
-		elementStart = p++;
-	    }
-	}
-	if (elementStart[0] != ':') {
-	    if (elementStart[0] != '\0') {
-		Tcl_ListObjAppendElement(NULL, result, 
-			Tcl_NewStringObj(elementStart, -1));
-	    }
-	} else {
-	    if (elementStart[1] != '\0' || elementStart == path) {
-		if ((elementStart[1] != '~') && (elementStart[1] != '\0')
-			&& (strchr(elementStart+1, '/') == NULL)) {
-		    elementStart++;
-		}
-		Tcl_ListObjAppendElement(NULL, result, 
-			Tcl_NewStringObj(elementStart, -1));
-	    }
-	}
-    } else {
-
-	/*
-	 * Split on slashes, suppress extra /'s, and convert .. to ::. 
-	 */
-
-	for (;;) {
-	    elementStart = p;
-	    while ((*p != '\0') && (*p != '/')) {
-		p++;
-	    }
-	    length = p - elementStart;
-	    if (length > 0) {
-		if ((length == 1) && (elementStart[0] == '.')) {
-		    Tcl_ListObjAppendElement(NULL, result, 
-					     Tcl_NewStringObj(":", 1));
-		} else if ((length == 2) && (elementStart[0] == '.')
-			&& (elementStart[1] == '.')) {
-		    Tcl_ListObjAppendElement(NULL, result, 
-					     Tcl_NewStringObj("::", 2));
-		} else {
-		    Tcl_Obj *nextElt;
-		    if (*elementStart == '~') {
-			nextElt = Tcl_NewStringObj(":",1);
-			Tcl_AppendToObj(nextElt, elementStart, length);
-		    } else {
-			nextElt = Tcl_NewStringObj(elementStart, length);
-		    }
-		    Tcl_ListObjAppendElement(NULL, result, nextElt);
-		}
-	    }
-	    if (*p++ == '\0') {
-		break;
-	    }
-	}
-    }
-    return result;
-}
-
-/*
  *---------------------------------------------------------------------------
  *
  * Tcl_FSJoinToPath --
@@ -1227,86 +803,6 @@ TclpNativeJoinPath(prefix, joining)
 	    length = dest - Tcl_GetString(prefix);
 	    Tcl_SetObjLength(prefix, length);
 	    break;
-
-	case TCL_PLATFORM_MAC: {
-	    int newLength;
-	    
-	    /*
-	     * Sort out separators.  We basically add the object we've
-	     * been given, but we have to make sure that there is
-	     * exactly one separator inbetween (unless the object we're
-	     * adding contains multiple contiguous colons, all of which
-	     * we must add).  Also if an object is just ':' we don't
-	     * bother to add it unless it's the very first element.
-	     */
-
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-	    int adjustedPath = 0;
-	    if ((strchr(p, ':') == NULL) && (strchr(p, '/') != NULL)) {
-		char *start = p;
-		adjustedPath = 1;
-		while (*start != '\0') {
-		    if (*start == '/') {
-		        *start = ':';
-		    }
-		    start++;
-		}
-	    }
-#endif
-	    if (length > 0) {
-		if ((p[0] == ':') && (p[1] == '\0')) {
-		    return;
-		}
-		if (start[length-1] != ':') {
-		    if (*p != '\0' && *p != ':') {
-			Tcl_AppendToObj(prefix, ":", 1);
-			length++;
-		    }
-		} else if (*p == ':') {
-		    p++;
-		}
-	    } else {
-		if (*p != '\0' && *p != ':') {
-		    Tcl_AppendToObj(prefix, ":", 1);
-		    length++;
-		}
-	    }
-	    
-	    /*
-	     * Append the element
-	     */
-
-	    newLength = strlen(p);
-	    /* 
-	     * It may not be good to just do 'Tcl_AppendToObj(prefix,
-	     * p, newLength)' because the object may contain duplicate
-	     * colons which we want to get rid of.
-	     */
-	    Tcl_AppendToObj(prefix, p, newLength);
-	    
-	    /* Remove spurious trailing single ':' */
-	    dest = Tcl_GetString(prefix) + length + newLength;
-	    if (*(dest-1) == ':') {
-		if (dest-1 > Tcl_GetString(prefix)) {
-		    if (*(dest-2) != ':') {
-		        Tcl_SetObjLength(prefix, length + newLength -1);
-		    }
-		}
-	    }
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-	    /* Revert the path to what it was */
-	    if (adjustedPath) {
-		char *start = joining;
-		while (*start != '\0') {
-		    if (*start == ':') {
-			*start = '/';
-		    }
-		    start++;
-		}
-	    }
-#endif
-	    break;
-	}
     }
     return;
 }
@@ -1463,18 +959,6 @@ TclGetExtension(name)
     switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX:
 	    lastSep = strrchr(name, '/');
-	    break;
-
-	case TCL_PLATFORM_MAC:
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-	    if (strchr(name, ':') == NULL) {
-		lastSep = strrchr(name, '/');
-	    } else {
-		lastSep = strrchr(name, ':');
-	    }
-#else
-	    lastSep = strrchr(name, ':');
-#endif
 	    break;
 
 	case TCL_PLATFORM_WINDOWS:
@@ -1704,9 +1188,6 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    break;
 	case TCL_PLATFORM_WINDOWS:
 	    separators = "/\\:";
-	    break;
-	case TCL_PLATFORM_MAC:
-	    separators = ":";
 	    break;
     }
     if (dir == PATH_GENERAL) {
@@ -2051,17 +1532,6 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	case TCL_PLATFORM_WINDOWS:
 	    separators = "/\\:";
 	    break;
-	case TCL_PLATFORM_MAC:
-#ifdef MAC_UNDERSTANDS_UNIX_PATHS
-	    if (pathPrefix == NULL) {
-		separators = (strchr(pattern, ':') == NULL) ? "/" : ":";
-	    } else {
-		separators = ":";
-	    }
-#else
-	    separators = ":";
-#endif
-	    break;
     }
 
     if (pathPrefix == NULL) {
@@ -2243,15 +1713,6 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 
 	    Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), 
 				   &objc, &objv);
-    #ifdef MAC_TCL
-	    /* adjust prefixLen if DoGlob prepended a ':' */
-	    if ((prefixLen > 0) && (objc > 0) && (pre[0] != ':')) {
-		CONST char *str = Tcl_GetStringFromObj(objv[0],NULL);
-		if (str[0] == ':') {
-		    prefixLen++;
-		}
-	    }
-    #endif
 	    for (i = 0; i< objc; i++) {
 		Tcl_Obj* elt;
 		int len;
@@ -2410,14 +1871,11 @@ DoGlob(interp, separators, pathPtr, flags, pattern, types)
      * Tcl 8.5a0.  Simplifications to the calling paths suggest it may
      * not be necessary any more, since path separators are handled
      * elsewhere.  It is left in place in case new bugs are reported
-     * (particularly on MacOS)
      */
 
 #if 0
     /*
-     * Deal with path separators.  On the Mac, we have to watch out
-     * for multiple separators, since they are special in Mac-style
-     * paths.
+     * Deal with path separators.
      */
     if (pathPtr == NULL) {
 	/* 
@@ -2429,31 +1887,6 @@ DoGlob(interp, separators, pathPtr, flags, pattern, types)
 	char lastChar = 0;
 
 	switch (tclPlatform) {
-	    case TCL_PLATFORM_MAC:
-    #ifdef MAC_UNDERSTANDS_UNIX_PATHS
-		if (*separators == '/') {
-		    if (((length == 0) && (count == 0))
-			    || ((length > 0) && (lastChar != ':'))) {
-			Tcl_DStringAppend(&append, ":", 1);
-		    }
-		} else {
-    #endif
-		    if (count == 0) {
-			if ((length > 0) && (lastChar != ':')) {
-			    Tcl_DStringAppend(&append, ":", 1);
-			}
-		    } else {
-			if (lastChar == ':') {
-			    count--;
-			}
-			while (count-- > 0) {
-			    Tcl_DStringAppend(&append, ":", 1);
-			}
-		    }
-    #ifdef MAC_UNDERSTANDS_UNIX_PATHS
-		}
-    #endif
-		break;
 	    case TCL_PLATFORM_WINDOWS:
 		/*
 		 * If this is a drive relative path, add the colon and the
@@ -2701,12 +2134,6 @@ DoGlob(interp, separators, pathPtr, flags, pattern, types)
 	    }
 
 	    switch (tclPlatform) {
-		case TCL_PLATFORM_MAC: {
-		    if (strchr(Tcl_DStringValue(&append), ':') == NULL) {
-			Tcl_DStringAppend(&append, ":", 1);
-		    }
-		    break;
-		}
 		case TCL_PLATFORM_WINDOWS: {
 		    if (length == 0 && (Tcl_DStringLength(&append) == 0)) {
 			if (((*name == '\\') && (name[1] == '/' || name[1] == '\\'))

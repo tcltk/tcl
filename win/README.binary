@@ -1,6 +1,6 @@
 Tcl/Tk 8.5 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.35 2004/03/02 00:42:51 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.36 2004/03/17 18:14:19 das Exp $ 
 
 1. Introduction
 --------------- 
@@ -13,7 +13,7 @@ Tcl provides a powerful platform for creating integration applications
 that tie together diverse applications, protocols, devices, and
 frameworks.  When paired with the Tk toolkit, Tcl provides the fastest
 and most powerful way to create GUI applications that run on PCs, Unix,
-and the Macintosh.  Tcl can also be used for a variety of web-related
+and Mac OS X.  Tcl can also be used for a variety of web-related
 tasks and for creating powerful command languages for applications.
 
 Tcl is maintained, enhanced, and distributed freely by the Tcl community.
@@ -76,7 +76,7 @@ our ftp site:
 	ftp://ftp.scriptics.com/pub/tcl/misc/example.zip
 
 This archive contains a template that you can use for building
-extensions that will be loadable on Unix, Windows, and Macintosh
+extensions that will be loadable on Unix, Windows, and Mac OS X
 systems.
 
 6. Reporting Bugs

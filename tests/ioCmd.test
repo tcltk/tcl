@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.19 2003/10/07 21:45:39 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.20 2004/03/17 18:14:18 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -287,12 +287,6 @@ proc iocmdSSHTDWN {} {
     }
 }
 
-test iocmd-8.15.0 {fconfigure command / tcp channel} {socket macOnly} {
-	iocmdSSETUP
-	set r [list [catch {fconfigure $cli -blah} msg] $msg]
-	iocmdSSHTDWN
-	set r
-} {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -error, -peername, or -sockname}}
 test iocmd-8.15.1 {fconfigure command / tcp channel} {socket unixOrPc} {
 	iocmdSSETUP
 	set r [list [catch {fconfigure $cli -blah} msg] $msg]

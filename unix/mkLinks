@@ -852,24 +852,6 @@ if test -r ListObj.3; then
     ln $S ListObj.3$Z Tcl_ListObjIndex.3$Z 
     ln $S ListObj.3$Z Tcl_ListObjReplace.3$Z 
 fi
-if test -r Macintosh.3; then
-    rm -f Macintosh.3.*
-    $ZIP Macintosh.3
-    rm -f Tcl_MacSetEventProc.3 Tcl_MacSetEventProc.3.* 
-    rm -f Tcl_MacConvertTextResource.3 Tcl_MacConvertTextResource.3.* 
-    rm -f Tcl_MacEvalResource.3 Tcl_MacEvalResource.3.* 
-    rm -f Tcl_MacFindResource.3 Tcl_MacFindResource.3.* 
-    rm -f Tcl_GetOSTypeFromObj.3 Tcl_GetOSTypeFromObj.3.* 
-    rm -f Tcl_SetOSTypeObj.3 Tcl_SetOSTypeObj.3.* 
-    rm -f Tcl_NewOSTypeObj.3 Tcl_NewOSTypeObj.3.* 
-    ln $S Macintosh.3$Z Tcl_MacSetEventProc.3$Z 
-    ln $S Macintosh.3$Z Tcl_MacConvertTextResource.3$Z 
-    ln $S Macintosh.3$Z Tcl_MacEvalResource.3$Z 
-    ln $S Macintosh.3$Z Tcl_MacFindResource.3$Z 
-    ln $S Macintosh.3$Z Tcl_GetOSTypeFromObj.3$Z 
-    ln $S Macintosh.3$Z Tcl_SetOSTypeObj.3$Z 
-    ln $S Macintosh.3$Z Tcl_NewOSTypeObj.3$Z 
-fi
 if test -r Namespace.3; then
     rm -f Namespace.3.*
     $ZIP Namespace.3
@@ -1815,10 +1797,6 @@ fi
 if test -r rename.n; then
     rm -f rename.n.*
     $ZIP rename.n
-fi
-if test -r resource.n; then
-    rm -f resource.n.*
-    $ZIP resource.n
 fi
 if test -r return.n; then
     rm -f return.n.*

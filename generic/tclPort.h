@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPort.h,v 1.7 2003/04/16 23:33:44 dgp Exp $
+ * RCS: @(#) $Id: tclPort.h,v 1.8 2004/03/17 18:14:14 das Exp $
  */
 
 #ifndef _TCLPORT
@@ -21,11 +21,7 @@
 #if defined(__WIN32__)
 #   include "../win/tclWinPort.h"
 #else
-#   if defined(MAC_TCL)
-#      include "tclMacPort.h"
-#   else
-#      include "../unix/tclUnixPort.h"
-#   endif
+#   include "../unix/tclUnixPort.h"
 #endif
 
 #if !defined(LLONG_MIN)
