@@ -1,5 +1,14 @@
 2004-09-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	Reworked management of the interp
+	* generic/tclCompile.c:	flag ERR_ALREADY_LOGGED, to reduce
+	* generic/tclExecute.c: its exposure.  Still left several
+	* generic/tclNamesp.c:	references that are just too nice
+	on performace to do away with.  These changes also resolve
+	an inconsistency in the ::errorInfo values produced by
+	[namespace eval x error foo bar] and
+	[namespace eval x {error foo bar}].
+
 	* generic/tclExecute.c (TclCompEvalObj):	Simplified
 	the TclCompEvalObj routine.  Much housekeeping now reliably
 	happens elsewhere.  [Patch 1031949]
