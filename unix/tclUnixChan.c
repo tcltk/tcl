@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.10 1999/04/16 00:48:04 stanton Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.11 1999/10/29 03:04:58 hobbs Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1584,7 +1584,7 @@ TcpInputProc(instanceData, buf, bufSize, errorCodePtr)
     if (state != 0) {
         return -1;
     }
-    bytesRead = recv(statePtr->fd, buf, bufSize, 0);
+    bytesRead = recv(statePtr->fd, buf, (size_t) bufSize, 0);
     if (bytesRead > -1) {
         return bytesRead;
     }
@@ -1637,7 +1637,7 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     if (state != 0) {
         return -1;
     }
-    written = send(statePtr->fd, buf, toWrite, 0);
+    written = send(statePtr->fd, buf, (size_t) toWrite, 0);
     if (written > -1) {
         return written;
     }

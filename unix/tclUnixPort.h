@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.11 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.12 1999/10/29 03:04:58 hobbs Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -36,6 +36,7 @@
  *---------------------------------------------------------------------------
  */
 
+#include <utime.h>
 #include <errno.h>
 #include <fcntl.h>
 #ifdef HAVE_NET_ERRNO_H
