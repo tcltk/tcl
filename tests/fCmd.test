@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.29 2003/06/23 10:14:02 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.30 2003/10/06 17:27:18 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -671,8 +671,8 @@ test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 } "1 {error renaming \"~$user\" to \"td1/[file tail ~$user]\": permission denied}"
 test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
 	{unixOnly notRoot} {
-    file tail ~$user
-} "$user"
+    string equal [file tail ~$user] ~$user
+} 0
 test fCmd-8.3 {file copy and path translation: ensure correct error} {
     list [catch {file copy ~ [file join this file doesnt exist]} res] $res
 } [list 1 \
