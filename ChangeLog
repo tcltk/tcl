@@ -1,3 +1,8 @@
+2002-07-18  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/ioUtil.test: added constraints to 1.4,2.4 so they
+	don't run outside of tcltest. [Bugs 583276,583277]
+	
 2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclVar.c (DupParsedVarName): nasty bug fixed, reported
