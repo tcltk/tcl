@@ -1,3 +1,7 @@
+2004-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/[a-e]*.n: First stage of backporting documentation updates.
+
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/subst.test (subst-12.3-5):	More tests for Bug 1036649.

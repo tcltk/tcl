@@ -5,14 +5,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.6 2002/04/23 19:06:10 hobbs Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.6.2.1 2004/10/27 09:35:38 dkf Exp $
 '\" 
 .so man.macros
 .TH exec n 7.6 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-exec \- Invoke subprocess(es)
+exec \- Invoke subprocesses
 .SH SYNOPSIS
 \fBexec \fR?\fIswitches\fR? \fIarg \fR?\fIarg ...\fR?
 .BE
@@ -38,7 +38,7 @@ Normally a trailing newline will be deleted.
 Marks the end of switches.  The argument following this one will
 be treated as the first \fIarg\fR even if it starts with a \fB\-\fR.
 .PP
-If an \fIarg\fR (or pair of \fIarg\fR's) has one of the forms
+If an \fIarg\fR (or pair of \fIarg\fRs) has one of the forms
 described below then it is used by \fBexec\fR to control the
 flow of input and output among the subprocess(es).
 Such arguments will not be passed to the subprocess(es).  In forms
@@ -217,7 +217,7 @@ example.
 .br
 2) TUI -- Textmode User Interface, any application that accesses the console
 API for doing such things as cursor movement, setting text color, detecting
-key presses and mouse movement, etc...  An example would be \fBtelnet.exe\fR
+key presses and mouse movement, etc.  An example would be \fBtelnet.exe\fR
 from Windows 2000.  These types of applications are not common in a windows
 environment, but do exist.
 .RE
@@ -225,8 +225,7 @@ environment, but do exist.
 present, as is done when launching applications under wish.  It is desirable
 to have console applications hidden and detached.  This is a designed-in
 limitation as \fBexec\fR wants to communicate over pipes.  The Expect
-extension addresses this issue when communication between a TUI application
-is desired.
+extension addresses this issue when communicating with a TUI application.
 .sp
 .RE
 .TP
@@ -254,12 +253,13 @@ The Windows NT home directory.
 The directories listed in the path.
 .RE
 .sp
-In order to execute the shell builtin commands like \fBdir\fR and \fBcopy\fR,
-the caller must prepend ``\fBcmd.exe /c\0\fR'' to the desired command.
+In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
+the caller must prepend the desired command with ``\fBcmd.exe /c\0\fR''
+because built-in commands are not implemented using executables.
 .sp
 .RE
 .TP
-\fBWindows 95\fR
+\fBWindows 9x\fR
 .
 When attempting to execute an application, \fBexec\fR first searches for
 the name as it was specified.  Then, in order, \fB.com\fR, \fB.exe\fR, and
@@ -274,15 +274,16 @@ The directory from which the Tcl executable was loaded.
 .br
 The current directory.
 .br
-The Windows 95 system directory.
+The Windows 9x system directory.
 .br
-The Windows 95 home directory.
+The Windows 9x home directory.
 .br
 The directories listed in the path.
 .RE
 .sp
-In order to execute the shell builtin commands like \fBdir\fR and \fBcopy\fR,
-the caller must prepend ``\fBcommand.com /c\0\fR'' to the desired command.
+In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
+the caller must prepend the desired command with ``\fBcommand.com /c\0\fR''
+because built-in commands are not implemented using executables.
 .sp
 Once a 16-bit DOS application has read standard input from a console and 
 then quit, all subsequently run 16-bit DOS applications will see the 
@@ -321,6 +322,87 @@ The \fBexec\fR command is not implemented and does not exist under Macintosh.
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 The \fBexec\fR command is fully functional and works as described.
+
+.SH "UNIX EXAMPLES"
+Here are some examples of the use of the \fBexec\fR command on Unix.
+.PP
+To execute a simple program and get its result:
+.CS
+\fBexec\fR uname -a
+.CE
+.PP
+To execute a program that can return a non-zero result, you should
+wrap the call to \fBexec\fR in \fBcatch\fR and check what the contents
+of the global \fBerrorCode\fR variable is if you have an error:
+.CS
+set status 0
+if {[catch {\fBexec\fR grep foo bar.txt} results]} {
+   if {[lindex $::errorCode 0] eq "CHILDSTATUS"} {
+      set status [lindex $::errorCode 2]
+   } else {
+      # Some kind of unexpected failure
+   }
+}
+.CE
+.PP
+When translating a command from a Unix shell invocation, care should
+be taken over the fact that single quote characters have no special
+significance to Tcl.  Thus:
+.CS
+awk '{sum += $1} END {print sum}' numbers.list
+.CE
+would be translated into something like:
+.CS
+\fBexec\fR awk {{sum += $1} END {print sum}} numbers.list
+.CE
+.PP
+If you are converting invocations involving shell globbing, you should
+remember that Tcl does not handle globbing or expand things into
+multiple arguments by default.  Instead you should write things like
+this:
+.CS
+eval [list \fBexec\fR ls -l] [glob *.tcl]
+.CE
+.PP
+.SH "WINDOWS EXAMPLES"
+Here are some examples of the use of the \fBexec\fR command on Windows.
+.PP
+To start an instance of \fInotepad\fR editing a file without waiting
+for the user to finish editing the file:
+.CS
+\fBexec\fR notepad myfile.txt &
+.CE
+.PP
+To print a text file using \fInotepad\fR:
+.CS
+\fBexec\fR notepad /p myfile.txt
+.CE
+.PP
+If a program calls other programs, such as is common with compilers,
+then you may need to resort to batch files to hide the console windows
+that sometimes pop up:
+.CS
+\fBexec\fR cmp.bat somefile.c -o somefile
+.CE
+With the file \fIcmp.bat\fR looking something like:
+.CS
+@gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
+.CE
+.PP
+Sometimes you need to be careful, as different programs may have the
+same name and be in the path. It can then happen that typing a command
+at the DOS prompt finds \fIa different program\fR than the same
+command run via \fBexec\fR. This is because of the (documented)
+differences in behaviour between \fBexec\fR and DOS batch files.
+.PP
+When in doubt, use the command \fBauto_execok\fR: it will return the
+complete path to the program as seen by the \fBexec\fR command.  This
+applies especially when you want to run "internal" commands like
+\fIdir\fR from a Tcl script (if you just want to list filenames, use
+the \fBglob\fR command.)  To do that, use this:
+.CS
+eval [list \fBexec\fR] [auto_execok dir] [list *.tcl]
+.CE
 
 .SH "SEE ALSO"
 error(n), open(n)
