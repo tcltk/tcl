@@ -1,3 +1,9 @@
+2004-12-13  Kevin B. Kenny
+
+	* doc/clock.n: Clarify that the [clock scan] command does not
+	accept the full range of ISO8601 point-in-time formats
+	[Bug 1075433].
+	
 2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/Async.3: Reword for better grammar, better nroff and get the
