@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.45 2004/05/14 19:15:35 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.46 2004/05/16 17:25:49 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -530,21 +530,22 @@ typedef struct ByteCode {
 
 /* TIP #157 - {expand}... language syntax support. */
 
-#define INST_LIST_VERIFY		100
-#define INST_INVOKE_EXP			101
+#define INST_EXPAND_START             100
+#define INST_EXPAND_STKTOP            101
+#define INST_INVOKE_EXPANDED          102
 
 /*
  * TIP #57 - 'lassign' command.  Code generation requires immediate
  *	     LINDEX and LRANGE operators.
  */
 
-#define INST_LIST_INDEX_IMM		102
-#define INST_LIST_RANGE_IMM		103
+#define INST_LIST_INDEX_IMM		103
+#define INST_LIST_RANGE_IMM		104
 
-#define INST_START_CMD                  104
+#define INST_START_CMD                  105
 
 /* The last opcode */
-#define LAST_INST_OPCODE		104
+#define LAST_INST_OPCODE		105
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
@@ -563,7 +564,6 @@ typedef enum InstOperandType {
     OPERAND_INT4,		/* Four byte signed integer. */
     OPERAND_UINT1,		/* One byte unsigned integer. */
     OPERAND_UINT4,		/* Four byte unsigned integer. */
-    OPERAND_ULIST1,		/* List of one byte unsigned integers. */
     OPERAND_IDX4		/* Four byte signed index (actually an
 				 * integer, but displayed differently.) */
 } InstOperandType;
@@ -865,6 +865,21 @@ EXTERN int		TclWordKnownAtCompileTime _ANSI_ARGS_((
 	TclRegisterLiteral(envPtr, (char *)(bytes), length, /*onHeap*/ 0)
 
 /*
+ * Macro used to manually adjust the stack requirements; used
+ * in cases where the stack effect cannot be computed from
+ * the opcode and its operands, but is still known at
+ * compile time.
+ */
+
+#define TclAdjustStackDepth(delta, envPtr) \
+    if ((delta) < 0) {\
+	if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\
+	    (envPtr)->maxStackDepth = (envPtr)->currStackDepth;\
+	}\
+    }\
+    (envPtr)->currStackDepth += (delta)
+
+/*
  * Macro used to update the stack requirements.
  * It is called by the macros TclEmitOpCode, TclEmitInst1 and
  * TclEmitInst4.
@@ -877,16 +892,11 @@ EXTERN int		TclWordKnownAtCompileTime _ANSI_ARGS_((
     {\
 	int delta = tclInstructionTable[(op)].stackEffect;\
 	if (delta) {\
-	    if (delta < 0) {\
-		if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\
-		    (envPtr)->maxStackDepth = (envPtr)->currStackDepth;\
-		}\
-		if (delta == INT_MIN) {\
-		    delta = 1 - (i);\
-		}\
+	    if (delta == INT_MIN) {\
+		delta = 1 - (i);\
 	    }\
-	    (envPtr)->currStackDepth += delta;\
-	}\
+            TclAdjustStackDepth(delta, envPtr);\
+        }\
     }
 
 /*
@@ -964,25 +974,6 @@ EXTERN int		TclWordKnownAtCompileTime _ANSI_ARGS_((
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i)      );\
     TclUpdateStackReqs(op, i, envPtr)
-
-/*
- * Macro to emit an immediate list of index deltas in the code stream. 
- * The ANSI C "prototypes" for this macro is:
- *
- * EXTERN void	TclEmitImmList1 _ANSI_ARGS_((Tcl_Obj *listPtr,
- *		    CompileEnv *envPtr));
- */
-
-#define TclEmitImmDeltaList1(listPtr, envPtr)				\
-    {									\
-	int numBytes = Tcl_DStringLength(listPtr) + 1;			\
-	while (((envPtr)->codeNext + numBytes) > (envPtr)->codeEnd) {	\
-	    TclExpandCodeArray(envPtr);					\
-	}								\
-	memcpy((VOID *) (envPtr)->codeNext,				\
-		(VOID *)Tcl_DStringValue(listPtr), (size_t) numBytes);	\
-	(envPtr)->codeNext += numBytes;					\
-    }
 
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
