@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.15 1998/07/29 11:41:24 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.16 1998/07/29 11:43:18 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -170,12 +170,10 @@
 # else
 #  define DLLIMPORT
 #  define DLLEXPORT
-#  define EXPORT
 # endif
 #else
 # define DLLIMPORT
 # define DLLEXPORT
-# define EXPORT
 #endif
 
 #ifdef EXPORT
