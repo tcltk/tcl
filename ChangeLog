@@ -1,3 +1,36 @@
+1999-04-02    <stanton@scriptics.com>
+
+	* tests/expr.test: 
+	* tests/for-old.test: 
+	* tests/for.test: 
+	* tests/foreach.test: 
+	* tests/format.test: 
+	* tests/httpold.test: 
+	* tests/if.test: 
+	* tests/init.test: 
+	* tests/interp.test: 
+	* tests/while.test:  Added some tests for known bugs (marked with
+	knownBug constraint), and cleaned up a few bad tests.
+
+	* generic/regc_locale.c: 
+	* generic/regcustom.h: 
+	* generic/tcl.decls: 
+	* generic/tclCmdIL.c: 
+	* generic/tclCmdMZ.c: 
+	* generic/tclInt.h: 
+	* generic/tclRegexp.c: 
+	* generic/tclScan.c: 
+	* generic/tclTest.c:
+	* generic/tclUtf.c: 
+	* win/tclWinFCmd.c: 
+	* win/tclWinFile.c: Made various Unicode utility functions
+	public. The following functions were made public and added to the
+	stubs table: 
+		Tcl_UtfToUniCharDString, Tcl_UniCharToUtfDString,
+		Tcl_UniCharLen, Tcl_UniCharNcmp, Tcl_UniCharIsAlnum,
+		Tcl_UniCharIsAlpha, Tcl_UniCharIsDigit, Tcl_UniCharIsLower,
+		Tcl_UniCharIsSpace, Tcl_UniCharIsUpper, Tcl_UniCharIsWordChar
+
 1999-04-01    <stanton@scriptics.com>
 
 	* tests/registry.test: 
