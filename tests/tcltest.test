@@ -6,7 +6,23 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.25 2002/06/06 19:23:43 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.26 2002/06/07 19:48:41 dgp Exp $
+
+# Note that there are several places where the value of 
+# tcltest::currentFailure is stored/reset in the -setup/-cleanup
+# of a test that has a body that runs [test] that will fail.
+# This is a workaround of using the same tcltest code that we are
+# testing to run the test itself.  Ditto on things like [verbose].
+#
+# It would be better to have the -body of the tests run the tcltest
+# commands in a slave interp so the [test] being tested would not
+# interfere with the [test] doing the testing.  Use of a slave
+# interp might also be able to replace the [exec] of child processes
+# that make this test file take so long to complete.
+#
+# Anyone reading this who has some time, a patch making that change
+# would be welcome.
+#
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -1070,6 +1086,7 @@ test tcltest-21.4 {test command with cleanup failure} {
 	if {[info exists foo]} {
 	    unset foo
 	}
+	set fail $::tcltest::currentFailure
     }
     -body {
 	test tcltest-21.4.0 {foo-1} {
@@ -1078,6 +1095,7 @@ test tcltest-21.4 {test command with cleanup failure} {
     }
     -result {^$}
     -match regexp
+    -cleanup {set ::tcltest::currentFailure $fail}
     -output "Test cleanup failed:.*can't unset \"foo\": no such variable"
 }
 
@@ -1086,6 +1104,7 @@ test tcltest-21.5 {test command with setup failure} {
 	if {[info exists foo]} {
 	    unset foo
 	}
+	set fail $::tcltest::currentFailure
     }
     -body {
 	test tcltest-21.5.0 {foo-2} {
@@ -1094,10 +1113,12 @@ test tcltest-21.5 {test command with setup failure} {
     }
     -result {^$}
     -match regexp
+    -cleanup {set ::tcltest::currentFailure $fail}
     -output "Test setup failed:.*can't unset \"foo\": no such variable"
 }
 
 test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
+    -setup {set fail $::tcltest::currentFailure}
     -body {
 	test tcltest-21.6.0 {foo-3} {
 	    -setup {
@@ -1121,12 +1142,15 @@ test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
 	    -result {$expected}
 	}
     }
+    -cleanup {set ::tcltest::currentFailure $fail}
     -result {^$}
     -match regexp
     -output "foo is 2"
 }
 
 test tcltest-21.7 {test command - bad flag} {
+    -setup {set fail $::tcltest::currentFailure}
+    -cleanup {set ::tcltest::currentFailure $fail}
     -body {
 	test tcltest-21.7.0 {foo-4} {
 	    -foobar {}
@@ -1145,12 +1169,14 @@ test tcltest-21.7a {expect with glob} \
 	-match glob
 
 test tcltest-21.8 {force a test command failure} \
+    -setup {set fail $::tcltest::currentFailure} \
     -body {
         test tcltest-21.8.0 {
             return 2
         } {1}
     } \
     -returnCodes 1 \
+    -cleanup {set ::tcltest::currentFailure $fail} \
     -result {bad option "1": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 
 test tcltest-21.9 {test command with setup} \
@@ -1163,6 +1189,9 @@ test tcltest-21.10 {test command with cleanup failure} -setup {
     if {[info exists foo]} {
 	unset foo
     }
+    set fail $::tcltest::currentFailure
+} -cleanup {
+    set ::tcltest::currentFailure $fail
 } -body {
     test 21.10.0 {foo-1} -cleanup {unset foo}
 } -result {^$} -match regexp \
@@ -1172,11 +1201,18 @@ test tcltest-21.11 {test command with setup failure} -setup {
     if {[info exists foo]} {
 	unset foo
     }
-} -body {
+    set fail $::tcltest::currentFailure
+} -cleanup {set ::tcltest::currentFailure $fail} -body {
     test 21.11.0 {foo-2} -setup {unset foo}
 } -result {^$} -output {Test setup failed:.*can't unset \"foo\": no such variable} -match regexp
 
-test tcltest-21.12 {test command - setup occurs before cleanup & before script} -body {
+test tcltest-21.12 {
+	test command - setup occurs before cleanup & before script
+} -setup {
+	set fail $::tcltest::currentFailure
+} -cleanup {
+	set ::tcltest::currentFailure $fail
+} -body {
     test 21.12.0 {foo-3} -setup {
 	if {[info exists foo]} {
 	    unset foo
@@ -1406,10 +1442,11 @@ test tcltest-24.9 {
 	proc errorDuringMatch args {return -code error "match returned error"}
 	customMatch [namespace current]::errorDuringMatch \
 		[namespace code errorDuringMatch]
+	set fail $::tcltest::currentFailure
 } -body {
 	test tcltest-24.9.0 {} -match [namespace current]::errorDuringMatch
 } -cleanup {
-	set ::tcltest::currentFailure false
+	set ::tcltest::currentFailure $fail
 } -match glob -result {} -output {*FAILED*match returned error*}
 
 test tcltest-24.10 {
@@ -1417,10 +1454,11 @@ test tcltest-24.10 {
 } -setup {
 	proc nonBooleanReturn args {return foo}
 	customMatch nonBooleanReturn [namespace code nonBooleanReturn]
+	set fail $::tcltest::currentFailure
 } -body {
 	test tcltest-24.10.0 {} -match nonBooleanReturn
 } -cleanup {
-	set ::tcltest::currentFailure false
+	set ::tcltest::currentFailure $fail
 } -match glob -result {} -output {*FAILED*expected boolean value*}
 
 test tcltest-24.11 {
@@ -1453,10 +1491,11 @@ test tcltest-24.13 {
 	customMatch exact [list string equal]
 	set v [verbose]
 	verbose {}
+	set fail $::tcltest::currentFailure
 } -body {
 	test tcltest-24.13.0 {} -body {format 1} -result 0
 } -cleanup {
-	set ::tcltest::currentFailure false
+	set ::tcltest::currentFailure $fail
 	verbose $v
 	customMatch exact $saveExactMatchScript
 	unset saveExactMatchScript
@@ -1475,11 +1514,12 @@ test tcltest-24.15 {
 } -setup {
 	set v [verbose]
 	verbose {}
+	set fail $::tcltest::currentFailure
 } -body {
 	test tcltest-24.15.0 {} -match glob -body {format {A B C}} \
 		-result {A B* }
 } -cleanup {
-	set ::tcltest::currentFailure false
+	set ::tcltest::currentFailure $fail
 	verbose $v
 } -match glob -result {} -output {*FAILED*Result was:
 *(glob matching):
@@ -1494,13 +1534,14 @@ test tcltest-24.16 {
 test tcltest-24.17 {
 	test: -match regexp	failure
 } -setup {
+	set fail $::tcltest::currentFailure
 	set v [verbose]
 	verbose {}
 } -body {
 	test tcltest-24.17.0 {} -match regexp -body {format {A B C}} \
 		-result {A B.* X}
 } -cleanup {
-	set ::tcltest::currentFailure false
+	set ::tcltest::currentFailure $fail
 	verbose $v
 } -match glob -result {} -output {*FAILED*Result was:
 *(regexp matching):
@@ -1509,6 +1550,7 @@ test tcltest-24.17 {
 test tcltest-24.18 {
 	test: -match custom	forget namespace qualification
 } -setup {
+	set fail $::tcltest::currentFailure
 	set v [verbose]
 	verbose {}
 	customMatch negative matchNegative
@@ -1516,7 +1558,7 @@ test tcltest-24.18 {
 	test tcltest-24.18.0 {} -match negative -body {format {A B C}} \
 		-result {A B X}
 } -cleanup {
-	set ::tcltest::currentFailure false
+	set ::tcltest::currentFailure $fail
 	verbose $v
 } -match glob -result {} -output {*FAILED*Error testing result:*}
 
@@ -1536,7 +1578,7 @@ test tcltest-24.19 {
 test tcltest-24.20 {
 	test: -match custom	failure
 } -setup {
-	set ::tcltest::currentFailure false
+	set fail $::tcltest::currentFailure
 	set v [verbose]
 	verbose {}
 	customMatch negative [namespace code matchNegative]
@@ -1544,6 +1586,7 @@ test tcltest-24.20 {
 	test tcltest-24.20.0 {} -match negative -body {format {A B C}} \
 		-result {A B C}
 } -cleanup {
+	set ::tcltest::currentFailure $fail
 	verbose $v
 } -match glob -result {} -output {*FAILED*Result was:
 *(negative matching):
