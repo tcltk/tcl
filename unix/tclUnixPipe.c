@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.17 2001/12/11 02:42:41 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.18 2002/01/15 17:55:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@ static int	PipeGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 static int	PipeInputProc _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, int toRead, int *errorCode));
 static int	PipeOutputProc _ANSI_ARGS_((
-		    ClientData instanceData, char *buf, int toWrite,
+		    ClientData instanceData, CONST char *buf, int toWrite,
 		    int *errorCode));
 static void	PipeWatchProc _ANSI_ARGS_((ClientData instanceData, int mask));
 static void	RestoreSignals _ANSI_ARGS_((void));
@@ -1041,7 +1041,7 @@ PipeInputProc(instanceData, buf, toRead, errorCodePtr)
 static int
 PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* Pipe state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {

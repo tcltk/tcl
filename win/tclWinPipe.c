@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.20 2001/09/06 01:38:02 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.21 2002/01/15 17:55:31 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -193,8 +193,8 @@ static int		PipeGetHandleProc(ClientData instanceData,
 static void		PipeInit(void);
 static int		PipeInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		PipeOutputProc(ClientData instanceData, char *buf,
-			    int toWrite, int *errorCode);
+static int		PipeOutputProc(ClientData instanceData,
+			    CONST char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	PipeReaderThread(LPVOID arg);
 static void		PipeSetupProc(ClientData clientData, int flags);
 static void		PipeWatchProc(ClientData instanceData, int mask);
@@ -2133,7 +2133,7 @@ PipeInputProc(
 static int
 PipeOutputProc(
     ClientData instanceData,		/* Pipe state. */
-    char *buf,				/* The data buffer. */
+    CONST char *buf,			/* The data buffer. */
     int toWrite,			/* How many bytes to write? */
     int *errorCode)			/* Where to store error code. */
 {

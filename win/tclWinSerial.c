@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.17 2002/01/11 20:21:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.18 2002/01/15 17:55:31 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -170,17 +170,17 @@ static int      SerialGetHandleProc(ClientData instanceData,
 static ThreadSpecificData *SerialInit(void);
 static int      SerialInputProc(ClientData instanceData, char *buf,
                 int toRead, int *errorCode);
-static int      SerialOutputProc(ClientData instanceData, char *buf,
+static int      SerialOutputProc(ClientData instanceData, CONST char *buf,
                 int toWrite, int *errorCode);
 static void     SerialSetupProc(ClientData clientData, int flags);
 static void     SerialWatchProc(ClientData instanceData, int mask);
 static void     ProcExitHandler(ClientData clientData);
 static int       SerialGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-                Tcl_Interp *interp, char *optionName,
+                Tcl_Interp *interp, CONST char *optionName,
                 Tcl_DString *dsPtr));
 static int       SerialSetOptionProc _ANSI_ARGS_((ClientData instanceData,
-                Tcl_Interp *interp, char *optionName,
-                char *value));
+                Tcl_Interp *interp, CONST char *optionName,
+                CONST char *value));
 static DWORD WINAPI     SerialWriterThread(LPVOID arg);
 
 /*
@@ -928,7 +928,7 @@ commError:
 static int
 SerialOutputProc(
     ClientData instanceData,    /* Serial state. */
-    char *buf,                  /* The data buffer. */
+    CONST char *buf,            /* The data buffer. */
     int toWrite,                /* How many bytes to write? */
     int *errorCode)             /* Where to store error code. */
 {
@@ -1523,8 +1523,8 @@ static int
 SerialSetOptionProc(instanceData, interp, optionName, value)
     ClientData instanceData;    /* File state. */
     Tcl_Interp *interp;         /* For error reporting - can be NULL. */
-    char *optionName;           /* Which option to set? */
-    char *value;                /* New value for option. */
+    CONST char *optionName;     /* Which option to set? */
+    CONST char *value;          /* New value for option. */
 {
     SerialInfo *infoPtr;
     DCB dcb;
@@ -1861,7 +1861,7 @@ static int
 SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;    /* File state. */
     Tcl_Interp *interp;         /* For error reporting - can be NULL. */
-    char *optionName;           /* Option to get. */
+    CONST char *optionName;     /* Option to get. */
     Tcl_DString *dsPtr;         /* Where to store value(s). */
 {
     SerialInfo *infoPtr;
