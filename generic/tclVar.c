@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.41 2001/11/19 14:35:54 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.42 2001/11/30 14:59:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2374,7 +2374,7 @@ Tcl_UnsetVar2(interp, part1, part2, flags)
 	while (dummyVar.tracePtr != NULL) {
 	    VarTrace *tracePtr = dummyVar.tracePtr;
 	    dummyVar.tracePtr = tracePtr->nextPtr;
-	    ckfree((char *) tracePtr);
+	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	}
 	for (activePtr = iPtr->activeTracePtr;  activePtr != NULL;
 	     activePtr = activePtr->nextPtr) {
@@ -2695,7 +2695,7 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
     } else {
 	prevPtr->nextPtr = tracePtr->nextPtr;
     }
-    ckfree((char *) tracePtr);
+    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 
     /*
      * If this is the last trace on the variable, and the variable is
@@ -4495,6 +4495,7 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, resultTypePtr)
     result = NULL;
     active.nextPtr = iPtr->activeTracePtr;
     iPtr->activeTracePtr = &active;
+    Tcl_Preserve((ClientData) iPtr);
     if (arrayPtr != NULL && !(arrayPtr->flags & VAR_TRACE_ACTIVE)) {
 	arrayPtr->refCount++;
 	active.varPtr = arrayPtr;
@@ -4504,6 +4505,7 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, resultTypePtr)
 	    if (!(tracePtr->flags & flags)) {
 		continue;
 	    }
+	    Tcl_Preserve((ClientData) tracePtr);
 	    result = (*tracePtr->traceProc)(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
 	    if (result != NULL) {
@@ -4517,9 +4519,11 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, resultTypePtr)
 		    }
 		    result = NULL;
 		} else {
+	            Tcl_Release((ClientData) tracePtr);
 		    goto done;
 		}
 	    }
+	    Tcl_Release((ClientData) tracePtr);
 	}
     }
 
@@ -4537,6 +4541,7 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, resultTypePtr)
 	if (!(tracePtr->flags & flags)) {
 	    continue;
 	}
+	Tcl_Preserve((ClientData) tracePtr);
 	result = (*tracePtr->traceProc)(tracePtr->clientData,
 		(Tcl_Interp *) iPtr, part1, part2, flags);
 	if (result != NULL) {
@@ -4550,9 +4555,11 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, resultTypePtr)
 		}
 		result = NULL;
 	    } else {
+	        Tcl_Release((ClientData) tracePtr);
 		goto done;
 	    }
 	}
+	Tcl_Release((ClientData) tracePtr);
     }
 
     /*
@@ -4570,6 +4577,7 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, resultTypePtr)
     varPtr->flags &= ~VAR_TRACE_ACTIVE;
     varPtr->refCount--;
     iPtr->activeTracePtr = active.nextPtr;
+    Tcl_Release((ClientData) iPtr);
     return result;
 }
 
@@ -4894,7 +4902,7 @@ TclDeleteVars(iPtr, tablePtr)
 	    while (varPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = varPtr->tracePtr;
 		varPtr->tracePtr = tracePtr->nextPtr;
-		ckfree((char *) tracePtr);
+		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeTracePtr; activePtr != NULL;
 		 activePtr = activePtr->nextPtr) {
@@ -5028,7 +5036,7 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	    while (varPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = varPtr->tracePtr;
 		varPtr->tracePtr = tracePtr->nextPtr;
-		ckfree((char *) tracePtr);
+		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeTracePtr; activePtr != NULL;
 		 activePtr = activePtr->nextPtr) {
@@ -5127,7 +5135,7 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	    while (elPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = elPtr->tracePtr;
 		elPtr->tracePtr = tracePtr->nextPtr;
-		ckfree((char *) tracePtr);
+		Tcl_EventuallyFree((ClientData) tracePtr,TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeTracePtr; activePtr != NULL;
 		 activePtr = activePtr->nextPtr) {
