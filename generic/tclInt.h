@@ -6,12 +6,12 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1993-1997 Lucent Technologies.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.21 1999/02/02 22:27:02 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.22 1999/02/03 00:55:05 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1502,7 +1502,7 @@ EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, long *longPtr));
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *targetName));
-EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
+EXTERN void            TclGetNamespaceForQualName _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *qualName,
 			    Namespace *cxtNsPtr, int flags,
 			    Namespace **nsPtrPtr, Namespace **altNsPtrPtr,

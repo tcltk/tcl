@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.12 1999/02/02 22:26:11 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.13 1999/02/03 00:55:04 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -3879,7 +3879,7 @@ TclCompileExprCmd(interp, string, lastChar, flags, envPtr)
 
     /*
      * Scan the concatenated expression's characters looking for any
-     * '['s or (for now) '\'s. If any are found, just call the expr cmd
+     * '['s or '\'s or '$'s. If any are found, just call the expr cmd
      * at runtime.
      */
     
@@ -3888,7 +3888,7 @@ TclCompileExprCmd(interp, string, lastChar, flags, envPtr)
     last = first + (Tcl_DStringLength(&buffer) - 1);
     for (p = first;  p <= last;  p++) {
 	c = *p;
-	if ((c == '[') || (c == '\\')) {
+	if ((c == '[') || (c == '\\') || (c == '$')) {
 	    inlineCode = 0;
 	    break;
 	}

@@ -9,12 +9,12 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.10 1998/10/13 20:30:22 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.11 1999/02/03 00:55:04 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -643,7 +643,6 @@ InfoCommandsCmd(dummy, interp, objc, objv)
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
     Tcl_Command cmd;
-    int result;
 
     /*
      * Get the pattern and find the "effective namespace" in which to
@@ -666,12 +665,9 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 	Namespace *dummy1NsPtr, *dummy2NsPtr;
 	
         pattern = Tcl_GetStringFromObj(objv[2], (int *) NULL);
-	result = TclGetNamespaceForQualName(interp, pattern,
-		(Namespace *) NULL, /*flags*/ TCL_LEAVE_ERR_MSG,
-		&nsPtr, &dummy1NsPtr, &dummy2NsPtr, &simplePattern);
-	if (result != TCL_OK) {
-	    return TCL_ERROR;
-	}
+       TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL,
+           /*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr, &simplePattern);
+
 	if (nsPtr != NULL) {	/* we successfully found the pattern's ns */
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
@@ -1628,7 +1624,6 @@ InfoVarsCmd(dummy, interp, objc, objv)
     Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
-    int result;
 
     /*
      * Get the pattern and find the "effective namespace" in which to
@@ -1652,12 +1647,9 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	Namespace *dummy1NsPtr, *dummy2NsPtr;
 
         pattern = Tcl_GetStringFromObj(objv[2], (int *) NULL);
-	result = TclGetNamespaceForQualName(interp, pattern,
-		(Namespace *) NULL, /*flags*/ TCL_LEAVE_ERR_MSG,
-		&nsPtr, &dummy1NsPtr, &dummy2NsPtr, &simplePattern);
-	if (result != TCL_OK) {
-	    return TCL_ERROR;
-	}
+       TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL,
+           /*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr, &simplePattern);
+
 	if (nsPtr != NULL) {	/* we successfully found the pattern's ns */
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
