@@ -1,3 +1,14 @@
+2002-02-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (TraceCommandProc): ensure that TraceCommandInfo
+	structure was also deleted when a command was deleted to prevent a
+	mem leak.
+
+	* generic/tclBasic.c (Tcl_CreateObjTrace): set tracePtr->flags correctly.
+
+	* generic/tclTimer.c (TimerExitProc): remove remaining events in
+	tls on thread exit.
+
 2002-02-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclNamesp.c: allow cached fully-qualified namespace
