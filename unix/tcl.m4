@@ -893,6 +893,17 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LDFLAGS="-export-dynamic"
 	    LD_SEARCH_FLAGS=""
 	    ;;
+	Rhapsody-*|Darwin-*)
+	    SHLIB_CFLAGS="-fno-common"
+	    SHLIB_LD="cc -dynamiclib \${LDFLAGS} -compatibility_version ${TCL_MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE}"
+	    SHLIB_LD_LIBS=""
+	    SHLIB_SUFFIX=".dylib"
+	    DL_OBJS="tclLoadDyld.o"
+	    DL_LIBS=""
+	    LDFLAGS=""
+	    LD_SEARCH_FLAGS=""
+	    CFLAGS_OPTIMIZE="-O3"
+	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="cc -nostdlib -r"
@@ -1220,6 +1231,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		IRIX*)
 		    ;;
 		NetBSD-*|FreeBSD-*|OpenBSD-*)
+		    ;;
+		Rhapsody-*|Darwin-*)
 		    ;;
 		RISCos-*)
 		    ;;

@@ -1,3 +1,10 @@
+2001-04-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/install-sh: added -S option
+	* unix/tcl.m4: added Rhapsody/Darwin target
+	* unix/tclLoadDyld.c (TclpLoadFile): 
+	* unix/tclMtherr.c (matherr): added support for Mac OS X
+
 2001-04-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclObj.c (TclAllocateFreeObjects): simplified
