@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.11 1999/07/22 21:50:54 redman Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.12 1999/07/30 21:46:47 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1391,6 +1391,7 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel            *chanPtr, *pt;
+    int                 interest = 0;
 
     /*
      * AK, 06/30/1999
@@ -1449,6 +1450,19 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     chanPtr = (Channel *) ckalloc((unsigned) sizeof(Channel));
 
     /*
+     * If there is some interest in the channel, remove it, break
+     * down the whole chain. It will be reconstructed later.
+     */
+
+    interest = pt->interestMask;
+
+    pt->interestMask = 0;
+
+    if (interest) {
+        (pt->typePtr->watchProc) (pt->instanceData, 0);
+    }
+
+    /*
      * Save some of the current state into the new structure,
      * reinitialize the parts which will stay with the transformation.
      *
@@ -1496,7 +1510,7 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     chanPtr->outQueueHead        = pt->outQueueHead; /* Save */
     chanPtr->outQueueTail        = pt->outQueueTail; /* Save */
     chanPtr->saveInBufPtr        = pt->saveInBufPtr; /* Save */
-    chanPtr->inQueueHead         = pt->outQueueHead; /* Save */
+    chanPtr->inQueueHead         = pt->inQueueHead;  /* Save */
     chanPtr->inQueueTail         = pt->inQueueTail;  /* Save */
 
     chanPtr->chPtr               = (ChannelHandler *) NULL;  /* TTO */
@@ -1527,9 +1541,11 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
      * - The information about encoding and eol-translation is taken
      *   without change.  There is no need to fiddle with
      *   refCount et. al.
+     *
+     * Don't forget to use the same blocking mode as the old channel.
      */
 
-    pt->flags               = mask;
+    pt->flags               = mask | (chanPtr->flags & CHANNEL_NONBLOCKING);
 
     /*
      * EDITORS NOTE:  all the lines with "take it as is" should get
@@ -1598,10 +1614,7 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
      * between them.
      */
 
-    if (pt->interestMask) {
-        int interest = pt->interestMask;
-
-	pt->interestMask = 0;
+    if (interest) {
         (pt->typePtr->watchProc) (pt->instanceData, interest);
     }
 
@@ -1680,10 +1693,10 @@ Tcl_UnstackChannel (interp, chan)
 	 * use correction code to ensure this.
 	 */
 
-	memcpy ((void*) &top,         (void*) chanPtr,     sizeof (Channel));
-	memcpy ((void*) &chanPtr,     (void*) chanDownPtr, sizeof (Channel));
+	memcpy ((void*) &top,        (void*) chanPtr,     sizeof (Channel));
+	memcpy ((void*) chanPtr,     (void*) chanDownPtr, sizeof (Channel));
 	top.supercedes = (Channel*) NULL;
-	memcpy ((void*) &chanDownPtr, (void*) &top,        sizeof (Channel));
+	memcpy ((void*) chanDownPtr, (void*) &top,        sizeof (Channel));
 
 	chanPtr->refCount        = chanDownPtr->refCount;
 	chanPtr->closeCbPtr      = chanDownPtr->closeCbPtr;
@@ -6086,61 +6099,77 @@ Tcl_NotifyChannel(channel, mask)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     NextChannelHandler nh;
 
-    /*
-     * Preserve the channel struct in case the script closes it.
-     */
-     
-    Tcl_Preserve((ClientData) channel);
-
-    /*
-     * If we are flushing in the background, be sure to call FlushChannel
-     * for writable events.  Note that we have to discard the writable
-     * event so we don't call any write handlers before the flush is
-     * complete.
+    /* Walk all channels in a stack ! and notify them in order.
      */
 
-    if ((chanPtr->flags & BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-	FlushChannel(NULL, chanPtr, 1);
-	mask &= ~TCL_WRITABLE;
-    }
-
-    /*
-     * Add this invocation to the list of recursive invocations of
-     * ChannelHandlerEventProc.
-     */
-    
-    nh.nextHandlerPtr = (ChannelHandler *) NULL;
-    nh.nestedHandlerPtr = tsdPtr->nestedHandlerPtr;
-    tsdPtr->nestedHandlerPtr = &nh;
-    
-    for (chPtr = chanPtr->chPtr; chPtr != (ChannelHandler *) NULL; ) {
-
+    while (chanPtr !=  (Channel *) NULL) {
         /*
-         * If this channel handler is interested in any of the events that
-         * have occurred on the channel, invoke its procedure.
-         */
-        
-        if ((chPtr->mask & mask) != 0) {
-            nh.nextHandlerPtr = chPtr->nextPtr;
-	    (*(chPtr->proc))(chPtr->clientData, mask);
-            chPtr = nh.nextHandlerPtr;
-        } else {
-            chPtr = chPtr->nextPtr;
+	 * Preserve the channel struct in case the script closes it.
+	 */
+     
+        Tcl_Preserve((ClientData) channel);
+
+	/*
+	 * If we are flushing in the background, be sure to call FlushChannel
+	 * for writable events.  Note that we have to discard the writable
+	 * event so we don't call any write handlers before the flush is
+	 * complete.
+	 */
+
+	if ((chanPtr->flags & BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
+	    FlushChannel(NULL, chanPtr, 1);
+	    mask &= ~TCL_WRITABLE;
 	}
+
+	/*
+	 * Add this invocation to the list of recursive invocations of
+	 * ChannelHandlerEventProc.
+	 */
+    
+	nh.nextHandlerPtr = (ChannelHandler *) NULL;
+	nh.nestedHandlerPtr = tsdPtr->nestedHandlerPtr;
+	tsdPtr->nestedHandlerPtr = &nh;
+    
+	for (chPtr = chanPtr->chPtr; chPtr != (ChannelHandler *) NULL; ) {
+
+	    /*
+	     * If this channel handler is interested in any of the events that
+	     * have occurred on the channel, invoke its procedure.
+	     */
+        
+	  if ((chPtr->mask & mask) != 0) {
+              nh.nextHandlerPtr = chPtr->nextPtr;
+	      (*(chPtr->proc))(chPtr->clientData, mask);
+	      chPtr = nh.nextHandlerPtr;
+	  } else {
+              chPtr = chPtr->nextPtr;
+	  }
+	}
+
+	/*
+	 * Update the notifier interest, since it may have changed after
+	 * invoking event handlers. Skip that if the channel was deleted
+	 * in the call to the channel handler.
+	 */
+
+	if (chanPtr->typePtr != NULL) {
+	    UpdateInterest(chanPtr);
+
+	    /* Walk down the stack.
+	     */
+	  chanPtr = chanPtr-> supercedes;
+	} else {
+	    /* Stop walking the chain, the whole stack was destroyed!
+	     */
+	    chanPtr = (Channel*) NULL;
+	}
+
+	Tcl_Release((ClientData) channel);
+
+	tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
+
+	channel = (Tcl_Channel) chanPtr;
     }
-
-    /*
-     * Update the notifier interest, since it may have changed after
-     * invoking event handlers.
-     */
-
-    if (chanPtr->typePtr != NULL) {
-	UpdateInterest(chanPtr);
-    }
-
-    Tcl_Release((ClientData) channel);
-
-    tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
 }
 
 /*
@@ -8129,4 +8158,5 @@ SetBlockMode(interp, chanPtr, mode)
     }
     return TCL_OK;
 }
+
 
