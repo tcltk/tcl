@@ -933,7 +933,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     struct stat statBuf;
     struct group *groupPtr;
 
-    if (stat(fileName, &statBuf) != 0) {
+    if (TclStat(fileName, &statBuf) != 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"could not stat file \"", fileName, "\": ",
 		Tcl_PosixError(interp), (char *) NULL);
@@ -977,7 +977,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     struct stat statBuf;
     struct passwd *pwPtr;
 
-    if (stat(fileName, &statBuf) != 0) {
+    if (TclStat(fileName, &statBuf) != 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"could not stat file \"", fileName, "\": ",
 		Tcl_PosixError(interp), (char *) NULL);
@@ -1021,7 +1021,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     struct stat statBuf;
     char returnString[6];
 
-    if (stat(fileName, &statBuf) != 0) {
+    if (TclStat(fileName, &statBuf) != 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"could not stat file \"", fileName, "\": ",
 		Tcl_PosixError(interp), (char *) NULL);
