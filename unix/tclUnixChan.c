@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.27 2002/01/23 20:46:01 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.28 2002/02/04 23:51:59 andreas_kupries Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -429,6 +429,16 @@ FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
     int written;
 
     *errorCodePtr = 0;
+
+    if (toWrite == 0) {
+      /* SF Tcl Bug 465765.
+       * Do not try to write nothing into a file. STREAM based
+       * implementations will considers this as EOF (if there is a
+       * pipe behind the file).
+       */
+
+      return 0;
+    }
     written = write(fsPtr->fd, buf, (size_t) toWrite);
     if (written > -1) {
         return written;
