@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.18 2002/03/29 21:01:12 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.19 2002/04/08 09:02:00 das Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -29,6 +29,8 @@ set ::tcltest::testConstraints(testcmdtrace) \
 	[llength [info commands testcmdtrace]]
 set ::tcltest::testConstraints(testcreatecommand) \
 	[llength [info commands testcreatecommand]]
+set ::tcltest::testConstraints(exec) \
+	[llength [info commands exec]]
 
 # This variable needs to be changed when the major or minor version number for
 # Tcl changes.
@@ -558,7 +560,7 @@ test basic-44.1 {Tcl_GlobalEval} {emptyTest} {
 test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {emptyTest} {
 } {}
 
-test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {
+test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     catch {close $f}
     set res [catch {
 	set f [open |[info nameofexecutable] w+]
@@ -583,7 +585,7 @@ test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {
 DONE
 }}
 
-test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} {
+test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     makeFile {
 	puts hello
 	break
@@ -597,7 +599,7 @@ invoked "break" outside of a loop
 "break"
     (file "BREAKtest" line 3)}}    
 
-test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {
+test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     makeFile {
 	interp alias {} patch {} info patchlevel
 	patch
@@ -611,7 +613,7 @@ test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {
 "break"
     (file "BREAKtest" line 4)}}    
 
-test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {
+test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     makeFile {
 	foo [set a 1] [break]
     } BREAKtest
@@ -625,7 +627,7 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {
 "foo [set a 1] [break]"
     (file "BREAKtest" line 2)}}
 
-test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} {
+test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     makeFile {
 	return -code return
     } BREAKtest

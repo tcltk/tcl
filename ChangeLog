@@ -1,3 +1,22 @@
+2002-04-08  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.h: no <sys/types.h> on mac.
+	* mac/tclMacFile.c: minor fixes to Vince's changes from 03-24.
+	* mac/tclMacOSA.c:
+	* mac/tclMacResource.c: added missing Tcl_UtfToExternalDString
+	conversions of resource file names.
+	* mac/tclMacSock.c (TcpGetOptionProc): fixed bug introduced
+	by Andreas on 02-25; changed strcmp's to strncmp's so that
+	option comparison behaves like on other platforms.
+	* mac/tcltkMacBuildSupport.sea.hqx (CW Pro6 changes): added
+	support to allow Tk to hookup C library stderr/stdout to TkConsole.
+	* tests/basic.test:
+	* tests/cmdAH.test:
+	* tests/encoding.test:
+	* tests/fileSystem.test:
+	* tests/ioCmd.test: fixed tests failing on mac: check for 
+	existence of [exec], changed some result strings.
+
 2002-04-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFCmd.c (Realpath): added a little extra code to

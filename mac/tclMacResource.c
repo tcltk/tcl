@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.12 2002/01/27 11:10:03 das Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.13 2002/04/08 09:02:52 das Exp $
  */
 
 #include <Errors.h>
@@ -1248,7 +1248,7 @@ Tcl_MacEvalResource(
     short saveRef, fileRef = -1;
     char idStr[64];
     FSSpec fileSpec;
-    Tcl_DString buffer;
+    Tcl_DString ds, buffer;
     CONST char *nativeName;
 
     saveRef = CurResFile();
@@ -1256,12 +1256,14 @@ Tcl_MacEvalResource(
     if (fileName != NULL) {
 	OSErr err;
 	
-	nativeName = Tcl_TranslateFileName(interp, fileName, &buffer);
-	if (nativeName == NULL) {
+	if (Tcl_TranslateFileName(interp, fileName, &buffer) == NULL) {
 	    return TCL_ERROR;
 	}
+	nativeName = Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&buffer), 
+    	    Tcl_DStringLength(&buffer), &ds);
 	err = FSpLocationFromPath(strlen(nativeName), nativeName,
                 &fileSpec);
+	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&buffer);
 	if (err != noErr) {
 	    Tcl_AppendResult(interp, "Error finding the file: \"", 
