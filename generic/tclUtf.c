@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.25 2002/05/29 10:35:46 dkf Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.26 2002/05/30 03:27:09 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1351,13 +1351,13 @@ Tcl_UniCharNcmp(cs, ct, n)
     CONST Tcl_UniChar *ct;		/* Unicode string cs is compared to. */
     unsigned long n;			/* Number of unichars to compare. */
 {
-#ifdef TCL_OPTIMIZE_UNICODE_COMPARE
+#ifdef WORDS_BIGENDIAN
     /*
      * We are definitely on a big-endian machine; memcmp() is safe
      */
     return memcmp(cs, ct, n*sizeof(Tcl_UniChar));
 
-#else /* !TCL_OPTIMIZE_UNICODE_COMPARE */
+#else /* !WORDS_BIGENDIAN */
     /*
      * We can't simply call memcmp() because that is not lexically correct.
      */
@@ -1367,7 +1367,7 @@ Tcl_UniCharNcmp(cs, ct, n)
 	}
     }
     return 0;
-#endif /* TCL_OPTIMIZE_UNICODE_COMPARE */
+#endif /* WORDS_BIGENDIAN */
 }
 
 /*
