@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.18 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.19 2002/01/18 14:17:06 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -668,7 +668,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Channel channel = 0;
     int seekFlag, mode, channelPermissions;
     DWORD accessMode, createMode, shareMode, flags, consoleParams, type;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     DCB dcb;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
