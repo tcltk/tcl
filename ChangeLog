@@ -1,5 +1,10 @@
 2003-03-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/parseOld.test:	Altered test numers to eliminate duplicates.
+	* tests/parse.test:	[Bugs 710365, 710369]
+	* tests/expr-old.test:
+	* tests/expr.test:
+
 	* tests/utf.test:	Altered test numers to eliminate duplicates.
 	* tests/trace.test:	[Bugs 710322, 710327, 710349, 710363]
 	* tests/lsearch.test:
