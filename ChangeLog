@@ -1,3 +1,12 @@
+2004-03-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in: Check for define of
+	MWMO_ALERTABLE in winuser.h.
+	* win/tclWinPort.h: If MWMO_ALERTABLE
+	is not defined in winuser.h then define it.
+	This is needed for Mingw.
+
 2004-03-05  Kevin B. Kenny <kennykb@acm.org>
 
 	* generic/tclTest.c: Modified TesteventObjCmd to use

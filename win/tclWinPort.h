@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.38 2003/08/27 21:52:41 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.39 2004/03/05 21:27:46 mdejong Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -443,6 +443,13 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #   define HAVE_PUTENV_THAT_COPIES 1
+#endif
+
+/*
+ * Older version of Mingw are known to lack a MWMO_ALERTABLE define.
+ */
+#if defined(HAVE_NO_MWMO_ALERTABLE)
+#   define MWMO_ALERTABLE 2
 #endif
 
 /*
