@@ -3,7 +3,7 @@
 	* unix/Makefile.in: Burn Tcl build directory
 	into tcltest executable to avoid crashes caused
 	by ld loading a previously installed version
-	of the tcl shared library.
+	of the tcl shared library. [Bug 218110]
 
 2002-01-10  Don Porter <dgp@users.sourceforge.net>,
 	Kevin Kenny <kennykb@users.sourceforge.net>
