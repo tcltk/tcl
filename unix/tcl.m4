@@ -2672,7 +2672,7 @@ AC_DEFUN(SC_TCL_CHECK_BROKEN_FUNC,[
 	    tcl_ok=0
 	fi
     fi
-    if test ["$tcl_ok"] = 1; then
+    if test ["$tcl_ok"] = 0; then
 	AC_LIBOBJ($1)
 	USE_COMPAT=1
     fi])
