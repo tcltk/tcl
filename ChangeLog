@@ -1,3 +1,9 @@
+2000-11-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/var.test: (test var-1.19) If my attempts to fix the
+	problem aren't right yet, my attempts to describe it look pretty
+	good to me...
+
 2000-11-16  Andreas Kupries  <a.kupries@westend.com>
 
 	* win/tclWinPort.h (line 69): Changed reference to winsock2.h into
