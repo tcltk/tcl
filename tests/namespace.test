@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.34 2004/08/27 13:59:29 dkf Exp $
+# RCS: @(#) $Id: namespace.test,v 1.35 2004/09/09 15:44:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -269,6 +269,120 @@ test namespace-10.3 {Tcl_ForgetImport, deletes matching imported cmds} {
         lappend l [catch {cmd1 777} msg] $msg
     }
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1}] ::test_ns_import::p 1 {invalid command name "cmd1"}]
+
+test namespace-10.4 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval unrelated {
+	proc cmd {} {}
+    }
+    namespace eval my \
+	    [list namespace import [namespace current]::origin::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::unrelated::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin unrelated my
+}
+
+test namespace-10.5 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval my \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval my rename cmd newname
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::origin::cmd]
+    my::newname
+} -cleanup {
+    namespace delete origin my
+} -returnCodes error -match glob -result *
+
+test namespace-10.6 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval my \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval your {}
+    namespace eval my \
+	    [list rename cmd [namespace current]::your::newname]
+} -body {
+    namespace eval your namespace forget newname
+    your::newname
+} -cleanup {
+    namespace delete origin my your
+} -returnCodes error -match glob -result *
+
+test namespace-10.7 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval link namespace export cmd
+    namespace eval link \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval link2 namespace export cmd
+    namespace eval link2 \
+	    [list namespace import [namespace current]::link::cmd]
+    namespace eval my \
+	    [list namespace import [namespace current]::link2::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::origin::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin link link2 my
+} -returnCodes error -match glob -result *
+
+test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval link namespace export cmd
+    namespace eval link \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval link2 namespace export cmd
+    namespace eval link2 \
+	    [list namespace import [namespace current]::link::cmd]
+    namespace eval my \
+	    [list namespace import [namespace current]::link2::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::link::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin link link2 my
+}
+
+test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
+    namespace eval origin {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval link namespace export cmd
+    namespace eval link \
+	    [list namespace import [namespace current]::origin::cmd]
+    namespace eval link2 namespace export cmd
+    namespace eval link2 \
+	    [list namespace import [namespace current]::link::cmd]
+    namespace eval my \
+	    [list namespace import [namespace current]::link2::cmd]
+} -body {
+    namespace eval my \
+	    [list namespace forget [namespace current]::link2::cmd]
+    my::cmd
+} -cleanup {
+    namespace delete origin link link2 my
+} -returnCodes error -match glob -result *
 
 test namespace-11.1 {TclGetOriginalCommand, check if not imported cmd} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}
