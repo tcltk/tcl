@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.21 2000/01/13 20:33:10 ericm Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.22 2000/01/21 02:25:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -563,9 +563,12 @@ InfoBodyCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * we need to check if the body from this procedure had been generated
-     * from a precompiled body. If that is the case, then the bodyPtr's
-     * string representation is bogus, since sources are not available.
+     * We should not return a bytecompiled body.  If it is precompiled,
+     * then the bodyPtr's string representation is bogus, since sources
+     * are not available.  If it was just a bytecompiled body, then it
+     * is likely to not be of any use to the caller, as it was compiled
+     * for a separate procedure context [Bug: 3412], and noone else can
+     * reasonably use it.
      * In order to make sure that later manipulations of the object do not
      * invalidate the internal representation, we make a copy of the string
      * representation and return that one, instead.
@@ -574,11 +577,7 @@ InfoBodyCmd(dummy, interp, objc, objv)
     bodyPtr = procPtr->bodyPtr;
     resultPtr = bodyPtr;
     if (bodyPtr->typePtr == &tclByteCodeType) {
-        ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
-
-        if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-            resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
-        }
+	resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
     }
     
     Tcl_SetObjResult(interp, resultPtr);

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.11 1999/12/12 02:26:41 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.12 2000/01/21 02:25:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -257,7 +257,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
     if (objc == 3) {
 	varNamePtr = objv[2];
     }
-    
+
     result = Tcl_EvalObjEx(interp, objv[1], 0);
     
     if (objc == 3) {

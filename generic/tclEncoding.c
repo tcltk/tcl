@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.4 1999/12/12 22:46:41 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.5 2000/01/21 02:25:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -738,9 +738,9 @@ Tcl_CreateEncoding(typePtr)
     encodingPtr->nullSize	= typePtr->nullSize;
     encodingPtr->clientData	= typePtr->clientData;
     if (typePtr->nullSize == 1) {
-	encodingPtr->lengthProc = strlen;
+	encodingPtr->lengthProc = (LengthProc *) strlen;
     } else {
-	encodingPtr->lengthProc = unilen;
+	encodingPtr->lengthProc = (LengthProc *) unilen;
     }
     encodingPtr->refCount	= 1;
     encodingPtr->hPtr		= hPtr;

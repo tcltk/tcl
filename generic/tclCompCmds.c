@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.4 1999/10/29 03:04:00 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.5 2000/01/21 02:25:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1579,7 +1579,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     register char *p;
     char *name, *elName;
     int nameChars, elNameChars;
-    register int i;
+    register int i, n;
     int isAssignment, simpleVarName, localIndex, numWords;
     int maxDepth = 0;
     int code = TCL_OK;
@@ -1647,17 +1647,41 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 		break;
 	    }
 	}
-    } else if ((varTokenPtr->numComponents == 4)
+    } else if (((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[1].start[varTokenPtr[1].size-1] == '(')
-	    && (varTokenPtr[4].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[4].size == 1)
-	    && (varTokenPtr[4].start[0] == ')')) {
-	simpleVarName = 1;
-	name = varTokenPtr[1].start;
-	nameChars = varTokenPtr[1].size - 1;
-	elName = varTokenPtr[2].start;
-	elNameChars = varTokenPtr[2].size;
+            && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
+            && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
+        simpleVarName = 0;
+
+        /*
+	 * Check for parentheses inside first token
+	 */
+        for (i = 0, p = varTokenPtr[1].start; 
+	     i < varTokenPtr[1].size; i++, p++) {
+            if (*p == '(') {
+                simpleVarName = 1;
+                break;
+            }
+        }
+        if (simpleVarName) {
+            name = varTokenPtr[1].start;
+            nameChars = p - varTokenPtr[1].start;
+            elName = p + 1;
+            elNameChars = (varTokenPtr[n].start - p) + varTokenPtr[n].size - 2;
+
+            /*
+             * If elName contains any double quotes ("), we can't inline
+             * compile the element script using the replace '()' by '"'
+             * technique below.
+             */
+
+            for (i = 0, p = elName;  i < elNameChars;  i++, p++) {
+                if (*p == '"') {
+                    simpleVarName = 0;
+                    break;
+                }
+            }
+        }
     }
 
     if (simpleVarName) {
