@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.9 1999/03/30 03:45:32 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.10 1999/03/30 23:56:16 stanton Exp $
 
 library tcl
 
@@ -649,7 +649,7 @@ declare 185 generic {
     int Tcl_IsSafe(Tcl_Interp *interp)
 }
 declare 186 generic {
-    char * Tcl_JoinPath(int argc, CONST char **argv, Tcl_DString *resultPtr)
+    char * Tcl_JoinPath(int argc, char **argv, Tcl_DString *resultPtr)
 }
 declare 187 generic {
     int Tcl_LinkVar(Tcl_Interp *interp, char *varName, char *addr, int type)
@@ -859,7 +859,7 @@ declare 248 generic {
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 249 generic {
-    char * Tcl_TranslateFileName(Tcl_Interp *interp, CONST char *name, \
+    char * Tcl_TranslateFileName(Tcl_Interp *interp, char *name, \
 	    Tcl_DString *bufferPtr)
 }
 declare 250 generic {

@@ -1,5 +1,18 @@
 1999-03-30    <stanton@scriptics.com>
 
+	* unix/Makefile.in: Removed trailing backslash that broke the
+	"depend" target.
+
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): Changed to avoid
+	calling setlocale().  We now look directly at env(LANG) and
+	env(LC_CTYPE) instead. [Bug: 1636]
+
+	* generic/tclFileName.c: 
+	* generic/tclDecls.h: 
+	* generic/tcl.decls: Removed CONST from Tcl_JoinPath and
+	Tcl_TranslateFileName because it changes the signature of
+	Tcl_JoinPath in an incompatible manner.
+
 	* generic/tclInt.h: 
 	* generic/tclLoad.c (TclFinalizeLoad): 
 	* generic/tclEvent.c (Tcl_Finalize): Defer unloading of loadable
