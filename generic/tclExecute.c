@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.4 2001/10/05 13:48:34 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.5 2001/10/05 14:20:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -574,6 +574,9 @@ TclExecuteByteCode(interp, codePtr)
     char *bytes;
     int length;
     long i;
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_WideInt w;
+#endif
 
     /*
      * This procedure uses a stack to hold information about catch commands.
@@ -1940,14 +1943,24 @@ TclExecuteByteCode(interp, codePtr)
 
 		if ((t1Ptr == &tclIntType) || (t1Ptr == &tclBooleanType)) {
 		    i1 = (valuePtr->internalRep.longValue != 0);
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (t1Ptr == &tclWideIntType) {
+		    i1 = (valuePtr->internalRep.wideValue!=Tcl_LongAsWide(0));
+#endif
 		} else if (t1Ptr == &tclDoubleType) {
 		    i1 = (valuePtr->internalRep.doubleValue != 0.0);
 		} else {
 		    s = Tcl_GetStringFromObj(valuePtr, &length);
 		    if (TclLooksLikeInt(s, length)) {
+#ifdef TCL_WIDE_INT_IS_LONG
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				valuePtr, &i);
 			i1 = (i != 0);
+#else
+			result = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
+				valuePtr, &w);
+			i1 = (w != Tcl_LongAsWide(0));
+#endif
 		    } else {
 			result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL,
 				valuePtr, &i1);
@@ -1966,14 +1979,24 @@ TclExecuteByteCode(interp, codePtr)
 		
 		if ((t2Ptr == &tclIntType) || (t2Ptr == &tclBooleanType)) {
 		    i2 = (value2Ptr->internalRep.longValue != 0);
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (t2Ptr == &tclWideIntType) {
+		    i2 = (value2Ptr->internalRep.wideValue!=Tcl_LongAsWide(0));
+#endif
 		} else if (t2Ptr == &tclDoubleType) {
 		    i2 = (value2Ptr->internalRep.doubleValue != 0.0);
 		} else {
 		    s = Tcl_GetStringFromObj(value2Ptr, &length);
 		    if (TclLooksLikeInt(s, length)) {
+#ifdef TCL_WIDE_INT_IS_LONG
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				value2Ptr, &i);
 			i2 = (i != 0);
+#else
+			result = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
+				value2Ptr, &w);
+			i2 = (w != Tcl_LongAsWide(0));
+#endif
 		    } else {
 			result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL,
 				value2Ptr, &i2);
@@ -2349,6 +2372,9 @@ TclExecuteByteCode(interp, codePtr)
 		double d1 = 0.0;   /* Init. avoids compiler warning. */
 		double d2 = 0.0;   /* Init. avoids compiler warning. */
 		long iResult = 0;  /* Init. avoids compiler warning. */
+#ifndef TCL_WIDE_INT_IS_LONG
+		Tcl_WideInt w2 = Tcl_LongAsWide(0);	/* ditto. */
+#endif
 
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
@@ -2364,22 +2390,40 @@ TclExecuteByteCode(interp, codePtr)
 			|| (valuePtr->bytes && (valuePtr->length == 0)))
 			|| (((t2Ptr == NULL) && (value2Ptr->bytes == NULL))
 				|| (value2Ptr->bytes && (value2Ptr->length == 0))))) {
-		    if ((t1Ptr != &tclIntType) && (t1Ptr != &tclDoubleType)) {
+		    if ((t1Ptr != &tclIntType)
+#ifndef TCL_WIDE_INT_IS_LONG
+			    && (t1Ptr != &tclWideIntType)
+#endif
+			    && (t1Ptr != &tclDoubleType)) {
 			s1 = Tcl_GetStringFromObj(valuePtr, &length);
 			if (TclLooksLikeInt(s1, length)) {
+#ifdef TCL_WIDE_INT_IS_LONG
 			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &i);
+#else
+			    (void) Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
+				    valuePtr, &w);
+#endif
 			} else {
 			    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &d1);
 			}
 			t1Ptr = valuePtr->typePtr;
 		    }
-		    if ((t2Ptr != &tclIntType) && (t2Ptr != &tclDoubleType)) {
+		    if ((t2Ptr != &tclIntType)
+#ifndef TCL_WIDE_INT_IS_LONG
+			    && (t2Ptr != &tclWideIntType)
+#endif
+			    && (t2Ptr != &tclDoubleType)) {
 			s2 = Tcl_GetStringFromObj(value2Ptr, &length);
 			if (TclLooksLikeInt(s2, length)) {
+#ifdef TCL_WIDE_INT_IS_LONG
 			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				    value2Ptr, &i2);
+#else
+			    (void) Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
+				    value2Ptr, &w2);
+#endif
 			} else {
 			    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
 				    value2Ptr, &d2);
@@ -2387,8 +2431,16 @@ TclExecuteByteCode(interp, codePtr)
 			t2Ptr = value2Ptr->typePtr;
 		    }
 		}
-		if (((t1Ptr != &tclIntType) && (t1Ptr != &tclDoubleType))
-		        || ((t2Ptr != &tclIntType) && (t2Ptr != &tclDoubleType))) {
+		if (((t1Ptr != &tclIntType)
+#ifndef TCL_WIDE_INT_IS_LONG
+			&& (t1Ptr != &tclWideIntType)
+#endif
+			&& (t1Ptr != &tclDoubleType))
+		    || ((t2Ptr != &tclIntType)
+#ifndef TCL_WIDE_INT_IS_LONG
+			&& (t2Ptr != &tclWideIntType)
+#endif
+			&& (t2Ptr != &tclDoubleType))) {
 		    /*
 		     * One operand is not numeric. Compare as strings.
 		     * NOTE: strcmp is not correct for \x00 < \x01.
@@ -2426,11 +2478,23 @@ TclExecuteByteCode(interp, codePtr)
 			d1 = valuePtr->internalRep.doubleValue;
 			if (t2Ptr == &tclIntType) {
 			    d2 = value2Ptr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+			} else if (t2Ptr == &tclWideIntType) {
+			    d2 = Tcl_WideAsDouble(value2Ptr->internalRep.wideValue);
+#endif
 			} else {
 			    d2 = value2Ptr->internalRep.doubleValue;
 			}
-		    } else {	/* t1Ptr is int, t2Ptr is double */
+		    } else {	/* t1Ptr is int or wide, t2Ptr is double */
+#ifdef TCL_WIDE_INT_IS_LONG
 			d1 = valuePtr->internalRep.longValue;
+#else
+			if (t1Ptr == &tclWideIntType) {
+			    d1 = Tcl_WideAsDouble(valuePtr->internalRep.wideValue);
+			} else {
+			    d1 = valuePtr->internalRep.longValue;
+			}
+#endif
 			d2 = value2Ptr->internalRep.doubleValue;
 		    }
 		    switch (*pc) {
@@ -2453,6 +2517,44 @@ TclExecuteByteCode(interp, codePtr)
 			iResult = d1 >= d2;
 			break;
 		    }
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if ((t1Ptr == &tclWideIntType)
+		        || (t2Ptr == &tclWideIntType)) {
+		    /*
+		     * Compare as wide ints.
+		     */
+		    if (t1Ptr == &tclWideIntType) {
+			w = valuePtr->internalRep.wideValue;
+			if (t2Ptr == &tclIntType) {
+			    w2 = Tcl_LongAsWide(value2Ptr->internalRep.longValue);
+			} else {
+			    w2 = value2Ptr->internalRep.wideValue;
+			}
+		    } else {	/* t1Ptr is int, t2Ptr is wide */
+			w = Tcl_LongAsWide(valuePtr->internalRep.longValue);
+			w2 = value2Ptr->internalRep.wideValue;
+		    }
+		    switch (*pc) {
+		    case INST_EQ:
+			iResult = w == w2;
+			break;
+		    case INST_NEQ:
+			iResult = w != w2;
+			break;
+		    case INST_LT:
+			iResult = w < w2;
+			break;
+		    case INST_GT:
+			iResult = w > w2;
+			break;
+		    case INST_LE:
+			iResult = w <= w2;
+			break;
+		    case INST_GE:
+			iResult = w >= w2;
+			break;
+		    }
+#endif
 		} else {
 		    /*
 		     * Compare as ints.
