@@ -1,3 +1,7 @@
+2002-03-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/main.test: Added missing [after cancel]s.
+
 2002-03-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/main.test: Removed workarounds for Bug 495977.
