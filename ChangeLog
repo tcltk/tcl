@@ -1,3 +1,10 @@
+2003-12-14  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclInt.decls: commented-out entry for
+	TclpCheckStackSpace, removing it from the Stubs table.  It's
+	already declared in tclInt.h and labeled as a function that is
+	not to be exported.  Regened tables.
+
 2003-12-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): TIP#75 Implementation
