@@ -10,10 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.6 2001/10/22 09:54:17 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.7 2001/10/22 15:20:33 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tclPort.h"
 
 /*
  * Prototypes for procedures defined later in this file:
