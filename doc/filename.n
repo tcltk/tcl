@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: filename.n,v 1.10 2004/01/23 11:03:29 vincentdarley Exp $
+'\" RCS: @(#) $Id: filename.n,v 1.11 2004/03/09 12:59:04 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH filename n 7.5 Tcl "Tcl Built-In Commands"
@@ -216,7 +216,7 @@ to errors in most file operations.
 Another Windows peculiarity is that any number of trailing dots '.'  in
 filenames are totally ignored, so, for example, attempts to create a
 file or directory with a name "foo." will result in the creation of a
-file/directory with name "foo".  This fact is reflected in in the
+file/directory with name "foo".  This fact is reflected in the
 results of 'file normalize'.  Furthermore, a file name consisting only
 of dots '.........' or dots with trailing characters '.....abc' is
 illegal.
