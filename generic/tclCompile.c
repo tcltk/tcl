@@ -4009,7 +4009,7 @@ TclCompileForCmd(interp, string, lastChar, flags, envPtr)
 				 * to execute cmd. */
     ArgInfo argInfo;		/* Structure holding information about the
 				 * start and end of each argument word. */
-    int range1, range2;		/* Indexes in the ExceptionRange array of
+    int range1 = -1, range2;	/* Indexes in the ExceptionRange array of
 				 * the loop ranges for this loop: one for
 				 * its body and one for its "next" cmd. */
     JumpFixup jumpFalseFixup;	/* Used to update or replace the ifFalse
@@ -4040,17 +4040,20 @@ TclCompileForCmd(interp, string, lastChar, flags, envPtr)
     }
 
     /*
-     * If the test expression is enclosed in quotes (""s), don't compile
+     * If the test expression is not enclosed in braces, don't compile
      * the for inline. As a result of Tcl's two level substitution
      * semantics for expressions, the expression might have a constant
      * value that results in the loop never executing, or executing forever.
      * Consider "set x 0; for {} "$x > 5" {incr x} {}": the loop body 
      * should never be executed.
+     * NOTE: This is an overly aggressive test, since there are legitimate
+     * literals that could be compiled but aren't in braces.  However, until
+     * the parser is integrated in 8.1, this is the simplest implementation.
      */
 
-    if (*(argInfo.startArray[1]) == '"') {
+    if (*(argInfo.startArray[1]) != '{') {
 	result = TCL_OUT_LINE_COMPILE;
-        goto done;
+	goto done;
     }
 
     /*
@@ -4242,7 +4245,9 @@ TclCompileForCmd(interp, string, lastChar, flags, envPtr)
     }
     envPtr->pushSimpleWords = savePushSimpleWords;
     envPtr->maxStackDepth = maxDepth;
-    envPtr->excRangeDepth--;
+    if (range1 != -1) {
+	envPtr->excRangeDepth--;
+    }
     FreeArgInfo(&argInfo);
     return result;
 }
@@ -4294,7 +4299,7 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
     ArgInfo argInfo;		/* Structure holding information about the
 				 * start and end of each argument word. */
     int numLists = 0;		/* Count of variable (and value) lists. */
-    int range;			/* Index in the ExceptionRange array of the
+    int range = -1;		/* Index in the ExceptionRange array of the
 				 * ExceptionRange record for this loop. */
     ForeachInfo *infoPtr;	/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
@@ -4418,7 +4423,7 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
 
 	/*
 	 * Check that each variable name has no substitutions and that
-	 * it is a scalar name.
+	 * it is a local scalar name.
 	 */
 
 	numVars = varcList[i];
@@ -4430,6 +4435,11 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
 		    result = TCL_OUT_LINE_COMPILE;
 		    goto done;
 		}
+		if ((*p == ':') && (*(p+1) == ':')) { /* non-local name */
+		    result = TCL_OUT_LINE_COMPILE;
+		    goto done; 
+		}
+		    
 		if (*p == '(') {
 		    char *q = p;
 		    do {
@@ -4666,7 +4676,9 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
     envPtr->termOffset = (argInfo.endArray[numWords-1] + 1 - string);
     envPtr->pushSimpleWords = savePushSimpleWords;
     envPtr->maxStackDepth = maxDepth;
-    envPtr->excRangeDepth--;
+    if (range != -1) {
+	envPtr->excRangeDepth--;
+    }
     FreeArgInfo(&argInfo);
     return result;
 }
@@ -5847,7 +5859,7 @@ TclCompileWhileCmd(interp, string, lastChar, flags, envPtr)
     register int type;		/* Current char's CHAR_TYPE type. */
     int maxDepth = 0;		/* Maximum number of stack elements needed
 				 * to execute cmd. */
-    int range;			/* Index in the ExceptionRange array of the
+    int range = -1;		/* Index in the ExceptionRange array of the
 				 * ExceptionRange record for this loop. */
     JumpFixup jumpFalseFixup;	/* Used to update or replace the ifFalse
 				 * jump after test when its target PC is
@@ -5855,18 +5867,6 @@ TclCompileWhileCmd(interp, string, lastChar, flags, envPtr)
     unsigned char *jumpPc;
     int jumpDist, jumpBackDist, jumpBackOffset, objIndex, result;
     int savePushSimpleWords = envPtr->pushSimpleWords;
-
-    envPtr->excRangeDepth++;
-    envPtr->maxExcRangeDepth =
-	TclMax(envPtr->excRangeDepth, envPtr->maxExcRangeDepth);
-
-    /*
-     * Create and initialize a ExceptionRange record to hold information
-     * about this loop. This is used to implement break and continue.
-     */
-
-    range = CreateExceptionRange(LOOP_EXCEPTION_RANGE, envPtr);
-    envPtr->excRangeArrayPtr[range].continueOffset = TclCurrCodeOffset();
 
     AdvanceToNextWord(src, envPtr);
     src += envPtr->termOffset;
@@ -5881,18 +5881,33 @@ TclCompileWhileCmd(interp, string, lastChar, flags, envPtr)
     }
 
     /*
-     * If the test expression is enclosed in quotes (""s), don't compile
+     * If the test expression is not enclosed in braces, don't compile
      * the while inline. As a result of Tcl's two level substitution
      * semantics for expressions, the expression might have a constant
      * value that results in the loop never executing, or executing forever.
-     * Consider "set x 0; while "$x < 5" {incr x}": the loop body should
-     * never be executed.
+     * Consider "set x 0; whie "$x > 5" {incr x}": the loop body 
+     * should never be executed.
+     * NOTE: This is an overly aggressive test, since there are legitimate
+     * literals that could be compiled but aren't in braces.  However, until
+     * the parser is integrated in 8.1, this is the simplest implementation.
      */
 
-    if (*src == '"') {
+    if (*src != '{') {
 	result = TCL_OUT_LINE_COMPILE;
-        goto done;
+	goto done;
     }
+
+    /*
+     * Create and initialize a ExceptionRange record to hold information
+     * about this loop. This is used to implement break and continue.
+     */
+
+    envPtr->excRangeDepth++;
+    envPtr->maxExcRangeDepth =
+	TclMax(envPtr->excRangeDepth, envPtr->maxExcRangeDepth);
+
+    range = CreateExceptionRange(LOOP_EXCEPTION_RANGE, envPtr);
+    envPtr->excRangeArrayPtr[range].continueOffset = TclCurrCodeOffset();
 
     /*
      * Compile the next word: the test expression.
@@ -5902,7 +5917,8 @@ TclCompileWhileCmd(interp, string, lastChar, flags, envPtr)
     result = CompileExprWord(interp, src, lastChar, flags, envPtr);
     if (result != TCL_OK) {
 	if (result == TCL_ERROR) {
-            Tcl_AddObjErrorInfo(interp, "\n    (\"while\" test expression)", -1);
+            Tcl_AddObjErrorInfo(interp,
+		    "\n    (\"while\" test expression)", -1);
         }
 	goto done;
     }
@@ -6038,7 +6054,9 @@ TclCompileWhileCmd(interp, string, lastChar, flags, envPtr)
     envPtr->termOffset = (src - string);
     envPtr->pushSimpleWords = savePushSimpleWords;
     envPtr->maxStackDepth = maxDepth;
-    envPtr->excRangeDepth--;
+    if (range != -1) {
+	envPtr->excRangeDepth--;
+    }
     return result;
 }
 
@@ -6095,7 +6113,7 @@ CompileExprWord(interp, string, lastChar, flags, envPtr)
     int range = -1;		/* If we inline compile an un-{}'d
 				 * expression, the index for its catch range
 				 * record in the ExceptionRange array.
-				 * Initialized to avoid compile warning. */
+				 * Initialized to enable proper cleanup. */
     JumpFixup jumpFixup;	/* Used to emit the "success" jump after
 				 * the inline expression code. */
     char *p;
@@ -6295,6 +6313,9 @@ CompileExprWord(interp, string, lastChar, flags, envPtr)
     } /* if expression isn't in {}s */
     
     done:
+    if (range != -1) {
+	envPtr->excRangeDepth--;
+    }
     envPtr->termOffset = (src - string);
     envPtr->maxStackDepth = maxDepth;
     envPtr->pushSimpleWords = savePushSimpleWords;
@@ -7309,7 +7330,7 @@ FreeArgInfo(argInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * CreateLoopExceptionRange --
+ * CreateExceptionRange --
  *
  *	Procedure that allocates and initializes a new ExceptionRange
  *	structure of the specified kind in a CompileEnv's ExceptionRange
