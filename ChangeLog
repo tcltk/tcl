@@ -1,3 +1,14 @@
+2005-02-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclProc.c (TclInitCompiledLocals):
+	Add check for type of the framePtr->procPtr->bodyPtr
+	passed to TclInitCompiledLocals and panic if
+	it is not the correct type. If the body of the proc
+	is not of the compiled byte code type then the
+	code will crash. This was discovered while tracking
+	down a crash in Itcl, that crash is fixed by
+	Itcl patch 1115085.
+
 2005-02-01  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclExecute.c (TclCompEvalObj): Removed stray statement
