@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.45 2004/08/25 21:28:26 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.46 2004/08/27 09:07:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -229,6 +229,8 @@ static int		NamespaceWhichCmd _ANSI_ARGS_((
 static int		SetNsNameFromAny _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 static void		UpdateStringOfNsName _ANSI_ARGS_((Tcl_Obj *objPtr));
+static EnsembleConfig *	FindEnsemble _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *cmdNameObj, int flags));
 static int		NsEnsembleImplementationCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -4421,42 +4423,24 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	return TCL_OK;
     }
 
-    case ENS_EXISTS: {
-	Command *cmdPtr;
-	int flag;
-
+    case ENS_EXISTS:
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname");
 	    return TCL_ERROR;
 	}
-	cmdPtr = (Command *)
-		Tcl_FindCommand(interp, TclGetString(objv[3]), 0, 0);
-	flag = (cmdPtr != NULL &&
-		cmdPtr->objProc == NsEnsembleImplementationCmd);
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp), flag);
+	Tcl_SetBooleanObj(Tcl_GetObjResult(interp),
+		FindEnsemble(interp, objv[3], 0) != NULL);
 	return TCL_OK;
-    }
 
-    case ENS_CONFIG: {
-	char *cmdName;
-	Command *cmdPtr;
-
+    case ENS_CONFIG:
 	if (objc < 4 || (objc != 5 && objc & 1)) {
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?opt? ?value? ...");
 	    return TCL_ERROR;
 	}
-	cmdName = TclGetString(objv[3]);
-	cmdPtr = (Command *)
-		Tcl_FindCommand(interp, cmdName, 0, TCL_LEAVE_ERR_MSG);
-	if (cmdPtr == NULL) {
+	ensemblePtr = FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
+	if (ensemblePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
-            Tcl_AppendResult(interp, cmdName, " is not an ensemble command",
-		    NULL);
-            return TCL_ERROR;
-        }
-	ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
 
 	if (objc == 5) {
 	    if (Tcl_GetIndexFromObj(interp, objv[4], configOptions, "option",
@@ -4722,12 +4706,64 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    ensemblePtr->nsPtr->exportLookupEpoch++;
 	    return TCL_OK;
 	}
-    }
 
     default:
 	Tcl_Panic("unexpected ensemble command");
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindEnsemble --
+ *
+ *	Given a command name, get the ensemble configuration structure
+ *	for it, allowing for [namespace import]s. [Bug 1017022]
+ *
+ * Results:
+ *	A pointer to the config struct, or NULL if the command either
+ *	does not exist or is not an ensemble.
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static EnsembleConfig *
+FindEnsemble(interp, cmdNameObj, flags)
+    Tcl_Interp *interp;			/* Where to do the lookup, and where
+					 * to write the errors if
+					 * TCL_LEAVE_ERR_MSG is set in the
+					 * flags. */
+    Tcl_Obj *cmdNameObj;		/* Name of command to look up. */
+    int flags;				/* Either 0 or TCL_LEAVE_ERR_MSG; other
+					 * flags are probably not useful. */
+{
+    Command *cmdPtr;
+
+    cmdPtr = (Command *)
+	    Tcl_FindCommand(interp, TclGetString(cmdNameObj), NULL, flags);
+    if (cmdPtr == NULL) {
+	return NULL;
+    }
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	/*
+	 * Reuse existing infrastructure for following import link
+	 * chains rather than duplicating it.
+	 */
+	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
+
+	if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
+		Tcl_AppendResult(interp, "\"", TclGetString(cmdNameObj),
+			"\" is not an ensemble command", NULL);
+	    }
+	    return NULL;
+	}
+    }
+    return (EnsembleConfig *) cmdPtr->objClientData;
 }
 
 /*
