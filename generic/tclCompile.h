@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.6 2005/03/15 02:01:10 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.7 2005/03/15 14:55:28 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -767,6 +767,8 @@ typedef struct ForeachInfo {
 				 * holding the loop's iteration count. Used
 				 * to determine next value list element to
 				 * assign each loop var. */
+    int restartOffset;          /* Offset of the loop body, immediately after
+				 * the INST_FOREACH_START instruction. */
     ForeachVarList *varLists[1];/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large

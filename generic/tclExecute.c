@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.5 2005/03/15 02:01:11 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.6 2005/03/15 14:55:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1199,8 +1199,7 @@ TclExecuteByteCode(interp, codePtr)
      * start of the instruction loop takes it back to the present value.
      */
 
-    pc -= 2;
-    goto cleanup0;
+    goto jumpToInst;
 
     
     /*
@@ -1263,14 +1262,14 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
     
-    cleanup0:
-
     /*
      * Move to the next instruction and extract the (instruction, operand)
      * fields. 
      */
      
+    cleanup0:
     pc += 2;
+    jumpToInst:
     TclGetInstAndOpAtPtr(pc, inst, opnd);
 
 #ifdef TCL_COMPILE_DEBUG
@@ -2394,8 +2393,8 @@ TclExecuteByteCode(interp, codePtr)
     case INST_JUMP:
 	TRACE(("%d => new pc %u\n", opnd,
 		      (unsigned int)(pc + opnd - codePtr->codeStart)));
-	pc += (opnd-2);
-	NEXT_INST_F(0, 0);
+	pc += opnd;
+	goto jumpToInst;
 
 
     case INST_JUMP_FALSE:
@@ -4400,20 +4399,20 @@ TclExecuteByteCode(interp, codePtr)
 	} else {
 	    /*
 	     * Range known from compile time: rewrite the instruction to a
-	     * jump! This part will be u2ed just once 
+	     * jump! This part will be used just once 
 	     */
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[opnd];
 
 	    if (inst == INST_BREAK) {
 		(*pc).i = INST_JUMP;
 		(*(pc+1)).i = (codePtr->codeStart + rangePtr->breakOffset) - pc;
-		pc = (codePtr->codeStart + rangePtr->breakOffset)-2;
-		NEXT_INST_F(0, 0);
+		pc = (codePtr->codeStart + rangePtr->breakOffset);
+		goto jumpToInst;
 	    } else if (rangePtr->continueOffset != -1) {		
 		(*pc).i = INST_JUMP;
 		(*(pc+1)).i = (codePtr->codeStart + rangePtr->continueOffset) - pc;
-		pc = codePtr->codeStart + rangePtr->continueOffset - 2;
-		NEXT_INST_F(0, 0);
+		pc = codePtr->codeStart + rangePtr->continueOffset;
+		goto jumpToInst;
 	    }
 	    goto nonLoopExceptionReturn;
 	}
@@ -4447,20 +4446,15 @@ TclExecuteByteCode(interp, codePtr)
 	    TclClearVarUndefined(iterVarPtr);
 	    TRACE(("%u => loop iter count temp %d\n", 
 		   opnd, iterTmpIndex));
-	}
-	    
-#if ENABLE_PEEPHOLE
-	/* 
-	 * Remark that the compiler ALWAYS sets INST_FOREACH_STEP
-	 * immediately after INST_FOREACH_START - let us just fall
-	 * through instead of jumping back to the top.
-	 */
 
-	pc += 2;
-	TclGetInstAndOpAtPtr(pc, inst, opnd);		
-#else
-	NEXT_INST_F(0, 0);
-#endif	
+	    /*
+	     * Jump to the test at INST_FOREACH_STEP
+	     */
+
+	    pc += infoPtr->restartOffset + 2;
+	    goto jumpToInst;
+	}
+
     case INST_FOREACH_STEP:
 	{
 	    /*
@@ -4585,26 +4579,35 @@ TclExecuteByteCode(interp, codePtr)
 		    listTmpIndex++;
 		}
 	    }
-	    TRACE(("%u => %d lists, iter %d, %s loop\n", opnd, numLists, 
-	            iterNum, (continueLoop? "continue" : "exit")));
 
 	    /* 
-	     * Run-time peep-hole optimisation: the compiler ALWAYS follows
-	     * INST_FOREACH_STEP4 with an INST_JUMP_FALSE. We just skip that
-	     * instruction and jump direct from here.
+	     * Code for the new [foreach] compiler, avoiding the
+	     * pushing/popping/testing/elimination of a freshly created
+	     * Tcl_Obj. 
 	     */
-#if ENABLE_PEEPHOLE
+
+	    TRACE(("%u => %d lists, iter %d, %s loop\n", 
+		   opnd, numLists, iterNum,
+		   (continueLoop? "continue" : "exit")));
+
 	    if (continueLoop) {
-		pc += 2;
+		pc -= infoPtr->restartOffset;
+		goto jumpToInst;
 	    } else {
-		TclGetInstAndOpAtPtr((pc+2), inst, opnd);		
-		pc += opnd;
+#if ENABLE_PEEPHOLE
+		/*
+		 * This is followed by an INST_PUSH; check if right after that
+		 * there is an INST_POP and both can be skipped.
+		 */
+		
+		TclGetInstAndOpAtPtr((pc+4), inst, opnd);	
+		if (inst == INST_POP) {	
+		    pc+=6;
+		    goto jumpToInst;
+		}
+#endif		
+		NEXT_INST_F(0, 0);
 	    }
-	    NEXT_INST_F(0, 0);
-#else
-	    objResultPtr = Tcl_NewIntObj(continueLoop);
-	    NEXT_INST_F(0, 1);
-#endif
 	}
 
     case INST_BEGIN_CATCH:
@@ -4779,11 +4782,11 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    if (result == TCL_BREAK) {
 		result = TCL_OK;
-		pc = (codePtr->codeStart + rangePtr->breakOffset)-2;
+		pc = (codePtr->codeStart + rangePtr->breakOffset);
 		TRACE_APPEND(("%s, range at %d, new pc %d\n",
 				     StringForResultCode(result),
 				     rangePtr->codeOffset, rangePtr->breakOffset));
-		NEXT_INST_F(0, 0);
+		goto jumpToInst;
 	    } else {
 		if (rangePtr->continueOffset == -1) {
 		    TRACE_APPEND(("%s, loop w/o continue, checking for catch\n",
@@ -4791,11 +4794,11 @@ TclExecuteByteCode(interp, codePtr)
 		    goto checkForCatch;
 		} 
 		result = TCL_OK;
-		pc = (codePtr->codeStart + rangePtr->continueOffset)-2;
+		pc = (codePtr->codeStart + rangePtr->continueOffset);
 		TRACE_APPEND(("%s, range at %d, new pc %d\n",
 				     StringForResultCode(result),
 				     rangePtr->codeOffset, rangePtr->continueOffset));
-		NEXT_INST_F(0, 0);
+		goto jumpToInst;
 	    }
 #if TCL_COMPILE_DEBUG    
 	} else if (traceInstructions) {

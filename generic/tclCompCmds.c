@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.5 2005/03/15 02:01:07 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.6 2005/03/15 14:55:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -566,11 +566,10 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     int loopCtTemp;		/* Index of temp var holding the loop's
 				 * iteration count. */
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    int jumpFalseOffset;
-    int jumpBackDist, jumpBackOffset, infoIndex, range;
+    int infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
-    int continueOffset;
+    int bodyOffset;
     
     /*
      * We parse the variable list argument words and create two arrays:
@@ -736,52 +735,37 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Initialize the temporary var that holds the count of loop iterations.
+     * Initialize the temporary var that holds the count of loop
+     * iterations. This jumps to the INST_FOREACH_STEP code after the body
+     * (loop rotation optimisation).
      */
 
     TclEmitInst1(INST_FOREACH_START, infoIndex, envPtr);
 
-    /*
-     * Top of loop code: assign each loop variable and check whether
-     * to terminate the loop.
-     */
-
-    continueOffset = (envPtr->codeNext - envPtr->codeStart);
-    TclEmitInst1(INST_FOREACH_STEP, infoIndex, envPtr);
-    TclEmitForwardJump(envPtr, INST_JUMP_FALSE, jumpFalseOffset);
 
     /*
      * Inline compile the loop body.
      */
 
     range = TclBeginExceptRange(envPtr);
-    envPtr->exceptArrayPtr[range].continueOffset = continueOffset;
+    bodyOffset = (envPtr->codeNext - envPtr->codeStart);
 
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
 
     TclEndExceptRange(range, envPtr);
-
     TclEmitInst0(INST_POP, envPtr);
 
     /*
-     * Jump back to the test at the top of the loop. Generate a 4 byte jump
-     * if the distance to the test is > 120 bytes. This is conservative and
-     * ensures that we won't have to replace this jump if we later need to
-     * replace the ifFalse jump with a 4 byte jump.
+     * Test for loop end, jump back to the top of the loop if not ended. 
      */
 
-    jumpBackOffset = (envPtr->codeNext - envPtr->codeStart);
-    jumpBackDist =
-	(jumpBackOffset - continueOffset);
-    TclEmitInst1(INST_JUMP, -jumpBackDist, envPtr);
-
-    /*
-     * Fix the target of the jump after the foreach_step test.
-     */
-
-    TclSetJumpTarget(envPtr, jumpFalseOffset);
+    envPtr->exceptArrayPtr[range].continueOffset
+	    = (envPtr->codeNext - envPtr->codeStart);
+    infoPtr->restartOffset = (envPtr->codeNext - envPtr->codeStart)
+	    - bodyOffset;    
+    TclEmitInst1(INST_FOREACH_STEP, infoIndex, envPtr);
 
     /*
      * Set the loop's break target.
@@ -794,8 +778,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * The foreach command's result is an empty string.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+    TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
 
     done:
@@ -2185,16 +2168,27 @@ cleanup:
     * no enclosing [catch], and there are no return options, then the
     * INST_DONE instruction is equivalent, and may be more efficient.
     */
+
     if (numOptionWords == 0) {
 	/* We have default return options... */
 	if (envPtr->procPtr != NULL) {
-	    /* ... and we're in a proc ... */
+	/* ... and we're in a proc ... */
 	    if (!envPtr->catchDepth) {
-		/* ... and there is no enclosing catch. */
+		/* ... and there is no enclosing catch. */	    
 		Tcl_DecrRefCount(returnOpts);
 		TclEmitInst0(INST_DONE, envPtr);
 		return TCL_OK;
 	    }
+	}	
+    } else if ((numOptionWords == 4) && (level == 0)) {
+	if (code == TCL_BREAK) {
+	    Tcl_DecrRefCount(returnOpts);
+	    TclEmitInst1(INST_BREAK, envPtr->exceptArrayCurr, envPtr);
+	    return TCL_OK;
+	} else if (code == TCL_CONTINUE) {
+	    Tcl_DecrRefCount(returnOpts);
+	    TclEmitInst1(INST_CONTINUE, envPtr->exceptArrayCurr, envPtr);
+	    return TCL_OK;
 	}
     }
 
