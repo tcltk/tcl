@@ -1,12 +1,43 @@
-2001-09-06  Don Porter  <dgp@users.sourceforge.net>
+2001-09-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
-	* doc/http.n:
-	* library/http/*.tcl:
-	* tools/tcl.wse.in:
-	* tools/tclmin.wse:
-	* unix/Makefile.in:
-	* win/{Mm}akefile.*:  Updated http package to version 2.4,
-	reflecting the new features just added.
+	* All the changes below serve to fix bug [219148] which reports a
+	  80x performance hit for file I/O on Win* systems. On my system
+	  it was closer to a 120x hit. Problem report by Uwe Traum <no
+	  email address available>.
+
+	  The fix goes like this: The obstacle is 'FlushFileBuffers',
+	  executed whenever Tcl writes data to the OS, as Tcl has to wait
+	  for the disk to complete I/O, and disks are slow. We remove that
+	  obstacle. This opens another problem, [file size] reports back
+	  wrong numbers. So for [file size] we add the call back in. As
+	  optimization we keep track of the channels which were written to
+	  and flush only these.
+
+	* win/tclWinFile.c (TclpObjStat): Added a call to
+	  'TclWinFlushDirtyChannels'. This ensures that [file size] and
+	  related commands report the correct size of a file even if Tcl
+	  has recently written to it. Unixoid OS's always report the
+	  correct size even for files with pending data, but Win*
+	  syssystem don't. They only report what is actually on disk.
+
+	* win/tclWinInt.h: Added declaration of
+	  'TclWinFlushDirtyChannels', making it available to other parts
+	  of the tcl core.
+
+	* win/tclWinChan.c (TclWinFlushDirtyChannels): New, internal,
+	  procedure. Goes through the list of open file channels and
+	  forces the OS to flush its file buffers for all which were
+	  written to since the last call of this function. This is an
+	  expensive operation as Tcl has to wait for the OS to complete
+	  actual writes to the disk.
+
+	  (FileInfo): Added dirty flag required by the procedure above.
+
+	  (FileOutputProc): Removed flushing of file buffers, setting the
+	  dirty flag instead. This means that the previously incurred
+	  delays do not happen anymore.
+
+	  (TclWinOpenFileChannel): Added initialization of 'dirty' flag.
 
 2001-09-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -24,10 +55,18 @@
 
 2001-09-06  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/unixInit.test (unixInit-3.2):  Updated test to support
-	newer HP-UX releases that properly report euc-jp as the system
-	encoding for Japanese.  Bug report and patch verification by
-	Bob Techentin.  [Bug 453883]
+	* tests/unixInit.test (unixInit-3.2): Updated test to support
+	  newer HP-UX releases that properly report euc-jp as the system
+	  encoding for Japanese.  Bug report and patch verification by Bob
+	  Techentin.  [Bug 453883]
+
+	* doc/http.n:
+	* library/http/*.tcl:
+	* tools/tcl.wse.in:
+	* tools/tclmin.wse:
+	* unix/Makefile.in:
+	* win/{Mm}akefile.*:  Updated http package to version 2.4,
+	reflecting the new features just added.
 
 2001-09-06 Vince Darley <vincentdarley@users.sourceforge.net>
 
