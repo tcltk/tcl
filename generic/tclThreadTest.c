@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.6 1999/03/10 06:49:24 stanton Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.7 1999/04/03 01:19:48 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -875,8 +875,13 @@ ThreadExitProc(dummy)
 	} else if (resultPtr->dstThreadId == self) {
 	    /*
 	     * Dang.  The target is going away.  Unblock the caller.
+	     * The result string must be dynamically allocated because
+	     * the main thread is going to call free on it.
 	     */
-	    resultPtr->result = "target thread died";
+
+	    char *msg = "target thread died";
+	    resultPtr->result = ckalloc(strlen(msg)+1);
+	    strcpy(resultPtr->result, msg);
 	    resultPtr->code = TCL_ERROR;
 	    Tcl_ConditionNotify(&resultPtr->done);
 	}
