@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.128 2004/06/23 19:23:49 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.129 2004/06/24 01:29:07 mistachkin Exp $
 #------------------------------------------------------------------------------
 
 !if !defined(MSDEVDIR) && !defined(MSVCDIR)
@@ -80,6 +80,7 @@ the environment.  Jump to this line to read the new instructions.
 #			   inside it.
 #		threads =  Turns on full multithreading support.
 #		thrdalloc = Use the thread allocator (shared global free pool).
+#		thrdstorage = Use the generic thread storage support.
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
 #		loimpact =  Adds a flag for how NT treats the heap to keep memory
@@ -308,6 +309,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclThread.obj \
 	$(TMP_DIR)\tclThreadAlloc.obj \
 	$(TMP_DIR)\tclThreadJoin.obj \
+	$(TMP_DIR)\tclThreadStorage.obj \
 	$(TMP_DIR)\tclTimer.obj \
 	$(TMP_DIR)\tclTrace.obj \
 	$(TMP_DIR)\tclUtf.obj \

@@ -1,3 +1,23 @@
+2004-06-23  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclThread.c: Implements platform independent thread storage
+	* generic/tclThreadStorage.c: mechanism and fixes associated bugs on
+	platforms where there is limited thread local storage space
+	(Win98/WinNT4). [Patch 976496]
+
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h: Added thread storage functions to the
+	* generic/tclStubInit.c: internal stubs table.
+
+	* unix/Makefile.in:
+	* unix/configure:
+	* unix/tcl.m4:
+	* win/makefile.vc:
+	* win/rules.vc:
+	* win/Makefile.in: Modified the unix, VC++, and Cygwin build systems
+	* win/configure: to include the new "tclThreadStorage.c" and the new
+	* win/tcl.m4: USE_THREAD_STORAGE define.
+
 2004-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/io.test: Added -force to 18.1 and 18.2. This was failing
