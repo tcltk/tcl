@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.88 2003/11/03 12:49:31 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.89 2003/11/07 11:36:47 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2528,11 +2528,18 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * function which should be used for
 				 * this file. */
 {
-    CONST char *symbols[] = { sym1, sym2 };
-    Tcl_PackageInitProc **procPtrs[] = { proc1Ptr, proc2Ptr };
+    CONST char *symbols[2];
+    Tcl_PackageInitProc **procPtrs[2];
     ClientData clientData;
     int res;
     
+    /* Initialize the arrays */
+    symbols[0] = sym1;
+    symbols[1] = sym2;
+    procPtrs[0] = proc1Ptr;
+    procPtrs[1] = proc2Ptr;
+    
+    /* Perform the load */
     res = TclLoadFile(interp, pathPtr, 2, symbols, procPtrs, 
 		      handlePtr, &clientData, unloadProcPtr);
     
