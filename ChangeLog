@@ -4,6 +4,10 @@
 	* tests/winDde.test:         for unique dde server names. Added
 	* win/tclWinDde.c:           some more tests. Fixes [Bug 219293]
 
+	* doc/dde.n: Updated documentation re TIP #130.
+	* tests/winDde.test: Applied patch for [Bug 738929] by KKB and
+	changed to new-style tests.
+
 2003-05-16  Kevin B. Kenny  <kennykb@hippolyta>
 
 	* unix/Makefile.in:	Removed one excess source file tclDToA.c
