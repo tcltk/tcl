@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.103 2004/05/08 15:51:41 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.104 2004/06/09 16:15:23 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -2610,7 +2610,8 @@ Tcl_FSChdir(pathPtr)
     int retVal = -1;
     
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
-        return TCL_ERROR;
+	Tcl_SetErrno(ENOENT);
+	return (retVal);
     }
     
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2641,7 +2642,7 @@ Tcl_FSChdir(pathPtr)
 	 * calculated above, and we must therefore cache that
 	 * information.
 	 */
-	if (retVal == TCL_OK) {
+	if (retVal == 0) {
 	    /* 
 	     * Note that this normalized path may be different to what
 	     * we found above (or at least a different object), if the
@@ -2653,7 +2654,8 @@ Tcl_FSChdir(pathPtr)
 	     */
 	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	    if (normDirName == NULL) {
-	        return TCL_ERROR;
+		Tcl_SetErrno(ENOENT); /*Not really true, but what else to do?*/
+		return -1;
 	    }
 	    if (fsPtr == &tclNativeFilesystem) {
 		/* 
@@ -3990,7 +3992,13 @@ Tcl_FSGetFileSystemForPath(pathPtr)
     /* 
      * Check if the filesystem has changed in some way since
      * this object's internal representation was calculated.
+     * Before doing that, assure we have the most up-to-date
+     * copy of the master filesystem. This is accomplished
+     * by the FsGetFirstFilesystem() call.
      */
+
+    fsRecPtr = FsGetFirstFilesystem();
+
     if (TclFSEnsureEpochOk(pathPtr, &retVal) != TCL_OK) {
 	return NULL;
     }
@@ -4001,7 +4009,6 @@ Tcl_FSGetFileSystemForPath(pathPtr)
      * succeeded.
      */
 
-    fsRecPtr = FsGetFirstFilesystem();
     while ((retVal == NULL) && (fsRecPtr != NULL)) {
 	Tcl_FSPathInFilesystemProc *proc = fsRecPtr->fsPtr->pathInFilesystemProc;
 	if (proc != NULL) {
