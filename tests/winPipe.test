@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.30 2004/06/23 15:36:59 dkf Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.31 2004/07/02 18:46:18 kennykb Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -110,7 +110,7 @@ test winpipe-1.10 {32 bit comprehensive tests: from file handle} \
 } {little stderr32}
 test winpipe-1.11 {32 bit comprehensive tests: read from application} \
 	{win exec cat32} {
-    set f [open "|[list $cat32] < $path(little)" r]
+    set f [open "|[list $cat32] < [list $path(little)]" r]
     gets $f line
     catch {close $f} msg
     list $line $msg
