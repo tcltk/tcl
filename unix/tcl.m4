@@ -1579,19 +1579,6 @@ AC_DEFUN(SC_TIME_HANDLER, [
 	    AC_MSG_RESULT(no))
     fi
 
-    #
-    # AIX does not have a timezone field in struct tm. When the AIX bsd
-    # library is used, the timezone global and the gettimeofday methods are
-    # to be avoided for timezone deduction instead, we deduce the timezone
-    # by comparing the localtime result on a known GMT value.
-    #
-
-    if test "`uname -s`" = "AIX" ; then
-	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
-	if test $libbsd = yes; then
-	    AC_DEFINE(USE_DELTA_FOR_TZ)
-	fi
-    fi
 ])
 
 #--------------------------------------------------------------------
@@ -1689,6 +1676,11 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     # the MATH_LIBS or it breaks the pow() function.  The way to
     # insure proper sequencing, is to add it to the tail of MATH_LIBS.
     # This library also supplies gettimeofday.
+    #
+    # AIX does not have a timezone field in struct tm. When the AIX bsd
+    # library is used, the timezone global and the gettimeofday methods are
+    # to be avoided for timezone deduction instead, we deduce the timezone
+    # by comparing the localtime result on a known GMT value.
     #--------------------------------------------------------------------
 
     libbsd=no
@@ -1696,6 +1688,7 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
 	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
 	if test $libbsd = yes; then
 	    MATH_LIBS="$MATH_LIBS -lbsd"
+	    AC_DEFINE(USE_DELTA_FOR_TZ)
 	fi
     fi
 
