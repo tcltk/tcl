@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.15 2001/05/17 02:13:02 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.16 2001/09/17 11:51:58 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -37,6 +37,7 @@
 
 extern Tcl_ObjType	tclCmdNameType;
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,
  * what level of tracing is desired:
@@ -47,7 +48,9 @@ extern Tcl_ObjType	tclCmdNameType;
  */
 
 extern int 		tclTraceCompile;
+#endif
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  * Variable that controls whether execution tracing is enabled and, if so,
  * what level of tracing is desired:
@@ -59,6 +62,7 @@ extern int 		tclTraceCompile;
  */
 
 extern int 		tclTraceExec;
+#endif
 
 /*
  *------------------------------------------------------------------------
