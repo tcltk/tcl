@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.4 1999/05/14 23:22:18 surles Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.5 1999/08/05 16:56:31 hobbs Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -219,20 +219,20 @@ command.
 .TP
 \fBtcl_pkgPath\fR
 This variable holds a list of directories indicating where packages are
-normally installed.  It typically contains either one or two entries; 
-if it contains two entries, the first is normally a directory for
-platform-dependent packages (e.g., shared library binaries) and the
-second is normally a directory for platform-independent packages (e.g.,
-script files). Typically a package is installed as a subdirectory of one
-of the entries in \fB$tcl_pkgPath\fR. The directories in
-\fB$tcl_pkgPath\fR are included by default in the \fBauto_path\fR
+normally installed.  It is not used on Windows.  It typically contains
+either one or two entries; if it contains two entries, the first is
+normally a directory for platform-dependent packages (e.g., shared library
+binaries) and the second is normally a directory for platform-independent
+packages (e.g., script files). Typically a package is installed as a
+subdirectory of one of the entries in \fB$tcl_pkgPath\fR. The directories
+in \fB$tcl_pkgPath\fR are included by default in the \fBauto_path\fR
 variable, so they and their immediate subdirectories are automatically
 searched for packages during \fBpackage require\fR commands.  Note:
-\fBtcl_pkgPath\fR it not intended to be modified by the application.
-Its value is added to \fBauto_path\fR at startup; changes to
-\fBtcl_pkgPath\fR are not reflected in \fBauto_path\fR.  If you
-want Tcl to search additional directories for packages you should add
-the names of those directories to \fBauto_path\fR, not \fBtcl_pkgPath\fR.
+\fBtcl_pkgPath\fR it not intended to be modified by the application.  Its
+value is added to \fBauto_path\fR at startup; changes to \fBtcl_pkgPath\fR
+are not reflected in \fBauto_path\fR.  If you want Tcl to search additional
+directories for packages you should add the names of those directories to
+\fBauto_path\fR, not \fBtcl_pkgPath\fR.
 .VE
 .TP
 \fBtcl_platform\fR
