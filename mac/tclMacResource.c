@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.8 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.9 2002/01/18 03:23:02 das Exp $
  */
 
 #include <Errors.h>
@@ -149,7 +149,7 @@ Tcl_ResourceObjCmd(
     char macPermision;
     int mode;
 
-    static char *switches[] = {"close", "delete" ,"files", "list", 
+    static CONST char *switches[] = {"close", "delete" ,"files", "list", 
             "open", "read", "types", "write", (char *) NULL
     };
 	        
@@ -158,7 +158,7 @@ Tcl_ResourceObjCmd(
             RESOURCE_OPEN, RESOURCE_READ, RESOURCE_TYPES, RESOURCE_WRITE
     };
               
-    static char *writeSwitches[] = {
+    static CONST char *writeSwitches[] = {
             "-id", "-name", "-file", "-force", (char *) NULL
     };
             
@@ -167,7 +167,7 @@ Tcl_ResourceObjCmd(
             RESOURCE_WRITE_FILE, RESOURCE_FORCE
     };
             
-    static char *deleteSwitches[] = {"-id", "-name", "-file", (char *) NULL};
+    static CONST char *deleteSwitches[] = {"-id", "-name", "-file", (char *) NULL};
              
     enum {RESOURCE_DELETE_ID, RESOURCE_DELETE_NAME, RESOURCE_DELETE_FILE};
 

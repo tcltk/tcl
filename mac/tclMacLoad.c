@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.10 2002/01/17 03:03:12 dgp Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.11 2002/01/18 03:22:58 das Exp $
  */
 
 #include <CodeFragments.h>
@@ -130,7 +130,7 @@ TclpLoadFile(
     Tcl_DString ds;
     char *native;
     
-    native = Tcl_FSGetNativePath(pathPtr);
+    native = (char *) Tcl_FSGetNativePath(pathPtr);
     err = FSpLocationFromPath(strlen(native), native, &fileSpec);
     
     if (err != noErr) {
