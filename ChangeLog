@@ -1,3 +1,15 @@
+2000-05-22  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclEnv.c: cast cleanup [Bug: 5624]
+	* win/tclWinConsole.c: cast and header cleanup [Bug: 5625]
+	* win/tclWinSerial.c: cast cleanup [Bug: 5626]
+	* win/tclWinFCmd.c: cast cleanup [Bug: 5627]
+
+2000-05-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclStringObj.c (AppendUnicodeToUnicodeRep): removed
+	overallocation by extra sizeof(Tcl_UniChar) multiplication.
+
 2000-05-19  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclTest.c:
