@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.20 1999/03/17 20:16:55 welch Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.21 1999/03/25 19:46:23 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -1059,6 +1059,7 @@ dist: $(UNIX_DIR)/configure
 	chmod +x $(DISTDIR)/unix/mkLinks
 	mkdir $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/*.c $(GENERIC_DIR)/*.h $(DISTDIR)/generic
+	cp -p $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
 	cp -p $(TOP_DIR)/changes $(TOP_DIR)/README* $(TOP_DIR)/license.terms \
