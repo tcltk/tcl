@@ -1,3 +1,10 @@
+2001-07-18  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIO.c: Aftermath to [SF #427196]. Squash empty buffers
+	  if they are smaller than the requested buffersize, to prevent
+	  reusage of old buffers and to honor changes in the requested
+	  buffersize made by the user.
+
 2001-07-17  Mo DeJong  <mdejong@redhat.com>
 
 	* win/tclWinFile.c (TclpReadlink): Add Cygwin specific definition
