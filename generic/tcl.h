@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.18 1998/07/29 22:24:11 welch Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.19 1998/08/04 09:57:24 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -176,6 +176,9 @@
 #  ifdef _MSC_VER
 #   define DLLIMPORT __declspec(dllimport)
 #   define DLLEXPORT __declspec(dllexport)
+#  else
+#   define DLLIMPORT
+#   define DLLEXPORT
 #  endif
 # endif
 #else
@@ -183,13 +186,31 @@
 # define DLLEXPORT
 #endif
 
-#ifdef EXPORT
-# undef EXPORT
+#ifdef TCLSTORAGECLASS
+# undef TCLSTORAGECLASS
 #endif
 #ifdef BUILD_tcl
-# define EXPORT DLLEXPORT
+# define TCLSTORAGECLASS DLLEXPORT
 #else
-# define EXPORT DLLIMPORT
+# define TCLSTORAGECLASS DLLIMPORT
+#endif
+
+/*
+ * The EXPORT macro is used to declare procedures that are exported by DLL
+ * extensions
+ */
+    
+#ifndef STATIC_BUILD
+# ifdef _MSC_VER
+#  define EXPORT(a,b) __declspec(dllexport) a b
+#  define DllEntryPoint DllMain
+#else
+#  ifdef __BORLANDC__
+#   define EXPORT(a,b) a _export b
+#  else
+#   define EXPORT(a,b) a b
+#  endif
+#endif
 #endif
 
 /*
@@ -210,9 +231,9 @@
 #endif
 
 #ifdef __cplusplus
-#   define EXTERN extern "C" EXPORT
+#   define EXTERN extern "C" TCLSTORAGECLASS
 #else
-#   define EXTERN extern EXPORT
+#   define EXTERN extern TCLSTORAGECLASS
 #endif
 
 /*
