@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.27 2002/11/26 22:35:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.28 2002/12/04 03:59:17 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1143,7 +1143,7 @@ TclpCreateProcess(
 
     if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
 	if (HasConsole()) {
-	    createFlags = 0;
+	    createFlags = CREATE_NEW_PROCESS_GROUP;
 	} else if (applType == APPL_DOS) {
 	    /*
 	     * Under NT, 16-bit DOS applications will not run unless they
@@ -1162,7 +1162,7 @@ TclpCreateProcess(
 	} 
     } else {
 	if (HasConsole()) {
-	    createFlags = 0;
+	    createFlags = CREATE_NEW_PROCESS_GROUP;
 	} else {
 	    createFlags = DETACHED_PROCESS;
 	}
@@ -1852,6 +1852,19 @@ PipeClose2Proc(
     errorCode = 0;
     if ((!flags || (flags == TCL_CLOSE_READ))
 	    && (pipePtr->readFile != NULL)) {
+
+	/*
+	 * Send the console group a notification of close.  We assume
+	 * the child is a console application, and that it will respond.
+	 * It doesn't seem as though console mode applications that
+	 * don't set a HandlerRoutine acknowledge this.
+	 */
+
+	if (HasConsole() && pipePtr->numPids) {
+	    GenerateConsoleCtrlEvent(CTRL_C_EVENT,
+		    TclpGetPid(pipePtr->pidPtr[0]));
+	}
+
 	/*
 	 * Clean up the background thread if necessary.  Note that this
 	 * must be done before we can close the file, since the 
