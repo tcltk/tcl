@@ -1,3 +1,8 @@
+2004-07-08  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWinInit.c (AppendEnvironment): Silenced a compilation
+	warning about a type mismatch.
+	
 2004-07-07  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileScript): fix for [Bug 458361]. 
