@@ -1,5 +1,22 @@
 2004-11-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/AddErrInfo.3:	Docs for Tcl_(Get|Set)ReturnOptions.  [TIP 227]
+
+	* doc/AddErrInfo.3:
+	* doc/Async.3:		Documentation updates to replace references
+	* doc/BackgdErr.3:	to global variable ::errorInfo and ::errorCode
+	* doc/SaveResult.3:	and to the ::bgerror command with references
+	* doc/after.n:		to their preferred replacements, the
+	* doc/bgerror.n:	-errorinfo and -errorcode return options,
+	* doc/error.n:		the Tcl_*InterpState routines, and the
+	* doc/exec.n:		[interp bgerror] command.
+	* doc/exit.n:
+	* doc/fileevent.n:
+	* doc/interp.n:
+	* doc/return.n:
+	* doc/tclvars.n:
+	* doc/update.n:
+
 	* tests/unixInit.test:	Removed "knownBug" constraints to prompt
 	bug fixing before 8.5a2 release.
 
