@@ -1,5 +1,10 @@
 2004-05-16  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclExecute.c (TclExecuteByteCode): remove one level of
+	indirection for compiledLocals addressing.
+
+2004-05-16  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclExecute.c (INST_CALL_FUNC1): bugfix; restored
 	(DE)CACHE_STACK_INFO pair around the call - the user defined math
 	function could cause a recursive call to TEBC.
