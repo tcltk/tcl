@@ -26,7 +26,8 @@
 	same duties but adheres to the standard return convention for Tcl
 	evaluations; the deprecated function could only return TCL_OK or
 	TCL_ERROR, which caused [Bug: 219384] and [Bug: 455151].
-
+	This patch implements [TIP: 56].
+	
 2001-09-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
