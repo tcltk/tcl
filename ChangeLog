@@ -1,3 +1,20 @@
+2001-06-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/unixInit.test (unixInit-1.2,unixInit-2.8): Added test for
+	code described below, and fixed a couple of errors that caused
+	problems during testing; the code to determine the installedTcl
+	constraint was wrong, and test unixInit-2.8 assumed that /tmp/lib
+	was free for use and could be deleted, which clashed nastily with
+	my installation and made other tests fail unnecessarily!
+
+	* unix/tclUnixChan.c (TtyInit,TclpOpenFileChannel,
+	Tcl_MakeFileChannel,TclpGetDefaultStdChannel): Alterations so that
+	the standard channels - stdin, stdout and stderr - have the
+	correct type and fconfigure options.  This required making the
+	initialisation of serial lines a little more sophisticated to
+	make the console behave correctly in interactive mode... [Bug
+	#219137 and duplicates]
+
 2001-06-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.decls:

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.14 2001/01/04 21:30:49 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.15 2001/06/18 13:13:23 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -27,10 +27,10 @@ set env(LANG) C
 # Some tests will fail if they are run on a machine that doesn't have
 # this Tcl version installed (as opposed to built) on it.
 if {[catch {
-    set f [open "|[list $::tcltest::tcltest exit]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     exec kill -PIPE [pid $f]
     close $f
-}]} {
+} msg]} {
     set ::tcltest::testConstraints(installedTcl) 0
 } else {
     set ::tcltest::testConstraints(installedTcl) 1
@@ -58,6 +58,19 @@ test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly installedTcl} {
 
     set x
 } {0 1}
+
+# This test is really a test of code in tclUnixChan.c, but the
+# channels are set up as part of initialisation of the interpreter so
+# the test seems to me to fit here as well as anywhere else.
+test unixInit-1.2 {initialisation: channel type deduction} {unixOnly installedTcl} {
+    set sock [socket localhost echo]
+    set pipe [open |[list $::tcltest::tcltest >@$sock] w]
+    puts $pipe {puts [fconfigure stdout -peername]; exit}
+    close $pipe
+    gets $sock channeltype
+    close $sock
+    set channeltype
+} {127.0.0.1 localhost 7}
 
 proc getlibpath "{program [list $::tcltest::tcltest]}" {
     set f [open "|$program" w+]
@@ -152,12 +165,12 @@ test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
 } {}
 test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly} {
     file delete -force /tmp/sparkly
-    file delete -force /tmp/lib
+    file delete -force /tmp/library
     file mkdir /tmp/sparkly
     file copy $::tcltest::tcltest /tmp/sparkly/tcltest
 
-    file mkdir /tmp/lib/tcl[info tclversion]
-    close [open /tmp/lib/tcl[info tclversion]/init.tcl w]
+    file mkdir /tmp/library/tcl[info tclversion]
+    close [open /tmp/library/tcl[info tclversion]/init.tcl w]
 
     set allAbsolute 1
     foreach dir [getlibpath /tmp/sparkly/tcltest] {
@@ -165,7 +178,7 @@ test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly} {
 		&& [string equal absolute [file pathtype $dir]]}]
     }
     file delete -force /tmp/sparkly
-    file delete -force /tmp/lib
+    file delete -force /tmp/library
     set allAbsolute
 } 1
 test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
@@ -215,7 +228,7 @@ test unixInit-5.1 {Tcl_Init} {emptyTest unixOnly} {
 
 test unixInit-6.1 {Tcl_SourceRCFile} {emptyTest unixOnly} {
 } {}
-    
+
 # cleanup
 if {[info exists oldlibrary]} {
     set env(TCL_LIBRARY) $oldlibrary
