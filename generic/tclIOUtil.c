@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.99 2004/04/06 22:25:53 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.100 2004/04/07 15:54:15 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1291,9 +1291,9 @@ Tcl_FSData(fsPtr)
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
     /*
-     * Traverse the 'filesystemList' looking for the particular node
-     * whose 'fsPtr' member matches 'fsPtr' and remove that one from
-     * the list.  Ensure that the "default" node cannot be removed.
+     * Traverse the list of filesystems look for a particular one.
+     * If found, return that filesystem's clientData (originally
+     * provided when calling Tcl_FSRegister).
      */
 
     while ((retVal == NULL) && (fsRecPtr != NULL)) {
