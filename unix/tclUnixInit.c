@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.43 2004/06/11 21:30:08 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.44 2004/06/11 22:39:30 dgp Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -792,8 +792,6 @@ TclpSetVariables(interp)
     } else
 #endif /* HAVE_CFBUNDLE */
     {
-        Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, 
-                TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
     }
 
