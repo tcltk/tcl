@@ -1096,7 +1096,7 @@
 
 	* doc/library.n:
 	* library/init.tcl:
-	* tests/autoMkindex.test: Modified [auto_import] to apply
+	* tests/autoMkindex.t*: Modified [auto_import] to apply
 	pattern matching in the [namespace import] style.  [Bug 420186]
 	***POTENTIAL INCOMPATIBILITY*** for any callers of [auto_import]
 	from outside Tcl that expect the pattern matching to be like that
@@ -1290,7 +1290,7 @@
 
 2001-04-04  Don Porter  <dgp@users.sourceforge.net>
 
-	* unix/tclMain.c:  Patch from Kevin Kenny to restore support of
+	* generic/tclMain.c:  Patch from Kevin Kenny to restore support of
 	  pre-ANSI compilers.  [Bug 413846, Patch 413842]
 
 2001-04-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
