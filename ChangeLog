@@ -1,3 +1,13 @@
+2004-05-06  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclObj.c (TclFreeObj): made TclFreeObj use the new macro
+	TclFreeObjMacro(), so that the allocation and freeing of Tcl_Obj
+	is defined in a single spot (the macros in tclInt.h), with the
+	exception of the TCL_MEM_DEBUG case.
+	The #ifdef logic for the corresponding macros has been reformulated
+	to make it clearer.
+
 2004-05-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/break.n, doc/continue.n, doc/for.n, doc/while.n: More examples.
