@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.132 2004/09/02 11:23:03 vincentdarley Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.133 2004/09/08 00:05:54 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if !defined(MSDEVDIR) && !defined(MSVCDIR)
@@ -906,7 +906,7 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@$(CPY) "$(ROOT)\library\clock.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\clock.tcl"    "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\tm.tcl"       "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
@@ -918,13 +918,13 @@ install-libraries: tclConfig install-msgs install-tzdata
 
 install-tzdata:
 	@echo "Installing time zone data"
-	set TCL_LIBRARY="$(ROOT)/library"
+	set TCL_LIBRARY=$(ROOT)/library
 	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
 	    "$(ROOT)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
 
 install-msgs:
 	@echo "Installing message catalogs"
-	set TCL_LIBRARY="$(ROOT)/library"
+	set TCL_LIBRARY=$(ROOT)/library
 	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
 	    "$(ROOT)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
