@@ -1,3 +1,7 @@
+2004-09-30  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/subst.test (12.2): test correction.
+
 2004-09-29  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (Tcl_EvalEx):
