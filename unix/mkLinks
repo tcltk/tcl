@@ -859,6 +859,10 @@ if test -r ParseCmd.3; then
     rm -f Tcl_ParseVarName.3
     ln ParseCmd.3 Tcl_ParseVarName.3
 fi
+if test -r ParseCmd.3; then
+    rm -f Tcl_ParseVar.3
+    ln ParseCmd.3 Tcl_ParseVar.3
+fi
 if test -r PkgRequire.3; then
     rm -f Tcl_PkgProvide.3
     ln PkgRequire.3 Tcl_PkgProvide.3

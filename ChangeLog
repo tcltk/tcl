@@ -1,3 +1,8 @@
+2000-04-24  Eric Melski  <ericm@scriptics.com>
+
+	* unix/mkLinks: 
+	* doc/ParseCmd.3: Added documentation for Tcl_ParseVar [Bug: 1828].
+
 2000-04-24  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tclUnixNotfy.c (Tcl_FinalizeNotifier, NotifierThreadProc):
@@ -157,6 +162,11 @@
 2000-04-12  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/dde.n: corrected dde poke docs. [Bug: 4991]
+
+2000-04-11  Eric Melski  <ericm@scriptics.com>
+
+	* win/tclWinPipe.c: Added "CONST" keyword to declaration of char
+	*native in TclpCreateTempFile, to supress compiler warnings.
 
 2000-04-10  Brent Welch <welch@scriptics.com>
 
