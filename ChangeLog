@@ -1,10 +1,18 @@
-1999-0706     <welch@scriptics.com>
+1999-07-06    <redman@scriptics.com>
+
+	* win/tclWinSerial.c:  New implementation of serial port driver
+	from Rolf Shroedter (Rolf.Schroedter@dlr.de) that allows more than
+	one byte to be read from the port.  Implemented using polling
+	instead of threads, there is a max. 10ms latency between checking the
+	port for file events.  [Bug: 1980 2217]
+
+1999-07-06    <welch@scriptics.com>
 
 	* library/http2.0/http.tcl: Fixed the -timeout option so it
 	handles timeouts that occur during connection attempts to
 	hosts that are down (the only case that really matters!)
 
-1999-0703     <welch@scriptics.com>
+1999-07-03    <welch@scriptics.com>
 
 	* doc/ChnlStack.3:
 	* generic/tcl.decls:
@@ -12,7 +20,7 @@
 	from Andreas Kupres that adds new C APIs Tcl_StackChannel,
 	Tcl_UnstackChannel, and Tcl_GetStackedChannel.
 
-1999-0703     <welch@scriptics.com>
+1999-07-03    <welch@scriptics.com>
 
 	* generic/tclNotify.c:
 	* unix/tclUnixNotfy.c:
@@ -23,7 +31,7 @@
 	hook points in the notifiers to be able to replace the notifier
 	calls at runtime  The Xt notifier and test program use this hook.
 
-1999-0703     <welch@scriptics.com>
+1999-07-03    <welch@scriptics.com>
 
 	* generic/tclParse.c: Changed parsing of variable names to
 	allow empty array names.  Now "$(foo)" is a variable reference!
@@ -31,7 +39,7 @@
 	This change is requested by Jean-Luc Fontaine for his STOOOP
 	package.
 
-1999-0701     <redman@scriptics.com>
+1999-07-01    <redman@scriptics.com>
 
 	* generic/tclCmdAH.c:
 	* generic/tclFCmd.c: Call TclStat instead of TclpStat in order to
