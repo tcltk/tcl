@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.37 2001/11/21 02:36:20 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.38 2001/11/23 01:26:47 das Exp $
 
 library tcl
 
@@ -696,7 +696,7 @@ declare 6 mac {
 	    Boolean createFolder, FSSpec *spec)
 }
 declare 7 mac {
-    void GetGlobalMouse(Point *mouse)
+    void GetGlobalMouseTcl(Point *mouse)
 }
 
 # The following routines are utility functions in Tcl.  They are exported
@@ -704,15 +704,15 @@ declare 7 mac {
 # however.  The first set are from the MoreFiles package.
 
 declare 8 mac {
-    pascal OSErr FSpGetDirectoryID(CONST FSSpec *spec, long *theDirID, \
+    pascal OSErr FSpGetDirectoryIDTcl(CONST FSSpec *spec, long *theDirID, \
 	    Boolean *isDirectory)
 }
 declare 9 mac {
-    pascal short FSpOpenResFileCompat(CONST FSSpec *spec, \
+    pascal short FSpOpenResFileCompatTcl(CONST FSSpec *spec, \
 	    SignedByte permission)
 }
 declare 10 mac {
-    pascal void FSpCreateResFileCompat(CONST FSSpec *spec, OSType creator, \
+    pascal void FSpCreateResFileCompatTcl(CONST FSSpec *spec, OSType creator, \
 	    OSType fileType, ScriptCode scriptTag)
 }
 
@@ -767,6 +767,9 @@ declare 23 mac {
 #  declare 24 mac {
 #      int TclMacReadlink(char *path, char *buf, int size)
 #  }
+declare 24 mac {
+    char * TclpGetTZName(int isdst)
+}
 declare 25 mac {
     int TclMacChmod(char *path, int mode)
 }

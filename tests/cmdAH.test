@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.15 2001/09/09 17:32:16 mdejong Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.16 2001/11/23 01:25:51 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1178,7 +1178,7 @@ test cmdAH-20.3 {Tcl_FileObjCmd: atime} {
 test cmdAH-20.4 {Tcl_FileObjCmd: atime} {
     list [catch {file atime $file notint} msg] $msg
 } {1 {expected integer but got "notint"}}
-test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {
+test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {unixOrPc} {
     if {[string equal $tcl_platform(platform) "windows"]} {
 	set old [pwd]
 	cd $::tcltest::temporaryDirectory
