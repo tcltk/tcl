@@ -1,3 +1,17 @@
+2004-05-19  Andreas Kupries  <andreask@activestate.com>
+
+	* tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
+	* tclIO.h: [SF Tcl Bug 462317], see ChangeLog entry
+	           2001-09-26. The fix done at that time is incomplete. It
+	           is possible to get around it if the actual read
+	           operation is defered and not executed in the event
+	           handler itself. Instead of tracking if we are in an
+	           read caused by a synthesized fileevent we now track if
+	           the OS has delivered a true event = actual data and
+	           bypass the driver if a read finds that there is no
+	           actual data waiting. The flag is cleared by a short or
+	           full read.
+
 2004-05-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to (Bug 956063) in 'file dirname'.
