@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.30 2004/10/06 17:09:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.31 2004/10/07 00:14:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -555,7 +555,7 @@ DeleteValue(
     result = (*regWinProcs->regDeleteValueProc)(key, Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult("unable to delete value \"",
+	Tcl_AppendResult(interp, "unable to delete value \"",
 		Tcl_GetString(valueNameObj), "\" from key \"",
 		Tcl_GetString(keyNameObj), "\": ", NULL);
 	AppendSystemError(interp, result);
