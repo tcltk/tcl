@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.27 2003/01/14 02:06:11 mdejong Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.28 2003/01/16 19:01:59 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -1314,3 +1314,18 @@ TclWinFlushDirtyChannels ()
 	}
     }
 }
+
+#ifdef HAVE_NO_SEH
+/*
+ * This method exists only to stop the compiler from emitting
+ * warnings about variables and methods accessed only from asm.
+ */
+static void squelch_warnings()
+{
+    void *ptr;
+    ptr = _except_makefilechannel_handler;
+    ESP = 0;
+    EBP = 0;
+    squelch_warnings();
+}
+#endif /* HAVE_NO_SEH */

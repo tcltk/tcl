@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.31 2002/07/15 09:53:21 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.32 2003/01/16 19:01:59 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -251,7 +251,7 @@ DoRenameFile(
 	decode:
 	if (srcAttr & FILE_ATTRIBUTE_DIRECTORY) {
 	    TCHAR *nativeSrcRest, *nativeDstRest;
-	    char **srcArgv, **dstArgv;
+	    CONST char **srcArgv, **dstArgv;
 	    int size, srcArgc, dstArgc;
 	    WCHAR nativeSrcPath[MAX_PATH];
 	    WCHAR nativeDstPath[MAX_PATH];
@@ -576,7 +576,7 @@ DoCopyFile(
 	    }
 	    if (dstAttr & FILE_ATTRIBUTE_READONLY) {
 		(*tclWinProcs->setFileAttributesProc)(nativeDst, 
-			dstAttr & ~FILE_ATTRIBUTE_READONLY);
+			dstAttr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
 		if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
 		    return TCL_OK;
 		}
@@ -682,7 +682,7 @@ DoDeleteFile(
 		Tcl_SetErrno(EISDIR);
 	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
 		int res = (*tclWinProcs->setFileAttributesProc)(nativePath, 
-			attr & ~FILE_ATTRIBUTE_READONLY);
+			attr & ~((DWORD)FILE_ATTRIBUTE_READONLY));
 		if ((res != 0) && ((*tclWinProcs->deleteFileProc)(nativePath)
 			!= FALSE)) {
 		    return TCL_OK;
@@ -1834,3 +1834,19 @@ TclpObjListVolumes(void)
     Tcl_IncrRefCount(resultPtr);
     return resultPtr;
 }
+
+#ifdef HAVE_NO_SEH
+/*
+ * This method exists only to stop the compiler from emitting
+ * warnings about variables and methods accessed only from asm.
+ */
+static void squelch_warnings()
+{
+    void *ptr;
+    ptr = _except_dorenamefile_handler;
+    ptr = _except_docopyfile_handler;
+    ESP = 0;
+    EBP = 0;
+    squelch_warnings();
+}
+#endif /* HAVE_NO_SEH */
