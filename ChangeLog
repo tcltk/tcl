@@ -1,3 +1,7 @@
+2004-05-17  Miguel Sofer <msofer@users.sf.net>
+	* generic/tclExecute.c (TclExecuteByteCode): remove one level of
+	indirection for compiledLocals addressing.
+
 2004-05-16  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_CALL_FUNC1): bugfix; restored
