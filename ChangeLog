@@ -9,6 +9,7 @@
 
 	* win/tclWinReg.c (OpenSubKey): Backported fix for bug 775976
 	which causes the registry set command to fail when built with VC7.
+	* library/reg/pkgIndex.tcl: Incremented the version to 1.1.2.
 
 2003-07-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
