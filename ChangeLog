@@ -1,3 +1,9 @@
+2001-12-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/init.tcl (auto_execok): make sure env(COMSPEC) on
+	Windows is executed with the right case, as it may otherwise fail
+	inexplicably.
+
 2001-12-21  Daniel Steffen <das@users.sourceforge.net>
 
 	* unix/tcl.m4: fixed incorrect SHLIB_LD_LIBS
