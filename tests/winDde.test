@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.21 2004/06/23 15:36:58 dkf Exp $
+# RCS: @(#) $Id: winDde.test,v 1.22 2004/06/23 17:26:58 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -98,7 +98,11 @@ proc createChildProcess { ddeServerName {handler {}}} {
 	puts ready
         flush stdout
 	vwait done
-	update
+	# allow enough time for the calling process to
+	# claim all results, to avoid spurious "server did
+	# not respond"
+	after 200 { set reallyDone 1 }
+	vwait reallyDone
 	exit
     }
     close $f
