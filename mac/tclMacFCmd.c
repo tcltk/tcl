@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.6 1999/10/05 22:46:14 hobbs Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.7 1999/10/15 04:47:03 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -1202,7 +1202,7 @@ GetFileFinderAttributes(
     FInfo finfo;
     Tcl_DString pathString;
 
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
     err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
 	    Tcl_DStringValue(&pathString), &fileSpec);
     Tcl_DStringFree(&pathString);
@@ -1281,7 +1281,7 @@ GetFileReadOnly(
     CInfoPBRec paramBlock;
     Tcl_DString pathString;
 
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
     err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
 	    Tcl_DStringValue(&pathString), &fileSpec);
     Tcl_DStringFree(&pathString);
@@ -1346,7 +1346,7 @@ SetFileFinderAttributes(
     FInfo finfo;
     Tcl_DString pathString;
 
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
     err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
 	    Tcl_DStringValue(&pathString), &fileSpec);
     Tcl_DStringFree(&pathString);
@@ -1439,7 +1439,7 @@ SetFileReadOnly(
     int hidden;
     Tcl_DString pathString;
 
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    Tcl_UtfToExternalDString(NULL, fileName, -1, &pathString);
     err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
 	    Tcl_DStringValue(&pathString), &fileSpec);
     Tcl_DStringFree(&pathString);
