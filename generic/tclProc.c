@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.42 2002/09/27 01:28:15 hobbs Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.43 2002/10/02 01:36:29 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -150,9 +150,9 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 
 
     /*
-     * Optimize for noop procs: if the body is not precompiled, the argument 
-     * list is just "args" and the body is empty, define a compileProc to 
-     * compile a noop.
+     * Optimize for noop procs: if the body is not precompiled (like a TclPro
+     * procbody), and the argument list is just "args" and the body is empty,
+     * define a compileProc to compile a noop.
      *
      * Notes: 
      *   - cannot be done for any argument list without having different
@@ -162,15 +162,10 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
      *     are about to ignore ...
      *   - could be enhanced to handle also non-empty bodies that contain 
      *     only comments; however, parsing the body will slow down the 
-     *     compilation of all procs whose argument list is just _args_ 
-     */
-    
-    if (objv[3]->typePtr == &tclByteCodeType) {
-	ByteCode *body = objv[3]->internalRep.otherValuePtr;
+     *     compilation of all procs whose argument list is just _args_ */
 
-	if (body->flags & TCL_BYTECODE_PRECOMPILED) {
-	    goto done;
-	}
+    if (objv[3]->typePtr == &tclProcBodyType) {
+	goto done;
     }
 
     procArgs = Tcl_GetString(objv[2]);
@@ -410,28 +405,32 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	    p++;
 	}
 
-        if (precompiled) {
-            /*
-             * compare the parsed argument with the stored one
-             */
+	if (precompiled) {
+	    /*
+	     * Compare the parsed argument with the stored one.
+	     * For the flags, we and out VAR_UNDEFINED to support bridging
+	     * precompiled <= 8.3 code in 8.4 where this is now used as an
+	     * optimization indicator.	Yes, this is a hack. -- hobbs
+	     */
 
-            if ((localPtr->nameLength != nameLength)
-                    || (strcmp(localPtr->name, fieldValues[0]))
-                    || (localPtr->frameIndex != i)
-                    || (localPtr->flags != (VAR_SCALAR | VAR_ARGUMENT))
-                    || ((localPtr->defValuePtr == NULL)
-                            && (fieldCount == 2))
-                    || ((localPtr->defValuePtr != NULL)
-                            && (fieldCount != 2))) {
-                char buf[80 + TCL_INTEGER_SPACE];
-                sprintf(buf, "\": formal parameter %d is inconsistent with precompiled body",
-                        i);
-                Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                        "procedure \"", procName,
-                        buf, (char *) NULL);
-                ckfree((char *) fieldValues);
-                goto procError;
-            }
+	    if ((localPtr->nameLength != nameLength)
+		    || (strcmp(localPtr->name, fieldValues[0]))
+		    || (localPtr->frameIndex != i)
+		    || ((localPtr->flags & ~VAR_UNDEFINED)
+			    != (VAR_SCALAR | VAR_ARGUMENT))
+		    || ((localPtr->defValuePtr == NULL)
+			    && (fieldCount == 2))
+		    || ((localPtr->defValuePtr != NULL)
+			    && (fieldCount != 2))) {
+		char buf[80 + TCL_INTEGER_SPACE];
+		sprintf(buf, "\": formal parameter %d is inconsistent with precompiled body",
+			i);
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			"procedure \"", procName,
+			buf, (char *) NULL);
+		ckfree((char *) fieldValues);
+		goto procError;
+	    }
 
             /*
              * compare the default value if any
