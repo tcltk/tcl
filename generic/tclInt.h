@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.23.4.1 1999/03/03 00:38:40 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.23.4.2 1999/03/04 01:01:58 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1373,6 +1373,12 @@ typedef int (*TclObjCmdProcType) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST objv[]));
 
 /*
+ * Opaque names for platform specific types.
+ */
+
+typedef struct TclpTime_t_ *TclpTime_t;
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
@@ -1419,22 +1425,6 @@ extern long		tclObjsFreed;
  */
 
 extern char *		tclEmptyStringRep;
-
-/*
- *----------------------------------------------------------------
- * Procedures shared among Tcl modules but not used by the outside
- * world:
- *----------------------------------------------------------------
- */
-
-/*
- * The following macro is implemented as a function on the Mac.
- */
-
-#ifndef MAC_TCL
-#define TclpCheckStackSpace()(1)
-#endif
-
 
 /*
  *----------------------------------------------------------------
@@ -1613,6 +1603,18 @@ EXTERN int 	Tcl_MacSourceObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_ResourceObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 #endif
+
+
+/*
+ *----------------------------------------------------------------
+ * Command procedures used for testing.
+ *----------------------------------------------------------------
+ */
+
+EXTERN int	TclTestChannelCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, char **argv));
+EXTERN int	TclTestChannelEventCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int argc, char **argv));
 
 /*
  *----------------------------------------------------------------

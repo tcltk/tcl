@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.33.4.1 1999/03/03 00:38:38 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.33.4.2 1999/03/04 01:01:57 stanton Exp $
  */
 
 #ifndef _TCL
@@ -765,7 +765,7 @@ typedef struct Tcl_DString {
 #  define Tcl_DumpActiveMemory(x)
 #  define Tcl_ValidateAllMemory(x,y)
 
-#endif /* TCL_MEM_DEBUG */
+#endif /* !TCL_MEM_DEBUG */
 
 /*
  * Forward declaration of Tcl_HashTable.  Needed by some C++ compilers
@@ -1059,7 +1059,14 @@ typedef enum Tcl_PathType {
 #define Tcl_Ckrealloc Tcl_Realloc
 #define Tcl_Return Tcl_SetResult
 #define Tcl_TildeSubst Tcl_TranslateFileName
-#define panic Tcl_Panic
+
+/*
+ * In later releases, Tcl_Panic will be the correct name to use.  For now
+ * we leave it as panic to avoid breaking existing binaries.
+ */
+
+#define Tcl_Panic panic
+#define Tcl_PanicVA panicVA
 
 /*
  * The following constant is used to test for older versions of Tcl
