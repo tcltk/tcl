@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.129 2004/05/16 20:23:01 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.130 2004/05/16 22:26:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4092,7 +4092,9 @@ TclExecuteByteCode(interp, codePtr)
 				* name is objv[0]. */
 
 	    objv = (tosPtr - (objc-1)); /* "objv[0]" */
+	    DECACHE_STACK_INFO();
 	    result = ExprCallMathFunc(interp, objc, objv);
+	    CACHE_STACK_INFO();
 	    if (result != TCL_OK) {
 		goto checkForCatch;
 	    }
