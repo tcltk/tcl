@@ -561,15 +561,11 @@ fi
 if test -r Macintosh.3; then
     rm -f Tcl_MacSetEventProc.3
     rm -f Tcl_MacConvertTextResource.3
-    rm -f Tcl_MacSetEventProc.3
-    rm -f Tcl_MacConvertTextResource.3
     rm -f Tcl_MacEvalResource.3
     rm -f Tcl_MacFindResource.3
     rm -f Tcl_GetOSTypeFromObj.3
     rm -f Tcl_SetOSTypeObj.3
     rm -f Tcl_NewOSTypeObj.3
-    ln Macintosh.3 Tcl_MacSetEventProc.3
-    ln Macintosh.3 Tcl_MacConvertTextResource.3
     ln Macintosh.3 Tcl_MacSetEventProc.3
     ln Macintosh.3 Tcl_MacConvertTextResource.3
     ln Macintosh.3 Tcl_MacEvalResource.3
@@ -786,12 +782,6 @@ if test -r SetErrno.3; then
     ln SetErrno.3 Tcl_ErrnoId.3
     ln SetErrno.3 Tcl_ErrnoMsg.3
 fi
-if test -r Signal.3; then
-    rm -f Tcl_SignalId.3
-    rm -f Tcl_SignalMsg.3
-    ln Signal.3 Tcl_SignalId.3
-    ln Signal.3 Tcl_SignalMsg.3
-fi
 if test -r SetRecLmt.3; then
     rm -f Tcl_SetRecursionLimit.3
     ln SetRecLmt.3 Tcl_SetRecursionLimit.3
@@ -837,6 +827,12 @@ if test -r SetVar.3; then
     ln SetVar.3 Tcl_ObjGetVar2.3
     ln SetVar.3 Tcl_UnsetVar.3
     ln SetVar.3 Tcl_UnsetVar2.3
+fi
+if test -r Signal.3; then
+    rm -f Tcl_SignalId.3
+    rm -f Tcl_SignalMsg.3
+    ln Signal.3 Tcl_SignalId.3
+    ln Signal.3 Tcl_SignalMsg.3
 fi
 if test -r Sleep.3; then
     rm -f Tcl_Sleep.3
