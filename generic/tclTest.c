@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.45 2002/02/15 23:42:12 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.46 2002/02/28 00:38:49 hobbs Exp $
  */
 
 #define TCL_TEST
@@ -4404,6 +4404,7 @@ TestStatProc1(path, buf)
     CONST char *path;
     struct stat *buf;
 {
+    memset(buf, 0, sizeof(struct stat));
     buf->st_size = 1234;
     return ((strstr(path, "testStat1%.fil") == NULL) ? -1 : 0);
 }
@@ -4414,6 +4415,7 @@ TestStatProc2(path, buf)
     CONST char *path;
     struct stat *buf;
 {
+    memset(buf, 0, sizeof(struct stat));
     buf->st_size = 2345;
     return ((strstr(path, "testStat2%.fil") == NULL) ? -1 : 0);
 }
@@ -4424,6 +4426,7 @@ TestStatProc3(path, buf)
     CONST char *path;
     struct stat *buf;
 {
+    memset(buf, 0, sizeof(struct stat));
     buf->st_size = 3456;
     return ((strstr(path, "testStat3%.fil") == NULL) ? -1 : 0);
 }
