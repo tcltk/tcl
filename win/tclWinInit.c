@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.16 1999/04/23 01:57:32 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.17 1999/05/13 01:50:17 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -618,13 +618,19 @@ TclpSetVariables(interp)
 	}
     }
 
+    /*
+     * Initialize the user name from the environment first, since this is much
+     * faster than asking the system.
+     */
+
     Tcl_DStringSetLength(&ds, 100);
-    if (GetUserName(Tcl_DStringValue(&ds), &Tcl_DStringLength(&ds)) != 0) {
-	Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
-		TCL_GLOBAL_ONLY);
-    } else {
-	Tcl_SetVar2(interp, "tcl_platform", "user", "", TCL_GLOBAL_ONLY);
+    if (TclGetEnv("USERNAME", &ds) == NULL) {
+	if (GetUserName(Tcl_DStringValue(&ds), &Tcl_DStringLength(&ds)) == 0) {
+	    Tcl_DStringSetLength(&ds, 0);
+	}
     }
+    Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
+	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
 }
 
