@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.19 2001/10/18 14:19:38 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.20 2001/10/18 14:59:44 dkf Exp $
  */
 
 #ifndef _TCL
@@ -381,8 +381,6 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #   include <sys/types.h>
-typedef long		Tcl_WideInt;
-typedef unsigned long	Tcl_WideInt;
 typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
