@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.73 2004/09/22 22:23:39 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.74 2004/09/23 00:34:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -969,7 +969,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 
 	    Tcl_ListObjAppendElement(NULL, returnCmd, errInfo);
 
-	    for (p = script; p != parse.commandStart; p++) {
+	    for (p = envPtr->source; p != parse.commandStart; p++) {
 		if (*p == '\n') {
 		    errorLine++;
 		}
