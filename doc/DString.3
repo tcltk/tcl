@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DString.3,v 1.4 1999/04/21 21:50:22 rjohnson Exp $
+'\" RCS: @(#) $Id: DString.3,v 1.5 2000/04/14 23:01:50 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_DString 3 7.4 Tcl "Tcl Library Procedures"
@@ -136,7 +136,7 @@ and reinitializes the string's value to an empty string.
 .PP
 \fBTcl_DStringResult\fR sets the result of \fIinterp\fR to the value of
 the dynamic string given by \fIdsPtr\fR.  It does this by moving
-a pointer from \fIdsPtr\fR to \fIinterp->result\fR.
+a pointer from \fIdsPtr\fR to the interpreter's result.
 This saves the cost of allocating new memory and copying the string.
 \fBTcl_DStringResult\fR also reinitializes the dynamic string to
 an empty string.

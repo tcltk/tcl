@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.2 1998/09/14 18:39:47 stanton Exp $
+'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.3 2000/04/14 23:01:49 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateMathFunc 3 7.0 Tcl "Tcl Library Procedures"
@@ -87,7 +87,7 @@ It should set also \fIresultPtr->type\fR to either TCL_INT or TCL_DOUBLE
 to indicate which value was set.
 Under normal circumstances \fIproc\fR should return TCL_OK.
 If an error occurs while executing the function, \fIproc\fR should
-return TCL_ERROR and leave an error message in \fIinterp->result\fR.
+return TCL_ERROR and leave an error message in the interpreter's result.
 
 .SH KEYWORDS
 expression, mathematical function

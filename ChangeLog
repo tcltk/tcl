@@ -1,3 +1,30 @@
+2000-04-14  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/AppInit.3:
+	* doc/Async.3:
+	* doc/BackgdErr.3:
+	* doc/CrtChannel.3:
+	* doc/CrtInterp.3:
+	* doc/CrtMathFnc.3:
+	* doc/DString.3:
+	* doc/Eval.3:
+	* doc/ExprLong.3:
+	* doc/GetInt.3:
+	* doc/GetOpnFl.3:
+	* doc/Interp.3:
+	* doc/LinkVar.3:
+	* doc/OpenFileChnl.3:
+	* doc/OpenTcp.3:
+	* doc/PkgRequire.3:
+	* doc/RecordEval.3:
+	* doc/SetResult.3:
+	* doc/SplitList.3:
+	* doc/StaticPkg.3:
+	* doc/TraceVar.3:
+	* doc/Translate.3:
+	* doc/UpVar.3:
+	* doc/load.n: removed or updated references to interp->result use.
+
 2000-04-13  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/regexp.n: doc clarification [Bug: 5037]

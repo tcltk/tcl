@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RecordEval.3,v 1.2 1998/09/14 18:39:50 stanton Exp $
+'\" RCS: @(#) $Id: RecordEval.3,v 1.3 2000/04/14 23:01:53 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_RecordAndEval 3 7.4 Tcl "Tcl Library Procedures"
@@ -36,7 +36,7 @@ the command at global level instead of the current stack level.
 on the history list and then execute it using \fBTcl_Eval\fR
 (or \fBTcl_GlobalEval\fR if the TCL_EVAL_GLOBAL bit is set in \fIflags\fR).
 It returns a completion code such as TCL_OK just like \fBTcl_Eval\fR
-and it leaves information in \fIinterp->result\fR.
+and it leaves information in the interpreter's result.
 If you don't want the command recorded on the history list then
 you should invoke \fBTcl_Eval\fR instead of \fBTcl_RecordAndEval\fR.
 Normally \fBTcl_RecordAndEval\fR is only called with top-level

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.3 1999/04/16 00:46:30 stanton Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.4 2000/04/14 23:01:48 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -90,8 +90,8 @@ execution in an interpreter, then \fIinterp\fR will identify
 the interpreter in which the command was evaluated and
 \fIcode\fR will be the completion code returned by that
 command.
-The command's result will be present in \fIinterp->result\fR.
-When \fIproc\fR returns, whatever it leaves in \fIinterp->result\fR
+The command's result will be present in the interpreter's result.
+When \fIproc\fR returns, whatever it leaves in the interpreter's result
 will be returned as the result of the command and the integer
 value returned by \fIproc\fR will be used as the new completion
 code for the command.
@@ -127,7 +127,7 @@ not be invoked.
 If multiple handlers become active at the same time, the
 handlers are invoked in the order they were created (oldest
 handler first).
-The \fIcode\fR and \fIinterp->result\fR for later handlers
+The \fIcode\fR and the interpreter's result for later handlers
 reflect the values returned by earlier handlers, so that
 the most recently created handler has last say about
 the interpreter's result and completion code.
@@ -139,17 +139,17 @@ this over and over until there are no longer any ready handlers.
 .SH WARNING
 .PP
 It is almost always a bad idea for an asynchronous event
-handler to modify \fIinterp->result\fR or return a code different
+handler to modify the interpreter's result or return a code different
 from its \fIcode\fR argument.
 This sort of behavior can disrupt the execution of scripts in
 subtle ways and result in bugs that are extremely difficult
 to track down.
 If an asynchronous event handler needs to evaluate Tcl scripts
-then it should first save \fIinterp->result\fR plus the values
+then it should first save the interpreter's result plus the values
 of the variables \fBerrorInfo\fR and \fBerrorCode\fR (this can
 be done, for example, by storing them in dynamic strings).
 When the asynchronous handler is finished it should restore
-\fIinterp->result\fR, \fBerrorInfo\fR, and \fBerrorCode\fR,
+the interpreter's result, \fBerrorInfo\fR, and \fBerrorCode\fR,
 and return the \fIcode\fR argument.
 
 .SH KEYWORDS

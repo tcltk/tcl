@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: UpVar.3,v 1.2 1998/09/14 18:39:51 stanton Exp $
+'\" RCS: @(#) $Id: UpVar.3,v 1.3 2000/04/14 23:01:55 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_UpVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -64,8 +64,7 @@ The destination variable name is specified in a single string;  it
 may not be an array element.
 .PP
 Both procedures return either TCL_OK or TCL_ERROR, and they
-leave an error message in \fIinterp->result\fR if an error
-occurs.
+leave an error message in the interpreter's result if an error occurs.
 .PP
 As with the \fBupvar\fR command, the source variable need not exist;
 if it does exist, unsetting it later does not destroy the link.  The

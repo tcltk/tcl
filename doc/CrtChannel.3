@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.4 1999/08/21 19:40:47 hobbs Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.5 2000/04/14 23:01:49 hobbs Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -277,7 +277,7 @@ and no further driver operations will be invoked on this instance after
 calling the \fIcloseProc\fR. If the close operation is successful, the
 procedure should return zero; otherwise it should return a nonzero POSIX
 error code. In addition, if an error occurs and \fIinterp\fR is not NULL,
-the procedure should store an error message in \fIinterp->result\fR.
+the procedure should store an error message in the interpreter's result.
 .PP
 .VS
 Alternatively, channels that support closing the read and write sides
@@ -305,7 +305,7 @@ flags cleared.  In all cases, the \fIclose2Proc\fR function should
 return zero if the close operation was successful; otherwise it should
 return a nonzero POSIX error code. In addition, if an error occurs and
 \fIinterp\fR is not NULL, the procedure should store an error message
-in \fIinterp->result\fR.
+in the interpreter's result.
 .VE
 
 .SH INPUTPROC

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.3 1999/04/16 00:46:33 stanton Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.4 2000/04/14 23:01:54 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -72,7 +72,7 @@ whenever the variable is read or written or unset.
 If the trace is created successfully then \fBTcl_TraceVar\fR returns
 TCL_OK.  If an error occurred (e.g. \fIvarName\fR specifies an element
 of an array, but the actual variable isn't an array) then TCL_ERROR
-is returned and an error message is left in \fIinterp->result\fR.
+is returned and an error message is left in the interpreter's result.
 .PP
 The \fIflags\fR argument to \fBTcl_TraceVar\fR indicates when the
 trace procedure is to be invoked and provides information

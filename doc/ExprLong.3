@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLong.3,v 1.2 1998/09/14 18:39:48 stanton Exp $
+'\" RCS: @(#) $Id: ExprLong.3,v 1.3 2000/04/14 23:01:50 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
@@ -63,15 +63,13 @@ that is more efficient to execute.
 The \fIinterp\fR argument refers to an interpreter used to
 evaluate the expression (e.g. for variables and nested Tcl
 commands) and to return error information.
-\fIinterp->result\fR is assumed to be initialized
-in the standard fashion when they are invoked.
 .PP
 For all of these procedures the return value is a standard
 Tcl result: \fBTCL_OK\fR means the expression was successfully
 evaluated, and \fBTCL_ERROR\fR means that an error occurred while
 evaluating the expression.
 If \fBTCL_ERROR\fR is returned then
-\fIinterp->result\fR will hold a message describing the error.
+the interpreter's result will hold a message describing the error.
 If an error occurs while executing a Tcl command embedded in
 the expression then that error will be returned.
 .PP
@@ -99,7 +97,7 @@ it must be one of the values accepted by \fBTcl_GetBoolean\fR
 such as ``yes'' or ``no'', or else an error occurs.
 .PP
 \fBTcl_ExprString\fR returns the value of the expression as a
-string stored in \fIinterp->result\fR.
+string stored in the interpreter's result.
 If the expression's actual value is an integer
 then \fBTcl_ExprString\fR converts it to a string using \fBsprintf\fR
 with a ``%d'' converter.

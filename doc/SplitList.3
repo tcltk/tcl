@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitList.3,v 1.2 1998/09/14 18:39:50 stanton Exp $
+'\" RCS: @(#) $Id: SplitList.3,v 1.3 2000/04/14 23:01:53 hobbs Exp $
 '\" 
 .so man.macros
-.TH Tcl_SplitList 3 7.5 Tcl "Tcl Library Procedures"
+.TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
 Tcl_SplitList, Tcl_Merge, Tcl_ScanElement, Tcl_ConvertElement \- manipulate Tcl lists
@@ -24,26 +24,20 @@ char *
 .sp
 int
 \fBTcl_ScanElement\fR(\fIsrc, flagsPtr\fR)
-.VS
 .sp
 int
 \fBTcl_ScanCountedElement\fR(\fIsrc, length, flagsPtr\fR)
-.VE
 .sp
 int
 \fBTcl_ConvertElement\fR(\fIsrc, dst, flags\fR)
-.VS
 .sp
 int
 \fBTcl_ConvertCountedElement\fR(\fIsrc, length, dst, flags\fR)
-.VE
 .SH ARGUMENTS
 .AS Tcl_Interp ***argvPtr
 .AP Tcl_Interp *interp out
-.VS
 Interpreter to use for error reporting.  If NULL, then no error message
 is left.
-.VE
 .AP char *list in
 Pointer to a string with proper list structure.
 .AP int *argcPtr out
@@ -63,10 +57,8 @@ String that is to become an element of a list.
 .AP int *flagsPtr in
 Pointer to word to fill in with information about \fIsrc\fR.
 The value of *\fIflagsPtr\fR must be passed to \fBTcl_ConvertElement\fR.
-.VS
 .AP int length in
 Number of bytes in string \fIsrc\fR.
-.VE
 .AP char *dst in
 Place to copy converted list element.  Must contain enough characters
 to hold converted string.
@@ -99,19 +91,15 @@ code = Tcl_SplitList(interp, string, &argc, &argv);
 .CE
 Then you should eventually free the storage with a call like the
 following:
-.VS
 .CS
 Tcl_Free((char *) argv);
 .CE
-.VE
 .PP
 \fBTcl_SplitList\fR normally returns \fBTCL_OK\fR, which means the list was
 successfully parsed.
 If there was a syntax error in \fIlist\fR, then \fBTCL_ERROR\fR is returned
-and \fIinterp->result\fR will point to an error message describing the
-.VS
+and the interpreter's result will point to an error message describing the
 problem (if \fIinterp\fR was not NULL).
-.VE
 If \fBTCL_ERROR\fR is returned then no memory is allocated and \fI*argvPtr\fR
 is not modified.
 .PP
@@ -126,11 +114,9 @@ it will be parsed into \fIargc\fR words whose values will
 be the same as the \fIargv\fR strings passed to \fBTcl_Merge\fR.
 \fBTcl_Merge\fR will modify the list elements with braces and/or
 backslashes in order to produce proper Tcl list structure.
-.VS
 The result string is dynamically allocated
 using \fBTcl_Alloc\fR;  the caller must eventually release the space
 using \fBTcl_Free\fR.
-.VE
 .PP
 If the result of \fBTcl_Merge\fR is passed to \fBTcl_SplitList\fR,
 the elements returned by \fBTcl_SplitList\fR will be identical to
@@ -180,12 +166,10 @@ used to generate a portion of an argument for a Tcl command.
 In this case, surrounding \fIsrc\fR with curly braces would cause
 the command not to be parsed correctly.
 .PP
-.VS
 \fBTcl_ScanCountedElement\fR and \fBTcl_ConvertCountedElement\fR are
 the same as \fBTcl_ScanElement\fR and \fBTcl_ConvertElement\fR, except
 the length of string \fIsrc\fR is specified by the \fIlength\fR
 argument, and the string may contain embedded nulls.
-.VE
 
 .SH KEYWORDS
 backslash, convert, element, list, merge, split, strings
