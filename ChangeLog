@@ -1,3 +1,12 @@
+2001-10-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/cmdIL.test: test improvement.
+	* doc/lsort.n: Doc improvement.
+	* generic/tclCmdIL.c (InfoBodyCmd): Strengthened bytecode
+	isolation [fix orig. by Miguel Sofer]
+	(Tcl_LsortObjCmd, SortCompare): Symbolic indexing values plus
+	correct handling of indexing relative to end in [lsort].
+
 2001-10-05  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* generic/tclLiteral.c: (TclReleaseLiteral) insured that

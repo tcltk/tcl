@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.24.2.2 2001/07/16 23:14:13 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.24.2.3 2001/10/08 15:50:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -71,6 +71,13 @@ typedef struct SortInfo {
 #define SORTMODE_REAL       2
 #define SORTMODE_COMMAND    3
 #define SORTMODE_DICTIONARY 4
+
+/*
+ * Magic values for the index field of the SortInfo structure.
+ * Note that the index "end-1" will be translated to SORTIDX_END-1, etc.
+ */
+#define SORTIDX_NONE	-1		/* Not indexed; use whole value. */
+#define SORTIDX_END	-2		/* Indexed from end. */
 
 /*
  * Forward declarations for procedures defined in this file:
@@ -562,23 +569,17 @@ InfoBodyCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    /*
-     * We should not return a bytecompiled body.  If it is precompiled,
-     * then the bodyPtr's string representation is bogus, since sources
-     * are not available.  If it was just a bytecompiled body, then it
-     * is likely to not be of any use to the caller, as it was compiled
-     * for a separate procedure context [Bug: 3412], and noone else can
-     * reasonably use it.
-     * In order to make sure that later manipulations of the object do not
-     * invalidate the internal representation, we make a copy of the string
-     * representation and return that one, instead.
+    /* 
+     * Here we used to return procPtr->bodyPtr, except when the body was
+     * bytecompiled - in that case, the return was a copy of the body's
+     * string rep. In order to better isolate the implementation details
+     * of the compiler/engine subsystem, we now always return a copy of 
+     * the string rep. It is important to return a copy so that later 
+     * manipulations of the object do not invalidate the internal rep.
      */
 
     bodyPtr = procPtr->bodyPtr;
-    resultPtr = bodyPtr;
-    if (bodyPtr->typePtr == &tclByteCodeType) {
-	resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
-    }
+    resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
     
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
@@ -2519,7 +2520,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
     sortInfo.isIncreasing = 1;
     sortInfo.sortMode = SORTMODE_ASCII;
-    sortInfo.index = -1;
+    sortInfo.index = SORTIDX_NONE;
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
@@ -2560,8 +2561,8 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 			    -1);
 		    return TCL_ERROR;
 		}
-		if (TclGetIntForIndex(interp, objv[i+1], -2, &sortInfo.index)
-			!= TCL_OK) {
+		if (TclGetIntForIndex(interp, objv[i+1], SORTIDX_END,
+			&sortInfo.index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		i++;
@@ -2814,20 +2815,20 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 
 	return order;
     }
-    if (infoPtr->index != -1) {
+    if (infoPtr->index != SORTIDX_NONE) {
 	/*
 	 * The "-index" option was specified.  Treat each object as a
 	 * list, extract the requested element from each list, and
-	 * compare the elements, not the lists.  The special index "end"
-	 * is signaled here with a large negative index.
+	 * compare the elements, not the lists.  "end"-relative indices
+	 * are signaled here with large negative values.
 	 */
 
 	if (Tcl_ListObjLength(infoPtr->interp, objPtr1, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
 	}
-	if (infoPtr->index < -1) {
-	    index = listLen - 1;
+	if (infoPtr->index < SORTIDX_NONE) {
+	    index = listLen + infoPtr->index + 1;
 	} else {
 	    index = infoPtr->index;
 	}
@@ -2853,8 +2854,8 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
 	}
-	if (infoPtr->index < -1) {
-	    index = listLen - 1;
+	if (infoPtr->index < SORTIDX_NONE) {
+	    index = listLen + infoPtr->index + 1;
 	} else {
 	    index = infoPtr->index;
 	}
