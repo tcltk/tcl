@@ -98,45 +98,56 @@ proc ::tcl::tm::add {args} {
 
     variable paths
 
-    set newpaths {}
+    # We use a copy of the path as source during validation, and
+    # extend it as well. Because we not only have to detect if the new
+    # paths are bogus with respect to the existing paths, but also
+    # between themselves. Otherwise we can still add bogus paths, by
+    # specifying them in a single call. This makes the use of the new
+    # paths simpler as well, a trivial assignment of the collected
+    # paths to the official state var.
+
+    set newpaths $paths
     foreach p $args {
-	set pos [lsearch -exact $paths $p]
-	if {$pos >= 0} {
+	if {$p in $newpaths} {
 	    # Ignore a path already on the list.
 	    continue
 	}
 
 	# Search for paths which are subdirectories of the new one. If
-	# there are any then new path violates the restriction about
-	# ancestors.
+	# there are any then the new path violates the restriction
+	# about ancestors.
 
-	set pos [lsearch -glob $paths ${p}/*]
+	set pos [lsearch -glob $newpaths ${p}/*]
+	# Cannot use "in", we need the position for the message.
 	if {$pos >= 0} {
 	    return -code error \
-		"$p is ancestor of existing module path [lindex $paths $pos]."
+		"$p is ancestor of existing module path [lindex $newpaths $pos]."
 	}
 
-	# Now look for paths which are ancestors of the new one. This
-	# reverse question req us to loop over the existing paths :(
+	# Now look for existing paths which are ancestors of the new
+	# one. This reverse question forces us to loop over the
+	# existing paths, as each element is the pattern, not the new
+	# path :(
 
-	foreach ep $paths {
+	foreach ep $newpaths {
 	    if {[string match ${ep}/* $p]} {
 		return -code error \
 		    "$p is subdirectory of existing module path $ep."
 	    }
 	}
 
-	lappend newpaths $p
+	set newpaths [linsert $newpaths 0 $p]
     }
 
     # The validation of the input is complete and successful, and
-    # everything in newpaths is actually new. We can now extend the
-    # list of paths.
+    # everything in newpaths is either an old path, or added. We can
+    # now extend the official list of paths, a simple assignment is
+    # sufficient.
 
-    foreach p $newpaths {
-	set paths [linsert $paths 0 $p]
-    }
+    set paths $newpaths
+    return
 }
+
 proc ::tcl::tm::remove {args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
     #
@@ -157,6 +168,7 @@ proc ::tcl::tm::remove {args} {
 	}
     }
 }
+
 proc ::tcl::tm::list {args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
 
@@ -164,8 +176,7 @@ proc ::tcl::tm::list {args} {
 	return -code error "wrong # args: should be \"::tcl::tm::path list\""
     }
     variable paths
-
-    return $paths
+    return  $paths
 }
 
 # ::tcl::tm::UnknownHandler --
