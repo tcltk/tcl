@@ -5,7 +5,12 @@
 	built with VC++.  This will simplify linking for users of the
 	static library.
 
+	* win/rules.vc:  Added new 'fullwarn' to the CHECKS commandline
+	macro; sets $(FULLWARNINGS).
+
 	* win/makefile.vc:  Removed 'advapi.lib' from $(baselibs).
+	Added new logic to crank-up the warning levels for both compile
+	and link when $(FULLWARNINGS) is set.
 
 2004-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
