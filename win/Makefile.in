@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.17 1999/07/22 23:45:53 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.18 1999/07/30 22:26:23 wart Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -145,6 +145,7 @@ LDFLAGS_CONSOLE	= @LDFLAGS_CONSOLE@
 LDFLAGS_WINDOW	= @LDFLAGS_WINDOW@
 EXEEXT		= @EXEEXT@
 OBJEXT		= @OBJEXT@
+STLIB_LD	= @STLIB_LD@
 SHLIB_LD	= @SHLIB_LD@
 SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@
 SHLIB_CFLAGS	= @SHLIB_CFLAGS@

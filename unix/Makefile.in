@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.42 1999/07/22 21:50:56 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.43 1999/07/30 22:26:23 wart Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -169,6 +169,7 @@ INSTALL_DATA =		${INSTALL} -m 644
 # configure script.  You shouldn't normally need to modify any of
 # these definitions by hand.
 
+STLIB_LD = @STLIB_LD@
 SHLIB_LD = @SHLIB_LD@
 SHLIB_CFLAGS = @SHLIB_CFLAGS@
 
