@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.35 2004/06/21 22:05:55 mdejong Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.36 2004/10/06 14:06:20 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -1011,12 +1011,10 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	channel = TclWinOpenConsoleChannel(handle, channelName, mode);
 	break;
     case FILE_TYPE_PIPE:
-	if (mode & TCL_READABLE)
-	{
+	if (mode & TCL_READABLE) {
 	    readFile = TclWinMakeFile(handle);
 	}
-	if (mode & TCL_WRITABLE)
-	{
+	if (mode & TCL_WRITABLE) {
 	    writeFile = TclWinMakeFile(handle);
 	}
 	channel = TclpCreateCommandChannel(readFile, writeFile, NULL, 0, NULL);
@@ -1073,58 +1071,56 @@ Tcl_MakeFileChannel(rawHandle, mode)
             "pushl %%fs:0" "\n\t"
             "movl  %%esp, %%fs:0"
             :
-            : "r" (_except_makefilechannel_handler)
-            );
-#else
-	__try {
-#endif /* HAVE_NO_SEH */
-
-	    result = CloseHandle(dupedHandle);
-
-#ifdef HAVE_NO_SEH
-        __asm__ __volatile__ (
-            "jmp  makefilechannel_pop" "\n"
-        "makefilechannel_reentry:" "\n\t"
-            "movl %%fs:0, %%eax" "\n\t"
-            "movl 0x8(%%eax), %%esp" "\n\t"
-            "movl 0x8(%%esp), %%ebp" "\n"
-            "movl $0, %0" "\n"
-        "makefilechannel_pop:" "\n\t"
-            "movl (%%esp), %%eax" "\n\t"
-            "movl %%eax, %%fs:0" "\n\t"
-            "add  $12, %%esp" "\n\t"
-            : "=m"(result)
-            :
-            : "%eax");
+            : "r" (_except_makefilechannel_handler) );
+	result = CloseHandle(dupedHandle);
+	__asm__ __volatile__ (
+	    "jmp  makefilechannel_pop" "\n"
+	"makefilechannel_reentry:" "\n\t"
+	    "movl %%fs:0, %%eax" "\n\t"
+	    "movl 0x8(%%eax), %%esp" "\n\t"
+	    "movl 0x8(%%esp), %%ebp" "\n"
+	    "movl $0, %0" "\n"
+	"makefilechannel_pop:" "\n\t"
+	    "movl (%%esp), %%eax" "\n\t"
+	    "movl %%eax, %%fs:0" "\n\t"
+	    "add  $12, %%esp" "\n\t"
+	    : "=m"(result)
+	    :
+	    : "%eax");
 
 # ifdef TCL_MEM_DEBUG
-    __asm__ __volatile__ (
-            "movl  %%esp,  %0" "\n\t"
-            "movl  %%ebp,  %1" "\n\t"
-            "movl  %%fs:0, %2" "\n\t"
-            : "=m"(RESTORED_ESP),
-              "=m"(RESTORED_EBP),
-              "=r"(RESTORED_HANDLER) );
+	__asm__ __volatile__ (
+	    "movl  %%esp,  %0" "\n\t"
+	    "movl  %%ebp,  %1" "\n\t"
+	    "movl  %%fs:0, %2" "\n\t"
+	    : "=m"(RESTORED_ESP),
+	      "=m"(RESTORED_EBP),
+	      "=r"(RESTORED_HANDLER) );
 
-    if (INITIAL_ESP != RESTORED_ESP)
-        Tcl_Panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
-        Tcl_Panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
-        Tcl_Panic("HANDLER restored incorrectly");
+	if (INITIAL_ESP != RESTORED_ESP) {
+	    Tcl_Panic("ESP restored incorrectly");
+	}
+	if (INITIAL_EBP != RESTORED_EBP) {
+	    Tcl_Panic("EBP restored incorrectly");
+	}
+	if (INITIAL_HANDLER != RESTORED_HANDLER) {
+	    Tcl_Panic("HANDLER restored incorrectly");
+	}
 # endif /* TCL_MEM_DEBUG */
 
-	    if (result == 0) {
-		/*
-		 * The handle failed to close.  The original is therefore
-		 * invalid.
-		 */
+	if (result == 0) {
+	    /*
+	     * The handle failed to close.  The original is therefore
+	     * invalid.
+	     */
 
-		return NULL;
-	    }
-#else
+	    return NULL;
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER) {
+
+#else
+	__try {
+	    result = CloseHandle(dupedHandle);
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	    /*
 	     * Definately an invalid handle.  So, therefore, the original
 	     * is invalid also.
@@ -1173,7 +1169,7 @@ _except_makefilechannel_handler(
     void *DispatcherContext)
 {
     __asm__ __volatile__ (
-            "jmp makefilechannel_reentry");
+	    "jmp makefilechannel_reentry");
     return 0; /* Function does not return */
 }
 #endif
@@ -1250,13 +1246,13 @@ TclpGetDefaultStdChannel(type)
      */
 
     if ((Tcl_SetChannelOption((Tcl_Interp *) NULL, channel, "-translation",
-            "auto") == TCL_ERROR)
+	    "auto") == TCL_ERROR)
 	    || (Tcl_SetChannelOption((Tcl_Interp *) NULL, channel, "-eofchar",
 		    "\032 {}") == TCL_ERROR)
 	    || (Tcl_SetChannelOption((Tcl_Interp *) NULL, channel,
 		    "-buffering", bufMode) == TCL_ERROR)) {
-        Tcl_Close((Tcl_Interp *) NULL, channel);
-        return (Tcl_Channel) NULL;
+	Tcl_Close((Tcl_Interp *) NULL, channel);
+	return (Tcl_Channel) NULL;
     }
     return channel;
 }
@@ -1363,9 +1359,8 @@ TclWinFlushDirtyChannels ()
      * in the OS
      */
     
-    for (infoPtr = tsdPtr->firstFilePtr;
-	 infoPtr != NULL; 
-	 infoPtr = infoPtr->nextPtr) {
+    for (infoPtr = tsdPtr->firstFilePtr; infoPtr != NULL; 
+	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->dirty) {
 	    FlushFileBuffers(infoPtr->handle);
 	    infoPtr->dirty = 0;
@@ -1393,8 +1388,8 @@ TclWinFlushDirtyChannels ()
 void
 TclpCutFileChannel(chan)
     Tcl_Channel chan;			/* The channel being removed. Must
-                                         * not be referenced in any
-                                         * interpreter. */
+					 * not be referenced in any
+					 * interpreter. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel *chanPtr = (Channel *) chan;
@@ -1402,8 +1397,9 @@ TclpCutFileChannel(chan)
     FileInfo **nextPtrPtr;
     int removed = 0;
 
-    if (chanPtr->typePtr != &fileChannelType)
-        return;
+    if (chanPtr->typePtr != &fileChannelType) {
+	return;
+    }
 
     infoPtr = (FileInfo *) chanPtr->instanceData;
 
@@ -1423,7 +1419,7 @@ TclpCutFileChannel(chan)
      */
 
     if (!removed) {
-        Tcl_Panic("file info ptr not on thread channel list");
+	Tcl_Panic("file info ptr not on thread channel list");
     }
 }
 
@@ -1447,15 +1443,16 @@ TclpCutFileChannel(chan)
 void
 TclpSpliceFileChannel(chan)
     Tcl_Channel chan;			/* The channel being removed. Must
-                                         * not be referenced in any
-                                         * interpreter. */
+					 * not be referenced in any
+					 * interpreter. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel *chanPtr = (Channel *) chan;
     FileInfo *infoPtr;
 
-    if (chanPtr->typePtr != &fileChannelType)
-        return;
+    if (chanPtr->typePtr != &fileChannelType) {
+	return;
+    }
 
     infoPtr = (FileInfo *) chanPtr->instanceData;
 
