@@ -1,3 +1,18 @@
+2000-10-27  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* unix/configure.in:
+	* unix/tcl.m4: added support for AIX-5.
+
+	* generic/tclIO.c (Tcl_NotifyChannel): removed #ifdef around code
+	for old channel structures, placed preserve/release around statePtr
+	* generic/tclIO.c (CloseChannel): the statePtr for a channel was
+	not being freed when the last channel in a stack was freed,
+	causing a mem leak.
+
+	* unix/tclUnixChan.c: updated channel types to strict
+	TCL_CHANNEL_VERSION_2 style to avoid compiler warnings.  They work
+	either way, but this avoids compiler warnings (that worries people).
+
 2000-10-27  Jennifer Hom  <jenn@ajubasolutions.com>
 
 	* library/tcltest1.0/tcltest.tcl: Removed a cd into the test
