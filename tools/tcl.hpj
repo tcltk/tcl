@@ -1,0 +1,14 @@
+[OPTIONS]
+REPORT=Yes
+TITLE=Tcl/Tk Reference Manual
+CONTENTS=contents
+COPYRIGHT=Copyright © 1996-1997 Sun Microsystems, Inc.
+
+[FILES]
+.\tcl.rtf
+
+[WINDOWS]
+main="Tcl/Tk Reference Manual",,0,,,0
+
+[CONFIG]
+BrowseButtons()

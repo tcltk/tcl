@@ -1,0 +1,49 @@
+# This makefile is used to convert Tcl manual pages into various
+# alternate formats:
+#
+#    Windows help file:  1. Build the winhelp target on Unix
+#			 2. Build the helpfile target on Windows
+#
+#    HTML:		 1. Build the html target on Unix
+
+# SCCS: %Z% $Id: Makefile.in,v 1.1 1998/04/28 18:53:49 stanton Exp $ 
+
+TCL = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
+TK = tk@TCL_VERSION@@TCL_PATCH_LEVEL@
+VER=@TCL_WIN_VERSION@
+
+TCL_SOURCE = @srcdir@/..
+TK_SOURCE = @srcdir@/../../$(TK)
+
+TCL_DOCS = \
+	$(TCL_SOURCE)/doc/*.[13n]
+
+TK_DOCS = \
+	$(TK_SOURCE)/doc/*.[13n]
+
+TCLSH = $(TCL_SOURCE)/unix/tclsh
+
+
+all: winhelp
+
+winhelp: tcl.rtf
+html: tcl$(VER).html
+
+man2tcl: man2tcl.c
+	$(CC) $(CFLAGS) -o man2tcl man2tcl.c
+
+tcl.rtf: man2help.tcl man2tcl $(TCL_DOCS) $(TK_DOCS)
+	$(TCLSH) man2help.tcl tcl $(VER) \
+		$(TCL_SOURCE)/doc $(TK_SOURCE)/doc
+
+tcl$(VER).html: man2html.tcl man2tcl $(TCL_DOCS) $(TK_DOCS)
+	$(TCLSH) man2html.tcl tcl$(VER).html \
+		../.. ${TCL} ${TK}
+
+clean:
+	-rm -f man2tcl *.o tcl$(VER).cnt tcl$(VER).rtf
+
+helpfile:
+	hc31 tcl.hpj
+	mv tcl.hlp tcl$(VER).hlp
+
