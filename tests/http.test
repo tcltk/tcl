@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.23 2001/08/07 00:42:30 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.24 2001/09/07 00:03:08 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -99,16 +99,18 @@ test http-1.4 {http::config} {
 } {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -useragent {Tcl Test Suite}}
 
 test http-1.5 {http::config} {
-    catch {http::config -proxyhost {} -junk 8080}
-} 1
+    list [catch {http::config -proxyhost {} -junk 8080} msg] $msg
+} {1 {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -useragent}}
+
 
 test http-2.1 {http::reset} {
     catch {http::reset http#1}
 } 0
 
 test http-3.1 {http::geturl} {
-    catch {http::geturl -bogus flag}
-} 1
+    list [catch {http::geturl -bogus flag} msg] $msg
+} {1 {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -progress, -query, -queryblocksize, -querychannel, -queryprogress, -validate, -timeout, -type}}
+
 test http-3.2 {http::geturl} {
     catch {http::geturl http:junk} err
     set err
@@ -463,6 +465,10 @@ test http-6.1 {http::ProxyRequired} {
 <h1>Hello, World!</h1>
 <h2>GET http://$url</h2>
 </body></html>"
+
+test http-7.1 {http::mapReply} {
+    http::mapReply "abc\$\[\]\"\\()\}\{"
+} {abc%24%5b%5d%22%5c%28%29%7d%7b}
 
 # cleanup
 catch {unset url}
