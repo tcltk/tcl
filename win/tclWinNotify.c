@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.6 2000/06/13 20:30:23 ericm Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.7 2000/11/21 21:33:43 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -508,5 +508,39 @@ void
 Tcl_Sleep(ms)
     int ms;			/* Number of milliseconds to sleep. */
 {
-    Sleep((DWORD) ms);
+    /*
+     * Simply calling 'Sleep' for the requisite number of milliseconds
+     * can make the process appear to wake up early because it isn't
+     * synchronized with the CPU performance counter that is used in
+     * tclWinTime.c.  This behavior is probably benign, but messes
+     * up some of the corner cases in the test suite.  We get around
+     * this problem by repeating the 'Sleep' call as many times
+     * as necessary to make the clock advance by the requisite amount.
+     */
+
+    Tcl_Time now;		/* Current wall clock time */
+    Tcl_Time desired;		/* Desired wakeup time */
+    int sleepTime = ms;		/* Time to sleep */
+
+    TclpGetTime( &now );
+    desired.sec = now.sec + ( ms / 1000 );
+    desired.usec = now.usec + 1000 * ( ms % 1000 );
+    if ( desired.usec > 1000000 ) {
+	++desired.sec;
+	desired.usec -= 1000000;
+    }
+	
+    for ( ; ; ) {
+	Sleep( sleepTime );
+	TclpGetTime( &now );
+	if ( now.sec > desired.sec ) {
+	    break;
+	} else if ( ( now.sec == desired.sec )
+	     && ( now.usec >= desired.usec ) ) {
+	    break;
+	}
+	sleepTime = ( ( 1000 * ( desired.sec - now.sec ) )
+		      + ( ( desired.usec - now.usec ) / 1000 ) );
+    }
+
 }
