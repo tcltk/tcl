@@ -1,3 +1,9 @@
+2001-02-23  msofer  <msofer@ant.utdt>
+
+	* /cvsroot/tcl/tcl/tests/execute.test:
+	added test for evaluation of an expression in a variable; evals once
+	by compiling, second time using the previous compilation
+
 2001-02-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_SplitObjCmd): Improved efficiency of
