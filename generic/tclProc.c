@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.60 2004/10/15 04:01:33 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.61 2004/10/15 21:02:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1470,20 +1470,6 @@ TclUpdateReturnInfo(iPtr)
 	/* Now we've reached the level to return the requested -code */
 	Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnCodeKey, &valuePtr);
 	Tcl_GetIntFromObj(NULL, valuePtr, &code);
-    }
-    if (code == TCL_ERROR) {
-	Tcl_DictObjGet(NULL, iPtr->returnOpts,
-		iPtr->returnErrorcodeKey, &valuePtr);
-	if (valuePtr != NULL) {
-	    Tcl_SetObjErrorCode((Tcl_Interp *)iPtr, valuePtr);
-	}
-
-	Tcl_DictObjGet(NULL, iPtr->returnOpts,
-		iPtr->returnErrorinfoKey, &valuePtr);
-	if (valuePtr != NULL) {
-	    iPtr->errorInfo = valuePtr;
-	    Tcl_IncrRefCount(iPtr->errorInfo);
-	}
     }
     return code;
 }
