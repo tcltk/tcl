@@ -1,3 +1,9 @@
+2004-02-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinDde.c: Removed some gcc warnings - except for the 
+	-Wconversion warning for GetGlobalAtomName. gcc is just wrong
+	about this.
+
 2004-02-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	IMPLEMENTATION OF TIP#100 FROM GEORGIOS PETASIS
