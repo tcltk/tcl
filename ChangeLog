@@ -1,5 +1,10 @@
 1999-05-06    <stanton@scriptics.com>
 
+	* tests/string.test: 
+	* generic/tclCmdMZ.c: 
+	* doc/string.n: Fixed bug in string equal/compare code when using
+	-length option.  Cleaned up docs a bit more.
+
 	* tests/http.test: Unset "data" array before running tests to
 	avoid failures due to previous tests.
 
