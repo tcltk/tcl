@@ -1175,40 +1175,21 @@ echo "configure:1122: checking compiler flags" >&5
 	    # dynamic
             echo "$ac_t""using shared flags" 1>&6
 
-	    # check to see if ld supports --shared. Libtool does a much
-	    # more extensive test, but not really needed in this case.
-	    if test -z "$LD"; then
-		ld_prog="`(${CC} -print-prog-name=ld) 2>/dev/null`"
-		if test -z "$ld_prog"; then
-		  ld_prog=ld
-		else
-		  # get rid of the potential '\r' from ld_prog.
-		  ld_prog="`(echo $ld_prog | tr -d '\015' | sed 's,\\\\,\\/,g')`"
-		fi
-		LD="$ld_prog"
+	    # ad-hoc check to see if CC supports -shared.
+	    if "${CC}" -shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
+		{ echo "configure: error: ${CC} does not support the -shared option.
+                You will need to upgrade to a newer version of the toolchain." 1>&2; exit 1; }
 	    fi
-
-	    echo $ac_n "checking whether $ld_prog supports -shared option""... $ac_c" 1>&6
-echo "configure:1193: checking whether $ld_prog supports -shared option" >&5
-
-	    # now the ad-hoc check to see if GNU ld supports --shared.
-	    if "$LD" --shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
-		ld_supports_shared="no"
-		SHLIB_LD="${DLLWRAP-dllwrap}"
-	    else
-		ld_supports_shared="yes"
-		SHLIB_LD="${CC} -shared"
-	    fi
-	    echo "$ac_t""$ld_supports_shared" 1>&6
 
 	    runtime=
+	    # Link with gcc since ld does not link to default libs like
+	    # -luser32 and -lmsvcrt by default. Make sure CFLAGS is
+	    # included so -mno-cygwin passed the correct libs to the linker.
+	    SHLIB_LD='${CC} -shared ${CFLAGS}'
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
-	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \$@ ${extra_ldflags}"
-	    if test "${ld_supports_shared}" = "yes"; then
-	        MAKE_DLL="${MAKE_DLL} -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
-	    else
-	        MAKE_DLL="${MAKE_DLL} --output-lib \$(patsubst %.dll,lib%.a,\$@)"
-	    fi
+	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \$@ ${extra_ldflags} \
+	        -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
+
 	    LIBSUFFIX="\${DBGX}.a"
 	    DLLSUFFIX="\${DBGX}.dll"
 	    EXESUFFIX="\${DBGX}.exe"
@@ -1300,7 +1281,7 @@ echo "configure:1193: checking whether $ld_prog supports -shared option" >&5
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:1304: checking for build with symbols" >&5
+echo "configure:1285: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -1330,7 +1311,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1334: checking how to run the C preprocessor" >&5
+echo "configure:1315: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1345,13 +1326,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1349 "configure"
+#line 1330 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1355: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1336: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1362,13 +1343,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1366 "configure"
+#line 1347 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1372: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1353: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1379,13 +1360,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1383 "configure"
+#line 1364 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1389: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1370: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1411,17 +1392,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1415: checking for errno.h" >&5
+echo "configure:1396: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1420 "configure"
+#line 1401 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1425: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1406: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
