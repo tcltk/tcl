@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.87 2002/05/24 21:19:05 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.88 2002/06/12 09:28:58 vincentdarley Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1483,7 +1483,7 @@ EXTERN int		Tcl_FSEvalFile _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_Obj * fileName));
 /* 468 */
 EXTERN Tcl_Obj*		Tcl_FSNewNativePath _ANSI_ARGS_((
-				Tcl_Obj* fromFilesystem, 
+				Tcl_Filesystem* fromFilesystem, 
 				ClientData clientData));
 /* 469 */
 EXTERN CONST char*	Tcl_FSGetNativePath _ANSI_ARGS_((Tcl_Obj* pathObjPtr));
@@ -2083,7 +2083,7 @@ typedef struct TclStubs {
     ClientData (*tcl_FSGetInternalRep) _ANSI_ARGS_((Tcl_Obj* pathObjPtr, Tcl_Filesystem * fsPtr)); /* 465 */
     Tcl_Obj* (*tcl_FSGetTranslatedPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 466 */
     int (*tcl_FSEvalFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * fileName)); /* 467 */
-    Tcl_Obj* (*tcl_FSNewNativePath) _ANSI_ARGS_((Tcl_Obj* fromFilesystem, ClientData clientData)); /* 468 */
+    Tcl_Obj* (*tcl_FSNewNativePath) _ANSI_ARGS_((Tcl_Filesystem* fromFilesystem, ClientData clientData)); /* 468 */
     CONST char* (*tcl_FSGetNativePath) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 469 */
     Tcl_Obj* (*tcl_FSFileSystemInfo) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 470 */
     Tcl_Obj* (*tcl_FSPathSeparator) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 471 */
