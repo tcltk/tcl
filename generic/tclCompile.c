@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.1.2.9 1999/02/10 23:31:14 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.1.2.10 1999/03/24 01:42:47 surles Exp $
  */
 
 #include "tclInt.h"
@@ -463,7 +463,7 @@ TclCleanupByteCode(codePtr)
 #ifdef TCL_COMPILE_STATS
 
     if (interp != NULL) {
-	ByteCodeStats *statsPtr = &(codePtr->iPtr->stats);
+	ByteCodeStats *statsPtr;
 	Tcl_Time destroyTime;
 	int lifetimeSec, lifetimeMicroSec, log2;
 
