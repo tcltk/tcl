@@ -1,3 +1,39 @@
+2001-11-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/trace.test (trace-8.8): Added adapted version of Bug
+	#219393 as new test; the test won't reliably show up the old
+	problem unless it is being run under something like Purify, but
+	something is better than nothing...
+
+	* generic/tclVar.c (Tcl_TraceVar2, Tcl_UntraceVar2): Added missing
+	mask bits for trace result type and a check for a nonsense flag
+	combination.
+	* generic/tclCmdMZ.c (TraceVarProc): Added missing test for NULL
+	when deleting a trace that doesn't cause an error.
+
+	* doc/TraceVar.3: Added documentation for change due to TIP#68.
+
+	* generic/tclCmdMZ.c (TraceVarInfo): Removed problematic errMsg
+	field from structure.
+	(TraceVarProc): Removed references to errMsg field and changed
+	handling of errors so that they returned a Tcl_Obj* containing the
+	error string.  This minimizes the number of calls to the memory
+	management subsystem.
+	(TclTraceCommandObjCmd, TraceCommandProc): Removed references to
+	errMsg field which was never used in command traces in any case.
+	(Tcl_TraceObjCmd, TclTraceVariableObjCmd): Removed references to
+	errMsg field and made variable traces register with
+	TCL_TRACE_RESULT_OBJECT bit set.
+
+	* generic/tcl.h (TCL_TRACE_RESULT_DYNAMIC,TCL_TRACE_RESULT_OBJECT): 
+	New constants to define how to handle the strings returned from
+	trace callbacks [TIP#68]
+	* generic/tclVar.c (CallTraces, Tcl_GetVar2Ex, TclGetIndexedScalar,
+	TclGetElementOfIndexedArray, Tcl_SetVar2Ex, TclSetIndexedScalar,
+	TclSetElementOfIndexedArray, Tcl_UnsetVar2, Tcl_ArrayObjCmd,
+	TclDeleteVars, TclDeleteCompiledLocalVars, DeleteArray,
+	TclVarTraceExists): Support for those new trace flags.
+
 2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c: patch for [Bug 483309] (petasis).
