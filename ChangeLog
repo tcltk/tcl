@@ -1,5 +1,11 @@
 2002-09-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/tclUnixFile.c (TclpObjLink): removed unnecessary/unfreed
+	extra native char*.
+
+	* unix/tclUnixChan.c (Tcl_MakeTcpClientChannel): make sure to init
+	flags field of TcpState ptr to 0.
+
 	* unix/configure:
 	* unix/tcl.m4: added 64-bit gcc compilation support on HP-11.
 	[Patch #601051] (martin)
