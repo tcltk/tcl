@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.9 2002/03/28 02:42:40 davygrvy Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.10 2002/03/28 21:45:24 davygrvy Exp $
 # 
 
 #
@@ -108,14 +108,19 @@ proc doDir dir {
 # process command line arguments
 
 if {$argc < 3} {
-    puts stderr "usage: $argv0 projectName version manFiles..."
+    puts stderr "usage: $argv0 \[options\] projectName version manFiles..."
     exit 1
 }
 
-set baseName [lindex $argv 0]
-set version [lindex $argv 1]
+set arg 0
+
+if {![string compare [lindex $argv $arg] "-bitmap"]} {
+    set bitmap [lindex $argv [incr arg]]
+}
+puts [set baseName [lindex $argv [incr arg]]]
+puts [set version [lindex $argv [incr arg]]]
 set files {}
-foreach i [lrange $argv 2 end] {
+foreach i [lrange $argv [incr arg] end] {
     set i [file join $i]
     if {[file isdir $i]} {
 	foreach f [lsort [glob -directory $i "*.\[13n\]"]] {
@@ -125,7 +130,6 @@ foreach i [lrange $argv 2 end] {
 	lappend files $i
     }
 }
-
 source [file join [file dirname [info script]] index.tcl]
 generateContents $baseName $version $files
 source [file join [file dirname [info script]] man2help2.tcl]
