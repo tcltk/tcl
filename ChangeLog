@@ -1,3 +1,18 @@
+1999-04-06    <surles@scriptics.com>
+
+	* generic/tclVar.c: 
+	* generic/tclEnv.c: Moved the "array set" C level code into a
+	common routine (TclArraySet).  The TclSetupEnv routine now uses
+	this API to create an env array w/ no elements.
+
+	* generic/tclEnv.c:
+	* generic/tclWinInit.h:
+	* generic/tclUnixInit.h:
+	* generic/tclInt.h: Made the Env module I18N compliant.  Changed the
+	FindVariable routine to TclpFindVariable, that now does a case
+	insensitive string comparison on Windows, and not on UNIX. [Bug:
+	1299, 1500]
+
 1999-04-05    <stanton@scriptics.com>
 
 	* tests/io.test: Minor test cleanup.

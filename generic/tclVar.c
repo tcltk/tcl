@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.1.2.4 1999/02/10 23:31:20 stanton Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.1.2.5 1999/04/06 19:06:54 surles Exp $
  */
 
 #include "tclInt.h"
@@ -2847,8 +2847,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	  ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
 	  ARRAY_STARTSEARCH}; 
     static char *arrayOptions[] = {"anymore", "donesearch", "exists",
-				   "get", "names", "nextelement", "set", "size", "startsearch", 
-				   (char *) NULL};
+				   "get", "names", "nextelement", "set",
+				   "size", "startsearch", (char *) NULL};
 
     Interp *iPtr = (Interp *) interp;
     Var *varPtr, *arrayPtr;
@@ -3101,73 +3101,11 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
         case ARRAY_SET: {
-	    Tcl_Obj **elemPtrs;
-	    int listLen, i, result;
-	    
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName list");
 		return TCL_ERROR;
 	    }
-	    result = Tcl_ListObjGetElements(interp, objv[3], &listLen, 
-                    &elemPtrs);
-	    if (result != TCL_OK) {
-	        return result;
-	    }
-	    if (listLen & 1) {
-	        Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-                        "list must have an even number of elements", -1);
-		return TCL_ERROR;
-	    }
-	    if (listLen > 0) {
-		for (i = 0;  i < listLen;  i += 2) {
-		    if (Tcl_ObjSetVar2(interp, objv[2], elemPtrs[i],
-			    elemPtrs[i+1], TCL_LEAVE_ERR_MSG) == NULL) {
-			result = TCL_ERROR;
-			break;
-		    }
-		}
-		return result;
-	    }
-
-	    /*
-	     * The list is empty make sure we have an array, or create
-	     * one if necessary.
-	     */
-	    
-	    if (varPtr != NULL) {
-		if (!TclIsVarUndefined(varPtr) && TclIsVarArray(varPtr)) {
-		    /*
-		     * Already an array, done.
-		     */
-		    
-		    return TCL_OK;
-                }
-		if (TclIsVarArrayElement(varPtr) ||
-			!TclIsVarUndefined(varPtr)) {
-		    /*
-		     * Either an array element, or a scalar: lose!
-		     */
-		    
-		    VarErrMsg(interp, varName, (char *)NULL, "array set",
-                            needArray);
-		    return TCL_ERROR;
-                }
-	    } else {
-		/*
-		 * Create variable for new array.
-		 */
-		
-		varPtr = TclLookupVar(interp, varName, (char *) NULL, 0, 0,
-			/*createPart1*/ 1, /*createPart2*/ 0,
-			&arrayPtr);
-	    }
-	    TclSetVarArray(varPtr);
-	    TclClearVarUndefined(varPtr);
-	    varPtr->value.tablePtr =
-		(Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
-	    Tcl_InitHashTable(varPtr->value.tablePtr, TCL_STRING_KEYS);
-	    return TCL_OK;
+	    return(TclArraySet(interp, objv[2], objv[3]));
 	}
         case ARRAY_SIZE: {
 	    Tcl_HashSearch search;
@@ -3230,6 +3168,102 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     Tcl_AppendStringsToObj(resultPtr, "\"", varName, "\" isn't an array",
 	    (char *) NULL);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArraySet --
+ *
+ *	Set the elements of an array.  If there are no elements to
+ *	set, create an empty array.  This routine is used by the
+ *	Tcl_ArrayObjCmd and by the TclSetupEnv routine.
+ *
+ * Results:
+ *	A standard Tcl result object.
+ *
+ * Side effects:
+ *	A variable will be created if one does not already exist.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclArraySet(interp, arrayNameObj, arrayElemObj)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    Tcl_Obj *arrayNameObj;	/* The array name. */
+    Tcl_Obj *arrayElemObj;	/* The array elements list.  If this is
+				 * NULL, create an empty array. */
+{
+    Var *varPtr, *arrayPtr;
+    Tcl_Obj **elemPtrs;
+    int result, elemLen, i;
+    char *varName;
+    
+    varName = TclGetString(arrayNameObj);
+    varPtr = TclLookupVar(interp, varName, (char *) NULL, /*flags*/ 0,
+            /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+
+    if (arrayElemObj != NULL) {
+	result = Tcl_ListObjGetElements(interp, arrayElemObj,
+		&elemLen, &elemPtrs);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	if (elemLen & 1) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		    "list must have an even number of elements", -1);
+	    return TCL_ERROR;
+	}
+	if (elemLen > 0) {
+	    for (i = 0;  i < elemLen;  i += 2) {
+		if (Tcl_ObjSetVar2(interp, arrayNameObj, elemPtrs[i],
+			elemPtrs[i+1], TCL_LEAVE_ERR_MSG) == NULL) {
+		    result = TCL_ERROR;
+		    break;
+		}
+	    }
+	    return result;
+	}
+    }
+    
+    /*
+     * The list is empty make sure we have an array, or create
+     * one if necessary.
+     */
+    
+    if (varPtr != NULL) {
+	if (!TclIsVarUndefined(varPtr) && TclIsVarArray(varPtr)) {
+	    /*
+	     * Already an array, done.
+	     */
+	    
+	    return TCL_OK;
+	}
+	if (TclIsVarArrayElement(varPtr) ||
+		!TclIsVarUndefined(varPtr)) {
+	    /*
+	     * Either an array element, or a scalar: lose!
+	     */
+	    
+	    VarErrMsg(interp, varName, (char *)NULL, "array set", needArray);
+	    return TCL_ERROR;
+	}
+    } else {
+	/*
+	 * Create variable for new array.
+	 */
+	
+	varPtr = TclLookupVar(interp, varName, (char *) NULL, 0, 0,
+	        /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+    }
+    TclSetVarArray(varPtr);
+    TclClearVarUndefined(varPtr);
+    varPtr->value.tablePtr =
+	(Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+    Tcl_InitHashTable(varPtr->value.tablePtr, TCL_STRING_KEYS);
+    return TCL_OK;
 }
 
 /*

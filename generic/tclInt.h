@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.19 1999/04/06 03:13:16 redman Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.20 1999/04/06 19:06:53 surles Exp $
  */
 
 #ifndef _TCLINT
@@ -1556,6 +1556,8 @@ EXTERN int		TclAccess _ANSI_ARGS_((CONST char *path,
 EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN int		TclAccessInsertProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
+EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
 			    int numPids, Tcl_Pid *pidPtr,
 			    Tcl_Channel errorChan));
@@ -1725,6 +1727,8 @@ EXTERN void		TclpFinalizeThreadDataKey _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN char *		TclpFindExecutable _ANSI_ARGS_((
 			    CONST char *argv0));
+EXTERN int		TclpFindVariable _ANSI_ARGS_((CONST char *name,
+			    int *lengthPtr));
 EXTERN void		TclpFree _ANSI_ARGS_((char *ptr));
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));

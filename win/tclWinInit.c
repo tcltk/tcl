@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.8 1999/03/12 23:29:22 surles Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.9 1999/04/06 19:06:57 surles Exp $
  */
 
 #include "tclWinInt.h"
@@ -573,6 +573,90 @@ TclpSetVariables(interp)
 	Tcl_SetVar2(interp, "tcl_platform", "user", "", TCL_GLOBAL_ONLY);
     }
     Tcl_DStringFree(&ds);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindVariable --
+ *
+ *	Locate the entry in environ for a given name.  On Unix this 
+ *	routine is case sensetive, on Windows this matches mioxed case.
+ *
+ * Results:
+ *	The return value is the index in environ of an entry with the
+ *	name "name", or -1 if there is no such entry.   The integer at
+ *	*lengthPtr is filled in with the length of name (if a matching
+ *	entry is found) or the length of the environ array (if no matching
+ *	entry is found).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpFindVariable(name, lengthPtr)
+    CONST char *name;		/* Name of desired environment variable
+				 * (UTF-8). */
+    int *lengthPtr;		/* Used to return length of name (for
+				 * successful searches) or number of non-NULL
+				 * entries in environ (for unsuccessful
+				 * searches). */
+{
+    int i, length, result = -1;
+    register CONST char *env, *p1, *p2;
+    char *envUpper, *nameUpper;
+    Tcl_DString envString;
+
+    /*
+     * Convert the name to all upper case for the case insensitive
+     * comparison.
+     */
+
+    length = strlen(name);
+    nameUpper = (char *) ckalloc((unsigned) length+1);
+    memcpy((VOID *) nameUpper, (VOID *) name, (size_t) length+1);
+    Tcl_UtfToUpper(nameUpper);
+    
+    Tcl_DStringInit(&envString);
+    for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
+	/*
+	 * Chop the env string off after the equal sign, then Convert
+	 * the name to all upper case, so we do not have to convert
+	 * all the characters after the equal sign.
+	 */
+	
+	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p1 = strchr(envUpper, '=');
+	if (p1 == NULL) {
+	    continue;
+	}
+	length = p1 - envUpper;
+	Tcl_DStringSetLength(&envString, length+1);
+	Tcl_UtfToUpper(envUpper);
+
+	p1 = envUpper;
+	p2 = nameUpper;
+	for (; *p2 == *p1; p1++, p2++) {
+	    /* NULL loop body. */
+	}
+	if ((*p1 == '=') && (*p2 == '\0')) {
+	    *lengthPtr = length;
+	    result = i;
+	    goto done;
+	}
+	
+	Tcl_DStringFree(&envString);
+    }
+    
+    *lengthPtr = i;
+
+    done:
+    Tcl_DStringFree(&envString);
+    ckfree(nameUpper);
+    return result;
 }
 
 /*

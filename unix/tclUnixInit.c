@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.12 1999/03/30 23:56:19 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.13 1999/04/06 19:06:56 surles Exp $
  */
 
 #include "tclInt.h"
@@ -484,6 +484,64 @@ TclpSetVariables(interp)
     Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindVariable --
+ *
+ *	Locate the entry in environ for a given name.  On Unix this 
+ *	routine is case sensetive, on Windows this matches mioxed case.
+ *
+ * Results:
+ *	The return value is the index in environ of an entry with the
+ *	name "name", or -1 if there is no such entry.   The integer at
+ *	*lengthPtr is filled in with the length of name (if a matching
+ *	entry is found) or the length of the environ array (if no matching
+ *	entry is found).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpFindVariable(name, lengthPtr)
+    CONST char *name;		/* Name of desired environment variable
+				 * (native). */
+    int *lengthPtr;		/* Used to return length of name (for
+				 * successful searches) or number of non-NULL
+				 * entries in environ (for unsuccessful
+				 * searches). */
+{
+    int i, result = -1;
+    register CONST char *env, *p1, *p2;
+    Tcl_DString envString;
+
+    Tcl_DStringInit(&envString);
+    for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
+	p1 = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	p2 = name;
+
+	for (; *p2 == *p1; p1++, p2++) {
+	    /* NULL loop body. */
+	}
+	if ((*p1 == '=') && (*p2 == '\0')) {
+	    *lengthPtr = p2 - name;
+	    result = i;
+	    goto done;
+	}
+	
+	Tcl_DStringFree(&envString);
+    }
+    
+    *lengthPtr = i;
+
+    done:
+    Tcl_DStringFree(&envString);
+    return result;
 }
 
 /*

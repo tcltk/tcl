@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.27 1999/04/06 05:50:26 welch Exp $
+RCS: @(#) $Id: changes,v 1.1.2.28 1999/04/06 19:06:51 surles Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4290,6 +4290,20 @@ OS/390 and BSD/OS 4.*. (stanton)
 
 4/5/99 (bug fix) Fixed crash in the clock command that occurred
 with negative time values in timezones east of GMT. (stanton)
+
+4/6/99 (bug fix) Moved the "array set" C level code into a common
+routine (TclArraySet).  The TclSetupEnv routine now uses this API to
+create an env array w/ no elements.  This fixes the bug caused when
+every environ varaible is removed, and the Tcl env variable is
+synched.  If no environ vars existed, the Tcl env var would never be
+created. (surles)
+
+4/6/99 (bug fix) Made the Env module I18N compliant. (surles)
+
+4/6/99 (bug fix) Changed the FindVariable routine to TclpFindVariable,
+that now does a case insensitive string comparison on Windows, and not
+on UNIX. (surles)
+
 
 --------------- Released 8.1b3, April 6, 1999 ----------------------
 
