@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.10 2004/04/09 20:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.11 2004/04/12 18:40:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3321,7 +3321,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 	}
     }
 
-    code = TEOVI(interp, objc, objv, cmdString, cmdLen, flags);
+    code = TEOVICount(interp, objc, objv, cmdString, cmdLen, flags);
 
     /*
      * If we are again at the top level, process any unusual 
