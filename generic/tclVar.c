@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.58 2002/07/17 18:21:55 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.59 2002/07/17 20:27:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1775,8 +1775,8 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
     CONST char *part2;		/* If non-null, points to an object holding
 				 * the name of an element in the array
 				 * part1Ptr. */
-    long incrAmount;		/* Amount to be added to variable. */
-    int flags;                  /* Various flags that tell how to incr value:
+    CONST long incrAmount;	/* Amount to be added to variable. */
+    CONST int flags;            /* Various flags that tell how to incr value:
 				 * any of TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY, TCL_APPEND_VALUE,
 				 * TCL_LIST_ELEMENT, TCL_LEAVE_ERR_MSG. */
