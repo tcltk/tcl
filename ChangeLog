@@ -1,3 +1,15 @@
+2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEncoding.c (TclFinalizeEncodingSubsystem): properly
+	cleanup all encodings by using Tcl_FirstHashEntry in the while loop.
+
+	* unix/Makefile.in (valgrind): add simple valgrind target
+
+	* tests/exec.test: unset path var to allow singleproc testing
+
+	* generic/tclInterp.c (AliasCreate): preserve/release interps to
+	prevent possible FMR error in bad alias cases.
+
 2002-11-26  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/tclWinPort.h:
