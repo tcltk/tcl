@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.9 2003/02/11 18:03:28 msofer Exp $
+# RCS: @(#) $Id: parse.test,v 1.10 2003/02/11 18:27:37 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -744,16 +744,3 @@ test parse-17.1 {Correct return codes from errors during substitution} {
 catch {unset a}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-
