@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.86 2001/11/11 03:16:10 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.87 2001/11/20 10:15:06 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1211,8 +1211,10 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
@@ -1235,6 +1237,8 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/tools/tcl.wse.in $(TOP_DIR)/tools/*.bmp \
 		$(TOP_DIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in \
+		$(TOP_DIR)/tools/tcl.wse.in
 
 #
 # The following target can only be used for non-patch releases.  Use
