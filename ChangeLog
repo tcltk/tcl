@@ -1,5 +1,8 @@
 1999-04-06    <stanton@scriptics.com>
 
+	* tests/unixNotfy.test: Fixed hang in tests when built with thread
+	support. 
+
 	* tests/httpold.test: Fixed broken test that didn't wait long
 	enough for events to arrive.
 
