@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.14 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.15 2002/07/29 10:56:08 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -987,8 +987,14 @@ m  9	HLP	{(?n)^(?![t#])\S+}	"tk\n\n#\n#\nit0"	it0
 # flush any leftover complaints
 doing 0 "flush"
 
+# Tests resulting from bugs reported by users
+test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
+    set str {2:::DebugWin32} 
+    set re {([[:xdigit:]])([[:space:]]*)} 
+    list [regexp $re $str match xdigit spaces] $match $xdigit $spaces
+    # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
+} {1 2 2 {}}
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
