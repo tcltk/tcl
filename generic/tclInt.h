@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.111 2002/08/14 17:31:43 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.112 2002/10/23 09:55:14 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -763,44 +763,6 @@ typedef struct CallFrame {
  */
 
 typedef VOID **TclHandle;
-
-/*
- *----------------------------------------------------------------
- * Data structures related to history.	 These are used primarily
- * in tclHistory.c
- *----------------------------------------------------------------
- */
-
-/*
- * The structure below defines one history event (a previously-executed
- * command that can be re-executed in whole or in part).
- */
-
-typedef struct {
-    char *command;		/* String containing previously-executed
-				 * command. */
-    int bytesAvl;		/* Total # of bytes available at *event (not
-				 * all are necessarily in use now). */
-} HistoryEvent;
-
-/*
- * The structure below defines a pending revision to the most recent
- * history event.  Changes are linked together into a list and applied
- * during the next call to Tcl_RecordHistory.  See the comments at the
- * beginning of tclHistory.c for information on revisions.
- */
-
-typedef struct HistoryRev {
-    int firstIndex;		/* Index of the first byte to replace in
-				 * current history event. */
-    int lastIndex;		/* Index of last byte to replace in
-				 * current history event. */
-    int newSize;		/* Number of bytes in newBytes. */
-    char *newBytes;		/* Replacement for the range given by
-				 * firstIndex and lastIndex (malloced). */
-    struct HistoryRev *nextPtr;	/* Next in chain of revisions to apply, or
-				 * NULL for end of list. */
-} HistoryRev;
 
 /*
  *----------------------------------------------------------------
