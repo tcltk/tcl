@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.3 2004/10/14 15:28:38 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.4 2004/10/31 16:43:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1082,7 +1082,15 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
     if (objc == 2) {
         pattern = NULL;
     } else if (objc == 3) {
-        pattern = Tcl_GetString(objv[2]);
+	pattern = Tcl_GetString(objv[2]);
+	/*
+	 * Strip leading global-namespace qualifiers. [Bug 1057461]
+	 */
+	if (pattern[0] == ':' && pattern[1] == ':') {
+	    while (*pattern == ':') {
+		pattern++;
+	    }
+	}
     } else {
         Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
         return TCL_ERROR;
