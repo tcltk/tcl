@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.102 2004/09/27 14:31:19 kennykb Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.103 2004/09/27 16:24:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -122,7 +122,7 @@ TclIntStubs tclIntStubs = {
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
     TclpGetUserHome, /* 42 */
-    TclGlobalInvoke, /* 43 */
+    NULL, /* 43 */
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
@@ -131,7 +131,7 @@ TclIntStubs tclIntStubs = {
     TclIncrVar2, /* 49 */
     TclInitCompiledLocals, /* 50 */
     TclInterpInit, /* 51 */
-    TclInvoke, /* 52 */
+    NULL, /* 52 */
     TclInvokeObjectCommand, /* 53 */
     TclInvokeStringCommand, /* 54 */
     TclIsProc, /* 55 */
@@ -144,7 +144,7 @@ TclIntStubs tclIntStubs = {
     TclObjCommandComplete, /* 62 */
     TclObjInterpProc, /* 63 */
     TclObjInvoke, /* 64 */
-    TclObjInvokeGlobal, /* 65 */
+    NULL, /* 65 */
     TclOpenFileChannelDeleteProc, /* 66 */
     TclOpenFileChannelInsertProc, /* 67 */
     NULL, /* 68 */

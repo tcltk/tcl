@@ -1,3 +1,19 @@
+2004-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Removed internal routines TclInvoke,
+	* generic/tclInt.decls: TclGlobalInvoke, TclObjInvokeGlobal and
+	* tests/basic.test:	the portion of TclObjInvoke that handles
+	calls without TCL_INVOKE_HIDDEN enabled.  None of this code is
+	called any longer within the core, and the superior public
+	interface, Tcl_EvalObjv, is available for any external callers.
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclEvent.c (HandleBgErrors):	Updated [bgerror]
+	invocations to make use of Tcl_Obj based routines, dropping
+	the calls to TclGlobalInvoke()
+
 2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c:
