@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.50 2004/09/30 23:06:47 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.51 2004/10/05 18:14:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -298,8 +298,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorcodeKey, &value);
 	    if (NULL == value) {
 		Tcl_DictObjPut(NULL, options, iPtr->returnErrorcodeKey,
-			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorCode,
-			NULL, TCL_GLOBAL_ONLY));
+			iPtr->errorCode);
 	    }
 	    value = NULL;
 	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorlineKey, &value);
