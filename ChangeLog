@@ -1,5 +1,7 @@
 2004-07-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/regcomp.c (stid): correct minor pointer size error
+
 	* generic/tclPipe.c (TclCreatePipeline): applied TIP #202 patch
 	* doc/exec.n, tests/exec.test:           that adds 2>@1 as a
 	special case redirection of stderr to the result output.
