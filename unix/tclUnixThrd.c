@@ -833,4 +833,54 @@ TclpInetNtoa(struct in_addr addr)
     return tsdPtr->nabuf;
 }
 
+/*
+ * Additions by AOL for specialized thread memory allocator.
+ */
+#ifdef USE_THREAD_ALLOC
+static int initialized = 0;
+static pthread_key_t	key;
+static pthread_once_t	once = PTHREAD_ONCE_INIT;
+
+Tcl_Mutex *
+TclpNewAllocMutex(void)
+{
+    struct lock {
+        Tcl_Mutex       tlock;
+        pthread_mutex_t plock;
+    } *lockPtr;
+
+    lockPtr = malloc(sizeof(struct lock));
+    if (lockPtr == NULL) {
+	panic("could not allocate lock");
+    }
+    lockPtr->tlock = (Tcl_Mutex) &lockPtr->plock;
+    pthread_mutex_init(&lockPtr->plock, NULL);
+    return &lockPtr->tlock;
+}
+
+static void
+InitKey(void)
+{
+    extern void TclFreeAllocCache(void *);
+
+    pthread_key_create(&key, TclFreeAllocCache);
+    initialized = 1;
+}
+
+void *
+TclpGetAllocCache(void)
+{
+    if (!initialized) {
+	pthread_once(&once, InitKey);
+    }
+    return pthread_getspecific(key);
+}
+
+void
+TclpSetAllocCache(void *arg)
+{
+    pthread_setspecific(key, arg);
+}
+
+#endif /* USE_THREAD_ALLOC */
 #endif /* TCL_THREADS */
