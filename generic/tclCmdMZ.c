@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.62 2002/02/27 06:39:26 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.63 2002/03/01 06:23:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3688,7 +3688,11 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 
 	Tcl_DStringFree(&cmd);
     }
-    if (flags & TCL_TRACE_DESTROYED) {
+    /*
+     * We delete when the trace was destroyed or if this is a delete trace,
+     * because command deletes are unconditional, so the trace must go away.
+     */
+    if (flags & (TCL_TRACE_DESTROYED | TCL_TRACE_DELETE)) {
 	ckfree((char *) tcmdPtr);
     }
     return;
