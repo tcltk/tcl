@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.37 2004/10/07 14:50:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.38 2004/11/22 12:53:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -842,10 +842,18 @@ Tcl_FSJoinPath(listObj, elements)
 
 		if (str[0] != '.' && ((tclPlatform != TCL_PLATFORM_WINDOWS) 
 			|| (strchr(str, '\\') == NULL))) {
-		    if (res != NULL) {
-			TclDecrRefCount(res);
+		    /* 
+		     * Finally, on Windows, 'file join' is defined to 
+		     * convert all backslashes to forward slashes,
+		     * so the base part cannot have backslashes either.
+		     */
+		    if ((tclPlatform != TCL_PLATFORM_WINDOWS)
+			|| (strchr(Tcl_GetString(elt), '\\') == NULL)) {
+			if (res != NULL) {
+			    TclDecrRefCount(res);
+			}
+			return TclNewFSPathObj(elt, str, len);
 		    }
-		    return TclNewFSPathObj(elt, str, len);
 		}
 
 		/* 
