@@ -1,5 +1,8 @@
 2002-05-31  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/package.tcl:  Fixed leak of slave interp in [pkg_mkIndex].
+	Thanks to Helmut for report.  [Bug 550534]
+
 	* tests/io.test:
 	* tests/main.test:  Use the "stdio" constraint to control whether
 	an [open "|[interpreter]"] is attempted.
