@@ -449,6 +449,8 @@ test lset-14.2 {lset, not compiled, flat args, is string rep preserved?} {
 catch {unset noRead}
 catch {unset noWrite}
 catch {rename failTrace {}}
+catch {unset ::x}
+catch {unset ::y}
 
 # cleanup
 ::tcltest::cleanupTests

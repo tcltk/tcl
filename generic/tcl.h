@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.105 2001/11/19 14:35:54 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.106 2001/11/23 01:26:39 das Exp $
  */
 
 #ifndef _TCL
@@ -71,8 +71,7 @@ extern "C" {
  */
 
 #ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || \
-       defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #	define __WIN32__
 #	ifndef WIN32
 #	    define WIN32
@@ -102,6 +101,7 @@ extern "C" {
  */
 
 #ifdef MAC_TCL
+#include <ConditionalMacros.h>
 #   ifndef HAS_STDARG
 #	define HAS_STDARG 1
 #   endif
@@ -222,7 +222,7 @@ extern "C" {
 #   define DLLIMPORT
 #   define DLLEXPORT
 #else
-#   if defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || (defined(__GNUC__) && defined(__declspec)))
+#   if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || (defined(__GNUC__) && defined(__declspec)))) || (defined(MAC_TCL) && FUNCTION_DECLSPEC)
 #	define DLLIMPORT __declspec(dllimport)
 #	define DLLEXPORT __declspec(dllexport)
 #   else
@@ -244,7 +244,7 @@ extern "C" {
  * name of a library we are building, is set on the compile line for sources
  * that are to be placed in the library.  When this macro is set, the
  * storage class will be set to DLLEXPORT.  At the end of the header file, the
- * storage class will be reset to DLLIMPORt.
+ * storage class will be reset to DLLIMPORT.
  */
 
 #undef TCL_STORAGE_CLASS
@@ -2149,7 +2149,20 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  * accessible via the stubs table.
  */
 
+/*
+ * tclPlatDecls.h can't be included here on the Mac, as we need
+ * Mac specific headers to define the Mac types used in this file,
+ * but these Mac haders conflict with a number of tk types
+ * and thus can't be included in the globally read tcl.h
+ * This header was originally added here as a fix for bug 5241
+ * (stub link error for symbols in TclPlatStubs table), as a work-
+ * around for the bug on the mac, tclMac.h is included immediately 
+ * after tcl.h in the tcl precompiled header (with DLLEXPORT set).
+ */
+
+#if !defined(MAC_TCL)
 #include "tclPlatDecls.h"
+#endif
 
 /*
  * Public functions that are not accessible via the stubs table.
