@@ -1,3 +1,11 @@
+2001-06-22  Mo DeJong  <mdejong@redhat.com>
+
+	* win/configure:
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Don't set LDFLAGS_DEBUG
+	to -g or LDFLAGS_OPTIMIZE to -O when compiling with gcc.
+	These flags are not needed and can cause problems with
+	the Cygwin version of ld.
+
 2001-06-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/unixInit.test (unixInit-1.2,unixInit-2.8): Added test for
