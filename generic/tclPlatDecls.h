@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.8 2001/08/02 20:15:40 mdejong Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.9 2001/09/05 03:34:22 davygrvy Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -17,8 +17,12 @@
  *  of the core are matching against your project build for these
  *  public functions.  BE AWARE.
  */
-#if defined(__WIN32__) && !defined(_INC_TCHAR)
-#include <tchar.h>
+#if defined(__WIN32__) && (!defined(_TCHAR_DEFINED) && !defined(__TCHAR_DEFINED))
+#   include <tchar.h>
+#   ifndef _TCHAR_DEFINED
+	/* tchar.h doesn't set this.  winnt.h checks this. */
+#	define _TCHAR_DEFINED
+#   endif
 #endif
 
 /* !BEGIN!: Do not edit below this line. */
