@@ -1,5 +1,11 @@
 2002-10-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tools/man2help2.tcl: 
+	* tests/http.test, tests/httpd, tests/httpold.test: 
+	* tests/env.test, tests/binary.test, tests/autoMkindex.test: 
+	* library/init.tcl, library/http/http.tcl: [info exist] should
+	really be [info exists].  [Bug 602566]
+
 	* doc/lsearch.n: Better specification of what happens when -sorted
 	is mixed with other options. [Bug 617816]
 
