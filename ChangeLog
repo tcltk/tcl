@@ -1,3 +1,14 @@
+2002-06-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Fixed [makeFile] and [viewFile] to
+	* tests/cmdAH.test:		accurately reflect a file's contents.
+	* tests/event.test:		Updated tests that depended on buggy
+	* tests/http.test:		behavior.  Also added warning messages
+	* tests/io.test:		to "-debug 1" operations to debug test
+	* tests/iogt.test:		calls to (make|remove)(File|Directory).
+
+	* unix/mkLinks: `make mklinks` on 6-27 commits.
+
 2002-06-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompile.h: modified the macro TclEmitPush to not

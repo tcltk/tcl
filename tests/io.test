@@ -12,10 +12,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.31 2002/06/06 18:44:43 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.32 2002/07/01 02:29:22 dgp Exp $
 
-if {[catch {package require tcltest 2}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2 required."
+if {[catch {package require tcltest 2.1}]} {
+    puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
     return
 }
 namespace eval ::tcl::test::io {
@@ -4207,7 +4207,8 @@ test io-34.10 {Tcl_Seek testing flushing of buffered input} {
     close $f
     list $x [viewFile test3]
 } "xyz {xyz
-456}"
+456
+}"
 test io-34.11 {Tcl_Seek testing flushing of buffered output} {
     set f [open test3 w]
     puts $f xyz\n123
@@ -4218,7 +4219,8 @@ test io-34.11 {Tcl_Seek testing flushing of buffered output} {
     set x [gets $f]
     close $f
     list $x [viewFile test3]
-} "zzy xyzzy"
+} "zzy {xyzzy
+}"
 test io-34.12 {Tcl_Seek testing combination of write, seek back and read} {
     set f [open test3 w]
     fconfigure $f -translation lf -eofchar {}
@@ -4235,7 +4237,8 @@ test io-34.12 {Tcl_Seek testing combination of write, seek back and read} {
     list $x [viewFile test3] $y
 } {14 {xyz
 123
-xyzzy} zzy}
+xyzzy
+} zzy}
 test io-34.13 {Tcl_Tell at start of file} {
     removeFile test1
     set f1 [open test1 w]
@@ -5208,7 +5211,8 @@ test io-40.7 {POSIX open access modes: EXCL} {
     puts $f "A test line"
     close $f
     viewFile test3
-} {A test line}
+} {A test line
+}
 test io-40.8 {POSIX open access modes: TRUNC} {
     removeFile test3
     set f [open test3 w]

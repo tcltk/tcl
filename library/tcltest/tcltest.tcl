@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.60 2002/06/28 19:22:55 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.61 2002/07/01 02:29:22 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -804,6 +804,10 @@ proc tcltest::DebugDo {level script} {
 
 #####################################################################
 
+proc tcltest::Warn {msg} {
+    puts [outputChannel] "WARNING: $msg"
+}
+
 # tcltest::mainThread
 #
 #     Accessor command for tcltest variable mainThread.
@@ -1341,7 +1345,7 @@ proc tcltest::ProcessFlags {flagArray} {
 			append msg [join [lrange $moreOptions 0 end -1] ", "]
 			append msg "or [lindex $moreOptions end]"
 		    }
-		    puts [errorChannel] "WARNING: $msg"
+		    Warn $msg
 		}
 	    } else {
 		# error is something other than "unknown option"
@@ -2290,6 +2294,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     if {!$calledFromAllFile} {
 	foreach file $filesMade {
 	    if {[file exists $file]} {
+		DebugDo 1 {Warn "cleanupTests deleting $file..."}
 		catch {file delete -force $file}
 	    }
 	}
@@ -2885,17 +2890,11 @@ proc tcltest::makeFile {contents name {directory ""}} {
     set fullName [file join $directory $name]
 
     DebugPuts 3 "[lindex [info level 0] 0]:\
-	     putting $contents into $fullName"
+	     putting ``$contents'' into $fullName"
 
     set fd [open $fullName w]
-
     fconfigure $fd -translation lf
-
-    if {[string equal [string index $contents end] "\n"]} {
-	puts -nonewline $fd $contents
-    } else {
-	puts $fd $contents
-    }
+    puts -nonewline $fd $contents
     close $fd
 
     if {[lsearch -exact $filesMade $fullName] == -1} {
@@ -2919,12 +2918,25 @@ proc tcltest::makeFile {contents name {directory ""}} {
 #	None.
 
 proc tcltest::removeFile {name {directory ""}} {
+    variable filesMade
     FillFilesExisted
     if {[llength [info level 0]] == 2} {
 	set directory [temporaryDirectory]
     }
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: removing $fullName"
+    set idx [lsearch -exact $filesMade $fullName]
+    set filesMade [lreplace $filesMade $idx $idx]
+    if {$idx == -1} {
+	DebugDo 1 {
+	    Warn "removeFile removing \"$fullName\":\n  not created by makeFile"
+	}
+    } 
+    if {![file isfile $fullName]} {
+	DebugDo 1 {
+	    Warn "removeFile removing \"$fullName\":\n  not a file"
+	}
+    }
     return [file delete $fullName]
 }
 
@@ -2976,12 +2988,26 @@ proc tcltest::makeDirectory {name {directory ""}} {
 #	None
 
 proc tcltest::removeDirectory {name {directory ""}} {
+    variable filesMade
     FillFilesExisted
     if {[llength [info level 0]] == 2} {
 	set directory [temporaryDirectory]
     }
     set fullName [file join $directory $name]
     DebugPuts 3 "[lindex [info level 0] 0]: deleting $fullName"
+    set idx [lsearch -exact $filesMade $fullName]
+    set filesMade [lreplace $filesMade $idx $idx]
+    if {$idx == -1} {
+	DebugDo 1 {
+	    Warn "removeDirectory removing \"$fullName\":\n  not created\
+		    by makeDirectory"
+	}
+    } 
+    if {![file isdirectory $fullName]} {
+	DebugDo 1 {
+	    Warn "removeDirectory removing \"$fullName\":\n  not a directory"
+	}
+    }
     return [file delete -force $fullName]
 }
 
@@ -3006,16 +3032,11 @@ proc tcltest::viewFile {name {directory ""}} {
 	set directory [temporaryDirectory]
     }
     set fullName [file join $directory $name]
-    if {[string equal $tcl_platform(platform) macintosh]
-	    || ![testConstraint unixExecs]} {
-	set f [open $fullName]
-	set data [read -nonewline $f]
-	close $f
-	return $data
-    } else {
-	return [exec cat $fullName]
-    }
-    return
+    set f [open $fullName]
+    fconfigure $f -translation binary
+    set data [read $f]
+    close $f
+    return $data
 }
 
 # tcltest::bytestring --
@@ -3234,19 +3255,17 @@ namespace eval tcltest {
     proc ConfigureFromEnvironment {} {
 	upvar #0 env(TCLTEST_OPTIONS) options
 	if {[catch {llength $options} msg]} {
-	    puts [errorChannel] "WARNING: invalid\
-		    TCLTEST_OPTIONS \"$options\":\n  invalid Tcl list: $msg"
+	    Warn "invalid TCLTEST_OPTIONS \"$options\":\n  invalid\
+		    Tcl list: $msg"
 	    return
 	}
 	if {[llength $::env(TCLTEST_OPTIONS)] < 2} {
-	    puts [errorChannel] "WARNING: invalid\
-		    TCLTEST_OPTIONS: \"$options\":\n  should be\
+	    Warn "invalid TCLTEST_OPTIONS: \"$options\":\n  should be\
 		    -option value ?-option value ...?"
 	    return
 	}
 	if {[catch {eval Configure $::env(TCLTEST_OPTIONS)} msg]} {
-	    puts [errorChannel] "WARNING: invalid\
-		    TCLTEST_OPTIONS: \"$options\":\n  $msg"
+	    Warn "invalid TCLTEST_OPTIONS: \"$options\":\n  $msg"
 	    return
 	}
     }
