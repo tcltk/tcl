@@ -9,13 +9,37 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.7 2000/01/14 22:15:52 ericm Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.8 2001/04/09 23:02:21 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #define TM_YEAR_BASE 1900
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
+
+/*
+ * TclpGetDate is coded to return a pointer to a 'struct tm'.  For
+ * thread safety, this structure must be in thread-specific data.
+ * The 'tmKey' variable is the key to this buffer.
+ */
+
+Tcl_ThreadDataKey tmKey;
+
+/*
+ * If we fall back on the thread-unsafe versions of gmtime and localtime,
+ * use this mutex to try to protect them.
+ */
+
+#if !defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R)
+TCL_DECLARE_MUTEX( tmMutex )
+#endif
+
+/*
+ * Forward declarations for procedures defined later in this file.
+ */
+
+static struct tm *ThreadSafeGMTime _ANSI_ARGS_(( CONST time_t* ));
+static struct tm *ThreadSafeLocalTime _ANSI_ARGS_(( CONST time_t* ));
 
 /*
  *-----------------------------------------------------------------------------
@@ -115,7 +139,7 @@ TclpGetTimeZone (currentTime)
 #if defined(HAVE_TM_TZADJ)
 #   define TCL_GOT_TIMEZONE
     time_t      curTime = (time_t) currentTime;
-    struct tm  *timeDataPtr = localtime(&curTime);
+    struct tm  *timeDataPtr = ThreadSafeLocalTime(&curTime);
     int         timeZone;
 
     timeZone = timeDataPtr->tm_tzadj  / 60;
@@ -129,7 +153,7 @@ TclpGetTimeZone (currentTime)
 #if defined(HAVE_TM_GMTOFF) && !defined (TCL_GOT_TIMEZONE)
 #   define TCL_GOT_TIMEZONE
     time_t     curTime = (time_t) currentTime;
-    struct tm *timeDataPtr = localtime(&curTime);
+    struct tm *timeDataPtr = ThreadSafeLocalTime(&curTime);
     int        timeZone;
 
     timeZone = -(timeDataPtr->tm_gmtoff / 60);
@@ -152,7 +176,7 @@ TclpGetTimeZone (currentTime)
     time_t tt;
     struct tm *stm;
     tt = 849268800L;      /*    1996-11-29 12:00:00  GMT */
-    stm = localtime(&tt); /* eg 1996-11-29  6:00:00  CST6CDT */
+    stm = ThreadSafeLocalTime(&tt); /* eg 1996-11-29  6:00:00  CST6CDT */
     /* The calculation below assumes a max of +12 or -12 hours from GMT */
     timeZone = (12 - stm->tm_hour)*60 + (0 - stm->tm_min);
     return timeZone;  /* eg +360 for CST6CDT */
@@ -268,9 +292,9 @@ TclpGetDate(time, useGMT)
     CONST time_t *tp = (CONST time_t *)time;
 
     if (useGMT) {
-	return gmtime(tp);
+	return ThreadSafeGMTime(tp);
     } else {
-	return localtime(tp);
+	return ThreadSafeLocalTime(tp);
     }
 }
 
@@ -307,4 +331,86 @@ TclpStrftime(s, maxsize, format, t)
 	return(strlen(s));
     }
     return strftime(s, maxsize, format, t);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadSafeGMTime --
+ *
+ *	Wrapper around the 'gmtime' library function to make it thread
+ *	safe.
+ *
+ * Results:
+ *	Returns a pointer to a 'struct tm' in thread-specific data.
+ *
+ * Side effects:
+ *	Invokes gmtime or gmtime_r as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static struct tm *
+ThreadSafeGMTime( timePtr )
+    CONST time_t *timePtr;	/* Pointer to the number of seconds
+				 * since the local system's epoch
+				 */
+
+{
+
+    /*
+     * Get a thread-local buffer to hold the returned time.
+     */
+
+    struct tm * tmPtr = (struct tm*) Tcl_GetThreadData( &tmKey,
+							sizeof( struct tm ) );
+#ifdef HAVE_GMTIME_R
+    gmtime_r( timePtr, tmPtr );
+#else
+    Tcl_MutexLock( & tmMutex );
+    *tmPtr = gmtime( timePtr );
+    Tcl_MutexUnlock( &tmMutex );
+#endif    
+    return tmPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadSafeLocalTime --
+ *
+ *	Wrapper around the 'localtime' library function to make it thread
+ *	safe.
+ *
+ * Results:
+ *	Returns a pointer to a 'struct tm' in thread-specific data.
+ *
+ * Side effects:
+ *	Invokes localtime or localtime_r as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static struct tm *
+ThreadSafeLocalTime( timePtr )
+    CONST time_t *timePtr;	/* Pointer to the number of seconds
+				 * since the local system's epoch
+				 */
+
+{
+
+    /*
+     * Get a thread-local buffer to hold the returned time.
+     */
+
+    struct tm * tmPtr = (struct tm*) Tcl_GetThreadData( &tmKey,
+							sizeof( struct tm ) );
+#ifdef HAVE_LOCALTIME_R
+    localtime_r( timePtr, tmPtr );
+#else
+    Tcl_MutexLock( & tmMutex );
+    *tmPtr = localtime( timePtr );
+    Tcl_MutexUnlock( &tmMutex );
+#endif    
+    return tmPtr;
 }
