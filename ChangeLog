@@ -1,5 +1,11 @@
-2001-08-02  Mo DeJong  <mdejong@redhat.com>
+2001-08-06  Don Porter <dgp@users.sourceforge.net>
 
+	* generic/tclPkg.c:
+	* tests/pkg.test:  [package forget] now forgets all of the
+	package arguments it receives, not stopping when a package is
+	not found.  [Bug 415273]
+
+2001-08-02  Mo DeJong  <mdejong@redhat.com>
 	* generic/tclPlatDecls.h:
 	* win/tclWinPort.h:
 	Revert <tchar.h> related changes made to improve
