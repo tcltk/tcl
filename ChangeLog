@@ -1,5 +1,8 @@
 1999-03-09    <stanton@GASPODE>
 
+	* generic/tcl.h: Changed TCL_STUB_MAGIC back to match plus patch 
+        implementation.
+
 	* Regenerated stub interfaces.
 	
 	* tools/genStubs.tcl: Reorganized code to support mixed generic
