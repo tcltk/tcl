@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.1.2.3 2002/02/05 23:58:02 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.1.2.4 2002/02/06 12:21:43 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -128,11 +128,17 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
      * place it in.
      */
 
-    if ((Tcl_Namespace*) NULL == Tcl_CreateNamespace (interp,
-		      Tcl_DStringValue (&cmdName), (ClientData) NULL,
-		      (Tcl_NamespaceDeleteProc *) NULL)) {
+    if ((Tcl_Namespace*) NULL == Tcl_FindNamespace(interp,
+		Tcl_DStringValue (&cmdName), NULL, TCL_GLOBAL_ONLY)) {
 
-        Tcl_Panic ("Tcl_RegisterConfig: Unable to create namespace for package configuration");
+	if ((Tcl_Namespace*) NULL == Tcl_CreateNamespace (interp,
+			  Tcl_DStringValue (&cmdName), (ClientData) NULL,
+			  (Tcl_NamespaceDeleteProc *) NULL)) {
+
+	    Tcl_Panic ("%s.\n%s %s", Tcl_GetStringResult(interp),
+		    "Tcl_RegisterConfig: Unable to create namespace for",
+		    "package configuration.");
+	}
     }
 
     Tcl_DStringAppend (&cmdName, "::pkgconfig", -1);   
@@ -141,7 +147,8 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
 		    Tcl_DStringValue (&cmdName), QueryConfigObjCmd,
 		    (ClientData) wrap, QueryConfigDelete)) {
 
-        Tcl_Panic ("Tcl_RegisterConfig: Unable to create query command for package configuration");
+        Tcl_Panic ("%s %s", "Tcl_RegisterConfig: Unable to create query",
+		"command for package configuration");
     }
 
     Tcl_DStringFree (&cmdName);
