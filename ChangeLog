@@ -1,3 +1,9 @@
+2002-06-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/string.n: Improved documentation for [string last] along
+	lines described in Bug #574799 so it indicates that the supplied
+	index marks the end of the search space.
+
 2002-06-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/dde.n:		Work in progress updating the documentation
