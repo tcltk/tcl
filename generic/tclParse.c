@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.11 1999/07/30 22:19:20 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.12 1999/08/12 23:14:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1456,7 +1456,19 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	Tcl_DecrRefCount(objv[i]);
     }
     if (gotParse) {
+	p = parse.commandStart + parse.commandSize;
 	Tcl_FreeParse(&parse);
+	if ((nested != 0) && (p > script) && (p[-1] == ']')) {
+	    /*
+	     * We get here in the special case where the TCL_BRACKET_TERM
+	     * flag was set in the interpreter and we reached a close
+	     * bracket in the script.  Return immediately.
+	     */
+
+	    iPtr->termOffset = (p - 1) - script;
+	} else {
+	    iPtr->termOffset = p - script;
+	}    
     }
     if (objv != staticObjArray) {
 	ckfree((char *) objv);

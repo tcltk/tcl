@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.20 1999/08/12 20:02:51 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.21 1999/08/12 23:14:43 stanton Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -78,6 +78,12 @@ CFLAGS_WARNING = @CFLAGS_WARNING@
 # The default switches for optimization or debugging
 CFLAGS_DEBUG    = @CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
+
+# To enable compilation debugging reverse the comment characters on
+# one of the following lines.
+COMPILE_DEBUG_FLAGS =
+#COMPILE_DEBUG_FLAGS = -DTCL_COMPILE_DEBUG
+#COMPILE_DEBUG_FLAGS = -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 
 # The default switches for optimization or debugging
 LDFLAGS_DEBUG    = @LDFLAGS_DEBUG@
@@ -160,13 +166,15 @@ RM		= rm -f
 COPY		= cp
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS}
+-I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
+${COMPILE_DEBUG_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS}
+-I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
+${COMPILE_DEBUG_FLAGS}
 
 TCLTEST_OBJS = \
 	tclTest.$(OBJEXT) \

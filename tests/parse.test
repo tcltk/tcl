@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.5 1999/06/26 03:54:18 jenn Exp $
+# RCS: @(#) $Id: parse.test,v 1.6 1999/08/12 23:14:43 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -361,7 +361,7 @@ test parse-10.14 {Tcl_EvalTokens, string values} {
     testevalex {concat x$a.$a.$a}
 } {x111.111.111}
 
-test parse-11.1 {Tcl_Eval2, TCL_EVAL_GLOBAL flag} {
+test parse-11.1 {Tcl_EvalEx, TCL_EVAL_GLOBAL flag} {
     proc x {} {
 	set y 777
 	set z [testevalex "set y" global]
@@ -371,33 +371,33 @@ test parse-11.1 {Tcl_Eval2, TCL_EVAL_GLOBAL flag} {
     set y 321
     x
 } {321 777}
-test parse-11.2 {Tcl_Eval2, error while parsing} {
+test parse-11.2 {Tcl_EvalEx, error while parsing} {
     list [catch {testevalex {concat "abc}} msg] $msg
 } {1 {missing "}}
-test parse-11.3 {Tcl_Eval2, error while collecting words} {
+test parse-11.3 {Tcl_EvalEx, error while collecting words} {
     catch {unset a}
     list [catch {testevalex {concat xyz $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
-test parse-11.4 {Tcl_Eval2, error in Tcl_EvalObjv call} {
+test parse-11.4 {Tcl_EvalEx, error in Tcl_EvalObjv call} {
     catch {unset a}
     list [catch {testevalex {_bogus_ a b c d}} msg] $msg
 } {1 {invalid command name "_bogus_"}}
-test parse-11.5 {Tcl_Eval2, exceptional return} {
+test parse-11.5 {Tcl_EvalEx, exceptional return} {
     list [catch {testevalex {break}} msg] $msg
 } {3 {}}
-test parse-11.6 {Tcl_Eval2, freeing memory} {
+test parse-11.6 {Tcl_EvalEx, freeing memory} {
     testevalex {concat a b c d e f g h i j k l m n o p q r s t u v w x y z}
 } {a b c d e f g h i j k l m n o p q r s t u v w x y z}
-test parse-11.7 {Tcl_Eval2, multiple commands in script} {
+test parse-11.7 {Tcl_EvalEx, multiple commands in script} {
     list [testevalex {set a b; set c d}] $a $c
 } {d b d}
-test parse-11.8 {Tcl_Eval2, multiple commands in script} {
+test parse-11.8 {Tcl_EvalEx, multiple commands in script} {
     list [testevalex {
 	set a b
 	set c d
     }] $a $c
 } {d b d}
-test parse-11.9 {Tcl_Eval2, freeing memory after error} {
+test parse-11.9 {Tcl_EvalEx, freeing memory after error} {
     catch {unset a}
     list [catch {testevalex {concat a b c d e f g h i j k l m n o p q r s t u v w x y z $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
@@ -728,6 +728,9 @@ test parse-15.58 {CommandComplete procedure, memory leaks} {
     info complete "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22"
 } 1
 
+test parse-16.1 {Tcl_EvalEx, check termOffset is set correctly for non TCL_OK cases, bug 2535} {
+    subst {[eval {return foo}]bar}
+} foobar
 
 # cleanup
 catch {unset a}
