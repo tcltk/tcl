@@ -6257,13 +6257,21 @@ eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 # AIX remembers this path and will attempt to use it at run-time to look
 # up the Tcl library.
 
+# AIX 4.3.3 has a somewhat broken pwd (reported also by other projects)
+# that makes us have to hardware /bin/pwd for AIX here.
+if test "$system" = "AIX-4.3" ; then
+    PWD=`/bin/pwd`
+else
+    PWD=`pwd`
+fi
+
 if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
         TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
     else
         TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
     fi
-    TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
+    TCL_BUILD_LIB_SPEC="-L${PWD} ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 else
     TCL_BUILD_EXP_FILE="lib.exp"
@@ -6273,10 +6281,10 @@ else
     eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
     
     if test "$GCC" = "yes" ; then
-	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
-	TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L`pwd`"    
+	TCL_BUILD_LIB_SPEC="-Wl,-bI:${PWD}/${TCL_BUILD_EXP_FILE} -L${PWD}"
+	TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L${PWD}"    
     else
-	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
+	TCL_BUILD_LIB_SPEC="-bI:${PWD}/${TCL_BUILD_EXP_FILE}"
 	TCL_LIB_SPEC="-bI:${libdir}/${TCL_EXP_FILE}"    
     fi
 fi
@@ -6317,9 +6325,9 @@ else
     TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
 fi
 
-TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
+TCL_BUILD_STUB_LIB_SPEC="-L${PWD} ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${libdir} ${TCL_STUB_LIB_FLAG}"
-TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
+TCL_BUILD_STUB_LIB_PATH="${PWD}/${TCL_STUB_LIB_FILE}"
 TCL_STUB_LIB_PATH="${libdir}/${TCL_STUB_LIB_FILE}"
 
 # Install time header dir can be set via --includedir
