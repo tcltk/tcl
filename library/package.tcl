@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.24 2003/07/11 17:25:50 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.25 2003/07/24 08:45:18 rmax Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -368,7 +368,7 @@ proc pkg_mkIndex {args} {
 	    set cmds [lsort [$c eval array names ::tcl::newCmds]]
 	    set pkgs [$c eval set ::tcl::newPkgs]
 	    if {$doVerbose} {
-		if { !$::tcl::direct } {
+		if { !$direct } {
 		    tclLog "commands provided were $cmds"
 		}
 		tclLog "packages provided were $pkgs"
