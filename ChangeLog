@@ -1,3 +1,7 @@
+2004-11-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/catch.n: Clarify documentation on return codes. [Bug 1062647]
+
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Updates for Tcl 8.4.8 release.
