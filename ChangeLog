@@ -1,3 +1,85 @@
+2000-08-07  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* BACKPORTED FROM 8.4 (HEAD) BRANCH:
+
+	* doc/AddErrInfo.3:
+	* doc/ChnlStack.3:
+	* doc/Exit.3:
+	* doc/GetIndex.3:
+	* doc/Notifier.3:
+	* doc/Object.3:
+	* doc/RegExp.3:
+	* doc/SetResult.3:
+	* doc/SplitList.3:
+	* doc/Thread.3:  Added missing entries to NAME section.
+
+	* doc/AddErrInfo.3:
+	* doc/CrtObjCmd.3:
+	* doc/RecEvalObj.3: Changed Tcl_EvalObj to Tcl_EvalObjEx
+
+	* generic/tclCkalloc.c: Fixed some function headers.
+
+	* doc/library.n: Added entries for auto_qualify and auto_import
+	[Bug: 1271].
+	* doc/library.n: Fixed .SH NAME macro to include each function
+	documented on the page, so that mkLinks will know about the
+	functions listed there, and so that the Windows help file index
+	will get set up correctly [Bug: 1898, 5273].
+
+	* doc/expr.n: Added documentation for each of the math library
+	functions that expr supports [Bug: 1054].
+
+	* tests/clock.test: Added test for "2 days 2 hours ago" style
+	specifications.
+
+	* generic/tclDate.c: Regenerated from tclGetDate.y.
+
+	* generic/tclGetDate.y: Tweaked grammar to properly handle the
+	"ago" keyword when it follows multiple relative unit specifiers,
+	as in "2 days 2 hours ago".  [Bug: 5497].
+
+	* generic/tclClock.c (FormatClock): correct code to handle locale
+	specific return values from strftime, if any. [Bug: 3345]
+
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): attempt to
+	correct setlocale calls for XIM support and locale issues.
+	[BUG: 5422 3345 4236 2522 2521]
+
+	* library/init.tcl (auto_import): added check to see if a valid
+	pattern was coming in, to avoid simple error cases [Bug: 3326]
+
+	* doc/regsub.n: correct regsub docs [Bug: 5346]
+
+	* library/history.tcl: Corrected an off-by-one error in HistIndex,
+	which was causing [history redo] to start its search at the wrong
+	event index. [Bug: 1269].
+
+	* generic/tclPosixStr.c (Tcl_SignalMsg): clarified #defines for
+	Linux on Sparc to compile correctly. [Bug: 5364]
+
+	* doc/scan.n: minor doc fixes [Bug: 5396]
+
+	* generic/tclEnv.c: cast cleanup [Bug: 5624]
+	* win/tclWinFCmd.c: cast cleanup [Bug: 5627]
+
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): Corrected
+	caching of the index ptr to account for offsets != sizeof(char *).
+	[Bug: 5153]
+
+	* doc/RegExp.3: Replaced instances of "Tcl_GetRegExpInfo" with
+	"Tcl_RegExpGetInfo", the correct name of the function [Bug: 5901].
+
+	* tests/opt.test:
+	* library/opt0.4/optparse.tcl: Applied patch from [Bug: 5922], which 
+	corrected an incorrect use of [string match].
+
+	* doc/package.n: Corrected information about [package forget]
+	arguments [Bug: 5418].
+
+	* tests/stringObj.test: Tweaked tests to avoid hardcoded
+	high-ASCII characters (which will fail in multibyte locales);
+	instead used \uXXXX syntax. [Bug: 3842].
+
 2000-08-05  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclIOGT.c (TclChannelTransform): fixed segfault that
