@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.59 2001/09/06 17:51:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.60 2001/09/10 17:17:41 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -288,6 +288,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclWinNoBackslash, /* 24 */
     TclWinGetPlatform, /* 25 */
     TclWinSetInterfaces, /* 26 */
+    TclWinFlushDirtyChannels, /* 27 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     TclpSysAlloc, /* 0 */
