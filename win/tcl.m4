@@ -336,34 +336,34 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 # Results:
 #
 #	Defines the following vars for all compilers:
-#    		EXTRA_CFLAGS
-#    		CFLAGS_DEBUG
-#    		CFLAGS_OPTIMIZE
-#    		CFLAGS_WARNING
-#    		LDFLAGS_DEBUG
-#    		LDFLAGS_OPTIMIZE
-#    		LDFLAGS_CONSOLE
-#    		LDFLAGS_WINDOW
-#    		CC_OBJNAME
-#    		CC_EXENAME
-#    		PATHTYPE
-#    		VPSEP
-#    		CYGPATH
+#		EXTRA_CFLAGS
+#		CFLAGS_DEBUG
+#		CFLAGS_OPTIMIZE
+#		CFLAGS_WARNING
+#		LDFLAGS_DEBUG
+#		LDFLAGS_OPTIMIZE
+#		LDFLAGS_CONSOLE
+#		LDFLAGS_WINDOW
+#		CC_OBJNAME
+#		CC_EXENAME
+#		PATHTYPE
+#		VPSEP
+#		CYGPATH
 #
 #	Defines the following vars for non-gcc compilers
-#    		SHLIB_LD
-#    		SHLIB_LD_LIBS
-#    		LIBS
-#    		AR
-#    		MAKE_LIB
-#    		MAKE_EXE
-#    		MAKE_DLL
+#		SHLIB_LD
+#		SHLIB_LD_LIBS
+#		LIBS
+#		AR
+#		MAKE_LIB
+#		MAKE_EXE
+#		MAKE_DLL
 #
-#    		LIBSUFFIX
-#    		LIBPREFIX
-#    		LIBRARIES
-#    		EXESUFFIX
-#    		DLLSUFFIX
+#		LIBSUFFIX
+#		LIBPREFIX
+#		LIBRARIES
+#		EXESUFFIX
+#		DLLSUFFIX
 #
 #--------------------------------------------------------------------
 
@@ -388,7 +388,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	RC_TYPE=
 	RC_INCLUDE=--include
 	RES=res.o
- 	MAKE_LIB="\${AR} crv \[$]@"
+	MAKE_LIB="\${AR} crv \[$]@"
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"

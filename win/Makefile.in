@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.35 2000/05/18 22:19:17 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.36 2000/05/19 18:57:59 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -319,7 +319,7 @@ $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) 
 
-$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32) tclsh.res
+$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) 
 
