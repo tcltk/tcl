@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.50 2000/08/25 02:04:29 ericm Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.51 2001/04/24 20:59:18 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -98,7 +98,7 @@ typedef int (Tcl_ResolveVarProc) _ANSI_ARGS_((
     int flags, Tcl_Var *rPtr));
 
 typedef int (Tcl_ResolveCmdProc) _ANSI_ARGS_((Tcl_Interp* interp,
-    char* name, Tcl_Namespace *context, int flags,
+    CONST char* name, Tcl_Namespace *context, int flags,
     Tcl_Command *rPtr));
  
 typedef struct Tcl_ResolverInfo {
@@ -1714,11 +1714,11 @@ EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *targetName));
 EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *qualName,
+			    Tcl_Interp *interp, CONST char *qualName,
 			    Namespace *cxtNsPtr, int flags,
 			    Namespace **nsPtrPtr, Namespace **altNsPtrPtr,
 			    Namespace **actualCxtPtrPtr,
-			    char **simpleNamePtr));
+			    CONST char **simpleNamePtr));
 EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int *seekFlagPtr));
