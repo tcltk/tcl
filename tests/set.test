@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set.test,v 1.6 1999/10/29 03:04:37 hobbs Exp $
+# RCS: @(#) $Id: set.test,v 1.7 2000/01/21 02:26:09 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -205,6 +205,32 @@ test set-1.25 {TclCompileSetCmd: var is array, braced (no subs)} {
     catch {unset array}
     set {array($foo)} 5
 } 5
+test set-1.26 {TclCompileSetCmd: various array constructs} {
+    # Test all kinds of array constructs that TclCompileSetCmd
+    # may feel inclined to tamper with.
+    proc p {} {
+	set a x
+	set be(hej) 1					; # hej
+	set be($a) 1					; # x
+	set {be($a)} 1					; # $a
+	set be($a,hej) 1				; # x,hej
+	set be($a,$a) 5					; # x,x
+	set be(c($a) 1					; # c(x
+	set be(\w\w) 1					; # ww
+	set be(a:$a) [set be(x,$a)]			; # a:x
+	set be(hej,$be($a,hej),hej) 1			; # hej,1,hej
+	set be([string range hugge 0 2]) 1		; # hug
+	set be(a\ a) 1					; # a a
+	set be($a\ ,[string range hugge 1 3],hej) 1	; # x ,ugg,hej
+	set be($a,h"ej) 1				; # x,h"ej
+	set be([string range "a b c" 2 end]) 1		; # b c
+	set [string range bet 0 1](foo) 1		; # foo
+	set be([set be(a:$a)][set b\e($a)]) 1		; # 51
+	return [lsort [array names be]]
+    }
+    p
+} [lsort {hej x $a x,hej x,x c(x ww a:x hej,1,hej hug {a a} {x ,ugg,hej} x,h"ej
+{b c} foo 51}]; # " just a matching end quote
 
 test set-2.1 {set command: runtime error, bad variable name} {
     list [catch {set {"foo}} msg] $msg $errorInfo
