@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.15 2001/09/07 17:08:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.15.6.1 2001/10/18 09:03:59 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -89,7 +89,7 @@ static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 	            	    char *buf, int toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toWrite, int *errorCode));
-static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
+static Tcl_WideInt	FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
@@ -431,7 +431,7 @@ FileCloseProc(instanceData, interp)
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
     ClientData instanceData;			/* File state. */
     long offset;				/* Offset to seek to. */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.16 2001/10/17 09:28:16 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.17 2001/10/18 09:03:59 dkf Exp $
  */
 
 #ifndef _TCL
@@ -329,7 +329,9 @@ typedef int *ClientData;
 
 
 /*
- * Define Tcl_WideInt to be a type that is (at least) 64-bits wide.
+ * Define Tcl_WideInt to be a type that is (at least) 64-bits wide,
+ * and define Tcl_WideUInt to be the unsigned variant of that type
+ * (assuming that where we have one, we can have the other.)
  *
  * At the moment, this only works on Unix systems anyway...
  *
@@ -359,7 +361,8 @@ typedef int *ClientData;
  * TCL_PRINTF_SUPPORTS_LL
  */
 #ifdef TCL_WIDE_INT_TYPE
-typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
+typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
+typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #else
 #   ifndef TCL_WIDE_INT_IS_LONG
 #      if defined(_LP64)||defined(__ALPHA)||defined(__alpha)||defined(_AIX)
@@ -370,13 +373,17 @@ typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
 #         define TCL_WIDE_INT_IS_LONG
 #      else
 #         ifdef __WIN32__
-typedef __int64		Tcl_WideInt;
+typedef __int64			Tcl_WideInt;
+typedef unsigned __int64	Tcl_WideUInt;
+#            define TCL_WIDE_INT_TYPE __int64
 #         else
 /*
  * Type of 64-bit values on 32-bit systems.  I think this is the ISO
  * C99 standard way of writing this type.
  */
-typedef long long	Tcl_WideInt;
+typedef long long		Tcl_WideInt;
+typedef unsigned long long	Tcl_WideUInt;
+#            define TCL_WIDE_INT_TYPE long long
 #         endif /* __WIN32__ */
 #      endif  /* _LP64 | __ALPHA | __alpha | _AIX */
 #   endif /* !TCL_WIDE_INT_IS_LONG */
@@ -385,6 +392,7 @@ typedef long long	Tcl_WideInt;
 #ifdef TCL_WIDE_INT_IS_LONG
 #   include <sys/types.h>
 typedef long		Tcl_WideInt;
+typedef unsigned long	Tcl_WideInt;
 #   ifdef __WIN32__
 typedef long		Tcl_SeekOffset;
 #   else
@@ -398,9 +406,15 @@ typedef struct stat	Tcl_StatBuf;
 #else /* TCL_WIDE_INT_IS_LONG */
 #   define TCL_PRINTF_SUPPORTS_LL
 #   ifdef __WIN32__
+#      ifdef __BORLANDC__
+typedef struct stati64 Tcl_StatBuf;
+#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER_SIZE	1
+#      else /* __BORLANDC__ */
 typedef struct _stati64	Tcl_StatBuf;
-#      define TCL_LL_MODIFIER		"I64"
-#      define TCL_LL_MODIFIER_SIZE	3
+#         define TCL_LL_MODIFIER	"I64"
+#         define TCL_LL_MODIFIER_SIZE	3
+#      endif /* __BORLANDC__ */
 #   else
 #      include <sys/types.h>
 #      ifdef HAVE_STRUCT_STAT64
