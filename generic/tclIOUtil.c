@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.5 2003/07/16 15:28:29 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.6 2003/07/17 00:16:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -5696,6 +5696,26 @@ SetFsPathFromAny(interp, objPtr)
     } else {
 	transPtr = Tcl_FSJoinToPath(objPtr,0,NULL);
     }
+
+#if defined(__CYGWIN__) && defined(__WIN32__)
+    {
+    extern int cygwin_conv_to_win32_path 
+	_ANSI_ARGS_((CONST char *, char *));
+    char winbuf[MAX_PATH+1];
+
+    /*
+     * In the Cygwin world, call conv_to_win32_path in order to use the
+     * mount table to translate the file name into something Windows will
+     * understand.  Take care when converting empty strings!
+     */
+    name = Tcl_GetStringFromObj(transPtr, &len);
+    if (len > 0) {
+	cygwin_conv_to_win32_path(name, winbuf);
+	TclWinNoBackslash(winbuf);
+	Tcl_SetStringObj(transPtr, winbuf, -1);
+    }
+    }
+#endif /* __CYGWIN__ && __WIN32__ */
 
     /* 
      * Now we have a translated filename in 'transPtr'.  This will have
