@@ -1,4 +1,4 @@
-2003-01-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+2003-02-04  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:
 	* generic/tclEvent.c:
@@ -21,6 +21,10 @@
 	* tests/fileName.test:
 	* tests/io.test: fixed some test failures when tests are run 
 	from a directory containing spaces.
+	
+	* tests/fileSystem.test:
+	* generic/tclTest.c: added regression test for the modification
+	date setting of cross-platform file copies.
 	
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
