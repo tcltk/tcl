@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.59 2001/09/24 21:10:32 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.60 2001/09/25 16:23:55 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -120,7 +120,7 @@ EXTERN Tcl_Obj *	Tcl_DuplicateObj _ANSI_ARGS_((Tcl_Obj * objPtr));
 EXTERN void		TclFreeObj _ANSI_ARGS_((Tcl_Obj * objPtr));
 /* 31 */
 EXTERN int		Tcl_GetBoolean _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, int * boolPtr));
+				CONST char * str, int * boolPtr));
 /* 32 */
 EXTERN int		Tcl_GetBooleanFromObj _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
@@ -130,7 +130,7 @@ EXTERN unsigned char *	Tcl_GetByteArrayFromObj _ANSI_ARGS_((
 				Tcl_Obj * objPtr, int * lengthPtr));
 /* 34 */
 EXTERN int		Tcl_GetDouble _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, double * doublePtr));
+				CONST char * str, double * doublePtr));
 /* 35 */
 EXTERN int		Tcl_GetDoubleFromObj _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
@@ -141,7 +141,7 @@ EXTERN int		Tcl_GetIndexFromObj _ANSI_ARGS_((Tcl_Interp * interp,
 				char * msg, int flags, int * indexPtr));
 /* 37 */
 EXTERN int		Tcl_GetInt _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, int * intPtr));
+				CONST char * str, int * intPtr));
 /* 38 */
 EXTERN int		Tcl_GetIntFromObj _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, int * intPtr));
@@ -1563,13 +1563,13 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewStringObj) _ANSI_ARGS_((CONST char * bytes, int length, CONST char * file, int line)); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 29 */
     void (*tclFreeObj) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 30 */
-    int (*tcl_GetBoolean) _ANSI_ARGS_((Tcl_Interp * interp, char * str, int * boolPtr)); /* 31 */
+    int (*tcl_GetBoolean) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * boolPtr)); /* 31 */
     int (*tcl_GetBooleanFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int * boolPtr)); /* 32 */
     unsigned char * (*tcl_GetByteArrayFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 33 */
-    int (*tcl_GetDouble) _ANSI_ARGS_((Tcl_Interp * interp, char * str, double * doublePtr)); /* 34 */
+    int (*tcl_GetDouble) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, double * doublePtr)); /* 34 */
     int (*tcl_GetDoubleFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, double * doublePtr)); /* 35 */
     int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char ** tablePtr, char * msg, int flags, int * indexPtr)); /* 36 */
-    int (*tcl_GetInt) _ANSI_ARGS_((Tcl_Interp * interp, char * str, int * intPtr)); /* 37 */
+    int (*tcl_GetInt) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * intPtr)); /* 37 */
     int (*tcl_GetIntFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int * intPtr)); /* 38 */
     int (*tcl_GetLongFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, long * longPtr)); /* 39 */
     Tcl_ObjType * (*tcl_GetObjType) _ANSI_ARGS_((char * typeName)); /* 40 */
