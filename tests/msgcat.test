@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.11 2002/06/17 05:37:39 dgp Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.11.2.1 2003/03/26 22:56:09 dgp Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {
@@ -175,7 +175,7 @@ namespace eval ::msgcat::test {
 	namespace eval :: ::msgcat::mcset foo_BAR text3
     } {text3}
 
-    test msgcat-2.2 {mcset, namespace overlap} {
+    test msgcat-2.2.1 {mcset, namespace overlap} {
 	namespace eval baz {::msgcat::mcset  foo_BAR con1 con1baz}
     } {con1baz}
 
