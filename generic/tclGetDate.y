@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.23 2004/09/17 19:41:07 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.24 2004/09/17 22:06:24 kennykb Exp $
  */
 
 %{
@@ -38,6 +38,35 @@
 #ifdef _MSC_VER
 #pragma warning( disable : 4102 )
 #endif /* _MSC_VER */
+
+/*
+ * yyparse will accept a 'struct TclGetDateInfo' as its parameter;
+ * that's where the parsed fields will be returned.
+ */
+
+#define YYPARSE_PARAM info
+
+#define yyDSTmode (((TclGetDateInfo*)info)->dateDSTmode)
+#define yyDayOrdinal (((TclGetDateInfo*)info)->dateDayOrdinal)
+#define yyDayNumber (((TclGetDateInfo*)info)->dateDayNumber)
+#define yyMonthOrdinal (((TclGetDateInfo*)info)->dateMonthOrdinal)
+#define yyHaveDate (((TclGetDateInfo*)info)->dateHaveDate)
+#define yyHaveDay (((TclGetDateInfo*)info)->dateHaveDay)
+#define yyHaveOrdinalMonth (((TclGetDateInfo*)info)->dateHaveOrdinalMonth)
+#define yyHaveRel (((TclGetDateInfo*)info)->dateHaveRel)
+#define yyHaveTime (((TclGetDateInfo*)info)->dateHaveTime)
+#define yyHaveZone (((TclGetDateInfo*)info)->dateHaveZone)
+#define yyTimezone (((TclGetDateInfo*)info)->dateTimezone)
+#define yyDay (((TclGetDateInfo*)info)->dateDay)
+#define yyMonth (((TclGetDateInfo*)info)->dateMonth)
+#define yyYear (((TclGetDateInfo*)info)->dateYear)
+#define yyHour (((TclGetDateInfo*)info)->dateHour)
+#define yyMinutes (((TclGetDateInfo*)info)->dateMinutes)
+#define yySeconds (((TclGetDateInfo*)info)->dateSeconds)
+#define yyMeridian (((TclGetDateInfo*)info)->dateMeridian)
+#define yyRelMonth (((TclGetDateInfo*)info)->dateRelMonth)
+#define yyRelDay (((TclGetDateInfo*)info)->dateRelDay)
+#define yyRelSeconds (((TclGetDateInfo*)info)->dateRelSeconds)
 
 #include "tclInt.h"
 
@@ -91,27 +120,6 @@ typedef enum _MERIDIAN {
  */
 
 static char     *yyInput;
-static DSTMODE  yyDSTmode;
-static time_t   yyDayOrdinal;
-static time_t   yyDayNumber;
-static time_t   yyMonthOrdinal;
-static int      yyHaveDate;
-static int      yyHaveDay;
-static int      yyHaveOrdinalMonth;
-static int      yyHaveRel;
-static int      yyHaveTime;
-static int      yyHaveZone;
-static time_t   yyTimezone;
-static time_t   yyDay;
-static time_t   yyHour;
-static time_t   yyMinutes;
-static time_t   yyMonth;
-static time_t   yySeconds;
-static time_t   yyYear;
-static MERIDIAN yyMeridian;
-static time_t   yyRelMonth;
-static time_t   yyRelDay;
-static time_t   yyRelSeconds;
 static time_t  *yyRelPointer;
 
 /*
@@ -122,14 +130,15 @@ static time_t	ToSeconds _ANSI_ARGS_((time_t Hours, time_t Minutes,
 		    time_t Seconds, MERIDIAN Meridian));
 static int	Convert _ANSI_ARGS_((time_t Month, time_t Day, time_t Year,
 		    time_t Hours, time_t Minutes, time_t Seconds,
-		    MERIDIAN Meridia, DSTMODE DSTmode, time_t *TimePtr));
+		    MERIDIAN Meridia, DSTMODE DSTmode, time_t *TimePtr,
+                    VOID* info));
 static time_t	DSTcorrect _ANSI_ARGS_((time_t Start, time_t Future));
 static time_t	NamedDay _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
 		    time_t DayNumber));
 static time_t   NamedMonth _ANSI_ARGS_((time_t Start, time_t MonthOrdinal,
-                    time_t MonthNumber));
+                    time_t MonthNumber, VOID* info));
 static int	RelativeMonth _ANSI_ARGS_((time_t Start, time_t RelMonth,
-		    time_t *TimePtr));
+		    time_t *TimePtr, VOID* info));
 static int	RelativeDay _ANSI_ARGS_((time_t Start, time_t RelDay,
 		    time_t *TimePtr));
 static int	LookupWord _ANSI_ARGS_((char *buff));
@@ -656,7 +665,7 @@ ToSeconds(Hours, Minutes, Seconds, Meridian)
  *-----------------------------------------------------------------------------
  */
 static int
-Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
+Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr, info)
     time_t      Month;
     time_t      Day;
     time_t      Year;
@@ -666,6 +675,7 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
     MERIDIAN    Meridian;
     DSTMODE     DSTmode;
     time_t     *TimePtr;
+    VOID*	info;
 {
     static int  DaysInMonth[12] = {
         31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -748,10 +758,11 @@ NamedDay(Start, DayOrdinal, DayNumber)
 }
 
 static time_t
-NamedMonth(Start, MonthOrdinal, MonthNumber)
+NamedMonth(Start, MonthOrdinal, MonthNumber, info)
     time_t Start;
     time_t MonthOrdinal;
     time_t MonthNumber;
+    VOID* info;
 {
     struct tm *tm;
     time_t now;
@@ -770,7 +781,7 @@ NamedMonth(Start, MonthOrdinal, MonthNumber)
 	tm->tm_year--;
     }
     result = Convert(MonthNumber, (time_t) 1, tm->tm_year + TM_YEAR_BASE,
-	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now);
+	    (time_t) 0, (time_t) 0, (time_t) 0, MER24, DSTmaybe, &now, info);
     if (result < 0) {
 	return 0;
     }
@@ -778,10 +789,11 @@ NamedMonth(Start, MonthOrdinal, MonthNumber)
 }
 
 static int
-RelativeMonth(Start, RelMonth, TimePtr)
+RelativeMonth(Start, RelMonth, TimePtr, info)
     time_t Start;
     time_t RelMonth;
     time_t *TimePtr;
+    VOID* info;
 {
     struct tm *tm;
     time_t Month;
@@ -799,7 +811,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
     Month = Month % 12 + 1;
     result = Convert(Month, (time_t) tm->tm_mday, Year,
 	    (time_t) tm->tm_hour, (time_t) tm->tm_min, (time_t) tm->tm_sec,
-	    MER24, DSTmaybe, &Julian);
+	    MER24, DSTmaybe, &Julian, info);
 
     /*
      * The Julian time returned above is behind by one day, if "month" 
@@ -829,7 +841,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
 	tm->tm_mday--;
 	result = Convert(Month, (time_t) tm->tm_mday, Year,
 		(time_t) tm->tm_hour, (time_t) tm->tm_min, (time_t) tm->tm_sec,
-		MER24, DSTmaybe, &Julian);
+		MER24, DSTmaybe, &Julian, info);
     }
     if (result != 0) {
 	return -1;
@@ -1062,6 +1074,9 @@ TclGetDate(p, now, zone, timePtr)
     time_t Time;
     time_t tod;
     int thisyear;
+    TclGetDateInfo dateInfo;
+
+    void* info = (void*) &dateInfo;
 
     yyInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
@@ -1094,7 +1109,7 @@ TclGetDate(p, now, zone, timePtr)
     yyHaveTime = 0;
     yyHaveZone = 0;
 
-    if (yyparse() || yyHaveTime > 1 || yyHaveZone > 1 || yyHaveDate > 1 ||
+    if (yyparse(info) || yyHaveTime > 1 || yyHaveZone > 1 || yyHaveDate > 1 ||
 	    yyHaveDay > 1 || yyHaveOrdinalMonth > 1) {
         return -1;
     }
@@ -1121,7 +1136,7 @@ TclGetDate(p, now, zone, timePtr)
 	    }
 	}
 	if (Convert(yyMonth, yyDay, yyYear, yyHour, yyMinutes, yySeconds,
-		yyMeridian, yyDSTmode, &Start) < 0) {
+		yyMeridian, yyDSTmode, &Start, info) < 0) {
             return -1;
 	}
     } else {
@@ -1133,7 +1148,7 @@ TclGetDate(p, now, zone, timePtr)
     }
 
     Start += yyRelSeconds;
-    if (RelativeMonth(Start, yyRelMonth, &Time) < 0) {
+    if (RelativeMonth(Start, yyRelMonth, &Time, info) < 0) {
         return -1;
     }
     Start += Time;
@@ -1149,7 +1164,7 @@ TclGetDate(p, now, zone, timePtr)
     }
 
     if (yyHaveOrdinalMonth) {
-	tod = NamedMonth(Start, yyMonthOrdinal, yyMonth);
+	tod = NamedMonth(Start, yyMonthOrdinal, yyMonth, info);
 	Start += tod;
     }
     
