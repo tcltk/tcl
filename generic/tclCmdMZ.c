@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.77 2002/10/15 16:13:46 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.78 2002/11/12 02:25:24 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1097,7 +1097,7 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 
 	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 	for ( ; string < end; string += len) {
-	    len = Tcl_UtfToUniChar(string, &ch);
+	    len = TclUtfToUniChar(string, &ch);
 	    /* Assume Tcl_UniChar is an integral type... */
 	    hPtr = Tcl_CreateHashEntry(&charReuseTable, (char*)0 + ch, &isNew);
 	    if (isNew) {
@@ -1110,6 +1110,22 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
 	Tcl_DeleteHashTable(&charReuseTable);
+    } else if (splitCharLen == 1) {
+	char *p;
+
+	/*
+	 * Handle the special case of splitting on a single character.
+	 * This is only true for the one-char ASCII case, as one unicode
+	 * char is > 1 byte in length.
+	 */
+
+	while (*string && (p = strchr(string, (int) *splitChars)) != NULL) {
+	    objPtr = Tcl_NewStringObj(string, p - string);
+	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
+	    string = p + 1;
+	}
+	objPtr = Tcl_NewStringObj(string, end - string);
+	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
 	char *element, *p, *splitEnd;
 	int splitLen;
@@ -1123,9 +1139,9 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	splitEnd = splitChars + splitCharLen;
 
 	for (element = string; string < end; string += len) {
-	    len = Tcl_UtfToUniChar(string, &ch);
+	    len = TclUtfToUniChar(string, &ch);
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
-		splitLen = Tcl_UtfToUniChar(p, &splitChar);
+		splitLen = TclUtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
 		    objPtr = Tcl_NewStringObj(element, string - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
@@ -1711,7 +1727,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    if (chcomp != NULL) {
 		for (; string1 < end; string1 += length2, failat++) {
-		    length2 = Tcl_UtfToUniChar(string1, &ch);
+		    length2 = TclUtfToUniChar(string1, &ch);
 		    if (!chcomp(ch)) {
 			result = 0;
 			break;
@@ -2021,9 +2037,22 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    /*
-	     * Get the length in actual characters.
+	     * If we have a ByteArray object, avoid indexing in the
+	     * Utf string since the byte array contains one byte per
+	     * character.  Otherwise, use the Unicode string rep to
+	     * get the range.
 	     */
-	    length1 = Tcl_GetCharLength(objv[2]) - 1;
+
+	    if (objv[2]->typePtr == &tclByteArrayType) {
+		string1 = (char *)Tcl_GetByteArrayFromObj(objv[2], &length1);
+		length1--;
+	    } else {
+		/*
+		 * Get the length in actual characters.
+		 */
+		string1 = NULL;
+		length1 = Tcl_GetCharLength(objv[2]) - 1;
+	    }
 
 	    if ((TclGetIntForIndex(interp, objv[3], length1, &first) != TCL_OK)
 		    || (TclGetIntForIndex(interp, objv[4], length1,
@@ -2038,7 +2067,15 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		last = length1;
 	    }
 	    if (last >= first) {
-		Tcl_SetObjResult(interp, Tcl_GetRange(objv[2], first, last));
+		if (string1 != NULL) {
+		    int numBytes = last - first + 1;
+		    resultPtr = Tcl_NewByteArrayObj(
+			(unsigned char *) &string1[first], numBytes);
+		    Tcl_SetObjResult(interp, resultPtr);
+		} else {
+		    Tcl_SetObjResult(interp,
+			    Tcl_GetRange(objv[2], first, last));
+		}
 	    }
 	    break;
 	}
@@ -2228,14 +2265,14 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 */
 
 		for (p = string1; p < end; p += offset) {
-		    offset = Tcl_UtfToUniChar(p, &ch);
+		    offset = TclUtfToUniChar(p, &ch);
 		    
 		    for (check = string2; ; ) {
 			if (check >= checkEnd) {
 			    p = end;
 			    break;
 			}
-			check += Tcl_UtfToUniChar(check, &trim);
+			check += TclUtfToUniChar(check, &trim);
 			if (ch == trim) {
 			    length1 -= offset;
 			    string1 += offset;
@@ -2256,13 +2293,13 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		for (p = string1 + length1; p > end; ) {
 		    p = Tcl_UtfPrev(p, string1);
-		    offset = Tcl_UtfToUniChar(p, &ch);
+		    offset = TclUtfToUniChar(p, &ch);
 		    for (check = string2; ; ) {
 		        if (check >= checkEnd) {
 			    p = end;
 			    break;
 			}
-			check += Tcl_UtfToUniChar(check, &trim);
+			check += TclUtfToUniChar(check, &trim);
 			if (ch == trim) {
 			    length1 -= offset;
 			    break;
@@ -2307,7 +2344,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		p = Tcl_UtfAtIndex(string1, index);
 		end = string1+length1;
 		for (cur = index; p < end; cur++) {
-		    p += Tcl_UtfToUniChar(p, &ch);
+		    p += TclUtfToUniChar(p, &ch);
 		    if (!Tcl_UniCharIsWordChar(ch)) {
 			break;
 		    }
@@ -2345,7 +2382,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    if (index > 0) {
 		p = Tcl_UtfAtIndex(string1, index);
 	        for (cur = index; cur >= 0; cur--) {
-		    Tcl_UtfToUniChar(p, &ch);
+		    TclUtfToUniChar(p, &ch);
 		    if (!Tcl_UniCharIsWordChar(ch)) {
 			break;
 		    }
@@ -4266,7 +4303,7 @@ CallTraceProcedure(interp, tracePtr, cmdPtr, command, numChars, objc, objv)
  *
  *----------------------------------------------------------------------
  */
-int 
+static int
 TraceExecutionProc(ClientData clientData, Tcl_Interp *interp, 
 	      int level, CONST char* command, Tcl_Command cmdInfo,
 	      int objc, struct Tcl_Obj *CONST objv[]) {

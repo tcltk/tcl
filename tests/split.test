@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: split.test,v 1.7 2001/09/12 20:28:50 dgp Exp $
+# RCS: @(#) $Id: split.test,v 1.8 2002/11/12 02:25:24 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -60,6 +60,18 @@ test split-1.9 {basic split commands} {
 test split-1.10 {basic split commands} {
     split "a0ab1b2bbb3\000c4" ab\000c
 } {{} 0 {} 1 2 {} {} 3 {} 4}
+test split-1.11 {basic split commands} {
+    split "12,3,45" {,}
+} {12 3 45}
+test split-1.12 {basic split commands} {
+    split "\u0001ab\u0001cd\u0001\u0001ef\u0001" \1
+} {{} ab cd {} ef {}}
+test split-1.13 {basic split commands} {
+    split "12,34,56," {,}
+} {12 34 56 {}}
+test split-1.14 {basic split commands} {
+    split ",12,,,34,56," {,}
+} {{} 12 {} {} 34 56 {}}
 
 test split-2.1 {split errors} {
     list [catch split msg] $msg $errorCode
