@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacApplication.r,v 1.4 2001/11/23 01:27:16 das Exp $
+ * RCS: @(#) $Id: tclMacApplication.r,v 1.5 2001/12/27 22:46:15 das Exp $
  */
 
 #include <Types.r>
@@ -34,20 +34,22 @@
 
 #if (TCL_RELEASE_LEVEL == 2)
 #   define MINOR_VERSION (TCL_MINOR_VERSION * 16) + TCL_RELEASE_SERIAL
+#   define RELEASE_CODE 0x00
 #else
 #   define MINOR_VERSION TCL_MINOR_VERSION * 16
+#   define RELEASE_CODE TCL_RELEASE_SERIAL
 #endif
 
 resource 'vers' (1) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
-	RELEASE_LEVEL, 0x00, verUS,
+	RELEASE_LEVEL, RELEASE_CODE, verUS,
 	TCL_PATCH_LEVEL,
 	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham" "\n" "© 2001 Tcl Core Team"
 };
 
 resource 'vers' (2) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
-	RELEASE_LEVEL, 0x00, verUS,
+	RELEASE_LEVEL, RELEASE_CODE, verUS,
 	TCL_PATCH_LEVEL,
 	"Tcl Shell " TCL_PATCH_LEVEL " © 1993-2001"
 };
