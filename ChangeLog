@@ -1,3 +1,10 @@
+2001-03-29  Mo DeJong  <mdejong@redhat.com>
+
+	* tests/interp.test: Print out warning when
+	testinterpdelete command is not defined.
+	Add tests that checks to make sure a
+	child interp inherits the parent's cwd.
+
 2001-03-29  Jeff Hobbs  <jeffh@gimlet.activestate.com>
 
 	* unix/tclUnixPipe.c (TclpCreateTempFile): prevent potential race
