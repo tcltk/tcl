@@ -1,3 +1,8 @@
+2002-06-19  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TEBC): removing unused "for(;;)" loop;
+	improved comments; re-indentation.
+
 2002-06-18  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c (TEBC): 
