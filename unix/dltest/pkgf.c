@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgf.c,v 1.4 1999/04/16 00:48:06 stanton Exp $
+ * RCS: @(#) $Id: pkgf.c,v 1.5 2003/03/26 20:02:19 dgp Exp $
  */
 #include "tcl.h"
 
@@ -46,7 +46,7 @@ Pkgf_Init(interp)
 				 * to be made available. */
 {
     static char script[] = "if 44 {open non_existent}";
-    if (Tcl_InitStubs(interp, TCL_VERSION, 1) == NULL) {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
 	return TCL_ERROR;
     }
     return Tcl_Eval(interp, script);
