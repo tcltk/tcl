@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.124 2004/10/05 21:21:45 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.125 2004/10/06 00:24:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1090,7 +1090,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
      */
 
     if (strstr(hiddenCmdToken, "::") != NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+        Tcl_AppendResult(interp,
                 "cannot use namespace qualifiers in hidden command",
 		" token (rename)", (char *) NULL);
         return TCL_ERROR;
@@ -1114,8 +1114,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
      */
 
     if ( cmdPtr->nsPtr != iPtr->globalNsPtr ) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "can only hide global namespace commands",
+        Tcl_AppendResult(interp, "can only hide global namespace commands",
 		" (use rename then hide)", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1140,9 +1139,8 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     
     hPtr = Tcl_CreateHashEntry(hiddenCmdTablePtr, hiddenCmdToken, &new);
     if (!new) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "hidden command named \"", hiddenCmdToken, "\" already exists",
-                (char *) NULL);
+        Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
+		"\" already exists", (char *) NULL);
         return TCL_ERROR;
     }
 
@@ -1244,10 +1242,8 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
      */
 
     if (strstr(cmdName, "::") != NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "can not expose to a namespace ",
-		"(use expose to toplevel, then rename)",
-                 (char *) NULL);
+        Tcl_AppendResult(interp, "can not expose to a namespace ",
+		"(use expose to toplevel, then rename)", (char *) NULL);
         return TCL_ERROR;
     }
 
@@ -1261,8 +1257,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 	hPtr = Tcl_FindHashEntry(hiddenCmdTablePtr, hiddenCmdToken);
     }
     if (hPtr == (Tcl_HashEntry *) NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown hidden command \"", hiddenCmdToken,
+        Tcl_AppendResult(interp, "unknown hidden command \"", hiddenCmdToken,
                 "\"", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1280,7 +1275,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 	 * This case is theoritically impossible,
 	 * we might rather Tcl_Panic() than 'nicely' erroring out ?
 	 */
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+        Tcl_AppendResult(interp,
                 "trying to expose a non global command name space command",
 		(char *) NULL);
         return TCL_ERROR;
@@ -1296,8 +1291,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 
     hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &new);
     if (!new) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "exposed command \"", cmdName,
+        Tcl_AppendResult(interp, "exposed command \"", cmdName,
                 "\" already exists", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1818,8 +1812,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
      * then reset the object result.
      */
 
-    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	    TCL_VOLATILE);
+    (void) Tcl_GetStringResult(interp);
     
     /*
      * Decrement the ref counts for the argument objects created above,
@@ -1886,7 +1879,7 @@ TclRenameCommand(interp, oldName, newName)
 	/*flags*/ 0);
     cmdPtr = (Command *) cmd;
     if (cmdPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't ",
+	Tcl_AppendResult(interp, "can't ",
                 ((newName == NULL)||(*newName == '\0'))? "delete":"rename",
                 " \"", oldName, "\": command doesn't exist", (char *) NULL);
 	return TCL_ERROR;
@@ -1918,15 +1911,13 @@ TclRenameCommand(interp, oldName, newName)
        TCL_CREATE_NS_IF_UNKNOWN, &newNsPtr, &dummy1, &dummy2, &newTail);
 
     if ((newNsPtr == NULL) || (newTail == NULL)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		 "can't rename to \"", newName, "\": bad command name",
-    	    	 (char *) NULL);
+	Tcl_AppendResult(interp, "can't rename to \"", newName,
+		"\": bad command name", (char *) NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		 "can't rename to \"", newName,
+	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		 "\": command already exists", (char *) NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -2769,9 +2760,8 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
 
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, name);
     if (hPtr == NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "math function \"", name, "\" not known in this interpreter",
-		(char *) NULL);
+        Tcl_AppendResult(interp, "math function \"", name,
+		"\" not known in this interpreter", (char *) NULL);
 	return TCL_ERROR;
     }
     mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
@@ -2879,8 +2869,8 @@ TclInterpReady(interp)
     
     if (iPtr->flags & DELETED) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "attempt to call eval in deleted interpreter", -1);
+	Tcl_AppendResult(interp,
+	        "attempt to call eval in deleted interpreter", (char *) NULL);
 	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
 	        "attempt to call eval in deleted interpreter",
 		(char *) NULL);
@@ -2894,8 +2884,8 @@ TclInterpReady(interp)
 
     if (((iPtr->numLevels) > iPtr->maxNestingDepth) 
 	    || (TclpCheckStackSpace() == 0)) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested evaluations (infinite loop?)", -1); 
+	Tcl_AppendResult(interp,
+		"too many nested evaluations (infinite loop?)", (char *) NULL); 
 	return TCL_ERROR;
     }
 
@@ -3000,9 +2990,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	    Tcl_IncrRefCount(newObjv[0]);
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	    if (cmdPtr == NULL) {
-	        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "invalid command name \"", Tcl_GetString(objv[0]), "\"",
-		    (char *) NULL);
+	        Tcl_AppendResult(interp, "invalid command name \"",
+			Tcl_GetString(objv[0]), "\"", (char *) NULL);
 	        code = TCL_ERROR;
 	    } else {
 	        iPtr->numLevels++;
@@ -3690,8 +3679,7 @@ Tcl_Eval(interp, string)
      * back into the string result (some callers may expect it there).
      */
 
-    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	    TCL_VOLATILE);
+    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -3863,11 +3851,11 @@ ProcessUnexpectedResult(interp, returnCode)
 {
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "invoked \"break\" outside of a loop", -1);
+	Tcl_AppendResult(interp,
+		"invoked \"break\" outside of a loop", (char *) NULL);
     } else if (returnCode == TCL_CONTINUE) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"invoked \"continue\" outside of a loop", -1);
+	Tcl_AppendResult(interp,
+		"invoked \"continue\" outside of a loop", (char *) NULL);
     } else {
         char buf[30 + TCL_INTEGER_SPACE];
 
@@ -3934,8 +3922,7 @@ Tcl_ExprLong(interp, string, ptr)
 	     * then reset the object result.
 	     */
 
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */	
     } else {
@@ -3985,8 +3972,7 @@ Tcl_ExprDouble(interp, string, ptr)
 	     * then reset the object result.
 	     */
 
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */
     } else {
@@ -4035,8 +4021,7 @@ Tcl_ExprBoolean(interp, string, ptr)
 	     * then reset the object result.
 	     */
 
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
     } else {
@@ -4243,8 +4228,7 @@ TclObjInvoke(interp, objc, objv, flags)
     }
 
     if ((objc < 1) || (objv == (Tcl_Obj **) NULL)) {
-        Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "illegal argument vector", -1);
+        Tcl_AppendResult(interp, "illegal argument vector", (char *) NULL);
         return TCL_ERROR;
     }
 
@@ -4262,9 +4246,8 @@ TclObjInvoke(interp, objc, objv, flags)
 	hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
     }
     if (hPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"invalid hidden command name \"", cmdName, "\"",
-		(char *) NULL);
+	Tcl_AppendResult(interp, "invalid hidden command name \"",
+		cmdName, "\"", (char *) NULL);
 	return TCL_ERROR;
     }
     cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
@@ -4358,8 +4341,7 @@ Tcl_ExprString(interp, string)
 	     * then reset the object result.
 	     */
 	    
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
     } else {

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.51 2004/10/05 18:14:27 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.52 2004/10/06 00:24:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -135,8 +135,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 
 	if (i == (caseObjc - 1)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "extra case pattern with no body", -1);
+	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -266,8 +265,8 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	if (NULL == Tcl_ObjSetVar2(interp, varNamePtr, NULL,
 		Tcl_GetObjResult(interp), 0)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
-	            "couldn't save command result in variable", -1);
+	    Tcl_AppendResult(interp,  
+	            "couldn't save command result in variable", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -312,21 +311,14 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 		Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL, options, 0)) {
 	    Tcl_DecrRefCount(options);
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
-	            "couldn't save return options in variable", -1);
+	    Tcl_AppendResult(interp,
+	            "couldn't save return options in variable", NULL);
 	    return TCL_ERROR;
 	}
     }
 
-    /*
-     * Set the interpreter's object result to an integer object holding the
-     * integer Tcl_EvalObj result. Note that we don't bother generating a
-     * string representation. We reset the interpreter's object result
-     * to an unshared empty object and then set it to be an integer object.
-     */
-
     Tcl_ResetResult(interp);
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), result);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
@@ -479,7 +471,6 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     Tcl_Encoding encoding;
     char *string;
     Tcl_DString ds;
-    Tcl_Obj *resultPtr;
 
     static CONST char *optionStrings[] = {
 	"convertfrom", "convertto", "names", "system",
@@ -532,8 +523,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		 * it will truncate the string at the first null byte.
 		 */
 
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
 		Tcl_DStringFree(&ds);
 	    } else {
 		/*
@@ -542,10 +533,9 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 
 		string = Tcl_GetStringFromObj(data, &length);
 		Tcl_UtfToExternalDString(encoding, string, length, &ds);
-		resultPtr = Tcl_GetObjResult(interp);
-		Tcl_SetByteArrayObj(resultPtr, 
+		Tcl_SetObjResult(interp, Tcl_NewByteArrayObj( 
 			(unsigned char *) Tcl_DStringValue(&ds),
-			Tcl_DStringLength(&ds));
+			Tcl_DStringLength(&ds)));
 		Tcl_DStringFree(&ds);
 	    }
 
@@ -566,8 +556,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    if (objc == 2) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			Tcl_GetEncodingName(NULL), -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			Tcl_GetEncodingName(NULL), -1));
 	    } else {
 	        return Tcl_SetSystemEncoding(interp,
 			Tcl_GetStringFromObj(objv[2], NULL));
@@ -875,7 +865,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		tval.actime = newTime;
 		tval.modtime = buf.st_mtime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			    "could not set access time for file \"",
 			    Tcl_GetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
@@ -891,7 +881,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_atime);
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
 	    return TCL_OK;
 	}
 	case FCMD_ATTRIBUTES:
@@ -958,7 +948,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISDIR(buf.st_mode);
 	    }
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	    return TCL_OK;
 	}
     	case FCMD_ISFILE: {
@@ -972,7 +962,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISREG(buf.st_mode);
 	    }
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	    return TCL_OK;
 	}
 	case FCMD_JOIN: {
@@ -1135,7 +1125,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		tval.actime = buf.st_atime;
 		tval.modtime = newTime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			    "could not set modification time for file \"",
 			    Tcl_GetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
@@ -1151,7 +1141,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_mtime);
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
 	    return TCL_OK;
 	}
 	case FCMD_MKDIR:
@@ -1172,8 +1162,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (fileName == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetStringObj(Tcl_GetObjResult(interp), fileName, 
-			     Tcl_DStringLength(&ds));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(fileName, 
+			     Tcl_DStringLength(&ds)));
 	    Tcl_DStringFree(&ds);
 	    return TCL_OK;
 	}
@@ -1212,7 +1202,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		value = (geteuid() == buf.st_uid);
 #endif
 	    }	    
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	    return TCL_OK;
 	}
 	case FCMD_PATHTYPE:
@@ -1221,14 +1211,14 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    switch (Tcl_FSGetPathType(objv[2])) {
 	    case TCL_PATH_ABSOLUTE:
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), "absolute", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("absolute", -1));
 		break;
 	    case TCL_PATH_RELATIVE:
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), "relative", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("relative", -1));
 		break;
 	    case TCL_PATH_VOLUME_RELATIVE:
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), "volumerelative",
-			-1);
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("volumerelative", -1));
 		break;
 	    }
 	    return TCL_OK;
@@ -1313,8 +1303,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp),
-		    (Tcl_WideInt) buf.st_size);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
 	    return TCL_OK;
 	}
 	case FCMD_SPLIT: {
@@ -1326,10 +1316,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    res = Tcl_FSSplitPath(objv[2], NULL);
 	    if (res == NULL) {
 		if (interp != NULL) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-			"could not read \"", Tcl_GetString(objv[2]),
-			"\": no such file or directory", 
-			(char *) NULL);
+		    Tcl_AppendResult(interp, "could not read \"",
+			Tcl_GetString(objv[2]),
+			"\": no such file or directory", (char *) NULL);
 		}
 		return TCL_ERROR;
 	    } else {
@@ -1389,8 +1378,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetStringObj(Tcl_GetObjResult(interp), 
-		    GetTypeFromMode((unsigned short) buf.st_mode), -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    GetTypeFromMode((unsigned short) buf.st_mode), -1));
 	    return TCL_OK;
 	}
 	case FCMD_VOLUMES:
@@ -1445,7 +1434,7 @@ CheckAccess(interp, pathPtr, mode)
     } else {
 	value = (Tcl_FSAccess(pathPtr, mode) == 0);
     }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 
     return TCL_OK;
 }
@@ -1811,8 +1800,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    goto done;
 	}
 	if (varcList[i] < 1) {
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "foreach varlist is empty", -1);
+	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
@@ -1878,8 +1866,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 			Tcl_DecrRefCount(valuePtr);
 		    }
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"couldn't set loop variable: \"",
+		    Tcl_AppendResult(interp, "couldn't set loop variable: \"",
 			Tcl_GetString(varvList[i][v]), "\"", (char *) NULL);
 		    result = TCL_ERROR;
 		    goto done;
