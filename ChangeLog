@@ -1,3 +1,21 @@
+2002-11-13  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:
+	* tests/trace.test: applied patch from Hemang Levana to fix
+	[Bug #615043] in execution traces with 'return -code error'.
+	
+	* generic/tclTestObj.c:
+	* tests/stringObj.test: added 'knownBug' test for [Bug 635200]
+	* generic/tclStringObj.c: corrected typos in comments
+
+	* generic/tclFileName.c:
+	* tests/fileName.test: applied patch for bug reported against
+	tclvfs concerning handling of Windows serial ports like 'com1',
+	'lpt3' by the virtual filesystem code.
+
+	* doc/RegExp.3: clarification of the 'extendMatch' return
+	values.
+
 2002-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclUtil.c (Tcl_Backslash): use TclUtfToUniChar.

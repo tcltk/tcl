@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.78 2002/11/12 02:25:24 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.79 2002/11/13 22:11:40 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -3955,6 +3955,8 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
     int flags;			/* OR-ed bits giving operation and other
 				 * information. */
 {
+    Interp *iPtr = (Interp *) interp;
+    int stateCode;
     Tcl_SavedResult state;
     TraceCommandInfo *tcmdPtr = (TraceCommandInfo *) clientData;
     int code;
@@ -3979,8 +3981,10 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	}
 
 	/*
-	 * Execute the command.  Save the interp's result used for
-	 * the command. We discard any object result the command returns.
+	 * Execute the command.  Save the interp's result used for the
+	 * command, including the value of iPtr->returnCode which may be
+	 * modified when Tcl_Eval is invoked. We discard any object
+	 * result the command returns.
 	 *
 	 * Add the TCL_TRACE_DESTROYED flag to tcmdPtr to indicate to
 	 * other areas that this will be destroyed by us, otherwise a
@@ -3988,6 +3992,7 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	 */
 
 	Tcl_SaveResult(interp, &state);
+	stateCode = iPtr->returnCode;
 	if (flags & TCL_TRACE_DESTROYED) {
 	    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
 	}
@@ -3999,7 +4004,8 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	}
 
 	Tcl_RestoreResult(interp, &state);
-
+	iPtr->returnCode = stateCode;
+	
 	Tcl_DStringFree(&cmd);
     }
     /*
@@ -4358,6 +4364,7 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	 */
 	if (call) {
 	    Tcl_SavedResult state;
+	    int stateCode;
 	    Tcl_DString cmd;
 	    Tcl_DString sub;
 	    int i;
@@ -4406,10 +4413,13 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	    
 	    /*
 	     * Execute the command.  Save the interp's result used for
-	     * the command. We discard any object result the command returns.
+	     * the command, including the value of iPtr->returnCode which
+	     * may be modified when Tcl_Eval is invoked.  We discard any
+	     * object result the command returns.
 	     */
 
 	    Tcl_SaveResult(interp, &state);
+	    stateCode = iPtr->returnCode;
 
 	    tcmdPtr->flags |= TCL_TRACE_EXEC_IN_PROGRESS;
 	    iPtr->flags    |= INTERP_TRACE_IN_PROGRESS;
@@ -4429,6 +4439,7 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
             if (traceCode == TCL_OK) {
 		/* Restore result if trace execution was successful */
 		Tcl_RestoreResult(interp, &state);
+		iPtr->returnCode = stateCode;
             }
 
 	    Tcl_DStringFree(&cmd);

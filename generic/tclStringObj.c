@@ -11,7 +11,7 @@
  *	of properly formed UTF-8 characters.  There is a one-to-one map between
  *	Unicode and UTF characters.  Because Unicode characters have a fixed
  *	width, operations such as indexing operate on Unicode data.  The String
- *	ojbect is opitmized for the case where each UTF char in a string is
+ *	object is optimized for the case where each UTF char in a string is
  *	only one byte.  In this case, we store the value of numChars, but we
  *	don't store the Unicode data (unless Tcl_GetUnicode is explicitly
  *	called).
@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.25 2002/11/12 02:26:15 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.26 2002/11/13 22:11:41 vincentdarley Exp $ */
 
 #include "tclInt.h"
 
@@ -1695,7 +1695,7 @@ SetStringFromAny(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
     /*
-     * The Unicode object is opitmized for the case where each UTF char
+     * The Unicode object is optimized for the case where each UTF char
      * in a string is only one byte.  In this case, we store the value of
      * numChars, but we don't copy the bytes to the unicodeObj->unicode.
      */
