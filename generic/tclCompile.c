@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.25 2001/09/19 18:18:16 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.25.2.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -339,7 +339,8 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     register AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
-    int length, nested, result;
+    Tcl_Length length;
+    int nested, result;
     char *string;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -3326,7 +3327,7 @@ TclPrintObject(outFile, objPtr, maxChars)
     int maxChars;		/* Maximum number of chars to print. */
 {
     char *bytes;
-    int length;
+    Tcl_Length length;
     
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     TclPrintSource(outFile, bytes, TclMin(length, maxChars));

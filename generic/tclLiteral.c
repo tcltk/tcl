@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8 1999/08/19 02:59:10 hobbs Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.16.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -364,7 +364,8 @@ TclLookupLiteralEntry(interp, objPtr)
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
     register LiteralEntry *entryPtr;
     char *bytes;
-    int length, globalHash;
+    Tcl_Length length;
+    int globalHash;
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
@@ -408,7 +409,8 @@ TclHideLiteral(interp, envPtr, index)
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &(envPtr->localLitTable);
-    int localHash, length;
+    int localHash;
+    Tcl_Length length;
     char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -678,7 +680,8 @@ TclReleaseLiteral(interp, objPtr)
     register LiteralEntry *entryPtr, *prevPtr;
     ByteCode* codePtr;
     char *bytes;
-    int length, index;
+    Tcl_Length length;
+    int index;
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
@@ -830,7 +833,8 @@ RebuildLiteralTable(tablePtr)
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     char *bytes;
-    int oldSize, count, index, length;
+    int oldSize, count, index;
+    Tcl_Length length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64.6.1 2001/09/25 10:24:07 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.2 2001/09/25 16:49:56 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1818,7 +1818,7 @@ EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix, 
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-							 int *lenPtr));
+							 Tcl_Length *lenPtr));
 EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int 		TclCrossFilesystemCopy _ANSI_ARGS_((Tcl_Interp *interp, 

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24 2001/08/27 02:14:08 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.6.1 2001/09/25 16:49:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -504,13 +504,13 @@ TclpSetInitialEncodings()
 
 	pathPtr = TclGetLibraryPath();
 	if (pathPtr != NULL) {
-	    int objc;
+	    Tcl_Length objc;
 	    Tcl_Obj **objv;
 	    
 	    objc = 0;
 	    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
 	    for (i = 0; i < objc; i++) {
-		int length;
+		Tcl_Length length;
 		char *string;
 		Tcl_DString ds;
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.3 2001/03/30 23:06:40 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.3.12.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 /*
@@ -367,12 +367,12 @@ typedef struct GetsState {
     Tcl_EncodingState state;	/* The encoding state just before the last
 				 * external to UTF-8 conversion in
 				 * FilterInputBytes(). */
-    int rawRead;		/* The number of bytes removed from bufPtr
+    Tcl_Length rawRead;		/* The number of bytes removed from bufPtr
 				 * in the last call to FilterInputBytes(). */
-    int bytesWrote;		/* The number of bytes of UTF-8 data
+    Tcl_Length bytesWrote;	/* The number of bytes of UTF-8 data
 				 * appended to objPtr during the last call to
 				 * FilterInputBytes(). */
-    int charsWrote;		/* The corresponding number of UTF-8
+    Tcl_Length charsWrote;	/* The corresponding number of UTF-8
 				 * characters appended to objPtr during the
 				 * last call to FilterInputBytes(). */
     int totalChars;		/* The total number of UTF-8 characters

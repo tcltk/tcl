@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.45 2001/09/13 23:49:57 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.45.2.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -467,8 +467,9 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int idx, result, cflags, all, wlen, wsublen, numMatches, offset;
+    int idx, result, cflags, all, numMatches, offset;
     int start, end, subStart, subEnd, match;
+    Tcl_Length wlen, wsublen;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr;
@@ -788,7 +789,8 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int optionLen, argLen, code, result;
+    Tcl_Length optionLen, argLen;
+    int code, result;
 
     if (iPtr->errorInfo != NULL) {
 	ckfree(iPtr->errorInfo);
@@ -919,7 +921,7 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
     Tcl_UniChar ch;
     int len;
     char *splitChars, *string, *end;
-    int splitCharLen, stringLen;
+    Tcl_Length splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
     if (objc == 2) {
@@ -1029,7 +1031,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     int index, left, right;
     Tcl_Obj *resultPtr;
     char *string1, *string2;
-    int length1, length2;
+    Tcl_Length length1, length2;
     static char *options[] = {
 	"bytelength",	"compare",	"equal",	"first",
 	"index",	"is",		"last",		"length",
@@ -1718,7 +1720,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    Tcl_Obj **mapElemv;
 	    Tcl_UniChar *ustring1, *ustring2, *p, *end;
 	    int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar*,
-					CONST Tcl_UniChar*, unsigned long));
+					CONST Tcl_UniChar*, Tcl_Length));
 
 	    if (objc < 4 || objc > 5) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "?-nocase? charMap string");
@@ -1780,7 +1782,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * algorithm is otherwise identical to the multi-pair case.
 		 * This will be >30% faster on larger strings.
 		 */
-		int mapLen;
+		Tcl_Length mapLen;
 		Tcl_UniChar *mapString;
 
 		ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
@@ -1806,8 +1808,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		Tcl_UniChar **mapStrings =
 		    (Tcl_UniChar **) ckalloc((mapElemc * 2)
 			    * sizeof(Tcl_UniChar *));
-		int *mapLens =
-		    (int *) ckalloc((mapElemc * 2) * sizeof(int));
+		Tcl_Length *mapLens =
+		    (Tcl_Length *) ckalloc((mapElemc*2) * sizeof(Tcl_Length));
 		/*
 		 * Precompute pointers to the unicode string and length.
 		 * This saves us repeated function calls later,
@@ -2723,7 +2725,8 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int optionIndex, commandLength;
+    int optionIndex;
+    Tcl_Length commandLength;
     char *name, *flagOps, *command, *p;
     size_t length;
     /* Main sub commands to 'trace' */
@@ -2966,7 +2969,8 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int commandLength, index;
+    Tcl_Length commandLength;
+    int index;
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
@@ -3136,7 +3140,8 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int commandLength, index;
+    Tcl_Length commandLength;
+    int index;
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
@@ -3660,10 +3665,10 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	    code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
 	    if (code != TCL_OK) {	     /* copy error msg to result */
 		char *string;
-		int length;
+		Tcl_Length length;
 		
 		string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
-		tvarPtr->errMsg = (char *) ckalloc((unsigned) (length + 1));
+		tvarPtr->errMsg = (char *) ckalloc(length + 1);
 		memcpy(tvarPtr->errMsg, string, (size_t) (length + 1));
 		result = tvarPtr->errMsg;
 	    }

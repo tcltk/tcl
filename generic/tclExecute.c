@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34 2001/09/21 19:09:03 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -256,7 +256,7 @@ static char *		GetOpcodeName _ANSI_ARGS_((unsigned char *pc));
 static ExceptionRange *	GetExceptRangeForPc _ANSI_ARGS_((unsigned char *pc,
 			    int catchOnly, ByteCode* codePtr));
 static char *		GetSrcInfoForPc _ANSI_ARGS_((unsigned char *pc,
-        		    ByteCode* codePtr, int *lengthPtr));
+        		    ByteCode* codePtr, Tcl_Length *lengthPtr));
 static void		GrowEvaluationStack _ANSI_ARGS_((ExecEnv *eePtr));
 static void		IllegalExprOperandType _ANSI_ARGS_((
 			    Tcl_Interp *interp, unsigned char *pc,
@@ -563,7 +563,7 @@ TclExecuteByteCode(interp, codePtr)
 #endif
     Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr;
     char *bytes;
-    int length;
+    Tcl_Length length;
     long i;
 
     /*
@@ -824,7 +824,7 @@ TclExecuteByteCode(interp, codePtr)
 		            tracePtr = nextTracePtr) {
 			nextTracePtr = tracePtr->nextPtr;
 			if (iPtr->numLevels <= tracePtr->level) {
-			    int numChars;
+			    Tcl_Length numChars;
 			    char *cmd = GetSrcInfoForPc(pc, codePtr,
 				    &numChars);
 			    if (cmd != NULL) {
@@ -2089,7 +2089,7 @@ TclExecuteByteCode(interp, codePtr)
 		    iResult = (*pc == INST_STR_EQ);
 		} else {
 		    char *s1, *s2;
-		    int s1len, s2len;
+		    Tcl_Length s1len, s2len;
 
 		    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
@@ -2123,7 +2123,8 @@ TclExecuteByteCode(interp, codePtr)
 		 * String compare
 		 */
 		char *s1, *s2;
-		int s1len, s2len, iResult;
+		Tcl_Length s1len, s2len;
+		int iResult;
 
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
@@ -2192,7 +2193,7 @@ TclExecuteByteCode(interp, codePtr)
 
        case INST_STR_LEN:
 	    {
-		int length1;
+		Tcl_Length length1;
 		 
 		valuePtr = POP_OBJECT();
 
@@ -3268,8 +3269,9 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_Obj *listPtr;
 		List *listRepPtr;
 		Var *iterVarPtr, *listVarPtr;
-		int iterNum, listTmpIndex, listLen, numVars;
+		int iterNum, listTmpIndex, numVars;
 		int varIndex, valIndex, continueLoop, j;
+		Tcl_Length listLen;
 
 		/*
 		 * Increment the temp holding the loop iteration number.
@@ -3725,7 +3727,7 @@ CallTraceProcedure(interp, tracePtr, cmdPtr, command, numChars, objc, objv)
     Interp *iPtr = (Interp *) interp;
     register char **argv;
     register int i;
-    int length;
+    Tcl_Length length;
     char *p;
 
     /*
@@ -3791,7 +3793,7 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
 				 * in codePtr's code. */
     ByteCode *codePtr;		/* The bytecode sequence in which to look
 				 * up the command source for the pc. */
-    int *lengthPtr;		/* If non-NULL, the location where the
+    Tcl_Length *lengthPtr;	/* If non-NULL, the location where the
 				 * length of the command's source should be
 				 * stored. If NULL, no length is stored. */
 {
@@ -4007,7 +4009,8 @@ VerifyExprObjType(interp, objPtr)
 	    (objPtr->typePtr == &tclDoubleType)) {
 	return TCL_OK;
     } else {
-	int length, result = TCL_OK;
+	Tcl_Length length;
+	int result = TCL_OK;
 	char *s = Tcl_GetStringFromObj(objPtr, &length);
 	
 	if (TclLooksLikeInt(s, length)) {

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.35 2001/09/01 00:51:31 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.35.6.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2762,7 +2762,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
     int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
 					 * at all were executed. */
-    int numSrcBytes;
+    Tcl_Length numSrcBytes;
     int result;
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
 					 * in case TCL_EVAL_GLOBAL was set. */
@@ -3081,7 +3081,7 @@ RecordTracebackInfo(interp, objPtr, numSrcBytes)
     Interp *iPtr = (Interp *) interp;
     char buf[200];
     char *ellipsis, *bytes;
-    int length;
+    Tcl_Length length;
 
     /*
      * Decide how much of the command to print in the error message
@@ -3599,7 +3599,8 @@ TclObjInvoke(interp, objc, objv, flags)
     int localObjc;		/* Used to invoke "unknown" if the */
     Tcl_Obj **localObjv = NULL;	/* command is not found. */
     register int i;
-    int length, result;
+    Tcl_Length length;
+    int result;
     char *bytes;
 
     if (interp == (Tcl_Interp *) NULL) {
@@ -3854,7 +3855,8 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
     LiteralEntry *entryPtr;
     Tcl_Obj *saveObjPtr;
     char *string;
-    int length, i, result;
+    Tcl_Length length;
+    int i, result;
 
     /*
      * First handle some common expressions specially.

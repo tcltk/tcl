@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23 2001/06/28 01:22:21 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -59,9 +59,12 @@ static int		SetDoubleFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 static int		SetIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
+static int		SetWideIntFromAny _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
 static void		UpdateStringOfBoolean _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfDouble _ANSI_ARGS_((Tcl_Obj *objPtr));
 static void		UpdateStringOfInt _ANSI_ARGS_((Tcl_Obj *objPtr));
+static void		UpdateStringOfWideInt _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 /*
  * Prototypes for the array hash key methods.
@@ -106,6 +109,14 @@ Tcl_ObjType tclIntType = {
     (Tcl_DupInternalRepProc *) NULL,	/* dupIntRepProc */
     UpdateStringOfInt,			/* updateStringProc */
     SetIntFromAny			/* setFromAnyProc */
+};
+
+Tcl_ObjType tclWideIntType = {
+    "wideInt",				/* name */
+    (Tcl_FreeInternalRepProc *) NULL,   /* freeIntRepProc */
+    (Tcl_DupInternalRepProc *) NULL,	/* dupIntRepProc */
+    UpdateStringOfWideInt,		/* updateStringProc */
+    SetWideIntFromAny			/* setFromAnyProc */
 };
 
 /*
@@ -758,11 +769,12 @@ Tcl_GetString(objPtr)
 
 char *
 Tcl_GetStringFromObj(objPtr, lengthPtr)
-    register Tcl_Obj *objPtr;	/* Object whose string rep byte pointer
-				 * should be returned. */
-    register int *lengthPtr;	/* If non-NULL, the location where the
-				 * string rep's byte array length should be
-				 * stored. If NULL, no length is stored. */
+    register Tcl_Obj *objPtr;	    /* Object whose string rep byte pointer
+				     * should be returned. */
+    register Tcl_Length *lengthPtr; /* If non-NULL, the location where the
+				     * string rep's byte array length should
+				     * be stored. If NULL, no length is
+				     * stored. */
 {
     if (objPtr->bytes == NULL) {
 	if (objPtr->typePtr->updateStringProc == NULL) {
@@ -1022,7 +1034,8 @@ SetBooleanFromAny(interp, objPtr)
     char *string, *end;
     register char c;
     char lowerCase[10];
-    int newBool, length;
+    int newBool;
+    Tcl_Length length;
     register int i;
     double dbl;
 
@@ -1384,7 +1397,7 @@ SetDoubleFromAny(interp, objPtr)
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     double newDouble;
-    int length;
+    Tcl_Length length;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
@@ -1664,7 +1677,7 @@ SetIntFromAny(interp, objPtr)
 {
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
-    int length;
+    Tcl_Length length;
     register char *p;
     long newLong;
 
@@ -1985,6 +1998,372 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
     result = SetIntFromAny(interp, objPtr);
     if (result == TCL_OK) {
 	*longPtr = objPtr->internalRep.longValue;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetWideIntFromAny --
+ *
+ *	Attempt to generate an integer internal form for the Tcl object
+ *	"objPtr".
+ *
+ * Results:
+ *	The return value is a standard object Tcl result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	If no error occurs, an int is stored as "objPtr"s internal
+ *	representation. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetWideIntFromAny(interp, objPtr)
+    Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
+    register Tcl_Obj *objPtr;	/* The object to convert. */
+{
+    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
+    char *string, *end;
+    Tcl_Length length;
+    register char *p;
+    Tcl_WideInt newWide;
+
+    /*
+     * Get the string representation. Make it up-to-date if necessary.
+     */
+
+    string = Tcl_GetStringFromObj(objPtr, &length);
+
+    /*
+     * Now parse "objPtr"s string as an int. We use an implementation here
+     * that doesn't report errors in interp if interp is NULL. Note: use
+     * strtoull instead of strtoll for integer conversions to allow full-size
+     * unsigned numbers, but don't depend on strtoull to handle sign
+     * characters; it won't in some implementations.
+     */
+
+    errno = 0;
+    for (p = string;  isspace(UCHAR(*p));  p++) { /* INTL: ISO space. */
+	/* Empty loop body. */
+    }
+    if (*p == '-') {
+	p++;
+	newWide = -((Tcl_WideInt)strtoull(p, &end, 0));
+    } else if (*p == '+') {
+	p++;
+	newWide = strtoull(p, &end, 0);
+    } else {
+	newWide = strtoull(p, &end, 0);
+    }
+    if (end == p) {
+	badInteger:
+	if (interp != NULL) {
+	    /*
+	     * Must copy string before resetting the result in case a caller
+	     * is trying to convert the interpreter's result to an int.
+	     */
+	    
+	    char buf[100];
+	    sprintf(buf, "expected wide integer but got \"%.50s\"", string);
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	    TclCheckBadOctal(interp, string);
+	}
+	return TCL_ERROR;
+    }
+    if (errno == ERANGE) {
+	if (interp != NULL) {
+	    char *s = "integer value too large to represent";
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    /*
+     * Make sure that the string has no garbage after the end of the int.
+     */
+    
+    while ((end < (string+length))
+	    && isspace(UCHAR(*end))) { /* INTL: ISO space. */
+	end++;
+    }
+    if (end != (string+length)) {
+	goto badInteger;
+    }
+
+    /*
+     * The conversion to int succeeded. Free the old internalRep before
+     * setting the new one. We do this as late as possible to allow the
+     * conversion code, in particular Tcl_GetStringFromObj, to use that old
+     * internalRep.
+     */
+
+    if ((oldTypePtr != NULL) &&	(oldTypePtr->freeIntRepProc != NULL)) {
+	oldTypePtr->freeIntRepProc(objPtr);
+    }
+    
+    objPtr->internalRep.wideValue = newWide;
+    objPtr->typePtr = &tclWideIntType;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfWideInt --
+ *
+ *	Update the string representation for a wide integer object.
+ *	Note: This procedure does not free an existing old string rep
+ *	so storage will be lost if this has not already been done. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string is set to a valid string that results from
+ *	the wideInt-to-string conversion.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfWideInt(objPtr)
+    register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
+{
+    char buffer[TCL_INTEGER_SPACE*2+2];
+    register char *start;
+    register int len;
+    register Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
+
+    buffer[TCL_INTEGER_SPACE*2+1] = '\0';
+    /*** lltostr() is a weird function... ***/
+    if (wideVal < 0) {
+	wideVal = -wideVal;
+	if (wideVal == 0) {
+	    start = ulltostr(((unsigned long long)LLONG_MAX)+1,
+			     buffer+(TCL_INTEGER_SPACE*2+1));
+	} else {
+	    start = lltostr(wideVal, buffer+(TCL_INTEGER_SPACE*2+1));
+	}
+	start--;
+	*start = '-';
+    } else {
+	start = lltostr(wideVal, buffer+(TCL_INTEGER_SPACE*2+1));
+    }
+    len = (int)(buffer + (TCL_INTEGER_SPACE*2+1) - start);
+    objPtr->bytes = ckalloc((unsigned) len + 1);
+    strcpy(objPtr->bytes, buffer);
+    objPtr->length = len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_NewWideIntObj --
+ *
+ *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
+ *	Tcl_NewWideIntObj to create a new 64-bit integer object end up calling
+ *	the debugging procedure Tcl_DbNewWideIntObj instead.
+ *
+ *	Otherwise, if the client is compiled without TCL_MEM_DEBUG defined,
+ *	calls to Tcl_NewWideIntObj result in a call to one of the two
+ *	Tcl_NewWideIntObj implementations below. We provide two implementations
+ *	so that the Tcl core can be compiled to do memory debugging of the 
+ *	core even if a client does not request it for itself.
+ *
+ * Results:
+ *	The newly created object is returned. This object will have an
+ *	invalid string representation. The returned object has ref count 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+#undef Tcl_NewWideIntObj
+
+Tcl_Obj *
+Tcl_NewWideIntObj(wideValue)
+    register Tcl_WideInt wideValue;	/* Wide integer used to initialize
+					 * the new object. */
+{
+    return Tcl_DbNewWideIntObj(wideValue, "unknown", 0);
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_NewWideIntObj(wideValue)
+    register Tcl_WideInt wideValue;	/* Wide integer used to initialize
+					 * the new object. */
+{
+    register Tcl_Obj *objPtr;
+
+    TclNewObj(objPtr);
+    objPtr->bytes = NULL;
+    
+    objPtr->internalRep.wideValue = wideValue;
+    objPtr->typePtr = &tclWideIntType;
+    return objPtr;
+}
+#endif /* if TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DbNewWideIntObj --
+ *
+ *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
+ *	Tcl_NewWideIntObj to create new wide integer end up calling
+ *	the debugging procedure Tcl_DbNewWideIntObj instead. We
+ *	provide two implementations of Tcl_DbNewWideIntObj so that
+ *	whether the Tcl core is compiled to do memory debugging of the
+ *	core is independent of whether a client requests debugging for
+ *	itself.
+ *
+ *	When the core is compiled with TCL_MEM_DEBUG defined,
+ *	Tcl_DbNewWideIntObj calls Tcl_DbCkalloc directly with the file
+ *	name and line number from its caller. This simplifies
+ *	debugging since then the checkmem command will report the
+ *	caller's file name and line number when reporting objects that
+ *	haven't been freed.
+ *
+ *	Otherwise, when the core is compiled without TCL_MEM_DEBUG defined,
+ *	this procedure just returns the result of calling Tcl_NewWideIntObj.
+ *
+ * Results:
+ *	The newly created wide integer object is returned. This object
+ *	will have an invalid string representation. The returned object has
+ *	ref count 0.
+ *
+ * Side effects:
+ *	Allocates memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+
+Tcl_Obj *
+Tcl_DbNewWideIntObj(wideValue, file, line)
+    register Tcl_WideInt wideValue;	/* Wide integer used to initialize
+					 * the new object. */
+    CONST char *file;			/* The name of the source file
+					 * calling this procedure; used for
+					 * debugging. */
+    int line;				/* Line number in the source file;
+					 * used for debugging. */
+{
+    register Tcl_Obj *objPtr;
+
+    TclDbNewObj(objPtr, file, line);
+    objPtr->bytes = NULL;
+    
+    objPtr->internalRep.wideValue = wideValue;
+    objPtr->typePtr = &tclWideIntType;
+    return objPtr;
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_DbNewWideIntObj(wideValue, file, line)
+    register Tcl_WideInt wideValue;	/* Long integer used to initialize
+					 * the new object. */
+    CONST char *file;			/* The name of the source file
+					 * calling this procedure; used for
+					 * debugging. */
+    int line;				/* Line number in the source file;
+					 * used for debugging. */
+{
+    return Tcl_NewWideIntObj(wideValue);
+}
+#endif /* TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetWideIntObj --
+ *
+ *	Modify an object to be a wide integer object and to have the
+ *	specified wide integer value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's old string rep, if any, is freed. Also, any old
+ *	internal rep is freed. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetWideIntObj(objPtr, wideValue)
+    register Tcl_Obj *objPtr;		/* Object w. internal rep to init. */
+    register Tcl_WideInt wideValue;	/* Wide integer used to initialize
+					 * the object's value. */
+{
+    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
+
+    if (Tcl_IsShared(objPtr)) {
+	panic("Tcl_SetWideIntObj called with shared object");
+    }
+
+    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
+	oldTypePtr->freeIntRepProc(objPtr);
+    }
+    
+    objPtr->internalRep.wideValue = wideValue;
+    objPtr->typePtr = &tclWideIntType;
+    Tcl_InvalidateStringRep(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetWideIntFromObj --
+ *
+ *	Attempt to return a wide integer from the Tcl object "objPtr". If
+ *	the object is not already a wide int object, an attempt will be made
+ *	to convert it to one.
+ *
+ * Results:
+ *	The return value is a standard Tcl object result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	If the object is not already an int object, the conversion will free
+ *	any old internal representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
+    Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
+    register Tcl_Obj *objPtr;	/* Object from which to get a wide int. */
+    register Tcl_WideInt *wideIntPtr; /* Place to store resulting long. */
+{
+    register int result;
+    
+    if (objPtr->typePtr == &tclWideIntType) {
+	*wideIntPtr = objPtr->internalRep.wideValue;
+	return TCL_OK;
+    }
+    result = SetWideIntFromAny(interp, objPtr);
+    if (result == TCL_OK) {
+	*wideIntPtr = objPtr->internalRep.wideValue;
     }
     return result;
 }

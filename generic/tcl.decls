@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.58.2.2 2001/09/25 10:24:06 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.58.2.3 2001/09/25 16:49:55 dkf Exp $
 
 library tcl
 
@@ -186,14 +186,15 @@ declare 44 generic {
 }
 declare 45 generic {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr, \
-	    int *objcPtr, Tcl_Obj ***objvPtr)
+	    Tcl_Length *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 generic {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index, \
 	    Tcl_Obj **objPtrPtr)
 }
 declare 47 generic {
-    int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr, int *intPtr)
+    int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
+			  Tcl_Length *lengthPtr)
 }
 declare 48 generic {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first, \
@@ -1628,7 +1629,7 @@ declare 460 generic {
     Tcl_Obj* Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
 }
 declare 461 generic {
-    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, int *lenPtr)
+    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, Tcl_Length *lenPtr)
 }
 declare 462 generic {
     int Tcl_FSEqualPaths(Tcl_Obj* firstPtr, Tcl_Obj* secondPtr)

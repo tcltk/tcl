@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.33 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.33.6.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1937,7 +1937,8 @@ Tcl_JoinObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
     char *joinString, *bytes;
-    int joinLength, listLen, length, i, result;
+    Tcl_Length joinLength, length, listLen, i;
+    int result;
     Tcl_Obj **elemPtrs;
     Tcl_Obj *resObjPtr;
 
@@ -2005,7 +2006,8 @@ Tcl_LindexObjCmd(dummy, interp, objc, objv)
 {
     Tcl_Obj *listPtr;
     Tcl_Obj **elemPtrs;
-    int listLen, index, result;
+    Tcl_Length listLen;
+    int index, result;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index");
@@ -2087,7 +2089,8 @@ Tcl_LinsertObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    int index, isDuplicate, len, result;
+    int index, isDuplicate, result;
+    Tcl_Length len;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index element ?element ...?");
@@ -2210,7 +2213,8 @@ Tcl_LlengthObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     register Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int listLen, result;
+    Tcl_Length listLen;
+    int result;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
@@ -2258,7 +2262,8 @@ Tcl_LrangeObjCmd(notUsed, interp, objc, objv)
 {
     Tcl_Obj *listPtr;
     Tcl_Obj **elemPtrs;
-    int listLen, first, last, numElems, result;
+    Tcl_Length listLen;
+    int first, last, numElems, result;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
@@ -2352,7 +2357,8 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Tcl_Obj *listPtr;
-    int isDuplicate, first, last, listLen, numToDelete, result;
+    int isDuplicate, first, last, numToDelete, result;
+    Tcl_Length listLen;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2465,9 +2471,10 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument values. */
 {
     char *bytes, *patternBytes;
-    int i, match, mode, index, result, listc, length, elemLen;
+    int i, match, mode, index, result;
     int dataType, isIncreasing, lower, upper, patInt, objInt;
     double patDouble, objDouble;
+    Tcl_Length length, elemLen, listc;
     Tcl_Obj *patObj, **listv;
     static char *options[] = {
 	"-ascii", "-decreasing", "-dictionary", "-exact", "-increasing", 
@@ -2744,7 +2751,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 {
     int i, index, unique;
     Tcl_Obj *resultPtr;
-    int length;
+    Tcl_Length length;
     Tcl_Obj *cmdPtr, **listObjPtrs;
     SortElement *elementArray;
     SortElement *elementPtr;        
@@ -3050,7 +3057,8 @@ SortCompare(objPtr1, objPtr2, infoPtr)
     SortInfo *infoPtr;                  /* Information passed from the
                                          * top-level "lsort" command */
 {
-    int order, listLen, index;
+    int order, index;
+    Tcl_Length listLen;
     Tcl_Obj *objPtr;
     char buffer[TCL_INTEGER_SPACE];
 
@@ -3154,7 +3162,7 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	}
     } else {
 	Tcl_Obj **objv, *paramObjv[2];
-	int objc;
+	Tcl_Length objc;
 
 	paramObjv[0] = objPtr1;
 	paramObjv[1] = objPtr2;

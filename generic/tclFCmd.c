@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.1 2001/09/25 10:24:07 dkf Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.2 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -812,7 +812,7 @@ TclFileAttrsCmd(interp, objc, objv)
     int result;
     char ** attributeStrings;
     Tcl_Obj* objStrings = NULL;
-    int numObjStrings = -1;
+    Tcl_Length numObjStrings = (Tcl_Length)-1;
     Tcl_Obj *filePtr;
     
     if (objc < 3) {
@@ -929,7 +929,7 @@ TclFileAttrsCmd(interp, objc, objv)
     result = TCL_OK;
 
     end:
-    if (numObjStrings != -1) {
+    if (numObjStrings != (Tcl_Length)-1) {
 	/* Free up the array we allocated */
 	ckfree((char*)attributeStrings);
 	/* 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.11 2000/08/18 18:02:16 ericm Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.11.12.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include "tcl.h"
@@ -58,10 +58,10 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 {
     Tcl_Obj *resultPtr;
     int index;
+    Tcl_Length length;
     Tcl_Obj *CONST *objPtr;
     int useGMT = 0;
     char *format = "%a %b %d %X %Z %Y";
-    int dummy;
     unsigned long baseClock, clockVal;
     long zone;
     Tcl_Obj *baseObjPtr = NULL;
@@ -90,9 +90,8 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 	    int forceMilli = 0;
 
 	    if (objc == 3) {
-		format = Tcl_GetStringFromObj(objv[2], &index);
-		if (strncmp(format, "-milliseconds",
-			(unsigned int) index) == 0) {
+		format = Tcl_GetStringFromObj(objv[2], &length);
+		if (strncmp(format, "-milliseconds", length) == 0) {
 		    forceMilli = 1;
 		} else {
 		    Tcl_AppendStringsToObj(resultPtr,
@@ -140,7 +139,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		}
 		switch (index) {
 		    case 0:		/* -format */
-			format = Tcl_GetStringFromObj(objPtr[1], &dummy);
+			format = Tcl_GetStringFromObj(objPtr[1], &length);
 			break;
 		    case 1:		/* -gmt */
 			if (Tcl_GetBooleanFromObj(interp, objPtr[1],
@@ -206,7 +205,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		zone = TclpGetTimeZone((unsigned long) baseClock);
 	    }
 
-	    scanStr = Tcl_GetStringFromObj(objv[2], &dummy);
+	    scanStr = Tcl_GetStringFromObj(objv[2], &length);
 	    Tcl_MutexLock(&clockMutex);
 	    if (TclGetDate(scanStr, (unsigned long) baseClock, zone,
 		    (unsigned long *) &clockVal) < 0) {

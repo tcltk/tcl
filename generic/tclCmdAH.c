@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.1 2001/09/25 10:24:06 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.2 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -421,7 +421,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int index, length;
+    int index;
+    Tcl_Length length;
     Tcl_Encoding encoding;
     char *string;
     Tcl_DString ds;
@@ -550,7 +551,7 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
 {
     Interp *iPtr = (Interp *) interp;
     char *info;
-    int infoLen;
+    Tcl_Length infoLen;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "message ?errorInfo? ?errorCode?");
@@ -704,7 +705,8 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
     register Tcl_Obj *objPtr;
     Tcl_Obj *resultPtr;
     register char *bytes;
-    int length, i, result;
+    Tcl_Length length;
+    int i, result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -724,6 +726,7 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
      * Create a new object holding the concatenated argument strings.
      */
 
+    /*** QUESTION: Do we need to copy the slow way? ***/
     bytes = Tcl_GetStringFromObj(objv[1], &length);
     objPtr = Tcl_NewStringObj(bytes, length);
     Tcl_IncrRefCount(objPtr);
@@ -1116,7 +1119,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileRenameCmd(interp, objc, objv);
 	}
 	case FILE_ROOTNAME: {
-	    int length;
+	    Tcl_Length length;
 	    char *fileName, *extension;
 	    
 	    if (objc != 3) {
@@ -1844,14 +1847,14 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 {
     char *format;		/* Used to read characters from the format
 				 * string. */
-    int formatLen;              /* The length of the format string */
+    Tcl_Length formatLen;	/* The length of the format string */
     char *endPtr;		/* Points to the last char in format array */
     char newFormat[40];		/* A new format specifier is generated here. */
     int width;			/* Field width from field specifier, or 0 if
 				 * no width given. */
     int precision;		/* Field precision from field specifier, or 0
 				 * if no precision given. */
-    int size;			/* Number of bytes needed for result of
+    Tcl_Length size;		/* Number of bytes needed for result of
 				 * conversion, based on type of conversion
 				 * ("e", "s", etc.), width, and precision. */
     long intValue;		/* Used to hold value to pass to sprintf, if

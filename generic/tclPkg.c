@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.7 2001/08/06 19:13:29 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.7.6.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -524,7 +524,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case PKG_IFNEEDED: {
-	    int length;
+	    Tcl_Length length;
 	    if ((objc != 4) && (objc != 5)) {
 		Tcl_WrongNumArgs(interp, 2, objv, "package version ?script?");
 		return TCL_ERROR;
@@ -680,7 +680,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case PKG_UNKNOWN: {
-	    int length;
+	    Tcl_Length length;
 	    if (objc == 2) {
 		if (iPtr->packageUnknown != NULL) {
 		    Tcl_SetResult(interp, iPtr->packageUnknown, TCL_VOLATILE);

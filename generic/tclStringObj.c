@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.21 2001/05/15 21:30:46 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.21.8.1 2001/09/25 16:49:56 dkf Exp $ */
 
 #include "tclInt.h"
 
@@ -358,7 +358,7 @@ Tcl_NewUnicodeObj(unicode, numChars)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_Length
 Tcl_GetCharLength(objPtr)
     Tcl_Obj *objPtr;	/* The String object to get the num chars of. */
 {
@@ -538,10 +538,10 @@ Tcl_GetUnicode(objPtr)
 
 Tcl_UniChar *
 Tcl_GetUnicodeFromObj(objPtr, lengthPtr)
-    Tcl_Obj *objPtr;	/* The object to find the unicode string for. */
-    int *lengthPtr;	/* If non-NULL, the location where the
-			 * string rep's unichar length should be
-			 * stored. If NULL, no length is stored. */
+    Tcl_Obj *objPtr;	   /* The object to find the unicode string for. */
+    Tcl_Length *lengthPtr; /* If non-NULL, the location where the
+			    * string rep's unichar length should be
+			    * stored. If NULL, no length is stored. */
 {
     String *stringPtr;
     
@@ -1057,7 +1057,8 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
     Tcl_Obj *appendObjPtr;	/* Object to append. */
 {
     String *stringPtr;
-    int length, numChars, allOneByteChars;
+    Tcl_Length length;
+    int numChars, allOneByteChars;
     char *bytes;
 
     SetStringFromAny(NULL, objPtr);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.21 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.21.6.1 2001/09/25 16:49:57 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -185,12 +185,12 @@ static int		FileCloseProc _ANSI_ARGS_((ClientData instanceData,
 static int		FileGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 		            int direction, ClientData *handlePtr));
 static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
-		            char *buf, int toRead, int *errorCode));
+		            char *buf, Tcl_Length toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((
-			    ClientData instanceData, char *buf, int toWrite,
-                            int *errorCode));
-static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
-			    long offset, int mode, int *errorCode));
+			    ClientData instanceData, char *buf,
+			    Tcl_Length toWrite, int *errorCode));
+static Tcl_WideInt	FileSeekProc _ANSI_ARGS_((ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static void		TcpAccept _ANSI_ARGS_((ClientData data, int mask));
@@ -204,9 +204,9 @@ static int		TcpGetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, char *optionName,
 			    Tcl_DString *dsPtr));
 static int		TcpInputProc _ANSI_ARGS_((ClientData instanceData,
-		            char *buf, int toRead,  int *errorCode));
+		            char *buf, Tcl_Length toRead,  int *errorCode));
 static int		TcpOutputProc _ANSI_ARGS_((ClientData instanceData,
-		            char *buf, int toWrite, int *errorCode));
+		            char *buf, Tcl_Length toWrite, int *errorCode));
 static void		TcpWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 #ifdef SUPPORTS_TTY
@@ -372,7 +372,7 @@ static int
 FileInputProc(instanceData, buf, toRead, errorCodePtr)
     ClientData instanceData;		/* File state. */
     char *buf;				/* Where to store data read. */
-    int toRead;				/* How much space is available
+    Tcl_Length toRead;			/* How much space is available
                                          * in the buffer? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -420,7 +420,7 @@ static int
 FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* File state. */
     char *buf;				/* The data buffer. */
-    int toWrite;			/* How many bytes to write? */
+    Tcl_Length toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
     FileState *fsPtr = (FileState *) instanceData;
@@ -510,10 +510,10 @@ FileCloseProc(instanceData, interp)
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
     ClientData instanceData;			/* File state. */
-    long offset;				/* Offset to seek to. */
+    Tcl_WideInt offset;				/* Offset to seek to. */
     int mode;					/* Relative to where
                                                  * should we seek? Can be
                                                  * one of SEEK_START,
@@ -521,9 +521,9 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     int *errorCodePtr;				/* To store error code. */
 {
     FileState *fsPtr = (FileState *) instanceData;
-    int newLoc;
+    Tcl_WideInt newLoc;
 
-    newLoc = lseek(fsPtr->fd, (off_t) offset, mode);
+    newLoc = lseek64(fsPtr->fd, (off64_t) offset, mode);
 
     *errorCodePtr = (newLoc == -1) ? errno : 0;
     return newLoc;
@@ -1642,7 +1642,7 @@ static int
 TcpInputProc(instanceData, buf, bufSize, errorCodePtr)
     ClientData instanceData;		/* Socket state. */
     char *buf;				/* Where to store data read. */
-    int bufSize;			/* How much space is available
+    Tcl_Length bufSize;			/* How much space is available
                                          * in the buffer? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -1695,7 +1695,7 @@ static int
 TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* Socket state. */
     char *buf;				/* The data buffer. */
-    int toWrite;			/* How many bytes to write? */
+    Tcl_Length toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
@@ -2497,7 +2497,7 @@ TclpGetDefaultStdChannel(type)
 
     switch (type) {
         case TCL_STDIN:
-            if ((lseek(0, (off_t) 0, SEEK_CUR) == -1) &&
+            if ((lseek64(0, (off64_t) 0, SEEK_CUR) == (off64_t)-1) &&
                     (errno == EBADF)) {
                 return (Tcl_Channel) NULL;
             }
@@ -2506,7 +2506,7 @@ TclpGetDefaultStdChannel(type)
             bufMode = "line";
             break;
         case TCL_STDOUT:
-            if ((lseek(1, (off_t) 0, SEEK_CUR) == -1) &&
+            if ((lseek64(1, (off64_t) 0, SEEK_CUR) == (off64_t)-1) &&
                     (errno == EBADF)) {
                 return (Tcl_Channel) NULL;
             }
@@ -2515,7 +2515,7 @@ TclpGetDefaultStdChannel(type)
             bufMode = "line";
             break;
         case TCL_STDERR:
-            if ((lseek(2, (off_t) 0, SEEK_CUR) == -1) &&
+            if ((lseek64(2, (off64_t) 0, SEEK_CUR) == (off64_t)-1) &&
                     (errno == EBADF)) {
                 return (Tcl_Channel) NULL;
             }

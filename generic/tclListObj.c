@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.9 2001/04/04 16:07:21 kennykb Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.9.12.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -304,7 +304,7 @@ Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr)
     Tcl_Interp *interp;		/* Used to report errors if not NULL. */
     register Tcl_Obj *listPtr;	/* List object for which an element array
 				 * is to be returned. */
-    int *objcPtr;		/* Where to store the count of objects
+    Tcl_Length *objcPtr;	/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr;	        /* Where to store the pointer to an array
 				 * of pointers to the list's objects. */
@@ -356,7 +356,8 @@ Tcl_ListObjAppendList(interp, listPtr, elemListPtr)
     Tcl_Obj *elemListPtr;	/* List obj with elements to append. */
 {
     register List *listRepPtr;
-    int listLen, objc, result;
+    int listLen, result;
+    Tcl_Length objc;
     Tcl_Obj **objv;
 
     if (Tcl_IsShared(listPtr)) {
@@ -548,10 +549,10 @@ Tcl_ListObjIndex(interp, listPtr, index, objPtrPtr)
  */
 
 int
-Tcl_ListObjLength(interp, listPtr, intPtr)
-    Tcl_Interp *interp;		/* Used to report errors if not NULL. */
-    register Tcl_Obj *listPtr;	/* List object whose #elements to return. */
-    register int *intPtr;	/* The resulting int is stored here. */
+Tcl_ListObjLength(interp, listPtr, lenPtr)
+    Tcl_Interp *interp;		 /* Used to report errors if not NULL. */
+    register Tcl_Obj *listPtr;	 /* List object whose #elements to return. */
+    register Tcl_Length *lenPtr; /* The resulting int is stored here. */
 {
     register List *listRepPtr;
     
@@ -563,7 +564,7 @@ Tcl_ListObjLength(interp, listPtr, intPtr)
     }
 
     listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
-    *intPtr = listRepPtr->elemCount;
+    *lenPtr = listRepPtr->elemCount;
     return TCL_OK;
 }
 
@@ -882,7 +883,8 @@ SetListFromAny(interp, objPtr)
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *s;
     CONST char *elemStart, *nextElem;
-    int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
+    int lenRemain, estCount, elemSize, hasBrace, i, j, result;
+    Tcl_Length length;
     char *limit;		/* Points just after string's last byte. */
     register CONST char *p;
     register Tcl_Obj **elemPtrs;
@@ -1012,7 +1014,7 @@ UpdateStringOfList(listPtr)
     int numElems = listRepPtr->elemCount;
     register int i;
     char *elem, *dst;
-    int length;
+    Tcl_Length length;
 
     /*
      * Convert each element of the list to string form and then convert it

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.35 2001/09/06 09:35:39 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.35.6.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -128,10 +128,10 @@ static void		PeekAhead _ANSI_ARGS_((Channel *chanPtr,
 				char **dstEndPtr, GetsState *gsPtr));
 static int		ReadBytes _ANSI_ARGS_((ChannelState *statePtr,
 				Tcl_Obj *objPtr, int charsLeft,
-				int *offsetPtr));
+				Tcl_Length *offsetPtr));
 static int		ReadChars _ANSI_ARGS_((ChannelState *statePtr,
-				Tcl_Obj *objPtr, int charsLeft, int *offsetPtr,
-				int *factorPtr));
+				Tcl_Obj *objPtr, int charsLeft,
+				Tcl_Length *offsetPtr, int *factorPtr));
 static void		RecycleBuffer _ANSI_ARGS_((ChannelState *statePtr,
 				ChannelBuffer *bufPtr, int mustDiscard));
 static int		StackSetBlockMode _ANSI_ARGS_((Channel *chanPtr,
@@ -140,11 +140,11 @@ static int		SetBlockMode _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int mode));
 static void		StopCopy _ANSI_ARGS_((CopyState *csPtr));
 static int		TranslateInputEOL _ANSI_ARGS_((ChannelState *statePtr,
-				char *dst, CONST char *src, int *dstLenPtr,
-				int *srcLenPtr));
+				char *dst, CONST char *src,
+				Tcl_Length *dstLenPtr, Tcl_Length *srcLenPtr));
 static int		TranslateOutputEOL _ANSI_ARGS_((ChannelState *statePtr,
-				char *dst, CONST char *src, int *dstLenPtr,
-				int *srcLenPtr));
+				char *dst, CONST char *src,
+				Tcl_Length *dstLenPtr, Tcl_Length *srcLenPtr));
 static void		UpdateInterest _ANSI_ARGS_((Channel *chanPtr));
 static int		WriteBytes _ANSI_ARGS_((Channel *chanPtr,
 				CONST char *src, int srcLen));
@@ -2853,10 +2853,11 @@ DoWriteChars(chanPtr, src, len)
 
 	Tcl_Obj *objPtr;
 	int result;
+	Tcl_Length length;
 
 	objPtr = Tcl_NewStringObj(src, len);
-	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
-	result = WriteBytes(chanPtr, src, len);
+	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &length);
+	result = WriteBytes(chanPtr, src, length);
 	Tcl_DecrRefCount(objPtr);
 	return result;
     }
@@ -2899,7 +2900,7 @@ Tcl_WriteObj(chan, objPtr)
     Channel *chanPtr;
     ChannelState *statePtr;	/* state info for channel */
     char *src;
-    int srcLen;
+    Tcl_Length srcLen;
 
     statePtr = ((Channel *) chan)->state;
     chanPtr  = statePtr->topChanPtr;
@@ -2946,7 +2947,8 @@ WriteBytes(chanPtr, src, srcLen)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
     char *dst;
-    int dstLen, dstMax, sawLF, savedLF, total, toWrite;
+    int dstMax, sawLF, savedLF, total;
+    Tcl_Length dstLen, toWrite;
     
     total = 0;
     sawLF = 0;
@@ -3034,8 +3036,8 @@ WriteChars(chanPtr, src, srcLen)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
     char *dst, *stage;
-    int saved, savedLF, sawLF, total, toWrite, flags;
-    int dstWrote, dstLen, stageLen, stageMax, stageRead;
+    int saved, savedLF, sawLF, total, flags, dstLen, stageMax;
+    Tcl_Length dstWrote, stageLen, toWrite, stageRead;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
     
@@ -3210,10 +3212,10 @@ TranslateOutputEOL(statePtr, dst, src, dstLenPtr, srcLenPtr)
 				 * applying appropriate EOL translation to
 				 * source characters. */
     CONST char *src;		/* Source UTF-8 characters. */
-    int *dstLenPtr;		/* On entry, the maximum length of output
+    Tcl_Length *dstLenPtr;	/* On entry, the maximum length of output
 				 * buffer in bytes.  On exit, the number of
 				 * bytes actually used in output buffer. */
-    int *srcLenPtr;		/* On entry, the length of source buffer.
+    Tcl_Length *srcLenPtr;	/* On entry, the length of source buffer.
 				 * On exit, the number of bytes read from
 				 * the source buffer. */
 {
@@ -3370,7 +3372,8 @@ Tcl_Gets(chan, lineRead)
 				 * for managing the storage. */
 {
     Tcl_Obj *objPtr;
-    int charsStored, length;
+    int charsStored;
+    Tcl_Length length;
     char *string;
 
     objPtr = Tcl_NewObj();
@@ -3422,7 +3425,8 @@ Tcl_GetsObj(chan, objPtr)
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
-    int oldLength, oldFlags, oldRemoved;
+    Tcl_Length oldLength;
+    int oldFlags, oldRemoved;
 
     /*
      * This operation should occur at the top of a channel stack.
@@ -3569,7 +3573,7 @@ Tcl_GetsObj(chan, objPtr)
 			 */
 
 			char tmp[1 + TCL_UTF_MAX];
-			int rawRead;
+			Tcl_Length rawRead;
 
 			bufPtr = gs.bufPtr;
 			Tcl_ExternalToUtf(NULL, gs.encoding,
@@ -4293,7 +4297,8 @@ DoReadChars(chanPtr, objPtr, toRead, appendFlag)
 {
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
-    int offset, factor, copied, copiedNow, result;
+    Tcl_Length offset;
+    int factor, copied, copiedNow, result;
     Tcl_Encoding encoding;
 #define UTF_EXPANSION_FACTOR	1024
     
@@ -4427,12 +4432,13 @@ ReadBytes(statePtr, objPtr, bytesToRead, offsetPtr)
 				 * has been allocated to hold data, not how
 				 * many bytes of data have been stored in the
 				 * object. */
-    int *offsetPtr;		/* On input, contains how many bytes of
+    Tcl_Length *offsetPtr;	/* On input, contains how many bytes of
 				 * objPtr have been used to hold data.  On
 				 * output, filled with how many bytes are now
 				 * being used. */
 {
-    int toRead, srcLen, srcRead, dstWrote, offset, length;
+    int toRead, srcLen, offset;
+    Tcl_Length length, srcRead, dstWrote;
     ChannelBuffer *bufPtr;
     char *src, *dst;
 
@@ -4530,7 +4536,7 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 				 * objPtr->length is how much space has been
 				 * allocated to hold data, not how many bytes
 				 * of data have been stored in the object. */
-    int *offsetPtr;		/* On input, contains how many bytes of
+    Tcl_Length *offsetPtr;	/* On input, contains how many bytes of
 				 * objPtr have been used to hold data.  On
 				 * output, filled with how many bytes are now
 				 * being used. */
@@ -4540,8 +4546,8 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 				 * UTF-8.  On output, contains another guess
 				 * based on the data seen so far. */
 {
-    int toRead, factor, offset, spaceLeft, length;
-    int srcLen, srcRead, dstNeeded, dstRead, dstWrote, numChars;
+    int toRead, factor, offset, spaceLeft, length, srcLen, dstNeeded;
+    Tcl_Length srcRead, dstWrote, numChars, dstRead;
     ChannelBuffer *bufPtr;
     char *src, *dst;
     Tcl_EncodingState oldState;
@@ -4730,11 +4736,11 @@ TranslateInputEOL(statePtr, dstStart, srcStart, dstLenPtr, srcLenPtr)
 				 * applying appropriate EOL translation to
 				 * source characters. */
     CONST char *srcStart;	/* Source characters. */
-    int *dstLenPtr;		/* On entry, the maximum length of output
+    Tcl_Length *dstLenPtr;	/* On entry, the maximum length of output
 				 * buffer in bytes; must be <= *srcLenPtr.  On
 				 * exit, the number of bytes actually used in
 				 * output buffer. */
-    int *srcLenPtr;		/* On entry, the length of source buffer.
+    Tcl_Length *srcLenPtr;	/* On entry, the length of source buffer.
 				 * On exit, the number of bytes read from
 				 * the source buffer. */
 {
@@ -5243,10 +5249,10 @@ GetInput(chanPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Tcl_Seek(chan, offset, mode)
     Tcl_Channel chan;		/* The channel on which to seek. */
-    int offset;			/* Offset to seek to. */
+    Tcl_WideInt offset;		/* Offset to seek to. */
     int mode;			/* Relative to which location to seek? */
 {
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
@@ -5405,7 +5411,7 @@ Tcl_Seek(chan, offset, mode)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Tcl_Tell(chan)
     Tcl_Channel chan;			/* The channel to return pos for. */
 {
@@ -7310,9 +7316,8 @@ CopyData(csPtr, mask)
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
     int result = TCL_OK;
-    int size;
-    int total;
-    int sizeb;
+    int size, total;
+    Tcl_Length sizeb;
     Tcl_Obj* bufObj = NULL;
     char* buffer;
 

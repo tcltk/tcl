@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.28 2001/09/17 11:51:59 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.28.2.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -239,11 +239,11 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
     char **argArray = NULL;
 
     register Proc *procPtr;
-    int i, length, result, numArgs;
+    int i, result, numArgs, precompiled = 0;
+    Tcl_Length length;
     char *args, *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
-    int precompiled = 0;
     
     if (bodyPtr->typePtr == &tclProcBodyType) {
         /*
@@ -430,7 +430,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
              */
 
             if (localPtr->defValuePtr != NULL) {
-                int tmpLength;
+                Tcl_Length tmpLength;
                 char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr,
                         &tmpLength);
                 if ((valueLength != tmpLength)
@@ -902,7 +902,8 @@ TclObjInterpProc(clientData, interp, objc, objv)
     register Var *varPtr;
     register CompiledLocal *localPtr;
     char *procName;
-    int nameLen, localCt, numArgs, argCt, i, result;
+    Tcl_Length nameLen;
+    int localCt, numArgs, argCt, i, result;
     Tcl_Obj *objResult = Tcl_GetObjResult(interp);
 
     /*

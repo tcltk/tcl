@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10 2001/08/30 19:02:43 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -145,7 +145,8 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     int flags;			/* 0 or TCL_EXACT */
     int *indexPtr;		/* Place to store resulting integer index. */
 {
-    int index, length, i, numAbbrev;
+    int index, i, numAbbrev;
+    Tcl_Length length;
     char *key, *p1, *p2, **entryPtr;
     Tcl_Obj *resultPtr;
 

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.16 2001/09/13 11:56:20 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.16.2.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -648,7 +648,7 @@ ParseTokens(src, mask, parsePtr)
 		}
 	    }
 	    tokenPtr->type = TCL_TOKEN_BS;
-	    Tcl_UtfBackslash(src, &tokenPtr->size, utfBytes);
+	    Tcl_UtfBackslash(src, (int *)&tokenPtr->size, utfBytes);
 	    parsePtr->numTokens++;
 	    src += tokenPtr->size;
 	} else if (*src == 0) {
@@ -1155,7 +1155,8 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
     char nameBuffer[MAX_VAR_CHARS+1];
     char *varName, *index;
     char *p = NULL;		/* Initialized to avoid compiler warning. */
-    int length, code;
+    int code;
+    Tcl_Length length;
 
     /*
      * The only tricky thing about this procedure is that it attempts to
@@ -2326,7 +2327,7 @@ TclObjCommandComplete(objPtr)
 					 * to check. */
 {
     char *script;
-    int length;
+    Tcl_Length length;
 
     script = Tcl_GetStringFromObj(objPtr, &length);
     return CommandComplete(script, length);

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.2 2001/09/25 10:24:06 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.3 2001/09/25 16:49:55 dkf Exp $
  */
 
 #ifndef _TCL
@@ -1349,9 +1349,9 @@ typedef int	(Tcl_DriverCloseProc) _ANSI_ARGS_((ClientData instanceData,
 		    Tcl_Interp *interp));
 typedef int	(Tcl_DriverClose2Proc) _ANSI_ARGS_((ClientData instanceData,
 		    Tcl_Interp *interp, int flags));
-typedef Tcl_Length (Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
+typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, Tcl_Length toRead, int *errorCodePtr));
-typedef Tcl_Length (Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
+typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, Tcl_Length toWrite, int *errorCodePtr));
 typedef Tcl_WideInt (Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
 		    Tcl_WideInt offset, int mode, int *errorCodePtr));

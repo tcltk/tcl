@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.23 2001/09/19 08:52:46 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.23.2.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -892,13 +892,13 @@ char
 Tcl_Backslash(src, readPtr)
     CONST char *src;		/* Points to the backslash character of
 				 * a backslash sequence. */
-    int *readPtr;		/* Fill in with number of characters read
+    Tcl_Length *readPtr;	/* Fill in with number of characters read
 				 * from src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
     Tcl_UniChar ch;
 
-    Tcl_UtfBackslash(src, readPtr, buf);
+    Tcl_UtfBackslash(src, (int *)readPtr, buf);
     Tcl_UtfToUniChar(buf, &ch);
     return (char) ch;
 }
@@ -999,10 +999,9 @@ Tcl_ConcatObj(objc, objv)
     int objc;			/* Number of objects to concatenate. */
     Tcl_Obj *CONST objv[];	/* Array of objects to concatenate. */
 {
-    int allocSize, finalSize, length, elemLength, i;
-    char *p;
-    char *element;
-    char *concatStr;
+    int allocSize, finalSize, i;
+    char *p, *element, *concatStr;
+    Tcl_Length length, elemLength;
     Tcl_Obj *objPtr;
 
     /*
@@ -1021,7 +1020,7 @@ Tcl_ConcatObj(objc, objv)
     }
     if (i == objc) {
 	Tcl_Obj **listv;
-	int listc;
+	Tcl_Length listc;
 
 	objPtr = Tcl_NewListObj(0, NULL);
 	for (i = 0;  i < objc;  i++) {
@@ -2158,7 +2157,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 				 * representing an index. */
 {
     char *bytes;
-    int length, offset;
+    Tcl_Length length;
+    int offset;
 
     if (objPtr->typePtr == &tclIntType) {
 	*indexPtr = (int)objPtr->internalRep.longValue;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.11 2001/05/21 22:32:01 hobbs Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.11.8.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -446,7 +446,7 @@ Tcl_RegExpExecObj(interp, re, objPtr, offset, nmatches, flags)
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
-    int length;
+    Tcl_Length length;
 
     /*
      * Save the target object so we can extract strings from it later.
@@ -561,7 +561,7 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
 				 * expression. */
     int flags;			/* Regular expression compilation flags. */
 {
-    int length;
+    Tcl_Length length;
     Tcl_ObjType *typePtr;
     TclRegexp *regexpPtr;
     char *pattern;

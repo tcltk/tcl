@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.8 2001/08/23 14:22:49 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.8.6.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #include <math.h>
@@ -22,8 +22,8 @@
  * special conditions in the parsing of a format specifier.
  */
 
-#define BINARY_ALL -1		/* Use all elements in the argument. */
-#define BINARY_NOCOUNT -2	/* No count was specified in format. */
+#define BINARY_ALL     ((Tcl_Length)-1)	/* Use all elements in argument. */
+#define BINARY_NOCOUNT ((Tcl_Length)-2)	/* No count specified in format. */
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -35,7 +35,7 @@ static int		FormatNumber _ANSI_ARGS_((Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr));
 static void		FreeByteArrayInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		GetFormatSpec _ANSI_ARGS_((char **formatPtr,
-			    char *cmdPtr, int *countPtr));
+			    char *cmdPtr, Tcl_Length *countPtr));
 static Tcl_Obj *	ScanNumber _ANSI_ARGS_((unsigned char *buffer, int type));
 static int		SetByteArrayFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
@@ -281,7 +281,7 @@ Tcl_SetByteArrayObj(objPtr, bytes, length)
 unsigned char *
 Tcl_GetByteArrayFromObj(objPtr, lengthPtr)
     Tcl_Obj *objPtr;		/* The ByteArray object. */
-    int *lengthPtr;		/* If non-NULL, filled with length of the
+    Tcl_Length *lengthPtr;	/* If non-NULL, filled with length of the
 				 * array of bytes in the ByteArray object. */
 {
     ByteArray *baPtr;
@@ -369,7 +369,7 @@ SetByteArrayFromAny(interp, objPtr)
     Tcl_Obj *objPtr;		/* The object to convert to type ByteArray. */
 {
     Tcl_ObjType *typePtr;
-    int length;
+    Tcl_Length length;
     char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
@@ -550,7 +550,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
     int value = 0;		/* Current integer value to be packed.
 				 * Initialized to avoid compiler warning. */
     char cmd;			/* Current format character. */
-    int count;			/* Count associated with current format
+    Tcl_Length count;		/* Count associated with current format
 				 * character. */
     char *format;		/* Pointer to current position in format
 				 * string. */
@@ -560,7 +560,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
     unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
     char *errorString, *errorValue, *str;
-    int offset, size, length, index;
+    int offset, size, index;
+    Tcl_Length length;
     static char *options[] = { 
 	"format",	"scan",		NULL 
     };
@@ -1333,7 +1334,7 @@ static int
 GetFormatSpec(formatPtr, cmdPtr, countPtr)
     char **formatPtr;		/* Pointer to format string. */
     char *cmdPtr;		/* Pointer to location of command char. */
-    int *countPtr;		/* Pointer to repeat count value. */
+    Tcl_Length *countPtr;	/* Pointer to repeat count value. */
 {
     /*
      * Skip any leading blanks.

@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.16 2001/09/17 11:51:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.16.2.1 2001/09/25 16:49:55 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -511,6 +511,7 @@ typedef struct ByteCode {
 #define INST_LIST_INDEX			80
 #define INST_LIST_LENGTH		81
 
+/* Opcodes 82 to 87 */
 #define INST_APPEND_SCALAR1		82
 #define INST_APPEND_SCALAR4		83
 #define INST_APPEND_ARRAY1		84
@@ -518,6 +519,7 @@ typedef struct ByteCode {
 #define INST_APPEND_ARRAY_STK		86
 #define INST_APPEND_STK			87
 
+/* Opcodes 88 to 93 */
 #define INST_LAPPEND_SCALAR1		88
 #define INST_LAPPEND_SCALAR4		89
 #define INST_LAPPEND_ARRAY1		90

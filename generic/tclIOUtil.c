@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.1 2001/09/25 10:24:07 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.2 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1146,7 +1146,8 @@ Tcl_FSEvalFile(interp, fileName)
     Tcl_Obj *fileName;		/* Name of file to process.  Tilde-substitution
 				 * will be performed on this name. */
 {
-    int result, length;
+    int result;
+    Tcl_Length length;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
@@ -1614,7 +1615,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	Tcl_Obj* cwd;
 	int ret = -1;
 	if (pathPtr != NULL) {
-	    int len;
+	    Tcl_Length len;
 	    Tcl_GetStringFromObj(pathPtr,&len);
 	    if (len != 0) {
 		/* 
@@ -1642,7 +1643,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	if (fsPtr != NULL) {
 	    Tcl_FSMatchInDirectoryProc *proc = fsPtr->matchInDirectoryProc;
 	    if (proc != NULL) {
-		int cwdLen;
+		Tcl_Length cwdLen;
 		Tcl_Obj *cwdDir;
 		char *cwdStr;
 #ifdef MAC_TCL
@@ -1674,13 +1675,13 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		ret = (*proc)(interp, tmpResultPtr, cwdDir, pattern, types);
 		Tcl_DecrRefCount(cwdDir);
 		if (ret == TCL_OK) {
-		    int resLength;
+		    Tcl_Length resLength;
 
 		    ret = Tcl_ListObjLength(interp, tmpResultPtr, &resLength);
 		    if (ret == TCL_OK) {
 			Tcl_Obj *elt, *cutElt;
 			char *eltStr;
-			int eltLen, i;
+			Tcl_Length eltLen, i;
 
 			for (i = 0; i < resLength; i++) {
 			    Tcl_ListObjIndex(interp, tmpResultPtr, i, &elt);
@@ -2580,7 +2581,7 @@ FSGetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr)
 Tcl_Obj* 
 Tcl_FSSplitPath(pathPtr, lenPtr)
     Tcl_Obj *pathPtr;		/* Path to split. */
-    int *lenPtr;		/* int to store number of path elements. */
+    Tcl_Length *lenPtr;		/* place to store number of path elements. */
 {
     Tcl_Obj *result = NULL;  /* Needed only to prevent gcc warnings. */
     Tcl_Filesystem *fsPtr;
@@ -2682,12 +2683,12 @@ Tcl_FSJoinPath(listObj, elements)
     Tcl_Filesystem *fsPtr = NULL;
     
     if (elements < 0) {
-	if (Tcl_ListObjLength(NULL, listObj, &elements) != TCL_OK) {
+	if (Tcl_ListObjLength(NULL, listObj, (Tcl_Length *)&elements) != TCL_OK) {
 	    return NULL;
 	}
     } else {
 	/* Just make sure it is a valid list */
-	int listTest;
+	Tcl_Length listTest;
 	if (Tcl_ListObjLength(NULL, listObj, &listTest) != TCL_OK) {
 	    return NULL;
 	}
@@ -2707,8 +2708,7 @@ Tcl_FSJoinPath(listObj, elements)
 	int driveNameLength;
 	Tcl_PathType type;
 	char *strElt;
-	int strEltLen;
-	int length;
+	Tcl_Length strEltLen, length;
 	char *ptr;
 	Tcl_Obj *driveName = NULL;
 	
@@ -2817,7 +2817,7 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
     Tcl_Obj **driveNameRef;
 {
     FilesystemRecord *fsRecPtr;
-    int pathLen;
+    Tcl_Length pathLen;
     char *path;
     Tcl_PathType type = TCL_PATH_RELATIVE;
     
@@ -2848,7 +2848,7 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 	 * reason to skip the native filesystem.
 	 */
 	if ((fsRecPtr->fsPtr != &nativeFilesystem) && (proc != NULL)) {
-	    int numVolumes;
+	    Tcl_Length numVolumes;
 	    Tcl_Obj *thisFsVolumes = (*proc)();
 	    if (thisFsVolumes != NULL) {
 		if (Tcl_ListObjLength(NULL, thisFsVolumes, 
@@ -2866,7 +2866,7 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 		}
 		while (numVolumes > 0) {
 		    Tcl_Obj *vol;
-		    int len;
+		    Tcl_Length len;
 		    char *strVol;
 
 		    numVolumes--;
@@ -3205,7 +3205,7 @@ Tcl_FSRemoveDirectory(pathPtr, recursive, errorPtr)
 		Tcl_Obj *cwdPtr = Tcl_FSGetCwd(NULL);
 		if (cwdPtr != NULL) {
 		    char *cwdStr, *normPathStr;
-		    int cwdLen, normLen;
+		    Tcl_Length cwdLen, normLen;
 		    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 		    if (normPath != NULL) {
 		        normPathStr = Tcl_GetStringFromObj(normPath, &normLen);
@@ -3400,7 +3400,7 @@ SetFsPathFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* The object to convert. */
 {
-    int len;
+    Tcl_Length len;
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
     char *name;
@@ -4019,7 +4019,7 @@ NativeCreateNativeRep(pathObjPtr)
     char *nativePathPtr;
     Tcl_DString ds;
     Tcl_Obj* normPtr;
-    int len;
+    Tcl_Length len;
     char *str;
 
     /* Make sure the normalized path is set */
@@ -4139,7 +4139,7 @@ NativePathInFilesystem(pathPtr, clientDataPtr)
     Tcl_Obj *pathPtr;
     ClientData *clientDataPtr;
 {
-    int len;
+    Tcl_Length len;
     Tcl_GetStringFromObj(pathPtr,&len);
     if (len == 0) {
         return -1;

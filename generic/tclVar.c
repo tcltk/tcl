@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.36 2001/08/10 13:10:13 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.36.6.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2901,7 +2901,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	     */
 	    
 	    char *p, *varName;
-	    int nameBytes, i;
+	    Tcl_Length nameBytes, i;
 
 	    varName = Tcl_GetStringFromObj(objv[1], &nameBytes);
 	    for (i = 0, p = varName;  i < nameBytes;  i++, p++) {
@@ -3487,7 +3487,8 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 {
     Var *varPtr, *arrayPtr;
     Tcl_Obj **elemPtrs;
-    int result, elemLen, i;
+    int result;
+    Tcl_Length elemLen, i;
     char *varName, *p;
     
     varName = TclGetString(arrayNameObj);

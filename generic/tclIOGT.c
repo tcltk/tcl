@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.3 2000/09/29 21:42:19 hobbs Exp $
+ * CVS: $Id: tclIOGT.c,v 1.3.12.1 2001/09/25 16:49:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -28,13 +28,13 @@ static int		TransformBlockModeProc _ANSI_ARGS_ ((
 static int		TransformCloseProc _ANSI_ARGS_ ((
 				ClientData instanceData, Tcl_Interp* interp));
 static int		TransformInputProc _ANSI_ARGS_ ((
-				ClientData instanceData,
-				char* buf, int toRead, int* errorCodePtr));
+				ClientData instanceData, char* buf,
+				Tcl_Length toRead, int* errorCodePtr));
 static int		TransformOutputProc _ANSI_ARGS_ ((
-				ClientData instanceData,
-				char*  buf, int toWrite, int* errorCodePtr));
-static int		TransformSeekProc _ANSI_ARGS_ ((
-				ClientData instanceData, long offset,
+				ClientData instanceData, char* buf,
+				Tcl_Length toWrite, int* errorCodePtr));
+static Tcl_WideInt	TransformSeekProc _ANSI_ARGS_ ((
+				ClientData instanceData, Tcl_WideInt offset,
 				int mode, int* errorCodePtr));
 static int		TransformSetOptionProc _ANSI_ARGS_((
 				ClientData instanceData, Tcl_Interp *interp,
@@ -377,15 +377,13 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
      * arguments. Feather's curried commands would come in handy here.
      */
 
-    Tcl_Obj*        resObj; /* See below, switch (transmit) */
-    int             resLen;
-    unsigned char*  resBuf;
+    Tcl_Obj* resObj;		    /* See below, switch (transmit) */
+    Tcl_Length resLen;
+    unsigned char* resBuf;
     Tcl_SavedResult ciSave;
-
     int res = TCL_OK;
     Tcl_Obj* command = Tcl_DuplicateObj (dataPtr->command);
     Tcl_Obj* temp;
-
 
     if (preserve) {
 	Tcl_SaveResult (dataPtr->interp, &ciSave);
@@ -641,7 +639,7 @@ static int
 TransformInputProc (instanceData, buf, toRead, errorCodePtr)
     ClientData instanceData;
     char*      buf;
-    int        toRead;
+    Tcl_Length toRead;
     int*       errorCodePtr;
 {
     TransformChannelData* dataPtr = (TransformChannelData*) instanceData;
@@ -797,7 +795,7 @@ static int
 TransformOutputProc (instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;
     char*      buf;
-    int        toWrite;
+    Tcl_Length toWrite;
     int*       errorCodePtr;
 {
     TransformChannelData* dataPtr = (TransformChannelData*) instanceData;
@@ -846,12 +844,12 @@ TransformOutputProc (instanceData, buf, toWrite, errorCodePtr)
  *------------------------------------------------------*
  */
 
-static int
+static Tcl_WideInt
 TransformSeekProc (instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;	/* The channel to manipulate */
-    long       offset;		/* Size of movement. */
-    int        mode;		/* How to move */
-    int*       errorCodePtr;	/* Location of error flag. */
+    ClientData  instanceData;	/* The channel to manipulate */
+    Tcl_WideInt offset;		/* Size of movement. */
+    int         mode;		/* How to move */
+    int*        errorCodePtr;	/* Location of error flag. */
 {
     int result;
     TransformChannelData* dataPtr	= (TransformChannelData*) instanceData;
