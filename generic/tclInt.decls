@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61 2003/05/14 19:21:22 das Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.1 2003/06/27 15:10:10 dgp Exp $
 
 library tcl
 
@@ -703,6 +703,20 @@ declare 173 generic {
 declare 174 generic {
     Tcl_Obj *TclIncrWideVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, Tcl_WideInt wideIncrAmount, int part1NotParsed)
+}
+
+# Factoring out of trace code
+
+declare 175 generic {
+    int TclCallVarTraces(Interp *iPtr, Var *arrayPtr, Var *varPtr,
+	    CONST char *part1, CONST char *part2, int flags, int leaveErrMsg)
+}
+declare 176 generic {
+    void TclCleanupVar(Var *varPtr, Var *arrayPtr)
+}
+declare 177 generic {
+    void TclVarErrMsg(Tcl_Interp *interp, CONST char *part1, CONST char *part2,
+	    CONST char *operation, CONST char *reason)
 }
 
 ##############################################################################

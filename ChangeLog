@@ -1,3 +1,31 @@
+2003-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/init.test:  Added tests init-4.6.* to illustrate [Bug 760872]
+
+2003-06-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclTrace.c: New file, factoring out of virtually all the
+	various trace-related things from tclBasic.c and tclCmdMZ.c with
+	the goal of making this a separate maintenance area.
+
+2003-06-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Add -ieee when
+	compiling with cc and add -mieee when compiling
+	with gcc under OSF1-V5 "Tru64" systems.
+	[Bug 748957]
+
+2003-06-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/encoding.n: Corrected the docs to say that [source] uses the
+	system encoding, which it always did anyway (since 8.1) [Bug 742100]
+
+2003-06-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclHash.c (Tcl_HashStats): Prevented occurrence of
+	division-by-zero problems.  [Bug 759749]
+
 2003-06-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/tclUnixPort.h: #undef inet_ntoa before

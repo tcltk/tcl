@@ -11,12 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.28 2003/05/07 21:15:44 dkf Exp $
+# RCS: @(#) $Id: trace.test,v 1.28.2.1 2003/06/27 15:10:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 
 proc traceScalar {name1 name2 op} {
     global info
@@ -2092,6 +2094,63 @@ test trace-28.9 {exec trace info nonsense} {
 test trace-28.10 {exec trace info nonsense} {
     list [catch {trace remove execution} res] $res
 } {1 {wrong # args: should be "trace remove execution name opList command"}}
+
+test trace-29.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
+    testcmdtrace tracetest {set stuff [expr 14 + 16]}
+} {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
+test trace-29.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
+    testcmdtrace tracetest {set stuff [info tclversion]}
+} [list {info tclversion} {info tclversion} {set stuff [info tclversion]} "set stuff [info tclversion]"]
+test trace-29.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
+    testcmdtrace deletetest {set stuff [info tclversion]}
+} [info tclversion]
+test trace-29.4 {Tcl_CreateTrace, check that tracing doesn't cause memory faults} {testcmdtrace} {
+    # Note that the proc call is the same as the variable name, and that
+    # the call can be direct or indirect by way of another procedure
+    proc tracer {args} {}
+    proc tracedLoop {level} {
+	incr level
+	tracer
+	foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}
+    }
+    testcmdtrace tracetest {tracedLoop 0}
+} {{tracedLoop 0} {tracedLoop 0} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {1 2} {tracedLoop $level}} {tracedLoop $level} {tracedLoop 1} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {} {tracedLoop $level}} {tracedLoop $level} {tracedLoop 1} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {} {tracedLoop $level}}}
+catch {rename tracer {}}
+catch {rename tracedLoop {}}
+
+test trace-29.5 {Tcl_CreateObjTrace, status return TCL_ERROR} {testcmdtrace} {
+    proc Error { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Error $x}} result] [set result]
+} {1 {Error $x}}
+
+test trace-29.6 {Tcl_CreateObjTrace, status return TCL_RETURN} {testcmdtrace} {
+    proc Return { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Return $x}} result] [set result]
+} {2 {}}
+
+test trace-29.7 {Tcl_CreateObjTrace, status return TCL_BREAK} {testcmdtrace} {
+    proc Break { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Break $x}} result] [set result]
+} {3 {}}
+
+test trace-29.8 {Tcl_CreateObjTrace, status return TCL_CONTINUE} {testcmdtrace} {
+    proc Continue { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Continue $x}} result] [set result]
+} {4 {}}
+
+test trace-29.9 {Tcl_CreateObjTrace, status return unknown} {testcmdtrace} {
+    proc OtherStatus { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {OtherStatus $x}} result] [set result]
+} {6 {}}
+
+test trace-30.1 {Tcl_DeleteTrace} {emptyTest} {
+    # the above tests have tested Tcl_DeleteTrace
+} {}
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: init.test,v 1.9 2002/06/05 01:12:38 dgp Exp $
+# RCS: @(#) $Id: init.test,v 1.9.4.1 2003/06/27 15:10:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -154,7 +154,7 @@ test init-3.0 {random stuff in the auto_index, should still work} {
 # should be the same.
 
 set count 0
-foreach arg {
+foreach arg [subst -nocommands -novariables {
 		c
                 {argument
                 which spans
@@ -174,7 +174,8 @@ foreach arg {
 		error stack cannot be uniquely determined.
 		foo bar
 "}
-	} {
+		{argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
+	}] {
 
     test init-4.$count.0 {::errorInfo produced by [unknown]} {
 	auto_reset

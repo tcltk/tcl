@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.15 2003/05/12 20:15:28 dgp Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.15.2.1 2003/06/27 15:10:11 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -307,7 +307,6 @@ test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
     invoked from within
 "time {error foo}"}}
 
-# The tests for Tcl_TraceObjCmd and TraceVarProc are in trace.test
 # The tests for Tcl_WhileObjCmd are in while.test
 
 # cleanup

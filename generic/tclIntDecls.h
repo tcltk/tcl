@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50 2003/04/28 12:34:28 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.1 2003/06/27 15:10:11 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -508,6 +508,18 @@ EXTERN Tcl_Obj *	TclIncrWideVar2 _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
 				Tcl_WideInt wideIncrAmount, 
 				int part1NotParsed));
+/* 175 */
+EXTERN int		TclCallVarTraces _ANSI_ARGS_((Interp * iPtr, 
+				Var * arrayPtr, Var * varPtr, 
+				CONST char * part1, CONST char * part2, 
+				int flags, int leaveErrMsg));
+/* 176 */
+EXTERN void		TclCleanupVar _ANSI_ARGS_((Var * varPtr, 
+				Var * arrayPtr));
+/* 177 */
+EXTERN void		TclVarErrMsg _ANSI_ARGS_((Tcl_Interp * interp, 
+				CONST char * part1, CONST char * part2, 
+				CONST char * operation, CONST char * reason));
 
 typedef struct TclIntStubs {
     int magic;
@@ -712,6 +724,9 @@ typedef struct TclIntStubs {
     int (*tclInThreadExit) _ANSI_ARGS_((void)); /* 172 */
     int (*tclUniCharMatch) _ANSI_ARGS_((CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int nocase)); /* 173 */
     Tcl_Obj * (*tclIncrWideVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, Tcl_WideInt wideIncrAmount, int part1NotParsed)); /* 174 */
+    int (*tclCallVarTraces) _ANSI_ARGS_((Interp * iPtr, Var * arrayPtr, Var * varPtr, CONST char * part1, CONST char * part2, int flags, int leaveErrMsg)); /* 175 */
+    void (*tclCleanupVar) _ANSI_ARGS_((Var * varPtr, Var * arrayPtr)); /* 176 */
+    void (*tclVarErrMsg) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * part1, CONST char * part2, CONST char * operation, CONST char * reason)); /* 177 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1325,6 +1340,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclIncrWideVar2
 #define TclIncrWideVar2 \
 	(tclIntStubsPtr->tclIncrWideVar2) /* 174 */
+#endif
+#ifndef TclCallVarTraces
+#define TclCallVarTraces \
+	(tclIntStubsPtr->tclCallVarTraces) /* 175 */
+#endif
+#ifndef TclCleanupVar
+#define TclCleanupVar \
+	(tclIntStubsPtr->tclCleanupVar) /* 176 */
+#endif
+#ifndef TclVarErrMsg
+#define TclVarErrMsg \
+	(tclIntStubsPtr->tclVarErrMsg) /* 177 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

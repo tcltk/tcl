@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.1 2003/06/18 19:48:02 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.2 2003/06/27 15:10:11 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -313,7 +313,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
 	 tclThreadAlloc.o tclThreadJoin.o tclStubInit.o tclStubLib.o \
-	tclTimer.o tclUtf.o tclUtil.o tclVar.o
+	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -402,6 +402,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclThreadAlloc.c \
 	$(GENERIC_DIR)/tclThreadJoin.c \
 	$(GENERIC_DIR)/tclTimer.c \
+	$(GENERIC_DIR)/tclTrace.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c
 
@@ -1014,6 +1015,9 @@ tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 
 tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubInit.c
+
+tclTrace.o: $(GENERIC_DIR)/tclTrace.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTrace.c
 
 tclUtil.o: $(GENERIC_DIR)/tclUtil.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
