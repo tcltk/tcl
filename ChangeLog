@@ -1,5 +1,10 @@
 2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* tests/namespace.test: modified namespace-41.2, added 41.3
+	{knownbug} after discussion with Don Porter and Kevin Kenny.
+
+2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* tests/namespace.test: added namespace-41.2, a simpler test for
 	[Bug: 231259]
 
