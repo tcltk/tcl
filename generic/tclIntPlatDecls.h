@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20.2.2 2004/03/26 22:28:27 dgp Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20.2.3 2004/05/17 18:42:23 dgp Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -91,15 +91,15 @@ EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir _ANSI_ARGS_((DIR * dir));
 #endif
-#ifndef TclpLocaltime_TCL_DECLARED
-#define TclpLocaltime_TCL_DECLARED
+#ifndef TclpLocaltime_unix_TCL_DECLARED
+#define TclpLocaltime_unix_TCL_DECLARED
 /* 11 */
-EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((time_t * clock));
+EXTERN struct tm *	TclpLocaltime_unix _ANSI_ARGS_((CONST time_t * clock));
 #endif
-#ifndef TclpGmtime_TCL_DECLARED
-#define TclpGmtime_TCL_DECLARED
+#ifndef TclpGmtime_unix_TCL_DECLARED
+#define TclpGmtime_unix_TCL_DECLARED
 /* 12 */
-EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((time_t * clock));
+EXTERN struct tm *	TclpGmtime_unix _ANSI_ARGS_((CONST time_t * clock));
 #endif
 #ifndef TclpInetNtoa_TCL_DECLARED
 #define TclpInetNtoa_TCL_DECLARED
@@ -300,8 +300,8 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 8 */
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR * dir)); /* 10 */
-    struct tm * (*tclpLocaltime) _ANSI_ARGS_((time_t * clock)); /* 11 */
-    struct tm * (*tclpGmtime) _ANSI_ARGS_((time_t * clock)); /* 12 */
+    struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((CONST time_t * clock)); /* 11 */
+    struct tm * (*tclpGmtime_unix) _ANSI_ARGS_((CONST time_t * clock)); /* 12 */
     char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
     int (*tclUnixCopyFile) _ANSI_ARGS_((CONST char * src, CONST char * dst, CONST Tcl_StatBuf * statBufPtr, int dontCopyAtts)); /* 14 */
 #endif /* UNIX */
@@ -399,13 +399,13 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpReaddir \
 	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
 #endif
-#ifndef TclpLocaltime
-#define TclpLocaltime \
-	(tclIntPlatStubsPtr->tclpLocaltime) /* 11 */
+#ifndef TclpLocaltime_unix
+#define TclpLocaltime_unix \
+	(tclIntPlatStubsPtr->tclpLocaltime_unix) /* 11 */
 #endif
-#ifndef TclpGmtime
-#define TclpGmtime \
-	(tclIntPlatStubsPtr->tclpGmtime) /* 12 */
+#ifndef TclpGmtime_unix
+#define TclpGmtime_unix \
+	(tclIntPlatStubsPtr->tclpGmtime_unix) /* 12 */
 #endif
 #ifndef TclpInetNtoa
 #define TclpInetNtoa \

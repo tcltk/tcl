@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.4 2004/03/26 22:28:26 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.5 2004/05/17 18:42:23 dgp Exp $
 
 library tcl
 
@@ -735,6 +735,16 @@ declare 181 generic {
     Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
 	    CONST char *file, int line)
 }
+
+# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
+
+declare 182 generic {
+     struct tm *TclpLocaltime(CONST time_t *clock)
+}
+declare 183 generic {
+     struct tm *TclpGmtime(CONST time_t *clock)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are
@@ -903,11 +913,13 @@ declare 9 unix {
 declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
+# Slots 11 and 12 are forwarders for functions that were promoted to
+# generic Stubs
 declare 11 unix {
-    struct tm *TclpLocaltime(time_t *clock)
+    struct tm *TclpLocaltime_unix(CONST time_t *clock)
 }
 declare 12 unix {
-    struct tm *TclpGmtime(time_t *clock)
+    struct tm *TclpGmtime_unix(CONST time_t *clock)
 }
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)

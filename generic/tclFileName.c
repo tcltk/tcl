@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.6 2004/04/09 20:58:14 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.7 2004/05/17 18:42:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1679,6 +1679,9 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
                     tail += driveNameLen;
                     break;
                 }
+		case TCL_PATH_RELATIVE: {
+		    /* Do nothing */
+		}
             }
             Tcl_DecrRefCount(temp);
 	}
@@ -1692,6 +1695,21 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 	    pathPrefix = Tcl_NewStringObj(tail, 1);
 	    tail++;
 	    Tcl_IncrRefCount(pathPrefix);
+	}
+    }
+    
+    /*
+     * Finally if we still haven't managed to generate a path
+     * prefix, check if the path starts with a current volume.
+     */
+    if (pathPrefix == NULL) {
+	int driveNameLen;
+	Tcl_Obj *driveName;
+	if (TclFSNonnativePathType(tail, (int) strlen(tail), NULL, 
+				   &driveNameLen, 
+				   &driveName) == TCL_PATH_ABSOLUTE) {
+	    pathPrefix = driveName;
+	    tail += driveNameLen;
 	}
     }
     
@@ -1852,7 +1870,10 @@ SkipToChar(stringPtr, match)
  *	path name to be globbed and the pattern.  The directory and
  *	remainder are assumed to be native format paths.  The prefix
  *	contained in 'pathPtr' is either a directory or path from which
- *	to start the search (or NULL).
+ *	to start the search (or NULL).  If pathPtr is NULL, then the
+ *	pattern must not start with an absolute path specification
+ *	(that case should be handled by moving the absolute path
+ *	prefix into pathPtr before calling DoGlob).
  *	
  * Results:
  *	The return value is a standard Tcl result indicating whether

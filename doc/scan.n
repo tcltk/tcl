@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.9 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.9.4.1 2004/05/17 18:42:20 dgp Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -33,7 +33,6 @@ inline manner, returning the data that would otherwise be stored in the
 variables as a list.  In the inline case, an empty string is returned when
 the end of the input string is reached before any conversions have been
 performed.
-
 .SH "DETAILS ON SCANNING"
 .PP
 \fBScan\fR operates by scanning \fIstring\fR and \fIformat\fR together.
@@ -188,7 +187,6 @@ white-space character is encountered or when the maximum field
 width has been reached, whichever comes first.
 If a \fB*\fR is present in the conversion specifier 
 then no variable is assigned and the next scan argument is not consumed.
-
 .SH "DIFFERENCES FROM ANSI SSCANF"
 .PP
 The behavior of the \fBscan\fR command is the same as the behavior of
@@ -209,6 +207,55 @@ modifiers are ignored when converting real values (i.e. type
 .IP [4]
 If the end of the input string is reached before any conversions have been
 performed and no variables are given, an empty string is returned.
+.SH EXAMPLES
+Parse a simple color specification of the form \fI#RRGGBB\fR using
+hexadecimal conversions with field sizes:
+.CS
+set string "#08D03F"
+scan $string "#%2x%2x%2x" r g b
+.CE
+
+Parse a \fIHH:MM\fR time string, noting that this avoids problems with
+octal numbers by forcing interpretation as decimals (if we did not
+care, we would use the \fB%i\fR conversion instead):
+.CS
+set string "08:08"   ;# *Not* octal!
+if {[scan $string "%d:%d" hours minutes] != 2} {
+    error "not a valid time string"
+}
+# We have to understand numeric ranges ourselves...
+if {$minutes < 0 || $minutes > 59} {
+    error "invalid number of minutes"
+}
+.CE
+
+Break a string up into sequences of non-whitespace characters (note
+the use of the \fB%n\fR conversion so that we get skipping over
+leading whitespace correct):
+.CS
+set string " a string {with braced words} + leading space "
+set words {}
+while {[scan $string %s%n word length] == 2} {
+    lappend words $word
+    set string [string range $string $length end]
+}
+.CE
+
+Parse a simple coordinate string, checking that it is complete by
+looking for the terminating character explicitly:
+.CS
+set string "(5.2,-4e-2)"
+# Note that the spaces before the literal parts of
+# the scan pattern are significant, and that ")" is
+# the Unicode character \\u0029
+if {
+   [scan $string " (%f ,%f %c" x y last] != 3
+   || $last != 0x0029
+} then {
+   error "invalid coordinate string"
+}
+puts "X=$x, Y=$y"
+.CE
 
 .SH "SEE ALSO"
 format(n), sscanf(3)

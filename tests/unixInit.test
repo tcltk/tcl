@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.30.4.4 2004/04/09 20:58:18 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.30.4.5 2004/05/17 18:42:25 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -281,7 +281,11 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
     cd $libDir
 } -body {
     # Checking for Bug 832657
-    lrange [getlibpath [file join .. bin tcltest]] 2 3
+    set x [lrange [getlibpath [file join .. bin tcltest]] 2 3]
+    foreach p $x {
+	lappend y [file normalize $p]
+    }
+    set y
 } -cleanup {
     cd $saveDir
     unset saveDir
@@ -297,6 +301,7 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
     removeDirectory sparkly $tmpDir
     unset tmpDir
     removeDirectory tmp
+    unset x p y
 } -result [list [file join [temporaryDirectory] tmp sparkly library] \
 	[file join [temporaryDirectory] tmp library] ]
 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: split.n,v 1.3 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: split.n,v 1.3.20.1 2004/05/17 18:42:20 dgp Exp $
 '\" 
 .so man.macros
 .TH split n "" Tcl "Tcl Built-In Commands"
@@ -30,15 +30,57 @@ character of \fIstring\fR is in \fIsplitChars\fR.
 If \fIsplitChars\fR is an empty string then each character of
 \fIstring\fR becomes a separate element of the result list.
 \fISplitChars\fR defaults to the standard white-space characters.
-For example,
+.SH EXAMPLES
+Divide up a USENET group name into its hierarchical components:
 .CS
-\fBsplit "comp.unix.misc" .\fR
+split "comp.lang.tcl.announce" .
+     \fB=> comp lang tcl announce\fR
 .CE
-returns \fB"comp unix misc"\fR and
+
+See how the \fBsplit\fR command splits on \fIevery\fR character in
+\fIsplitChars\fR, which can result in information loss if you are not
+careful:
 .CS
-\fBsplit "Hello world" {}\fR
+split "alpha beta gamma" "temp"
+     \fB=> al {ha b} {} {a ga} {} a\fR
 .CE
-returns \fB"H e l l o { } w o r l d"\fR.
+
+Extract the list words from a string that is not a well-formed list:
+.CS
+split "Example with {unbalanced brace character"
+     \fB=> Example with \\{unbalanced brace character\fR
+.CE
+
+Split a string into its constituent characters
+.CS
+split "Hello world" {}
+     \fB=> H e l l o { } w o r l d\fR
+.CE
+.SS "PARSING RECORD-ORIENTED FILES"
+Parse a Unix /etc/passwd file, which consists of one entry per line,
+with each line consisting of a colon-separated list of fields:
+
+.CS
+## Read the file
+set fid [open /etc/passwd]
+set content [read $fid]
+close $fid
+
+## Split into records on newlines
+set records [split $content "\\n"]
+
+## Iterate over the records
+foreach rec $records {
+
+   ## Split into fields on colons
+   set fields [split $rec ":"]
+
+   ## Assign fields to variables and print some out...
+   lassign $fields \\
+         userName password uid grp longName homeDir shell
+   puts "$longName uses [file tail $shell] for a login shell"
+}
+.CE
 
 .SH "SEE ALSO"
 join(n), list(n), string(n)

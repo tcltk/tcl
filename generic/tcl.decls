@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.6 2004/03/26 22:28:25 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.7 2004/05/17 18:42:20 dgp Exp $
 
 library tcl
 
@@ -1858,6 +1858,56 @@ declare 518 generic {
 # New export due to TIP#121
 declare 519 generic {
     Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
+}
+
+# TIP#143 API
+declare 520 generic {
+    void Tcl_LimitAddHandler(Tcl_Interp *interp, int type,
+	    Tcl_LimitHandlerProc *handlerProc, ClientData clientData,
+	    Tcl_LimitHandlerDeleteProc *deleteProc)
+}
+declare 521 generic {
+    void Tcl_LimitRemoveHandler(Tcl_Interp *interp, int type,
+	    Tcl_LimitHandlerProc *handlerProc, ClientData clientData)
+}
+declare 522 generic {
+    int Tcl_LimitReady(Tcl_Interp *interp)
+}
+declare 523 generic {
+    int Tcl_LimitCheck(Tcl_Interp *interp)
+}
+declare 524 generic {
+    int Tcl_LimitExceeded(Tcl_Interp *interp)
+}
+declare 525 generic {
+    void Tcl_LimitSetCommands(Tcl_Interp *interp, int commandLimit)
+}
+declare 526 generic {
+    void Tcl_LimitSetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
+}
+declare 527 generic {
+    void Tcl_LimitSetGranularity(Tcl_Interp *interp, int type, int granularity)
+}
+declare 528 generic {
+    int Tcl_LimitTypeEnabled(Tcl_Interp *interp, int type)
+}
+declare 529 generic {
+    int Tcl_LimitTypeExceeded(Tcl_Interp *interp, int type)
+}
+declare 530 generic {
+    void Tcl_LimitTypeSet(Tcl_Interp *interp, int type)
+}
+declare 531 generic {
+    void Tcl_LimitTypeReset(Tcl_Interp *interp, int type)
+}
+declare 532 generic {
+    int Tcl_LimitGetCommands(Tcl_Interp *interp)
+}
+declare 533 generic {
+    void Tcl_LimitGetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
+}
+declare 534 generic {
+    int Tcl_LimitGetGranularity(Tcl_Interp *interp, int type)
 }
 
 ##############################################################################

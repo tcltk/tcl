@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.5 2004/03/31 01:36:18 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.6 2004/05/17 18:42:24 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1175,7 +1175,9 @@ test filename-12.8 {globbing at filesystem root} {unixOnly} {
     set equal
 } {1}
 test filename-12.9 {globbing at filesystem root} {winOnly} {
-    set dir [lindex [glob -type d [lindex [file volumes] 0]*] 0]
+    # Can't grab just anything from 'file volumes' because we need a dir
+    # that has subdirs - assume that C:/ exists across Windows machines.
+    set dir [lindex [glob -type d C:/*] 0]
     set first [string range $dir 0 3]
     set res1 [glob -nocomplain ${first}*]
     set res2 [glob -path $first *]
@@ -1187,9 +1189,9 @@ test filename-12.9 {globbing at filesystem root} {winOnly} {
 } {1}
 
 test filename-12.10 {globbing with volume relative paths} {winOnly} {
-    set dir [lindex [glob -type d [lindex [file volumes] 0]*] 0]
+    set dir [lindex [glob -type d C:/*] 0]
     set pwd [pwd]
-    cd [lindex [file volumes] 0]
+    cd C:/
     set res1 [glob -nocomplain [string range $dir 2 end]]
     cd $pwd
     set res2 [list $dir]

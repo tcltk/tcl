@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.6 2004/05/04 17:44:21 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.7 2004/05/17 18:42:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -578,7 +578,7 @@ TclpGetDate(t, useGMT)
 #else
 	if (*t >= 0) {
 #endif
-	    return localtime(t);
+	    return TclpLocaltime(t);
 	}
 
 	time = *t - timezone;
@@ -1083,4 +1083,66 @@ AccumulateSample( Tcl_WideInt perfCounter,
 	
 	return estFreq;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGmtime --
+ *
+ *	Wrapper around the 'gmtime' library function to make it thread
+ *	safe.
+ *
+ * Results:
+ *	Returns a pointer to a 'struct tm' in thread-specific data.
+ *
+ * Side effects:
+ *	Invokes gmtime or gmtime_r as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct tm *
+TclpGmtime( timePtr )
+    CONST time_t *timePtr;	/* Pointer to the number of seconds
+				 * since the local system's epoch */
+
+{
+    /*
+     * The MS implementation of gmtime is thread safe because
+     * it returns the time in a block of thread-local storage,
+     * and Windows does not provide a Posix gmtime_r function.
+     */
+    return gmtime( timePtr );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpLocaltime --
+ *
+ *	Wrapper around the 'localtime' library function to make it thread
+ *	safe.
+ *
+ * Results:
+ *	Returns a pointer to a 'struct tm' in thread-specific data.
+ *
+ * Side effects:
+ *	Invokes localtime or localtime_r as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct tm *
+TclpLocaltime( timePtr )
+    CONST time_t *timePtr;	/* Pointer to the number of seconds
+				 * since the local system's epoch */
+
+{
+    /*
+     * The MS implementation of localtime is thread safe because
+     * it returns the time in a block of thread-local storage,
+     * and Windows does not provide a Posix localtime_r function.
+     */
+    return localtime( timePtr );
 }

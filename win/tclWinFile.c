@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.6 2004/04/09 20:58:19 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.7 2004/05/17 18:42:25 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1503,9 +1503,12 @@ NativeIsExec(nativePath)
 	    return 0;
 	}
 	
-	if ((memcmp((char*)(path+len-3),L"exe",3*sizeof(WCHAR)) == 0)
-	    || (memcmp((char*)(path+len-3),L"com",3*sizeof(WCHAR)) == 0)
-	    || (memcmp((char*)(path+len-3),L"bat",3*sizeof(WCHAR)) == 0)) {
+	/*
+	 * Use wide-char case-insensitive comparison
+	 */
+	if ((_wcsicmp(path+len-3,L"exe") == 0)
+	    || (_wcsicmp(path+len-3,L"com") == 0)
+	    || (_wcsicmp(path+len-3,L"bat") == 0)) {
 	    return 1;
 	}
     } else {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.5 2004/04/09 20:58:17 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.6 2004/05/17 18:42:24 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -848,6 +848,15 @@ test cmdAH-18.5 {Tcl_FileObjCmd: executable} {winOnly testchmod} {
     set x [file exe $gorpfile]
     set gorpexe [makeFile foo gorp.exe]
     lappend x [file exe $gorpexe]
+    removeFile $gorpexe
+    set x
+} {0 1}
+test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} {winOnly testchmod} {
+    # On pc, must be a .exe, .com, etc.
+
+    set x [file exe $gorpfile]
+    set gorpexe [makeFile foo gorp.exe]
+    lappend x [file exe [string toupper $gorpexe]]
     removeFile $gorpexe
     set x
 } {0 1}

@@ -11,12 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.3 2004/05/04 17:44:18 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.4 2004/05/17 18:42:23 dgp Exp $
  */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-
 #include "tclInt.h"
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
 /*
  * If range checking is enabled, an additional byte will be allocated

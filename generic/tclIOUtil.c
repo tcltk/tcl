@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.9 2004/05/04 17:44:17 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.10 2004/05/17 18:42:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -553,7 +553,7 @@ static void
 FsRecacheFilesystemList(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr;
+    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL;
 
     /* Trash the current cache */
     fsRecPtr = tsdPtr->filesystemList;
@@ -3470,12 +3470,69 @@ TclGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
                                          * the path, already with a
                                          * refCount for the caller.  */
 {
-    FilesystemRecord *fsRecPtr;
     int pathLen;
     char *path;
-    Tcl_PathType type = TCL_PATH_RELATIVE;
+    Tcl_PathType type;
     
     path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+
+    type = TclFSNonnativePathType(path, pathLen, filesystemPtrPtr, 
+				  driveNameLengthPtr, driveNameRef);
+    
+    if (type != TCL_PATH_ABSOLUTE) {
+	type = TclpGetNativePathType(pathPtr, driveNameLengthPtr, 
+				     driveNameRef);
+	if ((type == TCL_PATH_ABSOLUTE) && (filesystemPtrPtr != NULL)) {
+	    *filesystemPtrPtr = &tclNativeFilesystem;
+	}
+    }
+    return type;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFSNonnativePathType --
+ *
+ *	Helper function used by TclGetPathType.  Its purpose is to
+ *	check whether the given path starts with a string which
+ *	corresponds to a file volume in any registered filesystem
+ *	except the native one.  For speed and historical reasons the
+ *	native filesystem has special hard-coded checks dotted here
+ *	and there in the filesystem code.
+ *
+ * Results:
+ *	Returns one of TCL_PATH_ABSOLUTE or TCL_PATH_RELATIVE.
+ *	The filesystem reference will be set if and only if it is
+ *	non-NULL and the function's return value is TCL_PATH_ABSOLUTE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_PathType
+TclFSNonnativePathType(path, pathLen, filesystemPtrPtr, 
+		       driveNameLengthPtr, driveNameRef)
+    CONST char *path;                   /* Path to determine type for */
+    int pathLen;                        /* Length of the path */
+    Tcl_Filesystem **filesystemPtrPtr;  /* If absolute path and this is
+					 * non-NULL, then set to the
+					 * filesystem which claims this
+					 * path */  
+    int *driveNameLengthPtr;            /* If the path is absolute, and 
+					 * this is non-NULL, then set to
+					 * the length of the driveName */
+    Tcl_Obj **driveNameRef;             /* If the path is absolute, and
+					 * this is non-NULL, then set to
+					 * the name of the drive,
+					 * network-volume which contains
+					 * the path, already with a
+					 * refCount for the caller.  */
+{
+    FilesystemRecord *fsRecPtr;
+    Tcl_PathType type = TCL_PATH_RELATIVE;
 
     /*
      * Call each of the "listVolumes" function in succession, checking
@@ -3557,14 +3614,6 @@ TclGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 	    }
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
-    }
-    
-    if (type != TCL_PATH_ABSOLUTE) {
-	type = TclpGetNativePathType(pathPtr, driveNameLengthPtr, 
-				     driveNameRef);
-	if ((type == TCL_PATH_ABSOLUTE) && (filesystemPtrPtr != NULL)) {
-	    *filesystemPtrPtr = &tclNativeFilesystem;
-	}
     }
     return type;
 }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.10 2004/04/09 20:58:16 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.11 2004/05/17 18:42:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -266,6 +266,8 @@ TclIntStubs tclIntStubs = {
     Tcl_GetStartupScript, /* 179 */
     TclNewListObjDirect, /* 180 */
     TclDbNewListObjDirect, /* 181 */
+    TclpLocaltime, /* 182 */
+    TclpGmtime, /* 183 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -283,8 +285,8 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime, /* 11 */
-    TclpGmtime, /* 12 */
+    TclpLocaltime_unix, /* 11 */
+    TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
 #endif /* UNIX */
@@ -898,6 +900,21 @@ TclStubs tclStubs = {
     Tcl_GetCommandFullName, /* 517 */
     Tcl_FSEvalFileEx, /* 518 */
     Tcl_SetExitProc, /* 519 */
+    Tcl_LimitAddHandler, /* 520 */
+    Tcl_LimitRemoveHandler, /* 521 */
+    Tcl_LimitReady, /* 522 */
+    Tcl_LimitCheck, /* 523 */
+    Tcl_LimitExceeded, /* 524 */
+    Tcl_LimitSetCommands, /* 525 */
+    Tcl_LimitSetTime, /* 526 */
+    Tcl_LimitSetGranularity, /* 527 */
+    Tcl_LimitTypeEnabled, /* 528 */
+    Tcl_LimitTypeExceeded, /* 529 */
+    Tcl_LimitTypeSet, /* 530 */
+    Tcl_LimitTypeReset, /* 531 */
+    Tcl_LimitGetCommands, /* 532 */
+    Tcl_LimitGetTime, /* 533 */
+    Tcl_LimitGetGranularity, /* 534 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.3 2004/02/07 05:48:12 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.4 2004/05/17 18:42:25 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1158,7 +1158,7 @@ TclpCreateProcess(
 	    startInfo.wShowWindow = SW_HIDE;
 	    startInfo.dwFlags |= STARTF_USESHOWWINDOW;
 	    createFlags = CREATE_NEW_CONSOLE;
-	    Tcl_DStringAppend(&cmdLine, "cmd.exe /c ", -1);
+	    Tcl_DStringAppend(&cmdLine, "cmd.exe /c", -1);
 	} else {
 	    createFlags = DETACHED_PROCESS;
 	} 
@@ -1571,11 +1571,13 @@ BuildCommandLine(
     Tcl_DStringInit(&ds);
 
     /*
-     * Prime the path.
+     * Prime the path.  Add a space separator if we were primed with
+     * something.
      */
-    
+
     Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
-    
+    if (Tcl_DStringLength(linePtr) > 0) Tcl_DStringAppend(&ds, " ", 1);
+
     for (i = 0; i < argc; i++) {
 	if (i == 0) {
 	    arg = executable;

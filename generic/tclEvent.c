@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.4 2004/05/04 17:44:16 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.5 2004/05/17 18:42:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1114,6 +1114,9 @@ Tcl_VwaitObjCmd(clientData, interp, objc, objv)
     foundEvent = 1;
     while (!done && foundEvent) {
 	foundEvent = Tcl_DoOneEvent(TCL_ALL_EVENTS);
+	if (Tcl_LimitExceeded(interp)) {
+	    return TCL_ERROR;
+	}
     }
     Tcl_UntraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
@@ -1200,6 +1203,9 @@ Tcl_UpdateObjCmd(clientData, interp, objc, objv)
     }
     
     while (Tcl_DoOneEvent(flags) != 0) {
+	if (Tcl_LimitExceeded(interp)) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
