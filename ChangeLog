@@ -1,3 +1,10 @@
+2001-09-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/mkd.bat:
+	* win/rmd.bat:
+	Apply binary property (cvs admin -kb) to files and convert
+	to CRLF linefeed format to fix the VC++ build. [Bug #219409]
+
 2001-09-08 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	* generic/tclInt.h: 
