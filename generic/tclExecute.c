@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.7 2002/11/26 19:48:53 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.8 2002/12/06 03:08:18 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -247,8 +247,6 @@ static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 #endif
-static void		FreeCmdNameInternalRep _ANSI_ARGS_((
-    			    Tcl_Obj *objPtr));
 #ifdef TCL_COMPILE_DEBUG
 static char *		GetOpcodeName _ANSI_ARGS_((unsigned char *pc));
 #endif
@@ -344,7 +342,7 @@ BuiltinFunc builtinFuncTable[] = {
 
 Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
-    FreeCmdNameInternalRep,		/* freeIntRepProc */
+    TclFreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
     (Tcl_UpdateStringProc *) NULL,	/* updateStringProc */
     SetCmdNameFromAny			/* setFromAnyProc */
@@ -5446,6 +5444,7 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
     }
     
     cmdPtr->refCount++;
+
     resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
     resPtr->cmdPtr = cmdPtr;
     resPtr->refNsPtr = currNsPtr;
@@ -5465,7 +5464,7 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FreeCmdNameInternalRep --
+ * TclFreeCmdNameInternalRep --
  *
  *	Frees the resources associated with a cmdName object's internal
  *	representation.
@@ -5483,8 +5482,8 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
  *----------------------------------------------------------------------
  */
 
-static void
-FreeCmdNameInternalRep(objPtr)
+void
+TclFreeCmdNameInternalRep(objPtr)
     register Tcl_Obj *objPtr;	/* CmdName object with internal
 				 * representation to free. */
 {
@@ -5506,6 +5505,7 @@ FreeCmdNameInternalRep(objPtr)
 	     */
 	    
             Command *cmdPtr = resPtr->cmdPtr;
+
             TclCleanupCommand(cmdPtr);
             ckfree((char *) resPtr);
         }
@@ -5613,6 +5613,7 @@ SetCmdNameFromAny(interp, objPtr)
 	}
 	
 	cmdPtr->refCount++;
+
         resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
         resPtr->cmdPtr        = cmdPtr;
         resPtr->refNsPtr      = currNsPtr;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.9.20.1 2002/11/26 20:05:51 hobbs Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.9.20.2 2002/12/06 03:08:19 andreas_kupries Exp $
  */
 
 #include "tcl.h"
@@ -97,6 +97,7 @@ main(argc, argv)
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+
 #ifdef PURIFY
     /*
      * This isn't necessary - we are about to exit, but it assists in

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.6 2002/11/26 19:48:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1.2.7 2002/12/06 03:08:18 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -550,6 +550,30 @@ TclCleanupByteCode(codePtr)
 #endif /* TCL_COMPILE_STATS */
 
     bcDataPtr->refCount --;
+
+    if (bcDataPtr->refCount > 0) {
+        /*
+	 * To ensure proper cleanup of cloned Commands we scan the
+	 * shared bytecode for CmdName objects and invalidate their
+	 * internal representation.
+	 */
+
+        int numLitObjects = bcDataPtr->numLitObjects;
+	register Tcl_Obj **objArrayPtr;
+	int i;
+
+	objArrayPtr = bcDataPtr->objArrayPtr;
+	for (i = 0;  i < numLitObjects;  i++) {
+	    if (*objArrayPtr != NULL) {
+	        if ((*objArrayPtr)->typePtr == &tclCmdNameType) {
+		    Tcl_GetString ((*objArrayPtr));
+		    TclFreeCmdNameInternalRep ((*objArrayPtr));
+		    (*objArrayPtr)->typePtr = NULL;
+		}
+	    }
+	    objArrayPtr++;
+	}
+    }
     if (bcDataPtr->refCount <= 0) {
         int numLitObjects = bcDataPtr->numLitObjects;
 	int numAuxDataItems = bcDataPtr->numAuxDataItems;

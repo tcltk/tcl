@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.6 2002/11/26 19:48:56 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.7 2002/12/06 03:08:19 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1861,6 +1861,9 @@ EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
 EXTERN int		TclInvokeImportedCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
+
+EXTERN void		TclFreeCmdNameInternalRep _ANSI_ARGS_((
+			    Tcl_Obj *objPtr));
 
 /*
  *----------------------------------------------------------------

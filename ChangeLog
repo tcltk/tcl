@@ -1,3 +1,21 @@
+2002-12-05  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclCleanupByteCode): When encountering a
+	  shared bytecode structure we have to scan the literal table in
+	  that structure for objects of type "cmdName". These objects hold
+	  references to command structures, possibly in a different
+	  interp, and interfere with the cleanup of the refered commands
+	  (they keep their refcount up). Essentially at least one interp
+	  in a set of clones has a circular reference comand -> proc ->
+	  bytecode -> bytecode data -> cmdName obj -> command which
+	  prevents the command int that interp from being freed, leaking
+	  memory.
+
+	  The solution employed here is to invalidate the internal
+	  representation of 'cmdName's (but keeping the string rep),
+	  driving the refcount of refered command structures down,
+	  and breaking the cycle.
+
 2002-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclTest.c (TestCloneObjCmd): objify testclone command.
