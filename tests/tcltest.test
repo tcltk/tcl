@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.46 2004/11/02 19:03:29 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.47 2004/11/11 01:16:07 das Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1752,7 +1752,7 @@ test tcltest-26.1 {Bug/RFE 1017151} -setup {
 	tcltest::cleanupTests
     } test.tcl
 } -body {
-    slave msg test.tcl
+    slave msg [file join [temporaryDirectory] test.tcl]
     set msg
 } -cleanup {
     removeFile test.tcl
@@ -1772,7 +1772,7 @@ test tcltest-26.2 {Bug/RFE 1017151} -setup {
 	tcltest::cleanupTests
     } test.tcl
 } -body {
-    slave msg test.tcl
+    slave msg [file join [temporaryDirectory] test.tcl]
     set msg
 } -cleanup {
     removeFile test.tcl
