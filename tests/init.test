@@ -10,11 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: init.test,v 1.5 1999/06/26 20:55:07 rjohnson Exp $
+# RCS: @(#) $Id: init.test,v 1.6 2000/04/10 17:19:00 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 # Clear out any namespaces called test_ns_*
@@ -63,7 +63,7 @@ test init-1.8 {auto_qualify - multiple colons 2} {
 set testInterp [interp create]
 interp eval $testInterp [list set argv $argv]
 interp eval $testInterp [list package require tcltest]
-interp eval $testInterp [list namespace import ::tcltest::*]
+interp eval $testInterp [list namespace import -force ::tcltest::*]
 
 interp eval $testInterp {
 

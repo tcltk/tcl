@@ -10,16 +10,16 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.9 1999/10/19 18:08:44 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.10 2000/04/10 17:19:05 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 makeFile {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
     test a-1.0 {test a} {
 	list 0
     } {0}
@@ -148,7 +148,7 @@ test tcltest-5.1 {tcltest -constraints 'knownBug'} {unixOrPc} {
 
 makeFile {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
     puts $::tcltest::outputChannel "a test"
     ::tcltest::PrintError "a really short string"
     ::tcltest::PrintError "a really really really really really really long \
@@ -216,7 +216,7 @@ test tcltest-7.5 {tcltest test.tcl -d 3} {unixOrPc} {
 
 makeFile {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
     makeFile {} a.tmp
     exit
 } a.tcl
@@ -314,7 +314,7 @@ test tcltest-9.2 {-file a*.tcl} {unixOrPc} {
 
 makeFile {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 
     test makecore {make a core file} {
 	set f [open core w]
@@ -350,7 +350,7 @@ test tcltest-10.4 {-preservecore 3} {unixOrPc} {
 
 makeFile {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
     puts "=$::tcltest::parameters="
     exit
 } args.tcl
@@ -374,7 +374,7 @@ test tcltest-11.3 {-args {-foo bar -baz}} {unixOrPc} {
 # -load -loadfile
 makeFile {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
     puts $::tcltest::loadScript
     exit
 } load.tcl

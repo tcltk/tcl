@@ -12,11 +12,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringObj.test,v 1.9 1999/09/02 16:26:38 hobbs Exp $
+# RCS: @(#) $Id: stringObj.test,v 1.10 2000/04/10 17:19:04 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 if {[info commands testobj] == {}} {

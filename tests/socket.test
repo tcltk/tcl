@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.13 1999/10/19 18:08:44 jenn Exp $
+# RCS: @(#) $Id: socket.test,v 1.14 2000/04/10 17:19:04 ericm Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -64,7 +64,7 @@
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 # Some tests require the testthread command

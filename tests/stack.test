@@ -9,11 +9,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.7 1999/11/19 23:02:40 hobbs Exp $
+# RCS: @(#) $Id: stack.test,v 1.8 2000/04/10 17:19:04 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 # Note that a failure in this test results in a crash of the executable.

@@ -8,11 +8,11 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.15 2000/01/28 19:32:05 ericm Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.16 2000/04/10 17:19:03 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 set origDir [pwd]

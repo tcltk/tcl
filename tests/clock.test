@@ -10,11 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.12 2000/03/21 22:55:24 ericm Exp $
+# RCS: @(#) $Id: clock.test,v 1.13 2000/04/10 17:18:57 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 test clock-1.1 {clock tests} {

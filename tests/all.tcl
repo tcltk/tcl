@@ -7,11 +7,11 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.9 2000/01/27 23:44:09 jenn Exp $
+# RCS: @(#) $Id: all.tcl,v 1.10 2000/04/10 17:18:56 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 
 set ::tcltest::testSingleFile false

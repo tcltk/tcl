@@ -12,11 +12,11 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.17 2000/04/09 23:56:31 welch Exp $
+# RCS: @(#) $Id: http.test,v 1.18 2000/04/10 17:18:59 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespace import ::tcltest::*
+    namespace import -force ::tcltest::*
 }
 set tcltest::testConstraints(notLinux) \
 	[expr ![string equal Linux $tcl_platform(os)]]
