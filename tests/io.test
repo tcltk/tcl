@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.35 2002/07/04 15:46:55 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.36 2002/07/10 11:56:44 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -29,6 +29,7 @@ namespace eval ::tcl::test::io {
     namespace import ::tcltest::viewFile
 
 testConstraint testchannel [llength [info commands testchannel]]
+testConstraint exec [llength [info commands exec]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -1579,7 +1580,7 @@ test io-14.2 {Tcl_SetStdChannel and Tcl_GetStdChannel} {
 
 set path(test3) [makeFile {} test3]
 
-test io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} {stdio} {
+test io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec} {
     set f [open $path(test1) w]
     puts $f [format {
 	close stdin
@@ -1608,7 +1609,7 @@ out
 } {err
 }}
 # This test relies on the fact that the smallest available fd is used first.
-test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {unixOnly} {
+test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unixOnly} {
     set f [open $path(test1) w]
     puts $f [format { close stdin
 	close stdout
@@ -2660,7 +2661,7 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 	set result ok
     }
 } ok
-test io-29.33 {Tcl_Flush, implicit flush on exit} {stdio} {
+test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     set f [open $path(script) w]
     puts $f [format {
 	set f [open "%s" w]

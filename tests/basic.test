@@ -15,22 +15,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.22 2002/07/04 16:52:07 msofer Exp $
+# RCS: @(#) $Id: basic.test,v 1.23 2002/07/10 11:56:44 dgp Exp $
 #
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import -force ::tcltest::*
 
-::tcltest::testConstraint testcmdtoken \
-	[llength [info commands testcmdtoken]]
-::tcltest::testConstraint testcmdtrace \
-	[llength [info commands testcmdtrace]]
-::tcltest::testConstraint testcreatecommand \
-	[llength [info commands testcreatecommand]]
-::tcltest::testConstraint exec \
-	[llength [info commands exec]]
+testConstraint testcmdtoken [llength [info commands testcmdtoken]]
+testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+testConstraint testcreatecommand [llength [info commands testcreatecommand]]
+testConstraint exec [llength [info commands exec]]
 
 # This variable needs to be changed when the major or minor version number for
 # Tcl changes.
@@ -561,10 +555,10 @@ test basic-44.1 {Tcl_GlobalEval} {emptyTest} {
 test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {emptyTest} {
 } {}
 
-test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {exec} {
+test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {stdio} {
     catch {close $f}
     set res [catch {
-	set f [open |[list [info nameofexecutable]] w+]
+	set f [open |[list [interpreter]] w+]
 	fconfigure $f -buffering line
 	puts $f {fconfigure stdout -buffering line}
 	puts $f continue
@@ -591,7 +585,7 @@ test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} {exec} {
 	puts hello
 	break
     } BREAKtest]
-    set res [list [catch {exec [info nameofexecutable] $fName} msg] $msg]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
     regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
@@ -607,7 +601,7 @@ test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {exec} {
 	patch
 	break
     } BREAKtest]
-    set res [list [catch {exec [info nameofexecutable] $fName} msg] $msg]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
     regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
@@ -620,7 +614,7 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     set fName [makeFile {
 	foo [set a 1] [break]
     } BREAKtest]
-    set res [list [catch {exec [info nameofexecutable] $fName} msg] $msg]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
     regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
@@ -635,7 +629,7 @@ test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     set fName [makeFile {
 	return -code return
     } BREAKtest]
-    set res [list [catch {exec [info nameofexecutable] $fName} msg] $msg]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
     regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res

@@ -8,12 +8,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.14 2002/07/01 07:52:02 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.15 2002/07/10 11:56:44 dgp Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import -force ::tcltest::*
 
 proc toutf {args} {
     global x
@@ -25,12 +23,8 @@ proc fromutf {args} {
 }
 
 # Some tests require the testencoding command
-
-::tcltest::testConstraint testencoding \
-	[expr {[info commands testencoding] != {}}]
-::tcltest::testConstraint exec \
-	[llength [info commands exec]]
-
+testConstraint testencoding [llength [info commands testencoding]]
+testConstraint exec [llength [info commands exec]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -382,7 +376,7 @@ test encoding-24.1 {EscapeFreeProc on open channels} -constraints {
 	gets $f
     } iso2022.tcl]
 } -body {
-    exec $::tcltest::tcltest $file
+    exec [interpreter] $file
 } -cleanup {
     removeFile iso2022.tcl
 } -result {}
@@ -397,12 +391,12 @@ test encoding-24.2 {EscapeFreeProc on open channels} -constraints {
 	exit
     } iso2022.tcl]
 } -body {
-    viewable [exec $::tcltest::tcltest $file]
+    viewable [exec [interpreter] $file]
 } -cleanup {
     removeFile iso2022.tcl
 } -result "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
 
-test encoding-24.3 {EscapeFreeProc on open channels} {exec} {
+test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     # Bug #219314 - if we don't free escape encodings correctly on
     # channel closure, we go boom
     set file [makeFile {
@@ -410,7 +404,7 @@ test encoding-24.3 {EscapeFreeProc on open channels} {exec} {
 	set a "\u4e4e\u4e5e\u4e5f"; # 3 Japanese Kanji letters
 	puts $a
     } iso2022.tcl]
-    set f [open "|[list $::tcltest::tcltest $file]"]
+    set f [open "|[list [interpreter] $file]"]
     fconfigure $f -encoding iso2022-jp
     set count [gets $f line]
     close $f
