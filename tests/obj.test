@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.8 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: obj.test,v 1.9 2004/06/18 15:06:43 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -587,6 +587,14 @@ test obj-31.6 {regenerate string rep of "end--bigInteger"} {testobj nonPortable}
     testobj convert 1 end-offset
     testobj invalidateStringRep 1
 } end--2147483648
+
+test obj-32.1 {freeing very large object trees} {
+    set x {}
+    for {set i 0} {$i<100000} {incr i} {
+	set x [list $x {}]
+    }
+    unset x
+} {}
 
 if {[testConstraint testobj]} {
     testobj freeallvars
