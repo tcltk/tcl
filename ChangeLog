@@ -6,6 +6,8 @@
 	* win/tclWinPipe.c:  More Borland compatibility fixes.
 	[Patch: 436116]
 
+	* win/.cvsignore:  A few more glob patterns added.
+
 2001-09-05 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	* tests/winFCmd.test: made notWin2000 constraint false if not
