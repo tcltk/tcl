@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.30 1999/01/04 19:25:01 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.31 1999/01/05 01:18:34 rjohnson Exp $
  */
 
 #ifndef _TCL
@@ -177,7 +177,7 @@
 #  define DLLIMPORT
 #  define DLLEXPORT
 # else
-#  ifdef _MSC_VER
+#  if defined(_MSC_VER) || (defined(__GNUC__) && defined(__declspec))
 #   define DLLIMPORT __declspec(dllimport)
 #   define DLLEXPORT __declspec(dllexport)
 #  else
