@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.182 2004/10/18 21:15:41 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.183 2004/10/19 21:54:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1422,6 +1422,8 @@ typedef struct Interp {
 #define SAFE_INTERP			 0x80
 #define INTERP_TRACE_IN_PROGRESS	0x200
 
+typedef struct TclInterpState_ *TclInterpState;
+
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
  * to catch infinite recursion).
@@ -1708,6 +1710,8 @@ EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 EXTERN void             TclCleanupLiteralTable _ANSI_ARGS_((
                             Tcl_Interp* interp, LiteralTable* tablePtr ));
+EXTERN void		TclDiscardInterpState _ANSI_ARGS_ ((
+			    TclInterpState state));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1904,6 +1908,10 @@ EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id))
 EXTERN void		TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN void		TclRemoveScriptLimitCallbacks _ANSI_ARGS_((
 			    Tcl_Interp *interp));
+EXTERN int		TclRestoreInterpState _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, TclInterpState state));
+EXTERN TclInterpState	TclSaveInterpState _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, int status));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 EXTERN int		TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,

@@ -1,3 +1,25 @@
+2004-10-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h (Tcl*InterpState):		New internal routines
+	* generic/tclResult.c (Tcl*InterpState):	TclSaveInterpState,
+	TclRestoreInterpState, and TclDiscardInterpState are superior
+	replacements for Tcl_(Save|Restore|Discard)Result.  Intent is that
+	these routines will be converted to public routines after TIP approval.
+
+	* generic/tclBasic.c (TclEvalObjvInternal):
+	* generic/tclDictObj.c (DictUpdateCmd, DictWithCmd):
+	* generic/tclIOGT.c (ExecuteCallback):
+	* generic/tclTrace.c (Trace*Proc,TclCheck*Traces,TclCallVarTraces):
+	Callers of Tcl_*Result updated to call the new routines.  The
+	calls were relocated in several cases to perform save/restore
+	operations only when needed.
+
+	* generic/tclEvent.c (HandleBgErrors):
+	* generic/tclFCmd.c (CopyRenameOneFile):
+	Calls to Tcl_*Result that were eliminated because they appeared
+	to serve no useful purpose, typically saving/restoring an error
+	message, only to throw it away.
+
 2004-10-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp):
