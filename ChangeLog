@@ -1,3 +1,9 @@
+2003-05-13  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclEnv.c: Another putenv() copy behavior problem
+	repaired when compiling on windows and using microsoft's runtime.
+	[Bug 736421]
+
 2003-05-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c: ensure cd is thread-safe.
