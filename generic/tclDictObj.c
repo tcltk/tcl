@@ -9,10 +9,28 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.13 2004/01/14 09:34:33 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.14 2004/01/14 22:07:43 dkf Exp $
  */
 
 #include "tclInt.h"
+
+/*
+ * Flag values for TraceDictPath().
+ *
+ * DICT_PATH_UPDATE indicates that we are going to be doing an update
+ * at the tip of the path, so duplication of shared objects should be
+ * done along the way.
+ *
+ * DICT_PATH_EXISTS indicates that we are performing an existance test
+ * and a lookup failure should therefore not be an error.  If (and
+ * only if) this flag is set, TraceDictPath() will return the special
+ * value DICT_PATH_NON_EXISTENT if the path is not traceable.
+ */
+
+#define DICT_PATH_UPDATE 1
+#define DICT_PATH_EXISTS 2
+
+#define DICT_PATH_NON_EXISTENT ((Tcl_Obj *) (void *) 1)
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -58,7 +76,7 @@ static int		SetDictFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 static void		UpdateStringOfDict _ANSI_ARGS_((Tcl_Obj *dictPtr));
 static Tcl_Obj *	TraceDictPath _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *rootPtr, int keyc, Tcl_Obj *CONST keyv[],
-			    int willUpdate));
+			    int flags));
 struct Dict;
 static void		DeleteDict _ANSI_ARGS_((struct Dict *dict));
 
@@ -545,25 +563,27 @@ SetDictFromAny(interp, objPtr)
  * Results:
  *	The object at the end of the path, or NULL if there was an error.
  *	Note that this it is an error for an intermediate dictionary on
- *	the path to not exist.
+ *	the path to not exist.  If the flags argument is DICT_PATH_EXISTS,
+ *	a non-existent path gives a DICT_PATH_NON_EXISTENT result.
  *
  * Side effects:
- *	If the willUpdate flag is false, there are no side effects (other
- *	than potential conversion of objects to dictionaries.)  If the
- *	willUpdate flag is true, the following additional side effects
- *	occur.  Shared dictionaries along the path are converted into
- *	unshared objects, and a backward-pointing chain is built using
- *	the chain fields of the dictionaries (for easy invalidation of
- *	string representations.)
+ *	If the flags argument is zero or DICT_PATH_EXISTS, there are
+ *	no side effects (other than potential conversion of objects to
+ *	dictionaries.)  If the flags argument is DICT_PATH_UPDATE, the
+ *	following additional side effects occur.  Shared dictionaries
+ *	along the path are converted into unshared objects, and a
+ *	backward-pointing chain is built using the chain fields of the
+ *	dictionaries (for easy invalidation of string
+ *	representations.)
  *
  *----------------------------------------------------------------------
  */
 
 static Tcl_Obj *
-TraceDictPath(interp, dictPtr, keyc, keyv, willUpdate)
+TraceDictPath(interp, dictPtr, keyc, keyv, flags)
     Tcl_Interp *interp;
     Tcl_Obj *dictPtr, *CONST keyv[];
-    int keyc, willUpdate;
+    int keyc, flags;
 {
     Dict *dict, *newDict;
     int i;
@@ -574,7 +594,7 @@ TraceDictPath(interp, dictPtr, keyc, keyv, willUpdate)
 	}
     }
     dict = (Dict *) dictPtr->internalRep.otherValuePtr;
-    if (willUpdate) {
+    if (flags == DICT_PATH_UPDATE) {
 	dict->chain = NULL;
     }
 
@@ -583,6 +603,9 @@ TraceDictPath(interp, dictPtr, keyc, keyv, willUpdate)
 	Tcl_Obj *tmpObj;
 
 	if (hPtr == NULL) {
+	    if (flags == DICT_PATH_EXISTS) {
+		return DICT_PATH_NON_EXISTENT;
+	    }
 	    if (interp != NULL) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -599,7 +622,7 @@ TraceDictPath(interp, dictPtr, keyc, keyv, willUpdate)
 	    }
 	}
 	newDict = (Dict *) tmpObj->internalRep.otherValuePtr;
-	if (willUpdate) {
+	if (flags == DICT_PATH_UPDATE) {
 	    if (Tcl_IsShared(tmpObj)) {
 		Tcl_DecrRefCount(tmpObj);
 		tmpObj = Tcl_DuplicateObj(tmpObj);
@@ -1032,7 +1055,7 @@ Tcl_DictObjPutKeyList(interp, dictPtr, keyc, keyv, valuePtr)
 	Tcl_Panic("Tcl_DictObjPutKeyList called with empty key list");
     }
 
-    dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, /*willUpdate*/ 1);
+    dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, DICT_PATH_UPDATE);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1088,7 +1111,7 @@ Tcl_DictObjRemoveKeyList(interp, dictPtr, keyc, keyv)
 	Tcl_Panic("Tcl_DictObjRemoveKeyList called with empty key list");
     }
 
-    dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, /*willUpdate*/ 1);
+    dictPtr = TraceDictPath(interp, dictPtr, keyc-1, keyv, DICT_PATH_UPDATE);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1320,7 +1343,7 @@ DictGetCmd(interp, objc, objv)
      * going through a chain of searches.)  Note that this loop always
      * executes at least once.
      */
-    dictPtr = TraceDictPath(interp, objv[2], objc-4, objv+3, /*willUpdate*/ 0);
+    dictPtr = TraceDictPath(interp, objv[2], objc-4, objv+3, 0);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -1618,9 +1641,13 @@ DictExistsCmd(interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    dictPtr = TraceDictPath(interp, objv[2], objc-4, objv+3, /*willUpdate*/ 0);
+    dictPtr = TraceDictPath(interp, objv[2], objc-4, objv+3, DICT_PATH_EXISTS);
     if (dictPtr == NULL) {
 	return TCL_ERROR;
+    }
+    if (dictPtr == DICT_PATH_NON_EXISTENT) {
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	return TCL_OK;
     }
     result = Tcl_DictObjGet(interp, dictPtr, objv[objc-1], &valuePtr);
     if (result != TCL_OK) {
