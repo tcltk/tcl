@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.2 2004/04/06 22:25:56 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.3 2004/11/11 01:16:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -60,7 +60,7 @@ typedef struct fileinfobuf {
        u_int32_t padding[4];
      } finder;
      off_t rsrcForkSize;
-   } data;
+   } data __attribute__ ((packed));
 } fileinfobuf;
 
 /*
