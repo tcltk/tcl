@@ -1,3 +1,13 @@
+2004-10-22  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Fixed a typo where the fallback time zone
+	became ::localtime instead of :localtime.  Fixed a bug where
+	time zone names containing hyphens could not be loaded.
+	* tests/clock.test: Added regression test cases that covers
+	both bugs.
+	Thanks to Todd M. Helfter <tmh@jumpgate.itsp.purdue.edu> for
+	finding these bugs.
+	
 2004-10-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TclCompEvalObj, Tcl_ExprObj): 
