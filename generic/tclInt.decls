@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.24 2001/04/24 20:59:18 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.25 2001/04/27 22:11:51 kennykb Exp $
 
 library tcl
 
@@ -62,7 +62,8 @@ declare 9 {unix win} {
 	    TclFile *errFilePtr)
 }
 declare 10 generic {
-    int TclCreateProc(Tcl_Interp *interp, Namespace *nsPtr, char *procName, \
+    int TclCreateProc(Tcl_Interp *interp, Namespace *nsPtr, 
+            CONST char *procName,
 	    Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr)
 }
 declare 11 generic {

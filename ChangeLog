@@ -1,3 +1,7 @@
+2000-04-27  Kevin Kenny	<kennykb@crd.ge.com>
+
+	* generic/tclCmdIL.c: Added another four missing CONSTs.
+	
 2000-04-25  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/configure: Regen.

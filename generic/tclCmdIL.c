@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.29 2000/11/23 15:53:26 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.30 2001/04/27 22:11:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -77,7 +77,7 @@ typedef struct SortInfo {
  */
 
 static void		AppendLocals _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *listPtr, char *pattern,
+			    Tcl_Obj *listPtr, CONST char *pattern,
 			    int includeLinks));
 static int		DictionaryCompare _ANSI_ARGS_((char *left,
 			    char *right));
@@ -654,7 +654,8 @@ InfoCommandsCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *cmdName, *pattern, *simplePattern;
+    char *cmdName, *pattern;
+    CONST char *simplePattern;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Namespace *nsPtr;
@@ -1276,7 +1277,7 @@ static void
 AppendLocals(interp, listPtr, pattern, includeLinks)
     Tcl_Interp *interp;		/* Current interpreter. */
     Tcl_Obj *listPtr;		/* List object to append names to. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     int includeLinks;		/* 1 if upvars should be included, else 0. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1445,7 +1446,8 @@ InfoProcsCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *cmdName, *pattern, *simplePattern;
+    char *cmdName, *pattern;
+    CONST char *simplePattern;
     Namespace *nsPtr;
 #ifdef INFO_PROCS_SEARCH_GLOBAL_NS
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
@@ -1736,7 +1738,8 @@ InfoVarsCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *varName, *pattern, *simplePattern;
+    char *varName, *pattern;
+    CONST char *simplePattern;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Var *varPtr;
