@@ -1,3 +1,12 @@
+2001-01-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/winPipe.test (winpipe-1.20): 
+	* tests/winDde.test (createChildProcess): 
+	* tests/pkgMkIndex.test (pkgtest::createIndex):  Removed
+	assumption that paths contain no spaces which causes problems with
+	both [eval] and [open |...] due to the well-known differences
+	between lists and strings.  Fixes bug #119406
+
 2001-01-04  Don Porter  <dgp@users.sourceforge.net>
 	* tests/unixInit.test:
 	* unix/tclUnixInit.c (TclpInitLibraryPath):
