@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.19 1999/12/04 06:16:00 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.20 2000/01/11 22:09:10 hobbs Exp $
 
 package provide http 2.2	;# This uses Tcl namespaces
 
@@ -472,7 +472,7 @@ proc http::cleanup {token} {
 		set state(totalsize) [string trim $length]
 	    }
 	    if {[regexp -nocase {^([^:]+):(.+)$} $line x key value]} {
-		lappend state(meta) $key $value
+		lappend state(meta) $key [string trim $value]
 	    } elseif {[regexp ^HTTP $line]} {
 		set state(http) $line
 	    }
