@@ -1,3 +1,14 @@
+2004-11-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.h:
+	* generic/tclInt.h:
+	* unix/Makefile.in: include tclConfig.h from tcl.h and install it
+	as a public header. Normalized compiler include path order to 
+	-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR}.
+	
+	* unix/dltest/Makefile.in: add ${BUILD_DIR}/.. to include path
+	to pick up tclConfig.h.
+
 2004-11-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	Be sure -I{BUILD_DIR} comes first so that
