@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.6 1999/04/28 17:06:06 stanton Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.7 1999/05/28 23:02:33 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1024,8 +1024,8 @@ SetBooleanFromAny(interp, objPtr)
 	if (c & 0x80) {
 	    goto badBoolean;
 	}
-	if (isupper(UCHAR(c))) { /* INTL: ISO only. */
-	    c = (char) UCHAR(tolower(UCHAR(c))); /* INTL: ISO only. */
+	if (Tcl_UniCharIsUpper(UCHAR(c))) {
+	    c = (char) Tcl_UniCharToLower(UCHAR(c));
 	}
 	lowerCase[i] = c;
     }
