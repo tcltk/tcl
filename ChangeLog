@@ -9,6 +9,9 @@
 
 2003-07-15  Don Porter  <dgp@users.sourceforge.net>
 
+        * doc/http.n:  Updated SYNOPSIS to match actual syntax of
+        commands.  [Bug 756112]
+
 	* unix/dltest/pkga.c:	Updated to not use Tcl_UtfNcmp and counted
 	strings instead of strcmp (not defined in any #include'd header)
 	and presumed NULL-terminated strings.
