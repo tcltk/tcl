@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.24 2004/05/17 09:19:59 dkf Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.25 2004/07/16 22:22:35 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -432,6 +432,10 @@ to UTF-8 based on the channel's encoding and storing the produced data in
 that were stored in \fIreadObjPtr\fR.  If an error occurs while reading, the
 return value is \-1 and \fBTcl_ReadChars\fR records a POSIX error code that
 can be retrieved with \fBTcl_GetErrno\fR.
+.PP
+Setting \fIcharsToRead\fR to \fB-1\fR will cause the command to read
+all characters currently available (non-blocking) or everything until
+eof (blocking mode).
 .PP
 The return value may be smaller than the value to read, indicating that less
 data than requested was available.  This is called a \fIshort read\fR.  In
