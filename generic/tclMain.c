@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.8 2000/11/03 18:46:12 hobbs Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.9 2000/11/03 20:01:16 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -152,10 +152,10 @@ Tcl_Main(argc, argv, appInitProc)
     Tcl_DString argString;
     ThreadSpecificData *tsdPtr;
 
+    Tcl_FindExecutable(argv[0]);
+
     tsdPtr = (ThreadSpecificData *) 
 	Tcl_GetThreadData(&dataKey, sizeof(ThreadSpecificData));
-
-    Tcl_FindExecutable(argv[0]);
     tsdPtr->interp = interp = Tcl_CreateInterp();
 #ifdef TCL_MEM_DEBUG
     Tcl_InitMemory(interp);
