@@ -1,3 +1,8 @@
+2002-02-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): handle quirky about case
+	earlier to avoid shimmering problem.
+
 2002-02-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* tests/io.test: io-39.22 split into two tests, one platform
