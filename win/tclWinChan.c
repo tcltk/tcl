@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.31 2003/12/13 02:07:05 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.32 2003/12/13 03:11:02 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -533,9 +533,9 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
         moveMethod = FILE_END;
     }
 
-    newPosHigh = (LONG)(offset >> 32);
-    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset), &newPosHigh,
-			    moveMethod);
+    newPosHigh = Tcl_WideAsLong(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
+	    &newPosHigh, moveMethod);
     if (newPos == INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
@@ -544,7 +544,7 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
 	    return -1;
 	}
     }
-    return ((Tcl_WideInt) newPos) | (((Tcl_WideInt) newPosHigh) << 32);
+    return (Tcl_LongAsWide(newPos) | (Tcl_LongAsWide(newPosHigh) << 32));
 }
 
 /*
