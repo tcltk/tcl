@@ -10,12 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winTime.test,v 1.6 2000/11/21 21:33:42 andreas_kupries Exp $
+# RCS: @(#) $Id: winTime.test,v 1.7 2003/02/14 22:16:27 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testwinclock [llength [info commands testwinclock]]
 
 # The next two tests will crash on Windows if the check for negative
 # clock values is not done properly.
@@ -37,27 +39,22 @@ test winTime-1.2 {TclpGetDate} {pcOnly} {
 # with the Windows clock.  3000 iterations really isn't enough,
 # but how many does a tester have patience for?
 
-test winTime-2.1 {Synchronization of Tcl and Windows clocks} {pcOnly} {
-    set failed 0
-    foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] {}
-    set olddiff [expr { abs ( $tcl_sec - $sys_sec
-			   + 1.0e-6 * ( $tcl_usec - $sys_usec ) ) }]
+test winTime-2.1 {Synchronization of Tcl and Windows clocks} {testwinclock} {
+    set failed {}
     set ok 1
     for { set i 0 } { $i < 3000 } { incr i } {
 	foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] {}
-	set diff [expr { abs ( $tcl_sec - $sys_sec
-			       + 1.0e-6 * ( $tcl_usec - $sys_usec ) ) }]
-	if { ( $diff > $olddiff + 1000 )
-	     || ( $diff > 11000 ) } {
-	    set failed 1
+	set diff [expr { $tcl_sec - $sys_sec
+			 + 1.0e-6 * ( $tcl_usec - $sys_usec ) }]
+        if { abs($diff) > 0.02 } {
+	    set failed "Tcl clock differs from system clock by $diff sec"
 	    break
 	} else {
-	    set olddiff $diff
-	    after 1
+	    after 10
 	}
     }
     set failed
-} {0}
+} {}
 
 # cleanup
 ::tcltest::cleanupTests
