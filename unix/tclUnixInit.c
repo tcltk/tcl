@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.5 2002/08/20 20:25:30 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.6 2002/08/21 12:23:52 das Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -407,7 +407,7 @@ CONST char *path;		/* Path to the executable in native
     if (Tcl_MacOSXGetLibraryPath(NULL, 1024, tclLibPath) == TCL_OK) {
         str = tclLibPath;
     } else
-#endif /* HAVE_CFBUNDLE */  
+#endif /* HAVE_CFBUNDLE */
     {
         str = defaultLibraryDir;
     }
@@ -703,7 +703,12 @@ TclpSetVariables(interp)
     if (Tcl_MacOSXGetLibraryPath(interp, 1024, tclLibPath) == TCL_OK) {
         Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, 
                 TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
+                TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_pkgPath", " ",
+                TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
+        Tcl_SetVar(interp, "tcl_pkgPath", pkgPath,
+                TCL_GLOBAL_ONLY | TCL_APPEND_VALUE);
     } else
 #endif /* HAVE_CFBUNDLE */
     {
@@ -980,15 +985,13 @@ TclpCheckStackSpace()
  */
 int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
 {
-	int foundInFramework = TCL_ERROR;
+    int foundInFramework = TCL_ERROR;
 #ifdef HAVE_CFBUNDLE
     if (strcmp(defaultLibraryDir, "@TCL_IN_FRAMEWORK@") == 0) {
-    
-        foundInFramework = Tcl_MacOSXOpenBundleResources(interp, 
-                "com.tcltk.tcllibrary",
-                0, maxPathLen, tclLibPath);
+	foundInFramework = Tcl_MacOSXOpenBundleResources(interp, 
+	    "com.tcltk.tcllibrary", 0, maxPathLen, tclLibPath);
     }
-#endif	
-	return foundInFramework;
+#endif /* HAVE_CFBUNDLE */
+    return foundInFramework;
 }
 

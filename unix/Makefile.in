@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83.6.5 2002/08/20 20:25:29 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.6 2002/08/21 12:23:50 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -195,7 +195,8 @@ SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
-TCL_SHLIB_LD_EXTRAS = @TCL_SHLIB_LD_EXTRAS@
+TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
+
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
 
@@ -430,10 +431,10 @@ DL_SRCS = \
 	$(UNIX_DIR)/tclLoadOSF.c \
 	$(UNIX_DIR)/tclLoadShl.c
 
-MACOSX_SRCS = \
+MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c
 
-# Note: don't include DL_SRCS or MACOSX_SRCS in SRCS: most of those
+# Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
 # problems for things like "make depend".
 

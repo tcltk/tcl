@@ -108,7 +108,7 @@
 			shouldUseHeadermap = 0;
 		};
 		00E2F84C016E8B780ACA28DC = {
-			buildArgumentsString = "TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" ${EXTRA_MAKE_FLAGS}";
+			buildArgumentsString = "TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" ${EXTRA_MAKE_FLAGS} TCL_PACKAGE_PATH=\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl\"";
 			buildPhases = (
 			);
 			buildSettings = {
