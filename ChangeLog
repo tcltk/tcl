@@ -2,7 +2,9 @@
 
 	* generic/tcl.h: Added some support for the LCC-Win32 compiler.
 	Unfortunetly, this compiler has a bug in its preprocessor and
-	can't build Tcl even with this minor patch.
+	can't build Tcl even with this minor patch.  Also added some
+	support for the OpenWatcom compiler.  A new win/makefile.wc to
+	follow soon.
 
 2003-08-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
