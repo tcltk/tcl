@@ -8,11 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
-<<<<<<< tclStubInit.c
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.4 2003/09/05 23:08:07 dgp Exp $
-=======
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.4 2003/09/05 23:08:07 dgp Exp $
->>>>>>> 1.88
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.5 2003/09/05 23:10:06 dgp Exp $
  */
 
 #include "tclInt.h"
