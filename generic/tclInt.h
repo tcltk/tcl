@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64.6.4 2001/09/27 15:02:14 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.5 2001/10/03 15:16:05 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -27,11 +27,11 @@
  * needed by stdlib.h in some configurations.
  */
 
-#include <stdio.h>
-
 #ifndef _TCL
 #include "tcl.h"
 #endif
+
+#include <stdio.h>
 
 #include <ctype.h>
 #ifdef NO_LIMITS_H

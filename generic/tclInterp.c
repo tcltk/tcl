@@ -9,11 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.7.4.2 2001/09/27 13:57:59 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.7.4.3 2001/10/03 15:16:05 dkf Exp $
  */
 
-#include <stdio.h>
 #include "tclInt.h"
+#include <stdio.h>
 #include "tclPort.h"
 
 /*

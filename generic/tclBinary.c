@@ -10,11 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.8.6.4 2001/10/02 10:47:28 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.8.6.5 2001/10/03 15:16:05 dkf Exp $
  */
 
-#include <math.h>
 #include "tclInt.h"
+#include <math.h>
 #include "tclPort.h"
 
 /*
