@@ -1,3 +1,8 @@
+2002-02-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tcl.h: Better guessing of LP64/ILP32 architecture, but
+	now sensitive to presence of (suitable) <limits.h>
+
 2002-02-20  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tcl.decls (Tcl_RegExpRange,Tcl_GetIndexFromObjStruct):
