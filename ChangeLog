@@ -1,3 +1,12 @@
+2004-10-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclThreadTest.c (ThreadEventProc):	Corrected subtle
+	bug where the returned (char *) from Tcl_GetStringResult(interp)
+	continued to be used without copying or refcounting, while
+	activity on the interp continued.  That's not safe, and recent
+	changes demonstrated the lack of safety with failing tests
+	thread-4.3 and thread-4.5.
+
 2004-10-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclDictObj.c (DictWithCmd): Make sure all paths (that
