@@ -1,3 +1,25 @@
+2000-01-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclCmdIL.c (InfoBodyCmd): made [info body] return a
+	string if the body has been bytecompiled.
+	* generic/tclBasic.c (Tcl_EvalObjEx): added pedantic check for
+	originating proc body of bytecompiled code, #def'd out as the
+	change for [info body] should make it unnecessary
+
+	* unix/tclUnixNotfy.c (Tcl_InitNotifier): added cast for tsdPtr
+
+	* tests/set.test: added test for complex array elem name compiling
+	* generic/tclCompCmds.c (TclCompileSetCmd): Fixed parsing of array
+	elements during compiling, and slightly optimised same [Bug: 3889]
+
+	* doc/tclvars.n: added definitions for tcl_(non)wordchars
+
+	* doc/vwait.n: added notes about requirement for vwait var being
+	globally scoped [Bug: 3329]
+
+	* library/word.tcl: changed tcl_(non)wordchars settings to use
+	new unicode regexp char class escapes instead of char sequences
+
 2000-01-14  Eric Melski  <ericm@scriptics.com>
 
 	* tests/var.test: Added a test for the array multiple delete

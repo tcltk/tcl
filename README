@@ -5,7 +5,7 @@ README:  Tcl
 	http://www.scriptics.com/products/tcltk/netcvs.html]
         # http://www.scriptics.com/registration/<version>.tml
 
-RCS: @(#) $Id: README,v 1.26 2000/01/14 00:20:42 hobbs Exp $
+RCS: @(#) $Id: README,v 1.27 2000/01/21 02:24:30 hobbs Exp $
 
 Contents
 --------
@@ -34,7 +34,7 @@ Tcl is maintained, enhanced, and distributed freely as a
 service to the Tcl community by Scriptics Corporation.
 The official home for Tcl/Tk is on the Scriptics Web site:
 
-    http://www.scriptics.com
+	http://www.scriptics.com
 
 Tcl is a freely available open source package.  You can do virtually
 anything you like with it, such as modifying it, redistributing it,
@@ -46,19 +46,19 @@ and selling it either in whole or in part.  See the file
 
 Extensive documentation is available at our website.  The
 home page for this release is
-    http://www.scriptics.com/software/8.3.html
+	http://www.scriptics.com/software/8.3.html
 
 Information about new features in 8.3 can be found at
-    http://www.scriptics.com/software/whatsnew83.html
+	http://www.scriptics.com/software/whatsnew83.html
 
 Detailed release notes can be found at
-    http://www.scriptics.com/software/relnotes/tcl8.3b2
+	http://www.scriptics.com/software/relnotes/tcl8.3b2
 
 Information about Tcl itself can be found at
-    http://www.scriptics.com/scripting/
+	http://www.scriptics.com/scripting/
 
 There are many Tcl books on the market.  Most are listed at
-    http://www.scriptics.com/resource/doc/books/
+	http://www.scriptics.com/resource/doc/books/
 
 2a. Unix Documentation
 ----------------------
