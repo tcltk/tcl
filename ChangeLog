@@ -1,5 +1,8 @@
 2001-08-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/configure:
+	* unix/tcl.m4: added QNX-6 build support. [Bug #219410] (loverso)
+
 	* unix/tclUnixFCmd.c:
 	* generic/tclIOUtil.c:
 	* generic/tclFileName.c: corrected minor compiler warnings.
