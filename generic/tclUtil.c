@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.9 1999/05/04 01:33:11 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.10 1999/05/06 18:46:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2021,13 +2021,14 @@ TclLooksLikeInt(bytes, length)
  *
  *	This procedure returns an integer corresponding to the list index
  *	held in a Tcl object. The Tcl object's value is expected to be
- *	either an integer or the string "end". 
+ *	either an integer or a string of the form "end([+-]integer)?". 
  *
  * Results:
  *	The return value is normally TCL_OK, which means that the index was
  *	successfully stored into the location referenced by "indexPtr".  If
  *	the Tcl object referenced by "objPtr" has the value "end", the
- *	value stored is "endValue". If "objPtr"s values is not "end" and
+ *	value stored is "endValue". If "objPtr"s values is not of the form
+ *	"end([+-]integer)?" and
  *	can not be converted to an integer, TCL_ERROR is returned and, if
  *	"interp" is non-NULL, an error message is left in the interpreter's
  *	result object.
@@ -2052,8 +2053,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 				 * representing an index. */
 {
     char *bytes;
-    long longResult;
-    int length;
+    int length, offset;
 
     if (objPtr->typePtr == &tclIntType) {
 	*indexPtr = (int)objPtr->internalRep.longValue;
@@ -2064,28 +2064,29 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 
     if ((*bytes != 'e') ||
 	(strncmp(bytes, "end", (length > 3) ? 3 : length) != 0)) {
-      if (Tcl_ExprLongObj(interp, objPtr, &longResult) != TCL_OK) {
-	return TCL_ERROR;
+      if (Tcl_GetIntFromObj(NULL, objPtr, &offset) != TCL_OK) {
+	  goto intforindex_error;
       }
-      *indexPtr = longResult;
+      *indexPtr = offset;
       return TCL_OK;
     }
 
     if (length <= 3) {
       *indexPtr = endValue;
-    } else if ((bytes[3] == '+') || (bytes[3] == '-')) {
+    } else if (bytes[3] == '-') {
       /*
        * This is our limited string expression evaluator
        */
-      if (Tcl_ExprLong(interp, bytes+3, &longResult) != TCL_OK) {
+      if (Tcl_GetInt(interp, bytes+3, &offset) != TCL_OK) {
 	return TCL_ERROR;
       }
-      *indexPtr = endValue + longResult;
+      *indexPtr = endValue + offset;
     } else {
-      if (interp != NULL) {
+    intforindex_error:
+      if ((Interp *)interp != NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			       "invalid index \"", bytes,
-			       "\": must be integer or ?end[+-]?expression",
+			       "bad index \"", bytes,
+			       "\": must be integer or end?-integer?",
 			       (char *) NULL);
       }
       return TCL_ERROR;

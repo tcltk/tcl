@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.3 1999/04/16 00:47:29 stanton Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.4 1999/05/06 18:46:43 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -100,16 +100,16 @@ test iocmd-3.5 {gets command} {
 
 test iocmd-4.1 {read command} {
    list [catch {read} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numBytes?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
 test iocmd-4.2 {read command} {
    list [catch {read a b c d e f g h} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numBytes?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
 test iocmd-4.3 {read command} {
    list [catch {read aaa} msg] $msg
 } {1 {can not find channel named "aaa"}}
 test iocmd-4.4 {read command} {
    list [catch {read -nonewline} msg] $msg
-} {1 {wrong # args: should be "read channelId ?numBytes?" or "read ?-nonewline? channelId"}}
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
 test iocmd-4.5 {read command} {
    list [catch {read -nonew file4} msg] $msg $errorCode
 } {1 {can not find channel named "-nonew"} NONE}
@@ -129,7 +129,7 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
     set x [list [catch {read -nonewline $f 20 z} msg] $msg $errorCode]
     close $f
     set x
-} {1 {wrong # args: should be "read channelId ?numBytes?" or "read ?-nonewline? channelId"} NONE}
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} NONE}
 test iocmd-4.9 {read command} {
     list [catch {read stdin foo} msg] $msg $errorCode
 } {1 {bad argument "foo": should be "nonewline"} NONE}

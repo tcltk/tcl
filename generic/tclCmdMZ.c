@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.5 1999/05/04 02:57:55 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.6 1999/05/06 18:46:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -807,23 +807,21 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     int length1, length2;
     static char *options[] = {
 	"bytelength",	"compare",	"equal",	"first",
-	"icompare",	"iequal",	"index",
-	"last",		"length",	"map",
-	"match",	"range",	"repeat",	"replace",
-	"tolower",	"toupper",	"totitle",
+	"index",	"is",		"last",		"length",
+	"map",		"match",	"range",	"repeat",
+	"replace",	"tolower",	"toupper",	"totitle",
 	"trim",		"trimleft",	"trimright",
 	"wordend",	"wordstart",	(char *) NULL
     };
     enum options {
 	STR_BYTELENGTH,	STR_COMPARE,	STR_EQUAL,	STR_FIRST,
-	STR_ICOMPARE,	STR_IEQUAL,	STR_INDEX,
-	STR_LAST,	STR_LENGTH,	STR_MAP,
-	STR_MATCH,	STR_RANGE,	STR_REPEAT,	STR_REPLACE,
-	STR_TOLOWER,	STR_TOUPPER,	STR_TOTITLE,
+	STR_INDEX,	STR_IS,		STR_LAST,	STR_LENGTH,
+	STR_MAP,	STR_MATCH,	STR_RANGE,	STR_REPEAT,
+	STR_REPLACE,	STR_TOLOWER,	STR_TOUPPER,	STR_TOTITLE,
 	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
 	STR_WORDEND,	STR_WORDSTART
     };	  
-	    
+
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "option arg ?arg ...?");
 	return TCL_ERROR;
@@ -838,37 +836,73 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     switch ((enum options) index) {
 	case STR_EQUAL:
 	case STR_COMPARE: {
-	    int match, length, reqlength = -1;
+	    int i, match, length, nocase = 0, reqlength = -1;
 
-	    if (!(objc == 4 || objc == 5)) {
-	        Tcl_WrongNumArgs(interp, 2, objv, "string1 string2 ?length?");
+	    if (objc < 4 || objc > 7) {
+	    str_cmp_args:
+	        Tcl_WrongNumArgs(interp, 2, objv,
+				 "?-nocase? ?-length int? string1 string2");
 		return TCL_ERROR;
 	    }
-	    if ((objc == 5) &&
-		Tcl_GetIntFromObj(interp, objv[4], &reqlength) != TCL_OK) {
-		return TCL_ERROR;
+
+	    for (i = 2; i < objc-2; i++) {
+		string2 = Tcl_GetStringFromObj(objv[i], &length2);
+		if ((length2 > 1)
+			&& strncmp(string2, "-nocase", length2) == 0) {
+		    nocase = 1;
+		} else if ((length2 > 1)
+			&& strncmp(string2, "-length", length2) == 0) {
+		    if (i+1 >= objc-2) {
+			goto str_cmp_args;
+		    }
+		    if (Tcl_GetIntFromObj(interp, objv[++i],
+			    &reqlength) != TCL_OK) {
+			return TCL_ERROR;
+		    }
+		} else {
+		    Tcl_AppendStringsToObj(resultPtr, "bad option \"",
+			    string2, "\": must be -nocase or -length",
+			    (char *) NULL);
+		    return TCL_ERROR;
+		}
 	    }
 
-	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    string2 = Tcl_GetStringFromObj(objv[3], &length2);
-
+	    string1 = Tcl_GetStringFromObj(objv[objc-2], &length1);
+	    string2 = Tcl_GetStringFromObj(objv[objc-1], &length2);
+	    /*
+	     * This is the min length IN BYTES of the two strings
+	     */
 	    length = (length1 < length2) ? length1 : length2;
-	    if ((reqlength >= 0) && (reqlength < length)) {
-		Tcl_UniChar ch1, ch2;
 
+	    if (reqlength == 0) {
 		/*
-		 * reqlength must be interpreted as chars, not bytes
-		 * we will only enter here when both strings are of
-		 * at least reqlength chars long (no need for \0 check)
+		 * Anything matches at 0 chars, right?
 		 */
 		match = 0;
-		while (reqlength-- > 0) {
-		    string1 += Tcl_UtfToUniChar(string1, &ch1);
-		    string2 += Tcl_UtfToUniChar(string2, &ch2);
-		    if (ch1 != ch2) {
-			match = ch1 - ch2;
-			break;
-		    }
+	    } else if (nocase || ((reqlength > 0) && (reqlength < length))) {
+		/*
+		 * with -nocase or -length we have to check true char length
+		 * as it could be smaller than expected
+		 */
+		length1 = Tcl_NumUtfChars(string1, length1);
+		length2 = Tcl_NumUtfChars(string2, length2);
+		length = (length1 < length2) ? length1 : length2;
+		/*
+		 * Do the reqlength check again, against 0 as well for
+		 * the benfit of nocase
+		 */
+		if ((reqlength > 0) && (reqlength < length)) {
+		    length = reqlength;
+		}
+		if (nocase) {
+		    match = Tcl_UtfNcasecmp(string1, string2,
+			    (unsigned)length);
+		} else {
+		    match = Tcl_UtfNcmp(string1, string2,
+			    (unsigned) length);
+		}
+		if ((match == 0) && (reqlength >= length)) {
+		    match = length1 - length2;
 		}
 	    } else {
 		match = memcmp(string1, string2, (unsigned) length);
@@ -876,55 +910,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    match = length1 - length2;
 		}
 	    }
+
 	    if ((enum options) index == STR_EQUAL) {
-		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
-	    } else {
-		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
-					  (match < 0) ? -1 : 0));
-	    }
-	    break;
-	}
-	case STR_IEQUAL:
-	case STR_ICOMPARE: {
-	    int match, length, reqlength = -1;
-	    Tcl_UniChar ch1, ch2;
-
-	    if (objc < 4 || objc > 5) {
-	        Tcl_WrongNumArgs(interp, 2, objv, "string1 string2 ?length?");
-		return TCL_ERROR;
-	    }
-	    if ((objc == 5) &&
-		Tcl_GetIntFromObj(interp, objv[4], &reqlength) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-
-	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    string2 = Tcl_GetStringFromObj(objv[3], &length2);
-
-	    length = (length1 < length2) ? length1 : length2;
-	    if ((reqlength >= 0) && (reqlength < length)) {
-		length = reqlength;
-	    }
-	    /*
-	     * length must be interpreted as chars, not bytes
-	     * we will only enter here when both strings are of
-	     * at least length chars long (no need for \0 check)
-	     */
-	    match = 0;
-	    while (length-- > 0) {
-		string1 += Tcl_UtfToUniChar(string1, &ch1);
-		string2 += Tcl_UtfToUniChar(string2, &ch2);
-		if ((ch1 != ch2) &&
-		    (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2))) {
-		    match = ch1 - ch2;
-		    break;
-		}
-	    }
-	    if ((match == 0) && (reqlength >= length)) {
-		match = length1 - length2;
-	    }
-
-	    if ((enum options) index == STR_IEQUAL) {
 		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
 	    } else {
 		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
@@ -1002,6 +989,253 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    break;
 	}
+	case STR_IS: {
+	    char *end;
+	    Tcl_UniChar ch;
+	    int (*chcomp)(int) = NULL;	/* The UniChar comparison function */
+	    int i, failat = 0, result = 1, strict = 0;
+	    Tcl_Obj *objPtr, *failVarObj = NULL;
+
+	    static char *isOptions[] = {
+		"alnum",	"alpha",	"ascii",
+		"boolean",	"digit",	"double",
+		"false",	"integer",	"lower",
+		"space",	"true",		"upper",
+		"wordchar",	(char *) NULL
+	    };
+	    enum isOptions {
+		STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,
+		STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,
+		STR_IS_FALSE,	STR_IS_INT,	STR_IS_LOWER,
+		STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
+		STR_IS_WORD
+	    };
+
+	    if (objc < 4 || objc > 7) {
+		Tcl_WrongNumArgs(interp, 2, objv,
+				 "class ?-strict? ?-failindex var? str");
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[2], isOptions, "class", 0,
+				    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (objc != 4) {
+		for (i = 3; i < objc-1; i++) {
+		    string2 = Tcl_GetStringFromObj(objv[i], &length2);
+		    if ((length2 > 1) &&
+			strncmp(string2, "-strict", length2) == 0) {
+			strict = 1;
+		    } else if ((length2 > 1) &&
+			       strncmp(string2, "-failindex", length2) == 0) {
+			if (i+1 >= objc-1) {
+			    Tcl_WrongNumArgs(interp, 3, objv,
+					     "?-strict? ?-failindex var? str");
+			    return TCL_ERROR;
+			}
+			failVarObj = objv[++i];
+		    } else {
+			Tcl_AppendStringsToObj(resultPtr, "bad option \"",
+				string2, "\": must be -strict or -failindex",
+				(char *) NULL);
+			return TCL_ERROR;
+		    }
+		}
+	    }
+
+	    /*
+	     * We get the objPtr so that we can short-cut for some classes
+	     * by checking the object type (int and double), but we need
+	     * the string otherwise, because we don't want any conversion
+	     * of type occuring (as, for example, Tcl_Get*FromObj would do
+	     */
+	    objPtr = objv[objc-1];
+	    string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	    if (length1 == 0) {
+		if (strict) {
+		    result = 0;
+		}
+		goto str_is_done;
+	    }
+	    end = string1 + length1;
+
+	    /*
+	     * When entering here, result == 1 and failat == 0
+	     */
+	    switch ((enum isOptions) index) {
+		case STR_IS_ALNUM:
+		    chcomp = Tcl_UniCharIsAlnum;
+		    break;
+		case STR_IS_ALPHA:
+		    chcomp = Tcl_UniCharIsAlpha;
+		    break;
+		case STR_IS_ASCII:
+		    for (; string1 < end; string1++, failat++) {
+			/*
+			 * This is a valid check in unicode, because all
+			 * bytes < 0xC0 are single byte chars (but isascii
+			 * limits that def'n to 0x80).
+			 */
+			if (*((unsigned char *)string1) >= 0x80) {
+			    result = 0;
+			    break;
+			}
+		    }
+		    break;
+		case STR_IS_BOOL:
+		case STR_IS_TRUE:
+		case STR_IS_FALSE:
+		    if (objPtr->typePtr == &tclBooleanType) {
+			if ((((enum isOptions) index == STR_IS_TRUE) &&
+			     objPtr->internalRep.longValue == 0) ||
+			    (((enum isOptions) index == STR_IS_FALSE) &&
+			     objPtr->internalRep.longValue != 0)) {
+			    result = 0;
+			}
+		    } else if ((Tcl_GetBoolean(NULL, string1, &i)
+				== TCL_ERROR) ||
+			       (((enum isOptions) index == STR_IS_TRUE) &&
+				i == 0) ||
+			       (((enum isOptions) index == STR_IS_FALSE) &&
+				i != 0)) {
+			result = 0;
+		    }
+		    break;
+		case STR_IS_DIGIT:
+		    chcomp = Tcl_UniCharIsDigit;
+		    break;
+		case STR_IS_DOUBLE: {
+		    char *stop;
+
+		    if ((objPtr->typePtr == &tclDoubleType) ||
+			(objPtr->typePtr == &tclIntType)) {
+			break;
+		    }
+		    /*
+		     * This is adapted from Tcl_GetDouble
+		     *
+		     * The danger in this function is that
+		     * "12345678901234567890" is an acceptable 'double',
+		     * but will later be interp'd as an int by something
+		     * like [expr].  Therefore, we check to see if it looks
+		     * like an int, and if so we do a range check on it.
+		     * If strtoul gets to the end, we know we either
+		     * received an acceptable int, or over/underflow
+		     */
+		    if (TclLooksLikeInt(string1, length1)) {
+			errno = 0;
+			strtoul(string1, &stop, 0);
+			if (stop == end) {
+			    if (errno == ERANGE) {
+				result = 0;
+				failat = -1;
+			    }
+			    break;
+			}
+		    }
+		    errno = 0;
+		    strtod(string1, &stop); /* INTL: Tcl source. */
+		    if (errno == ERANGE) {
+			/*
+			 * if (errno == ERANGE), then it was an over/underflow
+			 * problem, but in this method, we only want to know
+			 * yes or no, so bad flow returns 0 (false) and sets
+			 * the failVarObj to the string length.
+			 */
+			result = 0;
+			failat = -1;
+		    } else if (stop == string1) {
+			/*
+			 * In this case, nothing like a number was found
+			 */
+			result = 0;
+			failat = 0;
+		    } else {
+			/*
+			 * Assume we sucked up one char per byte
+			 * and then we go onto SPACE, since we are
+			 * allowed trailing whitespace
+			 */
+			failat = stop - string1;
+			string1 = stop;
+			chcomp = Tcl_UniCharIsSpace;
+		    }
+		    break;
+		}
+		case STR_IS_INT: {
+		    char *stop;
+
+		    if ((objPtr->typePtr == &tclIntType) ||
+			(Tcl_GetInt(NULL, string1, &i) == TCL_OK)) {
+			break;
+		    }
+		    /*
+		     * Like STR_IS_DOUBLE, but we don't use strtoul.
+		     * Since Tcl_GetInt already failed, we set result to 0.
+		     */
+		    result = 0;
+		    errno = 0;
+		    strtoul(string1, &stop, 0); /* INTL: Tcl source. */
+		    if (errno == ERANGE) {
+			/*
+			 * if (errno == ERANGE), then it was an over/underflow
+			 * problem, but in this method, we only want to know
+			 * yes or no, so bad flow returns 0 (false) and sets
+			 * the failVarObj to the string length.
+			 */
+			failat = -1;
+		    } else if (stop == string1) {
+			/*
+			 * In this case, nothing like a number was found
+			 */
+			failat = 0;
+		    } else {
+			/*
+			 * Assume we sucked up one char per byte
+			 * and then we go onto SPACE, since we are
+			 * allowed trailing whitespace
+			 */
+			failat = stop - string1;
+			string1 = stop;
+			chcomp = Tcl_UniCharIsSpace;
+		    }
+		    break;
+		}
+		case STR_IS_LOWER:
+		    chcomp = Tcl_UniCharIsLower;
+		    break;
+		case STR_IS_SPACE:
+		    chcomp = Tcl_UniCharIsSpace;
+		    break;
+		case STR_IS_UPPER:
+		    chcomp = Tcl_UniCharIsUpper;
+		    break;
+		case STR_IS_WORD:
+		    chcomp = Tcl_UniCharIsWordChar;
+		    break;
+	    }
+	    if (chcomp != NULL) {
+		for (; string1 < end; string1 += length2, failat++) {
+		    length2 = Tcl_UtfToUniChar(string1, &ch);
+		    if (!chcomp(ch)) {
+			result = 0;
+			break;
+		    }
+		}
+	    }
+	str_is_done:
+	    /*
+	     * Only set the failVarObj when we will return 0
+	     * and we have indicated a valid fail index (>= 0)
+	     */
+	    if ((result == 0) && (failVarObj != NULL) &&
+		Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(failat),
+			       TCL_LEAVE_ERR_MSG) == NULL) {
+		return TCL_ERROR;
+	    }
+	    Tcl_SetBooleanObj(resultPtr, result);
+	    break;
+	}
 	case STR_LAST: {
 	    register char *p;
 	    int match;
@@ -1073,21 +1307,40 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case STR_MAP: {
-	    int mapElemc, len;
+	    int uselen, mapElemc, len, nocase = 0;
 	    Tcl_Obj **mapElemv;
 	    char *end;
 	    Tcl_UniChar ch;
+	    int (*str_comp_fn)();
 
-	    if (objc != 4) {
-	        Tcl_WrongNumArgs(interp, 2, objv, "charMap string");
+	    if (objc < 4 || objc > 5) {
+	        Tcl_WrongNumArgs(interp, 2, objv, "?-nocase? charMap string");
 		return TCL_ERROR;
+	    }
+
+	    if (objc == 5) {
+		string2 = Tcl_GetStringFromObj(objv[2], &length2);
+		if ((length2 > 1) &&
+		    strncmp(string2, "-nocase", length2) == 0) {
+		    nocase = 1;
+		} else {
+		    Tcl_AppendStringsToObj(resultPtr, "bad option \"",
+					   string2, "\": must be -nocase",
+					   (char *) NULL);
+		    return TCL_ERROR;
+		}
 	    }
 
 	    if (Tcl_ListObjGetElements(interp, objv[objc-2], &mapElemc,
 				       &mapElemv) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (mapElemc & 1) {
+	    if (mapElemc == 0) {
+		/*
+		 * empty charMap, just return whatever string was given
+		 */
+		Tcl_SetObjResult(interp, objv[objc-1]);
+	    } else if (mapElemc & 1) {
 		/*
 		 * The charMap must be an even number of key/value items
 		 */
@@ -1100,21 +1353,35 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    end = string1 + length1;
 
+	    if (nocase) {
+		length1 = Tcl_NumUtfChars(string1, length1);
+		str_comp_fn = Tcl_UtfNcasecmp;
+	    } else {
+		str_comp_fn = memcmp;
+	    }
+
 	    for ( ; string1 < end; string1 += len) {
 		len = Tcl_UtfToUniChar(string1, &ch);
 		for (index = 0; index < mapElemc; index +=2) {
 		    /*
 		     * Get the key string to match on
 		     */
-		    string2 = Tcl_GetStringFromObj(mapElemv[index], &length2);
-		    if ((*string2 == *string1) &&
-			(memcmp(string2, string1, length2) == 0)) {
+		    string2 = Tcl_GetStringFromObj(mapElemv[index],
+						   &length2);
+		    if (nocase) {
+			uselen = Tcl_NumUtfChars(string2, length2);
+		    } else {
+			uselen = length2;
+		    }
+		    if ((uselen <= length1) &&
+			(str_comp_fn(string2, string1, uselen) == 0)) {
 			/*
 			 * Adjust len to be full length of matched string
+			 * it has to be the BYTE length
 			 */
 			len = length2;
 			/*
-			 * Change string2 and length2 to the replacement value
+			 * Change string2 and length2 to the map value
 			 */
 			string2 = Tcl_GetStringFromObj(mapElemv[index+1],
 						       &length2);
@@ -1127,6 +1394,15 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     * No match was found, put the char onto result
 		     */
 		    Tcl_AppendToObj(resultPtr, string1, len);
+		}
+		/*
+		 * in nocase, length1 is in chars
+		 * otherwise it is in bytes
+		 */
+		if (nocase) {
+		    length1--;
+		} else {
+		    length1 -= len;
 		}
 	    }
 	    break;
@@ -1246,19 +1522,19 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    if (objc == 3) {
 		/*
-	       * Since the result object is not a shared object, it is
-	       * safe to copy the string into the result and do the
-	       * conversion in place.  The conversion may change the length
-	       * of the string, so reset the length after conversion.
-	       */
+		 * Since the result object is not a shared object, it is
+		 * safe to copy the string into the result and do the
+		 * conversion in place.  The conversion may change the length
+		 * of the string, so reset the length after conversion.
+		 */
 
 		Tcl_SetStringObj(resultPtr, string1, length1);
 		if ((enum options) index == STR_TOLOWER) {
-		    length1 = Tcl_UtfToLower(Tcl_GetStringFromObj(resultPtr, NULL));
+		    length1 = Tcl_UtfToLower(Tcl_GetString(resultPtr));
 		} else if ((enum options) index == STR_TOUPPER) {
-		    length1 = Tcl_UtfToUpper(Tcl_GetStringFromObj(resultPtr, NULL));
+		    length1 = Tcl_UtfToUpper(Tcl_GetString(resultPtr));
 		} else {
-		    length1 = Tcl_UtfToTitle(Tcl_GetStringFromObj(resultPtr, NULL));
+		    length1 = Tcl_UtfToTitle(Tcl_GetString(resultPtr));
 		}
 		Tcl_SetObjLength(resultPtr, length1);
 	    } else {

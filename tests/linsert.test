@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: linsert.test,v 1.4 1999/05/04 01:33:12 stanton Exp $
+# RCS: @(#) $Id: linsert.test,v 1.5 1999/05/06 18:46:43 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -86,7 +86,7 @@ test linsert-2.2 {linsert errors} {
 } {1 {wrong # args: should be "linsert list index element ?element ...?"}}
 test linsert-2.3 {linsert errors} {
     list [catch {linsert a 12x 2} msg] $msg
-} {1 {syntax error in expression "12x"}}
+} {1 {bad index "12x": must be integer or end?-integer?}}
 test linsert-2.4 {linsert errors} {
     list [catch {linsert \{ 12 2} msg] $msg
 } {1 {unmatched open brace in list}}
@@ -109,15 +109,3 @@ catch {unset lis}
 catch {rename p ""}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

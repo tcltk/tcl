@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.6 1999/05/05 01:19:43 stanton Exp $
+'\" RCS: @(#) $Id: string.n,v 1.7 1999/05/06 18:46:42 stanton Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -32,18 +32,19 @@ the byte length are rare.  In almost all cases, you should use the
 \fBstring length\fB operation.  Refer to the \fBTcl_NumUtfChars\fR
 manual entry for more details on the UTF-8 representation.
 .TP
-\fBstring compare \fIstring1 string2\fR ?\fIlength\fR?
+\fBstring compare ?\fI-nocase\fR? ?\fI-length int\fR? \fIstring1 string2\fR
 .VE 8.1
 Perform a character-by-character comparison of strings \fIstring1\fR and
 \fIstring2\fR in the same way as the C \fBstrcmp\fR procedure.  Return
 \-1, 0, or 1, depending on whether \fIstring1\fR is lexicographically
 less than, equal to, or greater than \fIstring2\fR.
 .VS 8.1
-If \fIlength\fR is
-specified, it works like C \fBstrncmp\fR, comparing only to the
-specified length.  If \fIlength\fR is negative, it is ignored.
+If \fI-length\fR is specified, it works like C \fBstrncmp\fR,
+comparing only to the specified length.  If \fI-length\fR is negative,
+it is ignored.  If \fI-nocase\fR is specified, then the strings are
+compared in a case-insensitive manner.
 .TP
-\fBstring equal \fIstring1 string2\fR ?\fIlength\fR?
+\fBstring equal ?\fI-nocase\fR? ?\fI-length int\fR? \fIstring1 string2\fR
 .VE 8.1
 Like the \fBcompare\fR method, but returns 1 when the strings
 are equal, or 0 when not.
@@ -54,19 +55,6 @@ the characters in \fIstring1\fR.  If found, return the index of the
 first character in the first such match within \fIstring2\fR.  If not
 found, return \-1.
 .TP
-\fBstring icompare \fIstring1 string2\fR ?\fIlength\fR?
-Perform a case-insensitive character-by-character comparison of strings
-\fIstring1\fR and
-\fIstring2\fR in the same way as the C \fBstrcasecmp\fR procedure.  Return
-\-1, 0, or 1, depending on whether \fIstring1\fR is lexicographically
-less than, equal to, or greater than \fIstring2\fR.  If length is
-specified, it works like C \fBstrncasecmp\fR, comparing only to the
-specified length.
-.TP
-\fBstring iequal \fIstring1 string2\fR ?\fIlength\fR?
-Like the \fBicompare\fR method, but returns 1 when the strings
-are equal, or 0 when not.
-.TP
 \fBstring index \fIstring charIndex\fR
 Returns the \fIcharIndex\fR'th character of the \fIstring\fR
 argument.  A \fIcharIndex\fR of 0 corresponds to the first
@@ -75,21 +63,69 @@ character of the string.
 \fIcharIndex\fR may be specified as
 follows:
 .RS
-.IP \fB[\fInumber\fB]\fR 10
-The char specified at this numerical index
+.IP \fB[\fIinteger\fB]\fR 10
+The char specified at this integral index
 .IP \fBend\fR 10
 The last char of the string.
 .IP \fIexpression\fR 10
 A Tcl expression that returns a number.
-.IP \fBend[+-]\fIexpression\fR 10
-The last char of the string plus or minus the number specified
-in the expression (e.g. \fBend-1\fR).
+.IP \fBend-\fIinteger\fR 10
+The last char of the string minus the specified integer
+offset (e.g. \fBend-1\fR).
 .PP
 .VE 8.1
 If \fIcharIndex\fR is less than 0 or greater than
 or equal to the length of the string then an empty string is
 returned.
 .RE
+.VS 8.1
+.TP
+\fBstring is \fIclass\fR ?\fI-strict\fR? ?\fI-failindex varname\fR? \fIstring\fR
+See if \fIstring\fR is a valid form of the specified class.  If
+\fI-strict\fR is specified, then an empty string returns 0, otherwise and
+empty string will return 1 on any class.  If \fI-failindex\fR is specified,
+then if the function returns 0, the index in the string where the class was
+no longer valid will be stored in the variable named \fIvarname\fR.  The
+\fIvarname\fR will not be set if the function returns 1.  The following
+class definitions are allowed (the class name can be abbreviated):
+.RS
+.IP \fBalnum\fR 10
+Any Unicode alphabet or digit character.
+.IP \fBalpha\fR 10
+Any Unicode alphabet character.
+.IP \fBascii\fR 10
+Any character with a value less than \\u0080 (those that
+are in the 7-bit ascii range).
+.IP \fBboolean\fR 10
+Any of the forms allowed to Tcl_GetBoolean.
+.IP \fBdigit\fR 10
+Any Unicode digit character.
+.IP \fBdouble\fR 10
+Any of the valid forms for a double in Tcl, with optional surrounding
+whitespace.  In case of under/overflow in the value, 0 is returned
+and the \fIvarname\fR will contain -1.
+.IP \fBfalse\fR 10
+Any of the forms allowed to Tcl_GetBoolean where the value is false.
+.IP \fBinteger\fR 10
+Any of the valid forms for an integer in Tcl, with optional surrounding
+whitespace.  In case of under/overflow in the value, 0 is returned
+and the \fIvarname\fR will contain -1.
+.IP \fBlower\fR 10
+Any Unicode lower case alphabet character.
+.IP \fBspace\fR 10
+Any Unicode space character.
+.IP \fBtrue\fR 10
+Any of the forms allowed to Tcl_GetBoolean where the value is true.
+.IP \fBupper\fR 10
+Any upper case alphabet character in the Unicode character set.
+.IP \fBwordchar\fR 10
+Any Unicode word character.  That is any alphanumeric character,
+and any Unicode connector punctuation characters (ie: underscore).
+.RE
+In the case of \fBboolean\fR, \fBtrue\fR and \fBfalse\fR, if the
+function will return 0, the \fIvarname\fR will always be set to 0,
+due to the varied nature of a valid boolean value.
+.VE 8.1
 .TP
 \fBstring last \fIstring1 string2\fR
 Search \fIstring2\fR for a sequence of characters that exactly match
