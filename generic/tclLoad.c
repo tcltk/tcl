@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.3 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.3.6.1 1999/12/01 00:03:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -645,9 +645,17 @@ TclFinalizeLoad()
     while (firstPackagePtr != NULL) {
 	pkgPtr = firstPackagePtr;
 	firstPackagePtr = pkgPtr->nextPtr;
+#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+	/*
+	 * Some Unix dlls are poorly behaved - registering things like
+	 * atexit calls that can't be unregistered.  If you unload
+	 * such dlls, you get a core on exit because it wants to
+	 * call a function in the dll after it's been unloaded.
+	 */
 	if (pkgPtr->fileName[0] != '\0') {
 	    TclpUnloadFile(pkgPtr->clientData);
 	}
+#endif
 	ckfree(pkgPtr->fileName);
 	ckfree(pkgPtr->packageName);
 	ckfree((char *) pkgPtr);

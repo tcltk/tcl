@@ -1,5 +1,8 @@
 1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* generic/tclLoad.c: #def'd out the unloading of DLLs at finalize
+	time for Unix in TclFinalizeLoad. [Bug: 2560 3373]
+
 	* unix/tclUnixPipe.c: fixed PipeBlockModeProc to properly set
 	isNonBlocking flag on pipe. [Bug: 1356 710]
 
