@@ -1,3 +1,9 @@
+2004-03-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/catch.n:	Compiled [catch] no longer fails to catch syntax
+	errors.  Removed the claims in the documentation that it does.
+	* doc/return.n:	Updated example to use [dict merge].
+
 2004-03-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure, unix/tcl.m4: add -Wno-strict-aliasing for GCC to
