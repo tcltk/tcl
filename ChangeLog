@@ -1,3 +1,7 @@
+2004-04-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/if.n, doc/rename.n, doc/time.n: More examples.
+
 2004-04-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:		Replaced Kevin Kenny's temporary
