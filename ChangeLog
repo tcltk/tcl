@@ -1,3 +1,9 @@
+2004-10-26  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclVar.c: removed more direct references to the VAR
+	flags, replaced with access macros.
+
 2004-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/expr.n: Clarified that non-num/non-bool literals require

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.187 2004/10/25 01:06:51 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.188 2004/10/26 16:19:58 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -536,6 +536,11 @@ typedef struct Var {
 #define TclClearVarTraceActive(varPtr) \
     (varPtr)->flags &= ~VAR_TRACE_ACTIVE
 
+#define TclSetVarNamespaceVar(varPtr) \
+    (varPtr)->flags |= VAR_NAMESPACE_VAR
+
+#define TclClearVarNamespaceVar(varPtr) \
+    (varPtr)->flags &= ~VAR_NAMESPACE_VAR
 
 /*
  * Macros to read various flag bits of variables.

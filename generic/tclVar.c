@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.96 2004/10/22 12:29:53 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.97 2004/10/26 16:19:58 msofer Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -442,7 +442,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 			&& !(flags & TCL_GLOBAL_ONLY)
 			/* careful: an undefined ns variable could
 			 * be hiding a valid global reference. */
-			&& !(varPtr->flags & VAR_UNDEFINED))));
+			&& !TclIsVarUndefined(varPtr))));
 	if (useReference && (varPtr->hPtr != NULL)) {
 	    /*
 	     * A straight global or namespace reference, use it. It isn't 
@@ -2268,8 +2268,8 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
      * If the variable was a namespace variable, decrement its reference count.
      */
     
-    if (varPtr->flags & VAR_NAMESPACE_VAR) {
-	varPtr->flags &= ~VAR_NAMESPACE_VAR;
+    if (TclIsVarNamespaceVar(varPtr)) {
+	TclClearVarNamespaceVar(varPtr);
 	varPtr->refCount--;
     }
 
@@ -3779,8 +3779,8 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 	 * destroyed or until the variable is unset.
 	 */
 
-	if (!(varPtr->flags & VAR_NAMESPACE_VAR)) {
-	    varPtr->flags |= VAR_NAMESPACE_VAR;
+	if (!TclIsVarNamespaceVar(varPtr)) {
+	    TclSetVarNamespaceVar(varPtr);
 	    varPtr->refCount++;
 	}
 
@@ -4253,8 +4253,8 @@ TclDeleteVars(iPtr, tablePtr)
 	 * variable.
 	 */
 
-	if (varPtr->flags & VAR_NAMESPACE_VAR) {
-	    varPtr->flags &= ~VAR_NAMESPACE_VAR;
+	if (TclIsVarNamespaceVar(varPtr)) {
+	    TclClearVarNamespaceVar(varPtr);
 	    varPtr->refCount--;
 	}
 
@@ -4454,8 +4454,8 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	 * harmless. 
 	 */
 
-	if (elPtr->flags & VAR_NAMESPACE_VAR) {
-	    elPtr->flags &= ~VAR_NAMESPACE_VAR;
+	if (TclIsVarNamespaceVar(elPtr)) {
+	    TclClearVarNamespaceVar(elPtr);
 	    elPtr->refCount--;
 	}
 	if (elPtr->refCount == 0) {
