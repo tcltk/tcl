@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.35 2002/01/05 22:55:52 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.36 2002/01/09 17:50:56 dgp Exp $
  */
 
 #define TCL_TEST
@@ -162,6 +162,7 @@ static void		ExitProcEven _ANSI_ARGS_((ClientData clientData));
 static void		ExitProcOdd _ANSI_ARGS_((ClientData clientData));
 static int              GetTimesCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int argc, char **argv));
+static void		MainLoop _ANSI_ARGS_((void));
 static int              NoopCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int argc, char **argv));
 static int              NoopObjCmd _ANSI_ARGS_((ClientData clientData,
