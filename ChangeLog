@@ -18,7 +18,8 @@
 	  1) changed to lazy initialization of test constraints
 	  2) deprecated [initConstraintsHook]
 	  3) repaired badly broken [limitConstraints].
-	[Patch 512214, Bug 558742, Bug 461000]
+	  4) deprecated [threadReap] and [mainThread]
+	[Patch 512214, Bug 558742, Bug 461000, Bug 534903]
 
 2002-06-06  Daniel Steffen  <das@users.sourceforge.net>
 
