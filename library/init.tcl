@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.29 1999/04/16 00:46:56 stanton Exp $
+# RCS: @(#) $Id: init.tcl,v 1.29.2.1 1999/05/21 00:04:29 redman Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -30,9 +30,12 @@ package require -exact Tcl 8.1
 # The parent directory of tcl_library. Adding the parent
 # means that packages in peer directories will be found automatically.
 #
+# Also add the directory where the executable is located, plus ../lib
+# relative to that path.
+#
 # tcl_pkgPath, which is set by the platform-specific initialization routines
 #	On UNIX it is compiled in
-#	On Windows it comes from the registry
+#       On Windows, it is not used
 #	On Macintosh it is "Tool Command Language" in the Extensions folder
 
 if {![info exists auto_path]} {
@@ -47,6 +50,13 @@ if {[string compare [info library] {}]} {
 	if {[lsearch -exact $auto_path $__dir] < 0} {
 	    lappend auto_path $__dir
 	}
+    }
+}
+foreach __dir [list [file dirname [info nameofexecutable]] \
+	[file join [file dirname [file dirname \
+	[info nameofexecutable]]] lib]] {
+    if {[lsearch -exact $auto_path $__dir] < 0} {
+	lappend auto_path $__dir
     }
 }
 if {[info exist tcl_pkgPath]} {
