@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.37 2003/01/09 21:13:26 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.38 2003/02/01 23:49:20 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1649,7 +1649,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int numValues, simpleVarName, isScalar, localIndex, numWords;
+    int simpleVarName, isScalar, localIndex, numWords;
     int code = TCL_OK;
 
     /*
@@ -1672,7 +1672,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	 */
         return TCL_OUT_LINE_COMPILE;
     }
-    numValues = (numWords - 2);
 
     /*
      * Decide if we can use a frame slot for the var/array name or if we
@@ -1708,16 +1707,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 		goto done;
 	    }
 	}
-#if 0
-    } else {
-	/*
-	 * We need to carefully handle the two arg case, as lappend
-	 * always creates the variable.
-	 */
-
-	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
-	numValues = 1;
-#endif
     }
 
     /*
