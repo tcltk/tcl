@@ -1,3 +1,9 @@
+1999-04-23    <stanton@scriptics.com>
+
+	* library/encoding/koi8-r.enc:
+	* tools/encoding/koi8-r.txt: Added support for the koi8-r Cyrillic
+	encoding. [Bug: 1771]
+
 1999-04-22    <stanton@scriptics.com>
 
 	* win/tclWinFCmd.c:
