@@ -4,6 +4,10 @@
 
 2003-07-15  Don Porter  <dgp@users.sourceforge.net>
 
+        * unix/dltest/pkga.c:   Updated to not use Tcl_UtfNcmp and counted
+        strings instead of strcmp (not defined in any #include'd header)
+        and presumed NULL-terminated strings.
+
 	* generic/tclCompCmds.c (TclCompileIfCmd):  Prior fix of Bug 711371
 	on 2003-04-07 introduced a buffer overflow.  Corrected.  [Bug 771613]
 
