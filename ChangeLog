@@ -1,3 +1,17 @@
+2001-09-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/http.n: noted -binary, charset and coding state keys.
+	* tests/http.test:
+	* library/http/pkgIndex.tcl:
+	* library/http/http.tcl (geturl): correctly get charset parameter
+	and convert text according to specified encoding (if known).  RFC
+	iso8859-1 is used by default.  Also recognize Content-encoding to
+	see if we should do binary translation.  Added a CYA -binary
+	switch for the cases that were missed. [Bug #219211 #219399]
+
+	* tests/ioUtil.test: changed to make better use of constraints and
+	remove knownBug constraints that weren't valid.
+
 2001-09-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (unixInit-3.2):  Updated test to support
