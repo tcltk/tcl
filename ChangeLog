@@ -1,3 +1,9 @@
+2004-05-05  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinSock.c (SocketEventProc) : connect errors should
+	fire both the readable and writable handlers because this is
+	how it works on UNIX [Bug 794839]
+
 2004-05-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/fileSystem.test (filesystem-1.39): replace 'file volumes'
