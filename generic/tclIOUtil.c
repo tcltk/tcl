@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.89 2003/11/07 11:36:47 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.90 2003/12/17 09:24:43 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -2334,7 +2334,8 @@ Tcl_FSGetCwd(interp)
 		 * we'll always be in the 'else' branch below which
 		 * is simpler.
 		 */
-                FsUpdateCwd(norm);
+		FsUpdateCwd(norm);
+		Tcl_DecrRefCount(norm);
 	    }
 	    Tcl_DecrRefCount(retVal);
 	}
@@ -2380,6 +2381,7 @@ Tcl_FSGetCwd(interp)
 			Tcl_DecrRefCount(norm);
 		    } else {
 			FsUpdateCwd(norm);
+			Tcl_DecrRefCount(norm);
 		    }
 		    Tcl_DecrRefCount(retVal);
 		} else {
