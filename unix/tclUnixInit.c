@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.9 1999/03/13 03:09:34 surles Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.10 1999/03/14 21:41:17 surles Exp $
  */
 
 #include "tclInt.h"
@@ -275,6 +275,16 @@ CONST char *path;		/* Path to the executable in native
 	    Tcl_DStringFree(&ds);
 	}
 	ckfree((char *) pathv);
+    }
+
+    /*
+     * Finally, look for the library relative to the compiled-in path.
+     */
+			      
+    str = defaultLibraryDir;
+    if (str[0] != '\0') {
+        objPtr = Tcl_NewStringObj(str, -1);
+        Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
     }
 
     TclSetLibraryPath(pathPtr);    
