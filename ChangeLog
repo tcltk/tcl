@@ -1,3 +1,9 @@
+2004-07-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclPipe.c (TclCreatePipeline): applied TIP #202 patch
+	* doc/exec.n, tests/exec.test:           that adds 2>@1 as a
+	special case redirection of stderr to the result output.
+
 2004-07-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/io.test: Changed several tests to run the event
