@@ -250,15 +250,20 @@ struct colormap *cm;
 		close = shortest(v, s, close, close, v->stop, &open);
 		if (close == NULL)
 			break;				/* NOTE BREAK */
+		if (v->nmatch == 0) {
+			/* don't need exact location */
+			freedfa(d);
+			freedfa(s);
+			return REG_OKAY;
+		}
 		MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
 		for (begin = open; begin <= close; begin++) {
 			MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
 			end = longest(v, d, begin, v->stop);
 			if (end != NULL) {
-				if (v->nmatch > 0) {
-					v->pmatch[0].rm_so = OFF(begin);
-					v->pmatch[0].rm_eo = OFF(end);
-				}
+				assert(v->nmatch > 0);
+ 				v->pmatch[0].rm_so = OFF(begin);
+ 				v->pmatch[0].rm_eo = OFF(end);
 				freedfa(d);
 				freedfa(s);
 				if (v->nmatch > 1) {

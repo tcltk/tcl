@@ -1,3 +1,7 @@
+1998-11-23    <stanton@GASPODE>
+
+	* regexec.c: more performance tuning from Henry Spencer.
+
 1998-11-17    <stanton@GASPODE>
 
 	* tclScan.c: moved "scan" implementation out of tclCmdMZ.c and
