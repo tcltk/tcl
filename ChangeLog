@@ -1,3 +1,30 @@
+2004-10-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* library/tm.tcl (::tcl::tm::*): Use the core proc engine to
+	generate the wrong-num-args error messages for the path ensemble.
+
+	Ensembles can now (sometimes) rewrite the error messages of their
+	subcommands so they appear more like the arguments that the user
+	passed to the ensemble. Below is a description of changes involved
+	in doing this.
+
+	* tests/namespace.test (namespace-50.*): Tests of ensemble
+	subcommand error message rewriting.
+	* generic/tclProc.c (TclObjInterpProc): Make procedures implement
+	their wrong-num-args message using Tcl_WrongNumArgs instead of
+	something baked-at-home.
+	* generic/tclNamesp.c (TclIsEnsemble, NsEnsembleImplementationCmd): 
+	Added test of ensemble-hood (available to rest of core) and made
+	ensembles set up the rewriting for Tcl_WrongNumArgs to take
+	advantage of.
+	* generic/tclInt.h (Interp.ensembleRewrite): Extra fields.
+	* generic/tclIndexObj.c (Tcl_WrongNumArgs): Add knowledge of what
+	is going on in ensembles' command rewriting so this command can
+	generate the right error message itself.
+	* generic/tclBasic.c (Tcl_CreateInterp, TclEvalObjvInternal):
+	Added code to initialize (as empty) the rewriting fields and reset
+	them when we leak outside an ensemble implementation.
+
 2004-10-28  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_START_CMD):
