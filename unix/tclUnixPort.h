@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.2 1998/09/24 23:59:46 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.3 1998/09/30 20:47:51 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -487,12 +487,6 @@ EXTERN int		TclpLstat _ANSI_ARGS_((CONST char *path,
 			    struct stat *buf));
 EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
 			    struct stat *buf));
-
-/*
- * TclpFinalize is a noop on Unix systems.
- */
-
-#define TclpFinalize()
 
 /*
  * The following routine is only exported for testing purposes.

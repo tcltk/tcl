@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.1.2.2 1998/09/24 23:59:14 stanton Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.1.2.3 1998/09/30 20:47:32 stanton Exp $
  */
 
 
@@ -291,12 +291,6 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
-
-/*
- * TclpFinalize is a noop on the Mac.
- */
-
-#define TclpFinalize()
 
 /*
  * The following define should really be in tclInt.h, but tclInt.h does
