@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.172 2004/03/02 00:42:50 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.173 2004/03/08 01:53:20 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -2258,8 +2258,8 @@ typedef struct Tcl_Config {
 	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 
     /*
-     * These function have been renamed. The old names are deprecated, but
-     * we define these macros for backwards compatibilty.
+     * These function have been renamed. The old names are deprecated,
+     * but we define these macros for backwards compatibilty.
      */
 
 #   define Tcl_Ckalloc Tcl_Alloc
