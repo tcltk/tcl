@@ -1,3 +1,9 @@
+2003-02-25  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/execute.test: cleaning up testobj's at the end, to avoid
+	leak warning by valgrind.
+
+
 2003-02-22  Zoran Vasiljevic  <zoran@archiwrae.com>
 
 	* generic/tclEvent.c (Tcl_FinalizeThread): Fix [Bug #571002] 
