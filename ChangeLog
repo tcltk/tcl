@@ -1,5 +1,12 @@
 2001-12-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/configure:
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Update
+	SunOS 5.[0-6] target so that correct linker
+	options are passed to gcc or ld. [Tk Bug 220863]
+
+2001-12-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/README: Update to account for changes
 	in the unix/dltest directory, the way autoconf
 	is run, and the new "make shell" target.
