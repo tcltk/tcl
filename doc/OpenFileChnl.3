@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.11 2001/09/10 21:49:37 andreas_kupries Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.12 2001/09/11 18:29:56 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_Ungets \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_Ungets,  Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -78,6 +78,14 @@ int
 .sp
 int
 \fBTcl_Write\fR(\fIchannel, byteBuf, bytesToWrite\fR)
+.VE
+.VS 8.3.2
+.sp
+int
+\fBTcl_ReadRaw\fR(\fIchannel, bufPtr, bytesToRead\fR)
+.sp
+int
+\fBTcl_WriteRaw\fR(\fIchannel, bufPtr, bytesToWrite\fR)
 .VE
 .sp
 int
@@ -463,6 +471,14 @@ of \fBTcl_Read\fR is the number of bytes, up to \fItoRead\fR, written in
 \fIbuf\fR.  The buffer produced by \fBTcl_Read\fR is not NULL terminated.
 Its contents are valid from the zeroth position up to and excluding the
 position indicated by the return value.  
+.PP
+\fBTcl_ReadRaw\fR is the same as \fBTcl_Read\fR but does not
+compensate for stacking. While \fBTcl_Read\fR (and the other functions
+in the API) always get their data from the topmost channel in the
+stack the supplied channel is part of, \fBTcl_ReadRaw\fR does
+not. Thus this function is \fBonly\fR usable for transformational
+channel drivers, i.e. drivers used in the middle of a stack of
+channels, to move data from the channel below into the transformation.
 
 .SH "TCL_GETSOBJ AND TCL_GETS"
 .PP
@@ -547,6 +563,15 @@ Tcl extensions.  It accepts \fIbytesToWrite\fR bytes of data at
 \fIbyteBuf\fR and queues them for output to \fIchannel\fR.  If
 \fIbytesToWrite\fR is negative, \fBTcl_Write\fR expects \fIbyteBuf\fR to be
 NULL terminated and it outputs everything up to the NULL.
+.PP
+\fBTcl_WriteRaw\fR is the same as \fBTcl_Write\fR but does not
+compensate for stacking. While \fBTcl_Write\fR (and the other
+functions in the API) always feed their input to the topmost channel
+in the stack the supplied channel is part of, \fBTcl_WriteRaw\fR does
+not. Thus this function is \fBonly\fR usable for transformational
+channel drivers, i.e. drivers used in the middle of a stack of
+channels, to move data from the transformation into the channel below
+it.
 .VE
 
 .SH TCL_FLUSH
