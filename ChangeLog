@@ -1,5 +1,14 @@
 2001-09-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): had to adjust fix from
+	2001-08-06 to actually duplicate the objects in certain cases.
+	This is really a place where feather would have been essential.
+	[Bug #461322]
+
+	* generic/tclUtf.c (Tcl_UtfPrev): corrected to return the proper
+	location when the middle of a UTF-8 byte was passed in.
+	[Bug #450504]
+
 	* ChangeLog.1999:
 	* ChangeLog: broke changes from 199x into ChangeLog.1999 to reduce
 	size of the main ChangeLog.
