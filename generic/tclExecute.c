@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.65 2002/06/13 23:10:12 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.66 2002/06/14 19:31:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3685,7 +3685,13 @@ TclExecuteByteCode(interp, codePtr)
 		TRACE(("%u => loop iter count temp %d\n", 
 		        opnd, iterTmpIndex));
 	    }
-	    ADJUST_PC(5);
+	    
+	    /* 
+	     * Remark that the compiler ALWAYS sets INST_FOREACH_STEP4 immediately
+	     * after INST_FOREACH_START4 - let us just fall through instead of
+	     *  ADJUST_PC(5);
+	     */
+	    pc += 5;
 	
 	case INST_FOREACH_STEP4:
 	    opnd = TclGetUInt4AtPtr(pc+1);
@@ -3789,18 +3795,23 @@ TclExecuteByteCode(interp, codePtr)
 			listTmpIndex++;
 		    }
 		}
-		
-		/*
-		 * Push 1 if at least one value list had a remaining element
-		 * and the loop should continue. Otherwise push 0.
-		 */
-
-		PUSH_OBJECT(Tcl_NewLongObj(continueLoop));
 		TRACE(("%u => %d lists, iter %d, %s loop\n", 
 		        opnd, numLists, iterNum,
 		        (continueLoop? "continue" : "exit")));
+
+		/* 
+		 * Run-time peep-hole optimisation: the compiler ALWAYS follows
+		 * INST_FOREACH_STEP4 with an INST_JUMP_FALSE. We just skip that
+		 * instruction and jump direct from here.
+		 */
+
+		pc += 5;
+		if (*pc == INST_JUMP_FALSE1) {
+		    ADJUST_PC(continueLoop? 2 : TclGetUInt1AtPtr(pc+1));
+		} else {
+		    ADJUST_PC(continueLoop? 5 : TclGetUInt4AtPtr(pc+1));
+		}
 	    }
-	    ADJUST_PC(5);
 
 	case INST_BEGIN_CATCH4:
 	    /*
