@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.98 2002/08/22 00:52:33 andreas_kupries Exp $
+# RCS: @(#) $Id: configure.in,v 1.99 2002/08/28 08:47:47 dkf Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -268,20 +268,20 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_MSG_CHECKING([for socklen_t])
-AC_CACHE_VAL(ac_cv_type_socklen_t,
-[AC_EGREP_CPP(changequote(<<,>>)dnl
+AC_CACHE_VAL(ac_cv_type_socklen_t,[AC_EGREP_CPP(changequote(<<,>>)dnl
 <<(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]>>dnl
-changequote([,]),[#include <sys/types.h>
-#include <sys/socket.h>
-#if STDC_HEADERS
-#include <stdlib.h>
-#include <stddef.h>
-#endif], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)
+changequote([,]),[
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #if STDC_HEADERS
+    #include <stdlib.h>
+    #include <stddef.h>
+    #endif
+    ], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)])
 AC_MSG_RESULT($ac_cv_type_socklen_t)
 if test $ac_cv_type_socklen_t = no; then
-  AC_DEFINE(socklen_t, unsigned)
+    AC_DEFINE(socklen_t, unsigned)
 fi
-])
 
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)
