@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.55 2001/05/26 01:25:59 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.56 2001/06/17 03:48:19 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1835,6 +1835,8 @@ EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *fileName, char *modeString,
 			    int permissions));
+EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
+			    format));
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
 EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,

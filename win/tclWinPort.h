@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.13 2000/11/16 21:38:52 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.14 2001/06/17 03:48:19 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -344,6 +344,12 @@ typedef float *TCHAR;
 #	define timezone _timezone
 #    endif
 #endif /* _MSC_VER || __MINGW32__ */
+
+/*
+ * There is no platform-specific panic routine for Windows in the Tcl internals.
+ */
+
+#define TclpPanic ((Tcl_PanicProc *) NULL)
 
 /*
  *---------------------------------------------------------------------------
