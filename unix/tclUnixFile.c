@@ -254,6 +254,12 @@ Tcl_FindExecutable(argv0)
 	 */
 
 	p = ":/bin:/usr/bin";
+    } else if (*p == '\0') {
+	/*
+	 * An empty path is equivalent to ".".
+	 */
+
+	p = "./";
     }
 
     /*
@@ -286,8 +292,11 @@ Tcl_FindExecutable(argv0)
 	}
 	if (*p == 0) {
 	    break;
+	} else if (*(p+1) == 0) {
+	    p = "./";
+	} else {
+	    p++;
 	}
-	p++;
     }
     goto done;
 
