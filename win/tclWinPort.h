@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.31 2002/06/12 09:28:59 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.32 2002/08/01 13:05:31 rmax Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -442,6 +442,9 @@
 #define getsockopt	TclWinGetSockOpt
 #define ntohs		TclWinNToHS
 #define setsockopt	TclWinSetSockOpt
+/* This type is not defined in the Windows headers */
+#define socklen_t       int
+
 
 /*
  * The following macros have trivial definitions, allowing generic code to 
