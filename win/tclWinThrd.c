@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.12 2001/07/16 23:30:16 mdejong Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.13 2001/07/24 19:47:02 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -131,14 +131,14 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     int flags;				/* Flags controlling behaviour of
 					 * the new thread */
 {
-    unsigned long code;
+    HANDLE tHandle;
 
     EnterCriticalSection(&joinLock);
 
-    code = _beginthreadex(NULL, (unsigned) stackSize, proc, clientData, 0,
-	(unsigned *)idPtr);
+    tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize, proc,
+	clientData, 0, (unsigned *)idPtr);
 
-    if (code == 0) {
+    if (tHandle == 0) {
         LeaveCriticalSection(&joinLock);
 	return TCL_ERROR;
     } else {
@@ -146,6 +146,7 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 	    TclRememberJoinableThread (*idPtr);
 	}
 
+	CloseHandle(tHandle);
 	LeaveCriticalSection(&joinLock);
 	return TCL_OK;
     }
