@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.132 2004/05/17 02:16:04 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.133 2004/05/17 02:36:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1104,7 +1104,7 @@ TclExecuteByteCode(interp, codePtr)
     Tcl_Obj *objResultPtr;
     char *part1, *part2;
     Var *varPtr, *arrayPtr;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
+    Var *compiledLocals;
 #ifdef TCL_COMPILE_DEBUG
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
@@ -1153,8 +1153,10 @@ TclExecuteByteCode(interp, codePtr)
 
     if (iPtr->varFramePtr != NULL) {
         namespacePtr = iPtr->varFramePtr->nsPtr;
+	compiledLocals = iPtr->varFramePtr->compiledLocals;
     } else {
         namespacePtr = iPtr->globalNsPtr;
+	compiledLocals = NULL;
     }
 
     /*
@@ -1728,7 +1730,7 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_LOAD_SCALAR1:
 	opnd = TclGetUInt1AtPtr(pc+1);
-	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	varPtr = &(compiledLocals[opnd]);
 	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
@@ -1751,7 +1753,7 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_LOAD_SCALAR4:
 	opnd = TclGetUInt4AtPtr(pc+1);
-	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	varPtr = &(compiledLocals[opnd]);
 	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
@@ -1822,7 +1824,7 @@ TclExecuteByteCode(interp, codePtr)
     
     doLoadArray:
 	part2 = TclGetString(*tosPtr);
-	arrayPtr = &(varFramePtr->compiledLocals[opnd]);
+	arrayPtr = &(compiledLocals[opnd]);
 	part1 = arrayPtr->name;
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
@@ -1984,7 +1986,7 @@ TclExecuteByteCode(interp, codePtr)
     doStoreArray:
 	valuePtr = *tosPtr;
 	part2 = TclGetString(*(tosPtr - 1));
-	arrayPtr = &(varFramePtr->compiledLocals[opnd]);
+	arrayPtr = &(compiledLocals[opnd]);
 	part1 = arrayPtr->name;
 	TRACE(("%u \"%.30s\" <- \"%.30s\" => ",
 		    opnd, part2, O2S(valuePtr)));
@@ -2040,7 +2042,7 @@ TclExecuteByteCode(interp, codePtr)
 
     doStoreScalar:
 	valuePtr = *tosPtr;
-	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	varPtr = &(compiledLocals[opnd]);
 	part1 = varPtr->name;
 	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
 	while (TclIsVarLink(varPtr)) {
@@ -2200,7 +2202,7 @@ TclExecuteByteCode(interp, codePtr)
 
     doIncrArray:
 	part2 = TclGetString(*tosPtr);
-	arrayPtr = &(varFramePtr->compiledLocals[opnd]);
+	arrayPtr = &(compiledLocals[opnd]);
 	part1 = arrayPtr->name;
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
@@ -2224,7 +2226,7 @@ TclExecuteByteCode(interp, codePtr)
 	pcAdjustment = 3;
 
     doIncrScalar:
-	varPtr = &(varFramePtr->compiledLocals[opnd]);
+	varPtr = &(compiledLocals[opnd]);
 	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
@@ -4242,7 +4244,6 @@ TclExecuteByteCode(interp, codePtr)
 	    ForeachInfo *infoPtr = (ForeachInfo *)
 	            codePtr->auxDataArrayPtr[opnd].clientData;
 	    int iterTmpIndex = infoPtr->loopCtTemp;
-	    Var *compiledLocals = iPtr->varFramePtr->compiledLocals;
 	    Var *iterVarPtr = &(compiledLocals[iterTmpIndex]);
 	    Tcl_Obj *oldValuePtr = iterVarPtr->value.objPtr;
 
@@ -4281,7 +4282,6 @@ TclExecuteByteCode(interp, codePtr)
 	            codePtr->auxDataArrayPtr[opnd].clientData;
 	    ForeachVarList *varListPtr;
 	    int numLists = infoPtr->numLists;
-	    Var *compiledLocals = iPtr->varFramePtr->compiledLocals;
 	    Tcl_Obj *listPtr;
 	    List *listRepPtr;
 	    Var *iterVarPtr, *listVarPtr;
@@ -4351,7 +4351,7 @@ TclExecuteByteCode(interp, codePtr)
 			}
 			    
 			varIndex = varListPtr->varIndexes[j];
-			varPtr = &(varFramePtr->compiledLocals[varIndex]);
+			varPtr = &(compiledLocals[varIndex]);
 			part1 = varPtr->name;
 			while (TclIsVarLink(varPtr)) {
 			    varPtr = varPtr->value.linkPtr;
