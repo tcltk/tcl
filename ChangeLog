@@ -1,5 +1,9 @@
 2002-05-31  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/io.test:
+	* tests/main.test:  Use the "stdio" constraint to control whether
+	an [open "|[interpreter]"] is attempted.
+
 	* generic/tclExecute.c (TclMathInProgress,TclExecuteByteCode
 		ExprCallMathFunc):
 	* generic/tclInt.h (TclMathInProgress):
