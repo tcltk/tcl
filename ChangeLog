@@ -1,3 +1,8 @@
+2003-07-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinReg.c (OpenSubKey): Fixed bug 775976 which causes the
+	registry set command to fail when built with VC7.
+
 2003-07-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Check that the thread incrementing or decrementing
