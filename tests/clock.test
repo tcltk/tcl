@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.14 2000/05/18 22:29:56 ericm Exp $
+# RCS: @(#) $Id: clock.test,v 1.15 2000/10/31 00:30:35 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -38,11 +38,11 @@ test clock-2.2 {clock clicks tests} {
 test clock-2.3 {clock clicks tests} {
     list [catch {clock clicks foo} msg] $msg
 } {1 {bad switch "foo": must be -milliseconds}}
-test clock-2.3 {clock clicks tests} {
+test clock-2.4 {clock clicks tests} {
     expr [clock clicks -milliseconds]+1
     concat {}
 } {}
-test clock-2.2 {clock clicks tests, millisecond timing test} {
+test clock-2.5 {clock clicks tests, millisecond timing test} {
     set start [clock clicks -milli]
     after 10
     set end [clock clicks -milli]
