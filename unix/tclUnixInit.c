@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.3 1998/09/30 23:01:16 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -456,7 +456,7 @@ TclpSetVariables(interp)
 	 */
 
 	if ((strchr(name.release, '.') != NULL)
-		|| !isdigit(name.version[0])) {	/* INTL: digit */
+		|| !isdigit(UCHAR(name.version[0]))) {	/* INTL: digit */
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
 		    TCL_GLOBAL_ONLY);
 	} else {

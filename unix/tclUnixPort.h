@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.3 1998/09/30 20:47:51 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.4 1998/09/30 23:01:20 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -278,15 +278,6 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #ifndef FD_CLOEXEC
 #   define FD_CLOEXEC 1
 #endif
-
-/*
- * On UNIX, there's no platform specific implementation of "TclpStat(...)"
- * or "TclpAccess(...)".  Simply call "stat(...)' and "access(...)"
- * respectively.
- */
-
-#define TclpStat	stat
-#define TclpAccess	access
 
 /*
  * On systems without symbolic links (i.e. S_IFLNK isn't defined)
