@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.4 1999/05/11 07:12:36 jingham Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.5 1999/08/15 04:04:06 jingham Exp $
  */
 
 #define MAC_TCL
@@ -209,7 +209,7 @@ Tclapplescript_Init(
      * Perform the required stubs magic...
      */
      	
-    if (!Tcl_InitStubs(interp, "8.0", 0)) {
+    if (!Tcl_InitStubs(interp, "8.2", 0)) {
 	return TCL_ERROR;
     }
 
