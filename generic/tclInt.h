@@ -1489,6 +1489,10 @@ EXTERN int		TclPreventAliasLoop _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_Interp *cmdInterp, Tcl_Command cmd));
 EXTERN void		TclPrintByteCodeObj _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_Obj *objPtr));
+EXTERN void		TclProcCleanupProc _ANSI_ARGS_((Proc *procPtr));
+EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
+EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData,
+		    	    Tcl_Interp *interp, int argc, char **argv));
 EXTERN int		TclRenameCommand _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *oldName, char *newName)) ;
 EXTERN void		TclResetShadowedCmdRefs _ANSI_ARGS_((
