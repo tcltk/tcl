@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.13 2004/11/15 21:14:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.14 2005/03/10 20:22:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4263,7 +4263,6 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
     ActiveInterpTrace active;
     int curLevel;
     int traceCode = TCL_OK;
-    TraceCommandInfo* tcmdPtr;
     
     if (command == NULL || iPtr->tracePtr == NULL ||
            (iPtr->flags & INTERP_TRACE_IN_PROGRESS)) {
@@ -4313,16 +4312,16 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	    
 	    if (tracePtr->flags & (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC)) {
 	        /* New style trace */
-		if ((tracePtr->flags != TCL_TRACE_EXEC_IN_PROGRESS) &&
-		    ((tracePtr->flags & traceFlags) != 0)) {
-		    tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
-		    tcmdPtr->curFlags = traceFlags;
-		    tcmdPtr->curCode  = code;
-		    traceCode = (tracePtr->proc)((ClientData)tcmdPtr, 
-						 (Tcl_Interp*)interp,
-						 curLevel, command,
-						 (Tcl_Command)cmdPtr,
-						 objc, objv);
+		if (tracePtr->flags & traceFlags) {
+		    if (tracePtr->proc == TraceExecutionProc) {
+			TraceCommandInfo *tcmdPtr =
+				(TraceCommandInfo *) tracePtr->clientData;
+			tcmdPtr->curFlags = traceFlags;
+			tcmdPtr->curCode  = code;
+		    }
+		    traceCode = (tracePtr->proc)(tracePtr->clientData, 
+			    interp, curLevel, command, (Tcl_Command)cmdPtr,
+			    objc, objv);
 		}
 	    } else {
 		/* Old-style trace */
