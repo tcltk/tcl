@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.9 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.9.4.1 2004/03/04 17:26:13 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -333,7 +333,7 @@ For more details on hidden commands, see HIDDEN COMMANDS, below.
 \fIslave \fBhide \fIexposedCmdName\fR ?\fIhiddenCmdName\fR?
 This command hides the exposed command \fIexposedCmdName\fR, renaming it to 
 the hidden command \fIhiddenCmdName\fR, or keeping the same name if the
-the argument is not given, in the \fIslave\fR interpreter.
+argument is not given, in the \fIslave\fR interpreter.
 If a hidden command with the targeted name already exists, this command
 fails.
 Currently both \fIexposedCmdName\fR and \fIhiddenCmdName\fR can 

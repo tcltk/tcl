@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.2 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.3 2004/03/04 17:26:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -926,7 +926,11 @@ test filename-9.19.2 {Tcl_JoinPath: win} {testsetplatform winOnly} {
       [file join {foo\bar}] \
       [file join [pwd] {foo\bar}] \
       [file join [pwd] [pwd] {foo\bar}]
-    string map [list [pwd] pwd] $res
+    set nres {}
+    foreach elt $res {
+	lappend nres [string map [list [pwd] pwd] $elt]
+    }
+    set nres
 } {foo/bar pwd/foo/bar pwd/foo/bar}
 test filename-9.20 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix

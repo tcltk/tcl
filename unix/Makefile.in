@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.4 2004/02/07 05:48:03 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.5 2004/03/04 17:26:24 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -90,7 +90,8 @@ CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 #CFLAGS			= $(CFLAGS_DEBUG)
 #CFLAGS			= $(CFLAGS_OPTIMIZE)
 #CFLAGS			= $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS			= @CFLAGS@ @CFLAGS_DEFAULT@ -DTCL_DBGX=$(TCL_DBGX)
+CFLAGS			= @CFLAGS@ @CFLAGS_DEFAULT@ -DTCL_DBGX=$(TCL_DBGX) \
+                          -DTCL_UNLOAD_DLLS=1
 
 # Flags to pass to the linker
 LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@

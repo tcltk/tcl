@@ -32,6 +32,21 @@ makeDirectory dir.dir
 makeDirectory [file join dir.dir dirinside.dir]
 makeFile "test file in directory" [file join dir.dir inside.file]
 
+tcltest::testConstraint unusedDrive 0
+set drive {}
+if {$::tcl_platform(platform) eq "windows"} {
+    set vols [string map [list :/ {}] [file volumes]]
+    for {set i 0} {$i < 26} {incr i} {
+	set drive [format %c [expr {$i + 65}]]
+	if {[lsearch -exact $vols $drive] == -1} {
+	    tcltest::testConstraint unusedDrive 1
+	    break
+	}
+    }
+    unset i vols
+    # The variable 'drive' will be used below
+}
+
 proc testPathEqual {one two} {
     if {[string equal $one $two]} {
 	return 1
@@ -170,9 +185,9 @@ test filesystem-1.18 {file normalisation} {winOnly} {
     file normalize c:/./
 } {C:/}
 
-test filesystem-1.19 {file normalisation} {winOnly} {
-    file normalize w:/./../../..
-} {w:/}
+test filesystem-1.19 {file normalisation} {winOnly unusedDrive} {
+    file normalize ${drive}:/./../../..
+} "${drive}:/"
 
 test filesystem-1.20 {file normalisation} {winOnly} {
     file normalize //name/foo/../
@@ -190,17 +205,17 @@ test filesystem-1.23 {file normalisation} {winOnly} {
     file normalize c:/./foo
 } {C:/foo}
 
-test filesystem-1.24 {file normalisation} {winOnly} {
-    file normalize w:/./../../../a
-} {w:/a}
+test filesystem-1.24 {file normalisation} {winOnly unusedDrive} {
+    file normalize ${drive}:/./../../../a
+} "${drive}:/a"
 
-test filesystem-1.25 {file normalisation} {winOnly} {
-    file normalize w:/./.././../../a
-} {w:/a}
+test filesystem-1.25 {file normalisation} {winOnly unusedDrive} {
+    file normalize ${drive}:/./.././../../a
+} "${drive}:/a"
 
-test filesystem-1.25.1 {file normalisation} {winOnly} {
-    file normalize w:/./.././..\\..\\a\\bb
-} {w:/a/bb}
+test filesystem-1.25.1 {file normalisation} {winOnly unusedDrive} {
+    file normalize ${drive}:/./.././..\\..\\a\\bb
+} "${drive}:/a/bb"
 
 test filesystem-1.26 {link normalisation: link and ..} {hasLinks} {
     file delete -force dir2.link
@@ -813,6 +828,7 @@ test filesystem-8.3 {path objects and empty string} {
 } {foo foo {}}
 
 cleanupTests
+unset -nocomplain drive
 }
 namespace delete ::tcl::test::fileSystem
 return

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.2 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.3 2004/03/04 17:26:18 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -1582,20 +1582,21 @@ set path(test3) [makeFile {} test3]
 
 test io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec openpipe} {
     set f [open $path(test1) w]
-    puts $f [format {
+    puts -nonewline $f {
 	close stdin
 	close stdout
 	close stderr
-	set f  [open "%s" r]
-	set f2 [open "%s" w]
-	set f3 [open "%s" w]
-	puts stdout [gets stdin]
+	set f  [}
+    puts $f [list open $path(test1) r]]
+    puts $f "set f2 \[[list open $path(test2) w]]"
+    puts $f "set f3 \[[list open $path(test3) w]]"
+    puts $f {	puts stdout [gets stdin]
 	puts stdout out
 	puts stderr err
 	close $f
 	close $f2
 	close $f3
-    } $path(test1) $path(test2) $path(test3)]
+    }
     close $f
     set result [exec [interpreter] $path(test1)]
     set f  [open $path(test2) r]
@@ -1611,19 +1612,20 @@ out
 # This test relies on the fact that the smallest available fd is used first.
 test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unixOnly} {
     set f [open $path(test1) w]
-    puts $f [format { close stdin
+    puts -nonewline $f { close stdin
 	close stdout
 	close stderr
-	set f  [open "%s" r]
-	set f2 [open "%s" w]
-	set f3 [open "%s" w]
-	puts stdout [gets stdin]
+	set f  [}
+    puts $f [list open $path(test1) r]]
+    puts $f "set f2 \[[list open $path(test2) w]]"
+    puts $f "set f3 \[[list open $path(test3) w]]"
+    puts $f {	puts stdout [gets stdin]
 	puts stdout $f2
 	puts stderr $f3
 	close $f
 	close $f2
 	close $f3
-    } $path(test1) $path(test2) $path(test3)]
+    }
     close $f
     set result [exec [interpreter] $path(test1)]
     set f  [open $path(test2) r]
@@ -1674,14 +1676,18 @@ test io-14.8 {reuse of stdio special channels} {stdio openpipe} {
     file delete $path(script)
     file delete $path(test1)
     set f [open $path(script) w]
-    puts $f [format {
+    puts -nonewline $f {
 	close stderr
-	set f [open "%s" w]
+	set f [}
+    puts $f [list open $path(test1) w]]
+    puts -nonewline $f {
 	puts stderr hello
 	close $f
-	set f [open "%s" r]
+	set f [}
+    puts $f [list open $path(test1) r]]
+    puts $f {
 	puts [gets $f]
-    } $path(test1) $path(test1)]
+    }
     close $f
     set f [open "|[list [interpreter] $path(script)]" r]
     set c [gets $f]
@@ -1876,12 +1882,14 @@ set path(stdout) [makeFile {} stdout]
 
 test io-20.5 {Tcl_CreateChannel: install channel in empty slot} {stdio openpipe} {
     set f [open $path(script) w]
-    puts $f [format {
+    puts -nonewline $f {
 	close stdout
-	set f1 [open "%s" w]
+	set f1 [}
+    puts $f [list open $path(stdout) w]]
+    puts $f {
 	fconfigure $f1 -buffersize 777
 	puts stderr [fconfigure stdout -buffersize]
-    } $path(stdout)]
+    }
     close $f
     set f [open "|[list [interpreter] $path(script)]"]
     catch {close $f} msg
@@ -2029,15 +2037,15 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
-    puts $f [format {
-	set f [open "%s" w]
+    puts $f "set f \[[list open $path(output) w]]"
+    puts $f {
 	fconfigure $f -translation lf -buffering none -eofchar {}
 	while {![eof stdin]} {
 	    after 20
 	    puts -nonewline $f [read stdin 1024]
 	}
 	close $f
-    } $path(output)]
+    }
     close $f
     set x 01234567890123456789012345678901
     for {set i 0} {$i < 11} {incr i} {
@@ -2295,12 +2303,12 @@ test io-29.12 {Tcl_WriteChars on a pipe} {stdio openpipe} {
     file delete $path(test1)
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
-    puts $f1 [format {
-	set f1 [open "%s" r]
+    puts $f1 "set f1 \[[list open $path(longfile) r]]"
+    puts $f1 {
 	for {set x 0} {$x < 10} {incr x} {
 	    puts [gets $f1]
 	}
-    } $path(longfile)]
+    }
     close $f1
     set f1 [open "|[list [interpreter] $path(pipe)]" r]
     set f2 [open $path(longfile) r]
@@ -2591,7 +2599,7 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
-    puts $f [format {set f [open "%s" w]} $path(output)]
+    puts $f "set f \[[list open $path(output)  w]]"
     puts $f {fconfigure $f -translation lf}
     set x [list while {![eof stdin]}]
     set x "$x {"
@@ -2628,7 +2636,7 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
-    puts $f [format {set f [open {%s} w]} $path(output)]
+    puts $f "set f \[[list open $path(output) w]]"
     puts $f {fconfigure $f -translation lf}
     set x [list while {![eof stdin]}]
     set x "$x \{"
@@ -2663,13 +2671,12 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 } ok
 test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     set f [open $path(script) w]
-    puts $f [format {
-	set f [open "%s" w]
-	fconfigure $f -translation lf
+    puts $f "set f \[[list open $path(test1) w]]"
+    puts $f {fconfigure $f -translation lf
 	puts $f hello
 	puts $f bye
 	puts $f strange
-    } $path(test1)]
+    }
     close $f
     exec [interpreter] $path(script)
     set f [open $path(test1) r]
@@ -5521,14 +5528,15 @@ testConstraint testfevent [llength [info commands testfevent]]
 
 test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent fileevent} {
     testfevent create
-    testfevent cmd [format {
-	set f [open {%s} r]
+    set script "set f \[[list open $path(foo) r]]\n"
+    append script {
 	set x "no event"
 	fileevent $f readable [namespace code {
 	    set x "f triggered: [gets $f]"
 	    fileevent $f readable {}
 	}]
-    } $path(foo)]
+    }
+    testfevent cmd $script
     after 1	;# We must delay because Windows takes a little time to notice
     update
     testfevent cmd {close $f}
@@ -5756,8 +5764,8 @@ test io-48.3 {testing readability conditions} {stdio unixOnly nonBlockFiles open
     }
     set l ""
     variable x not_done
-    puts $f [format {source {%s}}         $path(my_script)]
-    puts $f [format {set f [open {%s} r]} $path(bar)]
+    puts $f [list source $path(my_script)]
+    puts $f "set f \[[list open $path(bar) r]]"
     puts $f {copy_slowly $f}
     puts $f {exit}
     vwait [namespace which -variable x]
@@ -6659,16 +6667,18 @@ test io-53.3 {CopyData: background read underflow} {stdio unixOnly openpipe fcop
     file delete $path(test1)
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
-    puts $f1 [format {
+    puts -nonewline $f1 {
 	puts ready
 	flush stdout				;# Don't assume line buffered!
 	fcopy stdin stdout -command { set x }
 	vwait x
-	set f [open "%s" w]
+	set f [}
+    puts $f1 [list open $path(test1) w]]
+    puts $f1 {
 	fconfigure $f -translation lf
 	puts $f "done"
 	close $f
-    } $path(test1)]
+    }
     close $f1
     set f1 [open "|[list [interpreter] $path(pipe)]" r+]
     set result [gets $f1]
