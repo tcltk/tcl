@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.115 2002/08/31 06:09:46 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.116 2002/09/10 09:57:42 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -227,6 +227,9 @@ TCL_LIB_FLAG		= @TCL_LIB_FLAG@
 
 TCL_EXP_FILE		= @TCL_EXP_FILE@
 TCL_BUILD_EXP_FILE	= @TCL_BUILD_EXP_FILE@
+
+# support for embedded libraries on Darwin / Mac OS X
+DYLIB_INSTALL_DIR	= ${LIB_RUNTIME_DIR}
 
 #----------------------------------------------------------------
 # The information below is modified by the configure script when
@@ -473,11 +476,6 @@ objs: ${OBJS}
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		${CC_SEARCH_FLAGS} -o tclsh
-
-# Resetting the LIB_RUNTIME_DIR below is required so that
-# the generated tcltest executable gets the build directory
-# burned into its ld search path. This keeps tcltest from
-# picking up an already installed version of the Tcl library.
 
 # Resetting the LIB_RUNTIME_DIR below is required so that
 # the generated tcltest executable gets the build directory

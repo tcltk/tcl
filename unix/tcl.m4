@@ -1236,8 +1236,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	Rhapsody-*|Darwin-*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
-	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr 0xa000000"
-	    TK_SHLIB_LD_EXTRAS="-compatibility_version ${TK_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TK_LIB_FILE} -prebind -seg1addr 0xb000000"
+	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -install_name \${DYLIB_INSTALL_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr 0xa000000"
+	    TK_SHLIB_LD_EXTRAS="-compatibility_version ${TK_VERSION} -current_version \${VERSION} -install_name \${DYLIB_INSTALL_DIR}/\${TK_LIB_FILE} -prebind -seg1addr 0xb000000"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
