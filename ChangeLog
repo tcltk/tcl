@@ -1,5 +1,8 @@
 2003-05-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclCmdMZ.c (Tcl_TraceObjCmd): Made error message for
+	'trace info' more consistent with documentation.  [Bug 706961]
+
 	* generic/tclDictObj.c (DictInfoCmd): Fixed memory leak caused by
 	confusion about string ownership.  [Bug 731706]
 
