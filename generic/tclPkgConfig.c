@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkgConfig.c,v 1.1.2.2 2002/02/05 20:45:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkgConfig.c,v 1.1.2.3 2002/02/19 22:01:17 andreas_kupries Exp $
  */
 
 /* Note, the definitions in this module are influenced by the
@@ -28,10 +28,8 @@
  * - TCL_CFG_OPTIMIZED		NSCMdt tcl is compiled with cc optimizations on.
  * - TCL_CFG_PROFILED		NSCMdt tcl is compiled with profiling info.
  *
- * - CFG_RUNTIME_PREFIX		Path to platform independent data at runtime
- * - CFG_RUNTIME_EXEC_PREFIX	Path to platform dependent data at runtime
- * - CFG_INSTALL_PREFIX		Path to platform independent data during installation
- * - CFG_INSTALL_EXEC_PREFIX	Path to platform dependent data during installation
+ * - CFG_RUNTIME_*		Paths to various stuff at runtime.
+ * - CFG_INSTALL_*		Paths to various stuff at installation time.
  *
  * - TCL_CFGVAL_ENCODING	string containing the encoding used for the
  *                              configuration values.
@@ -94,10 +92,23 @@ static Tcl_Config cfg [] = {
   {"mem_debug",           CFG_MEMDEBUG},
   {"compile_debug",       CFG_COMPILE_DEBUG},
   {"compile_stats",       CFG_COMPILE_STATS},
-  {"prefix,runtime",      CFG_RUNTIME_PREFIX},
-  {"exec_prefix,runtime", CFG_RUNTIME_EXEC_PREFIX},
-  {"prefix,install",      CFG_INSTALL_PREFIX},
-  {"exec_prefix,install", CFG_INSTALL_EXEC_PREFIX},
+
+  /* Runtime paths to various stuff */
+
+  {"libdir,runtime",     CFG_RUNTIME_LIBDIR},
+  {"bindir,runtime",     CFG_RUNTIME_BINDIR},
+  {"scriptdir,runtime",  CFG_RUNTIME_SCRDIR},
+  {"includedir,runtime", CFG_RUNTIME_INCDIR},
+  {"docdir,runtime",     CFG_RUNTIME_DOCDIR},
+
+  /* Installation paths to various stuff */
+
+  {"libdir,install",     CFG_INSTALL_LIBDIR},
+  {"bindir,install",     CFG_INSTALL_BINDIR},
+  {"scriptdir,install",  CFG_INSTALL_SCRDIR},
+  {"includedir,install", CFG_INSTALL_INCDIR},
+  {"docdir,install",     CFG_INSTALL_DOCDIR},
+
   /* Last entry, closes the array */
   {NULL, NULL}
 };

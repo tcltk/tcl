@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.77.2.3 2002/02/06 12:20:26 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.77.2.4 2002/02/19 22:01:17 andreas_kupries Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -605,10 +605,16 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
-		-DCFG_INSTALL_EXEC_PREFIX=\"$(INSTALLDIR:\=/)\"	\
-		-DCFG_INSTALL_PREFIX=\"$(INSTALLDIR:\=/)\"		\
-		-DCFG_RUNTIME_EXEC_PREFIX=\"$(INSTALLDIR:\=/)\"	\
-		-DCFG_RUNTIME_PREFIX=\"$(INSTALLDIR:\=/)\"		\
+	-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR)\" \
+	-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR)\" \
+	-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \
+	-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
+	-DCFG_INSTALL_DOCDIR=\"$(DOC_INSTALL_DIR)\"	\
+	-DCFG_RUNTIME_LIBDIR=\"$(LIB_INSTALL_DIR)\" \    
+	-DCFG_RUNTIME_BINDIR=\"$(BIN_INSTALL_DIR)\" \    
+	-DCFG_RUNTIME_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \ 
+	-DCFG_RUNTIME_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
+	-DCFG_RUNTIME_DOCDIR=\"$(DOC_INSTALL_DIR)\"     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c

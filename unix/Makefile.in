@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.93.2.1 2002/01/25 01:47:01 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.93.2.2 2002/02/19 22:01:17 andreas_kupries Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -71,20 +71,6 @@ MANN_INSTALL_DIR	= $(MAN_INSTALL_DIR)/mann
 
 # Package search path.
 TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
-
-# TIP #59, embedding of configuration information into the binary library.
-#
-# Part of Tcl's configuration information are the paths where it was
-# installed and where it will look for its libraries (which can be
-# different). We derive this information from the variables which can
-# be overridden by the user to produce this effect by slashing of the
-# subdirectory information contained in them. See "tclPkgConfig.o"
-# below for the transfer of this information into the binary library.
-
-INSTALL_PREFIX		= $(shell dirname $(INCLUDE_INSTALL_DIR))
-INSTALL_EXEC_PREFIX	= $(shell dirname $(LIB_INSTALL_DIR))
-RUNTIME_PREFIX		= $(shell dirname $(shell dirname $(TCL_LIBRARY)))
-RUNTIME_EXEC_PREFIX	= $(shell dirname $(TCL_PACKAGE_PATH))
 
 # Libraries built with optimization switches have this additional extension
 TCL_DBGX		= @TCL_DBGX@
@@ -930,12 +916,30 @@ tclPipe.o: $(GENERIC_DIR)/tclPipe.c
 tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPkg.c
 
+
+# TIP #59, embedding of configuration information into the binary library.
+#
+# Part of Tcl's configuration information are the paths where it was
+# installed and where it will look for its libraries (which can be
+# different). We derive this information from the variables which can
+# be overridden by the user. As every path can be configured
+# separately we do not remember one general prefix/exec_prefix but all
+# the different paths individually.
+
 tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 	$(CC)	-c $(CC_SWITCHES)					\
-		-DCFG_INSTALL_EXEC_PREFIX=\"$(INSTALL_EXEC_PREFIX)\"	\
-		-DCFG_INSTALL_PREFIX=\"$(INSTALL_PREFIX)\"		\
-		-DCFG_RUNTIME_EXEC_PREFIX=\"$(RUNTIME_EXEC_PREFIX)\"	\
-		-DCFG_RUNTIME_PREFIX=\"$(RUNTIME_PREFIX)\"		\
+		-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR)\" \
+		-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR)\" \
+		-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \
+		-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
+		-DCFG_INSTALL_DOCDIR=\"$(MAN_INSTALL_DIR)\" \
+		\
+		-DCFG_RUNTIME_LIBDIR=\"$(libdir)\" \
+		-DCFG_RUNTIME_BINDIR=\"$(bindir)\" \
+		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY)\" \
+		-DCFG_RUNTIME_INCDIR=\"$(includedir)\" \
+		-DCFG_RUNTIME_DOCDIR=\"$(mandir)\" \
+		\
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
