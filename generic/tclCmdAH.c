@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.2 2003/03/14 21:48:46 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.3 2003/03/14 23:19:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2198,21 +2198,55 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	case 'u':
 	case 'x':
 	case 'X':
+	    size = 40 + precision;
+
 #ifndef TCL_WIDE_INT_IS_LONG
-	    if (useWide) {
-		if (Tcl_GetWideIntFromObj(interp, /* INTL: Tcl source. */
-			objv[objIndex], &wideValue) != TCL_OK) {
+	    /*
+	     * Peek what kind of value we've got so as not to be
+	     * converting stuff unduly.  [Bug #699060]
+	     */
+	    if (objv[objIndex]->typePtr == &tclWideIntType) {
+		Tcl_GetWideIntFromObj(NULL, objv[objIndex], &wideValue);
+		if (useWide) {
+		    whichValue = WIDE_VALUE;
+		    break;
+		} else {
+		    whichValue = INT_VALUE;
+		    intValue = (int) Tcl_WideAsLong(wideValue);
+		}
+	    } else if (objv[objIndex]->typePtr == &tclIntType) {
+		Tcl_GetLongFromObj(NULL, objv[objIndex], &intValue);
+		if (useWide) {
+		    whichValue = WIDE_VALUE;
+		    wideValue = Tcl_LongAsWide(intValue);
+		    break;
+		} else {
+		    whichValue = INT_VALUE;
+		}
+	    } else {
+		/*
+		 * No existing numeric interpretation, so we can
+		 * coerce to whichever is convenient.
+		 */
+		if (useWide) {
+		    if (Tcl_GetWideIntFromObj(interp, /* INTL: Tcl source. */
+			    objv[objIndex], &wideValue) != TCL_OK) {
+			goto fmtError;
+		    }
+		    whichValue = WIDE_VALUE;
+		    break;
+		}
+		if (Tcl_GetLongFromObj(interp,	      /* INTL: Tcl source. */
+			objv[objIndex], &intValue) != TCL_OK) {
 		    goto fmtError;
 		}
-		whichValue = WIDE_VALUE;
-		size = 40 + precision;
-		break;
 	    }
-#endif /* TCL_WIDE_INT_IS_LONG */
+#else /* TCL_WIDE_INT_IS_LONG */
 	    if (Tcl_GetLongFromObj(interp,	      /* INTL: Tcl source. */
 		    objv[objIndex], &intValue) != TCL_OK) {
 		goto fmtError;
 	    }
+#endif /* !TCL_WIDE_INT_IS_LONG */
 #if (LONG_MAX > INT_MAX)
 	    /*
 	     * Add the 'l' for long format type because we are on an
@@ -2225,7 +2259,6 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    newPtr[-2] = 'l';
 #endif /* LONG_MAX > INT_MAX */
 	    whichValue = INT_VALUE;
-	    size = 40 + precision;
 	    break;
 	case 's':
 	    /*

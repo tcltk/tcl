@@ -2,6 +2,8 @@
 
 	* generic/tclCmdAH.c (Tcl_FileObjCmd): Remove assumption that file
 	times and longs are the same size.  [Bug #698146]
+	(Tcl_FormatObjCmd): Stop surprising type conversions from
+	happening when working with integer and wide values.  [Bug #699060]
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Only add the modifier
 	that indicates we've got a wide int when we're formatting in an
