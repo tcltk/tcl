@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.3 1999/05/04 01:33:11 stanton Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.4 1999/05/04 02:57:55 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -159,7 +159,7 @@ test cmdMZ-5.1 {Tcl_StringObjCmd: error conditions} {
 } {1 {wrong # args: should be "string option arg ?arg ...?"}}
 test cmdMZ-5.2 {Tcl_StringObjCmd: error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {bad option "gorp": must be bytes, compare, equal, first, icompare, iequal, index, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "gorp": must be bytelength, compare, equal, first, icompare, iequal, index, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 
 test cmdMZ-6.1 {Tcl_StringObjCmd: string compare} {
     list [catch {string compare a} msg] $msg
@@ -279,21 +279,36 @@ test cmdMZ-9.7 {Tcl_StringObjCmd: string last, unicode} {
     string las \u7266 xxxx12\u7266xx345x678
 } 6
 
-test cmdMZ-10.1 {Tcl_StringObjCmd: string length} {
+test cmdMZ-10.1 {Tcl_StringObjCmd: string bytelength} {
+    list [catch {string bytelength} msg] $msg
+} {1 {wrong # args: should be "string bytelength string"}}
+test cmdMZ-10.2 {Tcl_StringObjCmd: string bytelength} {
+    list [catch {string bytelength a b} msg] $msg
+} {1 {wrong # args: should be "string bytelength string"}}
+test cmdMZ-10.3 {Tcl_StringObjCmd: string bytelength} {
+    string bytelength "\u00c7"
+} 2
+test cmdMZ-10.4 {Tcl_StringObjCmd: string bytelength} {
+    string b ""
+} 0
+test cmdMZ-10.5 {Tcl_StringObjCmd: string length} {
     list [catch {string length} msg] $msg
 } {1 {wrong # args: should be "string length string"}}
-test cmdMZ-10.2 {Tcl_StringObjCmd: string length} {
+test cmdMZ-10.6 {Tcl_StringObjCmd: string length} {
     list [catch {string length a b} msg] $msg
 } {1 {wrong # args: should be "string length string"}}
-test cmdMZ-10.3 {Tcl_StringObjCmd: string length} {
+test cmdMZ-10.7 {Tcl_StringObjCmd: string length} {
     string length "a little string"
 } 15
-test cmdMZ-10.4 {Tcl_StringObjCmd: string length} {
+test cmdMZ-10.8 {Tcl_StringObjCmd: string length} {
     string le ""
 } 0
-test cmdMZ-10.5 {Tcl_StringObjCmd: string length, unicode} {
+test cmdMZ-10.9 {Tcl_StringObjCmd: string length, unicode} {
     string le "abcd\u7266"
 } 5
+test cmdMZ-10.10 {Tcl_StringObjCmd: string length, byte arrays} {
+    string le [binary format B 1]
+} 1
 
 test cmdMZ-11.1 {Tcl_StringObjCmd: string match} {
     list [catch {string match a} msg] $msg
@@ -478,7 +493,7 @@ test cmdMZ-18.4 {Tcl_StringObjCmd: string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test cmdMZ-18.5 {Tcl_StringObjCmd: string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {bad option "trimg": must be bytes, compare, equal, first, icompare, iequal, index, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {bad option "trimg": must be bytelength, compare, equal, first, icompare, iequal, index, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 
 test cmdMZ-19.1 {Tcl_StringObjCmd: string wordend} {
     list [catch {string wordend a} msg] $msg
@@ -522,7 +537,7 @@ test cmdMZ-19.13 {Tcl_StringObjCmd: string wordend, unicode} {
 
 test cmdMZ-20.1 {Tcl_StringObjCmd: string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {ambiguous option "word": must be bytes, compare, equal, first, icompare, iequal, index, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {ambiguous option "word": must be bytelength, compare, equal, first, icompare, iequal, index, last, length, map, match, range, repeat, replace, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
 test cmdMZ-20.2 {Tcl_StringObjCmd: string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -566,6 +581,7 @@ test cmdMZ-20.12 {Tcl_StringObjCmd: string wordstart, unicode} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 
