@@ -1,3 +1,76 @@
+2004-11-30  Don Porter  <dgp@users.sourceforge.net>
+
+	Patch 976520 reworks several of the details involved with
+	startup/initialization of the Tcl library, focused on the
+	activities of Tcl_FindExecutable().
+
+	* generic/tclIO.c:	Removed bogus claim in comment that
+	encoding "iso8859-1" is "built-in" to Tcl.
+	
+	* generic/tclInt.h:	Created a new struct ProcessGlobalValue,
+	* generic/tclUtil.c:	routines Tcl(Get|Set)ProcessGlobalValue,
+	and function type TclInitProcessGlobalValueProc.  Together, these
+	take care of the housekeeping for "values" (things that can be
+	held in a Tcl_Obj) that are global across a whole process.  That is,
+	they are shared among multiple threads, and epoch and mutex
+	protection must govern the validity of cached copies maintained
+	in each thread.
+
+	* generic/tclNotify.c:	Modified TclInitNotifier() to tolerate
+	being called multiple times in the same thread.
+
+	* generic/tclEvent.c:	Dropped the unused argv0 argument to
+	TclInitSubsystems().  Removed machinery to unsure only one
+	TclInitNotifier() call per thread, now that that is safe.
+	Converted Tcl(Get|Set)LibraryPath to use a ProcessGlobalValue,
+	and moved them to tclEncoding.c.
+	* generic/tclBasic.c:	Updated caller.
+
+	* generic/tclInt.h:	TclpFindExecutable now returns void.
+	* unix/tclUnixFile.c:	
+	* win/tclWinFile.c:
+	* win/tclWinPipe.c:
+
+	* generic/tclEncoding.c: Built new encoding search initialization
+	on a foundation of ProcessGlobalValues, exposing new routines
+	Tcl(Get|Set)EncodingSearchPath.  A cache of a map from encoding name
+	to directory pathname keeps track of where encodings are available
+	for loading.  Tcl_FindExecutable greatly simplified into just
+	three function calls.  The "library path" is now misnamed, as its
+	only remaining purpose is as a foundation for the default encoding
+	search path.
+
+	* generic/tclInterp.c:	Inlined the initScript that is evaluated
+	by Tcl_Init().  Added verification after initScript evaluation
+	that Tcl can find its installed *.enc files, and that it has
+	initialized [encoding system] in agreement with what the environment
+	expects.  [tclInit] no longer driven by the value of $::tcl_libPath;
+	it largely constructs its own search path now, rather than attempt
+	to share one with the encoding system.
+
+	* unix/tclUnixInit.c:	TclpSetInitialEncodings factored so that a new
+	* win/tclWinInit.c:	routine TclpGetEncodingNameFromEnvironment
+	can reveal that Tcl thinks the [encoding system] should be, even
+	when an incomplete encoding search path, or a missing *.enc file
+	won't allow that initialization to succeed.  TclpInitLibraryPath
+	reworked as an initializer of a ProcessGlobalValue.
+
+	* unix/tclUnixTest.c:	Update implementations of [testfindexecutable],
+	[testgetdefenc], and [testsetdefenc].
+
+	* tests/unixInit.test:	Corrected tests to operate properly even
+	when a value of TCL_LIBRARY is required to find encodings.
+	 
+	* generic/tclInt.decls:	New internal stubs: TclGetEncodingSearchPath,
+	TclSetEncodingSearchPath, TclpGetEncodingNameFromEnvironment.  These
+	are candidates for public exposure by future TIPs.
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+	
+	* generic/tclTest.c:	Updated [testencoding] to use
+	* tests/encoding.test:	Tcl(Get|Set)EncodingSearchPath.  Updated tests.
+
 2004-11-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Corrected the regular expressions that match
