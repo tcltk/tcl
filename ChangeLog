@@ -1,3 +1,9 @@
+2000-07-07  Mo DeJong  <mdejong@redhat.com>
+
+	* win/configure.in: Fix definition of
+	TCL_SRC_DIR so that it matches the Unix version.
+	* win/tclConfig.sh.in: Removed duplicate variables.
+
 2000-07-06  Eric Melski  <ericm@scriptics.com>
 
 	* tests/msgcat.test: 
