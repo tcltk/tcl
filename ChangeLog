@@ -1,3 +1,10 @@
+2004-06-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+        * generic/tclIOUtil.c: partially corrected [Bug 932314].
+          Also, corrected return values of Tcl_FSChdir() to
+          reflect those of the underlying platform-specific call.
+          Originally, return codes were mixed with those of Tcl.
+
 2004-06-08  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c: handle warning [Bug 969066]
