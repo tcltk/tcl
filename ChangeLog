@@ -1,3 +1,9 @@
+2001-10-11  Miguel Sofer  <msofer@users.sourceforge.net>
+	
+	* generic/tclLiteral.c: (TclReleaseLiteral) insured that
+	self-referential bytecodes are properly cleaned up on interpreter
+	deletion [Bug 467523] (Ronnie Brunner)
+
 2001-10-10  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/unixInit.test:  Corrected restore of ::env(LANG).
