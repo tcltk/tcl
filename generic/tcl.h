@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.186 2004/11/01 09:24:49 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.187 2004/11/03 19:13:33 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -2316,6 +2316,13 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 
 #endif
 
+/*
+ * Public functions that are not accessible via the stubs table.
+ */
+
+EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
+	Tcl_AppInitProc *appInitProc));
+
 
 /*
  * Include the public function declarations that are accessible via
@@ -2330,13 +2337,6 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  */
 
 #include "tclPlatDecls.h"
-
-/*
- * Public functions that are not accessible via the stubs table.
- */
-
-EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
-	Tcl_AppInitProc *appInitProc));
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility.
