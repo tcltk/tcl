@@ -1,6 +1,13 @@
 2002-08-31  Daniel Steffen  <das@users.sourceforge.net>
 
-	*** macosx-8-4-branch merged into the mainline [patch 602770] ***
+	* unix/tcl.m4: added TK_SHLIB_LD_EXTRAS analogue of existing
+	TCL_SHLIB_LD_EXTRAS for linker settings only used when linking Tk.
+
+	* unix/configure: regen
+
+2002-08-31  Daniel Steffen  <das@users.sourceforge.net>
+
+	*** macosx-8-4-branch merged into the mainline [tcl patch #602770] ***
 
 	* generic/tcl.decls: added new macosx specific entry to stubs table.
 

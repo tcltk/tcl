@@ -284,6 +284,7 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
         AC_MSG_RESULT([could not find $TK_BIN_DIR/tkConfig.sh])
     fi
 
+    AC_SUBST(TK_VERSION)
     AC_SUBST(TK_BIN_DIR)
     AC_SUBST(TK_SRC_DIR)
     AC_SUBST(TK_LIB_FILE)
@@ -690,9 +691,9 @@ AC_DEFUN(SC_ENABLE_MEMDEBUG, [
 #                       extensions.  An empty string means we don't know how
 #                       to use shared libraries on this platform.
 # TCL_SHLIB_LD_EXTRAS - Additional element which are added to SHLIB_LD_LIBS
-#                       for the build of TCL, but not recorded in the
+#  TK_SHLIB_LD_EXTRAS   for the build of Tcl and Tk, but not recorded in the
 #                       tclConfig.sh, since they are only used for the build
-#                       of Tcl. 
+#                       of Tcl and Tk. 
 #                       Examples: MacOS X records the library version and
 #                       compatibility version in the shared library.  But
 #                       of course the Tcl version of this is only used for Tcl.
@@ -1219,6 +1220,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
 	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr 0xa000000"
+	    TK_SHLIB_LD_EXTRAS="-compatibility_version ${TK_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TK_LIB_FILE} -prebind -seg1addr 0xb000000"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
@@ -1647,7 +1649,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 
     if test "${SHARED_BUILD}" = "1" && test "${SHLIB_SUFFIX}" != "" ; then
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o [$]@ ${SHLIB_LD_FLAGS} ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o [$]@ ${SHLIB_LD_FLAGS} ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
     else
         LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
@@ -1705,6 +1707,7 @@ dnl        esac
     AC_SUBST(STLIB_LD)
     AC_SUBST(SHLIB_LD)
     AC_SUBST(TCL_SHLIB_LD_EXTRAS)
+    AC_SUBST(TK_SHLIB_LD_EXTRAS)
     AC_SUBST(SHLIB_LD_FLAGS)
     AC_SUBST(SHLIB_LD_LIBS)
     AC_SUBST(SHLIB_CFLAGS)
