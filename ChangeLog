@@ -1,3 +1,11 @@
+2002-04-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_SubstObj):
+	* tests/subst.test:  Corrected [subst] so that return codes
+	TCL_BREAK and TCL_CONTINUE returned by variable substitution
+	have the same effect as when those codes are returned by command
+	substitution.  [Bug 536879]
+
 2002-04-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/tcltest/tcltest.tcl: added getMatchingFiles back (alias
