@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# SCCS: @(#) auto.tcl 1.1 98/01/07 11:21:02
+# RCS: @(#) $Id: auto.tcl,v 1.1.2.3 1998/10/05 18:46:03 stanton Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -130,16 +130,12 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 # parse Tcl source files, writing out index entries as "proc"
 # commands are encountered.  This implementation won't work in a
 # safe interpreter, since a safe interpreter can't create the
-# special parser and mess with its commands.  If this is a safe
-# interpreter, we simply clip these procs out.
+# special parser and mess with its commands.  
 
 if {[interp issafe]} {
     proc auto_mkindex {dir args} {
         error "can't generate index within safe interpreter"
     }
-    proc tcl_nonsafe {args} {}
-} else {
-    proc tcl_nonsafe {args} {eval $args}
 }
 
 # auto_mkindex --
@@ -154,7 +150,7 @@ if {[interp issafe]} {
 #		names of files within dir.  If no additional
 #		are given auto_mkindex will look for *.tcl.
 
-tcl_nonsafe proc auto_mkindex {dir args} {
+proc auto_mkindex {dir args} {
     global errorCode errorInfo
 
     if {[interp issafe]} {
@@ -307,7 +303,7 @@ namespace eval auto_mkindex_parser {
 # Arguments: 
 # file -		Name of Tcl source file to be indexed.
 
-tcl_nonsafe proc auto_mkindex_parser::mkindex {file} {
+proc auto_mkindex_parser::mkindex {file} {
     variable parser
     variable index
     variable scriptFile
@@ -345,7 +341,7 @@ tcl_nonsafe proc auto_mkindex_parser::mkindex {file} {
 # The command is evaluated in the master interpreter, and can
 # use the variable auto_mkindex_parser::parser to get to the slave
 
-tcl_nonsafe proc auto_mkindex_parser::hook {cmd} {
+proc auto_mkindex_parser::hook {cmd} {
     variable initCommands
 
     lappend initCommands $cmd
@@ -356,7 +352,7 @@ tcl_nonsafe proc auto_mkindex_parser::hook {cmd} {
 # slave interpreter used by the mkindex parser.
 # The command is evaluated in the slave interpreter.
 
-tcl_nonsafe proc auto_mkindex_parser::slavehook {cmd} {
+proc auto_mkindex_parser::slavehook {cmd} {
     variable initCommands
 
     lappend initCommands "\$parser eval [list $cmd]"
@@ -378,7 +374,7 @@ tcl_nonsafe proc auto_mkindex_parser::slavehook {cmd} {
 # arglist -		Argument list for command.
 # body -		Implementation of command to handle indexing.
 
-tcl_nonsafe proc auto_mkindex_parser::command {name arglist body} {
+proc auto_mkindex_parser::command {name arglist body} {
     hook [list auto_mkindex_parser::commandInit $name $arglist $body]
 }
 
@@ -386,7 +382,7 @@ tcl_nonsafe proc auto_mkindex_parser::command {name arglist body} {
 # This does the actual work set up by auto_mkindex_parser::command
 # This is called when the interpreter used by the parser is created.
 
-tcl_nonsafe proc auto_mkindex_parser::commandInit {name arglist body} {
+proc auto_mkindex_parser::commandInit {name arglist body} {
     variable parser
 
     set ns [namespace qualifiers $name]
@@ -432,7 +428,7 @@ tcl_nonsafe proc auto_mkindex_parser::commandInit {name arglist body} {
 # Arguments:
 # name -		Name that is being added to index.
 
-tcl_nonsafe proc auto_mkindex_parser::fullname {name} {
+proc auto_mkindex_parser::fullname {name} {
     variable contextStack
 
     if {![string match ::* $name]} {
@@ -458,7 +454,7 @@ tcl_nonsafe proc auto_mkindex_parser::fullname {name} {
 # AUTO MKINDEX:  proc name arglist body
 # Adds an entry to the auto index list for the given procedure name.
 
-tcl_nonsafe auto_mkindex_parser::command proc {name args} {
+auto_mkindex_parser::command proc {name args} {
     variable index
     variable scriptFile
     append index "set [list auto_index([fullname $name])]"
@@ -477,7 +473,7 @@ tcl_nonsafe auto_mkindex_parser::command proc {name args} {
 # procedure does the import operation, but keeps track of imported
 # patterns so we can remove the imports later.
 
-tcl_nonsafe auto_mkindex_parser::command namespace {op args} {
+auto_mkindex_parser::command namespace {op args} {
     switch -- $op {
         eval {
             variable parser
@@ -507,4 +503,4 @@ tcl_nonsafe auto_mkindex_parser::command namespace {op args} {
     }
 }
 
-rename tcl_nonsafe ""
+return
