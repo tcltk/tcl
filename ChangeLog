@@ -1,3 +1,8 @@
+2004-04-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:  Removed obsolete tclBlockTime* declarations.
+	[Bug 926454]
+
 2004-04-01  Vince Darley  <vincentdarley@users.sourceforge.net>
 
         * generic/tclIOUtil.c:   Fix to privately reported vfs bug with
