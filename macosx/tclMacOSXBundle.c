@@ -50,19 +50,19 @@
  *      software in accordance with the terms specified in this
  *      license.
  */
- 
- #include <CoreFoundation/CoreFoundation.h>
- #include "tcl.h"
+
+#include <CoreFoundation/CoreFoundation.h>
+#include "tcl.h"
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_MacOSXOpenBundleResources --
  *
- *	Given the bundle name for a shared library, this routine
- *	sets libraryPath to the Resources/Scripts directory 
- *	in the framework package.  If hasResourceFile is
- *	true, it will also open the main resource file for the bundle.
+ *	Given the bundle name for a shared library, this routine sets
+ *	libraryPath to the Resources/Scripts directory in the framework
+ *	package.  If hasResourceFile is true, it will also open the main
+ *	resource file for the bundle.
  *
  *
  * Results:
@@ -76,53 +76,51 @@
  */
 
 int
-Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-        CONST char *bundleName,
-        int hasResourceFile,       
-        int maxPathLen,
-        char *libraryPath)
+Tcl_MacOSXOpenBundleResources(
+    Tcl_Interp *interp,
+    CONST char *bundleName,
+    int         hasResourceFile,
+    int         maxPathLen,
+    char       *libraryPath)
 {
     CFBundleRef bundleRef;
     CFStringRef bundleNameRef;
-    
+
     libraryPath[0] = '\0';
-    
-    bundleNameRef = CFStringCreateWithCString(NULL, 
-            bundleName, kCFStringEncodingUTF8);
-            
+
+    bundleNameRef = CFStringCreateWithCString(NULL,
+	    bundleName, kCFStringEncodingUTF8);
+
     bundleRef = CFBundleGetBundleWithIdentifier(bundleNameRef);
     CFRelease(bundleNameRef);
-    
-    if (bundleRef == 0) {
-        return TCL_ERROR;
-    } else {
-        CFURLRef libURL;
-        
-        if (hasResourceFile) {
-            short refNum;
-            refNum = CFBundleOpenBundleResourceMap(bundleRef);
-        }
-                
-        libURL = CFBundleCopyResourceURL(bundleRef, 
-	            CFSTR("Scripts"), 
-		    NULL, 
-		    NULL);
 
-        if (libURL != NULL) {
-            /* 
-             * FIXME: This is a quick fix, it is probably not right 
-             * for internationalization. 
-             */
-            
-            if (CFURLGetFileSystemRepresentation (libURL, true,
-                    libraryPath, maxPathLen)) {
-            }
-            CFRelease(libURL);
-        } else {
-            return TCL_ERROR;
-        }
+    if (bundleRef == 0) {
+	return TCL_ERROR;
+    } else {
+	CFURLRef libURL;
+
+	if (hasResourceFile) {
+	    short refNum;
+	    refNum = CFBundleOpenBundleResourceMap(bundleRef);
+	}
+
+	libURL = CFBundleCopyResourceURL(bundleRef,
+		CFSTR("Scripts"), NULL, NULL);
+
+	if (libURL != NULL) {
+	    /*
+	     * FIXME: This is a quick fix, it is probably not right
+	     * for internationalization.
+	     */
+
+	    if (CFURLGetFileSystemRepresentation(libURL, true,
+		    libraryPath, maxPathLen)) {
+	    }
+	    CFRelease(libURL);
+	} else {
+	    return TCL_ERROR;
+	}
     }
-    
+
     return TCL_OK;
 }
-
