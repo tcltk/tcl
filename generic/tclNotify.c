@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.8 2002/04/12 06:31:28 hobbs Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.9 2002/08/31 06:09:45 das Exp $
  */
 
 #include "tclInt.h"
@@ -116,7 +116,7 @@ TclInitNotifier()
     Tcl_MutexLock(&listLock);
 
     tsdPtr->threadId = Tcl_GetCurrentThread();
-    tsdPtr->clientData = Tcl_InitNotifier();
+    tsdPtr->clientData = tclStubs.tcl_InitNotifier();
     tsdPtr->nextPtr = firstNotifierPtr;
     firstNotifierPtr = tsdPtr;
 
@@ -160,7 +160,7 @@ TclFinalizeNotifier()
 
     Tcl_MutexLock(&listLock);
 
-    Tcl_FinalizeNotifier(tsdPtr->clientData);
+    tclStubs.tcl_FinalizeNotifier(tsdPtr->clientData);
     Tcl_MutexFinalize(&(tsdPtr->queueMutex));
     for (prevPtrPtr = &firstNotifierPtr; *prevPtrPtr != NULL;
 	 prevPtrPtr = &((*prevPtrPtr)->nextPtr)) {
@@ -203,6 +203,10 @@ Tcl_SetNotifier(notifierProcPtr)
 #endif
     tclStubs.tcl_SetTimer = notifierProcPtr->setTimerProc;
     tclStubs.tcl_WaitForEvent = notifierProcPtr->waitForEventProc;
+    tclStubs.tcl_InitNotifier = notifierProcPtr->initNotifierProc;
+    tclStubs.tcl_FinalizeNotifier = notifierProcPtr->finalizeNotifierProc;
+    tclStubs.tcl_AlertNotifier = notifierProcPtr->alertNotifierProc;
+    tclStubs.tcl_ServiceModeHook = notifierProcPtr->serviceModeHookProc;
 }
 
 /*
@@ -717,7 +721,7 @@ Tcl_SetServiceMode(mode)
 
     oldMode = tsdPtr->serviceMode;
     tsdPtr->serviceMode = mode;
-    Tcl_ServiceModeHook(mode);
+    tclStubs.tcl_ServiceModeHook(mode);
     return oldMode;
 }
 
@@ -1083,7 +1087,7 @@ Tcl_ThreadAlert(threadId)
     Tcl_MutexLock(&listLock);
     for (tsdPtr = firstNotifierPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	if (tsdPtr->threadId == threadId) {
-	    Tcl_AlertNotifier(tsdPtr->clientData);
+	    tclStubs.tcl_AlertNotifier(tsdPtr->clientData);
 	    break;
 	}
     }

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.140 2002/08/20 15:33:32 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.141 2002/08/31 06:09:45 das Exp $
  */
 
 #ifndef _TCL
@@ -124,6 +124,16 @@ extern "C" {
  */
 
 #ifndef RC_INVOKED
+
+/* 
+ * A special definition for Macintosh used to allow this header file
+ * to be included in resource files so that they can get obtain
+ * version information from this file.  Resource compilers don't like
+ * all the C stuff, like typedefs and procedure declarations, that
+ * occur below.  
+*/
+
+#ifndef RESOURCE_INCLUDED
 
 /*
  * Special macro to define mutexes, that doesn't do anything
@@ -697,6 +707,10 @@ typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
 typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
 	Tcl_FileProc *proc, ClientData clientData));
 typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
+typedef void (Tcl_AlertNotifierProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_ServiceModeHookProc) _ANSI_ARGS_((int mode));
+typedef ClientData (Tcl_InitNotifierProc) _ANSI_ARGS_((VOID));
+typedef void (Tcl_FinalizeNotifierProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
 
 
@@ -1866,6 +1880,10 @@ typedef struct Tcl_NotifierProcs {
     Tcl_WaitForEventProc *waitForEventProc;
     Tcl_CreateFileHandlerProc *createFileHandlerProc;
     Tcl_DeleteFileHandlerProc *deleteFileHandlerProc;
+    Tcl_InitNotifierProc *initNotifierProc;
+    Tcl_FinalizeNotifierProc *finalizeNotifierProc;
+    Tcl_AlertNotifierProc *alertNotifierProc;
+    Tcl_ServiceModeHookProc *serviceModeHookProc;
 } Tcl_NotifierProcs;
 
 
@@ -2268,6 +2286,8 @@ EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#endif /* RESOURCE_INCLUDED */
 
 /*
  * end block for C++
