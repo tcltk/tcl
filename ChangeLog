@@ -1,3 +1,8 @@
+2003-09-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: ensure SYMROOT exists if OBJROOT is overridden 
+	on command line. Replaced explict use of /usr/bin by ${BINDIR}.
+
 2003-09-24  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* library/package.tcl (tcl::MacPkgUnknown, tcl::MacOSXPkgUnknown):  
