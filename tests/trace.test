@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.31 2003/09/24 12:56:17 vincentdarley Exp $
+# RCS: @(#) $Id: trace.test,v 1.32 2003/09/29 21:28:09 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2176,7 +2176,9 @@ test trace-31.2 {command and execution traces shared struct} {
     set result
 } [list [list enter foo]]
 
-test trace-32.1 {mystery memory corruption} knownBug {
+test trace-32.1 {
+    TraceCommandInfo refcount decr in TraceCommandProc w/o loss of reference
+} {
     # Tcl Bug 811483
     proc foo {} {}
     trace add command foo delete foo
