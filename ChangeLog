@@ -1,5 +1,9 @@
 2004-10-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/tm.n: Tightened up the documentation.
+	* tests/tm.test: Created (with partially dummy content) so TIP#189
+	can be marked Final.
+
 	* generic/tclNamesp.c (NsEnsembleImplementationCmd): Make
 	ensembles cut their implementations out of error traces. This is
 	the right thing to do more often than not.

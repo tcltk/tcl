@@ -1,0 +1,40 @@
+# This file contains tests for the ::tcl::tm::* commands.
+#
+# Sourcing this file into Tcl runs the tests and generates output for
+# errors.  No output means no errors were found.
+#
+# Copyright (c) 2004 by Donal K. Fellows.
+# All rights reserved.
+#
+# RCS: @(#) $Id: tm.test,v 1.1 2004/10/22 22:08:25 dkf Exp $
+
+package require Tcl 8.5
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+test tm-1.1 {tm: path command exists} {
+    catch { ::tcl::tm::path }
+    info commands ::tcl::tm::path
+} ::tcl::tm::path
+test tm-1.2 {tm: path command syntax} {
+    ::tcl::tm::path FIXME
+} FIXME
+# Andreas Kupries needs to write some tests here...
+
+test tm-2.1 {tm: roots command exists} {
+    catch { ::tcl::tm::roots }
+    info commands ::tcl::tm::roots
+} ::tcl::tm::roots
+test tm-1.2 {tm: roots command syntax} {
+    ::tcl::tm::roots
+} FIXME
+# Andreas Kupries needs to write some tests here...
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
