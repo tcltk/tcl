@@ -456,7 +456,7 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSEvalFile.3
     rm -f Tcl_FSLoadFile.3
     rm -f Tcl_FSMatchInDirectory.3
-    rm -f Tcl_FSReadlink.3
+    rm -f Tcl_FSLink.3
     rm -f Tcl_FSLstat.3
     rm -f Tcl_FSUtime.3
     rm -f Tcl_FSFileAttrsGet.3
@@ -493,7 +493,7 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSEvalFile.3
     ln FileSystem.3 Tcl_FSLoadFile.3
     ln FileSystem.3 Tcl_FSMatchInDirectory.3
-    ln FileSystem.3 Tcl_FSReadlink.3
+    ln FileSystem.3 Tcl_FSLink.3
     ln FileSystem.3 Tcl_FSLstat.3
     ln FileSystem.3 Tcl_FSUtime.3
     ln FileSystem.3 Tcl_FSFileAttrsGet.3
