@@ -10,7 +10,17 @@
 
 	* win/makefile.vc:  Removed 'advapi.lib' from $(baselibs).
 	Added new logic to crank-up the warning levels for both compile
-	and link when $(FULLWARNINGS) is set.
+	and link when $(FULLWARNINGS) is set.  Some clean-up with how
+	the resource files are built and how -DTCL_USE_STATIC_PACKAGES
+	is sent when compiling the shells.
+
+	* win/tclAppInit.c: Small change in how TCL_USE_STATIC_PACKAGES
+	is used.
+
+	* win/tcl.rc:
+	* win/tclsh.rc: Some clean-up with how the resource files are
+	built.  Fixed 'OriginalFilename' problem that still thought
+	a debug suffix was still 'd', now is 'g'.
 
 2004-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
