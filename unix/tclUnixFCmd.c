@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.17 2002/02/15 14:28:50 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.18 2002/03/24 11:41:51 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -191,7 +191,7 @@ TclpObjRenameFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
+    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr), 
 			Tcl_FSGetNativePath(destPathPtr));
 }
 
@@ -308,7 +308,7 @@ TclpObjCopyFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
+    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr), 
 		      Tcl_FSGetNativePath(destPathPtr));
 }
 
@@ -1618,17 +1618,17 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
  * TclpObjNormalizePath --
  *
  *	This function scans through a path specification and replaces
- *	it, in place, with a normalized version.  On unix, this simply
- *	ascertains where the valid path ends, and makes no change in
- *	place.
+ *	it, in place, with a normalized version.  A normalized version
+ *	is one in which all symlinks in the path are replaced with
+ *	their expanded form (except a symlink at the very end of the
+ *	path).
  *
  * Results:
  *	The new 'nextCheckpoint' value, giving as far as we could
  *	understand in the path.
  *
  * Side effects:
- *	The pathPtr string, which must contain a valid path, is
- *	not modified (unlike Windows, MacOS versions).
+ *	The pathPtr string, is modified.
  *
  *---------------------------------------------------------------------------
  */
@@ -1640,13 +1640,15 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     int nextCheckpoint;
 {
     char *currentPathEndPosition;
-    char *path = Tcl_GetString(pathPtr);
+    int pathLen;
+    char cur;
+    char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
 
     currentPathEndPosition = path + nextCheckpoint;
 
     while (1) {
-	char cur = *currentPathEndPosition;
-	if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
+	cur = *currentPathEndPosition;
+	if ((cur == '/') && (path != currentPathEndPosition)) {
 	    /* Reached directory separator, or end of string */
 	    Tcl_DString ds;
 	    CONST char *nativePath;
@@ -1660,13 +1662,59 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		/* File doesn't exist */
 		break;
 	    }
-	    if (cur == 0) {
-		break;
-	    }
+	    /* Update the acceptable point */
+	    nextCheckpoint = currentPathEndPosition - path;
+	} else if (cur == 0) {
+	    break;
 	}
 	currentPathEndPosition++;
     }
-    nextCheckpoint = currentPathEndPosition - path;
-    /* We should really now convert this to a canonical path */
+    /* 
+     * We should really now convert this to a canonical path.  We do
+     * that with 'realpath' if we have it available.  Otherwise we could
+     * step through every single path component, checking whether it is a 
+     * symlink, but that would be a lot of work, and most modern OSes 
+     * have 'realpath'.
+     */
+#ifndef NO_REALPATH
+    if (1) {
+	char normPath[MAXPATHLEN];
+	Tcl_DString ds;
+	CONST char *nativePath = Tcl_UtfToExternalDString(NULL, path, 
+						   nextCheckpoint, &ds);
+	
+	if (realpath((char *) nativePath, normPath) != NULL) {
+	    /* 
+	     * Free up the native path and put in its place the
+	     * converted, normalized path.
+	     */
+	    Tcl_DStringFree(&ds);
+	    Tcl_ExternalToUtfDString(NULL,normPath,
+                                     strlen(normPath),&ds);
+
+	    if (path[nextCheckpoint] != '\0') {
+		/* not at end, append remaining path */
+	        int normLen = Tcl_DStringLength(&ds);
+		Tcl_DStringAppend(&ds, path + nextCheckpoint,
+				  pathLen - nextCheckpoint);
+                /* 
+                 * We recognise up to and including the directory
+                 * separator.
+		 */	
+	        nextCheckpoint = normLen + 1;
+	    } else {
+	        /* We recognise the whole string */ 
+	        nextCheckpoint = Tcl_DStringLength(&ds);
+	    }
+	    /* 
+	     * Overwrite with the normalized path.
+	     */
+	    Tcl_SetStringObj(pathPtr,Tcl_DStringValue(&ds),
+			     Tcl_DStringLength(&ds));
+	}
+	Tcl_DStringFree(&ds);
+    }
+#endif	/* !NO_REALPATH */
+
     return nextCheckpoint;
 }

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.36 2002/02/15 23:42:12 kennykb Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.37 2002/03/24 11:41:50 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -397,10 +397,10 @@ static Tcl_Filesystem nativeFilesystem = {
     &TclpObjCreateDirectory,
     &TclpObjRemoveDirectory, 
     &TclpObjDeleteFile,
-    &TclpObjLstat,
     &TclpObjCopyFile,
     &TclpObjRenameFile,
     &TclpObjCopyDirectory, 
+    &TclpObjLstat,
     &TclpLoadFile,
     &TclpObjGetCwd,
     &TclpObjChdir
@@ -1651,6 +1651,10 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
  *	write, since they can assume the pathPtr passed to them
  *	is an ordinary path.  In fact this means we could remove such
  *	special case handling from Tcl's native filesystems.
+ *	
+ *	If 'pattern' is NULL, then pathPtr is assumed to be a fully
+ *	specified path of a single file/directory which must be
+ *	checked for existence and correct type.
  *
  * Results: 
  *	
@@ -1703,10 +1707,14 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	    }
 	}
 	/* 
-	 * We have a null string, this means we must use the 'cwd', and
-	 * then manipulate the result.  We must deal with this here,
-	 * since if we don't, every single filesystem's implementation
-	 * of Tcl_FSMatchInDirectory will have to deal with it for us.
+	 * We have an empty or NULL path.  This is defined to mean we
+	 * must search for files within the current 'cwd'.  We
+	 * therefore use that, but then since the proc we call will
+	 * return results which include the cwd we must then trim it
+	 * off the front of each path in the result.  We choose to deal
+	 * with this here (in the generic code), since if we don't,
+	 * every single filesystem's implementation of
+	 * Tcl_FSMatchInDirectory will have to deal with it for us.
 	 */
 	cwd = Tcl_FSGetCwd(NULL);
 	if (cwd == NULL) {
@@ -1723,11 +1731,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		int cwdLen;
 		Tcl_Obj *cwdDir;
 		char *cwdStr;
-#ifdef MAC_TCL
-		char sep = ':';
-#else
-		char sep = '/';
-#endif
+		char sep = 0;
 		Tcl_Obj* tmpResultPtr = Tcl_NewListObj(0, NULL);
 		/* 
 		 * We know the cwd is a normalised object which does
@@ -1744,10 +1748,33 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		cwdDir = Tcl_DuplicateObj(cwd);
 		Tcl_IncrRefCount(cwdDir);
 		cwdStr = Tcl_GetStringFromObj(cwdDir, &cwdLen);
-		if (cwdStr[cwdLen-1] != sep) {
+		/* 
+		 * Should we perhaps use 'Tcl_FSPathSeparator'?
+		 * But then what about the Windows special case?
+		 * Perhaps we should just check if cwd is a root
+		 * volume.
+		 */
+		switch (tclPlatform) {
+		    case TCL_PLATFORM_UNIX:
+			if (cwdStr[cwdLen-1] != '/') {
+			    sep == '/';
+			}
+			break;
+		    case TCL_PLATFORM_WINDOWS:
+			if (cwdStr[cwdLen-1] != '/' && cwdStr[cwdLen-1] != '\\') {
+			    sep = '/';
+			}
+			break;
+		    case TCL_PLATFORM_MAC:
+			if (cwdStr[cwdLen-1] != ':') {
+			    sep = ':';
+			}
+			break;
+		}
+		if (sep != 0) {
 		    Tcl_AppendToObj(cwdDir, &sep, 1);
 		    cwdLen++;
-		    /* Note: cwdStr may no longer be a valid pointer */
+		    /* Note: cwdStr may no longer be a valid pointer now */
 		}
 		ret = (*proc)(interp, tmpResultPtr, cwdDir, pattern, types);
 		Tcl_DecrRefCount(cwdDir);
@@ -3682,6 +3709,11 @@ SetFsPathFromAny(interp, objPtr)
  *      and that path is to be used at the Tcl level, then calling
  *      this function is an efficient way of creating the appropriate
  *      path object type.
+ *      
+ *      Any memory which is allocated for 'clientData' should be retained
+ *      until clientData is passed to the filesystem's freeInternalRepProc
+ *      when it can be freed.  The built in platform-specific filesystems
+ *      use 'ckalloc' to allocate clientData, and ckfree to free it.
  *
  * Results:
  *      NULL or a valid path object pointer, with refCount zero.
@@ -3741,6 +3773,8 @@ Tcl_FSNewNativePath(fromFilesystem, clientData)
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = clientData;
     fsPathPtr->fsRecPtr = fsFromPtr->fsRecPtr;
+    /* We must increase the refCount for this filesystem. */
+    fsPathPtr->fsRecPtr->fileRefCount++;
     fsPathPtr->filesystemEpoch = fsFromPtr->filesystemEpoch;
 
     objPtr->internalRep.otherValuePtr = (VOID *) fsPathPtr;
@@ -4574,7 +4608,7 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
  * Tcl_FSEqualPaths --
  *
  *      This function tests whether the two paths given are equal path
- *      objects.
+ *      objects.  If either or both is NULL, 0 is always returned.
  *
  * Results:
  *      1 or 0.
