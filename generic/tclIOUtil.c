@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77 2003/03/03 20:22:41 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.1 2003/03/18 10:51:31 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2528,6 +2528,8 @@ Tcl_FSChdir(pathPtr)
 	    cwdPathPtr = normDirName;
 	    Tcl_MutexUnlock(&cwdMutex);
 	}
+    } else {
+	Tcl_SetErrno(ENOENT);
     }
     
     return (retVal);

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.30 2003/01/09 10:38:32 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.30.2.1 2003/03/18 10:51:31 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -401,7 +401,7 @@ test cmdAH-8.43 {Tcl_FileObjCmd: dirname} {
     set result [list [catch {file dirname ~} msg] $msg]
     set env(HOME) $temp
     set result
-} {0 /home}
+} [list 0 [expr {([file exists /home] && ([file type /home] == "link")) ? [file readlink /home] : "/home"}]]
 test cmdAH-8.44 {Tcl_FileObjCmd: dirname} {
     global env
     set temp $env(HOME)
@@ -419,7 +419,7 @@ test cmdAH-8.45 {Tcl_FileObjCmd: dirname} {
     set result [list [catch {file dirname ~} msg] $msg]
     set env(HOME) $temp
     set result
-} {0 /home}
+} [list 0 [expr {([file exists /home] && ([file type /home] == "link")) ? [file readlink /home] : "/home"}]]
 test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
     global env
     set temp $env(HOME)
