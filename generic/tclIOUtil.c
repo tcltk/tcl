@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.17 2004/05/04 22:26:00 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.18 2004/06/10 14:05:24 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -2624,7 +2624,8 @@ Tcl_FSChdir(pathPtr)
 
 	objPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
 	if (objPtr == NULL) {
-	    return TCL_ERROR;
+	    Tcl_SetErrno(ENOENT);
+	    return -1;
 	}
 	Tcl_IncrRefCount(objPtr);
 	str = Tcl_GetStringFromObj(objPtr, &len);
@@ -2644,7 +2645,8 @@ Tcl_FSChdir(pathPtr)
 #ifdef WIN32
 	if (objPtr) { Tcl_DecrRefCount(objPtr); }
 #endif
-        return TCL_ERROR;
+	Tcl_SetErrno(ENOENT);
+        return -1;
     }
     
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
@@ -2675,7 +2677,7 @@ Tcl_FSChdir(pathPtr)
 	 * calculated above, and we must therefore cache that
 	 * information.
 	 */
-	if (retVal == TCL_OK) {
+	if (retVal == 0) {
 	    /* 
 	     * Note that this normalized path may be different to what
 	     * we found above (or at least a different object), if the
@@ -2690,7 +2692,8 @@ Tcl_FSChdir(pathPtr)
 #ifdef WIN32
 		if (objPtr) { Tcl_DecrRefCount(objPtr); }
 #endif
-	        return TCL_ERROR;
+		Tcl_SetErrno(ENOENT);
+	        return -1;
 	    }
 	    FsUpdateCwd(normDirName);
 	}
@@ -3838,7 +3841,13 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
     /* 
      * Check if the filesystem has changed in some way since
      * this object's internal representation was calculated.
+     * Before doing that, assure we have the most up-to-date
+     * copy of the master filesystem. This is accomplished
+     * by the FsGetFirstFilesystem() call.
      */
+
+    fsRecPtr = FsGetFirstFilesystem();
+
     if (TclFSEnsureEpochOk(pathObjPtr, &retVal) != TCL_OK) {
 	return NULL;
     }
@@ -3849,7 +3858,6 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
      * succeeded.
      */
 
-    fsRecPtr = FsGetFirstFilesystem();
     while ((retVal == NULL) && (fsRecPtr != NULL)) {
 	Tcl_FSPathInFilesystemProc *proc = fsRecPtr->fsPtr->pathInFilesystemProc;
 	if (proc != NULL) {
