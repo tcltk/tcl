@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.26.2.5 2004/11/11 01:15:29 das Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.26.2.6 2004/11/25 11:31:31 rmax Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2373,10 +2373,10 @@ test fCmd-28.16 {file link: glob inside link} {linkDirectory} {
     cd [temporaryDirectory]
     file delete -force abc.link
     file link abc.link abc.dir
-    set res [glob -dir abc.link -tails *]
+    set res [lsort [glob -dir abc.link -tails *]]
     cd [workingDirectory]
     set res
-} {abc.file abc2.file}
+} [lsort [list abc.file abc2.file]]
 
 test fCmd-28.17 {file link: glob -type l} {linkDirectory} {
     cd [temporaryDirectory]
