@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.105 2004/11/13 00:19:05 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.106 2005/01/19 23:15:12 dkf Exp $
 
 library tcl
 
@@ -1925,6 +1925,53 @@ declare 538 generic {
 }
 declare 539 generic {
     Tcl_Obj *Tcl_GetReturnOptions(Tcl_Interp *interp, int result)
+}
+# TIP#235
+declare 540 generic {
+    int Tcl_IsEnsemble(Tcl_Command token)
+}
+declare 541 generic {
+    Tcl_Command Tcl_CreateEnsemble(Tcl_Interp *interp, CONST char *name,
+	    Tcl_Namespace *namespacePtr, int flags)
+}
+declare 542 generic {
+    Tcl_Command Tcl_FindEnsemble(Tcl_Interp *interp, Tcl_Obj *cmdNameObj,
+	    int flags)
+}
+declare 543 generic {
+    int Tcl_SetEnsembleSubcommandList(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *subcmdList)
+}
+declare 544 generic {
+    int Tcl_SetEnsembleMappingDict(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *mapDict)
+}
+declare 545 generic {
+    int Tcl_SetEnsembleUnknownHandler(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *unknownList)
+}
+declare 546 generic {
+    int Tcl_SetEnsembleFlags(Tcl_Interp *interp, Tcl_Command token, int flags)
+}
+declare 547 generic {
+    int Tcl_GetEnsembleSubcommandList(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **subcmdListPtr)
+}
+declare 548 generic {
+    int Tcl_GetEnsembleMappingDict(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **mapDictPtr)
+}
+declare 549 generic {
+    int Tcl_GetEnsembleUnknownHandler(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **unknownListPtr)
+}
+declare 550 generic {
+    int Tcl_GetEnsembleFlags(Tcl_Interp *interp, Tcl_Command token,
+	    int *flagsPtr)
+}
+declare 551 generic {
+    int Tcl_GetEnsembleNamespace(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Namespace **namespacePtrPtr)
 }
 
 ##############################################################################
