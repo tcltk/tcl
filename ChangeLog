@@ -1,3 +1,8 @@
+1999-07-07    <stanton@scriptics.com>
+
+	* doc/fconfigure.n: Clarified default buffering behavior for the
+	standard channels. [Bug: 2335]
+
 1999-07-06    <redman@scriptics.com>
 
 	* win/tclWinSerial.c:  New implementation of serial port driver

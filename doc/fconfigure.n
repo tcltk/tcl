@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.3 1999/04/16 00:46:34 stanton Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.4 1999/07/07 18:59:52 stanton Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.1 Tcl "Tcl Built-In Commands"
@@ -60,7 +60,8 @@ is output. If \fInewValue\fR is \fBnone\fR, the I/O system will flush
 automatically after every output operation.  The default is for
 \fB\-buffering\fR to be set to \fBfull\fR except for channels that
 connect to terminal-like devices; for these channels the initial setting
-is \fBline\fR.
+is \fBline\fR.  Additionally, \fBstdin\fR and \fBstdout\fR are
+intially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
 .TP
 \fB\-buffersize\fR \fInewSize\fR
 .
