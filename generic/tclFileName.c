@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.1.2.2 1998/09/24 23:58:49 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.1.2.3 1998/10/06 00:36:56 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1263,7 +1263,8 @@ int
 TclGlob(interp, pattern, noComplain)
     Tcl_Interp *interp;		/* Interpreter for returning error message
 				 * or appending list of matching file names. */
-    char *pattern;		/* Glob pattern to match. */
+    char *pattern;		/* Glob pattern to match. Must not refer
+				 * to a static string. */
     int noComplain;		/* Flag to turn off storing error messages
 				 * in interp. */
 {
@@ -1446,7 +1447,8 @@ TclDoGlob(interp, separators, headPtr, tail)
 				 * that should be used to identify globbing
 				 * boundaries. */
     Tcl_DString *headPtr;	/* Completely expanded prefix. */
-    char *tail;			/* The unexpanded remainder of the path. */
+    char *tail;			/* The unexpanded remainder of the path.
+				 * Must not be a pointer to a static string. */
 {
     int baseLength, quoted, count;
     int result = TCL_OK;
@@ -1622,6 +1624,12 @@ TclDoGlob(interp, separators, headPtr, tail)
      */
 
     if (*p != '\0') {
+
+	/*
+	 * Note that we are modifying the string in place.  This won't work
+	 * if the string is a static.
+	 */
+
 	 savedChar = *p;
 	 *p = '\0';
 	 firstSpecialChar = strpbrk(tail, "*[]?\\");
