@@ -1,3 +1,9 @@
+2003-04-07  Donal K. Fellows  <zzcgudf@ernie.mvc.mcc.ac.uk>
+
+	* generic/tclObj.c (tclWideIntType, TclInitObjSubsystem):
+	(SetBooleanFromAny): Make sure that tclWideIntType is defined and
+	somewhat sensible everywhere.  [Bug 713562]
+
 2003-04-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
