@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.19 2002/12/06 23:22:59 hobbs Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20 2003/05/14 19:21:22 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -67,6 +67,11 @@ EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((time_t * clock));
 EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((time_t * clock));
 /* 13 */
 EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
+/* 14 */
+EXTERN int		TclUnixCopyFile _ANSI_ARGS_((CONST char * src, 
+				CONST char * dst, 
+				CONST Tcl_StatBuf * statBufPtr, 
+				int dontCopyAtts));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 0 */
@@ -212,6 +217,21 @@ EXTERN int		TclMacChmod _ANSI_ARGS_((CONST char * path, int mode));
 EXTERN int		FSpLLocationFromPath _ANSI_ARGS_((int length, 
 				CONST char * path, FSSpecPtr theSpec));
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+/* 15 */
+EXTERN int		TclMacOSXGetFileAttribute _ANSI_ARGS_((
+				Tcl_Interp * interp, int objIndex, 
+				Tcl_Obj * fileName, 
+				Tcl_Obj ** attributePtrPtr));
+/* 16 */
+EXTERN int		TclMacOSXSetFileAttribute _ANSI_ARGS_((
+				Tcl_Interp * interp, int objIndex, 
+				Tcl_Obj * fileName, Tcl_Obj * attributePtr));
+/* 17 */
+EXTERN int		TclMacOSXCopyFileAttributes _ANSI_ARGS_((
+				CONST char * src, CONST char * dst, 
+				CONST Tcl_StatBuf * statBufPtr));
+#endif /* MAC_OSX_TCL */
 
 typedef struct TclIntPlatStubs {
     int magic;
@@ -232,6 +252,7 @@ typedef struct TclIntPlatStubs {
     struct tm * (*tclpLocaltime) _ANSI_ARGS_((time_t * clock)); /* 11 */
     struct tm * (*tclpGmtime) _ANSI_ARGS_((time_t * clock)); /* 12 */
     char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
+    int (*tclUnixCopyFile) _ANSI_ARGS_((CONST char * src, CONST char * dst, CONST Tcl_StatBuf * statBufPtr, int dontCopyAtts)); /* 14 */
 #endif /* UNIX */
 #ifdef __WIN32__
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
@@ -293,6 +314,11 @@ typedef struct TclIntPlatStubs {
     int (*tclMacChmod) _ANSI_ARGS_((CONST char * path, int mode)); /* 25 */
     int (*fSpLLocationFromPath) _ANSI_ARGS_((int length, CONST char * path, FSSpecPtr theSpec)); /* 26 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    int (*tclMacOSXGetFileAttribute) _ANSI_ARGS_((Tcl_Interp * interp, int objIndex, Tcl_Obj * fileName, Tcl_Obj ** attributePtrPtr)); /* 15 */
+    int (*tclMacOSXSetFileAttribute) _ANSI_ARGS_((Tcl_Interp * interp, int objIndex, Tcl_Obj * fileName, Tcl_Obj * attributePtr)); /* 16 */
+    int (*tclMacOSXCopyFileAttributes) _ANSI_ARGS_((CONST char * src, CONST char * dst, CONST Tcl_StatBuf * statBufPtr)); /* 17 */
+#endif /* MAC_OSX_TCL */
 } TclIntPlatStubs;
 
 #ifdef __cplusplus
@@ -362,6 +388,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclpInetNtoa
 #define TclpInetNtoa \
 	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
+#endif
+#ifndef TclUnixCopyFile
+#define TclUnixCopyFile \
+	(tclIntPlatStubsPtr->tclUnixCopyFile) /* 14 */
 #endif
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -577,6 +607,20 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->fSpLLocationFromPath) /* 26 */
 #endif
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+#ifndef TclMacOSXGetFileAttribute
+#define TclMacOSXGetFileAttribute \
+	(tclIntPlatStubsPtr->tclMacOSXGetFileAttribute) /* 15 */
+#endif
+#ifndef TclMacOSXSetFileAttribute
+#define TclMacOSXSetFileAttribute \
+	(tclIntPlatStubsPtr->tclMacOSXSetFileAttribute) /* 16 */
+#endif
+#ifndef TclMacOSXCopyFileAttributes
+#define TclMacOSXCopyFileAttributes \
+	(tclIntPlatStubsPtr->tclMacOSXCopyFileAttributes) /* 17 */
+#endif
+#endif /* MAC_OSX_TCL */
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 

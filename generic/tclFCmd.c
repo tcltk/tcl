@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.20 2002/08/08 10:41:22 hobbs Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21 2003/05/14 19:21:22 das Exp $
  */
 
 #include "tclInt.h"
@@ -918,21 +918,29 @@ TclFileAttrsCmd(interp, objc, objv)
 	 * Get all attributes.
 	 */
 
-	int index;
+	int index, res = TCL_OK, nbAtts = 0;
 	Tcl_Obj *listPtr;
 	 
 	listPtr = Tcl_NewListObj(0, NULL);
 	for (index = 0; attributeStrings[index] != NULL; index++) {
-	    Tcl_Obj *objPtr = Tcl_NewStringObj(attributeStrings[index], -1);
-	    Tcl_ListObjAppendElement(interp, listPtr, objPtr);
-	    /* We now forget about objPtr, it is in the list */
-	    objPtr = NULL;
-	    if (Tcl_FSFileAttrsGet(interp, index, filePtr,
-		    &objPtr) != TCL_OK) {
-		Tcl_DecrRefCount(listPtr);
-		goto end;
+	    Tcl_Obj *objPtrAttr;
+	    
+	    if (res != TCL_OK) {
+	        /* Clear the error from the last iteration */
+	        Tcl_ResetResult(interp);
 	    }
-	    Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	    res = Tcl_FSFileAttrsGet(interp, index, filePtr, &objPtrAttr);
+	    if (res == TCL_OK) {
+	        Tcl_Obj *objPtr = Tcl_NewStringObj(attributeStrings[index], -1);
+	        Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	        Tcl_ListObjAppendElement(interp, listPtr, objPtrAttr);
+	        nbAtts++;
+	    }
+	}
+	if (index > 0 && nbAtts == 0) {
+	    /* Error: no valid attributes found */
+	    Tcl_DecrRefCount(listPtr);
+	    goto end;
 	}
     	Tcl_SetObjResult(interp, listPtr);
     } else if (objc == 1) {
