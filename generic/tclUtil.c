@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.7 2005/03/03 21:54:09 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.8 2005/03/08 17:04:05 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2014,6 +2014,9 @@ Tcl_PrintDouble(interp, value, dst)
 	    if ( c == '\0' ) {
 		*dst++ = '0';
 	    } else {
+		while ( ++exp < 0 ) {
+		    *dst++ = '0';
+		}
 		while ( c != '\0' ) {
 		    *dst++ = c;
 		    c = *++p;

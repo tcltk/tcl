@@ -1,3 +1,11 @@
+2005-03-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+
+	* generic/tclUtil.c (Tcl_PrintDouble): Corrected bug where numbers
+		in the range [1e-4 .. 1.) were printed incorrectly.
+	* tests/util.test (util-10.*): Added test case for the above bug.
+	
 2005-03-04  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]

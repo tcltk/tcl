@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.14.2.1 2005/03/02 21:25:26 kennykb Exp $
+# RCS: @(#) $Id: util.test,v 1.14.2.2 2005/03/08 17:04:06 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -557,7 +557,7 @@ test util-9.22 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
 } {1.7e+196}
 test util-9.23 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0xbfa3f7ced916872b
-} {-0.39}
+} {-0.039}
 test util-9.24 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x64b7d93193f78fc6
 } {1.51e+177}
@@ -740,7 +740,7 @@ test util-9.83 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
 } {-6.3e-21}
 test util-9.84 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x3fa3f7ced916872b
-} {0.39}
+} {0.039}
 test util-9.85 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x460b297cad9f70b6
 } {2.69e+29}
@@ -855,6 +855,76 @@ test util-9.121 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
 test util-9.122 {Tcl_PrintDouble - rounding} {ieeeFloatingPoint} {
     convertDouble 0x478f58ac4db68c90
 } {5.20831059055e+36}
+
+test util-10.1 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-5
+} {1.1e-5}
+test util-10.2 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-4
+} {0.00011}
+test util-10.3 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-3
+} {0.0011}
+test util-10.4 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-2
+} {0.011}
+test util-10.5 {Tcl_PrintDouble - scaling} {
+    expr 1.1e-1
+} {0.11}
+test util-10.6 {Tcl_PrintDouble - scaling} {
+    expr 1.1e0
+} {1.1}
+test util-10.7 {Tcl_PrintDouble - scaling} {
+    expr 1.1e1
+} {11.0}
+test util-10.8 {Tcl_PrintDouble - scaling} {
+    expr 1.1e2
+} {110.0}
+test util-10.9 {Tcl_PrintDouble - scaling} {
+    expr 1.1e3
+} {1100.0}
+test util-10.10 {Tcl_PrintDouble - scaling} {
+    expr 1.1e4
+} {11000.0}
+test util-10.11 {Tcl_PrintDouble - scaling} {
+    expr 1.1e5
+} {110000.0}
+test util-10.12 {Tcl_PrintDouble - scaling} {
+    expr 1.1e6
+} {1100000.0}
+test util-10.13 {Tcl_PrintDouble - scaling} {
+    expr 1.1e7
+} {11000000.0}
+test util-10.14 {Tcl_PrintDouble - scaling} {
+    expr 1.1e8
+} {110000000.0}
+test util-10.15 {Tcl_PrintDouble - scaling} {
+    expr 1.1e9
+} {1100000000.0}
+test util-10.16 {Tcl_PrintDouble - scaling} {
+    expr 1.1e10
+} {11000000000.0}
+test util-10.17 {Tcl_PrintDouble - scaling} {
+    expr 1.1e11
+} {110000000000.0}
+test util-10.18 {Tcl_PrintDouble - scaling} {
+    expr 1.1e12
+} {1100000000000.0}
+test util-10.19 {Tcl_PrintDouble - scaling} {
+    expr 1.1e13
+} {11000000000000.0}
+test util-10.20 {Tcl_PrintDouble - scaling} {
+    expr 1.1e14
+} {110000000000000.0}
+test util-10.21 {Tcl_PrintDouble - scaling} {
+    expr 1.1e15
+} {1100000000000000.0}
+test util-10.22 {Tcl_PrintDouble - scaling} {
+    expr 1.1e16
+} {11000000000000000.0}
+test util-10.21 {Tcl_PrintDouble - scaling} {
+    expr 1.1e17
+} {1.1e+17}
 
 # cleanup
 ::tcltest::cleanupTests
