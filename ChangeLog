@@ -1,6 +1,7 @@
 2004-04-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* doc/if.n, doc/rename.n, doc/time.n: More examples.
+	* doc/glob.n, doc/incr.n, doc/set.n:	More examples.
+	* doc/if.n, doc/rename.n, doc/time.n:
 
 2004-04-30  Don Porter  <dgp@users.sourceforge.net>
 
