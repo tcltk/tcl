@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.3 1999/08/19 02:59:40 hobbs Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.4 2000/01/28 00:09:15 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -479,8 +479,13 @@ proc auto_mkindex_parser::fullname {name} {
 auto_mkindex_parser::command proc {name args} {
     variable index
     variable scriptFile
+    # Do some fancy reformatting on the "source" call to handle platform
+    # differences with respect to pathnames.  Use format just so that the
+    # command is a little easier to read (otherwise it'd be full of 
+    # backslashed dollar signs, etc.
     append index [list set auto_index([fullname $name])] \
-	    " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+	    [format { [list source [file join $dir %s]]} \
+	    [file split $scriptFile]] "\n"
 }
 
 # Conditionally add support for Tcl byte code files.  There are some
@@ -506,8 +511,12 @@ auto_mkindex_parser::hook {
 	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
 	    variable index
 	    variable scriptFile
+	    # Do some nice reformatting of the "source" call, to get around
+	    # path differences on different platforms.  We use the format
+	    # command just so that the code is a little easier to read.
 	    append index [list set auto_index([fullname $name])] \
-		    " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+		    [format { [list source [file join $dir %s]]} \
+		    [file split $scriptFile]] "\n"
 	}
     }
 }
