@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.35 2004/09/29 22:17:29 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.35.4.1 2005/04/01 18:49:01 msofer Exp $ */
 
 #include "tclInt.h"
 
@@ -208,8 +208,7 @@ Tcl_NewStringObj(bytes, length)
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
-    TclNewObj(objPtr);
-    TclInitStringRep(objPtr, bytes, length);
+    TclNewStringObj(objPtr, bytes, length);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */

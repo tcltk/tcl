@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.73 2004/12/12 23:16:23 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.73.2.1 2005/04/01 18:49:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -990,13 +990,9 @@ Tcl_InvalidateStringRep(objPtr)
     register Tcl_Obj *objPtr;	/* Object whose string rep byte pointer
 				 * should be freed. */
 {
-    if (objPtr->bytes != NULL) {
-	if (objPtr->bytes != tclEmptyStringRep) {
-	    ckfree((char *) objPtr->bytes);
-	}
-	objPtr->bytes = NULL;
-    }
+    TclInvalidateStringRep(objPtr);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1039,11 +1035,7 @@ Tcl_NewBooleanObj(boolValue)
 {
     register Tcl_Obj *objPtr;
 
-    TclNewObj(objPtr);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.longValue = (boolValue? 1 : 0);
-    objPtr->typePtr = &tclBooleanType;
+    TclNewBooleanObj(objPtr, boolValue);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -1135,10 +1127,7 @@ Tcl_SetBooleanObj(objPtr, boolValue)
 	Tcl_Panic("Tcl_SetBooleanObj called with shared object");
     }
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = (boolValue? 1 : 0);
-    objPtr->typePtr = &tclBooleanType;
-    Tcl_InvalidateStringRep(objPtr);
+    TclSetBooleanObj(objPtr, boolValue);
 }
 
 /*
@@ -1494,11 +1483,7 @@ Tcl_NewDoubleObj(dblValue)
 {
     register Tcl_Obj *objPtr;
 
-    TclNewObj(objPtr);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.doubleValue = dblValue;
-    objPtr->typePtr = &tclDoubleType;
+    TclNewDoubleObj(objPtr, dblValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -1590,10 +1575,7 @@ Tcl_SetDoubleObj(objPtr, dblValue)
 	Tcl_Panic("Tcl_SetDoubleObj called with shared object");
     }
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.doubleValue = dblValue;
-    objPtr->typePtr = &tclDoubleType;
-    Tcl_InvalidateStringRep(objPtr);
+    TclSetDoubleObj(objPtr, dblValue);
 }
 
 /*
@@ -1811,11 +1793,7 @@ Tcl_NewIntObj(intValue)
 {
     register Tcl_Obj *objPtr;
 
-    TclNewObj(objPtr);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.longValue = (long)intValue;
-    objPtr->typePtr = &tclIntType;
+    TclNewIntObj(objPtr, intValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -1847,10 +1825,7 @@ Tcl_SetIntObj(objPtr, intValue)
 	Tcl_Panic("Tcl_SetIntObj called with shared object");
     }
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = (long) intValue;
-    objPtr->typePtr = &tclIntType;
-    Tcl_InvalidateStringRep(objPtr);
+    TclSetIntObj(objPtr, intValue);
 }
 
 /*
@@ -2189,11 +2164,7 @@ Tcl_NewLongObj(longValue)
 {
     register Tcl_Obj *objPtr;
 
-    TclNewObj(objPtr);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.longValue = longValue;
-    objPtr->typePtr = &tclIntType;
+    TclNewLongObj(objPtr, longValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2295,10 +2266,7 @@ Tcl_SetLongObj(objPtr, longValue)
 	Tcl_Panic("Tcl_SetLongObj called with shared object");
     }
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = longValue;
-    objPtr->typePtr = &tclIntType;
-    Tcl_InvalidateStringRep(objPtr);
+    TclSetLongObj(objPtr, longValue);
 }
 
 /*
@@ -2565,11 +2533,7 @@ Tcl_NewWideIntObj(wideValue)
 {
     register Tcl_Obj *objPtr;
 
-    TclNewObj(objPtr);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.wideValue = wideValue;
-    objPtr->typePtr = &tclWideIntType;
+    TclNewWideIntObj(objPtr, wideValue);
     return objPtr;
 }
 #endif /* if TCL_MEM_DEBUG */
@@ -2674,10 +2638,7 @@ Tcl_SetWideIntObj(objPtr, wideValue)
 	Tcl_Panic("Tcl_SetWideIntObj called with shared object");
     }
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.wideValue = wideValue;
-    objPtr->typePtr = &tclWideIntType;
-    Tcl_InvalidateStringRep(objPtr);
+    TclSetWideIntObj(objPtr, wideValue);
 }
 
 /*

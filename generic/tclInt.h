@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214 2005/01/27 00:23:26 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.214.2.1 2005/04/01 18:49:01 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -941,6 +941,7 @@ typedef struct ExecEnv {
     Tcl_Obj **tosPtr;		/* Points to current top of stack; 
 				 * (stackPtr-1) when the stack is empty. */
     Tcl_Obj **endPtr;		/* Points to last usable item in stack. */
+    Tcl_Obj *constants[2];      /* Pointers to constant "0" and "1" objs. */
 } ExecEnv;
 
 /*
@@ -2635,6 +2636,9 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
  *
  * MODULE_SCOPE void	TclInitStringRep _ANSI_ARGS_((
  *			    Tcl_Obj *objPtr, char *bytePtr, int len));
+ *
+ * This macro should only be called on an unshared objPtr where
+ *  objPtr->typePtr->freeIntRepProc == NULL
  *----------------------------------------------------------------
  */
 
@@ -2681,6 +2685,24 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
 	(objPtr)->typePtr->freeIntRepProc(objPtr); \
     }
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to clean out an object's string
+ * representation.  The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE void	TclInvalidateStringRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+ *----------------------------------------------------------------
+ */
+
+#define TclInvalidateStringRep(objPtr) \
+    if (objPtr->bytes != NULL) { \
+	if (objPtr->bytes != tclEmptyStringRep) {\
+	    ckfree((char *) objPtr->bytes);\
+	}\
+	objPtr->bytes = NULL;\
+    }\
+
 
 /*
  *----------------------------------------------------------------
@@ -2755,6 +2777,130 @@ MODULE_SCOPE void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
     if ((nsPtr)->numExportPatterns) { \
 	(nsPtr)->exportLookupEpoch++; \
     }
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to set a Tcl_Obj's numeric representation
+ * avoiding the corresponding function calls in time critical parts of the
+ * core. They should only be called on unshared objects. The ANSI C
+ * "prototypes" for these macros are:  
+ *
+ * MODULE_SCOPE void	TclSetIntObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                           int intValue));
+ * MODULE_SCOPE void	TclSetLongObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                           long longValue));
+ * MODULE_SCOPE void	TclSetBooleanObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                           long boolValue));
+ * MODULE_SCOPE void	TclSetWideIntObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          Tcl_WideInt w));
+ * MODULE_SCOPE void	TclSetDoubleObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          double d));
+ *
+ *----------------------------------------------------------------
+ */
+
+#define TclSetIntObj(objPtr, i) \
+    TclInvalidateStringRep(objPtr);\
+    TclFreeIntRep(objPtr); \
+    (objPtr)->internalRep.longValue = (long)(i); \
+    (objPtr)->typePtr = &tclIntType
+
+#define TclSetLongObj(objPtr, l) \
+    TclSetIntObj((objPtr), (l))
+
+#define TclSetBooleanObj(objPtr, b) \
+    TclSetIntObj((objPtr), ((b)? 1 : 0));\
+    (objPtr)->typePtr = &tclBooleanType
+
+#define TclSetWideIntObj(objPtr, w) \
+    TclInvalidateStringRep(objPtr);\
+    TclFreeIntRep(objPtr); \
+    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
+    (objPtr)->typePtr = &tclWideIntType
+
+#define TclSetDoubleObj(objPtr, d) \
+    TclInvalidateStringRep(objPtr);\
+    TclFreeIntRep(objPtr); \
+    (objPtr)->internalRep.doubleValue = (double)(d); \
+    (objPtr)->typePtr = &tclDoubleType
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to create and initialise objects of
+ * standard types, avoiding the corresponding function calls in time
+ * critical parts of the core. The ANSI C "prototypes" for these
+ * macros are: 
+ *
+ * MODULE_SCOPE void	TclNewIntObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          int i));
+ * MODULE_SCOPE void	TclNewLongObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          long l));
+ * MODULE_SCOPE void	TclNewBooleanObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          int b));
+ * MODULE_SCOPE void	TclNewWideObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+ *                          Tcl_WideInt w));
+ * MODULE_SCOPE void	TclNewDoubleObj _ANSI_ARGS_((Tcl_Obj *objPtr),
+ *                          double d);
+ * MODULE_SCOPE void	TclNewStringObj _ANSI_ARGS_((Tcl_Obj *objPtr)
+ *                          char *s, int len);
+ *
+ *----------------------------------------------------------------
+ */
+#ifndef TCL_MEM_DEBUG
+#define TclNewIntObj(objPtr, i) \
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes = NULL; \
+    (objPtr)->internalRep.longValue = (long)(i); \
+    (objPtr)->typePtr = &tclIntType
+
+#define TclNewLongObj(objPtr, l) \
+    TclNewIntObj((objPtr), (l))
+
+#define TclNewBooleanObj(objPtr, b) \
+    TclNewIntObj((objPtr), ((b)? 1 : 0));\
+    (objPtr)->typePtr = &tclBooleanType
+
+#define TclNewWideIntObj(objPtr, w) \
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes = NULL; \
+    (objPtr)->internalRep.wideValue = (Tcl_WideInt)(w); \
+    (objPtr)->typePtr = &tclWideIntType
+
+#define TclNewDoubleObj(objPtr, d) \
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes = NULL; \
+    (objPtr)->internalRep.doubleValue = (double)(d); \
+    (objPtr)->typePtr = &tclDoubleType
+
+#define TclNewStringObj(objPtr, s, len) \
+    TclNewObj(objPtr); \
+    TclInitStringRep((objPtr), (s), (len))
+
+#else /* TCL_MEM_DEBUG */
+#define TclNewIntObj(objPtr, i)   \
+    (objPtr) = Tcl_NewIntObj(i)
+
+#define TclNewLongObj(objPtr, l) \
+    (objPtr) = Tcl_NewLongObj(l)
+
+#define TclNewBooleanObj(objPtr, b) \
+    (objPtr) = Tcl_NewBooleanObj(b)
+
+#define TclNewWideIntObj(objPtr, w)\
+    (objPtr) = Tcl_NewWideIntObj(w)
+
+#define TclNewDoubleObj(objPtr, d) \
+    (objPtr) = Tcl_NewDoubleObj(d)
+
+#define TclNewStringObj(objPtr, s, len) \
+    (objPtr) = Tcl_NewStringObj((s), (len))
+#endif /* TCL_MEM_DEBUG */
 
 #include "tclPort.h"
 #include "tclIntDecls.h"

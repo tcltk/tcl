@@ -1,3 +1,18 @@
+2005-04-01  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclObj.c:
+	* generic/tclStringObj.c: opt in INST_*_SCALAR, sync with HEAD: 
+	- (INST_JUMP_TRUE/FALSE): replaced "test and branch" with "compute
+	index into table" 
+	- defined new internal macros for creating and setting frequently
+	used obj types (int,long, wideInt, double, string). Changed TEBC
+	to use eg 'TclNewIntObj(objPtr, i)' to avoid the function call in
+	'objPtr = Tcl_NewIntObj(i)' 
+	- ExecEnv now stores two Tcl_Obj* pointing to the constants "0"
+	and "1", for use by TEBC.  
+
 2005-03-31 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:
