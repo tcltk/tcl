@@ -1,3 +1,8 @@
+2004-06-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4: autoconf 2.5 fixes in Darwin section.
+	* unix/configure: autoconf-2.57
+
 2004-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixInit.c (localeTable): Added some more locale to
