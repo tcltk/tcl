@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.2 1999/03/10 23:24:46 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.3 1999/03/10 23:44:20 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -873,18 +873,12 @@ EXTERN void		panicVA _ANSI_ARGS_((char * format, va_list argList));
 /* 279 */
 EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
 				int * patchLevel, Tcl_ReleaseType * type));
-/* 280 */
-EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
-/* 281 */
-EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
-/* 282 */
-EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
-/* 283 */
-EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
-/* 284 */
-EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
-/* 285 */
-EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* Slot 280 is reserved */
+/* Slot 281 is reserved */
+/* Slot 282 is reserved */
+/* Slot 283 is reserved */
+/* Slot 284 is reserved */
+/* Slot 285 is reserved */
 /* 286 */
 EXTERN void		Tcl_AppendObjToObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				Tcl_Obj * appendObjPtr));
@@ -1364,12 +1358,12 @@ typedef struct TclStubs {
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
     void (*panicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, Tcl_ReleaseType * type)); /* 279 */
-    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 280 */
-    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 281 */
-    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 282 */
-    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 283 */
-    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 284 */
-    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 285 */
+    void *reserved280;
+    void *reserved281;
+    void *reserved282;
+    void *reserved283;
+    void *reserved284;
+    void *reserved285;
     void (*tcl_AppendObjToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr)); /* 286 */
     void (*tcl_AlertNotifier) _ANSI_ARGS_((ClientData clientData)); /* 287 */
     Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((Tcl_EncodingType * typePtr)); /* 288 */
@@ -2558,30 +2552,12 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_GetVersion(major, minor, patchLevel, type) \
 	(tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type) /* 279 */
 #endif
-#ifndef use
-#define use(8.1) \
-	(tclStubsPtr->use)(8.1) /* 280 */
-#endif
-#ifndef use
-#define use(8.1) \
-	(tclStubsPtr->use)(8.1) /* 281 */
-#endif
-#ifndef use
-#define use(8.1) \
-	(tclStubsPtr->use)(8.1) /* 282 */
-#endif
-#ifndef use
-#define use(8.1) \
-	(tclStubsPtr->use)(8.1) /* 283 */
-#endif
-#ifndef use
-#define use(8.1) \
-	(tclStubsPtr->use)(8.1) /* 284 */
-#endif
-#ifndef use
-#define use(8.1) \
-	(tclStubsPtr->use)(8.1) /* 285 */
-#endif
+/* Slot 280 is reserved */
+/* Slot 281 is reserved */
+/* Slot 282 is reserved */
+/* Slot 283 is reserved */
+/* Slot 284 is reserved */
+/* Slot 285 is reserved */
 #ifndef Tcl_AppendObjToObj
 #define Tcl_AppendObjToObj(objPtr, appendObjPtr) \
 	(tclStubsPtr->tcl_AppendObjToObj)(objPtr, appendObjPtr) /* 286 */

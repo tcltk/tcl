@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.3.2.2 1999/03/10 23:24:47 redman Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.3.2.3 1999/03/10 23:44:21 redman Exp $
  */
 
 #include "tcl.h"
@@ -2713,54 +2713,12 @@ Tcl_GetVersion(major, minor, patchLevel, type)
     (tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type);
 }
 
-/* Slot 280 */
-# Reserved for future
-use(8.1)
-    8.0.x vs. 8.1;
-{
-    return (tclStubsPtr->use)(8.1);
-}
-
-/* Slot 281 */
-# Reserved for future
-use(8.1)
-    8.0.x vs. 8.1;
-{
-    return (tclStubsPtr->use)(8.1);
-}
-
-/* Slot 282 */
-# Reserved for future
-use(8.1)
-    8.0.x vs. 8.1;
-{
-    return (tclStubsPtr->use)(8.1);
-}
-
-/* Slot 283 */
-# Reserved for future
-use(8.1)
-    8.0.x vs. 8.1;
-{
-    return (tclStubsPtr->use)(8.1);
-}
-
-/* Slot 284 */
-# Reserved for future
-use(8.1)
-    8.0.x vs. 8.1;
-{
-    return (tclStubsPtr->use)(8.1);
-}
-
-/* Slot 285 */
-# Reserved for future
-use(8.1)
-    8.0.x vs. 8.1;
-{
-    return (tclStubsPtr->use)(8.1);
-}
-
+/* Slot 280 is reserved */
+/* Slot 281 is reserved */
+/* Slot 282 is reserved */
+/* Slot 283 is reserved */
+/* Slot 284 is reserved */
+/* Slot 285 is reserved */
 /* Slot 286 */
 void
 Tcl_AppendObjToObj(objPtr, appendObjPtr)
