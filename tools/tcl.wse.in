@@ -1542,7 +1542,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\pkgIndex.tcl
+  Source=${__TCLBASEDIR__}\library\reg1.0\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\reg1.0\pkgIndex.tcl
   Flags=0000000000000010
 end
@@ -1552,7 +1552,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\pkgIndex.tcl
+  Source=${__TCLBASEDIR__}\library\dde1.0\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\dde1.0\pkgIndex.tcl
   Flags=0000000000000010
 end

@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.27 1999/04/17 00:18:26 surles Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.28 1999/04/19 22:05:25 surles Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -444,10 +444,6 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLSH)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLPIPEDLLNAME)
 	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
-	@echo installing $(TCLREGDLLNAME)
-	@copy "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)"
-	@echo installing $(TCLDDEDLLNAME)
-	@copy "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)"
 	@echo installing $(TCLSTUBLIBNAME)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
 
@@ -455,19 +451,31 @@ install-libraries:
 	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
 	-@$(MKDIR) "$(INCLUDE_INSTALL_DIR)"
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
+	@echo installing http1.0
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
-	@copy << "$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
-package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]] registry"
-package ifneeded dde 1.0 "load [list [file join $$dir .. $(TCLDDEDLLNAME)]] dde"
-<<
 	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
+	@echo installing http2.0
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.0"
 	-@copy "$(ROOT)\library\http2.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.0"
 	-@copy "$(ROOT)\library\http2.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.0"
+	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@echo installing msgcat1.0
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	-@copy "$(ROOT)\library\msgcat1.0\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	-@copy "$(ROOT)\library\msgcat1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	@echo installing $(TCLDDEDLLNAME)
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.0"
+	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.0"
+	-@copy "$(ROOT)\library\dde1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.0"
+	@echo installing $(TCLREGDLLNAME)
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	-@copy "$(ROOT)\library\reg1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	@echo installing library files
 	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(GENERICDIR)\tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\history.tcl" "$(SCRIPT_INSTALL_DIR)"
