@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.6 1998/11/11 04:54:07 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.7 1998/12/02 21:45:33 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -478,7 +478,15 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 
 		string = (char *) Tcl_GetByteArrayFromObj(data, &length);
 		Tcl_ExternalToUtfDString(encoding, string, length, &ds);
-		Tcl_DStringResult(interp, &ds);
+
+		/*
+		 * Note that we cannot use Tcl_DStringResult here because
+		 * it will truncate the string at the first null byte.
+		 */
+
+		Tcl_SetStringObj(Tcl_GetObjResult(interp),
+			Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+		Tcl_DStringFree(&ds);
 	    } else {
 		/*
 		 * Store the result as binary data.
