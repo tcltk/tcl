@@ -18,6 +18,15 @@
 #include <winbase.h>
 
 /*
+ * The following macro can be defined at compile time to specify
+ * an alternate registry key for the default Tcl library path.
+ */
+ 
+#ifndef TCL_REGISTRY_KEY
+#define TCL_REGISTRY_KEY "Software\\Scriptics\\Tcl\\" TCL_VERSION
+#endif
+
+/*
  * The following declaration is a workaround for some Microsoft brain damage.
  * The SYSTEM_INFO structure is different in various releases, even though the
  * layout is the same.  So we overlay our own structure on top of it so we
@@ -135,30 +144,29 @@ TclPlatformInit(interp)
      */
 
     if (!isWin32s) {
-	if ((RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-		"Software\\Sun\\Tcl\\" TCL_VERSION, 0, KEY_READ, &key)
-		== ERROR_SUCCESS)
-		&& (RegQueryValueEx(key, "Root", NULL, NULL, NULL, &size)
-		    == ERROR_SUCCESS)) {
+	if ((RegOpenKeyEx(HKEY_LOCAL_MACHINE, TCL_REGISTRY_KEY, 0,
+		KEY_READ, &key) == ERROR_SUCCESS)
+		&& (RegQueryValueEx(key, "", NULL, NULL, NULL, &size)
+			== ERROR_SUCCESS)) {
 	    Tcl_DStringSetLength(&ds, size);
-	    RegQueryValueEx(key, "Root", NULL, NULL,
+	    RegQueryValueEx(key, "", NULL, NULL,
 		    (LPBYTE)Tcl_DStringValue(&ds), &size);
 	}
     } else {
-	if ((RegOpenKeyEx(HKEY_CLASSES_ROOT,
-		"Software\\Sun\\Tcl\\" TCL_VERSION, 0, KEY_READ, &key)
-		== ERROR_SUCCESS)
+	if ((RegOpenKeyEx(HKEY_CLASSES_ROOT, TCL_REGISTRY_KEY, 0,
+		KEY_READ, &key) == ERROR_SUCCESS)
 		&& (RegQueryValueEx(key, "", NULL, NULL, NULL, &size)
-		    == ERROR_SUCCESS)) {
+			== ERROR_SUCCESS)) {
 	    Tcl_DStringSetLength(&ds, size);
 	    RegQueryValueEx(key, "", NULL, NULL,
 		    (LPBYTE) Tcl_DStringValue(&ds), &size);
 	}
     }
-    Tcl_SetVar(interp, "tcl_library", Tcl_DStringValue(&ds), TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tclDefaultLibrary", Tcl_DStringValue(&ds),
+	    TCL_GLOBAL_ONLY);
     if (Tcl_DStringLength(&ds) > 0) {
 	char *argv[3];
-	argv[0] = Tcl_GetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
+	argv[0] = Tcl_GetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
 	argv[1] = "lib";
 	argv[2] = NULL;
 	Tcl_DStringSetLength(&ds, 0);
@@ -166,7 +174,7 @@ TclPlatformInit(interp)
 		TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT);
 	argv[1] = "lib/tcl" TCL_VERSION;
 	Tcl_DStringSetLength(&ds, 0);
-	Tcl_SetVar(interp, "tcl_library", Tcl_JoinPath(2, argv, &ds), 
+	Tcl_SetVar(interp, "tclDefaultLibrary", Tcl_JoinPath(2, argv, &ds), 
 		TCL_GLOBAL_ONLY);
     }
 
