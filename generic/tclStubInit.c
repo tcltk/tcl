@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.1 2001/10/17 06:49:36 wolfsuit Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.2 2001/11/11 17:57:09 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -61,9 +61,6 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 5 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 5 */
-#endif /* MAC_OSX_TCL */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
     TclCopyChannel, /* 8 */
@@ -76,9 +73,6 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 9 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 9 */
-#endif /* MAC_OSX_TCL */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
     TclDeleteVars, /* 12 */
@@ -179,9 +173,6 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 101 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 101 */
-#endif /* MAC_OSX_TCL */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
 #if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
@@ -193,9 +184,6 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 104 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 104 */
-#endif /* MAC_OSX_TCL */
     NULL, /* 105 */
     TclStatDeleteProc, /* 106 */
     TclStatInsertProc, /* 107 */
@@ -350,6 +338,10 @@ TclPlatStubs tclPlatStubs = {
     strncasecmp, /* 7 */
     strcasecmp, /* 8 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 0 */
+    Tcl_MacOSXOpenBundleResources, /* 1 */
+#endif /* MAC_OSX_TCL */
 };
 
 static TclStubHooks tclStubHooks = {
@@ -379,9 +371,6 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 9 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 9 */
-#endif /* MAC_OSX_TCL */
 #if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
@@ -391,9 +380,6 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 10 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 10 */
-#endif /* MAC_OSX_TCL */
     Tcl_SetTimer, /* 11 */
     Tcl_Sleep, /* 12 */
     Tcl_WaitForEvent, /* 13 */
@@ -503,9 +489,6 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 111 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 111 */
-#endif /* MAC_OSX_TCL */
     Tcl_DeleteTimerHandler, /* 112 */
     Tcl_DeleteTrace, /* 113 */
     Tcl_DontCallWhenDeleted, /* 114 */
@@ -570,9 +553,6 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 167 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 167 */
-#endif /* MAC_OSX_TCL */
     Tcl_GetPathType, /* 168 */
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
@@ -611,9 +591,6 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 197 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 197 */
-#endif /* MAC_OSX_TCL */
     Tcl_OpenFileChannel, /* 198 */
     Tcl_OpenTcpClient, /* 199 */
     Tcl_OpenTcpServer, /* 200 */
@@ -632,9 +609,6 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 207 */
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    NULL, /* 207 */
-#endif /* MAC_OSX_TCL */
     Tcl_RecordAndEval, /* 208 */
     Tcl_RecordAndEvalObj, /* 209 */
     Tcl_RegisterChannel, /* 210 */

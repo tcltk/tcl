@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.29.2.1 2001/10/17 06:49:36 wolfsuit Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.29.2.2 2001/11/11 17:57:09 wolfsuit Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -508,9 +508,6 @@ typedef struct TclIntStubs {
 #ifdef MAC_TCL
     void *reserved5;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved5;
-#endif /* MAC_OSX_TCL */
     void (*tclCleanupCommand) _ANSI_ARGS_((Command * cmdPtr)); /* 6 */
     int (*tclCopyAndCollapse) _ANSI_ARGS_((int count, CONST char * src, char * dst)); /* 7 */
     int (*tclCopyChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj * cmdPtr)); /* 8 */
@@ -523,9 +520,6 @@ typedef struct TclIntStubs {
 #ifdef MAC_TCL
     void *reserved9;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved9;
-#endif /* MAC_OSX_TCL */
     int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp * interp, Namespace * nsPtr, CONST char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr)); /* 10 */
     void (*tclDeleteCompiledLocalVars) _ANSI_ARGS_((Interp * iPtr, CallFrame * framePtr)); /* 11 */
     void (*tclDeleteVars) _ANSI_ARGS_((Interp * iPtr, Tcl_HashTable * tablePtr)); /* 12 */
@@ -626,9 +620,6 @@ typedef struct TclIntStubs {
 #ifdef MAC_TCL
     void *reserved101;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved101;
-#endif /* MAC_OSX_TCL */
     void (*tclSetupEnv) _ANSI_ARGS_((Tcl_Interp * interp)); /* 102 */
     int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char * proto, int * portPtr)); /* 103 */
 #if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
@@ -640,9 +631,6 @@ typedef struct TclIntStubs {
 #ifdef MAC_TCL
     void *reserved104;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved104;
-#endif /* MAC_OSX_TCL */
     void *reserved105;
     int (*tclStatDeleteProc) _ANSI_ARGS_((TclStatProc_ * proc)); /* 106 */
     int (*tclStatInsertProc) _ANSI_ARGS_((TclStatProc_ * proc)); /* 107 */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.63.2.1 2001/10/17 06:49:36 wolfsuit Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.63.2.2 2001/11/11 17:57:09 wolfsuit Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1536,9 +1536,6 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved9;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved9;
-#endif /* MAC_OSX_TCL */
 #if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     void (*tcl_DeleteFileHandler) _ANSI_ARGS_((int fd)); /* 10 */
 #endif /* UNIX */
@@ -1548,9 +1545,6 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved10;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved10;
-#endif /* MAC_OSX_TCL */
     void (*tcl_SetTimer) _ANSI_ARGS_((Tcl_Time * timePtr)); /* 11 */
     void (*tcl_Sleep) _ANSI_ARGS_((int ms)); /* 12 */
     int (*tcl_WaitForEvent) _ANSI_ARGS_((Tcl_Time * timePtr)); /* 13 */
@@ -1660,9 +1654,6 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved111;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved111;
-#endif /* MAC_OSX_TCL */
     void (*tcl_DeleteTimerHandler) _ANSI_ARGS_((Tcl_TimerToken token)); /* 112 */
     void (*tcl_DeleteTrace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Trace trace)); /* 113 */
     void (*tcl_DontCallWhenDeleted) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 114 */
@@ -1727,9 +1718,6 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved167;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved167;
-#endif /* MAC_OSX_TCL */
     Tcl_PathType (*tcl_GetPathType) _ANSI_ARGS_((CONST char * path)); /* 168 */
     int (*tcl_Gets) _ANSI_ARGS_((Tcl_Channel chan, Tcl_DString * dsPtr)); /* 169 */
     int (*tcl_GetsObj) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj * objPtr)); /* 170 */
@@ -1768,9 +1756,6 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved197;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved197;
-#endif /* MAC_OSX_TCL */
     Tcl_Channel (*tcl_OpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * modeString, int permissions)); /* 198 */
     Tcl_Channel (*tcl_OpenTcpClient) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * address, char * myaddr, int myport, int async)); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * host, Tcl_TcpAcceptProc * acceptProc, ClientData callbackData)); /* 200 */
@@ -1789,9 +1774,6 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved207;
 #endif /* MAC_TCL */
-#ifdef MAC_OSX_TCL
-    void *reserved207;
-#endif /* MAC_OSX_TCL */
     int (*tcl_RecordAndEval) _ANSI_ARGS_((Tcl_Interp * interp, char * cmd, int flags)); /* 208 */
     int (*tcl_RecordAndEvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * cmdPtr, int flags)); /* 209 */
     void (*tcl_RegisterChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 210 */
