@@ -1,3 +1,8 @@
+2004-09-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclIO.c (Tcl_Seek): Make sure wide seeks do not fail to
+	set ::errorCode on error. [Bug 1025359]
+
 2004-09-10  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tcl.h: Micro formatting fixes.
