@@ -5,8 +5,8 @@
 	* unix/Makefile.in:     Updated Makefile to build libtommath on
 				Unix as well as Windows. [Bug 1106865]
 
-	* generic/tclTestObj.c: Silenced a compiler warning about
-				a mismatched 'const'.
+	* generic/tclTestObj.c (TestbignumobjCmd): 
+	Silenced a compiler warning about a mismatched 'const'.
 	
 2005-01-20  Kevin B. Kenny  <kennykb@acm.org>
 
