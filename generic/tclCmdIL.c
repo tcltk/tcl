@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.65 2004/10/14 15:06:01 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.66 2004/10/14 17:20:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3751,7 +3751,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument values. */
 {
-    int i, index, unique;
+    int i, index, unique, indices;
     Tcl_Obj *resultPtr;
     int length;
     Tcl_Obj *cmdPtr, **listObjPtrs;
@@ -3762,12 +3762,12 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 					 * comparison function */
     static CONST char *switches[] = {
 	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
-	"-index", "-integer", "-real", "-unique", (char *) NULL
+	"-index", "-indices", "-integer", "-real", "-unique", (char *) NULL
     };
     enum Lsort_Switches {
 	LSORT_ASCII, LSORT_COMMAND, LSORT_DECREASING, LSORT_DICTIONARY,
-	LSORT_INCREASING, LSORT_INDEX, LSORT_INTEGER, LSORT_REAL,
-	LSORT_UNIQUE
+	LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES, LSORT_INTEGER,
+	LSORT_REAL, LSORT_UNIQUE
     };
 
     if (objc < 2) {
@@ -3787,6 +3787,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
     unique = 0;
+    indices = 0;
     for (i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0, &index)
 		!= TCL_OK) {
@@ -3884,6 +3885,9 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	case LSORT_UNIQUE:
 	    unique = 1;
 	    break;
+	case LSORT_INDICES:
+	    indices = 1;
+	    break;
 	}
     }
 
@@ -3928,16 +3932,32 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     if (sortInfo.resultCode == TCL_OK) {
 	resultPtr = Tcl_NewObj();
 	if (unique) {
-	    for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr){
-		if (elementPtr->count == 0) {
-		    Tcl_ListObjAppendElement(interp, resultPtr,
-			    elementPtr->objPtr);
+	    if (indices) {
+		for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
+		    if (elementPtr->count == 0) {
+			Tcl_ListObjAppendElement(interp, resultPtr,
+				Tcl_NewIntObj(elementPtr - &elementArray[0]));
+		    }
+		}
+	    } else {
+		for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr) {
+		    if (elementPtr->count == 0) {
+			Tcl_ListObjAppendElement(interp, resultPtr,
+				elementPtr->objPtr);
+		    }
 		}
 	    }
 	} else {
-	    for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr){
-		Tcl_ListObjAppendElement(interp, resultPtr,
-			elementPtr->objPtr);
+	    if (indices) {
+		for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
+		    Tcl_ListObjAppendElement(interp, resultPtr,
+			    Tcl_NewIntObj(elementPtr - &elementArray[0]));
+		}
+	    } else {
+		for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr){
+		    Tcl_ListObjAppendElement(interp, resultPtr,
+			    elementPtr->objPtr);
+		}
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
