@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.32 2002/01/05 22:55:51 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.33 2002/01/09 19:09:28 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -167,8 +167,8 @@ EXTERN char *		TclpGetUserHome _ANSI_ARGS_((CONST char * name,
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp * interp, 
 				int argc, char ** argv, int flags));
 /* 44 */
-EXTERN int		TclGuessPackageName _ANSI_ARGS_((char * fileName, 
-				Tcl_DString * bufPtr));
+EXTERN int		TclGuessPackageName _ANSI_ARGS_((
+				CONST char * fileName, Tcl_DString * bufPtr));
 /* 45 */
 EXTERN int		TclHideUnsafeCommands _ANSI_ARGS_((
 				Tcl_Interp * interp));
@@ -567,7 +567,7 @@ typedef struct TclIntStubs {
     Tcl_Command (*tclGetOriginalCommand) _ANSI_ARGS_((Tcl_Command command)); /* 41 */
     char * (*tclpGetUserHome) _ANSI_ARGS_((CONST char * name, Tcl_DString * bufferPtr)); /* 42 */
     int (*tclGlobalInvoke) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, int flags)); /* 43 */
-    int (*tclGuessPackageName) _ANSI_ARGS_((char * fileName, Tcl_DString * bufPtr)); /* 44 */
+    int (*tclGuessPackageName) _ANSI_ARGS_((CONST char * fileName, Tcl_DString * bufPtr)); /* 44 */
     int (*tclHideUnsafeCommands) _ANSI_ARGS_((Tcl_Interp * interp)); /* 45 */
     int (*tclInExit) _ANSI_ARGS_((void)); /* 46 */
     Tcl_Obj * (*tclIncrElementOfIndexedArray) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, Tcl_Obj * elemPtr, long incrAmount)); /* 47 */
