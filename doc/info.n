@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.2.2 2004/10/27 12:52:40 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.2.3 2004/10/27 14:23:56 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -214,8 +214,8 @@ script:
 proc printProc {procName} {
     set result [list proc $procName]
     set formals {}
-    foreach var [\fBinfo\fR args $procName] {
-        if {[\fBinfo\fR default $procName $var def]} {
+    foreach var [\fBinfo args\fR $procName] {
+        if {[\fBinfo default\fR $procName $var def]} {
             lappend formals [list $var $def]
         } else {
             # Still need the list-quoting because variable
@@ -223,7 +223,7 @@ proc printProc {procName} {
             lappend formals [list $var]
         }
     }
-    puts [lappend result $formals [\fBinfo\fR body $procName]]
+    puts [lappend result $formals [\fBinfo body\fR $procName]]
 }
 .CE
 
