@@ -28,7 +28,7 @@
  * symbol is defined by Makefile.
  */
 
-static char defaultLibraryDir[200] = TCL_LIBRARY;
+static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
 
 /*
  * Directory in which to look for packages (each package is typically
@@ -36,7 +36,7 @@ static char defaultLibraryDir[200] = TCL_LIBRARY;
  * defined by Makefile.
  */
 
-static char pkgPath[200] = TCL_PACKAGE_PATH;
+static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
 /*
  * Is this module initialized?
