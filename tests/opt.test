@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: opt.test,v 1.6 2000/04/10 17:19:02 ericm Exp $
+# RCS: @(#) $Id: opt.test,v 1.6.2.1 2000/08/07 21:32:11 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -33,9 +33,11 @@ test opt-1.1 {OptKeyRegister / check that auto allocation is skipping existing k
 } "$n [expr $n+1] [expr $n+2]"
 
 test opt-2.1 {OptKeyDelete} {
-    list [::tcl::OptKeyRegister {} testkey] [::tcl::OptKeyDelete testkey] \
-	    [catch {::tcl::OptKeyDelete testkey} msg] $msg;
-} {testkey {} 1 {can't unset "OptDesc(testkey)": no such element in array}}
+    list [::tcl::OptKeyRegister {} testkey] \
+	    [info exists ::tcl::OptDesc(testkey)] \
+	    [::tcl::OptKeyDelete testkey] \
+	    [info exists ::tcl::OptDesc(testkey)]
+} {testkey 1 {} 0}
 
 
 test opt-3.1 {OptParse / temp key is removed} {
@@ -134,17 +136,6 @@ test opt-8.7 {List utilities} {
     ::tcl::Lvarincr l {1 2} -9
     set l
 } {a {b c -2 e} f}
-
-test opt-8.8 {List utilities} {
-    set l {{b c 7 e} f}
-    ::tcl::Lfirst $l
-} {b c 7 e}
-
-
-test opt-8.9 {List utilities} {
-    set l {a {b c 7 e} f}
-    ::tcl::Lrest $l
-} {{b c 7 e} f}
 
 test opt-8.10 {List utilities} {
     set l {a {b c 7 e} f}
