@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.9 2000/01/26 21:36:36 ericm Exp $
+# RCS: @(#) $Id: namespace.test,v 1.10 2000/03/27 22:19:14 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -803,11 +803,11 @@ test namespace-26.5 {NamespaceExportCmd, sequence of patterns, patterns accumula
     }
     list [info commands test_ns_2::*] [test_ns_2::cmd3 hello]
 } {{::test_ns_2::cmd1 ::test_ns_2::cmd3} {cmd3: hello}}
-test namespace-26.6 {NamespaceExportCmd, no patterns means return export list} {
+test namespace-26.6 {NamespaceExportCmd, no patterns means return uniq'ed export list} {
     namespace eval test_ns_1 {
         namespace export
     }
-} {cmd1 cmd1 cmd3}
+} {cmd1 cmd3}
 test namespace-26.7 {NamespaceExportCmd, -clear resets export list} {
     namespace eval test_ns_1 {
         namespace export -clear cmd4

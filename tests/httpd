@@ -106,7 +106,6 @@ proc httpdRead { sock } {
 		set data(length) $data(length_orig)
 		httpdRespond $sock
 	    }
-puts stderr "Post Dispatch"
 	}
 	default {
 	    if [eof $sock] {
