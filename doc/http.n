@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.10.2.2 2001/04/03 22:06:43 hobbs Exp $
+'\" RCS: @(#) $Id: http.n,v 1.10.2.3 2001/09/07 00:10:57 hobbs Exp $
 '\" 
 .so man.macros
 .TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
@@ -14,7 +14,7 @@
 .SH NAME
 Http \- Client-side implementation of the HTTP/1.0 protocol.
 .SH SYNOPSIS
-\fBpackage require http ?2.3?\fP
+\fBpackage require http ?2.3.3?\fP
 .sp
 \fB::http::config \fI?options?\fR
 .sp
@@ -114,7 +114,7 @@ is \fB"Tcl http client package 2.2."\fR
 .RE
 .TP
 \fB::http::geturl\fP \fIurl\fP ?\fIoptions\fP? 
-The \fB::http::geturl \fR command is the main procedure in the package.
+The \fB::http::geturl\fR command is the main procedure in the package.
 The \fB\-query\fR option causes a POST operation and
 the \fB\-validate\fR option causes a HEAD operation;
 otherwise, a GET operation is performed.  The \fB::http::geturl\fR command
@@ -126,13 +126,16 @@ that is invoked when the HTTP transaction completes.
 \fB::http::geturl\fR takes several options:
 .RS
 .TP
+\fB\-binary\fP \fIboolean\fP
+Specifies whether to force interpreting the url data as binary.  Normally
+this is auto-detected (anything not beginning with a \fBtext\fR content
+type or whose content encoding is \fBgzip\fR or \fBcompress\fR is
+considered binary data).
+.TP
 \fB\-blocksize\fP \fIsize\fP
 The blocksize used when reading the URL.
-At most 
-\fIsize\fR
-bytes are read at once.  After each block, a call to the
-\fB\-progress\fR
-callback is made (if that option is specified).
+At most \fIsize\fR bytes are read at once.  After each block, a call to the
+\fB\-progress\fR callback is made (if that option is specified).
 .TP
 \fB\-channel\fP \fIname\fP
 Copy the URL contents to channel \fIname\fR instead of saving it in
@@ -406,6 +409,15 @@ the array are supported:
 \fBbody\fR
 The contents of the URL.  This will be empty if the \fB\-channel\fR
 option has been specified.  This value is returned by the \fB::http::data\fP command.
+.TP
+\fBcharset\fR
+The value of the charset attribute from the \fBContent-Type\fR meta-data
+value.  If none was specified, this defaults to the RFC standard
+\fBiso8859-1\fR, or the value of \fB$::http::defaultCharset\fR.  Incoming
+text data will be automatically converted from this charset to utf-8.
+.TP
+\fBcoding\fR
+A copy of the \fBContent-Encoding\fR meta-data value.
 .TP
 \fBcurrentsize\fR
 The current number of bytes fetched from the URL.
