@@ -1,3 +1,10 @@
+2004-02-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileSystem.test: fix to Tcl Bug 905163.
+	* tests/fileName.test: fix to Tcl Bug 904705.
+
+	* doc/{various}.n: removed 'the the' typos.
+
 2004-02-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: fixed copyright year in Tcl.framework Info.plist
