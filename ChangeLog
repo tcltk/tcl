@@ -1,3 +1,9 @@
+2002-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/cmdMZ.test (cmdMZ-1.4): 
+	* tests/cmdAH.test: More fixing of writable-current-dir
+	assumption. [Bug 575824]
+
 2002-07-04  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tests/basic.test: Same issue as below; fixed [Bug 575817]

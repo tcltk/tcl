@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.25 2002/07/02 19:10:57 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.26 2002/07/04 21:47:59 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -42,13 +42,14 @@ test cmdAH-1.2 {Tcl_CatchObjCmd, errors} {
 test cmdAH-2.1 {Tcl_CdObjCmd} {
     list [catch {cd foo bar} msg] $msg
 } {1 {wrong # args: should be "cd ?dirName?"}}
+set foodir [file join [temporaryDirectory] foo]
 test cmdAH-2.2 {Tcl_CdObjCmd} {
-    file delete -force foo
-    file mkdir foo
-    cd foo
+    file delete -force $foodir
+    file mkdir $foodir
+    cd $foodir
     set result [file tail [pwd]]
     cd ..
-    file delete foo
+    file delete $foodir
     set result
 } foo
 test cmdAH-2.3 {Tcl_CdObjCmd} {
@@ -56,12 +57,12 @@ test cmdAH-2.3 {Tcl_CdObjCmd} {
     set oldpwd [pwd]
     set temp $env(HOME)
     set env(HOME) $oldpwd
-    file delete -force foo
-    file mkdir foo
-    cd foo
+    file delete -force $foodir
+    file mkdir $foodir
+    cd $foodir
     cd ~
     set result [string equal [pwd] $oldpwd]
-    file delete foo
+    file delete $foodir
     set env(HOME) $temp
     set result
 } 1
@@ -70,12 +71,12 @@ test cmdAH-2.4 {Tcl_CdObjCmd} {
     set oldpwd [pwd]
     set temp $env(HOME)
     set env(HOME) $oldpwd
-    file delete -force foo
-    file mkdir foo
-    cd foo
+    file delete -force $foodir
+    file mkdir $foodir
+    cd $foodir
     cd
     set result [string equal [pwd] $oldpwd]
-    file delete foo
+    file delete $foodir
     set env(HOME) $temp
     set result
 } 1
@@ -209,10 +210,14 @@ test cmdAH-6.5 {cd} {unixOnly nonPortable} {
 # attributes
 
 test cmdAH-7.1 {Tcl_FileObjCmd - file attrs} {
-    catch {file delete -force foo.file}
-    close [open foo.file w]
-    list [catch {file attributes foo.file}] [file delete -force foo.file]
-} {0 {}}
+    set foofile [makeFile abcde foo.file]
+    catch {file delete -force $foofile}
+    close [open $foofile w]
+    set res [catch {file attributes $foofile}]
+    # We used [makeFile] so we undo with [removeFile]
+    removeFile $foofile
+    set res
+} {0}
 
 # dirname
 
@@ -1012,8 +1017,8 @@ testsetplatform $platform
 
 # readable
 
-makeFile abcde gorp.file
-makeDirectory dir.file
+set gorpfile [makeFile abcde gorp.file]
+set dirfile [makeDirectory dir.file]
 
 if {[info commands testchmod] == {}} {
     puts "This application hasn't been compiled with the \"testchmod\""
@@ -1022,13 +1027,13 @@ if {[info commands testchmod] == {}} {
 test cmdAH-16.1 {Tcl_FileObjCmd: readable} {testchmod} {
     list [catch {file readable a b} msg] $msg
 } {1 {wrong # args: should be "file readable name"}}
-testchmod 0444 gorp.file
+testchmod 0444 $gorpfile
 test cmdAH-16.2 {Tcl_FileObjCmd: readable} {testchmod} {
-    file readable gorp.file
+    file readable $gorpfile
 } 1
-testchmod 0333 gorp.file
+testchmod 0333 $gorpfile
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {unixOnly notRoot testchmod} {
-    file reada gorp.file
+    file reada $gorpfile
 } 0
 
 # writable
@@ -1036,81 +1041,83 @@ test cmdAH-16.3 {Tcl_FileObjCmd: readable} {unixOnly notRoot testchmod} {
 test cmdAH-17.1 {Tcl_FileObjCmd: writable} {testchmod} {
     list [catch {file writable a b} msg] $msg
 } {1 {wrong # args: should be "file writable name"}}
-testchmod 0555 gorp.file
+testchmod 0555 $gorpfile
 test cmdAH-17.2 {Tcl_FileObjCmd: writable} {notRoot testchmod} {
-    file writable gorp.file
+    file writable $gorpfile
 } 0
-testchmod 0222 gorp.file
+testchmod 0222 $gorpfile
 test cmdAH-17.3 {Tcl_FileObjCmd: writable} {testchmod} {
-    file writable gorp.file
+    file writable $gorpfile
 } 1
 }
 
 # executable
 
-file delete -force dir.file gorp.file
-file mkdir dir.file
-makeFile abcde gorp.file
+removeFile $gorpfile
+removeDirectory $dirfile
+set dirfile [makeDirectory dir.file]
+set gorpfile [makeFile abcde gorp.file]
 
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} {testchmod} {
     list [catch {file executable a b} msg] $msg
 } {1 {wrong # args: should be "file executable name"}}
 test cmdAH-18.2 {Tcl_FileObjCmd: executable} {testchmod} {
-    file executable gorp.file
+    file executable $gorpfile
 } 0
 test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly testchmod} {
     # Only on unix will setting the execute bit on a regular file
     # cause that file to be executable.   
     
-    testchmod 0775 gorp.file
-    file exe gorp.file
+    testchmod 0775 $gorpfile
+    file exe $gorpfile
 } 1
 
 test cmdAH-18.4 {Tcl_FileObjCmd: executable} {macOnly testchmod} {
     # On mac, the only executable files are of type APPL.
 
-    set x [file exe gorp.file]    
-    file attrib gorp.file -type APPL
-    lappend x [file exe gorp.file]
+    set x [file exe $gorpfile]    
+    file attrib $gorpfile -type APPL
+    lappend x [file exe $gorpfile]
 } {0 1}
 test cmdAH-18.5 {Tcl_FileObjCmd: executable} {pcOnly testchmod} {
     # On pc, must be a .exe, .com, etc.
     
-    set x [file exe gorp.file]
-    makeFile foo gorp.exe
-    lappend x [file exe gorp.exe]
-    file delete gorp.exe
+    set x [file exe $gorpfile]
+    set gorpexe [makeFile foo gorp.exe]
+    lappend x [file exe $gorpexe]
+    removeFile $gorpexe
     set x
 } {0 1}
 test cmdAH-18.6 {Tcl_FileObjCmd: executable} {testchmod} {
     # Directories are always executable.
     
-    file exe dir.file
+    file exe $dirfile
 } 1
 
-file delete -force dir.file  
-file delete gorp.file
-file delete link.file
+removeDirectory $dirfile
+removeFile $gorpfile
+set linkfile [file join [temporaryDirectory] link.file]
+file delete $linkfile
 
 # exists
 
 test cmdAH-19.1 {Tcl_FileObjCmd: exists} {
     list [catch {file exists a b} msg] $msg
 } {1 {wrong # args: should be "file exists name"}}
-test cmdAH-19.2 {Tcl_FileObjCmd: exists} {file exists gorp.file} 0
+test cmdAH-19.2 {Tcl_FileObjCmd: exists} {file exists $gorpfile} 0
 test cmdAH-19.3 {Tcl_FileObjCmd: exists} {
-    file exists [file join dir.file gorp.file]
+    file exists [file join [temporaryDirectory] dir.file gorp.file]
 } 0
 catch {
-    makeFile abcde gorp.file
-    makeDirectory dir.file
-    makeFile 12345 [file join dir.file gorp.file]
+    set gorpfile [makeFile abcde gorp.file]
+    set dirfile [makeDirectory dir.file]
+    set subgorp [makeFile 12345 [file join $dirfile gorp.file]]
 }
 test cmdAH-19.4 {Tcl_FileObjCmd: exists} {
-    file exists gorp.file
+    file exists $gorpfile
 } 1
 test cmdAH-19.5 {Tcl_FileObjCmd: exists} {
-    file exists [file join dir.file gorp.file]
+    file exists $subgorp
 } 1
 
 # nativename
@@ -1162,9 +1169,9 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
 # Stat related commands
 
 catch {testsetplatform $platform}
-file delete gorp.file
-makeFile "Test string" gorp.file
-catch {exec chmod 765 gorp.file}
+removeFile $gorpfile
+set gorpfile [makeFile "Test string" gorp.file]
+catch {exec chmod 765 $gorpfile}
 
 # atime
 
@@ -1175,9 +1182,9 @@ test cmdAH-20.1 {Tcl_FileObjCmd: atime} {
 } {1 {wrong # args: should be "file atime name ?time?"}}
 test cmdAH-20.2 {Tcl_FileObjCmd: atime} {
     catch {unset stat}
-    file stat gorp.file stat
-    list [expr {[file mtime gorp.file] == $stat(mtime)}] \
-	    [expr {[file atime gorp.file] == $stat(atime)}]
+    file stat $gorpfile stat
+    list [expr {[file mtime $gorpfile] == $stat(mtime)}] \
+	    [expr {[file atime $gorpfile] == $stat(atime)}]
 } {1 1}
 test cmdAH-20.3 {Tcl_FileObjCmd: atime} {
     string tolower [list [catch {file atime _bogus_} msg] \
@@ -1212,10 +1219,10 @@ test cmdAH-21.1 {Tcl_FileObjCmd: isdirectory} {
     list [catch {file isdirectory a b} msg] $msg
 } {1 {wrong # args: should be "file isdirectory name"}}
 test cmdAH-21.2 {Tcl_FileObjCmd: isdirectory} {
-    file isdirectory gorp.file
+    file isdirectory $gorpfile
 } 0
 test cmdAH-21.3 {Tcl_FileObjCmd: isdirectory} {
-    file isd dir.file
+    file isd $dirfile
 } 1
 
 # isfile
@@ -1223,13 +1230,13 @@ test cmdAH-21.3 {Tcl_FileObjCmd: isdirectory} {
 test cmdAH-22.1 {Tcl_FileObjCmd: isfile} {
     list [catch {file isfile a b} msg] $msg
 } {1 {wrong # args: should be "file isfile name"}}
-test cmdAH-22.2 {Tcl_FileObjCmd: isfile} {file isfile gorp.file} 1
-test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile dir.file} 0
+test cmdAH-22.2 {Tcl_FileObjCmd: isfile} {file isfile $gorpfile} 1
+test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 
 # lstat and readlink:  don't run these tests everywhere, since not all
 # sites will have symbolic links
 
-catch {file link -symbolic link.file gorp.file}
+catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} {
     list [catch {file lstat a} msg] $msg
 } {1 {wrong # args: should be "file lstat name varName"}}
@@ -1238,12 +1245,12 @@ test cmdAH-23.2 {Tcl_FileObjCmd: lstat} {
 } {1 {wrong # args: should be "file lstat name varName"}}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} {unixOnly nonPortable} {
     catch {unset stat}
-    file lstat link.file stat
+    file lstat $linkfile stat
     lsort [array names stat]
 } {atime ctime dev gid ino mode mtime nlink size type uid}
 test cmdAH-23.4 {Tcl_FileObjCmd: lstat} {unixOnly nonPortable} {
     catch {unset stat}
-    file lstat link.file stat
+    file lstat $linkfile stat
     list $stat(nlink) [expr $stat(mode)&0777] $stat(type)
 } {1 511 link}
 test cmdAH-23.5 {Tcl_FileObjCmd: lstat errors} {nonPortable} {
@@ -1253,40 +1260,42 @@ test cmdAH-23.5 {Tcl_FileObjCmd: lstat errors} {nonPortable} {
 test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} {
     catch {unset x}
     set x 44
-    list [catch {file lstat gorp.file x} msg] $msg $errorCode
+    list [catch {file lstat $gorpfile x} msg] $msg $errorCode
 } {1 {can't set "x(dev)": variable isn't array} NONE}
 catch {unset stat}
 
 # mkdir
 
+set dirA [file join [temporaryDirectory] a]
+set dirB [file join [temporaryDirectory] a]
 test cmdAH-23.7 {Tcl_FileObjCmd: mkdir} {
-    catch {file delete -force a}
-    file mkdir a
-    set res [file isdirectory a]
-    file delete a
+    catch {file delete -force $dirA}
+    file mkdir $dirA
+    set res [file isdirectory $dirA]
+    file delete $dirA
     set res
 } {1}
 test cmdAH-23.8 {Tcl_FileObjCmd: mkdir} {
-    catch {file delete -force a}
-    file mkdir a/b
-    set res [file isdirectory a/b]
-    file delete -force a
+    catch {file delete -force $dirA}
+    file mkdir $dirA/b
+    set res [file isdirectory $dirA/b]
+    file delete -force $dirA
     set res
 } {1}
 test cmdAH-23.9 {Tcl_FileObjCmd: mkdir} {
-    catch {file delete -force a}
-    file mkdir a/b/c
-    set res [file isdirectory a/b/c]
-    file delete -force a
+    catch {file delete -force $dirA}
+    file mkdir $dirA/b/c
+    set res [file isdirectory $dirA/b/c]
+    file delete -force $dirA
     set res
 } {1}
 test cmdAH-23.10 {Tcl_FileObjCmd: mkdir} {
-    catch {file delete -force a}
-    catch {file delete -force b}
-    file mkdir a/b b/a/c
-    set res [list [file isdirectory a/b] [file isdirectory b/a/c]]
-    file delete -force a
-    file delete -force b
+    catch {file delete -force $dirA}
+    catch {file delete -force $dirB}
+    file mkdir $dirA/b $dirB/a/c
+    set res [list [file isdirectory $dirA/b] [file isdirectory $dirB/a/c]]
+    file delete -force $dirA
+    file delete -force $dirB
     set res
 } {1 1}
 
@@ -1305,17 +1314,17 @@ test cmdAH-24.1 {Tcl_FileObjCmd: mtime} {
 # completely horrible "keep on trying to write until you managed to do
 # it all in less than a second."  - DKF
 test cmdAH-24.2 {Tcl_FileObjCmd: mtime} {
-    set f [open gorp.file w]
+    set f [open $gorpfile w]
     puts $f "More text"
     set localOld [clock seconds]
     close $f
-    set old [file mtime gorp.file]
+    set old [file mtime $gorpfile]
     after 2000
-    set f [open gorp.file w]
+    set f [open $gorpfile w]
     puts $f "More text"
     set localNew [clock seconds]
     close $f
-    set new [file mtime gorp.file]
+    set new [file mtime $gorpfile]
     expr {
 	($new > $old) && ($localNew > $localOld) &&
 	(abs(($new-$old) - ($localNew-$localOld)) <= 1)
@@ -1323,9 +1332,9 @@ test cmdAH-24.2 {Tcl_FileObjCmd: mtime} {
 } {1}
 test cmdAH-24.3 {Tcl_FileObjCmd: mtime} {
     catch {unset stat}
-    file stat gorp.file stat
-    list [expr {[file mtime gorp.file] == $stat(mtime)}] \
-	    [expr {[file atime gorp.file] == $stat(atime)}]
+    file stat $gorpfile stat
+    list [expr {[file mtime $gorpfile] == $stat(mtime)}] \
+	    [expr {[file atime $gorpfile] == $stat(atime)}]
 } {1 1}
 test cmdAH-24.4 {Tcl_FileObjCmd: mtime} {
     string tolower [list [catch {file mtime _bogus_} msg] $msg \
@@ -1336,9 +1345,9 @@ test cmdAH-24.5 {Tcl_FileObjCmd: mtime} {
     # On other platforms, just use a file in the local directory.
 
     if {[string equal $tcl_platform(platform) "unix"]} {
-	 set name /tmp/tcl.test
+	set name /tmp/tcl.test.[pid]
     } else {
-	set name tf
+	set name [file join [temporaryDirectory] tf]
     }
 
     # Make sure that a new file's time is correct.  10 seconds variance 
@@ -1368,7 +1377,7 @@ test cmdAH-25.1 {Tcl_FileObjCmd: owned} {
     list [catch {file owned a b} msg] $msg
 } {1 {wrong # args: should be "file owned name"}}
 test cmdAH-25.2 {Tcl_FileObjCmd: owned} {
-    file owned gorp.file
+    file owned $gorpfile
 } 1
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unixOnly notRoot} {
     file owned /
@@ -1380,8 +1389,8 @@ test cmdAH-26.1 {Tcl_FileObjCmd: readlink} {
     list [catch {file readlink a b} msg] $msg
 } {1 {wrong # args: should be "file readlink name"}}
 test cmdAH-26.2 {Tcl_FileObjCmd: readlink} {unixOnly nonPortable} {
-    file readlink link.file
-} gorp.file
+    file readlink $linkfile
+} $gorpfile
 test cmdAH-26.3 {Tcl_FileObjCmd: readlink errors} {unixOnly nonPortable} {
     list [catch {file readlink _bogus_} msg] [string tolower $msg] \
 	    [string tolower $errorCode]
@@ -1401,12 +1410,12 @@ test cmdAH-27.1 {Tcl_FileObjCmd: size} {
     list [catch {file size a b} msg] $msg
 } {1 {wrong # args: should be "file size name"}}
 test cmdAH-27.2 {Tcl_FileObjCmd: size} {
-    set oldsize [file size gorp.file]
-    set f [open gorp.file a]
+    set oldsize [file size $gorpfile]
+    set f [open $gorpfile a]
     fconfigure $f -translation lf -eofchar {}
     puts $f "More text"
     close $f
-    expr {[file size gorp.file] - $oldsize}
+    expr {[file size $gorpfile] - $oldsize}
 } {10}
 test cmdAH-27.3 {Tcl_FileObjCmd: size} {
     string tolower [list [catch {file size _bogus_} msg] $msg \
@@ -1416,8 +1425,9 @@ test cmdAH-27.3 {Tcl_FileObjCmd: size} {
 # stat
 
 catch {testsetplatform $platform}
-makeFile "Test string" gorp.file
-catch {exec chmod 765 gorp.file}
+removeFile $gorpfile
+set gorpFile [makeFile "Test string" gorp.file]
+catch {exec chmod 765 $gorpfile}
 
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} {
     list [catch {file stat _bogus_} msg] $msg $errorCode
@@ -1427,17 +1437,17 @@ test cmdAH-28.2 {Tcl_FileObjCmd: stat} {
 } {1 {wrong # args: should be "file stat name varName"} NONE}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} {
     catch {unset stat}
-    file stat gorp.file stat
+    file stat $gorpfile stat
     lsort [array names stat]
 } {atime ctime dev gid ino mode mtime nlink size type uid}
 test cmdAH-28.4 {Tcl_FileObjCmd: stat} {
     catch {unset stat}
-    file stat gorp.file stat
+    file stat $gorpfile stat
     list $stat(nlink) $stat(size) $stat(type)
 } {1 12 file}
 test cmdAH-28.5 {Tcl_FileObjCmd: stat} {unixOnly} {
     catch {unset stat}
-    file stat gorp.file stat
+    file stat $gorpfile stat
     expr $stat(mode)&0777
 } {501}
 test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
@@ -1447,15 +1457,15 @@ test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
 test cmdAH-28.7 {Tcl_FileObjCmd: stat} {
     catch {unset x}
     set x 44
-    list [catch {file stat gorp.file x} msg] $msg $errorCode
+    list [catch {file stat $gorpfile x} msg] $msg $errorCode
 } {1 {can't set "x(dev)": variable isn't array} NONE}
 test cmdAH-28.8 {Tcl_FileObjCmd: stat} {
     # Sign extension of purported unsigned short to int.
 
-    close [open foo.test w]
-    file stat foo.test stat
+    set filename [makeFile "" foo.text]
+    file stat $filename stat
     set x [expr {$stat(mode) > 0}]
-    file delete foo.test
+    removeFile $filename
     set x
 } 1
 test cmdAH-28.9 {Tcl_FileObjCmd: stat} {pcOnly} {
@@ -1496,9 +1506,9 @@ test cmdAH-28.12 {Tcl_FileObjCmd: stat} {
     # stat(mode) with S_IFREG flag was returned as a negative number
     # if mode_t was a short instead of an unsigned short.
 
-    close [open foo.test w]
-    file stat foo.test stat
-    file delete foo.test
+    set filename [makeFile "" foo.test]
+    file stat $filename stat
+    removeFile $filename
     expr {$stat(mode) > 0}
 } 1
 catch {unset stat}
@@ -1509,29 +1519,30 @@ test cmdAH-29.1 {Tcl_FileObjCmd: type} {
     list [catch {file size a b} msg] $msg
 } {1 {wrong # args: should be "file size name"}}
 test cmdAH-29.2 {Tcl_FileObjCmd: type} {
-    file type dir.file
+    file type $dirfile
 } directory
 test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {unixOnly nonPortable} {
-    set exists [list [file exists link.file] [file exists gorp.file]]
-    file delete link.file
-    set exists2	[list [file exists link.file] [file exists gorp.file]]
+    set exists [list [file exists $linkfile] [file exists $gorpfile]]
+    file delete $linkfile
+    set exists2	[list [file exists $linkfile] [file exists $gorpfile]]
     list $exists $exists2
 } {{1 1} {0 1}}
 test cmdAH-29.3 {Tcl_FileObjCmd: type} {
-    file type gorp.file
+    file type $gorpfile
 } file
 test cmdAH-29.4 {Tcl_FileObjCmd: type} {unixOnly nonPortable} {
-    exec ln -s a/b/c link.file
-    set result [file type link.file]
-    file delete link.file
+    exec ln -s a/b/c $linkfile
+    set result [file type $linkfile]
+    file delete $linkfile
     set result
 } link
 test cmdAH-29.4.1 {Tcl_FileObjCmd: type} {
-    file mkdir temp
-    file link -symbolic link.dir temp
-    set result [file type link.dir]
-    file delete link.dir
-    file delete temp
+    set tempdir [makeDirectory temp]
+    set linkdir [file join [temporaryDirectory] link.dir]
+    file link -symbolic $linkdir $tempdir
+    set result [file type $linkdir]
+    file delete $linkdir
+    removeDirectory $tempdir
     set result
 } link
 test cmdAH-29.5 {Tcl_FileObjCmd: type} {
@@ -1588,7 +1599,7 @@ test cmdAH-31.4 {Tcl_FileObjCmd: channels, globbing} {
     lsort [file channels std*]
 } [lsort {stdout stderr stdin}]
 
-set newFileId [open gorp.file w]
+set newFileId [open $gorpfile w]
 
 test cmdAH-31.5 {Tcl_FileObjCmd: channels} {
     set res [file channels $newFileId]
@@ -1645,10 +1656,11 @@ catch {unset platform}
 
 # Tcl_ForObjCmd is tested in for.test
 
-catch {exec chmod 777 dir.file}
-file delete -force dir.file
-file delete gorp.file
-file delete link.file
+catch {exec chmod 777 $dirfile}
+removeDirectory $dirfile
+removeFile $gorpfile
+# No idea how well [removeFile] copes with links...
+file delete $linkfile
 
 cd $cmdAHwd
 
