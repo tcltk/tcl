@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.7 2000/07/22 01:53:24 ericm Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.8 2000/09/06 16:57:27 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -67,8 +67,8 @@ static int		CompareOneWordKeys _ANSI_ARGS_((
 			    VOID *keyPtr, Tcl_HashEntry *hPtr));
 static unsigned int	HashOneWordKey _ANSI_ARGS_((
 			    Tcl_HashTable *tablePtr,
-#endif			    VOID *keyPtr));
-
+			    VOID *keyPtr));
+#endif
 
 /*
  * Prototypes for the string hash key methods.
