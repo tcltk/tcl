@@ -86,8 +86,6 @@ static void
 PlatformInitExitHandler(clientData)
     ClientData clientData;		/* Unused. */
 {
-    strcpy(defaultLibraryDir, TCL_LIBRARY);
-    strcpy(pkgPath, TCL_PACKAGE_PATH);
     initialized = 0;
 }
 
