@@ -1,3 +1,12 @@
+1999-11-24  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/open.n:
+	* win/tclWinSerial.c: adopted patch from Schroedter to handle
+	fconfigure $sock -lasterror on Windows. [RFE: 3368]
+
+	* generic/tclCmdIL.c: made SORTMODE_INTEGER work with Longs
+	[Bug: 3652]
+
 1999-11-23  Scott Stanton  <stanton@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl: Fixed bug where tcltest output
