@@ -1,3 +1,10 @@
+2004-05-27  Reinhard Max  <max@suse.de>
+
+        * generic/tclEncoding.c: 
+        * tests/encoding.test: added support and tests for translating
+	embedded null characters between real nullbytes and the internal
+	representation on input/output (Bug #949905).
+
 2004-05-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Correction to debug prints and testing
