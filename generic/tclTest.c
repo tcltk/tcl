@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.46 2002/02/28 00:38:49 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.47 2002/03/07 20:17:22 dgp Exp $
  */
 
 #define TCL_TEST
@@ -301,9 +301,6 @@ static int		TestopenfilechannelprocCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestsetplatformCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
-static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
-                            ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]));
 static int		TeststaticpkgCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		PretendTclpStat _ANSI_ARGS_((CONST char *path,
@@ -568,9 +565,6 @@ Tcltest_Init(interp)
 	    TestsetobjerrorcodeCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testsetplatform", TestsetplatformCmd,
-	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateObjCommand(interp, "testsetrecursionlimit",
-	    TestsetrecursionlimitCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "teststaticpkg", TeststaticpkgCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -3283,47 +3277,6 @@ TestsetplatformCmd(clientData, interp, argc, argv)
     }
     return TCL_OK;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsetrecursionlimitCmd --
- *
- *	This procedure implements the "testsetrecursionlimit" command. It is
- *	used to change the interp recursion limit (to test the effects
- *      of Tcl_SetRecursionLimit).
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Sets the interp's recursion limit.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestsetrecursionlimitCmd(dummy, interp, objc, objv)
-    ClientData dummy;		/* Not used. */
-    Tcl_Interp *interp;		/* Current interpreter. */
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* The argument objects. */
-{
-    int     value;
-
-    if (objc != 2) {
-    	Tcl_WrongNumArgs(interp, 1, objv, "integer");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    value = Tcl_SetRecursionLimit(interp, value);
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), value);
-    return TCL_OK;
-}
-
-
 
 /*
  *----------------------------------------------------------------------
