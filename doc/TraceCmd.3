@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" CVS: @(#) $Id: TraceCmd.3,v 1.6 2004/09/18 17:01:06 dkf Exp $
+'\" CVS: @(#) $Id: TraceCmd.3,v 1.7 2004/10/07 14:52:43 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceCommand 3 7.4 Tcl "Tcl Library Procedures"
@@ -67,10 +67,10 @@ Whenever one of the specified operations occurs to the command,
 match the type \fBTcl_CommandTraceProc\fR:
 .CS
 typedef void Tcl_CommandTraceProc(
-	ClientData \fIclientData\fR,
+        ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
-	CONST char *\fIoldName\fR,
-	CONST char *\fInewName\fR,
+        CONST char *\fIoldName\fR,
+        CONST char *\fInewName\fR,
         int \fIflags\fR);
 .CE
 The \fIclientData\fR and \fIinterp\fR parameters will have the same
