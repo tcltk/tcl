@@ -1,3 +1,10 @@
+2003-08-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/return.n:	Updated [return] docs to cover new TIP 90 features.
+
+	* doc/break.n:		Added SEE ALSO references to return.n
+	* doc/continue.n:
+
 2003-09-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/Namespace.3: Basic documentation for the TIP#139 functions.
