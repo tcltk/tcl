@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.21 1998/08/04 11:19:03 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.22 1998/08/04 11:54:40 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -230,9 +230,9 @@
 #endif
 
 #ifdef __cplusplus
-#   define EXTERN extern "C" TCLSTORAGECLASS
+#   define EXTERN extern "C" TCL_STORAGE_CLASS
 #else
-#   define EXTERN extern TCLSTORAGECLASS
+#   define EXTERN extern TCL_STORAGE_CLASS
 #endif
 
 /*
@@ -1568,7 +1568,7 @@ EXTERN void		Tcl_WrongNumArgs _ANSI_ARGS_((Tcl_Interp *interp,
 
 #endif /* RESOURCE_INCLUDED */
 
-#undef EXPORT
-#define EXPORT DLLIMPORT
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCL */
