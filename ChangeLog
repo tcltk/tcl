@@ -17,6 +17,11 @@
 	% close $p     <- now doesn't block in Tcl_WaitPid()
 	%
 
+	* win/tclWinPipe.c (PipeClose2Proc):  Changed CTRL_C_EVENT
+	to CTRL_BREAK_EVENT as it can't be ignored by the child and
+	proved to work on [open "|netstat 1" w+] where CTRL_C_EVENT
+	didn't.
+
 2002-11-27  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/tclWinPort.h:  Don't turn off winsock prototypes!
