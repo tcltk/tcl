@@ -1,3 +1,11 @@
+2003-01-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileReturnCmd): 
+	* tests/compile.test:	Corrects failure of bytecompiled 
+	[catch {return}] to have result TCL_RETURN (not TCL_OK) [Bug 633204].
+	This patch is a workaround for 8.4.X.  A new opcode INST_RETURN is a
+	better long term solution for 8.5 and later.
+
 2003-01-04  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/makefile.vc:
