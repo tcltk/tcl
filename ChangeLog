@@ -1,3 +1,13 @@
+2004-05-21  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): reorganised TEBC
+	automatic variables, defining them in tight blocks instead of at
+	the function level. This has three purposes:
+	- it simplifies the analysis of individual instructions
+	- it is preliminary work to the non-recursive engine
+	- it allows a better register allocation by the optimiser; under
+	gcc3.3, this results in up to 10% runtime in some tests
+
 2004-05-20  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c (TclLimitRemoveAllHandlers): 
