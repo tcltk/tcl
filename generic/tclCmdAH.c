@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.36 2003/11/10 17:57:21 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.37 2003/12/12 17:02:37 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1208,6 +1208,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    fileName = Tcl_FSGetNormalizedPath(interp, objv[2]);
+	    if (fileName == NULL) {
+	        return TCL_ERROR;
+	    }
 	    Tcl_SetObjResult(interp, fileName);
 	    return TCL_OK;
 	}
