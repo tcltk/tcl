@@ -19,8 +19,11 @@
 	[Patch: 436116]
 
 	* win/.cvsignore:  A few more glob patterns added.
+
 	* win/makefile.bc (new):  Borland lives once more! rejoice..
 	* generic/tclAlloc.c: Small Borland compatibility fix.
+	* win/tclWinTime.c:  More Borland compatibility fixes.
+	[Patch: 436116]
 
 2001-09-05 Vince Darley <vincentdarley@users.sourceforge.net>
 
