@@ -1,3 +1,8 @@
+2003-03-13  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* win/makefile.vc: Backed the version to 8.4 on the 8.4 branch.
+	(I just loathe sticky tags).
+	
 2003-03-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Removed TCL_PREFIX_IDENT and TCL_DEBUG_IDENT
