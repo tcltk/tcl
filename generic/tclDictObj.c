@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.22 2004/10/08 15:05:05 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.23 2004/10/08 22:44:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2787,7 +2787,7 @@ DictUpdateCmd(interp, objc, objv)
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
     if (dictPtr == NULL) {
-	return TCL_OK;
+	return result;
     }
 
     /*
@@ -2825,7 +2825,7 @@ DictUpdateCmd(interp, objc, objv)
      */
 
     if (Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
-	    TCL_LEAVE_ERR_MSG) != TCL_OK) {
+	    TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DiscardResult(&sr);
 	if (allocdict) {
 	    TclDecrRefCount(dictPtr);
