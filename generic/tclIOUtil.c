@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.9 1999/11/10 02:51:56 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.10 2000/05/11 00:16:53 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -306,6 +306,12 @@ Tcl_EvalFile(interp, fileName)
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	goto end;
     }
+    /*
+     * The eofchar is \32 (^Z).  This is the usual on Windows, but we
+     * effect this cross-platform to allow for scripted documents.
+     * [Bug: 2040]
+     */
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
     if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
         Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,

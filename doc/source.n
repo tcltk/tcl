@@ -1,11 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Scriptics Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.2 1998/09/14 18:39:55 stanton Exp $
+'\" RCS: @(#) $Id: source.n,v 1.3 2000/05/11 00:16:52 hobbs Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -31,7 +32,14 @@ of the script then the \fBsource\fR command will return that error.
 If a \fBreturn\fR command is invoked from within the script then the
 remainder of the file will be skipped and the \fBsource\fR command
 will return normally with the result from the \fBreturn\fR command.
-
+.PP
+.VS 8.4
+The end-of-file character for files is '\\32' (^Z) for all platforms.
+The source command will read files up to this character.  This
+restriction does not exist for the \fBread\fR or \fBgets\fR commands,
+allowing for files containing code and data segments (scripted documents).
+.VE 8.4
+.PP
 The \fI\-rsrc\fR and \fI\-rsrcid\fR forms of this command are only
 available on Macintosh computers.  These versions of the command
 allow you to source a script from a \fBTEXT\fR resource.  You may specify
