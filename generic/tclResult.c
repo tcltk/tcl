@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.15 2004/10/15 04:01:33 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.16 2004/10/17 14:22:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -941,7 +941,6 @@ TclTransferResult(sourceInterp, result, targetInterp)
 				 * are the same, nothing is done. */
 {
     Interp *iPtr;
-    Tcl_Obj *objPtr;
 
     if (sourceInterp == targetInterp) {
 	return;
