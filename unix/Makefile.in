@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.98 2002/04/23 05:41:03 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.99 2002/05/31 22:20:20 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -123,7 +123,7 @@ ENV_FLAGS =
 # the current one does).
 GENERIC_FLAGS =
 #GENERIC_FLAGS = -DTCL_GENERIC_ONLY
-UNIX_OBJS = tclMtherr.o tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
+UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
 	tclUnixTime.o tclUnixInit.o tclUnixThrd.o 
 #UNIX_OBJS =
@@ -378,7 +378,6 @@ UNIX_HDRS = \
 
 UNIX_SRCS = \
 	$(UNIX_DIR)/tclAppInit.c \
-	$(UNIX_DIR)/tclMtherr.c \
 	$(UNIX_DIR)/tclUnixChan.c \
 	$(UNIX_DIR)/tclUnixEvent.c \
 	$(UNIX_DIR)/tclUnixFCmd.c \
@@ -888,9 +887,6 @@ tclLoadShl.o: $(UNIX_DIR)/tclLoadShl.c
 
 tclMain.o: $(GENERIC_DIR)/tclMain.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclMain.c
-
-tclMtherr.o: $(UNIX_DIR)/tclMtherr.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclMtherr.c
 
 tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNamesp.c

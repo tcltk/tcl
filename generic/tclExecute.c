@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.56 2002/05/30 03:26:40 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.57 2002/05/31 22:20:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -64,33 +64,6 @@ TCL_DECLARE_MUTEX(execMutex)
  */
 
 int tclTraceExec = 0;
-#endif
-
-typedef struct ThreadSpecificData {
-    /*
-     * The following global variable is use to signal matherr that Tcl
-     * is responsible for the arithmetic, so errors can be handled in a
-     * fashion appropriate for Tcl.  Zero means no Tcl math is in
-     * progress;  non-zero means Tcl is doing math.
-     */
-    
-    int mathInProgress;
-
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-
-/*
- * The variable below serves no useful purpose except to generate
- * a reference to matherr, so that the Tcl version of matherr is
- * linked in rather than the system version. Without this reference
- * the need for matherr won't be discovered during linking until after
- * libtcl.a has been processed, so Tcl's version won't be used.
- */
-
-#ifdef NEED_MATHERR
-extern int matherr();
-int (*tclMatherrPtr)() = matherr;
 #endif
 
 /*
@@ -3939,7 +3912,6 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		BuiltinFunc *mathFuncPtr;
-		ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 		if ((opnd < 0) || (opnd > LAST_BUILTIN_FUNC)) {
 		    TRACE(("UNRECOGNIZED BUILTIN FUNC CODE %d\n", opnd));
@@ -3947,10 +3919,8 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		mathFuncPtr = &(builtinFuncTable[opnd]);
 		DECACHE_STACK_INFO();
-		tsdPtr->mathInProgress++;
 		result = (*mathFuncPtr->proc)(interp, eePtr,
 		        mathFuncPtr->clientData);
-		tsdPtr->mathInProgress--;
 		CACHE_STACK_INFO();
 		if (result != TCL_OK) {
 		    goto checkForCatch;
@@ -3971,13 +3941,10 @@ TclExecuteByteCode(interp, codePtr)
 				    * is the 0-th argument. */
 		Tcl_Obj **objv;	   /* The array of arguments. The function
 				    * name is objv[0]. */
-		ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 		objv = &(stackPtr[stackTop - (objc-1)]); /* "objv[0]" */
 		DECACHE_STACK_INFO();
-		tsdPtr->mathInProgress++;
 		result = ExprCallMathFunc(interp, eePtr, objc, objv);
-		tsdPtr->mathInProgress--;
 		CACHE_STACK_INFO();
 		if (result != TCL_OK) {
 		    goto checkForCatch;
@@ -5678,7 +5645,6 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     long i;
     double d;
     int j, k, result;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_ResetResult(interp);
 
@@ -5776,10 +5742,8 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
      * Invoke the function and copy its result back into valuePtr.
      */
 
-    tsdPtr->mathInProgress++;
     result = (*mathFuncPtr->proc)(mathFuncPtr->clientData, interp, args,
 	    &funcResult);
-    tsdPtr->mathInProgress--;
     if (result != TCL_OK) {
 	goto done;
     }
@@ -5867,30 +5831,6 @@ TclExprFloatError(interp, value)
 	Tcl_AppendToObj(Tcl_GetObjResult(interp), msg, -1);
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclMathInProgress --
- *
- *	This procedure is called to find out if Tcl is doing math
- *	in this thread.
- *
- * Results:
- *	0 or 1.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclMathInProgress()
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    return tsdPtr->mathInProgress;
 }
 
 #ifdef TCL_COMPILE_STATS
