@@ -488,7 +488,7 @@ proc output-RS-list {} {
 		.RE {
 		    break
 		}
-		.SH {
+		.SH - .SS {
 		    manerror "unbalanced .RS at section end"
 		    backup-text 1
 		    break
@@ -534,7 +534,10 @@ proc output-IP-list {context code rest} {
 	man-puts </DL>
     } else {
 	# labelled list, make contents
-	if {[string compare $context ".SH"]} {
+	if {
+	    [string compare $context ".SH"] &&
+	    [string compare $context ".SS"]
+	} then {
 	    man-puts <P>
 	}
 	man-puts <DL>
@@ -954,14 +957,18 @@ proc output-directive {line} {
 	.BE {
 	    # man-puts <HR>
 	}
-	.SH {
+	.SH - .SS {
 	    # drain any open lists
 	    # announce the subject
 	    set manual(section) $rest
 	    # start our own stack of stuff
 	    set manual($manual(name)-$manual(section)) {}
 	    lappend manual(has-$manual(section)) $manual(name)
-	    man-puts "<H3>[long-toc $manual(section)]</H3>"
+	    if {[string compare .SS $code]} {
+		man-puts "<H3>[long-toc $manual(section)]</H3>"
+	    } else {
+		man-puts "<H4>[long-toc $manual(section)]</H4>"
+	    }
 	    # some sections can simply free wheel their way through the text
 	    # some sections can be processed in their own loops
 	    switch -exact $manual(section) {
@@ -994,6 +1001,7 @@ proc output-directive {line} {
 			    continue
 			}
 			if {[next-op-is .SH rest]
+		         || [next-op-is .SS rest]
 		         || [next-op-is .BE rest]
 			 || [next-op-is .SO rest]} {
 			    backup-text 1
@@ -1022,7 +1030,7 @@ proc output-directive {line} {
 		}
 		{SEE ALSO} {
 		    while {[more-text]} {
-			if {[next-op-is .SH rest]} {
+			if {[next-op-is .SH rest] || [next-op-is .SS rest]} {
 			    backup-text 1
 			    return
 			}
@@ -1049,7 +1057,7 @@ proc output-directive {line} {
 		}
 		KEYWORDS {
 		    while {[more-text]} {
-			if {[next-op-is .SH rest]} {
+			if {[next-op-is .SH rest] || [next-op-is .SS rest]} {
 			    backup-text 1
 			    return
 			}
@@ -1072,7 +1080,7 @@ proc output-directive {line} {
 		}
 	    }
 	    if {[next-op-is .IP rest]} {
-		output-IP-list .SH .IP $rest
+		output-IP-list $code .IP $rest
 		return
 	    }
 	    if {[next-op-is .PP rest]} {
@@ -1377,11 +1385,11 @@ proc make-man-pages {html args} {
 			set manual(partial-text) {}
 		    }
 		    switch -exact $code {
-			.SH {
+			.SH - .SS {
 			    if {[llength $rest] == 0} {
 				gets $manual(infp) rest
 			    }
-			    lappend manual(text) ".SH [unquote $rest]"
+			    lappend manual(text) "$code [unquote $rest]"
 			}
 			.TH {
 			    lappend manual(text) "$code [unquote $rest]"
