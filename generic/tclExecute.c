@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.68 2002/06/14 21:08:31 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.69 2002/06/16 17:59:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1702,15 +1702,16 @@ TclExecuteByteCode(interp, codePtr)
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_INCR_ARRAY_STK:
+	    valuePtr = POP_OBJECT();
 	    elemPtr = POP_OBJECT();
 	    goto doIncrStkGetIncr;
 
 	case INST_INCR_SCALAR_STK:
 	case INST_INCR_STK:
+	    valuePtr = POP_OBJECT();
 	    elemPtr = NULL;
 
 	    doIncrStkGetIncr:
-	    valuePtr = POP_OBJECT();
 	    if (valuePtr->typePtr == &tclIntType) {
 		i = valuePtr->internalRep.longValue;
 #ifndef TCL_WIDE_INT_IS_LONG
