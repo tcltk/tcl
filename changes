@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.51 1999/12/22 01:27:57 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.52 1999/12/22 20:00:24 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4762,4 +4762,4 @@ ExitThread to _endthreadex to prevent 4K mem leak
 
 1999-12-21 (bug fix) changed thread ids to longs (for 64bit systems)
 
---- Released 8.3b1, December 21, 1999 --- See ChangeLog for details ---
+--- Released 8.3b1, December 22, 1999 --- See ChangeLog for details ---
