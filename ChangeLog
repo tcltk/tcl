@@ -1,3 +1,21 @@
+1999-05-07    <stanton@scriptics.com>
+
+	* generic/tcl.decls: Replaced const with CONST.
+
+	* generic/tclResult.c (Tcl_AppendResultVA): 
+	* generic/tclStringObj.c (Tcl_AppendStringsToObjVA): Fixed to copy
+	arglist using memcpy instead of assignment so it works properly on
+	OS/390. [Bug: 1997]
+
+	* generic/tclLoadNone.c: Updated to use current interfaces, added
+	TclpUnloadFile. [Bug: 2003]
+
+	* win/winDumpExts.c: 
+	* win/makefile.vc: Changed to emit library name in defs
+	file. [Bug: 1998]
+
+	* unix/configure.in: Added fix for OS/390. [Bug: 1976]
+
 1999-05-06    <stanton@scriptics.com>
 
 	* tests/string.test: 
