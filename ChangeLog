@@ -1,3 +1,9 @@
+2003-07-24  Reinhard Max  <max@suse.de>
+
+	* library/package.tcl: Fixed a typo that broke pkg_mkIndex -verbose.
+	
+	* tests/pkgMkIndex.test: Added a test for [pkg_mkIndex -verbose].
+
 2003-07-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in: changes to html-tcl & html-tk
