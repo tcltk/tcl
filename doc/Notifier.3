@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.2 1998/09/14 18:39:49 stanton Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.3 1999/04/16 22:53:43 hershey Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.0 Tcl "Tcl Library Procedures"
@@ -24,12 +24,23 @@ Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEven
 \fBTcl_SetMaxBlockTime\fR(\fItimePtr\fB)\fR
 .sp
 \fBTcl_QueueEvent\fR(\fIevPtr, position\fR)
+.sp
+\fBTcl_ThreadQueueEvent\fR(\fIthreadId, evPtr, position\fR)
 .VS
 .sp
 \fBTcl_DeleteEvents\fR(\fIdeleteProc, clientData\fR)
 .sp
 int
 \fBTcl_WaitForEvent\fR(\fItimePtr\fR)
+.sp
+ClientData
+\fBTcl_InitNotifier\fR()
+.sp
+\fBTcl_FinalizeNotifier\fR(\fIclientData\fR)
+.sp
+\fBTcl_AlertNotifier\fR(\fIclientData\fR)
+.sp
+\fBTcl_ThreadAlert\fR(\fIthreadId\fR)
 .sp
 \fBTcl_SetTimer\fR(\fItimePtr\fR)
 .sp
@@ -119,7 +130,9 @@ servicing at a future time.
 \fBTcl_QueueEvent\fR is used (primarily
 by event sources) to add events to the event queue and 
 \fBTcl_DeleteEvents\fR is used to remove events from the queue without
-processing them.
+processing them.  See the manual entry for \fBThread\fR for a 
+description of the \fBTcl_ThreadQueueEvent\fR procedure.
+
 .IP [3]
 The event loop: in order to detect and process events, the application
 enters a loop that waits for events to occur, places them on the event
@@ -406,7 +419,8 @@ entry, plus \fBTcl_DoOneEvent\fR and \fBTcl_Sleep\fR, which are
 available on all platforms, and \fBTcl_CreateFileHandler\fR and
 \fBTcl_DeleteFileHandler\fR, which are Unix-specific.  Most of these
 procedures are generic, in that they are the same for all notifiers.
-However, five of the procedures are notifier-dependent:
+However, eight of the procedures are notifier-dependent:
+\fBTcl_InitNotifier\fR, \fBTcl_AlertNotifier\fR, \fBTcl_FinalizeNotifier\fR, 
 \fBTcl_SetTimer\fR, \fBTcl_Sleep\fR, \fBTcl_WaitForEvent\fR,
 \fBTcl_CreateFileHandler\fR and \fBTcl_DeleteFileHandler\fR.  To
 support a new platform or to integrate Tcl with an
