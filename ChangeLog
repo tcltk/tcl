@@ -1,3 +1,8 @@
+2003-03-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:  Removed definition of ParseValue struct that
+	is no longer used.
+
 2003-03-19  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:
