@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.47 2003/04/28 10:05:27 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.48 2003/05/01 19:57:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2899,8 +2899,9 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	} else if ((size == 2) && (parsePtr->numWords == 4)
 		&& !strncmp(chrs, "--", 2)) {
 	    /*
-	     * If no control flag present, use glob matching.  We end up
-	     * re-checking this word, but that's the way things are...
+	     * If no control flag present, use exact matching (the default).
+	     *
+	     * We end up re-checking this word, but that's the way things are...
 	     */
 	    mode = Switch_Exact;
 	} else {
