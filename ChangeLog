@@ -1,3 +1,16 @@
+1999-08-04  Scott Stanton  <stanton@scriptics.com>
+
+	* tests/reg.test: Added test for REG_EXPECT bug fixed by Henry's
+	patch.
+
+	* generic/regc_nfa.c: 
+	* generic/regcomp.c: 
+	* generic/rege_dfa.c:
+	* generic/regexec.c: 
+	* generic/regguts.h: Applied patches supplied by Henry Spencer to
+	greatly enhance the performance of certain classes of regular
+	expressions. [Bug: 2440, 2447]
+
 1999-08-03  Scott Redman  <redman@scriptics.com>
 
 	* win/tclWinInt.h: Remove function declarations in header that was
