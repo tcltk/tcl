@@ -1,3 +1,8 @@
+2004-05-10  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c (BuildCommandLine): Moved non-obvious appending
+	logic to outside the loop and added commentary for its purpose.
+
 2004-05-08  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: 
