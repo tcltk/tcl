@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.2 2003/04/07 16:54:11 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.3 2003/04/11 20:49:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1659,23 +1659,20 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    break;
 		case STR_IS_INT: {
 		    char *stop;
+		    long int l = 0;
 
-		    if ((objPtr->typePtr == &tclIntType) ||
-			(Tcl_GetInt(NULL, string1, &i) == TCL_OK)) {
+		    if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &i)) {
 			break;
 		    }
 		    /*
 		     * Like STR_IS_DOUBLE, but we use strtoul.
-		     * Since Tcl_GetInt already failed, we set result to 0.
+		     * Since Tcl_GetIntFromObj already failed,
+		     * we set result to 0.
 		     */
 		    result = 0;
 		    errno = 0;
-#ifdef TCL_WIDE_INT_IS_LONG
-		    strtoul(string1, &stop, 0); /* INTL: Tcl source. */
-#else
-		    strtoull(string1, &stop, 0); /* INTL: Tcl source. */
-#endif
-		    if (errno == ERANGE) {
+		    l = strtol(string1, &stop, 0); /* INTL: Tcl source. */
+		    if ((errno == ERANGE) || (l > INT_MAX) || (l < INT_MIN)) {
 			/*
 			 * if (errno == ERANGE), then it was an over/underflow
 			 * problem, but in this method, we only want to know
@@ -1683,6 +1680,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			 * the failVarObj to the string length.
 			 */
 			failat = -1;
+
 		    } else if (stop == string1) {
 			/*
 			 * In this case, nothing like a number was found
