@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.50 2002/03/01 06:22:48 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.51 2002/03/22 22:54:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3818,6 +3818,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 					 * TCL_EVAL_DIRECT. */
 {
     register Interp *iPtr = (Interp *) interp;
+    char *script;
     int numSrcBytes;
     int result;
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
@@ -3848,9 +3849,8 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
 		    listRepPtr->elements, flags);
 	} else {
-	    register char *p;
-	    p = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-	    result = Tcl_EvalEx(interp, p, numSrcBytes, flags);
+	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
 	}
     } else {
 	/*
@@ -3877,6 +3877,17 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	        && ((iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS) == 0)) {
 		ProcessUnexpectedResult(interp, result);
 		result = TCL_ERROR;
+
+		/*
+		 * If an error was created here, record information about 
+		 * what was being executed when the error occurred.
+		 */
+
+		if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
+		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+		    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+		    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+		}
 	    }
 	}
 	iPtr->evalFlags = 0;

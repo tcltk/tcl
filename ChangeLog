@@ -1,3 +1,12 @@
+2002-03-22  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_EvalObjEx):
+	* generic/tclExecute.c (TclCompEvalObj): fixed the errorInfo for
+	return codes other than (TCL_OK, TCL_ERROR) to runLevel 0 
+	[Bug 533758]. Removed the static RecordTracebackInfo(), as its
+	functionality is easily replicated by Tcl_LogCommandInfo. Bug
+	and redundancy noted by Don Porter.
+
 2002-03-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/expr.n: Improved documentation for ceil and floor [Bug 350535]
