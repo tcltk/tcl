@@ -1,3 +1,24 @@
+2001-07-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclVar.c (Tcl_GetVar2Ex): added ability to recognize
+	TCL_TRACE_READS flags to cause creation of part1 in TclLookupVar
+	to make sure newly created array will get read traces triggered
+	appropriately.  This is called by Tcl_ObjGetVar2, Tcl_GetVar, and
+	Tcl_GetVar2.
+	(TclSetIndexedScalar, TclSetElementOfIndexedArray): added read
+	trace triggering for lappend case.
+	(Tcl_LappendObjCmd): pass TCL_TRACE_READS to Tcl_ObjGetVar2 to
+	trigger possible read traces for new arrays.
+
+	* generic/tclExecute.c (TclExecuteByteCode): added TCL_TRACE_READS
+	flag to INST_LAPPEND(_ARRAY)_STK case to trigger read traces for
+	newly created arrays.  Removed unnecessary #ifdef for
+	TCL_COMPILE_DEBUG in INST_LOAD_SCALAR1 case.
+
+	* tests/append.test:
+	* tests/appendComp.test: added tests for read trace triggering for
+	append and lappend.
+
 2001-07-03  Mo DeJong  <mdejong@redhat.com>
 
 	* tests/clock.test (clock-2.5): Adjust test so that it passes
