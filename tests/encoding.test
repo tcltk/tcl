@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.19 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.20 2004/05/07 20:01:23 rmax Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -290,6 +290,21 @@ test encoding-14.1 {BinaryProc} {
 test encoding-15.1 {UtfToUtfProc} {
     encoding convertto utf-8 \xa3
 } "\xc2\xa3"
+
+test encoding-15.2 {UtfToUtfProc null character output} {
+    set x \u0000
+    set y [encoding convertto utf-8 \u0000]
+    set y [encoding convertfrom identity $y]
+    binary scan $y H* z
+    list [string bytelength $x] [string bytelength $y] $z
+} {2 1 00}
+
+test encoding-15.3 {UtfToUtfProc null character input} {
+    set x [encoding convertfrom identity \x00]
+    set y [encoding convertfrom utf-8 $x]
+    binary scan [encoding convertto identity $y] H* z
+    list [string bytelength $x] [string bytelength $y] $z
+} {1 2 c080}
 
 test encoding-16.1 {UnicodeToUtfProc} {
     encoding convertfrom unicode NN
