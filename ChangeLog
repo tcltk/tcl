@@ -1,3 +1,12 @@
+2001-02-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_SplitObjCmd): Improved efficiency of
+	splitting strings into individual characters by adding hash so
+	that only one Tcl_Obj per character is created.  Improves
+	performance of splitting of short strings and makes a huge
+	difference to splitting of long strings, such as is done in the
+	mime package in tcllib.  [Bug #131523]
+
 2001-01-31  Don Porter  <dgp@users.sourceforge.net>
 	* win/makefile.vc (install-libraries):  Corrected misdirected
 	install directory for the msgcat 1.2 package.

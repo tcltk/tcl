@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.30 2000/09/20 01:50:38 ericm Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.31 2001/02/16 09:26:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -939,15 +939,34 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	 * Do nothing.
 	 */
     } else if (splitCharLen == 0) {
+	Tcl_HashTable charReuseTable;
+	Tcl_HashEntry *hPtr;
+	int isNew;
+
 	/*
 	 * Handle the special case of splitting on every character.
+	 *
+	 * Uses a hash table to ensure that each kind of character has
+	 * only one Tcl_Obj instance (multiply-referenced) in the
+	 * final list.  This is a *major* win when splitting on a long
+	 * string (especially in the megabyte range!) - DKF
 	 */
 
+	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 	for ( ; string < end; string += len) {
 	    len = Tcl_UtfToUniChar(string, &ch);
-	    objPtr = Tcl_NewStringObj(string, len);
+	    /* Assume Tcl_UniChar is an integral type... */
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, (char*)0 + ch, &isNew);
+	    if (isNew) {
+		objPtr = Tcl_NewStringObj(string, len);
+		/* Don't need to fiddle with refcount... */
+		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+	    } else {
+		objPtr = (Tcl_Obj*) Tcl_GetHashValue(hPtr);
+	    }
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
+	Tcl_DeleteHashTable(&charReuseTable);
     } else {
 	char *element, *p, *splitEnd;
 	int splitLen;
