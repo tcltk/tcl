@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.44 2001/01/18 19:09:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.45 2001/03/26 22:16:54 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1840,7 +1840,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharCaseMatch) _ANSI_ARGS_((CONST Tcl_UniChar * ustr, CONST Tcl_UniChar * pattern, int nocase)); /* 420 */
     Tcl_HashEntry * (*tcl_FindHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, CONST char * key)); /* 421 */
     Tcl_HashEntry * (*tcl_CreateHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, CONST char * key, int * newPtr)); /* 422 */
-    void (*Tcl_InitCustomHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr, int keyType, Tcl_HashKeyType * typePtr)); /* 423 */
+    void (*tcl_InitCustomHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr, int keyType, Tcl_HashKeyType * typePtr)); /* 423 */
     void (*tcl_InitObjHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 424 */
     ClientData (*tcl_CommandTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * procPtr, ClientData prevClientData)); /* 425 */
     int (*tcl_TraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 426 */
@@ -3592,7 +3592,7 @@ extern TclStubs *tclStubsPtr;
 #endif
 #ifndef Tcl_InitCustomHashTable
 #define Tcl_InitCustomHashTable \
-	(tclStubsPtr->Tcl_InitCustomHashTable) /* 423 */
+	(tclStubsPtr->tcl_InitCustomHashTable) /* 423 */
 #endif
 #ifndef Tcl_InitObjHashTable
 #define Tcl_InitObjHashTable \
