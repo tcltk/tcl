@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.29 2004/05/27 18:28:44 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.30 2004/05/27 18:45:35 kennykb Exp $
 
 set env(LC_TIME) POSIX
 
@@ -513,6 +513,11 @@ testConstraint needPST [expr {
     && ([clock format 1 -format %s] != "%s")
 }]
 test clock-9.1 {%s gmt testing} {needPST} {
+
+    # Note that this test will fail if the strftime on the underlying
+    # system doesn't support the %s format group.  Systems that are known
+    # to have trouble include the native C libraries on AIX and HP-UX
+
     # We need PST to guarantee the difference value below, and %s isn't
     # valid on all OSes (like Solaris).
     set s 100000
