@@ -1,5 +1,9 @@
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclExecute.c (TEBC:INST_START_CMD): Make sure that the
+	command-count is always advanced.  Allows TIP#143 limits to tell
+	that work is being done.
+
 	* doc/list.n: Updated example to fit with the unified format.
 	* doc/seek.n: Added some examples.
 
