@@ -1,3 +1,13 @@
+2003-03-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinDde.c: Make dde services conform the the documentation
+	such that giving only a topic name really returns all services
+	with that topic. [Bug 219155]
+	Prevent hangup caused by dde server applications failing to process
+	messages [Bug 707822]
+	* tests/winDde.test: Corrected labels and added a test for search
+	by topic name.
+
 2003-03-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h (tclOriginalNotifier):
