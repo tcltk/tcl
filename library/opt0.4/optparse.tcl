@@ -8,7 +8,7 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.2 1999/04/16 00:47:18 stanton Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.3 2000/06/20 21:28:11 ericm Exp $
 
 package provide opt 0.4.1
 
@@ -253,7 +253,7 @@ proc ::tcl::OptParse {desc arglist} {
 # into local variable named "Args".
 proc ::tcl::OptProc {name desc body} {
     set namespace [uplevel namespace current];
-    if {   ([string match $name "::*"]) 
+    if {   ([string match "::*" $name]) 
         || ([string compare $namespace "::"]==0)} {
         # absolute name or global namespace, name is the key
         set key $name;

@@ -1,3 +1,8 @@
+2000-06-20  Eric Melski  <ericm@ajubasolutions.com>
+
+	* library/opt0.4/optparse.tcl: Applied patch from [Bug: 5922], which 
+	corrected an incorrect use of [string match].
+
 2000-06-19  Eric Melski  <ericm@scriptics.com>
 
 	* doc/RegExp.3: Replaced instances of "Tcl_GetRegExpInfo" with
