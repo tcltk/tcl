@@ -1,3 +1,9 @@
+2004-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclThreadAlloc.c (Ptr2Block): Rewrote so as to maximize
+	the chance of detecting and reporting a memory inconsistency without
+	relying on things being consistent. [Bug 975895]
+
 2004-06-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/load.test:	Relaxed strictness of error message matching
