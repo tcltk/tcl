@@ -1,3 +1,8 @@
+2004-12-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl (tcl_findLibrary):	Disabled use of [file normalize]
+	that caused trouble with freewrap. [Bug 1072136].
+
 2004-11-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/reg.test (reg-32.*):	Added missing testregexp constraints.
