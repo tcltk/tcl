@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.5 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.6 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -272,8 +272,10 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 	     */
 	    retc = TclGuessPackageName(fullFileName, &pkgName);
 	    if (!retc) {
-		int pargc;
-		char **pargv, *pkgGuess;
+		Tcl_Obj *splitPtr;
+		Tcl_Obj *pkgGuessPtr;
+		int pElements;
+		char *pkgGuess;
 
 		/*
 		 * The platform-specific code couldn't figure out the
@@ -283,8 +285,9 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 		 * characters that follow that.
 		 */
 
-		Tcl_SplitPath(fullFileName, &pargc, &pargv);
-		pkgGuess = pargv[pargc-1];
+		splitPtr = Tcl_FSSplitPath(objv[1], &pElements);
+		Tcl_ListObjIndex(NULL, splitPtr, pElements -1, &pkgGuessPtr);
+		pkgGuess = Tcl_GetString(pkgGuessPtr);
 		if ((pkgGuess[0] == 'l') && (pkgGuess[1] == 'i')
 			&& (pkgGuess[2] == 'b')) {
 		    pkgGuess += 3;
@@ -298,7 +301,7 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 		    }
 		}
 		if (p == pkgGuess) {
-		    ckfree((char *)pargv);
+		    Tcl_DecrRefCount(splitPtr);
 		    Tcl_AppendResult(interp,
 			    "couldn't figure out package name for ",
 			    fullFileName, (char *) NULL);
@@ -306,7 +309,7 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 		    goto done;
 		}
 		Tcl_DStringAppend(&pkgName, pkgGuess, (p - pkgGuess));
-		ckfree((char *)pargv);
+		Tcl_DecrRefCount(splitPtr);
 	    }
 	}
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.95 2001/08/08 22:28:23 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.96 2001/08/23 17:37:07 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -1533,7 +1533,7 @@ typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 			    Tcl_Obj *destPathPtr));
 typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((ClientData clientData));
-typedef int (Tcl_FSListVolumesProc) _ANSI_ARGS_((Tcl_Interp *interp));
+typedef Tcl_Obj* (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
 /* We have to declare the utime structure here. */
 struct utimbuf;
 typedef int (Tcl_FSUtimeProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -1548,7 +1548,8 @@ typedef char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj *objPtr));
-typedef Tcl_Obj* (Tcl_FSReadlinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
+typedef Tcl_Obj* (Tcl_FSLinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+					       Tcl_Obj *toPtr));
 typedef int (Tcl_FSLoadFileProc) _ANSI_ARGS_((Tcl_Interp * interp, 
 			    Tcl_Obj *pathPtr, char * sym1, char * sym2, 
 			    Tcl_PackageInitProc ** proc1Ptr, 
@@ -1670,11 +1671,11 @@ typedef struct Tcl_Filesystem {
 			     * with 'file mtime', 'file atime' and
 			     * the open-r/open-w/fcopy implementation
 			     * of 'file copy'. */
-    Tcl_FSReadlinkProc *readlinkProc; 
+    Tcl_FSLinkProc *linkProc; 
 			    /* Function to process a 
-			     * 'Tcl_FSReadlink()' call.  Should be
+			     * 'Tcl_FSLink()' call.  Should be
 			     * implemented only if the filesystem supports
-			     * links. */
+			     * links (reading or creating). */
     Tcl_FSListVolumesProc *listVolumesProc;	    
 			    /* Function to list any filesystem volumes 
 			     * added by this filesystem.  Should be

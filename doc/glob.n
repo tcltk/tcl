@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.9 2001/07/31 19:12:06 vincentdarley Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.10 2001/08/23 17:37:07 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -33,7 +33,8 @@ Search for files which match the given patterns starting in the given
 \fIdirectory\fR.  This allows searching of directories whose name
 contains glob-sensitive characters without the need to quote such
 characters explicitly.  This option may not be used in conjunction with
-\fB\-path\fR.
+\fB\-path\fR, which is used to allow searching for complete file paths
+whose names may contain glob-sensitive characters.
 .TP
 \fB\-join\fR
 The remaining pattern arguments are treated as a single pattern
@@ -48,18 +49,22 @@ switch an error is returned if the result list would be empty.
 \fB\-path\fR \fIpathPrefix\fR
 Search for files with the given \fIpathPrefix\fR where the rest of the name
 matches the given patterns.  This allows searching for files with names
-similar to a given file even when the names contain glob-sensitive
+similar to a given file (as opposed to a directory) even when the names 
+contain glob-sensitive 
 characters.  This option may not be used in conjunction with
-\fB\-directory\fR.
+\fB\-directory\fR.  For example, to find all files with the same root name
+as $path, but differing extensions, you should use \fBglob 
+-path [file rootname $path] .*\fR which will work even if $path contains
+numerous glob-sensitive characters.
 .TP
 \fB\-tails\fR
 Only return the part of each file found which follows the last directory
 named in any \fB\-directory\fR or \fB\-path\fR path specification.  
-Thus \fBglob -tails -dir $dir *\fR is equivalent to 
+Thus \fBglob -tails -directory $dir *\fR is equivalent to 
 \fBset pwd [pwd] ; cd $dir ; glob *; cd $pwd\fR.  For 
 \fB\-path\fR specifications, the returned names will include the last
-path segment, so \fBglob -tails -path /usr/loc */*\fR will return paths
-like \fBlocal/bin local/lib\fR etc.
+path segment, so \fBglob -tails -path [file rootname ~/foo.tex] .*\fR 
+will return paths like \fBfoo.aux foo.bib foo.tex\fR etc.
 .TP
 \fB\-types\fR \fItypeList\fR
 Only list files or directories which match \fItypeList\fR, where the items
@@ -164,7 +169,7 @@ like ``.../'' and ``..../'' for successively higher up parent directories.
 .TP 
 \fBMacintosh\fR 
 . 
-When using the options, \fB\-dir\fR, \fB\-join\fR or \fB\-path\fR, glob
+When using the options, \fB\-directory\fR, \fB\-join\fR or \fB\-path\fR, glob
 assumes the directory separator for the entire pattern is the standard
 ``:''.  When not using these options, glob examines each pattern argument
 and uses ``/'' unless the pattern contains a ``:''.
