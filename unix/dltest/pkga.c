@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkga.c,v 1.3 1999/03/11 21:47:40 stanton Exp $
+ * RCS: @(#) $Id: pkga.c,v 1.4 2000/04/04 08:06:07 hobbs Exp $
  */
 #include "tcl.h"
 
@@ -17,15 +17,15 @@
  * Prototypes for procedures defined later in this file:
  */
 
-static int	Pkga_EqCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
-static int	Pkga_QuoteCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
+static int    Pkga_EqObjCmd _ANSI_ARGS_((ClientData clientData,
+		Tcl_Interp *interp, int objc, Tcl_Obj * CONST objv[]));
+static int    Pkga_QuoteObjCmd _ANSI_ARGS_((ClientData clientData,
+		Tcl_Interp *interp, int objc, Tcl_Obj * CONST objv[]));
 
 /*
  *----------------------------------------------------------------------
  *
- * Pkga_EqCmd --
+ * Pkga_EqObjCmd --
  *
  *	This procedure is invoked to process the "pkga_eq" Tcl command.
  *	It expects two arguments and returns 1 if they are the same,
@@ -41,30 +41,28 @@ static int	Pkga_QuoteCmd _ANSI_ARGS_((ClientData clientData,
  */
 
 static int
-Pkga_EqCmd(dummy, interp, argc, argv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int argc;				/* Number of arguments. */
-    char **argv;			/* Argument strings. */
+Pkga_EqObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj * CONST objv[];	/* Argument objects. */
 {
-    if (argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" string1 string2\"", (char *) NULL);
+    int result;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
 	return TCL_ERROR;
     }
 
-    if (strcmp(argv[1], argv[2]) == 0) {
-	interp->result = "1";
-    } else {
-	interp->result = "0";
-    }
+    result = !strcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Pkga_quoteCmd --
+ * Pkga_QuoteObjCmd --
  *
  *	This procedure is invoked to process the "pkga_quote" Tcl command.
  *	It expects one argument, which it returns as result.
@@ -79,18 +77,17 @@ Pkga_EqCmd(dummy, interp, argc, argv)
  */
 
 static int
-Pkga_QuoteCmd(dummy, interp, argc, argv)
+Pkga_QuoteObjCmd(dummy, interp, objc, objv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
-    int argc;				/* Number of arguments. */
-    char **argv;			/* Argument strings. */
+    int objc;                         /* Number of arguments. */
+    Tcl_Obj * CONST objv[];           /* Argument strings. */
 {
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" value\"", (char *) NULL);
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
-    strcpy(interp->result, argv[1]);
+    Tcl_SetObjResult(interp, objv[1]);
     return TCL_OK;
 }
 
@@ -125,9 +122,9 @@ Pkga_Init(interp)
     if (code != TCL_OK) {
 	return code;
     }
-    Tcl_CreateCommand(interp, "pkga_eq", Pkga_EqCmd, (ClientData) 0,
-	    (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "pkga_quote", Pkga_QuoteCmd, (ClientData) 0,
-	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "pkga_eq", Pkga_EqObjCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "pkga_quote", Pkga_QuoteObjCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     return TCL_OK;
 }

@@ -10,19 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkge.c,v 1.4 1999/04/16 00:48:06 stanton Exp $
+ * RCS: @(#) $Id: pkge.c,v 1.5 2000/04/04 08:06:07 hobbs Exp $
  */
 
 #include "tcl.h"
 
-/*
- * Prototypes for procedures defined later in this file:
- */
-
-static int	Pkgd_SubCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
-static int	Pkgd_UnsafeCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
 
 /*
  *----------------------------------------------------------------------
