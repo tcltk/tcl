@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.20 2003/01/16 19:02:00 mdejong Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21 2003/03/03 17:12:49 dgp Exp $
  */
 
 #include <tclPort.h>
@@ -228,7 +228,7 @@ Registry_Init(
     }
 
     Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd, NULL, NULL);
-    return Tcl_PkgProvide(interp, "registry", "1.1");
+    return Tcl_PkgProvide(interp, "registry", "1.1.1");
 }
 
 /*
