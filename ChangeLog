@@ -1,3 +1,12 @@
+2003-04-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd,STR_IS_INT):  Corrected
+	inconsistent results of [string is integer] observed on systems
+	where sizeof(long) != sizeof(int).  [Bug 718878]
+	* tests/string.test: Added tests for Bug 718878.
+	* doc/string.n: Clarified that [string is integer] accepts
+	32-bit integers.
+
 2003-04-11  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (UpdateInterest): When dropping interest in
