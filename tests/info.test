@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.27 2004/05/19 20:15:31 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.28 2004/10/31 16:28:21 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -287,6 +287,10 @@ test info-8.2 {info globals option} {
 test info-8.3 {info globals option} {
     list [catch {info globals 1 2} msg] $msg
 } {1 {wrong # args: should be "info globals ?pattern?"}}
+test info-8.4 {info globals option: may have leading namespace qualifiers} {
+    set x 0
+    list [info globals x] [info globals :x] [info globals ::x] [info globals :::x] [info globals ::::x]
+} {x {} x x x}
 
 test info-9.1 {info level option} {
     info level
