@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: security.test,v 1.5 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: security.test,v 1.6 2004/05/19 13:02:10 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,7 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # If this proc becomes invoked, then there is a bug
 
 proc BUG {args} {
-  set ::BUG 1
+    set ::BUG 1
 }
 
 # Check and Clear the bug flag (to do before each test)
@@ -33,7 +33,7 @@ proc CB {} {
 }
 
 
-test sec-1.1 {tcl_endOfPreviousWord} {
+test security-1.1 {tcl_endOfPreviousWord} {
     catch {tcl_startOfPreviousWord x {[BUG]}}
     CB
 } 0
@@ -41,14 +41,3 @@ test sec-1.1 {tcl_endOfPreviousWord} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: while-old.test,v 1.6 2000/04/10 17:19:06 ericm Exp $
+# RCS: @(#) $Id: while-old.test,v 1.7 2004/05/19 13:06:15 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -119,15 +119,3 @@ test while-old-5.2 {while return result} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
