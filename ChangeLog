@@ -1,3 +1,8 @@
+2003-05-19  Kevin B. Kenny  <kennykb@hippolyta>
+
+	* unix/tclUnixTime.c: Corrected a bug in conversion of non-ASCII
+	chars in the format string.
+
 2003-05-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.pbproj/project.pbxproj: changed tclConfig.sh location
