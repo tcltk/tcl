@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.12 2000/03/31 08:52:31 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.13 2000/11/16 21:38:52 andreas_kupries Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -66,7 +66,7 @@ typedef float *TCHAR;
 
 #include <tchar.h>
 #include <time.h>
-#include <winsock2.h>
+#include <winsock.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
