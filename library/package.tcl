@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.15 2000/07/19 21:40:57 ericm Exp $
+# RCS: @(#) $Id: package.tcl,v 1.16 2000/11/24 13:56:40 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -437,7 +437,7 @@ proc tclPkgSetup {dir pkg version files} {
 # interpreter to setup the package database.
 
 proc tclMacPkgSearch {dir} {
-    foreach x [glob -nocomplain [file join $dir *.shlb]] {
+    foreach x [glob -directory $dir -nocomplain *.shlb] {
 	if {[file isfile $x]} {
 	    set res [resource open $x]
 	    foreach y [resource list TEXT $res] {
@@ -477,7 +477,8 @@ proc tclPkgUnknown {name version {exact {}}} {
 	# in a catch statement, where we get the pkgIndex files out
 	# of the subdirectories
 	catch {
-	    foreach file [glob -nocomplain [file join $dir * pkgIndex.tcl]] {
+	    foreach file [glob -directory $dir -join -nocomplain \
+		    * pkgIndex.tcl] {
 		set dir [file dirname $file]
 		if {[file readable $file] && ![info exists procdDirs($dir)]} {
 		    if {[catch {source $file} msg]} {
@@ -509,7 +510,7 @@ proc tclPkgUnknown {name version {exact {}}} {
 		tclMacPkgSearch $dir
 		set procdDirs($dir) 1
 	    }
-	    foreach x [glob -nocomplain [file join $dir *]] {
+	    foreach x [glob -directory $dir -nocomplain *] {
 		if {[file isdirectory $x] && ![info exists procdDirs($x)]} {
 		    set dir $x
 		    tclMacPkgSearch $dir
