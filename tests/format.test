@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.12 2003/03/14 16:28:07 dkf Exp $
+# RCS: @(#) $Id: format.test,v 1.13 2003/03/18 00:55:33 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -93,28 +93,28 @@ test format-2.7 {string formatting, international chars} {
 test format-2.8 {string formatting, width} {
     format "a%5sa" f
 } "a    fa"
-test format-2.8 {string formatting, width} {
+test format-2.9 {string formatting, width} {
     format "a%-5sa" f
 } "af    a"
-test format-2.8 {string formatting, width} {
+test format-2.10 {string formatting, width} {
     format "a%2sa" foo
 } "afooa"
-test format-2.8 {string formatting, width} {
+test format-2.11 {string formatting, width} {
     format "a%0sa" foo
 } "afooa"
-test format-2.8 {string formatting, precision} {
+test format-2.12 {string formatting, precision} {
     format "a%.2sa" foobarbaz
 } "afoa"
-test format-2.8 {string formatting, precision} {
+test format-2.13 {string formatting, precision} {
     format "a%.sa" foobarbaz
 } "aa"
-test format-2.8 {string formatting, precision} {
+test format-2.14 {string formatting, precision} {
     list [catch {format "a%.-2sa" foobarbaz} msg] $msg
 } {1 {bad field specifier "-"}}
-test format-2.8 {string formatting, width and precision} {
+test format-2.15 {string formatting, width and precision} {
     format "a%5.2sa" foobarbaz
 } "a   foa"
-test format-2.8 {string formatting, width and precision} {
+test format-2.16 {string formatting, width and precision} {
     format "a%5.7sa" foobarbaz
 } "afoobarba"
 
