@@ -984,7 +984,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	Rhapsody-*|Darwin-*)
-            EXTRA_CFLAGS="${EXTRA_CFLAGS} -DHAVE_CFBUNDLE"
+            HACK_PART_1="-DMA"
+            HACK_PART_2="C_OSX_TCL"
+            EXTRA_CFLAGS="${HACK_PART_1}${HACK_PART_2} -DHAVE_CFBUNDLE"
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS} "
             TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -framework CoreFoundation"

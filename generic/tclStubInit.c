@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.61 2001/09/13 11:56:20 msofer Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.1 2001/10/17 06:49:36 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -52,7 +52,7 @@ TclIntStubs tclIntStubs = {
     TclAccessInsertProc, /* 2 */
     TclAllocateFreeObjects, /* 3 */
     NULL, /* 4 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     TclCleanupChildren, /* 5 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -61,10 +61,13 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 5 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 5 */
+#endif /* MAC_OSX_TCL */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
     TclCopyChannel, /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     TclCreatePipeline, /* 9 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -73,6 +76,9 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 9 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 9 */
+#endif /* MAC_OSX_TCL */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
     TclDeleteVars, /* 12 */
@@ -164,7 +170,7 @@ TclIntStubs tclIntStubs = {
     TclServiceIdle, /* 98 */
     TclSetElementOfIndexedArray, /* 99 */
     TclSetIndexedScalar, /* 100 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     TclSetPreInitScript, /* 101 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -173,9 +179,12 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 101 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 101 */
+#endif /* MAC_OSX_TCL */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     TclSockMinimumBuffers, /* 104 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -184,6 +193,9 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 104 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 104 */
+#endif /* MAC_OSX_TCL */
     NULL, /* 105 */
     TclStatDeleteProc, /* 106 */
     TclStatInsertProc, /* 107 */
@@ -248,7 +260,7 @@ TclIntStubs tclIntStubs = {
 TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -358,7 +370,7 @@ TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -367,7 +379,10 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 9 */
 #endif /* MAC_TCL */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#ifdef MAC_OSX_TCL
+    NULL, /* 9 */
+#endif /* MAC_OSX_TCL */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -376,6 +391,9 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 10 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 10 */
+#endif /* MAC_OSX_TCL */
     Tcl_SetTimer, /* 11 */
     Tcl_Sleep, /* 12 */
     Tcl_WaitForEvent, /* 13 */
@@ -476,7 +494,7 @@ TclStubs tclStubs = {
     Tcl_DeleteHashEntry, /* 108 */
     Tcl_DeleteHashTable, /* 109 */
     Tcl_DeleteInterp, /* 110 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_DetachPids, /* 111 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -485,6 +503,9 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 111 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 111 */
+#endif /* MAC_OSX_TCL */
     Tcl_DeleteTimerHandler, /* 112 */
     Tcl_DeleteTrace, /* 113 */
     Tcl_DontCallWhenDeleted, /* 114 */
@@ -540,7 +561,7 @@ TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -549,6 +570,9 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 167 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 167 */
+#endif /* MAC_OSX_TCL */
     Tcl_GetPathType, /* 168 */
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
@@ -578,7 +602,7 @@ TclStubs tclStubs = {
     Tcl_NotifyChannel, /* 194 */
     Tcl_ObjGetVar2, /* 195 */
     Tcl_ObjSetVar2, /* 196 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_OpenCommandChannel, /* 197 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -587,6 +611,9 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 197 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 197 */
+#endif /* MAC_OSX_TCL */
     Tcl_OpenFileChannel, /* 198 */
     Tcl_OpenTcpClient, /* 199 */
     Tcl_OpenTcpServer, /* 200 */
@@ -596,7 +623,7 @@ TclStubs tclStubs = {
     Tcl_PosixError, /* 204 */
     Tcl_QueueEvent, /* 205 */
     Tcl_Read, /* 206 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
     Tcl_ReapDetachedProcs, /* 207 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -605,6 +632,9 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 207 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    NULL, /* 207 */
+#endif /* MAC_OSX_TCL */
     Tcl_RecordAndEval, /* 208 */
     Tcl_RecordAndEvalObj, /* 209 */
     Tcl_RegisterChannel, /* 210 */

@@ -49,6 +49,7 @@
 		};
 		00E2F846016E82EB0ACA28DC = {
 			children = (
+				F5C88655017D604601DC9062,
 				F5F24FEE016ED0DF01DC9062,
 				00E2F855016E922C0ACA28DC,
 				00E2F857016E92B00ACA28DC,
@@ -88,7 +89,7 @@
 			refType = 4;
 		};
 		00E2F84B016E8A830ACA28DC = {
-			buildArgumentsString = "$SRCROOT/../unix/configure --enable-threads --enable-shared --enable-debugger --enable-framework=yes --prefix=$DSTROOT";
+			buildArgumentsString = "$SRCROOT/../unix/configure --enable-threads=yes --enable-shared=yes --enable-symbols=no --enable-framework=yes --prefix=$DSTROOT";
 			buildPhases = (
 			);
 			buildSettings = {
@@ -501,6 +502,34 @@
 			);
 			shellPath = /bin/sh;
 			shellScript = "if test \"${STRIP_BY_HAND}\" = \"YES\"; then \n    strip -x \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/${PRODUCT_NAME}\"\nfi";
+		};
+		F5C88655017D604601DC9062 = {
+			children = (
+				F5C88656017D604601DC9062,
+				F5C88657017D60C901DC9062,
+				F5C88658017D60C901DC9062,
+			);
+			isa = PBXGroup;
+			name = "Header Tools";
+			refType = 4;
+		};
+		F5C88656017D604601DC9062 = {
+			isa = PBXFileReference;
+			name = genStubs.tcl;
+			path = /Volumes/CodeBits/jingham/Tcl/source/tcl/tools/genStubs.tcl;
+			refType = 0;
+		};
+		F5C88657017D60C901DC9062 = {
+			isa = PBXFileReference;
+			name = tcl.decls;
+			path = /Volumes/CodeBits/jingham/Tcl/source/tcl/generic/tcl.decls;
+			refType = 0;
+		};
+		F5C88658017D60C901DC9062 = {
+			isa = PBXFileReference;
+			name = tclInt.decls;
+			path = /Volumes/CodeBits/jingham/Tcl/source/tcl/generic/tclInt.decls;
+			refType = 0;
 		};
 		F5F24F6B016ECAA401DC9062 = {
 			isa = PBXFileReference;

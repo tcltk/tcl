@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.72.8.1 2001/10/15 09:13:49 wolfsuit Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.8.2 2001/10/17 06:49:36 wolfsuit Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -461,10 +461,14 @@ VERSION=${TCL_VERSION}
 #	another for platform-independent scripts.
 #--------------------------------------------------------------------
 
-if test "$prefix" != "$exec_prefix"; then
-    TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
+if test "$FRAMEWORK_BUILD" = "1" ; then
+    TCL_PACKAGE_PATH="${prefix}/Tcl.framework/Versions/${TCL_VERSION}/Resources/Scripts"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    if test "$prefix" != "$exec_prefix"; then
+        TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
+    else
+        TCL_PACKAGE_PATH="${prefix}/lib"
+    fi
 fi
 
 #--------------------------------------------------------------------

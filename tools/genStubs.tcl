@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.9.8.1 2001/10/15 09:13:49 wolfsuit Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.9.8.2 2001/10/17 06:49:36 wolfsuit Exp $
 
 package require Tcl 8
 
@@ -122,7 +122,7 @@ proc genStubs::hooks {names} {
 # Arguments:
 #	index		The index number of the interface.
 #	platform	The platform the interface belongs to.  Should be one
-#			of generic, win, unix, or mac, or macosx.
+#			of generic, win, unix, or mac, or macosx or aqua.
 #	decl		The C function declaration, or {} for an undefined
 #			entry.
 #
@@ -221,13 +221,16 @@ proc genStubs::addPlatformGuard {plat text} {
 	    return "#ifdef __WIN32__\n${text}#endif /* __WIN32__ */\n"
 	}
 	unix {
-	    return "#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TCL))/* UNIX */\n${text}#endif /* UNIX */\n"
+	    return "#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */\n${text}#endif /* UNIX */\n"
 	}		    
 	mac {
 	    return "#ifdef MAC_TCL\n${text}#endif /* MAC_TCL */\n"
 	}
 	macosx {
 	    return "#ifdef MAC_OSX_TCL\n${text}#endif /* MAC_OSX_TCL */\n"
+	}
+        aqua {
+	    return "#ifdef MAC_OSX_TK\n${text}#endif /* MAC_OSX_TK */\n"
 	}
     }
     return "$text"
@@ -618,12 +621,22 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 			set emit 1
 		    }
 		}
+                #
+                # "aqua" is a special case, since it always implies
+                # "macosx", so we need to be careful not to emit duplicate
+                # stubs entries for the two.
+                #
+		if {[info exists stubs($name,aqua,$i)]
+                        && ![info exists stubs($name,macosx,$i)]} {
+		    append text [addPlatformGuard aqua \
+			    [$slotProc $name $stubs($name,aqua,$i) $i]]
+		    set emit 1
+		}
 	    }
 	    if {$emit == 0} {
 		eval {append text} $skipString
 	    }
 	}
-	
     } else {
 	# Emit separate stubs blocks per platform
 	foreach plat {unix win mac macosx} {
@@ -640,6 +653,20 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		append text [addPlatformGuard $plat $temp]
 	    }
 	}
+        # Again, make sure you don't duplicate entries for macosx  & aqua.
+	if {[info exists stubs($name,aqua,lastNum)]
+                && ![info exists stubs($name,macosx,lastNum)]} {
+	    set lastNum $stubs($name,aqua,lastNum)
+	    set temp {}
+	    for {set i 0} {$i <= $lastNum} {incr i} {
+		if {![info exists stubs($name,aqua,$i)]} {
+		    eval {append temp} $skipString
+		} else {
+			append temp [$slotProc $name $stubs($name,aqua,$i) $i]
+		    }
+		}
+		append text [addPlatformGuard aqua $temp]
+	    }
     }
 
 }

@@ -1,25 +1,24 @@
 // !$*UTF8*$!
 {
 	00E2F845016E82EB0ACA28DC = {
-		activeBuildStyle = 00E2F848016E82EB0ACA28DC;
-		activeTarget = 00E2F84E016E92110ACA28DC;
+		activeBuildStyle = 00E2F847016E82EB0ACA28DC;
+		activeTarget = F50DC359017027D801DC9062;
 		addToTargets = (
-			00E2F84E016E92110ACA28DC,
+			F50DC359017027D801DC9062,
 		);
 		breakpoints = (
 		);
 		intermediatesDirectory = /Volumes/CodeBits/jingham/Build;
 		perUserDictionary = {
 			PBXWorkspaceConfiguration = {
-				ContentSize = "{748, 673}";
+				ContentSize = "{876, 673}";
 				LeftSlideOut = {
-					ActiveTab = 3;
-					Frame = "{{0, 23}, {748, 650}}";
+					ActiveTab = 0;
+					Frame = "{{0, 23}, {876, 650}}";
 					Split0 = {
-						ActiveTab = 2;
-						Frame = "{{225, 0}, {523, 650}}";
+						Frame = "{{244, 0}, {632, 650}}";
 						Split0 = {
-							Frame = "{{0, 292}, {523, 358}}";
+							Frame = "{{0, 25}, {632, 625}}";
 						};
 						SplitCount = 1;
 						Tab0 = {
@@ -55,18 +54,18 @@
 							};
 						};
 						Tab2 = {
-							BuildMessageFrame = "{{0, 0}, {525, 151}}";
-							BuildTranscriptFrame = "{{0, 160}, {525, 109}}";
-							Frame = "{{0, 0}, {523, 267}}";
+							BuildMessageFrame = "{{0, 0}, {653, 132}}";
+							BuildTranscriptFrame = "{{0, 141}, {653, 128}}";
+							Frame = "{{0, 0}, {651, 267}}";
 						};
 						Tab3 = {
-							Frame = "{{0, 0}, {653, 295}}";
+							Frame = "{{0, 0}, {601, 295}}";
 						};
 						TabCount = 4;
 					};
 					SplitCount = 1;
 					Tab0 = {
-						Frame = "{{0, 0}, {167, 650}}";
+						Frame = "{{0, 0}, {219, 650}}";
 					};
 					Tab1 = {
 						ClassesFrame = "{{0, 0}, {202, 56}}";
@@ -80,15 +79,15 @@
 					Tab3 = {
 						Frame = "{{0, 0}, {200, 650}}";
 						Split0 = {
-							Frame = "{{0, 0}, {200, 314}}";
+							Frame = "{{0, 0}, {200, 313}}";
 						};
 						Split1 = {
-							Frame = "{{0, 323}, {200, 327}}";
+							Frame = "{{0, 322}, {200, 328}}";
 						};
 						SplitCount = 2;
 					};
 					Tab4 = {
-						Frame = "{{0, 0}, {250, 100}}";
+						Frame = "{{0, 0}, {250, 650}}";
 					};
 					TabCount = 5;
 				};
