@@ -1,3 +1,8 @@
+2003-09-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/Namespace.3: Basic documentation for the TIP#139 functions.
+	This will need improving, but the basic bits are there at least.
+
 2003-08-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/catch.n:	Updated [catch] docs to cover new TIP 90 features.
