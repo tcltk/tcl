@@ -1,3 +1,15 @@
+2004-10-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl	Purged Tcl's script library of all
+	* library/clock.tcl	remaining references to global vars
+	* library/init.tcl	::errorInfo and ::errorCode.
+
+	* generic/tclMain.c (Tcl_Main):	Updated to make use of
+	TclGetReturnOptions instead of ::errorInfo variable.
+
+	* generic/tclInterp.c (tclInit): Bug fix.  Access dict variables
+	with [dict get], not array syntax.  
+
 2004-10-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/tm.test: Rewrote the tests to actually perform syntax
