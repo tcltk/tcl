@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.70 2003/11/14 20:44:45 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.71 2003/11/14 23:21:02 dkf Exp $
  */
 
 #define TCL_TEST
@@ -423,6 +423,9 @@ static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
 static int              TestNumUtfCharsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+static int              TestHashSystemHashCmd _ANSI_ARGS_((ClientData clientData,
+                            Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -620,6 +623,9 @@ Tcltest_Init(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testfile", TestfileCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testhashsystemhash",
+	    TestHashSystemHashCmd, (ClientData) 0, 
+	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetplatform", TestgetplatformCmd,
@@ -6447,5 +6453,80 @@ TestNumUtfCharsCmd(clientData, interp, objc, objv)
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
     }
+    return TCL_OK;
+}
+
+/*
+ * Used to do basic checks of the TCL_HASH_KEY_SYSTEM_HASH flag
+ */
+static int
+TestHashSystemHashCmd(clientData, interp, objc, objv)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    int objc;
+    Tcl_Obj *CONST objv[];
+{
+    static const Tcl_HashKeyType hkType = {
+	TCL_HASH_KEY_TYPE_VERSION, TCL_HASH_KEY_SYSTEM_HASH,
+	NULL, NULL, NULL, NULL
+    };
+    Tcl_HashTable hash;
+    Tcl_HashEntry *hPtr;
+    int i, isNew, limit = 100;
+
+    if (objc>1 && Tcl_GetIntFromObj(interp, objv[1], &limit)!=TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_InitCustomHashTable(&hash, TCL_CUSTOM_TYPE_KEYS, &hkType);
+
+    if (hash.numEntries != 0) {
+	Tcl_AppendResult(interp, "non-zero initial size", NULL);
+	Tcl_DeleteHashTable(&hash);
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<limit ; i++) {
+	hPtr = Tcl_CreateHashEntry(&hash, (char *)i, &isNew);
+	if (!isNew) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem",-1);
+	    Tcl_DeleteHashTable(&hash);
+	    return TCL_ERROR;
+	}
+	Tcl_SetHashValue(hPtr, (ClientData) (i+42));
+    }
+
+    if (hash.numEntries != limit) {
+	Tcl_AppendResult(interp, "unexpected maximal size", NULL);
+	Tcl_DeleteHashTable(&hash);
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<limit ; i++) {
+	hPtr = Tcl_FindHashEntry(&hash, (char *)i);
+	if (hPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," lookup problem",-1);
+	    Tcl_DeleteHashTable(&hash);
+	    return TCL_ERROR;
+	}
+	if ((int)(Tcl_GetHashValue(hPtr)) != i+42) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," value problem",-1);
+	    Tcl_DeleteHashTable(&hash);
+	    return TCL_ERROR;
+	}
+	Tcl_DeleteHashEntry(hPtr);
+    }
+
+    if (hash.numEntries != 0) {
+	Tcl_AppendResult(interp, "non-zero final size", NULL);
+	Tcl_DeleteHashTable(&hash);
+	return TCL_ERROR;
+    }
+
+    Tcl_DeleteHashTable(&hash);
+    Tcl_AppendResult(interp, "OK", NULL);
     return TCL_OK;
 }
