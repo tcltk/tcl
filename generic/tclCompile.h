@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.37 2003/09/12 23:55:32 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.38 2003/09/15 09:46:22 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -527,7 +527,7 @@ typedef struct ByteCode {
 #define INST_EXPON			99 /* TIP#123 - exponentiation */
 
 /* The last opcode */
-#define LAST_INST_OPCODE        	98
+#define LAST_INST_OPCODE        	99
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
