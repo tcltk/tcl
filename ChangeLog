@@ -1,3 +1,9 @@
+2000-07-19  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/socket.test: removed doTestsWithRemoteServer constraint
+	from socket-12.*.  It requires 'exec', not a remote server.
+	Cleaned up some coding errors.
+
 2000-07-18 Brent Welch	<welch@ajubasolutions.com>
 
 	* win/Makefile.in: Added rules for static tcldde and tclreg libraries.
