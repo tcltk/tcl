@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.87 2003/05/05 20:54:38 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.88 2003/05/07 21:15:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2882,8 +2882,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     }
     switch ((enum traceOptions) optionIndex) {
 	case TRACE_ADD: 
-	case TRACE_REMOVE:
-	case TRACE_INFO: {
+	case TRACE_REMOVE: {
 	    /* 
 	     * All sub commands of trace add/remove must take at least
 	     * one more argument.  Beyond that we let the subcommand itself
@@ -2901,6 +2900,29 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 	    return (traceSubCmds[typeIndex])(interp, optionIndex, objc, objv);
 	    break;
 	}
+	case TRACE_INFO: {
+	    /* 
+	     * All sub commands of trace info must take exactly two
+	     * more arguments which name the type of thing being
+	     * traced and the name of the thing being traced.
+	     */
+	    int typeIndex;
+	    if (objc < 3) {
+		/*
+		 * Delegate other complaints to the type-specific code
+		 * which can give a better error message.
+		 */
+		Tcl_WrongNumArgs(interp, 2, objv, "type name");
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[2], traceTypeOptions,
+			"option", 0, &typeIndex) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    return (traceSubCmds[typeIndex])(interp, optionIndex, objc, objv);
+	    break;
+	}
+
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
         case TRACE_OLD_VARIABLE: {
 	    int flags;
