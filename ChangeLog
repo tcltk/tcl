@@ -1,5 +1,19 @@
 2003-03-20  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInt.h (tclOriginalNotifier):
+	* generic/tclStubInit.c (tclOriginalNotifier):
+	* mac/tclMacNotify.c (Tcl_SetTimer,Tcl_WaitForEvent):
+	* unix/tclUnixNotfy.c (Tcl_SetTimer,Tcl_WaitForEvent,
+		Tcl_CreateFileHandler,Tcl_DeleteFileHandler):
+	* win/tclWinNotify.c (Tcl_SetTimer,Tcl_WaitForEvent):  Some linkers
+	apparently use a different representation for a pointer to a function
+	within the same compilation unit and a pointer to a function in a
+	different compilation unit.  This causes checks like those in the
+	original notifier procedures to fall into infinite loops.  The fix
+	is to store pointers to the original notifier procedures in a struct
+	defined in the same compilation unit as the stubs tables, and compare
+	against those values.  [Bug 707174]
+
 	* generic/tclInt.h:  Removed definition of ParseValue struct that
 	is no longer used.
 
