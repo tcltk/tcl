@@ -1769,12 +1769,20 @@ TcpWatchProc(instanceData, mask)
 {
     TcpState *statePtr = (TcpState *) instanceData;
 
-    if (mask) {
-	Tcl_CreateFileHandler(statePtr->fd, mask,
-		(Tcl_FileProc *) Tcl_NotifyChannel,
-		(ClientData) statePtr->channel);
-    } else {
-	Tcl_DeleteFileHandler(statePtr->fd);
+    /*
+     * Make sure we don't mess with server sockets since they will never
+     * be readable or writable at the Tcl level.  This keeps Tcl scripts
+     * from interfering with the -accept behavior.
+     */
+
+    if (!statePtr->acceptProc) {
+	if (mask) {
+	    Tcl_CreateFileHandler(statePtr->fd, mask,
+		    (Tcl_FileProc *) Tcl_NotifyChannel,
+		    (ClientData) statePtr->channel);
+	} else {
+	    Tcl_DeleteFileHandler(statePtr->fd);
+	}
     }
 }
 
