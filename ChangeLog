@@ -1,10 +1,20 @@
+2004-11-18  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.m4 (SC_CONFIG_MANPAGES): Applied an improved version of
+	* unix/configure.in:                patch #996085, that introduces
+	* unix/Makefile.in:                 --enable-man-suffix.
+
+	* unix/installManPage:              added
+	* unix/mkLinks.tcl:                 removed
+	* unix/mkLinks:                     removed
+
 2004-11-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/configure.in:	The change below reveals that the public
 	data type Tcl_StatBuf relies on config information.  For now,
 	disabled the use of the tclConfig.h file until its full impact
 	on Tcl's interface can be assessed.
-
+	
 	* unix/configure:	autoconf-2.57
 
 	* generic/tcl.h:	Moved the #include "tclConfig.h" out of
