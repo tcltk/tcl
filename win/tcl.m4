@@ -427,7 +427,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
 	LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
     else
-	SHLIB_LD="link -dll -nologo -incremental:no"
+	SHLIB_LD="link -dll -nologo -link50compat -incremental:no"
 	SHLIB_LD_LIBS="user32.lib advapi32.lib"
 	LIBS="user32.lib advapi32.lib"
 	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib"
