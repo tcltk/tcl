@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.12 1999/08/31 21:43:46 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.13 1999/09/01 23:15:41 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -1655,7 +1655,9 @@ proc ::tcltest::threadReap {} {
 # Initialize the constraints and set up command line arguments 
 namespace eval tcltest {
     ::tcltest::initConstraints
-    ::tcltest::processCmdLineArgs
+    if {[namespace children ::tcltest] == {}} {
+	::tcltest::processCmdLineArgs
+    }
 }
 
 return
