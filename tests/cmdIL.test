@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.20 2004/01/17 00:38:57 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.21 2004/01/17 00:52:18 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -498,6 +498,10 @@ test cmdIL-6.12 {lassign command - memory leak testing} -setup {
     rename getbytes {}
     rename stress {}
 }
+test cmdIL-6.13 {lassign command - shimmering protection} {
+    set x {a b c}
+    list [lassign $x $x y] $x [set $x] $y
+} {c {a b c} a b}
 
 # cleanup
 ::tcltest::cleanupTests
