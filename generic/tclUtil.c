@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.50 2004/12/01 23:18:54 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51 2004/12/02 00:09:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2736,62 +2736,70 @@ TclGetProcessGlobalValue(pgvPtr)
     Tcl_Obj *value = NULL;
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
+    int epoch = pgvPtr->epoch;
 
-    Tcl_MutexLock(&pgvPtr->mutex);
     if (pgvPtr->encoding) {
-       Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
-       if (pgvPtr->encoding != current) {
+	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
+	if (pgvPtr->encoding != current) {
 
-           /*
-            * The system encoding has changed since the master
-            * string value was saved.  Convert the master value
-            * to be based on the new system encoding.  
-            */
+	    /*
+	     * The system encoding has changed since the master
+	     * string value was saved.  Convert the master value
+	     * to be based on the new system encoding.  
+	     */
 
-           Tcl_DString native, newValue;
+	    Tcl_DString native, newValue;
 
-           pgvPtr->epoch++;
-           Tcl_UtfToExternalDString(pgvPtr->encoding, pgvPtr->value,
-                   pgvPtr->numBytes, &native);
-           Tcl_ExternalToUtfDString(current, Tcl_DStringValue(&native),
-                   Tcl_DStringLength(&native), &newValue);
-           Tcl_DStringFree(&native);
-           ckfree(pgvPtr->value);
-           pgvPtr->value = ckalloc((unsigned int)
-                   Tcl_DStringLength(&newValue) + 1);
-           memcpy((VOID *) pgvPtr->value, (VOID *) Tcl_DStringValue(&newValue),+                   (size_t) Tcl_DStringLength(&newValue) + 1);
-           Tcl_DStringFree(&newValue);
-           Tcl_FreeEncoding(pgvPtr->encoding);
-           pgvPtr->encoding = current;
-       } else {
-           Tcl_FreeEncoding(current);
-       }
+	    Tcl_MutexLock(&pgvPtr->mutex);
+	    pgvPtr->epoch++;
+	    epoch = pgvPtr->epoch;
+	    Tcl_UtfToExternalDString(pgvPtr->encoding, pgvPtr->value,
+		    pgvPtr->numBytes, &native);
+	    Tcl_ExternalToUtfDString(current, Tcl_DStringValue(&native),
+	    Tcl_DStringLength(&native), &newValue);
+	    Tcl_DStringFree(&native);
+	    ckfree(pgvPtr->value);
+	    pgvPtr->value = ckalloc((unsigned int)
+		    Tcl_DStringLength(&newValue) + 1);
+	    memcpy((VOID *) pgvPtr->value, (VOID *) Tcl_DStringValue(&newValue),
+		    (size_t) Tcl_DStringLength(&newValue) + 1);
+	    Tcl_DStringFree(&newValue);
+	    Tcl_FreeEncoding(pgvPtr->encoding);
+	    pgvPtr->encoding = current;
+	    Tcl_MutexUnlock(&pgvPtr->mutex);
+	} else {
+	    Tcl_FreeEncoding(current);
+	}
     }
     cacheMap = GetThreadHash(&pgvPtr->key);
-    hPtr = Tcl_FindHashEntry(cacheMap, (char *)pgvPtr->epoch);
+    hPtr = Tcl_FindHashEntry(cacheMap, (char *)epoch);
     if (NULL == hPtr) {
-       int dummy;
+	int dummy;
 
-        /* No cache for the current epoch - must be a new one */
-        /* First, clear the cacheMap, as anything in it must
-         * refer to some expired epoch.*/
-        ClearHash(cacheMap);
+	/* No cache for the current epoch - must be a new one */
+	/* First, clear the cacheMap, as anything in it must
+	 * refer to some expired epoch.*/
+	ClearHash(cacheMap);
 
-        /* If no thread has set the shared value, call the initializer */
-       if (NULL == pgvPtr->value) {
-           (*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
-                   &pgvPtr->encoding);
-          Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
-       }
+	/* If no thread has set the shared value, call the initializer */
+	Tcl_MutexLock(&pgvPtr->mutex);
+	if (NULL == pgvPtr->value) {
+	    if (pgvPtr->proc) {
+		pgvPtr->epoch++;
+		(*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
+			&pgvPtr->encoding);
+		Tcl_CreateExitHandler(FreeProcessGlobalValue,
+			(ClientData) pgvPtr);
+	    }
+	}
 
-
-       /* Store a copy of the shared value in our epoch-indexed cache */
-       value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
-       hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
-       Tcl_SetHashValue(hPtr, (ClientData) value);
-       Tcl_IncrRefCount(value);
+	/* Store a copy of the shared value in our epoch-indexed cache */
+	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
+	hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
+	Tcl_MutexUnlock(&pgvPtr->mutex);
+	Tcl_SetHashValue(hPtr, (ClientData) value);
+	Tcl_IncrRefCount(value);
     }
-    Tcl_MutexUnlock(&pgvPtr->mutex);
     return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 }
 
