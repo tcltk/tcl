@@ -8,7 +8,7 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.9 2003/03/19 21:57:52 dgp Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.10 2003/09/10 20:27:30 dgp Exp $
 
 package require Tcl 8.2
 # When this version number changes, update the pkgIndex.tcl file
@@ -816,10 +816,10 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
  	 if { $arg == "true" || $arg == "false" } {
             return boolean
         }
-        if {[string is integer $arg]} {
+        if {[string is integer -strict $arg]} {
             return int
         }
-        if {[string is double $arg]} {
+        if {[string is double -strict $arg]} {
             return float
         }
         return string
