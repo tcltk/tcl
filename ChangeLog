@@ -1,5 +1,11 @@
 2000-07-25  Eric Melski  <ericm@ajubasolutions.com>
 
+	* generic/tclVar.c (CallTraces): Added check for VAR_TRACE_ACTIVE
+	on the array containing the variable before executing traces on
+	that array, to conform with normal variable traces and the
+	documentation, which states that while executing a trace, other
+	traces on that variable are disabled. [Bug: 6049].
+
 	* win/tclWinPipe.c (BuildCommandLine): Added Tcl_DStringFree call
 	to prevent potential memory leaks [Bug: 6041].
 
