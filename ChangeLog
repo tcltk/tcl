@@ -1,3 +1,20 @@
+1999-05-13    <stanton@scriptics.com>
+
+	* unix/Makefile.in:
+	* unix/tclAppInit.c: Minor cleanup related to Xt notifier.
+	
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): Tcl now looks for
+	an encoding subfield in the LANG/LC_ALL variables in cases where
+	the locale is not found in the locale table.  Ensure that
+	setlocale() is called at least once so X11 will initialize
+	properly.  Also, forces the LC_NUMERIC locale to be "C" so numeric
+	processing in scripts is not affected by the current locale
+	setting. [Bug: 1989]
+
+	* generic/tclRegexp.c: Increased per-thread regexp cache to 30
+	slots.  This seems to be about the right number for larger
+	applications like exmh.  [Bug: 1063]
+
 1999-05-12    <stanton@scriptics.com>
 
 	* doc/tclsh.1: Updated references to rc script names to accurately
