@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.29 2000/09/06 18:31:36 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.30 2000/09/20 01:50:38 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -433,6 +433,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	}
 	offset += info.matches[0].end;
 	all++;
+	eflags |= TCL_REG_NOTBOL;
 	if (offset >= stringLength) {
 	    break;
 	}
