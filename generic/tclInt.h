@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.83 2002/02/27 07:08:28 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.84 2002/03/06 15:04:58 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2201,13 +2201,13 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 	if ((objPtr)->refCount < -1) \
 	    panic("Reference count for %lx was negative: %s line %d", \
 		  (objPtr), __FILE__, __LINE__); \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
 	} \
 	ckfree((char *) (objPtr)); \
 	TclIncrObjsFreed(); \
@@ -2232,13 +2232,13 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 
 #  define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
 	} \
 	ckfree((char *) (objPtr)); \
 	TclIncrObjsFreed(); \
@@ -2268,13 +2268,13 @@ extern Tcl_Mutex tclObjMutex;
 
 #  define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
 	} \
 	Tcl_MutexLock(&tclObjMutex); \
 	(objPtr)->internalRep.otherValuePtr = (VOID *) tclFreeObjList; \
