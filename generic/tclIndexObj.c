@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.4 2001/10/19 16:50:47 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.6.5 2001/10/22 09:03:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -43,6 +43,8 @@ Tcl_ObjType tclIndexType = {
  * The definition of the internal representation of the "index"
  * object; The internalRep.otherValuePtr field of an object of "index"
  * type will be a pointer to one of these structures.
+ *
+ * Keep this structure declaration in sync with tclTestObj.c
  */
 
 typedef struct {

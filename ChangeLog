@@ -1,3 +1,8 @@
+2001-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclTestObj.c (TestindexobjCmd): Fixed assumptions
+	relating to internal representation of index objects.
+
 2001-10-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/GetIndex.3: Added note that table of strings must be ASCII
