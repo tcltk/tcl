@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.15 2002/07/15 22:18:07 msofer Exp $
+# RCS: @(#) $Id: set-old.test,v 1.16 2003/02/05 20:05:51 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -399,8 +399,8 @@ test set-old-8.18 {array command, get option} {
     catch {unset a}
     set a(22) 3
     set {a(long name)} {}
-    array get a
-} {22 3 {long name} {}}
+    lsort [array get a]
+} {{} 22 3 {long name}}
 test set-old-8.19 {array command, get option (unset variable)} {
     catch {unset a}
     set a(x) 3
@@ -414,8 +414,8 @@ test set-old-8.20 {array command, get option, with pattern} {
     set a(x3) 5
     set a(b1) 24
     set a(b2) 25
-    array get a x*
-} {x1 3 x2 4 x3 5}
+    lsort [array get a x*]
+} {3 4 5 x1 x2 x3}
 test set-old-8.21 {array command, get option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
         if {$x==1} {
@@ -503,8 +503,8 @@ test set-old-8.35 {array command, set option} {
     catch {unset a}
     set a(xx) yy
     array set a {b c d e}
-    array get a
-} {d e xx yy b c}
+    lsort [array get a]
+} {b c d e xx yy}
 test set-old-8.36 {array command, set option, array doesn't exist yet but has compiler-allocated procedure slot} {
     proc foo {x} {
         if {$x==1} {
@@ -687,9 +687,9 @@ test set-old-9.2 {array enumeration} {
     set a(b) 1
     set a(c) 1
     set x [array startsearch a]
-    list [array nextelement a $x] [array ne a $x] [array next a $x] \
-	    [array next a $x] [array next a $x]
-} {a b c {} {}}
+    lsort [list [array nextelement a $x] [array ne a $x] [array next a $x] \
+	    [array next a $x] [array next a $x]]
+} {{} {} a b c}
 test set-old-9.3 {array enumeration} {
     catch {unset a}
     set a(a) 1
@@ -698,12 +698,12 @@ test set-old-9.3 {array enumeration} {
     set x [array startsearch a]
     set y [array startsearch a]
     set z [array startsearch a]
-    list [array nextelement a $x] [array ne a $x] \
+    lsort [list [array nextelement a $x] [array ne a $x] \
 	    [array next a $y] [array next a $z] [array next a $y] \
 	    [array next a $z] [array next a $y] [array next a $z] \
 	    [array next a $y] [array next a $z] [array next a $x] \
-	    [array next a $x]
-} {a b a a b b c c {} {} c {}}
+	    [array next a $x]]
+} {{} {} {} a a a b b b c c c}
 test set-old-9.4 {array enumeration: stopping searches} {
     catch {unset a}
     set a(a) 1
@@ -712,10 +712,10 @@ test set-old-9.4 {array enumeration: stopping searches} {
     set x [array startsearch a]
     set y [array startsearch a]
     set z [array startsearch a]
-    list [array next a $x] [array next a $x] [array next a $y] \
+    lsort [list [array next a $x] [array next a $x] [array next a $y] \
 	    [array done a $z; array next a $x] \
-	    [array done a $x; array next a $y] [array next a $y]
-} {a b a c b c}
+	    [array done a $x; array next a $y] [array next a $y]]
+} {a a b b c c}
 test set-old-9.5 {array enumeration: stopping searches} {
     catch {unset a}
     set a(a) 1
@@ -783,8 +783,8 @@ test set-old-9.12 {array enumeration with traced undefined elements} {
     set a(a) 1
     trace var a(b) r {}
     set x [array startsearch a]
-    list [array next a $x] [array next a $x]
-} {a {}}
+    lsort [list [array next a $x] [array next a $x]]
+} {{} a}
 
 test set-old-10.1 {array enumeration errors} {
     list [catch {array start} msg] $msg
@@ -873,21 +873,21 @@ test set-old-11.1 {array anymore option} {
     set a(b) 2
     set a(c) 3
     array startsearch a
-    list [array anymore a s-1-a] [array next a s-1-a] \
+    lsort [list [array anymore a s-1-a] [array next a s-1-a] \
 	    [array anymore a s-1-a] [array next a s-1-a] \
 	    [array anymore a s-1-a] [array next a s-1-a] \
-	    [array anymore a s-1-a] [array next a s-1-a] 
-} {1 a 1 b 1 c 0 {}}
+	    [array anymore a s-1-a] [array next a s-1-a]]
+} {{} 0 1 1 1 a b c}
 test set-old-11.2 {array anymore option} {
     catch {unset a}
     set a(a) 1
     set a(b) 2
     set a(c) 3
     array startsearch a
-    list [array next a s-1-a] [array next a s-1-a] \
+    lsort [list [array next a s-1-a] [array next a s-1-a] \
 	    [array anymore a s-1-a] [array next a s-1-a] \
-	    [array next a s-1-a] [array anymore a s-1-a] 
-} {a b 1 c {} 0}
+	    [array next a s-1-a] [array anymore a s-1-a]]
+} {{} 0 1 a b c}
 
 # Special check to see that the value of a variable is handled correctly
 # if it is returned as the result of a procedure (must not free the variable

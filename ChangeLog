@@ -1,3 +1,11 @@
+2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/interp.test:
+	* tests/set-old.test: Run test cases that depend
+	on hash order through lsort so that the tests
+	also pass under Jacl. Does not change test
+	results under Tcl.
+
 2003-02-04  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:
