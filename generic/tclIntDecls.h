@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.51 2003/06/26 08:43:15 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.52 2003/08/25 21:05:15 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -30,115 +30,201 @@
  */
 
 /* Slot 0 is reserved */
+#ifndef TclAccessDeleteProc_TCL_DECLARED
+#define TclAccessDeleteProc_TCL_DECLARED
 /* 1 */
 EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((
 				TclAccessProc_ * proc));
+#endif
+#ifndef TclAccessInsertProc_TCL_DECLARED
+#define TclAccessInsertProc_TCL_DECLARED
 /* 2 */
 EXTERN int		TclAccessInsertProc _ANSI_ARGS_((
 				TclAccessProc_ * proc));
+#endif
+#ifndef TclAllocateFreeObjects_TCL_DECLARED
+#define TclAllocateFreeObjects_TCL_DECLARED
 /* 3 */
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
+#endif
 /* Slot 4 is reserved */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#ifndef TclCleanupChildren_TCL_DECLARED
+#define TclCleanupChildren_TCL_DECLARED
 /* 5 */
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp * interp, 
 				int numPids, Tcl_Pid * pidPtr, 
 				Tcl_Channel errorChan));
+#endif
 #endif /* UNIX */
 #ifdef __WIN32__
+#ifndef TclCleanupChildren_TCL_DECLARED
+#define TclCleanupChildren_TCL_DECLARED
 /* 5 */
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp * interp, 
 				int numPids, Tcl_Pid * pidPtr, 
 				Tcl_Channel errorChan));
+#endif
 #endif /* __WIN32__ */
+#ifndef TclCleanupCommand_TCL_DECLARED
+#define TclCleanupCommand_TCL_DECLARED
 /* 6 */
 EXTERN void		TclCleanupCommand _ANSI_ARGS_((Command * cmdPtr));
+#endif
+#ifndef TclCopyAndCollapse_TCL_DECLARED
+#define TclCopyAndCollapse_TCL_DECLARED
 /* 7 */
 EXTERN int		TclCopyAndCollapse _ANSI_ARGS_((int count, 
 				CONST char * src, char * dst));
+#endif
+#ifndef TclCopyChannel_TCL_DECLARED
+#define TclCopyChannel_TCL_DECLARED
 /* 8 */
 EXTERN int		TclCopyChannel _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Channel inChan, Tcl_Channel outChan, 
 				int toRead, Tcl_Obj * cmdPtr));
+#endif
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#ifndef TclCreatePipeline_TCL_DECLARED
+#define TclCreatePipeline_TCL_DECLARED
 /* 9 */
 EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp * interp, 
 				int argc, CONST char ** argv, 
 				Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, 
 				TclFile * outPipePtr, TclFile * errFilePtr));
+#endif
 #endif /* UNIX */
 #ifdef __WIN32__
+#ifndef TclCreatePipeline_TCL_DECLARED
+#define TclCreatePipeline_TCL_DECLARED
 /* 9 */
 EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp * interp, 
 				int argc, CONST char ** argv, 
 				Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, 
 				TclFile * outPipePtr, TclFile * errFilePtr));
+#endif
 #endif /* __WIN32__ */
+#ifndef TclCreateProc_TCL_DECLARED
+#define TclCreateProc_TCL_DECLARED
 /* 10 */
 EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp * interp, 
 				Namespace * nsPtr, CONST char * procName, 
 				Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, 
 				Proc ** procPtrPtr));
+#endif
+#ifndef TclDeleteCompiledLocalVars_TCL_DECLARED
+#define TclDeleteCompiledLocalVars_TCL_DECLARED
 /* 11 */
 EXTERN void		TclDeleteCompiledLocalVars _ANSI_ARGS_((
 				Interp * iPtr, CallFrame * framePtr));
+#endif
+#ifndef TclDeleteVars_TCL_DECLARED
+#define TclDeleteVars_TCL_DECLARED
 /* 12 */
 EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp * iPtr, 
 				Tcl_HashTable * tablePtr));
+#endif
+#ifndef TclDoGlob_TCL_DECLARED
+#define TclDoGlob_TCL_DECLARED
 /* 13 */
 EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * separators, Tcl_DString * headPtr, 
 				char * tail, Tcl_GlobTypeData * types));
+#endif
+#ifndef TclDumpMemoryInfo_TCL_DECLARED
+#define TclDumpMemoryInfo_TCL_DECLARED
 /* 14 */
 EXTERN void		TclDumpMemoryInfo _ANSI_ARGS_((FILE * outFile));
+#endif
 /* Slot 15 is reserved */
+#ifndef TclExprFloatError_TCL_DECLARED
+#define TclExprFloatError_TCL_DECLARED
 /* 16 */
 EXTERN void		TclExprFloatError _ANSI_ARGS_((Tcl_Interp * interp, 
 				double value));
+#endif
 /* Slot 17 is reserved */
 /* Slot 18 is reserved */
 /* Slot 19 is reserved */
 /* Slot 20 is reserved */
 /* Slot 21 is reserved */
+#ifndef TclFindElement_TCL_DECLARED
+#define TclFindElement_TCL_DECLARED
 /* 22 */
 EXTERN int		TclFindElement _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * listStr, int listLength, 
 				CONST char ** elementPtr, 
 				CONST char ** nextPtr, int * sizePtr, 
 				int * bracePtr));
+#endif
+#ifndef TclFindProc_TCL_DECLARED
+#define TclFindProc_TCL_DECLARED
 /* 23 */
 EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp * iPtr, 
 				CONST char * procName));
+#endif
+#ifndef TclFormatInt_TCL_DECLARED
+#define TclFormatInt_TCL_DECLARED
 /* 24 */
 EXTERN int		TclFormatInt _ANSI_ARGS_((char * buffer, long n));
+#endif
+#ifndef TclFreePackageInfo_TCL_DECLARED
+#define TclFreePackageInfo_TCL_DECLARED
 /* 25 */
 EXTERN void		TclFreePackageInfo _ANSI_ARGS_((Interp * iPtr));
+#endif
 /* Slot 26 is reserved */
+#ifndef TclGetDate_TCL_DECLARED
+#define TclGetDate_TCL_DECLARED
 /* 27 */
 EXTERN int		TclGetDate _ANSI_ARGS_((char * p, unsigned long now, 
 				long zone, unsigned long * timePtr));
+#endif
+#ifndef TclpGetDefaultStdChannel_TCL_DECLARED
+#define TclpGetDefaultStdChannel_TCL_DECLARED
 /* 28 */
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
+#endif
 /* Slot 29 is reserved */
 /* Slot 30 is reserved */
+#ifndef TclGetExtension_TCL_DECLARED
+#define TclGetExtension_TCL_DECLARED
 /* 31 */
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char * name));
+#endif
+#ifndef TclGetFrame_TCL_DECLARED
+#define TclGetFrame_TCL_DECLARED
 /* 32 */
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, CallFrame ** framePtrPtr));
+#endif
+#ifndef TclGetInterpProc_TCL_DECLARED
+#define TclGetInterpProc_TCL_DECLARED
 /* 33 */
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
+#endif
+#ifndef TclGetIntForIndex_TCL_DECLARED
+#define TclGetIntForIndex_TCL_DECLARED
 /* 34 */
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, int endValue, 
 				int * indexPtr));
+#endif
 /* Slot 35 is reserved */
+#ifndef TclGetLong_TCL_DECLARED
+#define TclGetLong_TCL_DECLARED
 /* 36 */
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, long * longPtr));
+#endif
+#ifndef TclGetLoadedPackages_TCL_DECLARED
+#define TclGetLoadedPackages_TCL_DECLARED
 /* 37 */
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 				Tcl_Interp * interp, char * targetName));
+#endif
+#ifndef TclGetNamespaceForQualName_TCL_DECLARED
+#define TclGetNamespaceForQualName_TCL_DECLARED
 /* 38 */
 EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * qualName, 
@@ -147,379 +233,710 @@ EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
 				Namespace ** altNsPtrPtr, 
 				Namespace ** actualCxtPtrPtr, 
 				CONST char ** simpleNamePtr));
+#endif
+#ifndef TclGetObjInterpProc_TCL_DECLARED
+#define TclGetObjInterpProc_TCL_DECLARED
 /* 39 */
 EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
+#endif
+#ifndef TclGetOpenMode_TCL_DECLARED
+#define TclGetOpenMode_TCL_DECLARED
 /* 40 */
 EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, int * seekFlagPtr));
+#endif
+#ifndef TclGetOriginalCommand_TCL_DECLARED
+#define TclGetOriginalCommand_TCL_DECLARED
 /* 41 */
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 				Tcl_Command command));
+#endif
+#ifndef TclpGetUserHome_TCL_DECLARED
+#define TclpGetUserHome_TCL_DECLARED
 /* 42 */
 EXTERN char *		TclpGetUserHome _ANSI_ARGS_((CONST char * name, 
 				Tcl_DString * bufferPtr));
+#endif
+#ifndef TclGlobalInvoke_TCL_DECLARED
+#define TclGlobalInvoke_TCL_DECLARED
 /* 43 */
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp * interp, 
 				int argc, CONST84 char ** argv, int flags));
+#endif
+#ifndef TclGuessPackageName_TCL_DECLARED
+#define TclGuessPackageName_TCL_DECLARED
 /* 44 */
 EXTERN int		TclGuessPackageName _ANSI_ARGS_((
 				CONST char * fileName, Tcl_DString * bufPtr));
+#endif
+#ifndef TclHideUnsafeCommands_TCL_DECLARED
+#define TclHideUnsafeCommands_TCL_DECLARED
 /* 45 */
 EXTERN int		TclHideUnsafeCommands _ANSI_ARGS_((
 				Tcl_Interp * interp));
+#endif
+#ifndef TclInExit_TCL_DECLARED
+#define TclInExit_TCL_DECLARED
 /* 46 */
 EXTERN int		TclInExit _ANSI_ARGS_((void));
+#endif
 /* Slot 47 is reserved */
 /* Slot 48 is reserved */
+#ifndef TclIncrVar2_TCL_DECLARED
+#define TclIncrVar2_TCL_DECLARED
 /* 49 */
 EXTERN Tcl_Obj *	TclIncrVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
 				long incrAmount, int part1NotParsed));
+#endif
+#ifndef TclInitCompiledLocals_TCL_DECLARED
+#define TclInitCompiledLocals_TCL_DECLARED
 /* 50 */
 EXTERN void		TclInitCompiledLocals _ANSI_ARGS_((
 				Tcl_Interp * interp, CallFrame * framePtr, 
 				Namespace * nsPtr));
+#endif
+#ifndef TclInterpInit_TCL_DECLARED
+#define TclInterpInit_TCL_DECLARED
 /* 51 */
 EXTERN int		TclInterpInit _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef TclInvoke_TCL_DECLARED
+#define TclInvoke_TCL_DECLARED
 /* 52 */
 EXTERN int		TclInvoke _ANSI_ARGS_((Tcl_Interp * interp, int argc, 
 				CONST84 char ** argv, int flags));
+#endif
+#ifndef TclInvokeObjectCommand_TCL_DECLARED
+#define TclInvokeObjectCommand_TCL_DECLARED
 /* 53 */
 EXTERN int		TclInvokeObjectCommand _ANSI_ARGS_((
 				ClientData clientData, Tcl_Interp * interp, 
 				int argc, CONST84 char ** argv));
+#endif
+#ifndef TclInvokeStringCommand_TCL_DECLARED
+#define TclInvokeStringCommand_TCL_DECLARED
 /* 54 */
 EXTERN int		TclInvokeStringCommand _ANSI_ARGS_((
 				ClientData clientData, Tcl_Interp * interp, 
 				int objc, Tcl_Obj *CONST objv[]));
+#endif
+#ifndef TclIsProc_TCL_DECLARED
+#define TclIsProc_TCL_DECLARED
 /* 55 */
 EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command * cmdPtr));
+#endif
 /* Slot 56 is reserved */
 /* Slot 57 is reserved */
+#ifndef TclLookupVar_TCL_DECLARED
+#define TclLookupVar_TCL_DECLARED
 /* 58 */
 EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * part1, CONST char * part2, 
 				int flags, CONST char * msg, int createPart1, 
 				int createPart2, Var ** arrayPtrPtr));
+#endif
 /* Slot 59 is reserved */
+#ifndef TclNeedSpace_TCL_DECLARED
+#define TclNeedSpace_TCL_DECLARED
 /* 60 */
 EXTERN int		TclNeedSpace _ANSI_ARGS_((CONST char * start, 
 				CONST char * end));
+#endif
+#ifndef TclNewProcBodyObj_TCL_DECLARED
+#define TclNewProcBodyObj_TCL_DECLARED
 /* 61 */
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc * procPtr));
+#endif
+#ifndef TclObjCommandComplete_TCL_DECLARED
+#define TclObjCommandComplete_TCL_DECLARED
 /* 62 */
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj * cmdPtr));
+#endif
+#ifndef TclObjInterpProc_TCL_DECLARED
+#define TclObjInterpProc_TCL_DECLARED
 /* 63 */
 EXTERN int		TclObjInterpProc _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Interp * interp, int objc, 
 				Tcl_Obj *CONST objv[]));
+#endif
+#ifndef TclObjInvoke_TCL_DECLARED
+#define TclObjInvoke_TCL_DECLARED
 /* 64 */
 EXTERN int		TclObjInvoke _ANSI_ARGS_((Tcl_Interp * interp, 
 				int objc, Tcl_Obj *CONST objv[], int flags));
+#endif
+#ifndef TclObjInvokeGlobal_TCL_DECLARED
+#define TclObjInvokeGlobal_TCL_DECLARED
 /* 65 */
 EXTERN int		TclObjInvokeGlobal _ANSI_ARGS_((Tcl_Interp * interp, 
 				int objc, Tcl_Obj *CONST objv[], int flags));
+#endif
+#ifndef TclOpenFileChannelDeleteProc_TCL_DECLARED
+#define TclOpenFileChannelDeleteProc_TCL_DECLARED
 /* 66 */
 EXTERN int		TclOpenFileChannelDeleteProc _ANSI_ARGS_((
 				TclOpenFileChannelProc_ * proc));
+#endif
+#ifndef TclOpenFileChannelInsertProc_TCL_DECLARED
+#define TclOpenFileChannelInsertProc_TCL_DECLARED
 /* 67 */
 EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 				TclOpenFileChannelProc_ * proc));
+#endif
 /* Slot 68 is reserved */
+#ifndef TclpAlloc_TCL_DECLARED
+#define TclpAlloc_TCL_DECLARED
 /* 69 */
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
+#endif
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
 /* Slot 73 is reserved */
+#ifndef TclpFree_TCL_DECLARED
+#define TclpFree_TCL_DECLARED
 /* 74 */
 EXTERN void		TclpFree _ANSI_ARGS_((char * ptr));
+#endif
+#ifndef TclpGetClicks_TCL_DECLARED
+#define TclpGetClicks_TCL_DECLARED
 /* 75 */
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
+#endif
+#ifndef TclpGetSeconds_TCL_DECLARED
+#define TclpGetSeconds_TCL_DECLARED
 /* 76 */
 EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
+#endif
+#ifndef TclpGetTime_TCL_DECLARED
+#define TclpGetTime_TCL_DECLARED
 /* 77 */
 EXTERN void		TclpGetTime _ANSI_ARGS_((Tcl_Time * time));
+#endif
+#ifndef TclpGetTimeZone_TCL_DECLARED
+#define TclpGetTimeZone_TCL_DECLARED
 /* 78 */
 EXTERN int		TclpGetTimeZone _ANSI_ARGS_((unsigned long time));
+#endif
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
+#ifndef TclpRealloc_TCL_DECLARED
+#define TclpRealloc_TCL_DECLARED
 /* 81 */
 EXTERN char *		TclpRealloc _ANSI_ARGS_((char * ptr, 
 				unsigned int size));
+#endif
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
 /* Slot 85 is reserved */
 /* Slot 86 is reserved */
 /* Slot 87 is reserved */
+#ifndef TclPrecTraceProc_TCL_DECLARED
+#define TclPrecTraceProc_TCL_DECLARED
 /* 88 */
 EXTERN char *		TclPrecTraceProc _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Interp * interp, CONST char * name1, 
 				CONST char * name2, int flags));
+#endif
+#ifndef TclPreventAliasLoop_TCL_DECLARED
+#define TclPreventAliasLoop_TCL_DECLARED
 /* 89 */
 EXTERN int		TclPreventAliasLoop _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Interp * cmdInterp, Tcl_Command cmd));
+#endif
 /* Slot 90 is reserved */
+#ifndef TclProcCleanupProc_TCL_DECLARED
+#define TclProcCleanupProc_TCL_DECLARED
 /* 91 */
 EXTERN void		TclProcCleanupProc _ANSI_ARGS_((Proc * procPtr));
+#endif
+#ifndef TclProcCompileProc_TCL_DECLARED
+#define TclProcCompileProc_TCL_DECLARED
 /* 92 */
 EXTERN int		TclProcCompileProc _ANSI_ARGS_((Tcl_Interp * interp, 
 				Proc * procPtr, Tcl_Obj * bodyPtr, 
 				Namespace * nsPtr, CONST char * description, 
 				CONST char * procName));
+#endif
+#ifndef TclProcDeleteProc_TCL_DECLARED
+#define TclProcDeleteProc_TCL_DECLARED
 /* 93 */
 EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
+#endif
+#ifndef TclProcInterpProc_TCL_DECLARED
+#define TclProcInterpProc_TCL_DECLARED
 /* 94 */
 EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Interp * interp, int argc, 
 				CONST84 char ** argv));
+#endif
 /* Slot 95 is reserved */
+#ifndef TclRenameCommand_TCL_DECLARED
+#define TclRenameCommand_TCL_DECLARED
 /* 96 */
 EXTERN int		TclRenameCommand _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * oldName, char * newName));
+#endif
+#ifndef TclResetShadowedCmdRefs_TCL_DECLARED
+#define TclResetShadowedCmdRefs_TCL_DECLARED
 /* 97 */
 EXTERN void		TclResetShadowedCmdRefs _ANSI_ARGS_((
 				Tcl_Interp * interp, Command * newCmdPtr));
+#endif
+#ifndef TclServiceIdle_TCL_DECLARED
+#define TclServiceIdle_TCL_DECLARED
 /* 98 */
 EXTERN int		TclServiceIdle _ANSI_ARGS_((void));
+#endif
 /* Slot 99 is reserved */
 /* Slot 100 is reserved */
+#ifndef TclSetPreInitScript_TCL_DECLARED
+#define TclSetPreInitScript_TCL_DECLARED
 /* 101 */
 EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char * string));
+#endif
+#ifndef TclSetupEnv_TCL_DECLARED
+#define TclSetupEnv_TCL_DECLARED
 /* 102 */
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef TclSockGetPort_TCL_DECLARED
+#define TclSockGetPort_TCL_DECLARED
 /* 103 */
 EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * str, char * proto, int * portPtr));
+#endif
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#ifndef TclSockMinimumBuffers_TCL_DECLARED
+#define TclSockMinimumBuffers_TCL_DECLARED
 /* 104 */
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock, 
 				int size));
+#endif
 #endif /* UNIX */
 #ifdef __WIN32__
+#ifndef TclSockMinimumBuffers_TCL_DECLARED
+#define TclSockMinimumBuffers_TCL_DECLARED
 /* 104 */
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock, 
 				int size));
+#endif
 #endif /* __WIN32__ */
 /* Slot 105 is reserved */
+#ifndef TclStatDeleteProc_TCL_DECLARED
+#define TclStatDeleteProc_TCL_DECLARED
 /* 106 */
 EXTERN int		TclStatDeleteProc _ANSI_ARGS_((TclStatProc_ * proc));
+#endif
+#ifndef TclStatInsertProc_TCL_DECLARED
+#define TclStatInsertProc_TCL_DECLARED
 /* 107 */
 EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ * proc));
+#endif
+#ifndef TclTeardownNamespace_TCL_DECLARED
+#define TclTeardownNamespace_TCL_DECLARED
 /* 108 */
 EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace * nsPtr));
+#endif
+#ifndef TclUpdateReturnInfo_TCL_DECLARED
+#define TclUpdateReturnInfo_TCL_DECLARED
 /* 109 */
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp * iPtr));
+#endif
 /* Slot 110 is reserved */
+#ifndef Tcl_AddInterpResolvers_TCL_DECLARED
+#define Tcl_AddInterpResolvers_TCL_DECLARED
 /* 111 */
 EXTERN void		Tcl_AddInterpResolvers _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name, 
 				Tcl_ResolveCmdProc * cmdProc, 
 				Tcl_ResolveVarProc * varProc, 
 				Tcl_ResolveCompiledVarProc * compiledVarProc));
+#endif
+#ifndef Tcl_AppendExportList_TCL_DECLARED
+#define Tcl_AppendExportList_TCL_DECLARED
 /* 112 */
 EXTERN int		Tcl_AppendExportList _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Namespace * nsPtr, 
 				Tcl_Obj * objPtr));
+#endif
+#ifndef Tcl_CreateNamespace_TCL_DECLARED
+#define Tcl_CreateNamespace_TCL_DECLARED
 /* 113 */
 EXTERN Tcl_Namespace *	Tcl_CreateNamespace _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * name, ClientData clientData, 
 				Tcl_NamespaceDeleteProc * deleteProc));
+#endif
+#ifndef Tcl_DeleteNamespace_TCL_DECLARED
+#define Tcl_DeleteNamespace_TCL_DECLARED
 /* 114 */
 EXTERN void		Tcl_DeleteNamespace _ANSI_ARGS_((
 				Tcl_Namespace * nsPtr));
+#endif
+#ifndef Tcl_Export_TCL_DECLARED
+#define Tcl_Export_TCL_DECLARED
 /* 115 */
 EXTERN int		Tcl_Export _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Namespace * nsPtr, CONST char * pattern, 
 				int resetListFirst));
+#endif
+#ifndef Tcl_FindCommand_TCL_DECLARED
+#define Tcl_FindCommand_TCL_DECLARED
 /* 116 */
 EXTERN Tcl_Command	Tcl_FindCommand _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * name, 
 				Tcl_Namespace * contextNsPtr, int flags));
+#endif
+#ifndef Tcl_FindNamespace_TCL_DECLARED
+#define Tcl_FindNamespace_TCL_DECLARED
 /* 117 */
 EXTERN Tcl_Namespace *	Tcl_FindNamespace _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * name, 
 				Tcl_Namespace * contextNsPtr, int flags));
+#endif
+#ifndef Tcl_GetInterpResolvers_TCL_DECLARED
+#define Tcl_GetInterpResolvers_TCL_DECLARED
 /* 118 */
 EXTERN int		Tcl_GetInterpResolvers _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name, 
 				Tcl_ResolverInfo * resInfo));
+#endif
+#ifndef Tcl_GetNamespaceResolvers_TCL_DECLARED
+#define Tcl_GetNamespaceResolvers_TCL_DECLARED
 /* 119 */
 EXTERN int		Tcl_GetNamespaceResolvers _ANSI_ARGS_((
 				Tcl_Namespace * namespacePtr, 
 				Tcl_ResolverInfo * resInfo));
+#endif
+#ifndef Tcl_FindNamespaceVar_TCL_DECLARED
+#define Tcl_FindNamespaceVar_TCL_DECLARED
 /* 120 */
 EXTERN Tcl_Var		Tcl_FindNamespaceVar _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name, 
 				Tcl_Namespace * contextNsPtr, int flags));
+#endif
+#ifndef Tcl_ForgetImport_TCL_DECLARED
+#define Tcl_ForgetImport_TCL_DECLARED
 /* 121 */
 EXTERN int		Tcl_ForgetImport _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Namespace * nsPtr, CONST char * pattern));
+#endif
+#ifndef Tcl_GetCommandFromObj_TCL_DECLARED
+#define Tcl_GetCommandFromObj_TCL_DECLARED
 /* 122 */
 EXTERN Tcl_Command	Tcl_GetCommandFromObj _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr));
+#endif
+#ifndef Tcl_GetCommandFullName_TCL_DECLARED
+#define Tcl_GetCommandFullName_TCL_DECLARED
 /* 123 */
 EXTERN void		Tcl_GetCommandFullName _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Command command, 
 				Tcl_Obj * objPtr));
+#endif
+#ifndef Tcl_GetCurrentNamespace_TCL_DECLARED
+#define Tcl_GetCurrentNamespace_TCL_DECLARED
 /* 124 */
 EXTERN Tcl_Namespace *	Tcl_GetCurrentNamespace _ANSI_ARGS_((
 				Tcl_Interp * interp));
+#endif
+#ifndef Tcl_GetGlobalNamespace_TCL_DECLARED
+#define Tcl_GetGlobalNamespace_TCL_DECLARED
 /* 125 */
 EXTERN Tcl_Namespace *	Tcl_GetGlobalNamespace _ANSI_ARGS_((
 				Tcl_Interp * interp));
+#endif
+#ifndef Tcl_GetVariableFullName_TCL_DECLARED
+#define Tcl_GetVariableFullName_TCL_DECLARED
 /* 126 */
 EXTERN void		Tcl_GetVariableFullName _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Var variable, 
 				Tcl_Obj * objPtr));
+#endif
+#ifndef Tcl_Import_TCL_DECLARED
+#define Tcl_Import_TCL_DECLARED
 /* 127 */
 EXTERN int		Tcl_Import _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Namespace * nsPtr, CONST char * pattern, 
 				int allowOverwrite));
+#endif
+#ifndef Tcl_PopCallFrame_TCL_DECLARED
+#define Tcl_PopCallFrame_TCL_DECLARED
 /* 128 */
 EXTERN void		Tcl_PopCallFrame _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef Tcl_PushCallFrame_TCL_DECLARED
+#define Tcl_PushCallFrame_TCL_DECLARED
 /* 129 */
 EXTERN int		Tcl_PushCallFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_CallFrame * framePtr, 
 				Tcl_Namespace * nsPtr, int isProcCallFrame));
+#endif
+#ifndef Tcl_RemoveInterpResolvers_TCL_DECLARED
+#define Tcl_RemoveInterpResolvers_TCL_DECLARED
 /* 130 */
 EXTERN int		Tcl_RemoveInterpResolvers _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name));
+#endif
+#ifndef Tcl_SetNamespaceResolvers_TCL_DECLARED
+#define Tcl_SetNamespaceResolvers_TCL_DECLARED
 /* 131 */
 EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
 				Tcl_Namespace * namespacePtr, 
 				Tcl_ResolveCmdProc * cmdProc, 
 				Tcl_ResolveVarProc * varProc, 
 				Tcl_ResolveCompiledVarProc * compiledVarProc));
+#endif
+#ifndef TclpHasSockets_TCL_DECLARED
+#define TclpHasSockets_TCL_DECLARED
 /* 132 */
 EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
+#endif
+#ifndef TclpGetDate_TCL_DECLARED
+#define TclpGetDate_TCL_DECLARED
 /* 133 */
 EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((TclpTime_t time, int useGMT));
+#endif
+#ifndef TclpStrftime_TCL_DECLARED
+#define TclpStrftime_TCL_DECLARED
 /* 134 */
 EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize, 
 				CONST char * format, CONST struct tm * t, 
 				int useGMT));
+#endif
+#ifndef TclpCheckStackSpace_TCL_DECLARED
+#define TclpCheckStackSpace_TCL_DECLARED
 /* 135 */
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
+#endif
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
+#ifndef TclGetEnv_TCL_DECLARED
+#define TclGetEnv_TCL_DECLARED
 /* 138 */
 EXTERN CONST84_RETURN char * TclGetEnv _ANSI_ARGS_((CONST char * name, 
 				Tcl_DString * valuePtr));
+#endif
 /* Slot 139 is reserved */
+#ifndef TclLooksLikeInt_TCL_DECLARED
+#define TclLooksLikeInt_TCL_DECLARED
 /* 140 */
 EXTERN int		TclLooksLikeInt _ANSI_ARGS_((CONST char * bytes, 
 				int length));
+#endif
+#ifndef TclpGetCwd_TCL_DECLARED
+#define TclpGetCwd_TCL_DECLARED
 /* 141 */
 EXTERN CONST84_RETURN char * TclpGetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_DString * cwdPtr));
+#endif
+#ifndef TclSetByteCodeFromAny_TCL_DECLARED
+#define TclSetByteCodeFromAny_TCL_DECLARED
 /* 142 */
 EXTERN int		TclSetByteCodeFromAny _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
 				CompileHookProc * hookProc, 
 				ClientData clientData));
+#endif
+#ifndef TclAddLiteralObj_TCL_DECLARED
+#define TclAddLiteralObj_TCL_DECLARED
 /* 143 */
 EXTERN int		TclAddLiteralObj _ANSI_ARGS_((
 				struct CompileEnv * envPtr, Tcl_Obj * objPtr, 
 				LiteralEntry ** litPtrPtr));
+#endif
+#ifndef TclHideLiteral_TCL_DECLARED
+#define TclHideLiteral_TCL_DECLARED
 /* 144 */
 EXTERN void		TclHideLiteral _ANSI_ARGS_((Tcl_Interp * interp, 
 				struct CompileEnv * envPtr, int index));
+#endif
+#ifndef TclGetAuxDataType_TCL_DECLARED
+#define TclGetAuxDataType_TCL_DECLARED
 /* 145 */
 EXTERN struct AuxDataType * TclGetAuxDataType _ANSI_ARGS_((char * typeName));
+#endif
+#ifndef TclHandleCreate_TCL_DECLARED
+#define TclHandleCreate_TCL_DECLARED
 /* 146 */
 EXTERN TclHandle	TclHandleCreate _ANSI_ARGS_((VOID * ptr));
+#endif
+#ifndef TclHandleFree_TCL_DECLARED
+#define TclHandleFree_TCL_DECLARED
 /* 147 */
 EXTERN void		TclHandleFree _ANSI_ARGS_((TclHandle handle));
+#endif
+#ifndef TclHandlePreserve_TCL_DECLARED
+#define TclHandlePreserve_TCL_DECLARED
 /* 148 */
 EXTERN TclHandle	TclHandlePreserve _ANSI_ARGS_((TclHandle handle));
+#endif
+#ifndef TclHandleRelease_TCL_DECLARED
+#define TclHandleRelease_TCL_DECLARED
 /* 149 */
 EXTERN void		TclHandleRelease _ANSI_ARGS_((TclHandle handle));
+#endif
+#ifndef TclRegAbout_TCL_DECLARED
+#define TclRegAbout_TCL_DECLARED
 /* 150 */
 EXTERN int		TclRegAbout _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_RegExp re));
+#endif
+#ifndef TclRegExpRangeUniChar_TCL_DECLARED
+#define TclRegExpRangeUniChar_TCL_DECLARED
 /* 151 */
 EXTERN void		TclRegExpRangeUniChar _ANSI_ARGS_((Tcl_RegExp re, 
 				int index, int * startPtr, int * endPtr));
+#endif
+#ifndef TclSetLibraryPath_TCL_DECLARED
+#define TclSetLibraryPath_TCL_DECLARED
 /* 152 */
 EXTERN void		TclSetLibraryPath _ANSI_ARGS_((Tcl_Obj * pathPtr));
+#endif
+#ifndef TclGetLibraryPath_TCL_DECLARED
+#define TclGetLibraryPath_TCL_DECLARED
 /* 153 */
 EXTERN Tcl_Obj *	TclGetLibraryPath _ANSI_ARGS_((void));
+#endif
 /* Slot 154 is reserved */
 /* Slot 155 is reserved */
+#ifndef TclRegError_TCL_DECLARED
+#define TclRegError_TCL_DECLARED
 /* 156 */
 EXTERN void		TclRegError _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * msg, int status));
+#endif
+#ifndef TclVarTraceExists_TCL_DECLARED
+#define TclVarTraceExists_TCL_DECLARED
 /* 157 */
 EXTERN Var *		TclVarTraceExists _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * varName));
+#endif
+#ifndef TclSetStartupScriptFileName_TCL_DECLARED
+#define TclSetStartupScriptFileName_TCL_DECLARED
 /* 158 */
 EXTERN void		TclSetStartupScriptFileName _ANSI_ARGS_((
 				CONST char * filename));
+#endif
+#ifndef TclGetStartupScriptFileName_TCL_DECLARED
+#define TclGetStartupScriptFileName_TCL_DECLARED
 /* 159 */
 EXTERN CONST84_RETURN char * TclGetStartupScriptFileName _ANSI_ARGS_((void));
+#endif
 /* Slot 160 is reserved */
+#ifndef TclChannelTransform_TCL_DECLARED
+#define TclChannelTransform_TCL_DECLARED
 /* 161 */
 EXTERN int		TclChannelTransform _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Channel chan, Tcl_Obj * cmdObjPtr));
+#endif
+#ifndef TclChannelEventScriptInvoker_TCL_DECLARED
+#define TclChannelEventScriptInvoker_TCL_DECLARED
 /* 162 */
 EXTERN void		TclChannelEventScriptInvoker _ANSI_ARGS_((
 				ClientData clientData, int flags));
+#endif
+#ifndef TclGetInstructionTable_TCL_DECLARED
+#define TclGetInstructionTable_TCL_DECLARED
 /* 163 */
 EXTERN void *		TclGetInstructionTable _ANSI_ARGS_((void));
+#endif
+#ifndef TclExpandCodeArray_TCL_DECLARED
+#define TclExpandCodeArray_TCL_DECLARED
 /* 164 */
 EXTERN void		TclExpandCodeArray _ANSI_ARGS_((void * envPtr));
+#endif
+#ifndef TclpSetInitialEncodings_TCL_DECLARED
+#define TclpSetInitialEncodings_TCL_DECLARED
 /* 165 */
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
+#endif
+#ifndef TclListObjSetElement_TCL_DECLARED
+#define TclListObjSetElement_TCL_DECLARED
 /* 166 */
 EXTERN int		TclListObjSetElement _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * listPtr, 
 				int index, Tcl_Obj * valuePtr));
+#endif
+#ifndef TclSetStartupScriptPath_TCL_DECLARED
+#define TclSetStartupScriptPath_TCL_DECLARED
 /* 167 */
 EXTERN void		TclSetStartupScriptPath _ANSI_ARGS_((
 				Tcl_Obj * pathPtr));
+#endif
+#ifndef TclGetStartupScriptPath_TCL_DECLARED
+#define TclGetStartupScriptPath_TCL_DECLARED
 /* 168 */
 EXTERN Tcl_Obj *	TclGetStartupScriptPath _ANSI_ARGS_((void));
+#endif
+#ifndef TclpUtfNcmp2_TCL_DECLARED
+#define TclpUtfNcmp2_TCL_DECLARED
 /* 169 */
 EXTERN int		TclpUtfNcmp2 _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2, unsigned long n));
+#endif
+#ifndef TclCheckInterpTraces_TCL_DECLARED
+#define TclCheckInterpTraces_TCL_DECLARED
 /* 170 */
 EXTERN int		TclCheckInterpTraces _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * command, 
 				int numChars, Command * cmdPtr, int result, 
 				int traceFlags, int objc, 
 				Tcl_Obj *CONST objv[]));
+#endif
+#ifndef TclCheckExecutionTraces_TCL_DECLARED
+#define TclCheckExecutionTraces_TCL_DECLARED
 /* 171 */
 EXTERN int		TclCheckExecutionTraces _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * command, 
 				int numChars, Command * cmdPtr, int result, 
 				int traceFlags, int objc, 
 				Tcl_Obj *CONST objv[]));
+#endif
+#ifndef TclInThreadExit_TCL_DECLARED
+#define TclInThreadExit_TCL_DECLARED
 /* 172 */
 EXTERN int		TclInThreadExit _ANSI_ARGS_((void));
+#endif
+#ifndef TclUniCharMatch_TCL_DECLARED
+#define TclUniCharMatch_TCL_DECLARED
 /* 173 */
 EXTERN int		TclUniCharMatch _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int strLen, 
 				CONST Tcl_UniChar * pattern, int ptnLen, 
 				int nocase));
+#endif
+#ifndef TclIncrWideVar2_TCL_DECLARED
+#define TclIncrWideVar2_TCL_DECLARED
 /* 174 */
 EXTERN Tcl_Obj *	TclIncrWideVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
 				Tcl_WideInt wideIncrAmount, 
 				int part1NotParsed));
+#endif
+#ifndef TclCallVarTraces_TCL_DECLARED
+#define TclCallVarTraces_TCL_DECLARED
 /* 175 */
 EXTERN int		TclCallVarTraces _ANSI_ARGS_((Interp * iPtr, 
 				Var * arrayPtr, Var * varPtr, 
 				CONST char * part1, CONST char * part2, 
 				int flags, int leaveErrMsg));
+#endif
+#ifndef TclCleanupVar_TCL_DECLARED
+#define TclCleanupVar_TCL_DECLARED
 /* 176 */
 EXTERN void		TclCleanupVar _ANSI_ARGS_((Var * varPtr, 
 				Var * arrayPtr));
+#endif
+#ifndef TclVarErrMsg_TCL_DECLARED
+#define TclVarErrMsg_TCL_DECLARED
 /* 177 */
 EXTERN void		TclVarErrMsg _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * part1, CONST char * part2, 
 				CONST char * operation, CONST char * reason));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
