@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8 2000/03/31 08:52:05 hobbs Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.9 2000/07/26 01:30:59 davidg Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -115,8 +115,7 @@ EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((CONST char * fname,
 /* 20 */
 EXTERN void		TclWinAddProcess _ANSI_ARGS_((HANDLE hProcess, 
 				DWORD id));
-/* 21 */
-EXTERN void		TclpAsyncMark _ANSI_ARGS_((Tcl_AsyncHandler async));
+/* Slot 21 is reserved */
 /* 22 */
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 				CONST char * contents));
@@ -235,7 +234,7 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 18 */
     TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char * fname, int mode)); /* 19 */
     void (*tclWinAddProcess) _ANSI_ARGS_((HANDLE hProcess, DWORD id)); /* 20 */
-    void (*tclpAsyncMark) _ANSI_ARGS_((Tcl_AsyncHandler async)); /* 21 */
+    void *reserved21;
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
     char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 23 */
     char * (*tclWinNoBackslash) _ANSI_ARGS_((char * path)); /* 24 */
@@ -398,10 +397,7 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinAddProcess \
 	(tclIntPlatStubsPtr->tclWinAddProcess) /* 20 */
 #endif
-#ifndef TclpAsyncMark
-#define TclpAsyncMark \
-	(tclIntPlatStubsPtr->tclpAsyncMark) /* 21 */
-#endif
+/* Slot 21 is reserved */
 #ifndef TclpCreateTempFile
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
