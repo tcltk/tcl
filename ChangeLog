@@ -1,15 +1,27 @@
+2000-04-07  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/binary.n: clarified docs on sign extension in binary scan
+	[Bug: 3466]
+
+	* library/tcltest1.0/tcltest.tcl (initConstraints): removed win32s
+	references (no longer supported)
+
+	* tests/fCmd.test: marked test 8.1 knownBug because it is
+	dangerous on poorly configured systems [Bug: 3881]
+	and added 8.2 to keep essence of 8.1 tested.
+
 2000-04-05  Andreas Kupries <a.kupries@westend.com>
 
-	* generic/tclIO.c (Tcl_UnstackChannel, line 1831): Forcing interest
-	  mask to the correct value after an unstack and re-initialization
-	  of the notifier via the watchProc. Without this the first
-	  fileevent  after an unstack will come through and be processed,
-	  but no more. [Bug: ??].
+	* generic/tclIO.c (Tcl_UnstackChannel, line 1831): Forcing
+	interest mask to the correct value after an unstack and
+	re-initialization of the notifier via the watchProc. Without this
+	the first fileevent after an unstack will come through and be
+	processed, but no more. [Bug: ??].
 
 2000-03-04  Brent Welch  <welch@scriptics.com>
 
-	* {win,unix}/Makefile.in: added dependency of tclStubInit.c on tcl.decls
-	and tclInt.decls
+	* {win,unix}/Makefile.in: added dependency of tclStubInit.c on
+	tcl.decls and tclInt.decls
 	* generic/tclThread.c: Tweak so this compiles w/out TCL_THREADS
 	* generic/{tcl.decls,tclStubInit.c}:  Just touched the tcl.decls and
 	regenerated the tclStubInit.c file
