@@ -1,3 +1,13 @@
+2004-07-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/cmdMZ.test (cmdMZ-return-2.17):  Added a test that a word
+	containing backslash-quoted value is treated correctly.
+
+	* generic/tclCompile.c (TclWordKnownAtCompileTime):  [Bug 986196]
+	Corrected flaw above and the flaw that caused TCL_TOKEN_SIMPLE_WORDs
+	to have their original word value copied ( "{a b}" ) rather than the
+	actual value ( "a b" ).  Thanks to Kevin Kenny for report and tests.
+
 2004-07-06  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/cmdMZ.test (cmdMZ-return-2.15,cmdMZ-return-2.16):

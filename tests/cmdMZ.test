@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.23 2004/07/06 20:17:11 kennykb Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.24 2004/07/06 21:08:37 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
@@ -164,6 +164,16 @@ test cmdMZ-return-2.15 {return opton handling} -setup {
 test cmdMZ-return-2.16 {return opton handling} -setup {
         proc p {} {
             return -code error -errorcode [list a b] c
+        }
+    } -body {
+        list [catch p result] $result $::errorCode
+    } -cleanup {
+        rename p {}
+    } -result {1 c {a b}}
+   
+test cmdMZ-return-2.17 {return opton handling} -setup {
+        proc p {} {
+            return -code error -errorcode a\ b c
         }
     } -body {
         list [catch p result] $result $::errorCode
