@@ -1,5 +1,36 @@
 2003-09-04  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/FileSystem.3:				Implementation of
+	* doc/source.n:					TIPs 137/151.  Adds
+	* doc/tclsh.1:					a -encoding option to
+	* generic/tcl.decls:				the [source] command
+	* generic/tclCmdMZ.c (Tcl_SourceObjCmd):	and a new C routine,
+	* generic/tclIOUtil.c (Tcl_FSEvalFileEx):	Tcl_FSEvalFileEx(),
+	* generic/tclMain.c (Tcl_Main):			that provides C access
+	* mac/tclMacResource.c (Tcl_MacSourceObjCmd):	to the same function.
+	* tests/cmdMZ.test:				Also adds command line
+	* tests/main.test:	option handling in Tcl_Main() so that tclsh
+	* tests/source.test:	and other apps built on Tcl_Main() respect
+	a -encoding command line option before a script filename.  Docs and
+	tests updated as well.  [Patch 742683]
+	This is a ***POTENTIAL INCOMPATIBILITY*** only for those C programs
+	that embed Tcl, build on Tcl_Main(), and make use of Tcl_Main's former
+	ability to pass a leading "-encoding" option to interactive shell
+	operations.
+
+	* generic/tclInt.decls:				Added internal stub
+	* generic/tclMain.c (Tcl*StartupScript*):	table entries for
+	two new functions Tcl_SetStartupScript() and Tcl_GetStartupScript()
+	that set/get the path and encoding for the startup script to be
+	evaluated by either Tcl_Main() or Tk_Main().  Given public names in
+	anticipation of their exposure by a followup TIP.
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
+2003-09-04  Don Porter  <dgp@users.sourceforge.net>
+
 	* doc/SplitList.3:	Implementation of TIP 148.  Fixes [Bug 489537].
 	* generic/tcl.h:	Updated Tcl_ConvertCountedElement() to quote
 	* generic/tclUtil.c:	the leading "#" character of all list elements

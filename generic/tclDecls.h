@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.98 2003/08/25 21:05:15 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.99 2003/09/05 21:52:12 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3211,6 +3211,13 @@ EXTERN void		Tcl_GetCommandFullName _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Command command, 
 				Tcl_Obj * objPtr));
 #endif
+#ifndef Tcl_FSEvalFileEx_TCL_DECLARED
+#define Tcl_FSEvalFileEx_TCL_DECLARED
+/* 518 */
+EXTERN int		Tcl_FSEvalFileEx _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * fileName, 
+				CONST char * encodingName));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3788,6 +3795,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_FindCommand) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_Namespace * contextNsPtr, int flags)); /* 515 */
     Tcl_Command (*tcl_GetCommandFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 516 */
     void (*tcl_GetCommandFullName) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command command, Tcl_Obj * objPtr)); /* 517 */
+    int (*tcl_FSEvalFileEx) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * fileName, CONST char * encodingName)); /* 518 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -5899,6 +5907,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetCommandFullName
 #define Tcl_GetCommandFullName \
 	(tclStubsPtr->tcl_GetCommandFullName) /* 517 */
+#endif
+#ifndef Tcl_FSEvalFileEx
+#define Tcl_FSEvalFileEx \
+	(tclStubsPtr->tcl_FSEvalFileEx) /* 518 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
