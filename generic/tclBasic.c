@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.55 2002/03/27 19:20:54 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.56 2002/03/29 21:01:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3092,6 +3092,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 				 * string was generated. */
     int code = TCL_OK;
     int i;
+    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
     for (tracePtr = iPtr->tracePtr; tracePtr; tracePtr = tracePtr->nextPtr) {
 	if (iPtr->numLevels <= tracePtr->level) {
@@ -3118,6 +3119,23 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 		flags);
 	iPtr->numLevels--;
     }
+
+    /*
+     * If we are again at the top level, process any unusual 
+     * return code returned by the evaluated code. 
+     */
+	
+    if (iPtr->numLevels == 0) {
+	if (code == TCL_RETURN) {
+	    code = TclUpdateReturnInfo(iPtr);
+	}
+	if ((code != TCL_OK) && (code != TCL_ERROR) 
+	    && !allowExceptions) {
+	    ProcessUnexpectedResult(interp, code);
+	    code = TCL_ERROR;
+	}
+    }
+	    
     if (code == TCL_ERROR) {
 
 	/* 
@@ -3488,6 +3506,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     int i, code, commandLength, bytesLeft, nested;
     CallFrame *savedVarFramePtr;   /* Saves old copy of iPtr->varFramePtr
 				    * in case TCL_EVAL_GLOBAL was set. */
+    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     
     /* For nested scripts, this variable will be set to point to the first 
      * char after the end of the script - needed only to compare pointers,
@@ -3591,7 +3610,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 			code = TclUpdateReturnInfo(iPtr);
 		    }
 		    if ((code != TCL_OK) && (code != TCL_ERROR) 
-			&& ((iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS) == 0)) {
+			&& !allowExceptions) {
 			ProcessUnexpectedResult(interp, code);
 			code = TCL_ERROR;
 		    }
@@ -3841,6 +3860,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
     int result;
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
 					 * in case TCL_EVAL_GLOBAL was set. */
+    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
     Tcl_IncrRefCount(objPtr);
 
@@ -3880,7 +3900,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    iPtr->varFramePtr = NULL;
 	}
 
-	result = TclCompEvalObj(interp, objPtr, /* engineCall */ 0);
+	result = TclCompEvalObj(interp, objPtr);
 
 	/*
 	 * If we are again at the top level, process any unusual 
@@ -3892,7 +3912,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 		result = TclUpdateReturnInfo(iPtr);
 	    }
 	    if ((result != TCL_OK) && (result != TCL_ERROR) 
-	        && ((iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS) == 0)) {
+	        && !allowExceptions) {
 		ProcessUnexpectedResult(interp, result);
 		result = TCL_ERROR;
 
