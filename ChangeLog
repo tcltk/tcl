@@ -1,3 +1,23 @@
+2000-01-23  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* library/init.tcl (auto_execok): added 'start' to list of
+	recognized built-in commands for COMSPEC on NT. [Bug: 2858]
+
+	* unix/tclUnixPort.h: moved include of <utime.h> lower since some
+	systems (UTS) require sys/types.h to be included first [Bug: 4031]
+
+	* unix/tclUnixChan.c (CreateSocketAddress): changed comparison
+	with -1 to 0xFFFFFFFFFFFFFFF, which is the pedantic way to say -1
+	for both 32 bit and 64 bit systems. [Bug: 3878]
+
+	* generic/tclFileName.c: improved guessing of path separator
+	for the Mac. (Darley)
+
+	* generic/tclInt.h:
+	* generic/tcl.decls: moved Tcl_ProcObjCmd to stubs table [Bug: 3827]
+	and removed 'register' from stub definition of
+	Tcl_AppendUnicodeToObj [Bug: 4038]
+
 2000-01-21  Eric Melski  <ericm@scriptics.com>
 
 	* doc/lreplace.n: Corrected man page with respect to treatment of
