@@ -1,5 +1,8 @@
 2003-07-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c: correct MT-safety issues with filesystem
+	records. [Bug 753315] (vasiljevic)
+
 	* library/http/pkgIndex.tcl: merged to v2.4.4 from head
 	* library/http/http.tcl: add support for user:pass info in URL.
 	* tests/http.test:       [Bug 759888] (shiobara)
