@@ -1,3 +1,8 @@
+2004-05-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/tcltest.test:	Test corrections for Mac OSX.  Thanks
+	to Steven Abner (tauvan).  [Bug 947440]
+
 2004-05-03  Andreas Kupries  <andreask@activestate.com>
 
 	* Applied [SF Tcl Patch 868853], fixing a mem leak in
