@@ -1,5 +1,16 @@
 2005-03-19 Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	Instruction set cleanup: one instruction INST_YES (not-not) added,
+	removal of unused instructions (66 are left), renumbering to ease
+	the code of the optimiser. Instructions that are logical negation
+	of each other (eg INST_LE and INST_GT) are numbered in pairs
+	(2n)(2n+1) to permit negation by bit-flipping (^1).
+	
+2005-03-19 Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompCmds.c:
 	* generic/tclCompExpr.c:
 	* generic/tclCompile.c:
