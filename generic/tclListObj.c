@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13 2002/01/07 23:09:13 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.14 2003/09/04 16:44:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1641,7 +1641,8 @@ UpdateStringOfList(listPtr)
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
 	elem = Tcl_GetStringFromObj(listRepPtr->elements[i], &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst, flagPtr[i]);
+	dst += Tcl_ConvertCountedElement(elem, length, dst, 
+		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH) );
 	*dst = ' ';
 	dst++;
     }

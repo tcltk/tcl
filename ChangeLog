@@ -1,3 +1,14 @@
+2003-09-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/SplitList.3:	Implementation of TIP 148.  Fixes [Bug 489537].
+	* generic/tcl.h:	Updated Tcl_ConvertCountedElement() to quote
+	* generic/tclUtil.c:	the leading "#" character of all list elements
+	unless the TCL_DONT_QUOTE_HASH flag is passed in.
+
+	* generic/tclDictObj.c:	Updated Tcl_ConvertCountedElement() callers
+	* generic/tclListObj.c:	to pass in the TCL_DONT_QUOTE_HASH flags
+	* generic/tclResult.c:	when appropriate.
+
 2003-08-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/return.n:	Updated [return] docs to cover new TIP 90 features.
