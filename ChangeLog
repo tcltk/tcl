@@ -1,5 +1,8 @@
 2002-06-17  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/msgcat/msgcat.tcl:  More Windows Registry locale codes
+	from Bruno Haible.
+
 	* doc/msgcat.n:
 	* library/msgcat/msgcat.tcl:
 	* library/msgcat/pkgIndex.tcl:
