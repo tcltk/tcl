@@ -1,3 +1,14 @@
+2000-04-09  Brent Welch <welch@scriptics.com>
+
+	* lib/httpd2.1/http.tcl: Worked on the "server closes before
+	reading post data" case, which unfortunately causes different
+	error cases on Solaris, which can read the reply, and Linux
+	and Windows, which cannot read anything.  This is all in the
+	loop-back case - client and server on the same host.  Also
+	unified the error handling so the "ioerror" status goes away
+	and errors are reflected in a more uniform way. Updated the
+	man page to document the behavior.
+
 2000-04-09  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tclUnixThrd.c (Tcl_CreateThread): moved TCL_THREADS ifdef
