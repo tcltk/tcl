@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.6 2000/05/09 17:50:39 ericm Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.7 2001/09/12 20:28:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -270,6 +270,7 @@ test lsearch-9.4 {decreasing sorted ascii search} {
 
 
 # cleanup
+catch {unset res}
 ::tcltest::cleanupTests
 return
 
