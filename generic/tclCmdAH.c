@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.54 2004/10/15 04:01:28 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.55 2004/10/18 21:15:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -271,9 +271,13 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
     if (objc == 4) {
 	Interp  *iPtr = (Interp *) interp;
 	Tcl_Obj *options = Tcl_DuplicateObj(iPtr->returnOpts);
-	Tcl_Obj *value = NULL;
 
-	if (result != TCL_RETURN) {
+	if (result == TCL_RETURN) {
+	    Tcl_DictObjPut(NULL, options,
+		    iPtr->returnCodeKey, Tcl_NewIntObj(iPtr->returnCode));
+	    Tcl_DictObjPut(NULL, options,
+		    iPtr->returnLevelKey, Tcl_NewIntObj(iPtr->returnLevel));
+	} else {
 	    Tcl_DictObjPut(NULL, options,
 		    iPtr->returnCodeKey, Tcl_NewIntObj(result));
 	    Tcl_DictObjPut(NULL, options,
@@ -285,26 +289,12 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	     * When result was an error, fill in any missing values
 	     * for -errorinfo, -errorcode, and -errorline
 	     */
-
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorinfoKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorinfoKey,
-			iPtr->errorInfo);
-	    }
-
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorcodeKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorcodeKey,
-			iPtr->errorCode);
-	    }
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorlineKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
+	    Tcl_DictObjPut(NULL, options,
+		    iPtr->returnErrorinfoKey, iPtr->errorInfo);
+	    Tcl_DictObjPut(NULL, options,
+		    iPtr->returnErrorcodeKey, iPtr->errorCode);
+	    Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
 			Tcl_NewIntObj(iPtr->errorLine));
-	    }
 	}
 
 	if (NULL ==
