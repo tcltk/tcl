@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.20 1999/03/12 23:00:59 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.21 1999/03/14 21:52:39 surles Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4153,3 +4153,25 @@ internal data structures. (stanton)
 
 3/10/99 (new feature) Added a Tcl_GetVersion API to make it easier to
 check the Tcl version and patch level from C. (redman)
+
+3/14/99 (feature change) Tried to unify the TclpInitLibrary path
+routines to look in similar places from Windows to UNIX.  The new
+library search path is: TCL_LIBRARY, TCL_LIBRARY/../tcl8.1, relative
+to DLL (Windows Only) relative to installed executable, relative to
+develop executable, and relative to compiled-in in location (UNIX
+Only.)  This fix included:
+    - Defining a TclpFindExecutable
+    - Moving Tcl_FindExecutable to a common area in tclEncoding.c
+    - Modifying the TclpInitLibraryPath routines.
+(surles)
+
+3/14/99 (feature change) Added hooks for TclPro Wrapper to initialize
+the location of the encoding files and libraries.  This fix included:
+    - Adding the TclSetPerInitScript routine.
+    - Modifying the Tcl_Init routines to evaluate the non-NULL
+      pre-init script.
+    - Adding the Tcl_SetdefaultEncodingDir and Tcl_GetDefaultEncodingDir
+      routines.
+    - Modifying the TclpInitLibrary routines to append the default
+      encoding dir.
+(surles)
