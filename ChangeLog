@@ -1,5 +1,11 @@
 2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/interp.test (interp-34.3): Rewrite this test to see if a
+	time limit can catch a tight bytecode loop, a maximally aggressive
+	denial-of-service attack.
+	* generic/tclInterp.c (Tcl_LimitCheck): Fix the sense of checks to
+	see whether a time limit has been extended.
+
 	* tests/*.test: Many minor fixes, including ensuring that every
 	test is run (so constraints control whether the test is doing
 	anything) and making sure that constraints are always set using
