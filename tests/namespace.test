@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.35 2004/09/09 15:44:23 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.36 2004/09/09 17:09:35 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -243,6 +243,50 @@ test namespace-9.7 {Tcl_Import, links are preserved if cmd is redefined} {
          [test_ns_import::cmd1 g h i] \
          [test_ns_export::cmd1 j k l]
 } {{cmd1: a b c} {cmd1: d e f} {} ::test_ns_export::cmd1 ::test_ns_export::cmd1 {new1: g h i} {new1: j k l}}
+
+test namespace-9.8 {Tcl_Import: Bug 1017299} -setup {
+    namespace eval one {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval two {
+	namespace export cmd
+	proc other args {}
+    }
+    namespace eval two \
+	    [list namespace import [namespace current]::one::cmd]
+    namespace eval three \
+	    [list namespace import [namespace current]::two::cmd]
+    namespace eval three {
+	rename cmd other
+	namespace export other
+    }
+} -body {
+    namespace eval two [list namespace import -force \
+	    [namespace current]::three::other]
+    namespace origin two::other
+} -cleanup {
+    namespace delete one two three
+} -match glob -result *::one::cmd
+
+test namespace-9.9 {Tcl_Import: Bug 1017299} -setup {
+    namespace eval one {
+	namespace export cmd
+	proc cmd {} {}
+    }
+    namespace eval two namespace export cmd
+    namespace eval two \
+	    [list namespace import [namespace current]::one::cmd]
+    namespace eval three namespace export cmd
+    namespace eval three \
+	    [list namespace import [namespace current]::two::cmd]
+} -body {
+    namespace eval two [list namespace import -force \
+	    [namespace current]::three::cmd]
+    namespace origin two::cmd
+} -cleanup {
+    namespace delete one two three
+} -returnCodes error -match glob -result {import pattern * would create a loop*}
 
 test namespace-10.1 {Tcl_ForgetImport, check for valid namespaces} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}
