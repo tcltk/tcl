@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.88 2003/05/07 21:15:44 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.89 2003/05/09 13:08:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -999,7 +999,7 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
     Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnCodeKey, &valuePtr);
     if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code)) {
 	static CONST char *returnCodes[] = {
-	    "ok", "error", "return", "break", "continue"
+	    "ok", "error", "return", "break", "continue", NULL
 	};
 
 	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,

@@ -1,3 +1,9 @@
+2003-05-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_ReturnObjCmd): The array of strings
+	passed to Tcl_GetIndexFromObj must be NULL terminated.  [Bug 735186]
+	Thanks to Joe Mistachkin for spotting this.
+
 2003-05-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/trace.n: Fixed very strange language in the documentation
