@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(pkga.c)
-# RCS: @(#) $Id: configure.in,v 1.1.2.3 1999/03/12 23:01:01 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.1.2.4 1999/03/24 04:22:53 stanton Exp $
 
 # Recover information that Tcl computed with its configure script.
 
@@ -27,5 +27,7 @@ TCL_LIBS=$TCL_LIBS
 AC_SUBST(TCL_LIBS)
 TCL_VERSION=$TCL_VERSION
 AC_SUBST(TCL_VERSION)
+TCL_DBGX=$TCL_DBGX
+AC_SUBST(TCL_DBGX)
 
 AC_OUTPUT(Makefile)
