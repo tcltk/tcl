@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.15 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.16 2002/01/27 11:09:49 das Exp $
  */
 
 /*
@@ -610,25 +610,23 @@ TclpReadlink(
     Handle theString = NULL;
     int pathSize;
     Tcl_DString ds;
-    char *native;
     
-    native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
+    Tcl_UtfToExternalDString(NULL, path, -1, &ds);
 
     /*
      * Remove ending colons if they exist.
      */
      
-    while ((strlen(native) != 0) && (path[strlen(native) - 1] == ':')) {
-	native[strlen(native) - 1] = NULL;
+    while ((Tcl_DStringLength(&ds) != 0) && (Tcl_DStringValue(&ds)[Tcl_DStringLength(&ds) - 1] == ':')) {
+	Tcl_DStringSetLength(&ds, Tcl_DStringLength(&ds) - 1);
     }
 
-    if (strchr(native, ':') == NULL) {
-	strcpy(fileName + 1, native);
-	native = NULL;
+    end = strrchr(Tcl_DStringValue(&ds), ':');
+    if (end == NULL ) {
+	strcpy(fileName + 1, Tcl_DStringValue(&ds));
     } else {
-	end = strrchr(native, ':') + 1;
-	strcpy(fileName + 1, end);
-	*end = NULL;
+	strcpy(fileName + 1, end + 1);
+	Tcl_DStringSetLength(&ds, end + 1 - Tcl_DStringValue(&ds));
     }
     fileName[0] = (char) strlen(fileName + 1);
     
@@ -637,8 +635,8 @@ TclpReadlink(
      * we want to look at.
      */
 
-    if (native != NULL) {
-	err = FSpLocationFromPath(strlen(native), native, &fileSpec);
+    if (end != NULL) {
+	err = FSpLocationFromPath(Tcl_DStringLength(&ds), Tcl_DStringValue(&ds), &fileSpec);
 	if (err != noErr) {
 	    Tcl_DStringFree(&ds);
 	    errno = EINVAL;
@@ -904,7 +902,7 @@ TclMacFOpenHack(
     int size;
     FILE * f;
     
-    err = FSpLocationFromPath(strlen(path), (char *) path, &fileSpec);
+    err = FSpLocationFromPath(strlen(path), path, &fileSpec);
     if ((err != noErr) && (err != fnfErr)) {
 	return NULL;
     }
@@ -1007,14 +1005,15 @@ TclMacOSErrorToPosixError(
 
 int
 TclMacChmod(
-    char *path, 
+    CONST char *path, 
     int mode)
 {
     HParamBlockRec hpb;
     OSErr err;
-    
-    c2pstr(path);
-    hpb.fileParam.ioNamePtr = (unsigned char *) path;
+    Str255 pathName;
+    strcpy((char *) pathName + 1, path);
+    pathName[0] = strlen(path);
+    hpb.fileParam.ioNamePtr = pathName;
     hpb.fileParam.ioVRefNum = 0;
     hpb.fileParam.ioDirID = 0;
     
@@ -1023,7 +1022,6 @@ TclMacChmod(
     } else {
         err = PBHSetFLockSync(&hpb);
     }
-    p2cstr((unsigned char *) path);
     
     if (err != noErr) {
         errno = TclMacOSErrorToPosixError(err);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.11 2002/01/18 03:22:58 das Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.12 2002/01/27 11:09:58 das Exp $
  */
 
 #include <CodeFragments.h>
@@ -126,11 +126,11 @@ TclpLoadFile(
     UInt32 offset = 0;
     UInt32 length = kCFragGoesToEOF;
     StringPtr fragName=NULL;
-    Str255 errName;
+    Str255 errName, symbolName;
     Tcl_DString ds;
-    char *native;
+    CONST char *native;
     
-    native = (char *) Tcl_FSGetNativePath(pathPtr);
+    native = Tcl_FSGetNativePath(pathPtr);
     err = FSpLocationFromPath(strlen(native), native, &fileSpec);
     
     if (err != noErr) {
@@ -145,7 +145,7 @@ TclpLoadFile(
      * it to us.
      */
     native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
-    native[strlen(native) - 5] = 0;
+    Tcl_DStringSetLength(&ds, Tcl_DStringLength(&ds) - 5);
     
     /*
      * See if this fragment has a 'cfrg' resource.  It will tell us where
@@ -215,9 +215,10 @@ TclpLoadFile(
     
     *unloadProcPtr = &TclpUnloadFile;
    
-    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
-    c2pstr(native);
-    err = FindSymbol(connID, (StringPtr) native, (Ptr *) proc1Ptr, &symClass);
+    Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    strcpy((char *) symbolName + 1, Tcl_DStringValue(&ds));
+    symbolName[0] = (unsigned) Tcl_DStringLength(&ds);
+    err = FindSymbol(connID, symbolName, (Ptr *) proc1Ptr, &symClass);
     Tcl_DStringFree(&ds);
     if (err != fragNoErr || symClass == kDataCFragSymbol) {
 	Tcl_SetResult(interp,
@@ -226,9 +227,10 @@ TclpLoadFile(
 	return TCL_ERROR;
     }
 
-    native = Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
-    c2pstr(native);
-    err = FindSymbol(connID, (StringPtr) native, (Ptr *) proc2Ptr, &symClass);
+    Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
+    strcpy((char *) symbolName + 1, Tcl_DStringValue(&ds));
+    symbolName[0] = (unsigned) Tcl_DStringLength(&ds);
+    err = FindSymbol(connID, symbolName, (Ptr *) proc2Ptr, &symClass);
     Tcl_DStringFree(&ds);
     if (err != fragNoErr || symClass == kDataCFragSymbol) {
 	*proc2Ptr = NULL;

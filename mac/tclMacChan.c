@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.11 2002/01/18 03:22:36 das Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.12 2002/01/27 11:09:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -1282,7 +1282,7 @@ GetOpenMode(
 					 * "RDONLY CREAT". */
 {
     int mode, modeArgc, c, i, gotRW;
-    char **modeArgv, *flag;
+    CONST char **modeArgv, *flag;
 
     /*
      * Check for the simpler fopen-like access modes (e.g. "r").  They
