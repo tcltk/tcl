@@ -1,6 +1,6 @@
 Tcl 8.4 for Windows
 
-RCS: @(#) $Id: README,v 1.19 2001/04/02 01:59:55 hobbs Exp $
+RCS: @(#) $Id: README,v 1.20 2001/04/03 07:11:40 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -19,13 +19,13 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Tcl 8.4 Source Distribution (plus any patches)
 
-	Visual C++ 2.x/4.x/5.x
+	Visual C++ 4+
 
         or
 
         Cygwin 1.1 (See http://sources.redhat.com/cygwin)
 
-In practice, this release is built with Visual C++ 5.0
+In practice, this release is built with Visual C++ 6.0
 
 In the "win" subdirectory of the source release, you will find
 "makefile.vc".  This is the makefile Visual C++ compiler.  You should
