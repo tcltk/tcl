@@ -1,3 +1,34 @@
+1999-12-21  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* generic/tcl.h:
+	* mac/README:
+	* unix/configure.in:
+	* tools/tcl.wse.in:
+	* win/README.binary:
+	* win/configure.in: updated to patch level 8.3b1
+
+	* unix/Makefile.in: added -srcdir=... for 'make html'
+
+	* doc/Hash.3: fixed reference to ckfree [Bug: 3912]
+	* doc/RegExp.3: fixed calling params for Tcl_RegExecFromObj
+	* doc/open.n: fixed minor formatting errors
+	* doc/string.n: fixed minor formatting errors
+
+	* doc/lsort.n: added -unique docs
+	* tests/cmdIL.test:
+	* generic/tclCmdIL.c: added -unique option to lsort
+
+	* generic/tclThreadTest.c: changed thread ids to longs [Bug: 3902]
+
+	* mac/tclMacOSA.c: fixed applescript for I18N [Bug: 3644]
+
+	* win/mkd.bat:
+	* win/rmd.bat: removed necessity of tag.txt [Bug: 3874]
+
+	* win/tclWinThrd.c: changed CreateThread to _beginthreadex and
+	ExitThread to _endthreadex
+
 1999-12-12  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/glob.n:
@@ -13,7 +44,7 @@
 	* win/tclWinFile.c: enhanced the glob command with the new options
 	-types -path -directory and -join.  Deprecated TclpMatchFiles with
 	TclpMatchFilesTypes, extended TclGlob and TclDoGlob and added
-	GlobTypeData structure.
+	GlobTypeData structure. [Bug: 2363]
 
 1999-12-10  Jeff Hobbs  <hobbs@scriptics.com>
 
