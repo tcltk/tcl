@@ -1,3 +1,7 @@
+2005-04-04  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: small opts in obj handling
+
 2005-04-02  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c: converted a few function calls to macros.
