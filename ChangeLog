@@ -1,3 +1,10 @@
+2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* doc/CrtInterp.3:
+	* generic/tclBasic.c: docs and comments corrections [Bug 493412]
+	Bug & patch by Don Porter.  
+	
+
 2001-12-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* win/tclWinNotify.c (Tcl_FinalizeNotifier): Stop Tcl on Windows
