@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.8.2.2 2001/10/04 14:13:07 dkf Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.8.2.3 2001/10/09 15:30:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -394,9 +394,6 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		 * Fall through!
 		 */
 	    case 'n':
-	    case 'f':
-	    case 'e':
-	    case 'g':
 	    case 's':
 		if (flags & SCAN_LONGER) {
 		invalidLonger:
@@ -410,11 +407,14 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		 * Fall through!
 		 */
 	    case 'd':
+	    case 'e':
+	    case 'f':
+	    case 'g':
 	    case 'i':
 	    case 'o':
-	    case 'x':
 	    case 'u':
-		break;
+	    case 'x':
+ 		break;
 		/*
 		 * Bracket terms need special checking
 		 */
@@ -1059,6 +1059,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		if ((width == 0) || (width > sizeof(buf) - 1)) {
 		    width = sizeof(buf) - 1;
 		}
+		flags &= ~SCAN_LONGER;
 		flags |= SCAN_SIGNOK | SCAN_NODIGITS | SCAN_PTOK | SCAN_EXPOK;
 		for (end = buf; width > 0; width--) {
 		    switch (*string) {

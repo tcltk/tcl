@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.31.2.2 2001/09/27 13:59:54 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.31.2.3 2001/10/09 15:30:51 dkf Exp $
  */
 
 #define TCL_TEST
@@ -2256,8 +2256,16 @@ TestMathFunc2(clientData, interp, args, resultPtr)
 
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (args[1].type == TCL_WIDE_INT) {
+	    Tcl_WideInt w0 = Tcl_LongAsWide(i0);
+	    Tcl_WideInt w1 = args[1].wideValue;
+
+	    resultPtr->type = TCL_WIDE_INT;
+	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
+#endif
 	} else {
-	    Tcl_SetResult(interp, "T2: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
     } else if (args[0].type == TCL_DOUBLE) {
@@ -2273,12 +2281,44 @@ TestMathFunc2(clientData, interp, args, resultPtr)
 
 	    resultPtr->type = TCL_DOUBLE;
 	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (args[1].type == TCL_WIDE_INT) {
+	    double d1 = Tcl_WideAsDouble(args[1].wideValue);
+
+	    resultPtr->type = TCL_DOUBLE;
+	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+#endif
 	} else {
-	    Tcl_SetResult(interp, "T2: wrong type for arg 2", TCL_STATIC);
+	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
 	    result = TCL_ERROR;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (args[0].type == TCL_WIDE_INT) {
+	Tcl_WideInt w0 = args[0].wideValue;
+	
+	if (args[1].type == TCL_INT) {
+	    Tcl_WideInt w1 = Tcl_LongAsWide(args[1].intValue);
+	    
+	    resultPtr->type = TCL_WIDE_INT;
+	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
+	} else if (args[1].type == TCL_DOUBLE) {
+	    double d0 = Tcl_WideAsDouble(w0);
+	    double d1 = args[1].doubleValue;
+
+	    resultPtr->type = TCL_DOUBLE;
+	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
+	} else if (args[1].type == TCL_WIDE_INT) {
+	    Tcl_WideInt w1 = args[1].wideValue;
+
+	    resultPtr->type = TCL_WIDE_INT;
+	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
+	} else {
+	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
+	    result = TCL_ERROR;
+	}
+#endif
     } else {
-	Tcl_SetResult(interp, "T2: wrong type for arg 1", TCL_STATIC);
+	Tcl_SetResult(interp, "T3: wrong type for arg 1", TCL_STATIC);
 	result = TCL_ERROR;
     }
     return result;
