@@ -1,3 +1,12 @@
+1999-03-19    <redman@scriptics.com>
+
+	* generic/tclCmdIL.c: Fixed the initialization of an array so that
+ 	the Sun 5.0 C compiler wouldn't complain.
+
+	* unix/configure.in: Added support for --enable-64bit.  For now,
+ 	this is only supported on Solaris 7 64bit (SunOS 5.7) using the Sun 
+	compiler (not gcc).
+	
 1999-03-18    <stanton@scriptics.com>
 
 	* win/tclWinChan.c (TclpOpenFileChannel, Tcl_MakeFileChannel):
