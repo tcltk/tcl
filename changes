@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.16 1998/12/23 02:56:21 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.1.2.17 1999/01/29 00:20:41 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3641,8 +3641,9 @@ problem. (RJ)
 tcl_platform array on Windows platform.  The existence of the debug
 element of the tcl_platform array indicates that the particular Tcl
 shell has been compiled with debug information.  Using
-"info exists tcl_platform(debug)" a Tcl script can direct the interpreter
-to load debug versions of DLLs with the load command. (SKS)
+"info exists tcl_platform(debug)" a Tcl script can direct the
+interpreter to load debug versions of DLLs with the load
+command. (SKS)
 
 10/20/98 (feature change) The Makefile and configure scripts have been
 changed for IRIX to build n32 binaries instead of the old 32 abi
@@ -3650,16 +3651,18 @@ format.  If you have extensions built with the o32 abi's you will need
 to update them to n32 for them to work with Tcl.  (RJ)
 *** POTENTIAL INCOMPATIBILITY ***
 
-10/23/98 (bug fix) tcl_findLibrary had a stray ] in one of the pathnames
-it searched for the initialization script.  tclInitScript.h was incorrectly
-adding the parent of tcl_library to tcl_pkgPath.  This logic was moved
-into init.tcl, and the initialization of auto_path was documented.
-Thanks to Donald Porter and Tom Silva for related patches. (BW)
+10/23/98 (bug fix) tcl_findLibrary had a stray ] in one of the
+pathnames it searched for the initialization script.  tclInitScript.h
+was incorrectly adding the parent of tcl_library to tcl_pkgPath.  This
+logic was moved into init.tcl, and the initialization of auto_path was
+documented.  Thanks to Donald Porter and Tom Silva for related
+patches. (BW)
 
 10/29/98 (bug fix) Fixed Tcl_NotifyChannel to use Tcl_Preserve instead
 of Tcl_RegisterChannel so that 1) unregistered channels do not get
 closed after their first fileevent, and 2) errors that occur during
-close in a fileevent script are actually reflected by the close command. (BW)
+close in a fileevent script are actually reflected by the close
+command. (BW)
 
 10/30/98 (bug fix) Overhaul of pkg_mkIndex to deal with transitive
 package requires and packages split among scripts and binary files.
@@ -3671,16 +3674,27 @@ permissions.  IM claims that this will always cause the same
 FileRef to be returned, but in MacOS 8.1+, this is no longer the case,
 so we have to test for this explicitly. (JI)
 
-11/10/98 (feature change) When compiling with Metrowerk's MSL, use the exit function from
-MSL rather than ExitToShell.  This allows MSL to clean up its temporary files. Thanks to
-Vince Darley for this improvement. (JI)
+11/10/98 (feature change) When compiling with Metrowerk's MSL, use the
+exit function from MSL rather than ExitToShell.  This allows MSL to
+clean up its temporary files. Thanks to Vince Darley for this
+improvement. (JI)
 
------------------ Released 8.0.4, 11/20/98 -------------------------
+----------------- Released 8.0.4, 11/19/98 -------------------------
+
+11/20/98 (bug fix) Handle possible NULL return in TclGetStdFiles. (RJ)
+
+11/20/98 (bug fix) The dltests would not build on SGI.  They reported
+that you could not mix n32 with 032 binaries.  The configure script
+has been modified to get the EXTRA_CFLAGS from the tcl configure
+script.  [Bug id: 840] (RJ)
 
 12/3/98 (bug fix) Windows NT creates sockets so they are inheritable
 by default.  Fixed socket code so it turns off this bit right after
 creation so sockets aren't kept open by exec'ed processes. [Bug: 892]
 Thanks to Kevin Kenny for this fix.  (SS)
+
+1/11/98 (bug fix)  On HP, "info sharedlibextension" was returning 
+empty string on static apps.  It now always returns ".sl".  (RJ)
 
 ======== Changes for 8.0 go above this line ========
 ======== Changes for 8.1 go below this line ========
@@ -4044,6 +4058,6 @@ different address. [Bug: 933] (stanton)
 
 12/22/98 (performance improvement) Improved the -command option of the
 lsort command to better use the object system for improved
-performance (about 5x speed up).  Thank's to Syd Polk for suppling the
+performance (about 5x speed up).  Thanks to Syd Polk for suppling the
 patch. [RFE: 726] (rjohnson)
 

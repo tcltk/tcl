@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.2 1998/09/24 23:59:44 stanton Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.3 1999/01/29 00:20:47 stanton Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -2417,6 +2417,9 @@ TclpGetDefaultStdChannel(type)
     }
 
     channel = Tcl_MakeFileChannel((ClientData) fd, mode);
+    if (channel == NULL) {
+	return NULL;
+    }
 
     /*
      * Set up the normal channel options for stdio handles.

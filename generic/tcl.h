@@ -7,12 +7,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1993-1996 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.9 1998/12/24 00:13:59 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.10 1999/01/29 00:20:43 stanton Exp $
  */
 
 #ifndef _TCL
@@ -74,6 +74,12 @@
 #   ifndef USE_PROTOTYPE
 #	define USE_PROTOTYPE 1
 #   endif
+
+/*
+ * Under Windows we need to call Tcl_Alloc in all cases to avoid competing
+ * C run-time library issues.
+ */
+
 #   ifndef USE_TCLALLOC
 #	define USE_TCLALLOC 1
 #   endif
@@ -192,7 +198,7 @@
 #  define DLLIMPORT
 #  define DLLEXPORT
 # else
-#  ifdef _MSC_VER
+#  if defined(_MSC_VER) || (defined(__GNUC__) && defined(__declspec))
 #   define DLLIMPORT __declspec(dllimport)
 #   define DLLEXPORT __declspec(dllexport)
 #  else
@@ -811,6 +817,14 @@ EXTERN void		Tcl_ValidateAllMemory _ANSI_ARGS_((char *file,
 #   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
 
 #else
+
+/*
+ * If USE_TCLALLOC is true, then we need to call Tcl_Alloc instead of
+ * the native malloc/free.  The only time USE_TCLALLOC should not be
+ * true is when compiling the Tcl/Tk libraries on Unix systems.  In this
+ * case we can safely call the native malloc/free directly as a performance
+ * optimization.
+ */
 
 #   if USE_TCLALLOC
 #	define ckalloc(x) Tcl_Alloc(x)

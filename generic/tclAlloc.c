@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.4 1998/12/08 04:29:49 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.5 1999/01/29 00:20:44 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -242,6 +242,9 @@ char *
 TclpAlloc(
     unsigned int nbytes)	/* Number of bytes to allocate. */
 {
+#ifdef USE_NATIVEMALLOC
+    return (char*) malloc(nbytes);
+#else
     register union overhead *op;
     register long bucket;
     register unsigned amt;
@@ -344,6 +347,7 @@ TclpAlloc(
 #endif
     TclpMutexUnlock(&allocMutex);
     return ((char *)(op + 1));
+#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -428,6 +432,10 @@ void
 TclpFree(
     char *cp)		/* Pointer to memory to free. */
 {   
+#ifdef USE_NATIVEMALLOC
+    free(cp);
+    return;
+#else
     register long size;
     register union overhead *op;
     struct block *bigBlockPtr;
@@ -467,6 +475,7 @@ TclpFree(
     nmalloc[size]--;
 #endif
     TclpMutexUnlock(&allocMutex);
+#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -490,6 +499,9 @@ TclpRealloc(
     char *cp,			/* Pointer to alloced block. */
     unsigned int nbytes)	/* New size of memory. */
 {   
+#ifdef USE_NATIVEMALLOC
+    return (char*) realloc(cp, nbytes);
+#else
     int i;
     union overhead *op;
     struct block *bigBlockPtr;
@@ -590,6 +602,7 @@ TclpRealloc(
 #endif
     TclpMutexUnlock(&allocMutex);
     return(cp);
+#endif /* USE_NATIVEMALLOC */
 }
 
 /*

@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.12 1998/12/13 08:12:03 lfb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.13 1999/01/29 00:20:49 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -50,16 +50,18 @@ MACHINE	= IX86
 # Set NODEBUG to 0 to compile with symbols
 NODEBUG = 1
 
-# The following defines can be added to enable various options in the
-# way Tcl is built:
+# The following defines can be used to control the amount of debugging
+# code that is added to the compilation.
 #
-# TCL_MEM_DEBUG - enable the debugging memory allocator
-# TCL_COMPILE_DEBUG - enable the debugging bytecode compiler
-# TCL_COMPILE_STATS - enable statistics gathering in the bytecode compiler
-# USE_TCLALLLOC=0 - disable the Tcl memory allocator so Purify will work
-
-#DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
-#DEBUGDEFINES = -DUSE_TCLALLOC=0 -DTCL_COMPILE_DEBUG 
+#	-DTCL_MEM_DEBUG		Enables the debugging memory allocator.
+#	-DTCL_COMPILE_DEBUG	Enables byte compilation logging.
+#	-DTCL_COMPILE_STATS	Enables byte compilation statistics gathering.
+#	-DUSE_NATIVEMALLOC	Disables the Tcl memory allocator in favor
+#				of the native malloc implementation.  This is
+#				needed when using Purify.
+#
+#DEBUGDEFINES = -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+#DEBUGDEFINES = -DUSE_NATIVEMALLOC
 
 ######################################################################
 # Do not modify below this line
