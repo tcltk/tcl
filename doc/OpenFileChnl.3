@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.14 2001/12/07 17:38:33 dgp Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.15 2001/12/10 15:50:46 dgp Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -350,7 +350,7 @@ reference to a channel that is also registered in a Tcl interpreter.
 This procedure interacts with the code managing the standard
 channels. If no standard channels were initialized before the first
 call to \fBTcl_RegisterChannel\fR they will get initialized by that
-call. See \fBTcl_StandardChannel\fR for a general treatise about
+call. See \fBTcl_StandardChannels\fR for a general treatise about
 standard channels and the behaviour of the Tcl library with regard to
 them.
 
