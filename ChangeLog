@@ -1,6 +1,64 @@
+2001-05-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/error.test: updated error-1.3 message to account for
+	string index being compiled at toplevel.
+	* tests/appendComp.test:
+	* tests/stringComp.test: new files for extended bytecode testing
+
+	* generic/tclBasic.c: added new CompileProc invocations to basic
+	command initialization.
+	* generic/tclCompCmds.c: added new compile commands for append,
+	lappend, lindex and llength.  Refactored set and incr compile
+	commands to use new TclPushVarName function for handling the
+	varname component during compilation (also used by append and
+	lappend).  Changed string compile command to compile toplevel code
+	as well (when possible).
+	* generic/tclCompile.c: added new instruction enums
+	* generic/tclCompile.h: added debug info for new instructions
+	* generic/tclExecute.c (TclExecuteByteCode): moved elemPtr to
+	toplevel var (oft-used).  Added definitions for new bytecode
+	instructions INST_LIST_INDEX, INST_LIST_LENGTH, INST_APPEND_SCALAR1,
+	INST_APPEND_SCALAR4, INST_APPEND_ARRAY1, INST_APPEND_ARRAY4,
+	INST_APPEND_ARRAY_STK, INST_APPEND_STK, INST_LAPPEND_SCALAR1,
+	INST_LAPPEND_SCALAR4, INST_LAPPEND_ARRAY1, INST_LAPPEND_ARRAY4,
+	INST_LAPPEND_ARRAY_STK, INST_LAPPEND_STK.
+	Refactored repititious code for reuse with INST_LOAD_STK (same as
+	INST_LOAD_SCALAR_STK), INST_STORE_STK (same as
+	INST_STORE_SCALAR_STK).
+	Updated INST_STR_CMP with style of fix of 2001-04-06 Fellows
+	[Bug #219201] as that fix only affected the runtime eval'ed
+	"string" (string compare is normally byte-compiled now).  We
+	may want to back these out for speed in the future, noting the
+	problems with \x00 comparisons in the docs.
+	* generic/tclInt.h: declarations for new compile commands.
+	* generic/tclVar.c: change TclGetIndexedScalar,
+	TclGetElementOfIndexedArray, TclSetElementOfIndexedArray and
+	TclSetIndexedScalar to use flags.  The Set functions now support
+	TCL_APPEND_ELEMENT and TCL_LIST_ELEMENT as well.
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h: minor signature changes for above.
+
+	* generic/tclCmdMZ.c: made use of new Tcl_GetUnicodeFromObj.
+
 2001-05-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/console.n: Deleted.  Put it in the wrong source tree!  D'oh!
+
+2001-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.decls:
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclStringObj.c (Tcl_GetUnicodeFromObj): new function to
+	parallel Tcl_GetStringFromObj (fix of an API oversight).
+
+	* unix/tclUnixPipe.c: updated pipeChannelType to
+	TCL_CHANNEL_VERSION_2 type specification.
+
+	* tests/fileName.test: corrected tests not to fail on win when a
+	C:/test dir exists.
+
+	* generic/tclFileName.c (ExtractWinRoot): corrected ABR error
 
 2001-05-15  Miguel Sofer  <msofer@users.sourceforge.net>
 
@@ -3162,7 +3220,6 @@
 	Fixed "clock scan <number>" to scan the number as an hour for the
 	current day, rather than a minute after 00:00 for the current day
 	(bug #2732).
-	
 
 2000-01-07  Eric Melski  <ericm@scriptics.com>
 
