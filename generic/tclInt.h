@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.55 2001/05/26 01:25:59 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.55.2.1 2001/05/31 23:45:44 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1997,6 +1997,8 @@ EXTERN int	Tcl_LreplaceObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LsearchObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	Tcl_LsetObjCmd _ANSI_ARGS_((ClientData clientData,
+                    Tcl_Interp* interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LsortObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_NamespaceObjCmd _ANSI_ARGS_((ClientData clientData,

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.50 2001/05/30 08:57:06 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.50.2.1 2001/05/31 23:45:44 kennykb Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1375,6 +1375,10 @@ EXTERN int		Tcl_GetMathFuncInfo _ANSI_ARGS_((Tcl_Interp * interp,
 /* 436 */
 EXTERN Tcl_Obj *	Tcl_ListMathFuncs _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * pattern));
+/* 437 */
+EXTERN int		Tcl_ListObjSetElement _ANSI_ARGS_((
+				Tcl_Interp* interp, Tcl_Obj* listPtr, 
+				int index, Tcl_Obj* valuePtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1879,6 +1883,7 @@ typedef struct TclStubs {
     Tcl_UniChar * (*tcl_GetUnicodeFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 434 */
     int (*tcl_GetMathFuncInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, int * numArgsPtr, Tcl_ValueType ** argTypesPtr, Tcl_MathProc ** procPtr, ClientData * clientDataPtr)); /* 435 */
     Tcl_Obj * (*tcl_ListMathFuncs) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * pattern)); /* 436 */
+    int (*tcl_ListObjSetElement) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* listPtr, int index, Tcl_Obj* valuePtr)); /* 437 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3674,6 +3679,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ListMathFuncs
 #define Tcl_ListMathFuncs \
 	(tclStubsPtr->tcl_ListMathFuncs) /* 436 */
+#endif
+#ifndef Tcl_ListObjSetElement
+#define Tcl_ListObjSetElement \
+	(tclStubsPtr->tcl_ListObjSetElement) /* 437 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -11,13 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lindex.test,v 1.8 2001/05/15 14:45:00 msofer Exp $
+# RCS: @(#) $Id: lindex.test,v 1.8.2.1 2001/05/31 23:45:44 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
+# not compiled:
 test lindex-1.1 {basic tests} {
     lindex {a b c} 0} a
 test lindex-1.2 {basic tests} {
@@ -26,9 +27,13 @@ test lindex-1.3 {basic tests} {
     lindex {a b\ c\ d x} 1} {b c d}
 test lindex-1.4 {basic tests} {
     lindex {a b c} 3} {}
+
+# compiled:
 test lindex-1.5 {basic tests} {
     list [catch {lindex {a b c} -1} msg] $msg
 } {0 {}}
+
+# not compiled:
 test lindex-1.6 {basic tests} {
     lindex {a b c d} end
 } d
@@ -48,12 +53,12 @@ test lindex-1.11 {Nested list with a backslashed brace} {
     lindex {{a \{}} 0
 } {a \{}
 
+# compiled:
+
 test lindex-2.1 {error conditions} {
     list [catch {lindex msg} msg] $msg
-} {1 {wrong # args: should be "lindex list index"}}
-test lindex-2.2 {error conditions} {
-    list [catch {lindex 1 2 3 4} msg] $msg
-} {1 {wrong # args: should be "lindex list index"}}
+} {1 {wrong # args: should be "lindex list index ?index...?"}}
+# test lindex-2.2 deleted -- no longer an error
 test lindex-2.3 {error conditions} {
     list [catch {lindex 1 2a2} msg] $msg
 } {1 {bad index "2a2": must be integer or end?-integer?}}
@@ -67,6 +72,7 @@ test lindex-2.6 {error conditions} {
     list [catch {lindex {a "b c"def ghi} 2} msg] $msg
 } {1 {list element in quotes followed by "def" instead of space}}
 
+# not compiled:
 test lindex-3.1 {quoted elements} {
     lindex {a "b c" d} 1
 } {b c}
@@ -79,6 +85,140 @@ test lindex-3.3 {quoted elements} {
 test lindex-3.4 {quoted elements} {
     lindex {a b {c d "e} {f g"}} 2
 } {c d "e}
+
+test lindex-4.1 {Tcl_LindexObjCmd - wrong no args} {
+    set z {lindex}
+    list [catch {$z foo} msg] $msg
+} "1 {wrong # args: should be \"lindex list index ?index...?\"}"
+test lindex-4.2 {Tcl_LindexObjCmd - ill-formed list} {
+    set z {lindex}
+    list [catch {$z "a \{" 0} msg] $msg
+} {1 {unmatched open brace in list}}
+test lindex-4.3 {Tcl_LindexObjCmd - ill-formed list} {
+    set z {lindex}
+    list [catch {$z {a {b c}d e} 2} msg] $msg
+} {1 {list element in braces followed by "d" instead of space}}
+test lindex-4.4 {Tcl_LindexObjCmd - ill-formed index 0} {
+    set z {lindex}
+    list [catch {$z {a b c d} 2a2} msg] $msg
+} {1 {bad index "2a2": must be integer or end?-integer?}}
+test lindex-4.5 {Tcl_LindexObjCmd - index out of range} {
+    set z {lindex}
+    $z {a b c} -1
+} {}
+test lindex-4.6 {Tcl_LindexObjCmd - index out of range} {
+    set z {lindex}
+    $z {a b c} 3
+} {}
+test lindex-4.7 {Tcl_LindexObjCmd - index out of range} {
+    set z {lindex}
+    $z {a b c} end-3
+} {}
+test lindex-4.8 {Tcl_LindexObjCmd - index out of range} {
+    set z {lindex}
+    $z {a b c} end--1
+} {}
+test lindex-4.9 {Tcl_LindexObjCmd - list and index the same object} {
+    set z {lindex}
+    set x 0
+    $z $x $x
+} {0}
+
+test lindex-5.1 {Tcl_LindexObjCmd - basics} {
+    set z {lindex}
+    $z {a b c} 0
+} a
+test lindex-5.2 {Tcl_LindexObjCmd - basics} {
+    set z {lindex}
+    $z {a b c} 2
+} c
+test lindex-5.3 {Tcl_LindexObjCmd - basics} {
+    set z {lindex}
+    $z {a b c} end
+} c
+test lindex-5.4 {Tcl_LindexObjCmd - basics} {
+    set z {lindex}
+    $z {a b c} end-0
+} c
+test lindex-5.5 {Tcl_LindexObjCmd - basics} {
+    set z {lindex}
+    $z {a b c} end-2
+} a
+
+test lindex-6.1 {Tcl_LindexObjCmd - twice through loop} {
+    set z {lindex}
+    $z {{a b c} {d e f} {g h i}} 0 0
+} a
+test lindex-6.2 {Tcl_LindexObjCmd - twice through loop} {
+    set z {lindex}
+    $z {{a b c} {d e f} {g h i}} 0 2
+} c
+test lindex-6.3 {Tcl_LindexObjCmd - twice through loop} {
+    set z {lindex}
+    $z {{a b c} {d e f} {g h i}} 2 0
+} g
+test lindex-6.4 {Tcl_LindexObjCmd - twice through loop} {
+    set z {lindex}
+    $z {{a b c} {d e f} {g h i}} 2 2
+} i
+
+test lindex-7.1 {Tcl_LindexObjCmd - data reused twice} {
+    set z {lindex}
+    set a 0
+    $z $a $a $a
+} 0
+test lindex-7.2 {Tcl_LindexObjCmd - data reused} {
+    set z {lindex}
+    set a 1
+    $z $a $a $a
+} {}
+
+test lindex-8.1 {Tcl_CompileLindexCmd - wrong args} {
+    list [catch {lindex} msg] $msg
+} "1 {wrong \# args: should be \"lindex list index ?index...?\"}"
+
+test lindex-8.2 {Tcl_CompileLindexCmd - two simple words} {
+    list [catch {lindex {a b} 0} msg] $msg
+} {0 a}
+
+test lindex-8.3 {Tcl_CompileLindexCmd - compilation failure on list} {
+    list [catch {lindex [lindex] 0} msg] $msg
+} "1 {wrong \# args: should be \"lindex list index ?index...?\"}"
+
+test lindex-8.4 {Tcl_CompileLindexCmd - list not simple} {
+    list [catch {lindex [lindex {{0 1} {2 3}} 1] 1} msg] $msg
+} {0 3}
+
+test lindex-8.5 {Tcl_CompileLindexCmd - first arg not simple} {
+    set x 4-1-1-1
+    list [catch {lindex {a b c d} [expr $x]} msg] $msg
+} {0 b}
+
+test lindex-8.6 {Tcl_CompileLindexCmd - three args} {
+    list [catch {lindex {{a b} {c d}} 1 1} msg] $msg
+} {0 d}
+
+test lindex-9.1 {INST_LIST_LINDEX - not a list} {
+    list [catch {lindex "a \{" 0} msg] $msg
+} {1 {unmatched open brace in list}}
+test lindex-9.2 {INST_LIST_LINDEX - bad index} {
+    list [catch {lindex {a b c d} 2a2} msg] $msg
+} {1 {bad index "2a2": must be integer or end?-integer?}}
+test lindex-9.3 {INST_LIST_LINDEX - negative index} {
+    list [catch {lindex {a b c d} -1} msg] $msg
+} {0 {}}
+test lindex-9.4 {INST_LIST_LINDEX - index past end} {
+    list [catch {lindex {a b c d} 4} msg] $msg
+} {0 {}}
+test lindex-9.5 {INST_LIST_LINDEX - shared data} {
+    list [catch {lindex 0 0} msg] $msg
+} {0 0}
+test lindex-9.6 {INST_LIST_LINDEX - shared data, twice} {
+    list [catch {lindex 0 0 0} msg] $msg
+} {0 0}
+test lindex-9.6 {INST_LIST_LINDEX - shared data, another example} {
+    list [catch {lindex 1 1 1} msg] $msg
+} {0 {}}
 
 # cleanup
 ::tcltest::cleanupTests

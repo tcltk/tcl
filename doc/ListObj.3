@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ListObj.3,v 1.4 2000/01/26 03:37:30 hobbs Exp $
+'\" RCS: @(#) $Id: ListObj.3,v 1.4.10.1 2001/05/31 23:45:44 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_ListObj 3 8.0 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_ListObjAppendList, Tcl_ListObjAppendElement, Tcl_NewListObj, Tcl_SetListObj, Tcl_ListObjGetElements, Tcl_ListObjLength, Tcl_ListObjIndex, Tcl_ListObjReplace \- manipulate Tcl objects as lists
+Tcl_ListObjAppendList, Tcl_ListObjAppendElement, Tcl_NewListObj, Tcl_SetListObj, Tcl_ListObjGetElements, Tcl_ListObjLength, Tcl_ListObjIndex, Tcl_ListObjReplace, Tcl_ListObjSetElement \- manipulate Tcl objects as lists
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -37,6 +37,11 @@ int
 .sp
 int
 \fBTcl_ListObjReplace\fR(\fIinterp, listPtr, first, count, objc, objv\fR)
+.VS 8.4
+.sp
+int
+\fBTcl_ListObjSetElement\fR(\fIinterp, listPtr, index, objPtr\fR)
+.VE
 .SH ARGUMENTS
 .AS Tcl_Interp "*CONST objv[]" out
 .AP Tcl_Interp *interp in
@@ -57,10 +62,16 @@ does not already point to a list object,
 an attempt will be made to convert it to one.
 .AP Tcl_Obj *objPtr in
 For \fBTcl_ListObjAppendElement\fR,
-points to the Tcl object that will be appended to \fIlistPtr\fR.
-For \fBTcl_SetListObj\fR,
-this points to the Tcl object that will be converted to a list object
-containing the \fIobjc\fR elements of the array referenced by \fIobjv\fR.
+points to the Tcl object that will be appended to \fIlistPtr\fR.  
+For \fBTcl_SetListObj\fR, this
+points to the Tcl object that will be converted to a list object
+containing the \fIobjc\fR elements of the array referenced by
+\fIobjv\fR.
+.VS 8.4
+For \fBTcl_ListObjSetElement\fR, points to the Tcl object that will be
+stored at location \fIindex\fR within the object designated by
+\fIlistPtr\fR.
+.VE 8.4
 .AP int *objcPtr in
 Points to location where \fBTcl_ListObjGetElements\fR
 stores the number of element objects in \fIlistPtr\fR.
@@ -85,7 +96,10 @@ Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
 .AP int index in
 Index of the list element that \fBTcl_ListObjIndex\fR
-is to return.
+is to return
+.VS 8.4
+or \fBTcl_ListObjSetElement\fR is to replace.
+.VE 8.4
 The first element has index 0.
 .AP Tcl_Obj **objPtrPtr out
 Points to place where \fBTcl_ListObjIndex\fR is to store
@@ -239,7 +253,26 @@ with a NULL \fIobjvPtr\fR:
 .CS
 result = Tcl_ListObjReplace(interp, listPtr, first, count, 0, NULL);
 .CE
-
+.PP
+.VS 8.4
+\fBTcl_ListObjSetElement\fR replaces a single element of the
+list designated by \fIlistPtr\fR at the location \fIindex\fR within
+the list with the object designated by \fIobjPtr\fR.  It increments
+the reference count of \fIobjPtr\fR to reflect this new reference, and
+decrements the reference count of the element that was previously at
+location \fIindex\fR.
+If \fIlistPtr\fR does not already refer to a list object,
+\fBTcl_ListObjSetElement\fR will attempt to convert it to one;
+if the conversion fails, it returns \fBTCL_ERROR\fR
+and leaves an error message in the interpreter's result object
+if \fIinterp\fR is not NULL.
+If the index is out of range,
+that is, \fIindex\fR is negative or
+greater than or equal to the number of elements in the list,
+then \fBTclListObjSetElement returns \fBTCL_ERROR\fR
+and leaves an error message in the interpreter's result object
+if \fIinterp\fR is not NULL.
+.VE 8.4
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
 

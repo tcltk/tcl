@@ -10,11 +10,12 @@
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.31 2001/05/30 08:57:06 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.31.2.1 2001/05/31 23:45:44 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2006,60 +2007,91 @@ Tcl_LindexObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Tcl_Obj *listPtr;
+    Tcl_Obj *listPtr, *oldListPtr;
     Tcl_Obj **elemPtrs;
     int listLen, index, result;
+    int i;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "list index");
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list index ?index...?");
 	return TCL_ERROR;
     }
 
     /*
-     * Convert the first argument to a list if necessary.
+     * Begin with the first argument.  From here on, we track the
+     * reference that we maintain to listPtr.  The reason is that
+     * if any data are shared between the 'list' and 'index' args,
+     * we will be repeatedly shimmering the list back and forth
+     * to an integer.  This process will cause its elements to be
+     * freed, resulting in pointer smashes if the pointer to the
+     * current element is not protected.
      */
 
     listPtr = objv[1];
-    result = Tcl_ListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
-    if (result != TCL_OK) {
-	return result;
-    }
+    Tcl_IncrRefCount( listPtr );
 
-    /*
-     * Get the index from objv[2].
-     */
+    for ( i = 2; i < objc; ++i ) {
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ (listLen - 1),
-	    &index);
-    if (result != TCL_OK) {
-	return result;
-    }
-    if ((index < 0) || (index >= listLen)) {
 	/*
-	 * The index is out of range: the result is an empty string object.
+	 * Convert the current listPtr to a list if necessary.
 	 */
-	
-	return TCL_OK;
-    }
 
-    /*
-     * Make sure listPtr still refers to a list object. It might have been
-     * converted to an int above if the argument objects were shared.
-     */
-
-    if (listPtr->typePtr != &tclListType) {
-	result = Tcl_ListObjGetElements(interp, listPtr, &listLen,
-	        &elemPtrs);
+	result = Tcl_ListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
 	if (result != TCL_OK) {
+	    Tcl_DecrRefCount( listPtr );
 	    return result;
 	}
-    }
 
+	/*
+	 * Get the index from objv[i].
+	 */
+
+	result = TclGetIntForIndex(interp, objv[i], /*endValue*/ (listLen - 1),
+				   &index);
+	if (result != TCL_OK) {
+	    Tcl_DecrRefCount( listPtr );
+	    return result;
+	}
+	if ((index < 0) || (index >= listLen)) {
+	    /*
+	     * The index is out of range: the result is an empty string object.
+	     */
+	    
+	    Tcl_DecrRefCount( listPtr );
+	    return TCL_OK;
+	}
+
+	/*
+	 * Make sure listPtr still refers to a list object. It might have been
+	 * converted to an int above if the argument objects were shared.
+	 */
+	
+	if (listPtr->typePtr != &tclListType) {
+	    result = Tcl_ListObjGetElements(interp, listPtr, &listLen,
+					    &elemPtrs);
+	    if (result != TCL_OK) {
+		Tcl_DecrRefCount( listPtr );
+		return result;
+	    }
+	}
+	
+	/*
+	 * Extract the pointer to the appropriate element
+	 */
+
+	oldListPtr = listPtr;
+	listPtr = elemPtrs[ index ];
+	Tcl_IncrRefCount( listPtr );
+	Tcl_DecrRefCount( oldListPtr );
+
+    }
+	
     /*
-     * Set the interpreter's object result to the index-th list element.
+     * Set the interpreter's object result to the last element extracted
      */
 
-    Tcl_SetObjResult(interp, elemPtrs[index]);
+    Tcl_SetObjResult(interp, listPtr);
+    Tcl_DecrRefCount( listPtr );
     return TCL_OK;
 }
 
@@ -2719,6 +2751,140 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     }
     Tcl_SetIntObj(Tcl_GetObjResult(interp), index);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LsetObjCmd --
+ *
+ *	This procedure is invoked to process the "lset" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_LsetObjCmd( clientData, interp, objc, objv )
+    ClientData clientData;	/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument values. */
+{
+
+    Tcl_Obj* listPtr;		/* Pointer to the list being altered. */
+    Tcl_Obj* subListPtr;	/* Pointer to a sublist of the list */
+    Tcl_Obj* finalValuePtr;	/* Value finally assigned to the variable */
+    int index;			/* Index of the element being replaced */
+    int result;			/* Result to return from this function */
+    int listLen;		/* Length of a list being examined */
+    Tcl_Obj** elemPtrs;		/* Pointers to the elements of a
+				 * list being examined */
+    int i;
+
+    /* Check parameter count */
+
+    if ( objc < 4 ) {
+	Tcl_WrongNumArgs( interp, 1, objv, "listVar index ?index...? value" );
+	return TCL_ERROR;
+    }
+
+    /* Look up the list variable */
+
+    listPtr = Tcl_ObjGetVar2( interp, objv[ 1 ], (Tcl_Obj*) NULL,
+			      TCL_LEAVE_ERR_MSG );
+    if ( listPtr == NULL ) {
+	return TCL_ERROR;
+    }
+
+    /* Make sure that the list value is unshared. */
+
+    if ( Tcl_IsShared( listPtr ) ) {
+	listPtr = Tcl_DuplicateObj( listPtr );
+    }
+
+    finalValuePtr = listPtr;
+
+    /*
+     * If there are multiple 'index' args, handle each arg except the
+     * last by diving into a sublist.
+     */
+
+    for ( i = 2; ; ++i ) {
+
+	/* Take apart the list */
+
+	result = Tcl_ListObjGetElements( interp, listPtr,
+					 &listLen, &elemPtrs );
+	if ( result != TCL_OK ) {
+	    return result;
+	}
+
+	/* Derive the index of the requested sublist */
+
+	result = TclGetIntForIndex( interp, objv[i], (listLen - 1), &index );
+	if ( result != TCL_OK ) {
+	    return result;
+	}
+
+	if ( ( index < 0 ) || ( index >= listLen ) ) {
+
+	    Tcl_SetObjResult( interp,
+			      Tcl_NewStringObj( "list index out of range",
+						-1 ) );
+	    return TCL_ERROR;
+	}
+
+	/* Break out of the loop if we've extracted the innermost sublist. */
+
+	if ( i >= ( objc - 2 ) ) {
+	    break;
+	}
+
+	/*
+	 * Extract the appropriate sublist, and make sure that it is unshared.
+	 */
+
+	subListPtr = elemPtrs[ index ];
+	if ( Tcl_IsShared( subListPtr ) ) {
+	    subListPtr = Tcl_DuplicateObj( subListPtr );
+	    result = Tcl_ListObjSetElement( interp, listPtr, index,
+					    subListPtr );
+	    if ( result != TCL_OK ) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    Tcl_InvalidateStringRep( listPtr );
+	}
+
+	listPtr = subListPtr;
+    }
+
+    /* Store the result in the list element */
+
+    result = Tcl_ListObjSetElement( interp, listPtr, index, objv[objc-1] );
+    if ( result != TCL_OK ) {
+	return result;
+    }
+
+    /* Finally, update the variable so that traces fire. */
+
+    listPtr = Tcl_ObjSetVar2( interp, objv[1], NULL, finalValuePtr,
+			      TCL_LEAVE_ERR_MSG );
+    if ( listPtr == NULL ) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult( interp, listPtr );
+
+    return result;
+
 }
 
 /*

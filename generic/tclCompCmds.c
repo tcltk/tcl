@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.8 2001/05/17 02:13:02 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.8.2.1 2001/05/31 23:45:44 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1766,40 +1766,79 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr;
     int code, depth, i;
+    int maxDepth;
 
-    if (parsePtr->numWords != 3) {
-	Tcl_SetResult(interp, "wrong # args: should be \"lindex list index\"",
-		TCL_STATIC);
+    if (parsePtr->numWords < 3) {
+	Tcl_SetResult
+	    (interp,
+	     "wrong # args: should be \"lindex list index ?index...?\"",
+	     TCL_STATIC);
 	return TCL_ERROR;
     }
+
+    /*
+     * Skip over the 'lindex' word itself.
+     */
+
     varTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
 
-    depth = 0;
-
     /*
-     * Push the two operands onto the stack.
+     * Walk the remaining args
      */
 
-    for (i = 0; i < 2; i++) {
+    maxDepth = 0;
+    for (i = 1; i < parsePtr->numWords; i++) {
+
+	/*
+	 * Emit code to push the arg on the stack.  Keep track
+	 * of how much stack we used.
+	 */
+
 	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr,
 		    varTokenPtr[1].start, varTokenPtr[1].size,
 		    0), envPtr);
-	    depth++;
+	    depth = 1;
 	} else {
 	    code = TclCompileTokens(interp, varTokenPtr+1,
 		    varTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
 		return code;
 	    }
-	    depth += envPtr->maxStackDepth;
+	    depth = envPtr->maxStackDepth;
 	}
 	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+
+	/*
+	 * Every arg except for the first has one arg beneath it on
+	 * the stack.  Keep track of the maximum depth the stack has
+	 * reached.
+	 */
+
+	if ( i > 1 ) {
+	    ++depth;
+	}
+	if ( depth > maxDepth ) {
+	    maxDepth = depth;
+	}
+
+	/*
+	 * Every arg except for the first gets an INST_LIST_INDEX
+	 * opcode.
+	 */
+
+	if ( i > 1 ) {
+	    TclEmitOpcode(INST_LIST_INDEX, envPtr);
+	}
     }
 
-    envPtr->maxStackDepth = depth;
-    TclEmitOpcode(INST_LIST_INDEX, envPtr);
+    /*
+     * Report on the maximum depth the stack reached.
+     */
+
+    envPtr->maxStackDepth = maxDepth;
+
     return TCL_OK;
 }
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.9 2001/04/04 16:07:21 kennykb Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.9.6.1 2001/05/31 23:45:44 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -758,6 +758,101 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 
     Tcl_InvalidateStringRep(listPtr);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ListObjSetElement --
+ *
+ *	Set a single element of a list to a specified value
+ *
+ * Results:
+ *
+ *	The return value is normally TCL_OK.  If listPtr does not
+ *	refer to a list object and cannot be converted to one, TCL_ERROR
+ *	is returned and an error message will be left in the interpreter
+ *	result if interp is not NULL.  Similarly, if index designates
+ *	an element outside the range [0..listLength-1], where
+ *	listLength is the count of elements in the list object designated
+ *	by listPtr, TCL_ERROR is returned and an error message is left
+ *	in the interpreter result.
+ *
+ * Side effects:
+ *
+ *	Panics if listPtr designates a shared object.  Otherwise, attempts
+ *	to convert it to a list.  Decrements the ref count of the object
+ *	at the specified index within the list, replaces with the
+ *	object designated by valuePtr, and increments the ref count
+ *	of the replacement object.  Frees the string representation of
+ *	listPtr, if any.
+ *
+ * This procedure is largely for the convenience of the 'lset' command,
+ * but other C code may want to use it, so it is exported from the library.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ListObjSetElement( interp, listPtr, index, valuePtr )
+    Tcl_Interp* interp;		/* Tcl interpreter; used for error reporting
+				 * if not NULL */
+    Tcl_Obj* listPtr;		/* List object in which element should be
+				 * stored */
+    int index;			/* Index of element to store */
+    Tcl_Obj* valuePtr;		/* Tcl object to store in the designated
+				 * list element */
+{
+    int result;			/* Return value from this function */
+    List* listRepPtr;		/* Internal representation of the list
+				 * being modified */
+    Tcl_Obj** elemPtrs;		/* Pointers to elements of the list */
+    int elemCount;		/* Number of elements in the list */
+
+    /* Ensure that the listPtr parameter designates an unshared list */
+
+    if ( Tcl_IsShared( listPtr ) ) {
+	panic( "Tcl_ListObjSetElement called with shared object" );
+    }
+    if ( listPtr->typePtr != &tclListType ) {
+	result = SetListFromAny( interp, listPtr );
+	if ( result != TCL_OK ) {
+	    return result;
+	}
+    }
+    listRepPtr = (List*) listPtr->internalRep.otherValuePtr;
+    elemPtrs = listRepPtr->elements;
+    elemCount = listRepPtr->elemCount;
+
+    /* Ensure that the index is in bounds */
+
+    if ( index < 0 || index >= elemCount ) {
+	if ( interp != NULL ) {
+	    Tcl_SetObjResult( interp,
+			      Tcl_NewStringObj( "list index out of range",
+						-1 ) );
+	    return TCL_ERROR;
+	}
+    }
+
+    /* Add a reference to the new list element */
+
+    Tcl_IncrRefCount( valuePtr );
+
+    /* Remove a reference from the old list element */
+
+    Tcl_DecrRefCount( elemPtrs[ index ] );
+
+    /* Stash the new object in the list */
+
+    elemPtrs[ index ] = valuePtr;
+
+    /* Invalidate and free any old string representation */
+
+    Tcl_InvalidateStringRep( listPtr );
+
+    return TCL_OK;
+    
 }
 
 /*

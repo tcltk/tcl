@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.33 2001/05/30 08:57:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.33.2.1 2001/05/31 23:45:44 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -130,6 +130,8 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		1},
     {"lsearch",		(Tcl_CmdProc *) NULL,	Tcl_LsearchObjCmd,
         (CompileProc *) NULL,		1},
+    {"lset",            (Tcl_CmdProc *) NULL,   Tcl_LsetObjCmd,
+        (CompileProc *) NULL,           1},
     {"lsort",		(Tcl_CmdProc *) NULL,	Tcl_LsortObjCmd,
         (CompileProc *) NULL,		1},
     {"namespace",	(Tcl_CmdProc *) NULL,	Tcl_NamespaceObjCmd,

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.6 2000/09/07 14:27:49 poenitz Exp $
+'\" RCS: @(#) $Id: lindex.n,v 1.6.6.1 2001/05/31 23:45:44 kennykb Exp $
 '\" 
 .so man.macros
 .TH lindex n 8.2 Tcl "Tcl Built-In Commands"
@@ -14,12 +14,15 @@
 .SH NAME
 lindex \- Retrieve an element from a list
 .SH SYNOPSIS
-\fBlindex \fIlist index\fR
+\fBlindex \fIlist index ?index...?\fR
 .BE
 
 .SH DESCRIPTION
 .PP
-This command treats \fIlist\fR as a Tcl list and returns the
+.VS 8.4
+When presented with two arguments, this command
+d treats \fIlist\fR as a Tcl list and returns the
+.VE
 \fIindex\fR'th element from it (0 refers to the first element of the list).
 In extracting the element, \fIlindex\fR observes the same rules
 concerning braces and quotes and backslashes as the Tcl command
@@ -31,7 +34,28 @@ string is returned.
 If \fIindex\fR has the value \fBend\fR, it refers to the last element
 in the list, and \fBend\-\fIinteger\fR refers to the last element in
 the list minus the specified integer offset.
-
+.PP
+.VS 8.4
+If additional \fIindex\fR arguments are supplied, then each argument is
+used in turn to select an element from the previous indexing operation,
+allowing the script to select elements from sublists.  The expression,
+.CS
+lindex $a 1 2 3
+.CE
+is synonymous with
+.CS
+lindex [lindex [lindex $a 1] 2] 3
+.CE
+.SH EXAMPLES
+.CS
+lindex {a b c} 0 => a
+lindex {a b c} 2 => c
+lindex {a b c} end => c
+lindex {a b c} end-1 => b
+lindex {{a b c} {d e f} {g h i}} 2 1 => h
+lindex {{{a b} {c d}} {{e f} {g h}}} 1 1 0 => g
+.CE
+.VE
 .SH "SEE ALSO"
 list(n), lappend(n), linsert(n), llength(n), lsearch(n), lsort(n),
 lrange(n), lreplace(n)
