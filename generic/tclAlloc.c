@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.2 1998/09/24 23:58:40 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.3 1998/11/18 03:34:27 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -31,7 +31,7 @@
 typedef unsigned long caddr_t;
 
 /*
- * The overhead on a block is at least 4 bytes.  When free, this space
+ * The overhead on a block is at least 8 bytes.  When free, this space
  * contains a pointer to the next free block, and the bottom two bits must
  * be zero.  When in use, the first byte is set to MAGIC, and the second
  * byte is the size index.  The remaining bytes are for alignment.
@@ -43,6 +43,7 @@ typedef unsigned long caddr_t;
 
 union overhead {
     union overhead *ov_next;	/* when free */
+    unsigned char ov_padding[8]; /* Ensure the structure is 8-byte aligned. */
     struct {
 	unsigned char	ovu_magic0;	/* magic number */
 	unsigned char	ovu_index;	/* bucket # */
@@ -51,6 +52,7 @@ union overhead {
 #ifdef RCHECK
 	unsigned short	ovu_rmagic;	/* range magic number */
 	unsigned long	ovu_size;	/* actual block size */
+	unsigned short  ovu_unused2;    /* padding to 8-byte align */
 #endif
     } ovu;
 #define ov_magic0	ovu.ovu_magic0
@@ -105,7 +107,10 @@ static struct block bigBlocks = {	/* Big blocks aren't suballocated. */
  * used before anything else in Tcl, we make this module self-initializing
  * after all with the allocInit variable.
  */
+
+#ifdef TCL_THREADS
 static TclpMutex allocMutex;
+#endif
 static int allocInit = 0;
 
 
