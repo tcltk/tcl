@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.72 2004/09/21 22:45:41 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.73 2004/09/22 22:23:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -948,8 +948,46 @@ TclCompileScript(interp, script, numBytes, envPtr)
     gotParse = 0;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
-	    code = TCL_ERROR;
-	    goto error;
+	    /* Compile bytecodes to report the parse error at runtime */
+	    Tcl_Obj *returnCmd = Tcl_NewStringObj(
+		    "return -code 1 -level 0 -errorinfo", -1);
+	    Tcl_Obj *errMsg = Tcl_GetObjResult(interp);
+	    Tcl_Obj *errInfo = Tcl_DuplicateObj(errMsg);
+	    char *cmdString;
+	    int cmdLength;
+	    Tcl_Parse subParse;
+	    int errorLine = 1;
+
+	    Tcl_IncrRefCount(returnCmd);
+	    Tcl_IncrRefCount(errInfo);
+	    Tcl_AppendToObj(errInfo, "\n    while executing\n\"", -1);
+	    TclAppendLimitedToObj(errInfo, parse.commandStart,
+		/* Drop the command terminator (";" or "]") if appropriate */
+		(parse.term == parse.commandStart + parse.commandSize - 1) ?
+			parse.commandSize - 1 : parse.commandSize, 153, NULL);
+	    Tcl_AppendToObj(errInfo, "\"", -1);
+
+	    Tcl_ListObjAppendElement(NULL, returnCmd, errInfo);
+
+	    for (p = script; p != parse.commandStart; p++) {
+		if (*p == '\n') {
+		    errorLine++;
+		}
+	    }
+	    Tcl_ListObjAppendElement(NULL, returnCmd,
+		    Tcl_NewStringObj("-errorline", -1));
+	    Tcl_ListObjAppendElement(NULL, returnCmd,
+		    Tcl_NewIntObj(errorLine));
+
+	    Tcl_ListObjAppendElement(NULL, returnCmd, errMsg);
+	    Tcl_DecrRefCount(errInfo);
+
+	    cmdString = Tcl_GetStringFromObj(returnCmd, &cmdLength);
+	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, &subParse);
+	    TclCompileReturnCmd(interp, &subParse, envPtr);
+	    Tcl_DecrRefCount(returnCmd);
+	    Tcl_FreeParse(&subParse);
+	    return TCL_OK;
 	}
 	gotParse = 1;
 	if (parse.numWords > 0) {
@@ -1224,26 +1262,6 @@ TclCompileScript(interp, script, numBytes, envPtr)
     Tcl_DStringFree(&ds);
     return TCL_OK;
 	
-    error:
-    /*
-     * Generate various pieces of error information, such as the line
-     * number where the error occurred and information to add to the
-     * errorInfo variable. Then free resources that had been allocated
-     * to the command.
-     */
-
-    commandLength = parse.commandSize;
-    if (parse.term == parse.commandStart + commandLength - 1) {
-	/*
-	 * The terminator character (such as ; or ]) of the command where
-	 * the error occurred is the last character in the parsed command.
-	 * Reduce the length by one so that the error message doesn't
-	 * include the terminator character.
-	 */
-
-	commandLength -= 1;
-    }
-
     log:
     LogCompilationInfo(interp, script, parse.commandStart, commandLength);
     if (gotParse) {
@@ -3339,7 +3357,7 @@ TclPrintInstruction(codePtr, pc)
 		             || (opCode == INST_JUMP_FALSE1))) {
 		fprintf(stdout, "%d  	# pc %u", opnd, (pcOffset + opnd));
 	    } else {
-		fprintf(stdout, "%d", opnd);
+		fprintf(stdout, "%d ", opnd);
 	    }
 	    break;
 	case OPERAND_INT4:
@@ -3349,7 +3367,7 @@ TclPrintInstruction(codePtr, pc)
 		             || (opCode == INST_JUMP_FALSE4))) {
 		fprintf(stdout, "%d  	# pc %u", opnd, (pcOffset + opnd));
 	    } else {
-		fprintf(stdout, "%d", opnd);
+		fprintf(stdout, "%d ", opnd);
 	    }
 	    break;
 	case OPERAND_UINT1:

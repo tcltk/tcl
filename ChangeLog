@@ -1,3 +1,11 @@
+2004-09-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (TclProcessReturn):	Support the -errorline
+	* generic/tclCompile.c (TclCompileScript):	option to [return].
+	* tests/compile.test (16.23.*):	Use that capability to defer reporting
+	* tests/misc.test (1.2):	of parse errors until runtime.
+	Updated tests to reflect change. [Bug 1032805]
+
 2004-09-22  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_START_CMD):
