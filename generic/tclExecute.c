@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.119 2004/01/12 03:23:31 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.120 2004/01/13 23:15:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1231,12 +1231,23 @@ TclExecuteByteCode(interp, codePtr)
 
     switch (*pc) {
     case INST_RETURN:
-	if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
-	    Tcl_DecrRefCount(iPtr->returnOpts);
-	    iPtr->returnOpts = iPtr->defaultReturnOpts;
-	    Tcl_IncrRefCount(iPtr->returnOpts);
+	{
+	    int code = TclGetInt4AtPtr(pc+1);
+	    int level = TclGetUInt4AtPtr(pc+5);
+	    Tcl_Obj *returnOpts = POP_OBJECT();
+
+	    DECACHE_STACK_INFO();
+	    Tcl_ResetResult(interp);
+	    result = TclProcessReturn(interp, code, level, returnOpts);
+	    CACHE_STACK_INFO();
+	    Tcl_DecrRefCount(returnOpts);
+	    if (result != TCL_OK) {
+		Tcl_SetObjResult(interp, *tosPtr);
+		cleanup = 1;
+		goto processExceptionReturn;
+	    }
+	    NEXT_INST_F(9, 0, 0);
 	}
-	result = TCL_RETURN;
 
     case INST_DONE:
 	if (tosPtr <= eePtr->stackPtr + initStackTop) {
