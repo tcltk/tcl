@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.126 2004/10/15 04:01:27 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.127 2004/10/15 15:42:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4457,7 +4457,6 @@ Tcl_AddObjErrorInfo(interp, message, length)
 				 * NULL byte. */
 {
     register Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *messagePtr;
     
     /*
      * If we are just starting to log an error, errorInfo is initialized
