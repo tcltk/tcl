@@ -1,3 +1,14 @@
+2003-08-23  Zoran Vasiljevic  <zoran@archiwrae.com>
+
+	* generic/tclIOUtil.c: merged fixes for thread-unsafe
+	handling of filesystem records [Bug #753315]. 
+	This also fixed the Bug #788780
+	* generic/tclPathObj.c: merged fixes for thread-unsafe
+	handling of filesystem records [Bug #753315]. 
+
+	* generic/tclFileSystem.h: merged fixes for thread-unsafe
+	handling of filesystem records [Bug #753315].
+
 2003-08-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWinSerial.c (SerialErrorStr): Fixed a syntax error
