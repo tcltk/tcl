@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.51 2001/04/24 20:59:18 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.52 2001/04/27 22:11:51 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1653,7 +1653,7 @@ EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp *interp,
 			    TclFile *inPipePtr, TclFile *outPipePtr,
 			    TclFile *errFilePtr));
 EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Namespace *nsPtr, char *procName,
+			    Namespace *nsPtr, CONST char *procName,
 			    Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr,
 			    Proc **procPtrPtr));
 EXTERN void		TclDeleteCompiledLocalVars _ANSI_ARGS_((
