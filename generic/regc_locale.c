@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.9 2002/07/29 10:56:08 dkf Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.10 2002/07/29 12:27:51 dkf Exp $
  */
 
 /* ASCII character-name table */
@@ -526,8 +526,11 @@ static chr graphCharTable[] = {
  */
 static int
 nmcces(v)
-    struct vars *v;
+    struct vars *v;			/* context */
 {
+    /*
+     * No multi-character collating elements defined at the moment.
+     */
     return 0;
 }
 
@@ -537,7 +540,7 @@ nmcces(v)
  */
 static int
 nleaders(v)
-    struct vars *v;
+    struct vars *v;			/* context */
 {
     return 0;
 }
@@ -548,8 +551,8 @@ nleaders(v)
  */
 static struct cvec *
 allmcces(v, cv)
-    struct vars *v;
-    struct cvec *cv;		/* this is supposed to have enough room */
+    struct vars *v;			/* context */
+    struct cvec *cv;			/* this is supposed to have enough room */
 {
     return clearcvec(cv);
 }
@@ -560,9 +563,9 @@ allmcces(v, cv)
  */
 static celt
 element(v, startp, endp)
-    struct vars *v;
-    chr *startp;		/* points to start of name */
-    chr *endp;			/* points just past end of name */
+    struct vars *v;			/* context */
+    chr *startp;			/* points to start of name */
+    chr *endp;				/* points just past end of name */
 {
     struct cname *cn;
     size_t len;
@@ -602,9 +605,9 @@ element(v, startp, endp)
  */
 static struct cvec *
 range(v, a, b, cases)
-    struct vars *v;
-    celt a;
-    celt b;				/* might equal a */
+    struct vars *v;			/* context */
+    celt a;				/* range start */
+    celt b;				/* range end, might equal a */
     int cases;				/* case-independent? */
 {
     int nchrs;
@@ -658,10 +661,9 @@ range(v, a, b, cases)
  - before - is celt x before celt y, for purposes of range legality?
  ^ static int before(celt, celt);
  */
-static int			/* predicate */
+static int				/* predicate */
 before(x, y)
-    celt x;
-    celt y;
+    celt x, y;				/* collating elements */
 {
     /* trivial because no MCCEs */
     if (x < y) {
@@ -677,9 +679,10 @@ before(x, y)
  */
 static struct cvec *
 eclass(v, c, cases)
-    struct vars *v;
-    celt c;
-    int cases;			/* all cases? */
+    struct vars *v;			/* context */
+    celt c;				/* Collating element representing
+					 * the equivalence class. */
+    int cases;				/* all cases? */
 {
     struct cvec *cv;
 
@@ -712,7 +715,7 @@ eclass(v, c, cases)
  */
 static struct cvec *
 cclass(v, startp, endp, cases)
-    struct vars *v;
+    struct vars *v;			/* context */
     chr *startp;			/* where the name starts */
     chr *endp;				/* just past the end of the name */
     int cases;				/* case-independent? */
@@ -924,8 +927,8 @@ cclass(v, startp, endp, cases)
  */
 static struct cvec *
 allcases(v, pc)
-    struct vars *v;
-    pchr pc;
+    struct vars *v;			/* context */
+    pchr pc;				/* character to get case equivs of */
 {
     struct cvec *cv;
     chr c = (chr)pc;
@@ -956,11 +959,10 @@ allcases(v, pc)
  * stop at embedded NULs!
  ^ static int cmp(CONST chr *, CONST chr *, size_t);
  */
-static int			/* 0 for equal, nonzero for unequal */
+static int				/* 0 for equal, nonzero for unequal */
 cmp(x, y, len)
-    CONST chr *x;
-    CONST chr *y;
-    size_t len;			/* exact length of comparison */
+    CONST chr *x, *y;			/* strings to compare */
+    size_t len;				/* exact length of comparison */
 {
     return memcmp(VS(x), VS(y), len*sizeof(chr));
 }
@@ -973,11 +975,10 @@ cmp(x, y, len)
  * stop at embedded NULs!
  ^ static int casecmp(CONST chr *, CONST chr *, size_t);
  */
-static int			/* 0 for equal, nonzero for unequal */
+static int				/* 0 for equal, nonzero for unequal */
 casecmp(x, y, len)
-    CONST chr *x;
-    CONST chr *y;
-    size_t len;			/* exact length of comparison */
+    CONST chr *x, *y;			/* strings to compare */
+    size_t len;				/* exact length of comparison */
 {
     for (; len > 0; len--, x++, y++) {
 	if ((*x!=*y) && (Tcl_UniCharToLower(*x) != Tcl_UniCharToLower(*y))) {
