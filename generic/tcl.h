@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.111 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.112 2002/01/31 04:39:43 dgp Exp $
  */
 
 #ifndef _TCL
@@ -276,6 +276,12 @@ extern "C" {
 #else
 #   define _ANSI_ARGS_(x)	()
 #   define CONST
+#endif
+
+#ifdef USE_NON_CONST
+#   define CONST84
+#else
+#   define CONST84 CONST
 #endif
 
 /*
@@ -1337,7 +1343,7 @@ typedef int	(Tcl_DriverClose2Proc) _ANSI_ARGS_((ClientData instanceData,
 typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, int toRead, int *errorCodePtr));
 typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
-		    CONST char *buf, int toWrite, int *errorCodePtr));
+		    CONST84 char *buf, int toWrite, int *errorCodePtr));
 typedef int	(Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
 		    long offset, int mode, int *errorCodePtr));
 typedef int	(Tcl_DriverSetOptionProc) _ANSI_ARGS_((
@@ -1345,7 +1351,7 @@ typedef int	(Tcl_DriverSetOptionProc) _ANSI_ARGS_((
 	            CONST char *optionName, CONST char *value));
 typedef int	(Tcl_DriverGetOptionProc) _ANSI_ARGS_((
 		    ClientData instanceData, Tcl_Interp *interp,
-		    CONST char *optionName, Tcl_DString *dsPtr));
+		    CONST84 char *optionName, Tcl_DString *dsPtr));
 typedef void	(Tcl_DriverWatchProc) _ANSI_ARGS_((
 		    ClientData instanceData, int mask));
 typedef int	(Tcl_DriverGetHandleProc) _ANSI_ARGS_((
@@ -1501,9 +1507,9 @@ typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) 
 	_ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr, 
-	CONST char *modeString, int permissions));
+	CONST84 char *modeString, int permissions));
 typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp, 
-	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST char *pattern, 
+	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST84 char *pattern, 
 	Tcl_GlobTypeData * types));
 typedef Tcl_Obj* (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
@@ -1530,7 +1536,7 @@ typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj **objPtrRef));
-typedef CONST char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+typedef CONST84 char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_Obj** objPtrRef));
 typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
