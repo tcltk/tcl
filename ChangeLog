@@ -1,5 +1,8 @@
 2004-08-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/package.tcl (pkg_mkIndex):	Updated [pkg_mkIndex] to
+	make use of [glob -directory $dir -tails] and return options.
+
 	TIP#207 IMPLEMENTATION
 
 	* doc/interp.n:		Added support for a -namespace option to the
