@@ -1,3 +1,9 @@
+2000-06-01  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (CloseChannel): Rewrote CloseChannel code to
+	unstack a channel during the close process.  Fixed a refcount bug
+	in Tcl_UnstackChannel.  [Bug: 5623]
+
 2000-05-29  Sandeep Tamhankar <sandeep@scriptics.com>
 
 	* tests/http.test
