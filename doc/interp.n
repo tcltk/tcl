@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.6 2001/06/27 21:00:45 hobbs Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.7 2001/08/07 02:54:30 hobbs Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -433,7 +433,7 @@ can only be provided by explicit definition of an \fBunknown\fR command
 in the safe interpreter.  This will involve exposing the \fBsource\fR
 command.  This is most easily accomplished by creating the safe interpreter
 with Tcl's \fBSafe\-Tcl\fR mechanism.  \fBSafe\-Tcl\fR provides safe
-versions of \fBsource\fB, \fBload\fR, and other Tcl commands needed
+versions of \fBsource\fR, \fBload\fR, and other Tcl commands needed
 to support autoloading of commands and the loading of packages.
 .VE
 .PP

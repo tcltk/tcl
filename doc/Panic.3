@@ -2,7 +2,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Panic.3,v 1.1 2001/06/08 20:06:11 dgp Exp $
+'\" RCS: @(#) $Id: Panic.3,v 1.2 2001/08/07 02:59:14 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_Panic 3 8.4 Tcl "Tcl Library Procedures"
@@ -68,7 +68,7 @@ typedef void Tcl_PanicProc( CONST char *\fBformat\fR,
 After \fBTcl_SetPanicProc\fR returns, any future calls to
 \fBTcl_Panic\fR will call \fIpanicProc\fR, passing along the
 \fIformat\fR and \fIarg\fR arguments.  To maintain consistency with the
-callers of \fBTcl_Panic\fR, \fIpanicProc\fB must not return; it must
+callers of \fBTcl_Panic\fR, \fIpanicProc\fR must not return; it must
 call \fBabort\fR.  \fIpanicProc\fR should avoid making calls into the
 Tcl library, or into other libraries that may call the Tcl library,
 since the original call to \fBTcl_Panic\fR indicates the Tcl library is
