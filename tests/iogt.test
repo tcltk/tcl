@@ -482,13 +482,15 @@ test iogt-2.0 {basic I/O going through transform} {
     set fin  [open dummy    r]
     set fout [open dummyout r]
 
-    set res [string compare [read $fin] [read $fout]]
+    set res     [string compare [set in [read $fin]] [set out [read $fout]]]
+    lappend res [string length $in]
+    lappend res [string length $out]
 
     close $fin
     close $fout
 
     set res
-} {0}
+} {0 71 71}
 
 
 test iogt-2.1 {basic I/O, operation trail} {
@@ -509,8 +511,7 @@ test iogt-2.1 {basic I/O, operation trail} {
     close $fout
 
     set res "[join $ain \n]\n--------\n[join $aout \n]"
-} {create/write
-create/read
+} {create/read
 query/maxRead
 read
 query/maxRead
@@ -529,12 +530,10 @@ query/maxRead
 read
 query/maxRead
 flush/read
-flush/write
-delete/write
+query/maxRead
 delete/read
 --------
 create/write
-create/read
 write
 write
 write
@@ -544,9 +543,7 @@ write
 write
 write
 flush/write
-flush/read
-delete/write
-delete/read}
+delete/write}
 
 test iogt-2.2 {basic I/O, data trail} {
 
@@ -566,8 +563,7 @@ test iogt-2.2 {basic I/O, data trail} {
     close $fout
 
     set res "[join $ain \n]\n--------\n[join $aout \n]"
-} {create/write {} *ignored*
-create/read {} *ignored*
+} {create/read {} *ignored*
 query/maxRead {} -1
 read abcdefghij abcdefghij
 query/maxRead {} -1
@@ -589,12 +585,9 @@ read {
 query/maxRead {} -1
 flush/read {} {}
 query/maxRead {} -1
-flush/write {} {}
-delete/write {} *ignored*
 delete/read {} *ignored*
 --------
 create/write {} *ignored*
-create/read {} *ignored*
 write abcdefghij abcdefghij
 write klmnopqrst klmnopqrst
 write uvwxyz0123 uvwxyz0123
@@ -606,9 +599,7 @@ write {
 } {
 }
 flush/write {} {}
-flush/read {} {}
-delete/write {} *ignored*
-delete/read {} *ignored*}
+delete/write {} *ignored*}
 
 
 test iogt-2.3 {basic I/O, mixed trail} {
@@ -629,10 +620,8 @@ test iogt-2.3 {basic I/O, mixed trail} {
     close $fout
 
     join $trail \n
-} {create/write {} *ignored*
-create/read {} *ignored*
+} {create/read {} *ignored*
 create/write {} *ignored*
-create/read {} *ignored*
 query/maxRead {} -1
 read abcdefghijklmnopqrst abcdefghijklmnopqrst
 write abcdefghij abcdefghij
@@ -656,13 +645,9 @@ write {
 } {
 }
 query/maxRead {} -1
-flush/write {} {}
-delete/write {} *ignored*
 delete/read {} *ignored*
 flush/write {} {}
-flush/read {} {}
-delete/write {} *ignored*
-delete/read {} *ignored*}
+delete/write {} *ignored*}
 
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} {

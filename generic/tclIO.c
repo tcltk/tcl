@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.1 2000/07/07 03:31:39 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.2 2000/07/10 17:35:55 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2272,7 +2272,7 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
         written = (chanPtr->typePtr->outputProc) (chanPtr->instanceData,
                 (char *) bufPtr->buf + bufPtr->nextRemoved, toWrite,
 		&errorCode);
-            
+
 	/*
          * If the write failed completely attempt to start the asynchronous
          * flush mechanism and break out of this loop - do not attempt to
@@ -2833,13 +2833,45 @@ Tcl_WriteRaw(chan, src, srcLen)
     Channel *chanPtr = ((Channel *) chan);
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
 
+    CopyState*    csPtr;
+    int           errorCode, written;
+
+    /* FIX
+     * The check below does too much because it will reject a call to this
+     * function with a channel which is part of an 'fcopy'. But we have to
+     * allow this here or else the chaining in the transformation drivers
+     * will fail with 'file busy' error instead of retrieving and
+     * transforming the data to copy.
+     *
+     * We let the check procedure now believe that there is no fcopy in
+     * progress. A better solution than this might be an additional flag
+     * argument to switch off specific checks.
+     */
+
+    csPtr           = statePtr->csPtr;
+    statePtr->csPtr = (CopyState*) NULL;
+
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
+	statePtr->csPtr = csPtr;
 	return -1;
     }
     if (srcLen < 0) {
         srcLen = strlen(src);
     }
-    return DoWrite(chanPtr, src, srcLen);
+    /*return DoWrite(chanPtr, src, srcLen);*/
+
+    /*
+     * Go immediately to the driver, do all the error handling by ourselves.
+     * The code was stolen from 'FlushChannel'.
+     */
+
+    written = (chanPtr->typePtr->outputProc) (chanPtr->instanceData, src, srcLen, &errorCode);
+
+    if (written < 0) {
+      Tcl_SetErrno(errorCode);
+    }
+
+    return written;
 }
 
 /*
@@ -4153,6 +4185,7 @@ Tcl_ReadRaw(chan, dst, bytesToRead)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
 
     CopyState*    csPtr;
+    int nread, result;
 
     /* FIX
      * The check below does too much because it will reject a call to this
@@ -4176,7 +4209,41 @@ Tcl_ReadRaw(chan, dst, bytesToRead)
 
     statePtr->csPtr = csPtr;
 
-    return DoRead(chanPtr, dst, bytesToRead);
+    /*return DoRead(chanPtr, dst, bytesToRead);*/
+
+    /*
+     * Go immediately to the driver, do all the error handling by ourselves.
+     * The code was stolen from 'GetInput' and slightly adapted (different
+     * return value here).
+     */
+
+    nread = (*chanPtr->typePtr->inputProc)(chanPtr->instanceData,
+	    dst, bytesToRead, &result);
+
+    if (nread > 0) {
+	/*
+	 * If we get a short read, signal up that we may be BLOCKED. We
+	 * should avoid calling the driver because on some platforms we
+	 * will block in the low level reading code even though the
+	 * channel is set into nonblocking mode.
+	 */
+            
+	if (nread < bytesToRead) {
+	    statePtr->flags |= CHANNEL_BLOCKED;
+	}
+    } else if (nread == 0) {
+	statePtr->flags |= CHANNEL_EOF;
+	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+    } else if (nread < 0) {
+	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
+	    statePtr->flags |= CHANNEL_BLOCKED;
+	    result = EAGAIN;
+	}
+	Tcl_SetErrno(result);
+	return -1;
+    } 
+
+    return nread;
 }
 
 /*
@@ -7672,21 +7739,17 @@ TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr)
      * Allocate a new CopyState to maintain info about the current copy in
      * progress.  This structure will be deallocated when the copy is
      * completed.
-     *
-     * Note, we have make sure that we use the topmost channel in a stack
-     * for the copying. The caller uses Tcl_GetChannel to access it, and
-     * thus gets the bottom of the stack.
      */
 
     csPtr = (CopyState*) ckalloc(sizeof(CopyState) + inStatePtr->bufSize);
-    csPtr->bufSize	= inStatePtr->bufSize;
-    csPtr->readPtr	= inStatePtr->topChanPtr;
-    csPtr->writePtr	= outStatePtr->topChanPtr;
-    csPtr->readFlags	= readFlags;
-    csPtr->writeFlags	= writeFlags;
-    csPtr->toRead	= toRead;
-    csPtr->total	= 0;
-    csPtr->interp	= interp;
+    csPtr->bufSize    = inStatePtr->bufSize;
+    csPtr->readPtr    = inPtr;
+    csPtr->writePtr   = outPtr;
+    csPtr->readFlags  = readFlags;
+    csPtr->writeFlags = writeFlags;
+    csPtr->toRead     = toRead;
+    csPtr->total      = 0;
+    csPtr->interp     = interp;
     if (cmdPtr) {
 	Tcl_IncrRefCount(cmdPtr);
     }
@@ -7740,6 +7803,10 @@ CopyData(csPtr, mask)
 
     /*
      * Copy the data the slow way, using the translation mechanism.
+     *
+     * Note: We have make sure that we use the topmost channel in a stack
+     * for the copying. The caller uses Tcl_GetChannel to access it, and
+     * thus gets the bottom of the stack.
      */
 
     while (csPtr->toRead != 0) {
@@ -7768,7 +7835,7 @@ CopyData(csPtr, mask)
 	} else {
 	    size = csPtr->toRead;
 	}
-	size = DoRead(csPtr->readPtr, csPtr->buffer, size);
+	size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, size);
 
 	if (size < 0) {
 	    readError:
@@ -7801,7 +7868,7 @@ CopyData(csPtr, mask)
 	 * Now write the buffer out.
 	 */
 
-	size = DoWrite(csPtr->writePtr, csPtr->buffer, size);
+	size = DoWrite(outStatePtr->topChanPtr, csPtr->buffer, size);
 	if (size < 0) {
 	    writeError:
 	    errObj = Tcl_NewObj();
@@ -7926,7 +7993,7 @@ DoRead(chanPtr, bufPtr, toRead)
     int copiedNow;		/* How many characters were copied from
                                  * the current input buffer? */
     int result;			/* Of calling GetInput. */
-    
+
     /*
      * If we have not encountered a sticky EOF, clear the EOF bit. Either
      * way clear the BLOCKED bit. We want to discover these anew during
@@ -8652,7 +8719,7 @@ Tcl_GetChannelNamesEx(interp, pattern)
  * I HAVE NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
  * ENHANCEMENTS, OR MODIFICATIONS.
  *
- * CVS: $Id: tclIO.c,v 1.20.2.3.2.1 2000/07/07 03:31:39 hobbs Exp $
+ * CVS: $Id: tclIO.c,v 1.20.2.3.2.2 2000/07/10 17:35:55 kupries Exp $
  */
 
 /*

@@ -1,3 +1,24 @@
+2000-07-10  Andreas Kupries <a.kupries@westend.com>
+
+	* tests/iogt.test: Reverted some earlier changes as a fix by Jeff
+	  revived the original and correct behaviour. IOW, the tests showed
+	  a genuine error and I didn't see it :(.
+
+	* generic/tclIO.c (Tcl_Read|Write_Raw): Changed to directly use
+ 	  the drivers and not DoRead|DoWrite. The latter use the buffering
+ 	  system, encoding and eol-translation and this wreaks havoc with
+ 	  the data going through the transformations. Both procedures use
+ 	  CheckForchannelErrors and let it believe that there is no
+ 	  background copy in progress or else stacked channels could not
+	  be used for that.
+
+	* generic/tclIO.c (TclCopyChannel, CopyData): Moved access to the
+ 	  topmost channel from the first to the second procedure to make
+ 	  the decision about that at the last possible time (Callbacks can
+ 	  change the stacking).
+
+	test suite: failures of iogt-[345].0
+	
 2000-07-06  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/iogt.test: new tests for stacked channel stuff based off
