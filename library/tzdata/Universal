@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(Etc/Universal)]} {
-    loadTimeZoneFile Etc/Universal
+    LoadTimeZoneFile Etc/Universal
 }
-set tzdata(:Universal) $TZData(:Etc/Universal)
+set TZData(:Universal) $TZData(:Etc/Universal)

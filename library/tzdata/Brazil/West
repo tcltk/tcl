@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(America/Manaus)]} {
-    loadTimeZoneFile America/Manaus
+    LoadTimeZoneFile America/Manaus
 }
-set tzdata(:Brazil/West) $TZData(:America/Manaus)
+set TZData(:Brazil/West) $TZData(:America/Manaus)

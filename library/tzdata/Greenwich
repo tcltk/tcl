@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(Etc/Greenwich)]} {
-    loadTimeZoneFile Etc/Greenwich
+    LoadTimeZoneFile Etc/Greenwich
 }
-set tzdata(:Greenwich) $TZData(:Etc/Greenwich)
+set TZData(:Greenwich) $TZData(:Etc/Greenwich)

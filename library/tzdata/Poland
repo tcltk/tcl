@@ -1,5 +1,5 @@
 # created by ../tools/tclZIC.tcl - do not edit
 if {![info exists TZData(Europe/Warsaw)]} {
-    loadTimeZoneFile Europe/Warsaw
+    LoadTimeZoneFile Europe/Warsaw
 }
-set tzdata(:Poland) $TZData(:Europe/Warsaw)
+set TZData(:Poland) $TZData(:Europe/Warsaw)

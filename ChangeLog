@@ -1,3 +1,25 @@
+2004-09-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclTimer.c: Removed a premature optimisation that
+	attempted to store the assoc data in the client data; the
+	optimisation caused a bug that [after] would overwrite
+	its imports.  [Bug 1016167]
+	* library/clock.tcl (InitTZData, ClearCaches): Changed so that the
+	in-memory time zone :UTC (and its aliases) always gets
+	reinitialised, in case tzdata is absent. [Bug 1019537, 1023779]
+	* library/tzdata/*: Regenerated.
+	* tests/clock.test (clock-31.*, clock-39.1): Corrected a problem
+	where the 'system' locale tests fail on a non-English Windows
+	machine. [Bug 1023761].  Added a test to make sure that alias
+	time zones load correctly. [Bug 1023779].
+	* tools/tclZIC.tcl (writeLinks): Corrected a problem where
+	alias time zone names were written incorrectly, causing them
+	to fail to load at run time. [Bug 1023779].
+	* win/tclWinTime.c (Tcl_GetTime): Eliminated CPUID tests on
+	Win64 - assuming that HAL vendors now do a better job of
+	keeping the performance counters synchronized among CPU's.
+	[Bug 1020445]
+	
 2004-09-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/tclvars.n, doc/tcltest.n, doc/tclsh.1, doc/safe.n, doc/expr.n:

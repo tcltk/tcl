@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.9 2004/08/25 22:21:34 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.10 2004/09/07 17:38:56 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -731,16 +731,14 @@ TclServiceIdle()
 	/* ARGSUSED */
 int
 Tcl_AfterObjCmd(clientData, interp, objc, objv)
-    ClientData clientData;	/* Points to the "tclAfter" assocData for
-				 * this interpreter, or NULL if the assocData
-				 * hasn't been created yet.*/
+    ClientData clientData;	/* Unused */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int ms;
     AfterInfo *afterPtr;
-    AfterAssocData *assocPtr = (AfterAssocData *) clientData;
+    AfterAssocData *assocPtr;
     Tcl_CmdInfo cmdInfo;
     int length;
     char *argString;
@@ -764,26 +762,13 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
      * future.
      */
 
+    assocPtr = Tcl_GetAssocData( interp, "tclAfter", NULL );
     if (assocPtr == NULL) {
-	Tcl_Command token = Tcl_GetCommandFromObj(interp, objv[0]);
-	Tcl_Command originalToken = TclGetOriginalCommand(token);
-
-	if (originalToken != NULL) {
-	    token = originalToken;
-	}
 	assocPtr = (AfterAssocData *) ckalloc(sizeof(AfterAssocData));
 	assocPtr->interp = interp;
 	assocPtr->firstAfterPtr = NULL;
 	Tcl_SetAssocData(interp, "tclAfter", AfterCleanupProc,
 		(ClientData) assocPtr);
-	cmdInfo.proc = NULL;
-	cmdInfo.clientData = (ClientData) NULL;
-	cmdInfo.objProc = Tcl_AfterObjCmd;
-	cmdInfo.objClientData = (ClientData) assocPtr;
-	cmdInfo.deleteProc = NULL;
-	cmdInfo.deleteData = (ClientData) assocPtr;
-
-	Tcl_SetCommandInfoFromToken(token, &cmdInfo);
     }
 
     /*
