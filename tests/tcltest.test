@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.34 2002/09/06 15:10:32 rmax Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.35 2002/09/22 18:19:26 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1685,6 +1685,22 @@ test tcltest-25.1 {
 } -cleanup {
 	unset foo
 } -result 0
+
+test tcltest-25.2 {
+	puts -nonewline (Bug 612786)
+} -body {
+	puts -nonewline stdout bla
+	puts -nonewline stdout bla
+} -output {blabla}
+
+test tcltest-25.3 {
+	reported return code (Bug 611922)
+} -body {
+	# Buggy tcltest will generate result of 2
+	test tcltest-25.3.0 {} -body {
+	    error foo
+	}
+} -match glob -output {*generated error; Return code was: 1*}
 
 cleanupTests
 }
