@@ -1,3 +1,10 @@
+2000-04-21  Brent Welch <welch@scriptics.com>
+
+	* library/http2.1/http.tcl: More thrashing with the "server closes
+	without reading post data" scenario.  Reverted to the previous
+	filevent configuratiuon, which seems to work better with small
+	amounts of post data.  
+
 2000-04-20  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclAlloc.c: wrapped caddr_t define to not be done on Unix
