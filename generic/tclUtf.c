@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.3 1999/04/29 00:04:41 hershey Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.4 1999/04/30 16:22:24 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -1006,8 +1006,9 @@ int
 Tcl_UtfToTitle(str)
     char *str;			/* String to convert in place. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch, titleChar, lowChar;
     char *src, *dst;
+    int bytes;
     
     /*
      * Capitalize the first character and then lowercase the rest of the
@@ -1017,12 +1018,28 @@ Tcl_UtfToTitle(str)
     src = dst = str;
 
     if (*src) {
-	src += Tcl_UtfToUniChar(src, &ch);
-	dst += Tcl_UniCharToUtf(Tcl_UniCharToTitle(ch), dst);
+	bytes = Tcl_UtfToUniChar(src, &ch);
+	titleChar = Tcl_UniCharToTitle(ch);
+
+	if (bytes < UtfCount(titleChar)) {
+	    memcpy(dst, src, (size_t) bytes);
+	    dst += bytes;
+	} else {
+	    dst += Tcl_UniCharToUtf(titleChar, dst);
+	}
+	src += bytes;
     }
     while (*src) {
-	src += Tcl_UtfToUniChar(src, &ch);
-	dst += Tcl_UniCharToUtf(Tcl_UniCharToLower(ch), dst);
+	bytes = Tcl_UtfToUniChar(src, &ch);
+	lowChar = Tcl_UniCharToLower(ch);
+
+	if (bytes < UtfCount(lowChar)) {
+	    memcpy(dst, src, (size_t) bytes);
+	    dst += bytes;
+	} else {
+	    dst += Tcl_UniCharToUtf(lowChar, dst);
+	}
+	src += bytes;
     }
     *dst = '\0';
     return (dst - str);
