@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.15 2001/04/06 10:50:00 dkf Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.16 2001/06/28 01:10:15 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ static int UtfCount _ANSI_ARGS_((int ch));
  *---------------------------------------------------------------------------
  */
  
-static int
+INLINE static int
 UtfCount(ch)
     int ch;			/* The Tcl_UniChar whose size is returned. */
 {
@@ -781,7 +781,8 @@ Tcl_UtfBackslash(src, readPtr, dst)
 				 * backslash sequence. */
 {
     register CONST char *p = src+1;
-    int result, count, n;
+    Tcl_UniChar result;
+    int count, n;
     char buf[TCL_UTF_MAX];
 
     if (dst == NULL) {
@@ -883,15 +884,25 @@ Tcl_UtfBackslash(src, readPtr, dst)
 		result = (unsigned char)((result << 3) + (*p - '0'));
 		break;
 	    }
-	    result = *p;
-	    count = 2;
+	    if (UCHAR(*p) < UNICODE_SELF) {
+		result = *p;
+		count = 2;
+	    } else {
+		/*
+		 * We have to convert here because the user has put a
+		 * backslash in front of a multi-byte utf-8 character.
+		 * While this means nothing special, we shouldn't break up
+		 * a correct utf-8 character. [Bug #217987] test subst-3.2
+		 */
+		count = Tcl_UtfToUniChar(p, &result) + 1; /* +1 for '\' */
+	    }
 	    break;
     }
 
     if (readPtr != NULL) {
 	*readPtr = count;
     }
-    return Tcl_UniCharToUtf(result, dst);
+    return Tcl_UniCharToUtf((int) result, dst);
 }
 
 /*
