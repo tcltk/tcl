@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.10 2001/12/04 15:36:29 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.11 2001/12/06 10:59:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -133,7 +133,6 @@ typedef struct ParseInfo {
  * entries must match the order and number of the lexeme definitions above.
  */
 
-#ifdef TCL_COMPILE_DEBUG
 static char *lexemeStrings[] = {
     "LITERAL", "FUNCNAME",
     "[", "{", "(", ")", "$", "\"", ",", "END", "UNKNOWN", "UNKNOWN_CHAR",
@@ -142,7 +141,6 @@ static char *lexemeStrings[] = {
     "&", "^", "|", "&&", "||", "?", ":",
     "!", "~", "eq", "ne",
 };
-#endif /* TCL_COMPILE_DEBUG */
 
 /*
  * Declarations for local procedures to this file:
@@ -1387,8 +1385,39 @@ ParsePrimaryExpr(infoPtr)
 	    return code;
 	}
 	if (infoPtr->lexeme != OPEN_PAREN) {
-	    LogSyntaxError(infoPtr,
-		    "expected a parenthesis enclosing function arguments");
+	    /*
+	     * Guess what kind of error we have by trying to tell
+	     * whether we have a function or variable name here.
+	     * Alas, this makes the parser more tightly bound with the
+	     * rest of the interpreter, but that is the only way to
+	     * give a sensible message here.  Still, it is not too
+	     * serious as this is only done when generating an error.
+	     */
+	    Interp *iPtr = (Interp *) infoPtr->parsePtr->interp;
+	    char savedChar;
+	    Tcl_HashEntry *hPtr;
+
+	    /*
+	     * Look up the name as a function name; note that this
+	     * requires the expression to be in writable memory.
+	     */
+	    savedChar = tokenPtr->start[tokenPtr->size];
+	    tokenPtr->start[tokenPtr->size] = '\0';
+	    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, tokenPtr->start);
+	    tokenPtr->start[tokenPtr->size] = savedChar;
+
+	    /*
+	     * Assume that we have an attempted variable reference
+	     * unless we've got a function name, as the set of
+	     * potential function names is typically much smaller.
+	     */
+	    if (hPtr != NULL) {
+		LogSyntaxError(infoPtr,
+			"expected parenthesis enclosing function arguments");
+	    } else {
+		LogSyntaxError(infoPtr,
+			"variable references require preceding $");
+	    }
 	    return TCL_ERROR;
 	}
 	code = GetLexeme(infoPtr); /* skip over '(' */
@@ -1438,18 +1467,17 @@ ParsePrimaryExpr(infoPtr)
     case COLON:
 	LogSyntaxError(infoPtr, "unexpected ternary 'else' separator");
 	return TCL_ERROR;
-
-    default:
-#ifdef TCL_COMPILE_DEBUG
-	{
-	    char buf[64];
-	    sprintf(buf, "unexpected operator %s", lexemeStrings[lexeme]);
-	    LogSyntaxError(infoPtr, buf);
-	}
-#else
-	LogSyntaxError(infoPtr, "unexpected operator");
-#endif
+    case CLOSE_PAREN:
+	LogSyntaxError(infoPtr, "unexpected close parenthesis");
 	return TCL_ERROR;
+
+    default: {
+	char buf[64];
+
+	sprintf(buf, "unexpected operator %s", lexemeStrings[lexeme]);
+	LogSyntaxError(infoPtr, buf);
+	return TCL_ERROR;
+	}
     }
 
     /*
