@@ -1,5 +1,10 @@
 2001-07-03  Mo DeJong  <mdejong@redhat.com>
 
+	* tests/clock.test (clock-2.5): Adjust test so that it passes
+	when the time slice is 60 msecs, now passes under Windows 98.
+
+2001-07-03  Mo DeJong  <mdejong@redhat.com>
+
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): Don't pass the v flag
 	to ${AR} when using gcc, verbose output is not needed.
 
