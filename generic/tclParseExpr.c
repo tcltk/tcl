@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.3 2005/02/03 23:56:39 kennykb Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.4 2005/03/03 21:54:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2078,7 +2078,7 @@ ParseMaxDoubleLength(string, end)
 	    case 'C': case 'D': case 'E': case 'F': case 'I': case 'N':
 	    case 'P': case 'X': case 'a': case 'b': case 'c': case 'd':
 	    case 'e': case 'f': case 'i': case 'n': case 'p': case 'x':
-	    case '.': case '+': case '-':
+	    case '.': case '+': case '-': case '(': case ' ': case ')':
 		p++;
 		break;
 	    default:

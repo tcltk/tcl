@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.7 2005/03/03 18:59:51 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.8 2005/03/03 21:54:09 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1854,6 +1854,7 @@ MODULE_SCOPE void	TclFinalizeAsync _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclFormatNaN _ANSI_ARGS_((double value, char* buffer));
 MODULE_SCOPE int	TclFSFileAttrIndex _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));

@@ -3,19 +3,23 @@
 	[kennykb-numerics-branch]
 
 	* generic/tclInt.h:
-	* generic/tclStrToD.c (Tcl_DoubleDigits):
+	* generic/tclStrToD.c (Tcl_DoubleDigits, TclFormatNaN):
 	* generic/tclUtil.c (Tcl_PrintDouble):   
 		Changed the signature of TclDoubleDigits so that it
 		accepts a pointer to the signum of the argument, and
 		returns the signum via that pointer.  Added very
 		hacky code to handle IEEE signed zeroes in Tcl_DoubleDigits.
 		(It can't be done other than as a hack until C9x;
-		C89 simply doesn't deal with the concept of -0.0)
+		C89 simply doesn't deal with the concept of -0.0).
+		Added output conversion of tagged NaN values.
 	* generic/tclBinary.c (FormatNumber):
 		Changed to allow [binary format] to handle NaN.
 	* tests/binary.test (binary-60.1):
 		Added a quick-n-dirty test to make sure that NaN's
 		can be scanned and formatted.
+	* generic/tclParseExpr.c (GetLexeme, ParseMaxDoubleLength):
+		Modified so that tagged NaN (e.g., NaN(DEADBEEF)) can
+		be recognized.
 	
 2005-03-02  Kevin B. Kenny  <kennykb@acm.org>
 

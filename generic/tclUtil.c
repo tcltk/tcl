@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.6 2005/03/03 18:59:53 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.7 2005/03/03 21:54:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1957,7 +1957,7 @@ Tcl_PrintDouble(interp, value, dst)
 	/* Handle NaN */
 
 	if ( IS_NAN( value ) ) {
-	    strcpy( dst, "NaN" );
+	    TclFormatNaN( value, dst );
 	    return;
 	}
 
