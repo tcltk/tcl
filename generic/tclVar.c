@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.36.6.2 2001/09/27 13:52:28 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.36.6.3 2001/10/05 10:43:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1934,7 +1934,6 @@ TclIncrVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
 				 * so we must increment a copy (i.e. copy
 				 * on write). */
     long i;
-    int result;
 
     varValuePtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
     if (varValuePtr == NULL) {
@@ -1955,14 +1954,29 @@ TclIncrVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
 	createdNewObj = 1;
     }
-    result = Tcl_GetLongFromObj(interp, varValuePtr, &i);
-    if (result != TCL_OK) {
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+#ifndef TCL_WIDE_INT_IS_LONG
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide;
+
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
 	}
-	return NULL;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else {
+#endif
+	if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#ifndef TCL_WIDE_INT_IS_LONG
     }
-    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#endif
 
     /*
      * Store the variable's new value and run any write traces.
@@ -2014,7 +2028,6 @@ TclIncrIndexedScalar(interp, localIndex, incrAmount)
 				 * so we must increment a copy (i.e. copy
 				 * on write). */
     long i;
-    int result;
 
     varValuePtr = TclGetIndexedScalar(interp, localIndex, TCL_LEAVE_ERR_MSG);
     if (varValuePtr == NULL) {
@@ -2036,14 +2049,29 @@ TclIncrIndexedScalar(interp, localIndex, incrAmount)
 	createdNewObj = 1;
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
     }
-    result = Tcl_GetLongFromObj(interp, varValuePtr, &i);
-    if (result != TCL_OK) {
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+#ifndef TCL_WIDE_INT_IS_LONG
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide;
+
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
 	}
-	return NULL;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else {
+#endif
+	if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#ifndef TCL_WIDE_INT_IS_LONG
     }
-    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#endif
 
     /*
      * Store the variable's new value and run any write traces.
@@ -2100,7 +2128,6 @@ TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
 				 * so we must increment a copy (i.e. copy
 				 * on write). */
     long i;
-    int result;
 
     varValuePtr = TclGetElementOfIndexedArray(interp, localIndex, elemPtr,
 	    TCL_LEAVE_ERR_MSG);
@@ -2123,15 +2150,30 @@ TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
 	createdNewObj = 1;
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
     }
-    result = Tcl_GetLongFromObj(interp, varValuePtr, &i);
-    if (result != TCL_OK) {
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+#ifndef TCL_WIDE_INT_IS_LONG
+    if (varValuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wide;
+
+	if (Tcl_GetWideIntFromObj(interp, varValuePtr, &wide) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
 	}
-	return NULL;
+	Tcl_SetWideIntObj(varValuePtr, wide + Tcl_LongAsWide(incrAmount));
+    } else {
+#endif
+	if (Tcl_GetLongFromObj(interp, varValuePtr, &i) != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded copy */
+	    }
+	    return NULL;
+	}
+	Tcl_SetLongObj(varValuePtr, (i + incrAmount));
+#ifndef TCL_WIDE_INT_IS_LONG
     }
-    Tcl_SetLongObj(varValuePtr, (i + incrAmount));
-    
+#endif
+
     /*
      * Store the variable's new value and run any write traces.
      */
