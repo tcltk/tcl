@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.58 1999/10/05 22:45:39 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.59 1999/10/13 00:32:16 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -48,6 +48,7 @@ extern "C" {
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/README		(not patchlevel) (part (h))
+ * tests/basic.test	(not patchlevel) (version checks)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
  */
