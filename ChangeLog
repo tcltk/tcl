@@ -1,3 +1,10 @@
+2002-07-05  Reinhard Max  <max@suse.de>
+
+        * generic/tclClock.c (FormatClock): Convert the format string to
+        UTF8 before calling TclpStrftime, so that non-ASCII characters
+        don't get mangled when the result string is being converted back.
+        * tests/clock.test: Added a test for that.
+
 2002-07-03  Don Porter  <dgp@users.sourceforge.net>
 
         * library/auto.tcl: Fix [tcl_findLibrary] to be sure it sets

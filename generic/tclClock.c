@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.9.2.2 2002/05/24 19:36:29 hobbs Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.9.2.3 2002/07/05 13:14:24 rmax Exp $
  */
 
 #include "tcl.h"
@@ -328,13 +328,16 @@ FormatClock(interp, clockVal, useGMT, format)
 	    bufSize++;
 	}
     }
+    Tcl_DStringInit(&uniBuffer);
+    Tcl_UtfToExternalDString(NULL, format, -1, &uniBuffer);
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer, bufSize);
 
     Tcl_MutexLock(&clockMutex);
-    result = TclpStrftime(buffer.string, (unsigned int) bufSize, format,
-	    timeDataPtr, useGMT);
+    result = TclpStrftime(buffer.string, (unsigned int) bufSize,
+	    Tcl_DStringValue(&uniBuffer), timeDataPtr, useGMT);
     Tcl_MutexUnlock(&clockMutex);
+    Tcl_DStringFree(&uniBuffer);
 
 #if !defined(HAVE_TM_ZONE) && !defined(WIN32)
     if (useGMT) {
