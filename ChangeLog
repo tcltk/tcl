@@ -1,5 +1,8 @@
 2001-04-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/read.n: Added section on "USE WITH SERIAL PORTS" to resolve
+	[Bug #219402]
+
 	* tests/string.test (string-2.30): Test for this case
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd, STR_COMPARE branch): Fixed
 	problem caused by Utf-rep of \x00 being more than Utf-rep of \x01
