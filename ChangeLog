@@ -1,3 +1,8 @@
+2004-07-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileSystem.test: new tests backported
+	* win/tclWin32Dll.c: compilation fix for VC++5.2
+
 2004-06-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* library/safe.tcl: Make sure that the temporary variable is
