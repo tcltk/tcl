@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.2 1998/09/24 23:58:53 stanton Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.3 1998/09/28 20:24:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,9 @@ typedef struct OpenFileChannelProc {
  * these statically declared list entry cannot be inadvertently removed.
  *
  * This method avoids the need to call any sort of "initialization"
- * function
+ * function.
+ *
+ * All three lists are protected by a global hookMutex.
  */
 
 static StatProc defaultStatProc = {
@@ -72,6 +74,8 @@ static OpenFileChannelProc defaultOpenFileChannelProc = {
 };
 static OpenFileChannelProc *openFileChannelProcList =
 	&defaultOpenFileChannelProc;
+
+static Tcl_Mutex hookMutex;
 
 /*
  *---------------------------------------------------------------------------
@@ -293,7 +297,7 @@ Tcl_EvalFile(interp, fileName)
 	Tcl_DStringAppend(&buffer, nativeName, -1);
 	nativeName = Tcl_DStringValue(&buffer);
     }
-    if (TclpStat(nativeName, &statBuf) == -1) {
+    if (TclStat(nativeName, &statBuf) == -1) {
         Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
@@ -448,7 +452,7 @@ TclStat(path, buf)
     CONST char *path;		/* Path of file to stat (in current CP). */
     TclStat_ *buf;		/* Filled with results of stat call. */
 {
-    StatProc *statProcPtr = statProcList;
+    StatProc *statProcPtr;
     int retVal = -1;
 
     /*
@@ -456,10 +460,13 @@ TclStat(path, buf)
      * value of -1 indicates the particular function has succeeded.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    statProcPtr = statProcList;
     while ((retVal == -1) && (statProcPtr != NULL)) {
 	retVal = (*statProcPtr->proc)(path, buf);
 	statProcPtr = statProcPtr->nextPtr;
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -488,7 +495,7 @@ TclAccess(path, mode)
     CONST char *path;		/* Path of file to access (in current CP). */
     int mode;                   /* Permission setting. */
 {
-    AccessProc *accessProcPtr = accessProcList;
+    AccessProc *accessProcPtr;
     int retVal = -1;
 
     /*
@@ -496,10 +503,13 @@ TclAccess(path, mode)
      * value of -1 indicates the particular function has succeeded.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    accessProcPtr = accessProcList;
     while ((retVal == -1) && (accessProcPtr != NULL)) {
 	retVal = (*accessProcPtr->proc)(path, mode);
 	accessProcPtr = accessProcPtr->nextPtr;
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -535,7 +545,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    OpenFileChannelProc *openFileChannelProcPtr = openFileChannelProcList;
+    OpenFileChannelProc *openFileChannelProcPtr;
     Tcl_Channel retVal = NULL;
 
     /*
@@ -544,11 +554,14 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
      * succeeded.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    openFileChannelProcPtr = openFileChannelProcList;
     while ((retVal == NULL) && (openFileChannelProcPtr != NULL)) {
 	retVal = (*openFileChannelProcPtr->proc)(interp, fileName,
 		modeString, permissions);
 	openFileChannelProcPtr = openFileChannelProcPtr->nextPtr;
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -588,8 +601,10 @@ TclStatInsertProc (proc)
 
 	if (newStatProcPtr != NULL) {
 	    newStatProcPtr->proc = proc;
+	    Tcl_MutexLock(&hookMutex);
 	    newStatProcPtr->nextPtr = statProcList;
 	    statProcList = newStatProcPtr;
+	    Tcl_MutexUnlock(&hookMutex);
 
 	    retVal = TCL_OK;
 	}
@@ -622,9 +637,11 @@ TclStatDeleteProc (proc)
     TclStatProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    StatProc *tmpStatProcPtr = statProcList;
+    StatProc *tmpStatProcPtr;
     StatProc *prevStatProcPtr = NULL;
 
+    Tcl_MutexLock(&hookMutex);
+    tmpStatProcPtr = statProcList;
     /*
      * Traverse the 'statProcList' looking for the particular node
      * whose 'proc' member matches 'proc' and remove that one from
@@ -648,6 +665,7 @@ TclStatDeleteProc (proc)
 	}
     }
 
+    Tcl_MutexUnlock(&hookMutex);
     return (retVal);
 }
 
@@ -686,8 +704,10 @@ TclAccessInsertProc(proc)
 
 	if (newAccessProcPtr != NULL) {
 	    newAccessProcPtr->proc = proc;
+	    Tcl_MutexLock(&hookMutex);
 	    newAccessProcPtr->nextPtr = accessProcList;
 	    accessProcList = newAccessProcPtr;
+	    Tcl_MutexUnlock(&hookMutex);
 
 	    retVal = TCL_OK;
 	}
@@ -720,7 +740,7 @@ TclAccessDeleteProc(proc)
     TclAccessProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    AccessProc *tmpAccessProcPtr = accessProcList;
+    AccessProc *tmpAccessProcPtr;
     AccessProc *prevAccessProcPtr = NULL;
 
     /*
@@ -729,6 +749,8 @@ TclAccessDeleteProc(proc)
      * the list.  Ensure that the "default" node cannot be removed.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    tmpAccessProcPtr = accessProcList;
     while ((retVal == TCL_ERROR) && (tmpAccessProcPtr != &defaultAccessProc)) {
 	if (tmpAccessProcPtr->proc == proc) {
 	    if (prevAccessProcPtr == NULL) {
@@ -745,6 +767,7 @@ TclAccessDeleteProc(proc)
 	    tmpAccessProcPtr = tmpAccessProcPtr->nextPtr;
 	}
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }
@@ -786,8 +809,10 @@ TclOpenFileChannelInsertProc(proc)
 
 	if (newOpenFileChannelProcPtr != NULL) {
 	    newOpenFileChannelProcPtr->proc = proc;
+	    Tcl_MutexLock(&hookMutex);
 	    newOpenFileChannelProcPtr->nextPtr = openFileChannelProcList;
 	    openFileChannelProcList = newOpenFileChannelProcPtr;
+	    Tcl_MutexUnlock(&hookMutex);
 
 	    retVal = TCL_OK;
 	}
@@ -829,6 +854,8 @@ TclOpenFileChannelDeleteProc(proc)
      * the list.  Ensure that the "default" node cannot be removed.
      */
 
+    Tcl_MutexLock(&hookMutex);
+    tmpOpenFileChannelProcPtr = openFileChannelProcList;
     while ((retVal == TCL_ERROR) &&
 	    (tmpOpenFileChannelProcPtr != &defaultOpenFileChannelProc)) {
 	if (tmpOpenFileChannelProcPtr->proc == proc) {
@@ -847,6 +874,7 @@ TclOpenFileChannelDeleteProc(proc)
 	    tmpOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr->nextPtr;
 	}
     }
+    Tcl_MutexUnlock(&hookMutex);
 
     return (retVal);
 }

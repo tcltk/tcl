@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.1.2.3 1998/09/28 20:24:20 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -107,8 +107,15 @@ Tcl_FindExecutable(argv0)
 	    }
 	}
 	name = Tcl_DStringAppend(&buffer, argv0, -1);
-	if ((TclAccess(name, X_OK) == 0)		/* INTL: Native. */
-		&& (TclStat(name, &statBuf) == 0)	/* INTL: Native. */
+
+	/*
+	 * INTL: The following calls to access() and stat() should not be
+	 * converted to Tclp routines because they need to operate on native
+	 * strings directly.
+	 */
+
+	if ((access(name, X_OK) == 0)		/* INTL: Native. */
+		&& (stat(name, &statBuf) == 0)	/* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
@@ -211,13 +218,11 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     if (Tcl_DStringLength(dirPtr) == 0) {
 	dirName = ".";
     } else {
-	dirName = dirPtr->string;
+	dirName = Tcl_DStringValue(dirPtr);
     }
 
-    native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
-    if ((TclStat(native, &statBuf) != 0)		/* INTL: Native. */
+    if ((TclStat(dirName, &statBuf) != 0)		/* INTL: Native. */
 	    || !S_ISDIR(statBuf.st_mode)) {
-	Tcl_DStringFree(&ds);
 	return TCL_OK;
     }
 
@@ -236,6 +241,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
      * Now open the directory for reading and iterate over the contents.
      */
 
+    native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
     d = opendir(native);				/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (d == NULL) {
@@ -246,15 +252,16 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	 */
 
 	if (baseLength > 0) {
-	    savedChar = dirPtr->string[baseLength-1];
+	    savedChar = (Tcl_DStringValue(dirPtr))[baseLength-1];
 	    if (savedChar == '/') {
-		dirPtr->string[baseLength-1] = '\0';
+		(Tcl_DStringValue(dirPtr))[baseLength-1] = '\0';
 	    }
 	}
 	Tcl_AppendResult(interp, "couldn't read directory \"",
-		dirPtr->string, "\": ", Tcl_PosixError(interp), (char *) NULL);
+		Tcl_DStringValue(dirPtr), "\": ",
+		Tcl_PosixError(interp), (char *) NULL);
 	if (baseLength > 0) {
-	    dirPtr->string[baseLength-1] = savedChar;
+	    (Tcl_DStringValue(dirPtr))[baseLength-1] = savedChar;
 	}
 	return TCL_ERROR;
     }
@@ -309,8 +316,8 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	    if (tail == NULL) {
 		Tcl_AppendElement(interp, Tcl_DStringValue(dirPtr));
 	    } else if ((TclStat(Tcl_DStringValue(dirPtr), &statBuf) == 0)
-		Tcl_AppendElement(interp, dirPtr->string);
-	    } else if ((TclStat(dirPtr->string, &statBuf) == 0)
+		Tcl_AppendElement(interp, Tcl_DStringValue(dirPtr));
+	    } else if ((TclStat(Tcl_DStringValue(dirPtr), &statBuf) == 0)
 		    && S_ISDIR(statBuf.st_mode)) {
 		Tcl_DStringAppend(dirPtr, "/", 1);
 		result = TclDoGlob(interp, separators, dirPtr, tail);

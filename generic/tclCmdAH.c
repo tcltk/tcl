@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.2 1998/09/24 23:58:42 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.3 1998/09/28 20:24:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1199,7 +1199,7 @@ CheckAccess(interp, objPtr, mode)
     if (fileName == NULL) {
 	value = 0;
     } else {
-	value = (TclpAccess(fileName, mode) == 0);
+	value = (TclAccess(fileName, mode) == 0);
         Tcl_DStringFree(&ds);
     }
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
