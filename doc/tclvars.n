@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.14 2004/02/06 00:01:25 davygrvy Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -257,10 +257,11 @@ The native byte order of this machine: either \fBlittleEndian\fR or
 .VE
 .TP
 \fBdebug\fR
-If this variable exists, then the interpreter
-was compiled with debugging symbols enabled.  This variable will only
-exist on Windows so extension writers can specify which package to load
-depending on the C run-time library that is loaded.
+If this variable exists, then the interpreter was compiled with and linked
+to a debug enabled C run-time.  This variable will only exist on Windows,
+so extension writers can specify which package to load depending on the
+C run-time library that is in use.  This is not an indication that this core
+contains symbols.
 .TP
 \fBmachine\fR
 The instruction set executed by this machine, such as
