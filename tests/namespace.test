@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.13 2000/05/11 00:17:29 hobbs Exp $
+# RCS: @(#) $Id: namespace.test,v 1.14 2001/04/07 02:12:30 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -694,12 +694,23 @@ test namespace-22.3 {NamespaceCodeCmd, arg is already scoped value} {
 } {namespace     inscope     ::test_ns_1 cmd}
 test namespace-22.4 {NamespaceCodeCmd, in :: namespace} {
     namespace code unknown
-} {namespace inscope :: unknown}
+} {::namespace inscope :: unknown}
 test namespace-22.5 {NamespaceCodeCmd, in other namespace} {
     namespace eval test_ns_1 {
         namespace code cmd
     }
-} {namespace inscope ::test_ns_1 cmd}
+} {::namespace inscope ::test_ns_1 cmd}
+test namespace-22.6 {NamespaceCodeCmd, in other namespace} { 
+    namespace eval test_ns_1 { 
+	variable v 42 
+    } 
+    namespace eval test_ns_2 { 
+	proc namespace args {} 
+    } 
+    namespace eval test_ns_2 [namespace eval test_ns_1 { 
+	namespace code {set v} 
+    }] 
+} {42} 
 
 test namespace-23.1 {NamespaceCurrentCmd, bad args} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
