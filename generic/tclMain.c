@@ -15,6 +15,9 @@
 #include "tcl.h"
 #include "tclInt.h"
 
+# undef EXPORT
+# define EXPORT DLLEXPORT
+
 /*
  * The following code ensures that tclLink.c is linked whenever
  * Tcl is linked.  Without this code there's no reference to the
