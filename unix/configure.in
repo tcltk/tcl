@@ -3,14 +3,14 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.57.2.14 2002/10/10 07:31:38 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.57.2.15 2002/10/16 00:06:53 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
 TCL_VERSION=8.3
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=3
-TCL_PATCH_LEVEL=".4"
+TCL_PATCH_LEVEL=".5"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------

@@ -1,11 +1,11 @@
 Tcl/Tk 8.3 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.19.2.4 2001/10/03 20:26:10 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.19.2.5 2002/10/16 00:06:53 hobbs Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.3.4 for
+This directory contains the binary distribution of Tcl/Tk 8.3.5 for
 Windows.  It was compiled with Microsoft Visual C++ 5.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
@@ -25,19 +25,19 @@ The home of Tcl and Tk sources and bug database on the Web is at:
 	http://tcl.sourceforge.net/
 
 The home page for the Tcl Developer Xchange is at:
-	http://www.tcl-tk.net/
+	http://www.tcl.tk/
 
 The home page for the Tcl/Tk release is
-	http://www.tcl-tk.net/software/tcltk/
+	http://www.tcl.tk/software/tcltk/
 
 Detailed release notes can be found at
 	http://sourceforge.net/project/showfiles.php?group_id=10894
 
 There are many Tcl books on the market.  Most are listed at
-	http://www.tcl-tk.net/resource/doc/books/
+	http://www.tcl.tk/resource/doc/books/
 
 There are notes about compiling Tcl at
-	http://www.tcl-tk.net/doc/howto/compile.html
+	http://www.tcl.tk/doc/howto/compile.html
 
 3. Installation
 ---------------
@@ -69,7 +69,7 @@ are library files for the Microsoft Visual C++ compiler:
 Please refer to the example dynamically loadable extension provided on
 our ftp site:
 
-	ftp://ftp.scriptics.com/pub/tcl/misc/example.zip
+	ftp://ftp.tcl.tk/pub/tcl/misc/example.zip
 
 This archive contains a template that you can use for building
 extensions that will be loadable on Unix, Windows, and Macintosh
@@ -105,19 +105,19 @@ reading software to ensure that it is supplying valid e-mail addresses.
 
 Many people have created exciting packages and applications based on Tcl
 and/or Tk and made them freely available to the Tcl community.  An archive
-of these contributions is kept on the machine ftp.neosoft.com.  You
-can access the archive using anonymous FTP;  the Tcl contributed archive is
-in the directory "/pub/tcl".  The archive also contains several FAQ
-("frequently asked questions") documents that provide solutions to problems
-that are commonly encountered by TCL newcomers.
+of these contributions is kept on the machine ftp://archives.tcl.tk/pub/tcl
+(aka ftp://ftp.procplace.com/pub/tcl).  You can access the archive using
+anonymous FTP.  The archive also contains several FAQ ("frequently asked
+questions") documents that provide solutions to problems that are commonly
+encountered by Tcl newcomers.
 
 9. Tcl Resource Center
 ----------------------
-Visit http://dev.scritics.com/resource/ to see an annotated index of
+
+Visit http://www.tcl.tk/resource/ to see an annotated index of
 many Tcl resources available on the World Wide Web.  This includes
 papers, books, and FAQs, as well as extensions, applications, binary
-releases, and patches.  You can contribute patches by sending them
-to <patches@scriptics.com>.  You can also recommend more URLs for the
+releases, and patches.  You can also recommend more URLs for the
 resource center using the forms labeled "Add a Resource".
 
 10. Mailing lists

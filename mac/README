@@ -1,19 +1,19 @@
 Tcl 8.3 for Macintosh
 
-RCS: @(#) $Id: README,v 1.12.2.2 2001/10/03 20:26:09 hobbs Exp $
+RCS: @(#) $Id: README,v 1.12.2.3 2002/10/16 00:06:50 hobbs Exp $
 
 1. Introduction
 ---------------
 
 This is the README file for the Macintosh version of the Tcl
 scripting language.  The home page for the Macintosh releases is
-	http://www.tcl-tk.net/software/mac/
+	http://www.tcl.tk/software/mac/
 
 A summary of what's new in this release is at
-	http://www.tcl-tk.net/software/tcltk/8.3.html
+	http://www.tcl.tk/software/tcltk/8.3.html
 
 A summary of Macintosh-specific features is at
-	http://www.tcl-tk.net/software/mac/features.html
+	http://www.tcl.tk/software/mac/features.html
 
 
 2. The Distribution
@@ -47,7 +47,7 @@ mactcl-source-<version>.sea.hqx
 The "html" subdirectory contains reference documentation in
 in the HTML format.  You may also find these pages at:
 
-	http://www.tcl-tk.net/man/tcl<version>/contents.html
+	http://www.tcl.tk/man/tcl<version>/contents.html
 
 3. Compiling Tcl
 ----------------
@@ -62,7 +62,7 @@ following items:
 The included project files should work fine.  However, for current
 release notes please check this page:
 
-	http://www.tcl-tk.net/doc/howto/compile.html#mac
+	http://www.tcl.tk/doc/howto/compile.html#mac
 
 If you have comments or bug reports, report them to the bug database at:
 

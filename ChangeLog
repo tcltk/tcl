@@ -1,5 +1,16 @@
 2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* README:            updated to 8.3.5 patchlevel
+	* generic/tcl.h:     with readmes pointing to www.tcl.tk
+	* mac/README:
+	* tools/tcl.wse.in:
+	* unix/configure:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure:
+	* win/configure.in:
+
 	* unix/configure:
 	* unix/tcl.m4: updated platform targets to match 8.4 fixes.
 
