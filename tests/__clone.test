@@ -12,14 +12,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: __clone.test,v 1.1.2.2 2002/11/26 21:13:53 andreas_kupries Exp $
+# RCS: @(#) $Id: __clone.test,v 1.1.2.3 2002/12/06 02:47:17 hobbs Exp $
 
 # allow the process to exit without calling the system exit,
 # to improve finalization cleanup
 proc exit args {}
 
 # Prevent execution of these tests when running in the cloned interpreter !!
-if {[info exists __clone__]} return
+if {[info exists __clone__] || ![llength [info commands testclone]]} return
 
 #memory validate on
 
