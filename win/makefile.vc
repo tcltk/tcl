@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #--------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.68 2001/11/08 00:22:22 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.69 2001/11/08 00:39:01 davygrvy Exp $
 #--------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -156,10 +156,10 @@ TCLSH		= $(OUT_DIR)\$(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION).dll
 TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
 
-TCLREGDLLNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX).$(EXT)
+TCLREGDLLNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
 TCLREGDLL	= $(OUT_DIR)\$(TCLREGDLLNAME)
 
-TCLDDEDLLNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX).$(EXT)
+TCLDDEDLLNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDEDLL	= $(OUT_DIR)\$(TCLDDEDLLNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
