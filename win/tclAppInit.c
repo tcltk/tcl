@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.6 1999/12/02 02:03:37 redman Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.7 2002/02/21 18:37:03 davygrvy Exp $
  */
 
-#include "tcl.h"
-#include <windows.h>
+#include "tclPort.h"
 #include <locale.h>
 
 #ifdef TCL_TEST
