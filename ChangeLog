@@ -1,3 +1,15 @@
+2000-03-27  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/httpd: removed unnecessary 'puts stderr "Post Dispatch"'
+
+	* tests/namespace.test:
+	* generic/tclNamesp.c (Tcl_Export): added a uniq'ing test to the
+	export list so only one instance of each export pattern would
+	exist in the list.
+
+	* generic/tclExecute.c (TclExecuteByteCode): optimized case for
+	the empty string in ==/!= comparisons
+
 2000-03-27  Eric Melski  <ericm@scriptics.com>
 
 	* unix/tclUnixChan.c: Added (off_t) type casts in lseek() call
@@ -9,16 +21,16 @@
 
 2000-03-22  Sandeep Tamhankar <sandeep@scriptics.com>
 
-        * library/http2.1/http.tcl: Fixed a bug where string query data
+	* library/http2.1/http.tcl: Fixed a bug where string query data
 	that was bigger than queryblocksize would get duplicate characters
 	at block boundaries.
 
 2000-03-22  Sandeep Tamhankar <sandeep@scriptics.com>
 
-        * library/http2.1/http.tcl: Fixed bug 4463, where we were getting
-        a stack trace if we tried to publish a project to a good host but
-        a port where there was no server listening.  It turned out the
-        problem was a stray fileevent that needed to be cleared.  Also,
+	* library/http2.1/http.tcl: Fixed bug 4463, where we were getting
+	a stack trace if we tried to publish a project to a good host but
+	a port where there was no server listening.  It turned out the
+	problem was a stray fileevent that needed to be cleared.  Also,
 	fixed a bug where http::code could stack trace if called on a bad
 	token (one which didn't represent a successful geturl) by adding
 	an http element to the state array in geturl.
