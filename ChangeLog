@@ -1,3 +1,9 @@
+2004-09-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_CreateInterp):	Removed obsolete
+	field for storing the string-based command procedure of built-in
+	commands.  We no longer have any string-based built-in commands!
+
 2004-09-08  Kevin B. Kenny <kennykb@acm.org>
 
 	* doc/clock.n: Corrected a buglet in the header information.
