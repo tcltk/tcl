@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.38 1999/07/09 21:18:10 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.39 1999/07/13 22:23:06 redman Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1046,10 +1046,12 @@ dist: $(UNIX_DIR)/configure
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/porting.notes $(UNIX_DIR)/porting.old \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix \
+		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
 	chmod +x $(DISTDIR)/unix/install-sh
+
 	tclsh $(UNIX_DIR)/mkLinks.tcl \
 		$(UNIX_DIR)/../doc/*.[13n] > $(DISTDIR)/unix/mkLinks
 	chmod +x $(DISTDIR)/unix/mkLinks
@@ -1086,6 +1088,11 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests/pkg
 	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(DISTDIR)/tests/pkg
 	mkdir $(DISTDIR)/win
+	cp $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
+	cp $(TOP_DIR)/win/configure.in \
+		$(TOP_DIR)/win/tclConfig.sh.in \
+		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
+		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.h $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
