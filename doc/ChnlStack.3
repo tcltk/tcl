@@ -4,28 +4,31 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlReplace.3,v 1.3 1999/06/30 17:46:51 welch Exp $
+'\" RCS: @(#) $Id: ChnlStack.3,v 1.1 1999/07/02 19:51:14 welch Exp $
 .so man.macros
-.TH Tcl_ReplaceChannel 3 8.2 Tcl "Tcl Library Procedures"
+.TH Tcl_StackChannel 3 8.2 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_ReplaceChannel, Tcl_UndoReplaceChannel \- stack an I/O channel on top of another, and undo it
+Tcl_StackChannel, Tcl_UnstackChannel \- stack an I/O channel on top of another, and undo it
 .SH SYNOPSIS
 .nf
 .nf
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Channel
-\fBTcl_ReplaceChannel\fR(\fIinterp, typePtr, clientData, mask, channel\fR)
+\fBTcl_StackChannel\fR(\fIinterp, typePtr, clientData, mask, channel\fR)
 .sp
 void
-\fBTcl_UndoReplaceChannel\fR(\fIinterp, channel\fR)
+\fBTcl_UnstackChannel\fR(\fIinterp, channel\fR)
+.sp
+Tcl_Channel
+\fBTcl_GetStackedChannel\fR(\fIchannel\fR)
 .sp
 .SH ARGUMENTS
 .AS Tcl_ChannelType
 .AP Tcl_Interp *interp in
-The Tcl interpreter in which \fIchannel\fP is registered.
+Interpreter for error reporting - can be NULL.
 .AP Tcl_ChannelType *typePtr in
 The new channel I/O procedures to use for \fIchannel\fP.
 .AP ClientData clientData in
@@ -41,51 +44,55 @@ An existing Tcl channel such as returned by \fBTcl_CreateChannel\fR.
 .SH DESCRIPTION
 .PP
 These functions are for use by extensions that add processing
-layers on top of Tcl I/O channels.  Examples include compression
+layers to Tcl I/O channels.  Examples include compression
 and encryption modules.  These functions transparently stack and unstack
 a new channel on top of an existing one.
 Any number of channels can be stacked together.
 .PP
-\fBTcl_ReplaceChannel\fR
+\fBTcl_StackChannel\fR
 replaces an existing \fIchannel\fP with a new channel by
 the same name that was registered for \fIchannel\fP
 with \fBTcl_RegisterChannel\fP.
-Because the channel name is the same, all Tcl-level I/O
-operations will automatically use the new channel instead
-of the old one.
-The new channel uses the I/O channel functions
+.PP
+\fBTcl_StackChannel\fR
+works by creating a new channel structure under the existing
+\fIchannel\fP and pushing the existing channel functions
+down to the newly created channel.
+The hidden channel does no buffering, newline translations,
+or character set encoding.
+Instead, 
+the buffering, newline translations, and
+encoding functions all remain at the top of the channel stack.
+The top-most channel gets changed to use the 
+I/O channel functions
 defined in \fItypePtr\fP, and the channel functions are passed
 the new \fIclientData\fP.
-A pointer to the new channel structure is returned.
-If an error occurs when creating the new channel,
+The existing \fIchannel\fP structure is modified in place,
+so C applications that continue to use \fIchannel\fP will
+also see the effects of the new processing module.
+A pointer to a new channel structure is returned,
+although this new data structure is the one that has been
+pushed down below the top of the channel module stack.
+(This pointer can also be obtained with the
+\fBTcl_GetStackedChannel\fP call.)
+If an error occurs when stacking the channel,
 NULL is returned instead. 
 .PP
 The \fImask\fP parameter specifies the operations that
 are allowed on the new channel.
 These can be a subset of the operations allowed on the original channel.
 For example, a read-write channel may become
-read-only after the \fBTcl_ReplaceChannel\fR call.
+read-only after the \fBTcl_StackChannel\fR call.
 .PP
-The old Tcl_Channel data structure
-is linked to the new channel
-using the \fBsupercedes\fP structure member of the
-Tcl_Channel that is returned by
-\fBTcl_ReplaceChannel\fR.
-The new channel functions
-should use the standard channel APIs like
-\fBTcl_Read\fP, \fBTcl_ReadChars\fP and \fBTcl_Write\fP
-to get at the underlying channel instead of
-accessing the other channel data structure directly.
-.PP
-Closing the new channel closes the channels stacked below it.
+Closing a channel closes the channels stacked below it.
 The close of stacked channels is executed in a way that
 allows buffered data to be properly flushed.
 .PP
-\fBTcl_UndoReplaceChannel\fP reverses the process.
+\fBTcl_UnstackChannel\fP reverses the process.
 The old channel is associated with the channel name,
-and the new channel created by 
-\fBTcl_ReplaceChannel\fR is destroyed.
-If there is no old channel, then \fBTcl_UndoReplaceChannel\fP 
+and the processing module added by
+\fBTcl_StackChannel\fR is destroyed.
+If there is no old channel, then \fBTcl_UnstackChannel\fP 
 is equivalent to \fBTcl_Close\fP .
 
 .SH "SEE ALSO"
