@@ -10,11 +10,20 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUtil.c 1.161 97/08/12 17:07:18
+ *  SCCS: %Z% $Id: tclUtil.c,v 1.2 1998/06/12 16:49:08 suresh Exp $ 
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+/*
+ * The following variable holds the full path name of the binary
+ * from which this application was executed, or NULL if it isn't
+ * know.  The value of the variable is set by the procedure
+ * Tcl_FindExecutable.  The storage space is dynamically allocated.
+ */
+ 
+char *tclExecutableName = NULL;
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement
@@ -2804,4 +2813,31 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
     }
     *indexPtr = index;
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetNameOfExecutable --
+ *
+ *	This procedure simply returns a pointer to the internal full
+ *	path name of the executable file as computed by
+ *	Tcl_FindExecutable.  This procedure call is the C API
+ *	equivalent to the "info nameofexecutable" command.
+ *
+ * Results:
+ *	A pointer to the internal string or NULL if the internal full
+ *	path name has not been computed or unknown.
+ *
+ * Side effects:
+ *	The object referenced by "objPtr" might be converted to an
+ *	integer object.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Tcl_GetNameOfExecutable()
+{
+    return (tclExecutableName);
 }
