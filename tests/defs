@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: defs,v 1.1.2.5 1998/12/10 03:28:02 stanton Exp $
+# RCS: @(#) $Id: defs,v 1.1.2.6 1998/12/11 21:44:59 stanton Exp $
 
 if {![info exists VERBOSE]} {
     set VERBOSE 0
@@ -565,6 +565,13 @@ if {[info commands testlocale]==""} {
 		    "FreeBSD" {
 			set isoLocale fr_FR.ISO_8859-1
 		    }
+		    HP-UX {
+			set isoLocale fr_FR.iso88591
+		    }
+		    Linux -
+		    IRIX {
+			set isoLocale fr
+		    }
 		    default {
 			# Works on SunOS 4 and Solaris, and maybe others...
 			# define it to something else on your system
@@ -583,7 +590,7 @@ if {[info commands testlocale]==""} {
     restore_locale
 
     if {$testConfig(hasIsoLocale) == 0} {
-	puts "(will skip tests that needs to set an iso8859-1 locale)"
+	puts "(will skip tests that need to set an iso8859-1 locale)"
     }
 
 } 
