@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.106 2005/01/19 23:15:12 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.107 2005/01/21 22:25:08 andreas_kupries Exp $
 
 library tcl
 
@@ -1973,6 +1973,18 @@ declare 551 generic {
     int Tcl_GetEnsembleNamespace(Tcl_Interp *interp, Tcl_Command token,
 	    Tcl_Namespace **namespacePtrPtr)
 }
+# TIP#233 (Virtualized Time)
+declare 552 generic {
+    void Tcl_SetTimeProc (Tcl_GetTimeProc* getProc,
+	    Tcl_ScaleTimeProc* scaleProc,
+	    ClientData clientData)
+}
+declare 553 generic {
+    void Tcl_QueryTimeProc (Tcl_GetTimeProc** getProc,
+	    Tcl_ScaleTimeProc** scaleProc,
+	    ClientData* clientData)
+}
+
 
 ##############################################################################
 

@@ -1,5 +1,20 @@
 2005-01-21  Andreas Kupries <andreask@activestate.com>
 
+	* generic/tclStubInit.c: Regenerated the stubs support code from
+	* generic/tclDecls.h:    the modified tcl.decls (TIP #233, see below).
+
+	* doc/GetTime.3:       Implemented TIP #233, i.e. the
+	* generic/tcl.decls:   'Virtualization of Tcl's Sense of Time'.
+	* generic/tcl.h:       Declared, implemented, and documented the
+	* generic/tclInt.h:    specified new API functions. Moved the
+	* unix/tclUnixEvent.c: native (OS) access to time information
+	* unix/tclUnixNotfy.c: into standard handler functions. Inserted
+	* unix/tclUnixTime.c:  hooks calling on the handlers where native
+	* win/tclWinNotify.c:  access was done before, and where scaling
+	* win/tclWinTime.c:    between domains (real/virtual) is required.
+
+2005-01-21  Andreas Kupries <andreask@activestate.com>
+
 	* generic/tclThread.c: Typo police. Fixed some nits
 	* generic/tclCmdAH.c:  in header comments of functions.
 	* generic/tclBasic.c:  (Missing --).

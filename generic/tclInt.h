@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.212 2005/01/19 23:15:16 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.213 2005/01/21 22:25:18 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1741,6 +1741,14 @@ MODULE_SCOPE int	tclFindExecutableSearchDone;
 MODULE_SCOPE char *	tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 MODULE_SCOPE Tcl_NotifierProcs tclOriginalNotifier;
+
+/* TIP #233 (Virtualized Time)
+ * Data for the time hooks, if any.
+ */
+
+MODULE_SCOPE Tcl_GetTimeProc*   tclGetTimeProcPtr;
+MODULE_SCOPE Tcl_ScaleTimeProc* tclScaleTimeProcPtr;
+MODULE_SCOPE ClientData         tclTimeClientData;
 
 /*
  * Variables denoting the Tcl object types defined in the core.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.108 2005/01/19 23:16:14 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.109 2005/01/21 22:25:11 andreas_kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3436,6 +3436,22 @@ EXTERN int		Tcl_GetEnsembleNamespace _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Command token, 
 				Tcl_Namespace ** namespacePtrPtr));
 #endif
+#ifndef Tcl_SetTimeProc_TCL_DECLARED
+#define Tcl_SetTimeProc_TCL_DECLARED
+/* 552 */
+EXTERN void		Tcl_SetTimeProc _ANSI_ARGS_((
+				Tcl_GetTimeProc* getProc, 
+				Tcl_ScaleTimeProc* scaleProc, 
+				ClientData clientData));
+#endif
+#ifndef Tcl_QueryTimeProc_TCL_DECLARED
+#define Tcl_QueryTimeProc_TCL_DECLARED
+/* 553 */
+EXTERN void		Tcl_QueryTimeProc _ANSI_ARGS_((
+				Tcl_GetTimeProc** getProc, 
+				Tcl_ScaleTimeProc** scaleProc, 
+				ClientData* clientData));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4029,6 +4045,8 @@ typedef struct TclStubs {
     int (*tcl_GetEnsembleUnknownHandler) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** unknownListPtr)); /* 549 */
     int (*tcl_GetEnsembleFlags) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, int * flagsPtr)); /* 550 */
     int (*tcl_GetEnsembleNamespace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Namespace ** namespacePtrPtr)); /* 551 */
+    void (*tcl_SetTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc* getProc, Tcl_ScaleTimeProc* scaleProc, ClientData clientData)); /* 552 */
+    void (*tcl_QueryTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc** getProc, Tcl_ScaleTimeProc** scaleProc, ClientData* clientData)); /* 553 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6276,6 +6294,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetEnsembleNamespace
 #define Tcl_GetEnsembleNamespace \
 	(tclStubsPtr->tcl_GetEnsembleNamespace) /* 551 */
+#endif
+#ifndef Tcl_SetTimeProc
+#define Tcl_SetTimeProc \
+	(tclStubsPtr->tcl_SetTimeProc) /* 552 */
+#endif
+#ifndef Tcl_QueryTimeProc
+#define Tcl_QueryTimeProc \
+	(tclStubsPtr->tcl_QueryTimeProc) /* 553 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
