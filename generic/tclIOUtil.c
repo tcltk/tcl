@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.76 2003/02/27 23:47:16 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77 2003/03/03 20:22:41 das Exp $
  */
 
 #include "tclInt.h"
@@ -4020,6 +4020,18 @@ TclNewFSPathObj(Tcl_Obj *dirPtr, CONST char *addStrRep, int len)
     objPtr = Tcl_NewObj();
     fsPathPtr = (FsPath*)ckalloc((unsigned)sizeof(FsPath));
     
+    if (tclPlatform == TCL_PLATFORM_MAC) {
+	/* 
+	 * Mac relative paths may begin with a directory separator ':'.
+	 * If present, we need to skip this ':' because we assume that
+	 * we can join dirPtr and addStrRep by concatenating them as
+	 * strings (and we ensure that dirPtr is terminated by a ':').
+	 */
+	if (addStrRep[0] == ':') {
+	    addStrRep++;
+	    len--;
+	}
+    }
     /* Setup the path */
     fsPathPtr->translatedPathPtr = NULL;
     fsPathPtr->normPathPtr = Tcl_NewStringObj(addStrRep, len);
