@@ -1,3 +1,8 @@
+1999-03-22    <stanton@scriptics.com>
+
+	* tests/reg.test: 
+	* generic/regc_color.c: Applied regexp bug fix from Henry Spencer.
+
 1999-03-19    <redman@scriptics.com>
 
 	* generic/tclCmdIL.c: Fixed the initialization of an array so that

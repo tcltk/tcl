@@ -253,6 +253,7 @@ struct colormap *cm;
 pcolor co;
 {
 	struct colordesc *cd = &cm->cd[co];
+	color pco, nco;			/* for freelist scan */
 
 	assert(co >= 0);
 	if (co == WHITE)
@@ -267,10 +268,28 @@ pcolor co;
 		cd->block = NULL;	/* just paranoia */
 	}
 
-	if ((size_t)co == cm->max)
+	if ((size_t)co == cm->max) {
 		while (cm->max > WHITE && UNUSEDCOLOR(&cm->cd[cm->max]))
-				cm->max--;
-	else {
+			cm->max--;
+		assert(cm->max >= 0);
+		while (cm->free > cm->max)
+			cm->free = cm->cd[cm->free].sub;
+		if (cm->free > 0) {
+			assert(cm->free < cm->max);
+			pco = cm->free;
+			nco = cm->cd[pco].sub;
+			while (nco > 0)
+				if (nco > cm->max) {
+					/* take this one out of freelist */
+					nco = cm->cd[nco].sub;
+					cm->cd[pco].sub = nco;
+				} else {
+					assert(nco < cm->max);
+					pco = nco;
+					nco = cm->cd[pco].sub;
+				}
+		}
+	} else {
 		cd->sub = cm->free;
 		cm->free = (color)(cd - cm->cd);
 	}

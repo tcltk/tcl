@@ -7,7 +7,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.1.2.3 1999/03/11 18:50:03 hershey Exp $
+# RCS: @(#) $Id: reg.test,v 1.1.2.4 1999/03/23 04:13:53 stanton Exp $
 
 if {[lsearch [namespace children] ::test] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -111,7 +111,7 @@ proc doing {major desc} {
 
 	if {$testbypassed != 0} {
 		puts stdout "!!! bypassed $testbypassed tests in\
-					 reg-$major, `$description'"
+					 $major, `$description'"
 	}
 
 	set prefix reg-$major
@@ -886,6 +886,7 @@ m  2	N	a?b*		abb	abb
 m  3	N	a?b*		bb	bb
 m  4	&	a*b		aab	aab
 m  5	&	^a*b		aaaab aaaab
+m  6	&M	 {[0-6][1-2][0-3][0-6][1-6][0-6]}	010010	010010
 
 
 
