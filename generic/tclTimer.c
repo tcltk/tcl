@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.11 2004/09/07 18:24:48 kennykb Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.12 2004/10/06 15:59:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -917,7 +917,7 @@ processInteger:
 			"\" doesn't exist", (char *) NULL);
 		return TCL_ERROR;
 	    }
-	    resultListPtr = Tcl_GetObjResult(interp);
+	    resultListPtr = Tcl_NewObj();
  	    Tcl_ListObjAppendElement(interp, resultListPtr, afterPtr->commandPtr);
  	    Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
  		(afterPtr->token == NULL) ? "idle" : "timer", -1));

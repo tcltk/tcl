@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.46 2004/09/29 22:17:29 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.47 2004/10/06 15:59:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1764,10 +1764,7 @@ Tcl_DStringGetResult(interp, dsPtr)
      * string result, then reset the object result.
      */
 
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	        TCL_VOLATILE);
-    }
+    (void) Tcl_GetStringResult(interp);
 
     dsPtr->length = strlen(iPtr->result);
     if (iPtr->freeProc != NULL) {
@@ -2331,10 +2328,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	     * because this is an error-generation path anyway.
 	     */
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				   "bad index \"", bytes,
-				   "\": must be integer or end?-integer?",
-				   (char *) NULL);
+	    Tcl_AppendResult(interp, "bad index \"", bytes,
+		    "\": must be integer or end?-integer?", (char *) NULL);
 	    if (!strncmp(bytes, "end-", 3)) {
 		bytes += 3;
 	    }
@@ -2426,10 +2421,8 @@ SetEndOffsetFromAny(interp, objPtr)
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				   "bad index \"", bytes,
-				   "\": must be end?-integer?",
-				   (char*) NULL);
+	    Tcl_AppendResult(interp, "bad index \"", bytes,
+		    "\": must be end?-integer?", (char*) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2453,10 +2446,8 @@ SetEndOffsetFromAny(interp, objPtr)
 	 */
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				   "bad index \"", bytes,
-				   "\": must be integer or end?-integer?",
-				   (char *) NULL);
+	    Tcl_AppendResult(interp, "bad index \"", bytes,
+		    "\": must be integer or end?-integer?", (char *) NULL);
 	}
 	return TCL_ERROR;
     }
