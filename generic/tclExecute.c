@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.169 2004/12/24 18:06:58 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.170 2005/02/01 17:27:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1008,7 +1008,6 @@ TclCompEvalObj(interp, objPtr)
 	    iPtr->numLevels--;
 	    return result;
 	}
-	iPtr->evalFlags = 0;
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
     } else {
 	/*
