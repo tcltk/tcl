@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.16 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.17 2002/09/02 20:10:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1804,6 +1804,11 @@ SlaveCreate(interp, pathPtr, safe)
         if (Tcl_Init(slaveInterp) == TCL_ERROR) {
             goto error;
         }
+	/*
+	 * This will create the "memory" command in slave interpreters
+	 * if we compiled with TCL_MEM_DEBUG, otherwise it does nothing.
+	 */
+	Tcl_InitMemory(slaveInterp);
     }
     return slaveInterp;
 
