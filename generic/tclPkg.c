@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.1.2.3 1999/03/10 06:49:21 stanton Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.1.2.4 1999/03/25 23:28:54 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -109,6 +109,9 @@ Tcl_PkgProvideEx(interp, name, version, clientData)
 	return TCL_OK;
     }
     if (ComparePkgVersions(pkgPtr->version, version, (int *) NULL) == 0) {
+	if (clientData != NULL) {
+	    pkgPtr->clientData = clientData;
+	}
 	return TCL_OK;
     }
     Tcl_AppendResult(interp, "conflicting versions provided for package \"",
@@ -310,15 +313,13 @@ Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr)
         if (clientDataPtr) {
 	    *clientDataPtr = pkgPtr->clientData;
 	}
-    
-        if (clientDataPtr) {
-	    *clientDataPtr = pkgPtr->clientData;
-	}
-    
 	return pkgPtr->version;
     }
     result = ComparePkgVersions(pkgPtr->version, version, &satisfies);
     if ((satisfies && !exact) || (result == 0)) {
+	if (clientDataPtr) {
+	    *clientDataPtr = pkgPtr->clientData;
+	}
 	return pkgPtr->version;
     }
     Tcl_AppendResult(interp, "version conflict for package \"",
