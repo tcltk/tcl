@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.75 2004/06/01 10:00:21 davygrvy Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.76 2004/06/01 18:44:16 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -6449,14 +6449,6 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
             (strncmp(optionName, "-buffersize", len) == 0)) {
 	int newBufferSize;
 	if (Tcl_GetInt(interp, newValue, &newBufferSize) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	if (newBufferSize < 10 || newBufferSize > (1024 * 1024)) {
-	    if (interp) {
-		Tcl_AppendResult(interp, "bad value for -buffersize: ",
-			"must not be less than 10 or greater than 1Mbyte.",
-			NULL);
-	    }
 	    return TCL_ERROR;
 	}
         Tcl_SetChannelBufferSize(chan, newBufferSize);
