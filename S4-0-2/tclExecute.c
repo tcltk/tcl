@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.1 2001/05/19 16:25:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.2 2001/05/22 15:54:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -856,7 +856,7 @@ TclExecuteByteCode(interp, codePtr)
     _CASE(INST_DUP): /* tosPtr += 1 */
     {
 	Tcl_Obj *item = TOS;
-	PUSH_OBJECT(Tcl_DuplicateObj(item));
+	PUSH_OBJECT(item);
 	pc++;
 	NEXT_INSTR;
     }
