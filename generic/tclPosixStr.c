@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.5 1999/08/21 19:41:04 hobbs Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.5.2.1 2000/08/07 21:32:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -986,7 +986,7 @@ Tcl_SignalId(sig)
 #ifdef SIGPROF
 	case SIGPROF: return "SIGPROF";
 #endif
-#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ))
+#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && (!defined(SIGLOST) || (SIGPWR != SIGLOST))
 	case SIGPWR: return "SIGPWR";
 #endif
 #ifdef SIGQUIT
@@ -1118,7 +1118,7 @@ Tcl_SignalMsg(sig)
 #ifdef SIGPROF
 	case SIGPROF: return "profiling alarm";
 #endif
-#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ))
+#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && (!defined(SIGLOST) || (SIGPWR != SIGLOST))
 	case SIGPWR: return "power-fail restart";
 #endif
 #ifdef SIGQUIT
