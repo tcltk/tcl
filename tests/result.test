@@ -5,14 +5,15 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 # SCCS: @(#) result.test 1.4 97/12/08 15:07:49
 
-if {[info procs test] != "test"} {
-    source defs
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 test result-1.1 {Tcl_SaveInterpResult} {
@@ -78,4 +79,8 @@ test result-4.5 {Tcl_SetObjErrorCode - five args} {
     catch {testsetobjerrorcode 1 2 3 4 5}
     list [set errorCode]
 } {{1 2 3 4 5}}
+
+# cleanup
+::test::cleanupTests
 return
+

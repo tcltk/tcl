@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.1.2.3 1998/12/03 23:59:13 stanton Exp $
+# RCS: @(#) $Id: switch.test,v 1.1.2.4 1999/03/11 18:50:12 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test switch-1.1 {simple patterns} {
     switch a a {format 1} b {format 2} c {format 3} default {format 4}
@@ -178,4 +181,7 @@ test switch-8.1 {empty body} {
     }
 } {}
 
+# cleanup
+::test::cleanupTests
 return
+

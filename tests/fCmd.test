@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.1.2.4 1998/12/11 00:12:08 stanton Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.1.2.5 1999/03/11 18:49:36 hershey Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -91,35 +91,35 @@ proc contents {file} {
     set r
 }
 
-set testConfig(NT) 0
-set testConfig(95) 0
+set ::test::testConfig(NT) 0
+set ::test::testConfig(95) 0
 
 switch $tcl_platform(os) {
-    "Windows NT" {set testConfig(NT) 1}
-    "Windows 95" {set testConfig(95) 1}
+    "Windows NT" {set ::test::testConfig(NT) 1}
+    "Windows 95" {set ::test::testConfig(95) 1}
 }
 
-set testConfig(fileSharing) 0
-set testConfig(notFileSharing) 1
+set ::test::testConfig(fileSharing) 0
+set ::test::testConfig(notFileSharing) 1
 
 if {$tcl_platform(platform) == "macintosh"} {
     catch {file delete -force foo.dir}
     file mkdir foo.dir
     if {[catch {file attributes foo.dir -readonly 1}] == 0} {
-    	set testConfig(fileSharing) 1
-    	set testConfig(notFileSharing) 0
+    	set ::test::testConfig(fileSharing) 1
+    	set ::test::testConfig(notFileSharing) 0
     }
     file delete -force foo.dir
 }
 
-set testConfig(xdev) 0
+set ::test::testConfig(xdev) 0
 
 if {$tcl_platform(platform) == "unix"} {
     if {[catch {set m1 [exec df .]; set m2 [exec df /tmp]}] == 0} {
 	set m1 [string range $m1 0 [expr [string first " " $m1]-1]]
 	set m2 [string range $m2 0 [expr [string first " " $m2]-1]]
 	if {$m1 != "" && $m2 != "" && $m1 != $m2 && [file exists $m1] && [file exists $m2]} {
-	    set testConfig(xdev) 1
+	    set ::test::testConfig(xdev) 1
 	}
     }
 }
@@ -479,7 +479,7 @@ test fCmd-6.16 {CopyRenameOneFile: TclpCopyRenameOneFile fails} {
     file mkdir td2
     list [catch {file rename -force td2 td1} msg] $msg
 } [subst {1 {error renaming "td2" to "[file join td1 td2]": file already exists}}]
-test fCmd-6.17 {CopyRenameOneFile: errno == EINVAL} {!$testConfig(win32s) || ($root == "C:/")} {
+test fCmd-6.17 {CopyRenameOneFile: errno == EINVAL} {!$::test::testConfig(win32s) || ($root == "C:/")} {
     # Don't run this test under Win32s on a drive mounted from an NT 
     # machine; it causes the NT machine to die.
 
@@ -2077,13 +2077,13 @@ test fCmd-27.4 {TclFileAttrsCmd - getting one option} {
     list [catch {eval file attributes foo.tmp [lindex $attrs 0]}] [file delete -force -- foo.tmp]
 } {0 {}}
 
-set testConfig(tclGroup) 0
+set ::test::testConfig(tclGroup) 0
 if {($tcl_platform(platform) == "macintosh") \
 	|| ($tcl_platform(platform) == "windows")} {
-    set testConfig(tclGroup) 1
+    set ::test::testConfig(tclGroup) 1
 } elseif {[catch {exec {groups}} groupList] == 0} {
     if {[lsearch $groupList tcl] != -1} {
-	set testConfig(tclGroup) 1
+	set ::test::testConfig(tclGroup) 1
     }
 }
 
@@ -2100,5 +2100,8 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} {tclGroup} {
     list [catch {eval file attributes foo.tmp [lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 
+# cleanup
 cleanup
+::test::cleanupTests
 return
+

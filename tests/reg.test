@@ -1,6 +1,17 @@
-# regexp tests
+# reg.test --
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+#
+# RCS: @(#) $Id: reg.test,v 1.1.2.3 1999/03/11 18:50:03 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # This file uses some custom procedures, defined below, for regexp regression
 # testing.  The name of the procedure indicates the general nature of the
@@ -879,4 +890,8 @@ m  5	&	^a*b		aaaab aaaab
 
 
 doing 0 "flush"			;# to flush any leftover complaints
+
+# cleanup
+::test::cleanupTests
 return
+

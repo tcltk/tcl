@@ -5,13 +5,16 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.1.2.2 1998/09/24 23:59:20 stanton Exp $
+# RCS: @(#) $Id: binary.test,v 1.1.2.3 1999/03/11 18:49:25 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test binary-1.1 {Tcl_BinaryObjCmd: bad args} {
     list [catch {binary} msg] $msg
@@ -1442,4 +1445,7 @@ test binary-41.8 {ScanNumber: word alignment} {nonPortable pcOnly} {
     list [binary scan \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f c1d1 arg1 arg2] $arg1 $arg2
 } {2 1 1.6}
 
+# cleanup
+::test::cleanupTests
 return
+

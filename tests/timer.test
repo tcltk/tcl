@@ -8,13 +8,16 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.1.2.2 1998/09/24 23:59:39 stanton Exp $
+# RCS: @(#) $Id: timer.test,v 1.1.2.3 1999/03/11 18:50:13 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test timer-1.1 {Tcl_CreateTimerHandler procedure} {
     foreach i [after info] {
@@ -534,4 +537,7 @@ test timer-9.1 {AfterCleanupProc procedure} {
     set x
 } {before after2 after4}
 
+# cleanup
+::test::cleanupTests
 return
+

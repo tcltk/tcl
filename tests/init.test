@@ -5,14 +5,16 @@
 # errors. No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: init.test,v 1.1.2.2 1998/09/24 23:59:27 stanton Exp $
+# RCS: @(#) $Id: init.test,v 1.1.2.3 1999/03/11 18:49:45 hershey Exp $
 
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # Clear out any namespaces called test_ns_*
 catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -58,8 +60,8 @@ test init-1.8 {auto_qualify - multiple colons 2} {
 # places where auto_loading occur (before loading the indexes files and after)
 
 set testInterp [interp create]
-interp eval $testInterp [list set VERBOSE $VERBOSE]
-interp eval $testInterp [list set TESTS $TESTS]
+interp eval $testInterp [list set argv $argv]
+interp eval $testInterp [list source [file join $::test::testsDir defs.tcl]]
 
 interp eval $testInterp {
 
@@ -145,6 +147,8 @@ test init-3.0 {random stuff in the auto_index, should still work} {
 
 }
 
+# cleanup
 interp delete $testInterp
-
+::test::cleanupTests
 return
+

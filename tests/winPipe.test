@@ -7,13 +7,24 @@
 # errors.  No output means no errors were found.
 #
 # Copyright (c) 1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.1.2.4 1999/02/10 23:31:24 stanton Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.1.2.5 1999/03/11 18:50:21 hershey Exp $
 
-if {($tcl_platform(platform) != "windows") || ($testConfig(stdio) == 0)} {
+if {$tcl_platform(platform) != "windows"} {
+    puts "skipping: Windows only tests..."
+    return
+}
+
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+if {$::test::testConfig(stdio) == 0} {
+    puts "skipping: requires another copy of tcltest under win32s..."
     return
 }
 
@@ -21,12 +32,10 @@ set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
 set cat16 [file join  $bindir cat16.exe]
 set cat32 [file join $bindir cat32.exe]
 
-if {[string compare test [info procs test]] == 1} then {source defs}
-
 if [catch {puts console1 ""}] {
-    set testConfig(AllocConsole) 1
+    set ::test::testConfig(AllocConsole) 1
 } else {
-    set testConfig(.console) 1
+    set ::test::testConfig(.console) 1
 }
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
@@ -60,7 +69,7 @@ puts $f {
 }
 close $f
 
-if {$testConfig(stdio) && [file exists $cat32]} {
+if {$::test::testConfig(stdio) && [file exists $cat32]} {
 test winpipe-1.1 {32 bit comprehensive tests: from little file} {
     exec $cat32 < little > stdout 2> stderr
     list [contents stdout] [contents stderr]
@@ -332,7 +341,7 @@ test winpipe-4.4 {TclpCreateTempFile: TEMP specifies non-existent directory} {
     set x {}
 } {}
 
-if {$testConfig(stdio) && [file exists $cat32]} {
+if {$::test::testConfig(stdio) && [file exists $cat32]} {
 test winpipe-5.1 {PipeSetupProc & PipeCheckProc: read threads} {
     set f [open "|$cat32" r+]
     fconfigure $f -blocking 0
@@ -387,5 +396,8 @@ if {[catch {set env(TEMP) $env_temp}]} {
     unset env(TEMP)
 }
 
+# cleanup
 file delete big little stdout stderr nothing echoArgs.tcl
+::test::cleanupTests
 return
+

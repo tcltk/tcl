@@ -7,13 +7,16 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.1.2.7 1998/12/10 18:27:07 stanton Exp $
+# RCS: @(#) $Id: io.test,v 1.1.2.8 1999/03/11 18:49:46 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 if {"[info commands testchannel]" != "testchannel"} {
     puts "Skipping io tests. This application does not seem to have the"
@@ -21,7 +24,7 @@ if {"[info commands testchannel]" != "testchannel"} {
     return
 }
 
-saveState
+::test::saveState
 
 removeFile test1
 removeFile pipe
@@ -56,6 +59,8 @@ makeFile {
     vwait forever
 } cat
 
+set thisScript [file join $::test::testsDir [info script]]
+
 # These tests are disabled until we decide what to do with "unsupported0".
 #
 #test io-1.1 {unsupported0 command} {
@@ -65,7 +70,7 @@ makeFile {
 #    unsupported0 $f1 $f2
 #    close $f1
 #    catch {close $f2}
-#    set s1 [file size [info script]]
+#    set s1 [file size $thisScript]
 #    set s2 [file size test1]
 #    set x ok
 #    if {"$s1" != "$s2"} {
@@ -75,7 +80,7 @@ makeFile {
 #} ok
 #test io-1.2 {unsupported0 command} {
 #    removeFile test1
-#    set f1 [open [info script]]
+#    set f1 [open $thisScript]
 #    set f2 [open test1 w]
 #    unsupported0 $f1 $f2 40
 #    close $f1
@@ -84,13 +89,13 @@ makeFile {
 #} 40
 #test io-1.3 {unsupported0 command} {
 #    removeFile test1
-#    set f1 [open [info script]]
+#    set f1 [open $thisScript]
 #    set f2 [open test1 w]
 #    unsupported0 $f1 $f2 -1
 #    close $f1
 #    close $f2
 #    set x ok
-#    set s1 [file size [info script]]
+#    set s1 [file size $thisScript]
 #    set s2 [file size test1]
 #    if {$s1 != $s2} {
 #        set x broken
@@ -103,7 +108,7 @@ makeFile {
 #    set f1 [open pipe w]
 #    puts $f1 {puts ready}
 #    puts $f1 {gets stdin}
-#    puts $f1 {set f1 [open [info script] r]}
+#    puts $f1 {set f1 [open $thisScript r]}
 #    puts $f1 {puts [read $f1 100]}
 #    puts $f1 {close $f1}
 #    close $f1
@@ -5084,7 +5089,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unixOnly} {
     close $f
     set x
 } {0600 {line 1}}
-test io-40.3 {POSIX open access modes: CREAT} {$testConfig(unix) && ([exec umask] == 2)} {
+test io-40.3 {POSIX open access modes: CREAT} {$::test::testConfig(unix) && ([exec umask] == 2)} {
     # This test only works if your umask is 2, like ouster's.
     removeFile test3
     set f [open test3 {WRONLY CREAT}]
@@ -5282,7 +5287,7 @@ test io-42.3 {Tcl_FileeventCmd: replacing, with NULL chars in script} {
 # Test fileevent on a pipe
 #
 
-if {$testConfig(stdio) && $testConfig(unixExecs)} {
+if {$::test::testConfig(stdio) && $::test::testConfig(unixExecs)} {
 
 catch {set f2 [open "|[list cat -u]" r+]}
 catch {set f3 [open "|[list cat -u]" r+]}
@@ -5382,7 +5387,7 @@ catch {close $f3}
 
 }
 	# Closes if {($platform(platform) != "macintosh") && \
-	#		($testConfig(unixExecs) == 1)} clause
+	#		($::test::testConfig(unixExecs) == 1)} clause
 
 close $f
 makeFile "foo bar" foo
@@ -6295,7 +6300,7 @@ test io-51.1 {Test old socket deletion on Macintosh} {socket} {
 
 test io-52.1 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fcopy $f1 $f2 -command { # }
     catch { fcopy $f1 $f2 } msg
@@ -6305,9 +6310,9 @@ test io-52.1 {TclCopyChannel} {
 } {0}
 test io-52.2 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
-    set f3 [open [info script]]
+    set f3 [open $thisScript]
     fcopy $f1 $f2 -command { # }
     catch { fcopy $f3 $f2 } msg
     close $f1
@@ -6317,7 +6322,7 @@ test io-52.2 {TclCopyChannel} {
 } {0}
 test io-52.3 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation cr -blocking 0
@@ -6325,7 +6330,7 @@ test io-52.3 {TclCopyChannel} {
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
-    set s1 [file size [info script]]
+    set s1 [file size $thisScript]
     set s2 [file size test1]
     if {("$s1" == "$s2") && ($s0 == $s1)} {
         lappend result ok
@@ -6334,7 +6339,7 @@ test io-52.3 {TclCopyChannel} {
 } {0 0 ok}
 test io-52.4 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation cr -blocking 0
@@ -6346,7 +6351,7 @@ test io-52.4 {TclCopyChannel} {
 } {0 0 40}
 test io-52.5 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation lf -blocking 0
@@ -6354,7 +6359,7 @@ test io-52.5 {TclCopyChannel} {
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
-    set s1 [file size [info script]]
+    set s1 [file size $thisScript]
     set s2 [file size test1]
     if {"$s1" == "$s2"} {
         lappend result ok
@@ -6363,15 +6368,15 @@ test io-52.5 {TclCopyChannel} {
 } {0 0 ok}
 test io-52.6 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation lf -blocking 0
-    set s0 [fcopy $f1 $f2 -size [expr [file size [info script]] + 5]]
+    set s0 [fcopy $f1 $f2 -size [expr [file size $thisScript] + 5]]
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
-    set s1 [file size [info script]]
+    set s1 [file size $thisScript]
     set s2 [file size test1]
     if {("$s1" == "$s2") && ($s0 == $s1)} {
         lappend result ok
@@ -6380,13 +6385,13 @@ test io-52.6 {TclCopyChannel} {
 } {0 0 ok}
 test io-52.7 {TclCopyChannel} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation lf -blocking 0
     fcopy $f1 $f2
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
-    set s1 [file size [info script]]
+    set s1 [file size $thisScript]
     set s2 [file size test1]
     close $f1
     close $f2
@@ -6403,7 +6408,7 @@ test io-52.8 {TclCopyChannel} {stdio} {
     puts $f1 {
 	puts ready
 	gets stdin
-	set f1 [open [info script] r]
+	set f1 [open $thisScript r]
 	fconfigure $f1 -translation lf
 	puts [read $f1 100]
 	close $f1
@@ -6424,7 +6429,7 @@ test io-52.8 {TclCopyChannel} {stdio} {
 
 test io-53.1 {CopyData} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation cr -blocking 0
@@ -6436,7 +6441,7 @@ test io-53.1 {CopyData} {
 } {0 0 0}
 test io-53.2 {CopyData} {
     removeFile test1
-    set f1 [open [info script]]
+    set f1 [open $thisScript]
     set f2 [open test1 w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation cr -blocking 0
@@ -6445,7 +6450,7 @@ test io-53.2 {CopyData} {
     vwait s0
     close $f1
     close $f2
-    set s1 [file size [info script]]
+    set s1 [file size $thisScript]
     set s2 [file size test1]
     if {("$s1" == "$s2") && ($s0 == $s1)} {
         lappend result ok
@@ -6534,7 +6539,7 @@ proc FcopyTestDone {bytes {error {}}} {
 
 test io-53.5 {CopyData: error during fcopy} {socket} {
     set listen [socket -server FcopyTestAccept 2828]
-    set in [open [info script]]	;# 126 K
+    set in [open $thisScript]	;# 126 K
     set out [socket 127.0.0.1 2828]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
@@ -6775,21 +6780,13 @@ test io-58.1 {Tcl_NotifyChannel and error when closing} {unixOrPc} {
     list $x $result
 } {1 {gets {normal message from pipe} gets {} catch {error message from pipe}}}
 
-
-removeFile fooBar
-removeFile longfile
-removeFile script
-removeFile output
-removeFile test1
-removeFile pipe
-removeFile my_script
-removeFile foo
-removeFile bar
-removeFile test2
-removeFile test3
-
-file delete cat
-
+# cleanup
+foreach file [list fooBar longfile script output test1 pipe my_script foo \
+	bar test2 test3 cat stdout] {
+    ::test::removeFile $file
+}
 restoreState
+::test::cleanupTests
 return
+
 

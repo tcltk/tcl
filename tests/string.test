@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.1.2.2 1998/12/03 23:59:13 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.1.2.3 1999/03/11 18:50:11 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test string-1.1 {string compare} {
     string compare abcde abdef
@@ -382,3 +385,8 @@ test string-15.1 {error conditions} {
 test string-15.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string option arg ?arg ...?"}}
+
+# cleanup
+::test::cleanupTests
+return
+

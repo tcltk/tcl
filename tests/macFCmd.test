@@ -5,27 +5,31 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: macFCmd.test,v 1.1.2.2 1998/09/24 23:59:29 stanton Exp $
+# RCS: @(#) $Id: macFCmd.test,v 1.1.2.3 1999/03/11 18:49:54 hershey Exp $
 #
 
 if {$tcl_platform(platform) != "macintosh"} {
+    puts "skipping: Mac only tests..."
     return
 }
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 catch {file delete -force foo.dir}
 file mkdir foo.dir
 if {[catch {file attributes foo.dir -readonly 1}]} {
-    set testConfig(fileSharing) 0
-    set testConfig(notFileSharing) 1
+    set ::test::testConfig(fileSharing) 0
+    set ::test::testConfig(notFileSharing) 1
 } else {
-    set testConfig(fileSharing) 1
-    set testConfig(notFileSharing) 0
+    set ::test::testConfig(fileSharing) 1
+    set ::test::testConfig(notFileSharing) 0
 }
 file delete -force foo.dir
 
@@ -167,4 +171,7 @@ test macFCmd-4.7 {SetFileReadOnly - directory readonly} {notFileSharing} {
     list [catch {file attributes foo.dir -readonly 1} msg] $msg [file delete -force foo.dir]
 } {1 {cannot set a directory to read-only when File Sharing is turned off} {}}
 
+# cleanup
+::test::cleanupTests
 return
+

@@ -6,18 +6,21 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: assocd.test,v 1.1.2.2 1998/09/24 23:59:19 stanton Exp $
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+# RCS: @(#) $Id: assocd.test,v 1.1.2.3 1999/03/11 18:49:23 hershey Exp $
 
 if {[string compare testsetassocdata [info commands testsetassocdata]] != 0} {
     puts "This application hasn't been compiled with the tests for assocData,"
     puts "therefore I am skipping all of these tests."
     return
+}
+
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 test assocd-1.1 {testing setting assoc data} {
@@ -56,4 +59,7 @@ test assocd-3.3 {testing deleting assoc data} {
    list [catch {testdelassocdata nonexistent} msg] $msg
 } {0 {}}
 
+# cleanup
+::test::cleanupTests
 return
+

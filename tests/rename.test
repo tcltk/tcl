@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: rename.test,v 1.1.2.2 1998/09/24 23:59:35 stanton Exp $
+# RCS: @(#) $Id: rename.test,v 1.1.2.3 1999/03/11 18:50:05 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # Must eliminate the "unknown" command while the test is running,
 # especially if the test is being run in a program with its
@@ -163,8 +166,10 @@ test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile 
     set msg
 } {called "incr" with too many arguments}
 
+# cleanup
 catch {rename incr {}}
 catch {rename incr.old incr}
-
+::test::cleanupTests
 return
+
 

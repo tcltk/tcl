@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: eval.test,v 1.1.2.2 1998/09/24 23:59:23 stanton Exp $
+# RCS: @(#) $Id: eval.test,v 1.1.2.3 1999/03/11 18:49:33 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test eval-1.1 {single argument} {
     eval {format 22}
@@ -54,4 +57,7 @@ test eval-2.5 {error in eval'ed command: setting errorInfo} {
 	error \"test error\"
     }\""
 
+# cleanup
+::test::cleanupTests
 return
+

@@ -5,15 +5,15 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.1.2.2 1998/09/24 23:59:39 stanton Exp $
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+# RCS: @(#) $Id: unixNotfy.test,v 1.1.2.3 1999/03/11 18:50:15 hershey Exp $
 
 if {$tcl_platform(platform) != "unix"} {
+    puts "skipping: Unix only tests..."
     return
 }
 
@@ -22,7 +22,12 @@ if {$tcl_platform(platform) != "unix"} {
 # the "testthread" command indicates that this is the case.
 
 if {"[info commands testthread]" == "testthread"} {
+    puts "skipping: tests require the testthread command..."
     return
+}
+
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 test unixNotfy-1.1 {Tcl_DeleteFileHandler} {
@@ -46,6 +51,9 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} {
     list [catch {vwait x} msg] $msg
 } {1 {can't wait for variable "x":  would wait forever}}
 
+# cleanup
 file delete foo
 file delete foo2
+::test::cleanupTests
 return
+

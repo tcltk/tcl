@@ -10,9 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.5 1999/02/10 23:31:23 stanton Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.6 1999/03/11 18:49:46 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # The set of hidden commands is platform dependent:
 
@@ -2327,8 +2329,10 @@ test interp-30.1 {deletion of aliases inside namespaces} {
     $i alias ns::cmd {}
 } {}
 
+# cleanup
 foreach i [interp slaves] {
   interp delete $i
 }
-
+::test::cleanupTests
 return
+

@@ -10,13 +10,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.1.2.3 1999/02/10 23:31:24 stanton Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.1.2.4 1999/03/11 18:50:19 hershey Exp $
 #
 
-if {[string compare test [info procs test]] == 1} then {source defs}
-
 if {$tcl_platform(platform) != "windows"} {
+    puts "skipping: Windows only tests..."
     return
+}
+
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 proc createfile {file {string a}} {
@@ -45,8 +48,8 @@ proc cleanup {args} {
     }
 }
 
-set testConfig(cdrom) 0
-set testConfig(exdev) 0
+set ::test::testConfig(cdrom) 0
+set ::test::testConfig(exdev) 0
 
 # find a CD-ROM so we can test read-only filesystems.
 
@@ -89,7 +92,7 @@ if {$cdrom == ""} {
     puts "Couldn't find a CD-ROM.  Skipping tests that access CD-ROM."
     puts "If you have a CD-ROM, insert a data disk and rerun tests."
 } else {
-    set testConfig(cdrom) 1
+    set ::test::testConfig(cdrom) 1
     set cdfile [findfile $cdrom]
 }
 
@@ -97,17 +100,17 @@ if {[file exists c:/] && [file exists d:/]} {
     catch {file delete d:/tf1}
     if {[catch {close [open d:/tf1 w]}] == 0} {
 	file delete d:/tf1
-	set testConfig(exdev) 1
+	set ::test::testConfig(exdev) 1
     }
 }
 
 file delete -force -- td1
 set foo [catch {open td1 w} testfile]
 if {$foo} {
-    set testConfig(longFileNames) 0
+    set ::test::testConfig(longFileNames) 0
 } else {
     close $testfile
-    set testConfig(longFileNames) 1
+    set ::test::testConfig(longFileNames) 1
     file delete -force -- td1
 }
 
@@ -136,7 +139,7 @@ test winFCmd-1.2 {TclpRenameFile: errno: EEXIST} {
     file mkdir td2
     list [catch {testfile mv td2 td1/td2} msg] $msg
 } {1 EEXIST} 
-test winFCmd-1.3 {TclpRenameFile: errno: EINVAL} {!$testConfig(win32s) || ("[lindex [file split [pwd]] end]" == "C:/")} {
+test winFCmd-1.3 {TclpRenameFile: errno: EINVAL} {!$::test::testConfig(win32s) || ("[lindex [file split [pwd]] end]" == "C:/")} {
     # Don't run this test under Win32s on a drive mounted from an NT 
     # machine; it causes the NT machine to die.
 
@@ -249,7 +252,7 @@ test winFCmd-1.23 {TclpRenameFile: move dir into self} {
     file mkdir td1
     list [catch {testfile mv [pwd]/td1 td1/td2} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.24 {TclpRenameFile: move a root dir} {!$testConfig(win32s) || ("[lindex [file split [pwd]] end]" == "C:/")} {
+test winFCmd-1.24 {TclpRenameFile: move a root dir} {!$::test::testConfig(win32s) || ("[lindex [file split [pwd]] end]" == "C:/")} {
     # Don't run this test under Win32s on a drive mounted from an NT 
     # machine; it causes the NT machine to die!  Neat security hole in NT.
 
@@ -975,4 +978,7 @@ foreach source {tef ted tnf tnd "" nul com1} {
     }
 }
 
+# cleanup
+::test::cleanupTests
 return
+

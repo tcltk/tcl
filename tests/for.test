@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.1.2.2 1998/09/24 23:59:25 stanton Exp $
+# RCS: @(#) $Id: for.test,v 1.1.2.3 1999/03/11 18:49:38 hershey Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -713,4 +713,7 @@ test for-5.15 {for cmd with computed command names: for command result} {
     set a
 } {}
 
+# cleanup
+::test::cleanupTests
 return
+

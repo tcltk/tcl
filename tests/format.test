@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.1.2.3 1998/11/10 02:40:59 stanton Exp $
+# RCS: @(#) $Id: format.test,v 1.1.2.4 1999/03/11 18:49:39 hershey Exp $
 
 if {[info commands test] != "test"} {
     source defs
@@ -478,9 +478,11 @@ for {set i 290} {$i < 400} {incr i} {
     append b "x"
 }
 
-
+# cleanup
 catch {unset a}
 catch {unset b}
 catch {unset c}
 catch {unset d}
+::test::cleanupTests
 return
+

@@ -8,11 +8,12 @@
 #
 # Copyright (c) 1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdInfo.test,v 1.1.2.2 1998/09/24 23:59:21 stanton Exp $
+# RCS: @(#) $Id: cmdInfo.test,v 1.1.2.3 1999/03/11 18:49:27 hershey Exp $
 
 if {[info commands testcmdinfo] == {}} {
     puts "This application hasn't been compiled with the \"testcmdinfo\""
@@ -20,7 +21,9 @@ if {[info commands testcmdinfo] == {}} {
     return
 }
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test cmdinfo-1.1 {command procedure and clientData} {
     testcmdinfo create x1
@@ -93,7 +96,9 @@ test cmdinfo-6.1 {Names for commands created when outside namespaces} {
     eval lappend y [testcmdtoken name $x]
 } {testCmd ::cmdInfoNs1::cmdInfoNs2::testCmd newTestCmd2 ::newTestCmd2}
 
+# cleanup
 catch {namespace delete cmdInfoNs1::cmdInfoNs2 cmdInfoNs1}
 catch {rename x1 ""}
-
+::test::cleanupTests
 return
+

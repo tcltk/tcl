@@ -5,20 +5,24 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) unixInit.test 1.4 98/01/13 20:03:07
-
-if {[info procs test] != "test"} {source defs}
+# RCS: @(#) $Id: unixInit.test,v 1.1.2.3 1999/03/11 18:50:14 hershey Exp $
 
 if {$tcl_platform(platform) != "unix"} {
+    puts "skipping: Unix only tests..."
     return
 }
 
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
 if {[catch {csh -c "setenv LANG japanese"}] == 0} {
-    set testConfig(japanese) 1
+    set ::test::testConfig(japanese) 1
 }
 
 catch {set oldlibrary $env(TCL_LIBRARY); unset env(TCL_LIBRARY)}
@@ -150,6 +154,9 @@ test unixInit-5.1 {Tcl_Init} {
 test unixInit-6.1 {Tcl_SourceRCFile} {
 } {}
     
+# cleanup
 catch {unset env(TCL_LIBRARY); set env(TCL_LIBRARY) $oldlibrary}
 catch {unset env(LANG); set env(LANG) $oldlang}
+::test::cleanupTests
 return
+

@@ -5,20 +5,31 @@
 # Sourcing this file into Tcl runs the tests and generates output for
 # errors.  No output means no errors were found.
 #
-# Copyright (c) 1998 by Scriptics Corporation.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.1 1998/12/11 21:44:59 stanton Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.2 1999/03/11 18:50:01 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+# temporarily copy the pkg and pkg1 dirs from testsDir to tmpDir
+set origPkgDir [file join $::test::testsDir pkg]
+set newPkgDir [file join $::test::tmpDir pkg]
+if {![catch {file copy $origPkgDir $newPkgDir}]} {
+    set removePkgDir 1
+}
+if {![catch {file copy "${origPkgDir}1" "${newPkgDir}1"}]} {
+    set removePkg1Dir 1
+}
 
 # Add the pkg1 directory to auto_path, so that its packages can be found.
 # packages in pkg1 are used to test indexing of packages in pkg.
 # Make sure that the path to pkg1 is absolute.
 
-set scriptDir [file dirname [info script]]
 set oldDir [pwd]
-lappend auto_path [file join [pwd] $scriptDir pkg1]
+lappend auto_path [file join $::test::tmpDir pkg1]
 
 namespace eval pkgtest {
     # Namespace for procs we can discard
@@ -317,8 +328,7 @@ test pkgMkIndex-9.1 {circular packages} {
 } {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
 
 # Try to find one of the DLLs in the dltest directory
-set x [file join [pwd] [file dirname [info script]]]
-set x [file join $x ../unix/dltest/pkga[info sharedlibextension]]
+set x [file join $::test::testsDir ../unix/dltest/pkga[info sharedlibextension]]
 if {[file exists $x]} {
     file copy -force $x pkg
     test pkgMkIndex-10.1 {package in DLL and script} {
@@ -331,10 +341,14 @@ if {[file exists $x]} {
     puts "Skipping pkgMkIndex-10.1 (index of DLL and script)"
 }
 
-#
 # cleanup
-#
-if {![info exist TESTS]} {
-    file delete [file join pkg pkgIndex.tcl]
-    namespace delete pkgtest
+namespace delete pkgtest
+cd $::test::tmpDir
+if {[info exists removePkgDir]} {
+    catch {file delete -force $newPkgDir}
 }
+if {[info exists removePkg1Dir]} {
+    catch {file delete -force "${newPkgDir}1"}
+}
+::test::cleanupTests
+return

@@ -3,20 +3,21 @@
 # are organized in the standard fashion for Tcl tests.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.1.2.2 1998/09/24 23:59:26 stanton Exp $
-
-if {[info procs test] != "test"} {
-    source defs
-}
+# RCS: @(#) $Id: indexObj.test,v 1.1.2.3 1999/03/11 18:49:44 hershey Exp $
 
 if {[info commands testindexobj] == {}} {
     puts "This application hasn't been compiled with the \"testindexobj\""
     puts "command, so I can't test Tcl_GetIndexFromObj etc."
     return 
+}
+
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 test indexObj-1.1 {exact match} {
@@ -67,4 +68,7 @@ test indexObj-4.1 {free old internal representation} {
     testindexobj 1 1 $x abc def {a b} zzz
 } {2}
 
+# cleanup
+::test::cleanupTests
 return
+

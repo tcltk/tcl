@@ -1,7 +1,10 @@
-Tcl Test Suite
---------------
+README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.1.2.1 1998/09/24 23:59:19 stanton Exp $
+RCS: @(#) $Id: README,v 1.1.2.2 1999/03/11 18:49:22 hershey Exp $
+
+
+Introduction:
+-------------
 
 This directory contains a set of validation tests for the Tcl
 commands.  Each of the files whose name ends in ".test" is
@@ -9,88 +12,227 @@ intended to fully exercise one or a few Tcl commands.  The
 commands tested by a given file are listed in the first line
 of the file.
 
-You can run the tests in two ways:
-    (a) type "make test" in ../unix; this will run all of the tests.
-    (b) start up tcltest in this directory, then "source" the test
-        file (for example, type "source parse.test").  To run all
-	of the tests, type "source all".
-In either case no output will be generated if all goes well, except
-for a listing of the tests..  If there are errors then additional
-messages will appear in the format described below.  Note: don't
-run the tests as superuser, since this will cause several of the tests
-to fail.
+You can run the tests in three ways:
 
-The rest of this file provides additional information on the
-features of the testing environment.
+    (a) type "make test" in ../unix; this will run all of the tests.
+
+    (b) type "tcltest <testFile> ?<option> <value>?
+
+    (c) start up tcltest in this directory, then "source" the test
+        file (for example, type "source parse.test").  To run all
+	of the tests, type "source all.tcl".
+
+In all cases, no output will be generated if all goes well, except for
+a listing of the tests..  If there are errors then additional messages
+will appear in the format described below.  Note that some tests will
+be skipped if you run as superuser.
 
 This approach to testing was designed and initially implemented
 by Mary Ann May-Pumphrey of Sun Microsystems.  Many thanks to
 her for donating her work back to the public Tcl release.
 
+The rest of this file provides additional information on the
+features of the testing environment.
+
+
 Definitions file:
 -----------------
 
-The file "defs" defines a collection of procedures and variables
-used to run the tests.  It is read in automatically by each of the
-.test files if needed, but once it has been read once it will not
-be read again by the .test files.  If you change defs while running
-tests you'll have to "source" it by hand to load its new contents.
+The file "defs.tcl" defines the "test" namespace which contains a
+collection of procedures and variables used to run the tests.  It is
+read in automatically by each of the .test files if needed, but once
+it has been read once it will not be read again by the .test files.
+Currently, the following procedures are exported from the "test"
+namespace and automatically imported:
+
+    cleanupTests dotests saveState restoreState normalizeMsg
+    makeFile removeFile makeDirectory removeDirectory viewFile
+    safeFetch bytestring set_iso8859_1_locale restore_locale
+    setTmpDir
+
+Please refer to the defs.tcl file for these procedures' specs.
+
+To keep tests from polluting the current working directory with
+unwanted files, you can specify a temporary directory, which will
+become the current working directory for the tests, by specifying
+-tmpdir on the command line or by calling the ::test::setTmpDir
+procedure (after sourcing the defs.tcl file).  The default working dir
+is the directory from which tcltest was called.  Please note that when
+you run the test suite by calling "make test", the working dir is
+<tcl8.1>/tests.
+
 
 Test output:
 ------------
 
-Normally, output only appears when there are errors.  However, if
-the variable VERBOSE is set to 1 then tests will be run in "verbose"
-mode and output will be generated for each test regardless of
-whether it succeeded or failed.  Test output consists of the
-following information:
+Foreach test file, the number of tests passed, skipped, and failed is
+printed to stdout.  Aside from this statistical information, output
+can be controlled on a per-test basis by the ::test::verbose variable.
 
-    - the test identifier (which can be used to locate the test code
-	    in the .test file)
-    - a brief description of the test
-    - the contents of the test code
-    - the actual results produced by the tests
-    - a "PASSED" or "FAILED" message
-    - the expected results (if the test failed)
+::test::verbose can be set to any substring or permutation of "bps".
+The default value of ::test::verbose is "b".  If 'b' is present, then
+the entire test is printed for each failed test, otherwise only the
+test's name, desired output, and actual output, are printed for each
+failed test.  If 'p' is present, then a line is printed for each
+passed test, otherwise no line is printed for passed tests.  If 's' is
+present, then a line (containing the consraints taht cause the test to
+be skipped) is printed for each skipped test, otherwise no line is
+printed for skipped tests.
 
-You can set VERBOSE either interactively (after the defs file has been
-read in), or you can change the default value in "defs".
+You can set ::test::verbose either interactively (after the defs.tcl
+file has been sourced) or by the command line argument -verbose, for
+example:
 
-Selecting tests for execution:
-------------------------------
+      tcltest socket.test -verbose "psb"
+
+
+Selecting files to be sourced by all.tcl:
+-----------------------------------------
+
+You can specify the files you want all.tcl to source on the command
+line with the -file options.  For example, if you call the
+following:
+
+     tcltest all.tcl -file unix*.test
+
+all files in <tcl8.1>/tests that match the pattern unix*.test will be
+sourced by the all.tcl file.  Another useful example is if a
+particular test hangs, say "get.test", and you just want to run the
+remaining tests, then you can call the following:
+
+     tcltest all.tcl -file [h-z]*.test
+
+Note that the argument to -file will be substituted relative to the
+directory containing this file.
+
+
+Selecting tests for execution within a file:
+--------------------------------------------
 
 Normally, all the tests in a file are run whenever the file is
-"source"d.  However, you can select a specific set of tests using
-the global variable TESTS.  This variable contains a pattern;  any
-test whose identifier matches TESTS will be run.  For example,
-the following interactive command causes all of the "for" tests in
-groups 2 and 4 to be executed:
+sourced.  Each test will be skipped if it doesn't match (using glob
+sytle matching) any element in the ::test::matchingTests variable, if
+it matches (using glob sytle matching) an element in
+::test::skippingTests, or if one of the elements of "constraints"
+turns out not to be true.
 
-    set TESTS {for-[24]*}
+You can set ::test::matchingTests and/or ::test::skippingTests either
+interactively (after the defs.tcl file has been sourced), or by the
+command line arguments -match and -skip, for example:
 
-TESTS defaults to *, but you can change the default in "defs" if
-you wish.
+       tcltest socket.test -match "*2.* *4.*" -skip "*2.33*"
+
+The three constraints: notIfCompiled, knownBug, and nonPortable can be
+overridden either interactively (after the defs.tcl file has been
+sourced) by setting the ::test::testConfig(<constraint>) variable, or
+by using the -constraints command line option with the name of the
+constraint in the argument.  The following example shows how to run
+tests that are constrained by the knownBug and nonPortable
+restricions:
+
+	tcltest all.tcl -constraints "knownBug nonPortable"
+
+See the defs.tcl file for information about each of these constraints.
+Other constraints can be added at any time.  See the "Writing a new
+test" section below for more details about using built-in constraints
+and adding new ones.
+
+Adding a New Test File:
+-----------------------
+
+If the file matches the tests/*.test pattern (as it should), then it
+will automatically be run by the all.tcl file.  Make sure your test
+file can be run from any working dir.  Running the following should
+work the same from any cwd:
+
+	tcltest <Tcl8.1>/tests/all.tcl
+
+Make sure no temporary files are left behind by your test file.  Your
+test file should call "::test::cleanupTests" before returning.  The
+::test::cleanupTests procedure prints statistics about the number of
+tests that passed, skipped, and failed, and removes all files the were
+created using the ::test::makeFile and ::test::makeDirectory
+procedures.
+
+Be sure your tests can run cross-platform in both the build
+environment as well as the installation environment.  If your test
+file contains tests that should not be run in or more of those cases,
+please use the constraints mechanism described in the next section to
+skip those tests.
+
+
+Writing a new test:
+-------------------
+
+The following is the spec for the "test" command:
+
+	test <name> <description> ?<constraint>? <script> <answer>
+
+The <name> field should be:
+
+	<target>-<majorNum>.<minorNum>
+
+For white-box (regression) tests, the target should be the name of the
+c function or Tcl procedure being tested.  For black-box tests, the
+target should be the name of the feature being tested.  Related tests
+should share a major number.
+
+If your test requires that a file be created on the fly, please use
+the ::test::makeFile procedure.  If your test requires that a small
+file (<50 lines) be checked in, please consider creating the file on
+the fly using the ::test::makeFile procedure.  Files created by the
+::test::makeFile procedure will automatically be removed by the
+::test::cleanupTests call at the end of each test file.
+
+Add appropriate constraints (e.g., unixOnly) to any tests that should
+not always be run.  For example, a test that should only be run on
+Unix should look like the following:
+
+    test getAttribute-1.1 {testing file permissions} {unixOnly} {
+        lindex [file attributes foo.tcl] 5
+    } {00644}
+
+See the defs.tcl file for a list of built-in flags.  You can add any
+constraints that you need.  The following is how the defs.tcl file
+adds the "unixOnly" constraint:
+
+    set ::test::testConfig(unixOnly) [expr {$tcl_platform(platform) == "unix"}]
+
 
 Saving keystrokes:
 ------------------
 
-A convenience procedure named "dotests" is included in file
-"defs".  It takes two arguments--the name of the test file (such
+A convenience procedure named "::test::dotests" is included in file
+"defs.tcl".  It takes two arguments--the name of the test file (such
 as "parse.test"), and a pattern selecting the tests you want to
-execute.  It sets TESTS to the second argument, calls "source" on
-the file specified in the first argument, and restores TESTS to
-its pre-call value at the end.
+execute.  It sets ::test::matching to the second argument, calls
+"source" on the file specified in the first argument, and restores
+::test::matching to its pre-call value at the end.
 
-Batch vs. interactive execution:
---------------------------------
 
-The tests can be run in either batch or interactive mode.  Batch
-mode refers to using I/O redirection from a UNIX shell.  For example,
-the following command causes the tests in the file named "parse.test"
-to be executed:
+Incompatibilities with prior Tcl versions:
+------------------------------------------
 
-    tclTest < parse.test > parse.test.results
+1) Global variables such as VERBOSE, TESTS, and testConfig are now
+   renamed to use the new "test" namespace.
 
-Users who want to execute the tests in this fashion need to first
-ensure that the file "defs" has proper values for the global
-variables that control the testing environment (VERBOSE and TESTS).
+   old name   new name
+   --------   --------
+   VERBOSE    ::test::verbose
+   TESTS      ::test::matchingTests
+   testConfig ::test::testConfig
+
+   The introduction of the "test" namespace is a precursor to using a
+   "test" package.  This next step will be part of a future Tcl
+   version.
+
+2) VERBOSE values are no longer numeric.  Please see the section above
+   on "Test output" for the new usage of the ::test::verbose variable.
+
+3) When you run "make test", the working dir for the test suite is now
+   the one from which you called "make test", rather than the
+   <tcl8.1>/tests directory.  This change allows for both unix and
+   windows test suites to be run simultaneously without interference.
+   All tests must now run independently of their working directory.
+   You can also control the working directory from the tcltest command
+   line with the -tmpdir option.

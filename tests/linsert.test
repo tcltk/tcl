@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: linsert.test,v 1.1.2.2 1998/09/24 23:59:28 stanton Exp $
+# RCS: @(#) $Id: linsert.test,v 1.1.2.3 1999/03/11 18:49:50 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 catch {unset lis}
 catch {rename p ""}
@@ -101,7 +104,9 @@ test linsert-3.2 {linsert won't modify shared argument objects} {
     linsert $lis 0 [string length $lis]
 } "7 a b c"
 
+# cleanup
 catch {unset lis}
 catch {rename p ""}
-
+::test::cleanupTests
 return
+

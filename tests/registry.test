@@ -10,13 +10,21 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.1.2.4 1999/02/10 23:31:24 stanton Exp $
+# RCS: @(#) $Id: registry.test,v 1.1.2.5 1999/03/11 18:50:04 hershey Exp $
 
 if {$tcl_platform(platform) != "windows"} {
+    puts "skipping: Windows only tests..."
     return
 }
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
+
+if {$::test::testConfig(win32s)} {
+    puts "Skipping registry tests under Win32s"
+    return
+}
 
 set lib [lindex [glob [file join [pwd] [file dirname \
 	[info nameofexecutable]] tclreg*.dll]] 0]
@@ -26,14 +34,9 @@ if [catch {load $lib registry}] {
     return
 }
 
-if {$testConfig(win32s)} {
-    puts "Skipping registry tests under Win32s"
-    return
-}
-
 switch $tcl_platform(os) {
-    "Windows NT" {set testConfig(NT) 1}
-    "Windows 95" {set testConfig(95) 1}
+    "Windows NT" {set ::test::testConfig(NT) 1}
+    "Windows 95" {set ::test::testConfig(95) 1}
 }
 
 # determine the current locale
@@ -41,7 +44,7 @@ set old [testlocale all]
 if {[testlocale all ""] == "English_United States.1252"} {
     # error messages from registry package are already localized.
 
-    set testConfig(english) 1
+    set ::test::testConfig(english) 1
 }
 testlocale all $old
 unset old
@@ -523,5 +526,8 @@ test registry-11.3 {SetValue: failure} {nonPortable english} {
 } {1 {unable to open key: Access is denied.}}
 
 
+# cleanup
 unset hostname
+::test::cleanupTests
 return
+

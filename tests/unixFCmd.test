@@ -9,12 +9,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.1.2.3 1998/12/11 00:12:08 stanton Exp $
-
-if {[string compare test [info procs test]] == 1} then {source defs}
+# RCS: @(#) $Id: unixFCmd.test,v 1.1.2.4 1999/03/11 18:50:14 hershey Exp $
 
 if {$tcl_platform(platform) != "unix"} {
+    puts "skipping: Unix only tests..."
     return
+}
+
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 if {$user == "root"} {
@@ -173,10 +176,10 @@ test unixFCmd-10.1 {TraversalDelete not done} {
 test unixFCmd-11.1 {CopyFileAttrs not done} {
 } {}
 
-set testConfig(tclGroup) 0
+set ::test::testConfig(tclGroup) 0
 if {[catch {exec {groups}} groupList] == 0} {
     if {[lsearch $groupList tcl] != -1} {
-	set testConfig(tclGroup) 1
+	set ::test::testConfig(tclGroup) 1
     }
 }
 
@@ -265,5 +268,8 @@ test unixFCmd-18.1 {Unix pwd} {nonPortable} {
     set r
 } {1 {error getting working directory name:}}
 
+# cleanup
 cleanup
+::test::cleanupTests
 return
+

@@ -7,21 +7,23 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1998 Mark Harrison.
-# Copyright (c) 1998 by Scriptics Corporation.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.1.2.3 1998/12/10 01:40:56 stanton Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.1.2.4 1999/03/11 18:49:55 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 if {[catch {package require msgcat 1.0}]} {
     if {[info exist msgcat1]} {
-	catch {puts stderr "Cannot load msgcat 1.0 package"}
+	catch {puts "Cannot load msgcat 1.0 package"}
 	return
     } else {
-	catch {puts stderr "Running msgcat 1.0 tests in slave interp"}
+	catch {puts "Running msgcat 1.0 tests in slave interp"}
 	set interp [interp create msgcat1]
 	$interp eval [list set msgcat1 "running"]
 	$interp eval [list source [info script]]
@@ -291,16 +293,15 @@ test msgcat-5.9 {::msgcat::mcload} {
     set result
 } {unknown:no_fi_notexist:abc}
 
-#
-# Clean up the test files
-#
-
+# cleanup
 foreach l $locales {
     file delete [string tolower [file join msgdir $l.msg]]
 }
 
 # Clean out the msg catalogs
-
-
 ::msgcat::mclocale $oldlocale
 file delete msgdir
+
+::test::cleanupTests
+return
+

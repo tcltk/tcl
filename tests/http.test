@@ -6,21 +6,24 @@
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.1.2.3 1998/11/11 04:08:28 stanton Exp $
+# RCS: @(#) $Id: http.test,v 1.1.2.4 1999/03/11 18:49:41 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 if {[catch {package require http 2.0}]} {
     if {[info exist http2]} {
-	catch {puts stderr "Cannot load http 2.0 package"}
+	catch {puts "Cannot load http 2.0 package"}
 	return
     } else {
-	catch {puts stderr "Running http 2.0 tests in slave interp"}
+	catch {puts "Running http 2.0 tests in slave interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
 	$interp eval [list source [info script]]
@@ -44,13 +47,13 @@ if {[info commands testthread] == "testthread" && [file exists httpd]} {
     puts "Running httpd in thread $httpthread"
 } else {
     if ![file exists httpd] {
-	puts stderr "Cannot read httpd script, http test skipped"
+	puts "Cannot read httpd script, http test skipped"
 	unset port
 	return
     }
     source httpd
     if [catch {httpd_init $port} listen] {
-	puts stderr "Cannot start http server, http test skipped"
+	puts "Cannot start http server, http test skipped"
 	unset port
 	return
     }
@@ -285,6 +288,7 @@ test http-6.1 {http::ProxyRequired} {
 <h2>GET http://$url</h2>
 </body></html>"
 
+# cleanup
 unset url
 unset port
 if {[info exists httpthread]} {
@@ -294,3 +298,6 @@ if {[info exists httpthread]} {
 } else {
     close $listen
 }
+::test::cleanupTests
+return
+

@@ -6,13 +6,16 @@
 # errors. No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.1.2.2 1998/09/24 23:59:31 stanton Exp $
+# RCS: @(#) $Id: namespace.test,v 1.1.2.3 1999/03/11 18:49:56 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # Clear out any namespaces called test_ns_*
 catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -1090,10 +1093,12 @@ test namespace-38.1 {UpdateStringOfNsName} {
          [namespace eval {} {namespace current}]
 } {:: ::}
 
+# cleanup
 catch {rename cmd1 {}}
 catch {unset l}
 catch {unset msg}
 catch {unset trigger}
 eval namespace delete [namespace children :: test_ns_*]
-
+::test::cleanupTests
 return
+

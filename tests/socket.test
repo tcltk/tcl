@@ -5,10 +5,13 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
+# RCS: @(#) $Id: socket.test,v 1.1.2.5 1999/03/11 18:50:08 hershey Exp $
+
 # Running socket tests with a remote server:
 # ------------------------------------------
 # 
@@ -58,12 +61,13 @@
 # server (via exec) on platforms that support this, on the local host,
 # listening at port 2048. If all fails, a message is printed and the tests
 # using the remote server are not performed.
-#
-# RCS: @(#) $Id: socket.test,v 1.1.2.4 1998/12/10 18:27:10 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
-if {$testConfig(socket) == 0} {
+if {$::test::testConfig(socket) == 0} {
+    puts "skipping: tests require sockets"
     return
 }
 
@@ -115,11 +119,12 @@ if {$doTestsWithRemoteServer} {
 	if {[info commands exec] == ""} {
 	    set noRemoteTestReason "can't exec"
 	    set doTestsWithRemoteServer 0
-	} elseif {$testConfig(win32s)} {
+	} elseif {$::test::testConfig(win32s)} {
 	    set noRemoteTestReason "\ncan't run multiple instances of tcltest under win32s."
 	    set doTestsWithRemoteServer 0
 	} else {
 	    set remoteServerIP 127.0.0.1
+	    #set remoteFile [file join $::test::testsDir remote.tcl]
 	    if {[catch {set remoteProcChan \
 				[open "|[list $tcltest remote.tcl \
 					-serverIsSilent \
@@ -145,10 +150,12 @@ if {$doTestsWithRemoteServer} {
     }
 }
 
+# Some tests are run only if we are doing testing against a remote server.
+set ::test::testConfig(doTestsWithRemoteServer) $doTestsWithRemoteServer
 if {$doTestsWithRemoteServer == 0} {
     puts "Skipping tests with remote server. See tests/socket.test for"
     puts "information on how to run remote server."
-    if {[info exists VERBOSE] && ($VERBOSE != 0)} {
+    if {$::test::verbose != ""} {
 	puts "Reason for not doing remote tests: $noRemoteTestReason"
     }
 }
@@ -1023,16 +1030,7 @@ test socket-10.1 {testing socket accept callback error handling} {
     set goterror
 } 1
 
-#
-# The rest of the tests are run only if we are doing testing against
-# a remote server.
-#
-
-if {$doTestsWithRemoteServer == 0} {
-    return
-}
-
-test socket-11.1 {tcp connection} {
+test socket-11.1 {tcp connection} {doTestsWithRemoteServer} {
     sendCommand {
 	set socket9_1_test_server [socket -server accept 2834]
 	proc accept {s a p} {
@@ -1046,7 +1044,7 @@ test socket-11.1 {tcp connection} {
     sendCommand {close $socket9_1_test_server}
     set r
 } done
-test socket-11.2 {client specifies its port} {
+test socket-11.2 {client specifies its port} {doTestsWithRemoteServer} {
     if {[info exists port]} {
 	incr port
     } else {
@@ -1070,7 +1068,7 @@ test socket-11.2 {client specifies its port} {
     }
     set result
 } ok
-test socket-11.3 {trying to connect, no server} {
+test socket-11.3 {trying to connect, no server} {doTestsWithRemoteServer} {
     set status ok
     if {![catch {set s [socket $remoteServerIp 2836]}]} {
 	if {![catch {gets $s}]} {
@@ -1080,7 +1078,7 @@ test socket-11.3 {trying to connect, no server} {
     }
     set status
 } ok
-test socket-11.4 {remote echo, one line} {
+test socket-11.4 {remote echo, one line} {doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_6_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1104,7 +1102,7 @@ test socket-11.4 {remote echo, one line} {
     sendCommand {close $socket10_6_test_server}
     set r
 } hello
-test socket-11.5 {remote echo, 50 lines} {
+test socket-11.5 {remote echo, 50 lines} {doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_7_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1138,7 +1136,7 @@ if {$tcl_platform(platform) == "macintosh"} {
 } else {
     set conflictResult {1 {couldn't open socket: address already in use}}
 }
-test socket-11.6 {socket conflict} {
+test socket-11.6 {socket conflict} {doTestsWithRemoteServer} {
     set s1 [socket -server accept 2836]
     if {[catch {set s2 [socket -server accept 2836]} msg]} {
 	set result [list 1 $msg]
@@ -1149,7 +1147,7 @@ test socket-11.6 {socket conflict} {
     close $s1
     set result
 } $conflictResult
-test socket-11.7 {server with several clients} {
+test socket-11.7 {server with several clients} {doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_9_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1185,7 +1183,7 @@ test socket-11.7 {server with several clients} {
     sendCommand {close $socket10_9_test_server}
     set i
 } 100    
-test socket-11.8 {client with several servers} {
+test socket-11.8 {client with several servers} {doTestsWithRemoteServer} {
     sendCommand {
 	set s1 [socket -server "accept 4003" 4003]
 	set s2 [socket -server "accept 4004" 4004]
@@ -1211,7 +1209,7 @@ test socket-11.8 {client with several servers} {
     }
     set l
 } {4003 {} 1 4004 {} 1 4005 {} 1}
-test socket-11.9 {accept callback error} {
+test socket-11.9 {accept callback error} {doTestsWithRemoteServer} {
     set s [socket -server accept 2836]
     proc accept {s a p} {expr 10 / 0}
     proc bgerror args {
@@ -1233,7 +1231,7 @@ test socket-11.9 {accept callback error} {
     rename bgerror {}
     set x
 } {{divide by zero}}
-test socket-11.10 {testing socket specific options} {
+test socket-11.10 {testing socket specific options} {doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_12_test_server [socket -server accept 2836]
 	proc accept {s a p} {close $s}
@@ -1247,7 +1245,7 @@ test socket-11.10 {testing socket specific options} {
     sendCommand {close $socket10_12_test_server}
     set l
 } {2836 3 3}
-test socket-11.11 {testing spurious events} {
+test socket-11.11 {testing spurious events} {doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_13_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1286,7 +1284,7 @@ test socket-11.11 {testing spurious events} {
     sendCommand {close $socket10_13_test_server}
     list $spurious $len
 } {0 2690}
-test socket-11.12 {testing EOF stickyness} {
+test socket-11.12 {testing EOF stickyness} {doTestsWithRemoteServer} {
     set counter 0
     set done 0
     proc count_up {s} {
@@ -1319,7 +1317,8 @@ test socket-11.12 {testing EOF stickyness} {
     sendCommand {close $socket10_14_test_server}
     set done
 } {EOF is sticky}
-test socket-11.13 {testing async write, async flush, async close} {
+test socket-11.13 {testing async write, async flush, async close} \
+	{doTestsWithRemoteServer} {
     proc readit {s} {
 	global count done
 	set l [read $s]
@@ -1372,7 +1371,7 @@ test socket-11.13 {testing async write, async flush, async close} {
     set count
 } 65566
 
-test socket-12.1 {testing inheritance of server sockets} {
+test socket-12.1 {testing inheritance of server sockets} {doTestsWithRemoteServer} {
     removeFile script1
     removeFile script2
 
@@ -1423,7 +1422,7 @@ test socket-12.1 {testing inheritance of server sockets} {
     removeFile script2
     set x
 } {server socket was not inherited}
-test socket-12.2 {testing inheritance of client sockets} {
+test socket-12.2 {testing inheritance of client sockets} {doTestsWithRemoteServer} {
     removeFile script1
     removeFile script2
 
@@ -1508,7 +1507,7 @@ test socket-12.2 {testing inheritance of client sockets} {
     removeFile script2
     set x
 } {client socket was not inherited}
-test socket-12.3 {testing inheritance of accepted sockets} {
+test socket-12.3 {testing inheritance of accepted sockets} {doTestsWithRemoteServer} {
     removeFile script1
     removeFile script2
 
@@ -1583,12 +1582,13 @@ test socket-12.3 {testing inheritance of accepted sockets} {
     set x
 } {accepted socket was not inherited}
 
-
+# cleanup
+catch {close $commandSocket}
+catch {close $remoteProcChan}
 if {[string match sock* $commandSocket] == 1} {
    puts $commandSocket exit
    flush $commandSocket
 }
-catch {close $commandSocket}
-catch {close $remoteProcChan}
+::test::cleanupTests
+flush stdout
 
-return

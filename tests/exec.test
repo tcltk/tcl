@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.1.2.2 1998/09/24 23:59:23 stanton Exp $
+# RCS: @(#) $Id: exec.test,v 1.1.2.3 1999/03/11 18:49:34 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # If exec is not defined just return with no error
 # Some platforms like the Macintosh do not have the exec command
@@ -20,7 +23,7 @@ if {[info commands exec] == ""} {
     puts "exec not implemented for this machine"
     return
 }
-if {$testConfig(stdio) == 0} {
+if {$::test::testConfig(stdio) == 0} {
     return
 }
 
@@ -569,8 +572,10 @@ test exec-17.1 { inheriting standard I/O } {
 } {{foobar
 }}
 
+# cleanup
 file delete script gorp.file gorp.file2
 file delete echo cat wc sh sleep exit
 file delete err
-
+::test::cleanupTests
 return
+

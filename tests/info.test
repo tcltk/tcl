@@ -6,13 +6,16 @@
 #
 # Copyright (c) 1991-1994 The Regents of the University of California.
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.1.2.2 1998/09/24 23:59:26 stanton Exp $
+# RCS: @(#) $Id: info.test,v 1.1.2.3 1999/03/11 18:49:45 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # Set up namespaces needed to test operation of "info args", "info body",
 # "info default", and "info procs" with imported procedures.
@@ -498,5 +501,8 @@ test info-20.5 {miscellaneous error conditions} {
     list [catch {info s} msg] $msg
 } {1 {ambiguous option "s": must be args, body, cmdcount, commands, complete, default, exists, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
 
+# cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}
+::test::cleanupTests
 return
+

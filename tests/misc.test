@@ -7,13 +7,16 @@
 #
 # Copyright (c) 1992-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: misc.test,v 1.1.2.2 1998/09/24 23:59:30 stanton Exp $
+# RCS: @(#) $Id: misc.test,v 1.1.2.3 1999/03/11 18:49:55 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 test misc-1.1 {error in variable ref. in command in array reference} {
     proc tstProc {} {
@@ -55,4 +58,7 @@ test misc-1.2 {error in variable ref. in command in array reference} {
     invoked from within
 "tstProc"}}
 
+# cleanup
+::test::cleanupTests
 return
+

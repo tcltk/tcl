@@ -6,11 +6,12 @@
 #
 # Copyright (c) 1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: link.test,v 1.1.2.2 1998/09/24 23:59:28 stanton Exp $
+# RCS: @(#) $Id: link.test,v 1.1.2.3 1999/03/11 18:49:49 hershey Exp $
 
 if {[info commands testlink] == {}} {
     puts "This application hasn't been compiled with the \"testlink\""
@@ -18,7 +19,9 @@ if {[info commands testlink] == {}} {
     return
 }
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 foreach i {int real bool string} {
     catch {unset $i}
@@ -234,4 +237,7 @@ foreach i {int real bool string} {
     catch {unset $i}
 }
 
+# cleanup
+::test::cleanupTests
 return
+

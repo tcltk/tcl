@@ -3,13 +3,16 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) compExpr.test 1.1 97/12/09 18:23:41
+# RCS: @(#) $Id: compExpr.test,v 1.1.2.2 1999/03/11 18:49:29 hershey Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::test] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
     set gotT1 0
@@ -318,6 +321,9 @@ test compExpr-6.1 {LogSyntaxError procedure, error in expr longer than 60 chars}
     list [catch {expr {(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)/} -1 foo 3} msg] $msg
 } {1 {syntax error in expression "(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+012"}}
 
+# cleanup
 catch {unset a}
 catch {unset b}
-concat {}
+::test::cleanupTests
+return
+
