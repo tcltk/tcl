@@ -1,3 +1,10 @@
+2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/encoding/gb2312-raw.enc (new): This is the original
+	gb2312.enc renamed to allow for it to still be used.  This is
+	needed by Tk (unix) because X fonts with gb2312* charsets really
+	do want the original gb2312 encoding. [Bug 557030]
+
 2003-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Stop unwarranted demotion
