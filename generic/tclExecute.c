@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21.2.6 2001/05/19 16:12:18 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.21.2.7 2001/05/19 22:05:45 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -727,7 +727,6 @@ TclExecuteByteCode(interp, codePtr)
     unsigned int initTos = tosPtr - eePtr->stackPtr; /* Stack top at start of execution. */
     unsigned char *pc = codePtr->codeStart; /* The current program counter. */
     int result = TCL_OK;	            /* Return code returned after execution. */
-    int flags;                              /* Flags to allow better factoring */
 #define DECR_REF_STACK_SIZE 4
     Tcl_Obj *decrRefQ[DECR_REF_STACK_SIZE]; /* structure for objs to be decrRef'ed */
 #undef DECR_REF_STACK_SIZE
@@ -1296,18 +1295,41 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
-    _CASE(INST_STORE_ARRAY_STK): /* tosPtr -= 2 */
+    _CASE(INST_APPEND_ARRAY_STK):
     {
         Tcl_Obj *valuePtr;
 	Tcl_Obj *elemPtr;
+	int varFlags;
 
+	varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	goto doStoreArrayStk;
+
+    _CASE(INST_LAPPEND_ARRAY_STK):
+	varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+	goto doStoreArrayStk;
+
+    _CASE(INST_STORE_ARRAY_STK): /* tosPtr -= 2 */
+	varFlags = TCL_LEAVE_ERR_MSG;
+
+    doStoreArrayStk:
 	valuePtr = POP_OBJECT();
 	elemPtr = POP_OBJECT(); 
 	TclDecrRefCount_Q(elemPtr);	
 	goto doStoreStk;
 
+    _CASE(INST_APPEND_STK):
+        varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+        goto doStoreScalarStk;
+
+    _CASE(INST_LAPPEND_STK):
+	varFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT);
+	goto doStoreScalarStk;
+
     _CASE(INST_STORE_STK): 
     _CASE(INST_STORE_SCALAR_STK): 
+        varFlags = TCL_LEAVE_ERR_MSG;
+
+    doStoreScalarStk:
 	valuePtr = POP_OBJECT();
         elemPtr = NULL;
 
@@ -1316,8 +1338,7 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_Obj *objPtr = TOS;
 	    Tcl_Obj *value2Ptr;
 	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-				       TCL_LEAVE_ERR_MSG);
+	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr, varFlags);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
 		Tcl_DecrRefCount_Q(valuePtr);
@@ -1409,36 +1430,6 @@ TclExecuteByteCode(interp, codePtr)
 	}
     }
 
-    _CASE(INST_APPEND_STK):
-    _CASE(INST_APPEND_ARRAY_STK):
-    {
-	Tcl_Obj *elemPtr, *objPtr, *value2Ptr;
-	Tcl_Obj *valuePtr = POP_OBJECT(); /* value to append */
-
-	TclDecrRefCount_Q(valuePtr);
-
-	if (*pc == INST_APPEND_ARRAY_STK) {
-	    elemPtr = POP_OBJECT();
-	    TclDecrRefCount_Q(elemPtr);
-	} else {
-	    elemPtr = NULL;
-	}
-	objPtr = TOS; /* scalar name */
-
-	DECACHE_STACK_INFO();
-	value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-		    TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	CACHE_STACK_INFO();
-	if (value2Ptr == NULL) {
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	TclDecrRefCount_Q(objPtr);
-	SET_TOS(value2Ptr);
-	pc++;
-	NEXT_INSTR_Q;
-    }
-
     _CASE(INST_APPEND_ARRAY4):
     {
 	int opnd;
@@ -1511,61 +1502,6 @@ TclExecuteByteCode(interp, codePtr)
 	    SET_TOS(value2Ptr);
 	    NEXT_INSTR;
 	}
-    }
-
-    _CASE(INST_LAPPEND_STK):
-    _CASE(INST_LAPPEND_ARRAY_STK):
-    {
-	/*
-	 * This compile function for this should be refactored
-	 * to make better use of existing LOAD/STORE instructions.
-	 */
-	Tcl_Obj *valuePtr, *value2Ptr, *elemPtr, *newValuePtr, *objPtr;
-	int createdNewObj = 0;
-
-	value2Ptr = POP_OBJECT(); /* value to append */
-	TclDecrRefCount_Q(value2Ptr);
-	if (*pc == INST_LAPPEND_ARRAY_STK) {
-	    elemPtr = POP_OBJECT();
-	    TclDecrRefCount_Q(elemPtr);
-	} else {
-	    elemPtr = NULL;
-	}
-	objPtr = TOS; /* scalar name */
-	
-	DECACHE_STACK_INFO();
-	/* Currently value of the list */
-	valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr, 0);
-	CACHE_STACK_INFO();
-	if (valuePtr == NULL) {
-	    valuePtr = Tcl_NewObj();
-	    createdNewObj = 1;
-	} else if (Tcl_IsShared(valuePtr)) {
-	    valuePtr = Tcl_DuplicateObj(valuePtr);
-	    createdNewObj = 1;
-	}
-
-	DECACHE_STACK_INFO();
-	result = Tcl_ListObjAppendElement(interp, valuePtr, value2Ptr);
-	CACHE_STACK_INFO();
-	if (result != TCL_OK) {
-	    if (createdNewObj) TclDecrRefCount_Q(valuePtr);
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-
-	DECACHE_STACK_INFO();
-	newValuePtr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-				     TCL_LEAVE_ERR_MSG);
-	CACHE_STACK_INFO();
-	if (newValuePtr == NULL) {
-	    if (createdNewObj) TclDecrRefCount_Q(valuePtr);
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
-	SET_TOS(newValuePtr);
-	pc++;
-	NEXT_INSTR;
     }
 
     _CASE(INST_LAPPEND_ARRAY4):

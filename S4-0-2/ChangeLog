@@ -1,5 +1,9 @@
 2001-05-19  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c: refactor/regroup some instructions
+
+2001-05-19  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* S4-0-2: added directory with differences to HEAD
 	* generic/tclExecute.c: 
 	* generic/tclExecute.h: added append, lappend instructions
