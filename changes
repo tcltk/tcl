@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.86 2004/03/26 22:35:58 dgp Exp $
+RCS: @(#) $Id: changes,v 1.87 2004/07/23 15:06:48 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6047,3 +6047,116 @@ in this changeset (new minor version) rather than bug fixes:
    This is a safer/cleaner alternative to the use of 'eval'.
 
 --- Released 8.5a1, March 3, 2004 --- See ChangeLog for details ---
+
+2004-03-04 (new feature) registry package is [unload]able (thoyts)
+=> registry 1.1.4
+
+2004-03-08 (bug fix)[910525] [glob -path] in root directory (darley)
+
+2004-03-12 (new feature)[TIP 163] [dict merge] (english, fellows)
+
+2004-03-18 (platform support) support for Mac Classic removed (steffen)
+
+2004-03-28 (bug fix)[925121] corrected segfault in bc compiler (sofer)
+
+2004-03-30 (bug fix)[495830,729692] bytecode execution checks
+each command/interp validity before executing. (sofer)
+
+2004-03-31 (bug fix)[811457] support translation to "" (porter)
+2004-03-31 (bug fix)[811461] ignore locales with no "language" part (porter)
+=> msgcat 1.4.1
+
+2004-04-01 (bug fix) make [glob -type d -dir . *] work across VFS boundary
+
+2004-04-06 (clean up) refactored Tcl header file #include order.  Might
+create need for changes in extensions that #include private headers.
+Changed source code files should work with older Tcl as well.  See ChangeLog.
+     *** POTENTIAL INCOMPATIBILITY ***
+
+2004-04-07 (bug fix)[920667] install into any Unicode path on Win (hobbs)
+
+2004-04-07 (platform support) properly substitute more values in Windows
+tclConfig.sh (hobbs)
+
+2004-04-23 (bug fix)[930851] reset channel EOF when eofchar changes (kupries)
+
+2004-04-28 (bug fix)[600812][TIP 184] [upvar 0 scalar array(foo)] raises error
+
+2004-05-03 (bug fix)[947070] stack overflow prevention on Win (kenny)
+
+2004-05-03 (bug fix)[868853] fix leak in [fconfigure $serial -xchar] (cassoff)
+
+2004-04/05 (bug fix)[928353,929892,928808,947440,948177] test fixes: OSX
+(abner)
+
+2004-05-05 (bug fix)[794839] socket connect error -> r/w fileevents
+(gravereaux)
+
+2004-05-07 (bug fix)[949905] corrected utf-8 encoding of \u0000 on I/O (max)
+
+2004-05-13 (new feature)[TIP 129] [binary scan tnmrRqQ] (markus, fellows)
+
+2004-05-13 (new feature)[TIP 142] [interp limit] (fellows)
+
+2004-05-14 (bug fix)[940278] [clock] notices $::env(TZ) changes (kenny)
+
+2004-05-16 (feature rewrite) bytecode execution of {expand} changed
+        *** POTENTIAL INCOMPATIBILITY with prior 8.5a releases ***
+
+2004-05-18 (platform support) makefile.vc now generates tclConfig.sh (thoyts)
+
+2004-05-18 (bug fix)[500285,500389,852944] [clock %G %V] ISO8601 week numbers
+(kenny)
+
+2004-05-22 (bug fix)[735335,736729] variable name resolution error (sofer)
+
+2004-05-24 (bug fix) support for non-WIDE_INT aware math functions (hobbs)
+
+2004-05-25 (new feature) [http::config -urlencoding] (hobbs)
+=> http 2.5.0
+
+2004-05-26 (bug fix)[960926] file count doubled when -singleproc 1 (porter)
+=> tcltest 2.2.6
+
+2004-05-26 (bug fix)[874058] improved build configuration on 64-bit systems.
+Corrects Tcl_StatBuf definition issues.  (hobbs)
+
+2004-05-30 (platform support) Win: allow signed short exit codes (gravereaux)
+
+2004-06-05 (bug fix)[976722] hi-res clock fixes: Win
+(godfrey, suchenwirth, kenny)
+2004-06-10 (bug fix)[932314] bad return values from Tcl_FSChdir() (vasiljevic)
+
+2004-06-18 (platform support) regonize more unix locales (huang)
+
+2004-06-18 (bug fix) prevent stack overflow from long free() chains (fellows)
+
+2004-06-21 (platform support) exceptions w/ gcc -O3 on Win (dejong)
+
+2004-06-23 (feature rewrite)[976496] thread local storage done with hash
+tables to avoid system limits (mistachkin)
+
+2004-06-29 (bug fix)[981733] SafeBase global pollution (fellows)
+
+2004-06-30 (new feature)[TIP 188] [string is wideinteger] (kenny)
+
+2004-07-02 (new feature)[TIP 202] pipe redirection 2>@1 (hobbs)
+
+2004-07-03 (bug fix)[908375] round() wide integer support (lavana, sofer)
+
+2004-07-07 (bug fix)[458361] shimmer of single-word scripts suppressed (sofer)
+
+2004-07-15 (bug fix)[770053] crash in thread finalize of notifier (vasiljevic)
+
+2004-07-15 (bug fix)[990453] plug mutex leaks on reinit
+(mistachkin, vasiljevic)
+
+2004-07-16 (bug fix)[990500] clean exit of notifier thread
+(mistachkin, kupries)
+
+2004-07-19 (bug fix)[987967] improved self-init of mutexes on Win (vasiljevic)
+
+2004-07-20 (bug fix) pure Darwin/CFLite support (steffen)
+
+2004-07-20 (bug fix)[736426] plug leaky allocator reinit (mistachkin, kenny)
+
