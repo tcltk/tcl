@@ -79,7 +79,7 @@ static char *typeNames[] = {
     "dword_big_endian", "link", "multi_sz", "resource_list", NULL
 };
 
-static DWORD lastType = REG_RESOURCE_REQUIREMENTS_LIST;
+static DWORD lastType = REG_RESOURCE_LIST;
 
 
 /*
@@ -542,7 +542,7 @@ GetType(
      * If we don't know about the type, just use the numeric value.
      */
 
-    if (type > lastType) {
+    if (type > lastType || type < 0) {
 	Tcl_SetIntObj(resultPtr, type);
     } else {
 	Tcl_SetStringObj(resultPtr, typeNames[type], -1);
@@ -590,19 +590,27 @@ GetValue(
     }
 
     /*
-     * Get the value once to determine the length then again to store
-     * the data in the buffer.
+     * Initialize a Dstring to maximum statically allocated size
+     * we could get one more byte by avoiding Tcl_DStringSetLength()
+     * and just setting length to TCL_DSTRING_STATIC_SIZE, but this
+     * should be safer if the implementation Dstrings changes.
+     *
+     * This allows short values to be read from the registy in one call.
+     * Longer values need a second call with an expanded DString.
      */
 
     Tcl_DStringInit(&data);
-    resultPtr = Tcl_GetObjResult(interp);
+    Tcl_DStringSetLength(&data, length = TCL_DSTRING_STATIC_SIZE - 1);
 
-    valueName = Tcl_GetStringFromObj(valueNameObj, (int*) &length);
-    result = RegQueryValueEx(key, valueName, NULL, &type, NULL, &length);
-    if (result == ERROR_SUCCESS) {
-	Tcl_DStringSetLength(&data, length);
-	result = RegQueryValueEx(key, valueName, NULL, &type,
-		(LPBYTE) Tcl_DStringValue(&data), &length);
+    resultPtr = Tcl_GetObjResult(interp);
+  
+    valueName = Tcl_GetStringFromObj(valueNameObj, NULL);
+    result = RegQueryValueEx(key, valueName, NULL, &type,
+	    (LPBYTE) Tcl_DStringValue(&data), &length);
+    if (result == ERROR_MORE_DATA) {
+        Tcl_DStringSetLength(&data, length);
+        result = RegQueryValueEx(key, valueName, NULL, &type,
+                (LPBYTE) Tcl_DStringValue(&data), &length);
     }
     RegCloseKey(key);
     if (result != ERROR_SUCCESS) {
