@@ -1,4 +1,4 @@
-2004-12-13  Kevin B. Kenny
+2004-12-13  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n: Clarify that the [clock scan] command does not
 	accept the full range of ISO8601 point-in-time formats
