@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# SCCS: @(#) man2help.tcl 1.2 97/01/28 18:58:20
+# RCS: @(#) $Id: man2help.tcl,v 1.1.2.2 1998/09/24 23:59:41 stanton Exp $
 # 
 
 #

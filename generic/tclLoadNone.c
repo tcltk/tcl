@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclLoadNone.c 1.7 97/11/06 15:08:30
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.1.2.2 1998/09/24 23:58:56 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: @(#) init.tcl 1.104 98/01/09 17:52:21
+# RCS: @(#) $Id: init.tcl,v 1.1.2.2 1998/09/24 23:59:06 stanton Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -78,6 +78,12 @@ if {(![interp issafe]) && ($tcl_platform(platform) == "windows")} {
 	    }
 	}
     }
+    if {[info exists p]} {
+	unset p
+    }
+    if {[info exists u]} {
+	unset u
+    }
     if {![info exists env(COMSPEC)]} {
 	if {$tcl_platform(os) == {Windows NT}} {
 	    set env(COMSPEC) cmd.exe
@@ -113,19 +119,16 @@ if {[info commands tclLog] == ""} {
     }
 }
 
-# The procs defined in this file that have a leading space
-# are 'hidden' from auto_mkindex because they are not
-# auto-loadable.
-
-
 # unknown --
 # This procedure is called when a Tcl command is invoked that doesn't
 # exist in the interpreter.  It takes the following steps to make the
 # command available:
 #
-#	1. See if the autoload facility can locate the command in a
+#	1. See if the command has the form "namespace inscope ns cmd" and
+#	   if so, concatenate its arguments onto the end and evaluate it.
+#	2. See if the autoload facility can locate the command in a
 #	   Tcl script file.  If so, load it and execute it.
-#	2. If the command was invoked interactively at top-level:
+#	3. If the command was invoked interactively at top-level:
 #	    (a) see if the command exists as an executable UNIX program.
 #		If so, "exec" the command.
 #	    (b) see if the command requests csh-like history substitution
@@ -138,9 +141,23 @@ if {[info commands tclLog] == ""} {
 # args -	A list whose elements are the words of the original
 #		command, including the command name.
 
- proc unknown args {
+proc unknown args {
     global auto_noexec auto_noload env unknown_pending tcl_interactive
     global errorCode errorInfo
+
+    # If the command word has the form "namespace inscope ns cmd"
+    # then concatenate its arguments onto the end and evaluate it.
+
+    set cmd [lindex $args 0]
+    if {[regexp "^namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
+        set arglist [lrange $args 1 end]
+	set ret [catch {uplevel $cmd $arglist} result]
+        if {$ret == 0} {
+            return $result
+        } else {
+	    return -code $ret -errorcode $errorCode $result
+        }
+    }
 
     # Save the values of errorCode and errorInfo variables, since they
     # may get modified if caught errors occur below.  The variables will
@@ -251,8 +268,8 @@ if {[info commands tclLog] == ""} {
 #                       a canonical namespace as returned [namespace current]
 #                       for instance. If not given, namespace current is used.
 
- proc auto_load {cmd {namespace {}}} {
-    global auto_index auto_oldpath auto_path env errorInfo errorCode
+proc auto_load {cmd {namespace {}}} {
+    global auto_index auto_oldpath auto_path
 
     if {[string length $namespace] == 0} {
 	set namespace [uplevel {namespace current}]
@@ -270,6 +287,34 @@ if {[info commands tclLog] == ""} {
     if {![info exists auto_path]} {
 	return 0
     }
+
+    if {![auto_load_index]} {
+	return 0
+    }
+
+    foreach name $nameList {
+	if {[info exists auto_index($name)]} {
+	    uplevel #0 $auto_index($name)
+	    if {[info commands $name] != ""} {
+		return 1
+	    }
+	}
+    }
+    return 0
+}
+
+# auto_load_index --
+# Loads the contents of tclIndex files on the auto_path directory
+# list.  This is usually invoked within auto_load to load the index
+# of available commands.  Returns 1 if the index is loaded, and 0 if
+# the index is already loaded and up to date.
+#
+# Arguments: 
+# None.
+
+proc auto_load_index {} {
+    global auto_index auto_oldpath auto_path errorInfo errorCode
+
     if {[info exists auto_oldpath]} {
 	if {$auto_oldpath == $auto_path} {
 	    return 0
@@ -317,15 +362,7 @@ if {[info commands tclLog] == ""} {
 	    }
 	}
     }
-    foreach name $nameList {
-	if {[info exists auto_index($name)]} {
-	    uplevel #0 $auto_index($name)
-	    if {[info commands $name] != ""} {
-		return 1
-	    }
-	}
-    }
-    return 0
+    return 1
 }
 
 # auto_qualify --
@@ -342,7 +379,7 @@ if {[info commands tclLog] == ""} {
 #               a canonical namespace as returned by [namespace current]
 #               for instance.
 
- proc auto_qualify {cmd namespace} {
+proc auto_qualify {cmd namespace} {
 
     # count separators and clean them up
     # (making sure that foo:::::bar will be treated as foo::bar)
@@ -387,3 +424,131 @@ if {[info commands tclLog] == ""} {
     }
 }
 
+# auto_import --
+# invoked during "namespace import" to make see if the imported commands
+# reside in an autoloaded library.  If so, the commands are loaded so
+# that they will be available for the import links.  If not, then this
+# procedure does nothing.
+#
+# Arguments -
+# pattern	The pattern of commands being imported (like "foo::*")
+#               a canonical namespace as returned by [namespace current]
+
+proc auto_import {pattern} {
+    global auto_index
+
+    set ns [uplevel namespace current]
+    set patternList [auto_qualify $pattern $ns]
+
+    auto_load_index
+
+    foreach pattern $patternList {
+        foreach name [array names auto_index] {
+            if {[string match $pattern $name] && "" == [info commands $name]} {
+                uplevel #0 $auto_index($name)
+            }
+        }
+    }
+}
+
+# auto_execok --
+#
+# Returns string that indicates name of program to execute if 
+# name corresponds to a shell builtin or an executable in the
+# Windows search path, or "" otherwise.  Builds an associative 
+# array auto_execs that caches information about previous checks, 
+# for speed.
+#
+# Arguments: 
+# name -			Name of a command.
+
+if {[string compare $tcl_platform(platform) windows] == 0} {
+# Windows version.
+#
+# Note that info executable doesn't work under Windows, so we have to
+# look for files with .exe, .com, or .bat extensions.  Also, the path
+# may be in the Path or PATH environment variables, and path
+# components are separated with semicolons, not colons as under Unix.
+#
+proc auto_execok name {
+    global auto_execs env tcl_platform
+
+    if {[info exists auto_execs($name)]} {
+	return $auto_execs($name)
+    }
+    set auto_execs($name) ""
+
+    if {[lsearch -exact {cls copy date del erase dir echo mkdir md rename 
+	    ren rmdir rd time type ver vol} $name] != -1} {
+	return [set auto_execs($name) [list $env(COMSPEC) /c $name]]
+    }
+
+    if {[llength [file split $name]] != 1} {
+	foreach ext {{} .com .exe .bat} {
+	    set file ${name}${ext}
+	    if {[file exists $file] && ![file isdirectory $file]} {
+		return [set auto_execs($name) [list $file]]
+	    }
+	}
+	return ""
+    }
+
+    set path "[file dirname [info nameof]];.;"
+    if {[info exists env(WINDIR)]} {
+	set windir $env(WINDIR) 
+    }
+    if {[info exists windir]} {
+	if {$tcl_platform(os) == "Windows NT"} {
+	    append path "$windir/system32;"
+	}
+	append path "$windir/system;$windir;"
+    }
+
+    if {[info exists env(PATH)]} {
+	append path $env(PATH)
+    }
+
+    foreach dir [split $path {;}] {
+	if {$dir == ""} {
+	    set dir .
+	}
+	foreach ext {{} .com .exe .bat} {
+	    set file [file join $dir ${name}${ext}]
+	    if {[file exists $file] && ![file isdirectory $file]} {
+		return [set auto_execs($name) [list $file]]
+	    }
+	}
+    }
+    return ""
+}
+
+} else {
+# Unix version.
+#
+proc auto_execok name {
+    global auto_execs env
+
+    if {[info exists auto_execs($name)]} {
+	return $auto_execs($name)
+    }
+    set auto_execs($name) ""
+    if {[llength [file split $name]] != 1} {
+	if {[file executable $name] && ![file isdirectory $name]} {
+	    set auto_execs($name) [list $name]
+	}
+	return $auto_execs($name)
+    }
+    foreach dir [split $env(PATH) :] {
+	if {$dir == ""} {
+	    set dir .
+	}
+	set file [file join $dir $name]
+	if {[file executable $file] && ![file isdirectory $file]} {
+	    set auto_execs($name) [list $file]
+	    return $auto_execs($name)
+	}
+    }
+    return ""
+}
+
+}

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclObj.c 1.60 98/02/20 10:24:00
+ * RCS: @(#) $Id: tclObj.c,v 1.1.2.2 1998/09/24 23:58:59 stanton Exp $
  */
 
 #include "tclInt.h"

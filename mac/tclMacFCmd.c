@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacFCmd.c 1.27 98/02/02 21:44:07
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.1.2.2 1998/09/24 23:59:11 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -1,7 +1,7 @@
 Tcl Test Suite
 --------------
 
-SCCS: @(#) README 1.6 96/04/17 10:51:11
+RCS: @(#) $Id: README,v 1.1.2.1 1998/09/24 23:59:19 stanton Exp $
 
 This directory contains a set of validation tests for the Tcl
 commands.  Each of the files whose name ends in ".test" is

@@ -1,6 +1,6 @@
 Tcl
 
-SCCS: @(#) README 1.57 98/02/18 16:11:20
+RCS: @(#) $Id: README,v 1.1.2.2 1998/09/24 23:58:14 stanton Exp $
 
 1. Introduction
 ---------------
@@ -39,6 +39,10 @@ books on Tcl:
     Exploring Expect, by Don Libes,
     O'Reilly and Associates, 1995, ISBN 1-56592-090-2
 
+Other books are listed at
+http://www.scriptics.com/resource/doc/books/
+http://www.tclconsortium.org/resources/books.html
+
 The "doc" subdirectory in this release contains a complete set of reference
 manual entries for Tcl.  Files with extension ".1" are for programs (for
 example, tclsh.1); files with extension ".3" are for C library procedures;
@@ -56,7 +60,7 @@ using the normal "man" mechanisms, such as
 		man Tcl
 
 There is also an official home for Tcl and Tk on the Web:
-	http://sunscript.sun.com
+	http://www.scriptics.com
 These Web pages include information about the latest releases, products
 related to Tcl and Tk, reports on bug fixes and porting issues, HTML
 versions of the manual pages, and pointers to many other Tcl/Tk Web
@@ -72,12 +76,13 @@ or Win 3.1 with Win32s).
 Before trying to compile Tcl you should do the following things:
 
     (a) Check for a binary release.  Pre-compiled binary releases are
-        available now for PCs and Macintoshes. Binary releases are much
-        easier to install than source releases. To find out whether a
-        binary release is available for your platform, check the Tcl/Tk
-        8.1 Web page at http://sunscript.sun.com/TclTkCore/8.1.html. 
-        Also, check in the FTP directory from which you retrieved the
-        base distribution.
+        available now for PCs, Macintoshes, and several flavors of UNIX.
+        Binary releases are much easier to install than source releases.
+        To find out whether a binary release is available for your
+        platform, check the Scriptics Tcl Resource Center
+        (http://www.scriptics.com/resource).  Also, check in
+        the FTP directory from which you retrieved the base
+        distribution.
 
     (b) Make sure you have the most recent patch release.  Look in the
 	FTP directory from which you retrieved this distribution to see
@@ -85,7 +90,7 @@ Before trying to compile Tcl you should do the following things:
 	without changing any features, so you should normally use the
 	latest patch release for the version of Tcl that you want. 
 	Patch releases are available in two forms.  A file like
-	tcl8.1p2.tar.Z is a complete release for patch level 2 of Tcl
+	tcl8.1.3.tar.Z is a complete release for patch level 3 of Tcl
 	version 8.1.  If there is a file with a higher patch level than
 	this release, just fetch the file with the highest patch level
 	and use it.
@@ -101,7 +106,7 @@ Before trying to compile Tcl you should do the following things:
 	applied to Tcl8.1p1 to produce Tcl 8.1p2, and so on. To apply an
 	uncompressed patch file such as tcl8.1p1.patch, invoke a shell
 	command like the following from the directory containing this
-	file:
+	file (some versions of patch require "-p0"):
 	    patch -p < tcl8.1p1.patch
 	If the patch file has a .gz extension, invoke a command like the
 	following:
@@ -120,7 +125,14 @@ compiling under UNIX, "win" if you're compiling under Windows, or
 in the README file in that directory for compiling Tcl, installing it,
 and running the test suite.
 
-4. Tcl newsgroup
+4. Summary of changes in Tcl 8.1
+--------------------------------
+
+Here are the most significant changes in Tcl 8.1.  In addition to these
+changes, there are several smaller changes and bug fixes.  See the file
+"changes" for a complete list of all changes.
+
+5. Tcl newsgroup
 -----------------
 
 There is a network news group "comp.lang.tcl" intended for the exchange
@@ -136,7 +148,7 @@ general interest.  A bad e-mail return address may prevent you from
 getting answers to your questions.  You may have to reconfigure your news
 reading software to ensure that it is supplying valid e-mail addresses.
 
-5. Tcl contributed archive
+6. Tcl contributed archive
 --------------------------
 
 Many people have created exciting packages and applications based on Tcl
@@ -147,24 +159,24 @@ in the directory "/pub/tcl".  The archive also contains several FAQ
 ("frequently asked questions") documents that provide solutions to problems
 that are commonly encountered by TCL newcomers.
 
-6. Mailing lists
+7. Tcl Resource Center
+----------------------
+Visit http://www.scritics.com/resource/ to see an annotated index of
+many Tcl resources available on the World Wide Web.  This includes
+papers, books, and FAQs, as well as extensions, applications, binary
+releases, and patches.  You can contribute patches by sending them
+to <patches@scriptics.com>.  You can also recommend more URLs for the
+resource center using the forms labeled "Add a Resource".
+
+8. Mailing lists
 ----------------
 
 A couple of  Mailing List have been set up to discuss Macintosh or
 Windows related Tcl issues.  In order to use these Mailing Lists you
-must have access to the internet.  If you have access to the WWW the
-home pages for these mailing lists are located at the following URLs:
-
-	http://www.sunlabs.com/people/raymond.johnson/mactcl-list.html
-
-		-and-
-
-	http://sunscript.sun.com/win/wintcl-list.html
-
-The home pages contain information about the lists and an HTML archive
-of all the past messages on the list.  To subscribe send a message to:
+must have access to the internet.  To subscribe send a message to:
 	
-	listserv@sunlabs.sun.com
+	wintcl-request@tclconsortium.org
+	mactcl-request@tclconsortium.org
 	
 In the body of the message (the subject will be ignored) put:
 	
@@ -179,12 +191,12 @@ subscribing put the line:
 	
 in the body instead (or wintcl).
 
-7. Support and bug fixes
+9. Support and bug fixes
 ------------------------
 
 We're very interested in receiving bug reports and suggestions for
 improvements.  We prefer that you send this information to the
-comp.lang.tcl newsgroup rather than to any of us at Sun.  We'll see
+comp.lang.tcl newsgroup rather than to any of us at Scriptics.  We'll see
 anything on comp.lang.tcl, and in addition someone else who reads 
 comp.lang.tcl may be able to offer a solution.  The normal turn-around
 time for bugs is 3-6 weeks.  Enhancements may take longer and may not
@@ -210,11 +222,17 @@ support for users.  If you need help we suggest that you post questions
 to comp.lang.tcl.  We read the newsgroup and will attempt to answer
 esoteric questions for which no-one else is likely to know the answer.
 In addition, Tcl support and training are available commercially from
-NeoSoft (info@neosoft.com), Computerized Processes Unlimited
-(gwl@cpu.com), and Data Kinetics (education@dkl.com).
+Scriptics (info@scriptics.com), NeoSoft (info@neosoft.com),
+Computerized Processes Unlimited (gwl@cpu.com),
+and Data Kinetics (education@dkl.com).
 
-8. Tcl version numbers
+10. Tcl version numbers
 ----------------------
+
+You can test the current version of Tcl by examining the
+tcl_version and tcl_patchLevel variables.  The tcl_patchLevel
+variable follows the naming rules outlined below (e.g., 8.0.3).
+The tcl_version just has the major.minor numbers in it (e.g., 8.0)
 
 Each Tcl release is identified by two numbers separated by a dot, e.g.
 6.7 or 7.0.  If a new release contains changes that are likely to break
@@ -247,7 +265,15 @@ incompatibility.  Once the official release is made then there won't
 be any more incompatibilities until the next release with a new major
 version number.
 
+(Note: This compatibility is true for Tcl scripts, but historically the Tcl
+C APIs have changed enough between releases that you may need to work a bit to
+upgrade extensions.)
+
 Patch releases have a suffix such as p1 or p2.  These releases contain
 bug fixes only.  A patch release (e.g Tcl 7.6p2) should be completely
 compatible with the base release from which it is derived (e.g. Tcl
 7.6), and you should normally use the highest available patch release.
+
+As of 8.0.3, the patch releases use a second . instead of 'p'.  So, the
+8.0 release went to 8.0p1, 8.0p2, and 8.0.3.  The alphas and betas will
+still use the 'a' and 'b' letters in their tcl_patchLevel.

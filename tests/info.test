@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) info.test 1.43 98/02/11 17:28:43
+# RCS: @(#) $Id: info.test,v 1.1.2.2 1998/09/24 23:59:26 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -350,6 +350,13 @@ test info-12.6 {info locals vs unset compiled locals} {
     }
     lsort [t1 {a b c c d e f}]
 } {a b c d e f}
+test info-12.7 {info locals with temporary variables} {
+    proc t1 {} {
+        foreach a {b c} {}
+        info locals
+    }
+    t1
+} {a}
 
 test info-13.1 {info nameofexecutable option} {
     list [catch {info nameofexecutable foo} msg] $msg
@@ -467,6 +474,13 @@ test info-19.3 {info vars option} {
 test info-19.4 {info vars option} {
     list [catch {info vars a b} msg] $msg
 } {1 {wrong # args: should be "info vars ?pattern?"}}
+test info-19.5 {info vars with temporary variables} {
+    proc t1 {} {
+        foreach a {b c} {}
+        info vars
+    }
+    t1
+} {a}
 
 test info-20.1 {miscellaneous error conditions} {
     list [catch {info} msg] $msg

@@ -8,7 +8,7 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * SCCS: @(#) strftime.c 1.5 98/02/02 20:59:19
+ * RCS: @(#) $Id: strftime.c,v 1.1.2.2 1998/09/24 23:58:17 stanton Exp $
  */
 
 /*
@@ -44,10 +44,9 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-/*static char *sccsid = "from: @(#)strftime.c	5.11 (Berkeley) 2/24/91";*/
-static char *rcsid = "$Id: strftime.c,v 1.1.2.1 1998/09/21 23:39:53 stanton Exp $";
-#endif /* LIBC_SCCS and not lint */
+#if defined(LIBC_SCCS)
+static char *rcsid = "$Id: strftime.c,v 1.1.2.2 1998/09/24 23:58:17 stanton Exp $";
+#endif /* LIBC_SCCS */
 
 #include <time.h>
 #include <string.h>

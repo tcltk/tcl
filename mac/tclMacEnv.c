@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacEnv.c 1.29 96/12/06 14:19:57
+ * RCS: @(#) $Id: tclMacEnv.c,v 1.1.2.1 1998/09/24 23:59:10 stanton Exp $
  */
 
 #include <Gestalt.h>

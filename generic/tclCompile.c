@@ -10,11 +10,19 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCompile.c 1.95 98/02/18 11:58:34
+ * RCS: @(#) $Id: tclCompile.c,v 1.1.2.2 1998/09/24 23:58:44 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+
+/*
+ * Table of all AuxData types.
+ */
+ 
+static Tcl_HashTable auxDataTypeTable;
+static int auxDataTypeTableInitialized; /* 0 means not yet initialized. */
+static Tcl_Mutex tableMutex;
 
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,
@@ -316,8 +324,8 @@ SetByteCodeFromAny(interp, objPtr)
 
 	auxDataPtr = compEnv.auxDataArrayPtr;
 	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-	    if (auxDataPtr->freeProc != NULL) {
-		auxDataPtr->freeProc(auxDataPtr->clientData);
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
 	    auxDataPtr++;
 	}
@@ -520,8 +528,8 @@ TclCleanupByteCode(codePtr)
     
     auxDataPtr = codePtr->auxDataArrayPtr;
     for (i = 0;  i < numAuxDataItems;  i++) {
-	if (auxDataPtr->freeProc != NULL) {
-	    (*auxDataPtr->freeProc)(auxDataPtr->clientData);
+	if (auxDataPtr->type->freeProc != NULL) {
+	    (*auxDataPtr->type->freeProc)(auxDataPtr->clientData);
 	}
 	auxDataPtr++;
     }
@@ -1502,6 +1510,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     register unsigned char *p;
     unsigned char *nextPtr;
     int numLitObjects = envPtr->literalArrayNext;
+    Namespace *namespacePtr;
     int i;
     Interp *iPtr;
 
@@ -1524,11 +1533,20 @@ TclInitByteCodeObj(objPtr, envPtr)
     structureSize += auxDataArrayBytes;
     structureSize += cmdLocBytes;
 
+    if (envPtr->iPtr->varFramePtr != NULL) {
+        namespacePtr = envPtr->iPtr->varFramePtr->nsPtr;
+    } else {
+        namespacePtr = envPtr->iPtr->globalNsPtr;
+    }
+    
     p = (unsigned char *) ckalloc((size_t) structureSize);
     codePtr = (ByteCode *) p;
     codePtr->interpHandle = TclHandlePreserve(iPtr->handle);
     codePtr->compileEpoch = iPtr->compileEpoch;
+    codePtr->nsPtr = namespacePtr;
+    codePtr->nsEpoch = namespacePtr->resolverEpoch;
     codePtr->refCount = 1;
+    codePtr->flags = 0;
     codePtr->source = envPtr->source;
     codePtr->procPtr = envPtr->procPtr;
 
@@ -1733,7 +1751,7 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	int localCt = procPtr->numCompiledLocals;
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 0;  i < localCt;  i++) {
-	    if (!localPtr->isTemp) {
+	    if (!TclIsVarTemporary(localPtr)) {
 		char *localName = localPtr->name;
 		if ((name[0] == localName[0])
 	                && (nameBytes == localPtr->nameLength)
@@ -1763,10 +1781,13 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	localPtr->nextPtr = NULL;
 	localPtr->nameLength = nameBytes;
 	localPtr->frameIndex = localVar;
-	localPtr->isArg  = 0;
-	localPtr->isTemp = (name == NULL);
+	if (name == NULL) {
+	    localPtr->flags |= VAR_TEMPORARY;
+	}
 	localPtr->flags = flags;
 	localPtr->defValuePtr = NULL;
+	localPtr->resolveInfo = NULL;
+
 	if (name != NULL) {
 	    memcpy((VOID *) localPtr->name, (VOID *) name,
 	            (size_t) nameBytes);
@@ -1775,6 +1796,119 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	procPtr->numCompiledLocals++;
     }
     return localVar;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInitCompiledLocals --
+ *
+ *	This routine is invoked in order to initialize the compiled
+ *	locals table for a new call frame.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May invoke various name resolvers in order to determine which
+ *	variables are being referenced at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclInitCompiledLocals(interp, framePtr, nsPtr)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    CallFrame *framePtr;	/* Call frame to initialize. */
+    Namespace *nsPtr;		/* Pointer to current namespace. */
+{
+    register CompiledLocal *localPtr;
+    Interp *iPtr = (Interp*) interp;
+    Tcl_ResolvedVarInfo *vinfo, *resVarInfo;
+    Var *varPtr = framePtr->compiledLocals;
+    Var *resolvedVarPtr;
+    ResolverScheme *resPtr;
+    int result;
+
+    /*
+     * Initialize the array of local variables stored in the call frame.
+     * Some variables may have special resolution rules.  In that case,
+     * we call their "resolver" procs to get our hands on the variable,
+     * and we make the compiled local a link to the real variable.
+     */
+
+    for (localPtr = framePtr->procPtr->firstLocalPtr;
+	 localPtr != NULL;
+	 localPtr = localPtr->nextPtr) {
+
+	/*
+	 * Check to see if this local is affected by namespace or
+	 * interp resolvers.  The resolver to use is cached for the
+	 * next invocation of the procedure.
+	 */
+
+	if (!(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY|VAR_RESOLVED))
+		&& (nsPtr->compiledVarResProc || iPtr->resolverPtr)) {
+	    resPtr = iPtr->resolverPtr;
+
+	    if (nsPtr->compiledVarResProc) {
+		result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
+			localPtr->name, localPtr->nameLength,
+			(Tcl_Namespace *) nsPtr, &vinfo);
+	    } else {
+		result = TCL_CONTINUE;
+	    }
+
+	    while ((result == TCL_CONTINUE) && resPtr) {
+		if (resPtr->compiledVarResProc) {
+		    result = (*resPtr->compiledVarResProc)(nsPtr->interp,
+			    localPtr->name, localPtr->nameLength,
+			    (Tcl_Namespace *) nsPtr, &vinfo);
+		}
+		resPtr = resPtr->nextPtr;
+	    }
+	    if (result == TCL_OK) {
+		localPtr->resolveInfo = vinfo;
+		localPtr->flags |= VAR_RESOLVED;
+	    }
+	}
+
+	/*
+	 * Now invoke the resolvers to determine the exact variables that
+	 * should be used.
+	 */
+
+        resVarInfo = localPtr->resolveInfo;
+        resolvedVarPtr = NULL;
+
+        if (resVarInfo && resVarInfo->fetchProc) {
+            resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
+		    resVarInfo);
+        }
+
+        if (resolvedVarPtr) {
+	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+	    varPtr->nsPtr = NULL;
+	    varPtr->hPtr = NULL;
+	    varPtr->refCount = 0;
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
+	    varPtr->flags = 0;
+            TclSetVarLink(varPtr);
+            varPtr->value.linkPtr = resolvedVarPtr;
+            resolvedVarPtr->refCount++;
+        } else {
+	    varPtr->value.objPtr = NULL;
+	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+	    varPtr->nsPtr = NULL;
+	    varPtr->hPtr = NULL;
+	    varPtr->refCount = 0;
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
+	    varPtr->flags = (localPtr->flags | VAR_UNDEFINED);
+        }
+	varPtr++;
+    }
 }
 
 /*
@@ -2049,12 +2183,7 @@ int
 TclCreateAuxData(clientData, dupProc, freeProc, envPtr)
     ClientData clientData;	/* The compilation auxiliary data to store
 				 * in the new aux data record. */
-    AuxDataDupProc *dupProc;	/* Procedure to call to duplicate the
-				 * compilation aux data when the containing
-				 * ByteCode structure is duplicated. */
-    AuxDataFreeProc *freeProc;	/* Procedure to call to free the
-				 * compilation aux data when the containing
-				 * ByteCode structure is freed.  */
+    AuxDataType *typePtr;	/* Pointer to the type to attach to this AuxData */
     register CompileEnv *envPtr;/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
@@ -2093,8 +2222,7 @@ TclCreateAuxData(clientData, dupProc, freeProc, envPtr)
     
     auxDataPtr = &(envPtr->auxDataArrayPtr[index]);
     auxDataPtr->clientData = clientData;
-    auxDataPtr->dupProc  = dupProc;
-    auxDataPtr->freeProc = freeProc;
+    auxDataPtr->type = typePtr;
     return index;
 }
 
@@ -2390,6 +2518,188 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
 /*
  *----------------------------------------------------------------------
  *
+ * TclGetInstructionTable --
+ *
+ *  Returns a pointer to the table describing Tcl bytecode instructions.
+ *  This procedure is defined so that clients can access the pointer from
+ *  outside the TCL DLLs.
+ *
+ * Results:
+ *	Returns a pointer to the global instruction table, same as the
+ *	expression (&instructionTable[0]).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+InstructionDesc *
+TclGetInstructionTable()
+{
+    return &instructionTable[0];
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclRegisterAuxDataType --
+ *
+ *	This procedure is called to register a new AuxData type
+ *	in the table of all AuxData types supported by Tcl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The type is registered in the AuxData type table. If there was already
+ *	a type with the same name as in typePtr, it is replaced with the
+ *	new type.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TclRegisterAuxDataType(typePtr)
+    AuxDataType *typePtr;	/* Information about object type;
+                             * storage must be statically
+                             * allocated (must live forever). */
+{
+    register Tcl_HashEntry *hPtr;
+    int new;
+
+    Tcl_MutexLock(&tableMutex);
+    if (!auxDataTypeTableInitialized) {
+        TclInitAuxDataTypeTable();
+    }
+
+    /*
+     * If there's already a type with the given name, remove it.
+     */
+
+    hPtr = Tcl_FindHashEntry(&tsdPtr->auxDataTypeTable, typePtr->name);
+    if (hPtr != (Tcl_HashEntry *) NULL) {
+        Tcl_DeleteHashEntry(hPtr);
+    }
+
+    /*
+     * Now insert the new object type.
+     */
+
+    hPtr = Tcl_CreateHashEntry(&tsdPtr->auxDataTypeTable, typePtr->name, &new);
+    if (new) {
+        Tcl_SetHashValue(hPtr, typePtr);
+    }
+    Tcl_MutexUnlock(&tableMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetAuxDataType --
+ *
+ *	This procedure looks up an Auxdata type by name.
+ *
+ * Results:
+ *	If an AuxData type with name matching "typeName" is found, a pointer
+ *	to its AuxDataType structure is returned; otherwise, NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+AuxDataType *
+TclGetAuxDataType(typeName)
+    char *typeName;		/* Name of AuxData type to look up. */
+{
+    register Tcl_HashEntry *hPtr;
+    AuxDataType *typePtr = NULL;
+
+    Tcl_MutexLock(&tableMutex);
+    if (!auxDataTypeTableInitialized) {
+        TclInitAuxDataTypeTable();
+    }
+
+    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typeName);
+    if (hPtr != (Tcl_HashEntry *) NULL) {
+        typePtr = (AuxDataType *) Tcl_GetHashValue(hPtr);
+    }
+    Tcl_MutexUnlock(&tableMutex);
+
+    return typePtr;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclInitAuxDataTypeTable --
+ *
+ *	This procedure is invoked to perform once-only initialization of
+ *	the AuxData type table. It also registers the AuxData types defined in 
+ *	this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the table of defined AuxData types "auxDataTypeTable" with
+ *	builtin AuxData types defined in this file.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TclInitAuxDataTypeTable()
+{
+    /*
+     * The table mutex must already be held before this routine is invoked.
+     */
+
+    auxDataTypeTableInitialized = 1;
+    Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
+
+    /*
+     * There is only one AuxData type at this time, so register it here.
+     */
+
+    TclRegisterAuxDataType(&tclForeachInfoType);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeAuxDataTypeTable --
+ *
+ *	This procedure is called by Tcl_Finalize after all exit handlers
+ *	have been run to free up storage associated with the table of AuxData
+ *	types.  This procedure is called by TclFinalizeExecution() which
+ *	is called by Tcl_Finalize().
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deletes all entries in the hash table of AuxData types.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeAuxDataTypeTable()
+{
+    Tcl_MutexLock(&tableMutex);
+    if (auxDataTypeTableInitialized) {
+        Tcl_DeleteHashTable(&auxDataTypeTable);
+        auxDataTypeTableInitialized = 0;
+    }
+    Tcl_MutexUnlock(&tableMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetCmdLocEncodingSize --
  *
  *	Computes the total number of bytes needed to encode the command
@@ -2671,13 +2981,14 @@ TclPrintByteCodeObj(interp, objPtr)
 	if (numCompiledLocals > 0) {
 	    CompiledLocal *localPtr = procPtr->firstLocalPtr;
 	    for (i = 0;  i < numCompiledLocals;  i++) {
-		fprintf(stdout, "      slot %d%s%s%s%s%s", i, 
+		fprintf(stdout, "      slot %d%s%s%s%s%s%s", i, 
 			((localPtr->flags & VAR_SCALAR)?  ", scalar"  : ""),
 			((localPtr->flags & VAR_ARRAY)?  ", array"  : ""),
 			((localPtr->flags & VAR_LINK)?  ", link"  : ""),
-			(localPtr->isArg?  ", arg"  : ""),
-			(localPtr->isTemp? ", temp" : ""));
-		if (localPtr->isTemp) {
+			((localPtr->flags & VAR_ARGUMENT)?  ", arg"  : ""),
+			((localPtr->flags & VAR_TEMPORARY)? ", temp" : ""),
+			((localPtr->flags & VAR_RESOLVED)? ", resolved" : ""));
+		if (TclIsVarTemporary(localPtr)) {
 		    fprintf(stdout,	"\n");
 		} else {
 		    fprintf(stdout,	", \"%s\"\n", localPtr->name);
@@ -2928,7 +3239,7 @@ TclPrintInstruction(codePtr, pc)
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
 		}
-		if (localPtr->isTemp) {
+		if (TclIsVarTemporary(localPtr)) {
 		    fprintf(stdout, "%u	# temp var %u",
 			    (unsigned int) opnd, (unsigned int) opnd);
 		} else {
@@ -2958,7 +3269,7 @@ TclPrintInstruction(codePtr, pc)
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
 		}
-		if (localPtr->isTemp) {
+		if (TclIsVarTemporary(localPtr)) {
 		    fprintf(stdout, "%u	# temp var %u",
 			    (unsigned int) opnd, (unsigned int) opnd);
 		} else {

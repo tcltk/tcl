@@ -12,107 +12,6 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-# auto_execok --
-#
-# Returns string that indicates name of program to execute if 
-# name corresponds to a shell builtin or an executable in the
-# Windows search path, or "" otherwise.  Builds an associative 
-# array auto_execs that caches information about previous checks, 
-# for speed.
-#
-# Arguments: 
-# name -			Name of a command.
-
-if {[string compare $tcl_platform(platform) windows] == 0} {
-# Windows version.
-#
-# Note that info executable doesn't work under Windows, so we have to
-# look for files with .exe, .com, or .bat extensions.  Also, the path
-# may be in the Path or PATH environment variables, and path
-# components are separated with semicolons, not colons as under Unix.
-#
- proc auto_execok name {
-    global auto_execs env tcl_platform
-
-    if {[info exists auto_execs($name)]} {
-	return $auto_execs($name)
-    }
-    set auto_execs($name) ""
-
-    if {[lsearch -exact {cls copy date del erase dir echo mkdir md rename 
-	    ren rmdir rd time type ver vol} $name] != -1} {
-	return [set auto_execs($name) [list $env(COMSPEC) /c $name]]
-    }
-
-    if {[llength [file split $name]] != 1} {
-	foreach ext {{} .com .exe .bat} {
-	    set file ${name}${ext}
-	    if {[file exists $file] && ![file isdirectory $file]} {
-		return [set auto_execs($name) [list $file]]
-	    }
-	}
-	return ""
-    }
-
-    set path "[file dirname [info nameof]];.;"
-    if {[info exists env(WINDIR)]} {
-	set windir $env(WINDIR) 
-    }
-    if {[info exists windir]} {
-	if {$tcl_platform(os) == "Windows NT"} {
-	    append path "$windir/system32;"
-	}
-	append path "$windir/system;$windir;"
-    }
-
-    if {[info exists env(PATH)]} {
-	append path $env(PATH)
-    }
-
-    foreach dir [split $path {;}] {
-	if {$dir == ""} {
-	    set dir .
-	}
-	foreach ext {{} .com .exe .bat} {
-	    set file [file join $dir ${name}${ext}]
-	    if {[file exists $file] && ![file isdirectory $file]} {
-		return [set auto_execs($name) [list $file]]
-	    }
-	}
-    }
-    return ""
-}
-
-} else {
-# Unix version.
-#
-proc auto_execok name {
-    global auto_execs env
-
-    if {[info exists auto_execs($name)]} {
-	return $auto_execs($name)
-    }
-    set auto_execs($name) ""
-    if {[llength [file split $name]] != 1} {
-	if {[file executable $name] && ![file isdirectory $name]} {
-	    set auto_execs($name) [list $name]
-	}
-	return $auto_execs($name)
-    }
-    foreach dir [split $env(PATH) :] {
-	if {$dir == ""} {
-	    set dir .
-	}
-	set file [file join $dir $name]
-	if {[file executable $file] && ![file isdirectory $file]} {
-	    set auto_execs($name) [list $file]
-	    return $auto_execs($name)
-	}
-    }
-    return ""
-}
-
-}
 # auto_reset --
 # Destroy all cached information for auto-loading and auto-execution,
 # so that the information gets recomputed the next time it's needed.
@@ -126,7 +25,7 @@ proc auto_reset {} {
     global auto_execs auto_index auto_oldpath
     foreach p [info procs] {
 	if {[info exists auto_index($p)] && ![string match auto_* $p]
-		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup
+		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup tcl_findLibrary
 			tclMacPkgSearch tclPkgUnknown} $p] < 0)} {
 	    rename $p {}
 	}
@@ -136,21 +35,169 @@ proc auto_reset {} {
     catch {unset auto_oldpath}
 }
 
+
+# tcl_findLibrary
+#	This is a utility for extensions that searches for a library directory
+#	using a canonical searching algorithm. A side effect is to source
+#	the initialization script and set a global library variable.
+# Arguments:
+# 	basename	Prefix of the directory name, (e.g., "tk")
+#	version		Version number of the package, (e.g., "8.0")
+#	patch		Patchlevel of the package, (e.g., "8.0.3")
+#	initScript	Initialization script to source (e.g., tk.tcl)
+#	enVarName	environment variable to honor (e.g., TK_LIBRARY)
+#	varName		Global variable to set when done (e.g., tk_library)
+
+proc tcl_findLibrary {basename version patch initScript enVarName varName} {
+    upvar #0 $varName the_library
+    global env
+
+    set dirs {}
+    set errors {}
+
+    # The C application may have hardwired a path, which we honor
+    
+    if {[info exist the_library]} {
+	lappend dirs $the_library
+    } else {
+
+	# Do the canonical search
+
+	# 1. From an environment variable, if it exists
+
+        if {[info exists env($enVarName)]} {
+            lappend dirs $env($enVarName)
+        }
+
+	# 2. Relative to the Tcl library
+
+        lappend dirs [file join [file dirname [info library]] $basename$version]
+
+	# 3. Various locations relative to the executable
+	# ../lib/foo1.0		(From bin directory in install hierarchy)
+	# ../../lib/foo1.0	(From bin/arch directory in install hierarchy)
+	# ../library		(From unix directory in build hierarchy)
+	# ../../library		(From unix/arch directory in build hierarchy)
+	# ../../foo1.0b1/library (From unix directory in parallel build hierarchy)
+	# ../../../foo1.0b1/library (From unix/arch directory in parallel build hierarchy)
+
+        set parentDir [file dirname [file dirname [info nameofexecutable]]]
+        set grandParentDir [file dirname $parentDir]
+        lappend dirs [file join $parentDir lib $basename$version]
+        lappend dirs [file join $grandParentDir lib $basename$version]
+        lappend dirs [file join $parentDir library]
+        lappend dirs [file join $grandParentDir library]
+        if [string match {*[ab]*} $patch] {
+            set ver $patch
+        } else {
+            set ver $version
+        }
+        lappend dirs [file join $grandParentDir] $basename$ver library]
+        lappend dirs [file join [file dirname $grandParentDir] $basename$ver library]
+    }
+    foreach i $dirs {
+        set the_library $i
+        set file [file join $i $initScript]
+
+	# source everything when in a safe interpreter because
+	# we have a source command, but no file exists command
+
+        if {[interp issafe] || [file exists $file]} {
+            if {![catch {uplevel #0 [list source $file]} msg]} {
+                return
+            } else {
+                append errors "$file: $msg\n$errorInfo\n"
+            }
+        }
+    }
+    set msg "Can't find a usable $initScript in the following directories: \n"
+    append msg "    $dirs\n\n"
+    append msg "$errors\n\n"
+    append msg "This probably means that $basename wasn't installed properly.\n"
+    error $msg
+}
+
+
+# OPTIONAL SUPPORT PROCEDURES
+# In Tcl 8.1 all the code below here has been moved to other files to
+# reduce the size of init.tcl
+
+# ----------------------------------------------------------------------
+# auto_mkindex
+# ----------------------------------------------------------------------
+# The following procedures are used to generate the tclIndex file
+# from Tcl source files.  They use a special safe interpreter to
+# parse Tcl source files, writing out index entries as "proc"
+# commands are encountered.  This implementation won't work in a
+# safe interpreter, since a safe interpreter can't create the
+# special parser and mess with its commands.  If this is a safe
+# interpreter, we simply clip these procs out.
+
+if {[interp issafe]} {
+    proc auto_mkindex {dir args} {
+        error "can't generate index within safe interpreter"
+    }
+    proc tcl_nonsafe {args} {}
+} else {
+    proc tcl_nonsafe {args} {eval $args}
+}
+
 # auto_mkindex --
 # Regenerate a tclIndex file from Tcl source files.  Takes as argument
 # the name of the directory in which the tclIndex file is to be placed,
 # followed by any number of glob patterns to use in that directory to
-# locate all of the relevant files. It does not parse or source the file
-# so the generated index will not contain the appropriate namespace qualifiers
-# if you don't explicitly specify it.
+# locate all of the relevant files.
 #
 # Arguments: 
-# dir -			Name of the directory in which to create an index.
-# args -		Any number of additional arguments giving the
-#			names of files within dir.  If no additional
-#			are given auto_mkindex will look for *.tcl.
+# dir -		Name of the directory in which to create an index.
+# args -	Any number of additional arguments giving the
+#		names of files within dir.  If no additional
+#		are given auto_mkindex will look for *.tcl.
 
-proc auto_mkindex {dir args} {
+tcl_nonsafe proc auto_mkindex {dir args} {
+    global errorCode errorInfo
+
+    if {[interp issafe]} {
+        error "can't generate index within safe interpreter"
+    }
+
+    set oldDir [pwd]
+    cd $dir
+    set dir [pwd]
+
+    append index "# Tcl autoload index file, version 2.0\n"
+    append index "# This file is generated by the \"auto_mkindex\" command\n"
+    append index "# and sourced to set up indexing information for one or\n"
+    append index "# more commands.  Typically each line is a command that\n"
+    append index "# sets an element in the auto_index array, where the\n"
+    append index "# element name is the name of a command and the value is\n"
+    append index "# a script that loads the command.\n\n"
+    if {$args == ""} {
+	set args *.tcl
+    }
+    auto_mkindex_parser::init
+    foreach file [eval glob $args] {
+        if {[catch {auto_mkindex_parser::mkindex $file} msg] == 0} {
+            append index $msg
+        } else {
+            set code $errorCode
+            set info $errorInfo
+            cd $oldDir
+            error $msg $info $code
+        }
+    }
+    auto_mkindex_parser::cleanup
+
+    set fid [open "tclIndex" w]
+    puts $fid $index nonewline
+    close $fid
+    cd $oldDir
+}
+
+# Original version of auto_mkindex that just searches the source
+# code for "proc" at the beginning of the line.
+
+proc auto_mkindex_old {dir args} {
     global errorCode errorInfo
     set oldDir [pwd]
     cd $dir
@@ -201,3 +248,263 @@ proc auto_mkindex {dir args} {
 	error $msg $info $code
     }
 }
+
+# Create a safe interpreter that can be used to parse Tcl source files
+# generate a tclIndex file for autoloading.  This interp contains
+# commands for things that need index entries.  Each time a command
+# is executed, it writes an entry out to the index file.
+
+namespace eval auto_mkindex_parser {
+    variable parser ""          ;# parser used to build index
+    variable index ""           ;# maintains index as it is built
+    variable scriptFile ""      ;# name of file being processed
+    variable contextStack ""    ;# stack of namespace scopes
+    variable imports ""         ;# keeps track of all imported cmds
+    variable initCommands ""    ;# list of commands that create aliases
+    proc init {} {
+	variable parser
+	variable initCommands
+	if {![interp issafe]} {
+	    set parser [interp create -safe]
+	    $parser hide info
+	    $parser hide rename
+	    $parser hide proc
+	    $parser hide namespace
+	    $parser hide eval
+	    $parser hide puts
+	    $parser invokehidden namespace delete ::
+	    $parser invokehidden proc unknown {args} {}
+
+	    #
+	    # We'll need access to the "namespace" command within the
+	    # interp.  Put it back, but move it out of the way.
+	    #
+	    $parser expose namespace
+	    $parser invokehidden rename namespace _%@namespace
+	    $parser expose eval
+	    $parser invokehidden rename eval _%@eval
+
+	    # Install all the registered psuedo-command implementations
+
+	    foreach cmd $initCommands {
+		eval $cmd
+	    }
+	}
+    }
+    proc cleanup {} {
+	variable parser
+	interp delete $parser
+	unset parser
+    }
+}
+
+# auto_mkindex_parser::mkindex --
+# Used by the "auto_mkindex" command to create a "tclIndex" file for
+# the given Tcl source file.  Executes the commands in the file, and
+# handles things like the "proc" command by adding an entry for the
+# index file.  Returns a string that represents the index file.
+#
+# Arguments: 
+# file -		Name of Tcl source file to be indexed.
+
+tcl_nonsafe proc auto_mkindex_parser::mkindex {file} {
+    variable parser
+    variable index
+    variable scriptFile
+    variable contextStack
+    variable imports
+
+    set scriptFile $file
+
+    set fid [open $file]
+    set contents [read $fid]
+    close $fid
+
+    # There is one problem with sourcing files into the safe
+    # interpreter:  references like "$x" will fail since code is not
+    # really being executed and variables do not really exist.
+    # Be careful to escape all naked "$" before evaluating.
+
+    regsub -all {([^\$])\$([^\$])} $contents {\1\\$\2} contents
+
+    set index ""
+    set contextStack ""
+    set imports ""
+
+    $parser eval $contents
+
+    foreach name $imports {
+        catch {$parser eval [list _%@namespace forget $name]}
+    }
+    return $index
+}
+
+# auto_mkindex_parser::hook command
+# Registers a Tcl command to evaluate when initializing the
+# slave interpreter used by the mkindex parser.
+# The command is evaluated in the master interpreter, and can
+# use the variable auto_mkindex_parser::parser to get to the slave
+
+tcl_nonsafe proc auto_mkindex_parser::hook {cmd} {
+    variable initCommands
+
+    lappend initCommands $cmd
+}
+
+# auto_mkindex_parser::slavehook command
+# Registers a Tcl command to evaluate when initializing the
+# slave interpreter used by the mkindex parser.
+# The command is evaluated in the slave interpreter.
+
+tcl_nonsafe proc auto_mkindex_parser::slavehook {cmd} {
+    variable initCommands
+
+    lappend initCommands "\$parser eval [list $cmd]"
+}
+
+# auto_mkindex_parser::command --
+# Registers a new command with the "auto_mkindex_parser" interpreter
+# that parses Tcl files.  These commands are fake versions of things
+# like the "proc" command.  When you execute them, they simply write
+# out an entry to a "tclIndex" file for auto-loading.
+#
+# This procedure allows extensions to register their own commands
+# with the auto_mkindex facility.  For example, a package like
+# [incr Tcl] might register a "class" command so that class definitions
+# could be added to a "tclIndex" file for auto-loading.
+#
+# Arguments:
+# name -		Name of command recognized in Tcl files.
+# arglist -		Argument list for command.
+# body -		Implementation of command to handle indexing.
+
+tcl_nonsafe proc auto_mkindex_parser::command {name arglist body} {
+    hook [list auto_mkindex_parser::commandInit $name $arglist $body]
+}
+
+# auto_mkindex_parser::commandInit --
+# This does the actual work set up by auto_mkindex_parser::command
+# This is called when the interpreter used by the parser is created.
+
+tcl_nonsafe proc auto_mkindex_parser::commandInit {name arglist body} {
+    variable parser
+
+    set ns [namespace qualifiers $name]
+    set tail [namespace tail $name]
+    if {$ns == ""} {
+        set fakeName "[namespace current]::_%@fake_$tail"
+    } else {
+        set fakeName "_%@fake_$name"
+        regsub -all {::} $fakeName "_" fakeName
+        set fakeName "[namespace current]::$fakeName"
+    }
+    proc $fakeName $arglist $body
+
+    #
+    # YUK!  Tcl won't let us alias fully qualified command names,
+    # so we can't handle names like "::itcl::class".  Instead,
+    # we have to build procs with the fully qualified names, and
+    # have the procs point to the aliases.
+    #
+    if {[regexp {::} $name]} {
+        set exportCmd [list _%@namespace export [namespace tail $name]]
+        $parser eval [list _%@namespace eval $ns $exportCmd]
+        set alias [namespace tail $fakeName]
+        $parser invokehidden proc $name {args} "_%@eval $alias \$args"
+        $parser alias $alias $fakeName
+    } else {
+        $parser alias $name $fakeName
+    }
+    return
+}
+
+# auto_mkindex_parser::fullname --
+# Used by commands like "proc" within the auto_mkindex parser.
+# Returns the qualified namespace name for the "name" argument.
+# If the "name" does not start with "::", elements are added from
+# the current namespace stack to produce a qualified name.  Then,
+# the name is examined to see whether or not it should really be
+# qualified.  If the name has more than the leading "::", it is
+# returned as a fully qualified name.  Otherwise, it is returned
+# as a simple name.  That way, the Tcl autoloader will recognize
+# it properly.
+#
+# Arguments:
+# name -		Name that is being added to index.
+
+tcl_nonsafe proc auto_mkindex_parser::fullname {name} {
+    variable contextStack
+
+    if {![string match ::* $name]} {
+        foreach ns $contextStack {
+            set name "${ns}::$name"
+            if {[string match ::* $name]} {
+                break
+            }
+        }
+    }
+
+    if {[namespace qualifiers $name] == ""} {
+        return [namespace tail $name]
+    } elseif {![string match ::* $name]} {
+        return "::$name"
+    }
+    return $name
+}
+
+# Register all of the procedures for the auto_mkindex parser that
+# will build the "tclIndex" file.
+
+# AUTO MKINDEX:  proc name arglist body
+# Adds an entry to the auto index list for the given procedure name.
+
+tcl_nonsafe auto_mkindex_parser::command proc {name args} {
+    variable index
+    variable scriptFile
+    append index "set [list auto_index([fullname $name])]"
+    append index " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+}
+
+# AUTO MKINDEX:  namespace eval name command ?arg arg...?
+# Adds the namespace name onto the context stack and evaluates the
+# associated body of commands.
+#
+# AUTO MKINDEX:  namespace import ?-force? pattern ?pattern...?
+# Performs the "import" action in the parser interpreter.  This is
+# important for any commands contained in a namespace that affect
+# the index.  For example, a script may say "itcl::class ...",
+# or it may import "itcl::*" and then say "class ...".  This
+# procedure does the import operation, but keeps track of imported
+# patterns so we can remove the imports later.
+
+tcl_nonsafe auto_mkindex_parser::command namespace {op args} {
+    switch -- $op {
+        eval {
+            variable parser
+            variable contextStack
+
+            set name [lindex $args 0]
+            set args [lrange $args 1 end]
+
+            set contextStack [linsert $contextStack 0 $name]
+            if {[llength $args] == 1} {
+                $parser eval [lindex $args 0]
+            } else {
+                eval $parser eval $args
+            }
+            set contextStack [lrange $contextStack 1 end]
+        }
+        import {
+            variable parser
+            variable imports
+            foreach pattern $args {
+                if {$pattern != "-force"} {
+                    lappend imports $pattern
+                }
+            }
+            catch {$parser eval "_%@namespace import $args"}
+        }
+    }
+}
+
+rename tcl_nonsafe ""

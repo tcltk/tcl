@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWin16.c 1.18 97/05/23 13:13:32
+ * RCS: @(#) $Id: tclWin16.c,v 1.1.2.1 1998/09/24 23:59:50 stanton Exp $
  */
 
 #define STRICT

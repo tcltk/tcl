@@ -1,6 +1,14 @@
 Tcl 8.1a2 for Macintosh
 
-SCCS: @(#) README 1.33 98/02/18 15:10:27
+by Ray Johnson
+Scriptics Corporation
+rjohnson@scriptics.com
+with major help from
+Jim Ingham
+Cygnus Solutions
+jingham@cygnus.com
+
+RCS: @(#) $Id: README,v 1.1.2.2 1998/09/24 23:59:08 stanton Exp $
 
 1. Introduction
 ---------------
@@ -96,12 +104,16 @@ mactcl-source-8.1a2.sea.hqx
 The "html" subdirectory contains reference documentation in
 in the HTML format.  You may also find these pages at:
 
-	http://sunscript.sun.com/man/tcl8.1/contents.html
+	http://www.scriptics.com/man/tcl8.1/contents.html
 
 Other documentation and sample Tcl scripts can be found at
-the Tcl ftp site: 
+the Tcl archive site: 
 
 	ftp://ftp.neosoft.com/tcl/
+
+and the Tcl resource center:
+
+	http://www.scriptics.com/resource/
 
 The internet news group comp.lang.tcl is also a valuable
 source of information about Tcl.  A mailing list is also
@@ -113,19 +125,25 @@ available (see below).
 In order to compile Macintosh Tcl you must have the 
 following items:
 
-	CodeWarrior Pro 2
+	CodeWarrior Pro 2 or 3
 	Mac Tcl 8.1 (source)
 	More Files 1.4.3
 
 There are two sets of project files included with the package. The ones
-we use for the release are for CodeWarrior Pro 2, and are not compatible
-with CodeWarrior Gold release 11 and earlier. We no longer support CW
-11 or earlier.
+we use for the release are for CodeWarrior Pro 3, and are not compatible
+with CodeWarrior Gold release 11 and earlier. We have included the files
+for earlier versions of CodeWarrior in the folder tcl8.0:mac:CW11 Projects,
+but they are unsupported, and a little out of date.
 
-However, there is a bug in the CFM68K Linker in CW Pro 2,
-which renders the CFM68K Version under CW Pro 2 very unstable.  You
-need to upgrade your compilers to the latest version (2.0.1).  This is
-available on the Metrowerks ftp site.
+As of Tcl8.0p2, the code will also build under CW Pro 2.  The only
+change that needs to be made is that float.mac.c should be replaced by
+float.c in the MacTcl MSL project file.
+
+However, there seems to be a bug in the CFM68K Linker in CW Pro 2,
+which renders the CFM68K Version under CW Pro 2 very unstable.  I am
+working with MetroWerks to resolve this issue.  The PPC version is
+fine, as is the Traditional 68K Shell.  But if you need to use the
+CFM68K, then you must stay with CW Pro 1 for now.
 
 The project  files included with the Mac Tcl source should work 
 fine.  The only thing you may need to update are the access paths.
@@ -154,5 +172,5 @@ Special notes:
 
 If you have comments or Bug reports send them to:
 Jim Ingham
-jingham@eng.sun.com
+jingham@cygnus.com
 

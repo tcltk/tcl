@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacPort.h 1.78 98/02/18 15:48:22
+ * RCS: @(#) $Id: tclMacPort.h,v 1.1.2.2 1998/09/24 23:59:14 stanton Exp $
  */
 
 
@@ -99,8 +99,9 @@
 
 #   define isatty(arg) 		1
 
-/*
- * Define access mode constants.
+/* 
+ * Defines used by access function.  This function is provided
+ * by Mac Tcl as the function TclpAccess.
  */
  
 #   define F_OK			0	/* test for existence of file */
@@ -236,21 +237,17 @@ EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((const time_t *tp,
 #define TclSetSystemEnv(a,b)
 
 /*
- * The following macros and declaration wrap the C runtime library
- * functions.
+ * The following defines replace the Macintosh version of the POSIX
+ * functions "stat" and "access".  The various compilier vendors
+ * don't implement this function well nor consistantly.
  */
+#define lstat(path, bufPtr) TclStat(path, bufPtr)
 
-#define fopen			TclMacFOpenHack
-#define lstat			stat
-
-#define TclpLstat		TclpStat
-#define TclStrftime		strftime
-
-EXTERN int 		TclpStat _ANSI_ARGS_((CONST char *path, 
-			    struct stat *buf));
-EXTERN FILE * 		TclMacFOpenHack _ANSI_ARGS_((const char *path,
-			    const char *mode));
-
+EXTERN FILE * TclMacFOpenHack _ANSI_ARGS_((const char *path,
+	const char *mode));
+#define fopen(path, mode) TclMacFOpenHack(path, mode)
+EXTERN int TclMacReadlink _ANSI_ARGS_((char *path, char *buf, int size));
+#define readlink(fileName, buffer, size) TclMacReadlink(fileName, buffer, size)
 #ifdef TCL_TEST
 #define chmod(path, mode) TclMacChmod(path, mode)
 EXTERN int	TclMacChmod(char *path, int mode);
@@ -294,5 +291,19 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+/*
+ * TclpFinalize is a noop on the Mac.
+ */
+
+#define TclpFinalize()
+
+/*
+ * The following define should really be in tclInt.h, but tclInt.h does
+ * not include tclPort.h, which includes the "struct stat" definition.
+ */
+
+EXTERN int TclpStat _ANSI_ARGS_ ((CONST char *path, struct stat *buf));
+EXTERN int TclpAccess _ANSI_ARGS_ ((CONST char *path, int mode));
 
 #endif /* _MACPORT */

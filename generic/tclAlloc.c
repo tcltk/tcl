@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclAlloc.c 1.9 98/02/18 14:40:50
+ * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.2 1998/09/24 23:58:40 stanton Exp $
  */
 
 #include "tclInt.h"

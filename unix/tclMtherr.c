@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMtherr.c 1.14 98/02/13 15:35:28
+ * RCS: @(#) $Id: tclMtherr.c,v 1.1.2.2 1998/09/24 23:59:44 stanton Exp $
  */
 
 #include "tclInt.h"

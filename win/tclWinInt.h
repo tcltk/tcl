@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinInt.h 1.17 98/02/02 22:07:26
+ * RCS: @(#) $Id: tclWinInt.h,v 1.1.2.2 1998/09/24 23:59:52 stanton Exp $
  */
 
 #ifndef _TCLWININT
@@ -28,6 +28,11 @@
  */
 
 #define TCL_WIN_STACK_THRESHOLD 0x2000
+
+#ifdef BUILD_tcl
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
+#endif
 
 /*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
@@ -93,14 +98,16 @@ EXTERN Tcl_Encoding tclWinTCharEncoding;
 
 EXTERN TclPlatformType *TclWinGetPlatform(void);
 EXTERN int		TclWinGetPlatformId(void);
+EXTERN void		TclWinInit(HINSTANCE hInst);
 EXTERN char *		TclWinNoBackslash(char *path);
 EXTERN void		TclWinSetInterfaces(int);
 EXTERN int		TclWinSynchSpawn(void *args, int type, void **trans,
 				Tcl_Pid *pidPtr);
-
 EXTERN TCHAR *		Tcl_WinUtfToTChar(CONST char *string, int len,
 				Tcl_DString *dsPtr);
 EXTERN char *		Tcl_WinTCharToUtf(CONST TCHAR *string, int len,
 				Tcl_DString *dsPtr);
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif	/* _TCLWININT */

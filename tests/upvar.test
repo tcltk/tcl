@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) upvar.test 1.16 97/12/08 15:04:46
+# RCS: @(#) $Id: upvar.test,v 1.1.2.2 1998/09/24 23:59:39 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -327,6 +327,11 @@ test upvar-8.9 {upvar won't create namespace variable that refers to procedure v
     }
     list [catch {MakeLink 1} msg] $msg
 } {1 {bad variable name "a": upvar won't create namespace variable that refers to procedure variable}}
+test upvar-8.10 {upvar will create element alias for new array element} {
+    catch {unset upvarArray}
+    array set upvarArray {}
+    catch {upvar 0 upvarArray(elem) upvarArrayElemAlias}
+} {0}
 
 if {[info commands testupvar] != {}} {
     test upvar-9.1 {Tcl_UpVar2 procedure} {

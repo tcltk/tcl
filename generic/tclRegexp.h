@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclRegexp.h 1.22 98/01/28 20:44:28
+ * RCS: @(#) $Id: tclRegexp.h,v 1.1.2.2 1998/09/24 23:59:02 stanton Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -39,6 +39,11 @@
 
 #ifndef _TCLINT
 #include "tclInt.h"
+#endif
+
+#ifdef BUILD_tcl
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
 #endif
 
 /*

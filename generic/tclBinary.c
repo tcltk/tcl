@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclBinary.c 1.30 98/02/05 20:20:50
+ * RCS: @(#) $Id: tclBinary.c,v 1.1.2.2 1998/09/24 23:58:41 stanton Exp $
  */
 
 #include <math.h>
@@ -1285,7 +1285,7 @@ GetFormatSpec(formatPtr, cmdPtr, countPtr)
     if (**formatPtr == '*') {
 	(*formatPtr)++;
 	(*countPtr) = BINARY_ALL;
-    } else if (isdigit(**formatPtr)) { /* INTL: digit */
+    } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
 	(*countPtr) = strtoul(*formatPtr, formatPtr, 10);
     } else {
 	(*countPtr) = BINARY_NOCOUNT;

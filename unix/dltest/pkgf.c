@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) pkgf.c 1.2 96/02/15 12:30:32
+ * RCS: @(#) $Id: pkgf.c,v 1.1.2.1 1998/09/24 23:59:48 stanton Exp $
  */
 #include "tcl.h"
 

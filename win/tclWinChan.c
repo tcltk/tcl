@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinChan.c 1.83 98/02/19 14:12:21
+ * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.2 1998/09/24 23:59:51 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -840,7 +840,7 @@ ComGetOptionProc(instanceData, interp, optionName, dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenFileChannel --
+ * TclpOpenFileChannel --
  *
  *	Open an File based channel on Unix systems.
  *
@@ -856,7 +856,7 @@ ComGetOptionProc(instanceData, interp, optionName, dsPtr)
  */
 
 Tcl_Channel
-Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
+TclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     char *fileName;			/* Name of file to open. */
@@ -905,7 +905,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
 	    channelPermissions = (TCL_READABLE | TCL_WRITABLE);
 	    break;
 	default:
-	    panic("Tcl_OpenFileChannel: invalid mode value");
+	    panic("TclpOpenFileChannel: invalid mode value");
 	    break;
     }
 

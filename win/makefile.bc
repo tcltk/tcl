@@ -1,5 +1,5 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# SCCS: @(#) makefile.bc 1.88 98/02/19 16:49:06
+# RCS: @(#) $Id: makefile.bc,v 1.1.2.2 1998/09/24 23:59:49 stanton Exp $
 #
 # Borland C++ 4.5 makefile
 #
@@ -105,6 +105,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclPreserve.obj \
 	$(TMPDIR)\tclProc.obj \
 	$(TMPDIR)\tclRegexp.obj \
+	$(TMPDIR)\tclResolve.obj \
 	$(TMPDIR)\tclResult.obj \
 	$(TMPDIR)\tclStringObj.obj \
 	$(TMPDIR)\tclThread.obj \

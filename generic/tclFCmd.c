@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclFCmd.c 1.22 98/02/02 21:42:40
+ * RCS: @(#) $Id: tclFCmd.c,v 1.1.2.2 1998/09/24 23:58:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -141,9 +141,9 @@ FileCopyRename(interp, argc, argv, copyFlag)
     result = TCL_OK;
 
     /*
-     * Call stat() so that if target is a symlink that points to a directory
-     * we will put the sources in that directory instead of overwriting the
-     * symlink.
+     * Call TclpStat() so that if target is a symlink that points to a
+     * directory we will put the sources in that directory instead of
+     * overwriting the symlink.
      */
 
     if ((TclpStat(target, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
@@ -253,8 +253,9 @@ TclFileMakeDirsCmd(interp, argc, argv)
 	    char *target = Tcl_JoinPath(j + 1, pargv, &targetBuffer);
 
 	    /*
-	     * Call stat() so that if target is a symlink that points to a
-	     * directory we will create subdirectories in that directory.
+	     * Call TclpStat() so that if target is a symlink that points
+	     * to a directory we will create subdirectories in that
+	     * directory.
 	     */
 
 	    if (TclpStat(target, &statBuf) == 0) {

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) http.n 1.11 97/08/07 16:45:02
+'\" RCS: @(#) $Id: http.n,v 1.1.2.1 1998/09/24 23:58:32 stanton Exp $
 '\" 
 .so man.macros
 .TH "Http" n 8.0 Tcl "Tcl Built-In Commands"

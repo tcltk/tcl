@@ -8,11 +8,19 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixTest.c 1.6 97/11/07 21:31:30
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.1.2.2 1998/09/24 23:59:46 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+/*
+ * The headers are needed for the testalarm command that verifies the
+ * use of SA_RESTART in signal handlers.
+ */
+
+#include <signal.h>
+#include <sys/resource.h>
 
 /*
  * The following macros convert between TclFile's and fd's.  The conversion
@@ -45,6 +53,12 @@ typedef struct Pipe {
 static Pipe testPipes[MAX_PIPES];
 
 /*
+ * The stuff below is used by the testalarm and testgotsig ommands.
+ */
+
+static char *gotsig = "0";
+
+/*
  * Forward declarations of procedures defined later in this file:
  */
 
@@ -54,9 +68,16 @@ static int		TestfilehandlerCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestfilewaitCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestfindexecutableCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestgetopenfileCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 int			TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
+static int		TestalarmCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestgotsigCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static void 		AlarmHandler _ANSI_ARGS_(());
 
 /*
  *----------------------------------------------------------------------
@@ -83,7 +104,13 @@ TclplatformtestInit(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testfilewait", TestfilewaitCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testgotsig", TestgotsigCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     return TCL_OK;
 }
@@ -388,6 +415,48 @@ TestfilewaitCmd(clientData, interp, argc, argv)
 /*
  *----------------------------------------------------------------------
  *
+ * TestfindexecutableCmd --
+ *
+ *	This procedure implements the "testfindexecutable" command. It is
+ *	used to test Tcl_FindExecutable.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestfindexecutableCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    char *oldName;
+
+    if (argc != 2) {
+	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
+		" argv0\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+    oldName = tclExecutableName;
+    tclExecutableName = NULL;
+    Tcl_FindExecutable(argv[1]);
+    if (tclExecutableName != NULL) {
+	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
+	ckfree(tclExecutableName);
+    }
+    tclExecutableName = oldName;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TestgetopenfileCmd --
  *
  *	This procedure implements the "testgetopenfile" command. It is
@@ -427,5 +496,111 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
                 "Tcl_GetOpenFile succeeded but FILE * NULL!", (char *) NULL);
         return TCL_ERROR;
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * TestalarmCmd --
+ *
+ *	Test that EINTR is handled correctly by generating and
+ *	handling a signal.  This requires using the SA_RESTART
+ *	flag when registering the signal handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Sets up an signal and async handlers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TestalarmCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+#ifdef SA_RESTART
+    unsigned int sec;
+    struct sigaction action;
+
+    if (argc > 1) {
+	Tcl_GetInt(interp, argv[1], (int *)&sec);
+    } else {
+	sec = 1;
+    }
+
+    /*
+     * Setup the signal handling that automatically retries
+     * any interupted I/O system calls.
+     */
+    action.sa_handler = AlarmHandler;
+    memset((void *)&action.sa_mask, 0, sizeof(sigset_t));
+    action.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGALRM, &action, NULL) < 0) {
+	Tcl_AppendResult(interp, "sigaction: ", Tcl_PosixError(interp), NULL);
+	return TCL_ERROR;
+    }
+    if (alarm(sec) < 0) {
+	Tcl_AppendResult(interp, "alarm: ", Tcl_PosixError(interp), NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+#else
+    Tcl_AppendResult(interp, "warning: sigaction SA_RESTART not support on this platform", NULL);
+    return TCL_ERROR;
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AlarmHandler --
+ *
+ *	Signal handler for the alarm command.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ * 	Calls the Tcl Async handler.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AlarmHandler()
+{
+    gotsig = "1";
+}
+
+/*
+ *----------------------------------------------------------------------
+ * TestgotsigCmd --
+ *
+ * 	Verify the signal was handled after the testalarm command.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Resets the value of gotsig back to '0'.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TestgotsigCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    Tcl_AppendResult(interp, gotsig, (char *) NULL);
+    gotsig = "0";
     return TCL_OK;
 }

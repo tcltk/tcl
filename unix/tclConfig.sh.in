@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# SCCS: @(#) tclConfig.sh.in 1.20 97/07/01 11:40:19
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.1.2.1 1998/09/24 23:59:43 stanton Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -23,11 +23,19 @@ TCL_CC='@CC@'
 # -D flags for use with the C compiler.
 TCL_DEFS='@DEFS@'
 
+# If TCL was built with debugging symbols, generated libraries contain
+# this string at the end of the library name (before the extension).
+TCL_DBGX=@TCL_DBGX@
+
+# Default flags used in an optimized and debuggable build, respectively.
+TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'
+TCL_CFLAGS_OPTIMIZE='@CFLAGS_OPTIMIZE@'
+
 # Flag, 1: we built a shared lib, 0 we didn't
 TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 
 # The name of the Tcl library (may be either a .a file or a shared library):
-TCL_LIB_FILE=@TCL_LIB_FILE@
+TCL_LIB_FILE='@TCL_LIB_FILE@'
 
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@DL_LIBS@ @LIBS@ @MATH_LIBS@'
@@ -75,6 +83,9 @@ TCL_COMPAT_OBJS='@LIBOBJS@'
 # Name of the ranlib program to use.
 TCL_RANLIB='@RANLIB@'
 
+# -l flag to pass to the linker to pick up the Tcl library
+TCL_LIB_FLAG='@TCL_LIB_FLAG@'
+
 # String to pass to linker to pick up the Tcl library from its
 # build directory.
 TCL_BUILD_LIB_SPEC='@TCL_BUILD_LIB_SPEC@'
@@ -94,13 +105,13 @@ TCL_LIB_VERSIONS_OK='@TCL_LIB_VERSIONS_OK@'
 # extension, and anything else needed).  May depend on the variables
 # VERSION and SHLIB_SUFFIX.  On most UNIX systems this is
 # ${VERSION}${SHLIB_SUFFIX}.
-TCL_SHARED_LIB_SUFFIX='@TCL_SHARED_LIB_SUFFIX@'
+TCL_SHARED_LIB_SUFFIX='@CFG_TCL_SHARED_LIB_SUFFIX@'
 
 # String that can be evaluated to generate the part of an unshared library
 # name that comes after the "libxxx" (includes version number, if any,
 # extension, and anything else needed).  May depend on the variable
 # VERSION.  On most UNIX systems this is ${VERSION}.a.
-TCL_UNSHARED_LIB_SUFFIX='@TCL_UNSHARED_LIB_SUFFIX@'
+TCL_UNSHARED_LIB_SUFFIX='@CFG_TCL_UNSHARED_LIB_SUFFIX@'
 
 # Location of the top-level source directory from which Tcl was built.
 # This is the directory that contains a README file as well as

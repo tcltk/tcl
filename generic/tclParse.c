@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclParse.c 1.21 98/02/11 18:59:35
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.2 1998/09/24 23:59:00 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2031,4 +2031,54 @@ TclObjCommandComplete(objPtr)
 
     script = Tcl_GetStringFromObj(objPtr, &length);
     return CommandComplete(script, length);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsLocalScalar --
+ *
+ *	Check to see if a given string is a legal scalar variable
+ *	name with no namespace qualifiers or substitutions.
+ *
+ * Results:
+ *	Returns 1 if the variable is a local scalar.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIsLocalScalar(src, len)
+    CONST char *src;
+    int len;
+{
+    char *p;
+    char *lastChar = src + (len - 1);
+
+    for (p = src; p <= lastChar; p++) {
+	if ((CHAR_TYPE(p, lastChar) != TCL_NORMAL) &&
+		(CHAR_TYPE(p, lastChar) != TCL_COMMAND_END)) {
+	    /*
+	     * TCL_COMMAND_END is returned for the last character
+	     * of the string.  By this point we know it isn't
+	     * an array or namespace reference.
+	     */
+
+	    return 0;
+	}
+	if  (*p == '(') {
+	    if (*lastChar == ')') { /* we have an array element */
+		return 0;
+	    }
+	} else if (*p == ':') {
+	    if ((p != lastChar) && *(p+1) == ':') { /* qualified name */
+		return 0;
+	    }
+	}
+    }
+	
+    return 1;
 }

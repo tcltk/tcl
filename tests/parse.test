@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) parse.test 1.14 97/12/22 19:41:39
+# RCS: @(#) $Id: parse.test,v 1.1.2.2 1998/09/24 23:59:33 stanton Exp $
 
 if {[info commands testparser] == {}} {
     puts "This application hasn't been compiled with the \"testparser\""

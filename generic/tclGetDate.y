@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclGetDate.y 1.35 98/01/12 15:25:45
+ * RCS: @(#) $Id: tclGetDate.y,v 1.1.2.2 1998/09/24 23:58:50 stanton Exp $
  */
 
 %{

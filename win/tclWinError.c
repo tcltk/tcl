@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinError.c 1.8 97/10/29 09:47:13
+ * RCS: @(#) $Id: tclWinError.c,v 1.1.2.2 1998/09/24 23:59:51 stanton Exp $
  */
 
 #include "tclWinInt.h"

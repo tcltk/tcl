@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacResource.c 1.40 98/01/21 22:29:00
+ * RCS: @(#) $Id: tclMacResource.c,v 1.1.2.2 1998/09/24 23:59:16 stanton Exp $
  */
 
 #include <Errors.h>
@@ -1245,7 +1245,7 @@ Tcl_MacEvalResource(
     Handle sourceText;
     Str255 rezName;
     char msg[200];
-    int result;
+    int result, iOpenedResFile = false;
     short saveRef, fileRef = -1;
     char idStr[64];
     FSSpec fileSpec;
@@ -1261,7 +1261,8 @@ Tcl_MacEvalResource(
 	if (nativeName == NULL) {
 	    return TCL_ERROR;
 	}
-	err = FSpLocationFromPath(strlen(nativeName), nativeName, &fileSpec);
+	err = FSpLocationFromPath(strlen(nativeName), nativeName,
+                &fileSpec);
 	Tcl_DStringFree(&buffer);
 	if (err != noErr) {
 	    Tcl_AppendResult(interp, "Error finding the file: \"", 
@@ -1277,6 +1278,7 @@ Tcl_MacEvalResource(
 	}
 		
 	UseResFile(fileRef);
+	iOpenedResFile = true;
     } else {
 	/*
 	 * The default behavior will search through all open resource files.
@@ -1317,7 +1319,8 @@ Tcl_MacEvalResource(
 	if (result == TCL_RETURN) {
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    sprintf(msg, "\n    (rsrc \"%.150s\" line %d)", resourceName,
+	    sprintf(msg, "\n    (rsrc \"%.150s\" line %d)",
+                    resourceName,
 		    interp->errorLine);
 	    Tcl_AddErrorInfo(interp, msg);
 	}
@@ -1334,12 +1337,27 @@ Tcl_MacEvalResource(
 	    ".", NULL);
 
     rezEvalCleanUp:
+
+    /* 
+     * TRICKY POINT: The code that you are sourcing here could load a
+     * shared library.  This will go AHEAD of the resource we stored away
+     * in saveRef on the resource path.  
+     * If you restore the saveRef in this case, you will never be able
+     * to get to the resources in the shared library, since you are now
+     * pointing too far down on the resource list.  
+     * So, we only reset the current resource file if WE opened a resource
+     * explicitly, and then only if the CurResFile is still the 
+     * one we opened... 
+     */
+     
+    if (iOpenedResFile && (CurResFile() == fileRef)) {
+        UseResFile(saveRef);
+    }
+	
     if (fileRef != -1) {
 	CloseResFile(fileRef);
     }
 
-    UseResFile(saveRef);
-	
     return result;
 }
 

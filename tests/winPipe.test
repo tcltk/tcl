@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) winPipe.test 1.15 97/12/22 18:13:59
+# RCS: @(#) $Id: winPipe.test,v 1.1.2.2 1998/09/24 23:59:40 stanton Exp $
 
 if {($tcl_platform(platform) != "windows") || ($testConfig(stdio) == 0)} {
     return
@@ -366,6 +366,17 @@ test winpipe-5.2 {PipeSetupProc & PipeCheckProc: write threads} {
 
 }
 
+makeFile {
+    puts "[list $argv0 $argv]"
+} echoArgs.tcl
+
+test winpipe-4.1 {BuildCommandLine: null arguments} {
+    exec $tcltest echoArgs.tcl foo "" bar
+} {echoArgs.tcl {foo {} bar}}
+test winpipe-4.1 {BuildCommandLine: null arguments} {
+    exec $tcltest echoArgs.tcl foo \" bar
+} {echoArgs.tcl {foo {"} bar}}
+
 # restore old values for env(TMP) and env(TEMP)
 
 if {[catch {set env(TMP) $env_tmp}]} {
@@ -375,5 +386,5 @@ if {[catch {set env(TEMP) $env_temp}]} {
     unset env(TEMP)
 }
 
-file delete big little stdout stderr nothing cat
+file delete big little stdout stderr nothing 
 return

@@ -1,4 +1,5 @@
 /* 
+
  * tclWin32Dll.c --
  *
  *	This file contains the DLL entry point which sets up the 32-to-16-bit
@@ -9,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWin32Dll.c 1.37 98/02/02 22:07:20
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.1.2.2 1998/09/24 23:59:50 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -121,11 +122,15 @@ TclWinProcs *tclWinProcs;
 static Tcl_Encoding tclWinTCharEncoding;
 
 /*
- * Declarations for functions that are only used in this file.
+ * The following declaration is for the VC++ DLL entry point.
  */
 
 BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason, 
 				LPVOID reserved);
+
+
+#ifdef __WIN32__
+#ifndef STATIC_BUILD
 
 
 /*
@@ -178,8 +183,6 @@ DllMain(hInst, reason, reserved)
     DWORD reason;		/* Reason this function is being called. */
     LPVOID reserved;		/* Not used. */
 {
-    OSVERSIONINFO os;
-
     switch (reason) {
     case DLL_PROCESS_ATTACH:
 	if (hInstance != NULL) {
@@ -194,12 +197,7 @@ DllMain(hInst, reason, reserved)
 	    return FALSE;
 	}
 
-	hInstance = hInst;
-        os.dwOSVersionInfoSize = sizeof(os);
-	GetVersionEx(&os);
-	platformId = os.dwPlatformId;
-
-	tclWinProcs = &asciiProcs;
+	TclWinInit(hInst);
 	return TRUE;
 
     case DLL_PROCESS_DETACH:
@@ -211,6 +209,9 @@ DllMain(hInst, reason, reserved)
 
     return TRUE; 
 }
+
+#endif /* !STATIC_BUILD */
+#endif /* __WIN32__ */
 
 /*
  *----------------------------------------------------------------------
@@ -306,6 +307,88 @@ HINSTANCE
 TclWinGetTclInstance()
 {
     return hInstance;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinInit --
+ *
+ *	This function initializes the internal state of the tcl library.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the 16-bit thunking library, and the tclPlatformId
+ *	variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclWinInit(hInst)
+    HINSTANCE hInst;		/* Library instance handle. */
+{
+    OSVERSIONINFO os;
+
+    tclInstance = hInst;
+    os.dwOSVersionInfoSize = sizeof(os);
+    GetVersionEx(&os);
+    tclPlatformId = os.dwPlatformId;
+
+    /*
+     * The following code stops Windows 3.x from automatically putting 
+     * up Sharing Violation dialogs, e.g, when someone tries to
+     * access a file that is locked or a drive with no disk in it.
+     * Tcl already returns the appropriate error to the caller, and they 
+     * can decide to put up their own dialog in response to that failure.  
+     *
+     * Under 95 and NT, the system doesn't automatically put up dialogs 
+     * when the above operations fail.
+     */
+
+    if (tclPlatformId == VER_PLATFORM_WIN32s) {
+	SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
+    }
+
+    tclWinProcs = &asciiProcs;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalize --
+ *
+ *	Clean up the Windows specific library state.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unloads any DLLs and cleans up the thunking library, if
+ *	necessary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFinalize()
+{
+    /*
+     * Unregister the Tcl thunk.
+     */
+
+    if (UTUnRegister != NULL) {
+	UTUnRegister(tclInstance);
+	UTUnRegister = NULL;
+    }
+
+    /*
+     * Cleanup any dynamically loaded libraries.
+     */
+
+    UnloadLibraries();
 }
 
 /*

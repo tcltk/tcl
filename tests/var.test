@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) var.test 1.12 98/02/05 20:22:48
+# RCS: @(#) $Id: var.test,v 1.1.2.2 1998/09/24 23:59:39 stanton Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -407,6 +407,10 @@ test var-8.1 {TclDeleteVars, "unset" traces are called with fully-qualified var 
     list [unset test_ns_var::v] $test_ns_var::info
 } {{} {test_ns_var::v {} u}}
 
+if {[info commands testsetnoerr] == {}} {
+    puts "This application hasn't been compiled with the \"testsetnoerr\""
+    puts "command, so I can't test TclSetVar etc."
+} else {
 test var-9.1 {behaviour of TclSetVar without TCL_LEAVE_ERR_MSG flag} {
 	testsetnoerr v 1
 } 1

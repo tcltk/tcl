@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclLoadOSF.c 1.4 97/12/11 10:59:16
+ * RCS: @(#) $Id: tclLoadOSF.c,v 1.1.2.2 1998/09/24 23:59:44 stanton Exp $
  */
 
 #include "tclInt.h"

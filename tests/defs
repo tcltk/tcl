@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) defs 1.72 98/01/15 18:41:39
+# RCS: @(#) $Id: defs,v 1.1.2.2 1998/09/24 23:59:22 stanton Exp $
 
 if ![info exists VERBOSE] {
     set VERBOSE 0
@@ -512,6 +512,7 @@ if {$tcl_platform(os) != "Win32s"} {
 	close $f
 	set testConfig(stdio) 1
     }
+    catch {file delete -force tmp}
 }
 
 if {($tcl_platform(platform) == "windows") && ($testConfig(stdio) == 0)} {

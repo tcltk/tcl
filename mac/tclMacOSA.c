@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacOSA.c 1.8 97/11/07 21:30:43
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.1.2.2 1998/09/24 23:59:14 stanton Exp $
  */
 
 #define MAC_TCL

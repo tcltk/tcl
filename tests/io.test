@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) io.test 1.149 98/02/10 17:49:32
+# RCS: @(#) $Id: io.test,v 1.1.2.2 1998/09/24 23:59:27 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -6679,6 +6679,51 @@ test io-56.1 {ChannelTimerProc} {
     close $f
     lappend result $y
 } {2 done}
+
+test io-34.1 {buffered data and file events, gets} {
+    proc accept {sock args} {
+	set ::s2 $sock
+    }
+    set server [socket -server accept 4040]
+    set s [socket localhost 4040]
+    vwait s2
+    update
+    fileevent $s2 readable {lappend result readable}
+    puts $s "12\n34567890"
+    flush $s
+    set result [gets $s2]
+    after 1000 {lappend result timer}
+    vwait result
+    lappend result [gets $s2]
+    vwait result
+    close $s
+    close $s2
+    close $server
+    set result
+} {12 readable 34567890 timer}
+test io-34.2 {buffered data and file events, read} {
+    proc accept {sock args} {
+	set ::s2 $sock
+    }
+    set server [socket -server accept 4040]
+    set s [socket localhost 4040]
+    vwait s2
+    update
+    fileevent $s2 readable {lappend result readable}
+    puts -nonewline $s "1234567890"
+    flush $s
+    set result [read $s2 1]
+    after 1000 {lappend result timer}
+    vwait result
+    lappend result [read $s2 9]
+    vwait result
+    close $s
+    close $s2
+    close $server
+    set result
+} {1 readable 234567890 timer}
+        
+
 
 removeFile fooBar
 removeFile longfile

@@ -8,13 +8,22 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinInit.c 1.48 98/02/17 17:17:19
+ * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.2 1998/09/24 23:59:52 stanton Exp $
  */
 
 #include "tclWinInt.h"
 #include <winreg.h>
 #include <winnt.h>
 #include <winbase.h>
+
+/*
+ * The following macro can be defined at compile time to specify
+ * the root of the Tcl registry keys.
+ */
+ 
+#ifndef TCL_REGISTRY_KEY
+#define TCL_REGISTRY_KEY "Software\\Scriptics\\Tcl\\" TCL_VERSION
+#endif
 
 /*
  * The following declaration is a workaround for some Microsoft brain damage.
@@ -68,8 +77,8 @@ static char* processors[NUMPROCESSORS] = {
  * The Init script (common to Windows and Unix platforms) is
  * defined in tkInitScript.h
  */
-#include "tclInitScript.h"
 
+#include "tclInitScript.h"
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
 static void		AppendPath(Tcl_Obj *listPtr, HMODULE hModule,
@@ -329,13 +338,10 @@ AppendRegistry(
 
     if (TclWinGetPlatformId() == VER_PLATFORM_WIN32s) {
 	key = HKEY_CLASSES_ROOT;
-	subKey = "";
     } else {
 	key = HKEY_LOCAL_MACHINE;
-	subKey = "Root";
     }
-    result = RegOpenKeyExA(key, "Software\\Sun\\Tcl\\" TCL_VERSION, 0, 
-	    KEY_QUERY_VALUE, &key);
+    result = RegOpenKeyExA(key, TCL_REGISTRY_KEY, 0, KEY_QUERY_VALUE, &key);
     if (result != ERROR_SUCCESS) {
 	return;
     }
@@ -349,13 +355,13 @@ AppendRegistry(
 
     len = MAX_PATH;
     if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	MultiByteToWideChar(CP_ACP, 0, subKey, -1, wBuf, MAX_PATH);
+	MultiByteToWideChar(CP_ACP, 0, "", -1, wBuf, MAX_PATH);
         result = RegQueryValueExW(key, wBuf, NULL, NULL, (LPBYTE) wBuf, &len);
 	if (result == ERROR_SUCCESS) {
 	    len = ToUtf(wBuf, buf);
 	}
     } else {
-	result = RegQueryValueExA(key, subKey, NULL, NULL, (LPBYTE) buf, &len);
+	result = RegQueryValueExA(key, "", NULL, NULL, (LPBYTE) buf, &len);
     }
     if (result == ERROR_SUCCESS) {
 	if (buf[len - 1] != '\\') {

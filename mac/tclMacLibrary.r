@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacLibrary.r 1.6 98/01/21 22:20:26
+ * RCS: @(#) $Id: tclMacLibrary.r,v 1.1.2.2 1998/09/24 23:59:13 stanton Exp $
  */
 
 #include <Types.r>

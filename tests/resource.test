@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) resource.test 1.8 97/11/06 12:36:32
+# RCS: @(#) $Id: resource.test,v 1.1.2.1 1998/09/24 23:59:35 stanton Exp $
 
 # Only run this test on Macintosh systems
 if {$tcl_platform(platform) != "macintosh"} {

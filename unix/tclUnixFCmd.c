@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixFCmd.c 1.36 98/02/18 18:24:52
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1070,7 +1070,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     int result;
 
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    result = stat(native, &statBuf);			/* INTL: Native. */
+    result = TclStat(native, &statBuf);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     
     if (result != 0) {
@@ -1122,7 +1122,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     int result;
 
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    result = stat(native, &statBuf);			/* INTL: Native. */
+    result = TclStat(native, &statBuf);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     
     if (result != 0) {
@@ -1174,7 +1174,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     int result;
 
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    result = stat(native, &statBuf);			/* INTL: Native. */
+    result = TclStat(native, &statBuf);		/* INTL: Native. */
     Tcl_DStringFree(&ds);
     
     if (result != 0) {

@@ -1,6 +1,10 @@
 Tcl 8.1a2 for Windows
 
-SCCS: @(#) README 1.28 98/02/18 15:11:13
+by Scott Stanton
+Scriptics Corporation
+scott.stanton@scriptics.com
+
+RCS: @(#) $Id: README,v 1.1.2.2 1998/09/24 23:59:48 stanton Exp $
 
 1. Introduction
 ---------------
@@ -18,7 +22,7 @@ common source release.  The binary distribution is a self-extracting
 archive with a built-in installation script.
 
 Look for the binary release in the same location as the source release
-(ftp.sunlabs.com:/pub/tcl or any of the mirror sites).  For most users,
+(ftp.scriptics.com:/pub/tcl or any of the mirror sites).  For most users,
 the binary release will be much easier to install and use.  You only
 need the source release if you plan to modify the core of Tcl, or if
 you need to compile with a different compiler.  With the addition of
@@ -34,8 +38,10 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Borland C++ 4.52 (both 16-bit and 32-bit compilers)
 	  or
-	Visual C++ 2.x/4.x
-	Visual C++ 1.5 (to build tcl1681.dll for Win32s support of exec)
+	Visual C++ 2.x/4.x/5.x
+	Visual C++ 1.5 (to build tcl1680.dll for Win32s support of exec)
+
+In practice, the 8.1.a2 release is built with Visual C++ 5.0
 
 In the "win" subdirectory of the source release, you will find two
 files called "makefile.bc" and "makefile.vc".  These are the makefiles
@@ -55,11 +61,10 @@ find them.  Tcl looks in one of three places for the library files:
 	   as specified in the registry:
 
 		For Windows NT & 95:
-		    HKEY_LOCAL_MACHINE\SOFTWARE\Sun\Tcl\8.1
-			Value Name is "Root"
+		    HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.1
 
 		For Win32s:
-		    HKEY_CLASSES_ROOT\SOFTWARE\Sun\Tcl\8.1\
+		    HKEY_CLASSES_ROOT\SOFTWARE\Scriptics\Tcl\8.1\
 
 	3) Relative to the directory containing the current .exe.
 	    Tcl will look for a directory "..\lib\tcl8.1" relative to the
@@ -69,7 +74,90 @@ Note that in order to run tclsh81.exe, you must ensure that tcl81.dll
 and tclpip81.dll (plus tcl1681.dll under Win32s) are on your path, in
 the system directory, or in the directory containing tclsh81.exe.
 
-4. Test suite
+4. Building Extensions
+----------------------
+
+With the Windows compilers you have to worry about how you export symbols
+from DLLs.  tcl.h defines a few macros to help solve this problem:
+EXTERN - all Tcl_ function prototypes use this macro, which implies
+	they are exported.  You'll see this used in tcl.h and tk.h.
+	You should use this in your exported procedures.
+	However, this is not the whole story.
+TCL_STORAGE_CLASS - this is really an import/export flag, depending on if you are
+	importing symbols from a DLL (i.e., a user of the DLL), or if
+	you are exporting symbols from the DLL (i.e., you are building it.)
+	The EXTERN macro includes TCL_STORAGE_CLASS.
+	TCL_STORAGE_CLASS is defined to be either DLLIMPORT or DLLEXPORT as
+	described below.
+STATIC_BUILD - define this if you are *not* building a DLL
+	(e.g., a main program)
+DLL_BUILD - define this if you *are* building a DLL
+DLLIMPORT - If STATIC_BUILD is defined, this becomes nothing.
+	(On UNIX, DLLIMPORT is defined to be empty)
+	Otherwise, this this expands to __declspec(dllimport)
+DLLEXPORT - If STATIC_BUILD is defined, this becomes nothing.
+	(On UNIX, DLLEXPORT is defined to be empty)
+	Otherwise, this this expands to __declspec(dllexport)
+
+EXPORT(type, func)
+	For the Borland compiler, you need to export functions differently.
+	The DLLEXPORT macro is empty, and instead you need to use
+	EXPORT because they had a different order.  Your declaration will
+	look like
+	EXTERN EXPORT(int, Foo_Init)(Tcl_Interp *interp);
+We have not defined EXPORT anywhere.  You can paste this into your C file:
+#ifndef STATIC_BUILD
+#if defined(_MSC_VER)
+#   define EXPORT(a,b) __declspec(dllexport) a b
+#   define DllEntryPoint DllMain
+#else
+#   if defined(__BORLANDC__)
+#       define EXPORT(a,b) a _export b
+#   else
+#       define EXPORT(a,b) a b
+#   endif
+#endif
+#endif
+
+
+How to use these:
+
+Assume your extension is named Foo.  In its Makefile, define
+BUILD_Foo so that you know you are building Foo and not using it.
+Then, in your main header file, foo.h, conditionally define
+EXPORT to be either DLLIMPORT or DLLEXPORT based on the
+presense of BUILD_Foo, like this:
+
+#ifndef _FOO
+#define _FOO
+#include "tcl.h"
+/* Additional includes go here */
+/*
+ * if the BUILD_foo macro is defined, the assumption is that we are
+ * building the dynamic library.
+ */
+#ifdef BUILD_Foo
+#  undef TCL_STORAGE_CLASS
+#  define TCL_STORAGE_CLASS DLLEXPORT
+#endif
+/*
+ * Function prototypes for this module.
+ */
+EXTERN int Foo_Init _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN int Foo_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
+/* Additional prototypes go here */
+/*
+ * end of foo.h
+ * reset TCL_STORAGE_CLASS to DLLIMPORT.
+ */
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
+#endif /* _FOO */
+
+In your C file, put EXTERN before then functions you need to export.
+If you use Borland, you'll need to use the old EXPORT macro, too.
+
+5. Test suite
 -------------
 
 This distribution contains an extensive test suite for Tcl.  Some of
@@ -81,7 +169,7 @@ In order to run the test suite, you build the "test" target using the
 appropriate makefile for your compiler.
 
 
-5. Known Bugs
+6. Known Bugs
 -------------
 
 Here is the current list of known bugs/missing features for the
@@ -97,6 +185,11 @@ Windows version of Tcl:
   Win32s.
 - Environment variables containing international characters aren't
   imported correctly.
+
+If you have comments or bug reports for the Windows version of Tcl,
+please direct them to:
+
+<bugs@scriptics.com>
 
 If you have comments or bug reports for the Windows version of Tk,
 please direct them to the comp.lang.tcl newsgroup or the wintcl

@@ -22,6 +22,16 @@
 static ClientData	DupForeachInfo _ANSI_ARGS_((ClientData clientData));
 static void		FreeForeachInfo _ANSI_ARGS_((
 			    ClientData clientData));
+
+/*
+ * The structures below define the AuxData types defined in this file.
+ */
+
+AuxDataType tclForeachInfoType = {
+    "ForeachInfo",				/* name */
+    DupForeachInfo,				/* dupProc */
+    FreeForeachInfo				/* freeProc */
+};
 
 /*
  *----------------------------------------------------------------------
@@ -140,14 +150,8 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	if (nameTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    name = nameTokenPtr[1].start;
 	    nameChars = nameTokenPtr[1].size;
-	    for (i = 0, p = name;  i < nameChars;  i++, p++) {
-		if (*p == '(') {
-		    p = (name + nameChars-1);	
-		    if (*p == ')') { /* last char is ')' => array elem */
-			return TCL_OUT_LINE_COMPILE;
-		    }
-		    break;
-		}
+	    if (!TclIsLocalScalar(name, nameChars)) {
+		return TCL_OUT_LINE_COMPILE;
 	    }
 	    localIndex = TclFindCompiledLocal(nameTokenPtr[1].start,
 		    nameTokenPtr[1].size, /*create*/ 1, 
@@ -684,14 +688,9 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    numVars = varcList[loopIndex];
 	    for (j = 0;  j < numVars;  j++) {
 		char *varName = varvList[loopIndex][j];
-		char *p = varName;
-		while (*p != '\0') {
-		    if ((*p == '\\') || (*p == '$') || (*p == '[')
-			    || (*p == '(') || (*p == '"') || (*p == '{')) {
-			code = TCL_OUT_LINE_COMPILE;
-			goto done;
-		    }
-		    p++;
+		if (!TclIsLocalScalar(varName, strlen(varName))) {
+		    code = TCL_OUT_LINE_COMPILE;
+		    goto done;
 		}
 	    }
 	    loopIndex++;
@@ -743,8 +742,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
-    infoIndex = TclCreateAuxData((ClientData) infoPtr,
-            DupForeachInfo, FreeForeachInfo, envPtr);
+    infoIndex = TclCreateAuxData((ClientData) infoPtr, &tclForeachInfoType, envPtr);
 
     /*
      * Evaluate then store each value list in the associated temporary.

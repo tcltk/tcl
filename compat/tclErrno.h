@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclErrno.h 1.1 96/04/29 15:25:31
+ * RCS: @(#) $Id: tclErrno.h,v 1.1.2.1 1998/09/24 23:58:18 stanton Exp $
  */
 
 extern int errno;			/* global error number */

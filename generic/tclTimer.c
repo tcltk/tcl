@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclTimer.c 1.19 98/02/17 23:44:52
+ * RCS: @(#) $Id: tclTimer.c,v 1.1.2.2 1998/09/24 23:59:04 stanton Exp $
  */
 
 #include "tclInt.h"

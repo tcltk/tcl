@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixPipe.c 1.42 97/12/22 19:41:57
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) opt.test 1.7 98/01/07 17:07:52
+# RCS: @(#) $Id: opt.test,v 1.1.2.2 1998/09/24 23:59:32 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -253,7 +253,6 @@ test opt-10.10 {medium size overall test} {
     list [catch {optTest save tst foo} msg] [lindex [split $msg "\n"] 0]
 } {1 {too many arguments (unexpected argument(s): foo), usage:}}
 
-
 test opt-11.1 {too many args test 2} {
     set key [::tcl::OptKeyRegister {-foo}]
     list [catch {::tcl::OptKeyParse $key {-foo blah}} msg] $msg\
@@ -263,9 +262,6 @@ test opt-11.1 {too many args test 2} {
     ------------ ----     -----   ----
     ( -help                       gives this help )
     -foo         boolflag (false) } {}}
-
-
-
 test opt-11.2 {default value for args} {
     set args {}
     set key [::tcl::OptKeyRegister {{args -list {a b c} "args..."}}]

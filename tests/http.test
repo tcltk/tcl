@@ -11,7 +11,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# SCCS: @(#) http.test 1.11 98/02/20 14:51:59
+# RCS: @(#) $Id: http.test,v 1.1.2.2 1998/09/24 23:59:25 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

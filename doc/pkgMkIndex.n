@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) pkgMkIndex.n 1.10 98/01/28 17:23:37
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.1.2.2 1998/09/24 23:58:34 stanton Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 7.6 Tcl "Tcl Built-In Commands"

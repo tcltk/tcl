@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixInit.c 1.39 98/01/20 23:00:59
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -36,7 +36,7 @@
  * symbol is defined by Makefile.
  */
 
-static char defaultLibraryDir[200] = TCL_LIBRARY;
+static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
 
 /*
  * Directory in which to look for packages (each package is typically
@@ -44,7 +44,7 @@ static char defaultLibraryDir[200] = TCL_LIBRARY;
  * defined by Makefile.
  */
 
-static char pkgPath[200] = TCL_PACKAGE_PATH;
+static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
 typedef struct LocaleTable {
     CONST char *lang;

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) safe.n 1.12 98/01/28 12:46:57
+'\" RCS: @(#) $Id: safe.n,v 1.1.2.2 1998/09/24 23:58:36 stanton Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"

@@ -6,12 +6,13 @@
  *	and deletion, and command parsing and execution.
  *
  * Copyright (c) 1987-1994 The Regents of the University of California.
- * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclBasic.c 1.331 98/02/18 15:32:09
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.2 1998/09/24 23:58:40 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -329,6 +330,7 @@ Tcl_CreateInterp()
     TclInitLiteralTable(&(iPtr->literalTable));
     iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
+    iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
     iPtr->scriptFile = NULL;
     iPtr->flags = 0;
@@ -901,6 +903,8 @@ DeleteInterpProc(interp)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
+    AssocData *dPtr;
+    ResolverScheme *resPtr, *nextResPtr;
     int i;
 
     /*
@@ -1038,6 +1042,14 @@ DeleteInterpProc(interp)
     Tcl_DecrRefCount(iPtr->emptyObjPtr);
     iPtr->emptyObjPtr = NULL;
 
+    resPtr = iPtr->resolverPtr;
+    while (resPtr) {
+	nextResPtr = resPtr->nextPtr;
+	ckfree(resPtr->name);
+	ckfree((char *) resPtr);
+        resPtr = nextResPtr;
+    }
+    
     /*
      * Free up literal objects created for scripts compiled by the
      * interpreter.
@@ -1397,11 +1409,13 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
 				 * when this command is deleted. */
 {
     Interp *iPtr = (Interp *) interp;
+    ImportRef *oldRefPtr = NULL;
     Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr;
+    Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     char *tail;
     int new, result;
+    ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -1434,9 +1448,15 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     if (!new) {
 	/*
 	 * Command already exists. Delete the old one.
+	 * Be careful to preserve any existing import links so we can
+	 * restore them down below.  That way, you can redefine a
+	 * command and its import status will remain intact.
 	 */
 
 	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	oldRefPtr = cmdPtr->importRefPtr;
+	cmdPtr->importRefPtr = NULL;
+
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
 	if (!new) {
@@ -1464,6 +1484,21 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->deleteData = clientData;
     cmdPtr->deleted = 0;
     cmdPtr->importRefPtr = NULL;
+
+    /*
+     * Plug in any existing import references found above.  Be sure
+     * to update all of these references to point to the new command.
+     */
+
+    if (oldRefPtr != NULL) {
+	cmdPtr->importRefPtr = oldRefPtr;
+	while (oldRefPtr != NULL) {
+	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    dataPtr->realCmdPtr = cmdPtr;
+	    oldRefPtr = oldRefPtr->nextPtr;
+	}
+    }
 
     /*
      * We just created a command, so in its namespace and all of its parent
@@ -1521,11 +1556,13 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 				 * when this command is deleted. */
 {
     Interp *iPtr = (Interp *) interp;
+    ImportRef *oldRefPtr = NULL;
     Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr;
+    Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     char *tail;
     int new, result;
+    ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -1572,6 +1609,16 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 	    return (Tcl_Command) cmdPtr;
 	}
 
+	/*
+	 * Otherwise, we delete the old command.  Be careful to preserve
+	 * any existing import links so we can restore them down below.
+	 * That way, you can redefine a command and its import status
+	 * will remain intact.
+	 */
+
+	oldRefPtr = cmdPtr->importRefPtr;
+	cmdPtr->importRefPtr = NULL;
+
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
 	if (!new) {
@@ -1599,7 +1646,30 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->deleteData = clientData;
     cmdPtr->deleted = 0;
     cmdPtr->importRefPtr = NULL;
+
+    /*
+     * Plug in any existing import references found above.  Be sure
+     * to update all of these references to point to the new command.
+     */
+
+    if (oldRefPtr != NULL) {
+	cmdPtr->importRefPtr = oldRefPtr;
+	while (oldRefPtr != NULL) {
+	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    dataPtr->realCmdPtr = cmdPtr;
+	    oldRefPtr = oldRefPtr->nextPtr;
+	}
+    }
     
+    /*
+     * We just created a command, so in its namespace and all of its parent
+     * namespaces, it may shadow global commands with the same name. If any
+     * shadowed commands are found, invalidate all cached command references
+     * in the affected namespaces.
+     */
+    
+    TclResetShadowedCmdRefs(interp, cmdPtr);
     return (Tcl_Command) cmdPtr;
 }
 
@@ -2432,6 +2502,8 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_EvalObj
+
 int
 Tcl_EvalObj(interp, objPtr, flags)
     Tcl_Interp *interp;			/* Token for command interpreter
@@ -2455,6 +2527,7 @@ Tcl_EvalObj(interp, objPtr, flags)
     int result;
     CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
 					 * in case TCL_EVAL_GLOBAL was set. */
+    Namespace *namespacePtr;
 
     /*
      * Prevent the object from being deleted as a side effect of evaling it.
@@ -2535,13 +2608,41 @@ Tcl_EvalObj(interp, objPtr, flags)
     }
 
     /*
-     * Get the ByteCode from the object. Make sure it hasn't been
-     * invalidated by, e.g., someone redefining a command with a compile
-     * procedure (this can make the compiled code wrong). If necessary,
-     * convert the object to be a ByteCode object and compile it. Also, if
-     * the code was compiled in a different interpreter, we recompile it.
+     * Get the ByteCode from the object. If it exists, make sure it hasn't
+     * been invalidated by, e.g., someone redefining a command with a
+     * compile procedure (this might make the compiled code wrong). If
+     * necessary, convert the object to be a ByteCode object and compile it.
+     * Also, if the code was compiled in/for a different interpreter,
+     * or for a different namespace, or for the same namespace but
+     * with different name resolution rules, we recompile it.
+     *
+     * Precompiled objects, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
      */
 
+    if (iPtr->varFramePtr != NULL) {
+        namespacePtr = iPtr->varFramePtr->nsPtr;
+    } else {
+        namespacePtr = iPtr->globalNsPtr;
+    }
+
+    if (objPtr->typePtr == &tclByteCodeType) {
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	
+	if ((codePtr->iPtr != iPtr)
+	        || (codePtr->compileEpoch != iPtr->compileEpoch)
+	        || (codePtr->nsPtr != namespacePtr)
+	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if (codePtr->iPtr != iPtr) {
+                    panic("Tcl_EvalObj: compiled script jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                tclByteCodeType.freeIntRepProc(objPtr);
+            }
+	}
+    }
     if (objPtr->typePtr != &tclByteCodeType) {
 	iPtr->errorLine = 1; 
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
@@ -2577,7 +2678,7 @@ Tcl_EvalObj(interp, objPtr, flags)
      */
 
     numSrcBytes = codePtr->numSrcBytes;
-    if (numSrcBytes > 0) {
+    if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	/*
 	 * Increment the code's ref count while it is being executed. If
 	 * afterwards no references to it remain, free the code.
@@ -3526,14 +3627,25 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
      * necessary, convert the object to be a ByteCode object and compile it.
      * Also, if the code was compiled in/for a different interpreter, we
      * recompile it.
+     *
+     * Precompiled expressions, however, are immutable and therefore
+     * they are not recompiled, even if the epoch has changed.
+     *
      */
 
     if (objPtr->typePtr == &tclByteCodeType) {
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    (*tclByteCodeType.freeIntRepProc)(objPtr);
-	    objPtr->typePtr = (Tcl_ObjType *) NULL;
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if (codePtr->iPtr != iPtr) {
+                    panic("Tcl_ExprObj: compiled expression jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+            } else {
+                (*tclByteCodeType.freeIntRepProc)(objPtr);
+                objPtr->typePtr = (Tcl_ObjType *) NULL;
+            }
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
@@ -3568,8 +3680,8 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
     
 	    auxDataPtr = compEnv.auxDataArrayPtr;
 	    for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-		if (auxDataPtr->freeProc != NULL) {
-		    auxDataPtr->freeProc(auxDataPtr->clientData);
+		if (auxDataPtr->type->freeProc != NULL) {
+		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
 		}
 		auxDataPtr++;
 	    }

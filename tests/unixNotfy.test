@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) unixNotfy.test 1.7 98/02/17 23:45:12
+# RCS: @(#) $Id: unixNotfy.test,v 1.1.2.2 1998/09/24 23:59:39 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -47,4 +47,5 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} {
 } {1 {can't wait for variable "x":  would wait forever}}
 
 file delete foo
+file delete foo2
 return

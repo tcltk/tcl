@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclExecute.c 1.117 98/02/18 16:14:34
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.2 1998/09/24 23:58:47 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -392,6 +392,7 @@ TclCreateExecEnv(interp)
 
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
+	TclInitAuxDataTypeTable();
 	InitByteCodeExecution(interp);
 	execInitialized = 1;
     }
@@ -450,6 +451,7 @@ TclFinalizeExecution()
     Tcl_MutexLock(&execMutex);
     execInitialized = 0;
     Tcl_MutexUnlock(&execMutex);
+    TclFinalizeAuxDataTypeTable();
 }
 
 /*
@@ -2632,9 +2634,6 @@ TclExecuteByteCode(interp, codePtr)
 		if (oldValuePtr == NULL) {
 		    iterVarPtr->value.objPtr = Tcl_NewLongObj(-1);
 		    Tcl_IncrRefCount(iterVarPtr->value.objPtr);
-		    if (oldValuePtr != NULL) {
-			Tcl_DecrRefCount(oldValuePtr);
-		    }
 		} else {
 		    Tcl_SetLongObj(oldValuePtr, -1);
 		}

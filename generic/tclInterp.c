@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclInterp.c 1.135 98/02/18 15:32:12
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.2 1998/09/24 23:58:54 stanton Exp $
  */
 
 #include <stdio.h>
@@ -2315,6 +2315,7 @@ Tcl_MakeSafe(interp)
      * (the only one remaining is [info nameofexecutable])
      */
 
+    Tcl_UnsetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar(interp, "tcl_pkgPath", TCL_GLOBAL_ONLY);
     

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# SCCS: @(#) man2help2.tcl 1.7 98/01/22 16:51:45
+# RCS: @(#) $Id: man2help2.tcl,v 1.1.2.2 1998/09/24 23:59:41 stanton Exp $
 # 
 
 # Global variables used by these scripts:
@@ -173,7 +173,7 @@ proc text {string} {
 	SEE { 
 	    global topics curPkg curSect
 	    foreach i [split $string] {
-		if ![regexp -nocase {^[a-z_]+} [string trim $i] i ] {
+		if ![regexp -nocase {^[a-z_0-9]+} [string trim $i] i ] {
 		    continue
 		}
 		if ![catch {set ref $topics($curPkg,$curSect,$i)} ] {
@@ -439,6 +439,7 @@ proc font {type} {
 		set state(textState) INSERT
 	    }
 	}
+	C -
 	B {
 	    beginFont Code
 	    if {$state(textState) == "INSERT"} {
@@ -627,6 +628,10 @@ proc char {name} {
         \\o {
 	    set state(intl) 1
 	}
+	\\\  {
+	    textSetup
+	    puts -nonewline $file " "
+	}
 	\\0 {
 	    textSetup
 	    puts -nonewline $file " \\emspace "
@@ -641,6 +646,10 @@ proc char {name} {
 	}
 	\\% -
 	\\| {
+	}
+	\\(bu {
+	    textSetup
+	    puts -nonewline $file "·"
 	}
 	default {
 	    puts stderr "Unknown character: $name"
@@ -751,6 +760,7 @@ proc IPmacro {argList} {
 	set count [lindex $argList 1]
 	set tab [expr $count * 0.1]i
 	newPara $tab -$tab
+	textSetup
 	setTabs $tab
 	formattedText [lindex $argList 0]
 	tab
@@ -816,6 +826,8 @@ proc THmacro {argList} {
     set vers	[lindex $argList 2]		;# 7.4
     set curPkg	[lindex $argList 3]		;# Tcl
     set curSect	[lindex $argList 4]		;# {Tcl Library Procedures}
+    
+    regsub -all {\\ } $curSect { } curSect	;# Clean up for [incr\ Tcl]
 
     puts $file "#{\\footnote $curID}"		;# Context string
     puts $file "\${\\footnote $name}"		;# Topic title

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) unixFCmd.test 1.17 97/12/08 15:05:53
+# RCS: @(#) $Id: unixFCmd.test,v 1.1.2.2 1998/09/24 23:59:39 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -91,7 +91,26 @@ test unixFCmd-1.7 {TclpRenameFile: EXDEV} {
     catch {file delete -force foo}
     set result
 } {1}
-
+test unixFCmd-1.8 {Checking EINTR Bug} nonPortable {
+    testalarm 
+    after 2000
+    list [testgotsig] [testgotsig]
+} {1 0}
+test unixFCmd-1.9 {Checking EINTR Bug} nonPortable {
+    cleanup
+    set f [open tfalarm w]
+    puts $f {
+	after 2000
+	puts "hello world"
+	exit 0
+    }
+    close $f
+    testalarm 
+    set pipe [open "|[info nameofexecutable] tfalarm" r+]
+    set line [read $pipe 1]
+    catch {close $pipe}
+    list $line [testgotsig]
+} {h 1}
 test unixFCmd-2.1 {TclpCopyFile: target exists: lstat(dst) == 0} {
     cleanup
     exec touch tf1

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) strtol.c 1.4 96/02/15 12:08:23
+ * RCS: @(#) $Id: strtol.c,v 1.1.2.1 1998/09/24 23:58:18 stanton Exp $
  */
 
 #include <ctype.h>

@@ -14,15 +14,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) basic.test 1.23 97/12/09 16:34:32
+# RCS: @(#) $Id: basic.test,v 1.1.2.2 1998/09/24 23:59:20 stanton Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
-
-if {[info commands testcreatecommand] == ""} {
-    puts "This application hasn't been compiled with the testcreatecommand"
-    puts "command.  Skipping all of these tests."
-}	    
 
 catch {namespace delete test_ns_basic}
 catch {interp delete test_interp}
@@ -199,6 +194,10 @@ test basic-13.2 {Tcl_ExposeCommand, invalidate cached refs to cmd now being expo
          [p]
 } {42 {} {} Hello {} {} 42}
 
+if {[info commands testcreatecommand] == ""} {
+    puts "This application hasn't been compiled with the testcreatecommand"
+    puts "command.  Skipping affected tests."
+} else {
 test basic-14.1 {Tcl_CreateCommand, new cmd goes into a namespace specified in its name, if any} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     list [testcreatecommand create] \
@@ -212,6 +211,7 @@ test basic-14.2 {Tcl_CreateCommand, namespace code ignore single ":"s in middle 
 	 [value:at:] \
 	 [testcreatecommand delete2]
 } {{} {CreatedCommandProc2 in ::} {}}
+}
 
 test basic-15.1 {Tcl_CreateObjCommand, new cmd goes into a namespace specified in its name, if any} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -296,6 +296,10 @@ test basic-18.6 {TclRenameCommand, check for command shadowing by newly renamed 
 test basic-19.1 {Tcl_SetCommandInfo} {
 } {}
 
+if {[info commands testcmdtoken] == {}} {
+    puts "This application hasn't been compiled with the \"testcmdtoken\""
+    puts "command, so I can't test Tcl_GetCommandInfo."
+} else {
 test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespaces} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     catch {rename p ""}
@@ -316,6 +320,7 @@ test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespac
          [rename test_ns_basic::test_ns_basic2::p q] \
          [testcmdtoken name $x]
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
+}
 
 test basic-21.1 {Tcl_GetCommandName} {
 } {}
@@ -476,6 +481,10 @@ test basic-37.1 {Tcl_ExprString: see expr.test} {
 test basic-38.1 {Tcl_ExprObj} {
 } {}
 
+if {[info commands testcmdtrace] == {}} {
+    puts "This application hasn't been compiled with the \"testcmdtrace\""
+    puts "command, so I can't test Tcl_CreateTrace."
+} else {
 test basic-39.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace tracetest {set stuff [expr 14 + 16]}
 } {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
@@ -485,6 +494,7 @@ test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of tra
 test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace deletetest {set stuff [info tclversion]}
 } 8.1
+}
 
 test basic-40.1 {Tcl_DeleteTrace} {
 } {}

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) scan.test 1.31 98/01/05 15:24:00
+# RCS: @(#) $Id: scan.test,v 1.1.2.2 1998/09/24 23:59:35 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

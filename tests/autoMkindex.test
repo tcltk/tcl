@@ -1,0 +1,55 @@
+# Commands covered:  auto_mkindex auto_import
+#
+# This file contains tests related to autoloading and generating
+# the autoloading index.
+#
+# Copyright (c) 1998  Lucent Technologies, Inc.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: autoMkindex.test,v 1.1.2.1 1998/09/24 23:59:19 stanton Exp $
+
+if {[string compare test [info procs test]] == 1} then {source defs}
+
+test autoMkindex-1.1 {remove any existing tclIndex file} {
+    file delete tclIndex
+    file exists tclIndex
+} {0}
+
+test autoMkindex-1.2 {build tclIndex based on a test file} {
+    auto_mkindex . autoMkindex.tcl
+    file exists tclIndex
+} {1}
+
+set element "{source [file join . autoMkindex.tcl]}"
+
+test autoMkindex-1.3 {examine tclIndex} {
+    namespace eval tcl_autoMkindex_tmp {
+        set dir "."
+        variable auto_index
+        source tclIndex
+        set result ""
+        foreach elem [lsort [array names auto_index]] {
+            lappend result [list $elem $auto_index($elem)]
+        }
+        set result
+    }
+} "{::buried::explicit $element} {::buried::inside $element} {::buried::pub_one $element} {::buried::pub_two $element} {::buried::relative $element} {::buried::under::neath $element} {::buried::within $element} {indented $element} {normal $element} {top $element}"
+
+namespace delete tcl_autoMkindex_tmp
+
+test autoMkindex-2.1 {commands on the autoload path can be imported} {
+    set interp [interp create]
+    set final [$interp eval {
+        namespace eval blt {}
+        set auto_path [linsert $auto_path 0 .]
+        set info [list [catch {namespace import buried::*} result] $result]
+        foreach name [lsort [info commands pub_*]] {
+            lappend info $name [namespace origin $name]
+        }
+        set info
+    }]
+    interp delete $interp
+    set final
+} "0 {} pub_one ::buried::pub_one pub_two ::buried::pub_two"

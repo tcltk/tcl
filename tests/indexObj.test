@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# @(#) indexObj.test 1.4 97/12/08 15:06:27
+# RCS: @(#) $Id: indexObj.test,v 1.1.2.2 1998/09/24 23:59:26 stanton Exp $
 
 if {[info procs test] != "test"} {
     source defs

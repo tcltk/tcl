@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacAlloc.c 1.16 97/12/23 10:47:20
+ * RCS: @(#) $Id: tclMacAlloc.c,v 1.1.2.2 1998/09/24 23:59:09 stanton Exp $
  */
 
 #include "tclMacInt.h"
@@ -22,6 +22,7 @@
 #include <Memory.h>
 #include <stdlib.h>
 #include <string.h>
+
 /*
  * Flags that are used by ConfigureMemory to define how the allocator
  * should work.  They can be or'd together.
@@ -306,16 +307,16 @@ FreeAllMemory()
 	memRecord = systemMemory;
 	systemMemory = memRecord->next;
 	if (*(memRecord->memoryHandle) != NULL) {
-	    DisposeHandle(memRecord->memoryHandle);
-	}
+            DisposeHandle(memRecord->memoryHandle);
+        }
 	DisposePtr((void *) memRecord);
     }
     while (appMemory != NULL) {
 	memRecord = appMemory;
 	appMemory = memRecord->next;
 	if (*(memRecord->memoryHandle) != NULL) {
-	    DisposeHandle(memRecord->memoryHandle);
-	}
+            DisposeHandle(memRecord->memoryHandle);
+        }
 	DisposePtr((void *) memRecord);
     }
 }

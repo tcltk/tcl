@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) clock.n 1.18 97/09/10 13:31:23
+'\" RCS: @(#) $Id: clock.n,v 1.1.2.1 1998/09/24 23:58:29 stanton Exp $
 '\" 
 .so man.macros
 .TH clock n 7.4 Tcl "Tcl Built-In Commands"

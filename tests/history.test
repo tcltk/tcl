@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) history.test 1.16 97/12/08 15:03:07
+# RCS: @(#) $Id: history.test,v 1.1.2.2 1998/09/24 23:59:25 stanton Exp $
   
 if {[catch {history}]} {
     puts stdout "This version of Tcl was built without the history command;\n"

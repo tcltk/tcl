@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixFile.c 1.58 98/01/17 00:01:01
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -77,6 +77,12 @@ Tcl_FindExecutable(argv0)
 	 */
 
 	p = ":/bin:/usr/bin";
+    } else if (*p == '\0') {
+	/*
+	 * An empty path is equivalent to ".".
+	 */
+
+	p = "./";
     }
 
     /*
@@ -101,15 +107,18 @@ Tcl_FindExecutable(argv0)
 	    }
 	}
 	name = Tcl_DStringAppend(&buffer, argv0, -1);
-	if ((access(name, X_OK) == 0)			/* INTL: Native. */
-		&& (stat(name, &statBuf) == 0)		/* INTL: Native. */
+	if ((TclAccess(name, X_OK) == 0)		/* INTL: Native. */
+		&& (TclStat(name, &statBuf) == 0)	/* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
 	if (*p == '\0') {
 	    break;
+	} else if (*(p+1) == 0) {
+	    p = "./";
+	} else {
+	    p++;
 	}
-	p++;
     }
     goto done;
 
@@ -206,7 +215,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     }
 
     native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
-    if ((stat(native, &statBuf) != 0)			/* INTL: Native. */
+    if ((TclStat(native, &statBuf) != 0)		/* INTL: Native. */
 	    || !S_ISDIR(statBuf.st_mode)) {
 	Tcl_DStringFree(&ds);
 	return TCL_OK;
@@ -299,7 +308,9 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	    Tcl_DStringAppend(dirPtr, utf, -1);
 	    if (tail == NULL) {
 		Tcl_AppendElement(interp, Tcl_DStringValue(dirPtr));
-	    } else if ((TclpStat(Tcl_DStringValue(dirPtr), &statBuf) == 0)
+	    } else if ((TclStat(Tcl_DStringValue(dirPtr), &statBuf) == 0)
+		Tcl_AppendElement(interp, dirPtr->string);
+	    } else if ((TclStat(dirPtr->string, &statBuf) == 0)
 		    && S_ISDIR(statBuf.st_mode)) {
 		Tcl_DStringAppend(dirPtr, "/", 1);
 		result = TclDoGlob(interp, separators, dirPtr, tail);

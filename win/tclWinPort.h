@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinPort.h 1.62 98/02/18 14:00:22
+ * RCS: @(#) $Id: tclWinPort.h,v 1.1.2.2 1998/09/24 23:59:53 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -61,6 +61,11 @@ typedef float *TCHAR;
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
+
+#ifdef BUILD_tcl
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
+#endif
 
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
@@ -414,6 +419,10 @@ EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
 
 EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
 			    struct stat *buf));
+EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *path, 
+			    int mode));
+
+#define TclpReleaseFile(file)	ckfree((char *) file)
 
 /*
  * Declarations for Windows-only functions.
@@ -450,5 +459,8 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLWINPORT */

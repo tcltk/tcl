@@ -13,20 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCmdIL.c 1.185 98/02/05 20:20:55
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.2 1998/09/24 23:58:42 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
-
-/*
- * The following variable holds the full path name of the binary
- * from which this application was executed, or NULL if it isn't
- * know.  The value of the variable is set by the procedure
- * Tcl_FindExecutable.  The storage space is dynamically allocated.
- */
-
-char *tclExecutableName = NULL;
+#include "tclCompile.h"
 
 /*
  * During execution of the "lsort" command, structures of the following
@@ -81,6 +73,9 @@ typedef struct SortInfo {
  * Forward declarations for procedures defined in this file:
  */
 
+static void		AppendLocals _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, char *pattern,
+			    int includeLinks));
 static int		DictionaryCompare _ANSI_ARGS_((char *left,
 			    char *right));
 static int		InfoArgsCmd _ANSI_ARGS_((ClientData dummy,
@@ -510,7 +505,7 @@ InfoArgsCmd(dummy, interp, objc, objv)
     listObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
             localPtr = localPtr->nextPtr) {
-        if (localPtr->isArg) {
+        if (TclIsVarArgument(localPtr)) {
             Tcl_ListObjAppendElement(interp, listObjPtr,
 		    Tcl_NewStringObj(localPtr->name, -1));
         }
@@ -549,7 +544,8 @@ InfoBodyCmd(dummy, interp, objc, objv)
     register Interp *iPtr = (Interp *) interp;
     char *name;
     Proc *procPtr;
-
+    Tcl_Obj *bodyPtr, *resultPtr;
+    
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "procname");
         return TCL_ERROR;
@@ -562,7 +558,27 @@ InfoBodyCmd(dummy, interp, objc, objv)
 		"\"", name, "\" isn't a procedure", (char *) NULL);
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, procPtr->bodyPtr);
+
+    /*
+     * we need to check if the body from this procedure had been generated
+     * from a precompiled body. If that is the case, then the bodyPtr's
+     * string representation is bogus, since sources are not available.
+     * In order to make sure that later manipulations of the object do not
+     * invalidate the internal representation, we make a copy of the string
+     * representation and return that one, instead.
+     */
+
+    bodyPtr = procPtr->bodyPtr;
+    resultPtr = bodyPtr;
+    if (bodyPtr->typePtr == &tclByteCodeType) {
+        ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
+
+        if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+            resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
+        }
+    }
+    
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -832,7 +848,8 @@ InfoDefaultCmd(dummy, interp, objc, objv)
 
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
             localPtr = localPtr->nextPtr) {
-        if ((localPtr->isArg) && (strcmp(argName, localPtr->name) == 0)) {
+        if (TclIsVarArgument(localPtr)
+		&& (strcmp(argName, localPtr->name) == 0)) {
             if (localPtr->defValuePtr != NULL) {
 		valueObjPtr = Tcl_SetObjVar2(interp,
 		        Tcl_GetString(objv[4]), NULL,
@@ -1216,12 +1233,7 @@ InfoLocalsCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    Var *varPtr;
-    char *varName, *pattern;
-    int i, localVarCt;
-    Tcl_HashTable *localVarTablePtr;
-    register Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
+    char *pattern;
     Tcl_Obj *listPtr;
 
     if (objc == 2) {
@@ -1233,10 +1245,9 @@ InfoLocalsCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
     
-    if (iPtr->varFramePtr == NULL) {
+    if (iPtr->varFramePtr == NULL || !iPtr->varFramePtr->isProcCallFrame) {
         return TCL_OK;
     }
-    localVarTablePtr = iPtr->varFramePtr->varTablePtr;
 
     /*
      * Return a list containing names of first the compiled locals (i.e. the
@@ -1245,18 +1256,63 @@ InfoLocalsCmd(dummy, interp, objc, objv)
      */
     
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-    
+    AppendLocals(interp, listPtr, pattern, 0);
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendLocals --
+ *
+ *	Append the local variables for the current frame to the
+ *	specified list object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AppendLocals(interp, listPtr, pattern, includeLinks)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    Tcl_Obj *listPtr;		/* List object to append names to. */
+    char *pattern;		/* Pattern to match against. */
+    int includeLinks;		/* 1 if upvars should be included, else 0. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CompiledLocal *localPtr;
+    Var *varPtr;
+    int i, localVarCt;
+    char *varName;
+    Tcl_HashTable *localVarTablePtr;
+    register Tcl_HashEntry *entryPtr;
+    Tcl_HashSearch search;
+
+    localPtr = iPtr->varFramePtr->procPtr->firstLocalPtr;
     localVarCt = iPtr->varFramePtr->numCompiledLocals;
-    for (i = 0, varPtr = iPtr->varFramePtr->compiledLocals;
-            i < localVarCt;
-	    i++, varPtr++) {
-	if (!TclIsVarUndefined(varPtr)) {
+    varPtr = iPtr->varFramePtr->compiledLocals;
+    localVarTablePtr = iPtr->varFramePtr->varTablePtr;
+
+    for (i = 0; i < localVarCt; i++) {
+	/*
+	 * Skip nameless (temporary) variables and undefined variables
+	 */
+
+	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)) {
 	    varName = varPtr->name;
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,
 		        Tcl_NewStringObj(varName, -1));
 	    }
         }
+	varPtr++;
+	localPtr = localPtr->nextPtr;
     }
     
     if (localVarTablePtr != NULL) {
@@ -1264,7 +1320,8 @@ InfoLocalsCmd(dummy, interp, objc, objv)
 	        entryPtr != NULL;
                 entryPtr = Tcl_NextHashEntry(&search)) {
 	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	    if (!TclIsVarUndefined(varPtr) && !TclIsVarLink(varPtr)) {
+	    if (!TclIsVarUndefined(varPtr)
+		    && (includeLinks || !TclIsVarLink(varPtr))) {
 		varName = Tcl_GetHashKey(localVarTablePtr, entryPtr);
 		if ((pattern == NULL)
 		        || Tcl_StringMatch(varName, pattern)) {
@@ -1274,9 +1331,6 @@ InfoLocalsCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
 }
 
 /*
@@ -1307,13 +1361,17 @@ InfoNameOfExecutableCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
+    CONST char *nameOfExecutable;
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         return TCL_ERROR;
     }
+
+    nameOfExecutable = Tcl_GetNameOfExecutable();
     
-    if (tclExecutableName != NULL) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp), tclExecutableName, -1);
+    if (nameOfExecutable != NULL) {
+	Tcl_SetStringObj(Tcl_GetObjResult(interp), (char *)nameOfExecutable, -1);
     }
     return TCL_OK;
 }
@@ -1595,13 +1653,13 @@ InfoVarsCmd(dummy, interp, objc, objv)
     char *varName, *pattern, *simplePattern;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    Var *varPtr, *localVarPtr;
+    Var *varPtr;
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
-    int i, result;
+    int result;
 
     /*
      * Get the pattern and find the "effective namespace" in which to
@@ -1709,49 +1767,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	    }
 	}
     } else {
-	/*
-	 * We're in a local call frame and no specific namespace was
-	 * specific. Create a list that starts with the compiled locals
-	 * (i.e. the ones stored in the call frame).
-	 */
-
-	CallFrame *varFramePtr = iPtr->varFramePtr;
-        int localVarCt = varFramePtr->numCompiledLocals;
-	Tcl_HashTable *varTablePtr = varFramePtr->varTablePtr;
-	
-        for (i = 0, localVarPtr = iPtr->varFramePtr->compiledLocals;
-                i < localVarCt;
-                i++, localVarPtr++) {
-            if (!TclIsVarUndefined(localVarPtr)) {
-                varName = localVarPtr->name;
-                if ((simplePattern == NULL)
-		        || Tcl_StringMatch(varName, simplePattern)) {
-                    Tcl_ListObjAppendElement(interp, listPtr,
-			    Tcl_NewStringObj(varName, -1));
-                }
-            }
-        }
-
-	/*
-	 * Now add in the variables in the call frame's variable hash
-	 * table (if one exists).
-	 */
-
-	if (varTablePtr != NULL) {
-	    for (entryPtr = Tcl_FirstHashEntry(varTablePtr, &search);
-		    entryPtr != NULL;
-		    entryPtr = Tcl_NextHashEntry(&search)) {
-		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		if (!TclIsVarUndefined(varPtr)) {
-		    varName = Tcl_GetHashKey(varTablePtr, entryPtr);
-		    if ((simplePattern == NULL)
-		            || Tcl_StringMatch(varName, simplePattern)) {
-			Tcl_ListObjAppendElement(interp, listPtr,
-				Tcl_NewStringObj(varName, -1));
-		    }
-		}
-	    }
-	}
+	AppendLocals(interp, listPtr, simplePattern, 1);
     }
     
     Tcl_SetObjResult(interp, listPtr);
@@ -2895,7 +2911,7 @@ DictionaryCompare(left, right)
 	    diff = 0;
 	    while (1) {
 		if (diff == 0) {
-		    diff = *left - *right;
+		    diff = UCHAR(*left) - UCHAR(*right);
 		}
 		right++;
 		left++;
@@ -2930,7 +2946,7 @@ DictionaryCompare(left, right)
 	    left += Tcl_UtfToUniChar(left, &uniLeft);
 	    right += Tcl_UtfToUniChar(right, &uniRight);
 	} else {
-	    diff = *left - *right;
+	    diff = UCHAR(*left) - UCHAR(*right);
 	    break;
 	}
 

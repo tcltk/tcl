@@ -5,15 +5,12 @@
 # widgets behave properly for different platforms.
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
+# Copyright (c) 1998 by Scritpics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# SCCS: @(#) word.tcl 1.4 97/12/03 11:57:11
-# 
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
+# RCS: @(#) $Id: word.tcl,v 1.1.2.2 1998/09/24 23:59:07 stanton Exp $
 
 # The following variables are used to determine which characters are
 # interpreted as white space.  

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) seek.n 1.10 96/08/26 13:00:14
+'\" RCS: @(#) $Id: seek.n,v 1.1.2.1 1998/09/24 23:58:36 stanton Exp $
 '\" 
 .so man.macros
 .TH seek n 7.5 Tcl "Tcl Built-In Commands"

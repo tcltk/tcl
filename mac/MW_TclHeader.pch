@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) MW_TclHeader.pch 1.28 98/02/18 11:43:47
+ * RCS: @(#) $Id: MW_TclHeader.pch,v 1.1.2.2 1998/09/24 23:59:08 stanton Exp $
  */
 
 /*
@@ -42,5 +42,17 @@
 #include "tcl.h"
 #include "tclMac.h"
 #include "tclInt.h"
-#pragma export off
+
+/*
+ * These three symbols are needed by Itcl, so we must export them
+ * here.  They are all from tclCompile.h, but there is no need to 
+ * export that whole file...
+ */
+ 
+EXTERN void		TclPrintSource _ANSI_ARGS_((FILE *outFile,
+			    char *string, int maxChars));
+extern int 		tclTraceExec;
+extern int 		tclTraceCompile;
+
+#pragma export reset
 

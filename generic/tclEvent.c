@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclEvent.c 1.173 98/02/18 18:23:41
+ * RCS: @(#) $Id: tclEvent.c,v 1.1.2.2 1998/09/24 23:58:47 stanton Exp $
  */
 
 #include "tclInt.h"

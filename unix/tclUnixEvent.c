@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixEvent.c 1.2 98/02/04 16:21:02
+ * RCS: @(#) $Id: tclUnixEvent.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
  */
 
 #include "tclInt.h"

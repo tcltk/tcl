@@ -10,8 +10,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) pkge.c 1.6 97/10/20 13:17:59
+ * RCS: @(#) $Id: pkge.c,v 1.1.2.2 1998/09/24 23:59:48 stanton Exp $
  */
+
 #include "tcl.h"
 
 /*

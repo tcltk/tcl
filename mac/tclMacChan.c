@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacChan.c 1.50 98/02/19 15:30:57
+ * RCS: @(#) $Id: tclMacChan.c,v 1.1.2.2 1998/09/24 23:59:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -734,7 +734,7 @@ TclpGetDefaultStdChannel(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenFileChannel --
+ * TclpOpenFileChannel --
  *
  *	Open an File based channel on Unix systems.
  *
@@ -750,7 +750,7 @@ TclpGetDefaultStdChannel(
  */
 
 Tcl_Channel
-Tcl_OpenFileChannel(
+TclpOpenFileChannel(
     Tcl_Interp *interp,			/* Interpreter for error reporting;
                                          * can be NULL. */
     char *fileName,			/* Name of file to open. */

@@ -4,12 +4,13 @@
  *	This file provides the generic portions (those that are the same on
  *	all platforms and for all channel types) of Tcl's IO facilities.
  *
+ * Copyright (c) 1998 Scriptics Corporation
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclIO.c 1.283 98/02/18 16:14:30
+ * RCS: @(#) $Id: tclIO.c,v 1.1.2.2 1998/09/24 23:58:51 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2817,7 +2818,7 @@ Tcl_GetsObj(chan, objPtr)
 {
     GetsState gs;
     Channel *chanPtr;
-    int inEofChar, skip;
+    int inEofChar, skip, copiedTotal;
     ChannelBuffer *bufPtr;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
@@ -2826,7 +2827,8 @@ Tcl_GetsObj(chan, objPtr)
 
     chanPtr = (Channel *) chan;
     if (CheckChannelErrors(chanPtr, TCL_READABLE) != 0) {
-	return -1;
+	copiedTotal = -1;
+	goto done;
     }
 
     bufPtr = chanPtr->inQueueHead;
@@ -3033,7 +3035,8 @@ Tcl_GetsObj(chan, objPtr)
 
 		Tcl_SetObjLength(objPtr, 0);
 		CommonGetsCleanup(chanPtr, encoding);
-		return -1;
+		copiedTotal = -1;
+		goto done;
 	    }
 	    goto goteol;
 	}
@@ -3064,7 +3067,8 @@ Tcl_GetsObj(chan, objPtr)
     Tcl_SetObjLength(objPtr, eol - objPtr->bytes);
     CommonGetsCleanup(chanPtr, encoding);
     chanPtr->flags &= ~CHANNEL_BLOCKED;
-    return gs.totalChars + gs.charsWrote - skip;
+    copiedTotal = gs.totalChars + gs.charsWrote - skip;
+    goto done;
 
     /*
      * Couldn't get a complete line.  This only happens if we get a error
@@ -3097,7 +3101,16 @@ Tcl_GetsObj(chan, objPtr)
      */
 
     chanPtr->flags |= CHANNEL_NEED_MORE_DATA;
-    return -1;
+    copiedTotal = -1;
+
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
+    return copiedTotal;
 }
 
 /*
@@ -4102,7 +4115,8 @@ Tcl_Ungets(chan, str, len, atEnd)
      
     flags = chanPtr->flags;
     if (CheckChannelErrors(chanPtr, TCL_READABLE) != 0) {
-	return -1;
+	len = -1;
+	goto done;
     }
     chanPtr->flags = flags;
 
@@ -4115,7 +4129,7 @@ Tcl_Ungets(chan, str, len, atEnd)
      */
 
     if (chanPtr->flags & CHANNEL_STICKY_EOF) {
-        return len;
+	goto done;
     }
     chanPtr->flags &= (~(CHANNEL_BLOCKED | CHANNEL_EOF));
 
@@ -4138,6 +4152,13 @@ Tcl_Ungets(chan, str, len, atEnd)
         chanPtr->inQueueHead = bufPtr;
     }
 
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return len;
 }
 
@@ -7016,24 +7037,33 @@ DoRead(chanPtr, bufPtr, toRead)
                 toRead - copied);
         if (copiedNow == 0) {
             if (chanPtr->flags & CHANNEL_EOF) {
-                return copied;
+		goto done;
             }
             if (chanPtr->flags & CHANNEL_BLOCKED) {
                 if (chanPtr->flags & CHANNEL_NONBLOCKING) {
-                    return copied;
+		    goto done;
                 }
                 chanPtr->flags &= (~(CHANNEL_BLOCKED));
             }
             result = GetInput(chanPtr);
             if (result != 0) {
-                if (result == EAGAIN) {
-                    return copied;
+                if (result != EAGAIN) {
+                    copied = -1;
                 }
-                return -1;
+		goto done;
             }
         }
     }
+
     chanPtr->flags &= (~(CHANNEL_BLOCKED));
+
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return copied;
 }
 

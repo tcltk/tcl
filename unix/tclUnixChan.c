@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixChan.c 1.217 98/02/18 18:23:24
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.2 1998/09/24 23:59:44 stanton Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1219,7 +1219,7 @@ TtyInit(fd)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenFileChannel --
+ * TclpOpenFileChannel --
  *
  *	Open an file based channel on Unix systems.
  *
@@ -1236,7 +1236,7 @@ TtyInit(fd)
  */
 
 Tcl_Channel
-Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
+TclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     char *fileName;			/* Name of file to open. */
@@ -1272,7 +1272,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
             /*
              * This may occurr if modeString was "", for example.
              */
-	    panic("Tcl_OpenFileChannel: invalid mode value");
+	    panic("TclpOpenFileChannel: invalid mode value");
 	    return NULL;
     }
 
@@ -1852,12 +1852,20 @@ TcpWatchProc(instanceData, mask)
 {
     TcpState *statePtr = (TcpState *) instanceData;
 
-    if (mask) {
-	Tcl_CreateFileHandler(statePtr->fd, mask,
-		(Tcl_FileProc *) Tcl_NotifyChannel,
-		(ClientData) statePtr->channel);
-    } else {
-	Tcl_DeleteFileHandler(statePtr->fd);
+    /*
+     * Make sure we don't mess with server sockets since they will never
+     * be readable or writable at the Tcl level.  This keeps Tcl scripts
+     * from interfering with the -accept behavior.
+     */
+
+    if (!statePtr->acceptProc) {
+	if (mask) {
+	    Tcl_CreateFileHandler(statePtr->fd, mask,
+		    (Tcl_FileProc *) Tcl_NotifyChannel,
+		    (ClientData) statePtr->channel);
+	} else {
+	    Tcl_DeleteFileHandler(statePtr->fd);
+	}
     }
 }
 
