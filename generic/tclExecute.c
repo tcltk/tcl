@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.137 2004/05/21 21:31:03 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.138 2004/05/21 21:51:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1164,7 +1164,6 @@ TclExecuteByteCode(interp, codePtr)
 	fprintf(stdout, "  Starting stack top=%d\n", initStackTop);
 	fflush(stdout);
     }
-    opnd = 0;			/* Init. avoids compiler warning. */       
 #endif
     
 #ifdef TCL_COMPILE_STATS
@@ -1586,6 +1585,8 @@ TclExecuteByteCode(interp, codePtr)
 		
 #ifdef TCL_COMPILE_DEBUG
 		if (tclTraceExec >= 2) {
+		    int i;
+
 		    if (traceInstructions) {
 			strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
 			TRACE(("%u => call ", objc));
@@ -2492,7 +2493,6 @@ TclExecuteByteCode(interp, codePtr)
 		    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE4)) {
 			TRACE(("%d => %.20s false\n", falseJmp, O2S(valuePtr)));
 		    } else {
-			opnd = pcAdjustment;
 			TRACE(("%d => %.20s false, new pc %u\n", falseJmp, O2S(valuePtr),
 				      (unsigned int)(pc + falseJmp - codePtr->codeStart)));
 		    }
@@ -4740,13 +4740,13 @@ TclExecuteByteCode(interp, codePtr)
 #if TCL_COMPILE_DEBUG    
 	} else if (traceInstructions) {
 	    if ((result != TCL_ERROR) && (result != TCL_RETURN))  {
-		objPtr = Tcl_GetObjResult(interp);
+		Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 		TRACE_APPEND(("OTHER RETURN CODE %d, result= \"%s\"\n ", 
-				     result, O2S(objPtr)));
+			result, O2S(objPtr)));
 	    } else {
-		objPtr = Tcl_GetObjResult(interp);
+		Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 		TRACE_APPEND(("%s, result= \"%s\"\n", 
-				     StringForResultCode(result), O2S(objPtr)));
+			StringForResultCode(result), O2S(objPtr)));
 	    }
 #endif
 	}
