@@ -1,3 +1,9 @@
+1999-03-10    <redman@scriptics.com>
+
+	* generic/tcl.h:
+	* generic/tclBasic.c: Add Tcl_GetVersion() to public C API to
+	allow checking of the Tcl library's version number at runtime.
+	
 1999-03-09    <stanton@GASPODE>
 
 	* generic/tcl.h: Changed TCL_STUB_MAGIC back to match plus patch 
