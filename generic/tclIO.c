@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.26 2000/10/27 22:34:23 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.27 2000/10/28 00:29:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2141,7 +2141,8 @@ CloseChannel(interp, chanPtr, errorCode)
      * There is only the TOP Channel, so we free the remaining
      * pointers we have and then ourselves.  Since this is the
      * last of the channels in the stack, make sure to free the
-     * ChannelState structure associated with it.
+     * ChannelState structure associated with it.  We use
+     * Tcl_EventuallyFree to allow for any last
      */
     chanPtr->typePtr = NULL;
 
@@ -6191,7 +6192,6 @@ Tcl_NotifyChannel(channel, mask)
     ChannelHandler *chPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     NextChannelHandler nh;
-#ifdef TCL_CHANNEL_VERSION_2
     Channel* upChanPtr;
     Tcl_ChannelType* upTypePtr;
 
@@ -6249,6 +6249,7 @@ Tcl_NotifyChannel(channel, mask)
      */
      
     Tcl_Preserve((ClientData) channel);
+    Tcl_Preserve((ClientData) statePtr);
 
     /*
      * If we are flushing in the background, be sure to call FlushChannel
@@ -6258,8 +6259,8 @@ Tcl_NotifyChannel(channel, mask)
      */
 
     if ((statePtr->flags & BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-      FlushChannel(NULL, chanPtr, 1);
-      mask &= ~TCL_WRITABLE;
+	FlushChannel(NULL, chanPtr, 1);
+	mask &= ~TCL_WRITABLE;
     }
 
     /*
@@ -6272,19 +6273,18 @@ Tcl_NotifyChannel(channel, mask)
     tsdPtr->nestedHandlerPtr = &nh;
 
     for (chPtr = statePtr->chPtr; chPtr != (ChannelHandler *) NULL; ) {
+	/*
+	 * If this channel handler is interested in any of the events that
+	 * have occurred on the channel, invoke its procedure.
+	 */
 
-      /*
-       * If this channel handler is interested in any of the events that
-       * have occurred on the channel, invoke its procedure.
-       */
-        
-      if ((chPtr->mask & mask) != 0) {
-	nh.nextHandlerPtr = chPtr->nextPtr;
-	(*(chPtr->proc))(chPtr->clientData, mask);
-	chPtr = nh.nextHandlerPtr;
-      } else {
-	chPtr = chPtr->nextPtr;
-      }
+	if ((chPtr->mask & mask) != 0) {
+	    nh.nextHandlerPtr = chPtr->nextPtr;
+	    (*(chPtr->proc))(chPtr->clientData, mask);
+	    chPtr = nh.nextHandlerPtr;
+	} else {
+	    chPtr = chPtr->nextPtr;
+	}
     }
 
     /*
@@ -6297,82 +6297,10 @@ Tcl_NotifyChannel(channel, mask)
         UpdateInterest(chanPtr);
     }
 
+    Tcl_Release((ClientData) statePtr);
     Tcl_Release((ClientData) channel);
 
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
-#else
-    /* Walk all channels in a stack ! and notify them in order.
-     */
-
-    while (chanPtr != (Channel *) NULL) {
-        /*
-	 * Preserve the channel struct in case the script closes it.
-	 */
-     
-        Tcl_Preserve((ClientData) channel);
-
-	/*
-	 * If we are flushing in the background, be sure to call FlushChannel
-	 * for writable events.  Note that we have to discard the writable
-	 * event so we don't call any write handlers before the flush is
-	 * complete.
-	 */
-
-	if ((statePtr->flags & BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-	    FlushChannel(NULL, chanPtr, 1);
-	    mask &= ~TCL_WRITABLE;
-	}
-
-	/*
-	 * Add this invocation to the list of recursive invocations of
-	 * ChannelHandlerEventProc.
-	 */
-    
-	nh.nextHandlerPtr = (ChannelHandler *) NULL;
-	nh.nestedHandlerPtr = tsdPtr->nestedHandlerPtr;
-	tsdPtr->nestedHandlerPtr = &nh;
-
-	for (chPtr = statePtr->chPtr; chPtr != (ChannelHandler *) NULL; ) {
-
-	    /*
-	     * If this channel handler is interested in any of the events that
-	     * have occurred on the channel, invoke its procedure.
-	     */
-        
-	    if ((chPtr->mask & mask) != 0) {
-		nh.nextHandlerPtr = chPtr->nextPtr;
-		(*(chPtr->proc))(chPtr->clientData, mask);
-		chPtr = nh.nextHandlerPtr;
-	    } else {
-		chPtr = chPtr->nextPtr;
-	    }
-	}
-
-	/*
-	 * Update the notifier interest, since it may have changed after
-	 * invoking event handlers. Skip that if the channel was deleted
-	 * in the call to the channel handler.
-	 */
-
-	if (chanPtr->typePtr != NULL) {
-	    UpdateInterest(chanPtr);
-
-	    /* Walk down the stack.
-	     */
-	    chanPtr = chanPtr->downChanPtr;
-	} else {
-	    /* Stop walking the chain, the whole stack was destroyed!
-	     */
-	    chanPtr = (Channel *) NULL;
-	}
-
-	Tcl_Release((ClientData) channel);
-
-	tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
-
-	channel = (Tcl_Channel) chanPtr;
-    }
-#endif
 }
 
 /*
