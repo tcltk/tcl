@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.7 1999/10/19 18:08:40 jenn Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.8 1999/11/19 06:34:00 hobbs Exp $
 '\" 
 .so man.macros
 .TH "Tcltest" n 8.2 Tcl "Tcl Built-In Commands"
@@ -714,7 +714,7 @@ A simple test file (foo.test)
 .DS
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    import namespace ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 test foo-1.1 {save 1 in variable name foo} {} {
@@ -729,7 +729,7 @@ A simple all.tcl
 .DS
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    import namespace ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 set ::tcltest::testSingleFile false

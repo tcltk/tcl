@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.4 1999/08/21 19:40:48 hobbs Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.5 1999/11/19 06:33:58 hobbs Exp $
 '\" 
 .so man.macros
 .TH glob n 8.1 Tcl "Tcl Built-In Commands"
@@ -86,7 +86,8 @@ may not contain ?, *, or [] constructs.  On Windows NT, if \fIpattern\fR is
 of the form ``\fB~\fIusername\fB@\fIdomain\fR'' it refers to the home
 directory of the user whose account information resides on the specified NT
 domain server.  Otherwise, user account information is obtained from
-the local computer.  
+the local computer.  On Windows 95 and 98, \fBglob\fR accepts patterns
+like ``.../'' and ``..../'' for successively higher up parent directories.
 .VE
 
 .SH KEYWORDS
