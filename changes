@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.50 1999/08/13 18:30:24 redman Exp $
+RCS: @(#) $Id: changes,v 1.51 1999/12/22 01:27:57 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4640,3 +4640,126 @@ error code. [Bug: 2535] (stanton)
 
 --------------- Released 8.2.0, August 17, 1999 ----------------------
 
+9/21/99 (config fixes) fixed several AIX configuration issues.  gcc and
+threading may still cause problems on AIX. (hobbs)
+
+9/21/99 (bug fix) fixed expr double-eval problem. [Bug: 732] (hobbs)
+
+9/21/99 (bug fix) fixed static buffer overflow problem. [Bug: 2483] (hobbs)
+
+9/21/99 (bug fix) fixed end-int linsert interpretation. [Bug: 2693] (hobbs)
+
+9/21/99 (bug fix) fixed bug when setting array in non-existent
+namespace. [Bug: 2613] (hobbs)
+
+--- Released 8.2.1, October 04, 1999 --- See ChangeLog for details ---
+
+10/30/99 (feature enhancement) new regexp engine from Henry Spencer
+was patched in - should greatly reduce stack space usage. (spencer)
+
+10/30/99 (bug fix) fixed Purify reported memory leaks in findexecutable
+test command, TclpCreateProcess on Unix, in handling of C environ array,
+and in testthread code.  No more known (reported) mem leaks for Tcl
+built using gcc on Solaris 2.5.1.  Also none reported for Tcl on NT
+(using Purify 6.0). (hobbs)
+
+10/30/99 (bug fix) fixed improper bytecode handling of 
+'eval {set array($unknownvar) 5}' (also for incr) (hobbs)
+
+10/30/99 (bug fix) fixed event/io threading problems by making
+triggerPipe non-blocking (nick kisserbeth)
+
+10/30/99 (bug fix) fixed Tcl_AppendStringsToObjVA and Tcl_AppendResultVA
+to only	iterates once over the va_list (avoiding non-portable memcpy).
+(joe english, hobbs)
+
+10/30/99 (bug fix) removed savedChar trick in tclCompile.c that appeared
+to be causing a segv when the literal table was released.
+[Bug: 2459, 2515] (David Whitehouse)
+
+10/30/99 (bug fix) fixed [string index] to return ByteArrayObj
+when indexing into one (test case string-5.16) [Bug: 2871] (hobbs)
+
+10/30/99 (bug fix) fixes for mac UTF filename handling (ingham)
+
+--- Released 8.2.2, November 04, 1999 --- See ChangeLog for details ---
+
+11/19/99 (feature enhancement) bug fixes for http package as well as
+patch required by TLS (SSL) extension that adds http::(un)register
+and -type to http::geturl.  Up'd http pkg version to 2.2.
+
+11/19/99 (bug fix) removed extra decr of numLevels in Tcl_EvalObjEx
+that could cause seg fault (mjansen@wendt.de)
+
+11/19/99 (bug fixes) numerous minor big fixes, including correcting the
+installation of the koi8-r encoding and tcltest1.0 on Windows.
+
+11/30/99 (bug fix) fixes scan where %[..] didn't match anything
+
+11/30/99 (bug fix) fixed setting of isNonBlocking flag in PipeBlockModeProc
+so you can now close a non-blocking channel without waiting.
+
+11/30/99 (bug work-around) prevented the unloading of DLLs for Unix in
+TclFinalizeLoad.  This stops the seg fault on exit that some users would
+see (ie with oratcl) when using DLLs that do nasty things like register
+atexit handlers.
+
+12/07/99 (bug fix) fixes for 'expr + {[incr]}' and 'expr + {[error]}'
+cases (different causes).
+
+--- Released 8.2.3, December 16, 1999 --- See ChangeLog for details ---
+
+1999-09-14 (feature enhancement) added -start switch to regexp and regsub.
+
+1999-09-15 (feature enhancement) add 'array unset' command.
+
+1999-09-15 (feature enhancement) rewrote runtime libraries to use new
+string functions
+
+1999-08-18 (feature enhancement) added 'file channels' command, along with
+Tcl_GetChannelNames(Ex) public C APIs.
+
+1999-10-19 (feature enhancement) enhanced tcltest package
+
+1999-09-16 (feature enhancement) added -milliseconds switch to 'clock clicks'
+
+1999-10-28 (feature enhancement) added support for inline 'scan'
+
+1999-10-28 (feature enhancement) added support for touch functionality by
+extendeding 'file atime' and 'file mtime' to take an optional time argument
+
+1999-11-24 (feature enhancement) added 'fconfigure $sock -lasterror'
+command to Windows to query the last error received on a serial socket.
+
+1999-11-30 (bug fix) fixed handling of %Z on NT for timezones that don't
+have DST
+
+1999-12-03 (feature enhancement) improved error message in bad octal cases
+and improper use of comments.
+
+1999-12-07 (bug fix) fixed Tcl_ScanCountedElement to not step
+beyond the end of the counted string
+
+1999-12-09 (feature enhancement) removed all references to 16 bit
+compatibility code for Windows
+
+1999-12-10 (bug fix) removed check for vfork - Tcl now uses only fork in exec.
+
+1999-12-10 (optimization) changed Tcl_ConcatObj to return a list
+object when it receives all pure list objects as input (used by 'concat'),
+added optimizations in Tcl_EvalObjEx for pure list case, and optimized
+INST_TRY_CVT_TO_NUMERIC in TclExecuteByteCode for boolean objects.
+
+1999-12-12 (feature enhancement) enhanced glob command with -type, -path,
+-directory and -join switches.
+
+1999-12-21 (bug fix) changed CreateThread to _beginthreadex and
+ExitThread to _endthreadex to prevent 4K mem leak
+
+1999-12-21 (bug fix) fixed applescript for I18N
+
+1999-12-21 (feature enhancement) added -unique option to lsort
+
+1999-12-21 (bug fix) changed thread ids to longs (for 64bit systems)
+
+--- Released 8.3b1, December 21, 1999 --- See ChangeLog for details ---
