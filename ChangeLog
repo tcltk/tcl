@@ -1,3 +1,8 @@
+2004-03-27  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/array.n: added documentation for trace-realted behaviour of
+	'array get' [Bug 449893]
+
 2004-03-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bumped version number to 8.5a2 to
