@@ -961,7 +961,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		if test "$GCC" = "yes" ; then
-		    hpux_arch='`gcc -dumpmachine`'
+		    hpux_arch=`gcc -dumpmachine`
 		    case $hpux_arch in
 			hppa64*)
 			    # 64-bit gcc in use.  Fix flags for GNU ld.
@@ -969,6 +969,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 			    SHLIB_LD="gcc -shared"
 			    SHLIB_LD_LIBS=""
 			    LD_SEARCH_FLAGS=''
+			    CC_SEARCH_FLAGS=''
 			    ;;
 			*)
 			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
@@ -1068,7 +1069,6 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	            LDFLAGS="-64"
 	        fi
 	    fi
-
 	    ;;
 	Linux*)
 	    SHLIB_CFLAGS="-fPIC"

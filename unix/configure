@@ -5852,7 +5852,7 @@ fi
 	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		if test "$GCC" = "yes" ; then
-		    hpux_arch='`gcc -dumpmachine`'
+		    hpux_arch=`gcc -dumpmachine`
 		    case $hpux_arch in
 			hppa64*)
 			    # 64-bit gcc in use.  Fix flags for GNU ld.
@@ -5860,6 +5860,7 @@ fi
 			    SHLIB_LD="gcc -shared"
 			    SHLIB_LD_LIBS=""
 			    LD_SEARCH_FLAGS=''
+			    CC_SEARCH_FLAGS=''
 			    ;;
 			*)
 			    echo "configure: warning: "64bit mode not supported with GCC on $system"" 1>&2
@@ -5875,7 +5876,7 @@ fi
 	HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*)
 	    SHLIB_SUFFIX=".sl"
 	    echo $ac_n "checking for shl_load in -ldld""... $ac_c" 1>&6
-echo "configure:5879: checking for shl_load in -ldld" >&5
+echo "configure:5880: checking for shl_load in -ldld" >&5
 ac_lib_var=`echo dld'_'shl_load | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -5883,7 +5884,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-ldld  $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 5887 "configure"
+#line 5888 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -5894,7 +5895,7 @@ int main() {
 shl_load()
 ; return 0; }
 EOF
-if { (eval echo configure:5898: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:5899: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -5999,7 +6000,6 @@ fi
 	            LDFLAGS="-64"
 	        fi
 	    fi
-
 	    ;;
 	Linux*)
 	    SHLIB_CFLAGS="-fPIC"
