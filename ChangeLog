@@ -1,5 +1,7 @@
 1999-04-06    <stanton@scriptics.com>
-
+	
+	* tests/unixInit.test: Fixed race condition in test.
+	
 	* tests/unixInit.test: 
 	* tests/fileName.test: Minor test nits.
 
