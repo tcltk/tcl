@@ -1,3 +1,9 @@
+2002-01-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/http/pkgIndex.tcl:
+	* library/http/http.tcl: don't add port in default case to handle
+	broken servers.  http bumped to 2.4.1  [Bug #504508]
+
 2002-01-23  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* unix/mkLinks: Regenerated.
