@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.23 2002/06/21 14:22:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.24 2002/07/15 10:28:18 vincentdarley Exp $
  */
 
 /*
@@ -1169,7 +1169,30 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    /* Needs to create a new link */
-	    return NULL;
+	    FSSpec spec;
+	    FSSpec linkSpec;
+	    OSErr err;
+	    char *path;
+	    AliasHandle alias;
+	    
+	    err = FspLocationFromFsPath(toPtr, &spec);
+	    if (err != noErr) {
+		errno = ENOENT;
+		return NULL;
+	    }
+
+	    path = Tcl_FSGetNativePath(pathPtr);
+	    err = FSpLocationFromPath(strlen(path), path, &linkSpec);
+	    if (err == noErr) {
+		err = dupFNErr;		/* EEXIST. */
+	    } else {
+		err = NewAlias(&spec, &linkSpec, &alias);
+	    }
+	    if (err != noErr) {
+		errno = TclMacOSErrorToPosixError(err);
+		return NULL;
+	    }
+	    return toPtr;
 	} else {
 	    errno = ENODEV;
 	    return NULL;

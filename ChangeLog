@@ -5,6 +5,8 @@
 	* win/tclWinFile.c: updated comments to reflect 07-11 changes.
 	* win/tclWinFCmd.c: made ConvertFileNameFormat static again,
 	since no longer used in tclWinFile.c
+	* mac/tclMacFile.c: completed TclpObjLink implementation which
+	was previously lacking.
 	
 2002-07-14  Don Porter  <dgp@users.sourceforge.net>
 
