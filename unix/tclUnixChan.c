@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.8 1999/01/04 19:25:04 rjohnson Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.9 1999/02/03 00:51:20 stanton Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1657,6 +1657,23 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     if (optionName != (char *) NULL) {
         len = strlen(optionName);
+    }
+
+    if ((len > 1) && (optionName[1] == 'e') &&
+                    (strncmp(optionName, "-error", len) == 0)) {
+       int optlen;
+       int err, ret;
+    
+       optlen = sizeof(int);
+       ret = getsockopt(statePtr->fd, SOL_SOCKET, SO_ERROR,
+                        (char *)&err, &optlen);
+       if (ret < 0) {
+           err = errno;
+       }
+       if (err != 0) {
+           Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(err), -1);
+       }
+       return TCL_OK;
     }
 
     if ((len == 0) ||
