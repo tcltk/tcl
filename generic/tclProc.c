@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.58 2004/10/06 09:56:06 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.59 2004/10/06 10:11:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -22,9 +22,6 @@
 
 static void	ProcBodyDup _ANSI_ARGS_((Tcl_Obj *srcPtr, Tcl_Obj *dupPtr));
 static void	ProcBodyFree _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int	ProcBodySetFromAny _ANSI_ARGS_((Tcl_Interp *interp,
-		    Tcl_Obj *objPtr));
-static void	ProcBodyUpdateString _ANSI_ARGS_((Tcl_Obj *objPtr));
 static  int	ProcessProcResultCode _ANSI_ARGS_((Tcl_Interp *interp,
 		    char *procName, int nameLen, int returnCode));
 static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
@@ -38,8 +35,11 @@ Tcl_ObjType tclProcBodyType = {
     "procbody",			/* name for this type */
     ProcBodyFree,		/* FreeInternalRep procedure */
     ProcBodyDup,		/* DupInternalRep procedure */
-    ProcBodyUpdateString,	/* UpdateString procedure */
-    ProcBodySetFromAny		/* SetFromAny procedure */
+    NULL,			/* UpdateString procedure; Tcl_GetString
+				 * and Tcl_GetStringFromObj should panic
+				 * instead. */
+    NULL			/* SetFromAny procedure; Tcl_ConvertToType
+				 * should panic instead. */
 };
 
 /*
@@ -105,21 +105,18 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 	    0, &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
 
     if (nsPtr == NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't create procedure \"", fullName,
+	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
 		"\": unknown namespace", (char *) NULL);
         return TCL_ERROR;
     }
     if (procName == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't create procedure \"", fullName,
+	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
 		"\": bad procedure name", (char *) NULL);
         return TCL_ERROR;
     }
     if ((nsPtr != iPtr->globalNsPtr)
 	    && (procName != NULL) && (procName[0] == ':')) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't create procedure \"", procName,
+	Tcl_AppendResult(interp, "can't create procedure \"", procName,
 		"\" in non-global namespace with name starting with \":\"",
 	        (char *) NULL);
         return TCL_ERROR;
@@ -332,12 +329,11 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
     if (precompiled) {
         if (numArgs > procPtr->numArgs) {
-            char buf[64 + TCL_INTEGER_SPACE + TCL_INTEGER_SPACE];
-            sprintf(buf, "\": arg list contains %d entries, precompiled header expects %d",
+            char buf[40 + TCL_INTEGER_SPACE + TCL_INTEGER_SPACE];
+            sprintf(buf, "%d entries, precompiled header expects %d",
                     numArgs, procPtr->numArgs);
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "procedure \"", procName,
-                    buf, (char *) NULL);
+            Tcl_AppendResult(interp, "procedure \"", procName,
+		    "\": arg list contains ", buf, NULL);
             goto procError;
         }
         localPtr = procPtr->firstLocalPtr;
@@ -360,15 +356,14 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
         }
         if (fieldCount > 2) {
             ckfree((char *) fieldValues);
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+            Tcl_AppendResult(interp,
                     "too many fields in argument specifier \"",
                     argArray[i], "\"", (char *) NULL);
             goto procError;
         }
         if ((fieldCount == 0) || (*fieldValues[0] == 0)) {
             ckfree((char *) fieldValues);
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "procedure \"", procName,
+            Tcl_AppendResult(interp, "procedure \"", procName,
                     "\" has argument with no name", (char *) NULL);
             goto procError;
         }
@@ -393,20 +388,16 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 		} while (*q != '\0');
 		q--;
 		if (*q == ')') { /* we have an array element */
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		            "procedure \"", procName,
+		    Tcl_AppendResult(interp, "procedure \"", procName,
 		            "\" has formal parameter \"", fieldValues[0],
-			    "\" that is an array element",
-			    (char *) NULL);
+			    "\" that is an array element", (char *) NULL);
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
 	    } else if ((*p == ':') && (*(p+1) == ':')) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		        "procedure \"", procName,
+		Tcl_AppendResult(interp, "procedure \"", procName,
 		        "\" has formal parameter \"", fieldValues[0],
-			"\" that is not a simple name",
-			(char *) NULL);
+			"\" that is not a simple name", (char *) NULL);
 		ckfree((char *) fieldValues);
 		goto procError;
 	    }
@@ -430,13 +421,12 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 			    && (fieldCount == 2))
 		    || ((localPtr->defValuePtr != NULL)
 			    && (fieldCount != 2))) {
-		char buf[80 + TCL_INTEGER_SPACE];
-		sprintf(buf, "\": formal parameter %d is inconsistent with precompiled body",
-			i);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"procedure \"", procName,
-			buf, (char *) NULL);
+		char buf[40 + TCL_INTEGER_SPACE];
+
 		ckfree((char *) fieldValues);
+		sprintf(buf, "%d is inconsistent with precompiled body", i);
+		Tcl_AppendResult(interp, "procedure \"", procName,
+			"\": formal parameter ", buf, (char *) NULL);
 		goto procError;
 	    }
 
@@ -451,10 +441,8 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
                 if ((valueLength != tmpLength)
                         || (strncmp(fieldValues[1], tmpPtr,
                                 (size_t) tmpLength))) {
-                    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                            "procedure \"", procName,
-                            "\": formal parameter \"",
-                            fieldValues[0],
+                    Tcl_AppendResult(interp, "procedure \"", procName,
+                            "\": formal parameter \"", fieldValues[0],
                             "\" has default value inconsistent with precompiled body",
                             (char *) NULL);
                     ckfree((char *) fieldValues);
@@ -1064,7 +1052,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	 */
 
 	Tcl_ResetResult(interp);
-	objResult = Tcl_GetObjResult(interp);
+	TclNewObj(objResult);
 	Tcl_AppendToObj(objResult, "wrong # args: should be \"", -1);
 
 	/*
@@ -1093,6 +1081,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	    localPtr = localPtr->nextPtr;
 	}
 	Tcl_AppendStringsToObj(objResult, "\"", (char *) NULL);
+	Tcl_SetObjResult(interp, objResult);
 
 	result = TCL_ERROR;
 	goto procDone;
@@ -1334,9 +1323,9 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     } 
     if (returnCode != TCL_ERROR) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), ((returnCode == TCL_BREAK) 
+	Tcl_AppendResult(interp, ((returnCode == TCL_BREAK) 
 		? "invoked \"break\" outside of a loop"
-		: "invoked \"continue\" outside of a loop"), -1);
+		: "invoked \"continue\" outside of a loop"), NULL);
     }
     errorLine = Tcl_NewIntObj(interp->errorLine);
     message = Tcl_NewStringObj("\n    (procedure \"", -1);
@@ -1626,62 +1615,6 @@ ProcBodyFree(objPtr)
     if (procPtr->refCount <= 0) {
         TclProcCleanupProc(procPtr);
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ProcBodySetFromAny --
- *
- *	Tcl_ObjType's SetFromAny function for the proc body object.
- *	Calls Tcl_Panic.
- *
- * Results:
- *	Theoretically returns a TCL result code.
- *
- * Side effects:
- *	Calls Tcl_Panic, since we can't set the value of the object from a
- *	string representation (or any other internal ones).
- *
- *----------------------------------------------------------------------
- */
-
-static int
-ProcBodySetFromAny(interp, objPtr)
-    Tcl_Interp *interp;			/* current interpreter */
-    Tcl_Obj *objPtr;			/* object pointer */
-{
-    Tcl_Panic("called ProcBodySetFromAny");
-
-    /*
-     * this to keep compilers happy.
-     */
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ProcBodyUpdateString --
- *
- *	Tcl_ObjType's UpdateString function for the proc body object.
- *	Calls Tcl_Panic.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Calls Tcl_Panic, since we this type has no string representation.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ProcBodyUpdateString(objPtr)
-    Tcl_Obj *objPtr;		/* the object to update */
-{
-    Tcl_Panic("called ProcBodyUpdateString");
 }
 
 /*
