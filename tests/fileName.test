@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.19 2002/05/02 20:15:20 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.20 2002/05/07 18:03:05 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1272,6 +1272,11 @@ test filename-11.21 {Tcl_GlobCmd} {
     list [catch {lsort [glob -type d -path $globname *]} msg] $msg
 } [list 0 [lsort [list $globname]]]
 
+# Get rid of file/dir if it exists, since it will have
+# been left behind by a previous failed run.
+if {[file exists $horribleglobname]} {
+    file delete -force $horribleglobname
+}
 file rename globTest $horribleglobname
 set globname $horribleglobname
 
@@ -1769,7 +1774,7 @@ test filename-16.15 {windows specific globbing} {pcOnly} {
     glob ..
 } {..}
 test filename-16.16 {windows specific globbing} {pcOnly} {
-    file tail [glob "[lindex [glob -types d -dir C:/ *] 0]/.."]
+    file tail [lindex [glob "[lindex [glob -types d -dir C:/ *] 0]/.."] 0]
 } {..}
 
 # cleanup
