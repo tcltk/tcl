@@ -1,3 +1,7 @@
+2001-08-30  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tcl.h: Silence warning from Sun compiler. [Bug 454374]
+
 2001-08-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/Encoding.3: added note that tclPlatDecls.h must be included
