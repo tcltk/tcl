@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.40 2003/01/09 10:38:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.41 2003/01/16 19:01:59 mdejong Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -393,7 +393,7 @@ TclWinSymLinkDelete(LinkOriginal, linkOnly)
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
     HANDLE hFile;
-    int returnedLength;
+    DWORD returnedLength;
     memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
     reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     hFile = (*tclWinProcs->createFileProc)(LinkOriginal, GENERIC_WRITE, 0,
@@ -506,7 +506,7 @@ NativeReadReparse(LinkDirectory, buffer)
     REPARSE_DATA_BUFFER* buffer;  /* Pointer to buffer. Cannot be NULL */
 {
     HANDLE hFile;
-    int returnedLength;
+    DWORD returnedLength;
    
     hFile = (*tclWinProcs->createFileProc)(LinkDirectory, GENERIC_READ, 0,
 	NULL, OPEN_EXISTING, 
@@ -550,7 +550,7 @@ NativeWriteReparse(LinkDirectory, buffer)
     REPARSE_DATA_BUFFER* buffer;
 {
     HANDLE hFile;
-    int returnedLength;
+    DWORD returnedLength;
     
     /* Create the directory - it must not already exist */
     if ((*tclWinProcs->createDirectoryProc)(LinkDirectory, NULL) == 0) {
@@ -568,7 +568,7 @@ NativeWriteReparse(LinkDirectory, buffer)
     }
     /* Set the link */
     if (!DeviceIoControl(hFile, FSCTL_SET_REPARSE_POINT, buffer, 
-			 buffer->ReparseDataLength 
+			 (DWORD) buffer->ReparseDataLength 
 			 + REPARSE_MOUNTPOINT_HEADER_SIZE,
 			 NULL, 0, &returnedLength, NULL)) {	
 	/* Error setting junction */
@@ -2011,7 +2011,6 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	 * links are not possible.  Both of these assumptions
 	 * appear to be true of these operating systems.
 	 */
-	Tcl_Obj *temp = NULL;
 	int isDrive = 1;
 	Tcl_DString ds;
 
@@ -2171,7 +2170,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
 					  sizeof(WCHAR));
 			Tcl_DStringAppend(&dsNorm,(TCHAR*)nativeName, 
-					  wcslen(nativeName)*sizeof(WCHAR));
+					  (int) (wcslen(nativeName)*sizeof(WCHAR)));
 		    }
 		}
 		Tcl_DStringFree(&ds);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.8 2002/01/18 14:07:40 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.9 2003/01/16 19:01:59 mdejong Exp $
  */
 
 #include "tclPort.h"
@@ -451,6 +451,7 @@ DdeServerProc (
 {
     Tcl_DString dString;
     int len;
+    DWORD dlen;
     char *utilString;
     Tcl_Obj *ddeObjectPtr;
     HDDEDATA ddeReturn = NULL;
@@ -470,7 +471,7 @@ DdeServerProc (
 	    Tcl_DStringInit(&dString);
 	    Tcl_DStringSetLength(&dString, len);
 	    utilString = Tcl_DStringValue(&dString);
-	    DdeQueryString(ddeInstance, ddeTopic, utilString, len + 1,
+	    DdeQueryString(ddeInstance, ddeTopic, utilString, (DWORD) len + 1,
 		    CP_WINANSI);
 
 	    for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
@@ -497,7 +498,7 @@ DdeServerProc (
 	    Tcl_DStringInit(&dString);
 	    Tcl_DStringSetLength(&dString, len);
 	    utilString = Tcl_DStringValue(&dString);
-	    DdeQueryString(ddeInstance, ddeTopic, utilString, len + 1, 
+	    DdeQueryString(ddeInstance, ddeTopic, utilString, (DWORD) len + 1, 
 		    CP_WINANSI);
 	    for (riPtr = tsdPtr->interpListPtr; riPtr != NULL; 
 		    riPtr = riPtr->nextPtr) {
@@ -568,12 +569,12 @@ DdeServerProc (
 		Tcl_DStringSetLength(&dString, len);
 		utilString = Tcl_DStringValue(&dString);
 		DdeQueryString(ddeInstance, ddeItem, utilString, 
-                        len + 1, CP_WINANSI);
+                        (DWORD) len + 1, CP_WINANSI);
 		if (stricmp(utilString, "$TCLEVAL$EXECUTE$RESULT") == 0) {
 		    returnString =
 		        Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
 		    ddeReturn = DdeCreateDataHandle(ddeInstance,
-			    returnString, len+1, 0, ddeItem, CF_TEXT,
+			    returnString, (DWORD) len+1, 0, ddeItem, CF_TEXT,
 			    0);
 		} else {
 		    Tcl_Obj *variableObjPtr = Tcl_GetVar2Ex(
@@ -583,7 +584,8 @@ DdeServerProc (
 			returnString = Tcl_GetStringFromObj(variableObjPtr,
 				&len);
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
-				returnString, len+1, 0, ddeItem, CF_TEXT, 0);
+				returnString, (DWORD) len+1, 0, ddeItem,
+				CF_TEXT, 0);
 		    } else {
 			ddeReturn = NULL;
 		    }
@@ -614,7 +616,8 @@ DdeServerProc (
 		return (HDDEDATA) DDE_FNOTPROCESSED;
 	    }
 
-	    utilString = (char *) DdeAccessData(hData, &len);
+	    utilString = (char *) DdeAccessData(hData, &dlen);
+	    len = dlen;
 	    ddeObjectPtr = Tcl_NewStringObj(utilString, -1);
 	    Tcl_IncrRefCount(ddeObjectPtr);
 	    DdeUnaccessData(hData);
@@ -664,7 +667,8 @@ DdeServerProc (
 	    numItems = i;
 	    ddeReturn = DdeCreateDataHandle(ddeInstance, NULL,
 		    (numItems + 1) * sizeof(HSZPAIR), 0, 0, 0, 0);
-	    returnPtr = (HSZPAIR *) DdeAccessData(ddeReturn, &len);
+	    returnPtr = (HSZPAIR *) DdeAccessData(ddeReturn, &dlen);
+	    len = dlen;
 	    for (i = 0, riPtr = tsdPtr->interpListPtr; i < numItems; 
 		    i++, riPtr = riPtr->nextPtr) {
 		returnPtr[i].hszSvc = DdeCreateStringHandle(
@@ -1030,7 +1034,7 @@ Tcl_DdeObjCmd(
 	    }
 
 	    ddeData = DdeCreateDataHandle(ddeInstance, dataString,
-		    dataLength+1, 0, 0, CF_TEXT, 0);
+		    (DWORD) dataLength+1, 0, 0, CF_TEXT, 0);
 	    if (ddeData != NULL) {
 		if (async) {
 		    DdeClientTransaction((LPBYTE) ddeData, 0xFFFFFFFF, hConv, 0, 
@@ -1077,7 +1081,9 @@ Tcl_DdeObjCmd(
 			SetDdeError(interp);
 			result = TCL_ERROR;
 		    } else {
-			dataString = DdeAccessData(ddeData, &dataLength);
+			DWORD tmp;
+			dataString = DdeAccessData(ddeData, &tmp);
+			dataLength = tmp;
 			if (binary) {
 			    returnObjPtr = Tcl_NewByteArrayObj(dataString,
 				    dataLength);
@@ -1116,7 +1122,7 @@ Tcl_DdeObjCmd(
 		ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
 			CP_WINANSI);
 		if (ddeItem != NULL) {
-		    ddeData = DdeClientTransaction(dataString,length+1,
+		    ddeData = DdeClientTransaction(dataString, (DWORD) length+1,
 			    hConv, ddeItem, CF_TEXT, XTYP_POKE, 5000, NULL);
 		    if (ddeData == NULL) {
 			SetDdeError(interp);
@@ -1154,7 +1160,7 @@ Tcl_DdeObjCmd(
 		Tcl_DStringSetLength(&dString, length);
 		name = Tcl_DStringValue(&dString);
 		DdeQueryString(ddeInstance, convInfo.hszSvcPartner, 
-                        name, length + 1, CP_WINANSI);
+                        name, (DWORD) length + 1, CP_WINANSI);
 		Tcl_ListObjAppendElement(interp, elementObjPtr,
 			Tcl_NewStringObj(name, length));
 		length = DdeQueryString(ddeInstance, convInfo.hszTopic,
@@ -1162,7 +1168,7 @@ Tcl_DdeObjCmd(
 		Tcl_DStringSetLength(&dString, length);
 		name = Tcl_DStringValue(&dString);
 		DdeQueryString(ddeInstance, convInfo.hszTopic, name,
-			length + 1, CP_WINANSI);
+			(DWORD) length + 1, CP_WINANSI);
 		Tcl_ListObjAppendElement(interp, elementObjPtr,
 			Tcl_NewStringObj(name, length));
 		Tcl_ListObjAppendElement(interp, convListObjPtr,
@@ -1257,7 +1263,7 @@ Tcl_DdeObjCmd(
 		objPtr = Tcl_ConcatObj(objc, objv);
 		string = Tcl_GetStringFromObj(objPtr, &length);
 		ddeItemData = DdeCreateDataHandle(ddeInstance, string,
-			length+1, 0, 0, CF_TEXT, 0);
+			(DWORD) length+1, 0, 0, CF_TEXT, 0);
 		
 		if (async) {
 		    ddeData = DdeClientTransaction((LPBYTE) ddeItemData,
@@ -1300,8 +1306,8 @@ Tcl_DdeObjCmd(
 		    length = DdeGetData(ddeData, NULL, 0, 0);
 		    Tcl_SetObjLength(resultPtr, length);
 		    string = Tcl_GetString(resultPtr);
-		    DdeGetData(ddeData, string, length, 0);
-		    Tcl_SetObjLength(resultPtr, strlen(string));
+		    DdeGetData(ddeData, string, (DWORD) length, 0);
+		    Tcl_SetObjLength(resultPtr, (int) strlen(string));
 		    
 		    if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr)
 			    != TCL_OK) {
