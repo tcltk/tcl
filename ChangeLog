@@ -1,3 +1,8 @@
+2004-09-27  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclObjInvoke): fix for bogus gcc warning
+	about uninitialised variable.
+
 2004-09-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Removed internal routines TclInvoke,

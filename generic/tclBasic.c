@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.118 2004/09/27 22:03:42 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.119 2004/09/27 22:39:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4283,6 +4283,7 @@ TclObjInvoke(interp, objc, objv, flags)
         }
 	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
     } else {
+	cmdPtr = NULL; /* Avoid warning */
 	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
 
