@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.55 2003/10/13 16:48:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.56 2003/12/09 14:57:18 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1413,22 +1413,24 @@ NativeAccess(nativePath, mode)
 	    goto accessError;
 	}
 	(*tclWinProcs->revertToSelfProc)();
+	
 	memset (&genMap, 0x00, sizeof (GENERIC_MAPPING));
+	
 	/* 
-	 * Fill GenericMask type according to access priveleges
-	 * we are checking.
+	 * Setup desiredAccess according to the access priveleges we
+	 * are checking.
 	 */
 	genMap.GenericAll = 0;
 	if (mode & R_OK) {
-	    genMap.GenericRead = FILE_GENERIC_READ;
+	    desiredAccess |= FILE_GENERIC_READ;
 	}
 	if (mode & W_OK) {
-	    genMap.GenericWrite = FILE_GENERIC_WRITE;
+	    desiredAccess |= FILE_GENERIC_WRITE;
 	}
 	if (mode & X_OK) {
-	    genMap.GenericExecute = FILE_GENERIC_EXECUTE;
+	    desiredAccess |= FILE_GENERIC_EXECUTE;
 	}
-	(*tclWinProcs->mapGenericMaskProc)(&desiredAccess, &genMap);
+
 	/* 
 	 * Perform access check using the token. 
 	 */
