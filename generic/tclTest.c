@@ -2756,7 +2756,7 @@ TestsetnoerrCmd(dummy, interp, argc, argv)
  * TeststatprocCmd  --
  *
  *	Implements the "testTclStatProc" cmd that is used to test the
- *	'TclStatInsertProc' C Api.
+ *	'TclStatInsertProc' & 'TclStatDeleteProc' C Apis.
  *
  * Results:
  *	A standard Tcl result.
@@ -2860,7 +2860,7 @@ TestStatProc3(path, buf)
  * TestaccessprocCmd  --
  *
  *	Implements the "testTclAccessProc" cmd that is used to test the
- *	'TclAccessInsertProc' C Api.
+ *	'TclAccessInsertProc' & 'TclAccessDeleteProc' C Apis.
  *
  * Results:
  *	A standard Tcl result.
@@ -2961,7 +2961,7 @@ TestAccessProc3(path, mode)
  * TestopenfilechannelprocCmd  --
  *
  *	Implements the "testTclOpenFileChannelProc" cmd that is used to test the
- *	'TclAccessInsertProc' C Api.
+ *	'TclOpenFileChannelInsertProc' & 'TclOpenFileChannelDeleteProc' C Apis.
  *
  * Results:
  *	A standard Tcl result.
