@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.33 2000/04/25 20:58:48 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.33.2.1 2000/07/13 01:08:46 welch Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -134,7 +134,7 @@ PIPE_DLL_FILE		= tclpip$(VER).dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
 			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
-STATIC_LIBRARIES	= $(TCL_LIB_FILE)
+STATIC_LIBRARIES	= $(TCL_LIB_FILE) $(REG_LIB_FILE) $(DDE_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 TCLTEST			= tcltest${EXEEXT}
@@ -345,9 +345,17 @@ ${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${DDE_DLL_FILE}
 	@MAKE_DLL@ ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 
+${DDE_LIB_FILE}: ${DDE_OBJS} ${TCL_LIB_FILE}
+	@$(RM) ${DDE_LIB_FILE}
+	@MAKE_LIB@ ${DDE_OBJS} ${TCL_LIB_FILE}
+
 ${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${REG_DLL_FILE}
 	@MAKE_DLL@ ${REG_OBJS} ${TCL_STUB_LIB_FILE}
+
+${REG_LIB_FILE}: ${REG_OBJS} ${TCL_LIB_FILE}
+	@$(RM) ${REG_LIB_FILE}
+	@MAKE_LIB@ ${REG_OBJS} ${TCL_LIB_FILE}
 
 # PIPE_DLL_FILE is actually an executable, don't build it
 # like a DLL.
