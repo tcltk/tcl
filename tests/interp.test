@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.36 2004/05/20 13:04:12 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.37 2004/05/25 17:44:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -295,6 +295,7 @@ test interp-9.3 {testing aliases for hidden commands} {
     catch {interp create a}
     a eval {proc p {} {return ENTER_A}}
     interp alias {} p a p
+    set res {}
     lappend res [list [catch p msg] $msg]
     interp hide a p
     lappend res [list [catch p msg] $msg]
