@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.73 2003/02/10 12:50:31 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.74 2003/02/11 09:42:15 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3945,35 +3945,36 @@ UpdateStringOfFsPath(objPtr)
      * Perhaps we should just check if cwd is a root
      * volume.
      */
-    switch (tclPlatform) {
-	case TCL_PLATFORM_UNIX:
-	    if (cwdStr[cwdLen-1] != '/') {
-		Tcl_AppendToObj(copy, "/", 1);
-		cwdLen++;
-	    }
-	    break;
-	case TCL_PLATFORM_WINDOWS:
-	    /* 
-	     * We need the extra 'cwdLen != 2', and ':' checks because 
-	     * a volume relative path doesn't get a '/'.  For example 
-	     * 'glob C:*cat*.exe' will return 'C:cat32.exe'
-	     */
-	    if (cwdStr[cwdLen-1] != '/' 
-	      && cwdStr[cwdLen-1] != '\\') {
-		if (cwdLen != 2 || cwdStr[1] != ':') {
+    if (cwdLen) {
+	switch (tclPlatform) {
+	    case TCL_PLATFORM_UNIX:
+		if (cwdStr[cwdLen-1] != '/') {
 		    Tcl_AppendToObj(copy, "/", 1);
 		    cwdLen++;
 		}
-	    }
-	    break;
-	case TCL_PLATFORM_MAC:
-	    if (cwdStr[cwdLen-1] != ':') {
-		Tcl_AppendToObj(copy, ":", 1);
-		cwdLen++;
-	    }
-	    break;
+		break;
+	    case TCL_PLATFORM_WINDOWS:
+		/* 
+		 * We need the extra 'cwdLen != 2', and ':' checks because 
+		 * a volume relative path doesn't get a '/'.  For example 
+		 * 'glob C:*cat*.exe' will return 'C:cat32.exe'
+		 */
+		if (cwdStr[cwdLen-1] != '/'
+			&& cwdStr[cwdLen-1] != '\\') {
+		    if (cwdLen != 2 || cwdStr[1] != ':') {
+			Tcl_AppendToObj(copy, "/", 1);
+			cwdLen++;
+		    }
+		}
+		break;
+	    case TCL_PLATFORM_MAC:
+		if (cwdStr[cwdLen-1] != ':') {
+		    Tcl_AppendToObj(copy, ":", 1);
+		    cwdLen++;
+		}
+		break;
+	}
     }
-
     Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
     objPtr->bytes = Tcl_GetStringFromObj(copy, &cwdLen);
     objPtr->length = cwdLen;
@@ -4627,7 +4628,7 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
     /* Ensure cwd hasn't changed */
     if (fsPathPtr->flags != 0) {
 	Tcl_Obj *dir, *copy;
-	int dirLen;
+	int cwdLen;
 	int pathType;
 	CONST char *cwdStr;
 	
@@ -4644,44 +4645,46 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	Tcl_IncrRefCount(dir);
 	/* We now own a reference on both 'dir' and 'copy' */
 	
-	cwdStr = Tcl_GetStringFromObj(copy,&dirLen);
+	cwdStr = Tcl_GetStringFromObj(copy, &cwdLen);
 	/* 
 	 * Should we perhaps use 'Tcl_FSPathSeparator'?
 	 * But then what about the Windows special case?
 	 * Perhaps we should just check if cwd is a root
 	 * volume.
 	 */
-	switch (tclPlatform) {
-	    case TCL_PLATFORM_UNIX:
-		if (cwdStr[dirLen-1] != '/') {
-		    Tcl_AppendToObj(copy, "/", 1);
-		    dirLen++;
-		}
-		break;
-	    case TCL_PLATFORM_WINDOWS:
-		if (cwdStr[dirLen-1] != '/' 
-		  && cwdStr[dirLen-1] != '\\') {
-		    Tcl_AppendToObj(copy, "/", 1);
-		    dirLen++;
-		}
-		break;
-	    case TCL_PLATFORM_MAC:
-		if (cwdStr[dirLen-1] != ':') {
-		    Tcl_AppendToObj(copy, ":", 1);
-		    dirLen++;
-		}
-		break;
+	if (cwdLen) {
+	    switch (tclPlatform) {
+		case TCL_PLATFORM_UNIX:
+		    if (cwdStr[cwdLen-1] != '/') {
+			Tcl_AppendToObj(copy, "/", 1);
+			cwdLen++;
+		    }
+		    break;
+		case TCL_PLATFORM_WINDOWS:
+		    if (cwdStr[cwdLen-1] != '/' 
+			    && cwdStr[cwdLen-1] != '\\') {
+			Tcl_AppendToObj(copy, "/", 1);
+			cwdLen++;
+		    }
+		    break;
+		case TCL_PLATFORM_MAC:
+		    if (cwdStr[cwdLen-1] != ':') {
+			Tcl_AppendToObj(copy, ":", 1);
+			cwdLen++;
+		    }
+		    break;
+	    }
 	}
 	Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
 	/* 
 	 * Normalize the combined string, but only starting after
 	 * the end of the previously normalized 'dir'.  This should
-	 * be much faster!  We use 'dirLen-1' so that we are
+	 * be much faster!  We use 'cwdLen-1' so that we are
          * already pointing at the dir-separator that we know about.
          * The normalization code will actually start off directly
          * after that separator.
 	 */
-	TclNormalizeToUniquePath(interp, copy, dirLen-1);
+	TclNormalizeToUniquePath(interp, copy, cwdLen-1);
 	/* Now we need to construct the new path object */
 	
 	if (pathType == TCL_PATH_RELATIVE) {
@@ -4717,39 +4720,41 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	    }
 	    fsPathPtr = (FsPath*) pathObjPtr->internalRep.otherValuePtr;
 	} else if (fsPathPtr->normPathPtr == NULL) {
-	    int dirLen;
+	    int cwdLen;
 	    Tcl_Obj *copy;
 	    CONST char *cwdStr;
 	    
 	    copy = Tcl_DuplicateObj(fsPathPtr->cwdPtr);
 	    Tcl_IncrRefCount(copy);
-	    cwdStr = Tcl_GetStringFromObj(copy,&dirLen);
+	    cwdStr = Tcl_GetStringFromObj(copy, &cwdLen);
 	    /* 
 	     * Should we perhaps use 'Tcl_FSPathSeparator'?
 	     * But then what about the Windows special case?
 	     * Perhaps we should just check if cwd is a root
 	     * volume.
 	     */
-	    switch (tclPlatform) {
-		case TCL_PLATFORM_UNIX:
-		    if (cwdStr[dirLen-1] != '/') {
-			Tcl_AppendToObj(copy, "/", 1);
-			dirLen++;
-		    }
-		    break;
-		case TCL_PLATFORM_WINDOWS:
-		    if (cwdStr[dirLen-1] != '/' 
-		      && cwdStr[dirLen-1] != '\\') {
-			Tcl_AppendToObj(copy, "/", 1);
-			dirLen++;
-		    }
-		    break;
-		case TCL_PLATFORM_MAC:
-		    if (cwdStr[dirLen-1] != ':') {
-			Tcl_AppendToObj(copy, ":", 1);
-			dirLen++;
-		    }
-		    break;
+	    if (cwdLen) {
+		switch (tclPlatform) {
+		    case TCL_PLATFORM_UNIX:
+			if (cwdStr[cwdLen-1] != '/') {
+			    Tcl_AppendToObj(copy, "/", 1);
+			    cwdLen++;
+			}
+			break;
+		    case TCL_PLATFORM_WINDOWS:
+			if (cwdStr[cwdLen-1] != '/' 
+				&& cwdStr[cwdLen-1] != '\\') {
+			    Tcl_AppendToObj(copy, "/", 1);
+			    cwdLen++;
+			}
+			break;
+		    case TCL_PLATFORM_MAC:
+			if (cwdStr[cwdLen-1] != ':') {
+			    Tcl_AppendToObj(copy, ":", 1);
+			    cwdLen++;
+			}
+			break;
+		}
 	    }
 	    Tcl_AppendObjToObj(copy, pathObjPtr);
 	    /* 
@@ -4757,7 +4762,7 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	     * the end of the previously normalized 'dir'.  This should
 	     * be much faster!
 	     */
-	    TclNormalizeToUniquePath(interp, copy, dirLen-1);
+	    TclNormalizeToUniquePath(interp, copy, cwdLen-1);
 	    fsPathPtr->normPathPtr = copy;
 	}
     }
