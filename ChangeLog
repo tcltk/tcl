@@ -1,3 +1,8 @@
+2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/format.test: Renumber tests, a bunch of
+	tests all had the same id.
+
 2003-03-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/lsearch.n:	Altered documentation of -ascii options so
