@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.104 2002/07/18 15:06:54 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.105 2002/07/18 15:09:44 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1761,7 +1761,10 @@ EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
 EXTERN int              TclpLoadFile _ANSI_ARGS_((Tcl_Interp *interp, 
 				Tcl_Obj *pathPtr,
-				TclLoadHandle *loadHandle,
+				CONST char *sym1, CONST char *sym2, 
+				Tcl_PackageInitProc **proc1Ptr,
+				Tcl_PackageInitProc **proc2Ptr, 
+				ClientData *clientDataPtr,
 				Tcl_FSUnloadFileProc **unloadProcPtr));
 EXTERN Tcl_Obj*		TclpObjListVolumes _ANSI_ARGS_((void));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
