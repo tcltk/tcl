@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.11 2003/01/28 17:59:12 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.12 2003/01/31 18:54:32 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -221,7 +221,10 @@ namespace eval ::tcl::test::main {
     } -constraints {
 	exec
     } -setup {
-	catch {removeFile no-such-file}
+	if {[file exists no-such-file]} {
+	    error "Can't run test Tcl_Main-3.1\
+		    where a file named \"no-such-file\" exists"
+	}
     } -body {
 	set code [catch {exec [interpreter] no-such-file >& result} result]
 	set f [open result]
