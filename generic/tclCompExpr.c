@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.1.2.2 1998/09/24 23:58:43 stanton Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.1.2.3 1998/10/06 00:42:45 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -478,6 +478,13 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	     * Look up the operator. Temporarily overwrite the character
 	     * just after the end of the operator with a 0 byte. If the
 	     * operator isn't found, treat it as a math function.
+	     */
+
+	    /*
+	     * TODO: Note that the string is modified in place.  This is unsafe
+	     * and will break if any of the routines called while the string is
+	     * modified have side effects that depend on the original string
+	     * being unmodified (e.g. adding an etry to the literal table).
 	     */
 
 	    operator = tokenPtr->start;
