@@ -1,3 +1,21 @@
+1999-04-22    <stanton@scriptics.com>
+
+	* win/tclWinFCmd.c:
+	* win/tclWin32Dll.c: Changed uses of "try" to "__try", since that
+	is the actual keyword.  This eliminates the need for some -D flags
+	from the makefile.
+
+	* generic/tclPort.h: Added include of tcl.h since it defines
+	various Windows macros that are needed before deciding which
+	platform porting file to use.
+
+	* generic/tclEvent.c: lint
+
+	* win/tclWinInit.c (TclpInitPlatform): Added call to TclWinInit
+	when building a static library since DllMain will not be invoked.
+	This could break old code that explicitly called TclWinInit, but
+	should be simpler in the long run.
+
 1999-04-22  Scott Stanton  <stanton@scriptics.com>
 
 	* generic/tclInt.h: 
