@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71 2000/11/16 00:15:29 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.72 2001/04/04 07:13:52 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1098,6 +1098,11 @@ rpm: all /bin/rpm
 	mv RPMS/i386/*.rpm .
 	rm -rf RPMS THIS.TCL.SPEC
 
+mklinks:
+	$(TCL_EXE) $(UNIX_DIR)/mkLinks.tcl \
+		$(UNIX_DIR)/../doc/*.[13n] > $(UNIX_DIR)/mkLinks
+	chmod +x $(UNIX_DIR)/mkLinks
+
 #
 # Target to create a proper Tcl distribution from information in the
 # master source directory.  DISTDIR must be defined to indicate where
@@ -1111,7 +1116,7 @@ DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
 	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
 
-dist: $(UNIX_DIR)/configure
+dist: $(UNIX_DIR)/configure mklinks
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.c $(UNIX_DIR)/*.h $(DISTDIR)/unix
@@ -1121,13 +1126,11 @@ dist: $(UNIX_DIR)/configure
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
+		$(UNIX_DIR)/mkLinks \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
 	chmod +x $(DISTDIR)/unix/install-sh
-	$(TCL_EXE) $(UNIX_DIR)/mkLinks.tcl \
-		$(UNIX_DIR)/../doc/*.[13n] > $(DISTDIR)/unix/mkLinks
-	chmod +x $(DISTDIR)/unix/mkLinks
 	mkdir $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/*.c $(GENERIC_DIR)/*.h $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
