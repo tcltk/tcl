@@ -91,6 +91,7 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
 {
 #ifdef TCL_THREADS
     pthread_attr_t attr;
+    pthread_t theThread;
     int result;
 
     pthread_attr_init(&attr);
@@ -126,12 +127,13 @@ TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     }
 
 
-    if (pthread_create((pthread_t *)idPtr, &attr,
+    if (pthread_create(&theThread, &attr,
 	    (void * (*)())proc, (void *)clientData) &&
-	    pthread_create((pthread_t *)idPtr, NULL,
+	    pthread_create(&theThread, NULL,
 		    (void * (*)())proc, (void *)clientData)) {
 	result = TCL_ERROR;
     } else {
+	*idPtr = (Tcl_ThreadId)theThread;
 	result = TCL_OK;
     }
     pthread_attr_destroy(&attr);
