@@ -1,3 +1,18 @@
+2000-07-25  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* doc/Async.3:
+	* generic/tclAsync.c:
+	* generic/tclInt.decls:
+	* generic/tclTest.c:
+	* mac/tclMacPort.h:
+	* unix/tclUnixPort.h:
+	* win/tclWinInit.c:  Thread-safe rewrite for tclAsync.c.  Added
+	notifier alerting on all platforms as it was only working on Win
+	before.  Removed older Win hacks that would end-up waking the
+	wrong notifier in the presence of a threaded build.  All tests
+	pass as before.  New test cases will be added soon for the new
+	behavior.  [BUG: 5791]
+
 2000-07-25  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclVar.c (CallTraces): Added check for VAR_TRACE_ACTIVE
