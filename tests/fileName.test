@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.20 2002/05/07 18:03:05 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.21 2002/05/08 05:58:56 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1701,7 +1701,7 @@ test filename-15.6 {unix specific globbing} {unixOnly} {
     set result [list [catch {glob ~} msg] $msg]
     set env(HOME) $temp
     set result
-} [list 0 [list [glob ~]/globTest/odd\\\[\]*?\{\}name]]
+} [list 0 [list [lindex [glob ~] 0]/globTest/odd\\\[\]*?\{\}name]]
 catch {exec rm -f globTest/odd\\\[\]*?\{\}name}
 
 # The following tests are only valid for Windows systems.

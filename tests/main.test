@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.7 2002/04/16 00:39:39 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.8 2002/05/08 05:58:57 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -48,7 +48,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[interpreter] script" r]}
+	catch {set f [open "|[list [interpreter] script]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -62,7 +62,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} -script
-	catch {set f [open "|[interpreter] -script" w+]}
+	catch {set f [open "|[list [interpreter] -script]" w+]}
     } -body {
 	puts $f {puts [list $argv0 $argv $tcl_interactive]; exit}
 	flush $f
@@ -79,7 +79,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[interpreter] script \u00c0" r]}
+	catch {set f [open "|[list [interpreter] script \u00c0]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -95,7 +95,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[interpreter] script \u20ac" r]}
+	catch {set f [open "|[list [interpreter] script \u20ac]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -111,7 +111,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u00c0
-	catch {set f [open "|[interpreter] \u00c0" r]}
+	catch {set f [open "|[list [interpreter] \u00c0]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -127,7 +127,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u20ac
-	catch {set f [open "|[interpreter] \u20ac" r]}
+	catch {set f [open "|[list [interpreter] \u20ac]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -514,7 +514,7 @@ namespace eval ::tcl::test::main {
     } -constraints {
 	exec
     } -setup {
-	catch {set f [open "|[interpreter]" w+]}
+	catch {set f [open "|[list [interpreter]]" w+]}
     } -body {
 	type $f {
 	    fconfigure stdin -blocking 0
@@ -530,7 +530,7 @@ namespace eval ::tcl::test::main {
     } -constraints {
 	exec
     } -setup {
-	catch {set f [open "|[interpreter]" w+]}
+	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {fconfigure $f -blocking 0}
     } -body {
 	type $f "fconfigure stdin -eofchar \\032
@@ -556,7 +556,7 @@ namespace eval ::tcl::test::main {
 	exec
     } -setup {
 	set cmd {makeFile "if 1 \{" script}
-	catch {set f [open "|[interpreter] < [eval $cmd]" r]}
+	catch {set f [open "|[list [interpreter]] < [list [eval $cmd]]" r]}
 	catch {fconfigure $f -blocking 0}
     } -body {
 	variable wait
@@ -674,7 +674,7 @@ namespace eval ::tcl::test::main {
     } -constraints {
 	exec Tcltest
     } -setup {
-	catch {set f [open "|[interpreter]" w+]}
+	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {fconfigure $f -blocking 0}
     } -body {
 	type $f "testsetmainloop
