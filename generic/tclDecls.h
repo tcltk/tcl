@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.74 2002/01/17 03:03:11 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.75 2002/01/17 04:37:33 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -137,7 +137,7 @@ EXTERN int		Tcl_GetDoubleFromObj _ANSI_ARGS_((
 				double * doublePtr));
 /* 36 */
 EXTERN int		Tcl_GetIndexFromObj _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * objPtr, char * CONST * tablePtr, 
+				Tcl_Obj * objPtr, CONST char ** tablePtr, 
 				CONST char * msg, int flags, int * indexPtr));
 /* 37 */
 EXTERN int		Tcl_GetInt _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -983,7 +983,7 @@ EXTERN void		Tcl_GetEncodingNames _ANSI_ARGS_((
 /* 304 */
 EXTERN int		Tcl_GetIndexFromObjStruct _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
-				char * CONST * tablePtr, int offset, 
+				CONST char ** tablePtr, int offset, 
 				CONST char * msg, int flags, int * indexPtr));
 /* 305 */
 EXTERN VOID *		Tcl_GetThreadData _ANSI_ARGS_((
@@ -1159,7 +1159,7 @@ EXTERN int		Tcl_ParseVarName _ANSI_ARGS_((Tcl_Interp * interp,
 				char * string, int numBytes, 
 				Tcl_Parse * parsePtr, int append));
 /* 365 */
-EXTERN char *		Tcl_GetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN CONST char *	Tcl_GetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_DString * cwdPtr));
 /* 366 */
 EXTERN int		Tcl_Chdir _ANSI_ARGS_((CONST char * dirName));
@@ -1432,7 +1432,7 @@ EXTERN int		Tcl_FSFileAttrsSet _ANSI_ARGS_((Tcl_Interp * interp,
 				int index, Tcl_Obj * pathPtr, 
 				Tcl_Obj * objPtr));
 /* 453 */
-EXTERN char**		Tcl_FSFileAttrStrings _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+EXTERN CONST char **	Tcl_FSFileAttrStrings _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				Tcl_Obj ** objPtrRef));
 /* 454 */
 EXTERN int		Tcl_FSStat _ANSI_ARGS_((Tcl_Obj * pathPtr, 
@@ -1480,7 +1480,7 @@ EXTERN Tcl_Obj*		Tcl_FSNewNativePath _ANSI_ARGS_((
 				Tcl_Obj* fromFilesystem, 
 				ClientData clientData));
 /* 469 */
-EXTERN char*		Tcl_FSGetNativePath _ANSI_ARGS_((Tcl_Obj* pathObjPtr));
+EXTERN CONST char*	Tcl_FSGetNativePath _ANSI_ARGS_((Tcl_Obj* pathObjPtr));
 /* 470 */
 EXTERN Tcl_Obj*		Tcl_FSFileSystemInfo _ANSI_ARGS_((
 				Tcl_Obj* pathObjPtr));
@@ -1496,7 +1496,7 @@ EXTERN int		Tcl_FSUnregister _ANSI_ARGS_((Tcl_Filesystem * fsPtr));
 /* 475 */
 EXTERN ClientData	Tcl_FSData _ANSI_ARGS_((Tcl_Filesystem * fsPtr));
 /* 476 */
-EXTERN char*		Tcl_FSGetTranslatedStringPath _ANSI_ARGS_((
+EXTERN CONST char*	Tcl_FSGetTranslatedStringPath _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj* pathPtr));
 /* 477 */
 EXTERN Tcl_Filesystem*	Tcl_FSGetFileSystemForPath _ANSI_ARGS_((
@@ -1577,7 +1577,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_GetByteArrayFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 33 */
     int (*tcl_GetDouble) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, double * doublePtr)); /* 34 */
     int (*tcl_GetDoubleFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, double * doublePtr)); /* 35 */
-    int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char * CONST * tablePtr, CONST char * msg, int flags, int * indexPtr)); /* 36 */
+    int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST char ** tablePtr, CONST char * msg, int flags, int * indexPtr)); /* 36 */
     int (*tcl_GetInt) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * intPtr)); /* 37 */
     int (*tcl_GetIntFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int * intPtr)); /* 38 */
     int (*tcl_GetLongFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, long * longPtr)); /* 39 */
@@ -1877,7 +1877,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 301 */
     char * (*tcl_GetEncodingName) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 302 */
     void (*tcl_GetEncodingNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char * CONST * tablePtr, int offset, CONST char * msg, int flags, int * indexPtr)); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST char ** tablePtr, int offset, CONST char * msg, int flags, int * indexPtr)); /* 304 */
     VOID * (*tcl_GetThreadData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, int size)); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 306 */
     ClientData (*tcl_InitNotifier) _ANSI_ARGS_((void)); /* 307 */
@@ -1938,7 +1938,7 @@ typedef struct TclStubs {
     int (*tcl_ParseExpr) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr)); /* 362 */
     int (*tcl_ParseQuotedString) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append, char ** termPtr)); /* 363 */
     int (*tcl_ParseVarName) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append)); /* 364 */
-    char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
+    CONST char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
     int (*tcl_Chdir) _ANSI_ARGS_((CONST char * dirName)); /* 366 */
     int (*tcl_Access) _ANSI_ARGS_((CONST char * path, int mode)); /* 367 */
     int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
@@ -2026,7 +2026,7 @@ typedef struct TclStubs {
     int (*tcl_FSUtime) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct utimbuf * tval)); /* 450 */
     int (*tcl_FSFileAttrsGet) _ANSI_ARGS_((Tcl_Interp * interp, int index, Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef)); /* 451 */
     int (*tcl_FSFileAttrsSet) _ANSI_ARGS_((Tcl_Interp * interp, int index, Tcl_Obj * pathPtr, Tcl_Obj * objPtr)); /* 452 */
-    char** (*tcl_FSFileAttrStrings) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef)); /* 453 */
+    CONST char ** (*tcl_FSFileAttrStrings) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef)); /* 453 */
     int (*tcl_FSStat) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct stat * buf)); /* 454 */
     int (*tcl_FSAccess) _ANSI_ARGS_((Tcl_Obj * pathPtr, int mode)); /* 455 */
     Tcl_Channel (*tcl_FSOpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, CONST char * modeString, int permissions)); /* 456 */
@@ -2042,14 +2042,14 @@ typedef struct TclStubs {
     Tcl_Obj* (*tcl_FSGetTranslatedPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 466 */
     int (*tcl_FSEvalFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * fileName)); /* 467 */
     Tcl_Obj* (*tcl_FSNewNativePath) _ANSI_ARGS_((Tcl_Obj* fromFilesystem, ClientData clientData)); /* 468 */
-    char* (*tcl_FSGetNativePath) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 469 */
+    CONST char* (*tcl_FSGetNativePath) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 469 */
     Tcl_Obj* (*tcl_FSFileSystemInfo) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 470 */
     Tcl_Obj* (*tcl_FSPathSeparator) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 471 */
     Tcl_Obj* (*tcl_FSListVolumes) _ANSI_ARGS_((void)); /* 472 */
     int (*tcl_FSRegister) _ANSI_ARGS_((ClientData clientData, Tcl_Filesystem * fsPtr)); /* 473 */
     int (*tcl_FSUnregister) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 474 */
     ClientData (*tcl_FSData) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 475 */
-    char* (*tcl_FSGetTranslatedStringPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 476 */
+    CONST char* (*tcl_FSGetTranslatedStringPath) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj* pathPtr)); /* 476 */
     Tcl_Filesystem* (*tcl_FSGetFileSystemForPath) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 477 */
     Tcl_PathType (*tcl_FSGetPathType) _ANSI_ARGS_((Tcl_Obj * pathObjPtr)); /* 478 */
     int (*tcl_OutputBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 479 */

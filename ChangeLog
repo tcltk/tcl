@@ -8,6 +8,54 @@
 
 2002-01-16  Don Porter <dgp@users.sourceforge.net>
 
+	* doc/FileSystem.3:
+	* doc/GetCwd.3:
+	* doc/GetIndex.3:
+	* generic/tcl.decls (Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct,
+	  Tcl_GetCwd, Tcl_FSFileAttrStrings, Tcl_FSGetNativePath,
+	  Tcl_FSGetTranslatedStringPath):
+	* generic/tcl.h (Tcl_FSFileAttrStringsProc):
+	* generic/tclFCmd.c (TclFileAttrsCmd):
+	* generic/tclIOUtil.c (Tcl_GetCwd,NativeFileAttrStrings,
+	  Tcl_FSFileAttrStrings,Tcl_FSGetTranslatedStringPath,
+	  Tcl_FSGetNativePath):
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObj,Tcl_GetIndexFromObjStruct):
+	More TIP 27 updates in tclIOUtil.c and tclIndexObj.c that were
+	overlooked before.  
+	***POTENTIAL INCOMPATIBILITY*** 
+	Includes a source incompatibility in the tablePtr arguments of
+	the Tcl_GetIndexFromObj* routines.
+	* generic/tclDecls.h: make genstubs
+
+	* generic/tclBinary.c (Tcl_BinaryObjCmd):
+	* generic/tclClock.c (Tcl_ClockObjCmd):
+	* generic/tclCmdAH.c (Tcl_EncodingObjCmd, Tcl_FileObjCmd):
+	* generic/tclCmdIL.c (Tcl_InfoObjCmd,Tcl_LsearchObjCmd,Tcl_LsortObjCmd):
+	* generic/tclCmdMZ.c (Tcl_TraceObjCmd,Tcl_RegexpObjCmd,Tcl_RegsubObjCmd,
+	  Tcl_StringObjCmd,Tcl_SubstObjCmd,Tcl_SwitchObjCmd,
+	  TclTraceCommandObjCmd,TclTraceVariableObjCmd):
+	* generic/tclCompCmds.c (TclCompileStringCmd):
+	* generic/tclEvent.c (Tcl_UpdateObjCmd):
+	* generic/tclFileName.c (Tcl_GlobObjCmd):
+	* generic/tclIO.c (Tcl_FileEventObjCmd):
+	* generic/tclIOCmd.c (Tcl_SeekObjCmd,Tcl_ExecObjCmd,Tcl_SocketObjCmd,
+	  Tcl_FcopyObjCmd):
+	* generic/tclInterp.c (Tcl_InterpObjCmd,SlaveObjCmd):
+	* generic/tclNamesp.c (Tcl_NamespaceObjCmd):
+	* generic/tclPkg.c (Tcl_PackageObjCmd):
+	* generic/tclTest.c (Tcltest_Init,TestencodingObjCmd,TestgetplatformCmd,
+	  TestlocaleCmd,TestregexpObjCmd,TestsaveresultCmd,
+	  TestGetIndexFromObjStructObjCmd,TestReportFileAttrStrings):
+	* generic/tclTestObj.c (TestindexObjCmd,TeststringObjCmd):
+	* generic/tclTimer.c (Tcl_AfterObjCmd):
+	* generic/tclVar.c (Tcl_ArrayObjCmd):
+	* mac/tclMacFCmd.c (SetFileFinderAttributes):
+	* unix/tclUnixChan.c (TclpOpenFileChannel):
+	* unix/tclUnixFCmd.c (tclpFileAttrStrings):
+	* unix/tclUnixFile.c (TclpObjAccess,TclpObjChdir,TclpObjStat,
+	  TclpObjLstat):
+	* win/tclWinFCmd.c (tclpFileAttrStrings): Updated callers.
+
 	* doc/RegExp.3:
 	* doc/Utf.3:
 	* generic/tcl.decls:

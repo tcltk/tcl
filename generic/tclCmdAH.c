@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.17 2002/01/03 18:23:47 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.18 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -427,7 +427,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     Tcl_DString ds;
     Tcl_Obj *resultPtr;
 
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
 	"convertfrom", "convertto", "names", "system",
 	NULL
     };
@@ -786,7 +786,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  * This list of constants should match the fileOption string array below.
  */
 
-    static char *fileOptions[] = {
+    static CONST char *fileOptions[] = {
 	"atime",	"attributes",	"channels",	"copy",
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",

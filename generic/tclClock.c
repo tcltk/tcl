@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.12 2001/11/21 02:36:20 hobbs Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.13 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tcl.h"
@@ -67,13 +67,13 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     Tcl_Obj *baseObjPtr = NULL;
     char *scanStr;
     
-    static char *switches[] =
+    static CONST char *switches[] =
 	{"clicks", "format", "scan", "seconds", (char *) NULL};
     enum command { COMMAND_CLICKS, COMMAND_FORMAT, COMMAND_SCAN,
 		       COMMAND_SECONDS
     };
-    static char *formatSwitches[] = {"-format", "-gmt", (char *) NULL};
-    static char *scanSwitches[] = {"-base", "-gmt", (char *) NULL};
+    static CONST char *formatSwitches[] = {"-format", "-gmt", (char *) NULL};
+    static CONST char *scanSwitches[] = {"-base", "-gmt", (char *) NULL};
 
     resultPtr = Tcl_GetObjResult(interp);
     if (objc < 2) {

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.29 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.30 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -70,7 +70,7 @@ Tcl_ObjType tclFsPathType = {
  * them in tclInt.h, because they are not (and should not be) used
  * anywhere else.
  */
-extern char *			tclpFileAttrStrings[];
+extern CONST char *		tclpFileAttrStrings[];
 extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
 
 /* 
@@ -141,7 +141,7 @@ Tcl_Chdir(dirName)
 }
 
 /* Obsolete */
-char *
+CONST char *
 Tcl_GetCwd(interp, cwdPtr)
     Tcl_Interp *interp;
     Tcl_DString *cwdPtr;
@@ -1937,7 +1937,7 @@ Tcl_FSUtime (pathPtr, tval)
  *----------------------------------------------------------------------
  */
 
-static char**
+static CONST char**
 NativeFileAttrStrings(pathPtr, objPtrRef)
     Tcl_Obj *pathPtr;
     Tcl_Obj** objPtrRef;
@@ -2036,7 +2036,7 @@ NativeFileAttrsSet(interp, index, pathPtr, objPtr)
  *----------------------------------------------------------------------
  */
 
-char**
+CONST char **
 Tcl_FSFileAttrStrings(pathPtr, objPtrRef)
     Tcl_Obj* pathPtr;
     Tcl_Obj** objPtrRef;
@@ -3806,7 +3806,7 @@ Tcl_FSGetTranslatedPath(interp, pathPtr)
  *
  *---------------------------------------------------------------------------
  */
-char*
+CONST char*
 Tcl_FSGetTranslatedStringPath(interp, pathPtr)
 Tcl_Interp *interp;
 Tcl_Obj* pathPtr;
@@ -4038,11 +4038,11 @@ Tcl_FSGetInternalRep(pathObjPtr, fsPtr)
  *---------------------------------------------------------------------------
  */
 
-char* 
+CONST char* 
 Tcl_FSGetNativePath(pathObjPtr)
     Tcl_Obj* pathObjPtr;
 {
-    return (char*)Tcl_FSGetInternalRep(pathObjPtr, &nativeFilesystem);
+    return (CONST char *)Tcl_FSGetInternalRep(pathObjPtr, &nativeFilesystem);
 }
 
 /*

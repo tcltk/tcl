@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.36 2001/11/14 23:17:03 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.37 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -373,7 +373,7 @@ Tcl_InfoObjCmd(clientData, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    static char *subCmds[] = {
+    static CONST char *subCmds[] = {
             "args", "body", "cmdcount", "commands",
 	     "complete", "default", "exists", "functions", "globals",
 	     "hostname", "level", "library", "loaded",
@@ -2743,7 +2743,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     int dataType, isIncreasing, lower, upper, patInt, objInt;
     double patDouble, objDouble;
     Tcl_Obj *patObj, **listv;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-ascii", "-decreasing", "-dictionary", "-exact", "-increasing", 
 	    "-integer", "-glob", "-real", "-regexp", "-sorted", NULL
     };
@@ -3105,7 +3105,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     SortInfo sortInfo;                  /* Information about this sort that
                                          * needs to be passed to the 
                                          * comparison function */
-    static char *switches[] = {
+    static CONST char *switches[] = {
 	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
 	"-index", "-integer", "-real", "-unique", (char *) NULL
     };

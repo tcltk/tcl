@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.4 2001/11/21 02:36:20 hobbs Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.5 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -735,7 +735,9 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
     char *argString;
     int index;
     char buf[16 + TCL_INTEGER_SPACE];
-    static char *afterSubCmds[] = {"cancel", "idle", "info", (char *) NULL};
+    static CONST char *afterSubCmds[] = {
+	"cancel", "idle", "info", (char *) NULL
+    };
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
     ThreadSpecificData *tsdPtr = InitTimer();
 
