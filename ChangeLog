@@ -1,3 +1,9 @@
+1999-07-08    <stanton@scriptics.com>
+
+	* tests/string.test: 
+	* generic/tclCmdMZ.c: Fixed bug in string range bounds checking
+	code.
+
 1999-07-08  Jennifer Hom  <jenn@scriptics.com>
 
 	* doc/tcltest.n:
