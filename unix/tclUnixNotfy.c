@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.6 1999/10/21 02:18:09 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.7 2000/01/21 02:26:25 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -207,7 +207,8 @@ Tcl_InitNotifier()
 
     Tcl_MutexLock(&notifierMutex);
     if (notifierCount == 0) {
-	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL) != TCL_OK) {
+	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL)
+		!= TCL_OK) {
 	    panic("Tcl_InitNotifier: unable to start notifier thread");
 	}
     }
@@ -223,7 +224,7 @@ Tcl_InitNotifier()
 
     Tcl_MutexUnlock(&notifierMutex);
 #endif
-    return tsdPtr;
+    return (ClientData) tsdPtr;
 }
 
 /*
