@@ -1,5 +1,9 @@
 2004-05-03  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclProc.c (TclCreateProc): comments corrected.
+	
+2004-05-03  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c (TclCompileScript): setting the compilation
 	namespace outside of the loop.
 
