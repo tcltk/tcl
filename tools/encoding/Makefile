@@ -53,7 +53,9 @@
 # SCCS: @(#) Makefile 1.1 98/01/28 11:41:36
 #
 
-encodings: clean txt2enc euc-jp.txt euc-kr.txt
+EUC_ENCODINGS = euc-cn.txt euc-kr.txt euc-jp.txt 
+
+encodings: clean txt2enc $(EUC_ENCODINGS)
 	@echo Compiling encoding files.
 	@for p in *.esc; do \
 	    base=`echo $$p | sed 's/\..*$$//'`; \
@@ -86,18 +88,23 @@ encodings: clean txt2enc euc-jp.txt euc-kr.txt
 	done
 
 clean:
-	@rm -f txt2enc *.enc euc-jp.txt euc-kr.txt
+	@rm -f txt2enc *.enc $(EUC_ENCODINGS)
 
 txt2enc: txt2enc.c
 	@gcc -o txt2enc txt2enc.c
 
-euc-jp.txt: ascii.txt Makefile
+euc-jp.txt: ascii.txt jis0208.txt Makefile
 	@echo Building euc-jp.txt from components.
 	@cat ascii.txt > euc-jp.txt
 	@grep '^0x[A-F]' jis0201.txt | sed 's/0x/0x8E/' >> euc-jp.txt
 	@cat jis0208.txt | awk 'BEGIN {print "ibase=16"} index($$1,"#") != 1 {print substr($$2,3) "+" 8080; print substr($$3,3)}' | bc | awk '{ str = $$1; getline; printf "0x%04x 0x%04x\n", str, $$0}' >> euc-jp.txt
 
-euc-kr.txt: ascii.txt Makefile
+euc-kr.txt: ascii.txt ksc5601.txt Makefile
 	@echo Building euc-kr.txt from components.
 	@cat ascii.txt > euc-kr.txt
 	@cat ksc5601.txt | awk 'BEGIN {print "ibase=16"} index($$1,"#") != 1 {print substr($$1,3) "+" 8080; print substr($$2,3)}' | bc | awk '{ str = $$1; getline; printf "0x%04x 0x%04x\n", str, $$0}' >> euc-kr.txt
+
+euc-cn.txt: ascii.txt gb2312.txt Makefile
+	@echo Building euc-cn.txt from components.
+	@cat ascii.txt > euc-cn.txt
+	@cat gb2312.txt | awk 'BEGIN {print "ibase=16"} index($$1,"#") != 1 {print substr($$1,3) "+" 8080; print substr($$2,3)}' | bc | awk '{ str = $$1; getline; printf "0x%04x 0x%04x\n", str, $$0}' >> euc-cn.txt

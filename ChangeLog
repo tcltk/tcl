@@ -1,3 +1,14 @@
+1999-04-13    <stanton@scriptics.com>
+
+	* library/encoding/gb2312.enc:
+	* library/encoding/euc-cn.enc:
+	* tools/encoding/gb2312.txt:
+	* tools/encoding/cp950.txt:
+	* tools/encoding/Makefile: Restored the double byte definition of
+	GB2312 and added the EUC-CN encoding.  EUC-CN is a variant of
+	GB2312 that shifts the characters into bytes with the high bit set
+	and includes ASCII as a subset. [Bug: 632]
+
 1999-04-13    <redman@scriptics.com>
 
 	* win/tclWinSock.c: Apply patch to allow write access to a socket
