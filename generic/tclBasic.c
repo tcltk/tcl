@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.96 2004/01/18 16:19:04 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.97 2004/02/24 22:58:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -165,6 +165,8 @@ static CmdInfo builtInCmds[] = {
     {"switch",		(Tcl_CmdProc *) NULL,	Tcl_SwitchObjCmd,	
         TclCompileSwitchCmd,		1},
     {"trace",		(Tcl_CmdProc *) NULL,	Tcl_TraceObjCmd,
+        (CompileProc *) NULL,		1},
+    {"unload",		(Tcl_CmdProc *) NULL,	Tcl_UnloadObjCmd,
         (CompileProc *) NULL,		1},
     {"unset",		(Tcl_CmdProc *) NULL,	Tcl_UnsetObjCmd,	
         (CompileProc *) NULL,		1},
