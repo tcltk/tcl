@@ -1,3 +1,12 @@
+2004-10-12  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/America/Campo_Grande:
+	* library/tzdata/America/Cuiaba:
+	* library/tzdata/America/Sao_Paulo
+	* library/tzdata/America/Argentina/Mendoza:
+	* library/tzdata/America/Argentina/San_Juan:
+	Synchronized to Olson's 'tzdata2004e'.
+	
 2004-10-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP#201 AND TIP#212 IMPLEMENTATIONS
