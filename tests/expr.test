@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.1 2004/12/14 18:43:41 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.2 2005/01/21 19:20:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -902,7 +902,7 @@ test expr-26.7 {'ni' operator} {expr {"" ni ""}} 1
 proc testIEEE {} {
     variable ieeeValues
     binary scan [binary format dd -1.0 1.0] c* c
-    switch -exact $c {
+    switch -exact -- $c {
 	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
 	    # little endian
 	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
