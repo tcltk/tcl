@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.14 2002/01/03 18:23:47 dkf Exp $
+# RCS: @(#) $Id: basic.test,v 1.15 2002/02/10 20:36:34 kennykb Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -509,7 +509,38 @@ test basic-39.4 {Tcl_CreateTrace, check that tracing doesn't cause memory faults
 catch {rename tracer {}}
 catch {rename tracedLoop {}}
 
+test basic-39.5 {Tcl_CreateObjTrace, status return TCL_ERROR} {testcmdtrace} {
+    proc Error { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Error $x}} result] [set result]
+} {1 {Error $x}}
+
+test basic-39.6 {Tcl_CreateObjTrace, status return TCL_RETURN} {testcmdtrace} {
+    proc Return { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Return $x}} result] [set result]
+} {2 {}}
+
+test basic-39.7 {Tcl_CreateObjTrace, status return TCL_BREAK} {testcmdtrace} {
+    proc Break { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Break $x}} result] [set result]
+} {3 {}}
+
+test basic-39.8 {Tcl_CreateObjTrace, status return TCL_CONTINUE} {testcmdtrace} {
+    proc Continue { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {Continue $x}} result] [set result]
+} {4 {}}
+
+test basic-39.9 {Tcl_CreateObjTrace, status return unknown} {testcmdtrace} {
+    proc OtherStatus { args } { error "Shouldn't get here" }
+    set x 1;
+    list [catch {testcmdtrace resulttest {OtherStatus $x}} result] [set result]
+} {6 {}}
+
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
+    # the above tests have tested Tcl_DeleteTrace
 } {}
 
 test basic-41.1 {Tcl_AddErrorInfo} {emptyTest} {
