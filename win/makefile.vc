@@ -12,10 +12,10 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.126 2004/05/18 20:02:38 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.127 2004/06/01 08:18:32 davygrvy Exp $
 #------------------------------------------------------------------------------
 
-!if "$(MSDEVDIR)" == ""
+!if !defined(MSDEVDIR) && !defined(MSVCDIR)
 MSG = ^
 You'll need to run vcvars32.bat from Developer Studio, first, to setup^
 the environment.  Jump to this line to read the new instructions.
