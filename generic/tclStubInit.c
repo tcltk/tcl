@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.81 2003/04/05 01:26:11 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.82 2003/04/28 12:34:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -268,6 +268,7 @@ TclIntStubs tclIntStubs = {
     TclCheckExecutionTraces, /* 171 */
     TclInThreadExit, /* 172 */
     TclUniCharMatch, /* 173 */
+    TclIncrWideVar2, /* 174 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
