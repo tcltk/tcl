@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.39 2002/11/13 22:11:40 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40 2003/01/09 10:01:59 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2597,15 +2597,12 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	 */
 
 	Tcl_Obj *nameObj;
-	/* Used to deal with one special case pertinent to MacOS */
-	int macSpecialCase = 0;
 
 	switch (tclPlatform) {
 	    case TCL_PLATFORM_MAC: {
 		if (strchr(Tcl_DStringValue(headPtr), ':') == NULL) {
 		    Tcl_DStringAppend(headPtr, ":", 1);
 		}
-		macSpecialCase = 1;
 		break;
 	    }
 	    case TCL_PLATFORM_WINDOWS: {
