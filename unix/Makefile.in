@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.30 1999/06/15 01:16:28 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.31 1999/06/15 20:44:36 wart Exp $
 
 # PURIFY =
 
@@ -166,13 +166,6 @@ INSTALL =		@srcdir@/install-sh -c
 INSTALL_PROGRAM =	${INSTALL}
 INSTALL_DATA =		${INSTALL} -m 644
 
-# The following symbol defines additional compiler flags to enable
-# Tcl itself to be a shared library.  If Tcl isn't going to be a
-# shared library then the symbol has an empty definition.
-
-TCL_SHLIB_CFLAGS = @TCL_SHLIB_CFLAGS@
-#TCL_SHLIB_CFLAGS =
-
 # The symbols below provide support for dynamic loading and shared
 # libraries.  See configure.in for a description of what the
 # symbols mean.  The values of the symbols are normally set by the
@@ -235,7 +228,7 @@ CC =			@CC@
 #----------------------------------------------------------------
 
 
-CC_SWITCHES =	${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
+CC_SWITCHES =	${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS} \
@@ -393,13 +386,13 @@ DL_SRCS = \
 
 SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
-all: binaries libraries man
+all: binaries libraries doc
 
 binaries: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) tclsh
 
 libraries:
 
-man:
+doc:
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
