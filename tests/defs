@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: defs,v 1.1.2.2 1998/09/24 23:59:22 stanton Exp $
+# RCS: @(#) $Id: defs,v 1.1.2.3 1998/12/02 21:46:04 stanton Exp $
 
 if ![info exists VERBOSE] {
     set VERBOSE 0
@@ -484,7 +484,7 @@ proc viewFile {name} {
 # exposing that Tcl uses UTF-8 internally.
 
 proc bytestring {string} {
-    testencoding toutf $string identity
+    encoding convertfrom identity $string
 }
 
 # Locate tcltest executable
