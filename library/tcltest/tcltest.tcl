@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.69 2002/07/10 18:51:54 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.70 2002/07/11 19:02:58 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -2385,8 +2385,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# loop is running, which is the real issue.
 	# Actually, this doesn't belong here at all.  A package
 	# really has no business [exit]-ing an application.
-	if {![catch {package present Tk}]
-		&& ![info exists ::tcl_interactive]} {
+	if {![catch {package present Tk}] && ![testConstraint interactive]} {
 	    exit
 	}
     } else {
