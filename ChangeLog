@@ -1,3 +1,8 @@
+2001-09-10  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclInt.decls: Added 'TclWinFlushDirtyChannels' to
+	  the internal platform specific stub table.
+
 2001-09-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* All the changes below serve to fix bug [219148] which reports a
