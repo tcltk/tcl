@@ -29,6 +29,9 @@
 
 2001-09-10  Don Porter <dgp@users.sourceforge.net>
 
+	* unix/mkLinks (Tcl_FSLink): Updated to reflect 2001-08-23
+	file system changes.
+
 	* unix/tclLoadShl.c:  Added #include of tclInt.h; access to Tcl
 	internals, notably TclpUnloadFile(), is required.  Thanks to
 	Bob Techentin for report and patch.  [Bug 459305]
