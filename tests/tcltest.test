@@ -6,17 +6,13 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.21 2002/05/10 18:47:11 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.22 2002/06/03 23:44:32 dgp Exp $
 
-set tcltestVersion [package require tcltest]
-namespace import -force ::tcltest::*
-
-if {[package vcompare $tcltestVersion 1.0] < 1} {
-    puts "Tests require that version 2.0 of tcltest be loaded."
-    puts "$tcltestVersion was loaded instead - tests will be skipped."
-    tcltest::cleanupTests
+if {[catch {package require tcltest 2.1}]} {
+    puts "Skipping tests in [info script].  tcltest 2.1 required."
     return
 }
+namespace import -force ::tcltest::*
 
 makeFile {
     package require tcltest
@@ -1313,6 +1309,113 @@ test tcltest-23.5 {viewFile} {
 	file delete -force $mfdir
     }
 }
+
+# customMatch
+test tcltest-24.0 {
+	tcltest::customMatch: syntax
+} -body {
+	list [catch {customMatch} result] $result
+} -result [list 1 "wrong # args: should be \"customMatch mode script\""]
+
+test tcltest-24.1 {
+	tcltest::customMatch: syntax
+} -body {
+	list [catch {customMatch foo} result] $result
+} -result [list 1 "wrong # args: should be \"customMatch mode script\""]
+
+test tcltest-24.2 {
+	tcltest::customMatch: syntax
+} -body {
+	list [catch {customMatch foo bar baz} result] $result
+} -result [list 1 "wrong # args: should be \"customMatch mode script\""]
+
+test tcltest-24.3 {
+	tcltest::customMatch: syntax
+} -body {
+	list [catch {customMatch bad "a \{ b"} result] $result
+} -result [list 1 "invalid customMatch script; can't evaluate after completion"]
+
+test tcltest-24.4 {
+	tcltest::test: valid -match values
+} -body {
+	list [catch {
+		test tcltest-24.4.0 {} \
+			-match ReallyBadMatchValueThatNoTestWillUse
+	} result] $result
+} -match glob -result {1 *bad -match value*}
+
+test tcltest-24.5 {
+	tcltest::test: valid -match values
+} -setup {
+	customMatch alwaysMatch "format 1 ;#"
+} -body {
+	list [catch {
+		test tcltest-24.5.0 {} \
+			-match ReallyBadMatchValueThatNoTestWillUse
+	} result] $result
+} -match glob -result {1 *bad -match value*: must be *alwaysMatch,*}
+
+test tcltest-24.6 {
+	tcltest::customMatch: -match script that always matches
+} -setup {
+	customMatch alwaysMatch "format 1 ;#"
+	set v [verbose]
+	verbose {}
+} -body {
+	test tcltest-24.6.0 {} -match alwaysMatch -body {format 1} -result 0
+} -cleanup {
+	verbose $v
+} -result {} -output {} -errorOutput {}
+
+test tcltest-24.7 {
+	tcltest::customMatch: replace default -exact matching
+} -setup {
+	set saveExactMatchScript $::tcltest::CustomMatch(exact)
+	customMatch exact "format 1 ;#"
+	set v [verbose]
+	verbose {}
+} -body {
+	test tcltest-24.7.0 {} -body {format 1} -result 0
+} -cleanup {
+	verbose $v
+	customMatch exact $saveExactMatchScript
+	unset saveExactMatchScript
+} -result {} -output {}
+
+test tcltest-24.8 {
+	tcltest::customMatch: default -exact matching
+} -setup {
+	set saveExactMatchScript $::tcltest::CustomMatch(exact)
+	customMatch exact [list ::string equal]
+	set v [verbose]
+	verbose {}
+} -body {
+	test tcltest-24.8.0 {} -body {format 1} -result 0
+} -cleanup {
+	verbose $v
+	customMatch exact $saveExactMatchScript
+	unset saveExactMatchScript
+} -match glob -result {} -output {*FAILED*Result was:
+1*(exact matching):
+0*}
+
+test tcltest-24.9 {
+	tcltest::customMatch: error during match
+} -setup {
+	proc errorDuringMatch args {return -code error "match returned error"}
+	customMatch errorDuringMatch [namespace code errorDuringMatch]
+} -body {
+	test tcltest-24.9.0 {} -match errorDuringMatch
+} -match glob -result {} -output {*FAILED*match returned error*}
+
+test tcltest-24.10 {
+	tcltest::customMatch: bad return from match command
+} -setup {
+	proc nonBooleanReturn args {return foo}
+	customMatch nonBooleanReturn [namespace code nonBooleanReturn]
+} -body {
+	test tcltest-24.10.0 {} -match nonBooleanReturn
+} -match glob -result {} -output {*FAILED*expected boolean value*}
 
 # cleanup
 if {[file exists a.tmp]} {

@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.50 2002/05/08 05:50:24 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.51 2002/06/03 23:44:32 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -25,7 +25,7 @@ package require Tcl 8.3
 namespace eval tcltest {
 
     # Export the public tcltest procs
-    namespace export bytestring cleanupTests debug errorChannel \
+    namespace export bytestring cleanupTests customMatch debug errorChannel \
 	    errorFile interpreter limitConstraints loadFile loadScript \
 	    loadTestedCommands mainThread makeDirectory makeFile match \
 	    matchDirectories matchFiles normalizeMsg normalizePath \
@@ -1649,8 +1649,8 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
 # tcltest::CompareStrings --
 #
 #	compares the expected answer to the actual answer, depending on
-#	the mode provided.  Mode determines whether a regexp, exact, or
-#	glob comparison is done.
+#	the mode provided.  Mode determines whether a regexp, exact,
+#	glob or custom comparison is done.
 #
 # Arguments:
 #	actual - string containing the actual result
@@ -1664,20 +1664,42 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
 #	None.
 
 proc tcltest::CompareStrings {actual expected mode} {
-    switch -- $mode {
-	exact {
-	    set retval [string equal $actual $expected]
-	}
-	glob {
-	    set retval [string match $expected $actual]
-	}
-	regexp {
-	    set retval [regexp -- $expected $actual]
-	}
+    variable CustomMatch
+    if {![info exists CustomMatch($mode)]} {
+        return -code error "No matching command registered for `-match $mode'"
     }
-    return $retval
+    set match [namespace eval :: $CustomMatch($mode) [list $expected $actual]]
+    if {[catch {expr {$match && $match}} result]} {
+	return -code error "Invalid result from `-match $mode' command: $result"
+    }
+    return $match
 }
 
+# tcltest::customMatch --
+#
+#	registers a command to be called when a particular type of
+#	matching is required.
+#
+# Arguments:
+#	nickname - Keyword for the type of matching
+#	cmd - Incomplete command that implements that type of matching
+#		when completed with expected string and actual string
+#		and then evaluated.
+#
+# Results:
+#	None.
+#
+# Side effects:
+#	Sets the variable tcltest::CustomMatch
+
+proc tcltest::customMatch {mode script} {
+    variable CustomMatch
+    if {![info complete $script]} {
+	return -code error \
+		"invalid customMatch script; can't evaluate after completion"
+    }
+    set CustomMatch($mode) $script
+}
 
 # tcltest::SubstArguments list
 #
@@ -1815,8 +1837,10 @@ proc tcltest::SubstArguments {argList} {
 #   cleanup -           Code to run after $script (above).  This
 #                       attribute is optional; default is {}.
 #   match -             specifies type of matching to do on result,
-#                       output, errorOutput; this must be one of: exact,
-#                       glob, regexp.  default is exact.
+#                       output, errorOutput; this must be a string
+#			previously registered by a call to [customMatch].
+#			The strings exact, glob, and regexp are pre-registered
+#			by the tcltest package.  Default value is exact.
 #
 # Arguments:
 #   name -		Name of test, in the form foo-1.2.
@@ -1892,10 +1916,14 @@ proc tcltest::test {name description args} {
 	}
 
 	# Check the values supplied for -match
-	if {[lsearch {regexp glob exact} $match] == -1} {
+	variable CustomMatch
+	if {[lsearch [array names CustomMatch] $match] == -1} {
 	    incr tcltest::testLevel -1
+	    set sorted [lsort [array names CustomMatch]]
+	    set values [join [lrange $sorted 0 end-1] ", "]
+	    append values ", or [lindex $sorted end]"
 	    return -code error "bad -match value \"$match\":\
-		    must be exact, glob, or regexp"
+		    must be $values"
 	}
 
 	# Replace symbolic valies supplied for -returnCodes
@@ -1992,33 +2020,45 @@ proc tcltest::test {name description args} {
 	# If expected output/error strings exist, we have to compare
 	# them.  If the comparison fails, then so did the test.
 	set outputFailure 0
-	set errorFailure 0
 	variable outData
 	if {[info exists output]} {
-	    set outputFailure [expr \
-		    {![CompareStrings $outData $output $match]}]
+	    if {[set outputCompare [catch {
+		CompareStrings $outData $output $match
+	    } outputMatch]] == 0} {
+		set outputFailure [expr {!$outputMatch}]
+	    } else {
+		set outputFailure 1
+	    }
 	}
+	set errorFailure 0
 	variable errData
 	if {[info exists errorOutput]} {
-	    set errorFailure [expr \
-		    {![CompareStrings $errData $errorOutput $match]}]
+	    if {[set errorCompare [catch {
+		CompareStrings $errData $errorOutput $match
+	    } errorMatch]] == 0} {
+		set errorFailure [expr {!$errorMatch}]
+	    } else {
+		set errorFailure 1
+	    }
 	}
 
-	set testFailed 1
-	set codeFailure 0
-	set scriptFailure 0
-
 	# check if the return code matched the expected return code
+	set codeFailure 0
 	if {[lsearch -exact $returnCodes $code] == -1} {
 	    set codeFailure 1
 	}
 
 	# check if the answer matched the expected answer
-	if {[CompareStrings $actualAnswer $result $match] == 0} {
+	if {[set scriptCompare [catch {
+	    CompareStrings $actualAnswer $result $match
+	} scriptMatch]] == 0} {
+	    set scriptFailure [expr {!$scriptMatch}]
+	} else {
 	    set scriptFailure 1
 	}
 
 	# if we didn't experience any failures, then we passed
+	set testFailed 1
 	variable numTests
 	if {!($setupFailure || $cleanupFailure || $coreFailure
 		|| $outputFailure || $errorFailure || $codeFailure
@@ -2051,10 +2091,14 @@ proc tcltest::test {name description args} {
 			failed:\n$setupMsg"
 	    }
 	    if {$scriptFailure} {
+	      if {$scriptCompare} {
+		puts [outputChannel] "---- Error testing result: $scriptMatch"
+	      } else {
 		puts [outputChannel] "---- Result\
 			was:\n$actualAnswer"
 		puts [outputChannel] "---- Result should have been\
 			($match matching):\n$result"
+	      }
 	    }
 	    if {$codeFailure} {
 		switch -- $code {
@@ -2078,14 +2122,23 @@ proc tcltest::test {name description args} {
 		}
 	    }
 	    if {$outputFailure} {
+	      if {$outputCompare} {
+		puts [outputChannel] "---- Error testing output: $outputMatch"
+	      } else {
 		puts [outputChannel] "---- Output was:\n$outData"
 		puts [outputChannel] "---- Output should have been\
 			($match matching):\n$output"
+	      }
 	    }
 	    if {$errorFailure} {
+	      if {$errorCompare} {
+		puts [outputChannel] "---- Error testing errorOutput:\
+			$errorMatch"
+	      } else {
 		puts [outputChannel] "---- Error output was:\n$errData"
 		puts [outputChannel] "---- Error output should have\
 			been ($match matching):\n$errorOutput"
+	      }
 	    }
 	    if {$cleanupFailure} {
 		puts [outputChannel] "---- Test cleanup\
@@ -3247,8 +3300,13 @@ namespace eval tcltest {
     foreach file [glob -nocomplain -directory [temporaryDirectory] *] {
 	lappend filesExisted [file tail $file]
     }
+
+    # Define the standard match commands
+    customMatch exact	[list ::string equal]
+    customMatch glob	[list ::string match]
+    customMatch regexp	[list ::regexp --]
     unset file
 }
 
-package provide tcltest 2.0.2
+package provide tcltest 2.1
 
