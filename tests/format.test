@@ -10,11 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.5 1999/06/26 03:54:14 jenn Exp $
+# RCS: @(#) $Id: format.test,v 1.6 1999/08/17 21:34:45 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-    namespae import ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 # The following code is needed because some versions of SCO Unix have
