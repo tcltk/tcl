@@ -1,3 +1,8 @@
+2003-04-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (TraceExecutionProc):  Added missing
+	Tcl_DiscardResult() call to avoid memory leak.
+
 2003-04-07  Donal K. Fellows  <zzcgudf@ernie.mvc.mcc.ac.uk>
 
 	* generic/tclDictObj.c (Tcl_DictObjCmd): Stopped compilers from
