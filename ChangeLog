@@ -50,8 +50,7 @@
 	management of the interp result by Tcl_GetIndexFromObj() exposed
 	improper interp result management in the [glob] command procedure.
 	Corrected by adopting the Tcl_SetObjResult(Tcl_NewStringObj) pattern.
-	This stopped a segfault in test filename-11.36.
-
+	This stopped a segfault in test filename-11.36. [Bug 877677]
 
 2004-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
