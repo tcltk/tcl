@@ -110,7 +110,8 @@ TclPlatformInit(interp)
     int unameOK;
 
     tclPlatform = TCL_PLATFORM_UNIX;
-    Tcl_SetVar(interp, "tcl_library", defaultLibraryDir, TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir,
+	    TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
     Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
     unameOK = 0;
