@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.13 2004/10/05 23:21:26 dkf Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.14 2004/10/06 15:59:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -540,10 +540,7 @@ Tcl_AppendElement(interp, stringPtr)
      * string result, then reset the object result.
      */
 
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	        TCL_VOLATILE);
-    }
+    (void) Tcl_GetStringResult(interp);
 
     /*
      * See how much space is needed, and grow the append buffer if

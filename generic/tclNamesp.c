@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.60 2004/10/05 18:14:28 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.61 2004/10/06 15:59:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -628,8 +628,8 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
         parentPtr = NULL;
         simpleName = "";
     } else if (*name == '\0') {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't create namespace \"\": only global namespace can have empty name", (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't create namespace \"\": only global namespace can have empty name", -1));
 	return NULL;
     } else {
 	/*
@@ -657,8 +657,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 */
 
         if (Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "can't create namespace \"", name,
+	    Tcl_AppendResult(interp, "can't create namespace \"", name,
     	    	    "\": already exists", (char *) NULL);
             return NULL;
         }
@@ -1129,10 +1128,8 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-	        "invalid export pattern \"", pattern,
-		"\": pattern can't specify a namespace",
-		(char *) NULL);
+	Tcl_AppendResult(interp, "invalid export pattern \"", pattern,
+		"\": pattern can't specify a namespace", (char *) NULL);
 	return TCL_ERROR;
     }
 
@@ -1358,8 +1355,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
      */
 
     if (strlen(pattern) == 0) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp),
-	        "empty import pattern", -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern", -1));
         return TCL_ERROR;
     }
     TclGetNamespaceForQualName(interp, pattern, nsPtr,
@@ -1367,19 +1363,17 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown namespace in import pattern \"",
+	Tcl_AppendResult(interp, "unknown namespace in import pattern \"",
 		pattern, "\"", (char *) NULL);
         return TCL_ERROR;
     }
     if (importNsPtr == nsPtr) {
 	if (pattern == simplePattern) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	    Tcl_AppendResult(interp,
 		    "no namespace specified in import pattern \"", pattern,
 		    "\"", (char *) NULL);
 	} else {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "import pattern \"", pattern,
+	    Tcl_AppendResult(interp, "import pattern \"", pattern,
 		    "\" tries to import from namespace \"",
 		    importNsPtr->name, "\" into itself", (char *) NULL);
 	}
@@ -1457,8 +1451,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 			dataPtr = (ImportedCmdData *) link->objClientData;
 			link = dataPtr->realCmdPtr;
 			if (overwrite == link) {
-			    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				    "import pattern \"", pattern,
+			    Tcl_AppendResult(interp, "import pattern \"",
+				    pattern,
 				    "\" would create a loop containing ",
 				    "command \"", Tcl_DStringValue(&ds),
 				    "\"", (char *) NULL);
@@ -1489,8 +1483,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
                 refPtr->nextPtr = cmdPtr->importRefPtr;
                 cmdPtr->importRefPtr = refPtr;
             } else {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		        "can't import command \"", cmdName,
+		Tcl_AppendResult(interp, "can't import command \"", cmdName,
 			"\": already exists", (char *) NULL);
                 return TCL_ERROR;
             }
@@ -1562,7 +1555,7 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (sourceNsPtr == NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+        Tcl_AppendResult(interp,
 		"unknown namespace in namespace forget pattern \"",
 		pattern, "\"", (char *) NULL);
         return TCL_ERROR;
@@ -2128,8 +2121,8 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
        return (Tcl_Namespace *) nsPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown namespace \"", name, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown namespace \"", name,
+		"\"", (char *) NULL);
     }
     return NULL;
 }
@@ -2254,8 +2247,8 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
         return (Tcl_Command) cmdPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown command \"", name, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown command \"", name,
+		"\"", (char *) NULL);
     }
 
     return (Tcl_Command) NULL;
@@ -2381,8 +2374,8 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
 	return (Tcl_Var) varPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown variable \"", name, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown variable \"", name,
+		"\"", (char *) NULL);
     }
     return (Tcl_Var) NULL;
 }
@@ -2826,8 +2819,8 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
             return TCL_ERROR;
         }
         if (namespacePtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", TclGetString(objv[2]),
+	    Tcl_AppendResult(interp, "unknown namespace \"",
+		    TclGetString(objv[2]),
 		    "\" in namespace children command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3017,9 +3010,9 @@ NamespaceCurrentCmd(dummy, interp, objc, objv)
 
     currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     if (currNsPtr == (Namespace *) Tcl_GetGlobalNamespace(interp)) {
-        Tcl_AppendToObj(Tcl_GetObjResult(interp), "::", -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("::", 2));
     } else {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), currNsPtr->fullName, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(currNsPtr->fullName, -1));
     }
     return TCL_OK;
 }
@@ -3083,8 +3076,8 @@ NamespaceDeleteCmd(dummy, interp, objc, objv)
 	namespacePtr = Tcl_FindNamespace(interp, name,
 		(Tcl_Namespace *) NULL, /*flags*/ 0);
         if (namespacePtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", TclGetString(objv[i]),
+	    Tcl_AppendResult(interp, "unknown namespace \"",
+		    TclGetString(objv[i]),
 		    "\" in namespace delete command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3265,7 +3258,7 @@ NamespaceExistsCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), (namespacePtr != NULL));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(namespacePtr != NULL));
     return TCL_OK;
 }
 
@@ -3573,8 +3566,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
         return result;
     }
     if (namespacePtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-	        "unknown namespace \"", TclGetString(objv[2]),
+	Tcl_AppendResult(interp, "unknown namespace \"", TclGetString(objv[2]),
 		"\" in inscope namespace command", (char *) NULL);
         return TCL_ERROR;
     }
@@ -3671,6 +3663,7 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Command command, origCommand;
+    Tcl_Obj *resultPtr;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "name");
@@ -3679,12 +3672,12 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
 
     command = Tcl_GetCommandFromObj(interp, objv[2]);
     if (command == (Tcl_Command) NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"invalid command name \"", TclGetString(objv[2]),
-		"\"", (char *) NULL);
+	Tcl_AppendResult(interp, "invalid command name \"",
+		TclGetString(objv[2]), "\"", (char *) NULL);
 	return TCL_ERROR;
     }
     origCommand = TclGetOriginalCommand(command);
+    resultPtr = Tcl_NewObj();
     if (origCommand == (Tcl_Command) NULL) {
 	/*
 	 * The specified command isn't an imported command. Return the
@@ -3692,10 +3685,11 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
 	 * was defined in.
 	 */
 
-	Tcl_GetCommandFullName(interp, command, Tcl_GetObjResult(interp));
+	Tcl_GetCommandFullName(interp, command, resultPtr);
     } else {
-	Tcl_GetCommandFullName(interp, origCommand, Tcl_GetObjResult(interp));
+	Tcl_GetCommandFullName(interp, origCommand, resultPtr);
     }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -3738,8 +3732,8 @@ NamespaceParentCmd(dummy, interp, objc, objv)
             return result;
         }
         if (nsPtr == NULL) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", TclGetString(objv[2]),
+            Tcl_AppendResult(interp, "unknown namespace \"",
+		    TclGetString(objv[2]),
 		    "\" in namespace parent command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3753,8 +3747,8 @@ NamespaceParentCmd(dummy, interp, objc, objv)
      */
 
     if (nsPtr->parentPtr != NULL) {
-        Tcl_SetStringObj(Tcl_GetObjResult(interp),
-	        nsPtr->parentPtr->fullName, -1);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	        nsPtr->parentPtr->fullName, -1));
     }
     return TCL_OK;
 }
@@ -3821,7 +3815,7 @@ NamespaceQualifiersCmd(dummy, interp, objc, objv)
 
     if (p >= name) {
         length = p-name+1;
-        Tcl_AppendToObj(Tcl_GetObjResult(interp), name, length);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(name, length));
     }
     return TCL_OK;
 }
@@ -3883,7 +3877,7 @@ NamespaceTailCmd(dummy, interp, objc, objv)
     }
 
     if (p >= name) {
-        Tcl_AppendToObj(Tcl_GetObjResult(interp), p, -1);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(p, -1));
     }
     return TCL_OK;
 }
@@ -3921,6 +3915,7 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
 	"-command", "-variable", NULL
     };
     int lookupType = 0;
+    Tcl_Obj *resultPtr;
 
     if (objc < 3 || objc > 4) {
       badArgs:
@@ -3941,24 +3936,25 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
 	}
     }
 
+    resultPtr = Tcl_NewObj();
     switch (lookupType) {
     case 0: {			/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
-        if (cmd == (Tcl_Command) NULL) {	
-            return TCL_OK;	/* cmd not found, just return (no error) */
+        if (cmd != (Tcl_Command) NULL) {	
+	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
         }
-	Tcl_GetCommandFullName(interp, cmd, Tcl_GetObjResult(interp));
         break;
     }
     case 1: {			/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
         if (var != (Tcl_Var) NULL) {
-            Tcl_GetVariableFullName(interp, var, Tcl_GetObjResult(interp));
+            Tcl_GetVariableFullName(interp, var, resultPtr);
         }
         break;
     }
     }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -4470,8 +4466,8 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname");
 	    return TCL_ERROR;
 	}
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp),
-		FindEnsemble(interp, objv[3], 0) != NULL);
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+		FindEnsemble(interp, objv[3], 0) != NULL));
 	return TCL_OK;
 
     case ENS_CONFIG:
@@ -5106,26 +5102,24 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 
     Tcl_ResetResult(interp);
     if (ensemblePtr->subcommandTable.numEntries == 0) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown subcommand \"", TclGetString(objv[1]),
+	Tcl_AppendResult(interp, "unknown subcommand \"", TclGetString(objv[1]),
 		"\": namespace ", ensemblePtr->nsPtr->fullName,
 		" does not export any commands", NULL);
 	return TCL_ERROR;
     }
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "unknown ",
+    Tcl_AppendResult(interp, "unknown ",
 	    (ensemblePtr->flags & ENS_PREFIX ? "or ambiguous " : ""),
 	    "subcommand \"", TclGetString(objv[1]), "\": must be ", NULL);
     if (ensemblePtr->subcommandTable.numEntries == 1) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		ensemblePtr->subcommandArrayPtr[0], NULL);
+	Tcl_AppendResult(interp, ensemblePtr->subcommandArrayPtr[0], NULL);
     } else {
 	int i;
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	    Tcl_AppendResult(interp,
 		    ensemblePtr->subcommandArrayPtr[i], ", ", NULL);
 	}
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"or ", ensemblePtr->subcommandArrayPtr[i], NULL);
+	Tcl_AppendResult(interp, "or ",
+		ensemblePtr->subcommandArrayPtr[i], NULL);
     }
     return TCL_ERROR;
 }
