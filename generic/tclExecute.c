@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.15 2001/10/22 10:10:42 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.16 2001/10/23 09:46:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -245,6 +245,10 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     } else {								\
 	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
     }
+#   define FORCE_LONG(objPtr, longVar, wideVar)				\
+    if ((objPtr)->typePtr == &tclWideIntType) {				\
+	(longVar) = Tcl_WideAsLong(wideVar);				\
+    }
 #   define LLTRACE(a)			TRACE(a)
 #   define LLTRACE_WITH_OBJ(a,b)	TRACE_WITH_OBJ(a,b)
 #   define LLD				"%" TCL_LL_MODIFIER "d"
@@ -263,6 +267,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     } else {								\
 	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
     }
+#   define FORCE_LONG(objPtr, longVar, wideVar)
 #   define LLTRACE(a)
 #   define LLTRACE_WITH_OBJ(a,b)
 #endif /* TCL_WIDE_INT_IS_LONG */
@@ -1657,17 +1662,23 @@ TclExecuteByteCode(interp, codePtr)
 
 	case INST_INCR_SCALAR1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
-	    valuePtr = POP_OBJECT(); 
-	    if (valuePtr->typePtr != &tclIntType) {
-		result = tclIntType.setFromAnyProc(interp, valuePtr);
+	    valuePtr = POP_OBJECT();
+	    if (valuePtr->typePtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    } else {
+		GET_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
 		            opnd, O2S(valuePtr)), Tcl_GetObjResult(interp));
 		    TclDecrRefCount(valuePtr);
 		    goto checkForCatch;
 		}
+		FORCE_LONG(valuePtr, i, w);
 	    }
-	    i = valuePtr->internalRep.longValue;
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclIncrIndexedScalar(interp, opnd, i);
 	    CACHE_STACK_INFO();
@@ -1687,8 +1698,14 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_INCR_STK:
 	    valuePtr = POP_OBJECT();
 	    objPtr = POP_OBJECT(); /* scalar name */
-	    if (valuePtr->typePtr != &tclIntType) {
-		result = tclIntType.setFromAnyProc(interp, valuePtr);
+	    if (valuePtr->typePtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    } else {
+		GET_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("\"%.30s\" (by %s) => ERROR converting increment amount to int: ",
 		            O2S(objPtr), O2S(valuePtr)),
@@ -1697,8 +1714,8 @@ TclExecuteByteCode(interp, codePtr)
 		    TclDecrRefCount(valuePtr);
 		    goto checkForCatch;
 		}
+		FORCE_LONG(valuePtr, i, w);
 	    }
-	    i = valuePtr->internalRep.longValue;
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclIncrVar2(interp, objPtr, (Tcl_Obj *) NULL, i,
 		    TCL_LEAVE_ERR_MSG);
@@ -1722,8 +1739,14 @@ TclExecuteByteCode(interp, codePtr)
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    valuePtr = POP_OBJECT();
 	    elemPtr = POP_OBJECT();
-	    if (valuePtr->typePtr != &tclIntType) {
-		result = tclIntType.setFromAnyProc(interp, valuePtr);
+	    if (valuePtr->typePtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    } else {
+		GET_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("%u \"%.30s\" (by %s) => ERROR converting increment amount to int: ",
 			    opnd, O2S(elemPtr), O2S(valuePtr)),
@@ -1732,8 +1755,8 @@ TclExecuteByteCode(interp, codePtr)
 		    TclDecrRefCount(valuePtr);
 		    goto checkForCatch;
 		}
+		FORCE_LONG(valuePtr, i, w);
 	    }
-	    i = valuePtr->internalRep.longValue;
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclIncrElementOfIndexedArray(interp, opnd,
 		    elemPtr, i);
@@ -1758,8 +1781,14 @@ TclExecuteByteCode(interp, codePtr)
 	    valuePtr = POP_OBJECT();
 	    elemPtr = POP_OBJECT();
 	    objPtr = POP_OBJECT();	/* array name */
-	    if (valuePtr->typePtr != &tclIntType) {
-		result = tclIntType.setFromAnyProc(interp, valuePtr);
+	    if (valuePtr->typePtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    } else {
+		GET_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %s) => ERROR converting increment amount to int: ",
 			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
@@ -1769,8 +1798,8 @@ TclExecuteByteCode(interp, codePtr)
 		    TclDecrRefCount(valuePtr);
 		    goto checkForCatch;
 		}
+		FORCE_LONG(valuePtr, i, w);
 	    }
-	    i = valuePtr->internalRep.longValue;
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclIncrVar2(interp, objPtr, elemPtr, i,
 		    TCL_LEAVE_ERR_MSG);
@@ -1875,6 +1904,10 @@ TclExecuteByteCode(interp, codePtr)
 	    TclDecrRefCount(objPtr);
 	    TclDecrRefCount(elemPtr);
 	    ADJUST_PC(2);
+
+	    /*
+	     * END INCR INSTRUCTIONS
+	     */
 
 	case INST_JUMP1:
 #ifdef TCL_COMPILE_DEBUG
@@ -2761,9 +2794,7 @@ TclExecuteByteCode(interp, codePtr)
 		    /*
 		     * Shifts are never usefully 64-bits wide!
 		     */
-		    if (value2Ptr->typePtr == &tclWideIntType) {
-			i2 = Tcl_WideAsLong(w2);
-		    }
+		    FORCE_LONG(value2Ptr, i2, w2);
 		    if (valuePtr->typePtr == &tclWideIntType) {
 #ifdef TCL_COMPILE_DEBUG
 			w2 = Tcl_LongAsWide(i2);
@@ -2785,9 +2816,7 @@ TclExecuteByteCode(interp, codePtr)
 		    /*
 		     * Shifts are never usefully 64-bits wide!
 		     */
-		    if (value2Ptr->typePtr == &tclWideIntType) {
-			i2 = Tcl_WideAsLong(w2);
-		    }
+		    FORCE_LONG(value2Ptr, i2, w2);
 		    if (valuePtr->typePtr == &tclWideIntType) {
 #ifdef TCL_COMPILE_DEBUG
 			w2 = Tcl_LongAsWide(i2);
