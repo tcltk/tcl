@@ -1,3 +1,7 @@
+2005-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/CrtChannel.3 (THREADACTIONPROC): Formatting fix. [Bug 1149605]
+
 2005-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinFCmd.c (TraverseWinTree): use wcslen on wchar, not
