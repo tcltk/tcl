@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.21 2002/02/15 14:28:48 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.22 2002/02/19 10:26:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1898,7 +1898,8 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
      *    whatever's generated.  This is hard to estimate.
      * 3. there's no way to move the arguments from objv to the call
      *    to sprintf in a reasonable way.  This is particularly nasty
-     *    because some of the arguments may be two-word values (doubles).
+     *    because some of the arguments may be two-word values (doubles
+     *    and wide-ints).
      * So, what happens here is to scan the format string one % group
      * at a time, making many individual calls to sprintf.
      */
@@ -2000,7 +2001,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    newPtr++;
 	    format++;
 	}
-	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) {		/* INTL: Tcl source. */
 	    width = strtoul(format, &end, 10);	/* INTL: Tcl source. */
 	    format = end;
 	} else if (*format == '*') {
@@ -2043,7 +2044,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    format++;
 	    gotPrecision = 1;
 	}
-	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) {		/* INTL: Tcl source. */
 	    precision = strtoul(format, &end, 10);  /* INTL: "C" locale. */
 	    format = end;
 	} else if (*format == '*') {
@@ -2105,15 +2106,17 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 			objv[objIndex], &intValue) != TCL_OK) {
 		    goto fmtError;
 		}
-		if ((unsigned long) intValue > UINT_MAX) {
-		    /*
-		     * Add the 'l' for long format type.
-		     */
-		    newPtr++;
-		    *newPtr = 0;
-		    newPtr[-1] = newPtr[-2];
-		    newPtr[-2] = 'l';
-		}
+#if (LONG_MAX > INT_MAX)
+		/*
+		 * Add the 'l' for long format type because we are on
+		 * an LP64 archtecture and we are really going to pass
+		 * a long argument to sprintf.
+		 */
+		newPtr++;
+		*newPtr = 0;
+		newPtr[-1] = newPtr[-2];
+		newPtr[-2] = 'l';
+#endif /* LONG_MAX > INT_MAX */
 		whichValue = INT_VALUE;
 		size = 40 + precision;
 		break;
