@@ -1,3 +1,11 @@
+2003-04-11  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (UpdateInterest): When dropping interest in
+	  TCL_READABLE now dropping interest in TCL_EXCEPTION too. This
+	  fixes a bug where Expect detects eof on a file prematurely on
+	  solaris 2.6 and higher. A much more complete explanation is in
+	  the code itself (40 lines of comments for a one-line change :)
+
 2003-04-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/binary.n: Fixed typo in [binary format w] desc. [Bug 718543]
