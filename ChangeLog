@@ -1,3 +1,11 @@
+2002-05-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/load.test:
+	* tests/safe.test:
+	* tests/tcltest.test: Corrected some list-quoting issues and
+	other matters that cause tests to fail when the patch includes
+	special characters.  Report from Vince Darley.  [Bug 554068].
+
 2002-05-08    David Gravereaux <davygrvy@pobox.com>
 
 	* doc/file.n:

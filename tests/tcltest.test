@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.20 2002/05/08 05:51:05 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.21 2002/05/10 18:47:11 dgp Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -574,10 +574,10 @@ test tcltest-8.12 {tcltest a.tcl -testdir notReadableDir} {unixOnly} {
 
 
 test tcltest-8.13 {tcltest a.tcl -testdir normaldirectory} {unixOrPc} {
-    catch {exec $::tcltest::tcltest a.tcl -testdir normaldirectory} msg
+    catch {exec $::tcltest::tcltest a.tcl -testdir $normaldirectory} msg
     # The join is necessary because the message can be split on multiple lines
-    regexp "testdir: $normaldirectory" [join $msg]
-} {1} 
+    string first "testdir: $normaldirectory" [join $msg]
+} {0} 
 
 test tcltest-8.14 {tcltest::testsDirectory} {
     -setup {
