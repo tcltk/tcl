@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.38 2002/09/27 00:50:10 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.39 2002/11/13 22:11:40 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -243,9 +243,51 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	    return tail;
 	}
     } else {
-	*typePtr = TCL_PATH_RELATIVE;
-	return path;
+	int abs = 0;
+	if (path[0] == 'c' && path[1] == 'o') {
+	    if (path[2] == 'm' && path[3] >= '1' && path[3] <= '9') {
+		/* May have match for 'com[1-9]:?', which is a serial port */
+	        if (path[4] == '\0') {
+	            abs = 4;
+	        } else if (path [4] == ':' && path[5] == '\0') {
+		    abs = 5;
+	        }
+	    } else if (path[2] == 'n' && path[3] == '\0') {
+		/* Have match for 'con' */
+		abs = 3;
+	    }
+	} else if (path[0] == 'l' && path[1] == 'p' && path[2] == 't') {
+	    if (path[3] >= '1' && path[3] <= '9') {
+		/* May have match for 'lpt[1-9]:?' */
+		if (path[4] == '\0') {
+		    abs = 4;
+		} else if (path [4] == ':' && path[5] == '\0') {
+		    abs = 5;
+		}
+	    }
+	} else if (path[0] == 'p' && path[1] == 'r' 
+		   && path[2] == 'n' && path[3] == '\0') {
+	    /* Have match for 'prn' */
+	    abs = 3;
+	} else if (path[0] == 'n' && path[1] == 'u' 
+		   && path[2] == 'l' && path[3] == '\0') {
+	    /* Have match for 'nul' */
+	    abs = 3;
+	} else if (path[0] == 'a' && path[1] == 'u' 
+		   && path[2] == 'x' && path[3] == '\0') {
+	    /* Have match for 'aux' */
+	    abs = 3;
+	}
+	if (abs != 0) {
+	    *typePtr = TCL_PATH_ABSOLUTE;
+	    Tcl_DStringSetLength(resultPtr, offset);
+	    Tcl_DStringAppend(resultPtr, path, abs);
+	    return path + abs;
+	}
     }
+    /* Anything else is treated as relative */
+    *typePtr = TCL_PATH_RELATIVE;
+    return path;
 }
 
 /*

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.23 2002/10/15 16:13:47 vincentdarley Exp $
+# RCS: @(#) $Id: trace.test,v 1.24 2002/11/13 22:11:41 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1850,23 +1850,174 @@ test trace-28.1 {enterstep and leavestep traces with update idletasks (615043)} 
     trace add execution foo {enter enterstep leavestep leave} \
         [list traceExecute foo]
     update
-    after idle {puts idle}
+    after idle {set a "idle"}
     foo
 
     trace remove execution foo {enter enterstep leavestep leave} \
         [list traceExecute foo]
     rename foo {}
+    catch {unset a}
     join $info "\n"
 } {foo foo enter
 foo {set a 1} enterstep
 foo {set a 1} 0 1 leavestep
 foo {update idletasks} enterstep
-foo {puts idle} enterstep
-foo {puts idle} 0 {} leavestep
+foo {set a idle} enterstep
+foo {set a idle} 0 idle leavestep
 foo {update idletasks} 0 {} leavestep
 foo {set b 1} enterstep
 foo {set b 1} 0 1 leavestep
 foo foo 0 1 leave}
+
+test trace-28.2 {exec traces with 'error'} {
+    set info {}
+    set res {}
+    
+    proc foo {} {
+	if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}
+    }
+
+    proc bar {} { error "msg" }
+
+    lappend res [foo]
+
+    trace add execution foo {enter enterstep leave leavestep} \
+      [list traceExecute foo]
+
+    # With the trace active
+
+    lappend res [foo]
+
+    trace remove execution foo {enter enterstep leave leavestep} \
+      [list traceExecute foo]
+    
+    list $res [join $info \n]
+} {{error error} {foo foo enter
+foo {if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}} enterstep
+foo {catch bar} enterstep
+foo bar enterstep
+foo {error msg} enterstep
+foo {error msg} 1 msg leavestep
+foo bar 1 msg leavestep
+foo {catch bar} 0 1 leavestep
+foo {return error} enterstep
+foo {return error} 2 error leavestep
+foo {if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}} 2 error leavestep
+foo foo 0 error leave}}
+
+test trace-28.3 {exec traces with 'return -code error'} {
+    set info {}
+    set res {}
+    
+    proc foo {} {
+	if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}
+    }
+
+    proc bar {} { return -code error "msg" }
+
+    lappend res [foo]
+
+    trace add execution foo {enter enterstep leave leavestep} \
+      [list traceExecute foo]
+
+    # With the trace active
+
+    lappend res [foo]
+
+    trace remove execution foo {enter enterstep leave leavestep} \
+      [list traceExecute foo]
+    
+    list $res [join $info \n]
+} {{error error} {foo foo enter
+foo {if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}} enterstep
+foo {catch bar} enterstep
+foo bar enterstep
+foo {return -code error msg} enterstep
+foo {return -code error msg} 2 msg leavestep
+foo bar 1 msg leavestep
+foo {catch bar} 0 1 leavestep
+foo {return error} enterstep
+foo {return error} 2 error leavestep
+foo {if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}} 2 error leavestep
+foo foo 0 error leave}}
+
+test trace-28.4 {exec traces in slave with 'return -code error'} {knownBug} {
+    interp create slave
+    interp alias slave traceExecute {} traceExecute
+    set res [interp eval slave {
+	set info {}
+	set res {}
+	
+	proc foo {} {
+	    if {[catch {bar}]} {
+		return "error"
+	    } else {
+		return "ok"
+	    }
+	}
+	
+	proc bar {} { return -code error "msg" }
+	
+	lappend res [foo]
+	
+	trace add execution foo {enter enterstep leave leavestep} \
+	  [list traceExecute foo]
+	
+	# With the trace active
+	
+	lappend res [foo]
+	
+	trace remove execution foo {enter enterstep leave leavestep} \
+	  [list traceExecute foo]
+	
+	list $res [join $info \n]
+    }]
+    interp delete slave
+    set res
+} {{error error} {foo foo enter
+foo {if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}} enterstep
+foo {catch bar} enterstep
+foo bar enterstep
+foo {return -code error msg} enterstep
+foo {return -code error msg} 2 msg leavestep
+foo bar 1 msg leavestep
+foo {catch bar} 0 1 leavestep
+foo {return error} enterstep
+foo {return error} 2 error leavestep
+foo {if {[catch {bar}]} {
+	    return "error"
+	} else {
+	    return "ok"
+	}} 2 error leavestep
+foo foo 0 error leave}}
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).

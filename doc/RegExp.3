@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.12 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.13 2002/11/13 22:11:40 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -340,7 +340,9 @@ The \fIextendStart\fR field in \fBTcl_RegExpInfo\fR is only set if the
 character in the string where a match could occur.  If a match was
 found, this will be the same as the beginning of the current match.
 If no match was found, then it indicates the earliest point at which a
-match might occur if additional text is appended to the string.
+match might occur if additional text is appended to the string.  If it
+is no match is possible even with further text, this field will be set 
+to -1.
 .VE 8.1
 .SH "SEE ALSO"
 re_syntax(n)
