@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.33 2004/05/24 21:48:32 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.34 2004/05/25 22:23:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -149,13 +149,14 @@ typedef struct InterpInfo {
  * Limit callbacks handled by scripts are modelled as structures which
  * are stored in hashes indexed by a two-word key.  Note that the type
  * of the 'type' field in the key is not int; this is to make sure
- * that things work properly on 64-bit architectures.
+ * that things are likely to work properly on 64-bit architectures.
  */
 
 struct ScriptLimitCallback {
     Tcl_Interp *interp;
     Tcl_Obj *scriptObj;
     int type;
+    Tcl_HashEntry *entryPtr;
 };
 
 struct ScriptLimitCallbackKey {
@@ -3055,6 +3056,7 @@ DeleteScriptLimitCallback(clientData)
 	    (struct ScriptLimitCallback *) clientData;
 
     Tcl_DecrRefCount(limitCBPtr->scriptObj);
+    Tcl_DeleteHashEntry(limitCBPtr->entryPtr);
     ckfree((char *) limitCBPtr);
 }
 
@@ -3112,17 +3114,9 @@ SetLimitCallback(interp, type, targetInterp, scriptObj)
 	if (hashPtr != NULL) {
 	    Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
 		    Tcl_GetHashValue(hashPtr));
-	    Tcl_DeleteHashEntry(hashPtr);
 	}
 	return;
     }
-
-    limitCBPtr = (struct ScriptLimitCallback *)
-	    ckalloc(sizeof(struct ScriptLimitCallback));
-    limitCBPtr->interp = interp;
-    limitCBPtr->scriptObj = scriptObj;
-    limitCBPtr->type = type;
-    Tcl_IncrRefCount(scriptObj);
 
     hashPtr = Tcl_CreateHashEntry(&iPtr->limit.callbacks, (char *) &key,
 	    &isNew);
@@ -3130,6 +3124,15 @@ SetLimitCallback(interp, type, targetInterp, scriptObj)
 	Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
 		Tcl_GetHashValue(hashPtr));
     }
+
+    limitCBPtr = (struct ScriptLimitCallback *)
+	    ckalloc(sizeof(struct ScriptLimitCallback));
+    limitCBPtr->interp = interp;
+    limitCBPtr->scriptObj = scriptObj;
+    limitCBPtr->entryPtr = hashPtr;
+    limitCBPtr->type = type;
+    Tcl_IncrRefCount(scriptObj);
+
     Tcl_LimitAddHandler(targetInterp, type, CallScriptLimitCallback,
 	    (ClientData) limitCBPtr, DeleteScriptLimitCallback);
     Tcl_SetHashValue(hashPtr, (ClientData) limitCBPtr);
