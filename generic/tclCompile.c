@@ -1337,6 +1337,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     codePtr->iPtr = envPtr->iPtr;
     codePtr->compileEpoch = envPtr->iPtr->compileEpoch;
     codePtr->refCount = 1;
+    codePtr->flags = 0;
     codePtr->source = envPtr->source;
     codePtr->procPtr = envPtr->procPtr;
     codePtr->totalSize = totalSize;
@@ -7740,6 +7741,31 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
 	}
     }
     return 1;			/* the jump was grown */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetInstructionTable --
+ *
+ *  Returns a pointer to the table describing Tcl bytecode instructions.
+ *  This procedure is defined so that clients can access the pointer from
+ *  outside the TCL DLLs.
+ *
+ * Results:
+ *	Returns a pointer to the global instruction table, same as the expression
+ *  (&instructionTable[0]).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+InstructionDesc *
+TclGetInstructionTable()
+{
+    return &instructionTable[0];
 }
 
 
