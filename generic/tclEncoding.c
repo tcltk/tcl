@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.14 2002/11/12 02:25:37 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.15 2002/11/27 02:53:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -318,9 +318,11 @@ TclFinalizeEncodingSubsystem()
 	/*
 	 * Call FreeEncoding instead of doing it directly to handle refcounts
 	 * like escape encodings use.  [Bug #524674]
+	 * Make sure to call Tcl_FirstHashEntry repeatedly so that all
+	 * encodings are eventually cleaned up.
 	 */
 	FreeEncoding((Tcl_Encoding) Tcl_GetHashValue(hPtr));
-	hPtr = Tcl_NextHashEntry(&search);
+	hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     }
     Tcl_DeleteHashTable(&encodingTable);
     Tcl_MutexUnlock(&encodingMutex);
