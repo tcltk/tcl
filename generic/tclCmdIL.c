@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.17 1999/10/05 22:45:40 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.18 1999/11/24 20:55:07 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2786,10 +2786,10 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	order = DictionaryCompare(
 		Tcl_GetString(objPtr1),	Tcl_GetString(objPtr2));
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
-	int a, b;
+	long a, b;
 
-	if ((Tcl_GetIntFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
-		|| (Tcl_GetIntFromObj(infoPtr->interp, objPtr2, &b)
+	if ((Tcl_GetLongFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
+		|| (Tcl_GetLongFromObj(infoPtr->interp, objPtr2, &b)
 		!= TCL_OK)) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
