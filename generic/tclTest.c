@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.77 2004/03/01 17:33:45 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.78 2004/03/05 16:36:56 kennykb Exp $
  */
 
 #define TCL_TEST
@@ -2056,7 +2056,8 @@ TesteventObjCmd( ClientData unused,      /* Not used */
 	NULL
     };
     int posIndex;		/* Index of the chosen position */
-    static CONST int posNum[] = { /* Interpretation of the chosen position */
+    static CONST Tcl_QueuePosition posNum[] = { 
+				/* Interpretation of the chosen position */
 	TCL_QUEUE_HEAD,
 	TCL_QUEUE_TAIL,
 	TCL_QUEUE_MARK
