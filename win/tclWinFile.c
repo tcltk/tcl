@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.54 2003/09/29 22:38:21 dkf Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.55 2003/10/13 16:48:07 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1291,9 +1291,10 @@ TclpGetUserHome(name, bufferPtr)
  */
 
 static int
-NativeAccess(
-    CONST TCHAR *nativePath,	/* Path of file to access (UTF-8). */
-    int mode)			/* Permission setting. */
+NativeAccess(nativePath, mode)
+    CONST TCHAR *nativePath;	/* Path of file to access, native
+                            	 * encoding. */
+    int mode;			/* Permission setting. */
 {
     DWORD attr;
 
@@ -1312,26 +1313,151 @@ NativeAccess(
 	/*
 	 * File is not writable.
 	 */
-
 	Tcl_SetErrno(EACCES);
 	return -1;
     }
 
     if (mode & X_OK) {
-	if (attr & FILE_ATTRIBUTE_DIRECTORY) {
+	if (!(attr & FILE_ATTRIBUTE_DIRECTORY) && !NativeIsExec(nativePath)) {
 	    /*
-	     * Directories are always executable. 
+	     * It's not a directory and doesn't have the correct
+	     * extension.  Therefore it can't be executable
 	     */
-	    
-	    return 0;
+	    Tcl_SetErrno(EACCES);
+	    return -1;
 	}
-	if (NativeIsExec(nativePath)) {
-	    return 0;
-	}
-	Tcl_SetErrno(EACCES);
-	return -1;
     }
 
+    /* 
+     * It looks as if the permissions are ok, but if we are on NT, 2000
+     * or XP, we have a more complex permissions structure so we try to
+     * check that.  The code below is remarkably complex for such a 
+     * simple thing as finding what permissions the OS has set for a
+     * file.
+     * 
+     * If we are simply checking for file existence, then we don't
+     * need all these complications (which are really quite slow: 
+     * with this code 'file readable' is 5-6 times slower than 'file
+     * exists').
+     */
+    
+    if ((mode != F_OK) && (tclWinProcs->getFileSecurityProc != NULL)) {
+	SECURITY_DESCRIPTOR *sdPtr = NULL;
+	unsigned long size;
+	GENERIC_MAPPING genMap;
+	HANDLE hToken = NULL;
+	DWORD desiredAccess = 0;
+	DWORD grantedAccess;
+	BOOL accessYesNo;
+	PRIVILEGE_SET privSet;
+	DWORD privSetSize = sizeof(PRIVILEGE_SET);
+	int error;
+	
+	/* 
+	 * First find out how big the buffer needs to be 
+	 */
+	size = 0;
+	(*tclWinProcs->getFileSecurityProc)(nativePath, 
+		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION 
+		| DACL_SECURITY_INFORMATION, 0, 0, &size);
+
+	/* 
+	 * Should have failed with ERROR_INSUFFICIENT_BUFFER 
+	 */
+	error = GetLastError();
+	if (error != ERROR_INSUFFICIENT_BUFFER) {
+	    /* 
+	     * Most likely case is ERROR_ACCESS_DENIED, which
+	     * we will convert to EACCES - just what we want! 
+	     */
+	    TclWinConvertError(error);
+	    return -1;
+	}
+
+	/* 
+	 * Now size contains the size of buffer needed 
+	 */
+	sdPtr = (SECURITY_DESCRIPTOR *) HeapAlloc(GetProcessHeap(), 0, size);
+
+	if (sdPtr == NULL) {
+	    goto accessError;
+	}
+
+	/* 
+	 * Call GetFileSecurity() for real 
+	 */
+	if (!(*tclWinProcs->getFileSecurityProc)(nativePath, 
+		OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION 
+		| DACL_SECURITY_INFORMATION, sdPtr, size, &size)) {
+	    /* 
+	     * Error getting owner SD
+	     */
+	    goto accessError;
+	}
+
+	/* 
+	 * Perform security impersonation of the user and open the
+	 * resulting thread token.
+	 */
+	if (!(*tclWinProcs->impersonateSelfProc)(SecurityImpersonation)) {
+	    /* 
+	     * Unable to perform security impersonation. 
+	     */
+	    goto accessError;
+	}
+	if (!(*tclWinProcs->openThreadTokenProc)(GetCurrentThread (), 
+			TOKEN_DUPLICATE | TOKEN_QUERY, FALSE, &hToken)) {
+	    /* 
+	     * Unable to get current thread's token. 
+	     */
+	    goto accessError;
+	}
+	(*tclWinProcs->revertToSelfProc)();
+	memset (&genMap, 0x00, sizeof (GENERIC_MAPPING));
+	/* 
+	 * Fill GenericMask type according to access priveleges
+	 * we are checking.
+	 */
+	genMap.GenericAll = 0;
+	if (mode & R_OK) {
+	    genMap.GenericRead = FILE_GENERIC_READ;
+	}
+	if (mode & W_OK) {
+	    genMap.GenericWrite = FILE_GENERIC_WRITE;
+	}
+	if (mode & X_OK) {
+	    genMap.GenericExecute = FILE_GENERIC_EXECUTE;
+	}
+	(*tclWinProcs->mapGenericMaskProc)(&desiredAccess, &genMap);
+	/* 
+	 * Perform access check using the token. 
+	 */
+	if (!(*tclWinProcs->accessCheckProc )(sdPtr, hToken, desiredAccess, 
+		&genMap, &privSet, &privSetSize, &grantedAccess,
+		&accessYesNo)) {
+	    /* 
+	     * Unable to perform access check. 
+	     */
+	  accessError:
+	    TclWinConvertError(GetLastError());
+	    if (sdPtr != NULL) {
+	        HeapFree(GetProcessHeap(), 0, sdPtr);
+	    }
+	    if (hToken != NULL) {
+	        CloseHandle(hToken);
+	    }
+	    return -1;
+	}
+	/* 
+	 * Clean up. 
+	 */
+	HeapFree(GetProcessHeap (), 0, sdPtr);
+	CloseHandle(hToken);
+	if (!accessYesNo) {
+	    Tcl_SetErrno(EACCES);
+	    return -1;
+	}
+    }
     return 0;
 }
 
@@ -1582,9 +1708,13 @@ TclpObjStat(pathPtr, statPtr)
 
     transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
     if (transPtr == NULL || (strpbrk(Tcl_GetString(transPtr), "?*") != NULL)) {
+	if (transPtr != NULL) {
+	    Tcl_DecrRefCount(transPtr);
+	}
 	Tcl_SetErrno(ENOENT);
 	return -1;
     }
+    Tcl_DecrRefCount(transPtr);
 #endif
     
     /*

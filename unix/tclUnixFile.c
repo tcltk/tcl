@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32 2003/02/12 18:57:52 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.33 2003/10/13 16:48:07 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -221,6 +221,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	if (NativeMatchType(native, types)) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
+	Tcl_DecrRefCount(fileNamePtr);
 	return TCL_OK;
     } else {
 	DIR *d;
@@ -277,6 +278,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    Tcl_DStringValue(&dsOrig), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
 	    Tcl_DStringFree(&dsOrig);
+	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_ERROR;
 	}
 
@@ -330,6 +332,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	closedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
+	Tcl_DecrRefCount(fileNamePtr);
 	return TCL_OK;
     }
 }
@@ -745,10 +748,14 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	char link[MAXPATHLEN];
 	int length;
 	Tcl_DString ds;
-
-	if (Tcl_FSGetTranslatedPath(NULL, pathPtr) == NULL) {
+	Tcl_Obj *transPtr;
+	
+	transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (transPtr == NULL) {
 	    return NULL;
 	}
+	Tcl_DecrRefCount(transPtr);
+
 	length = readlink(Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
 	if (length < 0) {
 	    return NULL;

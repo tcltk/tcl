@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.85 2003/10/10 15:50:35 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.86 2003/10/13 16:48:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -35,9 +35,13 @@
  * Prototypes for procedures defined later in this file.
  */
 
-static FilesystemRecord* FsGetFirstFilesystem(void);
-static void FsThrExitProc(ClientData cd);
-
+static FilesystemRecord* FsGetFirstFilesystem _ANSI_ARGS_((void));
+static void FsThrExitProc             _ANSI_ARGS_((ClientData cd));
+static Tcl_Obj* FsListMounts          _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+						   CONST char *pattern));
+static Tcl_Obj* FsAddMountsToGlobResult  _ANSI_ARGS_((Tcl_Obj *result, 
+	   Tcl_Obj *pathPtr, CONST char *pattern, Tcl_GlobTypeData *types));
+    
 #ifdef TCL_THREADS
 static void FsRecacheFilesystemList(void);
 #endif
@@ -922,7 +926,12 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
     if (fsPtr != NULL) {
 	Tcl_FSMatchInDirectoryProc *proc = fsPtr->matchInDirectoryProc;
 	if (proc != NULL) {
-	    return (*proc)(interp, result, pathPtr, pattern, types);
+	    int ret = (*proc)(interp, result, pathPtr, pattern, types);
+	    if (ret == TCL_OK && pattern != NULL) {
+		result = FsAddMountsToGlobResult(result, pathPtr, 
+						 pattern, types);
+	    }
+	    return ret;
 	}
     } else {
 	Tcl_Obj* cwd;
@@ -967,6 +976,9 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		if (ret == TCL_OK) {
 		    int resLength;
 
+		    tmpResultPtr = FsAddMountsToGlobResult(tmpResultPtr, cwd,
+							   pattern, types);
+
 		    ret = Tcl_ListObjLength(interp, tmpResultPtr, &resLength);
 		    if (ret == TCL_OK) {
 			int i;
@@ -988,6 +1000,92 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
     }
     Tcl_SetErrno(ENOENT);
     return -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsAddMountsToGlobResult --
+ *
+ *	This routine is used by the globbing code to take the results
+ *	of a directory listing and add any mounted paths to that
+ *	listing.  This is required so that simple things like 
+ *	'glob *' merge mounts and listings correctly.
+ *	
+ * Results: 
+ *	
+ *	The passed in 'result' may be modified (in place, if
+ *	necessary), and the correct list is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------- 
+ */
+static Tcl_Obj*
+FsAddMountsToGlobResult(result, pathPtr, pattern, types)
+    Tcl_Obj *result;    /* The current list of matching paths */
+    Tcl_Obj *pathPtr;   /* The directory in question */
+    CONST char *pattern;
+    Tcl_GlobTypeData *types;
+{
+    int mLength, gLength, i;
+    int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
+    Tcl_Obj *mounts = FsListMounts(pathPtr, pattern);
+
+    if (mounts == NULL) return result; 
+
+    if (Tcl_ListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
+	goto endOfMounts;
+    }
+    if (Tcl_ListObjLength(NULL, result, &gLength) != TCL_OK) {
+	goto endOfMounts;
+    }
+    for (i = 0; i < mLength; i++) {
+	Tcl_Obj *mElt;
+	int j;
+	int found = 0;
+	
+	Tcl_ListObjIndex(NULL, mounts, i, &mElt);
+
+	for (j = 0; j < gLength; j++) {
+	    Tcl_Obj *gElt;
+	    Tcl_ListObjIndex(NULL, result, j, &gElt);
+	    if (Tcl_FSEqualPaths(mElt, gElt)) {
+		found = 1;
+		if (!dir) {
+		    /* We don't want to list this */
+		    if (Tcl_IsShared(result)) {
+			Tcl_Obj *newList;
+			newList = Tcl_DuplicateObj(result);
+			Tcl_DecrRefCount(result);
+			result = newList;
+		    }
+		    Tcl_ListObjReplace(NULL, result, j, 1, 0, NULL);
+		    gLength--;
+		}
+		/* Break out of for loop */
+		break;
+	    }
+	}
+	if (!found && dir) {
+	    if (Tcl_IsShared(result)) {
+		Tcl_Obj *newList;
+		newList = Tcl_DuplicateObj(result);
+		Tcl_DecrRefCount(result);
+		result = newList;
+	    }
+	    Tcl_ListObjAppendElement(NULL, result, mElt);
+	    /* 
+	     * No need to increment gLength, since we
+	     * don't want to compare mounts against
+	     * mounts.
+	     */
+	}
+    }
+  endOfMounts:
+    Tcl_DecrRefCount(mounts);
+    return result;
 }
 
 /*
@@ -1627,6 +1725,9 @@ Tcl_FSStat(pathPtr, buf)
 	    retVal = (*statProcPtr->proc)(path, &oldStyleStatBuffer);
 	    statProcPtr = statProcPtr->nextPtr;
 	}
+	if (transPtr != NULL) {
+	    Tcl_DecrRefCount(transPtr);
+	}
     }
     
     Tcl_MutexUnlock(&obsoleteFsHookMutex);
@@ -1754,6 +1855,9 @@ Tcl_FSAccess(pathPtr, mode)
 	    retVal = (*accessProcPtr->proc)(path, mode);
 	    accessProcPtr = accessProcPtr->nextPtr;
 	}
+	if (transPtr != NULL) {
+	    Tcl_DecrRefCount(transPtr);
+	}
     }
     
     Tcl_MutexUnlock(&obsoleteFsHookMutex);
@@ -1830,6 +1934,9 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
 	    retVal = (*openFileChannelProcPtr->proc)(interp, path,
 						     modeString, permissions);
 	    openFileChannelProcPtr = openFileChannelProcPtr->nextPtr;
+	}
+	if (transPtr != NULL) {
+	    Tcl_DecrRefCount(transPtr);
 	}
     }
     Tcl_MutexUnlock(&obsoleteFsHookMutex);
@@ -2816,7 +2923,7 @@ Tcl_FSListVolumes(void)
      * a list of all drives from all filesystems.
      */
 
-    fsRecPtr = FsGetFirstFilesystem(); 
+    fsRecPtr = FsGetFirstFilesystem();
     while (fsRecPtr != NULL) {
 	Tcl_FSListVolumesProc *proc = fsRecPtr->fsPtr->listVolumesProc;
 	if (proc != NULL) {
@@ -2824,6 +2931,59 @@ Tcl_FSListVolumes(void)
 	    if (thisFsVolumes != NULL) {
 		Tcl_ListObjAppendList(NULL, resultPtr, thisFsVolumes);
 		Tcl_DecrRefCount(thisFsVolumes);
+	    }
+	}
+	fsRecPtr = fsRecPtr->nextPtr;
+    }
+    
+    return resultPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * FsListMounts --
+ *
+ *	List all mounts within the given directory, which match the
+ *	given pattern.
+ *
+ * Results:
+ *	The list of mounts, in a list object which has refCount 0, or
+ *	NULL if we didn't even find any filesystems to try to list
+ *	mounts.
+ *
+ * Side effects:
+ *	None
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static Tcl_Obj*
+FsListMounts(pathPtr, pattern)
+    Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
+    CONST char *pattern;	/* Pattern to match against. */
+{
+    FilesystemRecord *fsRecPtr;
+    Tcl_GlobTypeData mountsOnly = { TCL_GLOB_TYPE_MOUNT, 0, NULL, NULL };
+    Tcl_Obj *resultPtr = NULL;
+    
+    /*
+     * Call each of the "listMounts" functions in succession.
+     * A non-NULL return value indicates the particular function has
+     * succeeded.  We call all the functions registered, since we want
+     * a list from each filesystems.
+     */
+
+    fsRecPtr = FsGetFirstFilesystem();
+    while (fsRecPtr != NULL) {
+	if (fsRecPtr != &nativeFilesystemRecord) {
+	    Tcl_FSMatchInDirectoryProc *proc = 
+	                          fsRecPtr->fsPtr->matchInDirectoryProc;
+	    if (proc != NULL) {
+		if (resultPtr == NULL) {
+		    resultPtr = Tcl_NewObj();
+		}
+		(*proc)(NULL, resultPtr, pathPtr, pattern, &mountsOnly);
 	    }
 	}
 	fsRecPtr = fsRecPtr->nextPtr;
@@ -3430,6 +3590,11 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
 {
     FilesystemRecord *fsRecPtr;
     Tcl_Filesystem* retVal = NULL;
+    
+    if (pathObjPtr == NULL) {
+	panic("Tcl_FSGetFileSystemForPath called with NULL object");
+	return NULL;
+    }
     
     /* 
      * If the object has a refCount of zero, we reject it.  This

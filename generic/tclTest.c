@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.68 2003/10/08 14:24:41 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.69 2003/10/13 16:48:06 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -6080,17 +6080,23 @@ TestReportOpenFileChannel(interp, fileName, mode, permissions)
 
 static int
 TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
-    Tcl_Interp *interp;		/* Interpreter to receive results. */
-    Tcl_Obj *resultPtr;		/* Directory separators to pass to TclDoGlob. */
+    Tcl_Interp *interp;		/* Interpreter for error
+                       		 * messages. */
+    Tcl_Obj *resultPtr;		/* Object to lappend results. */
     Tcl_Obj *dirPtr;	        /* Contains path to directory to search. */
     CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. */
 {
-    TestReport("matchindirectory",dirPtr, NULL);
-    return Tcl_FSMatchInDirectory(interp, resultPtr, 
-				  TestReportGetNativePath(dirPtr), pattern, 
-				  types);
+    if (types != NULL && types->type & TCL_GLOB_TYPE_MOUNT) {
+	TestReport("matchmounts",dirPtr, NULL);
+	return TCL_OK;
+    } else {
+        TestReport("matchindirectory",dirPtr, NULL);
+	return Tcl_FSMatchInDirectory(interp, resultPtr, 
+				      TestReportGetNativePath(dirPtr), pattern, 
+				      types);
+    }
 }
 static int
 TestReportChdir(dirName)
