@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.52 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.53 2002/03/02 04:55:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3777,7 +3777,7 @@ FilterInputBytes(chanPtr, gsPtr)
     char *dst;
     int offset, toRead, dstNeeded, spaceLeft, result, rawLen, length;
     Tcl_Obj *objPtr;
-#define ENCODING_LINESIZE   30	/* Lower bound on how many bytes to convert
+#define ENCODING_LINESIZE   20	/* Lower bound on how many bytes to convert
 				 * at a time.  Since we don't know a priori
 				 * how many bytes of storage this many source
 				 * bytes will use, we actually need at least
@@ -3806,7 +3806,7 @@ FilterInputBytes(chanPtr, gsPtr)
 	 * seen EOL.  Need to read more bytes from the channel device.
 	 * Side effect is to allocate another channel buffer.
 	 */
-	 
+
 	read:
         if (statePtr->flags & CHANNEL_BLOCKED) {
             if (statePtr->flags & CHANNEL_NONBLOCKING) {
@@ -3859,7 +3859,14 @@ FilterInputBytes(chanPtr, gsPtr)
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 	    dst, spaceLeft, &gsPtr->rawRead, &gsPtr->bytesWrote,
-	    &gsPtr->charsWrote); 
+	    &gsPtr->charsWrote);
+
+    /*
+     * Make sure that if we go through 'gets', that we reset the
+     * TCL_ENCODING_START flag still.  [Bug #523988]
+     */
+    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
+
     if (result == TCL_CONVERT_MULTIBYTE) {
 	/*
 	 * The last few bytes in this channel buffer were the start of a

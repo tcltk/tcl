@@ -1,10 +1,25 @@
+2002-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/encoding/iso2022-jp.enc: 
+	* library/encoding/iso2022.enc: 
+	* tools/encoding/iso2022-jp.esc:
+	* tools/encoding/iso2022.esc: gave <ESC>$B precedence over <ESC>$@,
+	based on comments (point 1) in [Bug #219283] (rfc 1468)
+
+	* tests/encoding.test: added encoding-23.* tests
+	* generic/tclIO.c (FilterInputBytes): reset the TCL_ENCODING_START
+	flags in the ChannelState when using 'gets'. [Bug #523988]
+	Also reduced the value of ENCODING_LINESIZE from 30 to 20 as this
+	seems to improve the performance of 'gets' according to tclbench.
+
 2002-02-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (TraceCommandProc): ensure that TraceCommandInfo
 	structure was also deleted when a command was deleted to prevent a
 	mem leak.
 
-	* generic/tclBasic.c (Tcl_CreateObjTrace): set tracePtr->flags correctly.
+	* generic/tclBasic.c (Tcl_CreateObjTrace): set tracePtr->flags
+	correctly.
 
 	* generic/tclTimer.c (TimerExitProc): remove remaining events in
 	tls on thread exit.
