@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.75 2002/01/17 04:37:32 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.76 2002/01/21 16:15:03 dgp Exp $
 
 library tcl
 
@@ -1496,16 +1496,16 @@ declare 424 generic {
     void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
 }
 declare 425 generic {
-    ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, char *varName, \
+    ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, CONST char *varName, \
 	    int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData)
 }
 declare 426 generic {
-    int Tcl_TraceCommand(Tcl_Interp *interp, char *varName, int flags, \
-		Tcl_CommandTraceProc *proc, ClientData clientData)
+    int Tcl_TraceCommand(Tcl_Interp *interp, CONST char *varName, int flags, \
+	    Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 427 generic {
-    void Tcl_UntraceCommand(Tcl_Interp *interp, char *varName, int flags, \
-		Tcl_CommandTraceProc *proc, ClientData clientData)
+    void Tcl_UntraceCommand(Tcl_Interp *interp, CONST char *varName, \
+	    int flags, Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 428 generic {
     char * Tcl_AttemptAlloc(unsigned int size)
@@ -1518,7 +1518,7 @@ declare 430 generic {
 }
 declare 431 generic {
     char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
-	CONST char *file, int line)
+	    CONST char *file, int line)
 }
 declare 432 generic {
     int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
@@ -1531,8 +1531,8 @@ declare 434 generic {
     Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 435 generic {
-    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name,
-	int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name, \
+	int *numArgsPtr, Tcl_ValueType **argTypesPtr, \
 	Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 }
 declare 436 generic {
