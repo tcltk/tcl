@@ -25,17 +25,10 @@
  * our entry point.
  */
 
-#ifndef STATIC_BUILD
-#if defined(_MSC_VER)
-#   define EXPORT(a,b) __declspec(dllexport) a b
-#   define DllEntryPoint DllMain
-#else
-#   if defined(__BORLANDC__)
-#	define EXPORT(a,b) a _export b
-#   else
-#	define EXPORT(a,b) a b
-#   endif
-#endif
+#ifdef DLL_BUILD
+# if defined(_MSC_VER)
+#  define DllEntryPoint DllMain
+# endif
 #endif
 
 /*
@@ -114,7 +107,7 @@ static int		SetValue(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *valueNameObj, Tcl_Obj *dataObj,
 			    Tcl_Obj *typeObj);
 
-EXTERN EXPORT(int,Registry_Init)(Tcl_Interp *interp);
+EXTERN int Registry_Init(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -136,7 +129,7 @@ EXTERN EXPORT(int,Registry_Init)(Tcl_Interp *interp);
  */
 
 #ifdef __WIN32__
-#ifndef STATIC_BUILD
+#ifdef DLL_BUILD
 BOOL APIENTRY
 DllEntryPoint(
     HINSTANCE hInst,		/* Library instance handle. */
@@ -164,7 +157,8 @@ DllEntryPoint(
  *----------------------------------------------------------------------
  */
 
-EXPORT(int,Registry_Init)(
+int
+Registry_Init(
     Tcl_Interp *interp)
 {
     Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd, NULL, NULL);
