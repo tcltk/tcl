@@ -1,3 +1,12 @@
+2004-05-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclObjUnsetVar2): backported fix [Bug 735335]
+	and new (in tcl8.4) exteriorisations of [Bug 736729] due to the use of
+	tclNsVarNameType obj types. The consequences of [Bug 736729]
+	should be the same as in tcl8.3 and previous versions.
+	The use of tclNsVarNameType objs is still disabled, pending a
+	decision by the release manager.
+
 2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* win/tclWinFile.c (TclpMatchInDirectory): fix for an issue
