@@ -1,3 +1,10 @@
+2004-03-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (TclParseInit):	Modified TclParseInit so
+	* generic/tclTest.c ([testexprparser]): that Tcl_Parse initialization
+	conforms to documented promised about what fields will not be
+	modified by what Tcl_Parse* routines. [Bug 910595]
+
 2004-03-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
