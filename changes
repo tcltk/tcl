@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.65 2002/03/01 21:26:14 dgp Exp $
+RCS: @(#) $Id: changes,v 1.66 2002/03/04 23:12:25 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5252,7 +5252,7 @@ interpreter deletion (sofer, rbrunner)
 
 2001-10-16 (new feature, Mac) change in binary extension format from MachO
 bundles to standard .dylib dynamic libraries like on other unices.
-        **POTENTIAL INCOMPATIBILITY***
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2001-10-18 (bug fix) corrected off-by-one-day error in clock scan with
 relative months and years during swing hours. (lavana)
@@ -5287,7 +5287,7 @@ compiles to 0 bytecodes (sofer)
 
 2001-09-17 (new feature) compiling with TCL_COMPILE_DEBUG now required to 
 enable all compile and execution tracing (sofer)
-        **POTENTIAL INCOMPATIBILITY***
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2001-09-19 (bug fix)[411825] made TclNeedSpace UTF-8 aware (fellows)
 
@@ -5303,11 +5303,12 @@ enable all compile and execution tracing (sofer)
 2001-11-06 (new feature) revitalized makefile.vc (gravereaux)
 
 2001-11-07 (new feature) Cygwin gcc support dropped.  Use mingw (dejong)
-        **POTENTIAL INCOMPATIBILITY***
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2001-11-07 (new feature) Support --include-dir= and --libdir= options to
-configure.  Store in tclConfig.sh as TCL_INCLUDE_SPEC and TCL_LIB_SPEC. (dejong)
-        **POTENTIAL INCOMPATIBILITY***
+configure.  Store in tclConfig.sh as TCL_INCLUDE_SPEC and TCL_LIB_SPEC.
+(dejong)
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2001-11-08 (new feature) Enable --enable-threads on FreeBSD (dejong)
 
@@ -5335,12 +5336,12 @@ or a dynamic string as well as a static string to indicate an error (fellows)
 
 2001-12-05 (new feature) new algorithm for [array get] adds safety when read
 traces modify the array. (sofer)
-        **POTENTIAL INCOMPATIBILITY***
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2001-12-10 (bug fix)[490514] doc fixes (porter,english)
 
-2001-12-18 (new feature) removed unix/dltest/configure; unix/configure does all
-(dejong)
+2001-12-18 (new feature) removed unix/dltest/configure; unix/configure does
+all (dejong)
 
 2001-12-19 (new feature) New make target 'make shell' (dejong)
 
@@ -5348,7 +5349,7 @@ traces modify the array. (sofer)
 
 2001-12-28 (new feature) new command [memory onexit] replaces [checkmem] when
 compiled with TCL_MEM_DEBUG.  Added documentation. (porter)
-        **POTENTIAL INCOMPATIBILITY***
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2001-12-28 (bug fix) proper case in [auto_execok] use of $env(COMPSPEC) (hobbs)
 
@@ -5376,46 +5377,49 @@ that amount to string matching.  Also -nocase and --. (hobbs)
 2002-02-05 (bug fix) [http::error] called when [::error] intended
 => http 2.4.2 (porter)
 
-2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs (talcott,kupries)
+2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs
+(talcott,kupries)
 
 2002-02-06 (performance enhancement) [regsub] special cases that map to
 [string map] detected. (hobbs)
 
-2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value (hobbs)
+2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value
+(hobbs)
 
 2002-02-10 (new feature)[TIP 32,79] Tcl_CreateObjTrace API (kenny)
 
 2002-02-12 (new feature) partial support for DJGPP Tcl on DOS (gravereaux)
 
-2002-02-14 (mem leak) An error in [gets $chan] leaks an empty Tcl_Obj.  fixed.
-(kupries, sofer)
+2002-02-14 (mem leak) Fixed leaking an empty Tcl_Obj when [gets $chan]
+errored out. (kupries, sofer)
 
-2002-02-15 (new feature)[TIP 72] support for 64-bit integer values on 32-bit
-platforms and ability to work with >2GiB files.  Extends many
+2002-02-15 (new feature)[TIP 72] support for 64-bit integer values on
+32-bit platforms and ability to work with >2GiB files.  Extends many
 commands.  See ChangeLog and TIP for details.
-        **POTENTIAL INCOMPATIBILITY***
+	*** POTENTIAL INCOMPATIBILITY ***
 
 2002-02-22 (bug fix)[476537] Fix panic when loading shared library without
 proper use of stubs on platform without backlinking (porter)
 
 2002-02-22 (new feature)  64-bit support for xlc compiler on AIX-4 (hobbs)
 
-2002-02-22 (new feature)[521560] Removed limits on filename length and format
-[source]able through the Safe Base (hobbs)
+2002-02-22 (new feature)[521560] Removed limits on filename length and
+format [source]able through the Safe Base (hobbs)
 
 2002-02-22 (performance enhancement) optimized bytecodes for [if], [for],
 [while] and constant conditions (sofer)
 
 2002-02-22 (new feature)[TIP 76] [regsub] can now return result (fellows)
 
-2002-02-25 (bug fix)[495207] buffer overrun when closing ] left out of argument
-to [subst] (sofer, english)
+2002-02-25 (bug fix)[495207] buffer overrun when closing ] left out of
+argument to [subst] (sofer, english)
 
 2002-02-25 (bug fix)[514392] [load] updated for Mac OS X 10.1 (steffen)
 
 2002-02-26 (bug fix) [info hostname] choked on names >31 characters (hobbs)
 
-2002-02-26 (new feature)[TIP 35] serial channel configuration: Unix (schroedter)
+2002-02-26 (new feature)[TIP 35] serial channel configuration: Unix
+(schroedter, hobbs)
 
 2002-02-25 (bug fix)[483575] [fconfigure ... -error] now no-op on Mac (kupries)
 
@@ -5426,5 +5430,10 @@ cached Command for all namespaces, avoiding repeated lookups (sofer)
 Added compiler macro USE_NON_CONST to keep using those old API prototypes
 that present irreconcilable source incompatibilities with header files
 of prior Tcl releases.  Others will need to be reconciled.
-        **POTENTIAL INCOMPATIBILITY***
+        *** POTENTIAL INCOMPATIBILITY ***
 
+2002-03-04 (bug fix)[474358, 218099, 219314, 524674] fixed several problems
+related to the handling of iso2022 text and finalization of escape-based
+encodings. (taguchi, takahashi, hobbs)
+
+--- Released 8.4a4, March 5, 2002 --- See ChangeLog for details ---
