@@ -1,3 +1,11 @@
+2002-02-22  Don Porter <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:
+	* generic/tclObj.c: renamed global variable emptyString ->
+	tclEmptyString because it is no longer static.
+	* generic/tclPkg.c: Fix for panic when library is loaded on a
+	platform without backlinking without proper use of stubs. [Bug 476537]
+
 2002-02-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/regexpComp.test: updated regexp-11.[1-4] to match changes

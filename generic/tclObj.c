@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.29 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.30 2002/02/22 22:36:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -47,8 +47,8 @@ Tcl_Mutex tclObjMutex;
  * is shared by all new objects allocated by Tcl_NewObj.
  */
 
-static char emptyString;
-char *tclEmptyStringRep = &emptyString;
+char tclEmptyString = '\0';
+char *tclEmptyStringRep = &tclEmptyString;
 
 /*
  * Prototypes for procedures defined later in this file:
