@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.18 2001/11/19 17:30:27 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.19 2002/01/17 02:43:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -983,7 +983,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_ParseVar(interp, string, termPtr)
     Tcl_Interp *interp;			/* Context for looking up variable. */
     register char *string;		/* String containing variable name.

@@ -1,5 +1,13 @@
 2002-01-16  Don Porter <dgp@users.sourceforge.net>
 
+	* doc/ParseCmd.3 (Tcl_ParseVar):
+	* generic/tcl.decls (Tcl_ParseVar):
+	* generic/tclParse.c (Tcl_ParseVar):
+	* generic/tclTest.c (TestparsevarObjCmd): Updated APIs in
+        generic/tclParse.c according to the guidelines of TIP 27.  Updated
+	callers.
+	* generic/tclDecls.h: make genstubs
+
 	* generic/tcl.decls (Tcl_RecordAndEval):
 	* generic/tclDecls.h: make genstubs
 	* generic/tclHistory.c (Tcl_RecordAndEval): Updated APIs in
