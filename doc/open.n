@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.19 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: open.n,v 1.20 2004/04/26 14:38:09 dkf Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -132,7 +132,15 @@ standard input for the pipeline is taken from the current standard
 input unless overridden by the command.
 The id of the spawned process is accessible through the \fBpid\fR
 command, using the channel id returned by \fBopen\fR as argument.
-
+.PP
+If the command (or one of the commands) executed in the command
+pipeline returns an error (according to the definition in \fBexec\fR),
+a Tcl error is generated when \fBclose\fR is called on the channel
+(similar to the \fBclose\fR command.)
+.PP
+It is often useful to use the \fBfileevent\fR command with pipelines
+so other processing may happen at the same time as running the command
+in the background.
 .VS 8.4
 .SH "SERIAL COMMUNICATIONS"
 .PP
@@ -393,6 +401,16 @@ input, but is redirected from a file, then the above problem does not occur.
 See the PORTABILITY ISSUES section of the \fBexec\fR command for additional
 information not specific to command pipelines about executing
 applications on the various platforms
+.SH "EXAMPLE"
+Open a command pipeline and catch any errors:
+
+.CS
+set fl [open "| ls this_file_does_not_exist"]
+set data [read $fl]
+if {[catch {close $fl} err]} {
+    puts "ls command failed: $err"
+}
+.CE
 
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
