@@ -1,4 +1,5 @@
-'\"
+'\" -*- nroff -*-
+'\" 
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
 '\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
@@ -6,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.13.2.2 2004/09/02 13:58:58 dkf Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.13.2.3 2004/10/27 12:52:40 dkf Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.4 Tcl "Tcl Built-In Commands"
@@ -119,13 +120,13 @@ precedence.
 .VS 8.4
 .SH EXAMPLES
 .CS
-lsearch {a b c d e} c => 2
-lsearch -all {a b c a b c} c => 2 5
-lsearch -inline {a20 b35 c47} b* => b35
-lsearch -inline -not {a20 b35 c47} b* => a20
-lsearch -all -inline -not {a20 b35 c47} b* => a20 c47
-lsearch -all -not {a20 b35 c47} b* => 0 2
-lsearch -start 3 {a b c a b c} c => 5
+\fBlsearch\fR {a b c d e} c \fI=> 2\fR
+\fBlsearch\fR -all {a b c a b c} c \fI=> 2 5\fR
+\fBlsearch\fR -inline {a20 b35 c47} b* \fI=> b35\fR
+\fBlsearch\fR -inline -not {a20 b35 c47} b* \fI=> a20\fR
+\fBlsearch\fR -all -inline -not {a20 b35 c47} b* \fI=> a20 c47\fR
+\fBlsearch\fR -all -not {a20 b35 c47} b* \fI=> 0 2\fR
+\fBlsearch\fR -start 3 {a b c a b c} c \fI=> 5\fR
 .CE
 .VE 8.4
 

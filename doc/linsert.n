@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.7 2001/11/14 23:38:39 hobbs Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.7.4.1 2004/10/27 12:52:40 dkf Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,7 @@ linsert \- Insert elements into a list
 .SH DESCRIPTION
 .PP
 This command produces a new list from \fIlist\fR by inserting all of the
-\fIelement\fR arguments just before the \fIindex\fRth element of
+\fIelement\fR arguments just before the \fIindex\fR'th element of
 \fIlist\fR.  Each \fIelement\fR argument will become a separate element of
 the new list.  If \fIindex\fR is less than or equal to zero, then the new
 elements are inserted at the beginning of the list.  If \fIindex\fR has the
@@ -29,7 +29,16 @@ value \fBend\fR, or if it is greater than or equal to the number of
 elements in the list, then the new elements are appended to the list.
 \fBend\-\fIinteger\fR refers to the last element in the list minus the
 specified integer offset.
-
+.SH EXAMPLE
+Putting some values into a list, first indexing from the start and
+then indexing from the end, and then chaining them together:
+.CS
+set oldList {the fox jumps over the dog}
+set midList [\fBlinsert\fR $oldList 1 quick]
+set newList [\fBlinsert\fR $midList end-1 lazy]
+# The old lists still exist though...
+set newerList [\fBlinsert\fR [\fBlinsert\fR $oldList end-1 quick] 1 lazy]
+.CE
 
 .SH "SEE ALSO"
 .VS 8.4
