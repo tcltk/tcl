@@ -1,5 +1,8 @@
 2000-05-10  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* generic/tclPosixStr.c (Tcl_SignalMsg): clarified #defines for
+	Linux on Sparc to compile correctly. [Bug: 5364]
+
 	* doc/namespace.n:
 	* tests/namespace.test:
 	* generic/tclNamesp.c (Tcl_NamespaceObjCmd): added 'namespace
