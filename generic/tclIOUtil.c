@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.40 2002/04/23 02:54:59 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.41 2002/05/02 20:15:20 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -328,7 +328,6 @@ typedef struct FilesystemRecord {
  * are implemented in the platform-specific directories.
  */
 static Tcl_FSPathInFilesystemProc NativePathInFilesystem;
-static Tcl_FSFilesystemPathTypeProc NativeFilesystemPathType;
 static Tcl_FSFilesystemSeparatorProc NativeFilesystemSeparator;
 static Tcl_FSFreeInternalRepProc NativeFreeInternalRep;
 static Tcl_FSDupInternalRepProc NativeDupInternalRep;
@@ -348,6 +347,7 @@ static Tcl_FSUtimeProc NativeUtime;
  * support into a separate code library, this could actually be
  * enforced).
  */
+Tcl_FSFilesystemPathTypeProc TclpFilesystemPathType;
 Tcl_FSInternalToNormalizedProc TclpNativeToNormalized;
 Tcl_FSStatProc TclpObjStat;
 Tcl_FSAccessProc TclpObjAccess;	    
@@ -376,7 +376,7 @@ static Tcl_Filesystem nativeFilesystem = {
     &TclpNativeToNormalized,
     &NativeCreateNativeRep,
     &TclpObjNormalizePath,
-    &NativeFilesystemPathType,
+    &TclpFilesystemPathType,
     &NativeFilesystemSeparator,
     &TclpObjStat,
     &TclpObjAccess,
@@ -507,6 +507,8 @@ typedef struct FsDivertLoad {
     ClientData clientData;
     Tcl_FSUnloadFileProc *unloadProcPtr;	
     Tcl_Obj *divertedFile;
+    Tcl_Filesystem *divertedFilesystem;
+    ClientData divertedFileNativeRep;
 } FsDivertLoad;
 
 /* Now move on to the basic filesystem implementation */
@@ -2452,6 +2454,18 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		tvdlPtr->unloadProcPtr = newUnloadProcPtr;
 		/* copyToPtr is already incremented for this reference */
 		tvdlPtr->divertedFile = copyToPtr;
+		/* 
+		 * This is the filesystem we loaded it into.  It is
+		 * almost certainly the nativeFilesystem, but we don't
+		 * want to make that assumption.  Since we have a
+		 * reference to 'copyToPtr', we already have a refCount
+		 * on this filesystem, so we don't need to worry about it
+		 * disappearing on us.
+		 */
+		tvdlPtr->divertedFilesystem = copyFsPtr;
+		/* Get the native representation of the file path */
+		tvdlPtr->divertedFileNativeRep = Tcl_FSGetInternalRep(copyToPtr,
+								      copyFsPtr);
 		copyToPtr = NULL;
 		(*clientDataPtr) = (ClientData) tvdlPtr;
 		(*unloadProcPtr) = &FSUnloadTempFile;
@@ -2502,9 +2516,35 @@ FSUnloadTempFile(clientData)
     }
     
     /* Remove the temporary file we created. */
-    Tcl_FSDeleteFile(tvdlPtr->divertedFile);
+    if (Tcl_FSDeleteFile(tvdlPtr->divertedFile) != TCL_OK) {
+	/* 
+	 * The above may have failed because the filesystem, or something
+	 * it depends upon (e.g. encodings) are being taken down because
+	 * Tcl is exiting.
+	 * 
+	 * Therefore we try to call the filesystem's 'delete file proc' 
+	 * directly.  Note that this call may still cause problems, because
+	 * it will ask for the native representation of the divertedFile,
+	 * and that may need to be _recalculated_, in which case this
+	 * call isn't very different to the above.  What we could do
+	 * instead is generate a new Tcl_Obj (pure native) by calling:
+	 * 
+	 * Tcl_Obj *tmp = Tcl_FSNewNativePath(tvdlPtr->divertedFile, 
+	 *                     tvdlPtr->divertedFileNativeRep);
+	 * Tcl_IncrRefCount(tmp);                   
+	 * tvdlPtr->divertedFilesystem->deleteFileProc(tmp);
+	 * Tcl_DecrRefCount(tmp);
+	 *                     
+	 * and then use that in this call.  This approach would
+	 */
+	//tvdlPtr->divertedFilesystem->deleteFileProc(tvdlPtr->divertedFile);
+    }
     
-    /* And free up the allocations */
+    /* 
+     * And free up the allocations.  This will also of course remove
+     * a refCount from the Tcl_Filesystem to which this file belongs,
+     * which could then free up the filesystem if we are exiting.
+     */
     Tcl_DecrRefCount(tvdlPtr->divertedFile);
     ckfree((char*)tvdlPtr);
 }
@@ -4479,32 +4519,6 @@ NativeFilesystemSeparator(pathObjPtr)
 	    break;
     }
     return Tcl_NewStringObj(separator,1);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * NativeFilesystemPathType --
- *
- *      This function is part of the native filesystem support, and
- *      returns the path type of the given path.  Right now it simply
- *      returns NULL.  In the future it could return specific path
- *      types, like 'network' for a natively-networked path, etc.
- *
- * Results:
- *      NULL at present.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-static Tcl_Obj*
-NativeFilesystemPathType(pathObjPtr)
-    Tcl_Obj* pathObjPtr;
-{
-    /* All native paths are of the same type */
-    return NULL;
 }
 
 /*

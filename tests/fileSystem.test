@@ -119,7 +119,7 @@ test filesystem-3.4 {Tcl_FSRegister} Tcltest {
 
 test filesystem-3.5 {Tcl_FSUnregister} Tcltest {
     testfilesystem 0
-    file system bar
+    lindex [file system bar] 0
 } {native}
 
 test filesystem-4.0 {testfilesystem} {

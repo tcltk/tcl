@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.18 2002/04/22 19:57:49 hobbs Exp $
+# RCS: @(#) $Id: fileName.test,v 1.19 2002/05/02 20:15:20 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1420,6 +1420,18 @@ test filename-11.45 {Tcl_GlobCmd on root volume} {
     }
     expr {$res1 == $res2}
 } {1}
+test filename-11.46 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -dir foo *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.47 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -path foo *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.48 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -dir foo -join * *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.49 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -path foo -join * *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
 
 file rename $horribleglobname globTest
 set globname globTest
@@ -1748,6 +1760,17 @@ test filename-16.13 {windows specific globbing} {pcOnly sharedCdrive} {
     cd //[info hostname]/c
     glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
 } //[info hostname]/c/globTest
+test filename-16.14 {windows specific globbing} {pcOnly} {
+    cd [lindex [glob -types d -dir C:/ *] 0]
+    expr {[lsearch -exact [glob {{.,*}*}] ".."] != -1}
+} {1}
+test filename-16.15 {windows specific globbing} {pcOnly} {
+    cd [lindex [glob -types d -dir C:/ *] 0]
+    glob ..
+} {..}
+test filename-16.16 {windows specific globbing} {pcOnly} {
+    file tail [glob "[lindex [glob -types d -dir C:/ *] 0]/.."]
+} {..}
 
 # cleanup
 catch {file delete -force C:/globTest}
