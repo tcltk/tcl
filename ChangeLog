@@ -1,6 +1,6 @@
 2004-05-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* doc/for.n, doc/while.n: More examples.
+	* doc/break.n, doc/continue.n, doc/for.n, doc/while.n: More examples.
 
 2004-05-05  Don Porter  <dgp@users.sourceforge.net>
 
