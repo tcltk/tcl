@@ -36,12 +36,16 @@
 	* generic/tclVar.c:
 	* unix/tclUnixFCmd.c:
 	* unix/tclUnixPipe.c:
+	* win/tclWinDde.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinPipe.c:
 	It is a poor practice to directly set or append to the value
 	of the objResult of an interp, because that value might be
 	shared, and in that circumstance a Tcl_Panic() will be the
 	result.  Searched for example of this practice and replaced
 	with safer alternatives, often using the Tcl_AppendResult()
 	routine that dkf just rehabilitated.
+	* library/dde/pkgIndex.tcl: Bump to dde 1.3.1
 
 2004-10-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
