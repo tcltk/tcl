@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.7 2002/01/15 17:55:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.8 2002/09/02 19:27:02 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -503,7 +503,13 @@ ConsoleCloseProc(
      */
     
     if (consolePtr->writeThread) {
-	WaitForSingleObject(consolePtr->writable, INFINITE);
+	if (consolePtr->toWrite) {
+	    /*
+	     * We only need to wait if there is something to write.
+	     * This may prevent infinite wait on exit. [python bug 216289]
+	     */
+	    WaitForSingleObject(consolePtr->writable, INFINITE);
+	}
 
 	/*
 	 * Forcibly terminate the background thread.  We cannot rely on the
@@ -819,7 +825,7 @@ ConsoleEventProc(
     mask = 0;
     if (infoPtr->watchMask & TCL_WRITABLE) {
 	if (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT) {
-	  mask = TCL_WRITABLE;
+	    mask = TCL_WRITABLE;
 	}
     }
 
