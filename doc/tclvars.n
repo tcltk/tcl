@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.11 2002/02/15 14:28:48 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.12 2002/04/23 19:06:10 hobbs Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -43,7 +43,10 @@ capitalization are converted automatically to upper case.  For instance, the
 PATH variable could be exported by the operating system as ``path'',
 ``Path'', ``PaTh'', etc., causing otherwise simple Tcl code to have to
 support many special cases.  All other environment variables inherited by
-Tcl are left unmodified.
+Tcl are left unmodified.  Setting an env array variable to blank is the
+same as unsetting it as this is the behavior of the underlying Windows OS.
+It should be noted that relying on an existing and empty environment variable
+won't work on windows and is discoraged for cross-platform usage.
 .VE
 .RE
 .RS
