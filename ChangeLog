@@ -500,7 +500,7 @@
 
 	* generic/tclUtf.c (Tcl_UtfPrev): corrected to return the proper
 	location when the middle of a UTF-8 byte was passed in.
-	[Bug #450504]
+	[Tk Bug #450504]
 
 	* ChangeLog.1999:
 	* ChangeLog: broke changes from 199x into ChangeLog.1999 to reduce
