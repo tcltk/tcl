@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.28 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.29 2003/11/19 22:04:39 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -502,6 +502,13 @@ test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
 } -returnCodes ok  -result [expr {wide(1)<<32}]
+
+test compile-16.22.$noComp {TclCompileScript: word expansion not mandatory} -body {
+    proc ReturnResults args {return $args}
+    if 1 "ReturnResults [string repeat {x } 260]"
+} -constraints $constraints -cleanup {
+    rename ReturnResults {}
+} -returnCodes ok -result [string trim [string repeat {x } 260]]
 
 }	;# End of noComp loop
 
