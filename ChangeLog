@@ -1,3 +1,11 @@
+2001-07-06  Mo DeJong  <mdejong@redhat.com>
+
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Pass -e _WinMain@16 in
+	addition to the -mwindows flag to work around a problem
+	with ld when it incorrectly use main() as the executable
+	entry point when both WinMain() and main() are available.
+
 2001-07-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/cmdAH.test: Added leading zero to file modes to work
@@ -8,7 +16,7 @@
 
 	* win/Makefile.in: Subst DEPARG directly instead
 	of relying on a variable. This will make Cygwin
-	build faster since an extra exec will be avoided.
+	builds faster since an extra exec will be avoided.
 	* win/configure: Regen.
 	* win/configure.in: Subst DEPARG.
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): Move AC_MSG_CHECKING
