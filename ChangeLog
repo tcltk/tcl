@@ -1,3 +1,12 @@
+2003-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Use -Wl,--export-dynamic
+	instead of -rdynamic for LDFLAGS. The -rdynamic is
+	not documented so it seems better to pass the
+	--export-dynamic flag to the linker.
+	[Patch 573395]
+
 2003-03-27  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/encoding.test:
