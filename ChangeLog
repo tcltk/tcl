@@ -1,3 +1,8 @@
+2005-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/string.n: Removed the term 'set' from the documentation of
+	the [string trim] commands, as it caused confusion.
+
 2005-01-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tcl.m4 (SC_PATH_{TCL,TK}CONFIG): Added code to detect the
