@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.7 1999/12/02 02:03:23 redman Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.8 2000/04/18 23:10:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -88,14 +88,13 @@ TCL_DECLARE_MUTEX(exitMutex)
 static int inFinalize = 0;
 static int subsystemsInitialized = 0;
 
-static Tcl_Obj *tclLibraryPath = NULL;
-
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;  /* First in list of all exit handlers for
 				 * this thread. */
     int inExit;			/* True when this thread is exiting. This
 				 * is used as a hack to decide to close
 				 * the standard channels. */
+    Tcl_Obj *tclLibraryPath;	/* Path(s) to the Tcl library */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 
@@ -588,15 +587,15 @@ TclSetLibraryPath(pathPtr)
     Tcl_Obj *pathPtr;		/* A Tcl list object whose elements are
 				 * the new library path. */
 {
-    Tcl_MutexLock(&exitMutex);
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
     if (pathPtr != NULL) {
 	Tcl_IncrRefCount(pathPtr);
     }
-    if (tclLibraryPath != NULL) {
-	Tcl_DecrRefCount(tclLibraryPath);
+    if (tsdPtr->tclLibraryPath != NULL) {
+	Tcl_DecrRefCount(tsdPtr->tclLibraryPath);
     }
-    tclLibraryPath = pathPtr;
-    Tcl_MutexUnlock(&exitMutex);
+    tsdPtr->tclLibraryPath = pathPtr;
 }
 
 /*
@@ -619,7 +618,8 @@ TclSetLibraryPath(pathPtr)
 Tcl_Obj *
 TclGetLibraryPath()
 {
-    return tclLibraryPath;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    return tsdPtr->tclLibraryPath;
 }
 
 /*
@@ -666,7 +666,8 @@ TclInitSubsystems(argv0)
      * thread has created an interpreter.
      */
 
-    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    tsdPtr = (ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
+
     if (subsystemsInitialized == 0) {
 	/* 
 	 * Double check inside the mutex.  There are definitly calls
@@ -690,17 +691,17 @@ TclInitSubsystems(argv0)
 	     * implementation of self-initializing locks.
 	     */
 #if USE_TCLALLOC
-	    TclInitAlloc();
+	    TclInitAlloc(); /* process wide mutex init */
 #endif
 #ifdef TCL_MEM_DEBUG
-	    TclInitDbCkalloc();
+	    TclInitDbCkalloc(); /* process wide mutex init */
 #endif
 
-	    TclpInitPlatform();
-    	    TclInitObjSubsystem();
-	    TclInitIOSubsystem();
-	    TclInitEncodingSubsystem();
-    	    TclInitNamespaceSubsystem();
+	    TclpInitPlatform(); /* creates signal handler(s) */
+    	    TclInitObjSubsystem(); /* register obj types, create mutexes */
+	    TclInitIOSubsystem(); /* inits a tsd key (noop) */
+	    TclInitEncodingSubsystem(); /* process wide encoding init */
+    	    TclInitNamespaceSubsystem(); /* register ns obj type (mutexed) */
 	}
 	TclpInitUnlock();
     }
@@ -740,8 +741,10 @@ void
 Tcl_Finalize()
 {
     ExitHandler *exitPtr;
+    ThreadSpecificData *tsdPtr;
 
     TclpInitLock();
+    tsdPtr = TCL_TSD_INIT(&dataKey);
     if (subsystemsInitialized != 0) {
 	subsystemsInitialized = 0;
 
@@ -769,12 +772,21 @@ Tcl_Finalize()
 	Tcl_MutexUnlock(&exitMutex);
 
 	/*
+	 * Clean up the library path now, before we invalidate thread-local
+	 * storage.
+	 */
+	if (tsdPtr->tclLibraryPath != NULL) {
+	    Tcl_DecrRefCount(tsdPtr->tclLibraryPath);
+	    tsdPtr->tclLibraryPath = NULL;
+	}
+
+	/*
 	 * Clean up after the current thread now, after exit handlers.
 	 * In particular, the testexithandler command sets up something
 	 * that writes to standard output, which gets closed.
 	 * Note that there is no thread-local storage after this call.
 	 */
-    
+
 	Tcl_FinalizeThread();
 
 	/*
@@ -788,10 +800,6 @@ Tcl_Finalize()
 
 	TclFinalizeEncodingSubsystem();
 
-	if (tclLibraryPath != NULL) {
-	    Tcl_DecrRefCount(tclLibraryPath);
-	    tclLibraryPath = NULL;
-	}
 	if (tclExecutableName != NULL) {
 	    ckfree(tclExecutableName);
 	    tclExecutableName = NULL;
