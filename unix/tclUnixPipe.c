@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.9.2.1 2001/04/03 22:54:39 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.9.2.2 2001/10/18 01:02:02 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -958,14 +958,20 @@ PipeInputProc(instanceData, buf, toRead, errorCodePtr)
      * appropriately, and read will unblock as soon as a short read is
      * possible, if the channel is in blocking mode. If the channel is
      * nonblocking, the read will never block.
+     * Some OSes can throw an interrupt error, for which we should
+     * immediately retry. [Bug #415131]
      */
 
-    bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
-    if (bytesRead > -1) {
-        return bytesRead;
+    do {
+	bytesRead = read (GetFd(psPtr->inFile), buf, (size_t) toRead);
+    } while ((bytesRead < 0) && (errno == EINTR));
+
+    if (bytesRead < 0) {
+	*errorCodePtr = errno;
+	return -1;
+    } else {
+	return bytesRead;
     }
-    *errorCodePtr = errno;
-    return -1;
 }
 
 /*
@@ -998,12 +1004,22 @@ PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
     int written;
 
     *errorCodePtr = 0;
-    written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
-    if (written > -1) {
-        return written;
+
+    /*
+     * Some OSes can throw an interrupt error, for which we should
+     * immediately retry. [Bug #415131]
+     */
+
+    do {
+	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+    } while ((written < 0) && (errno == EINTR));
+
+    if (written < 0) {
+	*errorCodePtr = errno;
+	return -1;
+    } else {
+	return written;
     }
-    *errorCodePtr = errno;
-    return -1;
 }
 
 /*

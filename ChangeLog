@@ -1,3 +1,9 @@
+2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixPipe.c (PipeInputProc, PipeOutputProc): do immediate
+	retry when error is returned with errno == EINTR.
+	[Bug #415131] (leger)
+
 2001-10-17 Daniel Steffen <das@users.sourceforge.net>
 
 	* mac/tclMacProjects.sea.hqx: updated projects with new version
