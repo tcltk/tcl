@@ -1,3 +1,9 @@
+2003-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4.5 TAGGED FOR RELEASE ***
+
+	* changes: updated for 8.4.5 release
+
 2003-11-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regcomp.c:	Backported regexp bug fixes and tests.  Thanks
@@ -161,8 +167,8 @@
 	* tests/regexp.test:		Matched [makeFile] with [removeFile].
 	* tests/regexpComp.test:	[Bug 675652]
 
-        * tests/fCmd.test (fCmd-8.2):   Test only that tilde-substitution
-        happens, not for any particular result. [Bug 685991]
+	* tests/fCmd.test (fCmd-8.2):	Test only that tilde-substitution
+	happens, not for any particular result. [Bug 685991]
 
 	* unix/tcl.m4 (SC_PATH_TCLCONFIG):	Corrected search path so
 	that alpha and beta releases of Tcl are not favored. [Bug 608698]
