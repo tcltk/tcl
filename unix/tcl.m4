@@ -575,8 +575,8 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 #			Flags used when running the compiler in debug mode
 #	CFLAGS_OPTIMIZE -
 #			Flags used when running the compiler in optimize mode
-#
 #	EXTRA_CFLAGS
+#	PWD -		full path to pwd executable
 #
 #	Subst's the following vars:
 #		DL_LIBS
@@ -637,6 +637,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    AC_MSG_RESULT($system)
 	fi
     fi
+
+    # AIX 4.3.3 requires calling pwd by full path for some reason,
+    # so define a variable for it now.
+    AC_PATH_PROG(PWD, pwd)
 
     # Step 2: check for existence of -ldl library.  This is needed because
     # Linux can use either -ldl or -ldld for dynamic loading.
@@ -817,7 +821,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	IRIX-4.*)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_SUFFIX=".a"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
+	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `${PWD}`/tclsh -r -G 0"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
@@ -979,7 +983,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		)
 	    ], [
 		SHLIB_CFLAGS=""
-		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
+		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `${PWD}`/tclsh -r"
 		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".a"
 		DL_OBJS="tclLoadAout.o"
@@ -1103,7 +1107,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    ;;
 	RISCos-*)
 	    SHLIB_CFLAGS="-G 0"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
+	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `${PWD}`/tclsh -r -G 0"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".a"
 	    DL_OBJS="tclLoadAout.o"
@@ -1229,7 +1233,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	ULTRIX-4.*)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_SUFFIX=".a"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
+	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `${PWD}`/tclsh -r -G 0"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
