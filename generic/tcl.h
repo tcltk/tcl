@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.13 2001/10/15 10:52:39 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.14 2001/10/15 13:57:17 dkf Exp $
  */
 
 #ifndef _TCL
@@ -377,15 +377,25 @@ typedef int *ClientData;
  * Naturally, support for [format]ting of wide values is dependent on
  * TCL_PRINTF_SUPPORTS_LL
  */
-#if defined(_LP64) || defined (__ALPHA) || defined(__alpha)
+#if defined(_LP64) || defined (__ALPHA) || defined(__alpha) || defined(_AIX)
 /*
- * Longs are 64-bit, so use them in all appropriate spots.
+ * Longs are 64-bit (or the compiler doesn't know how to do anything
+ * else) so use them in all appropriate spots.
  */
 typedef long		Tcl_WideInt;
+#   define TCL_WIDE_INT_IS_LONG
+#else
+#   ifdef __WIN32__
+typedef __int64		Tcl_WideInt;
+#   else
+typedef long long	Tcl_WideInt;
+#   endif
+#endif  /* _LP64 | __ALPHA | __alpha | _AIX */
+
+#ifdef TCL_WIDE_INT_IS_LONG
 typedef off_t		Tcl_SeekOffset;
 typedef struct stat	Tcl_StatBuf;
 typedef struct dirent	Tcl_DirEntry;
-#   define TCL_WIDE_INT_IS_LONG
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
@@ -395,20 +405,18 @@ typedef struct dirent	Tcl_DirEntry;
 #   define Tcl_PlatformSeek		lseek
 #   define Tcl_PlatformOpen		open
 #   define Tcl_PlatformReaddir		readdir
-#else
+#else /* TCL_WIDE_INT_IS_LONG */
 /*
  * Type of 64-bit values on 32-bit systems.  I think this is the ISO
  * C99 standard way of writing this type.
  */
 #   define TCL_PRINTF_SUPPORTS_LL
 #   ifdef __WIN32__
-typedef __int64		Tcl_WideInt;
 typedef Tcl_WideInt	Tcl_SeekOffset;
 typedef struct _stati64	Tcl_StatBuf;
-#      define TCL_LL_MODIFIER		"I32"
+#      define TCL_LL_MODIFIER		"I64"
 #      define TCL_LL_MODIFIER_SIZE	3
 #   else
-typedef long long	Tcl_WideInt;
 typedef off64_t		Tcl_SeekOffset;
 typedef struct stat64	Tcl_StatBuf;
 #      define TCL_LL_MODIFIER		"ll"
@@ -424,7 +432,7 @@ typedef struct dirent64	Tcl_DirEntry;
 #   define Tcl_PlatformSeek		lseek64
 #   define Tcl_PlatformOpen		open64
 #   define Tcl_PlatformReaddir		readdir64
-#endif /* _LP64 */
+#endif /* TCL_WIDE_INT_IS_LONG */
 
 
 /*
