@@ -1,3 +1,11 @@
+2001-09-30  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclParseExpr.c: removed unnecessary inclusion of
+	tclCompile.h and made a small modification in (InfoBodyCmd) to
+	improve the isolation of the compiler/engine subsystem.
+
 2001-09-29  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:
