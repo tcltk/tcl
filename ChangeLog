@@ -1,3 +1,13 @@
+2003-03-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in: Don't run the AC_CYGWIN
+	macro since it uses AC_CANONICAL_HOST under
+	autoconf 2.5X. Just check to see if __CYGWIN__
+	is defined by the compiler and set the
+	ac_cv_cygwin variable based on that.
+	[Bug 705912]
+
 2003-03-18  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* tests/registry.test: Changed the conditionals to avoid an

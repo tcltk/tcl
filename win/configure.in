@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.70 2003/03/13 10:39:58 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.71 2003/03/19 03:09:43 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -87,8 +87,22 @@ AC_PROG_MAKE_SET
 # Perform additinal compiler tests.
 #--------------------------------------------------------------------
 
-AC_CYGWIN
+dnl Currently AC_CYGWIN is disabled since it invokes AC_CANONICAL_HOST
+dnl under autoconf 2.5X.
+dnl
+dnl AC_CYGWIN
 
+AC_CACHE_CHECK(for Cygwin version of gcc,
+    ac_cv_cygwin,
+AC_TRY_COMPILE([
+#ifdef __CYGWIN__
+#error cygwin
+#endif
+],
+[],
+        ac_cv_cygwin=no,
+        ac_cv_cygwin=yes)
+)
 if test "$ac_cv_cygwin" = "yes" ; then
     AC_MSG_ERROR([Compiling under Cygwin is not currently supported.
 A maintainer for the Cygwin port of Tcl/Tk is needed. See the README
