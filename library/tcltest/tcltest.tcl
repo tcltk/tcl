@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.35 2002/03/11 21:50:32 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.36 2002/03/24 17:21:12 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -1243,7 +1243,7 @@ proc tcltest::PrintError {errorMsg} {
     return
 }
 
-if {[namespace inscope tcltest info procs initConstraintsHook] == {}} {
+if {[llength [info commands tcltest::initConstraintsHook]] == 0} {
     proc tcltest::initConstraintsHook {} {}
 }
 
@@ -1538,7 +1538,7 @@ proc tcltest::initConstraints {} {
 #       Hook used for customization of display of usage information.
 #
 
-if {[namespace inscope tcltest info procs PrintUsageInfoHook] == {}} {
+if {[llength [info commands tcltest::PrintUsageInfoHook]] == 0} {
     proc tcltest::PrintUsageInfoHook {} {}
 }
 
@@ -1621,7 +1621,7 @@ proc tcltest::PrintUsageInfo {} {
 #       ProcessFlags.
 #
 
-if {[namespace inscope tcltest info procs processCmdLineArgsAddFlagsHook] == {}} {
+if {[llength [info commands tcltest::processCmdLineArgsAddFlagsHook]] == 0} {
     proc tcltest::processCmdLineArgsAddFlagsHook {} {}
 }
 
@@ -1635,7 +1635,7 @@ if {[namespace inscope tcltest info procs processCmdLineArgsAddFlagsHook] == {}}
 #	flags      The flags that have been pulled out of argv
 #
 
-if {[namespace inscope tcltest info procs processCmdLineArgsHook] == {}} {
+if {[llength [info commands tcltest::processCmdLineArgsHook]] == 0} {
     proc tcltest::processCmdLineArgsHook {flag} {}
 }
 
@@ -2552,7 +2552,7 @@ proc tcltest::runTest {name description script expectedAnswer constraints} {
 #       additional things that should be done at cleanup.
 #
 
-if {[namespace inscope tcltest info procs cleanupTestsHook] == {}} {
+if {[llength [info commands tcltest::cleanupTestsHook]] == 0} {
     proc tcltest::cleanupTestsHook {} {}
 }
 
