@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.79 2004/04/28 13:11:33 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.80 2004/05/22 03:42:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -398,11 +398,15 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	if (useLocal && (procPtr == varFramePtr->procPtr)) {
 	    /*
 	     * part1Ptr points to an indexed local variable of the
-	     * correct procedure: use the cached value.
+	     * correct procedure: use the cached value if the names
+	     * coincide.
 	     */
 	    
 	    varPtr = &(varFramePtr->compiledLocals[localIndex]);
-	    goto donePart1;
+	    if ((varPtr->name != NULL)
+		    && (strcmp(part1, varPtr->name) == 0)) {
+		goto donePart1;
+	    }
 	}
 	goto doneParsing;
     } else if (typePtr == &tclNsVarNameType) {
@@ -542,11 +546,10 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     /*
      * TEMPORARYLY DISABLED tclNsVarNameType
      *
-     * This is a stop-gap fix for [Bug 735335]; it may not address the 
-     * real issue (which I haven't pinned down yet), but it avoids the 
-     * segfault in the test case.
+     * This is a stop-gap fix for [Bug 736729]; it may not address the 
+     * real issue (which I haven't pinned down yet).
      * This optimisation will hopefully be turned back on soon.
-     *      Miguel Sofer, 2003-05-12
+     *      Miguel Sofer, 2004-05-22
      */
 
     } else if (index > -3) {
@@ -2154,7 +2157,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
- 
+    
     result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
 
     if ((arrayPtr != NULL) && (arrayPtr->searchPtr != NULL)) {
@@ -2182,6 +2185,16 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     varPtr->searchPtr = NULL;
 
     /*
+     * Keep the variable alive until we're done with it. We used to
+     * increase/decrease the refCount for each operation, making it
+     * hard to find [Bug 735335] - caused by unsetting the variable
+     * whose value was the variable's name.
+     */
+    
+    varPtr->refCount++;
+
+
+    /*
      * Call trace procedures for the variable being deleted. Then delete
      * its traces. Be sure to abort any other traces for the variable
      * that are still pending. Special tricks:
@@ -2193,7 +2206,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 
     if ((dummyVar.tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	varPtr->refCount++;
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	TclCallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
@@ -2209,7 +2221,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 		activePtr->nextTracePtr = NULL;
 	    }
 	}
-	varPtr->refCount--;
     }
 
     /*
@@ -2233,12 +2244,10 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	 * array are being deleted when the array still exists, but since the
 	 * array is about to be removed anyway, that shouldn't really matter.
 	 */
-	varPtr->refCount++;
 	DeleteArray(iPtr, part1, dummyVarPtr,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) 
 		| TCL_TRACE_UNSETS);
 	/* Decr ref count */
-	varPtr->refCount--;
     }
     if (TclIsVarScalar(dummyVarPtr)
 	    && (dummyVarPtr->value.objPtr != NULL)) {
@@ -2273,6 +2282,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
      * its value object, if any, was decremented above.
      */
 
+    varPtr->refCount--;
     TclCleanupVar(varPtr, arrayPtr);
     return result;
 }
@@ -4617,16 +4627,9 @@ FreeNsVarName(objPtr)
     Tcl_Obj *objPtr;
 {
     register Var *varPtr = (Var *) objPtr->internalRep.twoPtrValue.ptr2;
-
+    
     varPtr->refCount--;
-    if (TclIsVarUndefined(varPtr) && (varPtr->refCount <= 0)) {
-	if (TclIsVarLink(varPtr)) {
-	    Var *linkPtr = varPtr->value.linkPtr;
-	    linkPtr->refCount--;
-	    if (TclIsVarUndefined(linkPtr) && (linkPtr->refCount <= 0)) {
-		TclCleanupVar(linkPtr, (Var *) NULL);
-	    }
-	}
+    if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)) {
 	TclCleanupVar(varPtr, NULL);
     }
 }
