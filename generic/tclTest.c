@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.57 2003/01/28 14:52:50 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.58 2003/02/05 12:46:17 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -399,7 +399,8 @@ static Tcl_Channel	SimpleOpenFileChannel _ANSI_ARGS_ ((
 static Tcl_Obj*         SimpleListVolumes _ANSI_ARGS_ ((void));
 static int              SimplePathInFilesystem _ANSI_ARGS_ ((
 			    Tcl_Obj *pathPtr, ClientData *clientDataPtr));
-
+static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Interp *interp, 
+						 Tcl_Obj *pathPtr));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -6063,28 +6064,28 @@ SimplePathInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
     return TCL_OK;
 }
 
-static Tcl_Channel
-SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
-    Tcl_Interp *interp;              /* Interpreter for error reporting;
+/* 
+ * Since TclCopyChannel insists on an interpreter, we use this
+ * to simplify our test scripts.  Would be better if it could
+ * copy without an interp
+ */
+static Tcl_Interp *simpleInterpPtr = NULL;
+
+/* 
+ * Treats a file name 'simplefs:/foo' by copying the file 'foo'
+ * in the current (native) directory to a temporary native file,
+ * and then returns that native file.
+ */
+static Tcl_Obj*
+SimpleCopy(interp, pathPtr)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
-    Tcl_Obj *pathPtr;                   /* Name of file to open. */
-    int mode;             		/* POSIX open mode. */
-    int permissions;                    /* If the open involves creating a
-					 * file, with what modes to create
-					 * it? */
+    Tcl_Obj *pathPtr;                   /* Name of file to copy. */
 {
-    Tcl_Obj *tempPtr, *origPtr;
-    Tcl_Channel chan;
     int res;
     CONST char *str;
-    
-    if ((mode != 0) && !(mode & O_RDONLY)) {
-	Tcl_AppendResult(interp, "read-only", 
-		(char *) NULL);
-	return NULL;
-    }
-    
-    tempPtr = TclpTempFileName();
+    Tcl_Obj *origPtr;
+    Tcl_Obj *tempPtr = TclpTempFileName();
     Tcl_IncrRefCount(tempPtr);
 
     /* 
@@ -6094,12 +6095,43 @@ SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
     origPtr = Tcl_NewStringObj(str+10,-1);
     Tcl_IncrRefCount(origPtr);
 
+    if (interp != NULL) {
+	simpleInterpPtr = interp;
+    } else {
+	interp = simpleInterpPtr;
+    }
     res = TclCrossFilesystemCopy(interp, origPtr, tempPtr);
-
     Tcl_DecrRefCount(origPtr);
 
     if (res != TCL_OK) {
 	Tcl_DecrRefCount(tempPtr);
+	return NULL;
+    }
+    return tempPtr;
+}
+
+static Tcl_Channel
+SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
+					 * can be NULL. */
+    Tcl_Obj *pathPtr;                   /* Name of file to open. */
+    int mode;             		/* POSIX open mode. */
+    int permissions;                    /* If the open involves creating a
+					 * file, with what modes to create
+					 * it? */
+{
+    Tcl_Obj *tempPtr;
+    Tcl_Channel chan;
+    
+    if ((mode != 0) && !(mode & O_RDONLY)) {
+	Tcl_AppendResult(interp, "read-only", 
+		(char *) NULL);
+	return NULL;
+    }
+    
+    tempPtr = SimpleCopy(interp, pathPtr);
+    
+    if (tempPtr == NULL) {
 	return NULL;
     }
     
@@ -6124,8 +6156,14 @@ SimpleStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
     Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
-    /* All files exist */
-    return TCL_OK;
+    Tcl_Obj *tempPtr = SimpleCopy(NULL, pathPtr);
+    if (tempPtr == NULL) {
+	return TCL_ERROR;
+    } else {
+	int res = Tcl_FSStat(tempPtr, bufPtr);
+	Tcl_DecrRefCount(tempPtr);
+	return res;
+    }
 }
 
 static Tcl_Obj*
