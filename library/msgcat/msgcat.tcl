@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.15 2002/06/17 16:37:11 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.16 2002/07/17 19:14:52 drh Exp $
 
 package require Tcl 8.2
 package provide msgcat 1.3
@@ -387,14 +387,14 @@ proc msgcat::ConvertLocale {value} {
     # Convert to form: $language[_$territory][_$modifier]
     #
     # Comment out expanded RE version -- bugs alleged
-    #regexp -expanded {
+    # regexp -expanded {
     #	^		# Match all the way to the beginning
     #	([^_.@]*)	# Match "lanugage"; ends with _, ., or @
     #	(_([^.@]*))?	# Match (optional) "territory"; starts with _
     #	([.]([^@]*))?	# Match (optional) "codeset"; starts with .
     #	(@(.*))?	# Match (optional) "modifier"; starts with @
     #	$		# Match all the way to the end
-    #} $value -> language _ territory _ codeset _ modifier
+    # } $value -> language _ territory _ codeset _ modifier
     regexp {^([^_.@]*)(_([^.@]*))?([.]([^@]*))?(@(.*))?$} $value \
 	    -> language _ territory _ codeset _ modifier
     set ret $language

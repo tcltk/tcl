@@ -1,3 +1,9 @@
+2002-07-17  D. Richard Hipp    <drh@hwaci.com>
+
+	* library/msgcat/msgcat.tcl: fix a comment that was causing
+	problems for programs (ex: mktclapp) that embed the initialization
+	scripts in strings.
+
 2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclInt.decls:
