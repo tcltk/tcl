@@ -1,15 +1,20 @@
+2002-01-31  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* win/tclWinFCmd.c: TIP 27: Applied patch fixing CONST warnings on
+	  behalf of Don Porter <dgp@users.sourceforge.net>.
+
 2002-01-30  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tcl.decls:
 	* generic/tcl.h:
-	* generic/tclInt.h:  For each interface identified in the
-	TIP 27 changes below as a POTENTIAL INCOMPATIBILITY, the
-	source of the incompatibility has been parameterized so that
-	it can be removed.  When compiling extension code against 
-	the Tcl header files, use the compiler flag -DUSE_NON_CONST
-	to remove the irresolvable source incompatibilities introduced
-	by the TIP 27 changes.  Resolvable changes are left for extension
-        authors to resolve.
+	* generic/tclInt.h: For each interface identified in the TIP 27
+	  changes below as a POTENTIAL INCOMPATIBILITY, the source of the
+	  incompatibility has been parameterized so that it can be
+	  removed.  When compiling extension code against the Tcl header
+	  files, use the compiler flag -DUSE_NON_CONST to remove the
+	  irresolvable source incompatibilities introduced by the TIP 27
+	  changes.  Resolvable changes are left for extension authors to
+	  resolve.
 	* generic/tclDecls.h: make genstubs
 
 2002-01-30  Vince Darley <vincentdarley@users.sourceforge.net>
