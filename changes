@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.56 2000/04/26 00:24:19 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.57 2000/06/05 21:39:18 ericm Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4873,3 +4873,50 @@ tclLoadDyld.c dl type. (sanchez)
 exec process was running (dejong)
 
 --- Released 8.3.1, April 26, 2000 --- See ChangeLog for details ---
+2000-04-26 (doc fix) updated/added documentation for many API's and
+commands (melski)
+
+2000-05-02 (feature enhancement) added support for joinable threads;
+extended API's for channels to allow channels to move between threads
+(kupries)
+
+2000-05-02 (feature enhancement) changed error return for procedures
+with incorrect args to be like the Tcl_WrongNumArgs API, with a "wrong
+# args: ..." message printed, with an args list (hobbs)
+
+2000-05-08 (feature enhancement) added [array statistics] command
+
+2000-05-08 (performance enhancement) rewrote Tcl_StringCaseMatch
+algorithm for better performance; this affects the [string match]
+command; added "eq" and "ne" operands to expr, for testing
+string equality and inequality (hobbs)
+
+2000-05-09 (feature enhancement) extended [lsearch] to support sorted
+list searches and typed list searches (melski)
+
+2000-05-10 (feature enhancement) added [namespace exists] command
+(hobbs)
+
+2000-05-18 (build enhancement) added support for mingw compile env and
+cross-compiling (hobbs)
+
+2000-05-18 (bug fix) corrected clock grammar to properly handle the
+"ago" keyword when it follows multiple relative unit specifiers
+(melski)
+
+2000-05-22 (compile fix) type cast cleanups (hobbs)
+
+2000-05-23 (performance enhancement) added byte-compiled
+implementation of [return] command and [string] command (melski)
+
+2000-05-26 (performance enhancement) extended byte-compiled [string]
+command with support for [string compare/index/match] (hobbs)
+
+2000-05-27 (feature enhancement) added ability to set [info script]
+return value ([info script ?newFileName?]) (hobbs)
+
+2000-05-31 (feature enhancement) added support for regexp and exact
+pattern matching for [array names] (melski)
+
+2000-05-31 (feature enhancement) added -nocomplain and -- flags to
+[unset] to allow for silent unset operation (hobbs)
