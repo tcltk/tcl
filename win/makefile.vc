@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.106 2003/04/15 16:40:35 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107 2003/04/30 09:23:30 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -343,16 +343,16 @@ cflags = $(cflags) -QIA64_Bx
 !endif
 
 !if $(MSVCRT)
-!if "$(DBGX)" == ""
-crt = -MD
-!else
+!if $(DEBUG)
 crt = -MDd
+!else
+crt = -MD
 !endif
 !else
-!if "$(DBGX)" == ""
-crt = -MT
-!else
+!if $(DEBUG)
 crt = -MTd
+!else
+crt = -MT
 !endif
 !endif
 
