@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.50 2002/03/22 22:54:35 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.51 2002/03/29 21:01:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -818,16 +818,11 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
  */
 
 int
-TclCompEvalObj(interp, objPtr, engineCall)
+TclCompEvalObj(interp, objPtr)
     Tcl_Interp *interp;
     Tcl_Obj *objPtr;
-    int engineCall;                    /* Set to 1 if it is an internal 
-					* engine call, 0 if called from 
-					* Tcl_EvalObjEx */
 {
     register Interp *iPtr = (Interp *) interp;
-    int evalFlags;			/* Interp->evalFlags value when the
-					 * procedure was called. */
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
     int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
 					 * at all were executed. */
@@ -896,7 +891,7 @@ TclCompEvalObj(interp, objPtr, engineCall)
 	iPtr->errorLine = 1; 
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
 	if (result != TCL_OK) {
-	    return result;;
+	    return result;
 	}
     } else {
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
@@ -917,7 +912,6 @@ TclCompEvalObj(interp, objPtr, engineCall)
      * Resetting the flags must be done after any compilation.
      */
 
-    evalFlags = iPtr->evalFlags;
     iPtr->evalFlags = 0;
 
     /*
@@ -926,7 +920,6 @@ TclCompEvalObj(interp, objPtr, engineCall)
      */
 
     numSrcBytes = codePtr->numSrcBytes;
-    iPtr->numLevels++;
     if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	/*
 	 * Increment the code's ref count while it is being executed. If
@@ -934,7 +927,9 @@ TclCompEvalObj(interp, objPtr, engineCall)
 	 */
 	
 	codePtr->refCount++;
+	iPtr->numLevels++;
 	result = TclExecuteByteCode(interp, codePtr);
+	iPtr->numLevels--;
 	codePtr->refCount--;
 	if (codePtr->refCount <= 0) {
 	    TclCleanupByteCode(codePtr);
@@ -952,16 +947,17 @@ TclCompEvalObj(interp, objPtr, engineCall)
 
     if ((oldCount == iPtr->cmdCount) && Tcl_AsyncReady()) {
 	result = Tcl_AsyncInvoke(interp, result);
-    }
+    
 
-    /*
-     * If an error occurred, record information about what was being
-     * executed when the error occurred.
-     */
-
-    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-	Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+	/*
+	 * If an error occurred, record information about what was being
+	 * executed when the error occurred.
+	 */
+	
+	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+	}
     }
 
     /*
@@ -973,16 +969,6 @@ TclCompEvalObj(interp, objPtr, engineCall)
 
     iPtr->termOffset = numSrcBytes;
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    iPtr->numLevels--;
-
-    /* 
-     * Tcl_EvalObjEx needs the evalFlags for error reporting at
-     * iPtr->numLevels 0 - we pass it here, it will reset them.
-     */
-
-    if (!engineCall) {
-	iPtr->evalFlags = evalFlags;
-    }
 
     return result;
 }
@@ -1411,7 +1397,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_EVAL_STK:
 	    objPtr = POP_OBJECT();
 	    DECACHE_STACK_INFO();
-	    result = TclCompEvalObj(interp, objPtr, /* engineCall */ 1);
+	    result = TclCompEvalObj(interp, objPtr);
 	    CACHE_STACK_INFO();
 	    if (result == TCL_OK) {
 		/*
