@@ -1,5 +1,8 @@
 2002-06-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/tcltest.test:  Corrections to test suite so that tests
+	of failing [test]s don't show up themselves as failing tests.
+
 	* tests/io.test: Fixed up namespace variable resolution issues
 	revealed by running test suite with "-singleproc 1".
 
