@@ -9,10 +9,10 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # Copyright (c) 2001 ActiveState Corporation.
-# Copyright (c) 2001 Tomasoft Engineering.
+# Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.83 2002/02/21 22:00:58 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.84 2002/03/27 21:15:43 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -40,28 +40,31 @@ the environment.  Jump to this line to read the new instructions.
 #     the 64-bit compiler, if your SDK has it.
 #
 # 3)  Targets are:
-#	release  -- builds the core, the shell and the dlls. (default)
-#	dlls     -- just builds the windows extensions and the 16-bit DOS
-#		    pipe/thunk driver.
+#	release  -- Builds the core, the shell and the dlls. (default)
+#	dlls     -- Just builds the windows extensions and the 16-bit DOS
+#		    pipe/thunk helper app.
 #	shell    -- Just builds the shell and the core.
-#	core     -- Only builds the core.
-#	all      -- builds everything.
-#	test     -- builds and runs the test suite.
-#	tcltest  -- just builds the binaries for the test suite.
-#	install  -- installs the built binaries and libraries to $(INSTALLDIR)
+#	core     -- Only builds the core [tclXX.(dll|lib)].
+#	all      -- Builds everything.
+#	test     -- Builds and runs the test suite.
+#	tcltest  -- Just builds the test shell.
+#	install  -- Installs the built binaries and libraries to $(INSTALLDIR)
 #		    as the root of the install tree.
-#	plugin   -- [currently out-dated].
-#	clean    -- removes the contents of $(TMP_DIR) and $(OUT_DIR)
-#	genstubs -- rebuilds the Stubs table and support files (dev only).
-#	winhelp  -- builds the windows .hlp file for Tcl from the troff man
-#		    files.
+#	tidy/clean/hose -- varying levels of cleaning.
+#	genstubs -- Rebuilds the Stubs table and support files (dev only).
+#	depend   -- Generates an accurate set of source dependancies for this
+#		    makefile.  Helpful to avoid problems when the sources are
+#		    refreshed and you rebuild, but can "overbuild" when common
+#		    headers like tclInt.h just get small changes.
+#	winhelp  -- Builds the windows .hlp file for Tcl from the troff man
+#		    files found in $(ROOT)\doc .
 #
 # 4)  Macros usable on the commandline:
 #	INSTALLDIR=<path>
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,linkexten,threads,symbols,profile,none
+#	OPTS=static,msvcrt,linkexten,threads,symbols,profile,loimpact,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -144,7 +147,7 @@ the environment.  Jump to this line to read the new instructions.
 MSG = ^
 You must run this makefile only from the directory it is in.^
 Please `cd` to its location first.
-!error $(MSG) 
+!error $(MSG)
 !endif
 
 PROJECT	= tcl
@@ -176,11 +179,11 @@ TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION).dll
 TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
 
-TCLREGDLLNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
-TCLREGDLL	= $(OUT_DIR)\$(TCLREGDLLNAME)
+TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
+TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 
-TCLDDEDLLNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
-TCLDDEDLL	= $(OUT_DIR)\$(TCLDDEDLLNAME)
+TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
+TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLHLPBASE	= $(PROJECT)$(VERSION)
 TCLHLP		= $(OUT_DIR)\$(TCLHLPBASE).hlp
@@ -211,6 +214,10 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
+!if $(TCL_LINKWITHEXTENSIONS)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!endif
 	$(TMP_DIR)\testMain.obj
 
 TCLOBJS = \
@@ -300,6 +307,7 @@ TCLOBJS = \
 
 TCLSTUBOBJS = $(TMP_DIR)\tclStubLib.obj
 
+### The following paths CANNOT have spaces in them.
 COMPATDIR	= $(ROOT)\compat
 GENERICDIR	= $(ROOT)\generic
 TOOLSDIR	= $(ROOT)\tools
@@ -321,7 +329,7 @@ cdebug	= -O2 -Op -Gs
 cdebug	=
 !endif
 !else if "$(MACHINE)" == "IA64"
-# Warnings are too many to support warnings into errors.
+# Warnings are too many, can't support warnings into errors.
 cdebug	= -Z7 -Od
 !else
 cdebug	= -Z7 -WX -Od
@@ -418,10 +426,8 @@ test: setup $(TCLTEST) dlls $(CAT32)
 !endif
 
 setup:
-	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR) &\
-		echo *** Created directory '$(OUT_DIR)'
-	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR) &\
-		echo *** Created directory '$(TMP_DIR)'
+	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
+	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
 
 !if !$(STATIC_BUILD)
 $(TCLIMPLIB): $(TCLLIB)
@@ -433,159 +439,121 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 !else
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcl -out:$@ $(baselibs) @<<
+	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcl -out:$@ \
+		$(baselibs) @<<
 $**
 <<
 	-@del $*.exp
 !endif
-
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
-	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
-$**
-<<
-
+	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
-	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
-$**
-<<
-
+	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
 	$(link32) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj $(baselibs)
 
-
 !if $(STATIC_BUILD)
-$(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj
+$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
 !else
-$(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ $** $(baselibs)
+$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
+	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ \
+		$** $(baselibs)
 	-@del $*.exp
 	-@del $*.lib
 !endif
-
 
 !if $(STATIC_BUILD)
-$(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj
+$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
 !else
-$(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ $** $(baselibs)
+$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
+	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ \
+		$** $(baselibs)
 	-@del $*.exp
 	-@del $*.lib
 !endif
-
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
 		$(baselibs)
 
-install-binaries:
-	@echo installing $(TCLLIBNAME)
-!if "$(TCLLIB)" != "$(TCLIMPLIB)"
-	@xcopy /i /y "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
-!endif
-	@xcopy /i /y "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
-!if exist($(TCLSH))
-	@echo installing $(TCLSHNAME)
-	@xcopy /i /y "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
-!endif
-!if exist($(TCLPIPEDLL))
-	@echo installing $(TCLPIPEDLLNAME)
-	@xcopy /i /y "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)\"
-!endif
-	@echo installing $(TCLSTUBLIBNAME)
-	@xcopy /i /y "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
-!if exist($(TCLHLP))
-	@xcopy /i /y "$(TCLHLP)" "$(DOC_INSTALL_DIR)\"
-	@xcopy /i /y "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)\"
-!endif
-
-install-libraries:
-	@echo installing http1.0
-	@xcopy /i /y "$(ROOT)\library\http1.0\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http1.0\"
-	@echo installing http2.4
-	@xcopy /i /y "$(ROOT)\library\http\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http2.4\"
-	@echo installing opt0.4
-	@xcopy /i /y "$(ROOT)\library\opt\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
-	@echo installing msgcat1.2
-	@xcopy /i /y "$(ROOT)\library\msgcat\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2\"
-	@echo installing $(TCLDDEDLLNAME)
-!if $(STATIC_BUILD)
-	@xcopy /i /y "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)\"
-!else
-	@xcopy /i /y "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-	@xcopy /i /y "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
-!endif
-	@echo installing $(TCLREGDLLNAME)
-!if $(STATIC_BUILD)
-	@xcopy /i /y "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)\"
-!else
-	@xcopy /i /y "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-	@xcopy /i /y "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
-!endif
-	@echo installing encoding files
-	@xcopy /i /y "$(ROOT)\library\encoding\*.enc" \
-		"$(SCRIPT_INSTALL_DIR)\encoding\"
-	@echo installing library files
-	@xcopy /i /y "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)\"
-	@xcopy /i /y "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)\"
-	@xcopy /i /y "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\package.tcl"  "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-	@xcopy /i /y "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)\"
-
 
 #---------------------------------------------------------------------
-# Regenerate the stubs files.
+# Regenerate the stubs files.  [Development use only]
 #---------------------------------------------------------------------
 
 genstubs:
-	tclsh$(VERSION) $(ROOT)\tools\genStubs.tcl $(GENERICDIR) \
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	$(TCLSH) $(TOOLSDIR)\genStubs.tcl $(GENERICDIR) \
 		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
+!endif
 
 
 #---------------------------------------------------------------------
-# Regenerate the windows help files.
+# Generate the makefile depedancies.
+#---------------------------------------------------------------------
+
+depend:
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	echo $(TCL_INCLUDES)
+	$(TCLSH) $(TOOLSDIR)\mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
+		-passthru:"-DBUILD_tcl $(TCL_INCLUDES:"="")" $(GENERICDIR) \
+		$(COMPATDIR) $(WINDIR) @<<
+$(TCLOBJS)
+<<
+!endif
+
+
+#---------------------------------------------------------------------
+# Build the windows help file.
 #---------------------------------------------------------------------
 
 MAN2TCL		= $(TOOLSDIR)\man2tcl
-TCLRTF		= $(TOOLSDIR)\tcl.rtf
+TCLRTF		= $(TOOLSDIR)\$(PROJECT).rtf
 MAN2HELP	= $(TOOLSDIR)\man2help.tcl
-TCLHPJ		= $(TOOLSDIR)\tcl.hpj
 
 winhelp: $(TCLHLP)
 
 $(TCLHLP): $(TCLRTF)
 	cd $(TOOLSDIR)
-	start /wait hcrtf.exe -x tcl.hpj
+	start /wait hcrtf.exe -x <<$(PROJECT).hpj
+[OPTIONS]
+COMPRESS=12 Hall Zeck
+LCID=0x409 0x0 0x0 ; English (United States)
+TITLE=Tcl/Tk Reference Manual
+CNT=$(TCLHLPBASE).cnt
+HLP=$(TCLHLPBASE).hlp
+
+[FILES]
+$(PROJECT).rtf
+
+[WINDOWS]
+main="Tcl/Tk Reference Manual",,0
+
+[CONFIG]
+BrowseButtons()
+CreateButton(1, "Main Web Site", ExecFile("http://www.tcl.tk"))
+CreateButton(2, "Sourceforge", ExecFile("http://sf.net/projects/tcl"))
+CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
+<<
 	cd $(MAKEDIR)
 	copy $(TOOLSDIR)\$(TCLHLPBASE).hlp $(OUT_DIR)
 	copy $(TOOLSDIR)\$(TCLHLPBASE).cnt $(OUT_DIR)
 
-$(TCLHPJ): $(TCLHPJ).in
-	copy $(TCLHPJ).in $(TCLHPJ)
-
-$(MAN2TCL).exe: $(MAN2TCL).obj 
+$(MAN2TCL).exe:
 	cd $(TOOLSDIR)
 	$(cc32) -nologo -G4 -ML -O2 $(MAN2TCL).c
 	cd $(MAKEDIR)
@@ -623,7 +591,7 @@ $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 !endif
 
-# The following objects should be built using the stub interfaces
+### The following objects should be built using the stub interfaces
 
 $(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
 !if $(STATIC_BUILD)
@@ -641,8 +609,8 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 !endif
 
 
-# The following objects are part of the stub library and should not
-# be built as DLL objects but none of the symbols should be exported
+### The following objects are part of the stub library and should not
+### be built as DLL objects but none of the symbols should be exported
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(cdebug) $(cflags) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
@@ -671,6 +639,16 @@ $(GENERICDIR)\regfree.c: $(GENERICDIR)\regguts.h
 $(GENERICDIR)\regfronts.c: $(GENERICDIR)\regguts.h
 $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 
+!if exist("$(OUT_DIR)\depend.mk")
+!include "$(OUT_DIR)\depend.mk"
+!message *** Dependency rules in effect.
+!else
+!message *** Dependency rules are not being used.
+!endif
+
+### add a spacer in the output
+!message
+
 
 #---------------------------------------------------------------------
 # Implicit rules
@@ -692,7 +670,7 @@ $<
 <<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
-	$(rc32) -fo $@ -r -i $(GENERICDIR) -D__WIN32__ \
+	$(rc32) -fo $@ -r -i "$(GENERICDIR)" -D__WIN32__ \
 !if $(DEBUG)
 	-d DEBUG \
 !endif
@@ -704,6 +682,81 @@ $<
 !endif
 	$<
 
+.SUFFIXES:
+.SUFFIXES:.c .rc
+
+
+#---------------------------------------------------------------------
+# Installation.
+#---------------------------------------------------------------------
+
+install-binaries:
+	@echo installing $(TCLLIBNAME)
+!if "$(TCLLIB)" != "$(TCLIMPLIB)"
+	@xcopy /i /y "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
+!endif
+	@xcopy /i /y "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
+!if exist($(TCLSH))
+	@echo installing $(TCLSHNAME)
+	@xcopy /i /y "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
+!endif
+!if exist($(TCLPIPEDLL))
+	@echo installing $(TCLPIPEDLLNAME)
+	@xcopy /i /y "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)\"
+!endif
+	@echo installing $(TCLSTUBLIBNAME)
+	@xcopy /i /y "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
+!if exist($(TCLHLP))
+	@xcopy /i /y "$(TCLHLP)" "$(DOC_INSTALL_DIR)\"
+	@xcopy /i /y "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)\"
+!endif
+
+install-libraries:
+	@echo installing http1.0
+	@xcopy /i /y "$(ROOT)\library\http1.0\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http1.0\"
+	@echo installing http2.4
+	@xcopy /i /y "$(ROOT)\library\http\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http2.4\"
+	@echo installing opt0.4
+	@xcopy /i /y "$(ROOT)\library\opt\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
+	@echo installing msgcat1.2
+	@xcopy /i /y "$(ROOT)\library\msgcat\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2\"
+	@echo installing $(TCLDDELIBNAME)
+!if $(STATIC_BUILD)
+	@xcopy /i /y "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
+!else
+	@xcopy /i /y "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	@xcopy /i /y "$(ROOT)\library\dde\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+!endif
+	@echo installing $(TCLREGLIBNAME)
+!if $(STATIC_BUILD)
+	@xcopy /i /y "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
+!else
+	@xcopy /i /y "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@xcopy /i /y "$(ROOT)\library\reg\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+!endif
+	@echo installing encoding files
+	@xcopy /i /y "$(ROOT)\library\encoding\*.enc" \
+		"$(SCRIPT_INSTALL_DIR)\encoding\"
+	@echo installing library files
+	@xcopy /i /y "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)\"
+	@xcopy /i /y "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)\"
+	@xcopy /i /y "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\package.tcl"  "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+
 
 #---------------------------------------------------------------------
 # Clean up
@@ -713,15 +766,11 @@ tidy:
 	-del $(TCLLIB)
 	-del $(TCLSH)
 	-del $(TCLTEST)
-	-del $(TCLDDEDLL)
-	-del $(TCLREGDLL)
+	-del $(TCLDDELIB)
+	-del $(TCLREGLIB)
 
-clean:
+clean: tidy
 	-@$(RMDIR) $(TMP_DIR)
 
 hose: clean
 	-@$(RMDIR) $(OUT_DIR)
-
-
-.SUFFIXES:
-.SUFFIXES:.c .rc
