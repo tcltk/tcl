@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2002 ActiveState Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.23 2002/01/30 02:50:46 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.24 2002/02/07 01:04:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2227,12 +2228,19 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * If it has a '-', it could be an incorrectly formed regexp command.
      */
     varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
-	    || (*(varTokenPtr[1].start) == '-')) {
-	return TCL_OUT_LINE_COMPILE;
-    }
     str = varTokenPtr[1].start;
     len = varTokenPtr[1].size;
+    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (*str == '-')) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    if (len == 0) {
+	/*
+	 * The semantics of regexp are always match on re == "".
+	 */
+	TclEmitPush(TclRegisterLiteral(envPtr, "1", 1, 0), envPtr);
+	return TCL_OK;
+    }
 
     /*
      * On the first (pattern) arg, check to see if any RE special characters
@@ -2241,7 +2249,24 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * range.  If -nocase was specified, we can't do this because INST_STR_EQ
      * has no support for nocase.
      */
-    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')) {
+    
+    if (Tcl_RegExpCompile(NULL, str) == NULL) {
+	/*
+	 * This is a bad RE.  Let it complain at runtime.
+	 */
+	return TCL_OUT_LINE_COMPILE;	
+    }
+#if 0
+    if ((len > 2) && (*str == '.') && (str[1] == '*')) {
+	str += 2; len -= 2;
+    }
+    if ((len > 2) && (str[len-3] != '\\')
+	    && (str[len-2] == '.') && (str[len-1] == '*')) {
+	len -= 2;
+    }
+#endif
+    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')
+	    && (str[len-2] != '\\')) {
 	/*
 	 * It appears and exact search was requested (ie ^foo$), so strip
 	 * off the special chars and signal exactMatch.
