@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.5 1999/08/21 19:40:48 hobbs Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.6 2001/09/19 10:57:32 dkf Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -100,18 +100,22 @@ new connections are opened.  If the application doesn't enter the
 event loop, for example by invoking the \fBvwait\fR command or
 calling the C procedure \fBTcl_DoOneEvent\fR, then no connections
 will be accepted.
+.PP
+If \fIport\fR is specified as zero, the operating system will allocate
+an unused port for use as a server socket.  The port number actually
+allocated my be retrieved from the created server socket using the
+\fBfconfigure\fR command to retrieve the \fB\-sockname\fR option as
+described below.
 
 .SH "CONFIGURATION OPTIONS"
 The \fBfconfigure\fR command can be used to query several readonly
 configuration options for socket channels:
-.VS 8.0.5
 .TP
 \fB\-error\fR
 This option gets the current error status of the given socket.  This
 is useful when you need to determine if an asynchronous connect
 operation succeeded.  If there was an error, the error message is
 returned.  If there was no error, an empty string is returned.
-.VE 8.0.5
 .TP
 \fB\-sockname\fR
 This option returns a list of three elements, the address, the host name
