@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.3 2002/01/09 19:03:34 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.4 2002/01/27 11:09:26 das Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script]. tcltest v2 needed."
@@ -46,7 +46,7 @@ namespace eval ::tcl::main::test {
 	Tcl_Main: startup script - normal
     } -constraints [list exec] -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	set f [open "|[interpreter] script" r]
+	catch {set f [open "|[interpreter] script" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -58,7 +58,7 @@ namespace eval ::tcl::main::test {
 	Tcl_Main: startup script - can't begin with '-'
     } -constraints [list exec] -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} -script
-	set f [open "|[interpreter] -script" w+]
+	catch {set f [open "|[interpreter] -script" w+]}
     } -body {
 	puts $f {puts [list $argv0 $argv $tcl_interactive]; exit}
 	flush $f
@@ -73,7 +73,7 @@ namespace eval ::tcl::main::test {
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints [list exec] -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	set f [open "|[interpreter] script \u00c0" r]
+	catch {set f [open "|[interpreter] script \u00c0" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -87,7 +87,7 @@ namespace eval ::tcl::main::test {
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints [list exec] -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	set f [open "|[interpreter] script \u20ac" r]
+	catch {set f [open "|[interpreter] script \u20ac" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -101,7 +101,7 @@ namespace eval ::tcl::main::test {
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints [list exec] -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u00c0
-	set f [open "|[interpreter] \u00c0" r]
+	catch {set f [open "|[interpreter] \u00c0" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -115,7 +115,7 @@ namespace eval ::tcl::main::test {
 	Note the shortcoming explained in Tcl Patch 491789
     } -constraints [list exec] -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u20ac
-	set f [open "|[interpreter] \u20ac" r]
+	catch {set f [open "|[interpreter] \u20ac" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -462,7 +462,7 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-5.2 {
 	Tcl_Main able to handle non-blocking stdin
     } -constraints [list exec] -setup {
-	set f [open "|[interpreter]" w+]
+	catch {set f [open "|[interpreter]" w+]}
     } -body {
 	type $f {
 	    fconfigure stdin -blocking 0
@@ -476,8 +476,8 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-5.3 {
 	Tcl_Main handles stdin EOF in mid-command
     } -constraints [list exec] -setup {
-	set f [open "|[interpreter]" w+]
-	fconfigure $f -blocking 0
+	catch {set f [open "|[interpreter]" w+]}
+	catch {fconfigure $f -blocking 0}
     } -body {
 	type $f "fconfigure stdin -eofchar \\032
 	    if 1 \{\n\032"
@@ -499,8 +499,8 @@ namespace eval ::tcl::main::test {
 	Tcl_Main handles stdin EOF in mid-command
     } -constraints [list exec] -setup {
 	set cmd {makeFile "if 1 \{" script}
-	set f [open "|[interpreter] < [eval $cmd]" r]
-	fconfigure $f -blocking 0
+	catch {set f [open "|[interpreter] < [eval $cmd]" r]}
+	catch {fconfigure $f -blocking 0}
     } -body {
 	variable wait
 	fileevent $f readable \
@@ -604,8 +604,8 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-5.10 {
 	Tcl_Main: exit main loop in mid-interactive command
     } -constraints [list exec Tcltest] -setup {
-	set f [open "|[interpreter]" w+]
-	fconfigure $f -blocking 0
+	catch {set f [open "|[interpreter]" w+]}
+	catch {fconfigure $f -blocking 0}
     } -body {
 	type $f "testsetmainloop
 	         after 2000 testexitmainloop
