@@ -5,6 +5,10 @@
 	'Initializers must be constant'.  I believe Borland has this
 	strictness as well.  VC++ must be non-standard about this.
 
+	Changed Win32 platform #ifdef from 'WIN32' to '__WIN32__' as
+	this is the correct one to use across the Tcl sources.  Even
+	though we do force it in tcl.h, the true parent one is __WIN32__.
+
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/util.test: Added new tests for remaining TclNeedSpace()
