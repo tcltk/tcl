@@ -1,3 +1,7 @@
+2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3: fix to small typo.
+
 2004-09-26  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c:
