@@ -1,16 +1,27 @@
+2001-09-24  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* The change below fixes [Bug #464380]. The bug was reported by
+	  Ronnie Brunner <rbrunner@users.sourceforge.net>. He also
+	  provided the patch.
+	
+	* generic/tclEvent.c (Tcl_Finalize): Moved release of
+	  'tclLibraryPath' to Tcl_FinalizeThread.
+	  (Tcl_FinalizeThread): See above, new place for release of
+	  'tclLibraryPath'.
+
 2001-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tools/encoding/cp1252.txt: File was missing part of the encoding
-	[euro, ZCaron and zcaron].
+	  [euro, ZCaron and zcaron].
 
 	* doc/OpenFileChnl.3: Add docs for Tcl_OutputBuffered; remove some
-	old changebars.
+	  old changebars.
 
 2001-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode): corrected
-	INST_STR_CMP else case for strings to pass true utf char length to
-	Tcl_UtfNCmp.
+	  INST_STR_CMP else case for strings to pass true utf char length
+	  to Tcl_UtfNCmp.
 
 2001-09-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -19,22 +30,22 @@
 	* win/tclWinSock.c (SocketThread): corrected pointer cast for _WIN64.
 
 	* win/tclWinNotify.c: removed unnecessary winsock include (it is
-	already in from tclWinPort.h).
+	  already in from tclWinPort.h).
 
 	* win/tclWinPort.h: changed winsock.h include to winsock2.h.
-	Reverses change from 2000-11-16, but is necessary for WIN64.
-	Extensions should comply with defined OS words, or use #ifndef.
+	  Reverses change from 2000-11-16, but is necessary for WIN64.
+	  Extensions should comply with defined OS words, or use #ifndef.
 
 2001-09-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/socket.test: removed dependence on being run from same dir
-	as remote.tcl, which only now needs to be in the same dir as this
-	file.  [Bug #219326]
+	  as remote.tcl, which only now needs to be in the same dir as
+	  this file.  [Bug #219326]
 
 2001-09-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclTest.c (TestcmdtokenCmd): corrected pointer
-	storage/retrieval for 64bit machines.
+	  storage/retrieval for 64bit machines.
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd):
 	* generic/tclScan.c (Tcl_ScanObjCmd): corrected handling of format
