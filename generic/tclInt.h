@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.185 2004/10/21 15:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.186 2004/10/21 17:07:31 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1322,12 +1322,6 @@ typedef struct Interp {
     /* Fields used to manage extensible return options (TIP 90) */
     Tcl_Obj *returnOpts;	/* A dictionary holding the options to the
 				 * last [return] command */
-    Tcl_Obj *returnCodeKey;	/* holds "-code" */
-    Tcl_Obj *returnErrorcodeKey;	/* holds "-errorcode" */
-    Tcl_Obj *returnErrorinfoKey;	/* holds "-errorinfo" */
-    Tcl_Obj *returnErrorlineKey;	/* holds "-errorline" */
-    Tcl_Obj *returnLevelKey;	/* holds "-level" */
-    Tcl_Obj *returnOptionsKey;	/* holds "-options" */
 
     Tcl_Obj *errorInfo;		/* errorInfo value (now as a Tcl_Obj) */
     Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable */

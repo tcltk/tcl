@@ -1,5 +1,12 @@
 2004-10-21  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInt.h (Interp):
+	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp):
+	* generic/tclResult.c (GetKeys,ReleaseKeys,etc.):
+	Moved the key values of the return options dictionary out of
+	private fields of the Interp struct and into thread-static
+	values managed in tclResult.c.
+
 	* generic/tclCmdAH.c (Tcl_CatchObjCmd, Tcl_ErrorObjCmd):
 	Updated to call the new TclGet/SetReturnOptions routines to do
 	much of their work.
