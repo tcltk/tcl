@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.33 2001/03/28 02:30:06 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.34 2001/04/05 10:20:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1634,8 +1634,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int mapElemc, nocase = 0;
 	    Tcl_Obj **mapElemv;
 	    Tcl_UniChar *ustring1, *ustring2, *p, *end;
-	    int (*strCmpFn)(CONST Tcl_UniChar*, CONST Tcl_UniChar*,
-		    unsigned long);
+	    int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar*,
+					CONST Tcl_UniChar*, unsigned long));
 
 	    if (objc < 4 || objc > 5) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "?-nocase? charMap string");

@@ -1,3 +1,8 @@
+2001-04-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Fixed so will compile
+	with K&R compilers [Patch #413844, Bug #413847]
+
 2001-04-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/tclMain.c:  Patch from Kevin Kenny to restore support of
