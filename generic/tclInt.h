@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.9 1998/07/13 13:43:24 welch Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.10 1998/07/24 13:49:46 surles Exp $ 
  */
 
 #ifndef _TCLINT
@@ -56,6 +56,45 @@
 #else
 #   include <varargs.h>
 #endif
+
+/*
+  * The following procedures allow namespaces to be customized to
+  * support special name resolution rules for commands/variables.
+  * 
+  */
+typedef Tcl_Var (Tcl_ResolveRuntimeVarProc) _ANSI_ARGS_((
+    Tcl_Interp* interp, ClientData identity));
+
+typedef void (Tcl_ResolveVarDeleteProc) _ANSI_ARGS_((ClientData identity));
+
+typedef struct Tcl_ResolvedVarInfo {
+    ClientData identity;
+    Tcl_ResolveRuntimeVarProc *fetchProc;
+    Tcl_ResolveVarDeleteProc *deleteProc;
+} Tcl_ResolvedVarInfo;
+
+typedef int (Tcl_ResolveCompiledVarProc) _ANSI_ARGS_((
+    Tcl_Interp* interp, char* name, int length,
+    Tcl_Namespace *context, Tcl_ResolvedVarInfo *rPtr));
+
+typedef int (Tcl_ResolveVarProc) _ANSI_ARGS_((
+    Tcl_Interp* interp, char* name, Tcl_Namespace *context,
+    int flags, Tcl_Var *rPtr));
+
+typedef int (Tcl_ResolveCmdProc) _ANSI_ARGS_((Tcl_Interp* interp,
+ 	char* name, Tcl_Namespace *context, int flags,
+ 	Tcl_Command *rPtr));
+ 
+typedef struct Tcl_ResolverInfo {
+    Tcl_ResolveCmdProc *cmdResProc;	/* Procedure handling command name
+ 					 * resolution. */
+    Tcl_ResolveVarProc *varResProc;	/* Procedure handling variable name
+ 					 * resolution for variables that
+ 					 * can only be handled at runtime. */
+    Tcl_ResolveCompiledVarProc *compiledVarResProc;
+ 					/* Procedure handling variable name
+ 					 * resolution at compile time. */
+} Tcl_ResolverInfo;
 
 /*
  *----------------------------------------------------------------
@@ -480,7 +519,7 @@ typedef struct CompiledLocal {
     Tcl_Obj *defValuePtr;	/* Pointer to the default value of an
 				 * argument, if any. NULL if not an argument
 				 * or, if an argument, no default value. */
-    Tcl_ResolvedVarInfo resolveInfo;
+    Tcl_ResolvedVarInfo *resolveInfo;
 				/* Customized variable resolution info
 				 * supplied by the Tcl_ResolveCompiledVarProc
 				 * associated with a namespace. Each variable
@@ -1552,6 +1591,9 @@ EXTERN int		TclPreventAliasLoop _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN void		TclPrintByteCodeObj _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_Obj *objPtr));
 EXTERN void		TclProcCleanupProc _ANSI_ARGS_((Proc *procPtr));
+EXTERN int		TclProcCompileProc _ANSI_ARGS_((Tcl_Interp *interp,
+ 			    Proc *procPtr, Tcl_Obj *bodyPtr, Namespace *nsPtr,
+ 			    CONST char *description, CONST char *procName));
 EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
 EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData,
 		    	    Tcl_Interp *interp, int argc, char **argv));
@@ -1982,6 +2024,10 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
+EXTERN void		Tcl_AddInterpResolvers _ANSI_ARGS_((Tcl_Interp *interp,
+ 			    char *name, Tcl_ResolveCmdProc *cmdProc,
+ 			    Tcl_ResolveVarProc *varProc,
+ 			    Tcl_ResolveCompiledVarProc *compiledVarProc));
 EXTERN int		Tcl_AppendExportList _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 			    Tcl_Obj *objPtr));
@@ -1999,6 +2045,14 @@ EXTERN Tcl_Command	Tcl_FindCommand _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_Namespace *	Tcl_FindNamespace _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *name, Tcl_Namespace *contextNsPtr,
 			    int flags));
+EXTERN int              Tcl_GetInterpResolvers _ANSI_ARGS_((Tcl_Interp *interp,
+                            char *name, Tcl_ResolverInfo *resInfo));
+EXTERN int              Tcl_GetNamespaceResolvers _ANSI_ARGS_((
+			    Tcl_Namespace *namespacePtr,
+			    Tcl_ResolverInfo *resInfo));
+EXTERN void		Tcl_GetVariableFullName _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Var variable,
+  			    Tcl_Obj *objPtr));
 EXTERN Tcl_Var		Tcl_FindNamespaceVar _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *name,
 			    Tcl_Namespace *contextNsPtr, int flags));
@@ -2023,6 +2077,13 @@ EXTERN void		Tcl_PopCallFrame _ANSI_ARGS_((Tcl_Interp* interp));
 EXTERN int		Tcl_PushCallFrame _ANSI_ARGS_((Tcl_Interp* interp,
 			    Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr,
 			    int isProcCallFrame)); 
+EXTERN int		Tcl_RemoveInterpResolvers _ANSI_ARGS_((
+			    Tcl_Interp *interp, char *name));
+EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
+			    Tcl_Namespace *namespacePtr,
+			    Tcl_ResolveCmdProc *cmdProc,
+			    Tcl_ResolveVarProc *varProc,
+			    Tcl_ResolveCompiledVarProc *compiledVarProc));
 
 #endif /* _TCLINT */
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.9 1998/07/21 15:58:44 surles Exp $ 
+ * SCCS: %Z% $Id: tclProc.c,v 1.10 1998/07/24 13:49:29 surles Exp $ 
  */
 
 #include "tclInt.h"
@@ -45,7 +45,6 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
     char *fullName, *procName;
-    char **argArray = NULL;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
     Tcl_DString ds;
@@ -299,10 +298,8 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 	localPtr->isArg  = 1;
 	localPtr->isTemp = 0;
 	localPtr->flags = VAR_SCALAR;
-        localPtr->resolveInfo.identity   = NULL;
-        localPtr->resolveInfo.fetchProc  = NULL;
-        localPtr->resolveInfo.deleteProc = NULL;
-
+	localPtr->resolveInfo = NULL;
+	
 	if (fieldCount == 2) {
 	    localPtr->defValuePtr =
 		    Tcl_NewStringObj(fieldValues[1], valueLength);
@@ -718,14 +715,12 @@ TclObjInterpProc(clientData, interp, objc, objv)
 {
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = (Proc *) clientData;
-    Tcl_Obj *bodyPtr = procPtr->bodyPtr;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame frame;
     register CallFrame *framePtr = &frame;
     register Var *varPtr, *resolvedVarPtr;
     register CompiledLocal *localPtr;
     Tcl_ResolvedVarInfo *resVarInfo;
-    Proc *saveProcPtr;
     char *procName, *bytes;
     int nameLen, localCt, numArgs, argCt, length, i, result;
 
@@ -749,75 +744,16 @@ TclObjInterpProc(clientData, interp, objc, objv)
     /*
      * If necessary, compile the procedure's body. The compiler will
      * allocate frame slots for the procedure's non-argument local
-     * variables. If the ByteCode already exists, make sure it hasn't been
-     * invalidated by someone redefining a core command (this might make the
-     * compiled code wrong). Also, if the code was compiled in/for a
-     * different interpreter, we recompile it. Note that compiling the body
-     * might increase procPtr->numCompiledLocals if new local variables are
-     * found while compiling.
-     *
-     * Precompiled procedure bodies, however, are immutable and therefore
-     * they are not recompiled, even if the epoch has changed.
+     * variables.  Note that compiling the body might increase
+     * procPtr->numCompiledLocals if new local variables are found
+     * while compiling.
      */
-
-    if (bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
-	
-	if ((codePtr->iPtr != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)
-	        || (codePtr->nsPtr != nsPtr)
-	        || (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if (codePtr->iPtr != iPtr) {
-                    panic("TclObjInterpProc: compiled body jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
-                tclByteCodeType.freeIntRepProc(bodyPtr);
-                bodyPtr->typePtr = (Tcl_ObjType *) NULL;
-            }
-	}
-    }
-    if (bodyPtr->typePtr != &tclByteCodeType) {
-	char buf[100];
-	int numChars;
-	char *ellipsis;
-	
-	if (tclTraceCompile >= 1) {
-	    /*
-	     * Display a line summarizing the top level command we
-	     * are about to compile.
-	     */
-
-	    numChars = nameLen;
-	    ellipsis = "";
-	    if (numChars > 50) {
-		numChars = 50;
-		ellipsis = "...";
-	    }
-	    fprintf(stdout, "Compiling body of proc \"%.*s%s\"\n",
-		    numChars, procName, ellipsis);
-	}
-	
-	saveProcPtr = iPtr->compiledProcPtr;
-	iPtr->compiledProcPtr = procPtr;
-	result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
-	iPtr->compiledProcPtr = saveProcPtr;
-	
-	if (result != TCL_OK) {
-	    if (result == TCL_ERROR) {
-		numChars = nameLen;
-		ellipsis = "";
-		if (numChars > 50) {
-		    numChars = 50;
-		    ellipsis = "...";
-		}
-		sprintf(buf, "\n    (compiling body of proc \"%.*s%s\", line %d)",
-			numChars, procName, ellipsis, interp->errorLine);
-		Tcl_AddObjErrorInfo(interp, buf, -1);
-	    }
-	    return result;
-	}
+    
+    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
+	    "body of proc", procName);
+    
+    if (result != TCL_OK) {
+        return result;
     }
 
     /*
@@ -863,10 +799,10 @@ TclObjInterpProc(clientData, interp, objc, objv)
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
 	    localPtr = localPtr->nextPtr) {
 
-        resVarInfo = &localPtr->resolveInfo;
+        resVarInfo = localPtr->resolveInfo;
         resolvedVarPtr = NULL;
 
-        if (resVarInfo->fetchProc != NULL) {
+        if (resVarInfo && resVarInfo->fetchProc) {
             resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
                 resVarInfo->identity);
         }
@@ -1030,6 +966,130 @@ TclObjInterpProc(clientData, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
+ * TclProcCompileProc --
+ *
+ *	Called just before a procedure is executed to compile the
+ *	body to byte codes.  If the type of the body is not
+ *	"byte code" or if the compile conditions have changed
+ *	(namespace context, epoch counters, etc.) then the body
+ *	is recompiled.  Otherwise, this procedure does nothing.
+  *
+  * Results:
+  *	None.
+  *
+  * Side effects:
+  *	May change the internal representation of the body object
+  *	to compiled code.
+  *
+  *----------------------------------------------------------------------
+  */
+ 
+int
+TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
+    Tcl_Interp *interp;		/* Interpreter containing procedure. */
+    Proc *procPtr;		/* Data associated with procedure. */
+    Tcl_Obj *bodyPtr;		/* Body of proc. (Usually procPtr->bodyPtr,
+ 				 * but could be any code fragment compiled
+ 				 * in the context of this procedure.) */
+    Namespace *nsPtr;		/* Namespace containing procedure. */
+    CONST char *description;	/* string describing this body of code. */
+    CONST char *procName;	/* Name of this procedure. */
+{
+    Interp *iPtr = (Interp*)interp;
+    int result;
+    Tcl_CallFrame frame;
+    Proc *saveProcPtr;
+ 
+    /*
+     * If necessary, compile the procedure's body. The compiler will
+     * allocate frame slots for the procedure's non-argument local
+     * variables. If the ByteCode already exists, make sure it hasn't been
+     * invalidated by someone redefining a core command (this might make the
+     * compiled code wrong). Also, if the code was compiled in/for a
+     * different interpreter, we recompile it. Note that compiling the body
+     * might increase procPtr->numCompiledLocals if new local variables are
+     * found while compiling.
+     */
+ 
+    if (bodyPtr->typePtr == &tclByteCodeType) {
+ 	ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
+ 
+ 	if ((codePtr->iPtr != iPtr)
+ 	        || (codePtr->compileEpoch != iPtr->compileEpoch)
+ 	        || (codePtr->nsPtr != nsPtr)
+ 	        || (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
+ 	    tclByteCodeType.freeIntRepProc(bodyPtr);
+ 	    bodyPtr->typePtr = (Tcl_ObjType *) NULL;
+ 	}
+    }
+    if (bodyPtr->typePtr != &tclByteCodeType) {
+ 	char buf[100];
+ 	int numChars;
+ 	char *ellipsis;
+ 	
+ 	if (tclTraceCompile >= 1) {
+ 	    /*
+ 	     * Display a line summarizing the top level command we
+ 	     * are about to compile.
+ 	     */
+ 
+ 	    numChars = strlen(procName);
+ 	    ellipsis = "";
+ 	    if (numChars > 50) {
+ 		numChars = 50;
+ 		ellipsis = "...";
+ 	    }
+ 	    fprintf(stdout, "Compiling %s \"%.*s%s\"\n",
+ 		    description, numChars, procName, ellipsis);
+ 	}
+ 	
+ 	/*
+ 	 * Plug the current procPtr into the interpreter and coerce
+ 	 * the code body to byte codes.  The interpreter needs to
+ 	 * know which proc it's compiling so that it can access its
+ 	 * list of compiled locals.
+ 	 *
+ 	 * TRICKY NOTE:  Be careful to push a call frame with the
+ 	 *   proper namespace context, so that the byte codes are
+ 	 *   compiled in the appropriate class context.
+ 	 */
+ 
+ 	saveProcPtr = iPtr->compiledProcPtr;
+ 	iPtr->compiledProcPtr = procPtr;
+ 
+ 	result = Tcl_PushCallFrame(interp, &frame,
+		(Tcl_Namespace*)nsPtr, /* isProcCallFrame */ 0);
+ 
+ 	if (result == TCL_OK) {
+	    result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
+	    Tcl_PopCallFrame(interp);
+	}
+ 
+ 	iPtr->compiledProcPtr = saveProcPtr;
+ 	
+ 	if (result != TCL_OK) {
+ 	    if (result == TCL_ERROR) {
+ 		numChars = strlen(procName);
+ 		ellipsis = "";
+ 		if (numChars > 50) {
+ 		    numChars = 50;
+ 		    ellipsis = "...";
+ 		}
+ 		sprintf(buf, "\n    (compiling %s \"%.*s%s\", line %d)",
+ 			description, numChars, procName, ellipsis,
+ 			interp->errorLine);
+ 		Tcl_AddObjErrorInfo(interp, buf, -1);
+ 	    }
+ 	    return result;
+ 	}
+    }
+    return TCL_OK;
+}
+ 
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclProcDeleteProc --
  *
  *	This procedure is invoked just before a command procedure is
@@ -1092,10 +1152,11 @@ TclProcCleanupProc(procPtr)
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;  ) {
 	CompiledLocal *nextPtr = localPtr->nextPtr;
 
-        resVarInfo = &localPtr->resolveInfo;
-	if (resVarInfo->deleteProc != NULL) {
+        resVarInfo = localPtr->resolveInfo;
+	if (resVarInfo && resVarInfo->deleteProc) {
             (*resVarInfo->deleteProc)(resVarInfo->identity);
             resVarInfo->identity = NULL;
+	    ckfree((char *) resVarInfo);
         }
 
 	if (localPtr->defValuePtr != NULL) {

@@ -1085,6 +1085,10 @@ Tcl_AppendExportList(interp, namespacePtr, objPtr)
  *	is NULL). This is done by creating a new command (the "imported
  *	command") that points to the real command in its original namespace.
  *
+ *      If matching commands are on the autoload path but haven't been
+ *	loaded yet, this command forces them to be loaded, then creates
+ *	the links to them.
+ *
  * Results:
  *	Returns TCL_OK if successful, or TCL_ERROR (along with an error
  *	message in the interpreter's result) if something goes wrong.
@@ -1120,7 +1124,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     Tcl_HashSearch search;
     Command *cmdPtr;
     ImportRef *refPtr;
-    Tcl_Command importedCmd;
+    Tcl_Command autoCmd, importedCmd;
     ImportedCmdData *dataPtr;
     int wasExported, i, result;
 
@@ -1132,6 +1136,38 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
         nsPtr = (Namespace *) currNsPtr;
     } else {
         nsPtr = (Namespace *) namespacePtr;
+    }
+ 
+    /*
+     * First, invoke the "auto_import" command with the pattern
+     * being imported.  This command is part of the Tcl library.
+     * It looks for imported commands in autoloaded libraries and
+     * loads them in.  That way, they will be found when we try
+     * to create links below.
+     */
+    
+    autoCmd = Tcl_FindCommand(interp, "auto_import",
+ 	    (Tcl_Namespace *) NULL, /*flags*/ TCL_GLOBAL_ONLY);
+ 
+    if (autoCmd != NULL) {
+	Tcl_Obj *objv[2];
+ 
+	objv[0] = Tcl_NewStringObj("auto_import", -1);
+	Tcl_IncrRefCount(objv[0]);
+	objv[1] = Tcl_NewStringObj(pattern, -1);
+	Tcl_IncrRefCount(objv[1]);
+ 
+	cmdPtr = (Command *) autoCmd;
+	result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
+		2, objv);
+ 
+	Tcl_DecrRefCount(objv[0]);
+	Tcl_DecrRefCount(objv[1]);
+ 
+	if (result != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_ResetResult(interp);
     }
 
     /*

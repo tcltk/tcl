@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInitScript.h,v 1.2 1998/07/09 13:46:23 suresh Exp $ 
+ * SCCS: %Z% $Id: tclInitScript.h,v 1.3 1998/07/24 13:49:59 surles Exp $ 
  */
 
 /*
@@ -27,7 +27,7 @@
 static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
   proc tclInit {} {\n\
     global tcl_library tcl_version tcl_patchLevel errorInfo\n\
-    global tcl_pkgPath env\n\
+    global env tcl_pkgPath\n\
     rename tclInit {}\n\
     set errors {}\n\
     set dirs {}\n\

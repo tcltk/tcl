@@ -148,8 +148,8 @@ test interp-3.8 {testing interp exists and interp slaves} {
 } {1 {wrong # args: should be "interp slaves ?path?"}}
 test interp-3.9 {testing interp exists and interp slaves} {
     interp create {a a2} -safe
-    interp slaves a
-} {a2}
+    expr {[lsearch [interp slaves a] a2] >= 0}
+} 1
 test interp-3.10 {testing interp exists and interp slaves} {
     interp exists {a a2}
 } 1
@@ -175,8 +175,8 @@ test interp-4.5 {testing interp delete} {
     interp create a
     interp create {a x1}
     interp delete {a x1}
-    interp slaves a
-} ""
+    expr {[lsearch [interp slaves a] x1] >= 0}
+} 0
 test interp-4.6 {testing interp delete} {
     interp create c1
     interp create c2

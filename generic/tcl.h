@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.12 1998/07/21 15:25:42 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.13 1998/07/24 13:49:40 surles Exp $ 
  */
 
 #ifndef _TCL
@@ -534,45 +534,6 @@ typedef struct Tcl_Namespace {
 } Tcl_Namespace;
 
 /*
- * The following procedures allow namespaces to be customized to
- * support special name resolution rules for commands/variables.
- * 
- */
-typedef Tcl_Var (Tcl_ResolveRuntimeVarProc) _ANSI_ARGS_((
-	Tcl_Interp* interp, ClientData identity));
-
-typedef void (Tcl_ResolveVarDeleteProc) _ANSI_ARGS_((ClientData identity));
-
-typedef struct Tcl_ResolvedVarInfo {
-    ClientData identity;
-    Tcl_ResolveRuntimeVarProc *fetchProc;
-    Tcl_ResolveVarDeleteProc *deleteProc;
-} Tcl_ResolvedVarInfo;
-
-typedef int (Tcl_ResolveCompiledVarProc) _ANSI_ARGS_((
-	Tcl_Interp* interp, char* name, int length,
-        Tcl_Namespace *context, Tcl_ResolvedVarInfo *rPtr));
-
-typedef int (Tcl_ResolveVarProc) _ANSI_ARGS_((
-	Tcl_Interp* interp, char* name, Tcl_Namespace *context,
-	int flags, Tcl_Var *rPtr));
-
-typedef int (Tcl_ResolveCmdProc) _ANSI_ARGS_((Tcl_Interp* interp,
-	char* name, Tcl_Namespace *context, int flags,
-	Tcl_Command *rPtr));
-
-typedef struct Tcl_ResolverInfo {
-    Tcl_ResolveCmdProc *cmdResProc;	/* Procedure handling command name
-					 * resolution. */
-    Tcl_ResolveVarProc *varResProc;	/* Procedure handling variable name
-					 * resolution for variables that
-					 * can only be handled at runtime. */
-    Tcl_ResolveCompiledVarProc *compiledVarResProc;
-					/* Procedure handling variable name
-					 * resolution at compile time. */
-} Tcl_ResolverInfo;
-
-/*
  * The following structure represents a call frame, or activation record.
  * A call frame defines a naming context for a procedure call: its local
  * scope (for local variables) and its namespace scope (used for non-local
@@ -1063,10 +1024,6 @@ typedef enum Tcl_PathType {
 
 EXTERN void		Tcl_AddErrorInfo _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *message));
-EXTERN void		Tcl_AddInterpResolvers _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_ResolveCmdProc *cmdProc,
-			    Tcl_ResolveVarProc *varProc,
-			    Tcl_ResolveCompiledVarProc *compiledVarProc));
 EXTERN void		Tcl_AddObjErrorInfo _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *message, int length));
 EXTERN void		Tcl_AllowExceptions _ANSI_ARGS_((Tcl_Interp *interp));
@@ -1321,16 +1278,11 @@ EXTERN int		Tcl_GetInt _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int *intPtr));
 EXTERN int		Tcl_GetInterpPath _ANSI_ARGS_((Tcl_Interp *askInterp,
 			    Tcl_Interp *slaveInterp));
-EXTERN int              Tcl_GetInterpResolvers _ANSI_ARGS_((Tcl_Interp *interp,
-                            char *name, Tcl_ResolverInfo *resInfo));
 EXTERN int		Tcl_GetIntFromObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int *intPtr));
 EXTERN int		Tcl_GetLongFromObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, long *longPtr));
 EXTERN Tcl_Interp *	Tcl_GetMaster _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int              Tcl_GetNamespaceResolvers _ANSI_ARGS_((
-			    Tcl_Namespace *namespacePtr,
-			    Tcl_ResolverInfo *resInfo));
 EXTERN CONST char *	Tcl_GetNameOfExecutable _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	Tcl_GetObjResult _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN Tcl_ObjType *	Tcl_GetObjType _ANSI_ARGS_((char *typeName));
@@ -1457,8 +1409,6 @@ EXTERN void		Tcl_RegisterChannel _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN void		Tcl_RegisterObjType _ANSI_ARGS_((
 			    Tcl_ObjType *typePtr));
 EXTERN void		Tcl_Release _ANSI_ARGS_((ClientData clientData));
-EXTERN int		Tcl_RemoveInterpResolvers _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *name));
 EXTERN void		Tcl_RestartIdleTimer _ANSI_ARGS_((void));
 EXTERN void		Tcl_ResetResult _ANSI_ARGS_((Tcl_Interp *interp));
 #define Tcl_Return Tcl_SetResult
@@ -1494,11 +1444,6 @@ EXTERN void		Tcl_SetListObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 EXTERN void		Tcl_SetLongObj _ANSI_ARGS_((Tcl_Obj *objPtr, 
 			    long longValue));
 EXTERN void		Tcl_SetMaxBlockTime _ANSI_ARGS_((Tcl_Time *timePtr));
-EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
-			    Tcl_Namespace *namespacePtr,
-			    Tcl_ResolveCmdProc *cmdProc,
-			    Tcl_ResolveVarProc *varProc,
-			    Tcl_ResolveCompiledVarProc *compiledVarProc));
 EXTERN void		Tcl_SetObjErrorCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *errorObjPtr));
 EXTERN void		Tcl_SetObjLength _ANSI_ARGS_((Tcl_Obj *objPtr,
