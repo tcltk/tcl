@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.9 2004/10/25 17:24:39 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.10 2004/10/26 02:08:38 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1280,8 +1280,10 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 	[expr { -210866803200
 		+ ( 86400 * wide([dict get $date julianDay]) )
 		+ [dict get $date secondOfDay] }]
+    dict set date tzName $timezone
     set date [ConvertLocalToUTC $date[set date {}]]
     set seconds [dict get $date seconds]
+
 
     # Do relative times
 
@@ -1320,7 +1322,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 	    [expr { -210866803200
 		    + ( 86400 * wide([dict get $date2 julianDay]) )
 		    + [dict get $date secondOfDay] }]
-	dict set date2 tzname $timezone
+	dict set date2 tzName $timezone
 	set date2 [ConvertLocalToUTC $date2[set date2 {}]]
 	set seconds [dict get $date2 seconds]
 
