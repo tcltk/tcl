@@ -1,3 +1,19 @@
+2002-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test:
+	* tests/encoding.test: updated to reflect iso2022 escape change
+	* library/encoding/iso2022-jp.enc: 
+	* library/encoding/iso2022.enc: 
+	* tools/encoding/iso2022-jp.esc:
+	* tools/encoding/iso2022.esc: gave <ESC>$B precedence over <ESC>$@,
+	based on comments (point 1) in [Bug #219283] (rfc 1468)
+
+	* tests/encoding.test: added encoding-23.* tests
+	* generic/tclIO.c (FilterInputBytes): reset the TCL_ENCODING_START
+	flags in the ChannelState when using 'gets'. [Bug #523988]
+	Also reduced the value of ENCODING_LINESIZE from 30 to 20 as this
+	seems to improve the performance of 'gets' according to tclbench.
+
 2002-02-27  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* unix/tclUnixChan.c (TclpOpenFileChannel): Added code to regonize

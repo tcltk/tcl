@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.14 2002/01/26 00:30:31 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.15 2002/03/02 05:00:59 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3395,7 +3395,7 @@ FilterInputBytes(chanPtr, gsPtr)
     char *dst;
     int offset, toRead, dstNeeded, spaceLeft, result, rawLen, length;
     Tcl_Obj *objPtr;
-#define ENCODING_LINESIZE   30	/* Lower bound on how many bytes to convert
+#define ENCODING_LINESIZE   50	/* Lower bound on how many bytes to convert
 				 * at a time.  Since we don't know a priori
 				 * how many bytes of storage this many source
 				 * bytes will use, we actually need at least
@@ -3478,6 +3478,13 @@ FilterInputBytes(chanPtr, gsPtr)
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 	    dst, spaceLeft, &gsPtr->rawRead, &gsPtr->bytesWrote,
 	    &gsPtr->charsWrote); 
+
+    /*
+     * Make sure that if we go through 'gets', that we reset the
+     * TCL_ENCODING_START flag still.  [Bug #523988]
+     */
+    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
+
     if (result == TCL_CONVERT_MULTIBYTE) {
 	/*
 	 * The last few bytes in this channel buffer were the start of a
