@@ -13,11 +13,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.15 2004/05/02 21:04:44 msofer Exp $
+# RCS: @(#) $Id: proc.test,v 1.16 2004/05/19 12:54:56 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
+}
+
+if {[catch {package require procbodytest}]} {
+    testConstraint procbodytest 0
+} else {
+    testConstraint procbodytest 1
 }
 
 catch {namespace delete {expand}[namespace children :: test_ns_*]}
@@ -177,13 +183,6 @@ catch {rename {} ""}
 catch {rename {a b  c} {}}
 catch {unset msg}
 
-if {[catch {package require procbodytest}]} {
-    puts "This application couldn't load the \"procbodytest\" package, so I"
-    puts "can't test creation of procs whose bodies have type \"procbody\"."
-    ::tcltest::cleanupTests
-    return
-}
-
 catch {rename p ""}
 catch {rename t ""}
 
@@ -192,7 +191,7 @@ catch {rename t ""}
 # is executed, so that the Proc struct is populated correctly (CompiledLocals
 # are added at compile time).
 
-test proc-4.1 {TclCreateProc, procbody obj} {
+test proc-4.1 {TclCreateProc, procbody obj} procbodytest {
     catch {
 	proc p x {return "$x:$x"}
 	set rv [p P]
@@ -204,8 +203,7 @@ test proc-4.1 {TclCreateProc, procbody obj} {
     catch {rename t ""}
     set result
 } {P:P T:T}
-
-test proc-4.2 {TclCreateProc, procbody obj, use compiled locals} {
+test proc-4.2 {TclCreateProc, procbody obj, use compiled locals} procbodytest {
     catch {
 	proc p x {
 	    set y [string tolower $x]
@@ -220,8 +218,7 @@ test proc-4.2 {TclCreateProc, procbody obj, use compiled locals} {
     catch {rename t ""}
     set result
 } {P:p T:t}
-
-test proc-4.3 {TclCreateProc, procbody obj, too many args} {
+test proc-4.3 {TclCreateProc, procbody obj, too many args} procbodytest {
     catch {
 	proc p x {
 	    set y [string tolower $x]
@@ -236,8 +233,7 @@ test proc-4.3 {TclCreateProc, procbody obj, too many args} {
     catch {rename t ""}
     set result
 } {procedure "t": arg list contains 3 entries, precompiled header expects 1}
-
-test proc-4.4 {TclCreateProc, procbody obj, inconsitent arg name} {
+test proc-4.4 {TclCreateProc, procbody obj, inconsitent arg name} procbodytest {
     catch {
 	proc p {x y z} {
 	    set v [join [list $x $y $z]]
@@ -253,8 +249,7 @@ test proc-4.4 {TclCreateProc, procbody obj, inconsitent arg name} {
     catch {rename t ""}
     set result
 } {procedure "t": formal parameter 1 is inconsistent with precompiled body}
-
-test proc-4.5 {TclCreateProc, procbody obj, inconsitent arg default type} {
+test proc-4.5 {TclCreateProc, procbody obj, inconsitent arg default type} procbodytest {
     catch {
 	proc p {x y {z Z}} {
 	    set v [join [list $x $y $z]]
@@ -270,8 +265,7 @@ test proc-4.5 {TclCreateProc, procbody obj, inconsitent arg default type} {
     catch {rename t ""}
     set result
 } {procedure "t": formal parameter 2 is inconsistent with precompiled body}
-
-test proc-4.6 {TclCreateProc, procbody obj, inconsitent arg default type} {
+test proc-4.6 {TclCreateProc, procbody obj, inconsitent arg default type} procbodytest {
     catch {
 	proc p {x y z} {
 	    set v [join [list $x $y $z]]
@@ -287,8 +281,7 @@ test proc-4.6 {TclCreateProc, procbody obj, inconsitent arg default type} {
     catch {rename t ""}
     set result
 } {procedure "t": formal parameter 2 is inconsistent with precompiled body}
-
-test proc-4.7 {TclCreateProc, procbody obj, inconsitent arg default value} {
+test proc-4.7 {TclCreateProc, procbody obj, inconsitent arg default value} procbodytest {
     catch {
 	proc p {x y {z Z}} {
 	    set v [join [list $x $y $z]]
@@ -345,15 +338,3 @@ catch {rename p ""}
 catch {rename t ""}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
