@@ -18,6 +18,7 @@
 	  Tcl_UntraceVar2, Tcl_UpVar2, Tcl_VarTraceInfo2, Tcl_GetVar2Ex,
 	  TclSetVar2Ex): Updated interfaces of generic/tclVar.c according
 	to TIP 27.  In particular, the "part2" arguments were CONSTified.
+	[Patch 532642]
 	* generic/tclDecls.h: 
 	* generic/tclIntDecls.h: make genstubs
 
