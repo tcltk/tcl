@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.19 2004/05/27 18:50:09 dkf Exp $
+'\" RCS: @(#) $Id: string.n,v 1.20 2004/06/30 12:34:35 dkf Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -95,50 +95,56 @@ will be stored in the variable named \fIvarname\fR.  The \fIvarname\fR
 will not be set if the function returns 1.  The following character
 classes are recognized (the class name can be abbreviated):
 .RS
-.IP \fBalnum\fR 10
+.IP \fBalnum\fR 12
 Any Unicode alphabet or digit character.
-.IP \fBalpha\fR 10
+.IP \fBalpha\fR 12
 Any Unicode alphabet character.
-.IP \fBascii\fR 10
+.IP \fBascii\fR 12
 Any character with a value less than \\u0080 (those that are in the
 7\-bit ascii range).
-.IP \fBboolean\fR 10
+.IP \fBboolean\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR.
-.IP \fBcontrol\fR 10
+.IP \fBcontrol\fR 12
 Any Unicode control character.
-.IP \fBdigit\fR 10
+.IP \fBdigit\fR 12
 Any Unicode digit character.  Note that this includes characters
 outside of the [0\-9] range.
-.IP \fBdouble\fR 10
+.IP \fBdouble\fR 12
 Any of the valid forms for a double in Tcl, with optional surrounding
 whitespace.  In case of under/overflow in the value, 0 is returned and
 the \fIvarname\fR will contain \-1.
-.IP \fBfalse\fR 10
+.IP \fBfalse\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 false.
-.IP \fBgraph\fR 10
+.IP \fBgraph\fR 12
 Any Unicode printing character, except space.
-.IP \fBinteger\fR 10
-Any of the valid forms for a 32-bit integer in Tcl, with optional
+.IP \fBinteger\fR 12
+Any of the valid forms for an ordinary integer in Tcl, with optional
 surrounding whitespace.  In case of under/overflow in the value, 0 is
 returned and the \fIvarname\fR will contain \-1.
-.IP \fBlower\fR 10
+.IP \fBlower\fR 12
 Any Unicode lower case alphabet character.
-.IP \fBprint\fR 10
+.IP \fBprint\fR 12
 Any Unicode printing character, including space.
-.IP \fBpunct\fR 10
+.IP \fBpunct\fR 12
 Any Unicode punctuation character.
-.IP \fBspace\fR 10
+.IP \fBspace\fR 12
 Any Unicode space character.
-.IP \fBtrue\fR 10
+.IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
-.IP \fBupper\fR 10
+.IP \fBupper\fR 12
 Any upper case alphabet character in the Unicode character set.
-.IP \fBwordchar\fR 10
+.VS 8.5
+.IP \fBwideinteger\fR 12
+Any of the valid forms for a wide integer in Tcl, with optional
+surrounding whitespace.  In case of under/overflow in the value, 0 is
+returned and the \fIvarname\fR will contain \-1.
+.VE 8.5
+.IP \fBwordchar\fR 12
 Any Unicode word character.  That is any alphanumeric character, and
 any Unicode connector punctuation characters (e.g. underscore).
-.IP \fBxdigit\fR 10
+.IP \fBxdigit\fR 12
 Any hexadecimal digit character ([0\-9A\-Fa\-f]).
 .PP
 In the case of \fBboolean\fR, \fBtrue\fR and \fBfalse\fR, if the

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.102 2004/05/27 13:18:52 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.103 2004/06/30 12:34:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1573,20 +1573,21 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int (*chcomp)_ANSI_ARGS_((int)) = NULL; 
 	    int i, failat = 0, result = 1, strict = 0;
 	    Tcl_Obj *objPtr, *failVarObj = NULL;
+	    Tcl_WideInt w;
 
 	    static CONST char *isOptions[] = {
 		"alnum",	"alpha",	"ascii",	"control",
 		"boolean",	"digit",	"double",	"false",
 		"graph",	"integer",	"lower",	"print",
 		"punct",	"space",	"true",		"upper",
-		"wordchar",	"xdigit",	(char *) NULL
+		"wideinteger",  "wordchar",	"xdigit",	(char *) NULL
 	    };
 	    enum isOptions {
 		STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
 		STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_FALSE,
 		STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LOWER,	STR_IS_PRINT,
 		STR_IS_PUNCT,	STR_IS_SPACE,	STR_IS_TRUE,	STR_IS_UPPER,
-		STR_IS_WORD,	STR_IS_XDIGIT
+		STR_IS_WIDE,    STR_IS_WORD,	STR_IS_XDIGIT
 	    };
 
 	    if (objc < 4 || objc > 7) {
@@ -1758,23 +1759,26 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &i)) {
 			break;
 		    }
+
 		    /*
 		     * Like STR_IS_DOUBLE, but we use strtoul.
 		     * Since Tcl_GetIntFromObj already failed,
 		     * we set result to 0.
 		     */
+
 		    result = 0;
 		    errno = 0;
 		    l = strtol(string1, &stop, 0); /* INTL: Tcl source. */
 		    if ((errno == ERANGE) || (l > INT_MAX) || (l < INT_MIN)) {
 			/*
-			 * if (errno == ERANGE), then it was an over/underflow
-			 * problem, but in this method, we only want to know
-			 * yes or no, so bad flow returns 0 (false) and sets
-			 * the failVarObj to the string length.
+			 * if (errno == ERANGE) or the long value
+			 * won't fit in an int, then it was an
+			 * over/underflow problem, but in this method,
+			 * we only want to know yes or no, so bad flow
+			 * returns 0 (false) and sets the failVarObj
+			 * to the string length.
 			 */
 			failat = -1;
-
 		    } else if (stop == string1) {
 			/*
 			 * In this case, nothing like a number was found
@@ -1807,6 +1811,48 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		case STR_IS_UPPER:
 		    chcomp = Tcl_UniCharIsUpper;
 		    break;
+		case STR_IS_WIDE: {
+		    char *stop;
+
+		    if (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w)) {
+			break;
+		    }
+
+		    /*
+		     * Like STR_IS_DOUBLE, but we use strtoll.  Since
+		     * Tcl_GetWideIntFromObj already failed, we set
+		     * result to 0.
+		     */
+
+		    result = 0;
+		    errno = 0;
+		    w = strtoll(string1, &stop, 0);	/* INTL: Tcl source. */
+		    if (errno == ERANGE) {
+			/*
+			 * if (errno == ERANGE), then it was an
+			 * over/underflow problem, but in this method,
+			 * we only want to know yes or no, so bad flow
+			 * returns 0 (false) and sets the failVarObj
+			 * to the string length.
+			 */
+			failat = -1;
+		    } else if (stop == string1) {
+			/*
+			 * In this case, nothing like a number was found
+			 */
+			failat = 0;
+		    } else {
+			/*
+			 * Assume we sucked up one char per byte and
+			 * then we go onto SPACE, since we are allowed
+			 * trailing whitespace
+			 */
+			failat = stop - string1;
+			string1 = stop;
+			chcomp = Tcl_UniCharIsSpace;
+		    }
+		    break;
+		}
 		case STR_IS_WORD:
 		    chcomp = Tcl_UniCharIsWordChar;
 		    break;
