@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.45 2003/02/11 21:54:48 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.46 2003/02/11 23:59:39 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2778,7 +2778,7 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
     int offset, allMatches, inlineReturn, negatedMatch;
     double patDouble, objDouble;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr;
-    Tcl_RegExp regexp;
+    Tcl_RegExp regexp = NULL;
     static CONST char *options[] = {
 	"-all",	    "-ascii", "-decreasing", "-dictionary",
 	"-exact",   "-glob",  "-increasing", "-inline",
