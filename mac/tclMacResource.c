@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.18 2003/10/14 15:44:53 dgp Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.19 2003/10/23 10:07:09 vincentdarley Exp $
  */
 
 #include <Errors.h>
@@ -478,7 +478,14 @@ resourceRef? resourceType");
 		    } else {
 			objPtr = Tcl_NewIntObj(id);
 		    }
-		    ReleaseResource(resource);
+		    /*
+		     * If the Master Pointer of the  returned handle is
+		     * null, then resource was not in memory, and it is
+		     * safe to release it. Otherwise, it is not.
+		     */
+		    if (*resource == NULL) {
+			ReleaseResource(resource);
+		    }
 		    result = Tcl_ListObjAppendElement(interp, resultPtr,
 			    objPtr);
 		    if (result != TCL_OK) {
