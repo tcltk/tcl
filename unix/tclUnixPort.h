@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.24 2002/02/25 16:46:40 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.25 2002/06/07 08:50:22 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -325,6 +325,8 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 
 #ifndef S_IFLNK
 #   define lstat	stat
+#   define lstat64	stat64
+#   define Tcl_PlatformLStat	Tcl_PlatformStat
 #endif
 
 /*
@@ -338,49 +340,49 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #   else
 #       define S_ISREG(m) 0
 #   endif
-# endif
+#endif /* !S_ISREG */
 #ifndef S_ISDIR
 #   ifdef S_IFDIR
 #       define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #   else
 #       define S_ISDIR(m) 0
 #   endif
-# endif
+#endif /* !S_ISDIR */
 #ifndef S_ISCHR
 #   ifdef S_IFCHR
 #       define S_ISCHR(m) (((m) & S_IFMT) == S_IFCHR)
 #   else
 #       define S_ISCHR(m) 0
 #   endif
-# endif
+#endif /* !S_ISCHR */
 #ifndef S_ISBLK
 #   ifdef S_IFBLK
 #       define S_ISBLK(m) (((m) & S_IFMT) == S_IFBLK)
 #   else
 #       define S_ISBLK(m) 0
 #   endif
-# endif
+#endif /* !S_ISBLK */
 #ifndef S_ISFIFO
 #   ifdef S_IFIFO
 #       define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
 #   else
 #       define S_ISFIFO(m) 0
 #   endif
-# endif
+#endif /* !S_ISFIFO */
 #ifndef S_ISLNK
 #   ifdef S_IFLNK
 #       define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
 #   else
 #       define S_ISLNK(m) 0
 #   endif
-# endif
+#endif /* !S_ISLNK */
 #ifndef S_ISSOCK
 #   ifdef S_IFSOCK
 #       define S_ISSOCK(m) (((m) & S_IFMT) == S_IFSOCK)
 #   else
 #       define S_ISSOCK(m) 0
 #   endif
-# endif
+#endif /* !S_ISSOCK */
 
 /*
  * Make sure that MAXPATHLEN is defined.
@@ -409,16 +411,16 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 
 #ifndef NO_FD_SET
 #   define SELECT_MASK fd_set
-#else
+#else /* NO_FD_SET */
 #   ifndef _AIX
 	typedef long fd_mask;
-#   endif
+#   endif /* !AIX */
 #   if defined(_IBMR2)
 #	define SELECT_MASK void
-#   else
+#   else /* !defined(_IBMR2) */
 #	define SELECT_MASK int
-#   endif
-#endif
+#   endif /* defined(_IBMR2) */
+#endif /* !NO_FD_SET */
 
 /*
  * Define "NBBY" (number of bits per byte) if it's not already defined.
@@ -438,13 +440,13 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #   else
 #	define FD_SETSIZE 256
 #   endif
-#endif
+#endif /* FD_SETSIZE */
 #if !defined(howmany)
 #   define howmany(x, y) (((x)+((y)-1))/(y))
-#endif
+#endif /* !defined(howmany) */
 #ifndef NFDBITS
 #   define NFDBITS NBBY*sizeof(fd_mask)
-#endif
+#endif /* NFDBITS */
 #define MASK_SIZE howmany(FD_SETSIZE, NFDBITS)
 
 /*
@@ -454,6 +456,19 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
  */
 
 extern int errno;
+
+/*
+ * Not all systems declare all the errors that Tcl uses!  Provide some
+ * work-arounds...
+ */
+
+#ifndef EOVERFLOW
+#   ifdef EFBIG
+#	define EOVERFLOW EFBIG
+#   else /* !EFBIG */
+#	define EOVERFLOW EINVAL
+#   endif /* EFBIG */
+#endif /* EOVERFLOW */
 
 /*
  * Variables provided by the C library:
