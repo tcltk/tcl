@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.22 2002/02/16 01:17:36 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.23 2002/02/22 09:04:48 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -86,10 +86,10 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 #if !HAVE_STRTOLL && defined(TCL_WIDE_INT_TYPE)
-EXTERN Tcl_WideInt	strtoll _ANSI_ARGS_((char *string,  char **endPtr,
-					     int base));
-EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((char *string,  char **endPtr,
-					      int base));
+EXTERN Tcl_WideInt	strtoll _ANSI_ARGS_((CONST char *string,
+					     char **endPtr, int base));
+EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
+					      char **endPtr, int base));
 #endif
 
 #include <sys/file.h>
