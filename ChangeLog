@@ -1,5 +1,8 @@
 2004-04-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/switch.n: Reworked the examples to be more systematically
+	named and to cover some TIP#75 capabilities.
+
 	* doc/cd.n: Documentation clarification from David Welton.
 
 	* doc/exec.n: Added some examples, Windows ones from Arjen Markus
