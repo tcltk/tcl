@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.48 2001/10/16 05:31:17 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.49 2001/11/19 14:35:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -27,8 +27,6 @@
 typedef struct {
     int flags;			/* Operations for which Tcl command is
 				 * to be invoked. */
-    char *errMsg;		/* Error message returned from Tcl command,
-				 * or NULL.  Malloc'ed. */
     size_t length;		/* Number of non-NULL chars. in command. */
     char command[4];		/* Space for Tcl command to invoke.  Actual
 				 * size will be as large as necessary to
@@ -2806,9 +2804,8 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		    (sizeof(TraceVarInfo) - sizeof(tvarPtr->command)
 			    + length + 1));
 	    tvarPtr->flags = flags;
-	    tvarPtr->errMsg = NULL;
 	    tvarPtr->length = length;
-	    flags |= TCL_TRACE_UNSETS;
+	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 	    strcpy(tvarPtr->command, command);
 	    name = Tcl_GetString(objv[2]);
 	    if (Tcl_TraceVar(interp, name, flags, TraceVarProc,
@@ -2864,11 +2861,9 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		if ((tvarPtr->length == length) && (tvarPtr->flags == flags)
 			&& (strncmp(command, tvarPtr->command,
 				(size_t) length) == 0)) {
-		    Tcl_UntraceVar(interp, name, flags | TCL_TRACE_UNSETS,
+		    Tcl_UntraceVar(interp, name,
+			    flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 			    TraceVarProc, clientData);
-		    if (tvarPtr->errMsg != NULL) {
-			ckfree(tvarPtr->errMsg);
-		    }
 		    ckfree((char *) tvarPtr);
 		    break;
 		}
@@ -3019,7 +3014,6 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 			(sizeof(TraceCommandInfo) - sizeof(tcmdPtr->command)
 				+ length + 1));
 		tcmdPtr->flags = flags;
-		tcmdPtr->errMsg = NULL;
 		tcmdPtr->length = length;
 		flags |= TCL_TRACE_DELETE;
 		strcpy(tcmdPtr->command, command);
@@ -3050,9 +3044,6 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 			Tcl_UntraceCommand(interp, name,
 				flags | TCL_TRACE_DELETE,
 				TraceCommandProc, clientData);
-			if (tcmdPtr->errMsg != NULL) {
-			    ckfree(tcmdPtr->errMsg);
-			}
 			ckfree((char *) tcmdPtr);
 			break;
 		    }
@@ -3198,9 +3189,8 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 			(sizeof(TraceVarInfo) - sizeof(tvarPtr->command)
 				+ length + 1));
 		tvarPtr->flags = flags;
-		tvarPtr->errMsg = NULL;
 		tvarPtr->length = length;
-		flags |= TCL_TRACE_UNSETS;
+		flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 		strcpy(tvarPtr->command, command);
 		name = Tcl_GetString(objv[3]);
 		if (Tcl_TraceVar(interp, name, flags, TraceVarProc,
@@ -3225,11 +3215,9 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 			    && (tvarPtr->flags == flags)
 			    && (strncmp(command, tvarPtr->command,
 				    (size_t) length) == 0)) {
-			Tcl_UntraceVar(interp, name, flags | TCL_TRACE_UNSETS,
+			Tcl_UntraceVar(interp, name,
+				flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 				TraceVarProc, clientData);
-			if (tvarPtr->errMsg != NULL) {
-			    ckfree(tvarPtr->errMsg);
-			}
 			ckfree((char *) tvarPtr);
 			break;
 		    }
@@ -3521,10 +3509,6 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
     int code;
     Tcl_DString cmd;
 
-    if (tcmdPtr->errMsg != NULL) {
-	ckfree(tcmdPtr->errMsg);
-	tcmdPtr->errMsg = NULL;
-    }
     if ((tcmdPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
 	/*
 	 * Generate a command to execute by appending list elements
@@ -3561,9 +3545,6 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	Tcl_DStringFree(&cmd);
     }
     if (flags & TCL_TRACE_DESTROYED) {
-	if (tcmdPtr->errMsg != NULL) {
-	    ckfree(tcmdPtr->errMsg);
-	}
 	ckfree((char *) tcmdPtr);
     }
     return;
@@ -3605,10 +3586,6 @@ TraceVarProc(clientData, interp, name1, name2, flags)
     Tcl_DString cmd;
 
     result = NULL;
-    if (tvarPtr->errMsg != NULL) {
-	ckfree(tvarPtr->errMsg);
-	tvarPtr->errMsg = NULL;
-    }
     if ((tvarPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
 	if (tvarPtr->length != (size_t) 0) {
 	    /*
@@ -3658,13 +3635,9 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 
 	    code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
 	    if (code != TCL_OK) {	     /* copy error msg to result */
-		char *string;
-		int length;
-		
-		string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
-		tvarPtr->errMsg = (char *) ckalloc((unsigned) (length + 1));
-		memcpy(tvarPtr->errMsg, string, (size_t) (length + 1));
-		result = tvarPtr->errMsg;
+		register Tcl_Obj *errMsgObj = Tcl_GetObjResult(interp);
+		Tcl_IncrRefCount(errMsgObj);
+		result = (char *) errMsgObj;
 	    }
 
 	    Tcl_RestoreResult(interp, &state);
@@ -3673,9 +3646,11 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	}
     }
     if (flags & TCL_TRACE_DESTROYED) {
-	result = NULL;
-	if (tvarPtr->errMsg != NULL) {
-	    ckfree(tvarPtr->errMsg);
+	if (result != NULL) {
+	    register Tcl_Obj *errMsgObj = (Tcl_Obj *) result;
+
+	    Tcl_DecrRefCount(errMsgObj);
+	    result = NULL;
 	}
 	ckfree((char *) tvarPtr);
     }
