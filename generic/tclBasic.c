@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.19 1999/04/16 00:46:42 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.19.2.1 1999/05/14 18:26:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -323,11 +323,6 @@ Tcl_CreateInterp()
     iPtr->appendAvl = 0;
     iPtr->appendUsed = 0;
 
-    for (i = 0; i < NUM_REGEXPS; i++) {
-	iPtr->patterns[i] = NULL;
-	iPtr->patLengths[i] = -1;
-	iPtr->regexps[i] = NULL;
-    }
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
     iPtr->cmdCount = 0;
@@ -923,7 +918,6 @@ DeleteInterpProc(interp)
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
-    int i;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup.
@@ -1038,14 +1032,6 @@ DeleteInterpProc(interp)
     if (iPtr->appendResult != NULL) {
 	ckfree(iPtr->appendResult);
         iPtr->appendResult = NULL;
-    }
-    for (i = 0; i < NUM_REGEXPS; i++) {
-	if (iPtr->patterns[i] == NULL) {
-	    break;
-	}
-	ckfree(iPtr->patterns[i]);
-	ckfree((char *) iPtr->regexps[i]);
-        iPtr->regexps[i] = NULL;
     }
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.5 1999/04/16 00:46:52 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.5.2.1 1999/05/14 18:26:12 stanton Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -64,6 +64,8 @@ typedef struct TclRegexp {
 				 * representation of the last string matched
 				 * with this regexp to indicate the location
 				 * of subexpressions. */
+    int refCount;		/* Count of number of references to this
+				 * compiled regexp. */
 } TclRegexp;
 
 /*
