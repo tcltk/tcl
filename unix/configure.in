@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.100 2002/08/28 22:48:39 davygrvy Exp $
+# RCS: @(#) $Id: configure.in,v 1.101 2002/08/31 06:09:46 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -455,6 +455,8 @@ TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
+SC_ENABLE_FRAMEWORK
+
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # so that the backslashes quoting the DBX braces are dropped.
 
@@ -467,7 +469,11 @@ eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 # AIX remembers this path and will attempt to use it at run-time to look
 # up the Tcl library.
 
-if test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
+if test "$FRAMEWORK_BUILD" = "1" ; then
+    TCL_BUILD_LIB_SPEC="-F`pwd` -framework Tcl"
+    TCL_LIB_SPEC="-framework Tcl"
+    TCL_LIB_FILE="Tcl"
+elif test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
         TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
     else
@@ -503,7 +509,9 @@ VERSION=${TCL_VERSION}
 #	another for platform-independent scripts.
 #--------------------------------------------------------------------
 
-if test "$prefix" != "$exec_prefix"; then
+if test "$FRAMEWORK_BUILD" = "1" ; then
+    TCL_PACKAGE_PATH="${libdir}/Resources/Scripts"
+elif test "$prefix" != "$exec_prefix"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"
@@ -561,9 +569,8 @@ AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 
-AC_SUBST(DL_OBJS)
-
 AC_SUBST(TCL_SHARED_BUILD)
+AC_SUBST(LD_LIBRARY_PATH_VAR)
 
 AC_SUBST(TCL_BUILD_LIB_SPEC)
 AC_SUBST(TCL_NEEDS_EXP_FILE)

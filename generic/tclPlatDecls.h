@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.16 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.17 2002/08/31 06:09:45 das Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -74,6 +74,13 @@ EXTERN int		strncasecmp _ANSI_ARGS_((CONST char * s1,
 EXTERN int		strcasecmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2));
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+/* 0 */
+EXTERN int		Tcl_MacOSXOpenBundleResources _ANSI_ARGS_((
+				Tcl_Interp * interp, CONST char * bundleName, 
+				int hasResourceFile, int maxPathLen, 
+				char * libraryPath));
+#endif /* MAC_OSX_TCL */
 
 typedef struct TclPlatStubs {
     int magic;
@@ -94,6 +101,9 @@ typedef struct TclPlatStubs {
     int (*strncasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, size_t n)); /* 7 */
     int (*strcasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2)); /* 8 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    int (*tcl_MacOSXOpenBundleResources) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * bundleName, int hasResourceFile, int maxPathLen, char * libraryPath)); /* 0 */
+#endif /* MAC_OSX_TCL */
 } TclPlatStubs;
 
 #ifdef __cplusplus
@@ -158,6 +168,12 @@ extern TclPlatStubs *tclPlatStubsPtr;
 	(tclPlatStubsPtr->strcasecmp) /* 8 */
 #endif
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+#ifndef Tcl_MacOSXOpenBundleResources
+#define Tcl_MacOSXOpenBundleResources \
+	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
+#endif
+#endif /* MAC_OSX_TCL */
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
