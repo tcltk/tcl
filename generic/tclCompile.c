@@ -6,11 +6,12 @@
  *	sequence of instructions ("bytecodes"). 
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.26 2001/10/15 20:26:57 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.27 2001/11/14 23:17:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -254,6 +255,20 @@ InstructionDesc instructionTable[] = {
 	/* Lappend array element; value is stktop, then elem, array names */
     {"lappendStk",	  1,   0,   {OPERAND_NONE}},
 	/* Lappend general variable; value is stktop, then unparsed name */
+    {"lindexMulti",	  5,   1,   {OPERAND_UINT4}},
+        /* Lindex with generalized args, operand is number of indices.
+         * (operand) entries from stktop are the indices; then list to
+         * process. */
+    {"over",		  5,   1,   {OPERAND_UINT4}},
+        /* Duplicate the arg-th element from top of stack (TOS=0) */
+    {"lsetList",          1,   0,   {OPERAND_NONE}},
+        /* Four-arg version of 'lset'. stktop is old value; next is
+         * new element value, next is the index list; pushes new value */
+    {"lsetFlat",          5,   1,   {OPERAND_UINT4}},
+        /* Three- or >=5-arg version of 'lset'. stktop is old value,
+         * next is new element value; next come objc-2 indices; pushes
+	 * the new value.
+	 */
     {0}
 };
 

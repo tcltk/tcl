@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34 2001/09/21 19:09:03 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.35 2001/11/14 23:17:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -677,6 +678,13 @@ TclExecuteByteCode(interp, codePtr)
 	    PUSH_OBJECT(valuePtr);
 	    TRACE_WITH_OBJ(("=> "), valuePtr);
 	    ADJUST_PC(1);
+
+	case INST_OVER:
+	    opnd = TclGetUInt4AtPtr( pc+1 );
+	    valuePtr = stackPtr[ stackTop - opnd ];
+	    PUSH_OBJECT( valuePtr );
+	    TRACE_WITH_OBJ(("=> "), valuePtr);
+	    ADJUST_PC( 5 );
 
 	case INST_CONCAT1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
@@ -2013,62 +2021,201 @@ TclExecuteByteCode(interp, codePtr)
 	    
 	case INST_LIST_INDEX:
 	    {
-		Tcl_Obj **elemPtrs;
-		int index;
+
+		/*** lindex with objc == 3 ***/
+		
+		/* Pop the two operands */
 
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
 
-		result = Tcl_ListObjGetElements(interp, valuePtr,
-			&length, &elemPtrs);
-		if (result != TCL_OK) {
-		    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(value2Ptr);
-		    TclDecrRefCount(valuePtr);
+		/* Extract the desired list element */
+
+		objPtr = TclLindexList( interp, valuePtr, value2Ptr );
+		if ( objPtr == NULL ) {
+		    TRACE_WITH_OBJ( ( "%.30s %.30s => ERROR: ",
+				      O2S( valuePtr ),
+				      O2S( value2Ptr ) ),
+				    Tcl_GetObjResult( interp ) );
+		    TclDecrRefCount( value2Ptr );
+		    TclDecrRefCount( valuePtr );
+		    result = TCL_ERROR;
 		    goto checkForCatch;
 		}
 
-		result = TclGetIntForIndex(interp, value2Ptr, length - 1,
-			&index);
-		if (result != TCL_OK) {
-		    TRACE_WITH_OBJ(("%.20s => ERROR: ", O2S(value2Ptr)),
-			    Tcl_GetObjResult(interp));
-		    Tcl_DecrRefCount(value2Ptr);
-		    Tcl_DecrRefCount(valuePtr);
-		    goto checkForCatch;
-		}
+		/* Stash the list element on the stack */
 
-		if ((index < 0) || (index >= length)) {
-		    objPtr = Tcl_NewObj();
-		} else {
-		    /*
-		     * Make sure listPtr still refers to a list object. It
-		     * might have been converted to an int above if the
-		     * argument objects were shared.
-		     */
-
-		    if (valuePtr->typePtr != &tclListType) {
-			result = Tcl_ListObjGetElements(interp, valuePtr,
-				&length, &elemPtrs);
-			if (result != TCL_OK) {
-			    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
-				    Tcl_GetObjResult(interp));
-			    TclDecrRefCount(value2Ptr);
-			    TclDecrRefCount(valuePtr);
-			    goto checkForCatch;
-			}
-		    }
-		    objPtr = elemPtrs[index];
-		}
-
-		PUSH_OBJECT(objPtr);
-		TRACE(("%.20s %.20s => %s\n",
-			O2S(valuePtr), O2S(value2Ptr), O2S(objPtr)));
-		TclDecrRefCount(valuePtr);
-		TclDecrRefCount(value2Ptr);
+		PUSH_OBJECT( objPtr );
+		TRACE(( "%.20s %.20s => %s\n",
+			O2S( valuePtr ),
+			O2S( value2Ptr ),
+			O2S( objPtr ) ) );
+		TclDecrRefCount( valuePtr );
+		TclDecrRefCount( value2Ptr );
+		TclDecrRefCount( objPtr );
 	    }
-	    ADJUST_PC(1);
+
+	    ADJUST_PC( 1 );
+
+	case INST_LIST_INDEX_MULTI:
+	    {
+
+		/*
+		 * 'lindex' with multiple index args:
+		 *
+		 * Determine the count of index args.
+		 */
+
+		opnd = TclGetUInt4AtPtr(pc+1);
+		
+		/*
+		 * Do the 'lindex' operation.
+		 */
+
+		objPtr = TclLindexFlat( interp,
+					stackPtr[ stackTop - opnd ],
+					opnd,
+					stackPtr + stackTop - opnd + 1 );
+		/* 
+		 * Clean up ref counts
+		 */
+		
+		for ( i = 0 ; i <= opnd ; i++ ) {
+		    Tcl_DecrRefCount( stackPtr[ stackTop -- ] );
+		}
+
+		/*
+		 * Check for errors
+		 */
+
+		if ( objPtr == NULL ) {
+		    TRACE_WITH_OBJ( ( "%d => ERROR: ", opnd ),
+				    Tcl_GetObjResult( interp ) );
+		    result = TCL_ERROR;
+		    goto checkForCatch;
+		}
+		
+		/*
+		 * Set result
+		 */
+
+		PUSH_OBJECT( objPtr );
+		TRACE(( "%d => %s\n", opnd, O2S( objPtr ) ));
+		Tcl_DecrRefCount( objPtr );
+	    
+	    }
+	    ADJUST_PC( 5 );
+
+	case INST_LSET_FLAT:
+	    {
+		/*
+		 * Lset with 3, 5, or more args.  Get the number of index args.
+		 */
+
+		opnd = TclGetUInt4AtPtr( pc + 1 );
+
+		/*
+		 * Get the old value of variable, and remove the stack ref.
+		 * This is safe because the variable still references the
+		 * object; the ref count will never go zero here.
+		 */
+
+		value2Ptr = POP_OBJECT();
+		Tcl_DecrRefCount( value2Ptr );
+
+		/*
+		 * Get the new element value.
+		 */
+
+		valuePtr = POP_OBJECT();
+
+		/*
+		 * Compute the new variable value
+		 */
+
+		objPtr = TclLsetFlat( interp, value2Ptr, opnd,
+				      stackPtr + stackTop - opnd + 1,
+				      valuePtr );
+		Tcl_DecrRefCount( valuePtr );
+
+		/* 
+		 * Clean up ref counts
+		 */
+		
+		for ( i = 0 ; i < opnd ; i++ ) {
+		    Tcl_DecrRefCount( stackPtr[ stackTop -- ] );
+		}
+
+		/*
+		 * Check for errors
+		 */
+
+		if ( objPtr == NULL ) {
+		    TRACE_WITH_OBJ( ( "%d => ERROR: ", opnd ),
+				    Tcl_GetObjResult( interp ) );
+		    result = TCL_ERROR;
+		    goto checkForCatch;
+		}
+		
+		/*
+		 * Set result
+		 */
+
+		PUSH_OBJECT( objPtr );
+		TRACE(( "%d => %s\n", opnd, O2S( objPtr ) ));
+		Tcl_DecrRefCount( objPtr );
+	    
+	    }
+	    ADJUST_PC( 5 );
+
+	case INST_LSET_LIST:
+	    {
+		/*
+		 * 'lset' with 4 args.
+		 *
+		 * Get the old value of variable, and remove the stack ref.
+		 * This is safe because the variable still references the
+		 * object; the ref count will never go zero here.
+		 */
+
+		objPtr = POP_OBJECT();
+		Tcl_DecrRefCount( objPtr );
+
+		/*
+		 * Get the new element value, and the index list
+		 */
+
+		valuePtr = POP_OBJECT();
+		value2Ptr = POP_OBJECT();
+
+		/*
+		 * Compute the new variable value
+		 */
+
+		objPtr = TclLsetList( interp, objPtr, value2Ptr, valuePtr );
+		Tcl_DecrRefCount( valuePtr );
+		Tcl_DecrRefCount( value2Ptr );
+
+		/*
+		 * Check for errors
+		 */
+
+		if ( objPtr == NULL ) {
+		    TRACE_WITH_OBJ( ( "%d => ERROR: ", opnd ),
+				    Tcl_GetObjResult( interp ) );
+		    result = TCL_ERROR;
+		    goto checkForCatch;
+		}
+		
+		/*
+		 * Set result
+		 */
+
+		PUSH_OBJECT( objPtr );
+		TRACE(( "%d => %s\n", opnd, O2S( objPtr ) ));
+		Tcl_DecrRefCount( objPtr );
+	    }
+	    ADJUST_PC( 1 );
 
 	case INST_STR_EQ:
 	case INST_STR_NEQ:
@@ -3321,7 +3468,7 @@ TclExecuteByteCode(interp, codePtr)
 
 			listVarPtr = &(compiledLocals[listTmpIndex]);
 			listPtr = listVarPtr->value.objPtr;
-			listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+			listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
 			listLen = listRepPtr->elemCount;
 			
 			valIndex = (iterNum * numVars);

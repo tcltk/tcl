@@ -7,11 +7,12 @@
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.68 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.69 2001/11/14 23:17:03 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1565,6 +1566,7 @@ extern Tcl_ObjType	tclBooleanType;
 extern Tcl_ObjType	tclByteArrayType;
 extern Tcl_ObjType	tclByteCodeType;
 extern Tcl_ObjType	tclDoubleType;
+extern Tcl_ObjType	tclEndOffsetType;
 extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
 extern Tcl_ObjType	tclProcBodyType;
@@ -1742,6 +1744,25 @@ EXTERN int		TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command *cmdPtr));
 EXTERN int              TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int* result));
+EXTERN Tcl_Obj *	TclLindexList _ANSI_ARGS_((Tcl_Interp* interp,
+						   Tcl_Obj* listPtr,
+						   Tcl_Obj* argPtr ));
+EXTERN Tcl_Obj *	TclLindexFlat _ANSI_ARGS_((Tcl_Interp* interp,
+						   Tcl_Obj* listPtr,
+						   int indexCount,
+						   Tcl_Obj *CONST indexArray[]
+						   ));
+EXTERN Tcl_Obj *	TclLsetList _ANSI_ARGS_((Tcl_Interp* interp,
+						 Tcl_Obj* listPtr,
+						 Tcl_Obj* indexPtr,
+						 Tcl_Obj* valuePtr  
+						 ));
+EXTERN Tcl_Obj *	TclLsetFlat _ANSI_ARGS_((Tcl_Interp* interp,
+						 Tcl_Obj* listPtr,
+						 int indexCount,
+						 Tcl_Obj *CONST indexArray[],
+						 Tcl_Obj* valuePtr
+						 ));
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
@@ -1989,6 +2010,8 @@ EXTERN int	Tcl_LreplaceObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LsearchObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	Tcl_LsetObjCmd _ANSI_ARGS_((ClientData clientData,
+                    Tcl_Interp* interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LsortObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_NamespaceObjCmd _ANSI_ARGS_((ClientData clientData,
@@ -2103,6 +2126,9 @@ EXTERN int	TclCompileListCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileLlengthCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLsetCmd _ANSI_ARGS_(( Tcl_Interp* interp,
+						Tcl_Parse* parsePtr,
+						struct CompileEnv* envPtr ));
 EXTERN int	TclCompileReturnCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileSetCmd _ANSI_ARGS_((Tcl_Interp *interp,

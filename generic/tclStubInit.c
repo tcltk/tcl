@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.62 2001/10/15 20:26:58 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.63 2001/11/14 23:17:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -245,6 +245,7 @@ TclIntStubs tclIntStubs = {
     TclGetInstructionTable, /* 163 */
     TclExpandCodeArray, /* 164 */
     TclpSetInitialEncodings, /* 165 */
+    TclListObjSetElement, /* 166 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
