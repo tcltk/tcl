@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.55 2001/09/06 09:35:38 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.56 2001/09/06 17:51:00 vincentdarley Exp $
 
 library tcl
 
@@ -1677,6 +1677,9 @@ declare 478 generic {
 # New function due to TIP#49
 declare 479 generic {
     int Tcl_OutputBuffered(Tcl_Channel chan)
+}
+declare 480 generic {
+    void Tcl_FSMountsChanged(Tcl_Filesystem *fsPtr)
 }
 		  
 ##############################################################################
