@@ -1,3 +1,6 @@
+
+1998-12-11    === Tcl 8.1b1 Release ===
+	
 1998-12-10    <stanton@GASPODE>
 
 	* Fixed lots of files that used TCL_THREAD instead of TCL_THREADS.
