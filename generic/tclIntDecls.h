@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.49.2.7 2004/10/28 16:06:33 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.49.2.8 2005/03/15 16:29:53 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -115,8 +115,8 @@ EXTERN int		TclFormatInt _ANSI_ARGS_((char * buffer, long n));
 EXTERN void		TclFreePackageInfo _ANSI_ARGS_((Interp * iPtr));
 /* Slot 26 is reserved */
 /* 27 */
-EXTERN int		TclGetDate _ANSI_ARGS_((char * p, unsigned long now, 
-				long zone, unsigned long * timePtr));
+EXTERN int		TclGetDate _ANSI_ARGS_((char * p, Tcl_WideInt now, 
+				long zone, Tcl_WideInt * timePtr));
 /* 28 */
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
 /* Slot 29 is reserved */
@@ -241,7 +241,7 @@ EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
 /* 77 */
 EXTERN void		TclpGetTime _ANSI_ARGS_((Tcl_Time * time));
 /* 78 */
-EXTERN int		TclpGetTimeZone _ANSI_ARGS_((unsigned long time));
+EXTERN int		TclpGetTimeZone _ANSI_ARGS_((Tcl_WideInt time));
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
@@ -580,7 +580,7 @@ typedef struct TclIntStubs {
     int (*tclFormatInt) _ANSI_ARGS_((char * buffer, long n)); /* 24 */
     void (*tclFreePackageInfo) _ANSI_ARGS_((Interp * iPtr)); /* 25 */
     void *reserved26;
-    int (*tclGetDate) _ANSI_ARGS_((char * p, unsigned long now, long zone, unsigned long * timePtr)); /* 27 */
+    int (*tclGetDate) _ANSI_ARGS_((char * p, Tcl_WideInt now, long zone, Tcl_WideInt * timePtr)); /* 27 */
     Tcl_Channel (*tclpGetDefaultStdChannel) _ANSI_ARGS_((int type)); /* 28 */
     void *reserved29;
     void *reserved30;
@@ -631,7 +631,7 @@ typedef struct TclIntStubs {
     unsigned long (*tclpGetClicks) _ANSI_ARGS_((void)); /* 75 */
     unsigned long (*tclpGetSeconds) _ANSI_ARGS_((void)); /* 76 */
     void (*tclpGetTime) _ANSI_ARGS_((Tcl_Time * time)); /* 77 */
-    int (*tclpGetTimeZone) _ANSI_ARGS_((unsigned long time)); /* 78 */
+    int (*tclpGetTimeZone) _ANSI_ARGS_((Tcl_WideInt time)); /* 78 */
     void *reserved79;
     void *reserved80;
     char * (*tclpRealloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 81 */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.6 2004/10/28 16:06:51 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.7 2005/03/15 16:29:55 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -223,7 +223,7 @@ TclpGetClicks()
 
 int
 TclpGetTimeZone (currentTime)
-    unsigned long  currentTime;
+    Tcl_WideInt currentTime;
 {
     int timeZone;
 
