@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.61 2002/06/20 00:11:43 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.62 2002/06/20 16:41:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3003,7 +3003,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     /*
      * Finally, invoke the command's Tcl_ObjCmdProc.
      */
-    
+    cmdPtr->refCount++;
     iPtr->cmdCount++;
     if ( code == TCL_OK && traceCode == TCL_OK) {
 	savedVarFramePtr = iPtr->varFramePtr;
@@ -3020,14 +3020,17 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     /*
      * Call 'leave' command traces
      */
-    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-	traceCode = TclCheckExecutionTraces(interp, command, length,
-		       cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+    if (!(cmdPtr->flags & CMD_IS_DELETED)) {
+        if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+            traceCode = TclCheckExecutionTraces (interp, command, length,
+                   cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+        }
+        if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+            traceCode = TclCheckInterpTraces(interp, command, length,
+                   cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+        }
     }
-    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-	traceCode = TclCheckInterpTraces(interp, command, length,
-		       cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-    }
+    TclCleanupCommand(cmdPtr);
 
     /*
      * If one of the trace invocation resulted in error, then 
