@@ -1,5 +1,9 @@
 2004-01-29  Vince Darley  <vincentdarley@users.sourceforge.net>
 
+	* generic/tclPathObj.c: fix to [Bug 883143] in file normalization
+
+2004-01-29  Vince Darley  <vincentdarley@users.sourceforge.net>
+
 	* doc/file.n: 
 	* generic/tclFCmd.c
 	* generic/tclTest.c
