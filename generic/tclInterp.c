@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.46 2004/10/06 14:59:02 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.47 2004/10/15 04:01:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -59,7 +59,7 @@
 
 static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
   proc tclInit {} {\n\
-    global tcl_libPath tcl_library errorInfo\n\
+    global tcl_libPath tcl_library\n\
     global env tclDefaultLibrary\n\
     rename tclInit {}\n\
     set errors {}\n\
@@ -84,10 +84,10 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	set tcl_library $i\n\
 	set tclfile [file join $i init.tcl]\n\
 	if {[file exists $tclfile]} {\n\
-	    if {![catch {uplevel #0 [list source $tclfile]} msg]} {\n\
+	    if {![catch {uplevel #0 [list source $tclfile]} msg opt]} {\n\
 		return\n\
 	    } else {\n\
-		append errors \"$tclfile: $msg\n$errorInfo\n\"\n\
+		append errors \"$tclfile: $msg\n$opt(-errorinfo)\n\"\n\
 	    }\n\
 	}\n\
     }\n\

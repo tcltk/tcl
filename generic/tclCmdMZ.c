@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.111 2004/10/06 09:44:11 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.112 2004/10/15 04:01:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -880,8 +880,7 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
  *	Returns the return code the [return] command should return.
  *
  * Side effects:
- *	When the return code is TCL_ERROR, the values of ::errorInfo
- *	and ::errorCode may be updated.
+ * 	None.
  *
  *----------------------------------------------------------------------
  */
