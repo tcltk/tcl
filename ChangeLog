@@ -1,3 +1,10 @@
+2004-05-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Correction to debug prints and testing
+	* library/tcltest/pkgIndex.tcl:	if TCLTEST_OPTIONS value.  Updated
+	* tests/tcltest.test:		tcltest-19.1 to tcltest 2.1 behavior.
+					Bumped to tcltest 2.2.6.
+
 2004-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/http.n (http::config): add -urlencoding option (default utf-8)
