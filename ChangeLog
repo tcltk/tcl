@@ -19,7 +19,7 @@
 
 	* unix/tcl.m4:
 	* unix/tclUnixPipe.c: (macosx) use vfork() instead of fork() to
-	create new processes, as recommended by to Apple (vfork can be up to
+	create new processes, as recommended by Apple (vfork can be up to
 	100 times faster thank fork on macosx).
 	* unix/configure: regen.
 
