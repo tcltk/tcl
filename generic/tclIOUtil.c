@@ -17,11 +17,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.25 2001/11/02 12:06:27 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.26 2001/11/23 01:27:00 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#ifdef MAC_TCL
+#include "tclMacInt.h"
+#endif
 
 /*
  * Prototypes for procedures defined later in this file.  The last

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.7 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.8 2001/11/23 01:27:21 das Exp $
  */
 
 #include "tclInt.h"
@@ -136,7 +136,7 @@ static int		StdReady _ANSI_ARGS_((ClientData instanceData,
 
 static Tcl_ChannelType consoleChannelType = {
     "file",			/* Type name. */
-    StdIOBlockMode,		/* Set blocking/nonblocking mode.*/
+    (Tcl_ChannelTypeVersion)StdIOBlockMode,		/* Set blocking/nonblocking mode.*/
     StdIOClose,			/* Close proc. */
     StdIOInput,			/* Input proc. */
     StdIOOutput,		/* Output proc. */
@@ -153,7 +153,7 @@ static Tcl_ChannelType consoleChannelType = {
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    FileBlockMode,		/* Set blocking or
+    (Tcl_ChannelTypeVersion)FileBlockMode,		/* Set blocking or
                                  * non-blocking mode.*/
     FileClose,			/* Close proc. */
     FileInput,			/* Input proc. */

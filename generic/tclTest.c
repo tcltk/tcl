@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.33 2001/11/21 02:36:20 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.34 2001/11/23 01:29:07 das Exp $
  */
 
 #define TCL_TEST
@@ -314,6 +314,8 @@ static int		TestFilesystemObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Obj *CONST objv[]));
 
 static void TestReport _ANSI_ARGS_((CONST char* cmd, Tcl_Obj* arg1, Tcl_Obj* arg2));
+
+static Tcl_Obj *TestReportGetNativePath(Tcl_Obj* pathObjPtr);
 
 static Tcl_FSStatProc TestReportStat;
 static Tcl_FSAccessProc TestReportAccess;
@@ -5287,12 +5289,12 @@ TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
  * Simple helper function to extract the native vfs representation of a
  * path object, or NULL if no such representation exists.
  */
-Tcl_Obj* 
+static Tcl_Obj* 
 TestReportGetNativePath(Tcl_Obj* pathObjPtr) {
     return (Tcl_Obj*) Tcl_FSGetInternalRep(pathObjPtr, &testReportingFilesystem);
 }
 
-void 
+static void 
 TestReportFreeInternalRep(ClientData clientData) {
     Tcl_Obj *nativeRep = (Tcl_Obj*)clientData;
     if (nativeRep != NULL) {
@@ -5301,7 +5303,7 @@ TestReportFreeInternalRep(ClientData clientData) {
     }
 }
 
-ClientData 
+static ClientData 
 TestReportDupInternalRep(ClientData clientData) {
     Tcl_Obj *original = (Tcl_Obj*)clientData;
     Tcl_IncrRefCount(original);
