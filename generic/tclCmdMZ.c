@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.98 2003/12/24 04:18:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.99 2004/01/13 23:15:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -844,118 +844,63 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
     int code, level;
-    Tcl_Obj *valuePtr;
+    Tcl_Obj *returnOpts;
 
-    /* Start with the default options */
-    if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
-	Tcl_DecrRefCount(iPtr->returnOpts);
-	iPtr->returnOpts = iPtr->defaultReturnOpts;
-	Tcl_IncrRefCount(iPtr->returnOpts);
-    }
+    /*
+     * General syntax: [return ?-option value ...? ?result?]
+     * An even number of words means an explicit result argument is present.
+     */
+    int explicitResult = (0 == (objc % 2));
+    int numOptionWords = objc - 1 - explicitResult;
 
-    objv++, objc--;
-    if (objc) {
-	/* We're going to add our options, so manage Tcl_Obj sharing */
-	Tcl_DecrRefCount(iPtr->returnOpts);
-	iPtr->returnOpts = Tcl_DuplicateObj(iPtr->returnOpts);
-	Tcl_IncrRefCount(iPtr->returnOpts);
-    }
-    
-    for (;  objc > 1;  objv += 2, objc -= 2) {
-	int optLen;
-	CONST char *opt = Tcl_GetStringFromObj(objv[0], &optLen);
-	if ((optLen == 8) && (*opt == '-') && (strcmp(opt, "-options") == 0)) {
-	    Tcl_DictSearch search;
-	    int done = 0;
-	    Tcl_Obj *keyPtr;
-	    Tcl_Obj *dict = objv[1];
-
-	    nestedOptions:
-	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict,
-		    &search, &keyPtr, &valuePtr, &done)) {
-		/* Value is not a legal dictionary */
-		Tcl_DecrRefCount(iPtr->returnOpts);
-		iPtr->returnOpts = iPtr->defaultReturnOpts;
-		Tcl_IncrRefCount(iPtr->returnOpts);
-		Tcl_ResetResult(interp);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"bad -options value: expected dictionary but got \"",
-			Tcl_GetString(objv[1]), "\"", (char *) NULL);
-		return TCL_ERROR;
-	    }
-
-	    while (!done) {
-		Tcl_DictObjPut(NULL, iPtr->returnOpts, keyPtr, valuePtr);
-		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
-	    }
-
-	    valuePtr = NULL;
-	    Tcl_DictObjGet(NULL, iPtr->returnOpts,
-		    iPtr->returnOptionsKey, &valuePtr);
-	    if (valuePtr != NULL) {
-		dict = valuePtr;
-		Tcl_DictObjRemove(NULL, iPtr->returnOpts,
-			iPtr->returnOptionsKey);
-		goto nestedOptions;
-	    }
-
-	} else {
-	    Tcl_DictObjPut(NULL, iPtr->returnOpts, objv[0], objv[1]);
-	}
-    }
-
-    /* Check for bogus -code value */
-    Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnCodeKey, &valuePtr);
-    if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code)) {
-	static CONST char *returnCodes[] = {
-	    "ok", "error", "return", "break", "continue", NULL
-	};
-
-	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
-		NULL, TCL_EXACT, &code)) {
-	    /* Value is not a legal return code */
-	    Tcl_DecrRefCount(iPtr->returnOpts);
-	    iPtr->returnOpts = iPtr->defaultReturnOpts;
-	    Tcl_IncrRefCount(iPtr->returnOpts);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "bad completion code \"",
-		    Tcl_GetString(valuePtr),
-		    "\": must be ok, error, return, break, ",
-		    "continue, or an integer", (char *) NULL);
-	    return TCL_ERROR;
-	}
-	/* Have a legal string value for a return code; convert to integer */
-	Tcl_DictObjPut(NULL, iPtr->returnOpts,
-		iPtr->returnCodeKey, Tcl_NewIntObj(code));
-    }
-
-    /* Check for bogus -level value */
-    Tcl_DictObjGet(NULL, iPtr->returnOpts, iPtr->returnLevelKey, &valuePtr);
-    if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level) || (level < 0)) {
-	/* Value is not a legal level */
-	Tcl_DecrRefCount(iPtr->returnOpts);
-	iPtr->returnOpts = iPtr->defaultReturnOpts;
-	Tcl_IncrRefCount(iPtr->returnOpts);
-	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"bad -level value: expected non-negative integer but got \"",
-		Tcl_GetString(valuePtr), "\"", (char *) NULL);
+    if (TCL_ERROR == TclMergeReturnOptions(interp, numOptionWords, objv+1,
+	    &returnOpts, &code, &level)) {
 	return TCL_ERROR;
     }
 
-    /* 
-     * Convert [return -code return -level X] to
-     * [return -code ok -level X+1]
-     */
-    if (code == TCL_RETURN) {
-	level++;
-	Tcl_DictObjPut(NULL, iPtr->returnOpts,
-		iPtr->returnLevelKey, Tcl_NewIntObj(level));
-	Tcl_DictObjPut(NULL, iPtr->returnOpts,
-		iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
+    code = TclProcessReturn(interp, code, level, returnOpts);
+    if (explicitResult) {
+	Tcl_SetObjResult(interp, objv[objc-1]);
+    }
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclProcessReturn --
+ *
+ *	Does the work of the [return] command based on the code,
+ *	level, and returnOpts arguments.  Note that the code argument
+ *	must agree with the -code entry in returnOpts and the level
+ *	argument must agree with the -level entry in returnOpts, as
+ *	is the case for values returned from TclMergeReturnOptions.
+ *
+ * Results:
+ *	Returns the return code the [return] command should return.
+ *
+ * Side effects:
+ *	When the return code is TCL_ERROR, the values of ::errorInfo
+ *	and ::errorCode may be updated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclProcessReturn(interp, code, level, returnOpts)
+    Tcl_Interp *interp;
+    int code;
+    int level;
+    Tcl_Obj *returnOpts;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *valuePtr;
+
+    /* Store the merged return options */
+    if (iPtr->returnOpts != returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = returnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
     }
 
     if (level == 0) {
@@ -983,12 +928,157 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
     } else {
 	code = TCL_RETURN;
     }
-
-    if (objc == 1) {
-	Tcl_SetObjResult(interp, objv[0]);
-    }
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMergeReturnOptions --
+ *
+ *	Parses, checks, and stores the options to the [return] command.
+ *
+ * Results:
+ *	Returns TCL_ERROR is any of the option values are invalid.
+ *	Otherwise, returns TCL_OK, and writes the returnOpts, code,
+ *	and level values to the pointers provided.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+int
+TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj **optionsPtrPtr;	/* If not NULL, points to space for a
+				 * (Tcl_Obj *) where the pointer to the
+				 * merged return options dictionary should
+				 * be written */
+    int *codePtr;		/* If not NULL, points to space where the
+				 * -code value should be written */
+    int *levelPtr;		/* If not NULL, points to space where the
+				 * -level value should be written */
+{
+    Interp *iPtr = (Interp *) interp;
+    int code, level, size;
+    Tcl_Obj *valuePtr;
+    Tcl_Obj *returnOpts = Tcl_DuplicateObj(iPtr->defaultReturnOpts);
+
+    for (;  objc > 1;  objv += 2, objc -= 2) {
+	int optLen;
+	CONST char *opt = Tcl_GetStringFromObj(objv[0], &optLen);
+	int compareLen;
+	CONST char *compare =
+		Tcl_GetStringFromObj(iPtr->returnOptionsKey, &compareLen);
+
+	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
+	    Tcl_DictSearch search;
+	    int done = 0;
+	    Tcl_Obj *keyPtr;
+	    Tcl_Obj *dict = objv[1];
+
+	    nestedOptions:
+	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict,
+		    &search, &keyPtr, &valuePtr, &done)) {
+		/* Value is not a legal dictionary */
+		Tcl_ResetResult(interp);
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad ",
+			compare, " value: expected dictionary but got \"",
+			Tcl_GetString(objv[1]), "\"", (char *) NULL);
+		return TCL_ERROR;
+	    }
+
+	    while (!done) {
+		Tcl_DictObjPut(NULL, returnOpts, keyPtr, valuePtr);
+		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
+	    }
+
+	    valuePtr = NULL;
+	    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnOptionsKey, &valuePtr);
+	    if (valuePtr != NULL) {
+		dict = valuePtr;
+		Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnOptionsKey);
+		goto nestedOptions;
+	    }
+
+	} else {
+	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
+	}
+    }
+
+    /* Check for bogus -code value */
+    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnCodeKey, &valuePtr);
+    if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code)) {
+	static CONST char *returnCodes[] = {
+	    "ok", "error", "return", "break", "continue", NULL
+	};
+
+	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
+		NULL, TCL_EXACT, &code)) {
+	    /* Value is not a legal return code */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "bad completion code \"",
+		    Tcl_GetString(valuePtr),
+		    "\": must be ok, error, return, break, ",
+		    "continue, or an integer", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	/* Have a legal string value for a return code; convert to integer */
+	Tcl_DictObjPut(NULL, returnOpts,
+		iPtr->returnCodeKey, Tcl_NewIntObj(code));
+    }
+
+    /* Check for bogus -level value */
+    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnLevelKey, &valuePtr);
+    if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level) || (level < 0)) {
+	/* Value is not a legal level */
+	Tcl_ResetResult(interp);
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"bad -level value: expected non-negative integer but got \"",
+		Tcl_GetString(valuePtr), "\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    /* 
+     * Convert [return -code return -level X] to
+     * [return -code ok -level X+1]
+     */
+    if (code == TCL_RETURN) {
+	level++;
+	Tcl_DictObjPut(NULL, returnOpts,
+		iPtr->returnLevelKey, Tcl_NewIntObj(level));
+	Tcl_DictObjPut(NULL, returnOpts,
+		iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
+    }
+
+    /*
+     * Check if we just have the default options.  If so, use them.
+     * A dictionary equality test would be more robust, but seems
+     * tricky, to say the least.
+     */
+    Tcl_DictObjSize(NULL, returnOpts, &size);
+    if (size == 2 && code == TCL_OK && level == 1) {
+	Tcl_DecrRefCount(returnOpts);
+	returnOpts = iPtr->defaultReturnOpts;
+    }
+    if (codePtr != NULL) {
+	*codePtr = code;
+    }
+    if (levelPtr != NULL) {
+	*levelPtr = level;
+    }
+    if ((optionsPtrPtr == NULL) && (returnOpts != iPtr->defaultReturnOpts)) {
+	/* not passing back the options (?!), so clean them up */
+	Tcl_DecrRefCount(returnOpts);
+    } else {
+	*optionsPtrPtr = returnOpts;
+    }
+    return TCL_OK;
 }
 
 /*

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.139 2003/12/24 04:20:05 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.140 2004/01/13 23:15:03 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1702,6 +1702,10 @@ EXTERN Tcl_Obj *	TclLsetFlat _ANSI_ARGS_((Tcl_Interp* interp,
 						 Tcl_Obj *CONST indexArray[],
 						 Tcl_Obj* valuePtr
 						 ));
+EXTERN int		TclMergeReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[],
+			    Tcl_Obj **optionsPtrPtr, int *codePtr,
+			    int *levelPtr));
 EXTERN int              TclParseBackslash _ANSI_ARGS_((CONST char *src,
                             int numBytes, int *readPtr, char *dst));
 EXTERN int		TclParseHex _ANSI_ARGS_((CONST char *src, int numBytes,
@@ -1710,6 +1714,8 @@ EXTERN int		TclParseInteger _ANSI_ARGS_((CONST char *string,
 			    int numBytes));
 EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
 			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
+EXTERN int		TclProcessReturn _ANSI_ARGS_((Tcl_Interp *interp,
+			    int code, int level, Tcl_Obj *returnOpts));
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
