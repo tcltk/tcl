@@ -420,7 +420,8 @@ install-libraries:
 #
 
 $(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$(TMPDIR)\testMain.obj $?
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -DTCL_TEST \
+		-Fo$(TMPDIR)\testMain.obj $?
 
 $(TMPDIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
@@ -432,7 +433,7 @@ $(TMPDIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
 
 #
 # Implicit rules
