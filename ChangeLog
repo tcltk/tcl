@@ -1,9 +1,14 @@
+2003-11-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/compile.test (compile-16.22.0):	Improved test for the
+	recent fix for Bug 845412.
+
 2003-11-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompile.c (TclCompileScript): Added a guard for the
 	expansion code so that long non-expanding commands don't get
 	expansion infrastructure inserted in them, especially when that
-	infrastructure isn't initialised.
+	infrastructure isn't initialised.  [Bug 845412]
 
 2003-11-18  David Gravereaux <davygrvy@pobox.com>
 

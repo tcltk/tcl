@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.29 2003/11/19 22:04:39 dkf Exp $
+# RCS: @(#) $Id: compile.test,v 1.30 2003/11/20 00:16:00 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -374,7 +374,7 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
 } ""
 
 testConstraint testevalex [llength [info commands testevalex]]
-for {set noComp 1} {$noComp <= 1} {incr noComp} {
+for {set noComp 0} {$noComp <= 1} {incr noComp} {
 
 if $noComp {
     interp alias {} run {} testevalex
@@ -503,9 +503,12 @@ test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
     rename LongList {}
 } -returnCodes ok  -result [expr {wide(1)<<32}]
 
-test compile-16.22.$noComp {TclCompileScript: word expansion not mandatory} -body {
+test compile-16.22.$noComp {
+    Bug 845412: TclCompileScript: word expansion not mandatory
+} -body {
+    # This test may crash and will fail unless Bug 845412 is fixed.
     proc ReturnResults args {return $args}
-    if 1 "ReturnResults [string repeat {x } 260]"
+    run "ReturnResults [string repeat {x } 260]"
 } -constraints $constraints -cleanup {
     rename ReturnResults {}
 } -returnCodes ok -result [string trim [string repeat {x } 260]]
