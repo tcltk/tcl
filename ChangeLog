@@ -1,5 +1,7 @@
 2004-04-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/cd.n: Documentation clarification from David Welton.
+
 	* doc/exec.n: Added some examples, Windows ones from Arjen Markus
 	and Unix ones by myself.
 
