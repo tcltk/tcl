@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoull.c,v 1.3 2002/02/15 23:42:12 kennykb Exp $
+ * RCS: @(#) $Id: strtoull.c,v 1.4 2002/02/22 09:04:48 dkf Exp $
  */
 
 #include "tcl.h"
@@ -56,7 +56,7 @@ static char cvtIn[] = {
 
 Tcl_WideUInt
 strtoull(string, endPtr, base)
-    char *string;		/* String of ASCII digits, possibly
+    CONST char *string;		/* String of ASCII digits, possibly
 				 * preceded by white space.  For bases
 				 * greater than 10, either lower- or
 				 * upper-case digits may be used.
@@ -70,7 +70,7 @@ strtoull(string, endPtr, base)
 				 * else means decimal.
 				 */
 {
-    register char *p;
+    register CONST char *p;
     register Tcl_WideUInt result = 0;
     register unsigned digit;
     register Tcl_WideUInt shifted;
@@ -81,7 +81,7 @@ strtoull(string, endPtr, base)
      */
 
     p = string;
-    while (isspace(*p)) {	/* INTL: locale-dependent */
+    while (isspace(UCHAR(*p))) {	/* INTL: locale-dependent */
 	p += 1;
     }
 
@@ -229,7 +229,7 @@ strtoull(string, endPtr, base)
     }
 
     if (endPtr != 0) {
-	*endPtr = p;
+	*endPtr = (char *) p;
     }
 
     return result;
@@ -251,7 +251,7 @@ strtoull(string, endPtr, base)
 		break;
 	    }
 	}
-	*endPtr = p;
+	*endPtr = (char *) p;
     }
     return (Tcl_WideUInt)Tcl_LongAsWide(-1);
 }
