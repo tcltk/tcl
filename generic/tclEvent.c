@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.21 2002/05/13 13:20:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.22 2002/05/14 09:44:43 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -836,17 +836,10 @@ Tcl_Finalize()
 
 	TclFinalizeSynchronization();
 
-	/*
-	 * We defer unloading of packages until very late 
-	 * to avoid memory access issues.  Both exit callbacks and
-	 * synchronization variables may be stored in packages.
-	 */
-
-	TclFinalizeLoad();
-	
 	/**
 	 * Finalizing the filesystem must come after anything which
-	 * might conceivably interact with the 'Tcl_FS' API.
+	 * might conceivably interact with the 'Tcl_FS' API.  This
+	 * will also unload any extensions which have been loaded.
 	 */
 	TclFinalizeFilesystem();
 
