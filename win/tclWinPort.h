@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.30 2002/05/28 09:12:25 dkf Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.31 2002/06/12 09:28:59 vincentdarley Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -283,6 +283,10 @@
  * defined.
  */
 
+#ifndef S_IFLNK
+#define S_IFLNK        0120000  /* Symbolic Link */
+#endif
+
 #ifndef S_ISREG
 #   ifdef S_IFREG
 #       define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -318,6 +322,14 @@
 #       define S_ISFIFO(m) 0
 #   endif
 #endif /* !S_ISFIFO */
+#ifndef S_ISLNK
+#   ifdef S_IFLNK
+#       define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
+#   else
+#       define S_ISLNK(m) 0
+#   endif
+#endif /* !S_ISLNK */
+
 
 /*
  * Define MAXPATHLEN in terms of MAXPATH if available
