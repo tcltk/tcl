@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.2 2003/06/09 22:48:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.3 2003/06/10 20:35:48 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -28,7 +28,7 @@
  * caller.
  */
 
-#define ASSOC_KEY "Package About Dict"
+#define ASSOC_KEY "tclPackageAboutDict"
 
 /*
  * Static functions in this file:
