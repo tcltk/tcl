@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.1 2003/06/18 18:34:19 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.2 2004/09/09 15:45:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -949,8 +949,8 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
      */
 
     TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ TCL_LEAVE_ERR_MSG, &exportNsPtr, &dummyPtr,
-	    &dummyPtr, &simplePattern);
+	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -1177,8 +1177,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
         return TCL_ERROR;
     }
     TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ TCL_LEAVE_ERR_MSG, &importNsPtr, &dummyPtr,
-	    &dummyPtr, &simplePattern);
+	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -1312,17 +1312,22 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
  *
  * Tcl_ForgetImport --
  *
- *	Deletes previously imported commands. Given a pattern that may
- *	include the name of an exporting namespace, this procedure first
- *	finds all matching exported commands. It then looks in the namespace
- *	specified by namespacePtr for any corresponding previously imported
- *	commands, which it deletes. If namespacePtr is NULL, commands are
- *	deleted from the current namespace.
+ *	Deletes commands previously imported into the namespace indicated.  The
+ *	by namespacePtr, or the current namespace of interp, when
+ *	namespacePtr is NULL.  The pattern controls which imported commands
+ *	are deleted.  A simple pattern, one without namespace separators,
+ *	matches the current command names of imported commands in the
+ *	namespace.  Matching imported commands are deleted.  A qualified
+ *	pattern is interpreted as deletion selection on the basis of where
+ *	the command is imported from.  The original command and "first link"
+ *	command for each imported command are determined, and they are matched
+ *	against the pattern.  A match leads to deletion of the imported
+ *	command.
  *
  * Results:
- *	Returns TCL_OK if successful. If there is an error, returns
- *	TCL_ERROR and puts an error message in the interpreter's result
- *	object.
+ * 	Returns TCL_ERROR and records an error message in the interp
+ * 	result if a namespace qualified pattern refers to a namespace
+ * 	that does not exist.  Otherwise, returns TCL_OK.
  *
  * Side effects:
  *	May delete commands. 
@@ -1337,17 +1342,13 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 				  * previously imported commands should be
 				  * removed. NULL for current namespace. */
     CONST char *pattern;	 /* String pattern indicating which imported
-				  * commands to remove. This pattern should
-				  * be qualified by the name of the
-				  * namespace from which the command(s) were
-				  * imported. */
+				  * commands to remove. */
 {
-    Namespace *nsPtr, *importNsPtr, *dummyPtr, *actualCtxPtr;
+    Namespace *nsPtr, *sourceNsPtr, *dummyPtr;
     CONST char *simplePattern;
     char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Command *cmdPtr;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1360,42 +1361,74 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
     }
 
     /*
-     * From the pattern, find the namespace from which we are importing
-     * and get the simple pattern (no namespace qualifiers or ::'s) at
-     * the end.
+     * Parse the pattern into its namespace-qualification (if any)
+     * and the simple pattern.
      */
 
     TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ TCL_LEAVE_ERR_MSG, &importNsPtr, &dummyPtr,
-	    &actualCtxPtr, &simplePattern);
+	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
-    if (importNsPtr == NULL) {
+    if (sourceNsPtr == NULL) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"unknown namespace in namespace forget pattern \"",
 		pattern, "\"", (char *) NULL);
         return TCL_ERROR;
     }
 
-    /*
-     * Scan through the command table in the source namespace and look for
-     * exported commands that match the string pattern. If the current
-     * namespace has an imported command that refers to one of those real
-     * commands, delete it.
-     */
+    if (strcmp(pattern, simplePattern) == 0) {
+	/*
+	 * The pattern is simple.
+	 * Delete any imported commands that match it.
+	 */
 
-    for (hPtr = Tcl_FirstHashEntry(&importNsPtr->cmdTable, &search);
-            (hPtr != NULL);
-            hPtr = Tcl_NextHashEntry(&search)) {
-        cmdName = Tcl_GetHashKey(&importNsPtr->cmdTable, hPtr);
-        if (Tcl_StringMatch(cmdName, simplePattern)) {
-            hPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName);
-            if (hPtr != NULL) {	/* cmd of same name in current namespace */
-                cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
-                if (cmdPtr->deleteProc == DeleteImportedCmd) { 
-                    Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
-                }
-            }
-        }
+	for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+		(hPtr != NULL);
+		hPtr = Tcl_NextHashEntry(&search)) {
+	    Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	    if (cmdPtr->deleteProc != DeleteImportedCmd) {
+		continue;
+	    }
+	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+	    if (Tcl_StringMatch(cmdName, simplePattern)) {
+		Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+	    }
+	}
+	return TCL_OK;
+    }
+
+    /* The pattern was namespace-qualified */
+
+    for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search); (hPtr != NULL);
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_CmdInfo info;
+	Tcl_Command token = (Tcl_Command) Tcl_GetHashValue(hPtr);
+	Tcl_Command origin = TclGetOriginalCommand(token);
+
+	if (Tcl_GetCommandInfoFromToken(origin, &info) == 0) {
+	    continue;	/* Not an imported command */
+	}
+	if (info.namespacePtr != (Tcl_Namespace *) sourceNsPtr) {
+	    /*
+	     * Original not in namespace we're matching.
+	     * Check the first link in the import chain.
+	     */
+	    Command *cmdPtr = (Command *) token;
+	    ImportedCmdData *dataPtr =
+		    (ImportedCmdData *) cmdPtr->objClientData;
+	    Tcl_Command firstToken = (Tcl_Command) dataPtr->realCmdPtr;
+	    if (firstToken == origin) {
+		continue;
+	    }
+	    Tcl_GetCommandInfoFromToken(firstToken, &info);
+	    if (info.namespacePtr != (Tcl_Namespace *) sourceNsPtr) {
+		continue;
+	    }
+	    origin = firstToken;
+	}
+	if (Tcl_StringMatch(Tcl_GetCommandName(NULL, origin), simplePattern)) {
+	    Tcl_DeleteCommandFromToken(interp, token);
+	}
     }
     return TCL_OK;
 }
