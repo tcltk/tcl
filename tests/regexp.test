@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.1.2.4 1998/11/11 01:44:56 stanton Exp $
+# RCS: @(#) $Id: regexp.test,v 1.1.2.5 1998/12/03 23:59:13 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -76,7 +76,10 @@ test regexp-2.7 {getting substrings back from regexp} {
     set foo 1; set f2 1; set f3 1; set f4 1
     list [regexp (a)(b)?(c) xacy foo f2 f3 f4] $foo $f2 $f3 $f4
 } {1 ac a {} c}
-
+test regexp-2.8 {getting substrings back from regexp} {
+    set match {}
+    list [regexp {^a*b} aaaab match] $match
+} {1 aaaab}
 
 test regexp-3.1 {-indices option to regexp} {
     set foo {}

@@ -115,7 +115,7 @@ test unixInit-3.1 {TclpSetInitialEncodings} {
 
     set f [open "|[list $tcltest]" w+]
     fconfigure $f -buffering none
-    puts $f {puts [testencoding system]; exit}
+    puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
     unset env(LANG)
@@ -127,7 +127,7 @@ test unixInit-3.1 {TclpSetInitialEncodings} {japanese nonPortable} {
 
     set f [open "|[list $tcltest]" w+]
     fconfigure $f -buffering none
-    puts $f {puts [testencoding system]; exit}
+    puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
     unset env(LANG)
