@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.20 2002/04/04 21:14:53 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.21 2002/04/07 05:44:11 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -149,6 +149,29 @@ static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr));
+
+#ifdef PURIFY
+/*
+ * realpath and purify don't mix happily.  It has been noted that realpath
+ * should not be used with purify because of bogus warnings, but just
+ * memset'ing the resolved path will squelch those.  This assumes we are
+ * passing the standard MAXPATHLEN size resolved arg.
+ */
+static char *		Realpath _ANSI_ARGS_((CONST char *path,
+			    char *resolved));
+
+char *
+Realpath(path, resolved)
+    CONST char *path;
+    char *resolved;
+{
+    memset(resolved, 0, MAXPATHLEN);
+    return realpath(path, resolved);
+}
+#else
+#define Realpath realpath
+#endif
+
 
 /*
  *---------------------------------------------------------------------------
@@ -184,7 +207,6 @@ static int		TraverseUnixTree _ANSI_ARGS_((
  *
  *---------------------------------------------------------------------------
  */
-
 
 int 
 TclpObjRenameFile(srcPathPtr, destPathPtr)
@@ -232,8 +254,8 @@ DoRenameFile(src, dst)
 	DIR *dirPtr;
 	Tcl_DirEntry *dirEntPtr;
 
-	if ((realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
-		&& (realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
+	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
+		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
 	    dirPtr = opendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
@@ -274,7 +296,6 @@ DoRenameFile(src, dst)
 
     return TCL_ERROR;
 }
-
 
 /*
  *---------------------------------------------------------------------------
@@ -1643,6 +1664,11 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     int pathLen;
     char cur;
     char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+#ifndef NO_REALPATH
+    char normPath[MAXPATHLEN];
+    Tcl_DString ds;
+    CONST char *nativePath; 
+#endif
 
     currentPathEndPosition = path + nextCheckpoint;
 
@@ -1655,7 +1681,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    int accessOk;
 
 	    nativePath = Tcl_UtfToExternalDString(NULL, path, 
-			    currentPathEndPosition - path, &ds);
+		    currentPathEndPosition - path, &ds);
 	    accessOk = access(nativePath, F_OK);
 	    Tcl_DStringFree(&ds);
 	    if (accessOk != 0) {
@@ -1677,43 +1703,36 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
      * have 'realpath'.
      */
 #ifndef NO_REALPATH
-    if (1) {
-	char normPath[MAXPATHLEN];
-	Tcl_DString ds;
-	CONST char *nativePath = Tcl_UtfToExternalDString(NULL, path, 
-						   nextCheckpoint, &ds);
-	
-	if (realpath((char *) nativePath, normPath) != NULL) {
-	    /* 
-	     * Free up the native path and put in its place the
-	     * converted, normalized path.
-	     */
-	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDString(NULL, normPath,
-		    (int) strlen(normPath), &ds);
-
-	    if (path[nextCheckpoint] != '\0') {
-		/* not at end, append remaining path */
-	        int normLen = Tcl_DStringLength(&ds);
-		Tcl_DStringAppend(&ds, path + nextCheckpoint,
-				  pathLen - nextCheckpoint);
-                /* 
-                 * We recognise up to and including the directory
-                 * separator.
-		 */	
-	        nextCheckpoint = normLen + 1;
-	    } else {
-	        /* We recognise the whole string */ 
-	        nextCheckpoint = Tcl_DStringLength(&ds);
-	    }
-	    /* 
-	     * Overwrite with the normalized path.
-	     */
-	    Tcl_SetStringObj(pathPtr,Tcl_DStringValue(&ds),
-			     Tcl_DStringLength(&ds));
-	}
+    nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
+    if (Realpath(nativePath, normPath) != NULL) {
+	/* 
+	 * Free up the native path and put in its place the
+	 * converted, normalized path.
+	 */
 	Tcl_DStringFree(&ds);
+	Tcl_ExternalToUtfDString(NULL, normPath, (int) strlen(normPath), &ds);
+
+	if (path[nextCheckpoint] != '\0') {
+	    /* not at end, append remaining path */
+	    int normLen = Tcl_DStringLength(&ds);
+	    Tcl_DStringAppend(&ds, path + nextCheckpoint,
+		    pathLen - nextCheckpoint);
+	    /* 
+	     * We recognise up to and including the directory
+	     * separator.
+	     */	
+	    nextCheckpoint = normLen + 1;
+	} else {
+	    /* We recognise the whole string */ 
+	    nextCheckpoint = Tcl_DStringLength(&ds);
+	}
+	/* 
+	 * Overwrite with the normalized path.
+	 */
+	Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
+		Tcl_DStringLength(&ds));
     }
+    Tcl_DStringFree(&ds);
 #endif	/* !NO_REALPATH */
 
     return nextCheckpoint;
