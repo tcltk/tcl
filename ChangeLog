@@ -1,5 +1,3 @@
-test for branch commit.
-
 2003-05-22  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.pbproj/project.pbxproj: added missing references to
