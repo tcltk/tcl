@@ -8,6 +8,12 @@
 	added test for evaluation of an expression in a variable; evals once
 	by compiling, second time using the previous compilation
 
+2001-02-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Updated documentation to reflect the addition of
+	compat/strftime.c, including the correct formatting of
+	ISO-8601:1988 fiscal week number (%V).
+	
 2001-02-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_SplitObjCmd): Improved efficiency of
