@@ -41,7 +41,8 @@
 
 	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Corrected a typo in the
 	  generation of error messages and simplified by reusing data in a
-	  variable instead of retrieving the string again. Fixes [Tcl SF Bug 835289].
+	  variable instead of retrieving the string again.
+	  Fixes [Tcl SF Bug 835289].
 
 	* doc/OpenFileChnl.3: Added description of the behaviour of
 	  Tcl_ReadChars when its 'charsToRead' argument is set to
@@ -91,7 +92,7 @@
 	  on 'tclvfs', thinking that they have to close the channel in the
 	  close handler for the filesystem.
 
-2004-06-14  Andreas Kupries  <andreask@activestate.com>
+2004-07-14  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c:
 	* generic/tclIO.h:
@@ -297,8 +298,8 @@
 
 2004-05-19  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
-	* generic/tclIO.h: [SF Tcl Bug 462317], see ChangeLog entry
+	* generic/tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem
+	* generic/tclIO.h: as [SF Tcl Bug 462317], see ChangeLog entry
 	           2001-09-26. The fix done at that time is incomplete. It
 	           is possible to get around it if the actual read
 	           operation is defered and not executed in the event
