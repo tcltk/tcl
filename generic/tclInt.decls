@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.5 1999/04/16 00:46:47 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.6 1999/04/16 22:03:58 surles Exp $
 
 library tcl
 
@@ -379,10 +379,9 @@ declare 100 generic {
     Tcl_Obj * TclSetIndexedScalar(Tcl_Interp *interp, int localIndex, \
 	    Tcl_Obj *objPtr, int leaveErrorMsg)
 }
-# TODO: needs to be implemented
-#  declare 101 generic {
-#      char * TclSetPreInitScript(char *string)
-#  }
+declare 101 generic {
+    char * TclSetPreInitScript(char *string)
+}
 declare 102 generic {
     void TclSetupEnv(Tcl_Interp *interp)
 }

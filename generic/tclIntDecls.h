@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.4 1999/04/16 00:46:48 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.5 1999/04/16 22:03:58 surles Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -315,7 +315,8 @@ EXTERN Tcl_Obj *	TclSetElementOfIndexedArray _ANSI_ARGS_((
 EXTERN Tcl_Obj *	TclSetIndexedScalar _ANSI_ARGS_((Tcl_Interp * interp, 
 				int localIndex, Tcl_Obj * objPtr, 
 				int leaveErrorMsg));
-/* Slot 101 is reserved */
+/* 101 */
+EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char * string));
 /* 102 */
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp * interp));
 /* 103 */
@@ -549,7 +550,7 @@ typedef struct TclIntStubs {
     int (*tclServiceIdle) _ANSI_ARGS_((void)); /* 98 */
     Tcl_Obj * (*tclSetElementOfIndexedArray) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, Tcl_Obj * elemPtr, Tcl_Obj * objPtr, int leaveErrorMsg)); /* 99 */
     Tcl_Obj * (*tclSetIndexedScalar) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, Tcl_Obj * objPtr, int leaveErrorMsg)); /* 100 */
-    void *reserved101;
+    char * (*tclSetPreInitScript) _ANSI_ARGS_((char * string)); /* 101 */
     void (*tclSetupEnv) _ANSI_ARGS_((Tcl_Interp * interp)); /* 102 */
     int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char * proto, int * portPtr)); /* 103 */
     int (*tclSockMinimumBuffers) _ANSI_ARGS_((int sock, int size)); /* 104 */
@@ -971,7 +972,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclSetIndexedScalar \
 	(tclIntStubsPtr->tclSetIndexedScalar) /* 100 */
 #endif
-/* Slot 101 is reserved */
+#ifndef TclSetPreInitScript
+#define TclSetPreInitScript \
+ 	(tclIntStubsPtr->tclSetPreInitScript) /* 101 */
+#endif
 #ifndef TclSetupEnv
 #define TclSetupEnv \
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */
