@@ -1,3 +1,7 @@
+2004-07-01  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileSystem.test: Added test for [Bug 970529]
+
 2004-07-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* win/README.binary, win/README: Updated references to Tcl and Tk
