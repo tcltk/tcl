@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.8.2.2 2002/10/15 19:38:20 hobbs Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.8.2.3 2002/12/10 04:12:18 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -293,7 +293,29 @@ TclpMasterLock()
     }
     EnterCriticalSection(&masterLock);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpMasterUnlock
+ *
+ *	This procedure is used to release a lock that serializes creation
+ *	and deletion of synchronization objects.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Release the master mutex.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void
+TclpMasterUnlock()
+{
+    LeaveCriticalSection(&masterLock);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -327,30 +349,6 @@ Tcl_GetAllocMutex()
 
 
 #ifdef TCL_THREADS
-/*
- *----------------------------------------------------------------------
- *
- * TclpMasterUnlock
- *
- *	This procedure is used to release a lock that serializes creation
- *	and deletion of synchronization objects.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Release the master mutex.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMasterUnlock()
-{
-    LeaveCriticalSection(&masterLock);
-}
-
-
 /*
  *----------------------------------------------------------------------
  *

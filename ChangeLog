@@ -1,3 +1,9 @@
+2002-12-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinThrd.c (TclpMasterUnlock):
+	* generic/tclThread.c (TclFinalizeThreadData): TclpMasterUnlock
+	must exist and be called unconditional of TCL_THREADS. [Bug #651139]
+
 2002-10-28  Andreas Kupries  <andreask@activestate.com>
 
 	* library/dde1.1/pkgIndex.tcl:
