@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.68 2004/07/06 21:08:36 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.69 2004/07/07 22:05:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1117,6 +1117,15 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			    TclSetCmdNameObj(interp,
 			           envPtr->literalArrayPtr[objIndex].objPtr,
 				   cmdPtr);
+			}
+			if ((wordIdx == 0) && (parse.numWords == 1)) {
+			    /*
+			     * Single word script: unshare the command name to
+			     * avoid shimmering between bytecode and cmdName
+			     * representations [Bug 458361]
+			     */
+
+			    TclHideLiteral(interp, envPtr, objIndex);
 			}
 		    } else {
 			objIndex = TclRegisterNewLiteral(envPtr,
