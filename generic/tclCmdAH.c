@@ -972,7 +972,7 @@ checkAccess:
 	    if (fileName == NULL) {
 		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
 	    } else {
-		Tcl_SetBooleanObj(resultPtr, (access(fileName, mode) != -1));
+		Tcl_SetBooleanObj(resultPtr, (TclAccess(fileName, mode) != -1));
 	    }
 	    goto done;
 	  case FILE_WRITABLE:
@@ -1015,7 +1015,7 @@ checkAccess:
 	    	goto not3Args;
 	    }
 	    
-	    if (stat(fileName, &statBuf) == -1) {
+	    if (TclStat(fileName, &statBuf) == -1) {
 	    	goto badStat;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) statBuf.st_atime);
@@ -1056,7 +1056,7 @@ checkAccess:
 	    	errorString = "mtime name";
 	    	goto not3Args;
 	    }
-	    if (stat(fileName, &statBuf) == -1) {
+	    if (TclStat(fileName, &statBuf) == -1) {
 	    	goto badStat;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) statBuf.st_mtime);
@@ -1107,7 +1107,7 @@ checkAccess:
 	    	errorString = "size name";
 	    	goto not3Args;
 	    }
-	    if (stat(fileName, &statBuf) == -1) {
+	    if (TclStat(fileName, &statBuf) == -1) {
 	    	goto badStat;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) statBuf.st_size);
@@ -1119,7 +1119,7 @@ checkAccess:
 	    	goto done;
 	    }
 
-	    if (stat(fileName, &statBuf) == -1) {
+	    if (TclStat(fileName, &statBuf) == -1) {
 badStat:
 		Tcl_AppendStringsToObj(resultPtr, "couldn't stat \"", 
 			Tcl_GetStringFromObj(objv[2], &length),
@@ -1143,7 +1143,7 @@ badStat:
 	    goto done;
     }
 
-    if (stat(fileName, &statBuf) == -1) {
+    if (TclStat(fileName, &statBuf) == -1) {
     	Tcl_SetBooleanObj(resultPtr, 0);
 	goto done;
     }
