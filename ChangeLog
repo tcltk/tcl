@@ -1,6 +1,10 @@
-2004-11-19  Daniel Steffen  <das@users.sourceforge.net>
+2004-11-19  Reinhard Max  <max@suse.de>
 
 	*** 8.4.8 TAGGED FOR RELEASE ***
+
+	* unix/installManPage: Classic sed doesn't support | in REs.
+
+2004-11-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: 
 	* unix/configure.in: 
