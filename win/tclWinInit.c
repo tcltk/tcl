@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.50 2004/06/17 19:37:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.51 2004/06/17 19:41:45 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -202,8 +202,6 @@ SetDefaultLibraryDir(directory)
 static Tcl_Obj *
 GetDefaultLibraryDir()
 {
-    int numBytes;
-    CONST char *bytes;
     Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
 	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
 
@@ -304,7 +302,7 @@ TclpInitLibraryPath(path)
 				/* the path to the executable name.     */
 {
 #define LIBRARY_SIZE	    32
-    Tcl_Obj *pathPtr, *objPtr, objv[];
+    Tcl_Obj *pathPtr, *objPtr, **objv;
     CONST char *str;
     Tcl_DString ds;
     int objc, pathc;
