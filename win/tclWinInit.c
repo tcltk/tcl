@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.52 2004/06/17 20:17:48 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.53 2004/06/17 21:26:28 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -210,6 +210,7 @@ GetDefaultLibraryDir()
     }
 
     if (NULL == defaultLibraryDir) {
+Tcl_Panic("Called GetDLD before SetDLD!");
 	TclpInitLibraryPath(NULL);
 	if (NULL != *savedDirectoryPtr) {
 	    return *savedDirectoryPtr;
