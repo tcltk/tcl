@@ -1,3 +1,11 @@
+2003-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/binary.test (binary-46.*): Tests to help enforce the
+	current behaviour.
+	* doc/binary.n: Documented that [binary format a] and [binary scan a]
+	do encoding conversion by dropping high bytes, unlike the rest of
+	the core. [Bug 735364]
+
 2003-07-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/package.tcl:  Corrected [pkg_mkIndex] bug reported on
