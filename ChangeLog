@@ -1,3 +1,11 @@
+2002-04-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c (Realpath): added a little extra code to
+	initialize a realpath arg when compiling in PURIFY mode in order
+	to prevent spurious purify warnings.  We should really create our
+	own realpath implementation, but this will at least quiet purify
+	for now.
+
 2002-04-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_SubstObj):
