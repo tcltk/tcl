@@ -1,3 +1,10 @@
+2002-04-24  Daniel Steffen  <das@users.sourceforge.net>
+
+	* mac/tclMacResource.r: added check of
+	TCLTK_NO_LIBRARY_TEXT_RESOURCES #define to allow disabling the
+	inclusion of the tcl library code in the resource fork of Tcl
+	executables and shared libraries.
+
 2002-04-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/TraceCmd.3: New file that documents Tcl_CommandTraceInfo,
