@@ -4,6 +4,11 @@
 
 2002-07-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n: more refinements of the documentation.
+
+	* library/tcltest/tcltest.tcl:	Added trace to be sure the stdio
+	constraint is updated whenever the [interpreter] changes.
+
 	* doc/tcltest.n:		Reverted [makeFile] and [viewFile] to
 	* library/tcltest/tcltest.tcl:	their former behavior, and documented
 	* tests/cmdAH.test:		it.  Corrected misspelling of hook

@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.66 2002/07/02 19:10:57 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.67 2002/07/03 00:41:38 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -272,6 +272,8 @@ namespace eval tcltest {
 
     # Set the location of the execuatble
     Default tcltest [info nameofexecutable]
+    trace variable tcltest w [namespace code {testConstraint stdio \
+	    [eval [ConstraintInitializer stdio]] ;#}]
 
     # save the platform information so it can be restored later
     Default originalTclPlatform [array get tcl_platform]
