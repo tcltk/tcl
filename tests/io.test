@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.59 2004/07/23 15:58:40 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.60 2004/07/25 22:06:21 patthoyts Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7102,6 +7102,7 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
 test io-61.1 {Reset eof state after changing the eof char} -setup {
     set datafile [makeFile {} eofchar]
     set f [open $datafile w]
+    fconfigure $f -translation binary
     puts -nonewline $f [string repeat "Ho hum\n" 11]
     puts $f =
     set line [string repeat "Ge gla " 4]
