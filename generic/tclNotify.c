@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.7 2000/04/04 20:28:42 kupries Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.8 2002/04/12 06:31:28 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -146,6 +146,17 @@ TclFinalizeNotifier()
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ThreadSpecificData **prevPtrPtr;
+    Tcl_Event *evPtr, *hold;
+
+    Tcl_MutexLock(&(tsdPtr->queueMutex));
+    for (evPtr = tsdPtr->firstEventPtr; evPtr != (Tcl_Event *) NULL; ) {
+	hold = evPtr;
+	evPtr = evPtr->nextPtr;
+	ckfree((char *) hold);
+    }
+    tsdPtr->firstEventPtr = NULL;
+    tsdPtr->lastEventPtr = NULL;
+    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 
     Tcl_MutexLock(&listLock);
 
