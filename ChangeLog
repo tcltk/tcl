@@ -1,3 +1,7 @@
+2001-10-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes: First draft of Tcl changes for 8.3.4 release.
+
 2001-10-16  Don Porter	<dgp@users.sourceforge.net>
 
 	* unix/Makefile.in: Restored install of tclConfig.sh file
