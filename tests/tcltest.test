@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.28 2002/06/26 01:31:15 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.29 2002/06/26 03:25:06 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1045,7 +1045,12 @@ test tcltest-20.1 {PrintError} {unixOrPc} {
 } {1 1 1 1 1 1}
 
 # test::test
-test tcltest-21.0 {name and desc but no args specified} -body {
+test tcltest-21.0 {name and desc but no args specified} -setup {
+    set v [verbose]
+} -cleanup {
+    verbose $v
+} -body {
+   verbose {}
    test tcltest-21.0.0 bar
 } -result {}
 
@@ -1084,15 +1089,17 @@ test tcltest-21.4 {test command with cleanup failure} {
 	    unset foo
 	}
 	set fail $::tcltest::currentFailure
+	set v [verbose]
     }
     -body {
+	verbose {}
 	test tcltest-21.4.0 {foo-1} {
 	    -cleanup {unset foo}
 	}
     }
     -result {^$}
     -match regexp
-    -cleanup {set ::tcltest::currentFailure $fail}
+    -cleanup {verbose $v; set ::tcltest::currentFailure $fail}
     -output "Test cleanup failed:.*can't unset \"foo\": no such variable"
 }
 
@@ -1115,8 +1122,9 @@ test tcltest-21.5 {test command with setup failure} {
 }
 
 test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
-    -setup {set fail $::tcltest::currentFailure}
+    -setup {set v [verbose]; set fail $::tcltest::currentFailure}
     -body {
+	verbose {}
 	test tcltest-21.6.0 {foo-3} {
 	    -setup {
 		if {[info exists foo]} {
@@ -1139,7 +1147,7 @@ test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
 	    -result {$expected}
 	}
     }
-    -cleanup {set ::tcltest::currentFailure $fail}
+    -cleanup {verbose $v; set ::tcltest::currentFailure $fail}
     -result {^$}
     -match regexp
     -output "foo is 2"
@@ -1187,9 +1195,12 @@ test tcltest-21.10 {test command with cleanup failure} -setup {
 	unset foo
     }
     set fail $::tcltest::currentFailure
+    set v [verbose]
 } -cleanup {
+    verbose $v
     set ::tcltest::currentFailure $fail
 } -body {
+    verbose {}
     test tcltest-21.10.0 {foo-1} -cleanup {unset foo}
 } -result {^$} -match regexp \
 	-output {Test cleanup failed:.*can't unset \"foo\": no such variable}
@@ -1207,9 +1218,12 @@ test tcltest-21.12 {
 	test command - setup occurs before cleanup & before script
 } -setup {
 	set fail $::tcltest::currentFailure
+	set v [verbose]
 } -cleanup {
+	verbose $v
 	set ::tcltest::currentFailure $fail
 } -body {
+    verbose {}
     test tcltest-21.12.0 {foo-3} -setup {
 	if {[info exists foo]} {
 	    unset foo
@@ -1410,8 +1424,8 @@ test tcltest-24.6 {
 } -setup {
 	customMatch [namespace current]::alwaysMatch "format 1 ;#"
 	set v [verbose]
-	verbose {}
 } -body {
+	verbose {}
 	test tcltest-24.6.0 {} -match [namespace current]::alwaysMatch \
 		-body {format 1} -result 0
 } -cleanup {
@@ -1424,8 +1438,8 @@ test tcltest-24.7 {
 	set saveExactMatchScript $::tcltest::CustomMatch(exact)
 	customMatch exact "format 1 ;#"
 	set v [verbose]
-	verbose {}
 } -body {
+	verbose {}
 	test tcltest-24.7.0 {} -body {format 1} -result 0
 } -cleanup {
 	verbose $v
@@ -1439,10 +1453,13 @@ test tcltest-24.9 {
 	proc errorDuringMatch args {return -code error "match returned error"}
 	customMatch [namespace current]::errorDuringMatch \
 		[namespace code errorDuringMatch]
+	set v [verbose]
 	set fail $::tcltest::currentFailure
 } -body {
+	verbose {}
 	test tcltest-24.9.0 {} -match [namespace current]::errorDuringMatch
 } -cleanup {
+	verbose $v
 	set ::tcltest::currentFailure $fail
 } -match glob -result {} -output {*FAILED*match returned error*}
 
@@ -1451,10 +1468,13 @@ test tcltest-24.10 {
 } -setup {
 	proc nonBooleanReturn args {return foo}
 	customMatch nonBooleanReturn [namespace code nonBooleanReturn]
+	set v [verbose]
 	set fail $::tcltest::currentFailure
 } -body {
+	verbose {}
 	test tcltest-24.10.0 {} -match nonBooleanReturn
 } -cleanup {
+	verbose $v
 	set ::tcltest::currentFailure $fail
 } -match glob -result {} -output {*FAILED*expected boolean value*}
 
@@ -1470,9 +1490,9 @@ test tcltest-24.12 {
 	set saveExactMatchScript $::tcltest::CustomMatch(exact)
 	customMatch exact [list string equal]
 	set v [verbose]
-	verbose {}
 	proc string args {error {called [string] in caller namespace}}
 } -body {
+	verbose {}
 	test tcltest-24.12.0 {} -body {format 1} -result 1
 } -cleanup {
 	rename string {}
@@ -1487,9 +1507,9 @@ test tcltest-24.13 {
 	set saveExactMatchScript $::tcltest::CustomMatch(exact)
 	customMatch exact [list string equal]
 	set v [verbose]
-	verbose {}
 	set fail $::tcltest::currentFailure
 } -body {
+	verbose {}
 	test tcltest-24.13.0 {} -body {format 1} -result 0
 } -cleanup {
 	set ::tcltest::currentFailure $fail
@@ -1510,9 +1530,9 @@ test tcltest-24.15 {
 	test: -match glob	failure
 } -setup {
 	set v [verbose]
-	verbose {}
 	set fail $::tcltest::currentFailure
 } -body {
+	verbose {}
 	test tcltest-24.15.0 {} -match glob -body {format {A B C}} \
 		-result {A B* }
 } -cleanup {
@@ -1533,8 +1553,8 @@ test tcltest-24.17 {
 } -setup {
 	set fail $::tcltest::currentFailure
 	set v [verbose]
-	verbose {}
 } -body {
+	verbose {}
 	test tcltest-24.17.0 {} -match regexp -body {format {A B C}} \
 		-result {A B.* X}
 } -cleanup {
@@ -1549,9 +1569,9 @@ test tcltest-24.18 {
 } -setup {
 	set fail $::tcltest::currentFailure
 	set v [verbose]
-	verbose {}
 	customMatch negative matchNegative
 } -body {
+	verbose {}
 	test tcltest-24.18.0 {} -match negative -body {format {A B C}} \
 		-result {A B X}
 } -cleanup {
@@ -1563,9 +1583,9 @@ test tcltest-24.19 {
 	test: -match custom
 } -setup {
 	set v [verbose]
-	verbose {}
 	customMatch negative [namespace code matchNegative]
 } -body {
+	verbose {}
 	test tcltest-24.19.0 {} -match negative -body {format {A B C}} \
 		-result {A B X}
 } -cleanup {
@@ -1577,9 +1597,9 @@ test tcltest-24.20 {
 } -setup {
 	set fail $::tcltest::currentFailure
 	set v [verbose]
-	verbose {}
 	customMatch negative [namespace code matchNegative]
 } -body {
+	verbose {}
 	test tcltest-24.20.0 {} -match negative -body {format {A B C}} \
 		-result {A B C}
 } -cleanup {
