@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.44 2001/12/11 17:57:12 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.45 2001/12/11 19:45:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2422,28 +2422,30 @@ TclExecuteByteCode(interp, codePtr)
 
 	case INST_LIST_INDEX_MULTI:
 	    {
-
 		/*
 		 * 'lindex' with multiple index args:
 		 *
 		 * Determine the count of index args.
 		 */
+		
+		int numIdx;
 
 		opnd = TclGetUInt4AtPtr(pc+1);
-		
+		numIdx = opnd-1;
+
 		/*
 		 * Do the 'lindex' operation.
 		 */
 
 		objPtr = TclLindexFlat( interp,
-					stackPtr[ stackTop - opnd ],
-					opnd,
-					stackPtr + stackTop - opnd + 1 );
+					stackPtr[ stackTop - numIdx ],
+					numIdx,
+					stackPtr + stackTop - numIdx + 1 );
 		/* 
 		 * Clean up ref counts
 		 */
 		
-		for ( i = 0 ; i <= opnd ; i++ ) {
+		for ( i = 0 ; i <= numIdx ; i++ ) {
 		    Tcl_DecrRefCount( stackPtr[ stackTop -- ] );
 		}
 
@@ -2475,8 +2477,11 @@ TclExecuteByteCode(interp, codePtr)
 		 * Lset with 3, 5, or more args.  Get the number of index args.
 		 */
 
-		opnd = TclGetUInt4AtPtr( pc + 1 );
+		int numIdx;
 
+		opnd = TclGetUInt4AtPtr( pc + 1 );
+		numIdx = opnd - 2;
+		
 		/*
 		 * Get the old value of variable, and remove the stack ref.
 		 * This is safe because the variable still references the
@@ -2496,8 +2501,8 @@ TclExecuteByteCode(interp, codePtr)
 		 * Compute the new variable value
 		 */
 
-		objPtr = TclLsetFlat( interp, value2Ptr, opnd,
-				      stackPtr + stackTop - opnd + 1,
+		objPtr = TclLsetFlat( interp, value2Ptr, numIdx,
+				      stackPtr + stackTop - numIdx + 1,
 				      valuePtr );
 		Tcl_DecrRefCount( valuePtr );
 
@@ -2505,7 +2510,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * Clean up ref counts
 		 */
 		
-		for ( i = 0 ; i < opnd ; i++ ) {
+		for ( i = 0 ; i < numIdx ; i++ ) {
 		    Tcl_DecrRefCount( stackPtr[ stackTop -- ] );
 		}
 
