@@ -1,3 +1,20 @@
+2003-01-04  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/makefile.vc:
+	* win/rules.vc:  Fixed INSTALLDIR macro problem that blanked itself
+	by accident causing the install target to put the tree at the root
+	of the drive built on.  Whoops..
+
+	Renamed the 'linkexten' option to be 'staticpkg'.  Added 'thrdalloc'
+	to allow the switching _on_ of the thread allocator.  Under testing,
+	I found it not to be benificial under windows for the purpose of the
+	application I was using it for.  It was more important for this app
+	that resources for tcl threads be returned to the system rather than
+	saved/moved to the global recycler.  Be extra clean or extra fast
+	for the default threaded build?  Let's move to clean and allow it to
+	be switched on for users who find it benificial for their use of
+	threads.
+
 2002-12-18  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/makefile.vc: some uses of xcopy swapped to the @$(CPY) macro.
