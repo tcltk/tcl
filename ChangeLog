@@ -7,8 +7,8 @@
 	win/tclAppInit.c patch in SF patch DB for approval. 'profile'
 	option not hooked in yet.  Everything else know is done.
 
-	* win/tcl.dsp:
-	* win/tcl.dsw:  Simple MsDev stub project files that calls
+	* win/tcl.dsp(new):
+	* win/tcl.dsw(new):  Simple MsDev stub project files that calls
 	makefile.vc.  Will help run Tcl in the debugger easier without
 	confusing MsDev for where the .pdb files are.
 
