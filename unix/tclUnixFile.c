@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.36 2003/12/17 17:47:28 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.37 2004/01/21 19:59:34 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -571,10 +571,58 @@ TclpObjLstat(pathPtr, bufPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * TclpObjGetCwd --
+ * TclpGetNativeCwd --
  *
  *	This function replaces the library version of getcwd().
  *
+ * Results:
+ *	The input and output are filesystem paths in native form.  The
+ *	result is either the given clientData, if the working directory
+ *	hasn't changed, or a new clientData (owned by our caller),
+ *	giving the new native path, or NULL if the current directory
+ *	could not be determined.  If NULL is returned, the caller can
+ *	examine the standard posix error codes to determine the cause of
+ *	the problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpGetNativeCwd(clientData)
+    ClientData clientData;
+{
+    char buffer[MAXPATHLEN+1];
+
+#ifdef USEGETWD
+    if (getwd(buffer) == NULL) {			/* INTL: Native. */
+#else
+    if (getcwd(buffer, MAXPATHLEN + 1) == NULL) {	/* INTL: Native. */
+#endif
+	return NULL;
+    }
+    if ((clientData != NULL) && strcmp(buffer, (CONST char*)clientData) == 0) {
+	/* No change to pwd */
+	return clientData;
+    } else {
+	char *newCd = (char *) ckalloc((unsigned) 
+				       (strlen(buffer) + 1));
+	strcpy(newCd, buffer);
+	return (ClientData) newCd;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetCwd --
+ *
+ *	This function replaces the library version of getcwd().
+ *      (Obsolete function, only retained for old extensions which
+ *      may call it directly).
+ *      
  * Results:
  *	The result is a pointer to a string specifying the current
  *	directory, or NULL if the current directory could not be
@@ -589,22 +637,6 @@ TclpObjLstat(pathPtr, bufPtr)
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj* 
-TclpObjGetCwd(interp)
-    Tcl_Interp *interp;
-{
-    Tcl_DString ds;
-    if (TclpGetCwd(interp, &ds) != NULL) {
-	Tcl_Obj *cwdPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(cwdPtr);
-	Tcl_DStringFree(&ds);
-	return cwdPtr;
-    } else {
-	return NULL;
-    }
-}
-
-/* Older string based version */
 CONST char *
 TclpGetCwd(interp, bufferPtr)
     Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
@@ -730,7 +762,7 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	if ((linkAction & TCL_CREATE_SYMBOLIC_LINK)
 	  && (Tcl_FSGetPathType(toPtr) == TCL_PATH_RELATIVE)) {
 	    Tcl_Obj *dirPtr, *absPtr;
-	    dirPtr = TclFileDirname(NULL, pathPtr);
+	    dirPtr = TclPathPart(NULL, pathPtr, TCL_PATH_DIRNAME);
 	    if (dirPtr == NULL) {
 	        return NULL;
 	    }
@@ -852,8 +884,8 @@ TclpObjLink(pathPtr, toPtr, linkAction)
  *---------------------------------------------------------------------------
  */
 Tcl_Obj*
-TclpFilesystemPathType(pathObjPtr)
-    Tcl_Obj* pathObjPtr;
+TclpFilesystemPathType(pathPtr)
+    Tcl_Obj* pathPtr;
 {
     /* All native paths are of the same type */
     return NULL;

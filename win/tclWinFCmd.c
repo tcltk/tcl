@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.39 2003/12/24 04:18:22 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.40 2004/01/21 19:59:34 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -1593,10 +1593,9 @@ ConvertFileNameFormat(
 {
     int pathc, i;
     Tcl_Obj *splitPath;
-    int result = TCL_OK;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
-
+    
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
@@ -1604,10 +1603,16 @@ ConvertFileNameFormat(
 		"\": no such file or directory", 
 		(char *) NULL);
 	}
-	result = TCL_ERROR;
 	goto cleanup;
     }
     
+    /*
+     * We will decrement this again at the end.  It is safer to
+     * do this in case any of the calls below retain a reference
+     * to splitPath.
+     */
+    Tcl_IncrRefCount(splitPath);
+
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
@@ -1672,7 +1677,6 @@ ConvertFileNameFormat(
 		if (interp != NULL) {
 		    StatError(interp, fileName);
 		}
-		result = TCL_ERROR;
 		goto cleanup;
 	    }
 	    if (tclWinProcs->useWide) {
@@ -1730,13 +1734,27 @@ ConvertFileNameFormat(
     }
 
     *attributePtrPtr = Tcl_FSJoinPath(splitPath, -1);
+    
+    if (splitPath != NULL) {
+	/* 
+	 * Unfortunately, the object we will return may have its only
+	 * refCount as part of the list splitPath.  This means if
+	 * we free splitPath, the object will disappear.  So, we
+	 * have to be very careful here.  Unfortunately this means
+	 * we must manipulate the object's refCount directly.
+	 */
+	Tcl_IncrRefCount(*attributePtrPtr);
+	Tcl_DecrRefCount(splitPath);
+	--(*attributePtrPtr)->refCount;
+    }
+    return TCL_OK;
 
-cleanup:
+  cleanup:
     if (splitPath != NULL) {
 	Tcl_DecrRefCount(splitPath);
     }
   
-    return result;
+    return TCL_ERROR;
 }
 
 /*

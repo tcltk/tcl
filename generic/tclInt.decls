@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.67 2003/12/15 00:49:38 davygrvy Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.68 2004/01/21 19:59:33 vincentdarley Exp $
 
 library tcl
 
@@ -75,10 +75,11 @@ declare 11 generic {
 declare 12 generic {
     void TclDeleteVars(Interp *iPtr, Tcl_HashTable *tablePtr)
 }
-declare 13 generic {
-    int TclDoGlob(Tcl_Interp *interp, char *separators,
-	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
-}
+# Removed in 8.5
+#declare 13 generic {
+#    int TclDoGlob(Tcl_Interp *interp, char *separators,
+#	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
+#}
 declare 14 generic {
     void TclDumpMemoryInfo(FILE *outFile)
 }
@@ -140,7 +141,7 @@ declare 28 generic {
 #      char *TclGetEnv(CONST char *name)
 #  }
 declare 31 generic {
-    char *TclGetExtension(char *name)
+    CONST char *TclGetExtension(CONST char *name)
 }
 declare 32 generic {
     int TclGetFrame(Tcl_Interp *interp, CONST char *str,

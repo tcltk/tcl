@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.55 2003/12/15 00:49:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.56 2004/01/21 19:59:33 vincentdarley Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -124,13 +124,7 @@ EXTERN void		TclDeleteCompiledLocalVars _ANSI_ARGS_((
 EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp * iPtr, 
 				Tcl_HashTable * tablePtr));
 #endif
-#ifndef TclDoGlob_TCL_DECLARED
-#define TclDoGlob_TCL_DECLARED
-/* 13 */
-EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * separators, Tcl_DString * headPtr, 
-				char * tail, Tcl_GlobTypeData * types));
-#endif
+/* Slot 13 is reserved */
 #ifndef TclDumpMemoryInfo_TCL_DECLARED
 #define TclDumpMemoryInfo_TCL_DECLARED
 /* 14 */
@@ -190,7 +184,7 @@ EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
 #ifndef TclGetExtension_TCL_DECLARED
 #define TclGetExtension_TCL_DECLARED
 /* 31 */
-EXTERN char *		TclGetExtension _ANSI_ARGS_((char * name));
+EXTERN CONST char *	TclGetExtension _ANSI_ARGS_((CONST char * name));
 #endif
 #ifndef TclGetFrame_TCL_DECLARED
 #define TclGetFrame_TCL_DECLARED
@@ -991,7 +985,7 @@ typedef struct TclIntStubs {
     int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp * interp, Namespace * nsPtr, CONST char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr)); /* 10 */
     void (*tclDeleteCompiledLocalVars) _ANSI_ARGS_((Interp * iPtr, CallFrame * framePtr)); /* 11 */
     void (*tclDeleteVars) _ANSI_ARGS_((Interp * iPtr, Tcl_HashTable * tablePtr)); /* 12 */
-    int (*tclDoGlob) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * headPtr, char * tail, Tcl_GlobTypeData * types)); /* 13 */
+    void *reserved13;
     void (*tclDumpMemoryInfo) _ANSI_ARGS_((FILE * outFile)); /* 14 */
     void *reserved15;
     void (*tclExprFloatError) _ANSI_ARGS_((Tcl_Interp * interp, double value)); /* 16 */
@@ -1009,7 +1003,7 @@ typedef struct TclIntStubs {
     Tcl_Channel (*tclpGetDefaultStdChannel) _ANSI_ARGS_((int type)); /* 28 */
     void *reserved29;
     void *reserved30;
-    char * (*tclGetExtension) _ANSI_ARGS_((char * name)); /* 31 */
+    CONST char * (*tclGetExtension) _ANSI_ARGS_((CONST char * name)); /* 31 */
     int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CallFrame ** framePtrPtr)); /* 32 */
     TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
@@ -1246,10 +1240,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclDeleteVars \
 	(tclIntStubsPtr->tclDeleteVars) /* 12 */
 #endif
-#ifndef TclDoGlob
-#define TclDoGlob \
-	(tclIntStubsPtr->tclDoGlob) /* 13 */
-#endif
+/* Slot 13 is reserved */
 #ifndef TclDumpMemoryInfo
 #define TclDumpMemoryInfo \
 	(tclIntStubsPtr->tclDumpMemoryInfo) /* 14 */

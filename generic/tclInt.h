@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.142 2004/01/18 16:19:06 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.143 2004/01/21 19:59:33 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1483,6 +1483,22 @@ typedef struct List {
     Tcl_Obj **elements;		/* Array of pointers to element objects. */
 } List;
 
+/*
+ *----------------------------------------------------------------
+ * Data structures related to the filesystem internals
+ *----------------------------------------------------------------
+ */
+
+
+/* 
+ * The version_2 filesystem is private to Tcl.  As and when these
+ * changes have been thoroughly tested and investigated a new public
+ * filesystem interface will be released.  The aim is more versatile
+ * virtual filesystem interfaces, more efficiency in 'path' manipulation
+ * and usage, and cleaner filesystem code internally.
+ */
+#define TCL_FILESYSTEM_VERSION_2	((Tcl_FSVersion) 0x2)
+typedef ClientData (TclFSGetCwdProc2) _ANSI_ARGS_((ClientData clientData));
 
 /*
  * The following types are used for getting and storing platform-specific
@@ -1524,6 +1540,13 @@ typedef struct TclpTime_t_    *TclpTime_t;
 #define TCL_GLOBMODE_JOIN             2
 #define TCL_GLOBMODE_DIR              4
 #define TCL_GLOBMODE_TAILS            8
+
+typedef enum Tcl_PathPart {
+    TCL_PATH_DIRNAME,
+    TCL_PATH_TAIL,	
+    TCL_PATH_EXTENSION,
+    TCL_PATH_ROOT
+} Tcl_PathPart;
 
 /*
  *----------------------------------------------------------------
@@ -1760,7 +1783,7 @@ EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix,
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 							 int *lenPtr));
-EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
+EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int 		TclCrossFilesystemCopy _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *source, Tcl_Obj *target));
@@ -1776,13 +1799,15 @@ EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, 
 			        Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, 
 				CONST char *pattern, Tcl_GlobTypeData *types));
-EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN ClientData	TclpGetNativeCwd _ANSI_ARGS_((ClientData clientData));
+EXTERN Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 				Tcl_Obj *toPtr, int linkType));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
-EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp, 
-						    Tcl_Obj*pathPtr));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
+EXTERN Tcl_Obj*         TclPathPart _ANSI_ARGS_((Tcl_Interp *interp, 
+				Tcl_Obj *pathPtr, Tcl_PathPart portion));
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+						 Tcl_StatBuf *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int mode,
 			    int permissions));
@@ -1818,7 +1843,7 @@ EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
                             _ANSI_ARGS_((ClientData clientData));
 EXTERN Tcl_Obj*	        TclpFilesystemPathType
-					_ANSI_ARGS_((Tcl_Obj* pathObjPtr));
+					_ANSI_ARGS_((Tcl_Obj* pathPtr));
 EXTERN Tcl_PackageInitProc* TclpFindSymbol _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, CONST char *symbol));
 EXTERN int              TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp, 

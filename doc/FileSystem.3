@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.37 2003/12/16 18:20:49 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.38 2004/01/21 19:59:33 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -499,12 +499,16 @@ part of the path).
 The separator is returned as a Tcl_Obj containing a string of length
 1.  If the path is invalid, NULL is returned.
 .PP
-\fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which should be a valid list,
-and returns the path object given by considering the first 'elements'
-elements as valid path segments.  If elements < 0, we use the entire
-list.
+\fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which should be a valid
+list (which is allowed to have a refCount of zero), and returns the path
+object given by considering the first 'elements' elements as valid path
+segments.  If elements < 0, we use the entire list.
 .PP
-Returns object with refCount of zero, containing the joined path.
+Returns object, typically with refCount of zero (but it could be shared
+under some conditions) , containing the joined path.  The caller must
+add a refCount to the object before using it.  In particular, the
+returned object could be an element of the given list, so freeing the
+list might free the object prematurely if no refCount has been taken.
 .PP
 \fBTcl_FSSplitPath\fR takes the given Tcl_Obj, which should be a valid path,
 and returns a Tcl List object containing each segment of that path as
@@ -539,7 +543,11 @@ course increment the refCount if it wishes to maintain a copy for longer.
 valid path or NULL, and joins onto it the array of paths segments
 given.
 .PP
-Returns object with refCount of zero, containing the joined path.
+Returns object, typically with refCount of zero (but it could be shared
+under some conditions), containing the joined path.  The caller must
+add a refCount to the object before using it.  If any of the objects
+passed into this function (pathPtr or path elements) have a refCount
+of zero, they will be freed when this function returns.
 .PP
 \fBTcl_FSConvertToPathType\fR tries to convert the given Tcl_Obj to a valid
 Tcl path type, taking account of the fact that the cwd may have changed
@@ -600,8 +608,12 @@ have non-string-based native representations (for example, on MacOS, a
 representation using a fileSpec of FSRef structure would probably be
 more efficient).  On Windows a full Unicode representation would allow
 for paths of unlimited length.  Currently the representation is simply a
-character string containing the complete, absolute normalized path in
-the native encoding.  If for some reason a non-absolute or
+character string which may contain either the relative path or a
+complete, absolute normalized path in the native encoding (complex
+conditions dictate which of these will be provided, so neither can be
+relied upon, unless the path is known to be absolute).  If you need a
+native path which must be absolute, then you should ask for the native
+version of a normalized path.  If for some reason a non-absolute,
 non-normalized version of the path is needed, that must be constructed
 separately (e.g. using \fBTcl_FSGetTranslatedPath\fR).
 .PP

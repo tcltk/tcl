@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.35 2003/12/17 17:47:28 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.36 2004/01/21 19:59:33 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -513,7 +513,7 @@ test fCmd-6.19 {CopyRenameOneFile: errno == EXDEV} {unixOnly notRoot} {
     cleanup /tmp
     createfile tf1
     file rename tf1 /tmp
-    glob tf* /tmp/tf1
+    glob -nocomplain tf* /tmp/tf1
 } {/tmp/tf1}
 test fCmd-6.20 {CopyRenameOneFile: errno == EXDEV} {pcOnly} {
     catch {file delete -force c:/tcl8975@ d:/tcl8975@}
@@ -532,14 +532,14 @@ test fCmd-6.21 {CopyRenameOneFile: copy/rename: S_ISDIR(source)} \
     cleanup /tmp
     file mkdir td1
     file rename td1 /tmp
-    glob td* /tmp/td*
+    glob -nocomplain td* /tmp/td*
 } {/tmp/td1}
 test fCmd-6.22 {CopyRenameOneFile: copy/rename: !S_ISDIR(source)} \
 	{unixOnly notRoot} {
     cleanup /tmp
     createfile tf1
     file rename tf1 /tmp
-    glob tf* /tmp/tf*
+    glob -nocomplain tf* /tmp/tf*
 } {/tmp/tf1}
 test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} \
 	{unixOnly notRoot xdev} {

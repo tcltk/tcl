@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.39 2003/12/24 04:18:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.40 2004/01/21 19:59:33 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -23,13 +23,13 @@
  */
 
 static int		CheckAccess _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int mode));
+			    Tcl_Obj *pathPtr, int mode));
 static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_FSStatProc *statProc,
+			    Tcl_Obj *pathPtr, Tcl_FSStatProc *statProc,
 			    Tcl_StatBuf *statPtr));
 static char *		GetTypeFromMode _ANSI_ARGS_((int mode));
 static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *varName, Tcl_StatBuf *statPtr));
+			    Tcl_Obj *varName, Tcl_StatBuf *statPtr));
 
 /*
  *----------------------------------------------------------------------
@@ -948,7 +948,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    dirPtr = TclFileDirname(interp, objv[2]);
+	    dirPtr = TclPathPart(interp, objv[2], TCL_PATH_DIRNAME);
 	    if (dirPtr == NULL) {
 	        return TCL_ERROR;
 	    } else {
@@ -968,17 +968,19 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    return CheckAccess(interp, objv[2], F_OK);
 	case FCMD_EXTENSION: {
-	    char *fileName, *extension;
-
+	    Tcl_Obj *ext;
+	    
 	    if (objc != 3) {
 	    	goto only3Args;
 	    }
-	    fileName = Tcl_GetString(objv[2]);
-	    extension = TclGetExtension(fileName);
-	    if (extension != NULL) {
-	    	Tcl_SetStringObj(Tcl_GetObjResult(interp), extension, -1);
+	    ext = TclPathPart(interp, objv[2], TCL_PATH_EXTENSION);
+	    if (ext != NULL) {
+	        Tcl_SetObjResult(interp, ext);
+		Tcl_DecrRefCount(ext);
+		return TCL_OK;
+	    } else {
+		return TCL_ERROR;
 	    }
-	    return TCL_OK;
 	}
     	case FCMD_ISDIRECTORY: {
 	    int value;
@@ -1077,7 +1079,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 			 * doesn't exist.
 			 */
 			int access;
-			Tcl_Obj *dirPtr = TclFileDirname(interp, objv[index]);
+			Tcl_Obj *dirPtr = TclPathPart(interp, objv[index], TCL_PATH_DIRNAME);
 			if (dirPtr == NULL) {
 			    return TCL_ERROR;
 			}
@@ -1131,7 +1133,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
     	case FCMD_LSTAT: {
-	    char *varName;
 	    Tcl_StatBuf buf;
 
     	    if (objc != 4) {
@@ -1141,8 +1142,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    varName = Tcl_GetString(objv[3]);
-	    return StoreStatData(interp, varName, &buf);
+	    return StoreStatData(interp, objv[3], &buf);
 	}
 	case FCMD_MTIME: {
 	    Tcl_StatBuf buf;
@@ -1297,21 +1297,19 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	case FCMD_RENAME:
 	    return TclFileRenameCmd(interp, objc, objv);
 	case FCMD_ROOTNAME: {
-	    int length;
-	    char *fileName, *extension;
+	    Tcl_Obj *root;
 	    
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    fileName = Tcl_GetStringFromObj(objv[2], &length);
-	    extension = TclGetExtension(fileName);
-	    if (extension == NULL) {
-	    	Tcl_SetObjResult(interp, objv[2]);
+	    root = TclPathPart(interp, objv[2], TCL_PATH_ROOT);
+	    if (root != NULL) {
+		Tcl_SetObjResult(interp, root);
+		Tcl_DecrRefCount(root);
+		return TCL_OK;
 	    } else {
-	        Tcl_SetStringObj(Tcl_GetObjResult(interp), fileName,
-			(int) (length - strlen(extension)));
+		return TCL_ERROR;
 	    }
-	    return TCL_OK;
 	}
 	case FCMD_SEPARATOR:
 	    if ((objc < 2) || (objc > 3)) {
@@ -1356,14 +1354,27 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    (Tcl_WideInt) buf.st_size);
 	    return TCL_OK;
 	}
-	case FCMD_SPLIT:
+	case FCMD_SPLIT: {
+	    Tcl_Obj *res;
+	    
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_FSSplitPath(objv[2], NULL));
-	    return TCL_OK;
+	    res = Tcl_FSSplitPath(objv[2], NULL);
+	    if (res == NULL) {
+		if (interp != NULL) {
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
+			"could not read \"", Tcl_GetString(objv[2]),
+			"\": no such file or directory", 
+			(char *) NULL);
+		}
+		return TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, res);
+		return TCL_OK;
+	    }
+	}
 	case FCMD_STAT: {
-	    char *varName;
 	    Tcl_StatBuf buf;
 	    
 	    if (objc != 4) {
@@ -1373,8 +1384,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    varName = Tcl_GetString(objv[3]);
-	    return StoreStatData(interp, varName, &buf);
+	    return StoreStatData(interp, objv[3], &buf);
 	}
 	case FCMD_SYSTEM: {
 	    Tcl_Obj* fsInfo;
@@ -1393,45 +1403,19 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     	case FCMD_TAIL: {
-	    int splitElements;
-	    Tcl_Obj *splitPtr;
+	    Tcl_Obj *dirPtr;
 
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    /* 
-	     * The behaviour we want here is slightly different to
-	     * the standard Tcl_FSSplitPath in the handling of home
-	     * directories; Tcl_FSSplitPath preserves the "~" while 
-	     * this code computes the actual full path name, if we
-	     * had just a single component.
-	     */	    
-	    splitPtr = Tcl_FSSplitPath(objv[2], &splitElements);
-	    if ((splitElements == 1) && (Tcl_GetString(objv[2])[0] == '~')) {
-		Tcl_DecrRefCount(splitPtr);
-		splitPtr = Tcl_FSGetNormalizedPath(interp, objv[2]);
-		if (splitPtr == NULL) {
-		    return TCL_ERROR;
-		}
-		splitPtr = Tcl_FSSplitPath(splitPtr, &splitElements);
+	    dirPtr = TclPathPart(interp, objv[2], TCL_PATH_TAIL);
+	    if (dirPtr == NULL) {
+		return TCL_ERROR;
+	    } else {
+		Tcl_SetObjResult(interp, dirPtr);
+		Tcl_DecrRefCount(dirPtr);
+		return TCL_OK;
 	    }
-
-	    /*
-	     * Return the last component, unless it is the only component,
-	     * and it is the root of an absolute path.
-	     */
-
-	    if (splitElements > 0) {
-	    	if ((splitElements > 1)
-		  || (Tcl_FSGetPathType(objv[2]) == TCL_PATH_RELATIVE)) {
-		    
-		    Tcl_Obj *tail = NULL;
-		    Tcl_ListObjIndex(NULL, splitPtr, splitElements-1, &tail);
-		    Tcl_SetObjResult(interp, tail);
-	    	}
-	    }
-	    Tcl_DecrRefCount(splitPtr);
-	    return TCL_OK;
 	}
 	case FCMD_TYPE: {
 	    Tcl_StatBuf buf;
@@ -1484,19 +1468,19 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  */
   
 static int
-CheckAccess(interp, objPtr, mode)
+CheckAccess(interp, pathPtr, mode)
     Tcl_Interp *interp;		/* Interp for status return.  Must not be
 				 * NULL. */
-    Tcl_Obj *objPtr;		/* Name of file to check. */
+    Tcl_Obj *pathPtr;		/* Name of file to check. */
     int mode;			/* Attribute to check; passed as argument to
 				 * access(). */
 {
     int value;
     
-    if (Tcl_FSConvertToPathType(interp, objPtr) != TCL_OK) {
+    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	value = 0;
     } else {
-	value = (Tcl_FSAccess(objPtr, mode) == 0);
+	value = (Tcl_FSAccess(pathPtr, mode) == 0);
     }
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 
@@ -1524,9 +1508,9 @@ CheckAccess(interp, objPtr, mode)
  */
 
 static int
-GetStatBuf(interp, objPtr, statProc, statPtr)
+GetStatBuf(interp, pathPtr, statProc, statPtr)
     Tcl_Interp *interp;		/* Interp for error return.  May be NULL. */
-    Tcl_Obj *objPtr;		/* Path name to examine. */
+    Tcl_Obj *pathPtr;		/* Path name to examine. */
     Tcl_FSStatProc *statProc;	/* Either stat() or lstat() depending on
 				 * desired behavior. */
     Tcl_StatBuf *statPtr;	/* Filled with info about file obtained by
@@ -1534,16 +1518,16 @@ GetStatBuf(interp, objPtr, statProc, statPtr)
 {
     int status;
     
-    if (Tcl_FSConvertToPathType(interp, objPtr) != TCL_OK) {
+    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    status = (*statProc)(objPtr, statPtr);
+    status = (*statProc)(pathPtr, statPtr);
     
     if (status < 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(objPtr), "\": ",
+		    Tcl_GetString(pathPtr), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
 	}
 	return TCL_ERROR;
@@ -1573,12 +1557,11 @@ GetStatBuf(interp, objPtr, statProc, statPtr)
 static int
 StoreStatData(interp, varName, statPtr)
     Tcl_Interp *interp;			/* Interpreter for error reports. */
-    char *varName;			/* Name of associative array variable
+    Tcl_Obj *varName;			/* Name of associative array variable
 					 * in which to store stat results. */
     Tcl_StatBuf *statPtr;		/* Pointer to buffer containing
 					 * stat data to store in varName. */
 {
-    Tcl_Obj *var = Tcl_NewStringObj(varName, -1);
     Tcl_Obj *field = Tcl_NewObj();
     Tcl_Obj *value;
     register unsigned short mode;
@@ -1589,14 +1572,13 @@ StoreStatData(interp, varName, statPtr)
 #define STORE_ARY(fieldName, object) \
     Tcl_SetStringObj(field, (fieldName), -1); \
     value = (object); \
-    if (Tcl_ObjSetVar2(interp,var,field,value,TCL_LEAVE_ERR_MSG) == NULL) { \
-	Tcl_DecrRefCount(var); \
+    if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG) == NULL) { \
+	Tcl_DecrRefCount(varName); \
 	Tcl_DecrRefCount(field); \
 	Tcl_DecrRefCount(value); \
 	return TCL_ERROR; \
     }
 
-    Tcl_IncrRefCount(var);
     Tcl_IncrRefCount(field);
     STORE_ARY("dev",   Tcl_NewLongObj((long)statPtr->st_dev));
     /*
@@ -1619,7 +1601,6 @@ StoreStatData(interp, varName, statPtr)
     STORE_ARY("mode",  Tcl_NewIntObj(mode));
     STORE_ARY("type",  Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ARY
-    Tcl_DecrRefCount(var);
     Tcl_DecrRefCount(field);
     return TCL_OK;
 }

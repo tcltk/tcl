@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.91 2003/12/15 00:49:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.92 2004/01/21 19:59:33 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -99,7 +99,7 @@ TclIntStubs tclIntStubs = {
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
     TclDeleteVars, /* 12 */
-    TclDoGlob, /* 13 */
+    NULL, /* 13 */
     TclDumpMemoryInfo, /* 14 */
     NULL, /* 15 */
     TclExprFloatError, /* 16 */
