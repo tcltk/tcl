@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.3 1999/04/16 00:48:10 stanton Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.4 1999/10/29 03:05:13 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -16,9 +16,12 @@
 /*
  * Forward declarations of procedures defined later in this file:
  */
-int			TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
-static int		TesteventloopCmd _ANSI_ARGS_((ClientData dummy,
-			    Tcl_Interp *interp, int argc, char **argv));
+int		TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
+static int	TesteventloopCmd _ANSI_ARGS_((ClientData dummy,
+	Tcl_Interp *interp, int argc, char **argv));
+static int	TestvolumetypeCmd _ANSI_ARGS_((ClientData dummy,
+	Tcl_Interp *interp, int objc,
+	Tcl_Obj *CONST objv[]));
 
 /*
  *----------------------------------------------------------------------
@@ -46,6 +49,8 @@ TclplatformtestInit(interp)
      */
 
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     return TCL_OK;
 }
@@ -126,4 +131,60 @@ TesteventloopCmd(clientData, interp, argc, argv)
 	return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Testvolumetype --
+ *
+ *	This procedure implements the "testvolumetype" command. It is
+ *	used to check the volume type (FAT, NTFS) of a volume.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestvolumetypeCmd(clientData, interp, objc, objv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+#define VOL_BUF_SIZE 32
+    int found;
+    char volType[VOL_BUF_SIZE];
+    char *path;
+
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?name?");
+        return TCL_ERROR;
+    }
+    if (objc == 2) {
+	/*
+	 * path has to be really a proper volume, but we don't
+	 * get query APIs for that until NT5
+	 */
+	path = Tcl_GetString(objv[1]);
+    } else {
+	path = NULL;
+    }
+    found = GetVolumeInformationA(path, NULL, 0, NULL, NULL, 
+	    NULL, volType, VOL_BUF_SIZE);
+
+    if (found == 0) {
+	Tcl_AppendResult(interp, "could not get volume type for \"",
+		(path?path:""), "\"", (char *) NULL);
+	TclWinConvertError(GetLastError());
+	return TCL_ERROR;
+    }
+    Tcl_SetResult(interp, volType, TCL_VOLATILE);
+    return TCL_OK;
+#undef VOL_BUF_SIZE
 }

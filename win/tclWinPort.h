@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.10 1999/07/22 21:50:57 redman Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.11 1999/10/29 03:05:13 hobbs Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -61,6 +61,7 @@ typedef float *TCHAR;
 #ifndef __MWERKS__
 #include <sys/stat.h>
 #include <sys/timeb.h>
+#include <sys/utime.h>
 #endif
 
 #include <tchar.h>
