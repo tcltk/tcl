@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.64 2004/08/18 19:59:00 kennykb Exp $
+# RCS: @(#) $Id: init.tcl,v 1.65 2004/08/18 22:03:32 andreas_kupries Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -778,4 +778,10 @@ if { ![interp issafe] } {
 	    return [uplevel 1 [info level 0]]
 	}
     }
+}
+
+# Set up search for Tcl Modules (TIP #189).
+
+if { ![interp issafe] } {
+    source [file join [file dirname [info script]] tm.tcl]
 }
