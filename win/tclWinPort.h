@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.5 1998/09/14 18:40:20 stanton Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.6 1998/09/30 23:57:18 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -62,11 +62,12 @@
  * use by tclAlloc.c.
  */
 
-#define TclpSysAlloc(size, isBin)	((void*)GlobalAlloc(GMEM_FIXED, \
-					    (DWORD)size))
-#define TclpSysFree(ptr)		(GlobalFree((HGLOBAL)ptr))
-#define TclpSysRealloc(ptr, size)	((void*)GlobalReAlloc((HGLOBAL)ptr, \
-					    (DWORD)size, 0))
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+					    (DWORD)0, (DWORD)size))
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+					    (DWORD)0, (HGLOBAL)ptr))
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
 /*
  * The default platform eol translation on Windows is TCL_TRANSLATE_CRLF:
