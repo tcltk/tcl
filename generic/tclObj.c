@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.3 2001/09/27 14:52:26 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.4 2001/10/02 10:56:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -111,6 +111,7 @@ Tcl_ObjType tclIntType = {
     SetIntFromAny			/* setFromAnyProc */
 };
 
+#ifndef TCL_WIDE_INT_IS_LONG
 Tcl_ObjType tclWideIntType = {
     "wideInt",				/* name */
     (Tcl_FreeInternalRepProc *) NULL,   /* freeIntRepProc */
@@ -118,6 +119,7 @@ Tcl_ObjType tclWideIntType = {
     UpdateStringOfWideInt,		/* updateStringProc */
     SetWideIntFromAny			/* setFromAnyProc */
 };
+#endif
 
 /*
  * The structure below defines the Tcl obj hash key type.
@@ -2025,6 +2027,9 @@ SetWideIntFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
+#ifdef TCL_WIDE_INT_IS_LONG
+    return SetLongFromObj(interp, objPtr);
+#else
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     int length;
@@ -2110,6 +2115,7 @@ SetWideIntFromAny(interp, objPtr)
     objPtr->internalRep.wideValue = newWide;
     objPtr->typePtr = &tclWideIntType;
     return TCL_OK;
+#endif
 }
 
 /*
@@ -2204,6 +2210,9 @@ Tcl_NewWideIntObj(wideValue)
     register Tcl_WideInt wideValue;	/* Wide integer used to initialize
 					 * the new object. */
 {
+#ifdef TCL_WIDE_INT_IS_LONG
+    return Tcl_NewLongObj(wideValue);
+#else
     register Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
@@ -2212,6 +2221,7 @@ Tcl_NewWideIntObj(wideValue)
     objPtr->internalRep.wideValue = wideValue;
     objPtr->typePtr = &tclWideIntType;
     return objPtr;
+#endif
 }
 #endif /* if TCL_MEM_DEBUG */
 
@@ -2261,6 +2271,9 @@ Tcl_DbNewWideIntObj(wideValue, file, line)
     int line;				/* Line number in the source file;
 					 * used for debugging. */
 {
+#ifdef TCL_WIDE_INT_IS_LONG
+    return Tcl_DbNewLongObj(wideValue, file, line);
+#else
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
@@ -2269,6 +2282,7 @@ Tcl_DbNewWideIntObj(wideValue, file, line)
     objPtr->internalRep.wideValue = wideValue;
     objPtr->typePtr = &tclWideIntType;
     return objPtr;
+#endif
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -2311,6 +2325,9 @@ Tcl_SetWideIntObj(objPtr, wideValue)
     register Tcl_WideInt wideValue;	/* Wide integer used to initialize
 					 * the object's value. */
 {
+#ifdef TCL_WIDE_INT_IS_LONG
+    Tcl_SetLongObj(objPtr, wideValue);
+#else
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
 
     if (Tcl_IsShared(objPtr)) {
@@ -2324,6 +2341,7 @@ Tcl_SetWideIntObj(objPtr, wideValue)
     objPtr->internalRep.wideValue = wideValue;
     objPtr->typePtr = &tclWideIntType;
     Tcl_InvalidateStringRep(objPtr);
+#endif
 }
 
 /*
@@ -2353,8 +2371,14 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
     register Tcl_Obj *objPtr;	/* Object from which to get a wide int. */
     register Tcl_WideInt *wideIntPtr; /* Place to store resulting long. */
 {
+#ifdef TCL_WIDE_INT_IS_LONG
+    /*
+     * Next line is type-safe because we only do this when long = Tcl_WideInt
+     */
+    return Tcl_GetLongFromObj(interp, objPtr, wideIntPtr);
+#else
     register int result;
-    
+
     if (objPtr->typePtr == &tclWideIntType) {
 	*wideIntPtr = objPtr->internalRep.wideValue;
 	return TCL_OK;
@@ -2364,6 +2388,7 @@ Tcl_GetWideIntFromObj(interp, objPtr, wideIntPtr)
 	*wideIntPtr = objPtr->internalRep.wideValue;
     }
     return result;
+#endif
 }
 
 /*

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.6 2001/09/28 14:29:22 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.7 2001/10/02 10:56:11 dkf Exp $
  */
 
 #ifndef _TCL
@@ -344,7 +344,15 @@ typedef long LONG;
 /*
  * Type of 64-bit values on 32-bit systems.  FIXME - DKF
  */
+#ifdef _LP64
+/*
+ * Longs are 64-bit, so use them.
+ */
+#define TCL_WIDE_INT_IS_LONG
+typedef long		Tcl_WideInt;
+#else
 typedef long long	Tcl_WideInt;
+#endif
 /*
  * Strip the high bits, bearing in mind the sign!
  */
@@ -369,10 +377,10 @@ typedef long long	Tcl_WideInt;
  * in wide mode, so we'll switch to narrow off_t et al. instead.
  */
 #ifndef _LARGEFILE64_SOURCE
-#define NARROW_OFFSETS
+#define TCL_NARROW_OFFSETS
 #endif
 
-#ifdef NARROW_OFFSETS
+#ifdef TCL_NARROW_OFFSETS
 
 typedef struct stat	Tcl_StatBuf;
 typedef off_t		Tcl_SeekOffset;
@@ -383,7 +391,7 @@ typedef struct dirent	Tcl_DirEntry;
 #define Tcl_PlatformOpen  open
 #define Tcl_PlatformReaddir readdir
 
-#else /* NARROW_OFFSETS */
+#else /* TCL_NARROW_OFFSETS */
 
 typedef struct stat64	Tcl_StatBuf;
 typedef off64_t		Tcl_SeekOffset;
@@ -394,7 +402,7 @@ typedef struct dirent64	Tcl_DirEntry;
 #define Tcl_PlatformOpen    open64
 #define Tcl_PlatformReaddir readdir64
 
-#endif /* NARROW_OFFSETS */
+#endif /* TCL_NARROW_OFFSETS */
 
 /*
  * This flag controls whether binary compatability is maintained with
