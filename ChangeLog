@@ -1,3 +1,11 @@
+2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c: minor casts to prevent warnings
+
+	* unix/configure: regened
+	* unix/configure.in: added preset CFLAGS check from HEAD to
+	prevent --enable-gcc from adding "-g -O2"
+
 2001-10-17  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes: First draft of Tcl changes for 8.3.4 release.
