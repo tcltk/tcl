@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.7 2004/07/13 19:21:37 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.8 2004/07/19 20:12:26 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -44,7 +44,6 @@ if test "${CFLAGS+set}" != "set" ; then
 fi
 
 AC_PROG_CC
-AC_HAVE_HEADERS(unistd.h limits.h)
 
 #------------------------------------------------------------------------
 # Threads support
@@ -68,6 +67,30 @@ if test -n "$GCC"; then
     AC_MSG_RESULT(no))
 fi  
 fi
+
+#--------------------------------------------------------------------
+# Look for libraries that we will need when compiling the Tcl shell
+#--------------------------------------------------------------------
+
+SC_TCL_LINK_LIBS
+
+# Add the threads support libraries
+
+LIBS="$LIBS$THREADS_LIBS"
+
+SC_ENABLE_SHARED
+
+#--------------------------------------------------------------------
+# The statements below define a collection of compile flags.  This
+# macro depends on the value of SHARED_BUILD, and should be called
+# after SC_ENABLE_SHARED checks the configure switches.
+#--------------------------------------------------------------------
+
+SC_CONFIG_CFLAGS
+
+SC_ENABLE_SYMBOLS
+
+TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
 #	Detect what compiler flags to set for 64-bit support.
@@ -413,30 +436,6 @@ fi
 SC_ENABLE_LANGINFO
 
 #--------------------------------------------------------------------
-# Look for libraries that we will need when compiling the Tcl shell
-#--------------------------------------------------------------------
-
-SC_TCL_LINK_LIBS
-
-# Add the threads support libraries
-
-LIBS="$LIBS$THREADS_LIBS"
-
-SC_ENABLE_SHARED
-
-#--------------------------------------------------------------------
-# The statements below define a collection of compile flags.  This
-# macro depends on the value of SHARED_BUILD, and should be called
-# after SC_ENABLE_SHARED checks the configure switches.
-#--------------------------------------------------------------------
-
-SC_CONFIG_CFLAGS
-
-SC_ENABLE_SYMBOLS
-
-TCL_DBGX=${DBGX}
-
-#--------------------------------------------------------------------
 #	The statements below check for systems where POSIX-style
 #	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented. 
 #	On these systems (mostly older ones), use the old BSD-style
@@ -585,4 +584,4 @@ AC_SUBST(TCL_HAS_LONGLONG)
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(TCL_PACKAGE_PATH)
 
-AC_OUTPUT(Makefile dltest/Makefile tclConfig.sh)
+AC_OUTPUT([Makefile dltest/Makefile tclConfig.sh])
