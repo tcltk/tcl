@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.11 1999/07/31 01:55:51 redman Exp $
+# RCS: @(#) $Id: info.test,v 1.12 1999/12/12 02:27:03 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -80,16 +80,27 @@ test info-2.4 {info body option} {
     }
 } {{return "x=$x"} {return "y=$y"}}
 
-# "info cmdcount" is no longer accurate for compiled commands! The expected
-# result for info-3.1 used to be "3" and is now "1" since the "set"s have
-# been compiled away.
-test info-3.1 {info cmdcount option} {
+# "info cmdcount" is no longer accurate for compiled commands!
+# The expected result for info-3.1 used to be "3" and is now "1"
+# since the "set"s have been compiled away.  info-3.2 was corrected
+# in 8.3 because the eval'ed body won't be compiled.
+proc testinfocmdcount {} {
     set x [info cmdcount]
     set y 12345
     set z [info cm]
     expr $z-$x
+}
+test info-3.1 {info cmdcount compiled} {
+    testinfocmdcount
 } 1
-test info-3.2 {info cmdcount option} {
+test info-3.2 {info cmdcount evaled} {
+    set x [info cmdcount]
+    set y 12345
+    set z [info cm]
+    expr $z-$x
+} 3
+test info-3.3 {info cmdcount evaled} [info body testinfocmdcount] 3
+test info-3.4 {info cmdcount option} {
     list [catch {info cmdcount 1} msg] $msg
 } {1 {wrong # args: should be "info cmdcount"}}
 
@@ -510,15 +521,3 @@ test info-20.5 {miscellaneous error conditions} {
 catch {namespace delete test_ns_info1 test_ns_info2}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
