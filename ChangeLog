@@ -1,3 +1,17 @@
+2004-11-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (FreeScan): Fixed a bug where scanning
+	"Monday" with a base time other than midnight incorrectly carried
+	the base time forward.
+	
+	* test/clock.test (clock-33.{5,5a}): Made the test failure more
+	informative.
+	
+	* tests/clock.test (clock-34.{28,44,45,46}): Removed 'knownBug'
+	constraints from tests that no longer fail.
+
+	Thanks to Don Porter for reporting these.
+					
 2004-11-03  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tcl.h:		Moved the preprocessor logic
