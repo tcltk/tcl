@@ -1,3 +1,13 @@
+2000-04-27  Eric Melski  <ericm@scriptics.com>
+
+	* doc/library.n: Added entries for auto_qualify and auto_import
+	[Bug: 1271].
+
+	* doc/Init.3: Manual entry for Tcl_Init [Bug: 1820].
+
+	* doc/expr.n: Added documentation for each of the math library
+	functions that expr supports [Bug: 1054].
+
 2000-04-26  Eric Melski  <ericm@scriptics.com>
 
 	* doc/memory.n: Man page for Tcl "memory" command, which is

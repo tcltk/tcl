@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: memory.n,v 1.1 2000/04/27 01:47:00 ericm Exp $
+'\" RCS: @(#) $Id: memory.n,v 1.2 2000/04/28 00:47:49 ericm Exp $
 '\" 
 .so man.macros
 .TH memory n 8.1 Tcl "Tcl Built-In Commands"
@@ -73,7 +73,7 @@ command mode.
 \fB memory display\fR \fIfile\fR
 Write a list of all currently allocated memory to the specified file.
 
-.SH SEE ALSO
+.SH "SEE ALSO"
 ckalloc, ckfree, Tcl_ValidateAllMemory, Tcl_DumpActiveMemory, TCL_MEM_DEBUG
 
 .SH KEYWORDS

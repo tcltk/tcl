@@ -446,6 +446,10 @@ if test -r Hash.3; then
     ln Hash.3 Tcl_NextHashEntry.3
     ln Hash.3 Tcl_HashStats.3
 fi
+if test -r Init.3; then
+    rm -f Tcl_Init.3
+    ln Init.3 Tcl_Init.3
+fi
 if test -r InitStubs.3; then
     rm -f Tcl_InitStubs.3
     ln InitStubs.3 Tcl_InitStubs.3
@@ -912,9 +916,11 @@ if test -r http.n; then
 fi
 if test -r library.n; then
     rm -f auto_execok.n
+    rm -f auto_import.n
     rm -f auto_load.n
     rm -f auto_mkindex.n
     rm -f auto_mkindex_old.n
+    rm -f auto_qualify.n
     rm -f auto_reset.n
     rm -f tcl_findLibrary.n
     rm -f parray.n
@@ -924,9 +930,11 @@ if test -r library.n; then
     rm -f tcl_wordBreakAfter.n
     rm -f tcl_wordBreakBefore.n
     ln library.n auto_execok.n
+    ln library.n auto_import.n
     ln library.n auto_load.n
     ln library.n auto_mkindex.n
     ln library.n auto_mkindex_old.n
+    ln library.n auto_qualify.n
     ln library.n auto_reset.n
     ln library.n tcl_findLibrary.n
     ln library.n parray.n
