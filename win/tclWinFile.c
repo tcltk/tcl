@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.26 2002/02/15 14:28:51 dkf Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.27 2002/03/24 11:41:51 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -33,6 +33,8 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 static int NativeAccess(CONST TCHAR *path, int mode);
 static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr);
 static int NativeIsExec(CONST TCHAR *path);
+static int NativeMatchType(int isDrive, CONST TCHAR* nativeName, 
+			   Tcl_GlobTypeData *types);
 
 
 /*
@@ -119,332 +121,375 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
-    char drivePat[] = "?:\\";
-    const char *message;
-    CONST char *dir;
-    char *root;
-    int dirLength;
-    Tcl_DString dirString;
-    DWORD attr, volFlags;
-    HANDLE handle;
-    WIN32_FIND_DATAT data;
-    BOOL found;
-    Tcl_DString ds;
-    Tcl_DString dsOrig;
-    Tcl_Obj *fileNamePtr;
     CONST TCHAR *nativeName;
-    int matchSpecialDots;
-    
-    /*
-     * Convert the path to normalized form since some interfaces only
-     * accept backslashes.  Also, ensure that the directory ends with a
-     * separator character.
-     */
 
-    fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
-    if (fileNamePtr == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_DStringInit(&dsOrig);
-    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
-
-    dirLength = Tcl_DStringLength(&dsOrig);
-    Tcl_DStringInit(&dirString);
-    if (dirLength == 0) {
-	Tcl_DStringAppend(&dirString, ".\\", 2);
-    } else {
-	char *p;
-
-	Tcl_DStringAppend(&dirString, Tcl_DStringValue(&dsOrig),
-		Tcl_DStringLength(&dsOrig));
-	for (p = Tcl_DStringValue(&dirString); *p != '\0'; p++) {
-	    if (*p == '/') {
-		*p = '\\';
+    if (pattern == NULL || (*pattern == '\0')) {
+	int isDrive = 0;
+	int len;
+	char *str = Tcl_GetStringFromObj(pathPtr,&len);
+	if (len < 4) {
+	    if (len == 0) {
+		/* 
+		 * Not sure if this is possible, but we pass it on
+		 * anyway 
+		 */
+	    } else if (len == 1 && (str[0] == '/' || str[0] == '\\')) {
+		/* Path is pointing to the root volume */
+		isDrive = 1;
+	    } else if ((str[1] == ':') && (len == 2 || (str[2] == '/' || str[2] == '\\'))) {
+		/* Path is of the form 'x:' or 'x:/' or 'x:\' */
+		isDrive = 1;
 	    }
 	}
-	p--;
-	/* Make sure we have a trailing directory delimiter */
-	if ((*p != '\\') && (*p != ':')) {
-	    Tcl_DStringAppend(&dirString, "\\", 1);
-	    Tcl_DStringAppend(&dsOrig, "/", 1);
-	    dirLength++;
+	/* Match a file directly */
+	nativeName = (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr);
+	if (NativeMatchType(isDrive, nativeName, types)) {
+	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
-    }
-    dir = Tcl_DStringValue(&dirString);
-
-    /*
-     * First verify that the specified path is actually a directory.
-     */
-
-    nativeName = Tcl_WinUtfToTChar(dir, Tcl_DStringLength(&dirString), &ds);
-    attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
-    Tcl_DStringFree(&ds);
-
-    if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
-	Tcl_DStringFree(&dirString);
 	return TCL_OK;
-    }
-
-    /*
-     * Next check the volume information for the directory to see whether
-     * comparisons should be case sensitive or not.  If the root is null, then
-     * we use the root of the current directory.  If the root is just a drive
-     * specifier, we use the root directory of the given drive.
-     */
-
-    switch (Tcl_GetPathType(dir)) {
-	case TCL_PATH_RELATIVE:
-	    found = GetVolumeInformationA(NULL, NULL, 0, NULL, NULL, 
-		    &volFlags, NULL, 0);
-	    break;
-	case TCL_PATH_VOLUME_RELATIVE:
-	    if (dir[0] == '\\') {
-		root = NULL;
-	    } else {
-		root = drivePat;
-		*root = dir[0];
-	    }
-	    found = GetVolumeInformationA(root, NULL, 0, NULL, NULL, 
-		    &volFlags, NULL, 0);
-	    break;
-	case TCL_PATH_ABSOLUTE:
-	    if (dir[1] == ':') {
-		root = drivePat;
-		*root = dir[0];
-		found = GetVolumeInformationA(root, NULL, 0, NULL, NULL, 
-			&volFlags, NULL, 0);
-	    } else if (dir[1] == '\\') {
-		char *p;
-
-		p = strchr(dir + 2, '\\');
-		p = strchr(p + 1, '\\');
-		p++;
-		nativeName = Tcl_WinUtfToTChar(dir, p - dir, &ds);
-		found = (*tclWinProcs->getVolumeInformationProc)(nativeName, 
-			NULL, 0, NULL, NULL, &volFlags, NULL, 0);
-		Tcl_DStringFree(&ds);
-	    }
-	    break;
-    }
-
-    if (found == 0) {
-	message = "couldn't read volume information for \"";
-	goto error;
-    }
-
-    /*
-     * Check to see if the pattern should match the special
-     * . and .. names, referring to the current directory,
-     * or the directory above.  We need a special check for
-     * this because paths beginning with a dot are not considered
-     * hidden on Windows, and so otherwise a relative glob like
-     * 'glob -join * *' will actually return './. ../..' etc.
-     */
-
-    if ((pattern[0] == '.')
-	    || ((pattern[0] == '\\') && (pattern[1] == '.'))) {
-	matchSpecialDots = 1;
     } else {
-	matchSpecialDots = 0;
-    }
-
-    /*
-     * We need to check all files in the directory, so append a *.*
-     * to the path. 
-     */
-
-    dir = Tcl_DStringAppend(&dirString, "*.*", 3);
-    nativeName = Tcl_WinUtfToTChar(dir, -1, &ds);
-    handle = (*tclWinProcs->findFirstFileProc)(nativeName, &data);
-    Tcl_DStringFree(&ds);
-
-    if (handle == INVALID_HANDLE_VALUE) {
-	message = "couldn't read directory \"";
-	goto error;
-    }
-
-    /*
-     * Now iterate over all of the files in the directory.
-     */
-
-    for (found = 1; found != 0; 
-	    found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
-	CONST TCHAR *nativeMatchResult;
-	CONST char *name, *fname;
+	char drivePat[] = "?:\\";
+	const char *message;
+	CONST char *dir;
+	char *root;
+	int dirLength;
+	Tcl_DString dirString;
+	DWORD attr, volFlags;
+	HANDLE handle;
+	WIN32_FIND_DATAT data;
+	BOOL found;
+	Tcl_DString ds;
+	Tcl_DString dsOrig;
+	Tcl_Obj *fileNamePtr;
+	int matchSpecialDots;
 	
-	int typeOk = 1;
-	
-	if (tclWinProcs->useWide) {
-	    nativeName = (CONST TCHAR *) data.w.cFileName;
-	} else {
-	    nativeName = (CONST TCHAR *) data.a.cFileName;
+	/*
+	 * Convert the path to normalized form since some interfaces only
+	 * accept backslashes.  Also, ensure that the directory ends with a
+	 * separator character.
+	 */
+
+	fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
+	if (fileNamePtr == NULL) {
+	    return TCL_ERROR;
 	}
-	name = Tcl_WinTCharToUtf(nativeName, -1, &ds);
+	Tcl_DStringInit(&dsOrig);
+	Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
 
-	if (!matchSpecialDots) {
-	    /* If it is exactly '.' or '..' then we ignore it */
-	    if (name[0] == '.') {
-		if (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')) {
-		    continue;
+	dirLength = Tcl_DStringLength(&dsOrig);
+	Tcl_DStringInit(&dirString);
+	if (dirLength == 0) {
+	    Tcl_DStringAppend(&dirString, ".\\", 2);
+	} else {
+	    char *p;
+
+	    Tcl_DStringAppend(&dirString, Tcl_DStringValue(&dsOrig),
+		    Tcl_DStringLength(&dsOrig));
+	    for (p = Tcl_DStringValue(&dirString); *p != '\0'; p++) {
+		if (*p == '/') {
+		    *p = '\\';
 		}
 	    }
+	    p--;
+	    /* Make sure we have a trailing directory delimiter */
+	    if ((*p != '\\') && (*p != ':')) {
+		Tcl_DStringAppend(&dirString, "\\", 1);
+		Tcl_DStringAppend(&dsOrig, "/", 1);
+		dirLength++;
+	    }
 	}
-	
-	/*
-	 * Check to see if the file matches the pattern.  Note that we
-	 * are ignoring the case sensitivity flag because Windows doesn't honor
-	 * case even if the volume is case sensitive.  If the volume also
-	 * doesn't preserve case, then we previously returned the lower case
-	 * form of the name.  This didn't seem quite right since there are
-	 * non-case-preserving volumes that actually return mixed case.  So now
-	 * we are returning exactly what we get from the system.
-	 */
-
-	nativeMatchResult = NULL;
-
-	if (Tcl_StringCaseMatch(name, pattern, 1) != 0) {
-	    nativeMatchResult = nativeName;
-	}
-        Tcl_DStringFree(&ds);
-
-	if (nativeMatchResult == NULL) {
-	    continue;
-	}
+	dir = Tcl_DStringValue(&dirString);
 
 	/*
-	 * If the file matches, then we need to process the remainder of the
-	 * path.
+	 * First verify that the specified path is actually a directory.
 	 */
 
-	name = Tcl_WinTCharToUtf(nativeMatchResult, -1, &ds);
-	Tcl_DStringAppend(&dsOrig, name, -1);
+	nativeName = Tcl_WinUtfToTChar(dir, Tcl_DStringLength(&dirString), &ds);
+	attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
 	Tcl_DStringFree(&ds);
 
-	fname = Tcl_DStringValue(&dsOrig);
-	nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(&dsOrig), &ds);
-	
+	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+	    Tcl_DStringFree(&dirString);
+	    return TCL_OK;
+	}
+
 	/*
-	 * 'attr' represents the attributes of the file, but we only
-	 * want to retrieve this info if it is absolutely necessary
-	 * because it is an expensive call.  Unfortunately, to deal
-	 * with hidden files properly, we must always retrieve it.
-	 * There are more modern Win32 APIs available which we should
-	 * look into.
+	 * Next check the volume information for the directory to see whether
+	 * comparisons should be case sensitive or not.  If the root is null, then
+	 * we use the root of the current directory.  If the root is just a drive
+	 * specifier, we use the root directory of the given drive.
 	 */
 
-	attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
-	if (types == NULL) {
-	    /* If invisible, don't return the file */
-	    if (attr & FILE_ATTRIBUTE_HIDDEN) {
-		typeOk = 0;
-	    }
-	} else {
-	    if (attr & FILE_ATTRIBUTE_HIDDEN) {
-		/* If invisible */
-		if ((types->perm == 0) || 
-		  !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
-		    typeOk = 0;
+	switch (Tcl_GetPathType(dir)) {
+	    case TCL_PATH_RELATIVE:
+		found = GetVolumeInformationA(NULL, NULL, 0, NULL, NULL, 
+			&volFlags, NULL, 0);
+		break;
+	    case TCL_PATH_VOLUME_RELATIVE:
+		if (dir[0] == '\\') {
+		    root = NULL;
+		} else {
+		    root = drivePat;
+		    *root = dir[0];
 		}
+		found = GetVolumeInformationA(root, NULL, 0, NULL, NULL, 
+			&volFlags, NULL, 0);
+		break;
+	    case TCL_PATH_ABSOLUTE:
+		if (dir[1] == ':') {
+		    root = drivePat;
+		    *root = dir[0];
+		    found = GetVolumeInformationA(root, NULL, 0, NULL, NULL, 
+			    &volFlags, NULL, 0);
+		} else if (dir[1] == '\\') {
+		    char *p;
+
+		    p = strchr(dir + 2, '\\');
+		    p = strchr(p + 1, '\\');
+		    p++;
+		    nativeName = Tcl_WinUtfToTChar(dir, p - dir, &ds);
+		    found = (*tclWinProcs->getVolumeInformationProc)(nativeName, 
+			    NULL, 0, NULL, NULL, &volFlags, NULL, 0);
+		    Tcl_DStringFree(&ds);
+		}
+		break;
+	}
+
+	if (found == 0) {
+	    message = "couldn't read volume information for \"";
+	    goto error;
+	}
+
+	/*
+	 * Check to see if the pattern should match the special
+	 * . and .. names, referring to the current directory,
+	 * or the directory above.  We need a special check for
+	 * this because paths beginning with a dot are not considered
+	 * hidden on Windows, and so otherwise a relative glob like
+	 * 'glob -join * *' will actually return './. ../..' etc.
+	 */
+
+	if ((pattern[0] == '.')
+		|| ((pattern[0] == '\\') && (pattern[1] == '.'))) {
+	    matchSpecialDots = 1;
+	} else {
+	    matchSpecialDots = 0;
+	}
+
+	/*
+	 * We need to check all files in the directory, so append a *.*
+	 * to the path. 
+	 */
+
+	dir = Tcl_DStringAppend(&dirString, "*.*", 3);
+	nativeName = Tcl_WinUtfToTChar(dir, -1, &ds);
+	handle = (*tclWinProcs->findFirstFileProc)(nativeName, &data);
+	Tcl_DStringFree(&ds);
+
+	if (handle == INVALID_HANDLE_VALUE) {
+	    message = "couldn't read directory \"";
+	    goto error;
+	}
+
+	/*
+	 * Now iterate over all of the files in the directory.
+	 */
+
+	for (found = 1; found != 0; 
+		found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
+	    CONST TCHAR *nativeMatchResult;
+	    CONST char *name, *fname;
+	    
+	    if (tclWinProcs->useWide) {
+		nativeName = (CONST TCHAR *) data.w.cFileName;
 	    } else {
-		/* Visible */
-		if (types->perm & TCL_GLOB_PERM_HIDDEN) {
-		    typeOk = 0;
+		nativeName = (CONST TCHAR *) data.a.cFileName;
+	    }
+	    name = Tcl_WinTCharToUtf(nativeName, -1, &ds);
+
+	    if (!matchSpecialDots) {
+		/* If it is exactly '.' or '..' then we ignore it */
+		if (name[0] == '.') {
+		    if (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')) {
+			continue;
+		    }
 		}
 	    }
 	    
-	    if (typeOk == 1 && types->perm != 0) {
-		if (
-		    ((types->perm & TCL_GLOB_PERM_RONLY) &&
-			    !(attr & FILE_ATTRIBUTE_READONLY)) ||
-		    ((types->perm & TCL_GLOB_PERM_R) &&
-			    (NativeAccess(nativeName, R_OK) != 0)) ||
-		    ((types->perm & TCL_GLOB_PERM_W) &&
-			    (NativeAccess(nativeName, W_OK) != 0)) ||
-		    ((types->perm & TCL_GLOB_PERM_X) &&
-			    (NativeAccess(nativeName, X_OK) != 0))
-		    ) {
-		    typeOk = 0;
-		}
+	    /*
+	     * Check to see if the file matches the pattern.  Note that we
+	     * are ignoring the case sensitivity flag because Windows doesn't honor
+	     * case even if the volume is case sensitive.  If the volume also
+	     * doesn't preserve case, then we previously returned the lower case
+	     * form of the name.  This didn't seem quite right since there are
+	     * non-case-preserving volumes that actually return mixed case.  So now
+	     * we are returning exactly what we get from the system.
+	     */
+
+	    nativeMatchResult = NULL;
+
+	    if (Tcl_StringCaseMatch(name, pattern, 1) != 0) {
+		nativeMatchResult = nativeName;
 	    }
-	    if (typeOk && types->type != 0) {
-		Tcl_StatBuf buf;
-		
-		if (NativeStat(nativeName, &buf) != 0) {
-		    /* 
-		     * Posix error occurred, either the file
-		     * has disappeared, or there is some other
-		     * strange error.  In any case we don't
-		     * return this file.
-		     */
-		    typeOk = 0;
-		}
-		if (typeOk) {
-		    /*
-		     * In order bcdpfls as in 'find -t'
-		     */
-		    if (
-			((types->type & TCL_GLOB_TYPE_BLOCK) &&
-				S_ISBLK(buf.st_mode)) ||
-			((types->type & TCL_GLOB_TYPE_CHAR) &&
-				S_ISCHR(buf.st_mode)) ||
-			((types->type & TCL_GLOB_TYPE_DIR) &&
-				S_ISDIR(buf.st_mode)) ||
-			((types->type & TCL_GLOB_TYPE_PIPE) &&
-				S_ISFIFO(buf.st_mode)) ||
-			((types->type & TCL_GLOB_TYPE_FILE) &&
-				S_ISREG(buf.st_mode))
-#ifdef S_ISSOCK
-			|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
-				S_ISSOCK(buf.st_mode))
-#endif
-			) {
-			/* Do nothing -- this file is ok */
-		    } else {
-			typeOk = 0;
-#ifdef S_ISLNK
-			if (types->type & TCL_GLOB_TYPE_LINK) {
-			    /* 
-			     * We should use 'lstat' but it is the
-			     * same as 'stat' on windows.
-			     */
-			    if (NativeStat(nativeName, &buf) == 0) {
-				if (S_ISLNK(buf.st_mode)) {
-				    typeOk = 1;
-				}
-			    }
-			}
-#endif
-		    }
-		}
-	    }		
-	} 
-	if (typeOk) {
-	    Tcl_ListObjAppendElement(interp, resultPtr, 
-		    Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+	    Tcl_DStringFree(&ds);
+
+	    if (nativeMatchResult == NULL) {
+		continue;
+	    }
+
+	    /*
+	     * If the file matches, then we need to process the remainder of the
+	     * path.
+	     */
+
+	    name = Tcl_WinTCharToUtf(nativeMatchResult, -1, &ds);
+	    Tcl_DStringAppend(&dsOrig, name, -1);
+	    Tcl_DStringFree(&ds);
+
+	    fname = Tcl_DStringValue(&dsOrig);
+	    nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(&dsOrig), &ds);
+	    
+	    if (NativeMatchType(0, nativeName, types)) {
+		Tcl_ListObjAppendElement(interp, resultPtr, 
+			Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+	    }
+	    /*
+	     * Free ds here to ensure that nativeName is valid above.
+	     */
+
+	    Tcl_DStringFree(&ds);
+
+	    Tcl_DStringSetLength(&dsOrig, dirLength);
 	}
-	/*
-	 * Free ds here to ensure that nativeName is valid above.
-	 */
 
-	Tcl_DStringFree(&ds);
+	FindClose(handle);
+	Tcl_DStringFree(&dirString);
+	Tcl_DStringFree(&dsOrig);
 
-	Tcl_DStringSetLength(&dsOrig, dirLength);
+	return TCL_OK;
+	
+        error:
+	Tcl_DStringFree(&dirString);
+	TclWinConvertError(GetLastError());
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, message, Tcl_DStringValue(&dsOrig), "\": ", 
+			 Tcl_PosixError(interp), (char *) NULL);
+			 Tcl_DStringFree(&dsOrig);
+	return TCL_ERROR;
     }
 
-    FindClose(handle);
-    Tcl_DStringFree(&dirString);
-    Tcl_DStringFree(&dsOrig);
+}
+
+/* 
+ * This function needs a special case for a path which is a root
+ * volume, because for NTFS root volumes, the getFileAttributesProc
+ * returns a 'hidden' attribute when it should not.
+ */
+static int 
+NativeMatchType(
+    int isDrive,              /* Is this path a drive (root volume) */
+    CONST TCHAR* nativeName,  /* Native path to check */
+    Tcl_GlobTypeData *types)  /* Type description to match against */
+{
+    /*
+     * 'attr' represents the attributes of the file, but we only
+     * want to retrieve this info if it is absolutely necessary
+     * because it is an expensive call.  Unfortunately, to deal
+     * with hidden files properly, we must always retrieve it.
+     * There are more modern Win32 APIs available which we should
+     * look into.
+     */
 
-    return TCL_OK;
-
-    error:
-    Tcl_DStringFree(&dirString);
-    TclWinConvertError(GetLastError());
-    Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, message, Tcl_DStringValue(&dsOrig), "\": ", 
-	    Tcl_PosixError(interp), (char *) NULL);
-    Tcl_DStringFree(&dsOrig);
-    return TCL_ERROR;
+    DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
+    if (attr == 0xffffffff) {
+	/* File doesn't exist */
+	return 0;
+    }
+    
+    if (types == NULL) {
+	/* If invisible, don't return the file */
+	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
+	    return 0;
+	}
+    } else {
+	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
+	    /* If invisible */
+	    if ((types->perm == 0) || 
+	      !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
+		return 0;
+	    }
+	} else {
+	    /* Visible */
+	    if (types->perm & TCL_GLOB_PERM_HIDDEN) {
+		return 0;
+	    }
+	}
+	
+	if (types->perm != 0) {
+	    if (
+		((types->perm & TCL_GLOB_PERM_RONLY) &&
+			!(attr & FILE_ATTRIBUTE_READONLY)) ||
+		((types->perm & TCL_GLOB_PERM_R) &&
+			(NativeAccess(nativeName, R_OK) != 0)) ||
+		((types->perm & TCL_GLOB_PERM_W) &&
+			(NativeAccess(nativeName, W_OK) != 0)) ||
+		((types->perm & TCL_GLOB_PERM_X) &&
+			(NativeAccess(nativeName, X_OK) != 0))
+		) {
+		return 0;
+	    }
+	}
+	if (types->type != 0) {
+	    Tcl_StatBuf buf;
+	    
+	    if (NativeStat(nativeName, &buf) != 0) {
+		/* 
+		 * Posix error occurred, either the file
+		 * has disappeared, or there is some other
+		 * strange error.  In any case we don't
+		 * return this file.
+		 */
+		return 0;
+	    }
+	    /*
+	     * In order bcdpfls as in 'find -t'
+	     */
+	    if (
+		((types->type & TCL_GLOB_TYPE_BLOCK) &&
+			S_ISBLK(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_CHAR) &&
+			S_ISCHR(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_DIR) &&
+			S_ISDIR(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_PIPE) &&
+			S_ISFIFO(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_FILE) &&
+			S_ISREG(buf.st_mode))
+#ifdef S_ISSOCK
+		|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
+			S_ISSOCK(buf.st_mode))
+#endif
+		) {
+		/* Do nothing -- this file is ok */
+	    } else {
+#ifdef S_ISLNK
+		if (types->type & TCL_GLOB_TYPE_LINK) {
+		    /* 
+		     * We should use 'lstat' but it is the
+		     * same as 'stat' on windows.
+		     */
+		    if (NativeStat(nativeName, &buf) == 0) {
+			if (S_ISLNK(buf.st_mode)) {
+			    return 1;
+			}
+		    }
+		}
+#endif
+		return 0;
+	    }
+	}		
+    } 
+    return 1;
 }
 
 /*

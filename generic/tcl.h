@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.121 2002/03/20 22:47:36 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.122 2002/03/24 11:41:48 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -1788,28 +1788,31 @@ typedef struct Tcl_Filesystem {
 			     * 'Tcl_FSDeleteFile()' call.  Should
 			     * be implemented unless the FS is
 			     * read-only. */
-    Tcl_FSLstatProc *lstatProc;	    
-			    /* Function to process a 
-			     * 'Tcl_FSLstat()' call.  If not implemented,
-			     * Tcl will attempt to use the 'statProc'
-			     * defined above instead. */
     Tcl_FSCopyFileProc *copyFileProc; 
 			    /* Function to process a 
 			     * 'Tcl_FSCopyFile()' call.  If not
 			     * implemented Tcl will fall back
 			     * on open-r, open-w and fcopy as
-			     * a copying mechanism. */
+			     * a copying mechanism, for copying
+			     * actions initiated in Tcl (not C). */
     Tcl_FSRenameFileProc *renameFileProc;	    
 			    /* Function to process a 
 			     * 'Tcl_FSRenameFile()' call.  If not
 			     * implemented, Tcl will fall back on
-			     * a copy and delete mechanism. */
+			     * a copy and delete mechanism, for 
+			     * rename actions initiated in Tcl (not C). */
     Tcl_FSCopyDirectoryProc *copyDirectoryProc;	    
 			    /* Function to process a 
 			     * 'Tcl_FSCopyDirectory()' call.  If
 			     * not implemented, Tcl will fall back
 			     * on a recursive create-dir, file copy
-			     * mechanism. */
+			     * mechanism, for copying actions
+			     * initiated in Tcl (not C). */
+    Tcl_FSLstatProc *lstatProc;	    
+			    /* Function to process a 
+			     * 'Tcl_FSLstat()' call.  If not implemented,
+			     * Tcl will attempt to use the 'statProc'
+			     * defined above instead. */
     Tcl_FSLoadFileProc *loadFileProc; 
 			    /* Function to process a 
 			     * 'Tcl_FSLoadFile()' call.  If not

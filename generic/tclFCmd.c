@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.16 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.17 2002/03/24 11:41:50 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -716,10 +716,9 @@ FileForceOption(interp, objc, objv, forcePtr)
  *	if path is the root directory, returns no characters.
  *
  * Results:
- *	Appends the string that represents the basename to the end of
- *	the specified initialized DString, returning a pointer to the
- *	resulting string.  If there is an error, an error message is left
- *	in interp, NULL is returned, and the Tcl_DString is unmodified.
+ *	Returns the string object that represents the basename.  If there 
+ *	is an error, an error message is left in interp, and NULL is 
+ *	returned.
  *
  * Side effects:
  *	None.

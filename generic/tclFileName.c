@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.32 2002/02/27 06:39:16 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.33 2002/03/24 11:41:50 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2454,21 +2454,18 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	return TclDoGlob(interp, separators, headPtr, p, types);
     } else {
 	/*
+	 * This is the code path reached by a command like 'glob foo'.
+	 *
 	 * There are no more wildcards in the pattern and no more
 	 * unprocessed characters in the tail, so now we can construct
-	 * the path and verify the existence of the file.
-	 * 
-	 * We can't use 'Tcl_(FS)Access' to verify existence because
-	 * this fails when the file is a symlink to another file which
-	 * doesn't actually exist.  The problem is that if 'foo' is
-	 * such a broken link, 'glob foo' and 'glob foo*' return
-	 * different results.  So, we use 'Tcl_FSLstat' below so those
-	 * two return the same result.  This fixes [Bug 434876, L.
-	 * Virden]
+	 * the path, and pass it to Tcl_FSMatchInDirectory with an
+	 * empty pattern to verify the existence of the file and check
+	 * it is of the correct type (if a 'types' flag it given -- if
+	 * no such flag was given, we could just use 'Tcl_FSLStat', but
+	 * for simplicity we keep to a common approach).
 	 */
 
 	Tcl_Obj *nameObj;
-	Tcl_StatBuf buf;
 	/* Used to deal with one special case pertinent to MacOS */
 	int macSpecialCase = 0;
 
@@ -2518,16 +2515,8 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	nameObj = Tcl_NewStringObj(name, Tcl_DStringLength(headPtr));
 
 	Tcl_IncrRefCount(nameObj);
-	if (Tcl_FSLstat(nameObj, &buf) == 0) {
-	    if (macSpecialCase && (name[1] != '\0') 
-	      && (strchr(name+1, ':') == NULL)) {
-		Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
-					 Tcl_NewStringObj(name + 1,-1));
-	    } else {
-		Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
-					 nameObj);
-	    }
-	}
+	Tcl_FSMatchInDirectory(interp, Tcl_GetObjResult(interp), nameObj, 
+			       NULL, types);
 	Tcl_DecrRefCount(nameObj);
 	return TCL_OK;
     }

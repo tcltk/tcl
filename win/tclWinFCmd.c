@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.27 2002/03/15 01:10:19 mdejong Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.28 2002/03/24 11:41:51 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -872,8 +872,6 @@ DoRemoveJustDirectory(
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
 {
-    DWORD attr;
-
     /*
      * The RemoveDirectory API acts differently under Win95/98 and NT
      * WRT NULL and "". Avoid passing these values.
@@ -890,7 +888,7 @@ DoRemoveJustDirectory(
     TclWinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
-	attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+	DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
 	if (attr != 0xffffffff) {
 	    if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/* 
@@ -1234,8 +1232,6 @@ TraversalCopy(
     Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
 {
-    DWORD attr;
-
     switch (type) {
 	case DOTREE_F: {
 	    if (DoCopyFile(nativeSrc, nativeDst) == TCL_OK) {
@@ -1245,7 +1241,7 @@ TraversalCopy(
 	}
 	case DOTREE_PRED: {
 	    if (DoCreateDirectory(nativeDst) == TCL_OK) {
-		attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
+		DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
 		if ((*tclWinProcs->setFileAttributesProc)(nativeDst, attr) != FALSE) {
 		    return TCL_OK;
 		}
@@ -1380,7 +1376,8 @@ GetWinFileAttributes(
 {
     DWORD result;
     CONST TCHAR *nativeName;
-
+    int attr;
+    
     nativeName = Tcl_FSGetNativePath(fileName);
     result = (*tclWinProcs->getFileAttributesProc)(nativeName);
 
@@ -1389,7 +1386,34 @@ GetWinFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj((int) (result & attributeArray[objIndex]));
+    attr = (int)(result & attributeArray[objIndex]);
+    if ((objIndex == WIN_HIDDEN_ATTRIBUTE) && (attr != 0)) {
+	/* 
+	 * It is hidden.  However there is a bug on some Windows
+	 * OSes in which root volumes (drives) formatted as NTFS
+	 * are declared hidden when they are not (and cannot be).
+	 * 
+	 * We test for, and fix that case, here.
+	 */
+	int len;
+	char *str = Tcl_GetStringFromObj(fileName,&len);
+	if (len < 4) {
+	    if (len == 0) {
+		/* 
+		 * Not sure if this is possible, but we pass it on
+		 * anyway 
+		 */
+	    } else if (len == 1 && (str[0] == '/' || str[0] == '\\')) {
+		/* Path is pointing to the root volume */
+		attr = 0;
+	    } else if ((str[1] == ':') 
+		       && (len == 2 || (str[2] == '/' || str[2] == '\\'))) {
+		/* Path is of the form 'x:' or 'x:/' or 'x:\' */
+		attr = 0;
+	    }
+	}
+    }
+    *attributePtrPtr = Tcl_NewBooleanObj(attr);
     return TCL_OK;
 }
 

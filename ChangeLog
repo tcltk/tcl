@@ -1,3 +1,41 @@
+2002-03-24  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFilename.c:
+	* generic/tclFCmd.c:
+	* generic/tclTest.c:
+	* generic/tcl.h:
+	* generic/tclIOUtil.c:
+	* win/tclWinFile.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinPipe.c:
+	* unix/tclUnixFile.c:
+	* unix/tclUnixFCmd.c:
+	* mac/tclMacFile.c:
+	* doc/FileSystem.3:
+	* doc/file.n:
+	* tests/cmdAH.test:
+	* tests/fileName.test:
+	* tests/fileSystem.test: (new file)	
+	* tests/winFCmd.test: fix [Bug 511666] and [Bug 511658],
+	and improved documentation of some aspects of the filesystem,
+	particularly 'Tcl_FSMatchInDirectory' which now might match
+	a single file/directory only, and 'file normalize' which
+	wasn't very clear before.  Removed inconsistency betweens
+	docs and the Tcl_Filesystem structure.  Also fixed 
+	[Bug 523217] and corrected file normalization on Unix so that 
+	it expands symbolic links.  Added some new tests of the 
+	filesystem code (in the new file 'fileSystem.test'), and 
+	some extra tests for correct handling of symbolic links.
+	Fix to [Bug 530960] which shows up on Win98.  Made comparison
+	with ".com" case insensitive in tclWinPipe.c
+	
+	***POTENTIAL INCOMPATIBILITY***: But only between alpha
+	releases (users of the new Tcl_Filesystem lookup table in Tcl
+	8.4a4 need to handle the new way in which Tcl may call
+	Tcl_FSMatchInDirectory, and 'file normalize' on unix now
+	behaves correctly).  Only known impact is with the 'tclvfs'
+	extension.
+
 2002-03-22  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tests/basic.test (basic-46.1): adding test for [Bug 533758],
