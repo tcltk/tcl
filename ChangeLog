@@ -1,5 +1,8 @@
 2003-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c: ensure cd is thread-safe.
+	[Bug #710642] (vasiljevic)
+
 	* win/tclWinSerial.c (SerialCloseProc): correct mem leak on
 	closing a Windows serial port [Bug #718002] (schroedter)
 
