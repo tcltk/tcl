@@ -1,3 +1,9 @@
+2002-03-06  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInt.h: for unshared objects, TclDecrRefCount now
+	frees the internal rep before the string rep - just like the
+	non-macro Tcl_DecrRefCount/TclFreeObj [Bug 524802]. 
+
 2002-03-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/lsearch.n: Documentation of new features, plus examples.
