@@ -836,8 +836,6 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # symbols when dynamically loaded into tclsh.
 
 	    DL_OBJS="tclLoadDl.o"
-	    # AIX-5 has dl* in libc.so
-	    DL_LIBS=""
 	    LDFLAGS=""
 
 	    LD_LIBRARY_PATH_VAR="LIBPATH"
