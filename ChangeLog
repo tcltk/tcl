@@ -1,3 +1,11 @@
+2004-06-30  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/filename.n: clarified behaviour concerning trailing
+	slashes in filenames [Bug 971976]
+
+	* win/tclWinFile.c:
+	* tests/fileSystem.test: fix and tests for [Bug 979879]
+
 2004-06-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP#188 IMPLEMENTATION
