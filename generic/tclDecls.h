@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.85 2002/02/28 05:11:25 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.86 2002/03/20 22:47:36 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -574,7 +574,7 @@ EXTERN CONST char *	Tcl_GetVar _ANSI_ARGS_((Tcl_Interp * interp,
 				char * varName, int flags));
 /* 176 */
 EXTERN CONST char *	Tcl_GetVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags));
+				char * part1, CONST char * part2, int flags));
 /* 177 */
 EXTERN int		Tcl_GlobalEval _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * command));
@@ -772,7 +772,7 @@ EXTERN CONST char *	Tcl_SetVar _ANSI_ARGS_((Tcl_Interp * interp,
 				int flags));
 /* 238 */
 EXTERN CONST char *	Tcl_SetVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, 
+				char * part1, CONST char * part2, 
 				CONST char * newValue, int flags));
 /* 239 */
 EXTERN CONST char *	Tcl_SignalId _ANSI_ARGS_((int sig));
@@ -804,7 +804,7 @@ EXTERN int		Tcl_TraceVar _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData clientData));
 /* 248 */
 EXTERN int		Tcl_TraceVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags, 
+				char * part1, CONST char * part2, int flags, 
 				Tcl_VarTraceProc * proc, 
 				ClientData clientData));
 /* 249 */
@@ -825,7 +825,7 @@ EXTERN int		Tcl_UnsetVar _ANSI_ARGS_((Tcl_Interp * interp,
 				char * varName, int flags));
 /* 254 */
 EXTERN int		Tcl_UnsetVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags));
+				char * part1, CONST char * part2, int flags));
 /* 255 */
 EXTERN void		Tcl_UntraceVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * varName, int flags, 
@@ -833,7 +833,7 @@ EXTERN void		Tcl_UntraceVar _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData clientData));
 /* 256 */
 EXTERN void		Tcl_UntraceVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags, 
+				char * part1, CONST char * part2, int flags, 
 				Tcl_VarTraceProc * proc, 
 				ClientData clientData));
 /* 257 */
@@ -846,7 +846,7 @@ EXTERN int		Tcl_UpVar _ANSI_ARGS_((Tcl_Interp * interp,
 /* 259 */
 EXTERN int		Tcl_UpVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * frameName, char * part1, 
-				char * part2, CONST char * localName, 
+				CONST char * part2, CONST char * localName, 
 				int flags));
 /* 260 */
 EXTERN int		Tcl_VarEval _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp));
@@ -857,7 +857,7 @@ EXTERN ClientData	Tcl_VarTraceInfo _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData prevClientData));
 /* 262 */
 EXTERN ClientData	Tcl_VarTraceInfo2 _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags, 
+				char * part1, CONST char * part2, int flags, 
 				Tcl_VarTraceProc * procPtr, 
 				ClientData prevClientData));
 /* 263 */
@@ -994,7 +994,7 @@ EXTERN VOID *		Tcl_GetThreadData _ANSI_ARGS_((
 				Tcl_ThreadDataKey * keyPtr, int size));
 /* 306 */
 EXTERN Tcl_Obj *	Tcl_GetVar2Ex _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags));
+				char * part1, CONST char * part2, int flags));
 /* 307 */
 EXTERN ClientData	Tcl_InitNotifier _ANSI_ARGS_((void));
 /* 308 */
@@ -1026,7 +1026,7 @@ EXTERN int		Tcl_SetSystemEncoding _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name));
 /* 317 */
 EXTERN Tcl_Obj *	Tcl_SetVar2Ex _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, 
+				char * part1, CONST char * part2, 
 				Tcl_Obj * newValuePtr, int flags));
 /* 318 */
 EXTERN void		Tcl_ThreadAlert _ANSI_ARGS_((Tcl_ThreadId threadId));
@@ -1772,7 +1772,7 @@ typedef struct TclStubs {
     Tcl_Channel (*tcl_GetStdChannel) _ANSI_ARGS_((int type)); /* 173 */
     CONST char * (*tcl_GetStringResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 174 */
     CONST char * (*tcl_GetVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags)); /* 175 */
-    CONST char * (*tcl_GetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 176 */
+    CONST char * (*tcl_GetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags)); /* 176 */
     int (*tcl_GlobalEval) _ANSI_ARGS_((Tcl_Interp * interp, char * command)); /* 177 */
     int (*tcl_GlobalEvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 178 */
     int (*tcl_HideCommand) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * cmdName, CONST char * hiddenCmdToken)); /* 179 */
@@ -1850,7 +1850,7 @@ typedef struct TclStubs {
     void (*tcl_SetObjResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * resultObjPtr)); /* 235 */
     void (*tcl_SetStdChannel) _ANSI_ARGS_((Tcl_Channel channel, int type)); /* 236 */
     CONST char * (*tcl_SetVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, CONST char * newValue, int flags)); /* 237 */
-    CONST char * (*tcl_SetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, CONST char * newValue, int flags)); /* 238 */
+    CONST char * (*tcl_SetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, CONST char * newValue, int flags)); /* 238 */
     CONST char * (*tcl_SignalId) _ANSI_ARGS_((int sig)); /* 239 */
     CONST char * (*tcl_SignalMsg) _ANSI_ARGS_((int sig)); /* 240 */
     void (*tcl_SourceRCFile) _ANSI_ARGS_((Tcl_Interp * interp)); /* 241 */
@@ -1860,21 +1860,21 @@ typedef struct TclStubs {
     int (*tcl_StringMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern)); /* 245 */
     int (*tcl_TellOld) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
     int (*tcl_TraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 247 */
-    int (*tcl_TraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 248 */
+    int (*tcl_TraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 248 */
     char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_DString * bufferPtr)); /* 249 */
     int (*tcl_Ungets) _ANSI_ARGS_((Tcl_Channel chan, CONST char * str, int len, int atHead)); /* 250 */
     void (*tcl_UnlinkVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 251 */
     int (*tcl_UnregisterChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 252 */
     int (*tcl_UnsetVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags)); /* 253 */
-    int (*tcl_UnsetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 254 */
+    int (*tcl_UnsetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags)); /* 254 */
     void (*tcl_UntraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 255 */
-    void (*tcl_UntraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 256 */
+    void (*tcl_UntraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 256 */
     void (*tcl_UpdateLinkedVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 257 */
     int (*tcl_UpVar) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * frameName, char * varName, CONST char * localName, int flags)); /* 258 */
-    int (*tcl_UpVar2) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * frameName, char * part1, char * part2, CONST char * localName, int flags)); /* 259 */
+    int (*tcl_UpVar2) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * frameName, char * part1, CONST char * part2, CONST char * localName, int flags)); /* 259 */
     int (*tcl_VarEval) _ANSI_ARGS_(TCL_VARARGS(Tcl_Interp *,interp)); /* 260 */
     ClientData (*tcl_VarTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 261 */
-    ClientData (*tcl_VarTraceInfo2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 262 */
+    ClientData (*tcl_VarTraceInfo2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 262 */
     int (*tcl_Write) _ANSI_ARGS_((Tcl_Channel chan, CONST char * s, int slen)); /* 263 */
     void (*tcl_WrongNumArgs) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], CONST char * message)); /* 264 */
     int (*tcl_DumpActiveMemory) _ANSI_ARGS_((CONST char * fileName)); /* 265 */
@@ -1918,7 +1918,7 @@ typedef struct TclStubs {
     void (*tcl_GetEncodingNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 303 */
     int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST VOID * tablePtr, int offset, CONST char * msg, int flags, int * indexPtr)); /* 304 */
     VOID * (*tcl_GetThreadData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, int size)); /* 305 */
-    Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 306 */
+    Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags)); /* 306 */
     ClientData (*tcl_InitNotifier) _ANSI_ARGS_((void)); /* 307 */
     void (*tcl_MutexLock) _ANSI_ARGS_((Tcl_Mutex * mutexPtr)); /* 308 */
     void (*tcl_MutexUnlock) _ANSI_ARGS_((Tcl_Mutex * mutexPtr)); /* 309 */
@@ -1929,7 +1929,7 @@ typedef struct TclStubs {
     void (*tcl_RestoreResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 314 */
     void (*tcl_SaveResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 315 */
     int (*tcl_SetSystemEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 316 */
-    Tcl_Obj * (*tcl_SetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, Tcl_Obj * newValuePtr, int flags)); /* 317 */
+    Tcl_Obj * (*tcl_SetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, Tcl_Obj * newValuePtr, int flags)); /* 317 */
     void (*tcl_ThreadAlert) _ANSI_ARGS_((Tcl_ThreadId threadId)); /* 318 */
     void (*tcl_ThreadQueueEvent) _ANSI_ARGS_((Tcl_ThreadId threadId, Tcl_Event* evPtr, Tcl_QueuePosition position)); /* 319 */
     Tcl_UniChar (*tcl_UniCharAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 320 */

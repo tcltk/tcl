@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.29 2002/02/08 02:52:54 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.30 2002/03/20 22:47:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1879,7 +1879,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
     char *name1;		/* Name of variable. */
-    char *name2;		/* Second part of variable name. */
+    CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
     CONST char *value;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.12 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.13 2002/03/20 22:47:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ char **environ = NULL;
  */
 
 static char *		EnvTraceProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, char *name2,
+			    Tcl_Interp *interp, char *name1, CONST char *name2,
 			    int flags));
 static void		ReplaceString _ANSI_ARGS_((CONST char *oldStr,
 			    char *newStr));
@@ -506,7 +506,7 @@ EnvTraceProc(clientData, interp, name1, name2, flags)
     Tcl_Interp *interp;		/* Interpreter whose "env" variable is
 				 * being modified. */
     char *name1;		/* Better be "env". */
-    char *name2;		/* Name of variable being modified, or NULL
+    CONST char *name2;		/* Name of variable being modified, or NULL
 				 * if whole array is being deleted (UTF-8). */
     int flags;			/* Indicates what's happening. */
 {
