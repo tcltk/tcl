@@ -1,3 +1,11 @@
+2004-10-28  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclAlloc.c:	    Fixed [Tcl SF Bug 1030548], a
+	* generic/tclThreadAlloc.c: threaded debug build on Windows
+	* win/tclWinThrd.c:         now works again. Had to touch Unix
+	* unix/tclUnixThrd.c:       as well. Basic patch by Kevin, with
+	  modifications by myself.
+
 2004-10-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bumped patch level to 8.4.8 to prepare
