@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.3 2005/03/11 19:53:38 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.4 2005/03/13 13:57:34 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -200,7 +200,7 @@ typedef short TclHalfPSizedInt;
 #elif defined(__WIN64__)
 typedef Tcl_WideInt TclPSizedInt;
 typedef int TclHalfPSizedInt;
-#else
+#else /* start of NOT WIN */
 #if (SIZEOF_LONG <= SIZEOF_VOID_P)
 typedef long TclPSizedInt;
 #elif (SIZEOF_INT <= SIZEOF_VOID_P)
@@ -208,35 +208,49 @@ typedef int TclPSizedInt;
 #else
 typedef short TclPSizedInt;
 Should not happen (this text here to make the compiler barf)
-#endif
-
+#endif /* Define TclPSizedInt */
 #if (2*SIZEOF_LONG <= SIZEOF_VOID_P)
 typedef long TclHalfPSizedInt;
 #elif (2*SIZEOF_INT <= SIZEOF_VOID_P)
 typedef int TclHalfPSizedInt;
-#elif (2*SIZEOF_SHORT <= SIZEOF_VOID_P)
-typedef short TclHalfPSizedInt;
 #else
-Need to fake it (this text here to make the compiler barf)
-#endif
+typedef short TclHalfPSizedInt;
+#endif /* Define TclHaldPSizedInt */
 #endif
     
 typedef union TclVMWord {
     void *p;
     TclPSizedInt  i;
-    union {
-	TclHalfPSizedInt i1;
-	TclHalfPSizedInt i2;
-    } two;
 } TclVMWord;
 
+/*
+ * Macros to stash/extract one signed and one unsigned half-length ints
+ * into/from a pointer-sized int.
+ */
+#define PINT_MAX (~(((TclPSizedInt)1)<<(8*sizeof(TclPSizedInt)-1)))
+#define PINT_MIN (-PINT_MAX -1)
+
+#define HP_SHIFT (4*sizeof(TclPSizedInt))
+#define HP_MASK  (PINT_MAX>>(HP_SHIFT-1))
+
+#define HPUINT_MAX HP_MASK
+#define HPINT_MAX  (HP_MASK>>1)
+#define HPINT_MIN  (-HPINT_MAX-1)
+
+#define HP_STASH(full, n, u) \
+    (full) = (((n) << HP_SHIFT) | (u))
+
+#define HP_EXTRACT(full, n, u)\
+    (n) = ((full) >> HP_SHIFT);\
+    (u) = ((full) &  HP_MASK)
+	
 /*
  * Structure defining the compilation environment. After compilation, fields
  * describing bytecode instructions are copied out into the more compact
  * ByteCode structure defined below.
  */
 
-#define COMPILEENV_INIT_CODE_BYTES    250
+#define COMPILEENV_INIT_CODE_WORDS    250
 #define COMPILEENV_INIT_NUM_OBJECTS    60
 #define COMPILEENV_INIT_EXCEPT_RANGES   5
 #define COMPILEENV_INIT_CMD_MAP_SIZE   40
@@ -311,7 +325,7 @@ typedef struct CompileEnv {
     int auxDataArrayEnd;	/* Index after last aux data array entry. */
     int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
 				 * auxDataArrayPtr points in heap else 0. */
-    TclVMWord staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
+    TclVMWord staticCodeSpace[COMPILEENV_INIT_CODE_WORDS];
 				/* Initial storage for code. */
     LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
 				/* Initial storage of LiteralEntry array. */
@@ -456,169 +470,171 @@ typedef struct ByteCode {
  * the array operatorStrings in tclExecute.c.
  */
 
-/* Opcodes 0 to 9 */
+/* Opcodes 0 to 7 */
 #define INST_DONE			0
-#define INST_PUSH			2
-#define INST_POP			3
-#define INST_DUP			4
-#define INST_CONCAT			5
-#define INST_INVOKE_STK		7
-#define INST_EVAL_STK			8
-#define INST_EXPR_STK			9
+#define INST_PUSH			1
+#define INST_POP			2
+#define INST_DUP			3
+#define INST_CONCAT			4
+#define INST_INVOKE_STK		        5
+#define INST_EVAL_STK			6
+#define INST_EXPR_STK			7
 
-/* Opcodes 10 to 23 */
-#define INST_LOAD_SCALAR		11
-#define INST_LOAD_SCALAR_STK		12
-#define INST_LOAD_ARRAY		14
-#define INST_LOAD_ARRAY_STK		15
-#define INST_LOAD_STK			16
-#define INST_STORE_SCALAR		18
-#define INST_STORE_SCALAR_STK		19
-#define INST_STORE_ARRAY		21
-#define INST_STORE_ARRAY_STK		22
-#define INST_STORE_STK			23
+/* Opcodes 8 to 17 */
+#define INST_LOAD_SCALAR		8
+#define INST_LOAD_SCALAR_STK		9
+#define INST_LOAD_ARRAY		        10
+#define INST_LOAD_ARRAY_STK		11
+#define INST_LOAD_STK			12
+#define INST_STORE_SCALAR		13
+#define INST_STORE_SCALAR_STK		14
+#define INST_STORE_ARRAY		15
+#define INST_STORE_ARRAY_STK		16
+#define INST_STORE_STK			17
 
-/* Opcodes 24 to 33 */
-#define INST_INCR_SCALAR		24
-#define INST_INCR_SCALAR_STK		25
-#define INST_INCR_ARRAY		26
-#define INST_INCR_ARRAY_STK		27
-#define INST_INCR_STK			28
-#define INST_INCR_SCALAR_IMM		29
-#define INST_INCR_SCALAR_STK_IMM	30
-#define INST_INCR_ARRAY_IMM		31
-#define INST_INCR_ARRAY_STK_IMM		32
-#define INST_INCR_STK_IMM		33
+/* Opcodes 18 to 27 */
+#define INST_INCR_SCALAR		18
+#define INST_INCR_SCALAR_STK		19
+#define INST_INCR_ARRAY		        20
+#define INST_INCR_ARRAY_STK		21
+#define INST_INCR_STK			22
+#define INST_INCR_SCALAR_IMM		23
+#define INST_INCR_SCALAR_STK_IMM	24
+#define INST_INCR_ARRAY_IMM		25
+#define INST_INCR_ARRAY_STK_IMM		26
+#define INST_INCR_STK_IMM		27
 
-/* Opcodes 34 to 39 */
-#define INST_JUMP			35
-#define INST_JUMP_TRUE			37
-#define INST_JUMP_FALSE		39
+/* Opcodes 28 to 30 */
+#define INST_JUMP			28
+#define INST_JUMP_TRUE			29
+#define INST_JUMP_FALSE		        30
 
-/* Opcodes 40 to 64 */
-#define FIRST_OPERATOR_INST             40
-#define INST_BITOR			42
-#define INST_BITXOR			43
-#define INST_BITAND			44
-#define INST_EQ				45
-#define INST_NEQ			46
-#define INST_LT				47
-#define INST_GT				48
-#define INST_LE				49
-#define INST_GE				50
-#define INST_LSHIFT			51
-#define INST_RSHIFT			52
-#define INST_ADD			53
-#define INST_SUB			54
-#define INST_MULT			55
-#define INST_DIV			56
-#define INST_MOD			57
-#define INST_UPLUS			58
-#define INST_UMINUS			59
-#define INST_BITNOT			60
-#define INST_LNOT			61
-#define INST_CALL_BUILTIN_FUNC		62
-#define INST_CALL_FUNC			63
-#define INST_TRY_CVT_TO_NUMERIC		64
+/* Opcodes 31 to 53 */
+#define FIRST_OPERATOR_INST             31
+#define INST_BITOR			31
+#define INST_BITXOR			32
+#define INST_BITAND			33
+#define INST_EQ				34
+#define INST_NEQ			35
+#define INST_LT				36
+#define INST_GT				37
+#define INST_LE				38
+#define INST_GE				39
+#define INST_LSHIFT			40
+#define INST_RSHIFT			41
+#define INST_ADD			42
+#define INST_SUB			43
+#define INST_MULT			44
+#define INST_DIV			45
+#define INST_MOD			46
+#define INST_UPLUS			47
+#define INST_UMINUS			48
+#define INST_BITNOT			49
+#define INST_LNOT			50
+#define INST_CALL_BUILTIN_FUNC		51
+#define INST_CALL_FUNC			52
+#define INST_TRY_CVT_TO_NUMERIC		53
 
-/* Opcodes 65 to 66 */
-#define INST_BREAK			65
-#define INST_CONTINUE			66
+/* Opcodes 54 to 55 */
+#define INST_BREAK			54
+#define INST_CONTINUE			55
 
-/* Opcodes 67 to 68 */
-#define INST_FOREACH_START		67
-#define INST_FOREACH_STEP		68
+/* Opcodes 56 to 57 */
+#define INST_FOREACH_START		56
+#define INST_FOREACH_STEP		57
 
-/* Opcodes 69 to 72 */
-#define INST_BEGIN_CATCH		69
-#define INST_END_CATCH			70
-#define INST_PUSH_RESULT		71
-#define INST_PUSH_RETURN_CODE		72
+/* Opcodes 58 to 61 */
+#define INST_BEGIN_CATCH		58
+#define INST_END_CATCH			59
+#define INST_PUSH_RESULT		60
+#define INST_PUSH_RETURN_CODE		61
 
-/* Opcodes 73 to 78 */
-#define INST_STR_EQ			73
-#define INST_STR_NEQ			74
-#define INST_STR_CMP			75
-#define INST_STR_LEN			76
-#define INST_STR_INDEX			77
-#define INST_STR_MATCH			78
+/* Opcodes 62 to 67 */
+#define INST_STR_EQ			62
+#define INST_STR_NEQ			63
+#define INST_STR_CMP			64
+#define INST_STR_LEN			65
+#define INST_STR_INDEX			66
+#define INST_STR_MATCH			67
 
-/* Opcodes 78 to 81 */
-#define INST_LIST			79
-#define INST_LIST_INDEX			80
-#define INST_LIST_LENGTH		81
+/* Opcodes 68 to 70 */
+#define INST_LIST			68
+#define INST_LIST_INDEX			69
+#define INST_LIST_LENGTH		70
 
-/* Opcodes 82 to 87 */
-#define INST_APPEND_SCALAR		83
-#define INST_APPEND_ARRAY		85
-#define INST_APPEND_ARRAY_STK		86
-#define INST_APPEND_STK			87
+/* Opcodes 71 to 74 */
+#define INST_APPEND_SCALAR		71
+#define INST_APPEND_ARRAY		72
+#define INST_APPEND_ARRAY_STK		73
+#define INST_APPEND_STK			74
 
-/* Opcodes 88 to 93 */
-#define INST_LAPPEND_SCALAR		89
-#define INST_LAPPEND_ARRAY		91
-#define INST_LAPPEND_ARRAY_STK		92
-#define INST_LAPPEND_STK		93
+/* Opcodes 75 to 78 */
+#define INST_LAPPEND_SCALAR		75
+#define INST_LAPPEND_ARRAY		76
+#define INST_LAPPEND_ARRAY_STK		77
+#define INST_LAPPEND_STK		78
 
 /* TIP #22 - LINDEX operator with flat arg list */
 
-#define INST_LIST_INDEX_MULTI		94
+#define INST_LIST_INDEX_MULTI		79
 
 /*
  * TIP #33 - 'lset' command.  Code gen also required a Forth-like
  *	     OVER operation.
  */
 
-#define INST_OVER			95
-#define INST_LSET_LIST			96
-#define INST_LSET_FLAT			97
+#define INST_OVER			80
+#define INST_LSET_LIST			81
+#define INST_LSET_FLAT			82
 
 /* TIP#90 - 'return' command. */
 
-#define INST_RETURN			98
+#define INST_RETURN			83
 
 /* TIP#123 - exponentiation operator. */
 
-#define INST_EXPON			99
+#define INST_EXPON			84
 
 /* TIP #157 - {expand}... language syntax support. */
 
-#define INST_EXPAND_START             100
-#define INST_EXPAND_STKTOP            101
-#define INST_INVOKE_EXPANDED          102
+#define INST_EXPAND_START               85
+#define INST_EXPAND_STKTOP              86
+#define INST_INVOKE_EXPANDED            87
 
 /*
  * TIP #57 - 'lassign' command.  Code generation requires immediate
  *	     LINDEX and LRANGE operators.
  */
 
-#define INST_LIST_INDEX_IMM		103
-#define INST_LIST_RANGE_IMM		104
+#define INST_LIST_INDEX_IMM		88
+#define INST_LIST_RANGE_IMM		89
 
-#define INST_START_CMD                  105
+#define INST_START_CMD                  90
 
-#define INST_LIST_IN			106
-#define INST_LIST_NOT_IN		107
+#define INST_LIST_IN			91
+#define INST_LIST_NOT_IN		92
 
 /* The last opcode */
-#define LAST_INST_OPCODE		107
+#define LAST_INST_OPCODE		92
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
- * displaying code), total number of code bytes required (including
- * operand bytes), and a description of the type of each operand.
- * These operand types include signed and unsigned integers of length
- * one and four bytes. The unsigned integers are used for indexes or
+ * displaying code), their stack effect, the number and type of operands. 
+ * These operand types include signed and unsigned integers (the length is
+ * determined by the quantity of operands: TclPSizedInt if it is one operand,
+ * half that if there are two). The unsigned integers are used for indexes or
  * for, e.g., the count of objects to push in a "push" instruction.
+ * Note that every instruction+operands is emitted taking 2*sizeof(void *)
+ * bytes, even if it has no operands, in order to simplify the optimizer's
+ * algorithm. The optimizer may later choose to eliminate those redundant
+ * words (assuming the executor is prepared for that).
  */
 
 #define MAX_INSTRUCTION_OPERANDS 2
 
 typedef enum InstOperandType {
     OPERAND_NONE,
-    OPERAND_INT1,		/* One byte signed integer. */
     OPERAND_INT,		/* Four byte signed integer. */
-    OPERAND_UINT1,		/* One byte unsigned integer. */
     OPERAND_UINT,		/* Four byte unsigned integer. */
     OPERAND_IDX		        /* Four byte signed index (actually an
 				 * integer, but displayed differently.) */
@@ -626,7 +642,6 @@ typedef enum InstOperandType {
 
 typedef struct InstructionDesc {
     char *name;			/* Name of instruction. */
-    int numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the 
 				 * instruction, used for stack requirements 
 				 * computations. The value INT_MIN signals
@@ -934,79 +949,75 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     {\
 	int delta = tclInstructionTable[(op)].stackEffect;\
 	if (delta) {\
-	    if (delta == INT_MIN) {\
+	    if (delta == PINT_MIN) {\
 		delta = 1 - (i);\
 	    }\
             TclAdjustStackDepth(delta, envPtr);\
         }\
     }
 
+	
 /*
- * Macro to emit an opcode byte into a CompileEnv's code array.
- * The ANSI C "prototype" for this macro is:
- *
- * MODULE_SCOPE void	TclEmitOpcode _ANSI_ARGS_((unsigned char op,
- *		    CompileEnv *envPtr));
+ * Macros to emit an instruction with integer operands.
  */
 
-#define TclEmitOpcode(op, envPtr) \
-    if ((envPtr)->codeNext == (envPtr)->codeEnd) \
-	TclExpandCodeArray(envPtr); \
-    (*(envPtr)->codeNext++).i = (unsigned int) (op);\
-    TclUpdateStackReqs(op, 0, envPtr)
-
-/*
- * Macros to emit an integer operand.
- * The ANSI C "prototype" for these macros are:
- *
- * MODULE_SCOPE void	TclEmitInt _ANSI_ARGS_((int i, CompileEnv *envPtr));
- */
-
-#define TclEmitInt(n, envPtr) \
-    if (((envPtr)->codeNext) == (envPtr)->codeEnd) { \
-	TclExpandCodeArray(envPtr); \
-    } \
-    (*(envPtr)->codeNext++).i = (int) (n)
-
-/*
- * Macros to emit an instruction with signed or unsigned integer operands.
- * Four byte integers are stored in "big-endian" order with the high order
- * byte stored at the lowest address.
- * The ANSI C "prototypes" for these macros are:
- *
- * MODULE_SCOPE void	TclEmitInstInt _ANSI_ARGS_((unsigned char op, int i, 
- *		    CompileEnv *envPtr));
- */
-
-
-#define TclEmitInstInt(op, n, envPtr) \
+#define TclEmitInst1(op, n, envPtr) \
     if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
     } \
     (*(envPtr)->codeNext++).i = (unsigned int) (op);\
     (*(envPtr)->codeNext++).i = (int) (n); \
-    TclUpdateStackReqs(op, n, envPtr)
+    TclUpdateStackReqs((op), (n), envPtr)
 
+#define TclEmitInst2(op, n, u, envPtr)\
+    {\
+        TclPSizedInt z;\
+        HP_STASH(z, (n), (u));\
+        TclEmitInst1((op), z, envPtr);\
+    }
+
+#define  TclEmitInst0(op, envPtr) \
+    TclEmitInst1((op), 0, envPtr) 
 
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
- * object's one or four byte array index into the CompileEnv's code
- * array. These support, respectively, a maximum of 256 (2**8) and 2**32
- * objects in a CompileEnv. The ANSI C "prototype" for this macro is:
- *
- * MODULE_SCOPE void	TclEmitPush _ANSI_ARGS_((int objIndex, CompileEnv *envPtr));
+ * object's array index into the CompileEnv's code array. 
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    TclEmitInstInt(INST_PUSH, (objIndex), (envPtr))
+    TclEmitInst1(INST_PUSH, (objIndex), (envPtr))
+
+/*
+ * Compilation of some Tcl constructs such as if commands and the logical or
+ * (||) and logical and (&&) operators in expressions requires the
+ * generation of forward jumps. Since the PC target of these jumps isn't
+ * known when the jumps are emitted, we record the offset of each jump with
+ * the macro TclEmitForwardJump. When we learn the target PC, we update the
+ * jumps with the correct distance using the macro TclSetJumpTarget.
+ */
 
 #define TclStoreIntAtWPtr(n, p) \
-    (*(p)).i = (int) (n)
+    (*(p)).i = (TclPSizedInt) (n)
 
-#define TclGetIntAtWPtr(p)  (*(p)).i
+#define TclEmitForwardJump(envPtr, inst, fixOffset) \
+   (fixOffset) = (envPtr->codeNext - envPtr->codeStart);\
+   TclEmitInst0((inst), (envPtr))
 
-#define TclGetUIntAtWPtr(p)  ((unsigned) (*(p)).i)
+#define TclSetJumpTarget(envPtr, fixOffset) \
+{\
+    ptrdiff_t jumpDist =\
+        (envPtr->codeNext - envPtr->codeStart) - (fixOffset);\
+    TclVMWord *fixPc = envPtr->codeStart + fixOffset + 1;\
+    TclStoreIntAtWPtr(jumpDist, fixPc);\
+}
 
+/*
+ * Macro to extract the (instruction, operand) froma given address
+ */
+
+#define TclGetInstAndOpAtPtr(pc, inst, op) \
+    (inst) = (*(pc)).i;\
+    (op) = (*(pc+1)).i
 
 /*
  * Macros to update a (signed or unsigned) integer starting at a pointer.
@@ -1084,25 +1095,5 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 #define TclMin(i, j)   ((((int) i) < ((int) j))? (i) : (j))
 #define TclMax(i, j)   ((((int) i) > ((int) j))? (i) : (j))
 
-/*
- * Compilation of some Tcl constructs such as if commands and the logical or
- * (||) and logical and (&&) operators in expressions requires the
- * generation of forward jumps. Since the PC target of these jumps isn't
- * known when the jumps are emitted, we record the offset of each jump with
- * the macro TclEmitForwardJump. When we learn the target PC, we update the
- * jumps with the correct distance using the macro TclSetJumpTarget.
- */
-
-#define TclEmitForwardJump(envPtr, inst, fixOffset) \
-   (fixOffset) = (envPtr->codeNext - envPtr->codeStart);\
-   TclEmitInstInt((inst), 0, (envPtr))
-
-#define TclSetJumpTarget(envPtr, fixOffset) \
-{\
-    ptrdiff_t jumpDist =\
-        (envPtr->codeNext - envPtr->codeStart) - (fixOffset);\
-    TclVMWord *fixPc = envPtr->codeStart + fixOffset + 1;\
-    TclStoreIntAtWPtr(jumpDist, fixPc);\
-}
 
 #endif /* _TCLCOMPILATION */

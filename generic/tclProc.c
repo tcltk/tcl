@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.73 2005/02/02 23:09:06 mdejong Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.73.2.1 2005/03/13 13:57:44 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1839,7 +1839,7 @@ TclCompileNoOp(interp, parsePtr, envPtr)
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) { 
 	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
 		    envPtr);
-	    TclEmitOpcode(INST_POP, envPtr);
+	    TclEmitInst0(INST_POP, envPtr);
 	} 
     }
     envPtr->currStackDepth = savedStackDepth;
