@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.82 2001/09/07 02:43:12 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83 2001/09/10 00:33:09 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -472,7 +472,7 @@ shell: tclsh
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./tclsh ${SCRIPT}
+	./tclsh $(SCRIPT)
 
 # The following target outputs the name of the top-level source directory
 # for Tcl (it is used by Tk's configure script, for example).  The
