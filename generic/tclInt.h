@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.50 2000/08/25 02:04:29 ericm Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.50.2.1 2001/04/11 12:31:57 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -504,6 +504,10 @@ typedef struct Var {
 #define TclClearVarUndefined(varPtr) \
     (varPtr)->flags &= ~VAR_UNDEFINED
 
+/* A slighly faster combination for (SetVarScalar/ClearVarUndefined) */
+#define TclSetVarScalarDefined(varPtr) \
+        ((varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK|VAR_UNDEFINED)) | VAR_SCALAR)
+
 /*
  * Macros to read various flag bits of variables.
  * The ANSI C "prototypes" for these macros are:
@@ -541,6 +545,20 @@ typedef struct Var {
     
 #define TclIsVarResolved(varPtr) \
     ((varPtr)->flags & VAR_RESOLVED)
+
+/* A slighly faster combination for 
+ * (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) 
+ *  (1) XOR (^) reverses the VAR_UNDEFINED bit
+ *  (2) AND (&) keeps both bits and zeroes everything else
+ *  (3) == looks if both bits are set
+ * This is 3 ops instead of 4, single register instead of two
+ */
+#define _CONTAINS_(A,B) (((A) & (B)) == (B))
+#define TclIsVarScalarDefined(varPtr) \
+      _CONTAINS_(((varPtr)->flags ^ VAR_UNDEFINED), (VAR_UNDEFINED | VAR_SCALAR)) 
+#define TclIsVarArrayDefined(varPtr) \
+      _CONTAINS_(((varPtr)->flags ^ VAR_UNDEFINED), (VAR_UNDEFINED | VAR_ARRAY)) 
+
 
 /*
  *----------------------------------------------------------------
@@ -878,9 +896,9 @@ typedef int (CompileHookProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef struct ExecEnv {
     Tcl_Obj **stackPtr;		/* Points to the first item in the
 				 * evaluation stack on the heap. */
-    int stackTop;		/* Index of current top of stack; -1 when
-				 * the stack is empty. */
-    int stackEnd;		/* Index of last usable item in stack. */
+    Tcl_Obj **tosPtr;		/* Pointer to  current top of stack;
+				 *(stackPtr-1) when stack is empty */
+    Tcl_Obj **stackEndPtr;	/* Pointer to last usable item in stack. */
 } ExecEnv;
 
 /*
