@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.3 1999/04/16 00:46:43 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.4 1999/05/04 01:33:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -806,16 +806,22 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     char *string1, *string2;
     int length1, length2;
     static char *options[] = {
-	"compare",	"first",	"index",	"last",
-	"length",	"match",	"range",	"tolower",
-	"toupper",	"totitle",	"trim",		"trimleft",
-	"trimright",	"wordend",	"wordstart",	(char *) NULL
+	"bytes",	"compare",	"equal",	"first",
+	"icompare",	"iequal",	"index",
+	"last",		"length",	"map",
+	"match",	"range",	"repeat",	"replace",
+	"tolower",	"toupper",	"totitle",
+	"trim",		"trimleft",	"trimright",
+	"wordend",	"wordstart",	(char *) NULL
     };
     enum options {
-	STR_COMPARE,	STR_FIRST,	STR_INDEX,	STR_LAST,
-	STR_LENGTH,	STR_MATCH,	STR_RANGE,	STR_TOLOWER,
-	STR_TOUPPER,	STR_TOTITLE,	STR_TRIM,	STR_TRIMLEFT,
-	STR_TRIMRIGHT,	STR_WORDEND,	STR_WORDSTART
+	STR_BYTES,	STR_COMPARE,	STR_EQUAL,	STR_FIRST,
+	STR_ICOMPARE,	STR_IEQUAL,	STR_INDEX,
+	STR_LAST,	STR_LENGTH,	STR_MAP,
+	STR_MATCH,	STR_RANGE,	STR_REPEAT,	STR_REPLACE,
+	STR_TOLOWER,	STR_TOUPPER,	STR_TOTITLE,
+	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
+	STR_WORDEND,	STR_WORDSTART
     };	  
 	    
     if (objc < 2) {
@@ -830,11 +836,16 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
     resultPtr = Tcl_GetObjResult(interp);
     switch ((enum options) index) {
+	case STR_EQUAL:
 	case STR_COMPARE: {
-	    int match, length;
+	    int match, length, reqlength = -1;
 
-	    if (objc != 4) {
-	        Tcl_WrongNumArgs(interp, 2, objv, "string1 string2");
+	    if (!(objc == 4 || objc == 5)) {
+	        Tcl_WrongNumArgs(interp, 2, objv, "string1 string2 ?length?");
+		return TCL_ERROR;
+	    }
+	    if ((objc == 5) &&
+		Tcl_GetIntFromObj(interp, objv[4], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 
@@ -842,11 +853,83 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    string2 = Tcl_GetStringFromObj(objv[3], &length2);
 
 	    length = (length1 < length2) ? length1 : length2;
-	    match = memcmp(string1, string2, (unsigned) length);
-	    if (match == 0) {
-	        match = length1 - length2;
+	    if ((reqlength >= 0) && (reqlength < length)) {
+		Tcl_UniChar ch1, ch2;
+
+		/*
+		 * reqlength must be interpreted as chars, not bytes
+		 * we will only enter here when both strings are of
+		 * at least reqlength chars long (no need for \0 check)
+		 */
+		match = 0;
+		while (reqlength-- > 0) {
+		    string1 += Tcl_UtfToUniChar(string1, &ch1);
+		    string2 += Tcl_UtfToUniChar(string2, &ch2);
+		    if (ch1 != ch2) {
+			match = ch1 - ch2;
+			break;
+		    }
+		}
+	    } else {
+		match = memcmp(string1, string2, (unsigned) length);
+		if (match == 0) {
+		    match = length1 - length2;
+		}
 	    }
-	    Tcl_SetIntObj(resultPtr, (match > 0) ? 1 : (match < 0) ? -1 : 0);
+	    if ((enum options) index == STR_EQUAL) {
+		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
+	    } else {
+		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
+					  (match < 0) ? -1 : 0));
+	    }
+	    break;
+	}
+	case STR_IEQUAL:
+	case STR_ICOMPARE: {
+	    int match, length, reqlength = -1;
+	    Tcl_UniChar ch1, ch2;
+
+	    if (objc < 4 || objc > 5) {
+	        Tcl_WrongNumArgs(interp, 2, objv, "string1 string2 ?length?");
+		return TCL_ERROR;
+	    }
+	    if ((objc == 5) &&
+		Tcl_GetIntFromObj(interp, objv[4], &reqlength) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+
+	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	    string2 = Tcl_GetStringFromObj(objv[3], &length2);
+
+	    length = (length1 < length2) ? length1 : length2;
+	    if ((reqlength >= 0) && (reqlength < length)) {
+		length = reqlength;
+	    }
+	    /*
+	     * length must be interpreted as chars, not bytes
+	     * we will only enter here when both strings are of
+	     * at least length chars long (no need for \0 check)
+	     */
+	    match = 0;
+	    while (length-- > 0) {
+		string1 += Tcl_UtfToUniChar(string1, &ch1);
+		string2 += Tcl_UtfToUniChar(string2, &ch2);
+		if ((ch1 != ch2) &&
+		    (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2))) {
+		    match = ch1 - ch2;
+		    break;
+		}
+	    }
+	    if ((match == 0) && (reqlength >= length)) {
+		match = length1 - length2;
+	    }
+
+	    if ((enum options) index == STR_IEQUAL) {
+		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
+	    } else {
+		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
+					  (match < 0) ? -1 : 0));
+	    }
 	    break;
 	}
 	case STR_FIRST: {
@@ -897,29 +980,25 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	}
 	case STR_INDEX: {
 	    int index;
-	    Tcl_UniChar ch;
 	    char buf[TCL_UTF_MAX];
-	    char *start, *end;
 
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "string charIndex");
 		return TCL_ERROR;
 	    }
-
-	    if (Tcl_GetIntFromObj(interp, objv[3], &index) != TCL_OK) {
-		return TCL_ERROR;
+	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	    /*
+	     * establish what 'end' really means
+	     */
+	    length2 = Tcl_NumUtfChars(string1, length1) - 1;
+	    if (TclGetIntForIndex(interp, objv[3], length2,
+				  &index) != TCL_OK) {
+	      return TCL_ERROR;
 	    }
-	    if (index >= 0) {
-		start = Tcl_GetStringFromObj(objv[2], &length1);
-		end = start + length1;
-		for ( ; start < end; index--) {
-		    start += Tcl_UtfToUniChar(start, &ch);
-		    if (index == 0) {
-			Tcl_SetStringObj(resultPtr, buf,
-				Tcl_UniCharToUtf(ch, buf));
-			break;
-		    }
-		}
+	    if ((index >= 0) && (index < length1)) {
+		length2 = Tcl_UniCharToUtf(Tcl_UniCharAtIndex(string1,
+							      index), buf);
+		Tcl_SetStringObj(resultPtr, buf, length2);
 	    }
 	    break;
 	}
@@ -965,6 +1044,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetIntObj(resultPtr, match);
 	    break;
 	}
+	case STR_BYTES:
 	case STR_LENGTH: {
 	    if (objc != 3) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "string");
@@ -972,7 +1052,70 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    Tcl_SetIntObj(resultPtr, Tcl_NumUtfChars(string1, length1));
+	    if ((enum options) index == STR_BYTES) {
+		Tcl_SetIntObj(resultPtr, length1);
+	    } else {
+		Tcl_SetIntObj(resultPtr, Tcl_NumUtfChars(string1, length1));
+	    }
+	    break;
+	}
+	case STR_MAP: {
+	    int mapElemc, len;
+	    Tcl_Obj **mapElemv;
+	    char *end;
+	    Tcl_UniChar ch;
+
+	    if (objc != 4) {
+	        Tcl_WrongNumArgs(interp, 2, objv, "charMap string");
+		return TCL_ERROR;
+	    }
+
+	    if (Tcl_ListObjGetElements(interp, objv[objc-2], &mapElemc,
+				       &mapElemv) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (mapElemc & 1) {
+		/*
+		 * The charMap must be an even number of key/value items
+		 */
+		Tcl_SetStringObj(resultPtr, "char map list unbalanced", -1);
+		return TCL_ERROR;
+	    }
+	    string1 = Tcl_GetStringFromObj(objv[objc-1], &length1);
+	    if (length1 == 0) {
+		break;
+	    }
+	    end = string1 + length1;
+
+	    for ( ; string1 < end; string1 += len) {
+		len = Tcl_UtfToUniChar(string1, &ch);
+		for (index = 0; index < mapElemc; index +=2) {
+		    /*
+		     * Get the key string to match on
+		     */
+		    string2 = Tcl_GetStringFromObj(mapElemv[index], &length2);
+		    if ((*string2 == *string1) &&
+			(memcmp(string2, string1, length2) == 0)) {
+			/*
+			 * Adjust len to be full length of matched string
+			 */
+			len = length2;
+			/*
+			 * Change string2 and length2 to the replacement value
+			 */
+			string2 = Tcl_GetStringFromObj(mapElemv[index+1],
+						       &length2);
+			Tcl_AppendToObj(resultPtr, string2, length2);
+			break;
+		    }
+		}
+		if (index == mapElemc) {
+		    /*
+		     * No match was found, put the char onto result
+		     */
+		    Tcl_AppendToObj(resultPtr, string1, len);
+		}
+	    }
 	    break;
 	}
 	case STR_MATCH: {
@@ -1019,32 +1162,133 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    break;
 	}
+	case STR_REPEAT: {
+	    int count;
+
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "string count");
+		return TCL_ERROR;
+	    }
+
+	    if (Tcl_GetIntFromObj(interp, objv[3], &count) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+
+	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	    if (length1 > 0) {
+		for (index = 0; index < count; index++) {
+		    Tcl_AppendToObj(resultPtr, string1, length1);
+		}
+	    }
+	    break;
+	}
+	case STR_REPLACE: {
+	    int first, last;
+
+	    if (!(objc == 5 || objc == 6)) {
+	        Tcl_WrongNumArgs(interp, 2, objv, "string first last ?string?");
+		return TCL_ERROR;
+	    }
+
+	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	    length1 = Tcl_NumUtfChars(string1, length1) - 1;
+	    if (TclGetIntForIndex(interp, objv[3], length1,
+				  &first) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (TclGetIntForIndex(interp, objv[4], length1,
+		    &last) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((last < first) || (first > length1) || (last < 0)) {
+		Tcl_SetObjResult(interp, objv[2]);
+	    } else {
+		char *start, *end;
+
+		if (first < 0) {
+		    first = 0;
+		}
+		start = Tcl_UtfAtIndex(string1, first);
+		end = Tcl_UtfAtIndex(start, ((last > length1) ? length1 : last)
+				     - first + 1);
+	        Tcl_SetStringObj(resultPtr, string1, start - string1);
+		if (objc == 6) {
+		    Tcl_AppendObjToObj(resultPtr, objv[5]);
+		}
+		if (last < length1) {
+		    Tcl_AppendToObj(resultPtr, end, -1);
+		}
+	    }
+	    break;
+	}
 	case STR_TOLOWER:
 	case STR_TOUPPER:
 	case STR_TOTITLE:
-	    if (objc != 3) {
-	        Tcl_WrongNumArgs(interp, 2, objv, "string");
+	    if (objc < 3 || objc > 5) {
+	        Tcl_WrongNumArgs(interp, 2, objv, "string ?first? ?last?");
 		return TCL_ERROR;
 	    }
 
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
 
-	    /*
-	     * Since the result object is not a shared object, it is
-	     * safe to copy the string into the result and do the
-	     * conversion in place.  The conversion may change the length
-	     * of the string, so reset the length after conversion.
-	     */
+	    if (objc == 3) {
+		/*
+	       * Since the result object is not a shared object, it is
+	       * safe to copy the string into the result and do the
+	       * conversion in place.  The conversion may change the length
+	       * of the string, so reset the length after conversion.
+	       */
 
-	    Tcl_SetStringObj(resultPtr, string1, length1);
-	    if ((enum options) index == STR_TOLOWER) {
-		length1 = Tcl_UtfToLower(Tcl_GetStringFromObj(resultPtr, NULL));
-	    } else if ((enum options) index == STR_TOUPPER) {
-		length1 = Tcl_UtfToUpper(Tcl_GetStringFromObj(resultPtr, NULL));
+		Tcl_SetStringObj(resultPtr, string1, length1);
+		if ((enum options) index == STR_TOLOWER) {
+		    length1 = Tcl_UtfToLower(Tcl_GetStringFromObj(resultPtr, NULL));
+		} else if ((enum options) index == STR_TOUPPER) {
+		    length1 = Tcl_UtfToUpper(Tcl_GetStringFromObj(resultPtr, NULL));
+		} else {
+		    length1 = Tcl_UtfToTitle(Tcl_GetStringFromObj(resultPtr, NULL));
+		}
+		Tcl_SetObjLength(resultPtr, length1);
 	    } else {
-		length1 = Tcl_UtfToTitle(Tcl_GetStringFromObj(resultPtr, NULL));
+		int first, last;
+		char *start, *end;
+
+		length1 = Tcl_NumUtfChars(string1, length1) - 1;
+		if (TclGetIntForIndex(interp, objv[3], length1,
+				      &first) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (first < 0) {
+		    first = 0;
+		}
+		last = first;
+		if ((objc == 5) && (TclGetIntForIndex(interp, objv[4], length1,
+						      &last) != TCL_OK)) {
+		    return TCL_ERROR;
+		}
+		if (last >= length1) {
+		    last = length1;
+		}
+		if (last < first) {
+		    Tcl_SetObjResult(interp, objv[2]);
+		    break;
+		}
+		start = Tcl_UtfAtIndex(string1, first);
+		end = Tcl_UtfAtIndex(start, last - first + 1);
+		length2 = end-start;
+		string2 = ckalloc(length2+1);
+		memcpy(string2, start, length2);
+		string2[length2] = '\0';
+		if ((enum options) index == STR_TOLOWER) {
+		    length2 = Tcl_UtfToLower(string2);
+		} else if ((enum options) index == STR_TOUPPER) {
+		    length2 = Tcl_UtfToUpper(string2);
+		} else {
+		    length2 = Tcl_UtfToTitle(string2);
+		}
+		Tcl_SetStringObj(resultPtr, string1, start - string1);
+		Tcl_AppendToObj(resultPtr, string2, length2);
+		Tcl_AppendToObj(resultPtr, end, -1);
 	    }
-	    Tcl_SetObjLength(resultPtr, length1);
 	    break;
 
 	case STR_TRIM: {
@@ -1147,13 +1391,14 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    if (Tcl_GetIntFromObj(interp, objv[3], &index) != TCL_OK) {
-	        return TCL_ERROR;
+	    numChars = Tcl_NumUtfChars(string1, length1);
+	    if (TclGetIntForIndex(interp, objv[3], numChars-1,
+				  &index) != TCL_OK) {
+		return TCL_ERROR;
 	    }
 	    if (index < 0) {
 		index = 0;
 	    }
-	    numChars = Tcl_NumUtfChars(string1, length1);
 	    if (index < numChars) {
 		p = Tcl_UtfAtIndex(string1, index);
 		end = string1+length1;
@@ -1184,10 +1429,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    if (Tcl_GetIntFromObj(interp, objv[3], &index) != TCL_OK) {
+	    numChars = Tcl_NumUtfChars(string1, length1);
+	    if (TclGetIntForIndex(interp, objv[3], numChars-1,
+				  &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    numChars = Tcl_NumUtfChars(string1, length1);
 	    if (index >= numChars) {
 		index = numChars - 1;
 	    }

@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.3 1999/04/16 00:46:36 stanton Exp $
+'\" RCS: @(#) $Id: string.n,v 1.4 1999/05/04 01:33:10 stanton Exp $
 '\" 
 .so man.macros
-.TH string n 7.6 Tcl "Tcl Built-In Commands"
+.TH string n 8.1 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -21,12 +21,23 @@ string \- Manipulate strings
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
+.VS 8.1
 .TP
-\fBstring compare \fIstring1 string2\fR
+\fBstring compare \fIstring1 string2\fR ?\fIlength\fR?
+.VE 8.1
 Perform a character-by-character comparison of strings \fIstring1\fR and
 \fIstring2\fR in the same way as the C \fBstrcmp\fR procedure.  Return
 \-1, 0, or 1, depending on whether \fIstring1\fR is lexicographically
 less than, equal to, or greater than \fIstring2\fR.
+.VS 8.1
+If \fIlength\fR is
+specified, it works like C \fBstrncmp\fR, comparing only to the
+specified length.  If \fIlength\fR is negative, it is ignored.
+.TP
+\fBstring equal \fIstring1 string2\fR ?\fIlength\fR?
+.VE 8.1
+Like the \fBcompare\fR method, but returns 1 when the strings
+are equal, or 0 when not.
 .TP
 \fBstring first \fIstring1 string2\fR
 Search \fIstring2\fR for a sequence of characters that exactly match
@@ -34,10 +45,38 @@ the characters in \fIstring1\fR.  If found, return the index of the
 first character in the first such match within \fIstring2\fR.  If not
 found, return \-1.
 .TP
+\fBstring icompare \fIstring1 string2\fR ?\fIlength\fR?
+Perform a case-insensitive character-by-character comparison of strings
+\fIstring1\fR and
+\fIstring2\fR in the same way as the C \fBstrcasecmp\fR procedure.  Return
+\-1, 0, or 1, depending on whether \fIstring1\fR is lexicographically
+less than, equal to, or greater than \fIstring2\fR.  If length is
+specified, it works like C \fBstrncasecmp\fR, comparing only to the
+specified length.
+.TP
+\fBstring iequal \fIstring1 string2\fR ?\fIlength\fR?
+Like the \fBicompare\fR method, but returns 1 when the strings
+are equal, or 0 when not.
+.TP
 \fBstring index \fIstring charIndex\fR
 Returns the \fIcharIndex\fR'th character of the \fIstring\fR
 argument.  A \fIcharIndex\fR of 0 corresponds to the first
-character of the string.
+character of the string.  
+.VS 8.1
+\fIcharIndex\fR may be specified as
+follows:
+.RS
+.IP \fB[\fInumber\fB]\fR 10
+The char specified at this numerical index
+.IP \fBend\fR 10
+The last char of the string.
+.IP \fBexpression\fR 10
+A Tcl expression that returns a number.
+.IP \fBend[+-]expression\fR 10
+The last char of the string plus or minus the number specified
+in the expression (ie: end-1).
+.RE
+.VE 8.1
 If \fIcharIndex\fR is less than 0 or greater than
 or equal to the length of the string then an empty string is
 returned.
@@ -50,6 +89,25 @@ is no match, then return \-1.
 .TP
 \fBstring length \fIstring\fR
 Returns a decimal string giving the number of characters in \fIstring\fR.
+.VS 8.1
+.TP
+\fBstring map ?\fIoptions\fR? \fIcharMap string\fR
+Replaces characters in \fIstring\fR based on the key-value pairs in
+\fIcharMap\fR.  \fIcharMap\fR is a list of key value key value ... as
+in the form returned by \fBarray get\fR.  Each instance of a key in
+the string will be replace with its corresponding value.  Both key and
+value may be multiple characters.  This is done
+in an ordered manner, so the key appearing first in the list will be
+checked first, and so on.  \fIstring\fR is only iterated over once,
+so earlier key replacements will have no affect for later key matches.
+For example,
+.RS
+.CS
+\fBstring map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc\fR
+.CE
+will return the string \fB01321221\fR.
+.RE
+.VE 8.1
 .TP
 \fBstring match \fIpattern\fR \fIstring\fR
 See if \fIpattern\fR matches \fIstring\fR; return 1 if it does, 0
@@ -78,29 +136,58 @@ avoiding the special interpretation of the characters
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
 character whose index is \fIlast\fR. An index of 0 refers to the
-first character of the string.  
-An index of \fBend\fR (or any
-abbreviation of it) refers to the last character of the string.
+.VS 8.1
+first character of the string.  \fIfirst\fR and \fIlast\fR may be
+specified as for the \fBindex\fR method.
+.VE 8.1
 If \fIfirst\fR is less than zero then it is treated as if it were zero, and
 if \fIlast\fR is greater than or equal to the length of the string then
 it is treated as if it were \fBend\fR.  If \fIfirst\fR is greater than
 \fIlast\fR then an empty string is returned.
-.VS
+.VS 8.1
 .TP
-\fBstring tolower \fIstring\fR
-Returns a value equal to \fIstring\fR except that all upper (or title)
-case letters have been converted to lower case.
+\fBstring repeat \fIstring count\fR
+Returns \fIstring\fR repeated \fIcount\fR number of times.
 .TP
-\fBstring totitle \fIstring\fR
+\fBstring replace \fIstring last\fR ?\fIstring\fR?
+Removes a range of consecutive characters from \fIstring\fR, starting
+with the character whose index is \fIfirst\fR and ending with the
+character whose index is \fIlast\fR.  An index of 0 refers to the
+first character of the string.  \fIfirst\fR and \fIlast\fR may be
+specified as for the \fBindex\fR method.  If \fIstring\fR is
+specified, then it is placed in the removed character range.
+If \fIfirst\fR is less than zero then it is treated as if it were zero, and
+if \fIlast\fR is greater than or equal to the length of the string then
+it is treated as if it were \fBend\fR.  If \fIfirst\fR is greater than
+\fIlast\fR or the length of the initial string, or \fIlast\fR is less
+than 0, then the initial string is returned untouched.
+.TP
+\fBstring tolower \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
+Returns a value equal to \fIstring\fR except that all upper (or title) case
+letters have been converted to lower case.  If \fIfirst\fR is specified, it
+refers to the first char index in the string to start modifying.  If
+\fIlast\fR is specified, it refers to the char index in the string to stop
+at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+specified as for the \fBindex\fR method.
+.TP
+\fBstring totitle \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
 Returns a value equal to \fIstring\fR except that the first character
 in \fIstring\fR is converted to its Unicode title case variant (or upper
 case if there is no title case variant) and the rest of the string is
-converted to lower case.
+converted to lower case.  If \fIfirst\fR is specified, it
+refers to the first char index in the string to start modifying.  If
+\fIlast\fR is specified, it refers to the char index in the string to stop
+at (inclusive).  \fIfirst\fR and \fIlast\fR may be
+specified as for the \fBindex\fR method.
 .TP
-\fBstring toupper \fIstring\fR 
-Returns a value equal to \fIstring\fR except that all lower (or title)
-case letters have been converted to upper case.
-.VE
+\fBstring toupper \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
+Returns a value equal to \fIstring\fR except that all lower (or title) case
+letters have been converted to upper case.  If \fIfirst\fR is specified, it
+refers to the first char index in the string to start modifying.  If
+\fIlast\fR is specified, it refers to the char index in the string to stop
+at (inclusive).  \fIfirst\fR and \fIlast\fR may be specified as for the
+\fBindex\fR method.
+.VE 8.1
 .TP
 \fBstring trim \fIstring\fR ?\fIchars\fR?
 Returns a value equal to \fIstring\fR except that any leading
@@ -122,22 +209,24 @@ trailing characters from the set given by \fIchars\fR are
 removed.
 If \fIchars\fR is not specified then white space is removed
 (spaces, tabs, newlines, and carriage returns).
-.VS
+.VS 8.1
 .TP
-\fBstring wordend \fIstring index\fR
+\fBstring wordend \fIstring charIndex\fR
 Returns the index of the character just after the last one in the word
-containing character \fIindex\fR of \fIstring\fR.  A word is
+containing character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR
+may be specified as for the \fBindex\fR method.  A word is
 considered to be any contiguous range of alphanumeric (Unicode letters
 or decimal digits) or underscore (Unicode connector punctuation)
 characters, or any single character other than these.
 .TP
-\fBstring wordstart \fIstring index\fR
+\fBstring wordstart \fIstring charIndex\fR
 Returns the index of the first character in the word containing
-character \fIindex\fR of \fIstring\fR.  A word is considered to be any
+character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR may be
+specified as for the \fBindex\fR method.  A word is considered to be any
 contiguous range of alphanumeric (Unicode letters or decimal digits)
 or underscore (Unicode connector punctuation) characters, or any
 single character other than these.
-.VE
+.VE 8.1
 
 .SH KEYWORDS
 case conversion, compare, index, match, pattern, string, word
