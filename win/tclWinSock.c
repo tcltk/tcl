@@ -51,6 +51,9 @@ static struct {
     int (PASCAL FAR *listen)(SOCKET s, int backlog);
     u_short (PASCAL FAR *ntohs)(u_short netshort);
     int (PASCAL FAR *recv)(SOCKET s, char FAR * buf, int len, int flags);
+    int (PASCAL FAR *select)(int nfds, fd_set FAR * readfds,
+	    fd_set FAR * writefds, fd_set FAR * exceptfds,
+	    const struct timeval FAR * tiemout);
     int (PASCAL FAR *send)(SOCKET s, const char FAR * buf, int len, int flags);
     int (PASCAL FAR *setsockopt)(SOCKET s, int level, int optname,
 	    const char FAR * optval, int optlen);
@@ -297,6 +300,10 @@ InitSockets()
         GetProcAddress(winSock.hInstance, "ntohs");
     winSock.recv = (int (PASCAL FAR *)(SOCKET s, char FAR * buf,
             int len, int flags)) GetProcAddress(winSock.hInstance, "recv");
+    winSock.select = (int (PASCAL FAR *)(int nfds, fd_set FAR * readfds,
+	    fd_set FAR * writefds, fd_set FAR * exceptfds,
+	    const struct timeval FAR * tiemout))
+	GetProcAddress(winSock.hInstance, "select");
     winSock.send = (int (PASCAL FAR *)(SOCKET s, const char FAR * buf,
             int len, int flags)) GetProcAddress(winSock.hInstance, "send");
     winSock.setsockopt = (int (PASCAL FAR *)(SOCKET s, int level,
@@ -351,6 +358,7 @@ InitSockets()
             (winSock.listen == NULL) ||
             (winSock.ntohs == NULL) ||
             (winSock.recv == NULL) ||
+            (winSock.select == NULL) ||
             (winSock.send == NULL) ||
             (winSock.setsockopt == NULL) ||
             (winSock.socket == NULL) ||
@@ -606,8 +614,7 @@ SocketEventProc(evPtr, flags)
     SocketInfo *infoPtr;
     SocketEvent *eventPtr = (SocketEvent *) evPtr;
     int mask = 0;
-    u_long nBytes;
-    int status, events;
+    int events;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
@@ -665,33 +672,32 @@ SocketEventProc(evPtr, flags)
 	Tcl_SetMaxBlockTime(&blockTime);
 	mask |= TCL_READABLE;
     } else if (events & FD_READ) {
+	fd_set readFds;
+	struct timeval timeout;
+
 	/*
 	 * We must check to see if data is really available, since someone
-	 * could have consumed the data in the meantime.
+	 * could have consumed the data in the meantime.  Turn off async
+	 * notification so select will work correctly.  If the socket is
+	 * still readable, notify the channel driver, otherwise reset the
+	 * async select handler and keep waiting.
 	 */
 
-	status = (*winSock.ioctlsocket)(infoPtr->socket, FIONREAD,
-		&nBytes);
-	if (status != SOCKET_ERROR && nBytes > 0) {
+	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd, 0, 0);
+
+	FD_ZERO(&readFds);
+	FD_SET(infoPtr->socket, &readFds);
+	timeout.tv_usec = 0;
+	timeout.tv_sec = 0;
+
+	if ((*winSock.select)(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
 	} else {
-	    /*
-	     * We are in a strange state, probably because someone
-	     * besides Tcl is reading from this socket.  Try to
-	     * recover by clearing the read event.
-	     */
-	    
+	    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+		    SOCKET_MESSAGE, infoPtr->selectEvents);
 	    infoPtr->readyEvents &= ~(FD_READ);
-
- 	    /*
- 	     * Re-issue WSAAsyncSelect() since we are gobbling up an
- 	     * event,  without letting the reader do any I/O to re-enable
-	     * the notification.
- 	     */
-
- 	    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
- 		    SOCKET_MESSAGE, infoPtr->selectEvents);
 	}
+
     }
     if (events & FD_WRITE) {
 	mask |= TCL_WRITABLE;
@@ -1006,6 +1012,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
      * automatically places the socket into non-blocking mode.
      */
 
+    (*winSock.ioctlsocket)(sock, FIONBIO, &flag);
     (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
 	    SOCKET_MESSAGE, infoPtr->selectEvents);
 
@@ -1131,52 +1138,42 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
 
     oldMode = Tcl_SetServiceMode(TCL_SERVICE_NONE);
     
-    while (!(infoPtr->readyEvents & events)) {
-	if (infoPtr->flags & SOCKET_ASYNC) {
-	    if (!PeekMessage(&msg, winSock.hwnd, SOCKET_MESSAGE,
-		    SOCKET_MESSAGE, PM_REMOVE)) {
-		*errorCodePtr = EWOULDBLOCK;
-		result = 0;
-		break;
-	    }
-	} else {
-	    /*
-	     * Look for a socket event.  Note that we will be getting
-	     * events for all of Tcl's sockets, not just the one we wanted.
-	     */
+    /*
+     * Reset WSAAsyncSelect so we have a fresh set of events pending.
+     */
 
-	    result = GetMessage(&msg, winSock.hwnd, SOCKET_MESSAGE,
-		    SOCKET_MESSAGE);
-	    if (result == -1) {
-		TclWinConvertError(GetLastError());
-		*errorCodePtr = Tcl_GetErrno();
-		result = 0;
-		break;
-	    }
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd, 0, 0);
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+	    SOCKET_MESSAGE, infoPtr->selectEvents);
 
-	    /*
-	     * I don't think we can get a WM_QUIT during a tight modal
-	     * loop, but just in case...
-	     */
-
-	    if (result == 0) {
-		panic("WaitForSocketEvent: Got WM_QUIT during modal loop!");
-	    }
-	}
-
+    while (1) {
 	/*
-	 * Dispatch the message and then check for an error on the socket.
+	 * Process all outstanding messages on the socket window.
 	 */
 
-	infoPtr->lastError = 0;
-	DispatchMessage(&msg);
+	while (PeekMessage(&msg, winSock.hwnd, 0, 0, PM_REMOVE)) {
+	    DispatchMessage(&msg);
+	}
+	
 	if (infoPtr->lastError) {
 	    *errorCodePtr = infoPtr->lastError;
 	    result = 0;
 	    break;
+	} else if (infoPtr->readyEvents & events) {
+	    break;
+	} else if (infoPtr->flags & SOCKET_ASYNC) {
+	    *errorCodePtr = EWOULDBLOCK;
+	    result = 0;
+	    break;
 	}
-    }
 
+	/*
+	 * Wait until something happens.
+	 */
+
+	WaitMessage();
+    }
+    
     (void) Tcl_SetServiceMode(oldMode);
     return result;
 }
@@ -1507,45 +1504,43 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
      */
 
     while (1) {
-	if (infoPtr->readyEvents & (FD_CLOSE|FD_READ)) {
-	    bytesRead = (*winSock.recv)(infoPtr->socket, buf, toRead, 0);
-	    infoPtr->readyEvents &= ~(FD_READ);
+	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+		0, 0);
+	bytesRead = (*winSock.recv)(infoPtr->socket, buf, toRead, 0);
+	infoPtr->readyEvents &= ~(FD_READ);
 
-	    /*
-	     * Check for end-of-file condition or successful read.
-	     */
+	/*
+	 * Check for end-of-file condition or successful read.
+	 */
 
-	    if (bytesRead == 0) {
-		infoPtr->flags |= SOCKET_EOF;
-	    }
-	    if (bytesRead != SOCKET_ERROR) {
-		return bytesRead;
-	    }
+	if (bytesRead == 0) {
+	    infoPtr->flags |= SOCKET_EOF;
+	}
+	if (bytesRead != SOCKET_ERROR) {
+	    break;
+	}
 
-	    /*
-	     * If an error occurs after the FD_CLOSE has arrived,
-	     * then ignore the error and report an EOF.
-	     */
+	/*
+	 * If an error occurs after the FD_CLOSE has arrived,
+	 * then ignore the error and report an EOF.
+	 */
 
-	    if (infoPtr->readyEvents & FD_CLOSE) {
-		infoPtr->flags |= SOCKET_EOF;
-		return 0;
-	    }
+	if (infoPtr->readyEvents & FD_CLOSE) {
+	    infoPtr->flags |= SOCKET_EOF;
+	    bytesRead = 0;
+	    break;
+	}
 
-	    /*
-	     * Check for error condition or underflow in non-blocking case.
-	     */
+	/*
+	 * Check for error condition or underflow in non-blocking case.
+	 */
 
-	    error = (*winSock.WSAGetLastError)();
-	    if ((infoPtr->flags & SOCKET_ASYNC) || (error != WSAEWOULDBLOCK)) {
-		TclWinConvertWSAError(error);
-		*errorCodePtr = Tcl_GetErrno();
-		return -1;
-	    }
-
-	} else if (infoPtr->flags & SOCKET_ASYNC) {
-	    *errorCodePtr = EWOULDBLOCK;
-	    return -1;
+	error = (*winSock.WSAGetLastError)();
+	if ((infoPtr->flags & SOCKET_ASYNC) || (error != WSAEWOULDBLOCK)) {
+	    TclWinConvertWSAError(error);
+	    *errorCodePtr = Tcl_GetErrno();
+	    bytesRead = -1;
+	    break;
 	}
 
 	/*
@@ -1554,9 +1549,14 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
 	 */
 
 	if (!WaitForSocketEvent(infoPtr, FD_READ|FD_CLOSE, errorCodePtr)) {
-	    return -1;
+	    bytesRead = -1;
+	    break;
 	}
     }
+    
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+	    SOCKET_MESSAGE, infoPtr->selectEvents);
+    return bytesRead;
 }
 
 /*
@@ -1611,6 +1611,8 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     }
 
     while (1) {
+	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+		0, 0);
 	bytesWritten = (*winSock.send)(infoPtr->socket, buf, toWrite, 0);
 	if (bytesWritten != SOCKET_ERROR) {
 	    /*
@@ -1638,12 +1640,14 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
 	    infoPtr->readyEvents &= ~(FD_WRITE);
 	    if (infoPtr->flags & SOCKET_ASYNC) {
 		*errorCodePtr = EWOULDBLOCK;
-		return -1;
+		bytesWritten = -1;
+		break;
 	    } 
 	} else {
 	    TclWinConvertWSAError(error);
 	    *errorCodePtr = Tcl_GetErrno();
-	    return -1;
+	    bytesWritten = -1;
+	    break;
 	}
 
 	/*
@@ -1652,10 +1656,13 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
 	 */
 
 	if (!WaitForSocketEvent(infoPtr, FD_WRITE|FD_CLOSE, errorCodePtr)) {
-	    return -1;
+	    bytesWritten = -1;
+	    break;
 	}
     }
 
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+	    SOCKET_MESSAGE, infoPtr->selectEvents);
     return bytesWritten;
 }
 
