@@ -1,5 +1,8 @@
 2003-09-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* library/http/http.tcl (geturl): Correctly check the type of
+	boolean-valued options. [Bug 811170]
+
 	* unix/tcl.m4 (SC_ENABLE_FRAMEWORK): Added note to make it clearer
 	that this is an OSX feature, not a general Unix feature. [Bug 619440]
 
