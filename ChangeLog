@@ -1,5 +1,16 @@
 2000-11-03  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
+	* unix/Makefile.in (install-libraries, dist): 
+	* win/makefile.vc (install-libraries):
+	* win/Makefile.in (install-libraries): updated to install
+	unversioned library directories into versioned directories.
+
+	* tools/tcl.wse.in: updated for unversioning of library dirs
+
+	* unix/mkLinks: updated mkLinks with latest doc updates
+
+	* doc/Tcl_Main.3: added docs for Tcl_SetMainLoop
+
 	* generic/tclStubInit.c:
 	* generic/tclDecls.h:
 	* generic/tcl.decls: added Tcl_SetMainLoop proc that allows people
