@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.11 1999/05/25 01:00:26 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.12 1999/06/30 22:34:44 redman Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -488,6 +488,14 @@ EXTERN void		TclHideLiteral _ANSI_ARGS_((Tcl_Interp * interp,
 				struct CompileEnv * envPtr, int index));
 /* 145 */
 EXTERN struct AuxDataType * TclGetAuxDataType _ANSI_ARGS_((char * typeName));
+/* 146 */
+EXTERN TclHandle	TclHandleCreate _ANSI_ARGS_((VOID * ptr));
+/* 147 */
+EXTERN void		TclHandleFree _ANSI_ARGS_((TclHandle handle));
+/* 148 */
+EXTERN TclHandle	TclHandlePreserve _ANSI_ARGS_((TclHandle handle));
+/* 149 */
+EXTERN void		TclHandleRelease _ANSI_ARGS_((TclHandle handle));
 
 typedef struct TclIntStubs {
     int magic;
@@ -671,6 +679,10 @@ typedef struct TclIntStubs {
     int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
     void (*tclHideLiteral) _ANSI_ARGS_((Tcl_Interp * interp, struct CompileEnv * envPtr, int index)); /* 144 */
     struct AuxDataType * (*tclGetAuxDataType) _ANSI_ARGS_((char * typeName)); /* 145 */
+    TclHandle (*tclHandleCreate) _ANSI_ARGS_((VOID * ptr)); /* 146 */
+    void (*tclHandleFree) _ANSI_ARGS_((TclHandle handle)); /* 147 */
+    TclHandle (*tclHandlePreserve) _ANSI_ARGS_((TclHandle handle)); /* 148 */
+    void (*tclHandleRelease) _ANSI_ARGS_((TclHandle handle)); /* 149 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1263,6 +1275,22 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclGetAuxDataType
 #define TclGetAuxDataType \
 	(tclIntStubsPtr->tclGetAuxDataType) /* 145 */
+#endif
+#ifndef TclHandleCreate
+#define TclHandleCreate \
+	(tclIntStubsPtr->tclHandleCreate) /* 146 */
+#endif
+#ifndef TclHandleFree
+#define TclHandleFree \
+	(tclIntStubsPtr->tclHandleFree) /* 147 */
+#endif
+#ifndef TclHandlePreserve
+#define TclHandlePreserve \
+	(tclIntStubsPtr->tclHandlePreserve) /* 148 */
+#endif
+#ifndef TclHandleRelease
+#define TclHandleRelease \
+	(tclIntStubsPtr->tclHandleRelease) /* 149 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
