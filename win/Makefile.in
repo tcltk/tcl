@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.38 2000/08/15 00:08:37 ericm Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.39 2000/09/28 06:36:27 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -134,7 +134,7 @@ PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
 			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
-STATIC_LIBRARIES	= $(TCL_LIB_FILE)
+STATIC_LIBRARIES	= $(TCL_LIB_FILE) $(REG_LIB_FILE) $(DDE_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 TCLTEST			= tcltest${EXEEXT}
@@ -232,6 +232,7 @@ GENERIC_OBJS = \
 	tclInterp.$(OBJEXT) \
 	tclIO.$(OBJEXT) \
 	tclIOCmd.$(OBJEXT) \
+	tclIOGT.$(OBJEXT) \
 	tclIOSock.$(OBJEXT) \
 	tclIOUtil.$(OBJEXT) \
 	tclLink.$(OBJEXT) \
@@ -351,9 +352,17 @@ ${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${DDE_DLL_FILE}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
+${DDE_LIB_FILE}: ${DDE_OBJS} ${TCL_LIB_FILE}
+	@$(RM) ${DDE_LIB_FILE}
+	@MAKE_LIB@ ${DDE_OBJS} ${TCL_LIB_FILE}
+
 ${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${REG_DLL_FILE}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
+
+${REG_LIB_FILE}: ${REG_OBJS} ${TCL_LIB_FILE}
+	@$(RM) ${REG_LIB_FILE}
+	@MAKE_LIB@ ${REG_OBJS} ${TCL_LIB_FILE}
 
 # PIPE_DLL_FILE is actually an executable, don't build it
 # like a DLL.
