@@ -1,3 +1,8 @@
+2002-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:  Allow non-proc commands to be used
+	as the customization hooks.  [Bug 495662]
+
 2002-03-24  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFilename.c:
