@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.41 2003/08/27 20:29:36 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.42 2003/08/27 21:31:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2038,13 +2038,24 @@ TclNeedSpace(start, end)
      *     backslash.
      */
 
+    if (*end > 0x20) {
+	/*
+	 * Performance tweak.  All ASCII spaces are <= 0x20. So get
+	 * a quick answer for most characters before comparing against
+	 * all spaces in the switch below.
+	 *
+	 * NOTE: Remove this if other Unicode spaces ever get accepted
+	 * as list-element separators.
+	 */
+	return 1;
+    }
     switch (*end) {
 	case ' ':
-        case '\f':
+        case '\t':
         case '\n':
         case '\r':
-        case '\t':
         case '\v':
+        case '\f':
 	    if ((end == start) || (end[-1] != '\\')) {
 		return 0;
 	    }
