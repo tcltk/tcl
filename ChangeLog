@@ -7,6 +7,14 @@
 
 2000-11-02  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
+	* unix/configure:
+	* unix/dltest/configure:
+	* win/configure:
+	* tools/configure: checked in configure scripts so people doing
+	CVS checkouts aren't required to have autoconf.  Changes to
+	configure.in in the future will require the corresponding
+	configure script to also be re-autoconf'ed and checked in.
+
 	* win/makefile.vc:
 	* win/tcl.m4: makefile fixes for Win64 support
 
