@@ -1,3 +1,12 @@
+2001-12-21  Daniel Steffen <das@users.sourceforge.net>
+
+	* unix/tcl.m4: fixed incorrect SHLIB_LD_LIBS
+	setting for MacOSX / Darwin.
+	* unix/configure: Regen.
+	* unix/mkLinks.tcl: improved case-insensitive
+	filesystem support.
+	* unix/mkLinks: Regen.
+
 2001-12-19  Don Porter <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in (dist): corrected use of eolFix.tcl on
