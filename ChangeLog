@@ -14,7 +14,8 @@
 	
 	The new nmakehlp.c is built by rules.vc in preprocessing and removes
 	the need to use tricky shell syntax that wasn't compatible on Win9x
-	systems.  This is a first draft repair for [Bug 533862].
+	systems.  Clean targets made Win9x complient.  This is a first draft
+	repair for [Bug 533862].
 
 2002-03-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
