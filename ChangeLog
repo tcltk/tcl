@@ -1,3 +1,10 @@
+2000-04-17  Brent Welch <welch@scriptics.com>
+
+	* generic/tcl.h, generic/tclThreadTest.c, unix/tclUnixThrd.c,
+	win/tclWinThread.c, mac/tclMacThread.c:
+	Added Tcl_CreateThreadType and TCL_RETURN_THREAD_TYPE
+	macros for declaring the NewThread callback proc.
+
 2000-04-14  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tclUnixChan.c (TtyParseMode): Only allow setting mark/space
