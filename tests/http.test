@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.1.2.7 1999/04/02 18:57:08 hershey Exp $
+# RCS: @(#) $Id: http.test,v 1.1.2.8 1999/04/03 01:19:53 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -38,10 +38,10 @@ set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 
 set httpdFile [file join $::tcltest::testsDir httpd]
 if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
-    set httpthread [testthread create {
+    set httpthread [testthread create "
 	source $httpdFile
 	testthread wait
-    }]
+    "]
     testthread send $httpthread [list set port $port]
     testthread send $httpthread [list set bindata $bindata]
     testthread send $httpthread {httpd_init $port}
