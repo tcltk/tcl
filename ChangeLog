@@ -1,5 +1,7 @@
 2003-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/expr.n: Tighten up the wording of some operations. [Bug 758488]
+
 	* tests/cmdAH.test: Made tests of [file mtime] work better on FAT
 	filesystems. [Patch 760768]  Also a little general cleanup.
 
