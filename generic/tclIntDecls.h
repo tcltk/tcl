@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.45 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.46 2002/10/09 11:54:13 das Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -285,14 +285,8 @@ EXTERN void		TclResetShadowedCmdRefs _ANSI_ARGS_((
 EXTERN int		TclServiceIdle _ANSI_ARGS_((void));
 /* Slot 99 is reserved */
 /* Slot 100 is reserved */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 101 */
 EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char * string));
-#endif /* UNIX */
-#ifdef __WIN32__
-/* 101 */
-EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char * string));
-#endif /* __WIN32__ */
 /* 102 */
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp * interp));
 /* 103 */
@@ -1045,18 +1039,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #endif
 /* Slot 99 is reserved */
 /* Slot 100 is reserved */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef TclSetPreInitScript
 #define TclSetPreInitScript \
 	(tclIntStubsPtr->tclSetPreInitScript) /* 101 */
 #endif
-#endif /* UNIX */
-#ifdef __WIN32__
-#ifndef TclSetPreInitScript
-#define TclSetPreInitScript \
-	(tclIntStubsPtr->tclSetPreInitScript) /* 101 */
-#endif
-#endif /* __WIN32__ */
 #ifndef TclSetupEnv
 #define TclSetupEnv \
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */

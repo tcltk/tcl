@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.32 2002/09/24 12:53:33 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.33 2002/10/09 11:54:05 das Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -819,6 +819,8 @@ EXTERN void		TclVerifyGlobalLiteralTable _ANSI_ARGS_((
 EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 			    CompileEnv *envPtr));
 #endif
+EXTERN int		TclCompileVariableCmd _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Parse *parsePtr, CompileEnv *envPtr));
 
 /*
  *----------------------------------------------------------------
