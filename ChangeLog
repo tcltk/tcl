@@ -1,3 +1,11 @@
+2001-03-23  Jeff Hobbs  <jeffh@activestate.com>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): Corrected retrieval of
+	resultPtr to prevent possible corruption.
+
+	* generic/tclNamesp.c (Tcl_Import): Correctly freed a DString.
+ 	(lavana) [Patch #403755]
+
 2001-03-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/set-old.test (set-old-7.2): Changed error behaviour of
