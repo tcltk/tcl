@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.36 2004/06/11 21:30:07 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.37 2004/06/11 21:33:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -88,71 +88,6 @@ tclInit";
  
 static char *          tclPreInitScript = NULL;
 
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetPreInitScript --
- *
- *	This routine is used to change the value of the internal
- *	variable, tclPreInitScript.
- *
- * Results:
- *	Returns the current value of tclPreInitScript.
- *
- * Side effects:
- *	Changes the way Tcl_Init() routine behaves.
- *
- *----------------------------------------------------------------------
- */
-
-char *
-TclSetPreInitScript (string)
-    char *string;		/* Pointer to a script. */
-{
-    char *prevString = tclPreInitScript;
-    tclPreInitScript = string;
-    return(prevString);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Init --
- *
- *      This procedure is typically invoked by Tcl_AppInit procedures
- *      to find and source the "init.tcl" script, which should exist
- *      somewhere on the Tcl library path.
- *
- * Results:
- *      Returns a standard Tcl completion code and sets the interp's
- *      result if there is an error.
- *
- * Side effects:
- *      Depends on what's in the init.tcl script.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_Init(interp)
-    Tcl_Interp *interp;         /* Interpreter to initialize. */
-{
-    Tcl_Obj *pathPtr;
-
-    if (tclPreInitScript != NULL) {
-	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
-	    return (TCL_ERROR);
-	};
-    }
-
-    pathPtr = TclGetLibraryPath();
-    if (pathPtr == NULL) {
-	pathPtr = Tcl_NewObj();
-    }
-    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
-    return Tcl_Eval(interp, initScript);
-}
 
 /*
  * Counter for how many aliases were created (global)
@@ -373,6 +308,71 @@ static void		DeleteScriptLimitCallback _ANSI_ARGS_((
 static void		RunLimitHandlers _ANSI_ARGS_((LimitHandler *handlerPtr,
 			    Tcl_Interp *interp));
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetPreInitScript --
+ *
+ *	This routine is used to change the value of the internal
+ *	variable, tclPreInitScript.
+ *
+ * Results:
+ *	Returns the current value of tclPreInitScript.
+ *
+ * Side effects:
+ *	Changes the way Tcl_Init() routine behaves.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclSetPreInitScript (string)
+    char *string;		/* Pointer to a script. */
+{
+    char *prevString = tclPreInitScript;
+    tclPreInitScript = string;
+    return(prevString);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Init --
+ *
+ *      This procedure is typically invoked by Tcl_AppInit procedures
+ *      to find and source the "init.tcl" script, which should exist
+ *      somewhere on the Tcl library path.
+ *
+ * Results:
+ *      Returns a standard Tcl completion code and sets the interp's
+ *      result if there is an error.
+ *
+ * Side effects:
+ *      Depends on what's in the init.tcl script.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_Init(interp)
+    Tcl_Interp *interp;         /* Interpreter to initialize. */
+{
+    Tcl_Obj *pathPtr;
+
+    if (tclPreInitScript != NULL) {
+	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+	    return (TCL_ERROR);
+	};
+    }
+
+    pathPtr = TclGetLibraryPath();
+    if (pathPtr == NULL) {
+	pathPtr = Tcl_NewObj();
+    }
+    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+    return Tcl_Eval(interp, initScript);
+}
 
 /*
  *---------------------------------------------------------------------------
