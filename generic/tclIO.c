@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.64 2003/03/06 09:58:44 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.65 2003/03/06 10:10:24 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -5118,7 +5118,8 @@ Tcl_Flush(chan)
      */
 
     if ((statePtr->curOutPtr != NULL)
-	    && (statePtr->curOutPtr->nextAdded > 0)) {
+	    && (statePtr->curOutPtr->nextAdded >
+	            statePtr->curOutPtr->nextRemoved)) {
         statePtr->flags |= BUFFER_READY;
     }
     
