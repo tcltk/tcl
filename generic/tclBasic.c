@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.10 1998/08/10 15:43:41 welch Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.11 1998/08/10 17:18:18 rjohnson Exp $ 
  */
 
 #include "tclInt.h"
@@ -1495,12 +1495,15 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
      * Plug in any existing import references found above.  Be sure
      * to update all of these references to point to the new command.
      */
-    cmdPtr->importRefPtr = oldRefPtr;
-    while (oldRefPtr != NULL) {
-	refCmdPtr = oldRefPtr->importedCmdPtr;
-	dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
-	dataPtr->realCmdPtr = cmdPtr;
-	oldRefPtr = oldRefPtr->nextPtr;
+
+    if (oldRefPtr != NULL) {
+	cmdPtr->importRefPtr = oldRefPtr;
+	while (oldRefPtr != NULL) {
+	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    dataPtr->realCmdPtr = cmdPtr;
+	    oldRefPtr = oldRefPtr->nextPtr;
+	}
     }
 
     /*
@@ -1654,12 +1657,15 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
      * Plug in any existing import references found above.  Be sure
      * to update all of these references to point to the new command.
      */
-    cmdPtr->importRefPtr = oldRefPtr;
-    while (oldRefPtr != NULL) {
-	refCmdPtr = oldRefPtr->importedCmdPtr;
-	dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
-	dataPtr->realCmdPtr = cmdPtr;
-	oldRefPtr = oldRefPtr->nextPtr;
+
+    if (oldRefPtr != NULL) {
+	cmdPtr->importRefPtr = oldRefPtr;
+	while (oldRefPtr != NULL) {
+	    refCmdPtr = oldRefPtr->importedCmdPtr;
+	    dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	    dataPtr->realCmdPtr = cmdPtr;
+	    oldRefPtr = oldRefPtr->nextPtr;
+	}
     }
     
     /*
