@@ -1,3 +1,19 @@
+2002-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure: regen'ed
+	* unix/configure.in: replaced bigendian check with autoconf
+	standard AC_C_BIG_ENDIAN, which defined WORDS_BIGENDIAN on
+	bigendian systems.
+	* generic/tclUtf.c (Tcl_UniCharNcmp): 
+	* generic/tclInt.h (TclUniCharNcmp): use WORDS_BIGENDIAN instead of
+	TCL_OPTIMIZE_UNICODE_COMPARE to enable memcmp alternative.
+
+	* generic/tclExecute.c (TclExecuteByteCode INST_STR_CMP):
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): changed the case for
+	choosing the Tcl_UniCharNcmp compare to when both objs are of
+	StringType, as benchmarks show that is the optimal check (both
+	bigendian and littleendian systems).
+
 2002-05-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclMain.c: Removed "dummy" reference to Tcl_LinkVar.
