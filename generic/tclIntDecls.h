@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.57 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.58 2004/03/18 18:54:42 rmax Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -691,7 +691,7 @@ EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
 #ifndef TclpGetDate_TCL_DECLARED
 #define TclpGetDate_TCL_DECLARED
 /* 133 */
-EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((TclpTime_t time, int useGMT));
+EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((CONST time_t *time, int useGMT));
 #endif
 #ifndef TclpStrftime_TCL_DECLARED
 #define TclpStrftime_TCL_DECLARED
@@ -1104,7 +1104,7 @@ typedef struct TclIntStubs {
     int (*tcl_RemoveInterpResolvers) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 130 */
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
-    struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
+    struct tm * (*tclpGetDate) _ANSI_ARGS_((CONST time_t *time, int useGMT)); /* 133 */
     size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t, int useGMT)); /* 134 */
     void *reserved135;
     void *reserved136;
