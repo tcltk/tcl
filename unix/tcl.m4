@@ -720,7 +720,18 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	    ;;
-	IRIX-5.*|IRIX-6.*|IRIX64-6.5*)
+	IRIX-5.*)
+	    SHLIB_CFLAGS=""
+	    SHLIB_LD="ld -shared -rdata_shared"
+	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    EXTRA_CFLAGS=""
+	    LDFLAGS=""
+	    ;;
+	IRIX-6.*|IRIX64-6.5*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -n32 -shared -rdata_shared"
 	    SHLIB_LD_LIBS='${LIBS}'
