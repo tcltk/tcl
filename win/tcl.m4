@@ -344,7 +344,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS=""
-	LIBS_GUI="-lgdi32 -lcomdlg32"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32"
 	STLIB_LD="${AR}"
 	RC_OUT=-o
 	RC_TYPE=
