@@ -325,15 +325,21 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT($do64bit)
 
-    AC_MSG_CHECKING([compiler flags])
 
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 
     AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
 
+    if test "$CYGPATH" = "echo" || test "$ac_cv_cygwin" = "yes"; then
+        DEPARG='"$<"'
+    else
+        DEPARG='"$(shell $(CYGPATH) $<)"'
+    fi
+
     # set various compiler flags depending on whether we are using gcc or cl
-    
+
+    AC_MSG_CHECKING([compiler flags])
     if test "${GCC}" = "yes" ; then
 	if test "$do64bit" = "yes" ; then
 	    AC_MSG_WARN("64bit mode not supported with GCC on Windows")
@@ -353,7 +359,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
 
-	if "$CC" -v 2>&1 | egrep '\/gcc-lib\/i[[3-6]]86[[^\/]]*-cygwin' >/dev/null; then
+	if test "$ac_cv_cygwin" = "yes"; then
 	    extra_cflags="-mno-cygwin"
 	    extra_ldflags="-mno-cygwin"
 	else
