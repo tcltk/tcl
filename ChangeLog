@@ -1,5 +1,9 @@
 2004-05-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/fCmd.test: Rewrote tests that failed consistently on NFS
+	so they either succeed (through slightly more liberal matching of
+	the results) or are constrained to not run. [Bug 931312]
+
 	* doc/bgerror.n: Use idiomatic open flags for working with log
 	files.  [Bug 959602]
 
