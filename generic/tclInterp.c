@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.19 2002/11/23 01:22:50 hobbs Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.20 2002/11/27 02:54:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1089,7 +1089,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
          * the source alias, we have a loop.
 	 */
 
-	if (((Interp *)(nextAliasPtr->targetInterp))->flags & DELETED) {
+	if (Tcl_InterpDeleted(nextAliasPtr->targetInterp)) {
 	    /*
 	     * The slave interpreter can be deleted while creating the alias.
 	     * [Bug #641195]
@@ -1187,13 +1187,17 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 	Tcl_IncrRefCount(objv[i]);
     }
 
+    Tcl_Preserve(slaveInterp);
+    Tcl_Preserve(masterInterp);
+
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
 	    Tcl_GetString(namePtr), AliasObjCmd, (ClientData) aliasPtr,
 	    AliasObjCmdDeleteProc);
 
-    if (TclPreventAliasLoop(interp, slaveInterp, aliasPtr->slaveCmd) != TCL_OK) {
+    if (TclPreventAliasLoop(interp, slaveInterp,
+	    aliasPtr->slaveCmd) != TCL_OK) {
 	/*
-	 * Found an alias loop!  The last call to Tcl_CreateObjCommand made
+	 * Found an alias loop!	 The last call to Tcl_CreateObjCommand made
 	 * the alias point to itself.  Delete the command and its alias
 	 * record.  Be careful to wipe out its client data first, so the
 	 * command doesn't try to delete itself.
@@ -1207,19 +1211,21 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 	    Tcl_DecrRefCount(objv[i]);
 	}
 	
-        cmdPtr = (Command *) aliasPtr->slaveCmd;
-        cmdPtr->clientData = NULL;
-        cmdPtr->deleteProc = NULL;
-        cmdPtr->deleteData = NULL;
-        Tcl_DeleteCommandFromToken(slaveInterp, aliasPtr->slaveCmd);
+	cmdPtr = (Command *) aliasPtr->slaveCmd;
+	cmdPtr->clientData = NULL;
+	cmdPtr->deleteProc = NULL;
+	cmdPtr->deleteData = NULL;
+	Tcl_DeleteCommandFromToken(slaveInterp, aliasPtr->slaveCmd);
 
-        ckfree((char *) aliasPtr);
+	ckfree((char *) aliasPtr);
 
-        /*
-         * The result was already set by TclPreventAliasLoop.
-         */
+	/*
+	 * The result was already set by TclPreventAliasLoop.
+	 */
 
-        return TCL_ERROR;
+	Tcl_Release(slaveInterp);
+	Tcl_Release(masterInterp);
+	return TCL_ERROR;
     }
 
     /*
@@ -1271,6 +1277,9 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
     aliasPtr->targetEntryPtr = hPtr;
 
     Tcl_SetObjResult(interp, namePtr);
+
+    Tcl_Release(slaveInterp);
+    Tcl_Release(masterInterp);
     return TCL_OK;
 }
 
