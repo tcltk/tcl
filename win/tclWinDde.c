@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.3 1999/05/28 23:02:38 stanton Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.4 1999/06/16 02:10:25 redman Exp $
  */
 
 #include "tclPort.h"
@@ -305,6 +305,11 @@ DdeSetServerName(interp, name)
     }
     Tcl_DStringFree(&dString);
 
+    /*
+     * re-initialize with the new name
+     */
+    Initialize();
+    
     return riPtr->name;
 }
 
