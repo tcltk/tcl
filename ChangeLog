@@ -1,3 +1,10 @@
+2004-12-20  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: moved TclInitCompiledLocals to tclProc.c 
+	* generic/tclProc.c: new static InitCompiledLocals to allow for a
+	single pass over the proc's arguments at procload time (instead of
+	two, asdone previously)
+
 2004-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c (Tcl_LimitSetTime, TimeLimitCallback):
