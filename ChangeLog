@@ -1,3 +1,8 @@
+2002-01-24  Don Porter <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c (SetFsPathFromAny):  Corrected tilde-substitution
+	of pathnames where > 1 separator follows the ~.  [Bug 504950]
+
 2002-01-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/pkgIndex.tcl:
