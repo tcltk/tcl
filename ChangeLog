@@ -1,5 +1,10 @@
 2002-08-08  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* tests/uplevel.test: added 6.1 to test [uplevel] with shadowed
+	commands [Bug 524383]
+
+2002-08-08  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* tests/subst.test: added 5.8-10 as further tests for [Bug 495207] 
 
 2002-08-08  Don Porter  <dgp@users.sourceforge.net>
