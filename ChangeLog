@@ -1,5 +1,8 @@
 2003-07-24  Reinhard Max  <max@suse.de>
 
+        * library/package.tcl: Fixed a typo that broke pkg_mkIndex -verbose.
+        * tests/pkgMkIndex.test: Added a test for [pkg_mkIndex -verbose].
+
         * ChangeLog.2002 (new file):
         * ChangeLog: broke changes from 2002 into ChangeLog.2002 to reduce
           size of the main ChangeLog.
