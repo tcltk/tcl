@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.17 2003/10/01 14:33:49 das Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.18 2003/10/14 15:44:53 dgp Exp $
  */
 
 #include <Errors.h>
@@ -1254,7 +1254,6 @@ Tcl_MacEvalResource(
 {
     Handle sourceText;
     Str255 rezName;
-    char msg[200];
     int result, iOpenedResFile = false;
     short saveRef, fileRef = -1;
     char idStr[64];
@@ -1334,10 +1333,17 @@ Tcl_MacEvalResource(
 	if (result == TCL_RETURN) {
 	    result = TCL_OK;
 	} else if (result == TCL_ERROR) {
-	    sprintf(msg, "\n    (rsrc \"%.150s\" line %d)",
-                    resourceName,
-		    interp->errorLine);
-	    Tcl_AddErrorInfo(interp, msg);
+	    Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+	    Tcl_Obj *msg = Tcl_NewStringObj("\n    (rsrc \"", -1);
+	    Tcl_IncrRefCount(errorLine);
+	    Tcl_IncrRefCount(msg);
+	    TclAppendLimitedToObj(msg, resourceName, -1, 150, "");
+	    Tcl_AppendToObj(msg, "\" line ", -1);
+	    Tcl_AppendObjToObj(msg, errorLine);
+	    Tcl_DecrRefCount(errorLine);
+	    Tcl_AppendToObj(msg, ")", -1);
+	    TclAppendObjToErrorInfo(interp, msg);
+	    Tcl_DecrRefCount(msg);
 	}
 				
 	goto rezEvalCleanUp;

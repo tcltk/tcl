@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.33 2003/09/29 14:37:14 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.34 2003/10/14 15:44:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3150,11 +3150,17 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
         result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
-        char msg[256 + TCL_INTEGER_SPACE];
-	
-        sprintf(msg, "\n    (in namespace eval \"%.200s\" script line %d)",
-            namespacePtr->fullName, interp->errorLine);
-        Tcl_AddObjErrorInfo(interp, msg, -1);
+	Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+	Tcl_Obj *msg = Tcl_NewStringObj("\n    (in namespace eval \"", -1);
+	Tcl_IncrRefCount(errorLine);
+	Tcl_IncrRefCount(msg);
+	TclAppendLimitedToObj(msg, namespacePtr->fullName, -1, 200, "");
+	Tcl_AppendToObj(msg, "\" script line ", -1);
+	Tcl_AppendObjToObj(msg, errorLine);
+	Tcl_DecrRefCount(errorLine);
+	Tcl_AppendToObj(msg, ")", -1);
+        TclAppendObjToErrorInfo(interp, msg);
+	Tcl_DecrRefCount(msg);
     }
 
     /*

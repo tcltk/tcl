@@ -1,3 +1,33 @@
+2003-10-14  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (TclAppendObjToErrorInfo):	New internal routine
+	that appends a Tcl_Obj to the errorInfo, saving the caller the trouble
+	of extracting the string rep.
+
+	* generic/tclStringObj.c (TclAppendLimitedToObj):	New internal
+	routine that supports truncated appends with optional ellipsis marking.
+	This single routine supports UTF-8-safe truncated appends needed in
+	several places throughout the Tcl source code, mostly for error and
+	stack messages.  Clean fix for [Bug 760872].
+
+	* generic/tclInt.h:	Declarations for new internal routines.
+	
+	* generic/tclCmdMZ.c:	Updated callers to use the new routines.
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclIOUtil.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclParseExpr.c:
+	* generic/tclProc.c:
+	* generic/tclStringObj.c:
+	* mac/tclMacResource.c:
+
+	* library/init.tcl:	Updated ::errorInfo cleanup in [unknown] to
+	reflect slight modifications to Tcl_LogCommandInfo().  Corrects
+	failing init-4.* tests.
+
 2003-10-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	TIP#127 IMPLEMENTATION FROM JOE MICHAEL SCHLENKER
