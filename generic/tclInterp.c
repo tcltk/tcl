@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.7 2001/09/11 00:46:35 hobbs Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.8 2001/11/16 22:28:08 hobbs Exp $
  */
 
 #include <stdio.h>
@@ -1856,22 +1856,28 @@ SlaveObjCmd(clientData, interp, objc, objv)
 
     switch ((enum options) index) {
 	case OPT_ALIAS: {
-	    if (objc == 3) {
-		return AliasDescribe(interp, slaveInterp, objv[2]);
-	    }
-	    if (Tcl_GetString(objv[3])[0] == '\0') {
-		if (objc == 4) {
-		    return AliasDelete(interp, slaveInterp, objv[2]);
+	    if (objc > 2) {
+		if (objc == 3) {
+		    return AliasDescribe(interp, slaveInterp, objv[2]);
 		}
-	    } else {
-		return AliasCreate(interp, slaveInterp, interp, objv[2],
-			objv[3], objc - 4, objv + 4);
+		if (Tcl_GetString(objv[3])[0] == '\0') {
+		    if (objc == 4) {
+			return AliasDelete(interp, slaveInterp, objv[2]);
+		    }
+		} else {
+		    return AliasCreate(interp, slaveInterp, interp, objv[2],
+			    objv[3], objc - 4, objv + 4);
+		}
 	    }
 	    Tcl_WrongNumArgs(interp, 2, objv,
 		    "aliasName ?targetName? ?args..?");
             return TCL_ERROR;
 	}
 	case OPT_ALIASES: {
+	    if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, (char *) NULL);
+		return TCL_ERROR;
+	    }
 	    return AliasList(interp, slaveInterp);
 	}
 	case OPT_EVAL: {
@@ -1903,6 +1909,10 @@ SlaveObjCmd(clientData, interp, objc, objv)
             return SlaveHidden(interp, slaveInterp);
 	}
         case OPT_ISSAFE: {
+	    if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, (char *) NULL);
+		return TCL_ERROR;
+	    }
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), Tcl_IsSafe(slaveInterp));
 	    return TCL_OK;
 	}
