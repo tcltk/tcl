@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.25 2000/05/26 08:50:35 hobbs Exp $
+# RCS: @(#) $Id: string.test,v 1.26 2000/09/06 18:35:13 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -929,6 +929,28 @@ test string-13.6 {string repeat} {
 test string-13.7 {string repeat} {
     list [catch {string repeat abc end} msg] $msg
 } {1 {expected integer but got "end"}}
+test string-13.8 {string repeat} {
+    string repeat {} -1000
+} {}
+test string-13.9 {string repeat} {
+    string repeat {} 0
+} {}
+test string-13.10 {string repeat} {
+    string repeat def 0
+} {}
+test string-13.11 {string repeat} {
+    string repeat def 1
+} def
+test string-13.12 {string repeat} {
+    string repeat ab\u7266cd 3
+} ab\u7266cdab\u7266cdab\u7266cd
+test string-13.13 {string repeat} {
+    string repeat \x00 3
+} \x00\x00\x00
+test string-13.14 {string repeat} {
+    # The string range will ensure us that string repeat gets a unicode string
+    string repeat [string range ab\u7266cd 2 3] 3
+} \u7266c\u7266c\u7266c
 
 test string-14.1 {string replace} {
     list [catch {string replace} msg] $msg
