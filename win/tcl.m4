@@ -396,7 +396,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-Fo\[$]@"
-	CC_EXENAME="-Fe\[$]@"
+	CC_EXENAME="-Fe\"\$(shell cygpath \$(PATHTYPE) '\[$]@')\""
 
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.
