@@ -13,12 +13,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseOld.test,v 1.9 2000/04/10 17:19:02 ericm Exp $
+# RCS: @(#) $Id: parseOld.test,v 1.10 2001/08/02 01:20:05 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+tcltest::testConstraint testwordend \
+	[string equal "testwordend" [info commands testwordend]]
 
 proc fourArgs {a b c d} {
     global arg1 arg2 arg3 arg4
@@ -450,71 +453,69 @@ expr 1+1
 ]"
 } {2}
 
-if {[info command testwordend] == "testwordend"} {
-    test parseOld-14.1 {TclWordEnd procedure} {
-	testwordend " 	\n abc"
-    } {c}
-    test parseOld-14.2 {TclWordEnd procedure} {
-	testwordend "   \\\n"
-    } {}
-    test parseOld-14.3 {TclWordEnd procedure} {
-	testwordend "   \\\n "
-    } { }
-    test parseOld-14.4 {TclWordEnd procedure} {
-	testwordend {"abc"}
-    } {"}
-    test parseOld-14.5 {TclWordEnd procedure} {
-	testwordend {{xyz}}
-    } \}
-    test parseOld-14.6 {TclWordEnd procedure} {
-	testwordend {{a{}b{}\}} xyz}
-    } "\} xyz"
-    test parseOld-14.7 {TclWordEnd procedure} {
-	testwordend {abc[this is a]def ghi}
-    } {f ghi}
-    test parseOld-14.8 {TclWordEnd procedure} {
-	testwordend "puts\\\n\n  "
-    } "s\\\n\n  "
-    test parseOld-14.9 {TclWordEnd procedure} {
-	testwordend "puts\\\n   	"
-    } "s\\\n   	"
-    test parseOld-14.10 {TclWordEnd procedure} {
-	testwordend "puts\\\n   	xyz"
-    } "s\\\n   	xyz"
-    test parseOld-14.11 {TclWordEnd procedure} {
-	testwordend {a$x.$y(a long index) foo}
-    } ") foo"
-    test parseOld-14.12 {TclWordEnd procedure} {
-	testwordend {abc; def}
-    } {; def}
-    test parseOld-14.13 {TclWordEnd procedure} {
-	testwordend {abc def}
-    } {c def}
-    test parseOld-14.14 {TclWordEnd procedure} {
-	testwordend {abc	def}
-    } {c	def}
-    test parseOld-14.15 {TclWordEnd procedure} {
-	testwordend "abc\ndef"
-    } "c\ndef"
-    test parseOld-14.16 {TclWordEnd procedure} {
-	testwordend "abc"
-    } {c}
-    test parseOld-14.17 {TclWordEnd procedure} {
-	testwordend "a\000bc"
-    } {c}
-    test parseOld-14.18 {TclWordEnd procedure} {
-	testwordend \[a\000\]
-    } {]}
-    test parseOld-14.19 {TclWordEnd procedure} {
-	testwordend \"a\000\"
-    } {"}
-    test parseOld-14.20 {TclWordEnd procedure} {
-	testwordend a{\000}b
-    } {b}
-    test parseOld-14.21 {TclWordEnd procedure} {
-	testwordend "   \000b"
-    } {b}
-}
+test parseOld-14.1 {TclWordEnd procedure} {testwordend} {
+    testwordend " 	\n abc"
+} {c}
+test parseOld-14.2 {TclWordEnd procedure} {testwordend} {
+    testwordend "   \\\n"
+} {}
+test parseOld-14.3 {TclWordEnd procedure} {testwordend} {
+    testwordend "   \\\n "
+} { }
+test parseOld-14.4 {TclWordEnd procedure} {testwordend} {
+    testwordend {"abc"}
+} {"}
+test parseOld-14.5 {TclWordEnd procedure} {testwordend} {
+    testwordend {{xyz}}
+} \}
+test parseOld-14.6 {TclWordEnd procedure} {testwordend} {
+    testwordend {{a{}b{}\}} xyz}
+} "\} xyz"
+test parseOld-14.7 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc[this is a]def ghi}
+} {f ghi}
+test parseOld-14.8 {TclWordEnd procedure} {testwordend} {
+    testwordend "puts\\\n\n  "
+} "s\\\n\n  "
+test parseOld-14.9 {TclWordEnd procedure} {testwordend} {
+    testwordend "puts\\\n   	"
+} "s\\\n   	"
+test parseOld-14.10 {TclWordEnd procedure} {testwordend} {
+    testwordend "puts\\\n   	xyz"
+} "s\\\n   	xyz"
+test parseOld-14.11 {TclWordEnd procedure} {testwordend} {
+    testwordend {a$x.$y(a long index) foo}
+} ") foo"
+test parseOld-14.12 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc; def}
+} {; def}
+test parseOld-14.13 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc def}
+} {c def}
+test parseOld-14.14 {TclWordEnd procedure} {testwordend} {
+    testwordend {abc	def}
+} {c	def}
+test parseOld-14.15 {TclWordEnd procedure} {testwordend} {
+    testwordend "abc\ndef"
+} "c\ndef"
+test parseOld-14.16 {TclWordEnd procedure} {testwordend} {
+    testwordend "abc"
+} {c}
+test parseOld-14.17 {TclWordEnd procedure} {testwordend} {
+    testwordend "a\000bc"
+} {c}
+test parseOld-14.18 {TclWordEnd procedure} {testwordend} {
+    testwordend \[a\000\]
+} {]}
+test parseOld-14.19 {TclWordEnd procedure} {testwordend} {
+    testwordend \"a\000\"
+} {"}
+test parseOld-14.20 {TclWordEnd procedure} {testwordend} {
+    testwordend a{\000}b
+} {b}
+test parseOld-14.21 {TclWordEnd procedure} {testwordend} {
+    testwordend "   \000b"
+} {b}
 
 test parseOld-15.1 {TclScriptEnd procedure} {
     info complete {puts [
