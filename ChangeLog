@@ -1,3 +1,9 @@
+2002-03-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/compile.test (compile-12.3): Test to detect bug 530320.
+	* generic/tclCompile.c (TclCompileTokens): Fixed buffer overrun
+	reported in bug 530320.
+
 2002-03-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
