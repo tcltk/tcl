@@ -1,4 +1,12 @@
-2002-01-12  David Gravereaux <davygrvy@pobox.com>
+2002-01-11  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* win/tclWinSerial.c (SerialSetOptionProc): Applied patch for SF
+	  bug #500348 supplied by Rolf Schroedter
+	  <schroedter@users.sourceforge.net>. The function modified the
+	  contents of the the 'value' string and now does not do this
+	  anymore. This is a followup to the change made on 2001-12-17.
+
+2002-01-11  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Removed -GD compiler option.  It was intended
 	for future use, but MS is again changing the future at their whim.

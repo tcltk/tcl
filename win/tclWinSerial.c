@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.16 2001/12/19 19:34:18 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.17 2002/01/11 20:21:32 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -1519,11 +1519,6 @@ SerialModemStatusStr(status, dsPtr)
  *
  *----------------------------------------------------------------------
  */
-static void str_toupper( char *s ) 
-{
-        while ( (*s = toupper(*s)) != '\0' ) s++ ;
-}
-
 static int
 SerialSetOptionProc(instanceData, interp, optionName, value)
     ClientData instanceData;    /* File state. */
@@ -1618,15 +1613,14 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
         dcb.XonLim = (WORD) (infoPtr->sysBufRead*1/2);
         dcb.XoffLim = (WORD) (infoPtr->sysBufRead*1/4);
         
-        str_toupper(value);
-        if (strncmp(value, "NONE", vlen) == 0) {
+        if (strnicmp(value, "NONE", vlen) == 0) {
             /* leave all handshake options disabled */
-        } else if (strncmp(value, "XONXOFF", vlen) == 0) {
+        } else if (strnicmp(value, "XONXOFF", vlen) == 0) {
             dcb.fOutX = dcb.fInX = TRUE;
-        } else if (strncmp(value, "RTSCTS", vlen) == 0) {
+        } else if (strnicmp(value, "RTSCTS", vlen) == 0) {
             dcb.fOutxCtsFlow = TRUE;
             dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-        } else if (strncmp(value, "DTRDSR", vlen) == 0) {
+        } else if (strnicmp(value, "DTRDSR", vlen) == 0) {
             dcb.fOutxDsrFlow = TRUE;
             dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
         } else {
@@ -1703,11 +1697,10 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
             return TCL_ERROR;
         }
         while (argc > 1) {
-            str_toupper(argv[0]);
             if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
                 return TCL_ERROR;
             }
-            if (strncmp(argv[0], "DTR", strlen(argv[0])) == 0) {
+            if (strnicmp(argv[0], "DTR", strlen(argv[0])) == 0) {
                 if (! EscapeCommFunction(infoPtr->handle, flag ? SETDTR : CLRDTR)) {
                     if (interp) {
                         Tcl_AppendResult(interp, 
@@ -1715,7 +1708,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
                     }
                     return TCL_ERROR;
                 }
-            } else if (strncmp(argv[0], "RTS", strlen(argv[0])) == 0) {
+            } else if (strnicmp(argv[0], "RTS", strlen(argv[0])) == 0) {
                 if (! EscapeCommFunction(infoPtr->handle, flag ? SETRTS : CLRRTS)) {
                     if (interp) {
                         Tcl_AppendResult(interp, 
@@ -1723,7 +1716,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
                     }
                     return TCL_ERROR;
                 }
-            } else if (strncmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
+            } else if (strnicmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
                 if (! EscapeCommFunction(infoPtr->handle, flag ? SETBREAK : CLRBREAK)) {
                     if (interp) {
                         Tcl_AppendResult(interp, 
