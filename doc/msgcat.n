@@ -43,10 +43,17 @@ wishes to be enabled for multi-lingual applications.
 
 .SH COMMANDS
 .TP
-\fB::msgcat::mc \fIsrc-string\fR
+\fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 Returns a translation of \fIsrc-string\fR according to the
-user's current locale.  If no translation string
-exists, \fB::msgcat::mcunknown\fR is called and the string
+user's current locale.  If additional arguments past \fIsrc-string\fR
+are given, the \fBformat\fR command is used to substitute the
+additional arguments in the translation of \fIsrc-string\fR.
+
+\fB::msgcat::mc\fR will search the messages defined
+in the current namespace for a translation of \fIsrc-string\fR; if
+none is found, it will search in the parent of the current namespace,
+and so on until it reaches the global namespace.  If no translation
+string exists, \fB::msgcat::mcunknown\fR is called and the string
 returned from \fB::msgcat::mcunknown\fR is returned.
 .PP
 \fB::msgcat::mc\fR is the main function used to localize an
@@ -136,6 +143,35 @@ will print
 .CS
 hello from ::
 hello from ::foo
+.CE
+.PP
+When searching for a translation of a message, the
+message catalog will search first the current namespace,
+then the parent of the current namespace, and so on until
+the global namespace is reached.  This allows child namespaces
+to "inherit" messages from their parent namespace.
+.PP
+For example, executing the code
+.CS
+mcset en m1 ":: message1"
+mcset en m2 ":: message2"
+mcset en m3 ":: message3"
+namespace eval ::foo {
+    mcset en m2 "::foo message2"
+    mcset en m3 "::foo message3"
+}
+namespace eval ::foo::bar {
+    mcset en m3 "::foo::bar message3"
+}
+puts "[mc m1]; [mc m2]; [mc m3]"
+namespace eval ::foo {puts "[mc m1]; [mc m2]; [mc m3]"}
+namespace eval ::foo::bar {puts "[mc m1]; [mc m2]; [mc m3]"}
+.CE
+will print
+.CS
+:: message1; :: message2; :: message3
+:: message1; ::foo message2; ::foo message3
+:: message1; ::foo message2; ::foo::bar message3
 .CE
 
 .SH "LOCATION AND FORMAT OF MESSAGE FILES"

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.7 2000/04/10 17:19:02 ericm Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.8 2000/04/11 21:16:18 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -302,14 +302,108 @@ test msgcat-5.9 {::msgcat::mcload} {
     set result
 } {unknown:no_fi_notexist:abc}
 
-# cleanup
+# cleanup temp files
 foreach l $locales {
     file delete [string tolower [file join msgdir $l.msg]]
 }
-
 # Clean out the msg catalogs
-::msgcat::mclocale $oldlocale
 file delete msgdir
+
+#
+# Test mcset and mc, ensuring that resolution for messages
+# proceeds from the current ns to its parent and so on to the 
+# global ns.
+#
+# Do this for the 12 permutations of
+#     locales: foo
+#     namespaces: ::foo ::foo::bar ::foo::bar::baz
+#     strings: {ov1 ov2 ov3 ov4}
+#     namespace ::foo            defines ov1, ov2, ov3
+#     namespace ::foo::bar       defines      ov2, ov3
+#     namespace ::foo::bar::baz  defines           ov3
+#
+#     ov4 is not defined in any namespace.
+#
+# So,
+#     ov3 should be resolved in ::foo::bar::baz, ::foo::bar, ::foo;
+#     ov2 should be resolved in ::foo, ::foo::bar
+#     ov1 should be resolved in ::foo
+#     ov4 should be resolved in none, and call mcunknown
+#
+
+namespace eval ::foo {
+    ::msgcat::mcset foo ov1 "ov1_foo"
+    ::msgcat::mcset foo ov2 "ov2_foo"
+    ::msgcat::mcset foo ov3 "ov3_foo"
+}
+namespace eval ::foo::bar {
+    ::msgcat::mcset foo ov2 "ov2_foo_bar"
+    ::msgcat::mcset foo ov3 "ov3_foo_bar"
+}    
+namespace eval ::foo::bar::baz {
+    ::msgcat::mcset foo ov3 "ov3_foo_bar_baz"
+}    
+::msgcat::mclocale foo
+
+# namespace ::foo
+test msgcat-6.1 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo {::msgcat::mc ov1}
+} {ov1_foo}
+test msgcat-6.2 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo {::msgcat::mc ov2}
+} {ov2_foo}
+test msgcat-6.3 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo {::msgcat::mc ov3}
+} {ov3_foo}
+test msgcat-6.4 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo {::msgcat::mc ov4}
+} {ov4}
+# namespace ::foo::bar
+test msgcat-6.5 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar {::msgcat::mc ov1}
+} {ov1_foo}
+test msgcat-6.6 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar {::msgcat::mc ov2}
+} {ov2_foo_bar}
+test msgcat-6.7 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar {::msgcat::mc ov3}
+} {ov3_foo_bar}
+test msgcat-6.8 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar {::msgcat::mc ov4}
+} {ov4}
+# namespace ::foo
+test msgcat-6.9 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar::baz {::msgcat::mc ov1}
+} {ov1_foo}
+test msgcat-6.10 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar::baz {::msgcat::mc ov2}
+} {ov2_foo_bar}
+test msgcat-6.11 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar::baz {::msgcat::mc ov3}
+} {ov3_foo_bar_baz}
+test msgcat-6.12 {::msgcat::mc, namespace resolution} {
+    namespace eval ::foo::bar::baz {::msgcat::mc ov4}
+} {ov4}
+
+namespace delete ::foo::bar::baz ::foo::bar ::foo
+
+::msgcat::mclocale foo
+::msgcat::mcset foo format1 "this is a test"
+::msgcat::mcset foo format2 "this is a %s"
+::msgcat::mcset foo format3 "this is a %s %s"
+
+test msgcat-7.1 {::msgcat::mc, extra args go through to format} {
+    ::msgcat::mc format1 "good test"
+} "this is a test"
+test msgcat-7.2 {::msgcat::mc, extra args go through to format} {
+    ::msgcat::mc format2 "good test"
+} "this is a good test"
+test msgcat-7.3 {::msgcat::mc, errors from format are propagated} {
+    catch {::msgcat::mc format3 "good test"}
+} 1
+
+# Reset the locale
+::msgcat::mclocale $oldlocale
 
 ::tcltest::cleanupTests
 return

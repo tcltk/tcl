@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.3 1999/08/19 02:59:49 hobbs Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.4 2000/04/11 21:16:18 ericm Exp $
 
 package provide msgcat 1.0
 
@@ -32,20 +32,38 @@ namespace eval msgcat {
 # msgcat::mc --
 #
 #	Find the translation for the given string based on the current
-#	locale setting.
+#	locale setting. Check the local namespace first, then look in each
+#	parent namespace until the source is found.  If additional args are
+#	specified, use the format command to work them into the traslated
+#	string.
 #
 # Arguments:
 #	src	The string to translate.
+#	args	Args to pass to the format command
 #
 # Results:
-#	Returns the translatd string.
+#	Returns the translatd string.  Propagates errors thrown by the 
+#	format command.
 
-proc msgcat::mc {src} {
+proc msgcat::mc {src args} {
+    # Check for the src in each namespace starting from the local and
+    # ending in the global.
+
     set ns [uplevel {namespace current}]
-    foreach loc $::msgcat::loclist {
-	if {[info exists ::msgcat::msgs($loc,$ns,$src)]} {
-	    return $::msgcat::msgs($loc,$ns,$src)
+    
+    while {$ns != ""} {
+	foreach loc $::msgcat::loclist {
+	    if {[info exists ::msgcat::msgs($loc,$ns,$src)]} {
+		if {[llength $args] == 0} {
+		    return $::msgcat::msgs($loc,$ns,$src)
+		} else {
+		    return [eval \
+			    [list format $::msgcat::msgs($loc,$ns,$src)] \
+			    $args]
+		}
+	    }
 	}
+	set ns [namespace parent $ns]
     }
     # we have not found the translation
     return [uplevel 1 [list [namespace origin mcunknown] \
