@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.142 2004/05/27 20:44:36 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.143 2004/06/08 19:27:01 msofer Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -3989,7 +3989,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * from the string rep.
 	     */
 	    int length;
-	    long i;
+	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
 	    Tcl_WideInt w;
 	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
 
@@ -5406,7 +5406,7 @@ VerifyExprObjType(interp, objPtr)
 	char *s = Tcl_GetStringFromObj(objPtr, &length);
 	
 	if (TclLooksLikeInt(s, length)) {
-	    long i;
+	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
 	    Tcl_WideInt w;
 	    GET_WIDE_OR_INT(result, objPtr, i, w);
 	} else {
