@@ -1,3 +1,9 @@
+2003-01-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lset.n: Fixed fault in return values from lset in
+	documentation examples [SF Bug #658463] and tidied up a bit at the
+	same time.
+
 2003-01-21  Joe English  <jenglish@users.sourceforge.net>
 	* doc/namespace.n (namespace inscope): Clarified documentation
 	[SF Patch #670110]
