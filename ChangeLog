@@ -1,3 +1,8 @@
+2002-01-27  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/package.n: Documented global namespace context for script
+	evaluation by [package require].
+
 2001-01-27  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.decls:
