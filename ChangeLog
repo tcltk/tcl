@@ -1,3 +1,16 @@
+2002-10-22  Daniel Steffen  <das@users.sourceforge.net>
+
+	* library/auto.tcl (tcl_findLibrary):
+	* library/package.tcl (tclPkgUnknown): on macosx, search inside the
+	Resources/Scripts subdirectory of any potential package directory
+	* macosx/Tcl.pbproj/project.pbxproj: add standard Frameworks dirs
+	to TCL_PACKAGE_PATH make argument.
+	* unix/tclUnixInit.c (TclpSetVariables): on macosx, add embedded
+	framework dirs to tcl_pkgPath: @executable_path/../Frameworks and
+	@executable_path/../PrivateFrameworks (if they exist), as well as
+	the dirs in DYLD_FRAMEWORK_PATH (if set). [Patch #624509]
+	use standard MAXPATHLEN instead of literal 1024
+
 2002-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/StringObj.3, doc/Object.3: Documented that Tcl_Obj's
