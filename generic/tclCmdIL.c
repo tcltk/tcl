@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.8 1998/10/13 18:44:16 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.9 1998/10/13 20:05:39 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -2861,11 +2861,11 @@ DictionaryCompare(left, right)
 	     */
 
 	    zeros = 0;
-	    while ((*right == '0') && (*(right + 1) != '\0')) {
+	    while ((*right == '0') && (isdigit(UCHAR(right[1])))) {
 		right++;
 		zeros--;
 	    }
-	    while ((*left == '0') && (*(left + 1) != '\0')) {
+	    while ((*left == '0') && (isdigit(UCHAR(left[1])))) {
 		left++;
 		zeros++;
 	    }
