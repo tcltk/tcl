@@ -1,3 +1,26 @@
+1999-12-07  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* library/http2.1/http.tcl: fixed error handling in http::Event
+	[Bug: 3752]
+
+	* generic/tclUtil.c: fixed Tcl_ScanCountedElement to not step
+	beyond the end of the counted string [Bug: 3336]
+
+	* generic/tclCompile.c: fixed 'bad code length' error for
+	'expr + {[incr]}' case, with new test case [Bug: 3736]
+	and seg fault on 'expr + {[error]}' (different cause) that
+	was caused by a correct optimization that didn't correctly
+	track how it was modifying the source string in the opt.
+	The optimization was removed, which means that:
+		expr 1 + {[string length abc]}
+	will be not be compiled inline as before, but this should be
+	written:
+		expr {1 + [string length abc]}
+	which will be compiled inline for speed.  This prevents
+		expr 1 + {[mindless error]}
+	from seg faulting, and only affects optimizations for
+	degenerate cases [Bug: 3737]
+
 1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclLoad.c: #def'd out the unloading of DLLs at finalize
