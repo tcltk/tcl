@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.4.2.1 2000/08/03 21:40:15 ericm Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.4.2.2 2000/08/03 21:59:35 ericm Exp $
 
 package provide msgcat 1.0
 
@@ -67,7 +67,7 @@ proc msgcat::mc {src args} {
     }
     # we have not found the translation
     return [uplevel 1 [list [namespace origin mcunknown] \
-	    $::msgcat::locale $src]]
+	    $::msgcat::locale $src] $args]
 }
 
 # msgcat::mclocale --
