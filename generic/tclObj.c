@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.50 2003/09/29 14:37:14 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.51 2003/10/09 00:29:27 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -524,6 +524,7 @@ void TclDbInitNewObj(objPtr)
      * Add entry to a thread local map used to check if a Tcl_Obj
      * was allocated by the currently executing thread.
      */
+    if (!TclInExit())
     {
         Tcl_HashEntry *hPtr;
         Tcl_HashTable *tablePtr;
