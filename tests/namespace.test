@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.40 2004/10/02 04:21:49 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.41 2004/10/22 15:46:37 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1691,14 +1691,12 @@ test namespace-46.4 {ensemble: implementation errors} {
 } {ns 1 {unknown subcommand "?": namespace ::ns does not export any commands}}
 test namespace-46.5 {ensemble: implementation errors} {
     namespace eval ns {
-	namespace ensemble create -map {foo ::error}
+	namespace ensemble create -map {makeError ::error}
     }
-    list [catch {ns foo bar} msg] $msg $::errorInfo [namespace delete ns]
-} {1 bar {bar
+    list [catch {ns makeError "an error happened"} msg] $msg $::errorInfo [namespace delete ns]
+} {1 {an error happened} {an error happened
     while executing
-"::error bar"
-    invoked from within
-"ns foo bar"} {}}
+"ns makeError "an error happened""} {}}
 test namespace-46.6 {ensemble: implementation renames/deletes itself} {
     namespace eval ns {
 	namespace ensemble create -map {to ::rename}
