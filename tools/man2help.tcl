@@ -6,12 +6,14 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.8 2001/11/10 02:34:57 hobbs Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.9 2002/03/28 02:42:40 davygrvy Exp $
 # 
 
 #
 # PASS 1
 #
+
+set man2tclprog [file join [file dirname [info script]] man2tcl.exe]
 
 proc generateContents {basename version files} {
     global curID topics
@@ -21,7 +23,7 @@ proc generateContents {basename version files} {
 	flush stdout
 	doFile $f
     }
-    set fd [open "$basename$version.cnt" w]
+    set fd [open [file join [file dirname [info script]] $basename$version.cnt] w]
     fconfigure $fd -translation crlf
     puts $fd ":Base $basename$version.hlp"
     foreach package [getPackages] {
@@ -55,7 +57,7 @@ proc generateHelp {basename files} {
 	}
     }
 
-    set file [open "$basename.rtf" w]
+    set file [open [file join [file dirname [info script]] $basename.rtf] w]
     fconfigure $file -translation crlf
     puts $file "\{\\rtf1\\ansi \\deff0\\deflang1033\{\\fonttbl\{\\f0\\froman\\fcharset0\\fprq2 Times New Roman\;\}\}"
     foreach f $files {
@@ -78,8 +80,8 @@ proc generateHelp {basename files} {
 # file -		Name of file to translate.
 
 proc doFile {file} {
-    if {[catch {eval [exec man2tcl [glob $file]]} msg] &&
-	    [catch {eval [exec ./man2tcl [glob $file]]} msg]} {
+    global man2tclprog
+    if {[catch {eval [exec $man2tclprog [glob $file]]} msg]} {
 	global errorInfo
 	puts stderr $msg
 	puts "in"
@@ -124,7 +126,7 @@ foreach i [lrange $argv 2 end] {
     }
 }
 
-source [file join [file dir $argv0] index.tcl]
+source [file join [file dirname [info script]] index.tcl]
 generateContents $baseName $version $files
-source [file join [file dir $argv0] man2help2.tcl]
+source [file join [file dirname [info script]] man2help2.tcl]
 generateHelp $baseName $files

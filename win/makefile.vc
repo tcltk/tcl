@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.85 2002/03/27 22:57:57 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.86 2002/03/28 02:42:51 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -184,10 +184,6 @@ TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 
 TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
-
-TCLHLPBASE	= $(PROJECT)$(VERSION)
-TCLHLP		= $(OUT_DIR)\$(TCLHLPBASE).hlp
-TCLHLPCNT	= $(OUT_DIR)\$(TCLHLPBASE).cnt
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
 CAT32		= $(OUT_DIR)\cat32.exe
@@ -410,7 +406,7 @@ shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLPIPEDLL) $(TCLREGLIB) $(TCLDDELIB)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) 
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
-install:    install-binaries install-libraries
+install:    install-binaries install-libraries install-docs
 
 
 test: setup $(TCLTEST) dlls $(CAT32)
@@ -518,21 +514,33 @@ $(TCLOBJS)
 # Build the windows help file.
 #---------------------------------------------------------------------
 
-MAN2TCL		= $(TOOLSDIR)\man2tcl
-TCLRTF		= $(TOOLSDIR)\$(PROJECT).rtf
-MAN2HELP	= $(TOOLSDIR)\man2help.tcl
+TCLHLPBASE	= $(PROJECT)$(VERSION)
+HELPFILE	= $(OUT_DIR)\$(TCLHLPBASE).hlp
+HELPCNT		= $(OUT_DIR)\$(TCLHLPBASE).cnt
+DOCTMP_DIR	= $(OUT_DIR)\$(PROJECT)_docs
+HELPRTF		= $(DOCTMP_DIR)\$(PROJECT).rtf
+MAN2HELP	= $(DOCTMP_DIR)\man2help.tcl
+MAN2HELP2	= $(DOCTMP_DIR)\man2help2.tcl
+INDEX		= $(DOCTMP_DIR)\index.tcl
+MAN2TCL		= $(DOCTMP_DIR)\man2tcl.exe
 
-winhelp: $(TCLHLP)
+winhelp: docsetup $(HELPFILE)
 
-$(TCLHLP): $(TCLRTF)
-	cd $(TOOLSDIR)
+docsetup:
+	@if not exist $(DOCTMP_DIR)\nul mkdir $(DOCTMP_DIR)
+
+$(MAN2HELP) $(MAN2HELP2) $(INDEX): $(TOOLSDIR)\$$(@F)
+	copy $(TOOLSDIR)\$(@F) $(@D)
+
+$(HELPFILE): $(HELPRTF)
+	cd $(DOCTMP_DIR)
 	start /wait hcrtf.exe -x <<$(PROJECT).hpj
 [OPTIONS]
 COMPRESS=12 Hall Zeck
 LCID=0x409 0x0 0x0 ; English (United States)
 TITLE=Tcl/Tk Reference Manual
-CNT=$(TCLHLPBASE).cnt
-HLP=$(TCLHLPBASE).hlp
+CNT=$(@B).cnt
+HLP=$(@B).hlp
 
 [FILES]
 $(PROJECT).rtf
@@ -547,18 +555,20 @@ CreateButton(2, "Sourceforge", ExecFile("http://sf.net/projects/tcl"))
 CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
 <<
 	cd $(MAKEDIR)
-	copy $(TOOLSDIR)\$(TCLHLPBASE).hlp $(OUT_DIR)
-	copy $(TOOLSDIR)\$(TCLHLPBASE).cnt $(OUT_DIR)
+	copy "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
+	copy "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
 
-$(MAN2TCL).exe:
-	cd $(TOOLSDIR)
-	$(cc32) -nologo -G4 -ML -O2 $(MAN2TCL).c
-	cd $(MAKEDIR)
+$(MAN2TCL):
+	$(cc32) -nologo -G4 -ML -O2 $(TOOLSDIR)\man2tcl.c -link -out:$@
 
-$(TCLRTF): $(MAN2TCL).exe $(TCLSH)
-	cd $(TOOLSDIR)
-	..\win\$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc
-	cd $(MAKEDIR)
+$(HELPRTF): $(TCLSH) $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX)
+	$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc
+
+install-docs:
+!if exist($(HELPFILE))
+	@xcopy /i /y "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
+	@xcopy /i /y "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
+!endif
 
 
 #---------------------------------------------------------------------
@@ -703,10 +713,6 @@ install-binaries:
 !endif
 	@echo installing $(TCLSTUBLIBNAME)
 	@xcopy /i /y "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
-!if exist($(TCLHLP))
-	@xcopy /i /y "$(TCLHLP)" "$(DOC_INSTALL_DIR)\"
-	@xcopy /i /y "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)\"
-!endif
 
 install-libraries:
 	@echo installing http1.0
