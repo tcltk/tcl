@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLibrary.r,v 1.6 2001/12/27 22:46:22 das Exp $
+ * RCS: @(#) $Id: tclMacLibrary.r,v 1.7 2002/09/12 17:33:20 das Exp $
  */
 
 #include <Types.r>
@@ -21,7 +21,7 @@
  * the version string for Tcl.
  */
 
-#define RESOURCE_INCLUDED
+#define RC_INVOKED
 #include "tcl.h"
 
 #if (TCL_RELEASE_LEVEL == 0)
