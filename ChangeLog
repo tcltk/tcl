@@ -1,3 +1,9 @@
+1999-0701     <redman@scriptics.com>
+
+	* generic/tclCmdAH.c:
+	* generic/tclFCmd.c: Call TclStat instead of TclpStat in order to
+	allow Tcl_Stat hooks to work properly.
+
 1999-06-28    <redman@scriptics.com>
 
 	* generic/tclIndexObj.c:
