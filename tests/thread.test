@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: thread.test,v 1.1.2.5 1999/03/26 19:14:07 hershey Exp $
+# RCS: @(#) $Id: thread.test,v 1.1.2.6 1999/04/01 23:22:32 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -68,7 +68,9 @@ ThreadReap
 test thread-1.5 {Tcl_ThreadObjCmd: thread create one shot} {
     testthread create {set x 5}
     foreach try {0 1 2 4 5 6} {
+	# Try various ways to yeild
 	update
+	after 10
 	set l [llength [testthread names]]
 	if {$l == 1} {
 	    break
@@ -81,6 +83,7 @@ ThreadReap
 test thread-1.6 {Tcl_ThreadObjCmd: thread exit} {
     testthread create {testthread exit}
     update
+    after 10
     llength [testthread names]
 } {1}
 ThreadReap

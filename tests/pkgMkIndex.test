@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.7 1999/03/25 04:32:18 hershey Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.8 1999/04/01 23:22:32 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -342,6 +342,12 @@ test pkgMkIndex-10.1 {package in DLL and script} $dll {
 test pkgMkIndex-10.2 {package in DLL hidden by -load} $dll {
     pkgtest::runIndex -load Pkg* -- pkg pkga[info sharedlibextension]
 } {0 {}}
+
+# Tolerate "namespace import" at the global scope
+
+test pkgMkIndex-11.1 {conflicting namespace imports} {
+    pkgtest::runIndex pkg import.tcl
+} {0 {{fubar:1.0 {tclPkgSetup {import.tcl source ::fubar::foo}}}}}
 
 # cleanup
 namespace delete pkgtest
