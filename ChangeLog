@@ -1,3 +1,10 @@
+2003-02-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixThrd.c (TclpReaddir):
+	* unix/tclUnixPort.h: update to Bug 689100 patch to ensure that
+	there is a defined value of MAXNAMLEN (aka NAME_MAX in POSIX) and
+	that we have some buffer allocated.
+
 2003-02-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclStringObj.c: restored Tcl_SetObjLength() side-effect
