@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.14 2002/06/05 11:59:49 das Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.14.2.1 2003/10/01 14:34:16 das Exp $
  */
 
 #include <Errors.h>
@@ -1486,7 +1486,7 @@ Tcl_MacFindResource(
 	Tcl_DStringFree(&ds);
     }
     
-    if (*resource == NULL) {
+    if (resource != NULL && *resource == NULL) {
     	*releaseIt = 1;
     	LoadResource(resource);
     } else {
