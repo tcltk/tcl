@@ -1,3 +1,8 @@
+2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/tcl.m4: Make it work on OpenBSD again. Imported patch
+	from the OpenBSD ports tree.
+
 2005-03-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (TclCheckInterpTraces):	Corrected mistaken
