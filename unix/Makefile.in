@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.52 2000/01/11 22:09:18 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.53 2000/01/12 11:13:54 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.52 2000/01/11 22:09:18 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.53 2000/01/12 11:13:54 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -502,7 +502,9 @@ install-binaries: binaries
 		fi; \
 	    done;
 	@echo "Installing $(TCL_LIB_FILE)"
-	chmod +x $(SRC_DIR)/install-sh
+	@if test ! -x $(SRC_DIR)/install-sh; then \
+	    chmod +x $(SRC_DIR)/install-sh; \
+	    fi
 	@$(INSTALL_DATA) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
 	@(cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE))
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
@@ -541,7 +543,9 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	chmod +x $(SRC_DIR)/install-sh
+	@if test ! -x $(SRC_DIR)/install-sh; then \
+	    chmod +x $(SRC_DIR)/install-sh; \
+	    fi
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h ; \
 	    do \
 	    echo "Installing $$i"; \
@@ -566,7 +570,9 @@ install-libraries: libraries
 	done;
 
 install-doc: doc
-	@chmod +x $(UNIX_DIR)/mkLinks
+	@if test ! -x $(UNIX_DIR)/mkLinks; then \
+	    chmod +x $(UNIX_DIR)/mkLinks; \
+	    fi
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
 	    do \
 	    if [ ! -d $$i ] ; then \

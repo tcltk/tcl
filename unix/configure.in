@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.52 1999/12/21 23:59:49 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.53 2000/01/12 11:13:55 hobbs Exp $
 
 TCL_VERSION=8.3
 TCL_MAJOR_VERSION=8
@@ -254,29 +254,7 @@ fi
 #	"fixstrtod" that corrects the error.
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(strtod, tcl_strtod=1, tcl_strtod=0)
-if test "$tcl_strtod" = 1; then
-    AC_MSG_CHECKING([for Solaris strtod bug])
-    AC_TRY_RUN([
-extern double strtod();
-int main()
-{
-    char *string = "NaN";
-    char *term;
-    strtod(string, &term);
-    if ((term != string) && (term[-1] == 0)) {
-	exit(1);
-    }
-    exit(0);
-}], tcl_ok=1, tcl_ok=0, tcl_ok=0)
-    if test $tcl_ok = 1; then
-	AC_MSG_RESULT(ok)
-    else
-	AC_MSG_RESULT(buggy)
-	LIBOBJS="$LIBOBJS fixstrtod.o"
-	AC_DEFINE(strtod, fixstrtod)
-    fi
-fi
+SC_BUGGY_STRTOD
 
 #--------------------------------------------------------------------
 #	Check for various typedefs and provide substitutes if

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.4 1999/04/16 00:48:04 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.5 2000/01/12 11:13:55 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -88,7 +88,10 @@ static int		SetOwnerAttribute _ANSI_ARGS_((Tcl_Interp *interp,
 static int		SetPermissionsAttribute _ANSI_ARGS_((
 			    Tcl_Interp *interp, int objIndex,
 			    CONST char *fileName, Tcl_Obj *attributePtr));
-			  
+static int		GetModeFromPermString _ANSI_ARGS_((
+			    Tcl_Interp *interp, char *modeStringPtr,
+			    mode_t *modePtr));
+
 /*
  * Prototype for the TraverseUnixTree callback function.
  */
@@ -1340,16 +1343,44 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     Tcl_Obj *attributePtr;	    /* The attribute to set. */
 {
     long mode;
+    mode_t newMode;
     int result;
     CONST char *native;
     Tcl_DString ds;
 
-    if (Tcl_GetLongFromObj(interp, attributePtr, &mode) != TCL_OK) {
-	return TCL_ERROR;
+    /*
+     * First try if the string is a number
+     */
+    if (Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
+        newMode = (mode_t) (mode & 0x00007FFF);
+    } else {
+	struct stat buf;
+	char *modeStringPtr = Tcl_GetString(attributePtr);
+
+	/*
+	 * Try the forms "rwxrwxrwx" and "ugo=rwx"
+	 *
+	 * We get the current mode of the file, in order to allow for
+	 * ug+-=rwx style chmod strings.
+	 */
+	result = TclStat(fileName, &buf);
+	if (result != 0) {
+	    Tcl_AppendResult(interp, "could not read \"", fileName, "\": ",
+		    Tcl_PosixError(interp), (char *) NULL);
+	    return TCL_ERROR;
+	}
+	newMode = (mode_t) (buf.st_mode & 0x00007FFF);
+
+	if (GetModeFromPermString(NULL, modeStringPtr, &newMode) != TCL_OK) {
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "unknown permission string format \"",
+		    modeStringPtr, "\"", (char *) NULL);
+	    return TCL_ERROR;
+	}
     }
 
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    result = chmod(native, (mode_t) mode);		/* INTL: Native. */
+    result = chmod(native, newMode);		/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (result != 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -1359,6 +1390,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     }
     return TCL_OK;
 }
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -1388,4 +1420,192 @@ TclpListVolumes(interp)
     Tcl_SetStringObj(resultPtr, "/", 1);
     return TCL_OK;	
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetModeFromPermString --
+ *
+ *	This procedure is invoked to process the "file permissions"
+ *	Tcl command, to check for a "rwxrwxrwx" or "ugoa+-=rwxst" string.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static int
+GetModeFromPermString(interp, modeStringPtr, modePtr)
+    Tcl_Interp *interp;		/* The interp we are using for errors. */
+    char *modeStringPtr;	/* Permissions string */
+    mode_t *modePtr;		/* pointer to the mode value */
+{
+    mode_t newMode;
+    mode_t oldMode;		/* Storage for the value of the old mode
+				 * (that is passed in), to allow for the
+				 * chmod style manipulation */
+    int i,n, who, op, what, op_found, who_found;
+
+    /*
+     * We start off checking for an "rwxrwxrwx" style permissions string
+     */
+    if (strlen(modeStringPtr) != 9) {
+        goto chmodStyleCheck;
+    }
+
+    newMode = 0;
+    for (i = 0; i < 9; i++) {
+	switch (*(modeStringPtr+i)) {
+	    case 'r':
+		if ((i%3) != 0) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<(8-i));
+		break;
+	    case 'w':
+		if ((i%3) != 1) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<(8-i));
+		break;
+	    case 'x':
+		if ((i%3) != 2) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<(8-i));
+		break;
+	    case 's':
+		if (((i%3) != 2) || (i > 5)) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<(8-i));
+		newMode |= (1<<(11-(i/3)));
+		break;
+	    case 'S':
+		if (((i%3) != 2) || (i > 5)) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<(11-(i/3)));
+		break;
+	    case 't':
+		if (i != 8) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<(8-i));
+		newMode |= (1<<9);
+		break;
+	    case 'T':
+		if (i != 8) {
+		    goto chmodStyleCheck;
+		}
+		newMode |= (1<<9);
+		break;
+	    case '-':
+		break;
+	    default:
+		/*
+		 * Oops, not what we thought it was, so go on
+		 */
+		goto chmodStyleCheck;
+	}
+    }
+    *modePtr = newMode;
+    return TCL_OK;
+
+    chmodStyleCheck:
+    /*
+     * We now check for an "ugoa+-=rwxst" style permissions string
+     */
+
+    for (n = 0 ; *(modeStringPtr+n) != '\0' ; n = n + i) {
+	oldMode = *modePtr;
+	who = op = what = op_found = who_found = 0;
+	for (i = 0 ; *(modeStringPtr+n+i) != '\0' ; i++ ) {
+	    if (!who_found) {
+		/* who */
+		switch (*(modeStringPtr+n+i)) {
+		    case 'u' :
+			who |= 0x9c0;
+			continue;
+		    case 'g' :
+			who |= 0x438;
+			continue;
+		    case 'o' :
+			who |= 0x207;
+			continue;
+		    case 'a' :
+			who |= 0xfff;
+			continue;
+		}
+	    }
+	    who_found = 1;
+	    if (who == 0) {
+		who = 0xfff;
+	    }
+	    if (!op_found) {
+		/* op */
+		switch (*(modeStringPtr+n+i)) {
+		    case '+' :
+			op = 1;
+			op_found = 1;
+			continue;
+		    case '-' :
+			op = 2;
+			op_found = 1;
+			continue;
+		    case '=' :
+			op = 3;
+			op_found = 1;
+			continue;
+		    default  :
+			return TCL_ERROR;
+			break;
+		}
+	    }
+	    /* what */
+	    switch (*(modeStringPtr+n+i)) {
+		case 'r' :
+		    what |= 0x124;
+		    continue;
+		case 'w' :
+		    what |= 0x92;
+		    continue;
+		case 'x' :
+		    what |= 0x49;
+		    continue;
+		case 's' :
+		    what |= 0xc00;
+		    continue;
+		case 't' :
+		    what |= 0x200;
+		    continue;
+		case ',' :
+		    break;
+		default  :
+		    return TCL_ERROR;
+		    break;
+	    }
+	    if (*(modeStringPtr+n+i) == ',') {
+		i++;
+		break;
+	    }
+	}
+	switch (op) {
+	    case 1 :
+		*modePtr = oldMode | (who & what);
+		continue;
+	    case 2 :
+		*modePtr = oldMode & ~(who & what);
+		continue;
+	    case 3 :
+		*modePtr = (oldMode & ~who) | (who & what);
+		continue;
+	}
+    }
+    return TCL_OK;
+}

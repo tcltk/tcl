@@ -584,7 +584,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	AIX-4.[[2-9]])
 	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
 		# AIX requires the _r compiler when gcc isn't being used
-		CC=${CC}_r
+		if test "${CC}" != "cc_r" ; then
+		    CC=${CC}_r
+		fi
 		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
 	    SHLIB_CFLAGS=""
@@ -601,7 +603,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	AIX-*)
 	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
 		# AIX requires the _r compiler when gcc isn't being used
-		CC=${CC}_r
+		if test "${CC}" != "cc_r" ; then
+		    CC=${CC}_r
+		fi
 		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
 	    SHLIB_CFLAGS=""
@@ -853,6 +857,15 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
+	    if test "${TCL_THREADS}" = "1" ; then
+		if test "$using_gcc" = "no" ; then
+		    EXTRA_CFLAGS="-std1 -pthread"
+		    LDFLAGS="-pthread"
+		else
+		    THREADS_LIBS=" -lpthread -lmach -lexc -lc"
+		fi
+	    fi
 	    ;;
 	RISCos-*)
 	    SHLIB_CFLAGS="-G 0"
@@ -1544,6 +1557,8 @@ AC_DEFUN(SC_TIME_HANDLER, [
 #	terminating character under some conditions.  Check for this
 #	and if the problem exists use a substitute procedure
 #	"fixstrtod" (provided by Tcl) that corrects the error.
+#	Also, on Compaq's Tru64 Unix 5.0,
+#	strtod(" ") returns 0.0 instead of a failure to convert.
 #
 # Arguments:
 #	none
@@ -1556,25 +1571,31 @@ AC_DEFUN(SC_TIME_HANDLER, [
 #--------------------------------------------------------------------
 
 AC_DEFUN(SC_BUGGY_STRTOD, [
-    AC_CHECK_FUNC(strtod, tk_strtod=1, tk_strtod=0)
-    if test "$tk_strtod" = 1; then
-	AC_MSG_CHECKING([for Solaris 2.4 strtod bug])
+    AC_CHECK_FUNC(strtod, tcl_strtod=1, tcl_strtod=0)
+    if test "$tcl_strtod" = 1; then
+	AC_MSG_CHECKING([for Solaris2.4/Tru64 strtod bugs])
 	AC_TRY_RUN([
 	    extern double strtod();
 	    int main()
 	    {
-		char *string = "NaN";
+		char *string = "NaN", *spaceString = " ";
 		char *term;
-		strtod(string, &term);
+		double value;
+		value = strtod(string, &term);
 		if ((term != string) && (term[-1] == 0)) {
 		    exit(1);
 		}
+		value = strtod(string, &term);
+		if (term == (string+1)) {
+		    exit(1);
+		}
 		exit(0);
-	    }], tk_ok=1, tk_ok=0, tk_ok=0)
-	if test "$tk_ok" = 1; then
+	    }], tcl_ok=1, tcl_ok=0, tcl_ok=0)
+	if test "$tcl_ok" = 1; then
 	    AC_MSG_RESULT(ok)
 	else
 	    AC_MSG_RESULT(buggy)
+	    LIBOBJS="$LIBOBJS fixstrtod.o"
 	    AC_DEFINE(strtod, fixstrtod)
 	fi
     fi
@@ -1664,14 +1685,15 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     tcl_checkBoth=0
     AC_CHECK_FUNC(connect, tcl_checkSocket=0, tcl_checkSocket=1)
     if test "$tcl_checkSocket" = 1; then
-	AC_CHECK_LIB(socket, main, LIBS="$LIBS -lsocket", tcl_checkBoth=1)
+	AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
+	    LIBS="$LIBS -lsocket", tcl_checkBoth=1))
     fi
     if test "$tcl_checkBoth" = 1; then
 	tk_oldLibs=$LIBS
 	LIBS="$LIBS -lsocket -lnsl"
 	AC_CHECK_FUNC(accept, tcl_checkNsl=0, [LIBS=$tk_oldLibs])
     fi
-    AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, main,
+    AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"]))
     
     # Don't perform the eval of the libraries here because DL_LIBS
