@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.93 2002/07/24 13:51:18 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.94 2002/07/28 03:15:11 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -44,7 +44,6 @@ if test "${CFLAGS+set}" != "set" ; then
 fi
 
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_HAVE_HEADERS(unistd.h limits.h)
 
 #------------------------------------------------------------------------
@@ -403,35 +402,7 @@ SC_BLOCKING_STYLE
 
 TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-
-TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
-if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
-    TCL_SHLIB_CFLAGS="${SHLIB_CFLAGS}"
-    eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
-    if test "x$DL_OBJS" = "xtclLoadAout.o"; then
-	MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
-    else
-	MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
-    fi
-else
-    case $system in
-        BSD/OS*)
-	    ;;
-
-	AIX-[[1-4]].*)
-            ;;
-
-        *)
-	    SHLIB_LD_LIBS=""
-	    ;;
-    esac
-    TCL_SHLIB_CFLAGS=""
-    eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
-    MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
-    if test "x$DL_OBJS" = "xtclLoadDyld.o"; then
-    	MAKE_LIB="${MAKE_LIB} ; \${RANLIB} \$@"
-    fi
-fi
+eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # so that the backslashes quoting the DBX braces are dropped.
@@ -445,7 +416,7 @@ eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 # AIX remembers this path and will attempt to use it at run-time to look
 # up the Tcl library.
 
-if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
+if test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
         TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
     else
@@ -497,8 +468,6 @@ eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 # Replace DBGX with TCL_DBGX
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
-MAKE_STUB_LIB="\${STLIB_LD} \[$]@ \${STUB_LIB_OBJS}"
-
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}\${TCL_DBGX}"
 else
@@ -541,40 +510,23 @@ AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 
-AC_SUBST(CFLAGS)
-AC_SUBST(CFLAGS_DEFAULT)
-AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(DL_OBJS)
+AC_SUBST(CC_SEARCH_FLAGS)
+AC_SUBST(LD_SEARCH_FLAGS)
 
-AC_SUBST(LDFLAGS)
-AC_SUBST(LDFLAGS_DEFAULT)
-AC_SUBST(LDFLAGS_DEBUG)
-AC_SUBST(LDFLAGS_OPTIMIZE)
-AC_SUBST(AR)
-AC_SUBST(RANLIB)
-
-AC_SUBST(STLIB_LD)
-AC_SUBST(SHLIB_LD)
-AC_SUBST(SHLIB_LD_LIBS)
-AC_SUBST(SHLIB_CFLAGS)
-AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(TCL_SHARED_BUILD)
 
 AC_SUBST(TCL_BUILD_LIB_SPEC)
-AC_SUBST(TCL_LD_SEARCH_FLAGS)
 AC_SUBST(TCL_NEEDS_EXP_FILE)
 AC_SUBST(TCL_BUILD_EXP_FILE)
 AC_SUBST(TCL_EXP_FILE)
 
 AC_SUBST(TCL_LIB_VERSIONS_OK)
 AC_SUBST(TCL_SHARED_LIB_SUFFIX)
-AC_SUBST(TCL_SHLIB_CFLAGS)
 AC_SUBST(TCL_UNSHARED_LIB_SUFFIX)
 
 AC_SUBST(TCL_HAS_LONGLONG)
 
-AC_SUBST(MAKE_LIB)
-AC_SUBST(MAKE_STUB_LIB)
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(TCL_PACKAGE_PATH)
 

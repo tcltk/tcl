@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.16 2001/11/08 03:07:21 mdejong Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.17 2002/07/28 03:15:11 mdejong Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -96,7 +96,8 @@ TCL_LD_FLAGS='@LDFLAGS@'
 # run-time dynamic linker where to look for shared libraries such as
 # libtcl.so.  Used when linking applications.  Only works if there
 # is a variable "LIB_RUNTIME_DIR" defined in the Makefile.
-TCL_LD_SEARCH_FLAGS='@TCL_LD_SEARCH_FLAGS@'
+TCL_CC_SEARCH_FLAGS='@CC_SEARCH_FLAGS@'
+TCL_LD_SEARCH_FLAGS='@LD_SEARCH_FLAGS@'
 
 # Additional object files linked with Tcl to provide compatibility
 # with standard facilities from ANSI C or POSIX.
