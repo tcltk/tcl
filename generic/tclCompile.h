@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.22 2001/11/20 22:47:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.23 2001/12/10 15:44:34 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -217,6 +217,7 @@ typedef struct CompileEnv {
     int maxStackDepth;		/* Maximum number of stack elements needed
 				 * to execute the code. Set by compilation
 				 * procedures before returning. */
+    int currStackDepth;         /* Current stack depth. */
     LiteralTable localLitTable;	/* Contains LiteralEntry's describing
 				 * all Tcl objects referenced by this
 				 * compiled code. Indexed by the string
@@ -564,6 +565,12 @@ typedef enum InstOperandType {
 typedef struct InstructionDesc {
     char *name;			/* Name of instruction. */
     int numBytes;		/* Total number of bytes for instruction. */
+    int stackEffect;            /* The worst-case balance stack effect of the 
+				 * instruction, used for stack requirements 
+				 * computations. The value INT_MIN signals
+				 * that the instruction's worst case effect
+				 * is (1-opnd1).
+				 */
     int numOperands;		/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
@@ -838,6 +845,31 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  */
 
 /*
+ * Macro used to update the stack requirements.
+ * It is called by the macros TclEmitOpCode, TclEmitInst1 and
+ * TclEmitInst4.
+ * Remark that the very last instruction of a bytecode always
+ * reduces the stack level: INST_DONE or INST_POP, so that the 
+ * maxStackdepth is always updated.
+ */
+
+#define TclUpdateStackReqs(op, i, envPtr) \
+    {\
+	int delta = instructionTable[(op)].stackEffect;\
+	if (delta) {\
+	    if (delta < 0) {\
+		if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\
+		    (envPtr)->maxStackDepth = (envPtr)->currStackDepth;\
+		}\
+		if (delta == INT_MIN) {\
+		    delta = 1 - (i);\
+		}\
+	    }\
+	    (envPtr)->currStackDepth += delta;\
+	}\
+    }
+
+/*
  * Macro to emit an opcode byte into a CompileEnv's code array.
  * The ANSI C "prototype" for this macro is:
  *
@@ -848,7 +880,8 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 #define TclEmitOpcode(op, envPtr) \
     if ((envPtr)->codeNext == (envPtr)->codeEnd) \
         TclExpandCodeArray(envPtr); \
-    *(envPtr)->codeNext++ = (unsigned char) (op)
+    *(envPtr)->codeNext++ = (unsigned char) (op);\
+    TclUpdateStackReqs(op, 0, envPtr)
 
 /*
  * Macro to emit an integer operand.
@@ -874,12 +907,14 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  *		    CompileEnv *envPtr));
  */
 
+
 #define TclEmitInstInt1(op, i, envPtr) \
     if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) { \
         TclExpandCodeArray(envPtr); \
     } \
     *(envPtr)->codeNext++ = (unsigned char) (op); \
-    *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i))
+    *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));\
+    TclUpdateStackReqs(op, i, envPtr)
 
 #define TclEmitInstInt4(op, i, envPtr) \
     if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) { \
@@ -893,7 +928,8 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
     *(envPtr)->codeNext++ = \
         (unsigned char) ((unsigned int) (i) >>  8); \
     *(envPtr)->codeNext++ = \
-        (unsigned char) ((unsigned int) (i)      )
+        (unsigned char) ((unsigned int) (i)      );\
+    TclUpdateStackReqs(op, i, envPtr)
     
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
@@ -1006,3 +1042,8 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 # define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLCOMPILATION */
+
+
+
+
+
