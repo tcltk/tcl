@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.34 2001/09/27 20:32:35 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.35 2001/10/15 20:26:57 andreas_kupries Exp $
 
 library tcl
 
@@ -624,8 +624,26 @@ declare 161 generic {
 declare 162 generic {
     void TclChannelEventScriptInvoker(ClientData clientData, int flags)
 }
-# These functions are vfs aware, but are generally only useful internally.
+
+# ALERT: The result of 'TclGetInstructionTable' is actually an
+# "InstructionDesc*" but we do not want to describe this structure in
+# "tclInt.h". It is described in "tclCompile.h". Use a cast to the
+# correct type when calling this procedure.
+
 declare 163 generic {
+	void * TclGetInstructionTable (void)
+}
+
+# ALERT: The argument of 'TclExpandCodeArray' is actually a
+# "CompileEnv*" but we do not want to describe this structure in
+# "tclInt.h". It is described in "tclCompile.h".
+
+declare 164 generic {
+	void TclExpandCodeArray (void *envPtr)
+}
+
+# These functions are vfs aware, but are generally only useful internally.
+declare 165 generic {
     void TclpSetInitialEncodings(void)
 }
 
