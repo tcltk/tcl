@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.6.3 2001/09/27 15:18:53 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.6.4 2001/09/27 15:48:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -151,7 +151,7 @@ TclpOpenFile(fname, mode)
 	 */
 
 	if (mode & O_WRONLY) {
-	    lseek(fd, (off_t) 0, SEEK_END);
+	    Tcl_PlatformSeek(fd, (Tcl_SeekOffset) 0, SEEK_END);
 	}
 
 	/*
@@ -214,7 +214,7 @@ TclpCreateTempFile(contents)
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	lseek(fd, (off_t) 0, SEEK_SET);
+	Tcl_PlatformSeek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
     }
     return MakeFile(fd);
 }

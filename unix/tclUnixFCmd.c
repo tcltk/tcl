@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.5 2001/09/27 15:18:52 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.6 2001/09/27 15:48:17 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -97,7 +97,7 @@ static int		GetModeFromPermString _ANSI_ARGS_((
  */
 
 typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
-	Tcl_DString *dstPtr, CONST struct stat *statBufPtr, int type,
+	Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr, int type,
 	Tcl_DString *errorPtr));
 
 /*
@@ -128,9 +128,9 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
  */
 
 static int		CopyFile _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST struct stat *statBufPtr));
+			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		CopyFileAtts _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST struct stat *statBufPtr));
+			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		DoCopyFile _ANSI_ARGS_((CONST char *srcPtr,
 			    CONST char *dstPtr));
 static int		DoCreateDirectory _ANSI_ARGS_((CONST char *pathPtr));
@@ -140,10 +140,10 @@ static int		DoRemoveDirectory _ANSI_ARGS_((Tcl_DString *pathPtr,
 static int		DoRenameFile _ANSI_ARGS_((CONST char *src,
 			    CONST char *dst));
 static int		TraversalCopy _ANSI_ARGS_((Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, CONST struct stat *statBufPtr,
+			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
 			    int type, Tcl_DString *errorPtr));
 static int		TraversalDelete _ANSI_ARGS_((Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, CONST struct stat *statBufPtr,
+			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
 			    int type, Tcl_DString *errorPtr));
 static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
@@ -317,13 +317,13 @@ DoCopyFile(src, dst)
     CONST char *src;	/* Pathname of file to be copied (native). */
     CONST char *dst;	/* Pathname of file to copy to (native). */
 {
-    struct stat srcStatBuf, dstStatBuf;
+    Tcl_StatBuf srcStatBuf, dstStatBuf;
 
     /*
      * Have to do a stat() to determine the filetype.
      */
     
-    if (lstat(src, &srcStatBuf) != 0) {			/* INTL: Native. */
+    if (Tcl_PlatformLStat(src, &srcStatBuf) != 0) {	/* INTL: Native. */
 	return TCL_ERROR;
     }
     if (S_ISDIR(srcStatBuf.st_mode)) {
@@ -336,7 +336,7 @@ DoCopyFile(src, dst)
      * exists, so we remove it first
      */
     
-    if (lstat(dst, &dstStatBuf) == 0) {			/* INTL: Native. */
+    if (Tcl_PlatformLStat(dst, &dstStatBuf) == 0) {	/* INTL: Native. */
 	if (S_ISDIR(dstStatBuf.st_mode)) {
 	    errno = EISDIR;
 	    return TCL_ERROR;
@@ -406,7 +406,7 @@ CopyFile(src, dst, statBufPtr)
     CONST char *src;		/* Pathname of file to copy (native). */
     CONST char *dst;		/* Pathname of file to create/overwrite
 				 * (native). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Used to determine mode and blocksize. */
 {
     int srcFd;
@@ -692,10 +692,10 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
     
     if (recursive != 0) {
 	/* We should try to change permissions so this can be deleted */
-	struct stat statBuf;
+	Tcl_StatBuf statBuf;
 	int newPerm;
 
-	if (stat(path, &statBuf) == 0) {
+	if (Tcl_PlatformStat(path, &statBuf) == 0) {
 	    oldPerm = (mode_t) (statBuf.st_mode & 0x00007FFF);
 	}
 	
@@ -768,7 +768,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
 {
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     CONST char *source, *errfile;
     int result, sourceLen;
     int targetLen;
@@ -780,7 +780,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     targetLen = 0;		/* lint. */
 
     source = Tcl_DStringValue(sourcePtr);
-    if (lstat(source, &statBuf) != 0) {			/* INTL: Native. */
+    if (Tcl_PlatformLStat(source, &statBuf) != 0) {	/* INTL: Native. */
 	errfile = source;
 	goto end;
     }
@@ -898,7 +898,7 @@ static int
 TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname to copy (native). */
     Tcl_DString *dstPtr;	/* Destination pathname of copy (native). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Stat info for file specified by srcPtr. */
     int type;                   /* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
@@ -963,7 +963,7 @@ static int
 TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname (native). */
     Tcl_DString *ignore;	/* Destination pathname (not used). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Stat info for file specified by srcPtr. */
     int type;                   /* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
@@ -1017,7 +1017,7 @@ static int
 CopyFileAtts(src, dst, statBufPtr) 
     CONST char *src;		/* Path name of source file (native). */
     CONST char *dst;		/* Path name of target file (native). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Stat info for source file */
 {
     struct utimbuf tval;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.4 2001/09/27 15:11:41 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.5 2001/09/27 15:48:17 dkf Exp $
  */
 
 #ifndef _TCL
@@ -345,6 +345,10 @@ typedef long LONG;
  */
 typedef long long	Tcl_WideInt;
 typedef struct stat64	Tcl_StatBuf;
+typedef off64_t		Tcl_SeekOffset;
+#define Tcl_PlatformStat  stat64
+#define Tcl_PlatformLStat lstat64
+#define Tcl_PlatformSeek  lseek64
 
 /*
  * This flag controls whether binary compatability is maintained with
