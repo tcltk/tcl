@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.14 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: scan.test,v 1.14.2.1 2004/08/19 21:12:04 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -417,12 +417,15 @@ test scan-5.11 {integer scanning} {nonPortable} {
     list [scan "4294967280 4294967280" "%u %d" a b] $a \
 	    [expr {$b == -16 || $b == 0x7fffffff}]
 } {2 4294967280 1}
-
 test scan-5.12 {integer scanning} {64bitInts} {
     set a {}; set b {}; set c {}
     list [scan "7810179016327718216,6c63546f6c6c6548,661432506755433062510" \
 	    %ld,%lx,%lo a b c] $a $b $c
 } {3 7810179016327718216 7810179016327718216 7810179016327718216}
+test scan-5.13 {integer scanning and overflow} {
+    # This test used to fail on some 64-bit systems. [Bug 1011860]
+    scan {300000000 3000000000 30000000000} {%ld %ld %ld}
+} {300000000 3000000000 30000000000}
 
 test scan-6.1 {floating-point scanning} {
     set a {}; set b {}; set c {}; set d {}
