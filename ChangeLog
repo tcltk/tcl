@@ -1,3 +1,8 @@
+2003-07-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdIL.c (SortCompare): Cleared up confusing error
+	message. [Bug 771539]
+
 2003-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/binary.test (binary-46.*): Tests to help enforce the
