@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.15 1999/06/15 01:16:22 hershey Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.16 1999/06/17 19:31:50 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -144,7 +144,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 
     indices = 0;
     about = 0;
-    cflags = REG_ADVANCED;
+    cflags = TCL_REG_ADVANCED;
     eflags = 0;
     
     for (i = 1; i < objc; i++) {
@@ -165,7 +165,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGEXP_NOCASE: {
-		cflags |= REG_ICASE;
+		cflags |= TCL_REG_NOCASE;
 		break;
 	    }
 	    case REGEXP_ABOUT: {
@@ -173,19 +173,19 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGEXP_EXPANDED: {
-		cflags |= REG_EXPANDED;
+		cflags |= TCL_REG_EXPANDED;
 		break;
 	    }
 	    case REGEXP_LINE: {
-		cflags |= REG_NEWLINE;
+		cflags |= TCL_REG_NEWLINE;
 		break;
 	    }
 	    case REGEXP_LINESTOP: {
-		cflags |= REG_NLSTOP;
+		cflags |= TCL_REG_NLSTOP;
 		break;
 	    }
 	    case REGEXP_LINEANCHOR: {
-		cflags |= REG_NLANCH;
+		cflags |= TCL_REG_NLANCH;
 		break;
 	    }
 	    case REGEXP_LAST: {
@@ -217,7 +217,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	return TCL_OK;
     }
 
-    match = Tcl_RegExpMatchObj(interp, regExpr, objPtr, 0 /* offset */,
+    match = Tcl_RegExpExecObj(interp, regExpr, objPtr, 0 /* offset */,
 	    objc-2 /* nmatches */, eflags);
 
     if (match < 0) {
@@ -330,13 +330,17 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     char *subspec;
 
     static char *options[] = {
-	"-all",		"-nocase",	"--",		NULL
+	"-all",		"-nocase",	"-expanded",
+	"-line",	"-linestop",	"-lineanchor",
+	"--",		NULL
     };
     enum options {
-	REGSUB_ALL,	REGSUB_NOCASE,	REGSUB_LAST
+	REGSUB_ALL,	REGSUB_NOCASE,	REGSUB_EXPANDED,
+	REGSUB_LINE,	REGSUB_LINESTOP, REGSUB_LINEANCHOR,
+	REGSUB_LAST
     };
 
-    cflags = REG_ADVANCED;
+    cflags = TCL_REG_ADVANCED;
     all = 0;
 
     for (i = 1; i < objc; i++) {
@@ -357,7 +361,23 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    case REGSUB_NOCASE: {
-		cflags |= REG_ICASE;
+		cflags |= TCL_REG_NOCASE;
+		break;
+	    }
+	    case REGSUB_EXPANDED: {
+		cflags |= TCL_REG_EXPANDED;
+		break;
+	    }
+	    case REGSUB_LINE: {
+		cflags |= TCL_REG_NEWLINE;
+		break;
+	    }
+	    case REGSUB_LINESTOP: {
+		cflags |= TCL_REG_NLSTOP;
+		break;
+	    }
+	    case REGSUB_LINEANCHOR: {
+		cflags |= TCL_REG_NLANCH;
 		break;
 	    }
 	    case REGSUB_LAST: {
@@ -410,8 +430,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 * so that "^" won't match.
 	 */
 
-	match = Tcl_RegExpMatchObj(interp, regExpr, objPtr, offset,
-		10 /* matches */, ((offset > 0) ? REG_NOTBOL : 0));
+	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
+		10 /* matches */, ((offset > 0) ? TCL_REG_NOTBOL : 0));
 
 	if (match < 0) {
 	    result = TCL_ERROR;
@@ -2112,6 +2132,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 {
     int i, j, index, mode, matched, result;
     char *string, *pattern;
+    Tcl_Obj *stringObj;
     static char *options[] = {
 	"-exact",	"-glob",	"-regexp",	"--", 
 	NULL
@@ -2143,7 +2164,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    string = Tcl_GetString(objv[i]);
+    stringObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
 
@@ -2182,13 +2203,14 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	} else {
 	    switch (mode) {
 		case OPT_EXACT:
-		    matched = (strcmp(string, pattern) == 0);
+		    matched = (strcmp(Tcl_GetString(stringObj), pattern) == 0);
 		    break;
 		case OPT_GLOB:
-		    matched = Tcl_StringMatch(string, pattern);
+		    matched = Tcl_StringMatch(Tcl_GetString(stringObj),
+			    pattern);
 		    break;
 		case OPT_REGEXP:
-		    matched = TclRegExpMatchObj(interp, string, objv[i]);
+		    matched = Tcl_RegExpMatchObj(interp, stringObj, objv[i]);
 		    if (matched < 0) {
 			return TCL_ERROR;
 		    }
