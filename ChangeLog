@@ -1,3 +1,12 @@
+2000-01-30  Don Porter  <dgp@users.sourceforge.net>
+	* generic/tclIO.c (CopyData): Moved code that updates the count
+	of how many bytes are left to copy.  Corrects bug that when
+	writing occurs in the background, the copy loop could be
+	escaped without updating the count, causing CopyData() to try
+	to copy more bytes than the toRead value originally passed to
+	TclCopyChannel(), leading to hangs and misreporting of number
+	of bytes copied. [Bug 118203, Patch 103432]
+
 2000-01-18  Andreas Kupries  <a.kupries@westend.com>
 
 	* Everything below belongs together, it fixes bug #123153.

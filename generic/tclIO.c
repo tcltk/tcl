@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.27 2000/10/28 00:29:20 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.28 2001/01/30 17:32:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7081,6 +7081,18 @@ CopyData(csPtr, mask)
 	}
 
 	/*
+	 * Update the current byte count.  Do it now so the count is
+	 * valid before a return or break takes us out of the loop.
+	 * The invariant at the top of the loop should be that 
+	 * csPtr->toRead holds the number of bytes left to copy.
+	 */
+
+	if (csPtr->toRead != -1) {
+	    csPtr->toRead -= size;
+	}
+	csPtr->total += size;
+
+	/*
 	 * Check to see if the write is happening in the background.  If so,
 	 * stop copying and wait for the channel to become writable again.
 	 */
@@ -7088,7 +7100,7 @@ CopyData(csPtr, mask)
 	if (outStatePtr->flags & BG_FLUSH_SCHEDULED) {
 	    if (!(mask & TCL_WRITABLE)) {
 		if (mask & TCL_READABLE) {
-		    Tcl_DeleteChannelHandler(outChan, CopyEventProc,
+		    Tcl_DeleteChannelHandler(inChan, CopyEventProc,
 			    (ClientData) csPtr);
 		}
 		Tcl_CreateChannelHandler(outChan, TCL_WRITABLE,
@@ -7096,15 +7108,6 @@ CopyData(csPtr, mask)
 	    }
 	    return TCL_OK;
 	}
-
-	/*
-	 * Update the current byte count if we care.
-	 */
-
-	if (csPtr->toRead != -1) {
-	    csPtr->toRead -= size;
-	}
-	csPtr->total += size;
 
 	/*
 	 * For background copies, we only do one buffer per invocation so
