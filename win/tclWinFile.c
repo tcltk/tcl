@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.7 2004/03/29 18:49:36 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.8 2004/05/19 22:50:23 dkf Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -844,11 +844,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	dirName = Tcl_DStringAppend(&dirString, "*.*", 3);
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
 	handle = (*tclWinProcs->findFirstFileProc)(native, &data);
-	Tcl_DStringFree(&ds);
 
 	if (handle == INVALID_HANDLE_VALUE) {
-	    Tcl_DStringFree(&dirString);
 	    TclWinConvertError(GetLastError());
+	    Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&dirString);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "couldn't read directory \"",
 		    Tcl_DStringValue(&dsOrig), "\": ", 
@@ -856,6 +856,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
 	}
+	Tcl_DStringFree(&ds);
 
 	/*
 	 * Check to see if the pattern should match the special

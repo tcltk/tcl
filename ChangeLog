@@ -1,3 +1,13 @@
+2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* win/tclWinFile.c (TclpMatchInDirectory): fix for an issue
+	where there was a sneak path from Tcl_DStringFree to
+	SetErrorCode(0). The result was that the error code could
+	be reset between a call to FindFirstFile and the check
+	of its status return, leading to a bizarre error return of
+	{POSIX unknown {No error}}.  (Found in unplanned test -
+	no incident logged at SourceForge.)
+
 2004-05-19  Andreas Kupries  <andreask@activestate.com>
 
 	* tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
