@@ -1,3 +1,10 @@
+2004-03-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/reg/pkgIndex.tcl:  Added TIP #100 support to the
+	* win/tclWinReg.c:           registry package (patch #903831)
+	This provides a Windows test of the TIP #100 mechanism and 
+	a sample to show how unloading an extension can be done.
+
 2004-03-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/dltest/pkgua.c: Fix minor syntax problems. [Bug 909288]
