@@ -83,8 +83,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 #------------------------------------------------------------------------
 # SC_LOAD_TCLCONFIG --
 #
-#	Load the tclConfig.sh file
-#	Currently a no-op for Windows
+#	Load the tclConfig.sh file.
 #
 # Arguments:
 #	
@@ -148,6 +147,8 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     AC_SUBST(TCL_STUB_LIB_FILE)
     AC_SUBST(TCL_STUB_LIB_FLAG)
     AC_SUBST(TCL_STUB_LIB_SPEC)
+
+    AC_SUBST(TCL_DEFS)
 ])
 
 #------------------------------------------------------------------------
