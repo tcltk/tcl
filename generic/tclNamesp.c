@@ -546,7 +546,11 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     nsPtr->exportArrayPtr  = NULL;
     nsPtr->numExportPatterns = 0;
     nsPtr->maxExportPatterns = 0;
-    nsPtr->cmdRefEpoch     = 0;
+    nsPtr->cmdRefEpoch       = 0;
+    nsPtr->resolverEpoch     = 0;
+    nsPtr->cmdResProc        = NULL;
+    nsPtr->varResProc        = NULL;
+    nsPtr->compiledVarResProc = NULL;
 
     if (parentPtr != NULL) {
         entryPtr = Tcl_CreateHashEntry(&parentPtr->childTable, simpleName,
@@ -884,6 +888,7 @@ NamespaceFree(nsPtr)
 
     ckfree((char *) nsPtr);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1212,8 +1217,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 		Tcl_DString ds;
 
 		Tcl_DStringInit(&ds);
-		Tcl_DStringAppend(&ds, currNsPtr->fullName, -1);
-		if (currNsPtr != iPtr->globalNsPtr) {
+		Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+		if (nsPtr != iPtr->globalNsPtr) {
 		    Tcl_DStringAppend(&ds, "::", 2);
 		}
 		Tcl_DStringAppend(&ds, cmdName, -1);
@@ -1794,7 +1799,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	    && (nsPtr != globalNsPtr)) {
 	nsPtr = NULL;
     }
-    
+
     *nsPtrPtr    = nsPtr;
     *altNsPtrPtr = altNsPtr;
     Tcl_DStringFree(&buffer);
@@ -1905,12 +1910,59 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 				  * are given, TCL_GLOBAL_ONLY is
 				  * ignored. */
 {
+    Interp *iPtr = (Interp*)interp;
+
+    ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
     char *simpleName;
     register Tcl_HashEntry *entryPtr;
     register Command *cmdPtr;
     register int search;
     int result;
+    Tcl_Command cmd;
+
+    /*
+     * If this namespace has a command resolver, then give it first
+     * crack at the command resolution.  If the interpreter has any
+     * command resolvers, consult them next.  The command resolver
+     * procedures may return a Tcl_Command value, they may signal
+     * to continue onward, or they may signal an error.
+     */
+    if ((flags & TCL_GLOBAL_ONLY) != 0) {
+        cxtNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
+    }
+    else if (contextNsPtr != NULL) {
+        cxtNsPtr = (Namespace *) contextNsPtr;
+    }
+    else {
+        cxtNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    }
+
+    if (cxtNsPtr->cmdResProc != NULL || iPtr->resolverPtr != NULL) {
+        resPtr = iPtr->resolverPtr;
+
+        if (cxtNsPtr->cmdResProc) {
+            result = (*cxtNsPtr->cmdResProc)(interp, name,
+                (Tcl_Namespace *) cxtNsPtr, flags, &cmd);
+        } else {
+            result = TCL_CONTINUE;
+        }
+
+        while (result == TCL_CONTINUE && resPtr) {
+            if (resPtr->cmdResProc) {
+                result = (*resPtr->cmdResProc)(interp, name,
+                    (Tcl_Namespace *) cxtNsPtr, flags, &cmd);
+            }
+            resPtr = resPtr->nextPtr;
+        }
+
+        if (result == TCL_OK) {
+            return cmd;
+        }
+        else if (result != TCL_CONTINUE) {
+            return (Tcl_Command) NULL;
+        }
+    }
 
     /*
      * Find the namespace(s) that contain the command.
@@ -1946,6 +1998,7 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                 "unknown command \"", name, "\"", (char *) NULL);
     }
+
     return (Tcl_Command) NULL;
 }
 
@@ -1993,12 +2046,57 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
 				  * are given, TCL_GLOBAL_ONLY is
 				  * ignored. */
 {
+    Interp *iPtr = (Interp*)interp;
+    ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
     char *simpleName;
     Tcl_HashEntry *entryPtr;
     Var *varPtr;
     register int search;
     int result;
+    Tcl_Var var;
+
+    /*
+     * If this namespace has a variable resolver, then give it first
+     * crack at the variable resolution.  It may return a Tcl_Var
+     * value, it may signal to continue onward, or it may signal
+     * an error.
+     */
+    if ((flags & TCL_GLOBAL_ONLY) != 0) {
+        cxtNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
+    }
+    else if (contextNsPtr != NULL) {
+        cxtNsPtr = (Namespace *) contextNsPtr;
+    }
+    else {
+        cxtNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    }
+
+    if (cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL) {
+        resPtr = iPtr->resolverPtr;
+
+        if (cxtNsPtr->varResProc) {
+            result = (*cxtNsPtr->varResProc)(interp, name,
+                (Tcl_Namespace *) cxtNsPtr, flags, &var);
+        } else {
+            result = TCL_CONTINUE;
+        }
+
+        while (result == TCL_CONTINUE && resPtr) {
+            if (resPtr->varResProc) {
+                result = (*resPtr->varResProc)(interp, name,
+                    (Tcl_Namespace *) cxtNsPtr, flags, &var);
+            }
+            resPtr = resPtr->nextPtr;
+        }
+
+        if (result == TCL_OK) {
+            return var;
+        }
+        else if (result != TCL_CONTINUE) {
+            return (Tcl_Var) NULL;
+        }
+    }
 
     /*
      * Find the namespace(s) that contain the variable.
@@ -2710,11 +2808,10 @@ NamespaceDeleteCmd(dummy, interp, objc, objv)
     for (i = 2;  i < objc;  i++) {
         name = Tcl_GetStringFromObj(objv[i], (int *) NULL);
 	namespacePtr = Tcl_FindNamespace(interp, name,
-	    (Tcl_Namespace *) NULL, TCL_LEAVE_ERR_MSG);
-	if (namespacePtr == NULL) {
-            return TCL_ERROR;
+	    (Tcl_Namespace *) NULL, /* flags */ 0);
+	if (namespacePtr) {
+            Tcl_DeleteNamespace(namespacePtr);
         }
-        Tcl_DeleteNamespace(namespacePtr);
     }
     return TCL_OK;
 }

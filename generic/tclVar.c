@@ -141,7 +141,8 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 				 * parens around the index.  Otherwise they
 				 * are NULL. These are needed to restore
 				 * the parens after parsing the name. */
-    Namespace *varNsPtr, *dummy1Ptr, *dummy2Ptr;
+    Namespace *varNsPtr, *cxtNsPtr, *dummy1Ptr, *dummy2Ptr;
+    ResolverScheme *resPtr;
     Tcl_HashEntry *hPtr;
     register char *p;
     int new, i, result;
@@ -180,6 +181,46 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		break;
 	    }
 	}
+    }
+
+    /*
+     * If this namespace has a variable resolver, then give it first
+     * crack at the variable resolution.  It may return a Tcl_Var
+     * value, it may signal to continue onward, or it may signal
+     * an error.
+     */
+    if ((flags & TCL_GLOBAL_ONLY) != 0 || iPtr->varFramePtr == NULL) {
+        cxtNsPtr = iPtr->globalNsPtr;
+    }
+    else {
+        cxtNsPtr = iPtr->varFramePtr->nsPtr;
+    }
+
+    if (cxtNsPtr->varResProc != NULL || iPtr->resolverPtr != NULL) {
+        resPtr = iPtr->resolverPtr;
+
+        if (cxtNsPtr->varResProc) {
+            result = (*cxtNsPtr->varResProc)(interp, part1,
+                (Tcl_Namespace *) cxtNsPtr, flags, &var);
+        } else {
+            result = TCL_CONTINUE;
+        }
+
+        while (result == TCL_CONTINUE && resPtr) {
+            if (resPtr->varResProc) {
+                result = (*resPtr->varResProc)(interp, part1,
+                    (Tcl_Namespace *) cxtNsPtr, flags, &var);
+            }
+            resPtr = resPtr->nextPtr;
+        }
+
+        if (result == TCL_OK) {
+            varPtr = (Var *) var;
+            goto lookupVarPart2;
+        }
+        else if (result != TCL_CONTINUE) {
+            return (Var *) NULL;
+        }
     }
 
     /*
@@ -310,6 +351,8 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	    }
 	}
     }
+
+lookupVarPart2:
     if (openParen != NULL) {
 	*openParen = '(';
 	openParen = NULL;
@@ -4273,6 +4316,7 @@ TclDeleteVars(iPtr, tablePtr)
 	if (TclIsVarArray(varPtr)) {
 	    DeleteArray(iPtr, Tcl_GetHashKey(tablePtr, hPtr), varPtr,
 	            flags);
+	    varPtr->value.tablePtr = NULL;
 	}
 	if (TclIsVarScalar(varPtr) && (varPtr->value.objPtr != NULL)) {
 	    objPtr = varPtr->value.objPtr;
