@@ -1,3 +1,9 @@
+2004-06-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/winFCmd.test (winFCmd-16.12): Changed test to
+	compute the target directory, so as not to fail if the
+	user's HOME isn't the root.
+	
 2004-06-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: autoconf 2.5 fixes in Darwin section.
