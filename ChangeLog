@@ -1,3 +1,7 @@
+2004-06-08  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: handle warning [Bug 969066]
+
 2004-06-05  Kevin B. Kenny  <kennykb@acm.org>
 	
 	* generic/tcl.h: Corrected Tcl_WideInt declarations so that the mingw

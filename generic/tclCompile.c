@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.5 2004/03/29 02:17:59 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.6 2004/06/08 19:45:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1545,7 +1545,9 @@ TclInitByteCodeObj(objPtr, envPtr)
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
     size_t auxDataArrayBytes, structureSize;
     register unsigned char *p;
+#ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
+#endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
     int i;
@@ -1626,8 +1628,10 @@ TclInitByteCodeObj(objPtr, envPtr)
     }
 
     p += auxDataArrayBytes;
+#ifndef TCL_COMPILE_DEBUG
+    EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
+#else
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
-#ifdef TCL_COMPILE_DEBUG
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {	
 	panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
     }
