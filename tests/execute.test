@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.5 1999/06/26 03:54:13 jenn Exp $
+# RCS: @(#) $Id: execute.test,v 1.6 1999/06/26 21:41:53 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -67,6 +67,7 @@ test execute-1.2 {TclExecuteByteCode, INST_LOAD_SCALAR1, large opnd} {
     }
 
     proc foo {} $body
+    foo
 } 1
 test execute-1.3 {TclExecuteByteCode, INST_LOAD_SCALAR1, error} {
     proc foo {} {
