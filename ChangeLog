@@ -1,3 +1,8 @@
+2001-04-27  Miguel Sofer <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: small bugfix
+	* generic/tclExecute.h: small bugfix in MSVC code
+
 2001-04-11  Miguel Sofer <msofer@users.sourceforge.net>
 
 	** First CVS version of the S4 engine **

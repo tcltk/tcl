@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.h,v 1.1.2.3 2001/04/11 22:51:19 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.h,v 1.1.2.4 2001/04/27 23:04:41 msofer Exp $
  */
 
 
@@ -109,7 +109,7 @@
 
 #if JUMP_version == MSVC
 #define _CASE(instruction) case instruction
-#define _CASE_DECLS int intInst = (int) *pc
+#define _CASE_DECLS int intInst = (int) *pc;
 #define _CASE_START \
     intInst = (int) *pc;\
     instructions_start: \
