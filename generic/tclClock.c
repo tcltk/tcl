@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23 2003/05/18 19:48:26 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.24 2003/10/30 22:46:42 dkf Exp $
  */
 
 #include "tcl.h"
@@ -68,16 +68,22 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     Tcl_Obj *baseObjPtr = NULL;
     char *scanStr;
     Tcl_Time now;		/* Current time */
-    
-    static CONST char *switches[] =
-	{"clicks", "format", "scan", "seconds", (char *) NULL};
-    enum command { COMMAND_CLICKS, COMMAND_FORMAT, COMMAND_SCAN,
-		       COMMAND_SECONDS
+
+    static CONST char *switches[] = {
+	"clicks", "format", "scan", "seconds", (char *) NULL
     };
-    static CONST char *clicksSwitches[] = {"-milliseconds", "-microseconds",
-					   (char*) NULL};
-    static CONST char *formatSwitches[] = {"-format", "-gmt", (char *) NULL};
-    static CONST char *scanSwitches[] = {"-base", "-gmt", (char *) NULL};
+    enum command {
+	COMMAND_CLICKS, COMMAND_FORMAT, COMMAND_SCAN, COMMAND_SECONDS
+    };
+    static CONST char *clicksSwitches[] = {
+	"-milliseconds", "-microseconds", (char*) NULL
+    };
+    static CONST char *formatSwitches[] = {
+	"-format", "-gmt", (char *) NULL
+    };
+    static CONST char *scanSwitches[] = {
+	"-base", "-gmt", (char *) NULL
+    };
 
     resultPtr = Tcl_GetObjResult(interp);
     if (objc < 2) {
@@ -91,33 +97,28 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     }
     switch ((enum command) index) {
 	case COMMAND_CLICKS:	{		/* clicks */
-
 	    if (objc == 3) {
-		if ( Tcl_GetIndexFromObj( interp, objv[2], clicksSwitches,
-					  "option", 0, &clickType )
-		     != TCL_OK ) {
+		if (Tcl_GetIndexFromObj(interp, objv[2], clicksSwitches,
+			"option", 0, &clickType) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 	    } else if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?-milliseconds?");
 		return TCL_ERROR;
 	    }
-	    switch ( clickType ) {
+	    switch (clickType) {
 	    case 0: 		/* milliseconds */
-		Tcl_GetTime( &now );
-		Tcl_SetWideIntObj( resultPtr,
-				   ( (Tcl_WideInt) now.sec * 1000
-				     + now.usec / 1000 ) );
+		Tcl_GetTime(&now);
+		Tcl_SetWideIntObj(resultPtr,
+			((Tcl_WideInt) now.sec * 1000 + now.usec / 1000));
 		break;
 	    case 1:		/* microseconds */
-		Tcl_GetTime( &now );
-		Tcl_SetWideIntObj( resultPtr,
-				   ( (Tcl_WideInt) now.sec * 1000000
-				     + now.usec ) );
+		Tcl_GetTime(&now);
+		Tcl_SetWideIntObj(resultPtr,
+			((Tcl_WideInt) now.sec * 1000000 + now.usec));
 		break;
 	    case 2:		/* native clicks */
-		Tcl_SetWideIntObj( resultPtr,
-				   (Tcl_WideInt) TclpGetClicks() );
+		Tcl_SetWideIntObj(resultPtr, (Tcl_WideInt) TclpGetClicks());
 		break;
 	    }
 
@@ -136,7 +137,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
-    
+
 	    objPtr = objv+3;
 	    objc -= 3;
 	    while (objc > 1) {
@@ -304,7 +305,7 @@ FormatClock(interp, clockVal, useGMT, format)
      * threads at once.  Protect it with a the clock mutex.
      */
 
-    Tcl_MutexLock( &clockMutex );
+    Tcl_MutexLock(&clockMutex);
     if (useGMT) {
         CONST char *varValue;
 
@@ -323,7 +324,7 @@ FormatClock(interp, clockVal, useGMT, format)
 
     tclockVal = clockVal;
     timeDataPtr = TclpGetDate((TclpTime_t) &tclockVal, useGMT);
-    
+
     /*
      * Make a guess at the upper limit on the substituted string size
      * based on the number of percents in the string.
@@ -345,8 +346,8 @@ FormatClock(interp, clockVal, useGMT, format)
 #if defined(HAVE_TM_ZONE) || defined(WIN32)
     Tcl_MutexLock(&clockMutex);
 #endif
-    result = TclpStrftime( buffer.string, (unsigned int) bufSize,
-			   format, timeDataPtr, useGMT);
+    result = TclpStrftime(buffer.string, (unsigned int) bufSize, format,
+	    timeDataPtr, useGMT);
 #if defined(HAVE_TM_ZONE) || defined(WIN32)
     Tcl_MutexUnlock(&clockMutex);
 #endif
@@ -362,7 +363,7 @@ FormatClock(interp, clockVal, useGMT, format)
         timezone = savedTimeZone;
         tzset();
     }
-    Tcl_MutexUnlock( &clockMutex );
+    Tcl_MutexUnlock(&clockMutex);
 #endif
 
     if (result == 0) {
@@ -382,4 +383,3 @@ FormatClock(interp, clockVal, useGMT, format)
     Tcl_DStringFree(&buffer);
     return TCL_OK;
 }
-
