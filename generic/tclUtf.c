@@ -8,11 +8,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.1.2.3 1998/10/16 01:16:57 stanton Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.1.2.4 1998/10/21 20:57:08 stanton Exp $
  */
 
 #include "tclInt.h"
-#include "TclUtf.h"
+#include "tclUtf.h"
 
 /*
  * The following macros are used for fast character category tests.  The
