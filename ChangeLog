@@ -1,3 +1,9 @@
+2001-09-13  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtf.c (Tcl_UtfPrev): corrected to return the proper
+	location when the middle of a UTF-8 byte was passed in.
+	[Bug #450504]
+
 2001-09-13  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* tests/ioCmd.test: Changed the computation of the result for
