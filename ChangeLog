@@ -9,6 +9,9 @@
 	itereation as it was causing a double free attempt under some
 	conditions.
 
+	* win/coffbase.txt: Added the tls extension to the list of
+	preferred load addresses.
+
 2004-05-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/fileSystem.test (filesystem-1.39): replace 'file volumes'
