@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.58 2004/10/05 15:45:02 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.59 2004/10/05 16:26:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -477,7 +477,6 @@ Tcl_PopCallFrame(interp)
 {
     register Interp *iPtr = (Interp *) interp;
     register CallFrame *framePtr = iPtr->framePtr;
-    int saveErrFlag;
     Namespace *nsPtr;
 
     /*
