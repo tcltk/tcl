@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCmdIL.c,v 1.5 1998/07/28 13:53:29 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclCmdIL.c,v 1.6 1998/08/07 11:41:56 stanton Exp $ 
  */
 
 #include "tclInt.h"
@@ -486,7 +486,7 @@ InfoArgsCmd(dummy, interp, objc, objv)
     listObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
             localPtr = localPtr->nextPtr) {
-        if (localPtr->isArg) {
+        if (TclIsVarArgument(localPtr)) {
             Tcl_ListObjAppendElement(interp, listObjPtr,
 		    Tcl_NewStringObj(localPtr->name, -1));
         }
@@ -829,7 +829,8 @@ InfoDefaultCmd(dummy, interp, objc, objv)
 
     for (localPtr = procPtr->firstLocalPtr;  localPtr != NULL;
             localPtr = localPtr->nextPtr) {
-        if ((localPtr->isArg) && (strcmp(argName, localPtr->name) == 0)) {
+        if (TclIsVarArgument(localPtr)
+		&& (strcmp(argName, localPtr->name) == 0)) {
             if (localPtr->defValuePtr != NULL) {
 		valueObjPtr = Tcl_ObjSetVar2(interp, objv[4], NULL,
                         localPtr->defValuePtr, 0);
@@ -1283,7 +1284,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 	 * Skip nameless (temporary) variables and undefined variables
 	 */
 
-	if (!localPtr->isTemp && !TclIsVarUndefined(varPtr)) {
+	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)) {
 	    varName = varPtr->name;
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,
