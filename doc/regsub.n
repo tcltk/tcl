@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regsub.n,v 1.3 1999/06/24 21:15:13 jpeek Exp $
+'\" RCS: @(#) $Id: regsub.n,v 1.4 1999/09/21 04:20:36 hobbs Exp $
 '\" 
 .so man.macros
-.TH regsub n 7.4 Tcl "Tcl Built-In Commands"
+.TH regsub n 8.3 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -60,6 +60,17 @@ from the corresponding match.
 Upper-case characters in \fIstring\fR will be converted to lower-case
 before matching against \fIexp\fR;  however, substitutions specified
 by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
+.VS 8.3
+.TP 10
+\fB\-start\fR \fIindex\fR
+Specifies a character index offset into the string to start
+matching the regular expression at.  When using this switch, `^'
+will not match the beginning of the line, and \\A will still
+match the start of the string at \fIindex\fR.  If \fB\-indices\fR
+is specified, the indices will be indexed starting from the
+absolute beginning of the input string.
+\fIindex\fR will be constrained to the bounds of the input string.
+.VE 8.3
 .TP 10
 \fB\-\|\-\fR
 Marks the end of switches.  The argument following this one will

@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.3 1999/09/21 04:20:36 hobbs Exp $
 '\" 
 .so man.macros
-.TH linsert n 7.4 Tcl "Tcl Built-In Commands"
+.TH linsert n 8.2 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -19,15 +19,15 @@ linsert \- Insert elements into a list
 
 .SH DESCRIPTION
 .PP
-This command produces a new list from \fIlist\fR by inserting all
-of the \fIelement\fR arguments just before the \fIindex\fRth
-element of \fIlist\fR.  Each \fIelement\fR argument will become
-a separate element of the new list.  If \fIindex\fR is less than
-or equal to zero, then the new elements are inserted at the
-beginning of the list.  If \fIindex\fR
-has the value \fBend\fR,
-or if it is greater than or equal to the number of elements in the list,
-then the new elements are appended to the list.
+This command produces a new list from \fIlist\fR by inserting all of the
+\fIelement\fR arguments just before the \fIindex\fRth element of
+\fIlist\fR.  Each \fIelement\fR argument will become a separate element of
+the new list.  If \fIindex\fR is less than or equal to zero, then the new
+elements are inserted at the beginning of the list.  If \fIindex\fR has the
+value \fBend\fR, or if it is greater than or equal to the number of
+elements in the list, then the new elements are appended to the list.
+\fBend\-\fIinteger\fR refers to the last element in the list minus the
+specified integer offset.
 
 .SH KEYWORDS
 element, insert, list

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.12 1999/05/22 01:20:13 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.13 1999/09/21 04:20:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2223,34 +2223,33 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
 
-    if ((*bytes != 'e') ||
-	(strncmp(bytes, "end", (size_t)((length > 3) ? 3 : length)) != 0)) {
-      if (Tcl_GetIntFromObj(NULL, objPtr, &offset) != TCL_OK) {
-	  goto intforindex_error;
-      }
-      *indexPtr = offset;
-      return TCL_OK;
+    if ((*bytes != 'e') || (strncmp(bytes, "end",
+	    (size_t)((length > 3) ? 3 : length)) != 0)) {
+	if (Tcl_GetIntFromObj(NULL, objPtr, &offset) != TCL_OK) {
+	    goto intforindex_error;
+	}
+	*indexPtr = offset;
+	return TCL_OK;
     }
 
     if (length <= 3) {
-      *indexPtr = endValue;
+	*indexPtr = endValue;
     } else if (bytes[3] == '-') {
-      /*
-       * This is our limited string expression evaluator
-       */
-      if (Tcl_GetInt(interp, bytes+3, &offset) != TCL_OK) {
-	return TCL_ERROR;
-      }
-      *indexPtr = endValue + offset;
+	/*
+	 * This is our limited string expression evaluator
+	 */
+	if (Tcl_GetInt(interp, bytes+3, &offset) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	*indexPtr = endValue + offset;
     } else {
-    intforindex_error:
-      if ((Interp *)interp != NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			       "bad index \"", bytes,
-			       "\": must be integer or end?-integer?",
-			       (char *) NULL);
-      }
-      return TCL_ERROR;
+	intforindex_error:
+	if ((Interp *)interp != NULL) {
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "bad index \"", bytes,
+		    "\": must be integer or end?-integer?", (char *) NULL);
+	}
+	return TCL_ERROR;
     }
     return TCL_OK;
 }

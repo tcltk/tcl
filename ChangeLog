@@ -1,3 +1,78 @@
+1999-09-16  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/timer.test: changed after delay in timer test 6.29 from
+	1 to 10. [Bug: 2796]
+
+	* tests/pkg.test:
+	* generic/tclPkg.c: fixed package version check to disallow 1.2..3
+	[Bug: 2539]
+	
+
+	* unix/Makefile.in: fixed gendate target - this never worked
+	since RCS was intro'd.
+	* generic/tclGetDate.y: updated to reflect previous changes
+	to tclDate.c (leap year calc) and added CEST and UCT time zone
+	recognition.  Fixed 4 missing UCHAR() casts. [Bug: 2717, 954,
+	1245, 1249]
+
+	* generic/tclCkalloc.c: changed Tcl_DumpActiveMemory to really
+	dump to stderr and close it [Bug: 725] and changed Tcl_Ckrealloc
+	and Tcl_Ckfree to not bomb when NULL was passed in [Bug: 1719]
+	and changed Tcl_Alloc, et al to not panic when a alloc request
+	for zero came through and NULL was returned (valid on AIX, Tru64)
+	[Bug: 2795, etc]
+
+	* tests/clock.test:
+	* doc/clock.n:
+	* generic/tclClock.c: added -milliseconds switch to clock clicks
+	to guarantee that the return value of clicks is in the millisecs
+	granularity [Bug: 2682, 1332]
+
+1999-09-15  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIOCmd.c: fixed potential core dump in conjunction
+	with stacked channels with result obj manipulation in
+	Tcl_ReadChars [Bug: 2623]
+
+	* tests/format.test:
+	* generic/tclCmdAH.c: fixed translation of %0#s in format [Bug: 2605]
+
+	* doc/msgcat.n: fixed \\ bug in example [Bug: 2548]
+
+	* unix/tcl.m4:
+	* unix/aclocal.m4: added fix for FreeBSD-[1-2] recognition
+	[Bug: 2070] and fix for IRIX SHLIB_LB_LIBS. [Bug: 2610]
+
+	* doc/array.n:
+	* tests/var.test:
+	* tests/set.test:
+	* generic/tclVar.c: added an array unset operation, with docs
+	and tests.  Variation of [Bug: 1775].  Added fix in TclArraySet
+	to check when trying to set in a non-existent namespace. [Bug: 2613]
+
+1999-09-14  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/linsert.test:
+	* doc/linsert.n:
+	* generic/tclCmdIL.c: fixed end-int interpretation of linsert
+	to correctly calculate value for end, added test and docs [Bug: 2693]
+
+	* doc/regexp.n:
+	* doc/regsub.n:
+	* tests/regexp.test:
+	* generic/tclCmdMZ.c: add -start switch to regexp and regsub
+	with docs and tests
+
+	* doc/switch.n: added proper use of comments to example.
+	* generic/tclCmdMZ.c: changed switch to complain when an error
+	occurs that seems to be due to a misplaced comment.
+
+	* generic/tclCmdMZ.c: fixed illegal ref for \[0-9] substitutions
+	in regsub [Bug: 2723]
+
+	* generic/tclCmdMZ.c: changed [string equal] to return an Int
+	type object (was a Boolean)
+
 1999-09-01  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclParseExpr.c: changed '"' to '\"' to make FreeBSD

@@ -191,8 +191,8 @@ format "In location %s we produced %d units" $city $num
 This can be handled by using the positional
 parameters:
 .CS
-format "We produced %1\\\\$d units in location %2\\\\$s" $num $city
-format "In location %2\\\\$s we produced %1\\\\$d units" $num $city
+format "We produced %1\\$d units in location %2\\$s" $num $city
+format "In location %2\\$s we produced %1\\$d units" $num $city
 .CE
 .PP
 Similarly, positional parameters can be used with \fBscan\fR to

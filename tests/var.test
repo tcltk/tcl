@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.8 1999/07/22 21:50:55 redman Exp $
+# RCS: @(#) $Id: var.test,v 1.9 1999/09/21 04:20:45 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -583,6 +583,24 @@ test var-10.2 {can't nest arrays with array set} {
    catch {unset arr}
    list [catch {array set arr(x) {}} res] $res
 } {1 {can't set "arr(x)": variable isn't array}}
+
+test var-11.1 {array unset} {
+    catch {unset a}
+    array set a { 1,1 a 1,2 b 2,1 c 2,3 d }
+    array unset a 1,*
+    lsort -dict [array names a]
+} {2,1 2,3}
+test var-11.2 {array unset} {
+    catch {unset a}
+    array set a { 1,1 a 1,2 b }
+    array unset a
+    array exists a
+} 0
+test var-11.3 {array unset errors} {
+    catch {unset a}
+    array set a { 1,1 a 1,2 b }
+    list [catch {array unset a pattern too} msg] $msg
+} {1 {wrong # args: should be "array unset arrayName ?pattern?"}}
 
 catch {namespace delete ns}
 catch {unset arr}

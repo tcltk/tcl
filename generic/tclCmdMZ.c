@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.19 1999/07/22 21:50:54 redman Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.20 1999/09/21 04:20:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -126,19 +126,19 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int i, indices, match, about;
+    int i, indices, match, about, offset;
     int cflags, eflags;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr;
     Tcl_RegExpInfo info;
     static char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
-	"-line",	"-linestop",	"-lineanchor",
+	"-line",	"-linestop",	"-lineanchor",	"-start",
 	"--",		(char *) NULL
     };
     enum options {
 	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
-	REGEXP_LINE,	REGEXP_LINESTOP, REGEXP_LINEANCHOR,
+	REGEXP_LINE,	REGEXP_LINESTOP, REGEXP_LINEANCHOR,	REGEXP_START,
 	REGEXP_LAST
     };
 
@@ -146,6 +146,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     about = 0;
     cflags = TCL_REG_ADVANCED;
     eflags = 0;
+    offset = 0;
     
     for (i = 1; i < objc; i++) {
 	char *name;
@@ -188,6 +189,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		cflags |= TCL_REG_NLANCH;
 		break;
 	    }
+	    case REGEXP_START: {
+		if (++i >= objc) {
+		    goto endOfForLoop;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i], &offset) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (offset < 0) {
+		    offset = 0;
+		}
+		break;
+	    }
 	    case REGEXP_LAST: {
 		i++;
 		goto endOfForLoop;
@@ -217,7 +230,15 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	return TCL_OK;
     }
 
-    match = Tcl_RegExpExecObj(interp, regExpr, objPtr, 0 /* offset */,
+    if (offset > 0) {
+	/*
+	 * Add flag if using offset (string is part of a larger string),
+	 * so that "^" won't match.
+	 */
+	eflags |= TCL_REG_NOTBOL;
+    }
+
+    match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset /* offset */,
 	    objc-2 /* nmatches */, eflags);
 
     if (match < 0) {
@@ -252,15 +273,15 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	    Tcl_Obj *objs[2];
 
 	    if (i <= info.nsubs) {
-		start = info.matches[i].start;
-		end = info.matches[i].end;
+		start = offset + info.matches[i].start;
+		end = offset + info.matches[i].end;
 
 		/*
 		 * Adjust index so it refers to the last character in the
 		 * match instead of the first character after the match.
 		 */
 
-		if (end >= 0) {
+		if (end >= offset) {
 		    end--;
 		}
 	    } else {
@@ -274,8 +295,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
 	    if (i <= info.nsubs) {
-		newPtr = Tcl_GetRange(objPtr, info.matches[i].start,
-			info.matches[i].end - 1);
+		newPtr = Tcl_GetRange(objPtr, offset + info.matches[i].start,
+			offset + info.matches[i].end - 1);
 	    } else {
 		newPtr = Tcl_NewObj();
 		
@@ -331,17 +352,18 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
     static char *options[] = {
 	"-all",		"-nocase",	"-expanded",
-	"-line",	"-linestop",	"-lineanchor",
+	"-line",	"-linestop",	"-lineanchor",	"-start",
 	"--",		NULL
     };
     enum options {
 	REGSUB_ALL,	REGSUB_NOCASE,	REGSUB_EXPANDED,
-	REGSUB_LINE,	REGSUB_LINESTOP, REGSUB_LINEANCHOR,
+	REGSUB_LINE,	REGSUB_LINESTOP, REGSUB_LINEANCHOR,	REGSUB_START,
 	REGSUB_LAST
     };
 
     cflags = TCL_REG_ADVANCED;
     all = 0;
+    offset = 0;
 
     for (i = 1; i < objc; i++) {
 	char *name;
@@ -378,6 +400,18 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    }
 	    case REGSUB_LINEANCHOR: {
 		cflags |= TCL_REG_NLANCH;
+		break;
+	    }
+	    case REGSUB_START: {
+		if (++i >= objc) {
+		    goto endOfForLoop;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i], &offset) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (offset < 0) {
+		    offset = 0;
+		}
 		break;
 	    }
 	    case REGSUB_LAST: {
@@ -418,8 +452,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      */
 
     numMatches = 0;
-    offset = 0;
-    for (offset = 0; offset < wlen; ) {
+    for ( ; offset < wlen; ) {
 	int start, end, subStart, subEnd, match;
 	char *src, *firstChar;
 	char c;
@@ -439,6 +472,12 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	}
 	if (match == 0) {
 	    break;
+	}
+	if ((numMatches == 0) && (offset > 0)) {
+	    /* Copy the initial portion of the string in if an offset
+	     * was specified.
+	     */
+	    Tcl_AppendUnicodeToObj(resultPtr, wstring, offset);
 	}
 	numMatches++;
 
@@ -485,11 +524,13 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    if (firstChar != src) {
 		Tcl_AppendToObj(resultPtr, firstChar, src - firstChar);
 	    }
-	    subStart = info.matches[index].start;
-	    subEnd = info.matches[index].end;
-	    if ((subStart >= 0) && (subEnd >= 0)) {
-		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset + subStart,
-			subEnd - subStart);
+	    if (index <= info.nsubs) {
+		subStart = info.matches[index].start;
+		subEnd = info.matches[index].end;
+		if ((subStart >= 0) && (subEnd >= 0)) {
+		    Tcl_AppendUnicodeToObj(resultPtr,
+			    wstring + offset + subStart, subEnd - subStart);
+		}
 	    }
 	    if (*src == '\\') {
 		src++;
@@ -519,7 +560,13 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      * result variable.
      */
 
-    if ((offset < wlen) || (numMatches == 0)) {
+    if (numMatches == 0) {
+	/*
+	 * On zero matches, just ignore the offset, since it shouldn't
+	 * matter to us in this case, and the user may have skewed it.
+	 */
+	Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);
+    } else if (offset < wlen) {
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
     if (Tcl_ObjSetVar2(interp, varPtr, NULL, resultPtr, 0) == NULL) {
@@ -935,8 +982,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    match = Tcl_UtfNcasecmp(string1, string2,
 			    (unsigned) length);
 		} else {
-		    match = Tcl_UtfNcmp(string1, string2,
-			    (unsigned) length);
+		    match = Tcl_UtfNcmp(string1, string2, (unsigned) length);
 		}
 		if ((match == 0) && (reqlength > length)) {
 		    match = length1 - length2;
@@ -949,7 +995,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    if ((enum options) index == STR_EQUAL) {
-		Tcl_SetBooleanObj(resultPtr, (match) ? 0 : 1);
+		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
 	    } else {
 		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
 					  (match < 0) ? -1 : 0));
@@ -2136,7 +2182,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, matched, result;
+    int i, j, index, mode, matched, result, splitObjs, seenComment;
     char *string, *pattern;
     Tcl_Obj *stringObj;
     static char *options[] = {
@@ -2179,6 +2225,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      * argument, split them out again.
      */
 
+    splitObjs = 0;
     if (objc == 1) {
 	Tcl_Obj **listv;
 
@@ -2186,13 +2233,26 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	objv = listv;
+	splitObjs = 1;
     }
 
+    seenComment = 0;
     for (i = 0; i < objc; i += 2) {
 	if (i == objc - 1) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	            "extra switch pattern with no body", -1);
+
+	    /*
+	     * Check if this can be due to a badly placed comment
+	     * in the switch block
+	     */
+
+	    if (splitObjs && seenComment) {
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+			", this may be due to a comment incorrectly placed outside of a switch body - see the \"switch\" documentation", -1);
+	    }
+
 	    return TCL_ERROR;
 	}
 
@@ -2201,6 +2261,17 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	 */
 
 	pattern = Tcl_GetString(objv[i]);
+
+	/*
+	 * The following is an heuristic to detect the infamous
+	 * "comment in switch" error: just check if a pattern
+	 * begins with '#'.
+	 */
+
+	if (splitObjs && *pattern == '#') {
+	    seenComment = 1;
+	}
+
 	matched = 0;
 	if ((i == objc - 2) 
 		&& (*pattern == 'd') 
