@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.12 2002/07/19 08:36:51 dkf Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.13 2002/07/19 08:52:27 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -166,7 +166,33 @@ test cmdMZ-4.13 {Tcl_SplitObjCmd: basic split commands} {
 # The tests for Tcl_StringObjCmd are in string.test
 # The tests for Tcl_SubstObjCmd are in subst.test
 # The tests for Tcl_SwitchObjCmd are in switch.test
-# There are no tests for Tcl_TimeObjCmd
+
+test cmdMZ-5.1 {Tcl_TimeObjCmd: basic format of command} {
+    list [catch {time} msg] $msg
+} {1 {wrong # args: should be "time command ?count?"}}
+test cmdMZ-5.2 {Tcl_TimeObjCmd: basic format of command} {
+    list [catch {time a b c} msg] $msg
+} {1 {wrong # args: should be "time command ?count?"}}
+test cmdMZ-5.3 {Tcl_TimeObjCmd: basic format of command} {
+    list [catch {time a b} msg] $msg
+} {1 {expected integer but got "b"}}
+test cmdMZ-5.4 {Tcl_TimeObjCmd: nothing happens with negative iteration counts} {
+    time bogusCmd -12456
+} {0 microseconds per iteration}
+test cmdMZ-5.5 {Tcl_TimeObjCmd: result format} {
+    regexp {^\d+ microseconds per iteration} [time {format 1}]
+} 1
+test cmdMZ-5.6 {Tcl_TimeObjCmd: slower commands take longer} {
+    expr {[lindex [time {after 2}] 0] < [lindex [time {after 1000}] 0]}
+} 1
+test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
+    list [catch {time {error foo}} msg] $msg $::errorInfo
+} {1 foo {foo
+    while executing
+"error foo"
+    invoked from within
+"time {error foo}"}}
+
 # The tests for Tcl_TraceObjCmd and TraceVarProc are in trace.test
 # The tests for Tcl_WhileObjCmd are in while.test
 
