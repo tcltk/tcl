@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.36 2002/03/24 17:21:12 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.37 2002/03/24 18:57:53 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -1130,10 +1130,15 @@ proc tcltest::singleProcess { {value ""} } {
 #	None.
 
 proc tcltest::interpreter { {interp ""} } {
+    variable tcltest
     if {[llength [info level 0]] == 1} {
-	return $tcltest::tcltest
+	return $tcltest
     }
-    set tcltest::tcltest $interp
+    if {$interp == "{}"} {
+	set tcltest {}
+    } else {
+	set tcltest $interp
+    }
 }
 
 # tcltest::mainThread --
@@ -1483,13 +1488,8 @@ proc tcltest::initConstraints {} {
     }
 
     # Locate tcltest executable
-
     if {![info exists tk_version]} {
-	set tcltest::tcltest [info nameofexecutable]
-
-	if {$tcltest::tcltest == "{}"} {
-	    set tcltest::tcltest {}
-	}
+	interpreter [info nameofexecutable]
     }
 
     tcltest::testConstraint stdio 0
@@ -1501,7 +1501,7 @@ proc tcltest::initConstraints {} {
 	}
 	close $f
 
-	set f [open "|[list $tcltest::tcltest tmp]" r]
+	set f [open "|[list [interpreter] tmp]" r]
 	close $f
 	
 	tcltest::testConstraint stdio 1
