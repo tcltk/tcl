@@ -1,6 +1,9 @@
 2002-10-10  Don Porter  <dgp@users.sourceforge.net>
 
-	* doc/regexp.n:  Typo correction.  Thanks Ronnie Brunner. [Bug 606826]
+	* doc/Tcl.n:	Clarified that namespace separators are legal in
+			the variable names during $-subtitution. [Bug 615139]
+	
+	* doc/regexp.n:	Typo correction.  Thanks Ronnie Brunner. [Bug 606826]
 
 2002-07-22  Vince Darley  <vincentdarley@users.sourceforge.net>
 
