@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.8 2002/06/13 09:40:00 vincentdarley Exp $
+# RCS: @(#) $Id: winFile.test,v 1.9 2002/07/18 16:36:56 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,12 +20,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 test winFile-1.1 {TclpGetUserHome} {pcOnly} {
     list [catch {glob ~nosuchuser} msg] $msg
 } {1 {user "nosuchuser" doesn't exist}}
-test winFile-1.2 {TclpGetUserHome} {nt nonPortable} {
+test winFile-1.2 {TclpGetUserHome} {pcOnly nt nonPortable} {
     # The administrator account should always exist.
 
     catch {glob ~administrator}
 } {0}
-test winFile-1.2 {TclpGetUserHome} {95} {
+test winFile-1.2 {TclpGetUserHome} {pcOnly 95} {
     # Find some user in system.ini and then see if they have a home.
 
     set f [open $::env(windir)/system.ini]
@@ -44,7 +44,7 @@ test winFile-1.2 {TclpGetUserHome} {95} {
     close $f
     set x
 } {0}
-test winFile-1.3 {TclpGetUserHome} {nt nonPortable} {
+test winFile-1.3 {TclpGetUserHome} {pcOnly nt nonPortable} {
     catch {glob ~stanton@workgroup}
 } {0}
 
