@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Europe/Istanbul)]} {
+    loadTimeZoneFile Europe/Istanbul
+}
+set tzdata(:Turkey) $TZData(:Europe/Istanbul)

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.142 2004/07/30 08:31:21 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.143 2004/08/18 19:59:09 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -528,7 +528,7 @@ ro-test: tcltest
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
-	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(SCRIPT)
 
@@ -629,7 +629,7 @@ install-binaries: binaries
 	    @INSTALL_STUB_LIB@ ; \
 	fi
 
-install-libraries: libraries
+install-libraries: libraries install-tzdata install-msgs
 	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
 	    do \
 	    if [ ! -d $$i ] ; then \
@@ -691,6 +691,20 @@ install-libraries: libraries
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
 	done;
+
+install-tzdata:
+	@echo "Installing time zone data"
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./tclsh $(TOOL_DIR)/installData.tcl \
+	    $(TOP_DIR)/library/tzdata $(SCRIPT_INSTALL_DIR)/tzdata
+
+install-msgs:
+	@echo "Installing message catalogs"
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./tclsh $(TOOL_DIR)/installData.tcl \
+	    $(TOP_DIR)/library/msgs $(SCRIPT_INSTALL_DIR)/msgs
 
 install-doc: doc
 	@if test ! -x $(UNIX_DIR)/mkLinks; then \

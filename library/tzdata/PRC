@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Asia/Shanghai)]} {
+    loadTimeZoneFile Asia/Shanghai
+}
+set tzdata(:PRC) $TZData(:Asia/Shanghai)

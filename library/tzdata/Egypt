@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Africa/Cairo)]} {
+    loadTimeZoneFile Africa/Cairo
+}
+set tzdata(:Egypt) $TZData(:Africa/Cairo)

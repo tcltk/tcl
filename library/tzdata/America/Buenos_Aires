@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Argentina/Buenos_Aires)]} {
+    loadTimeZoneFile America/Argentina/Buenos_Aires
+}
+set tzdata(:America/Buenos_Aires) $TZData(:America/Argentina/Buenos_Aires)
