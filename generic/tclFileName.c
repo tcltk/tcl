@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.46 2004/01/21 19:59:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.47 2004/02/05 20:25:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -75,8 +75,7 @@ static CONST char *	DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
 static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
 			    Tcl_DString *resultPtr, int offset, 
 			    Tcl_PathType *typePtr));
-static int		SkipToChar _ANSI_ARGS_((CONST char **stringPtr,
-			    char match));
+static int		SkipToChar _ANSI_ARGS_((char **stringPtr, int match));
 static Tcl_Obj*		SplitMacPath _ANSI_ARGS_((CONST char *path));
 static Tcl_Obj*		SplitWinPath _ANSI_ARGS_((CONST char *path));
 static Tcl_Obj*		SplitUnixPath _ANSI_ARGS_((CONST char *path));
@@ -2295,11 +2294,11 @@ TclGlob(interp, pattern, pathPrefix, globFlags, types)
 
 static int
 SkipToChar(stringPtr, match)
-    CONST char **stringPtr;	/* Pointer string to check. */
-    char match;			/* Pointer to character to find. */
+    char **stringPtr;		/* Pointer string to check. */
+    int match;			/* Character to find. */
 {
     int quoted, level;
-    register CONST char *p;
+    register char *p;
 
     quoted = 0;
     level = 0;

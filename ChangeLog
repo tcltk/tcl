@@ -1,3 +1,8 @@
+2004-02-05  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c (SkipToChar):	Corrected CONST and
+	type-casting issues that caused compiler warnings.
+
 2004-02-04  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclCmdAH.c (StoreStatData):	Removed improper refcount
