@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.48 2002/02/25 23:17:21 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.49 2002/02/28 00:38:09 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3246,7 +3246,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
     int count;			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
-    Tcl_Obj *resultPtr, *indexPtr, *valuePtr, *newPtr;
+    Tcl_Obj *resultPtr, *indexPtr, *valuePtr;
     char buffer[TCL_UTF_MAX];
 #ifdef TCL_MEM_DEBUG
 #   define  MAX_VAR_CHARS 5
@@ -3362,9 +3362,8 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
 	    Tcl_IncrRefCount(resultPtr);
 	} else {
 	    if (Tcl_IsShared(resultPtr)) {
-		newPtr = Tcl_DuplicateObj(resultPtr);
 		Tcl_DecrRefCount(resultPtr);
-		resultPtr = newPtr;
+		resultPtr = Tcl_DuplicateObj(resultPtr);
 		Tcl_IncrRefCount(resultPtr);
 	    }
 	    if (valuePtr != NULL) {
@@ -3375,12 +3374,14 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
     }
     if (resultPtr != NULL) {
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_DecrRefCount(resultPtr);
     } else {
 	code = TCL_ERROR;
     }
 
     done:
+    if (resultPtr != NULL) {
+	Tcl_DecrRefCount(resultPtr);
+    }
     return code;
 }
 
