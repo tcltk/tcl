@@ -10,18 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.11 1999/08/02 17:45:38 redman Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.12 2004/11/03 00:57:45 davygrvy Exp $
  */
 
 #ifndef _TCLREGEXP
 #define _TCLREGEXP
 
 #include "regex.h"
-
-#ifdef BUILD_tcl
-# undef TCL_STORAGE_CLASS
-# define TCL_STORAGE_CLASS DLLEXPORT
-#endif
 
 /*
  * The TclRegexp structure encapsulates a compiled regex_t,
