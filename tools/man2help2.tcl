@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.14 2004/07/07 10:55:22 dkf Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.15 2004/07/07 12:08:43 dkf Exp $
 # 
 
 # Global variables used by these scripts:
@@ -160,6 +160,7 @@ proc text {string} {
 	    "\t"	{\tab } \
 	    ''		"\\rdblquote " \
 	    ``		"\\ldblquote " \
+	    "\u00b7"	"\\bullet " \
 	    ] $string]
 
     # Check if this is the beginning of an international character string.
@@ -688,7 +689,7 @@ proc char {name} {
 	}
 	\\(bu {
 	    textSetup
-	    puts -nonewline $file "\u00b7"
+	    puts -nonewline $file "\\bullet "
 	}
 	default {
 	    puts stderr "Unknown character: $name"
