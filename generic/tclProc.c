@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.20 1999/09/02 16:26:33 hobbs Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.21 1999/11/19 06:34:24 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -502,8 +502,8 @@ TclGetFrame(interp, string, framePtrPtr)
 	}
 	if (level < 0) {
 	    levelError:
-	    Tcl_AppendResult(interp, "bad level \"", string, "\"",
-		    (char *) NULL);
+	    Tcl_AppendResult(interp, "bad level \"",
+		    (result ? string : "1"), "\"", (char *) NULL);
 	    return -1;
 	}
     } else if (isdigit(UCHAR(*string))) { /* INTL: digit */

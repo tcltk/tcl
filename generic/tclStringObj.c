@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.14 1999/10/29 03:04:00 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.15 1999/11/19 06:34:25 hobbs Exp $ */
 
 #include "tclInt.h"
 
@@ -275,7 +275,15 @@ Tcl_NewUnicodeObj(unicode, numChars)
 {
     Tcl_Obj *objPtr;
     String *stringPtr;
-    int uallocated = (numChars + 1) * sizeof(Tcl_UniChar);
+    size_t uallocated;
+
+    if (numChars < 0) {
+	numChars = 0;
+	if (unicode) {
+	    while (unicode[numChars] != 0) { numChars++; }
+	}
+    }
+    uallocated = (numChars + 1) * sizeof(Tcl_UniChar);
 
     /*
      * Create a new obj with an invalid string rep.
@@ -289,8 +297,7 @@ Tcl_NewUnicodeObj(unicode, numChars)
     stringPtr->numChars = numChars;
     stringPtr->uallocated = uallocated;
     stringPtr->allocated = 0;
-    memcpy((VOID *) stringPtr->unicode, (VOID *) unicode,
-	    (size_t) (numChars * sizeof(Tcl_UniChar)));
+    memcpy((VOID *) stringPtr->unicode, (VOID *) unicode, uallocated);
     stringPtr->unicode[numChars] = 0;
     SET_STRING(objPtr, stringPtr);
     return objPtr;
@@ -338,7 +345,7 @@ Tcl_GetCharLength(objPtr)
 	     * UTF chars are 1-byte long, we don't need to store the
 	     * unicode string.
 	     */
-	    
+
 	    stringPtr->uallocated = 0;
 
 	} else {
@@ -427,7 +434,7 @@ Tcl_GetUniChar(objPtr, index)
  *
  * Tcl_GetUnicode --
  *
- *	Get the index'th Unicode character from the String object.  If
+ *	Get the Unicode form of the String object.  If
  *	the object is not already a String object, it will be converted
  *	to one.  If the String object does not have a Unicode rep, then
  *	one is create from the UTF string format.
@@ -703,7 +710,15 @@ Tcl_SetUnicodeObj(objPtr, unicode, numChars)
 {
     Tcl_ObjType *typePtr;
     String *stringPtr;
-    size_t uallocated = (numChars + 1) * sizeof(Tcl_UniChar);
+    size_t uallocated;
+
+    if (numChars < 0) {
+	numChars = 0;
+	if (unicode) {
+	    while (unicode[numChars] != 0) { numChars++; }
+	}
+    }
+    uallocated = (numChars + 1) * sizeof(Tcl_UniChar);
 
     /*
      * Free the internal rep if one exists, and invalidate the string rep.
@@ -723,8 +738,7 @@ Tcl_SetUnicodeObj(objPtr, unicode, numChars)
     stringPtr->numChars = numChars;
     stringPtr->uallocated = uallocated;
     stringPtr->allocated = 0;
-    memcpy((VOID *) stringPtr->unicode, (VOID *) unicode,
-	    (size_t) (numChars * sizeof(Tcl_UniChar)));
+    memcpy((VOID *) stringPtr->unicode, (VOID *) unicode, uallocated);
     stringPtr->unicode[numChars] = 0;
     SET_STRING(objPtr, stringPtr);
     Tcl_InvalidateStringRep(objPtr);
@@ -963,6 +977,12 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
     int numChars;
     size_t newSize;
 
+    if (appendNumChars < 0) {
+	appendNumChars = 0;
+	if (unicode) {
+	    while (unicode[appendNumChars] != 0) { appendNumChars++; }
+	}
+    }
     if (appendNumChars == 0) {
 	return;
     }
@@ -1027,6 +1047,12 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     Tcl_DString dsPtr;
     char *bytes;
     
+    if (numChars < 0) {
+	numChars = 0;
+	if (unicode) {
+	    while (unicode[numChars] != 0) { numChars++; }
+	}
+    }
     if (numChars == 0) {
 	return;
     }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.21 1999/05/14 23:16:54 surles Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.22 1999/11/19 06:34:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2581,7 +2581,6 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 
     iPtr->numLevels++;
     if (iPtr->numLevels > iPtr->maxNestingDepth) {
-	iPtr->numLevels--;
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		"too many nested calls to Tcl_EvalObj (infinite loop?)", -1); 
 	result = TCL_ERROR;
@@ -2595,7 +2594,6 @@ Tcl_EvalObjEx(interp, objPtr, flags)
     
     if (TclpCheckStackSpace() == 0) {
 	/*NOTREACHED*/
-    	iPtr->numLevels--;
     	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		"too many nested calls to Tcl_EvalObj (infinite loop?)", -1);
 	result = TCL_ERROR;

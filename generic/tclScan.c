@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.4 1999/10/29 04:34:22 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.5 1999/11/19 06:34:24 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -269,7 +269,7 @@ ValidateFormat(interp, format, numVars, totalSubs)
     Tcl_UniChar ch;
     int staticAssign[STATIC_LIST_SIZE];
     int *nassign = staticAssign;
-    int objIndex, nspace = STATIC_LIST_SIZE;
+    int objIndex, xpgSize, nspace = STATIC_LIST_SIZE;
 
     /*
      * Initialize an array that records the number of times a variable
@@ -285,7 +285,7 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	nassign[i] = 0;
     }
 
-    objIndex = gotXpg = gotSequential = 0;
+    xpgSize = objIndex = gotXpg = gotSequential = 0;
 
     while (*format != '\0') {
 	format += Tcl_UtfToUniChar(format, &ch);
@@ -323,8 +323,16 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		goto mixedXPG;
 	    }
 	    objIndex = value - 1;
-	    if ((objIndex < 0) || (objIndex >= numVars)) {
+	    if ((objIndex < 0) || (numVars && (objIndex >= numVars))) {
 		goto badIndex;
+	    } else if (numVars == 0) {
+		/*
+		 * In the case where no vars are specified, the user can
+		 * specify %9999$ legally, so we have to consider special
+		 * rules for growing the assign array.  'value' is
+		 * guaranteed to be > 0.
+		 */
+		xpgSize = (xpgSize > value) ? xpgSize : value;
 	    }
 	    goto xpgCheckDone;
 	}
@@ -425,9 +433,16 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	if (!(flags & SCAN_SUPPRESS)) {
 	    if (objIndex >= nspace) {
 		/*
-		 * Expand the nassign buffer
+		 * Expand the nassign buffer.  If we are using XPG specifiers,
+		 * make sure that we grow to a large enough size.  xpgSize is
+		 * guaranteed to be at least one larger than objIndex.
 		 */
-		nspace += STATIC_LIST_SIZE;
+		value = nspace;
+		if (xpgSize) {
+		    nspace = xpgSize;
+		} else {
+		    nspace += STATIC_LIST_SIZE;
+		}
 		if (nassign == staticAssign) {
 		    nassign = (void *)ckalloc(nspace * sizeof(int));
 		    for (i = 0; i < STATIC_LIST_SIZE; ++i) {
@@ -437,7 +452,7 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		    nassign = (void *)ckrealloc((void *)nassign,
 			    nspace * sizeof(int));
 		}
-		for (i = nspace-STATIC_LIST_SIZE; i < nspace; i++) {
+		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
 	    }
@@ -451,7 +466,11 @@ ValidateFormat(interp, format, numVars, totalSubs)
      */
 
     if (numVars == 0) {
-	numVars = objIndex;
+	if (xpgSize) {
+	    numVars = xpgSize;
+	} else {
+	    numVars = objIndex;
+	}
     }
     if (totalSubs) {
 	*totalSubs = numVars;
@@ -460,7 +479,11 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	if (nassign[i] > 1) {
 	    Tcl_SetResult(interp, "variable is assigned by multiple \"%n$\" conversion specifiers", TCL_STATIC);
 	    goto error;
-	} else if (nassign[i] == 0) {
+	} else if (!xpgSize && (nassign[i] == 0)) {
+	    /*
+	     * If the space is empty, and xpgSize is 0 (means XPG wasn't
+	     * used, and/or numVars != 0), then too many vars were given
+	     */
 	    Tcl_SetResult(interp, "variable is not assigned by any conversion specifiers", TCL_STATIC);
 	    goto error;
 	}

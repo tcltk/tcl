@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.6 1999/09/21 04:20:39 hobbs Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.7 1999/11/19 06:34:23 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -451,7 +451,7 @@ Tcl_DbCkfree(ptr, file, line)
     struct mem_header *memp;
 
     if (ptr == NULL) {
-	return;
+	return 0;
     }
 
     /*
@@ -546,7 +546,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
     new = Tcl_DbCkalloc(size, file, line);
     memcpy((VOID *) new, (VOID *) ptr, (size_t) copySize);
     Tcl_DbCkfree(ptr, file, line);
-    return(new);
+    return new;
 }
 
 
