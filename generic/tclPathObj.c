@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.16 2003/12/14 17:38:37 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.17 2003/12/17 09:25:26 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -1086,15 +1086,16 @@ Tcl_FSGetTranslatedPath(interp, pathPtr)
     srcFsPathPtr = (FsPath*) PATHOBJ(pathPtr);
     if (srcFsPathPtr->translatedPathPtr == NULL) {
 	if (PATHFLAGS(pathPtr) != 0) {
-	    return Tcl_FSGetNormalizedPath(interp, pathPtr);
+	    retObj = Tcl_FSGetNormalizedPath(interp, pathPtr);
+	} else {
+	    /* 
+	     * It is a pure absolute, normalized path object.
+	     * This is something like being a 'pure list'.  The
+	     * object's string, translatedPath and normalizedPath
+	     * are all identical.
+	     */
+	    retObj = srcFsPathPtr->normPathPtr;
 	}
-	/* 
-	 * It is a pure absolute, normalized path object.
-	 * This is something like being a 'pure list'.  The
-	 * object's string, translatedPath and normalizedPath
-	 * are all identical.
-	 */
-	retObj = srcFsPathPtr->normPathPtr;
     } else {
 	/* It is an ordinary path object */
 	retObj = srcFsPathPtr->translatedPathPtr;
