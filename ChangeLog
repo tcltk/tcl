@@ -1,5 +1,22 @@
 2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIO.c (Tcl_CutChannel, Tcl_SpliceChannel):
+	Invoke TclpCutFileChannel and TclpSpliceFileChannel.
+	* generic/tclInt.h: Declare TclpCutFileChannel
+	and TclpSpliceFileChannel.
+	* unix/tclUnixChan.c (FileCloseProc, TclpOpenFileChannel,
+	Tcl_MakeFileChannel, TclpCutFileChannel,
+	TclpSpliceFileChannel): Implement thread load data
+	cut and splice for file channels. This avoids
+	an invalid memory ref when compiled with -DDEPRECATED.
+	* win/tclWinChan.c (FileCloseProc, TclpCutFileChannel,
+	TclpSpliceFileChannel): Implement thread load data
+	cut and splice for file channels. This avoids
+	an invalid memory ref that was showing up in the
+	thread extension.
+
+2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/tclWin32Dll.c (TclpCheckStackSpace, squelch_warnings):
 	* win/tclWinChan.c (Tcl_MakeFileChannel, squelch_warnings):
 	* win/tclWinFCmd.c (DoRenameFile, DoCopyFile, squelch_warnings):
