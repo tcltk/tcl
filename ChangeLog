@@ -1,3 +1,8 @@
+2004-11-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c (InfoVarsCmd):	Corrected segfault in new
+	* tests/info.test (info-19.6):	trivial matching branch [Bug 1072654]
+
 2004-11-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/man2html.tcl, tools/man2html1.tcl: Update to use Tcl 8.4.
