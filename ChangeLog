@@ -1,3 +1,15 @@
+2003-01-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in:
+	* win/tclWin32Dll.c (TclpCheckStackSpace): Rework
+	the SEH exception handler logic to avoid using
+	the stack since alloca will modify the stack.
+	This was causing a nasty bug that would set the
+	exception handler to 0 because it tried to pop
+	the previous exception handler off the top of
+	the stack.
+
 2003-01-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/lset.n: Fixed fault in return values from lset in
