@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.75 2002/08/12 12:23:39 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.76 2002/08/22 15:57:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4135,17 +4135,25 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code, traceFlags, objc, 
 	    continue;
 	}
 	if (!(tracePtr->flags & TCL_TRACE_EXEC_IN_PROGRESS)) {
+            /*
+	     * The proc invoked might delete the traced command which 
+	     * which might try to free tracePtr.  We want to use tracePtr
+	     * until the end of this if section, so we use
+	     * Tcl_Preserve() and Tcl_Release() to be sureit is not
+	     * freed while we still need it.
+	     */
+	    Tcl_Preserve((ClientData) tracePtr);
 	    tracePtr->flags |= TCL_TRACE_EXEC_IN_PROGRESS;
 	    if ((tracePtr->flags != TCL_TRACE_EXEC_IN_PROGRESS) &&
-		((tracePtr->flags & traceFlags) != 0)) {
-	            tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
-                    tcmdPtr->curFlags = traceFlags;
-                    tcmdPtr->curCode  = code;
-		    traceCode = (tracePtr->proc)((ClientData)tcmdPtr, 
-                                                (Tcl_Interp*)interp,
-                                                curLevel, command,
-					        (Tcl_Command)cmdPtr,
-                                                objc, objv);
+		    ((tracePtr->flags & traceFlags) != 0)) {
+		tcmdPtr = (TraceCommandInfo*)tracePtr->clientData;
+		tcmdPtr->curFlags = traceFlags;
+		tcmdPtr->curCode  = code;
+		traceCode = (tracePtr->proc)((ClientData)tcmdPtr, 
+		        (Tcl_Interp*)interp,
+			curLevel, command,
+			(Tcl_Command)cmdPtr,
+                        objc, objv);
 	    } else {
 		if (traceFlags & TCL_TRACE_ENTER_EXEC) {
 		    /* 
@@ -4157,6 +4165,7 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code, traceFlags, objc, 
 		}
 	    }
 	    tracePtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
+	    Tcl_Release((ClientData) tracePtr);
 	}
         lastTracePtr = tracePtr;
     }
