@@ -1,3 +1,8 @@
+2001-03-14  Don Porter  <dgp@users.sourceforge.net>
+	* library/package.tcl (pkg_mkIndex):  Added patch from Vince
+	Darley to make [pkg_mkIndex -verbose] even more verbose.
+	[Bug 219349, Patch 403529]
+
 2001-03-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/info.n: Improved documentation for [info hostname].
