@@ -1,3 +1,14 @@
+2003-04-25  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tclWinThrd.c: Applied SF patch #727271. This patch changes
+	  the code to catch any errors returned by the windows functions
+	  handling TLS ASAP instead of waiting to get some mysterious
+	  crash later on due to bogus pointers. Patch provided by Joe
+	  Mistachkin.
+
+	  This is a stop-gap measure to deal with the low number of ?TLS
+	  slots provided by some of the variants of Windows (60-80).
+
 2003-04-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:  When the return code of a test does
