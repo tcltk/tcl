@@ -1,3 +1,10 @@
+2001-05-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/tcltest.test: removed extraneous 'c' (doh!) [Bug: 414031]
+
+	* tools/tcltk-man2html.tcl: removed use of 'exec' for portability
+	and fixed up code.
+
 2001-05-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/library.n:
