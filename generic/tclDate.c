@@ -1,4 +1,4 @@
-#ifndef lint
+#ifdef lint
 static char TclDatesccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
 #endif
 #define YYBYACC 1
@@ -20,7 +20,7 @@ static char TclDatesccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.10 2000/01/11 02:59:47 ericm Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.11 2000/01/12 01:16:08 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -588,7 +588,22 @@ ToSeconds(Hours, Minutes, Seconds, Meridian)
     return -1;  /* Should never be reached */
 }
 
-
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * Convert --
+ *
+ *      Convert a {month, day, year, hours, minutes, seconds, meridian, dst}
+ *      tuple into a clock seconds value.
+ *
+ * Results:
+ *      0 or -1 indicating success or failure.
+ *
+ * Side effects:
+ *      Fills TimePtr with the computed value.
+ *
+ *-----------------------------------------------------------------------------
+ */
 static int
 Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
     time_t      Month;
@@ -608,13 +623,23 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
     time_t Julian;
     int i;
 
+    /* Figure out how many days are in February for the given year.
+     * Every year divisible by 4 is a leap year.
+     * But, every year divisible by 100 is not a leap year.
+     * But, every year divisible by 400 is a leap year after all.
+     */
     DaysInMonth[1] = (Year % 4 == 0) && (Year % 100 != 0 || Year % 400 == 0)
                     ? 29 : 28;
+
+    /* Check the inputs for validity */
     if (Month < 1 || Month > 12
 	    || Year < START_OF_TIME || Year > END_OF_TIME
 	    || Day < 1 || Day > DaysInMonth[(int)--Month])
         return -1;
 
+    /* Start computing the value.  First determine the number of days
+     * represented by the date, then multiply by the number of seconds/day.
+     */
     for (Julian = Day - 1, i = 0; i < Month; i++)
         Julian += DaysInMonth[i];
     if (Year >= EPOCH) {
@@ -627,10 +652,16 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
 	            (((i % 100) != 0) || ((i % 400) == 0)));
     }
     Julian *= SECSPERDAY;
+
+    /* Add the timezone offset ?? */
     Julian += TclDateTimezone * 60L;
+
+    /* Add the number of seconds represented by the time component */
     if ((tod = ToSeconds(Hours, Minutes, Seconds, Meridian)) < 0)
         return -1;
     Julian += tod;
+
+    /* Perform a preliminary DST compensation ?? */
     if (DSTmode == DSTon
      || (DSTmode == DSTmaybe && TclpGetDate((TclpTime_t)&Julian, 0)->tm_isdst))
         Julian -= 60 * 60;
@@ -1011,7 +1042,7 @@ TclDateparse()
     *TclDatessp = TclDatestate = 0;
 
 TclDateloop:
-    if (TclDaten = TclDatedefred[TclDatestate]) goto TclDatereduce;
+    if ((TclDaten = TclDatedefred[TclDatestate])) goto TclDatereduce;
     if (TclDatechar < 0)
     {
         if ((TclDatechar = TclDatelex()) < 0) TclDatechar = 0;
@@ -1053,8 +1084,8 @@ TclDateloop:
     if (TclDateerrflag) goto TclDateinrecovery;
 #ifdef lint
     goto TclDatenewerror;
-#endif
 TclDatenewerror:
+#endif
     TclDateerror("syntax error");
 #ifdef lint
     goto TclDateerrlab;
