@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.1.2.10 1999/03/25 01:25:14 redman Exp $
+# RCS: @(#) $Id: socket.test,v 1.1.2.11 1999/04/05 22:18:03 stanton Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -284,7 +284,7 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept 2828]
+        set f [socket -server accept 2829]
 	proc accept {file addr port} {
             global x
             puts "[gets $file] $port"
@@ -300,9 +300,9 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
     set f [open "|[list $tcltest script]" r]
     gets $f x
     global port
-    if {[catch {socket -myport $port 127.0.0.1 2828} sock]} {
+    if {[catch {socket -myport $port 127.0.0.1 2829} sock]} {
         set x $sock
-	close [socket 127.0.0.1 2828]
+	close [socket 127.0.0.1 2829]
 	puts stderr $sock
     } else {
         puts $sock hello
@@ -318,7 +318,7 @@ test socket-2.3 {tcp connection with client interface specified} {socket stdio} 
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket  -server accept 2828]
+        set f [socket  -server accept 2830]
 	proc accept {file addr port} {
             global x
             puts "[gets $file] $addr"
@@ -333,7 +333,7 @@ test socket-2.3 {tcp connection with client interface specified} {socket stdio} 
     close $f
     set f [open "|[list $tcltest script]" r]
     gets $f x
-    if {[catch {socket -myaddr 127.0.0.1 127.0.0.1 2828} sock]} {
+    if {[catch {socket -myaddr 127.0.0.1 127.0.0.1 2830} sock]} {
         set x $sock
     } else {
         puts $sock hello
@@ -349,7 +349,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept -myaddr [info hostname] 2828]
+        set f [socket -server accept -myaddr [info hostname] 2831]
 	proc accept {file addr port} {
             global x
             puts "[gets $file]"
@@ -364,7 +364,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
     close $f
     set f [open "|[list $tcltest script]" r]
     gets $f x
-    if {[catch {socket [info hostname] 2828} sock]} {
+    if {[catch {socket [info hostname] 2831} sock]} {
         set x $sock
     } else {
         puts $sock hello
@@ -380,7 +380,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept 2828]
+        set f [socket -server accept 2832]
 	proc accept {file addr port} {
             global x
             puts "[gets $file]"
@@ -395,7 +395,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
     close $f
     set f [open "|[list $tcltest script]" r]
     gets $f x
-    if {[catch {socket 127.0.0.1 2828} sock]} {
+    if {[catch {socket 127.0.0.1 2832} sock]} {
         set x $sock
     } else {
         puts $sock hello
@@ -408,7 +408,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
 } {ready hello}
 test socket-2.6 {tcp connection} {socket} {
     set status ok
-    if {![catch {set sock [socket 127.0.0.1 2828]}]} {
+    if {![catch {set sock [socket 127.0.0.1 2833]}]} {
 	if {![catch {gets $sock}]} {
 	    set status broken
 	}
@@ -421,7 +421,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-	set f [socket -server accept 2828]
+	set f [socket -server accept 2834]
 	proc accept {s a p} {
             fileevent $s readable [list echo $s]
 	    fconfigure $s -translation lf -buffering line
@@ -445,7 +445,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     close $f
     set f [open "|[list $tcltest script]" r]
     gets $f
-    set s [socket 127.0.0.1 2828]
+    set s [socket 127.0.0.1 2834]
     fconfigure $s -buffering line -translation lf
     puts $s "hello abcdefghijklmnop"
     after 1000
@@ -456,10 +456,8 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     list $x $y
 } {{hello abcdefghijklmnop} done}
 test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
-    removeFile script
-    set f [open script w]
-    puts $f {
-	set f [socket -server accept 2828]
+    makeFile {
+	set f [socket -server accept 2835]
 	proc accept {s a p} {
             fileevent $s readable [list echo $s]
             fconfigure $s -buffering line
@@ -483,11 +481,10 @@ test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
 	after cancel $timer
 	close $f
 	puts "done $i"
-    }
-    close $f
+    } script
     set f [open "|[list $tcltest script]" r]
     gets $f
-    set s [socket 127.0.0.1 2828]
+    set s [socket 127.0.0.1 2835]
     fconfigure $s -buffering line
     catch {
 	for {set x 0} {$x < 50} {incr x} {
