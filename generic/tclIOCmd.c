@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.1 2004/07/15 20:17:48 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -102,7 +102,7 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
 	    int length;
 
 	    arg = Tcl_GetStringFromObj(objv[3], &length);
-	    if (strncmp(arg, "nonewline", (size_t) length) != 0) {
+	    if ((length != 9) || (strncmp(arg, "nonewline", (size_t) length) != 0)) {
 		Tcl_AppendResult(interp, "bad argument \"", arg,
 				 "\": should be \"nonewline\"",
 				 (char *) NULL);
