@@ -26,21 +26,21 @@
  * initialize the mutex.
  */
 
-static pthread_mutex_t masterLock = {PTHREAD_MUTEX_INITIALIZER};
+static pthread_mutex_t masterLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * initLock is used to serialize initialization and finalization
  * of Tcl.  It cannot use any dyamically allocated storage.
  */
 
-static pthread_mutex_t initLock = {PTHREAD_MUTEX_INITIALIZER};
+static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * allocLock is used by Tcl's version of malloc for synchronization.
  * For obvious reasons, cannot use any dyamically allocated storage.
  */
 
-static pthread_mutex_t allocLock = {PTHREAD_MUTEX_INITIALIZER};
+static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *allocLockPtr = &allocLock;
 
 /*
