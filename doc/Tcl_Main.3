@@ -1,22 +1,25 @@
 '\"
 '\" Copyright (c) 1994 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Ajuba Solutions.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.2 1998/09/14 18:39:50 stanton Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.2.18.1 2001/08/28 00:12:43 hobbs Exp $
 '\" 
 .so man.macros
-.TH Tcl_Main 3 7.4 Tcl "Tcl Library Procedures"
+.TH Tcl_Main 3 8.3.4 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_Main \- main program for Tcl-based applications
+Tcl_Main, Tcl_SetMainLoop \- main program and event loop definition for Tcl-based applications
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
 .sp
 \fBTcl_Main\fR(\fIargc, argv, appInitProc\fR)
+.sp
+\fBTcl_SetMainLoop\fR(\fImainLoopProc\fR)
 .SH ARGUMENTS
 .AS Tcl_AppInitProc *appInitProc
 .AP int argc in
@@ -26,6 +29,8 @@ Array of strings containing command-line arguments.
 .AP Tcl_AppInitProc *appInitProc in
 Address of an application-specific initialization procedure.
 The value for this argument is usually \fBTcl_AppInit\fR.
+.AP Tcl_MainLoopProc *mainLoopProc in
+Address of an application-specific event loop procedure.
 .BE
 
 .SH DESCRIPTION
@@ -53,9 +58,24 @@ that matches the type \fBTcl_AppInitProc\fR:
 .CS
 typedef int Tcl_AppInitProc(Tcl_Interp *\fIinterp\fR);
 .CE
-\fIAppInitProc\fR is almost always a pointer to \fBTcl_AppInit\fR;
-for more details on this procedure, see the documentation
-for \fBTcl_AppInit\fR.
+
+\fIAppInitProc\fR is almost always a pointer to \fBTcl_AppInit\fR; for more
+details on this procedure, see the documentation for \fBTcl_AppInit\fR.
+When the \fIappInitProc\fR is finished, the startup script will be
+evaluated.  If none exists, then an interactive prompt is provided.
+.PP
+.VS 8.3.4
+\fBTcl_SetMainLoop\fR allows setting an event loop procedure to be run.
+This allows, for example, Tk to be dynamically loaded and set its event
+loop.  The event loop will run following the startup script.  If you
+are in interactive mode, setting the main loop procedure will cause the
+prompt to become fileevent based and then the loop procedure is called.
+The main loop procedure must have an interface that matches the type
+\fBTcl_MainLoopProc\fR:
+.CS
+typedef void Tcl_MainLoopProc(void);
+.CE
+.VE 8.3.4
 
 .SH KEYWORDS
 application-specific initialization, command-line arguments, main program

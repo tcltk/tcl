@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70.2.3 2001/04/04 21:22:17 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.70.2.4 2001/08/28 00:12:43 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -600,6 +600,7 @@ typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
 typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
 	Tcl_FileProc *proc, ClientData clientData));
 typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
+typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
 
 /*
  * The following structure represents a type of object, which is a

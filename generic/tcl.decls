@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33.2.1 2000/07/27 01:39:14 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.33.2.2 2001/08/28 00:12:43 hobbs Exp $
 
 library tcl
 
@@ -992,9 +992,13 @@ declare 282 generic {
 declare 283 generic {
     Tcl_Channel Tcl_GetStackedChannel(Tcl_Channel chan)
 }
+
+# added in 8.3.4/8.4a2
+declare 284 generic {
+    void Tcl_SetMainLoop(Tcl_MainLoopProc *proc)
+}
+
 # Reserved for future use (8.0.x vs. 8.1)
-#  declare 284 generic {
-#  }
 #  declare 285 generic {
 #  }
 
@@ -1417,6 +1421,236 @@ declare 411 generic {
     Tcl_DriverHandlerProc * Tcl_ChannelHandlerProc(Tcl_ChannelType \
 	    *chanTypePtr)
 }
+
+## Introduced in 8.4a2
+#declare 412 generic {
+#    int Tcl_JoinThread (Tcl_ThreadId id, int* result)
+#}
+#declare 413 generic {
+#    int Tcl_IsChannelShared (Tcl_Channel channel)
+#}
+#declare 414 generic {
+#    int Tcl_IsChannelRegistered (Tcl_Interp* interp, Tcl_Channel channel)
+#}
+#declare 415 generic {
+#    void Tcl_CutChannel (Tcl_Channel channel)
+#}
+#declare 416 generic {
+#    void Tcl_SpliceChannel (Tcl_Channel channel)
+#}
+#declare 417 generic {
+#    void Tcl_ClearChannelHandlers (Tcl_Channel channel)
+#}
+#declare 418 generic {
+#    int Tcl_IsChannelExisting (CONST char* channelName)
+#}
+#
+#declare 419 generic {
+#    int Tcl_UniCharNcasecmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,\
+#	   unsigned long n)
+#}
+#declare 420 generic {
+#    int Tcl_UniCharCaseMatch(CONST Tcl_UniChar *ustr, \
+#	   CONST Tcl_UniChar *pattern, int nocase)
+#}
+#
+#declare 421 generic {
+#    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, \
+#	   CONST char *key)
+#}
+#
+#declare 422 generic {
+#    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr, \
+#	   CONST char *key, int *newPtr)
+#}
+#
+#declare 423 generic {
+#    void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType, \
+#	   Tcl_HashKeyType *typePtr)
+#}
+#
+#declare 424 generic {
+#    void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
+#}
+#declare 425 generic {
+#    ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, char *varName, \
+#	   int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData)
+#}
+#declare 426 generic {
+#    int Tcl_TraceCommand(Tcl_Interp *interp, char *varName, int flags, \
+#	       Tcl_CommandTraceProc *proc, ClientData clientData)
+#}
+#declare 427 generic {
+#    void Tcl_UntraceCommand(Tcl_Interp *interp, char *varName, int flags, \
+#	       Tcl_CommandTraceProc *proc, ClientData clientData)
+#}
+#declare 428 generic {
+#    char * Tcl_AttemptAlloc(unsigned int size)
+#}
+#declare 429 generic {
+#    char * Tcl_AttemptDbCkalloc(unsigned int size, char *file, int line)
+#}
+#declare 430 generic {
+#    char * Tcl_AttemptRealloc(char *ptr, unsigned int size)
+#}
+#declare 431 generic {
+#    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size, char *file, 
+#      int line)
+#}
+#declare 432 generic {
+#    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
+#}
+#declare 433 generic {
+#    Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
+#}
+
+## introduced in 8.4a3
+#declare 434 generic {
+#    Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
+#}
+#declare 435 generic {
+#    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name,
+#      int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+#      Tcl_MathProc **procPtr, ClientData *clientDataPtr)
+#}
+#declare 436 generic {
+#    Tcl_Obj * Tcl_ListMathFuncs(Tcl_Interp *interp, CONST char *pattern)
+#}
+#declare 437 generic {
+#    Tcl_Obj * Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+#}
+#declare 438 generic {
+#    int Tcl_DetachChannel(Tcl_Interp* interp, Tcl_Channel channel)
+#}
+#declare 439 generic {
+#    int Tcl_IsStandardChannel(Tcl_Channel channel)
+#}
+#declare 440 generic {
+#    int       Tcl_FSCopyFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
+#}
+#declare 441 generic {
+#    int       Tcl_FSCopyDirectory(Tcl_Obj *srcPathPtr, \
+#			   Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr)
+#}
+#declare 442 generic {
+#    int       Tcl_FSCreateDirectory(Tcl_Obj *pathPtr)
+#}
+#declare 443 generic {
+#    int       Tcl_FSDeleteFile(Tcl_Obj *pathPtr)
+#}
+#declare 444 generic {
+#    int       Tcl_FSLoadFile(Tcl_Interp * interp, \
+#		   Tcl_Obj *pathPtr, char * sym1, char * sym2, \
+#		   Tcl_PackageInitProc ** proc1Ptr, \
+#		   Tcl_PackageInitProc ** proc2Ptr, \
+#		   ClientData * clientDataPtr, \
+#		   Tcl_FSUnloadFileProc **unloadProcPtr)
+#}
+#declare 445 generic {
+#    int       Tcl_FSMatchInDirectory(Tcl_Interp *interp, Tcl_Obj * result, \
+#		   Tcl_Obj *pathPtr, \
+#		   char * pattern, Tcl_GlobTypeData * types)
+#}
+#declare 446 generic {
+#    Tcl_Obj*  Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr)
+#}
+#declare 447 generic {
+#    int       Tcl_FSRemoveDirectory(Tcl_Obj *pathPtr, \
+#		   int recursive, Tcl_Obj **errorPtr)
+#}
+#declare 448 generic {
+#    int       Tcl_FSRenameFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
+#}
+#declare 449 generic {
+#    int       Tcl_FSLstat(Tcl_Obj *pathPtr, struct stat *buf)
+#}
+#declare 450 generic {
+#    int Tcl_FSUtime(Tcl_Obj *pathPtr, struct utimbuf *tval)
+#}
+#declare 451 generic {
+#    int Tcl_FSFileAttrsGet(Tcl_Interp *interp, \
+#			   int index, Tcl_Obj *pathPtr, \
+#			   Tcl_Obj **objPtrRef)
+#}
+#declare 452 generic {
+#    int Tcl_FSFileAttrsSet(Tcl_Interp *interp, \
+#			   int index, Tcl_Obj *pathPtr, \
+#			   Tcl_Obj *objPtr)
+#}
+#declare 453 generic {
+#    char** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+#}
+#declare 454 generic {
+#    int Tcl_FSStat(Tcl_Obj *pathPtr, struct stat *buf)
+#}
+#declare 455 generic {
+#    int Tcl_FSAccess(Tcl_Obj *pathPtr, int mode)
+#}
+#declare 456 generic {
+#    Tcl_Channel Tcl_FSOpenFileChannel(Tcl_Interp *interp, Tcl_Obj *pathPtr, \
+#	   char *modeString, int permissions)
+#}
+#declare 457 generic {
+#    Tcl_Obj*  Tcl_FSGetCwd(Tcl_Interp *interp)
+#}
+#declare 458 generic {
+#    int Tcl_FSChdir(Tcl_Obj *pathPtr)
+#}
+#declare 459 generic {
+#    int Tcl_FSConvertToPathType(Tcl_Interp *interp, Tcl_Obj *pathPtr)
+#}
+#declare 460 generic {
+#    Tcl_Obj* Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
+#}
+#declare 461 generic {
+#    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, int *lenPtr)
+#}
+#declare 462 generic {
+#    int Tcl_FSEqualPaths(Tcl_Obj* firstPtr, Tcl_Obj* secondPtr)
+#}
+#declare 463 generic {
+#    Tcl_Obj* Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj* pathObjPtr)
+#}
+#declare 464 generic {
+#    Tcl_Obj* Tcl_FSJoinToPath(Tcl_Obj *basePtr, int objc, Tcl_Obj *CONST objv[])
+#}
+#declare 465 generic {
+#    ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathObjPtr, Tcl_Filesystem *fsPtr
+#
+#}
+#declare 466 generic {
+#    Tcl_Obj* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+#}
+#declare 467 generic {
+#    int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
+#}
+#declare 468 generic {
+#    Tcl_Obj* Tcl_FSNewNativePath(Tcl_Obj* fromFilesystem, ClientData clientData)
+#}
+#declare 469 generic {
+#    char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
+#}
+#declare 470 generic {
+#    Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathObjPtr)
+#}
+#declare 471 generic {
+#    Tcl_Obj* Tcl_FSPathSeparator(Tcl_Obj* pathObjPtr)
+#}
+#declare 472 generic {
+#    Tcl_Obj* Tcl_FSListVolumes(void)
+#}
+#declare 473 generic {
+#    int Tcl_FSRegister(ClientData clientData, Tcl_Filesystem *fsPtr)
+#}
+#declare 474 generic {
+#    int Tcl_FSUnregister(Tcl_Filesystem *fsPtr)
+#}
+#declare 475 generic {
+#    ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
+#}
+#declare 476 generic {
+#    char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+#}
 
 ##############################################################################
 

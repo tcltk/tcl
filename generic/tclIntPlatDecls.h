@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.1 2001/04/04 21:22:18 hobbs Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.2 2001/08/28 00:12:45 hobbs Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -150,8 +150,9 @@ EXTERN OSErr		FSpFindFolder _ANSI_ARGS_((short vRefNum,
 /* 7 */
 EXTERN void		GetGlobalMouseTcl _ANSI_ARGS_((Point * mouse));
 /* 8 */
-EXTERN pascal OSErr	FSpGetDirectoryIDTcl _ANSI_ARGS_((CONST FSSpec * spec, 
-				long * theDirID, Boolean * isDirectory));
+EXTERN pascal OSErr	FSpGetDirectoryIDTcl _ANSI_ARGS_((
+				CONST FSSpec * spec, long * theDirID, 
+				Boolean * isDirectory));
 /* 9 */
 EXTERN pascal short	FSpOpenResFileCompatTcl _ANSI_ARGS_((
 				CONST FSSpec * spec, SignedByte permission));

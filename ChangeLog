@@ -1,50 +1,68 @@
+2001-08-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/Encoding.3: added note that tclPlatDecls.h must be included
+	for use of Tcl_WinTCharToUtf and Tcl_WinUtfToTChar.
+
+	* doc/Tcl_Main.3: added docs for Tcl_SetMainLoop
+
+	* generic/tclStubInit.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls: added Tcl_SetMainLoop proc that allows people
+	to set a main loop that will run for tclsh.
+	* generic/tcl.h: added Tcl_MainLoopProc typedef
+	* generic/tclMain.c (Tcl_SetMainLoop, StdinProc, Prompt): new
+	StdinProc and Prompt static procs and Tcl_SetMainLoop stubs proc.
+	The first two handle a fileevent based prompt (taken from
+	tkMain.c).  Tcl_SetMainLoop enables the interactive setting of a
+	main loop procedure.  This enables Tk to be a loadable package.
+
 2001-08-24  Don Porter <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (unixInit-2.9): Corrected expected result
-        to match Tcl's quirky construction of its init library path.
+	to match Tcl's quirky construction of its init library path.
 
-        * tests/ioUtil.test (ioUtil-3.*): Corrected errors in tests
-        revealed by fix of overagressive compiler.  [Bug 451200]
+	* tests/ioUtil.test (ioUtil-3.*): Corrected errors in tests
+	revealed by fix of overagressive compiler.  [Bug 451200]
 
-        * doc/tclsh.1:  Added note that the tclsh program is frequently
-        installed with the Tcl version numer as part of the name.
-        [Patch 402725]
+	* doc/tclsh.1:	Added note that the tclsh program is frequently
+	installed with the Tcl version numer as part of the name.
+	[Patch 402725]
 
-        * generic/tclPkg.c:
-        * tests/pkg.test:  [package forget] now forgets all of the
-        package arguments it receives, not stopping when a package is
-        not found.  [Bug 415273]
+	* generic/tclPkg.c:
+	* tests/pkg.test:  [package forget] now forgets all of the
+	package arguments it receives, not stopping when a package is
+	not found.  [Bug 415273]
 
-        * doc/pkgMkindex.n:
-        * library/package.tcl:  Corrected documentation and usage
-        message of [pkg_mkIndex].
+	* doc/pkgMkindex.n:
+	* library/package.tcl:	Corrected documentation and usage
+	message of [pkg_mkIndex].
 
-        * tests/unixInit.test (unixInit-2.8): Added extra constraint,
-        notInstalledInTmp, to stop this test from damaging installations
-        in /tmp; not much fun to have to reinstall the Tcl library every
-        time you run the test suite!
+	* tests/unixInit.test (unixInit-2.8): Added extra constraint,
+	notInstalledInTmp, to stop this test from damaging installations
+	in /tmp; not much fun to have to reinstall the Tcl library every
+	time you run the test suite!
 
-        * tests/unixInit.test (unixInit-2.9):
-        * unix/tclUnixInit.c (TclpInitLibraryPath):
-        * win/tclWinInit.c (TclpInitLibraryPath):  Corrected buggy
-        construction of search path entries relative to executable.
-        Added test for bad construction.  [Bug 438014]
+	* tests/unixInit.test (unixInit-2.9):
+	* unix/tclUnixInit.c (TclpInitLibraryPath):
+	* win/tclWinInit.c (TclpInitLibraryPath):  Corrected buggy
+	construction of search path entries relative to executable.
+	Added test for bad construction.  [Bug 438014]
 
-        * tests/cmdMZ.test (cmdMZ-1.4): added notLinux constraint to test
-        to prevent failure message on Linux due to OS caching bug.
+	* tests/cmdMZ.test (cmdMZ-1.4): added notLinux constraint to test
+	to prevent failure message on Linux due to OS caching bug.
 
-        * doc/library.n:  
-        * library/init.tcl:
-        * tests/autoMkindex.t*: Modified [auto_import] to apply
-        pattern matching in the [namespace import] style.  [Bug 420186]
-        ***POTENTIAL INCOMPATIBILITY*** for any callers of [auto_import]
-        from outside Tcl that expect the pattern matching to be like that
-        of [string match].
+	* doc/library.n:  
+	* library/init.tcl:
+	* tests/autoMkindex.t*: Modified [auto_import] to apply
+	pattern matching in the [namespace import] style.  [Bug 420186]
+	***POTENTIAL INCOMPATIBILITY*** for any callers of [auto_import]
+	from outside Tcl that expect the pattern matching to be like that
+	of [string match].
 
-        * tools/genStubs.tcl: Add a package require of Tcl 8
-        at the beginning of the script so that the script
-        will print a descriptive error message when run
-        in an old Tcl 7 shell.
+	* tools/genStubs.tcl: Add a package require of Tcl 8
+	at the beginning of the script so that the script
+	will print a descriptive error message when run
+	in an old Tcl 7 shell.
 
 2001-08-23  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
