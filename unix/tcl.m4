@@ -920,6 +920,15 @@ dnl AC_CHECK_TOOL(AR, ar)
 		fi
 	    fi
 	    ;;
+	BeOS*)
+	    SHLIB_CFLAGS="-fPIC"
+	    SHLIB_LD="${CC} -nostart"
+	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-ldl"
+	    LDFLAGS=""
+	    ;;
 	BSD/OS-2.1*|BSD/OS-3*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="shlicc -r"
@@ -2328,6 +2337,13 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"])])
     
+    #--------------------------------------------------------------------
+    # Check for inet_ntoa in -lbind, for BeOS (which also needs -lsocket,
+    # even if the network functions are in -lnet which is always linked 
+    # to, for compatibility.
+    #--------------------------------------------------------------------
+    AC_CHECK_LIB(bind, inet_ntoa, [LIBS="$LIBS -lbind -lsocket"])
+
     # Don't perform the eval of the libraries here because DL_LIBS
     # won't be set until we call SC_CONFIG_CFLAGS
 
