@@ -1,3 +1,11 @@
+2001-11-12  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc:
+	* win/rules.vc:  Small bug fixes.
+
+	* win/README: added some docs pointing to the docs in makefile.vc
+	for it's use.
+
 2001-10-17  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* doc/lappend.n:
