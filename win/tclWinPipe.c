@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.25 2002/06/17 20:05:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.26 2002/11/07 02:13:37 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -854,11 +854,11 @@ TclpCloseFile(
 	case WIN_FILE:
 	    /*
 	     * Don't close the Win32 handle if the handle is a standard channel
-	     * during the exit process.  Otherwise, one thread may kill the
-	     * stdio of another.
+	     * during the thread exit process.  Otherwise, one thread may kill
+	     * the stdio of another.
 	     */
 
-	    if (!TclInExit() 
+	    if (!TclInThreadExit() 
 		    || ((GetStdHandle(STD_INPUT_HANDLE) != filePtr->handle)
 			    && (GetStdHandle(STD_OUTPUT_HANDLE) != filePtr->handle)
 			    && (GetStdHandle(STD_ERROR_HANDLE) != filePtr->handle))) {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.39 2002/09/03 02:01:25 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.40 2002/11/07 02:13:37 mdejong Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -549,7 +549,7 @@ FileCloseProc(instanceData, interp)
      * Do not close standard channels while in thread-exit.
      */
 
-    if (!TclInExit()
+    if (!TclInThreadExit()
 	    || ((fsPtr->fd != 0) && (fsPtr->fd != 1) && (fsPtr->fd != 2))) {
 	if (close(fsPtr->fd) < 0) {
 	    errorCode = errno;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.23 2002/08/05 03:24:40 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.24 2002/11/07 02:13:36 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -878,10 +878,6 @@ Tcl_FinalizeThread()
 	    (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr != NULL) {
-	/*
-	 * Invoke thread exit handlers first.
-	 */
-
 	tsdPtr->inExit = 1;
 
 	/*
@@ -937,10 +933,32 @@ Tcl_FinalizeThread()
 int
 TclInExit()
 {
+    return inFinalize;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInThreadExit --
+ *
+ *	Determines if we are in the middle of thread exit-time cleanup.
+ *
+ * Results:
+ *	If we are in the middle of exiting this thread, 1, otherwise 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclInThreadExit()
+{
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
     if (tsdPtr == NULL) {
-	return inFinalize;
+	return 0;
     } else {
 	return tsdPtr->inExit;
     }
