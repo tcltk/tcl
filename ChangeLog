@@ -1,3 +1,10 @@
+2002-02-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCmpCmds.c: (bugfix to the bugfix, hopefully the last)
+	Bugfix to the new [for]	compiling code: was setting a exceptArray
+	parameter using another param which wasn't yet initialised, thus
+	filling it with noise.
+
 2002-02-25  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* mac/tclMacSock.c (TcpGetOptionProc): Changed to recognize the
