@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.5 2001/04/04 16:07:21 kennykb Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6 2002/12/04 07:07:59 hobbs Exp $
  */
 
 /*
@@ -36,10 +36,10 @@
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLEXPORT
 
-TclStubs *tclStubsPtr;
-TclPlatStubs *tclPlatStubsPtr;
-TclIntStubs *tclIntStubsPtr;
-TclIntPlatStubs *tclIntPlatStubsPtr;
+TclStubs *tclStubsPtr = NULL;
+TclPlatStubs *tclPlatStubsPtr = NULL;
+TclIntStubs *tclIntStubsPtr = NULL;
+TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 static TclStubs *	HasStubSupport _ANSI_ARGS_((Tcl_Interp *interp));
 
@@ -86,14 +86,18 @@ Tcl_InitStubs (interp, version, exact)
     CONST char *version;
     int exact;
 {
-    CONST char *actualVersion;
+    CONST char *actualVersion = NULL;
     TclStubs *tmp;
-    
+
+    /*
+     * We can't optimize this check by caching tclStubsPtr because
+     * that prevents apps from being able to load/unload Tcl dynamically
+     * multiple times. [Bug 615304]
+     */
+
+    tclStubsPtr = HasStubSupport(interp);
     if (!tclStubsPtr) {
-	tclStubsPtr = HasStubSupport(interp);
-	if (!tclStubsPtr) {
-            return NULL;
-        }
+	return NULL;
     }
 
     actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact,
