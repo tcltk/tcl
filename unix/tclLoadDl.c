@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.9 2002/07/17 20:00:46 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.10 2002/07/17 20:02:43 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -84,6 +84,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 
     *unloadProcPtr = &TclpUnloadFile;
     *loadHandle = (TclLoadHandle)handle;
+    return TCL_OK;
 }
 
 Tcl_PackageInitProc*
