@@ -1,3 +1,9 @@
+2003-04-15  Kevin Kenny  <kennykb@acm.org>
+
+	* makefile.vc: Updated makefile.vc to conform with Mo DeJong's
+	changes to Makefile.in and tclWinPipe.c on 2003-04-14. Now passes
+	TCL_PIPE_DLL in place of TCL_DBGX.
+	
 2003-04-15  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: finished check-in from yesterday,
