@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.6 1999/04/28 17:06:07 stanton Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.7 1999/08/15 04:54:03 jingham Exp $
  */
 
 #include <Errors.h>
@@ -537,7 +537,7 @@ resourceRef? resourceType");
 		    break;
 		    case O_WRONLY:
 		    case O_RDWR:
-			macPermision = fsRdWrPerm;
+			macPermision = fsRdWrShPerm;
 			break;
 		    default:
 			panic("Tcl_ResourceObjCmd: invalid mode value");
@@ -559,7 +559,7 @@ resourceRef? resourceType");
 	    if (fileRef == -1) {
 	    	err = ResError();
 		if (((err == fnfErr) || (err == eofErr)) &&
-			(macPermision == fsRdWrPerm)) {
+			(macPermision == fsRdWrShPerm)) {
 		    /*
 		     * No resource fork existed for this file.  Since we are
 		     * opening it for writing we will create the resource fork
