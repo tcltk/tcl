@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.8 2003/04/28 12:34:24 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.9 2003/04/29 08:13:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1195,7 +1195,7 @@ Tcl_DbNewDictObj(file, line)
  *
  *	This function implements the "dict create" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1243,7 +1243,7 @@ DictCreateCmd(interp, objc, objv)
  *
  *	This function implements the "dict get" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1334,7 +1334,7 @@ DictGetCmd(interp, objc, objv)
  *
  *	This function implements the "dict replace" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1380,7 +1380,7 @@ DictReplaceCmd(interp, objc, objv)
  *
  *	This function implements the "dict remove" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1426,7 +1426,7 @@ DictRemoveCmd(interp, objc, objv)
  *
  *	This function implements the "dict keys" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1480,7 +1480,7 @@ DictKeysCmd(interp, objc, objv)
  *
  *	This function implements the "dict values" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1534,7 +1534,7 @@ DictValuesCmd(interp, objc, objv)
  *
  *	This function implements the "dict size" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1571,7 +1571,7 @@ DictSizeCmd(interp, objc, objv)
  *
  *	This function implements the "dict exists" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1615,7 +1615,7 @@ DictExistsCmd(interp, objc, objv)
  *
  *	This function implements the "dict info" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1660,7 +1660,7 @@ DictInfoCmd(interp, objc, objv)
  *
  *	This function implements the "dict incr" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1678,9 +1678,9 @@ DictIncrCmd(interp, objc, objv)
     Tcl_Obj *CONST *objv;
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int result, isWide;
-    long incrValue;
-    Tcl_WideInt wideIncrValue;
+    int result, isWide = 0;
+    long incrValue = 1;
+    Tcl_WideInt wideIncrValue = 0;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "varName key ?increment?");
@@ -1690,7 +1690,6 @@ DictIncrCmd(interp, objc, objv)
     if (objc == 5) {
 	if (objv[4]->typePtr == &tclIntType) {
 	    incrValue = objv[4]->internalRep.longValue;
-	    isWide = 0;
 	} else if (objv[4]->typePtr == &tclWideIntType) {
 	    wideIncrValue = objv[4]->internalRep.wideValue;
 	    isWide = 1;
@@ -1701,16 +1700,12 @@ DictIncrCmd(interp, objc, objv)
 	    }
 	    if (wideIncrValue <= Tcl_LongAsWide(LONG_MAX)
 		    && wideIncrValue >= Tcl_LongAsWide(LONG_MIN)) {
-		isWide = 0;
 		incrValue = Tcl_WideAsLong(wideIncrValue);
 		objv[4]->typePtr = &tclIntType;
 	    } else {
 		isWide = 1;
 	    }
 	}
-    } else {
-	incrValue = 1;
-	isWide = 0;
     }
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
@@ -1841,7 +1836,7 @@ DictIncrCmd(interp, objc, objv)
  *
  *	This function implements the "dict lappend" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -1930,7 +1925,7 @@ DictLappendCmd(interp, objc, objv)
  *
  *	This function implements the "dict append" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2004,7 +1999,7 @@ DictAppendCmd(interp, objc, objv)
  *
  *	This function implements the "dict for" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2146,7 +2141,7 @@ DictForCmd(interp, objc, objv)
  *
  *	This function implements the "dict set" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2208,7 +2203,7 @@ DictSetCmd(interp, objc, objv)
  *
  *	This function implements the "dict unset" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2269,7 +2264,7 @@ DictUnsetCmd(interp, objc, objv)
  *
  *	This function implements the "dict filter" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
@@ -2516,7 +2511,7 @@ DictFilterCmd(interp, objc, objv)
  *
  *	This function is invoked to process the "dict" Tcl command.
  *	See the user documentation for details on what it does, and
- *	TIP#??? for the formal specification.
+ *	TIP#111 for the formal specification.
  *
  * Results:
  *	A standard Tcl result.
