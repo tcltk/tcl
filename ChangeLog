@@ -1,3 +1,13 @@
+1999-04-05    <redman@scriptics.com>
+
+	* tests/safe.test:
+	* doc/safe.n:
+	* generic/tclBasic.c:
+	* library/safe.tcl: The encoding command is not safe as-is, so
+	create a safe alias to mask out the "encoding system <name>" but
+	allow all other uses including "encoding system". Added test cases
+	and updated the man page for Safe Tcl.
+
 1999-04-05    <stanton@scriptics.com>
 
 	* tests/winTime.test: 
