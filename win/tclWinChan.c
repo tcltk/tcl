@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.15 2001/09/07 17:08:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.16 2001/10/15 17:34:53 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -797,6 +797,20 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 
     switch (type) {
     case FILE_TYPE_SERIAL:
+	/*
+	 * Reopen channel for OVERLAPPED operation
+	 * Normally this shouldn't fail, because the channel exists
+	 */
+	handle = TclWinSerialReopen(handle, nativeName, accessMode);
+	if (handle == INVALID_HANDLE_VALUE) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != (Tcl_Interp *) NULL) {
+		Tcl_AppendResult(interp, "couldn't reopen serial \"",
+			Tcl_GetString(pathPtr), "\": ",
+			Tcl_PosixError(interp), (char *) NULL);
+	    }
+	    return NULL;
+	}
 	channel = TclWinOpenSerialChannel(handle, channelName,
 	        channelPermissions);
 	break;
