@@ -1,5 +1,8 @@
 2004-11-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/tclAppInit.c:	Removed tclConfig.h #include, now that tcl.h
+				takes care of it for us.
+
 	* generic/tclInt.h:	Moved verification of ptrdiff_t typedef from
 	* generic/tclExecute.c: multiple .c files into one common header where
 	* generic/tclVar.c:	it is verifiably after tclConfig.h inclusion.
