@@ -1,3 +1,11 @@
+2003-09-08  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinLoad.c (TclpDlopen): Changed the error message for
+	ERROR_PROC_NOT_FOUND to be a bit more helpful in giving us clues.
+	"can't find specified procedure" means a function in the import
+	table, for implicit loading, couldn't be resolved and that's why
+	the load failed.
+
 2003-09-04  Don Porter  <dgp@users.sourceforge.net>
 	
 	* doc/Tcl_Main.3:
@@ -91,7 +99,7 @@
 	unreferenced posixEpoch file-scope global.
 
 	* win/tclWinFile.c (WinReadLinkDirectory): Fix for 'Initializers
-	must be constant' with the driveSpec array with OpenWatcom.
+	must be constant' with the driveSpec array using OpenWatcom.
 
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
