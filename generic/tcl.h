@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.118 2002/02/21 16:49:38 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.119 2002/02/21 17:17:57 dgp Exp $
  */
 
 #ifndef _TCL
@@ -386,7 +386,7 @@ typedef struct _stati64	Tcl_StatBuf;
 #      ifdef NO_LIMITS_H
 #	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
 #      else /* !NO_LIMITS_H */
-#	  include <limit.h>
+#	  include <limits.h>
 #	  if (INT_MAX < LONG_MAX)
 #	     define TCL_WIDE_INT_IS_LONG	1
 #	  else
