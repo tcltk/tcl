@@ -1,5 +1,8 @@
 2005-04-06  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tools/man2html2.tcl (IPmacro): Rewrote to understand what .IP
+	really is (.IP and .TP are really just two ways of doing the same
+	thing). Change below made this relevant.
 	* doc/re_syntax.n: Change some uses of .TP to .IP to work around
 	bugs in various *roff implementations. Also reworded the atom
 	descriptions slightly.
