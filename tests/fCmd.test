@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.25 2002/10/04 08:25:14 dkf Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.26 2003/02/12 19:18:13 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -69,11 +69,11 @@ proc openup {path} {
 }
 
 proc cleanup {args} {
-	if {$::tcl_platform(platform) == "macintosh"} {
-		set wd [list :]
-	} else {
-		set wd [list .]
-	}
+    if {$::tcl_platform(platform) == "macintosh"} {
+	set wd [list :]
+    } else {
+	set wd [list .]
+    }
     foreach p [concat $wd $args] {
 	set x ""
 	catch {
