@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.56 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.57 2003/01/28 14:52:50 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -334,10 +334,15 @@ static int		TestChannelEventCmd _ANSI_ARGS_((ClientData clientData,
 static int		TestFilesystemObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc, 
 			    Tcl_Obj *CONST objv[]));
+static int		TestSimpleFilesystemObjCmd _ANSI_ARGS_((
+			    ClientData dummy, Tcl_Interp *interp, int objc, 
+			    Tcl_Obj *CONST objv[]));
 
-static void TestReport _ANSI_ARGS_((CONST char* cmd, Tcl_Obj* arg1, Tcl_Obj* arg2));
+static void             TestReport _ANSI_ARGS_ ((CONST char* cmd, Tcl_Obj* arg1, 
+			    Tcl_Obj* arg2));
 
-static Tcl_Obj *TestReportGetNativePath(Tcl_Obj* pathObjPtr);
+static Tcl_Obj*         TestReportGetNativePath _ANSI_ARGS_ ((
+			    Tcl_Obj* pathObjPtr));
 
 static int		TestReportStat _ANSI_ARGS_ ((Tcl_Obj *path,
 			    Tcl_StatBuf *buf));
@@ -384,6 +389,18 @@ static int		TestReportInFilesystem _ANSI_ARGS_ ((Tcl_Obj *pathPtr, ClientData *c
 static void		TestReportFreeInternalRep _ANSI_ARGS_ ((ClientData clientData));
 static ClientData	TestReportDupInternalRep _ANSI_ARGS_ ((ClientData clientData));
 
+static int		SimpleStat _ANSI_ARGS_ ((Tcl_Obj *path,
+			    Tcl_StatBuf *buf));
+static int		SimpleAccess _ANSI_ARGS_ ((Tcl_Obj *path,
+			    int mode));
+static Tcl_Channel	SimpleOpenFileChannel _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *fileName,
+			    int mode, int permissions));
+static Tcl_Obj*         SimpleListVolumes _ANSI_ARGS_ ((void));
+static int              SimplePathInFilesystem _ANSI_ARGS_ ((
+			    Tcl_Obj *pathPtr, ClientData *clientDataPtr));
+
+
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
@@ -416,6 +433,53 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportLoadFile,
     NULL /* cwd */,
     &TestReportChdir
+};
+
+static Tcl_Filesystem simpleFilesystem = {
+    "simple",
+    sizeof(Tcl_Filesystem),
+    TCL_FILESYSTEM_VERSION_1,
+    &SimplePathInFilesystem,
+    NULL,
+    NULL,
+    /* No internal to normalized, since we don't create any
+     * pure 'internal' Tcl_Obj path representations */
+    NULL,
+    /* No create native rep function, since we don't use it
+     * or 'Tcl_FSNewNativePath' */
+    NULL,
+    /* Normalize path isn't needed - we assume paths only have
+     * one representation */
+    NULL,
+    NULL,
+    NULL,
+    &SimpleStat,
+    &SimpleAccess,
+    &SimpleOpenFileChannel,
+    NULL,
+    NULL,
+    /* We choose not to support symbolic links inside our vfs's */
+    NULL,
+    &SimpleListVolumes,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL, 
+    NULL,
+    /* No copy file - fallback will occur at Tcl level */
+    NULL,
+    /* No rename file - fallback will occur at Tcl level */
+    NULL,
+    /* No copy directory - fallback will occur at Tcl level */
+    NULL, 
+    /* Use stat for lstat */
+    NULL,
+    /* No load - fallback on core implementation */
+    NULL,
+    /* We don't need a getcwd or chdir - fallback on Tcl's versions */
+    NULL,
+    NULL
 };
 
 
@@ -478,6 +542,8 @@ Tcltest_Init(interp)
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd, 
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testsimplefilesystem", TestSimpleFilesystemObjCmd, 
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
 			 TestGetIndexFromObjStructObjCmd, (ClientData) 0,
@@ -5677,6 +5743,34 @@ TestFilesystemObjCmd(dummy, interp, objc, objv)
     return res;
 }
 
+static int
+TestSimpleFilesystemObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;
+    Tcl_Interp *interp;
+    int		objc;
+    Tcl_Obj	*CONST objv[];
+{
+    int res, boolVal;
+    char *msg;
+    
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[1], &boolVal) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (boolVal) {
+	res = Tcl_FSRegister((ClientData)interp, &simpleFilesystem);
+	msg = (res == TCL_OK) ? "registered" : "failed";
+    } else {
+	res = Tcl_FSUnregister(&simpleFilesystem);
+	msg = (res == TCL_OK) ? "unregistered" : "failed";
+    }
+    Tcl_SetResult(interp, msg, TCL_VOLATILE);
+    return res;
+}
+
 static int 
 TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
 {
@@ -5959,3 +6053,89 @@ TestReportNormalizePath(interp, pathPtr, nextCheckpoint)
     TestReport("normalizepath",pathPtr,NULL);
     return nextCheckpoint;
 }
+
+static int 
+SimplePathInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
+    CONST char *str = Tcl_GetString(pathPtr);
+    if (strncmp(str,"simplefs:/",10)) {
+	return -1;
+    }
+    return TCL_OK;
+}
+
+static Tcl_Channel
+SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
+    Tcl_Interp *interp;              /* Interpreter for error reporting;
+					 * can be NULL. */
+    Tcl_Obj *pathPtr;                   /* Name of file to open. */
+    int mode;             		/* POSIX open mode. */
+    int permissions;                    /* If the open involves creating a
+					 * file, with what modes to create
+					 * it? */
+{
+    Tcl_Obj *tempPtr, *origPtr;
+    Tcl_Channel chan;
+    int res;
+    CONST char *str;
+    
+    if ((mode != 0) && !(mode & O_RDONLY)) {
+	Tcl_AppendResult(interp, "read-only", 
+		(char *) NULL);
+	return NULL;
+    }
+    
+    tempPtr = TclpTempFileName();
+    Tcl_IncrRefCount(tempPtr);
+
+    /* 
+     * We assume the same name in the current directory is ok.
+     */
+    str = Tcl_GetString(pathPtr);
+    origPtr = Tcl_NewStringObj(str+10,-1);
+    Tcl_IncrRefCount(origPtr);
+
+    res = TclCrossFilesystemCopy(interp, origPtr, tempPtr);
+
+    Tcl_DecrRefCount(origPtr);
+
+    if (res != TCL_OK) {
+	Tcl_DecrRefCount(tempPtr);
+	return NULL;
+    }
+    
+    chan = Tcl_FSOpenFileChannel(interp, tempPtr, "r", permissions);
+
+    Tcl_DecrRefCount(tempPtr);
+
+    return chan;
+}
+
+static int
+SimpleAccess(pathPtr, mode)
+    Tcl_Obj *pathPtr;		/* Path of file to access (in current CP). */
+    int mode;                   /* Permission setting. */
+{
+    /* All files exist */
+    return TCL_OK;
+}
+
+static int
+SimpleStat(pathPtr, bufPtr)
+    Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
+{
+    /* All files exist */
+    return TCL_OK;
+}
+
+static Tcl_Obj*
+SimpleListVolumes(void)
+{
+    /* Add one new volume */
+    Tcl_Obj *retVal;
+
+    retVal = Tcl_NewStringObj("simplefs:/",-1);
+    Tcl_IncrRefCount(retVal);
+    return retVal;
+}
+
