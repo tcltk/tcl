@@ -1,3 +1,15 @@
+2000-08-19  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* generic/tclPlatDecls.h: without a previous '#include <windows.h>',
+	tclPlatDecls.h can't be parsed due to a missing definition of TCHAR.
+	Added a check to include it when not defined.
+
+	***POSSIBLE OBSCURE BUG*** could be caused when the compile flags
+	for the core happen to be different than a project who uses these
+	publics regarding -D_MBCS and -D_UNICODE.  This added check might
+	have to be revisited later with a better understanding of the
+	reprocusions.  I think TCHAR should be replaced with it's expansion.
+
 2000-08-18  David Gravereaux <davygrvy@ajubasolutions.com>
 
 	* win/.cvsignore (added): provides a cleaner build environment with
