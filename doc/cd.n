@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: cd.n,v 1.4 2004/04/22 14:36:30 dkf Exp $
+'\" RCS: @(#) $Id: cd.n,v 1.5 2004/05/25 20:27:38 dkf Exp $
 '\" 
 .so man.macros
 .TH cd n "" Tcl "Tcl Built-In Commands"
@@ -26,6 +26,17 @@ Returns an empty string.
 Note that the current working directory is a per-process resource; the
 \fBcd\fR command changes the working directory for all interpreters
 and (in a threaded environment) all threads.
+.SH EXAMPLES
+Change to the home directory of the user \fBfred\fR:
+.CS
+cd ~fred
+.CE
+.PP
+Change to the directory \fBlib\fR that is a sibling directory of the
+current one:
+.CS
+cd ../lib
+.CE
 
 .SH "SEE ALSO"
 filename(n), glob(n), pwd(n)
