@@ -1,3 +1,8 @@
+2003-08-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinSerial.c (SerialErrorStr): Fixed a syntax error
+	created in the previous code cleanup.
+
 2003-08-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* win/tclWinSerial.c: Adjusted commenting and spacing usage to
