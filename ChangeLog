@@ -8,6 +8,8 @@
 	* generic/tclCompile.h: Exchanged use of the EXTERN macro to the
 	new MODULE_SCOPE macro.  Lowered exported internals count by 35.
 	[Patch 1055668]
+	* win/tclWinInt.h:
+	* win/tclWinPort.h: exported internals dropped by a count of 14.
 
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
