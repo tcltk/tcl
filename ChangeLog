@@ -1,3 +1,9 @@
+2004-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclCompEvalObj):	Simplified
+	the TclCompEvalObj routine.  Much housekeeping now reliably
+	happens elsewhere.  [Patch 1031949]
+
 2004-09-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/interp.n: Tighten up wording on how [interp eval] and
