@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.79 2003/04/14 15:48:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.80 2003/04/15 06:56:02 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -995,126 +995,6 @@ Tcl_FSData(fsPtr)
 
     FsReleaseIterator();
     return (retVal);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclFSNormalizeAbsolutePath --
- *
- * Description:
- *	Takes an absolute path specification and computes a 'normalized'
- *	path from it.
- *	
- *	A normalized path is one which has all '../', './' removed.
- *	Also it is one which is in the 'standard' format for the native
- *	platform.  On MacOS, Unix, this means the path must be free of
- *	symbolic links/aliases, and on Windows it means we want the
- *	long form, with that long form's case-dependence (which gives
- *	us a unique, case-dependent path).
- *	
- *	The behaviour of this function if passed a non-absolute path
- *	is NOT defined.
- *
- * Results:
- *	The result is returned in a Tcl_Obj with a refCount of 1,
- *	which is therefore owned by the caller.  It must be
- *	freed (with Tcl_DecrRefCount) by the caller when no longer needed.
- *
- * Side effects:
- *	None (beyond the memory allocation for the result).
- *
- * Special note:
- *	This code is based on code from Matt Newman and Jean-Claude
- *	Wippler, with additions from Vince Darley and is copyright 
- *	those respective authors.
- *
- *---------------------------------------------------------------------------
- */
-static Tcl_Obj*
-TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
-    Tcl_Interp* interp;    /* Interpreter to use */
-    Tcl_Obj *pathPtr;      /* Absolute path to normalize */
-    ClientData *clientDataPtr;
-{
-    int splen = 0, nplen, eltLen, i;
-    char *eltName;
-    Tcl_Obj *retVal;
-    Tcl_Obj *split;
-    Tcl_Obj *elt;
-    
-    /* Split has refCount zero */
-    split = Tcl_FSSplitPath(pathPtr, &splen);
-
-    /* 
-     * Modify the list of entries in place, by removing '.', and
-     * removing '..' and the entry before -- unless that entry before
-     * is the top-level entry, i.e. the name of a volume.
-     */
-    nplen = 0;
-    for (i = 0; i < splen; i++) {
-	Tcl_ListObjIndex(NULL, split, nplen, &elt);
-	eltName = Tcl_GetStringFromObj(elt, &eltLen);
-
-	if ((eltLen == 1) && (eltName[0] == '.')) {
-	    Tcl_ListObjReplace(NULL, split, nplen, 1, 0, NULL);
-	} else if ((eltLen == 2)
-		&& (eltName[0] == '.') && (eltName[1] == '.')) {
-	    if (nplen > 1) {
-	        nplen--;
-		Tcl_ListObjReplace(NULL, split, nplen, 2, 0, NULL);
-	    } else {
-		Tcl_ListObjReplace(NULL, split, nplen, 1, 0, NULL);
-	    }
-	} else {
-	    nplen++;
-	}
-    }
-    if (nplen > 0) {
-	ClientData clientData = NULL;
-	
-	retVal = Tcl_FSJoinPath(split, nplen);
-	/* 
-	 * Now we have an absolute path, with no '..', '.' sequences,
-	 * but it still may not be in 'unique' form, depending on the
-	 * platform.  For instance, Unix is case-sensitive, so the
-	 * path is ok.  Windows is case-insensitive, and also has the
-	 * weird 'longname/shortname' thing (e.g. C:/Program Files/ and
-	 * C:/Progra~1/ are equivalent).  MacOS is case-insensitive.
-	 * 
-	 * Virtual file systems which may be registered may have
-	 * other criteria for normalizing a path.
-	 */
-	Tcl_IncrRefCount(retVal);
-	TclFSNormalizeToUniquePath(interp, retVal, 0, &clientData);
-	/* 
-	 * Since we know it is a normalized path, we can
-	 * actually convert this object into an "path" object for
-	 * greater efficiency 
-	 */
-	TclFSMakePathFromNormalized(interp, retVal, clientData);
-	if (clientDataPtr != NULL) {
-	    *clientDataPtr = clientData;
-	}
-    } else {
-	/* Init to an empty string */
-	retVal = Tcl_NewStringObj("",0);
-	Tcl_IncrRefCount(retVal);
-    }
-    /* 
-     * We increment and then decrement the refCount of split to free
-     * it.  We do this right at the end, in case there are
-     * optimisations in Tcl_FSJoinPath(split, nplen) above which would
-     * let it make use of split more effectively if it has a refCount
-     * of zero.  Also we can't just decrement the ref count, in case
-     * 'split' was actually returned by the join call above, in a
-     * single-element optimisation when nplen == 1.
-     */
-    Tcl_IncrRefCount(split);
-    Tcl_DecrRefCount(split);
-
-    /* This has a refCount of 1 for the caller */
-    return retVal;
 }
 
 /*
