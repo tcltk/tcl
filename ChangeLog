@@ -1,5 +1,10 @@
 2004-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclDictObj.c (TraceDictPath, DictExistsCmd): Adjusted
+	behaviour of [dict exists] so a failure to look up a dictionary
+	along the path of dicts doesn't trigger an error.  This is how it
+	was documented to behave previously...  [Bug 871387]
+
 	* generic/tclDictObj.c: Assorted dict fixes from Peter Spjuth
 	relating to [Bug 876170].
 	(SetDictFromAny): Make sure that lists retain their ordering even
