@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.19 1998/11/02 22:40:09 welch Exp $
+# RCS: @(#) $Id: init.tcl,v 1.20 1998/11/02 23:03:34 stanton Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -1187,6 +1187,11 @@ proc pkg_mkIndex {args} {
 	    continue
 	}
 
+	# Changed back to the original directory before initializing the
+	# slave in case TCL_LIBRARY is a relative path (e.g. in the test
+	# suite). 
+
+	cd $oldDir
 	set c [interp create]
 
 	# Load into the child all packages currently loaded in the parent
@@ -1198,6 +1203,7 @@ proc pkg_mkIndex {args} {
 	    }
 	    load [lindex $pkg 0] [lindex $pkg 1] $c
 	}
+	cd $dir
 
 	$c eval {
 	    # Stub out the package command so packages can
