@@ -442,6 +442,8 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 # SC_ENABLE_SYMBOLS --
 #
 #	Specify if debugging symbols should be used
+#	Memory (TCL_MEM_DEBUG) and compile (TCL_COMPILE_DEBUG) debugging
+#	can also be enabled.
 #
 # Arguments:
 #	none
@@ -470,54 +472,39 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     AC_MSG_CHECKING([for build with symbols])
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
-    if test "$tcl_ok" = "yes"; then
-	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
-	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
-	DBGX=g
-	AC_MSG_RESULT([yes])
-    else
+    if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	AC_MSG_RESULT([no])
-    fi
-])
-
-#------------------------------------------------------------------------
-# SC_ENABLE_MEMDEBUG --
-#
-#	Specify if the memory debugging code should be used
-#
-# Arguments:
-#	none
-#	
-#	Requires the following vars to be set in the Makefile:
-#		None.
-#	
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-memdebug
-#
-#	Defines the following @vars@:
-#		MEM_DEBUG_FLAGS	Sets to -DTCL_MEM_DEBUG if true
-#				Sets to "" if false
-#
-#------------------------------------------------------------------------
-
-AC_DEFUN(SC_ENABLE_MEMDEBUG, [
-    AC_MSG_CHECKING([for build with memory debugging])
-    AC_ARG_ENABLE(memdebug, [  --enable-memdebug       build with memory debugging [--disable-memdebug]],    [tcl_ok=$enableval], [tcl_ok=no])
-    if test "$tcl_ok" = "yes"; then
-	MEM_DEBUG_FLAGS=-DTCL_MEM_DEBUG
-	AC_MSG_RESULT([yes])
     else
-	MEM_DEBUG_FLAGS=""
-	AC_MSG_RESULT([no])
+	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
+	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
+	DBGX=g
+	if test "$tcl_ok" = "yes"; then
+	    AC_MSG_RESULT([yes (standard debugging)])
+	fi
     fi
-    AC_SUBST(MEM_DEBUG_FLAGS)
-])
+    AC_SUBST(CFLAGS_DEFAULT)
+    AC_SUBST(LDFLAGS_DEFAULT)
 
+    if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
+	AC_DEFINE(TCL_MEM_DEBUG)
+    fi
+
+    if test "$tcl_ok" = "compile" -o "$tcl_ok" = "all"; then
+	AC_DEFINE(TCL_COMPILE_DEBUG)
+	AC_DEFINE(TCL_COMPILE_STATS)
+    fi
+
+    if test "$tcl_ok" != "yes" -a "$tcl_ok" != "no"; then
+	if test "$tcl_ok" = "all"; then
+	    AC_MSG_RESULT([enabled symbols mem compile debugging])
+	else
+	    AC_MSG_RESULT([enabled $tcl_ok debugging])
+	fi
+    fi
+])
 
 #--------------------------------------------------------------------
 # SC_CONFIG_CFLAGS

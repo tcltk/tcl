@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.14 2002/08/20 21:45:30 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.15 2002/10/10 07:31:36 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -131,10 +131,11 @@ NOTIFY_OBJS = tclUnixNotfy.o
 #NOTIFY_OBJS =
 
 # To enable memory debugging reverse the comment characters on the following
-# lines.  Warning:  if you enable memory debugging, you must do it
-# *everywhere*, including all the code that calls Tcl, and you must use
-# ckalloc and ckfree everywhere instead of malloc and free.
-MEM_DEBUG_FLAGS		= @MEM_DEBUG_FLAGS@
+# lines or configure with --enable-symbols=mem.
+# Warning:  if you enable memory debugging, you must do it *everywhere*,
+# including all the code that calls Tcl, and you must use ckalloc and
+# ckfree everywhere instead of malloc and free.
+MEM_DEBUG_FLAGS		=
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
 # To enable support for stubs in Tcl.
@@ -146,10 +147,9 @@ TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_STUB_LIB_FLAG	= @TCL_STUB_LIB_FLAG@
 #TCL_STUB_LIB_FLAG	= -ltclstub
 
-# To enable compilation debugging reverse the comment characters on
-# one of the following lines.
+# To enable compilation debugging reverse the comment characters on one
+# of the following lines or configure with --enable-symbols=compile.
 COMPILE_DEBUG_FLAGS	=
-#COMPILE_DEBUG_FLAGS	= -DTCL_COMPILE_STATS
 #COMPILE_DEBUG_FLAGS	= -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 
 # To compile without backward compatibility and deprecated code
@@ -508,7 +508,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.14 2002/08/20 21:45:30 andreas_kupries Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.15 2002/10/10 07:31:36 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
