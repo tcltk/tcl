@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.56 2001/09/06 09:35:38 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.57 2001/09/06 17:51:00 vincentdarley Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1497,6 +1497,9 @@ EXTERN Tcl_Filesystem*	Tcl_FSGetFileSystemForPath _ANSI_ARGS_((
 EXTERN Tcl_PathType	Tcl_FSGetPathType _ANSI_ARGS_((Tcl_Obj * pathObjPtr));
 /* 479 */
 EXTERN int		Tcl_OutputBuffered _ANSI_ARGS_((Tcl_Channel chan));
+/* 480 */
+EXTERN void		Tcl_FSMountsChanged _ANSI_ARGS_((
+				Tcl_Filesystem * fsPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2036,6 +2039,7 @@ typedef struct TclStubs {
     Tcl_Filesystem* (*tcl_FSGetFileSystemForPath) _ANSI_ARGS_((Tcl_Obj* pathObjPtr)); /* 477 */
     Tcl_PathType (*tcl_FSGetPathType) _ANSI_ARGS_((Tcl_Obj * pathObjPtr)); /* 478 */
     int (*tcl_OutputBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 479 */
+    void (*tcl_FSMountsChanged) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 480 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3995,6 +3999,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_OutputBuffered
 #define Tcl_OutputBuffered \
 	(tclStubsPtr->tcl_OutputBuffered) /* 479 */
+#endif
+#ifndef Tcl_FSMountsChanged
+#define Tcl_FSMountsChanged \
+	(tclStubsPtr->tcl_FSMountsChanged) /* 480 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.18 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.19 2001/09/06 17:51:00 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -367,7 +367,7 @@ static FilesystemRecord nativeFilesystemRecord = {
  * filesystems.  Any time it changes, all cached filesystem
  * representations are suspect and must be freed.
  */
-int filesystemEpoch = 0;
+int theFilesystemEpoch = 0;
 /* Stores the linked list of filesystems.*/
 static FilesystemRecord *filesystemList = &nativeFilesystemRecord;
 /* 
@@ -566,7 +566,7 @@ Tcl_FSRegister(clientData, fsPtr)
      * Increment the filesystem epoch counter, since existing paths
      * might conceivably now belong to different filesystems.
      */
-    filesystemEpoch++;
+    theFilesystemEpoch++;
     Tcl_MutexUnlock(&filesystemMutex);
 
     return TCL_OK;
@@ -629,7 +629,7 @@ Tcl_FSUnregister(fsPtr)
 	     * do not reference that filesystem (which would of course
 	     * lead to memory exceptions).
 	     */
-	    filesystemEpoch++;
+	    theFilesystemEpoch++;
 	    
 	    tmpFsRecPtr->fileRefCount--;
 	    if (tmpFsRecPtr->fileRefCount <= 0) {
@@ -645,6 +645,69 @@ Tcl_FSUnregister(fsPtr)
 
     Tcl_MutexUnlock(&filesystemMutex);
     return (retVal);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_FSMountsChanged --
+ *
+ *    Notify the filesystem that the available mounted filesystems
+ *    (or within any one filesystem type, the number or location of
+ *    mount points) have changed.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    The global filesystem variable 'theFilesystemEpoch' is
+ *    incremented.  The effect of this is to make all cached
+ *    path representations invalid.  Clearly it should only therefore
+ *    be called when it is really required!  There are a few 
+ *    circumstances when it should be called:
+ *    
+ *    (1) when a new filesystem is registered or unregistered.  
+ *    Strictly speaking this is only necessary if the new filesystem
+ *    accepts file paths as is (normally the filesystem itself is
+ *    really a shell which hasn't yet had any mount points established
+ *    and so its 'pathInFilesystem' proc will always fail).  However,
+ *    for safety, Tcl always calls this for you in these circumstances.
+ * 
+ *    (2) when additional mount points are established inside any
+ *    existing filesystem (except the native fs)
+ *    
+ *    (3) when any filesystem (except the native fs) changes the list
+ *    of available volumes.
+ *    
+ *    Tcl has no control over (2) and (3), so any registered filesystem
+ *    must make sure it calls this function when those situations
+ *    occur.
+ *    
+ *    (Note: the reason for the exception in 2,3 for the native
+ *    filesystem is that the native filesystem by default claims all
+ *    unknown files even if it really doesn't understand them or if
+ *    they don't exist).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_FSMountsChanged(fsPtr)
+    Tcl_Filesystem *fsPtr;
+{
+    /* 
+     * We currently don't do anything with this parameter.  We
+     * could in the future only invalidate files for this filesystem
+     * or otherwise take more advanced action.
+     */
+    (void)fsPtr;
+    /* 
+     * Increment the filesystem epoch counter, since existing paths
+     * might now belong to different filesystems.
+     */
+    Tcl_MutexLock(&filesystemMutex);
+    theFilesystemEpoch++;
+    Tcl_MutexUnlock(&filesystemMutex);
 }
 
 /*
@@ -4290,12 +4353,12 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
     }
     
     /* 
-     * Get a lock on filesystemEpoch and the filesystemList
+     * Get a lock on theFilesystemEpoch and the filesystemList
      * 
-     * While we don't need the fsRecPtr until the while loop
-     * below, we do want to make sure the filesystemEpoch doesn't
-     * change between the 'if' and 'while' blocks, getting this
-     * iterator will ensure that everything is consistent
+     * While we don't need the fsRecPtr until the while loop below, we
+     * do want to make sure the theFilesystemEpoch doesn't change
+     * between the 'if' and 'while' blocks, getting this iterator will
+     * ensure that everything is consistent
      */
     fsRecPtr = FsGetIterator();
     
@@ -4308,7 +4371,7 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
 	 * Check if the filesystem has changed in some way since
 	 * this object's internal representation was calculated.
 	 */
-	if (srcFsPathPtr->filesystemEpoch != filesystemEpoch) {
+	if (srcFsPathPtr->filesystemEpoch != theFilesystemEpoch) {
 	    /* 
 	     * We have to discard the stale representation and 
 	     * recalculate it 
@@ -4346,7 +4409,7 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
 		 */
 		srcFsPathPtr->fsRecPtr = fsRecPtr;
 		srcFsPathPtr->nativePathPtr = clientData;
-		srcFsPathPtr->filesystemEpoch = filesystemEpoch;
+		srcFsPathPtr->filesystemEpoch = theFilesystemEpoch;
 		fsRecPtr->fileRefCount++;
 		retVal = fsRecPtr->fsPtr;
 	    }

@@ -1,3 +1,15 @@
+2001-09-06 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	* generic/tclTest.c: tests of old-fs hooks no longer cause problems
+	in threaded builds.  Also removed unused unload proc.
+	* generic/tcl.decls:
+	* generic/tclIOUtilc: added Tcl_FSMountsChanged so that a vfs
+	can inform the filesystem that the filesystem epoch must be
+	changed (since cached filesystems may now be incorrect).  Fixes
+	problem running tclvfs extension.
+	* library/tcltest/tcltest.tcl: if tests aren't in a native
+	filesystem, then don't use pipes to run them. [Bug 458741]
+	
 2001-09-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tcl.decls (479 generic): 
