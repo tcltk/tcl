@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.25 2002/11/07 02:13:37 mdejong Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.26 2002/11/27 22:57:18 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1034,7 +1034,7 @@ Tcl_MakeFileChannel(rawHandle, mode)
 		GetCurrentProcess(), &dupedHandle, 0, FALSE,
 		DUPLICATE_SAME_ACCESS);
 
-	if (result != 0) {
+	if (result == 0) {
 	    /* 
 	     * Unable to make a duplicate. It's definately invalid at this
 	     * point.
