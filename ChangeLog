@@ -1,3 +1,11 @@
+1999-06-16  <wart@scriptics.com>
+
+	* unix/configure.in:
+	* unix/Makefile.in:
+	* unix/tcl.m4:
+	* unix/aclocal.m4: Numerous build changes to make Tcl conform to the
+	proposed TEA spec
+
 1999-06-16  Melissa Hirschl  <hershey@matisse.scriptics.com>
 
 	* generic/tclVar.c (Tcl_VariableObjCmd): fixed premature increment
