@@ -436,6 +436,30 @@ if test -r DetachPids.3; then
     ln $S DetachPids.3$Z Tcl_ReapDetachedProcs.3$Z 
     ln $S DetachPids.3$Z Tcl_WaitPid.3$Z 
 fi
+if test -r DictObj.3; then
+    rm -f DictObj.3.*
+    $ZIP DictObj.3
+    rm -f Tcl_NewDictObj.3 Tcl_NewDictObj.3.* 
+    rm -f Tcl_DictObjPut.3 Tcl_DictObjPut.3.* 
+    rm -f Tcl_DictObjGet.3 Tcl_DictObjGet.3.* 
+    rm -f Tcl_DictObjRemove.3 Tcl_DictObjRemove.3.* 
+    rm -f Tcl_DictObjSize.3 Tcl_DictObjSize.3.* 
+    rm -f Tcl_DictObjFirst.3 Tcl_DictObjFirst.3.* 
+    rm -f Tcl_DictObjNext.3 Tcl_DictObjNext.3.* 
+    rm -f Tcl_DictObjDone.3 Tcl_DictObjDone.3.* 
+    rm -f Tcl_DictObjPutKeyList.3 Tcl_DictObjPutKeyList.3.* 
+    rm -f Tcl_DictObjRemoveKeyList.3 Tcl_DictObjRemoveKeyList.3.* 
+    ln $S DictObj.3$Z Tcl_NewDictObj.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjPut.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjGet.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjRemove.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjSize.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjFirst.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjNext.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjDone.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjPutKeyList.3$Z 
+    ln $S DictObj.3$Z Tcl_DictObjRemoveKeyList.3$Z 
+fi
 if test -r DoOneEvent.3; then
     rm -f DoOneEvent.3.*
     $ZIP DoOneEvent.3
@@ -1491,6 +1515,10 @@ fi
 if test -r dde.n; then
     rm -f dde.n.*
     $ZIP dde.n
+fi
+if test -r dict.n; then
+    rm -f dict.n.*
+    $ZIP dict.n
 fi
 if test -r encoding.n; then
     rm -f encoding.n.*
