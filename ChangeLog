@@ -1,3 +1,8 @@
+2001-09-19  Miguel Sofer  <msofer@users.sourceforge.net>
+	
+	* generic/tclExecute.c: insured that execution stack errors are
+	also detected at abnormal returns.
+
 2001-09-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/socket.n: Added documentation to mention what happens when a
