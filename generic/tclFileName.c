@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.35 2002/05/07 18:03:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.36 2002/05/30 09:27:11 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1925,13 +1925,21 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
  *	This procedure prepares arguments for the TclDoGlob call.
  *	It sets the separator string based on the platform, performs
  *      tilde substitution, and calls TclDoGlob.
+ *      
+ *      The interpreter's result, on entry to this function, must
+ *      be a valid Tcl list (e.g. it could be empty), since we will
+ *      lappend any new results to that list.  If it is not a valid
+ *      list, this function will fail to do anything very meaningful.
  *
  * Results:
  *	The return value is a standard Tcl result indicating whether
  *	an error occurred in globbing.  After a normal return the
  *	result in interp (set by TclDoGlob) holds all of the file names
  *	given by the pattern and unquotedPrefix arguments.  After an 
- *	error the result in interp will hold an error message.
+ *	error the result in interp will hold an error message, unless
+ *	the 'TCL_GLOBMODE_NO_COMPLAIN' flag was given, in which case
+ *	an error results in a TCL_OK return leaving the interpreter's
+ *	result unmodified.
  *
  * Side effects:
  *	The 'pattern' is written to.
@@ -1958,6 +1966,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
     char c;
     int result, prefixLen;
     Tcl_DString buffer;
+    Tcl_Obj *oldResult;
 
     separators = NULL;		/* lint. */
     switch (tclPlatform) {
@@ -2012,19 +2021,18 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	
 	c = *tail;
 	*tail = '\0';
-	head = DoTildeSubst(interp, start+1, &buffer);
+	if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
+	    /* 
+	     * We will ignore any error message here, and we
+	     * don't want to mess up the interpreter's result.
+	     */
+	    head = DoTildeSubst(NULL, start+1, &buffer);
+	} else {
+	    head = DoTildeSubst(interp, start+1, &buffer);
+	}
 	*tail = c;
 	if (head == NULL) {
 	    if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-		/*
-		 * We should in fact pass down the nocomplain flag 
-		 * or save the interp result or use another mechanism
-		 * so the interp result is not mangled on errors in that case.
-		 * but that would a bigger change than reasonable for a patch
-		 * release.
-		 * (see fileName.test 15.2-15.4 for expected behaviour)
-		 */
-		Tcl_ResetResult(interp);
 		return TCL_OK;
 	    } else {
 		return TCL_ERROR;
@@ -2066,16 +2074,28 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	}
     }
 
+    /* 
+     * We need to get the old result, in case it is over-written
+     * below when we still need it.
+     */
+    oldResult = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(oldResult);
+    Tcl_ResetResult(interp);
+    
     result = TclDoGlob(interp, separators, &buffer, tail, types);
     Tcl_DStringFree(&buffer);
     
     if (result != TCL_OK) {
 	if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-	    Tcl_ResetResult(interp);
-	    return TCL_OK;
+	    /* Put back the old result and reset the return code */
+	    Tcl_SetObjResult(interp, oldResult);
+	    result = TCL_OK;
 	}
     } else {
 	/* 
+	 * Now we must concatenate the 'oldResult' and the current
+	 * result, and then place that into the interpreter.
+	 * 
 	 * If we only want the tails, we must strip off the prefix now.
 	 * It may seem more efficient to pass the tails flag down into
 	 * TclDoGlob, Tcl_FSMatchInDirectory, but those functions are
@@ -2084,33 +2104,47 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	 * complexity to the code.  This way is a little slower (when
 	 * the -tails flag is given), but much simpler to code.
 	 */
-	if (globFlags & TCL_GLOBMODE_TAILS) {
-	    int objc, i;
-	    Tcl_Obj **objv;
-	    Tcl_Obj *tailResult;
-	    Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), 
-				   &objc, &objv);
-	    tailResult = Tcl_NewListObj(0,NULL);
-	    for (i = 0; i< objc; i++) {
+	int objc, i;
+	Tcl_Obj **objv;
+
+	/* Ensure sole ownership */
+	if (Tcl_IsShared(oldResult)) {
+	    Tcl_DecrRefCount(oldResult);
+	    oldResult = Tcl_DuplicateObj(oldResult);
+	    Tcl_IncrRefCount(oldResult);
+	}
+
+	Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), 
+			       &objc, &objv);
+	for (i = 0; i< objc; i++) {
+	    Tcl_Obj* elt;
+	    if (globFlags & TCL_GLOBMODE_TAILS) {
 		int len;
 		char *oldStr = Tcl_GetStringFromObj(objv[i],&len);
-		Tcl_Obj* str;
 		if (len == prefixLen) {
 		    if ((pattern[0] == '\0')
 			|| (strchr(separators, pattern[0]) == NULL)) {
-			str = Tcl_NewStringObj(".",1);
+			elt = Tcl_NewStringObj(".",1);
 		    } else {
-			str = Tcl_NewStringObj("/",1);
+			elt = Tcl_NewStringObj("/",1);
 		    }
 		} else {
-		    str = Tcl_NewStringObj(oldStr + prefixLen, 
+		    elt = Tcl_NewStringObj(oldStr + prefixLen, 
 						len - prefixLen);
 		}
-		Tcl_ListObjAppendElement(interp, tailResult, str);
+	    } else {
+		elt = objv[i];
 	    }
-	    Tcl_SetObjResult(interp, tailResult);
+	    /* Assumption that 'oldResult' is a valid list */
+	    Tcl_ListObjAppendElement(interp, oldResult, elt);
 	}
+	Tcl_SetObjResult(interp, oldResult);
     }
+    /* 
+     * Release our temporary copy.  All code paths above must
+     * end here so we free our reference.
+     */
+    Tcl_DecrRefCount(oldResult);
     return result;
 }
 
