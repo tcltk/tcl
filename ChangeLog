@@ -1,3 +1,9 @@
+2002-12-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclNotify.c (TclFinalizeNotifier, Tcl_SetServiceMode): 
+	(Tcl_ThreadAlert): Check that the stub functions are non-NULL
+	before calling them.  They could be set to NULL by Tcl_SetNotifier.
+
 2002-12-16  David Gravereaux  <davygrvy@pobox.com>
 
 	* generic/tclPipe.c (TclCleanupChildren):
