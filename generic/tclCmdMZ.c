@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.72 2002/06/17 22:52:51 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.73 2002/06/19 22:38:39 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -484,9 +484,12 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
      * Set the interpreter's object result to an integer object
      * with value 1 if -all wasn't specified, otherwise it's all-1
      * (the number of times through the while - 1).
+     * Get the resultPtr again as the Tcl_ObjSetVar2 above may have
+     * cause the result to change. [Patch #558324] (watson).
      */
 
     if (!doinline) {
+	resultPtr = Tcl_GetObjResult(interp);
 	Tcl_SetIntObj(resultPtr, (all ? all-1 : 1));
     }
     return TCL_OK;
