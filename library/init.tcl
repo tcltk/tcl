@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.39 2000/02/01 19:26:08 ericm Exp $
+# RCS: @(#) $Id: init.tcl,v 1.39.2.1 2000/08/07 21:31:33 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -454,6 +454,12 @@ proc auto_qualify {cmd namespace} {
 
 proc auto_import {pattern} {
     global auto_index
+
+    # If no namespace is specified, this will be an error case
+
+    if {![string match *::* $pattern]} {
+	return
+    }
 
     set ns [uplevel namespace current]
     set patternList [auto_qualify $pattern $ns]
