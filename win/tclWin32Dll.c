@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.4 2004/06/21 22:07:32 mdejong Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.5 2004/07/02 16:52:19 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -77,6 +77,14 @@ _except_TclWinCPUID_detach_handler(
 
 #endif /* HAVE_NO_SEH */
 
+
+/*
+ * VC++ 5.x has no 'cpuid' assembler instruction, so we
+ * must emulate it
+ */
+#if defined(_MSC_VER) && ( _MSC_VER <= 1100 )
+#define cpuid __asm __emit 0fh __asm __emit 0a2h
+#endif
 
 /*
  * The following function tables are used to dispatch to either the
