@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.59 2003/01/26 05:59:37 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.60 2003/02/17 22:32:05 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -3579,7 +3579,6 @@ Tcl_GetsObj(chan, objPtr)
 	 * don't store the EOL in the output string.
 	 */
 
-	eol = dst;
 	switch (statePtr->inputTranslation) {
 	    case TCL_TRANSLATE_LF: {
 		for (eol = dst; eol < dstEnd; eol++) {
@@ -3628,6 +3627,7 @@ Tcl_GetsObj(chan, objPtr)
 		break;
 	    }
 	    case TCL_TRANSLATE_AUTO: {
+		eol = dst;
 		skip = 1;
 		if (statePtr->flags & INPUT_SAW_CR) {
 		    statePtr->flags &= ~INPUT_SAW_CR;
