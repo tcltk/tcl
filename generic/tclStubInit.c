@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.68 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.69 2002/04/19 14:19:02 das Exp $
  */
 
 #include "tclInt.h"
@@ -322,6 +322,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclMacFOpenHack, /* 23 */
     TclpGetTZName, /* 24 */
     TclMacChmod, /* 25 */
+    FSpLLocationFromPath, /* 26 */
 #endif /* MAC_TCL */
 };
 

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.47 2002/03/20 22:47:36 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.48 2002/04/19 14:18:33 das Exp $
 
 library tcl
 
@@ -779,6 +779,10 @@ declare 24 mac {
 }
 declare 25 mac {
     int TclMacChmod(CONST char *path, int mode)
+}
+# version of FSpLocationFromPath that doesn't resolve the last path component
+declare 26 mac {
+    int FSpLLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
 }
 
 ############################
