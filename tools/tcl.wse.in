@@ -1457,6 +1457,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=${__TKBASEDIR__}\library\spinbox.tcl
+  Destination=%MAINDIR%\lib\tk%VER%\spinbox.tcl
+  Flags=0000000000000010
+end
+item: Install File
   Source=${__TKBASEDIR__}\library\comdlg.tcl
   Destination=%MAINDIR%\lib\tk%VER%\comdlg.tcl
   Flags=0000000000000010
