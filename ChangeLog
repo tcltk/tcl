@@ -1,3 +1,9 @@
+2001-12-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/expr.n: Various documentation improvements in relation to
+	the function calls.  Includes fix for Bug #487704 submitted by
+	Devin Eyre.
+
 2001-12-03  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Some install target bugs repaired along with
