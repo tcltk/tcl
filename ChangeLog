@@ -1,3 +1,8 @@
+1999-03-27    <redman@scriptics.com>
+
+	* win/makefile.bc: Removed makefile for Borland compiler, no
+	longer supported.
+
 1999-03-26    <redman@scriptics.com>
 
 	* win/tclWinSerial.c:
