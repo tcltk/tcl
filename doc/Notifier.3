@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.7 1999/05/06 20:13:22 stanton Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.7.12.1 2000/08/07 21:29:37 hobbs Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -337,10 +337,10 @@ must be a structure of type \fBTcl_Event\fR, and the address of this
 structure is used when communicating between the event source and the
 rest of the notifier.  A \fBTcl_Event\fR has the following definition:
 .CS
-typedef struct Tcl_Event {
+typedef struct {
     Tcl_EventProc *\fIproc\fR;
     struct Tcl_Event *\fInextPtr\fR;
-};
+} Tcl_Event;
 .CE
 The event source must fill in the \fIproc\fR field of
 the event before calling \fBTcl_QueueEvent\fR.
@@ -597,6 +597,6 @@ mode.
 .VE
 .SH "SEE ALSO"
 \fBTcl_CreateFileHandler\fR, \fBTcl_DeleteFileHandler\fR, \fBTcl_Sleep\fR,
-\fBTcl_DoOneEvent\fR, \fBThreads.3\fR
+\fBTcl_DoOneEvent\fR, \fBThread(3)\fR
 .SH KEYWORDS
 event, notifier, event queue, event sources, file events, timer, idle, service mode, threads

@@ -1,11 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2000 Scriptics Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.4.2.1 2000/06/14 01:38:00 hershey Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.4.2.2 2000/08/07 21:29:39 hobbs Exp $
 '\" 
 .so man.macros
 .TH scan n 8.3 Tcl "Tcl Built-In Commands"
@@ -14,7 +15,7 @@
 .SH NAME
 scan \- Parse string using conversion specifiers in the style of sscanf
 .SH SYNOPSIS
-\fBscan \fIstring format \fR?\fIvarName ...\fR?
+\fBscan \fIstring format \fR?\fIvarName varName ...\fR?
 .BE
 
 .SH INTRODUCTION

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.3 1999/04/16 00:46:30 stanton Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.3.12.1 2000/08/07 21:29:37 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -59,7 +59,7 @@ Tcl command.
 \fBTcl_CreateObjCommand\fR defines a new command in \fIinterp\fR
 and associates it with procedure \fIproc\fR
 such that whenever \fIname\fR is
-invoked as a Tcl command (e.g., via a call to \fBTcl_EvalObj\fR)
+invoked as a Tcl command (e.g., via a call to \fBTcl_EvalObjEx\fR)
 the Tcl interpreter will call \fIproc\fR to process the command.
 .PP
 \fBTcl_CreateObjCommand\fR deletes any existing command
@@ -120,7 +120,7 @@ In the case of a \fBTCL_OK\fR return code this gives the result
 of the command,
 and in the case of \fBTCL_ERROR\fR this gives an error message.
 Before invoking a command procedure,
-\fBTcl_EvalObj\fR sets interpreter's result to
+\fBTcl_EvalObjEx\fR sets interpreter's result to
 point to an object representing an empty string, so simple
 commands can return an empty result by doing nothing at all.
 .PP
@@ -252,7 +252,6 @@ The string returned by \fBTcl_GetCommandName\fR is in dynamic memory
 owned by Tcl and is only guaranteed to retain its value as long as the
 command isn't deleted or renamed;  callers should copy the string if
 they need to keep it for a long time.
-.PP
 
 .SH "SEE ALSO"
 Tcl_CreateCommand, Tcl_ResetResult, Tcl_SetObjResult

@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.4 2000/04/26 17:00:43 ericm Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.4.2.1 2000/08/07 21:29:36 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_AddObjErrorInfo, Tcl_AddErrorInfo, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_PosixError, Tcl_LogCommandInfo \- record information about errors
+Tcl_AddObjErrorInfo, Tcl_AddErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tcl_SetErrorCodeVA, Tcl_PosixError, Tcl_LogCommandInfo \- record information about errors
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -82,8 +82,8 @@ formats for \fBerrorCode\fR.
 .PP
 The \fBerrorInfo\fR variable is gradually built up as an
 error unwinds through the nested operations.
-Each time an error code is returned to \fBTcl_EvalObj\fR
-(or \fBTcl_Eval\fR, which calls \fBTcl_EvalObj\fR)
+Each time an error code is returned to \fBTcl_EvalObjEx\fR
+(or \fBTcl_Eval\fR, which calls \fBTcl_EvalObjEx\fR)
 it calls the procedure \fBTcl_AddObjErrorInfo\fR to add
 additional text to \fBerrorInfo\fR describing the
 command that was being executed when the error occurred.
@@ -93,7 +93,7 @@ of the activity in progress when the error occurred.
 .PP
 It is sometimes useful to add additional information to
 \fBerrorInfo\fR beyond what can be supplied automatically
-by \fBTcl_EvalObj\fR.
+by \fBTcl_EvalObjEx\fR.
 \fBTcl_AddObjErrorInfo\fR may be used for this purpose:
 its \fImessage\fR and \fIlength\fR arguments describe an additional
 string to be appended to \fBerrorInfo\fR.
@@ -103,7 +103,7 @@ line number on which the error occurred;
 for Tcl procedures, the procedure name and line number
 within the procedure are recorded, and so on.
 The best time to call \fBTcl_AddObjErrorInfo\fR is just after
-\fBTcl_EvalObj\fR has returned \fBTCL_ERROR\fR.
+\fBTcl_EvalObjEx\fR has returned \fBTCL_ERROR\fR.
 In calling \fBTcl_AddObjErrorInfo\fR, you may find it useful to
 use the \fBerrorLine\fR field of the interpreter (see the
 \fBTcl_Interp\fR manual entry for details).

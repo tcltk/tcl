@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Exit.3,v 1.3 1999/04/16 00:46:31 stanton Exp $
+'\" RCS: @(#) $Id: Exit.3,v 1.3.12.1 2000/08/07 21:29:37 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_Exit 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_Exit, Tcl_Finalize, Tcl_FinalizeThread, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_CreateThreadExitHandler, Tcl_DeleteThreadExitHandler \- end the application or thread (and invoke exit handlers)
+Tcl_Exit, Tcl_Finalize, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_ExitThread, Tcl_FinalizeThread, Tcl_CreateThreadExitHandler, Tcl_DeleteThreadExitHandler \- end the application or thread (and invoke exit handlers)
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
