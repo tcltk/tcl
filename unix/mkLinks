@@ -972,6 +972,30 @@ if test -r Translate.3; then
     rm -f Tcl_TranslateFileName.3
     ln Translate.3 Tcl_TranslateFileName.3
 fi
+if test -r UniCharIsAlpha.3; then
+    rm -f Tcl_UniCharIsAlnum.3
+    rm -f Tcl_UniCharIsAlpha.3
+    rm -f Tcl_UniCharIsControl.3
+    rm -f Tcl_UniCharIsDigit.3
+    rm -f Tcl_UniCharIsGraph.3
+    rm -f Tcl_UniCharIsLower.3
+    rm -f Tcl_UniCharIsPrint.3
+    rm -f Tcl_UniCharIsPunct.3
+    rm -f Tcl_UniCharIsSpace.3
+    rm -f Tcl_UniCharIsUpper.3
+    rm -f Tcl_UniCharIsWordChar.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsAlnum.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsAlpha.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsControl.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsDigit.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsGraph.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsLower.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsPrint.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsPunct.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsSpace.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsUpper.3
+    ln UniCharIsAlpha.3 Tcl_UniCharIsWordChar.3
+fi
 if test -r UpVar.3; then
     rm -f Tcl_UpVar.3
     rm -f Tcl_UpVar2.3
