@@ -1,3 +1,8 @@
+2002-05-16  Joe English  <jenglish@users.sf.net>
+	* doc/CrtObjCmd.3: 
+	Added Tcl_GetCommandFromObj, Tcl_GetCommandFullName
+	(Tcl Bug #547987, #414921)
+
 2002-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* unix/tclUnixChan.c (TtyOutputProc): #if/#endif-ed this function
