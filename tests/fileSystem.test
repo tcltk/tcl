@@ -1009,6 +1009,20 @@ test filesystem-9.4 {path objects and join and object rep} {
     set res
 } {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
 
+test filesystem-9.5 {path objects and file tail and object rep} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir dgp
+    close [open dgp/test w]
+    foreach relative [glob -nocomplain [file join * test]] {
+	set absolute [file join [pwd] $relative]
+	set res [list [file tail $absolute] "test"]
+    }
+    file delete -force dgp 
+    cd $origdir
+    set res
+} {test test}
+
 cleanupTests
 unset -nocomplain drive
 }
