@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.24 2000/03/19 23:45:38 sandeep Exp $
+# RCS: @(#) $Id: http.tcl,v 1.25 2000/03/22 21:18:25 sandeep Exp $
 
 package provide http 2.3	;# This uses Tcl namespaces
 
@@ -227,6 +227,7 @@ proc http::geturl { url args } {
         type            text/html
         body            {}
 	status		""
+	http            ""
     }
     set options {-blocksize -channel -command -handler -headers \
 	    -progress -query -queryblocksize -querychannel -queryprogress\
@@ -331,10 +332,10 @@ proc http::geturl { url args } {
     if {$state(-timeout) > 0} {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
+	fileevent $s writable {}
 	if {![string equal $state(status) "connect"]} {
 	    return $token
 	}
-	fileevent $s writable {}
 	set state(status) ""
     }
 

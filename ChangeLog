@@ -1,3 +1,13 @@
+2000-03-22  Sandeep Tamhankar <sandeep@scriptics.com>
+
+        * library/http2.1/http.tcl: Fixed bug 4463, where we were getting
+        a stack trace if we tried to publish a project to a good host but
+        a port where there was no server listening.  It turned out the
+        problem was a stray fileevent that needed to be cleared.  Also,
+	fixed a bug where http::code could stack trace if called on a bad
+	token (one which didn't represent a successful geturl) by adding
+	an http element to the state array in geturl.
+
 2000-03-21  Eric Melski  <ericm@scriptics.com>
 
 	* tests/clock.test: Modified some tests that were not robust with
