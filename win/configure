@@ -1553,6 +1553,10 @@ eval "TCL_STUB_LIB_SPEC=\"-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${exec_prefix}/lib/${TCL_STUB_LIB_FILE}\""
 
+# Install time header dir can be set via --includedir
+eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
+
+
 eval "DLLSUFFIX=${DLLSUFFIX}"
 eval "LIBPREFIX=${LIBPREFIX}"
 eval "LIBSUFFIX=${LIBSUFFIX}"
@@ -1590,6 +1594,7 @@ fi
 
 
 # empty on win
+
 
 
 
@@ -1841,6 +1846,7 @@ s%@TCL_STUB_LIB_FILE@%$TCL_STUB_LIB_FILE%g
 s%@TCL_STUB_LIB_FLAG@%$TCL_STUB_LIB_FLAG%g
 s%@TCL_STUB_LIB_SPEC@%$TCL_STUB_LIB_SPEC%g
 s%@TCL_STUB_LIB_PATH@%$TCL_STUB_LIB_PATH%g
+s%@TCL_INCLUDE_SPEC@%$TCL_INCLUDE_SPEC%g
 s%@TCL_BUILD_STUB_LIB_SPEC@%$TCL_BUILD_STUB_LIB_SPEC%g
 s%@TCL_BUILD_STUB_LIB_PATH@%$TCL_BUILD_STUB_LIB_PATH%g
 s%@TCL_DLL_FILE@%$TCL_DLL_FILE%g

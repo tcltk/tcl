@@ -1,4 +1,19 @@
-2001-11-06  David Gravereaux <davygrvy@pobox.com>
+2001-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Define TCL_INCLUDE_SPEC in tclConfig.sh. It should be
+	included by extensions that need to find Tcl include
+	headers in the install location. The user can override
+	the include install dir with --includedir so we need
+	to record this information for extensions. [Tcl bug 421835]
+	
+	* unix/configure: Regen.
+	* unix/configure.in: Define TCL_INCLUDE_SPEC.
+	* unix/tclConfig.sh.in: Define TCL_INCLUDE_SPEC.
+	* win/configure: Regen.
+	* win/configure.in: Define TCL_INCLUDE_SPEC.
+	* win/tclConfig.sh.in: Define TCL_INCLUDE_SPEC.
+
+2001-11-07  David Gravereaux <davygrvy@pobox.com>
 
 	* win/rules.vc:
 	* win/makefile.vc: Dropped the NOMSVCRT macro and put it on the
