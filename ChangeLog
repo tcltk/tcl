@@ -1,3 +1,8 @@
+2002-02-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIndexObj.c (STRING_AT): removed ptrdiff_t cast and
+	use of VOID* in default case (GNU-ism).
+
 2002-02-15  Kevin Kenny  <kennykb@acm.org>
 
 	* compat/strtoll.c:
