@@ -1,3 +1,7 @@
+2002-03-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFCmd.c (DoCopyFile): correctly set retval to TCL_OK.
+
 2002-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWin32Dll.c (TclpCheckStackSpace):
