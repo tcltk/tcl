@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.25 1999/05/14 02:18:31 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.26 1999/06/02 19:29:19 surles Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -391,7 +391,13 @@ DL_SRCS = \
 
 SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
-all: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) tclsh
+all: binaries libraries man
+
+binaries: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) tclsh
+
+libraries:
+
+man:
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
@@ -492,8 +498,7 @@ install: install-binaries install-libraries install-man
 # some ranlibs write to current directory, and this might not always be
 # possible (e.g. if installing as root).
 
-install-binaries: $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) \
-		tclsh
+install-binaries: binaries $(TCL_BUILD_EXP_FILE)
 	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) ; \
 	    do \
 	    if [ ! -d $$i ] ; then \
@@ -522,7 +527,7 @@ install-binaries: $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) \
 			 $(LIB_INSTALL_DIR)/$(TCL_STUB_LIB_FILE); \
 	    fi
 
-install-libraries:
+install-libraries: libraries
 	@for i in $(INSTALL_ROOT)$(prefix)/lib $(INCLUDE_INSTALL_DIR) \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
@@ -565,7 +570,7 @@ install-libraries:
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
 	done;
 
-install-man:
+install-man: man
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
 	    do \
 	    if [ ! -d $$i ] ; then \
