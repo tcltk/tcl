@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.27 1999/03/31 18:58:14 welch Exp $
+# RCS: @(#) $Id: init.tcl,v 1.28 1999/03/31 22:37:03 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -1368,7 +1368,7 @@ proc pkg_mkIndex {args} {
 
 		foreach ::tcl::x [::tcl::GetAllNamespaces] {
 		    if {! [info exists ::tcl::namespaces($::tcl::x)]} {
-			namespace import ${::tcl::x}::*
+			namespace import -force ${::tcl::x}::*
 		    }
 		}
 
