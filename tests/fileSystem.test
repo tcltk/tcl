@@ -147,7 +147,7 @@ test filesystem-4.3 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {matchindirectory *} *}
+    -result {* {matchindirectory *}*}
 }
 
 # cleanup
