@@ -1,3 +1,17 @@
+2002-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure:
+	* unix/tcl.m4: added -pthread for FreeBSD to EXTRA_CFLAGS and
+	LDFLAGS.  Also triggered nodots only for FreeBSD-3.
+	Added AC_DEFINE(_POSIX_PTHREAD_SEMANTICS) for Solaris.
+
+	* unix/tclUnixPort.h:
+	* unix/tclUnixThrd.c: added thread-safe versions of readdir,
+	localtime, gmtime and inet_ntoa for threaded build. (jgdavidson)
+
+	* generic/tclScan.c (Tcl_ScanObjCmd): prevented ckfree being
+	called on a pointer to NULL.
+
 2002-02-07  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/DString.3:
