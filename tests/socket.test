@@ -532,6 +532,34 @@ test socket-2.10 {close on accept, accepted socket lives} {
     after cancel $timer
     set done
 } 1
+test socket-2.11 {detecting new data} {
+    proc accept {s a p} {
+	global sock
+	set sock $s
+    }
+
+    set s [socket -server accept 2400]
+    set sock ""
+    set s2 [socket localhost 2400]
+    vwait sock
+    puts $s2 one
+    flush $s2
+    after 500
+    fconfigure $sock -blocking 0
+    set result [gets $sock]
+    lappend result [gets $sock]
+    fconfigure $sock -blocking 1
+    puts $s2 two
+    flush $s2
+    fconfigure $sock -blocking 0
+    lappend result [gets $sock]
+    fconfigure $sock -blocking 1
+    close $s2
+    close $s
+    close $sock
+    set result
+} {one {} two}
+
 
 test socket-3.1 {socket conflict} {stdio} {
     removeFile script
