@@ -1,3 +1,7 @@
+2003-07-23  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in: added macosx/README to dist target.
+
 2003-07-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWinReg.c (OpenSubKey): Fixed bug 775976 which causes the
