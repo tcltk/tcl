@@ -1,5 +1,20 @@
 1998-12-01    <stanton@GASPODE>
 
+	* generic/tclTest.c (TestevalobjvObjCmd): Updated for EvalObjv
+	change.
+
+	* tests/parse.test: Updated tests for EvalObjv change.
+
+	* generic/tclParse.c (EvalObjv, Tcl_EvalObjv): Changed
+	Tcl_EvalObjv interface to remove string and length arguments,
+	preserved original interface as EvalObjv for internal use.
+
+	* generic/tcl.h: Changed Tcl_EvalObjv interface to remove string
+	and length arguments.
+
+	* doc/Eval.3: Updated documentation for Tcl_EvalObjv to remove
+	string and length arguments.
+
 	* generic/tclCompCmds.c (TclCompileForeachCmd): Fixed code that
 	corrupted the exceptDepth value in the compile environment when
 	foreach failed to compile inline. [Bug: 884]
