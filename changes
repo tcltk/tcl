@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.76 2003/02/28 21:32:34 dgp Exp $
+RCS: @(#) $Id: changes,v 1.77 2003/02/28 23:12:14 kennykb Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5669,6 +5669,8 @@ in DYLD_FRAMEWORK_PATH (if set). (steffen)
 
 2002-10-29 (bug fix)[627546] verbose [load] (dyld) error mesages on MacOSX
 
+2002-11-01 (bug fix) [package provide registry] consistent versions.
+
 2002-11-06 (bug fix)[582039] missing ar program -> configuration error
 
 2002-11-06 (feature enhancement) added new TclInThreadExit function to
@@ -5694,7 +5696,9 @@ function now correctly returns 1 during Tcl_Finalize processing.
 
 2003-01-07 (bug fix)[633204] [catch {return}] => 2 (not 0)
 
-2003-01-07 (bug fix)[634151] [file (a|m)time $nonASCIIpath $time] now works
+2003-01-09 (bug fix)[634151] [file (a|m)time $nonASCIIpath $time] now works
+
+2003-01-16 (bug fix) dde eval with {} service name does not crash.
 
 2003-01-16 (bug fix)[635200,655645,615043,571385] many command trace fixes
 
@@ -5719,6 +5723,8 @@ packages in multiple interps.
 2003-02-11 (bug fix)[684744] [info complete] stopped by \x00
 
 2003-02-11 (bug fix)[685445] [glob -types l] missed broken symlinks on Unix
+
+2003-02-11 (bug fix) [lsearch -regexp $a $a] doesn't crash
 
 2003-02-13 (bug fix)[685926] accept non-ASCII7 for tcl_platform(user) on Win
 
