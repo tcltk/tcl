@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4 2002/08/26 13:05:56 msofer Exp $ */
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.1 2003/05/10 00:09:08 mistachkin Exp $ */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
@@ -276,11 +276,7 @@ TclFreeAllocCache(void *arg)
     *nextPtrPtr = cachePtr->nextPtr;
     cachePtr->nextPtr = NULL;
     Tcl_MutexUnlock(listLockPtr);
-#ifdef WIN32
-    TlsFree((DWORD) cachePtr);
-#else
     free(cachePtr);
-#endif
 }
 
 
