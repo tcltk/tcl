@@ -12,6 +12,8 @@
 
 	* win/.cvsignore:  A few more glob patterns added.
 
+	* win/makefile.bc (new):  Borland lives once more! rejoice..
+
 2001-09-05 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	* tests/winFCmd.test: made notWin2000 constraint false if not
