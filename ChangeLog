@@ -1,3 +1,11 @@
+2002-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/configure.in:
+	* win/configure: Regen.
+	* win/configure.in: Use ${libdir} instead of ${exec_prefix}/lib
+	to properly support the --libdir option to configure. [Bug 489370]
+
 2002-01-11  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* win/tclWinSerial.c (SerialSetOptionProc): Applied patch for SF
