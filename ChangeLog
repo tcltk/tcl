@@ -1,3 +1,8 @@
+2004-08-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Stop [string map] from
+	crashing when its map and input string are the same object.
+
 2004-08-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (FindEnsemble): Factor out the code to
