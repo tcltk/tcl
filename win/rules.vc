@@ -10,7 +10,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.1 2001/11/07 03:39:30 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.2 2001/11/08 00:22:22 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -38,12 +38,19 @@ STATIC_BUILD	= 0
 TCL_THREADS	= 0
 DEBUG		= 0
 PROFILE		= 0
+MSVCRT		= 0
 !else
 !if ![echo $(OPTS) | find /i "static" > nul]
 !message *** Doing static
 STATIC_BUILD	= 1
 !else
 STATIC_BUILD	= 0
+!endif
+!if ![echo $(OPTS) | find /i "msvcrt" > nul]
+!message *** Doing msvcrt
+MSVCRT		= 1
+!else
+MSVCRT		= 0
 !endif
 !if ![echo $(OPTS) | find /i "threads" > nul]
 !message *** Doing threads
@@ -66,20 +73,11 @@ PROFILE		= 0
 !endif
 
 
-!ifndef NOMSVCRT
-!if $(STATIC_BUILD)
-NOMSVCRT	= 1
-!else
-NOMSVCRT	= 0
-!endif
+# make sure we don't make overly fat DLLs.
+!if !$(STATIC_BUILD)
+MSVCRT		= 1
 !endif
 
-!if $(STATIC_BUILD) == 0 && $(NOMSVCRT) == 1
-MSG = ^
-The static runtime in a loadable (dll) is a useless configuration that will^
-cause abnormal and unnecessary code bloat.
-!error $(MSG)
-!endif
 
 #----------------------------------------------------------
 # Figure-out how to name our intermediate and output directories.
@@ -104,14 +102,14 @@ TMP_DIRFULL = $(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
 SUFX	    = $(SUFX:s=)
 EXT	    = dll
-!if !$(NOMSVCRT)
+!if $(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
 !endif
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
-!if $(NOMSVCRT)
+!if !$(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
 !endif
@@ -144,7 +142,6 @@ OUT_DIR	    = $(TMP_DIR)
 !if "$(STATS)" == "" || ![echo $(STATS) | find /i "none" > nul]
 TCL_MEM_DEBUG	    = 0
 TCL_COMPILE_DEBUG   = 0
-TCL_COMPILE_STATS   = 0
 !else
 !if ![echo $(STATS) | find /i "memdbg" > nul]
 !message *** Doing memdbg
@@ -158,16 +155,6 @@ TCL_COMPILE_DEBUG   = 1
 !else
 TCL_COMPILE_DEBUG   = 0
 !endif
-!if ![echo $(STATS) | find /i "compstat" > nul]
-!message *** Doing compstat
-TCL_COMPILE_STATS   = 1
-!else
-TCL_COMPILE_STATS   = 0
-!endif
-!endif
-
-!if $(TCL_COMPILE_DEBUG) && !$(TCL_COMPILE_STATS)
-TCL_COMPILE_STATS  = 1
 !endif
 
 OPTDEFINES	=
@@ -175,10 +162,7 @@ OPTDEFINES	=
 OPTDEFINES	= -DTCL_MEM_DEBUG
 !endif
 !if $(TCL_COMPILE_DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG
-!endif
-!if $(TCL_COMPILE_STATS)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_STATS
+OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 !endif
 !if $(TCL_THREADS)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
