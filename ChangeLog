@@ -1,3 +1,8 @@
+2004-07-15  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclLiteral.c (TclReleaseLiteral): Removed unused
+	variable 'codePtr' to silence a message from VC++.
+	
 2004-07-15  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileScript): 
