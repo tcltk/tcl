@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.45 2003/12/24 04:18:22 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.46 2004/02/25 14:50:41 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2292,6 +2292,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
 		Tcl_ExternalToUtfDString(NULL, hostEntPtr->h_name, -1, &ds);
 		Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
+		Tcl_DStringFree(&ds);
 	    } else {
 		Tcl_DStringAppendElement(dsPtr, inet_ntoa(peername.sin_addr));
 	    }
@@ -2338,6 +2339,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
 		Tcl_ExternalToUtfDString(NULL, hostEntPtr->h_name, -1, &ds);
 		Tcl_DStringAppendElement(dsPtr, Tcl_DStringValue(&ds));
+		Tcl_DStringFree(&ds);
 	    } else {
 		Tcl_DStringAppendElement(dsPtr, inet_ntoa(sockname.sin_addr));
 	    }
