@@ -1,3 +1,15 @@
+2001-12-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tcl.h (TCL_STUB_MAGIC): Added cast to force type to be
+	an int and get rid of a persistent and pointless warning with
+	SunPro compiler.
+
+	* generic/tclCkalloc.c (Tcl_AttemptDbCkalloc,Tcl_AttemptDbCkrealloc): 
+	* generic/tcl.decls (Tcl_AttemptDbCkalloc,Tcl_AttemptDbCkrealloc):
+	Made the file parameters to these functions into CONST char *,
+	like they always should have been to match the other Tcl*Db* API
+	functions.
+
 2001-12-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* Applied #219311 on behalf of Rolf Schroedter
