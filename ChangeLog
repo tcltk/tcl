@@ -1,33 +1,40 @@
+2001-06-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* mac/tclMacAppInit.c (main, Macintosh_Init):
+	* mac/tclMacBOAAppInit.c (main):
+	* mac/tclMacPanic.c: Applied patches from Dan Steffen correcting
+	problems on the Macintosh in the 2001-06-08 changes.
+
 2001-06-12  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/regexp.test (regexp-18.12): 
 	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): Fixed so that submatches
-	  that do not match always have index pair {-1 -1} [Bug #219232]
+	that do not match always have index pair {-1 -1} [Bug #219232]
 
-2001-05-03  Don Porter  <dgp@users.sourceforge.net>
+2001-06-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:
 	* generic/tcl.decls:
 	* generic/tclPanic.c: Added CONST to Tcl_*Panic* public interfaces.
-	  [Patch 415648, TIP 27]
+	[Patch 415648, TIP 27]
 
 	* generic/tclInt.decls:
 	* mac/tclMacAppInit.c (main):
 	* mac/tclMacBOAAppInit.c (main):
 	* mac/tclMacPanic.c: Modified special Mac implementations of
-	  Tcl_*Panic* to be exact copies of the generic implementations.
-	  Added TclMacSetPanic.  The generic implementations should be
-	  used directly, rather than copies, but that requires further
-	  changes by someone familiar with the Mac build systems.
-	  [Patch 415648]
+	Tcl_*Panic* to be exact copies of the generic implementations.
+	Added TclMacSetPanic.  The generic implementations should be
+	used directly, rather than copies, but that requires further
+	changes by someone familiar with the Mac build systems.
+	[Patch 415648]
 
 	* generic/tclDecls.h:
 	* generic/tclIntPlatDecls.h:
-	*`generic/tclStubInit.c: `make gentubs` after above changes.
+	* generic/tclStubInit.c: `make gentubs` after above changes.
 
 	* doc/Panic.3:
 	* unix/mkLinks:  New file documenting Tcl_*Panic* public interfaces,
-	  followed by `make mklinks`.  [Patch 415648, Bug 219170, Bug 414936]
+	followed by `make mklinks`.  [Patch 415648, Bug 219170, Bug 414936]
 
 2001-06-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -666,6 +673,7 @@
 	in subspec value.
 
 2001-03-26  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclDecls.h (Tcl_InitCustomHashTable):  Correction to
 	patch from 2001-01-18;  tclDecls.h was not generated using
 	'make genstubs'.
@@ -689,6 +697,7 @@
 	[unset] to agree with documentation, so must change test as well.
 
 2001-03-14  Don Porter  <dgp@users.sourceforge.net>
+
 	* library/package.tcl (pkg_mkIndex):  Added patch from Vince
 	Darley to make [pkg_mkIndex -verbose] even more verbose.
 	[Bug 219349, Patch 403529]
@@ -757,10 +766,12 @@
 	mime package in tcllib.  [Bug #131523]
 
 2001-01-31  Don Porter  <dgp@users.sourceforge.net>
+
 	* win/makefile.vc (install-libraries):  Corrected misdirected
 	install directory for the msgcat 1.2 package.
 
 2001-01-30  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclIO.c (CopyData): Moved code that updates the count
 	of how many bytes are left to copy.  Corrects bug that when
 	writing occurs in the background, the copy loop could be
@@ -805,6 +816,7 @@
 	between lists and strings.  Fixes bug #119406
 
 2001-01-04  Don Porter  <dgp@users.sourceforge.net>
+
 	* tests/unixInit.test:
 	* unix/tclUnixInit.c (TclpInitLibraryPath):
 	* win/tclWinInit.c (TclpInitLibraryPath):  Several entries in
