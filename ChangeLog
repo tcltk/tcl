@@ -2,6 +2,8 @@
 
 	* generic/tclDictObj.c (Tcl_DictObjCmd): Stopped compilers from
 	moaning about switch fall-through.  [Bug 716327]
+	(DictFilterCmd): Yet more warning killing, this time reported by
+	Miguel Sofer by private chat.
 
 2003-04-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
