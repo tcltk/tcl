@@ -1,5 +1,9 @@
 2004-10-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclEncoding.c (LoadTableEncoding): Removed reference to
+	Tcl interpreter; it wasn't needed as direct object use is more
+	efficient.
+
 	* generic/tclPathObj.c: Made this file follow the style rules in
 	the Engineering Manual more closely, and also take advantage of
 	the internal object manipulation macros more.
