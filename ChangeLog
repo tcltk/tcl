@@ -1,3 +1,8 @@
+2002-10-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/socket.n: Mentioned that ports may be specified as serivce
+	names as well as integers. [Bug 616843]
+
 2002-09-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c (TclCompileRegexpCmd): correct the
