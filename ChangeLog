@@ -1,3 +1,17 @@
+2001-08-08  Don Porter <dgp@users.sourceforge.net>
+
+	* README:
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure:
+	* win/configure.in: Bumped up patchlevel to 8.4a4 to distinguish
+	CVS snapshots from the 8.4a3 release.  This does not necessarily
+	mean there will be an 8.4a4 release.  [Bug 448938].
+
 2001-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	8.4a3 RELEASE

@@ -1,11 +1,11 @@
 Tcl/Tk 8.4 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.25 2001/08/07 02:44:40 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.26 2001/08/08 22:28:24 dgp Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.4a3 for
+This directory contains the binary distribution of Tcl/Tk 8.4a4 for
 Windows.  It was compiled with Microsoft Visual C++ 6.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
