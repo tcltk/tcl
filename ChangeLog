@@ -3,6 +3,8 @@
 	* doc/Async.3:
 	* generic/tclAsync.c:
 	* generic/tclInt.decls:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c:
 	* generic/tclTest.c:
 	* mac/tclMacPort.h:
 	* unix/tclUnixPort.h:
