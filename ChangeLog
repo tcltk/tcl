@@ -1,5 +1,47 @@
+1999-11-18  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/tcl.m4: added defined for _THREAD_SAFE in --enable-threads
+	case; added check for pthread_mutex_init in libc; in AIX case,
+	with --enable-threads ${CC}_r is used; fixed flags when using gcc
+	on SCO
+
+	* generic/tclProc.c: corrected error reporting for default case
+	at the global level for uplevel command.
+
+	* generic/tclIOSock.c: changed int to size_t type for len
+	in TclSockMinimumBuffers.
+
+	* generic/tclCkalloc.c: fixed Tcl_DbCkfree to return a value
+	on NULL input. [Bug: 3400]
+
+	* generic/tclStringObj.c: fixed support for passing in negative
+	length to Tcl_SetUnicodeObj, et al handling routines. [Bug: 3380]
+
+	* doc/scan.n:
+	* tests/scan.test:
+	* generic/tclScan.c: finished support for inline scan by
+	supporting XPG identifiers.
+
+	* doc/http.n:
+	* library/http2.1/http.tcl: added register and unregister
+	commands to http:: package (better support for tls/SSL),
+	as well as -type argument to http::geturl. [RFE: 2617]
+
+	* generic/tclBasic.c: removed extra decr of numLevels in
+	Tcl_EvalObjEx that could cause seg fault. (mjansen@wendt.de)
+
+	* generic/tclEvent.c: fixed possible lack of MutexUnlock in
+	Tcl_DeleteExitHandler [Bug: 3545]
+
+	* unix/tcl.m4: Added better pthreads library check and inclusion
+	of _THREAD_SAFE in --enable-threads case
+	Added support for gcc config on SCO
+
+	* doc/glob.n: added note about ..../ glob behavior on Win9*
+	* doc/tcltest.n: fixed minor example errors [Bug: 3551]
+
 1999-11-17 Brent Welch <welch@scriptics.com>
-	*  library/http2.1/http.tcl: Correctly fixed the -timeout
+	* library/http2.1/http.tcl: Correctly fixed the -timeout
 	problem mentioned in the 10-29 change.  Also added error
 	handling for failed writes on the socket during the protocol.
 
@@ -63,7 +105,7 @@
 	* tests/incr.test:
 	* tests/set.test:
 	* generic/tclCompCmds.c: fixed improper bytecode handling of
-	'eval {set array($unknownvar) 5}' (also for incr)
+	'eval {set array($unknownvar) 5}' (also for incr) [Bug: 3184]
 
 	* win/tclWinTest.c: added testvolumetype command, as atime is
 	completely ignored for Windows FAT file systems
@@ -77,7 +119,7 @@
 1999-10-20  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tclUnixNotfy.c: fixed event/io threading problems by
-	making triggerPipe non-blocking
+	making triggerPipe non-blocking [Bug: 2792]
 
 	* library/tcltest1.0/tcltest.tcl:
 	* generic/tclThreadTest.c: fixed mem leaks in threads
