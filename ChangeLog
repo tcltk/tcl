@@ -1,3 +1,9 @@
+2004-07-10  Kevin Kenny  <kennykb@acm.org>
+
+	* tests/clock.test (clock-2.11): Changed the test so that
+	it isn't an infinite loop when run under valgrind on a slow
+	virtual machine.  Thanks to Miguel Sofer for the bug report.
+	
 2004-07-08  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (DeleteInterpProc): reverted the modification
@@ -23,7 +29,7 @@
 
 2004-07-07  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic.tclCmdMZ.c (TclMergeReturnOptions):  Simplified logic and
+	* generic/tclCmdMZ.c (TclMergeReturnOptions):  Simplified logic and
 	removed potential memory leak.  [Bug 986257].
 
 2004-07-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>

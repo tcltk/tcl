@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.31 2004/06/23 15:36:55 dkf Exp $
+# RCS: @(#) $Id: clock.test,v 1.32 2004/07/10 20:38:44 kennykb Exp $
 
 set env(LC_TIME) POSIX
 
@@ -89,13 +89,20 @@ test clock-2.10 {clock clicks test, micros align with seconds} {
 
 test clock-2.11 {clock clicks test, millis align with micros} {
     set t1 [clock clicks -millis]
-    while { 1 } {
+    set i 0
+    while { $i < 1000 } {
 	set t2 [clock clicks -micros]
 	set t3 [clock clicks -millis]
 	if { $t3 == $t1 } break
 	set t1 $t3
+        incr i
     }
-    expr { $t2 / 1000 == $t3 }
+    if { $i >= 1000 } {
+        set result {can't test millis/micros alignment, loop running too slow}
+    } else {
+        set result [expr { $t2 / 1000 == $t3 }]
+    }
+    set result
 } {1}
 
 test clock-2.12 {clock clicks test, wrong num args} {
