@@ -46,6 +46,13 @@
 
 2002-07-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n: more work in progress updating tcltest docs.
+
+	* library/tcltest/tcltest.tcl: Change [configure -match] to
+	stop treating an empty list as a list of the single pattern "*".
+	Changed the default value to [list *] so default operation
+	remains the same.
+
 	* tests/pkg/samename.tcl: restored.  needed by pkgMkIndex.test.
 
 	* library/tcltest/tcltest.tcl: restored writeability testing of
