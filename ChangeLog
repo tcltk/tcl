@@ -1,3 +1,11 @@
+2005-01-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): fixed bug with static build linking to
+	dynamic library in /usr/lib etc instead of linking to static library
+	earlier in search path. [Tcl Bug 956908]
+	Removed obsolete references to Rhapsody. 
+	* unix/configure: autoconf-2.57
+
 2005-01-21  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclStubInit.c: Regenerated the stubs support code from
