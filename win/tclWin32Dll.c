@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.3 2004/06/05 17:25:40 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.4 2004/06/21 22:07:32 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -45,6 +45,38 @@ static void *INITIAL_ESP,
             *RESTORED_EBP,
             *RESTORED_HANDLER;
 #endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
+
+#ifdef HAVE_NO_SEH
+
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_dllmain_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_checkstackspace_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+static
+__attribute__((cdecl))
+EXCEPTION_DISPOSITION
+_except_TclWinCPUID_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+#endif /* HAVE_NO_SEH */
+
 
 /*
  * The following function tables are used to dispatch to either the
@@ -153,12 +185,28 @@ static TclWinProcs unicodeProcs = {
 TclWinProcs *tclWinProcs;
 static Tcl_Encoding tclWinTCharEncoding;
 
+
+#ifdef HAVE_NO_SEH
+
+/* Need to add noinline flag to DllMain declaration so that gcc -O3
+ * does not inline asm code into DllEntryPoint and cause a
+ * compile time error because of redefined local labels.
+ */
+
+BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason, 
+				LPVOID reserved)
+                        __attribute__ ((noinline));
+
+#else
+
 /*
  * The following declaration is for the VC++ DLL entry point.
  */
 
 BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason, 
 				LPVOID reserved);
+#endif /* HAVE_NO_SEH */
+
 
 /*
  * The following structure and linked list is to allow us to map between
@@ -261,10 +309,12 @@ DllMain(hInst, reason, reserved)
 # endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_dllmain_detach_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_dllmain_detach_handler) );
 #else
 	__try {
 #endif /* HAVE_NO_SEH */
@@ -312,7 +362,22 @@ DllMain(hInst, reason, reserved)
 
     return TRUE; 
 }
-
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_dllmain_detach_handler --
+ *
+ *	SEH exception handler for DllMain.
+ *
+ * Results:
+ *	See DllMain.
+ *
+ * Side effects:
+ *	See DllMain.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -325,11 +390,10 @@ _except_dllmain_detach_handler(
 {
     __asm__ __volatile__ (
             "jmp dllmain_detach_reentry");
-    /* Nuke compiler warning about unused static function */
-    _except_dllmain_detach_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
+
 
 #endif /* !STATIC_BUILD */
 #endif /* __WIN32__ */
@@ -493,10 +557,12 @@ TclpCheckStackSpace()
 # endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_checkstackspace_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_checkstackspace_handler) );
 #else
     __try {
 #endif /* HAVE_NO_SEH */
@@ -552,6 +618,22 @@ TclpCheckStackSpace()
      */
     return retval;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_checkstackspace_handler --
+ *
+ *	SEH exception handler for TclpCheckStackSpace.
+ *
+ * Results:
+ *	See TclpCheckStackSpace.
+ *
+ * Side effects:
+ *	See TclpCheckStackSpace.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -564,8 +646,6 @@ _except_checkstackspace_handler(
 {
     __asm__ __volatile__ (
             "jmp checkstackspace_reentry");
-    /* Nuke compiler warning about unused static function */
-    _except_checkstackspace_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
@@ -978,10 +1058,12 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 
 # ifdef HAVE_NO_SEH
     __asm__ __volatile__ (
-	"pushl %ebp" "\n\t"
-	"pushl $__except_TclWinCPUID_detach_handler" "\n\t"
-	"pushl %fs:0" "\n\t"
-	"movl %esp, %fs:0" );
+	    "pushl %%ebp" "\n\t"
+	    "pushl %0" "\n\t"
+	    "pushl %%fs:0" "\n\t"
+	    "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_TclWinCPUID_detach_handler) );
 #  else
     __try {
 #  endif
@@ -1077,9 +1159,27 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 #endif
     return status;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_TclWinCPUID_detach_handler --
+ *
+ *	SEH exception handler for TclWinCPUID.
+ *
+ * Results:
+ *	See TclWinCPUID.
+ *
+ * Side effects:
+ *	See TclWinCPUID.
+ *
+ *----------------------------------------------------------------------
+ */
 
-#if defined( __GNUC__ ) && defined( HAVE_NO_SEH )
-static __attribute__((cdecl)) EXCEPTION_DISPOSITION
+#if defined( HAVE_NO_SEH )
+static
+__attribute__((cdecl))
+EXCEPTION_DISPOSITION
 _except_TclWinCPUID_detach_handler(
     struct _EXCEPTION_RECORD *ExceptionRecord,
     void *EstablisherFrame,
@@ -1088,10 +1188,7 @@ _except_TclWinCPUID_detach_handler(
 {
     __asm__ __volatile__ (
 	"jmp TclWinCPUID_detach_reentry" );
-    /* Nuke compiler warning about unused static function */
-    _except_TclWinCPUID_detach_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif
-
 
