@@ -8,7 +8,9 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * RCS: @(#) $Id: strftime.c,v 1.9 2002/04/22 22:41:46 hobbs Exp $
+ * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
+ *
+ * RCS: @(#) $Id: strftime.c,v 1.10 2002/05/29 00:19:39 hobbs Exp $
  */
 
 /*
@@ -45,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.9 2002/04/22 22:41:46 hobbs Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.10 2002/05/29 00:19:39 hobbs Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -103,6 +105,7 @@ static const _TimeLocale _DefaultTimeLocale =
 
 static const _TimeLocale *_CurrentTimeLocale = &_DefaultTimeLocale;
 
+static int isGMT;
 static size_t gsize;
 static char *pt;
 static int		 _add _ANSI_ARGS_((const char* str));
@@ -112,11 +115,12 @@ static size_t		_fmt _ANSI_ARGS_((const char *format,
 			    const struct tm *t));
 
 size_t
-TclpStrftime(s, maxsize, format, t)
+TclpStrftime(s, maxsize, format, t, useGMT)
     char *s;
     size_t maxsize;
     const char *format;
     const struct tm *t;
+    int useGMT;
 {
     if (format[0] == '%' && format[1] == 'Q') {
 	/* Format as a stardate */
@@ -128,6 +132,11 @@ TclpStrftime(s, maxsize, format, t)
 	return(strlen(s));
     }
 
+    isGMT = useGMT;
+    /*
+     * We may be able to skip this for useGMT, but it should be harmless.
+     * -- hobbs
+     */
     tzset();
 
     pt = s;
@@ -374,7 +383,7 @@ _fmt(format, t)
 			return(0);
 		    continue;
 		case 'Z': {
-		    char *name = TclpGetTZName(t->tm_isdst);
+		    char *name = (isGMT ? "GMT" : TclpGetTZName(t->tm_isdst));
 		    if (name && !_add(name)) {
 			return 0;
 		    }
