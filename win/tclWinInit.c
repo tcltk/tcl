@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.39 2003/02/13 23:49:48 kennykb Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.40 2003/02/27 03:47:09 chengyemao Exp $
  */
 
 #include "tclWinInt.h"
@@ -599,7 +599,7 @@ TclpSetVariables(interp)
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
     TCHAR szUserName[ UNLEN+1 ];
-    DWORD dwUserNameLen;
+    DWORD dwUserNameLen = sizeof(szUserName);
 
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
