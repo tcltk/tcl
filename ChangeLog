@@ -1,3 +1,17 @@
+2004-10-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/appendComp.test:	Backport test suite fixes of errors
+	* tests/autoMkindex.test:	revealed by -singleproc 1 -debug 1
+	* tests/exec.test:		options to make test.
+	* tests/execute.test:
+	* tests/interp.test:
+	* tests/io.test:
+	* tests/namespace.test:
+	* tests/regexpComp.test:
+	* tests/stringComp.test:
+	* tests/unixInit.test:
+	* tests/winPipe.test:
+
 2004-10-26  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Backport a missing bit 
