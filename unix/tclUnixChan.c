@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.30 2002/02/26 20:03:05 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.31 2002/02/27 18:53:26 andreas_kupries Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1690,6 +1690,9 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     CONST char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_ChannelType *channelTypePtr;
+#ifdef SUPPORTS_TTY
+    int ctl_tty;
+#endif
 #ifdef DEPRECATED
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif
@@ -1721,6 +1724,9 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 	return NULL;
     }
     fd = Tcl_PlatformOpen(native, mode, permissions);
+#ifdef SUPPORTS_TTY
+    ctl_tty = (strcmp (native, "/dev/tty") == 0);
+#endif
 
     if (fd < 0) {
         if (interp != (Tcl_Interp *) NULL) {
@@ -1741,7 +1747,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     sprintf(channelName, "file%d", fd);
     
 #ifdef SUPPORTS_TTY
-    if (isatty(fd)) {
+    if (!ctl_tty && isatty(fd)) {
 	/*
 	 * Initialize the serial port to a set of sane parameters.
 	 * Especially important if the remote device is set to echo and
