@@ -1,5 +1,15 @@
 1999-07-21    <redman@scriptics.com>
-
+	
+	* doc/open.n: Added documentation of \\.\comX notation for opening
+	serial ports on Windows (alternative to comX:).
+	
+	* tests/ioCmd.test:
+	* doc/open.n:
+	* win/tclWinSerial.c: Applied patch from Rolf Schroedter to add
+	-pollinterval option to fconfigure to modify the maxblocktime used
+	in the fileevent polling. Added documentation and fixed the test
+	case as well.
+	
 	* win/tclWinSock.c: Modified 8.1.0 version of the Win32 socket
 	driver to move the handling of the socket event window in a
 	separate thread.  It also turned out that Win95 & Win98 were, in
