@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.27 2003/12/24 04:18:23 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.28 2004/01/11 20:36:48 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -906,7 +906,7 @@ Tcl_ConditionNotify(condPtr)
 {
     WinCondition *winCondPtr;
     ThreadSpecificData *tsdPtr;
-    if (condPtr != NULL) {
+    if (*condPtr != NULL) {
 	winCondPtr = *((WinCondition **)condPtr);
 
 	/*
