@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.14.4.3 2002/08/20 20:25:25 das Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.14.4.4 2002/08/30 15:33:55 das Exp $
  */
 
 #include "tclInt.h"
@@ -3106,16 +3106,16 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     int *simpleVarNamePtr;	/* must not be NULL */
     int *isScalarPtr;		/* must not be NULL */
 {
-    Tcl_Parse elemParse;
-    int gotElemParse = 0;
     register CONST char *p;
     CONST char *name, *elName;
     register int i, n;
     int nameChars, elNameChars, simpleVarName, localIndex;
     int code = TCL_OK;
-    Tcl_DString copy;
 
-    Tcl_DStringInit(&copy);
+    Tcl_Token *elemTokenPtr = NULL;
+    int elemTokenCount = 0;
+    int allocedTokens = 0;
+    int removedParen = 0;
 
     /*
      * Decide if we can use a frame slot for the var/array name or if we
@@ -3148,8 +3148,11 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 
 	name = varTokenPtr[1].start;
 	nameChars = varTokenPtr[1].size;
-	/* last char is ')' => potential array reference */
 	if ( *(name + nameChars - 1) == ')') {
+	    /* 
+	     * last char is ')' => potential array reference.
+	     */
+
 	    for (i = 0, p = name;  i < nameChars;  i++, p++) {
 		if (*p == '(') {
 		    elName = p + 1;
@@ -3158,29 +3161,32 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 		    break;
 		}
 	    }
-	}
 
-	/*
-	 * If elName contains any double quotes ("), we can't inline
-	 * compile the element script using the replace '()' by '"'
-	 * technique below.
-	 */
+	    if ((elName != NULL) && elNameChars) {
+		/*
+		 * An array element, the element name is a simple
+		 * string: assemble the corresponding token.
+		 */
 
-	for (i = 0, p = elName;  i < elNameChars;  i++, p++) {
-	    if (*p == '"') {
-		simpleVarName = 0;
-		break;
+		elemTokenPtr = (Tcl_Token *) ckalloc(sizeof(Tcl_Token));
+		allocedTokens = 1;
+		elemTokenPtr->type = TCL_TOKEN_TEXT;
+		elemTokenPtr->start = elName;
+		elemTokenPtr->size = elNameChars;
+		elemTokenPtr->numComponents = 0;
+		elemTokenCount = 1;
 	    }
 	}
     } else if (((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
             && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
             && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
-        simpleVarName = 0;
 
         /*
 	 * Check for parentheses inside first token
 	 */
+
+        simpleVarName = 0;
         for (i = 0, p = varTokenPtr[1].start; 
 	     i < varTokenPtr[1].size; i++, p++) {
             if (*p == '(') {
@@ -3189,24 +3195,56 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
             }
         }
         if (simpleVarName) {
+	    int remainingChars;
+
+	    /*
+	     * Check the last token: if it is just ')', do not count
+	     * it. Otherwise, remove the ')' and flag so that it is
+	     * restored at the end.
+	     */
+
+	    if (varTokenPtr[n].size == 1) {
+		--n;
+	    } else {
+		--varTokenPtr[n].size;
+		removedParen = n;
+	    }
+
             name = varTokenPtr[1].start;
             nameChars = p - varTokenPtr[1].start;
             elName = p + 1;
+            remainingChars = (varTokenPtr[2].start - p) - 1;
             elNameChars = (varTokenPtr[n].start - p) + varTokenPtr[n].size - 2;
 
-            /*
-             * If elName contains any double quotes ("), we can't inline
-             * compile the element script using the replace '()' by '"'
-             * technique below.
-             */
+	    if (remainingChars) {
+		/*
+		 * Make a first token with the extra characters in the first 
+		 * token.
+		 */
 
-            for (i = 0, p = elName;  i < elNameChars;  i++, p++) {
-                if (*p == '"') {
-                    simpleVarName = 0;
-                    break;
-                }
-            }
-        }
+		elemTokenPtr = (Tcl_Token *) ckalloc(n * sizeof(Tcl_Token));
+		allocedTokens = 1;
+		elemTokenPtr->type = TCL_TOKEN_TEXT;
+		elemTokenPtr->start = elName;
+		elemTokenPtr->size = remainingChars;
+		elemTokenPtr->numComponents = 0;
+		elemTokenCount = n;
+		
+		/*
+		 * Copy the remaining tokens.
+		 */
+		
+		memcpy((void *) (elemTokenPtr+1), (void *) (&varTokenPtr[2]),
+		       ((n-1) * sizeof(Tcl_Token)));
+	    } else {
+		/*
+		 * Use the already available tokens.
+		 */
+		
+		elemTokenPtr = &varTokenPtr[2];
+		elemTokenCount = n - 1;	    
+	    }
+	}
     }
 
     if (simpleVarName) {
@@ -3247,25 +3285,9 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	 */
 
 	if (elName != NULL) {
-	    /*
-	     * Temporarily replace the '(' and ')' by '"'s.
-	     */
-	    Tcl_DStringAppend(&copy, "\"", 1);
-	    Tcl_DStringAppend(&copy, elName, elNameChars);
-	    Tcl_DStringAppend(&copy, "\"", 1);
-	    code = Tcl_ParseCommand(interp, Tcl_DStringValue(&copy),
-		    elNameChars+2, /*nested*/ 0, &elemParse);
-	    gotElemParse = 1;
-	    if ((code != TCL_OK) || (elemParse.numWords > 1)) {
-		char buffer[160];
-		sprintf(buffer, "\n    (parsing index for array \"%.*s\")",
-		        TclMin(nameChars, 100), name);
-		Tcl_AddObjErrorInfo(interp, buffer, -1);
-		code = TCL_ERROR;
-		goto done;
-	    } else if (elemParse.numWords == 1) {
-		code = TclCompileTokens(interp, elemParse.tokenPtr+1,
-                        elemParse.tokenPtr->numComponents, envPtr);
+	    if (elNameChars) {
+		code = TclCompileTokens(interp, elemTokenPtr,
+                        elemTokenCount, envPtr);
 		if (code != TCL_OK) {
 		    goto done;
 		}
@@ -3286,10 +3308,12 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     }
 
     done:
-    if (gotElemParse) {
-        Tcl_FreeParse(&elemParse);
+    if (removedParen) {
+	++varTokenPtr[removedParen].size;
     }
-    Tcl_DStringFree(&copy);
+    if (allocedTokens) {
+        ckfree((char *) elemTokenPtr);
+    }
     *localIndexPtr	= localIndex;
     *simpleVarNamePtr	= simpleVarName;
     *isScalarPtr	= (elName == NULL);

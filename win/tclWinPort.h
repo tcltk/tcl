@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.23.2.3 2002/08/20 20:25:31 das Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.23.2.4 2002/08/30 15:33:57 das Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -419,6 +419,14 @@
  */
 
 #define USE_PUTENV	1
+
+/*
+ * Msvcrt's putenv() copies the string rather than takes ownership of it.
+ */
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#   define HAVE_PUTENV_THAT_COPIES 1
+#endif
 
 /*
  * The following defines wrap the system memory allocation routines for

@@ -1,3 +1,68 @@
+2002-08-29  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* win/tclWinThrd.c (TclpFinalizeThreadData, TclWinFreeAllocCache):
+	  Applied patch for bug #599428, provided by Miguel Sofer
+	  <msofer@users.sourceforge.net>.
+
+2002-08-28  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclEnv.c:
+	* unix/configure.in:
+	* win/tclWinPort.h:  putenv() on some systems copies the buffer
+	rather than taking reference to it.  This causes memory leaks
+	and is know to effect mswindows (msvcrt) and NetBSD 1.5.2 .  This
+	patch tests for this behavior and turns on -DHAVE_PUTENV_THAT_COPIES=1
+	when approriate.  Thanks to David Welton for assistance.
+	[Bug 414910]
+
+	* unix/configure: regen'd
+
+2002-08-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/eval.n: Added mention of list command and corrected "SEE ALSO".
+
+	* unix/configure.in: Cache handling of ac_cv_type_socklen_t was
+	wrong. [Bug 600931] reported by John Ellson.  Fixed by putting the
+	brackets where they belong.
+
+2002-08-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompCmds.c: fix for [Bug 599788] (error in element
+	name causing segfault), reported by Tom Wilkason. Fixed by copying
+	the tokens instead of the source string.
+
+2002-08-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclThreadAlloc.c: small optimisation, reducing the
+	new allocator's overhead.
+	
+2002-08-23  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclObj.c (USE_THREAD_ALLOC): fixed leak [Bug 597936]. 
+	Thanks to Zoran Vasiljevic.
+
+2002-08-23  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclThreadAlloc.c (USE_THREAD_ALLOC): moving objects
+	between caches as a block, instead of one-by-one.
+
+2002-08-22  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c:
+	* generic/tclCmdMZ.c: fix for freed memory r/w in delete traces
+	[Bug 589863], patch by Hemang Lavana.
+
+2002-08-20  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* win/Makefile.in (CFLAGS): 
+	* unix/Makefile.in (MEM_DEBUG_FLAGS): Added usage of @MEM_DEBUG_FLAGS@.
+	* win/configure.in:
+	* unix/configure.in: Added usage of SC_ENABLE_MEMDEBUG.
+	* win/tcl.m4:
+	* unix/tcl.m4: Added macro SC_ENABLE_MEMDEBUG. Allows a user of
+	  configure to (de)activate memory validation and debugging
+	  (TCL_MEM_DEBUG). No need to modify the makefile anymore.
+
 2002-08-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCkalloc.c:	CONSTified MemoryCmd and CheckmemCmd.

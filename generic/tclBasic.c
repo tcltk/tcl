@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.35.8.3 2002/08/20 20:25:25 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.35.8.4 2002/08/30 15:33:55 das Exp $
  */
 
 #include "tclInt.h"
@@ -5023,8 +5023,7 @@ Tcl_DeleteTrace(interp, trace)
 
     /* Delete the trace object */
 
-    ckfree( (char*) tracePtr );
-
+    Tcl_EventuallyFree( (char*) tracePtr, TCL_DYNAMIC);
 }
 
 /*

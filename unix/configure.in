@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.72.8.6 2002/08/20 20:25:30 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.8.7 2002/08/30 15:33:57 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -268,20 +268,20 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_MSG_CHECKING([for socklen_t])
-AC_CACHE_VAL(ac_cv_type_socklen_t,
-[AC_EGREP_CPP(changequote(<<,>>)dnl
+AC_CACHE_VAL(ac_cv_type_socklen_t,[AC_EGREP_CPP(changequote(<<,>>)dnl
 <<(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]>>dnl
-changequote([,]),[#include <sys/types.h>
-#include <sys/socket.h>
-#if STDC_HEADERS
-#include <stdlib.h>
-#include <stddef.h>
-#endif], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)
+changequote([,]),[
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #if STDC_HEADERS
+    #include <stdlib.h>
+    #include <stddef.h>
+    #endif
+    ], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)])
 AC_MSG_RESULT($ac_cv_type_socklen_t)
 if test $ac_cv_type_socklen_t = no; then
-  AC_DEFINE(socklen_t, unsigned)
+    AC_DEFINE(socklen_t, unsigned)
 fi
-])
 
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)
@@ -373,6 +373,40 @@ if test $tcl_cv_char_signed = yes; then
 fi
 
 #--------------------------------------------------------------------
+#  Does putenv() copy or not?  We need to know to avoid memory leaks.
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for a putenv() that copies the buffer])
+AC_CACHE_VAL(tcl_cv_putenv_copy,
+    AC_TRY_RUN([
+	#include <stdlib.h>
+	#define OURVAR "havecopy=yes"
+	int main (int argc, char *argv[])
+	{
+	    char *foo, *bar;
+	    foo = (char *)strdup(OURVAR);
+	    putenv(foo);
+	    strcpy((char *)(strchr(foo, '=') + 1), "no");
+	    bar = getenv("havecopy");
+	    if (!strcmp(bar, "no")) {
+		/* doesn't copy */
+		return 0;
+	    } else {
+		/* does copy */
+		return 1;
+	    }
+	}
+    ],
+    tcl_cv_putenv_copy=no,
+    tcl_cv_putenv_copy=yes,
+    tcl_cv_putenv_copy=no)
+)
+AC_MSG_RESULT($tcl_cv_putenv_copy)
+if test $tcl_cv_putenv_copy = yes; then
+    AC_DEFINE(HAVE_PUTENV_THAT_COPIES)
+fi
+
+#--------------------------------------------------------------------
 # Check for support of nl_langinfo function
 #--------------------------------------------------------------------
 
@@ -399,6 +433,7 @@ SC_ENABLE_SHARED
 SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS
+SC_ENABLE_MEMDEBUG
 
 TCL_DBGX=${DBGX}
 

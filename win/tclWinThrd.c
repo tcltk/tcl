@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.18.8.1 2002/06/10 05:33:20 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.18.8.2 2002/08/30 15:33:57 das Exp $
  */
 
 #include "tclWinInt.h"
@@ -633,15 +633,10 @@ TclpFinalizeThreadData(keyPtr)
 {
     VOID *result;
     DWORD *indexPtr;
+
 #ifdef USE_THREAD_ALLOC
-    static int once = 0;
-
-    if (!once) {
-	once = 1;
-	TclWinFreeAllocCache();
-    }
+    TclWinFreeAllocCache();
 #endif
-
     if (*keyPtr != NULL) {
 	indexPtr = *(DWORD **)keyPtr;
 	result = (VOID *)TlsGetValue(*indexPtr);
@@ -1039,8 +1034,10 @@ TclWinFreeAllocCache(void)
     void *ptr;
 
     ptr = TlsGetValue(key);
-    TlsSetValue(key, NULL);
-    TclFreeAllocCache(ptr);
+    if (ptr != NULL) {
+	TlsSetValue(key, NULL);
+	TclFreeAllocCache(ptr);
+    }
 }
 
 #endif /* USE_THREAD_ALLOC */
