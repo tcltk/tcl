@@ -1,3 +1,8 @@
+2003-05-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclBasic.c (Tcl_HideCommand): Fixed error message for
+	grammar and spelling.
+
 2003-04-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclDictObj.c (DictIncrCmd): Updated to reflect the

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.20 2003/03/12 17:52:36 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.21 2003/05/05 16:48:54 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1498,7 +1498,7 @@ test interp-20.45 {interp hide vs namespaces} {
     set l [list [catch {interp hide a foo::x} msg] $msg]
     interp delete a
     set l
-} {1 {cannot use namespace qualifiers as hidden commandtoken (rename)}}
+} {1 {cannot use namespace qualifiers in hidden command token (rename)}}
 test interp-20.46 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
@@ -1519,7 +1519,7 @@ test interp-20.47 {interp hide vs namespaces} {
     set l [list [catch {interp hide a x foo::x} msg] $msg]
     interp delete a
     set l
-} {1 {cannot use namespace qualifiers as hidden commandtoken (rename)}}
+} {1 {cannot use namespace qualifiers in hidden command token (rename)}}
 test interp-20.48 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
@@ -1530,7 +1530,7 @@ test interp-20.48 {interp hide vs namespaces} {
     set l [list [catch {interp hide a foo::x bar::x} msg] $msg]
     interp delete a
     set l
-} {1 {cannot use namespace qualifiers as hidden commandtoken (rename)}}
+} {1 {cannot use namespace qualifiers in hidden command token (rename)}}
 
 test interp-21.1 {interp hidden} {
     interp hidden {}
