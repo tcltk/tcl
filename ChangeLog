@@ -1,5 +1,7 @@
 2004-06-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/*.test: Standardize use of platform constraints.
+
 	* unix/tclUnixInit.c (GetStackSize, TclpCheckStackSpace): 
 	* unix/tclUnixThrd.c (TclpThreadGetStackSize): Added code to check
 	whether the C stack is about to be exceeded, from [Patch 746378]

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.30 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: socket.test,v 1.31 2004/06/23 15:36:58 dkf Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -737,7 +737,7 @@ test socket-4.2 {byte order problems, socket numbers, htons} {socket} {
 } ok
 
 test socket-5.1 {byte order problems, socket numbers, htons} \
-	{socket unixOnly notRoot} {
+	{socket unix notRoot} {
     set x {couldn't open socket: not owner}
     if {![catch {socket -server dodo 0x1} msg]} {
         set x {htons problem, should be disallowed, are you running as SU?}
@@ -754,7 +754,7 @@ test socket-5.2 {byte order problems, socket numbers, htons} {socket} {
     set x
 } {couldn't open socket: port number too high}
 test socket-5.3 {byte order problems, socket numbers, htons} \
-	{socket unixOnly notRoot} {
+	{socket unix notRoot} {
     set x {couldn't open socket: not owner}
     if {![catch {socket -server dodo 21} msg]} {
 	set x {htons problem, should be disallowed, are you running as SU?}
