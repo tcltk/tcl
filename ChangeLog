@@ -1,3 +1,10 @@
+2004-07-23  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: simplify tclLocalVarNameType, removing the
+	reference to the corresponding proc. The reference is now seen as
+	unnecessary, and it may cause leaking circular references under
+	some circumstances (see for example [Bug 994838]).
+
 2004-07-22  Don Porter  <dgp@users.sourceforge.net>
 
         * tests/eofchar.data (removed): Test io-61.1 now generates its own
