@@ -13,29 +13,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.40 2001/07/12 13:15:09 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.41 2001/07/16 18:35:50 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclCompile.h"
 #include "tclRegexp.h"
-
-/*
- * Flag values used by Tcl_ScanObjCmd.
- */
-
-#define SCAN_NOSKIP	0x1		  /* Don't skip blanks. */
-#define SCAN_SUPPRESS	0x2		  /* Suppress assignment. */
-#define SCAN_UNSIGNED	0x4		  /* Read an unsigned value. */
-#define SCAN_WIDTH	0x8		  /* A width value was supplied. */
-
-#define SCAN_SIGNOK	0x10		  /* A +/- character is allowed. */
-#define SCAN_NODIGITS	0x20		  /* No digits have been scanned. */
-#define SCAN_NOZERO	0x40		  /* No zero digits have been scanned. */
-#define SCAN_XOK	0x80		  /* An 'x' is allowed. */
-#define SCAN_PTOK	0x100		  /* Decimal point is allowed. */
-#define SCAN_EXPOK	0x200		  /* An exponent is allowed. */
 
 /*
  * Structure used to hold information about variable traces:

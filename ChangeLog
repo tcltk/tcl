@@ -1,3 +1,8 @@
+2001-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c: Removed extra copy of the SCAN_* macros
+	#defined in generic/tclScan.c. (porter) [Bug 441230]
+
 2001-07-12  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/unixInit.test (unixInit-2.8): Added extra constraint,
