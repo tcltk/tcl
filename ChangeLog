@@ -1,3 +1,12 @@
+2000-12-07  jeff hobbs  <jhobbs@interwoven.com>
+
+	* generic/tcl.h: added note about need to updated
+	library/dde/pkgIndex.tcl with minor version increment.
+
+	* library/dde/pkgIndex.tcl: updated to use 84 version to reflect
+	the makefile.  Should probably be updated to use its real version
+	at some point. [Patch #102560, Bug #119421]
+
 2000-11-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Logical negation "!"
