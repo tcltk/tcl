@@ -1,5 +1,9 @@
 1999-07-21    <redman@scriptics.com>
-	
+
+	* tests/info.test:
+	* generic/tclParse.c:  Applied patch to fix "info complete"
+	for the string {[a [b]}.  Patch from Peter Spjuth. [Bug: 2382]
+
 	* doc/Utf.3:
 	* generic/tcl.decls:
 	* generic/tclDecls.h:
