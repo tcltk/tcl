@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.12 2001/10/16 05:10:34 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.13 2001/10/16 05:31:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -243,9 +243,9 @@ Tcl_RegExpRange(re, index, startPtr, endPtr)
     int index;			/* 0 means give the range of the entire
 				 * match, > 0 means give the range of
 				 * a matching subrange. */
-    CONST char **startPtr;	/* Store address of first character in
+    char **startPtr;		/* Store address of first character in
 				 * (sub-) range here. */
-    CONST char **endPtr;	/* Store address of character just after last
+    char **endPtr;		/* Store address of character just after last
 				 * in (sub-) range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
