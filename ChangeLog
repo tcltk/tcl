@@ -1,3 +1,10 @@
+2002-06-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+	
+	* win/tclWinPipe.c (BuildCommandLine): Fixed bug #554068 ([exec]
+	  on windows did not treat { in filenames well.). Bug reported by
+	  Vince Darley <vincentdarley@users.sourceforge.net>, patch
+	  provided by Vince too.
+
 2002-06-17  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tcl.h: #ifdef logic for K&R C backwards compatibility
