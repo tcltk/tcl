@@ -1,5 +1,13 @@
 2003-01-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinDde.c (Dde_Init): clarified use of tsdPtr.
+	(DdeServerProc): better refcount handling of returnPackagePtr.
+
+	* generic/tclEvent.c (Tcl_Finalize): revert finalize change on
+	2002-12-04 to correct the issue with extensions that have TSD
+	needing to finalize that before they are unloaded.  This issue
+	needs further clarification.
+
 	* tests/unixFCmd.test: only do groups check on unix
 
 2003-01-24  Vince Darley  <vincentdarley@users.sourceforge.net>
