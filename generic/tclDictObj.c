@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10 2003/05/07 15:26:27 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.11 2003/09/04 16:44:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -293,12 +293,14 @@ UpdateStringOfDict(dictPtr)
 	    i+=2,hPtr=Tcl_NextHashEntry(&search)) {
 	keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&dict->table, hPtr);
 	elem = Tcl_GetStringFromObj(keyPtr, &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst, flagPtr[i]);
+	dst += Tcl_ConvertCountedElement(elem, length, dst,
+		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH) );
 	*(dst++) = ' ';
 
 	valuePtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 	elem = Tcl_GetStringFromObj(valuePtr, &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst, flagPtr[i+1]);
+	dst += Tcl_ConvertCountedElement(elem, length, dst,
+		flagPtr[i+1] | TCL_DONT_QUOTE_HASH);
 	*(dst++) = ' ';
     }
     if (flagPtr != localFlags) {
