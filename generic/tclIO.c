@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.12 1999/07/30 21:46:47 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.13 1999/08/10 02:42:13 welch Exp $
  */
 
 #include "tclInt.h"
@@ -593,6 +593,39 @@ TclFinalizeIOSubsystem()
     }
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CloseChannels --
+ *
+ *	Close all open channels in this interp, except for the
+ *	standard input/output channels.  This is useful for cleanup.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	May closes one or more channels.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_CloseChannels(Tcl_Interp *interp)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    Channel *chanPtr, *nextChanPtr;
+
+    for (chanPtr = tsdPtr->firstChanPtr; chanPtr != NULL; chanPtr = nextChanPtr) {
+	nextChanPtr = chanPtr->nextChanPtr;
+	if (chanPtr != (Channel *) tsdPtr->stdinChannel
+		&& chanPtr != (Channel *) tsdPtr->stdoutChannel
+		&& chanPtr != (Channel *) tsdPtr->stderrChannel) {
+            (void) Tcl_UnregisterChannel(interp, (Tcl_Channel) chanPtr);
+	}
+    }
+}
 
 
 /*
@@ -8159,4 +8192,44 @@ SetBlockMode(interp, chanPtr, mode)
     return TCL_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetChannelNames --
+ *
+ *	Return the names of all open channels in the interp.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	Interp result modified with list of channel names.
+ *
+ *----------------------------------------------------------------------
+ */
 
+int
+Tcl_GetChannelNames(Tcl_Interp *interp)
+{
+    Channel *chanPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    char *name;
+
+    Tcl_ResetResult(interp);
+    chanPtr = tsdPtr->firstChanPtr;
+    while (chanPtr != NULL) {
+        if (chanPtr == (Channel *) tsdPtr->stdinChannel) {
+	    name = "stdin";
+	} else if (chanPtr == (Channel *) tsdPtr->stdoutChannel) {
+	    name = "stdout";
+	} else if (chanPtr == (Channel *) tsdPtr->stderrChannel) {
+	    name = "stderr";
+	} else {
+	    name = chanPtr->channelName;
+	}
+	Tcl_AppendElement(interp, name);
+	chanPtr = chanPtr->nextChanPtr;
+    }
+    return TCL_OK;
+}

@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.4 1999/04/16 00:46:42 stanton Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.5 1999/08/10 02:42:12 welch Exp $
  */
 
 #include "tclInt.h"
@@ -119,7 +119,7 @@ static char dumpFile[100];	/* Records where to dump memory allocation
  * be explicitly initialized.  This is necessary because the self
  * initializing mutexes use ckalloc...
  */
-static TclpMutex ckallocMutex;
+static Tcl_Mutex *ckallocMutexPtr;
 static int ckallocInit = 0;
 
 /*
@@ -138,8 +138,8 @@ static void		ValidateMemory _ANSI_ARGS_((
  *----------------------------------------------------------------------
  *
  * TclInitDbCkalloc --
- *     Initialize the locks used by the allocator.
- *	This is only appropriate to call in a single threaded environtment,
+ *	Initialize the locks used by the allocator.
+ *	This is only appropriate to call in a single threaded environment,
  *	such as during TclInitSubsystems.
  *
  *----------------------------------------------------------------------
@@ -149,7 +149,7 @@ TclInitDbCkalloc()
 {
     if (!ckallocInit) {
 	ckallocInit = 1;
-	TclpMutexInit(&ckallocMutex);
+	ckallocMutexPtr = Tcl_GetAllocMutex();
     }
 }
 
@@ -265,14 +265,13 @@ Tcl_ValidateAllMemory (file, line)
     struct mem_header *memScanP;
 
     if (!ckallocInit) {
-	ckallocInit = 1;
-	TclpMutexInit(&ckallocMutex);
+	TclInitDbCkalloc();
     }
-    TclpMutexLock(&ckallocMutex);
+    Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
         ValidateMemory(memScanP, file, line, FALSE);
     }
-    TclpMutexUnlock(&ckallocMutex);
+    Tcl_MutexUnlock(ckallocMutexPtr);
 }
 
 /*
@@ -303,7 +302,7 @@ Tcl_DumpActiveMemory (fileName)
 	}
     }
 
-    TclpMutexLock(&ckallocMutex);
+    Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
         address = &memScanP->body [0];
         fprintf(fileP, "%8lx - %8lx  %7ld @ %s %d %s",
@@ -313,7 +312,7 @@ Tcl_DumpActiveMemory (fileName)
 		 (memScanP->tagPtr == NULL) ? "" : memScanP->tagPtr->string);
 	(void) fputc('\n', fileP);
     }
-    TclpMutexUnlock(&ckallocMutex);
+    Tcl_MutexUnlock(ckallocMutexPtr);
 
     if (fileP != stderr) {
 	fclose (fileP);
@@ -372,10 +371,9 @@ Tcl_DbCkalloc(size, file, line)
 	memset (result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
     }
     if (!ckallocInit) {
-	ckallocInit = 1;
-	TclpMutexInit(&ckallocMutex);
+	TclInitDbCkalloc();
     }
-    TclpMutexLock(&ckallocMutex);
+    Tcl_MutexLock(ckallocMutexPtr);
     result->length = size;
     result->tagPtr = curTagPtr;
     if (curTagPtr != NULL) {
@@ -421,7 +419,7 @@ Tcl_DbCkalloc(size, file, line)
     if (current_bytes_malloced > maximum_bytes_malloced)
         maximum_bytes_malloced = current_bytes_malloced;
 
-    TclpMutexUnlock(&ckallocMutex);
+    Tcl_MutexUnlock(ckallocMutexPtr);
 
     return result->body;
 }
@@ -469,7 +467,7 @@ Tcl_DbCkfree(ptr, file, line)
     if (validate_memory)
         Tcl_ValidateAllMemory(file, line);
 
-    TclpMutexLock(&ckallocMutex);
+    Tcl_MutexLock(ckallocMutexPtr);
     ValidateMemory(memp, file, line, TRUE);
     if (init_malloced_bodies) {
 	memset((VOID *) ptr, GUARD_VALUE, (size_t) memp->length);
@@ -496,7 +494,7 @@ Tcl_DbCkfree(ptr, file, line)
     if (allocHead == memp)
         allocHead = memp->flink;
     TclpFree((char *) memp);
-    TclpMutexUnlock(&ckallocMutex);
+    Tcl_MutexUnlock(ckallocMutexPtr);
 
     return 0;
 }
@@ -957,7 +955,7 @@ void
 TclFinalizeMemorySubsystem()
 {
 #ifdef TCL_MEM_DEBUG
-    TclpMutexLock(&ckallocMutex);
+    Tcl_MutexLock(ckallocMutexPtr);
     if (tclMemDumpFileName != NULL) {
 	Tcl_DumpActiveMemory(tclMemDumpFileName);
     }
@@ -965,7 +963,7 @@ TclFinalizeMemorySubsystem()
 	TclpFree((char *) curTagPtr);
     }
     allocHead = NULL;
-    TclpMutexUnlock(&ckallocMutex);
+    Tcl_MutexUnlock(ckallocMutexPtr);
 #endif
 
 #if USE_TCLALLOC

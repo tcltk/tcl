@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.26 1999/08/02 18:33:44 redman Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.27 1999/08/10 02:42:14 welch Exp $
  */
 
 #include "tclInt.h"
@@ -232,6 +232,7 @@ TclIntStubs tclIntStubs = {
     TclTestChannelCmd, /* 154 */
     TclTestChannelEventCmd, /* 155 */
     TclRegError, /* 156 */
+    TclVarTraceExists, /* 157 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -780,6 +781,8 @@ TclStubs tclStubs = {
     Tcl_AppendUnicodeToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
+    Tcl_GetAllocMutex, /* 387 */
+    Tcl_GetChannelNames, /* 388 */
 };
 
 /* !END!: Do not edit above this line. */

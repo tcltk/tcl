@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.6 1999/04/16 00:46:42 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.7 1999/08/10 02:42:12 welch Exp $
  */
 
 #include "tclInt.h"
@@ -110,7 +110,7 @@ static struct block bigBlocks = {	/* Big blocks aren't suballocated. */
  */
 
 #ifdef TCL_THREADS
-static TclpMutex allocMutex;
+static Tcl_Mutex *allocMutexPtr;
 #endif
 static int allocInit = 0;
 
@@ -162,7 +162,7 @@ TclInitAlloc()
 {
     if (!allocInit) {
 	allocInit = 1;
-	TclpMutexInit(&allocMutex);
+	allocMutexPtr = Tcl_GetAllocMutex();
     }
 }
 
@@ -196,7 +196,7 @@ TclFinalizeAllocSubsystem()
     int i;
     struct block *blockPtr, *nextPtr;
 
-    TclpMutexLock(&allocMutex);
+    Tcl_MutexLock(allocMutexPtr);
     for (blockPtr = blockList; blockPtr != NULL; blockPtr = nextPtr) {
 	nextPtr = blockPtr->nextPtr;
 	TclpSysFree(blockPtr);
@@ -220,7 +220,7 @@ TclFinalizeAllocSubsystem()
 #ifdef MSTATS
     nmalloc[i] = 0;
 #endif
-    TclpMutexUnlock(&allocMutex);
+    Tcl_MutexUnlock(allocMutexPtr);
 }
 
 /*
@@ -254,11 +254,9 @@ TclpAlloc(nbytes)
 	 * may be used before any other part of Tcl.  E.g., see
 	 * main() for tclsh!
 	 */
-
-	allocInit = 1;
-	TclpMutexInit(&allocMutex);
+	TclAllocInit();
     }
-    TclpMutexLock(&allocMutex);
+    Tcl_MutexLock(allocMutexPtr);
     /*
      * First the simple case: we simple allocate big blocks directly
      */
@@ -266,7 +264,7 @@ TclpAlloc(nbytes)
 	bigBlockPtr = (struct block *) TclpSysAlloc((unsigned) 
 		(sizeof(struct block) + OVERHEAD + nbytes), 0);
 	if (bigBlockPtr == NULL) {
-	    TclpMutexUnlock(&allocMutex);
+	    Tcl_MutexUnlock(allocMutexPtr);
 	    return NULL;
 	}
 	bigBlockPtr->nextPtr = bigBlocks.nextPtr;
@@ -289,7 +287,7 @@ TclpAlloc(nbytes)
 	op->ov_rmagic = RMAGIC;
 	*(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
-	TclpMutexUnlock(&allocMutex);
+	Tcl_MutexUnlock(allocMutexPtr);
 	return (void *)(op+1);
     }
     /*
@@ -307,7 +305,7 @@ TclpAlloc(nbytes)
     while (nbytes + OVERHEAD > amt) {
 	amt <<= 1;
 	if (amt == 0) {
-	    TclpMutexUnlock(&allocMutex);
+	    Tcl_MutexUnlock(allocMutexPtr);
 	    return (NULL);
 	}
 	bucket++;
@@ -321,7 +319,7 @@ TclpAlloc(nbytes)
     if ((op = nextf[bucket]) == NULL) {
 	MoreCore(bucket);
 	if ((op = nextf[bucket]) == NULL) {
-	    TclpMutexUnlock(&allocMutex);
+	    Tcl_MutexUnlock(allocMutexPtr);
 	    return (NULL);
 	}
     }
@@ -343,7 +341,7 @@ TclpAlloc(nbytes)
     op->ov_rmagic = RMAGIC;
     *(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
-    TclpMutexUnlock(&allocMutex);
+    Tcl_MutexUnlock(allocMutexPtr);
     return ((char *)(op + 1));
 }
 
@@ -437,13 +435,13 @@ TclpFree(cp)
 	return;
     }
 
-    TclpMutexLock(&allocMutex);
+    Tcl_MutexLock(allocMutexPtr);
     op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
 
     ASSERT(op->ov_magic0 == MAGIC);		/* make sure it was in use */
     ASSERT(op->ov_magic1 == MAGIC);
     if (op->ov_magic0 != MAGIC || op->ov_magic1 != MAGIC) {
-	TclpMutexUnlock(&allocMutex);
+	Tcl_MutexUnlock(allocMutexPtr);
 	return;
     }
 
@@ -458,7 +456,7 @@ TclpFree(cp)
 	bigBlockPtr->prevPtr->nextPtr = bigBlockPtr->nextPtr;
 	bigBlockPtr->nextPtr->prevPtr = bigBlockPtr->prevPtr;
 	TclpSysFree(bigBlockPtr);
-	TclpMutexUnlock(&allocMutex);
+	Tcl_MutexUnlock(allocMutexPtr);
 	return;
     }
     ASSERT(size < NBUCKETS);
@@ -467,7 +465,7 @@ TclpFree(cp)
 #ifdef MSTATS
     nmalloc[size]--;
 #endif
-    TclpMutexUnlock(&allocMutex);
+    Tcl_MutexUnlock(allocMutexPtr);
 }
 
 /*
@@ -501,14 +499,14 @@ TclpRealloc(cp, nbytes)
 	return (TclpAlloc(nbytes));
     }
 
-    TclpMutexLock(&allocMutex);
+    Tcl_MutexLock(allocMutexPtr);
 
     op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
 
     ASSERT(op->ov_magic0 == MAGIC);		/* make sure it was in use */
     ASSERT(op->ov_magic1 == MAGIC);
     if (op->ov_magic0 != MAGIC || op->ov_magic1 != MAGIC) {
-	TclpMutexUnlock(&allocMutex);
+	Tcl_MutexUnlock(allocMutexPtr);
 	return NULL;
     }
 
@@ -528,7 +526,7 @@ TclpRealloc(cp, nbytes)
 	bigBlockPtr = (struct block *) TclpSysRealloc(bigBlockPtr, 
 		sizeof(struct block) + OVERHEAD + nbytes);
 	if (bigBlockPtr == NULL) {
-	    TclpMutexUnlock(&allocMutex);
+	    Tcl_MutexUnlock(allocMutexPtr);
 	    return NULL;
 	}
 
@@ -554,7 +552,7 @@ TclpRealloc(cp, nbytes)
 	op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
 	*(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
-	TclpMutexUnlock(&allocMutex);
+	Tcl_MutexUnlock(allocMutexPtr);
 	return (char *)(op+1);
     }
     maxsize = 1 << (i+3);
@@ -568,7 +566,7 @@ TclpRealloc(cp, nbytes)
     if (expensive) {
 	void *newp;
 
-	TclpMutexUnlock(&allocMutex);
+	Tcl_MutexUnlock(allocMutexPtr);
 
 	newp = TclpAlloc(nbytes);
 	if ( newp == NULL ) {
@@ -589,7 +587,7 @@ TclpRealloc(cp, nbytes)
     op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
     *(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
-    TclpMutexUnlock(&allocMutex);
+    Tcl_MutexUnlock(allocMutexPtr);
     return(cp);
 }
 
@@ -621,7 +619,7 @@ mstats(s)
     int totfree = 0,
 	totused = 0;
 
-    TclpMutexLock(&allocMutex);
+    Tcl_MutexLock(allocMutexPtr);
     fprintf(stderr, "Memory allocation statistics %s\nTclpFree:\t", s);
     for (i = 0; i < NBUCKETS; i++) {
 	for (j = 0, p = nextf[i]; p; p = p->ov_next, j++)
@@ -637,7 +635,7 @@ mstats(s)
 	    totused, totfree);
     fprintf(stderr, "\n\tNumber of big (>%d) blocks in use: %d\n", 
 	    MAXMALLOC, nmalloc[NBUCKETS]);
-    TclpMutexUnlock(&allocMutex);
+    Tcl_MutexUnlock(allocMutexPtr);
 }
 #endif
 

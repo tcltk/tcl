@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.24 1999/08/02 18:33:43 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.25 1999/08/10 02:42:12 welch Exp $
 
 library tcl
 
@@ -1334,6 +1334,14 @@ declare 385 generic {
 declare 386 generic {
     void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
 }
+declare 387 generic {
+    Tcl_Mutex * Tcl_GetAllocMutex(void)
+}
+declare 388 generic {
+    int Tcl_GetChannelNames(Tcl_Interp *interp)
+}
+
+
 
 ##############################################################################
 

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.13 1999/06/17 19:31:50 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.14 1999/08/10 02:42:13 welch Exp $
  */
 
 #include "tclInt.h"
@@ -915,9 +915,7 @@ InfoExistsCmd(dummy, interp, objc, objv)
     }
 
     varName = Tcl_GetString(objv[2]);
-    varPtr = TclLookupVar(interp, varName, (char *) NULL,
-            0, "access",
-            /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+    varPtr = TclVarTraceExists(interp, varName);
     if ((varPtr != NULL) && !TclIsVarUndefined(varPtr)) {
         Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
     } else {

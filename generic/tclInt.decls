@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.16 1999/08/02 17:45:37 redman Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.17 1999/08/10 02:42:14 welch Exp $
 
 library tcl
 
@@ -560,6 +560,8 @@ declare 149 generic {
     void TclHandleRelease(TclHandle handle)
 }
 
+# Added for Tcl 8.2
+
 declare 150 generic {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
 }
@@ -586,6 +588,9 @@ declare 155 generic {
 declare 156 generic {
     void TclRegError (Tcl_Interp *interp, char *msg, \
 	    int status)
+}
+declare 157 generic {
+    Var * TclVarTraceExists (Tcl_Interp *interp, char *varName)
 }
 
 ##############################################################################
