@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83 2004/10/27 20:53:37 davygrvy Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84 2004/11/29 22:41:58 andreas_kupries Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -535,7 +535,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.4 opt0.4 encoding msgcat1.4 tcltest2.2; \
+	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.2 ../tcl8/8.3 ../tcl8/8.5; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -559,26 +559,17 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing library http2.4 directory";
-	@for j in $(ROOT_DIR)/library/http/*.tcl; \
-	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http2.4"; \
-	    done;
+	@echo "Installing package http 2.5.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.0.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing library msgcat1.4 directory";
-	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
-	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.4"; \
-	    done;
-	@echo "Installing library tcltest2.2 directory";
-	@for j in $(ROOT_DIR)/library/tcltest/*.tcl; \
-	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.2"; \
-	    done;
+	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
+	@echo "Installing package tcltest 2.2.7 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.7.tm;
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
