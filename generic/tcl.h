@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.25 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.26 1998/09/29 18:22:39 rjohnson Exp $
  */
 
 #ifndef _TCL
@@ -1279,14 +1279,12 @@ EXTERN int		Tcl_GetCommandInfo _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *cmdName, Tcl_CmdInfo *infoPtr));
 EXTERN char *		Tcl_GetCommandName _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Command command));
-EXTERN char *		Tcl_GetCwd _ANSI_ARGS_((char *buf, int len));
 EXTERN int		Tcl_GetDouble _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, double *doublePtr));
 EXTERN int		Tcl_GetDoubleFromObj _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    double *doublePtr));
 EXTERN int		Tcl_GetErrno _ANSI_ARGS_((void));
-EXTERN int		Tcl_GetErrorLine _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN char *		Tcl_GetHostName _ANSI_ARGS_((void));
 EXTERN int		Tcl_GetIndexFromObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, char **tablePtr, char *msg,
@@ -1306,8 +1304,6 @@ EXTERN Tcl_ObjType *	Tcl_GetObjType _ANSI_ARGS_((char *typeName));
 EXTERN int		Tcl_GetOpenFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int write, int checkUsage,
 			    ClientData *filePtr));
-EXTERN Tcl_Command	Tcl_GetOriginalCommand _ANSI_ARGS_((
-			    Tcl_Command command));
 EXTERN Tcl_PathType	Tcl_GetPathType _ANSI_ARGS_((char *path));
 EXTERN int		Tcl_Gets _ANSI_ARGS_((Tcl_Channel chan,
         		    Tcl_DString *dsPtr));
@@ -1426,7 +1422,6 @@ EXTERN void		Tcl_RegisterChannel _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN void		Tcl_RegisterObjType _ANSI_ARGS_((
 			    Tcl_ObjType *typePtr));
 EXTERN void		Tcl_Release _ANSI_ARGS_((ClientData clientData));
-EXTERN void		Tcl_RestartIdleTimer _ANSI_ARGS_((void));
 EXTERN void		Tcl_ResetResult _ANSI_ARGS_((Tcl_Interp *interp));
 #define Tcl_Return Tcl_SetResult
 EXTERN int		Tcl_ScanCountedElement _ANSI_ARGS_((CONST char *string,

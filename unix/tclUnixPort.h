@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.7 1998/09/14 18:40:17 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.8 1998/09/29 18:22:39 rjohnson Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -447,7 +447,6 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
  */
 
 #define TclHasSockets(interp) (TCL_OK)
-#define TclHasPipes() (1)
 
 /*
  * Variables provided by the C library:
