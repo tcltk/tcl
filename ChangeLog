@@ -1,6 +1,7 @@
 1999-11-02  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tagged 8.2.2 final
+	* changes: updated based on ChangeLog
 
 1999-10-30  Jeff Hobbs  <hobbs@scriptics.com>
 
@@ -63,6 +64,7 @@
 
 	* generic/tclCompile.c: removed savedChar trick that appeared to
 	be causing a segv when the literal table was released
+	[Bug: 2459, 2515]
 
 	* generic/tclEnv.c: fixed mem leak with putenv and DStrings
 	and fixed possible ABR error in environ array

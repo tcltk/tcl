@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.50.2.1 1999/10/02 01:09:52 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.50.2.2 1999/11/03 00:42:07 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4653,3 +4653,33 @@ threading may still cause problems on AIX. (hobbs)
 namespace. [Bug: 2613] (hobbs)
 
 --- Released 8.2.1, October 04, 1999 --- See ChangeLog for details ---
+
+10/30/99 (feature enhancement) new regexp engine from Henry Spencer
+was patched in - should greatly reduce stack space usage. (spencer)
+
+10/30/99 (bug fix) fixed Purify reported memory leaks in findexecutable
+test command, TclpCreateProcess on Unix, in handling of C environ array,
+and in testthread code.  No more known (reported) mem leaks for Tcl
+built using gcc on Solaris 2.5.1.  Also none reported for Tcl on NT
+(using Purify 6.0). (hobbs)
+
+10/30/99 (bug fix) fixed improper bytecode handling of 
+'eval {set array($unknownvar) 5}' (also for incr) (hobbs)
+
+10/30/99 (bug fix) fixed event/io threading problems by making
+triggerPipe non-blocking (nick kisserbeth)
+
+10/30/99 (bug fix) fixed Tcl_AppendStringsToObjVA and Tcl_AppendResultVA
+to only	iterates once over the va_list (avoiding non-portable memcpy).
+(joe english, hobbs)
+
+10/30/99 (bug fix) removed savedChar trick in tclCompile.c that appeared
+to be causing a segv when the literal table was released.
+[Bug: 2459, 2515] (David Whitehouse)
+
+10/30/99 (bug fix) fixed [string index] to return ByteArrayObj
+when indexing into one (test case string-5.16) [Bug: 2871] (hobbs)
+
+10/30/99 (bug fix) fixes for mac UTF filename handling (ingham)
+
+--- Released 8.2.2, November 04, 1999 --- See ChangeLog for details ---
