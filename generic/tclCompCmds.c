@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.42 2003/03/13 02:48:52 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.43 2003/03/19 16:51:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2371,7 +2371,6 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr;
     int code;
-    int index = envPtr->exceptArrayNext - 1;
 
     /*
      * If we're not in a procedure, don't compile.
@@ -2379,22 +2378,6 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 
     if (envPtr->procPtr == NULL) {
 	return TCL_OUT_LINE_COMPILE;
-    }
-
-    /*
-     * Look back through the ExceptionRanges of the current CompileEnv,
-     * from exceptArrayPtr[(exceptArrayNext - 1)] down to 
-     * exceptArrayPtr[0] to see if any of them is an enclosing [catch].
-     * If there's an enclosing [catch], don't compile.
-     */
-
-    while (index >= 0) {
-	ExceptionRange range = envPtr->exceptArrayPtr[index];
-	if ((range.type == CATCH_EXCEPTION_RANGE) 
-		&& (range.catchOffset == -1)) {
-	    return TCL_OUT_LINE_COMPILE;
-	}
-	index--;
     }
 
     switch (parsePtr->numWords) {
@@ -2448,11 +2431,11 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * The INST_DONE opcode actually causes the branching out of the
+     * The INST_RETURN opcode triggers the branching out of the
      * subroutine, and takes the top stack item as the return result
      * (which is why we pushed the value above).
      */
-    TclEmitOpcode(INST_DONE, envPtr);
+    TclEmitOpcode(INST_RETURN, envPtr);
     return TCL_OK;
 }
 

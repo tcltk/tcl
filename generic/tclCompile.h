@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.35 2003/03/13 02:48:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36 2003/03/19 16:51:42 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -522,8 +522,10 @@ typedef struct ByteCode {
 #define INST_LSET_LIST			96
 #define INST_LSET_FLAT                  97
 
+#define INST_RETURN			98
+
 /* The last opcode */
-#define LAST_INST_OPCODE        	97
+#define LAST_INST_OPCODE        	98
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
