@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.17 2001/10/23 13:13:21 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.18 2001/11/23 22:56:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -260,10 +260,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #   define LLTRACE(a)			TRACE(a)
 #   define LLTRACE_WITH_OBJ(a,b)	TRACE_WITH_OBJ(a,b)
 #   define LLD				"%" TCL_LL_MODIFIER "d"
-#   ifndef LLONG_MAX
-#      define LLONG_MAX	((Tcl_WideInt)(((Tcl_WideUInt)((Tcl_WideInt)-1))>>1))
-#      define LLONG_MIN (~LLONG_MAX)
-#   endif
 #else /* TCL_WIDE_INT_IS_LONG */
 #   define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
     (resultVar) = Tcl_GetLongFromObj(interp, (objPtr), &(longVar));

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.22 2001/11/07 13:35:21 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.23 2001/11/23 22:56:23 dkf Exp $
  */
 
 #ifndef _TCL
@@ -568,6 +568,7 @@ typedef struct Tcl_RegExpInfo {
  * struct's reference in tclDecls.h.
  */
 typedef Tcl_StatBuf *Tcl_Stat_;
+typedef struct stat *Tcl_OldStat_;
 
 /*
  * When a TCL command returns, the interpreter contains a result from the

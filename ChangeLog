@@ -1,3 +1,17 @@
+2001-11-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclExecute.c: Removed duplicate declaration of LLONG_MIN
+	and LLONG_MAX which are now in tclPort.h instead.
+
+	* generic/tcl.h: Added extra forward declaration for picky
+	compilers.
+
+	* generic/tclFCmd.c (FileCopyRename): Fixed comment.
+
+	* generic/tcl.decls (Tcl_Stat): 
+	* generic/tclIOUtil.c (Tcl_Stat): Reworked so as to use old style
+	'struct stat' declaration for improved backward-compatability.
+
 2001-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* win/tclWinMtherr.c (_matherr): Better handling of selected

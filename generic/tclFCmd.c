@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.4 2001/09/27 14:14:06 dkf Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.5 2001/11/23 22:56:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -250,9 +250,9 @@ TclFileMakeDirsCmd(interp, objc, objv)
 	    target = Tcl_FSJoinPath(split, j + 1);
 	    Tcl_IncrRefCount(target);
 	    /*
-	     * Call Tcl_Stat() so that if target is a symlink that points
-	     * to a directory we will create subdirectories in that
-	     * directory.
+	     * Call Tcl_FSStat() so that if target is a symlink that
+	     * points to a directory we will create subdirectories in
+	     * that directory.
 	     */
 
 	    if (Tcl_FSStat(target, &statBuf) == 0) {

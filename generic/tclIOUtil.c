@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.4 2001/09/27 14:01:50 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.5 2001/11/23 22:56:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -77,15 +77,57 @@ extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
 
 /* Obsolete */
 int
-Tcl_Stat(path, buf)
+Tcl_Stat(path, oldStyleBuf)
     CONST char *path;		/* Path of file to stat (in current CP). */
-    Tcl_StatBuf *buf;		/* Filled with results of stat call. */
+    struct stat *oldStyleBuf;	/* Filled with results of stat call. */
 {
     int ret;
+    Tcl_StatBuf buf;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
+
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSStat(pathPtr,buf);
+    ret = Tcl_FSStat(pathPtr, &buf);
     Tcl_DecrRefCount(pathPtr);
+    if (ret != -1) {
+#ifndef TCL_WIDE_INT_IS_LONG
+#   define OUT_OF_RANGE(x) \
+	(((Tcl_WideInt)(x))<LLONG_MIN||((Tcl_WideInt)(x))>LLONG_MAX)
+
+	/*
+	 * Perform the result-buffer overflow check manually.
+	 */
+
+        if (OUT_OF_RANGE(buf.st_ino) || OUT_OF_RANGE(buf.st_size)
+		|| OUT_OF_RANGE(buf.st_blocks)) {
+	    errno = EOVERFLOW;
+	    return -1;
+	}
+
+#   undef OUT_OF_RANGE
+#endif /* !TCL_WIDE_INT_IS_LONG */
+
+	/*
+	 * Copy across all supported fields, with possible type
+	 * coercions on those fields that change between the normal
+	 * and lf64 versions of the stat structure (on Solaris at
+	 * least.)  This is slow when the structure sizes coincide,
+	 * but that's what you get for using an obsolete interface.
+	 */
+
+	oldStyleBuf->st_mode    = buf.st_mode;
+	oldStyleBuf->st_ino     = (ino_t) buf.st_ino;
+	oldStyleBuf->st_dev     = buf.st_dev;
+	oldStyleBuf->st_rdev    = buf.st_rdev;
+	oldStyleBuf->st_nlink   = buf.st_nlink;
+	oldStyleBuf->st_uid     = buf.st_uid;
+	oldStyleBuf->st_gid     = buf.st_gid;
+	oldStyleBuf->st_size    = (off_t) buf.st_size;
+	oldStyleBuf->st_atime   = buf.st_atime;
+	oldStyleBuf->st_mtime   = buf.st_mtime;
+	oldStyleBuf->st_ctime   = buf.st_ctime;
+	oldStyleBuf->st_blksize = buf.st_blksize;
+	oldStyleBuf->st_blocks  = (blkcnt_t) buf.st_blocks;
+    }
     return ret;
 }
 

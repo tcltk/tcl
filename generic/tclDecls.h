@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.58.2.4 2001/11/05 14:23:16 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.58.2.5 2001/11/23 22:56:24 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1161,7 +1161,7 @@ EXTERN int		Tcl_Chdir _ANSI_ARGS_((CONST char * dirName));
 EXTERN int		Tcl_Access _ANSI_ARGS_((CONST char * path, int mode));
 /* 368 */
 EXTERN int		Tcl_Stat _ANSI_ARGS_((CONST char * path, 
-				Tcl_StatBuf * bufPtr));
+				struct stat * bufPtr));
 /* 369 */
 EXTERN int		Tcl_UtfNcmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2, unsigned long n));
@@ -1952,7 +1952,7 @@ typedef struct TclStubs {
     char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
     int (*tcl_Chdir) _ANSI_ARGS_((CONST char * dirName)); /* 366 */
     int (*tcl_Access) _ANSI_ARGS_((CONST char * path, int mode)); /* 367 */
-    int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, Tcl_StatBuf * bufPtr)); /* 368 */
+    int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
     int (*tcl_UtfNcmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 369 */
     int (*tcl_UtfNcasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 370 */
     int (*tcl_StringCaseMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern, int nocase)); /* 371 */
