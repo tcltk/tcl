@@ -1,3 +1,7 @@
+2002-07-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4b1 TAGGED FOR RELEASE ***
+
 2002-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/cmdMZ.test (cmdMZ-1.4): 
