@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.13 2000/04/28 00:47:49 ericm Exp $
+'\" RCS: @(#) $Id: library.n,v 1.14 2000/09/07 14:27:49 poenitz Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -304,7 +304,7 @@ infinitely.
 The variable is unset before \fBunknown\fR returns.
 
 .SH "SEE ALSO"
-re_syntax(n)
+info(n), re_syntax(n)
 
 .SH KEYWORDS
 auto-exec, auto-load, library, unknown, word, whitespace 

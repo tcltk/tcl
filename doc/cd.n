@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: cd.n,v 1.2 1998/09/14 18:39:51 stanton Exp $
+'\" RCS: @(#) $Id: cd.n,v 1.3 2000/09/07 14:27:46 poenitz Exp $
 '\" 
 .so man.macros
 .TH cd n "" Tcl "Tcl Built-In Commands"
@@ -23,6 +23,9 @@ Change the current working directory to \fIdirName\fR, or to the
 home directory (as specified in the HOME environment variable) if
 \fIdirName\fR is not given.
 Returns an empty string.
+
+.SH "SEE ALSO"
+filename(n), glob(n), pwd(n)
 
 .SH KEYWORDS
 working directory

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.4 2000/07/13 07:22:44 poenitz Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.5 2000/09/07 14:27:49 poenitz Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -29,8 +29,8 @@ elements in the list, then the new elements are appended to the list.
 \fBend\-\fIinteger\fR refers to the last element in the list minus the
 specified integer offset.
 
+.SH "SEE ALSO"
+list(n), lappend(n), llength(n)
+
 .SH KEYWORDS
 element, insert, list
-
-.SH SEE ALSO
-lappend, lindex, list, llength, lsearch, lsort, lrange, lreplace

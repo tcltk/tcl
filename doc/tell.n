@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tell.n,v 1.3 1999/05/05 01:19:43 stanton Exp $
+'\" RCS: @(#) $Id: tell.n,v 1.4 2000/09/07 14:27:52 poenitz Exp $
 '\" 
 .so man.macros
 .TH tell n 8.1 Tcl "Tcl Built-In Commands"
@@ -27,6 +27,9 @@ that this value is in terms of bytes, not characters like \fBread\fR.
 .VE 8.1
 The value returned is -1 for channels that do not support
 seeking.
+
+.SH "SEE ALSO"
+file(n), open(n), close(n), gets(n), seek(n)
 
 .SH KEYWORDS
 access position, channel, seeking

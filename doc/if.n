@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: if.n,v 1.2 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: if.n,v 1.3 2000/09/07 14:27:48 poenitz Exp $
 '\" 
 .so man.macros
 .TH if n "" Tcl "Tcl Built-In Commands"
@@ -38,6 +38,9 @@ There may be any number of \fBelseif\fR clauses, including zero.
 The return value from the command is the result of the body script
 that was executed, or an empty string
 if none of the expressions was non-zero and there was no \fIbodyN\fR.
+
+.SH "SEE ALSO"
+expr(n), for(n), foreach(n)
 
 .SH KEYWORDS
 boolean, conditional, else, false, if, true

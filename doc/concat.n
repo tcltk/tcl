@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: concat.n,v 1.2 1998/09/14 18:39:51 stanton Exp $
+'\" RCS: @(#) $Id: concat.n,v 1.3 2000/09/07 14:27:46 poenitz Exp $
 '\" 
 .so man.macros
 .TH concat n "" Tcl "Tcl Built-In Commands"
@@ -35,6 +35,9 @@ will return
 as its result.
 .PP
 If no \fIarg\fRs are supplied, the result is an empty string.
+
+.SH "SEE ALSO"
+append(n), eval(n)
 
 .SH KEYWORDS
 concatenate, join, lists
