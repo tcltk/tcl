@@ -2383,11 +2383,16 @@ AC_DEFUN(SC_TCL_EARLY_FLAGS,[
 AC_DEFUN(SC_TCL_64BIT_FLAGS, [
     AC_MSG_CHECKING([for 64-bit integer type])
     AC_CACHE_VAL(tcl_cv_type_64bit,[
+	tcl_cv_type_64bit=none
+	# See if the compiler knows natively about __int64
 	AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
-           tcl_cv_type_64bit=__int64,tcl_cv_type_64bit=none
-           AC_TRY_RUN([#include <unistd.h>
-		int main() {exit(!(sizeof(long long) > sizeof(long)));}
-		], tcl_cv_type_64bit="long long"))])
+	    tcl_type_64bit=__int64, tcl_type_64bit="long long")
+	# See if we should use long anyway  Note that we substitute in the
+	# type that is our current guess for a 64-bit type inside this check
+	# program, so it should be modified only carefully...
+	AC_TRY_RUN([#include <unistd.h>
+	    int main() {exit(!(sizeof(]${tcl_type_64bit}[) > sizeof(long)));}
+	    ], tcl_cv_type_64bit=${tcl_type_64bit},:,:)])
     if test "${tcl_cv_type_64bit}" = none ; then
 	AC_DEFINE(TCL_WIDE_INT_IS_LONG)
 	AC_MSG_RESULT(using long)
