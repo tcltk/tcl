@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.13 2005/02/10 19:03:59 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.14 2005/03/18 16:33:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3405,14 +3405,21 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
 		p = buffer;
 		break;
 
-	    case TCL_TOKEN_COMMAND:
-		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			0);
+	    case TCL_TOKEN_COMMAND: {
+		Interp *iPtr = (Interp *) interp;
+		iPtr->numLevels++;
+		code = TclInterpReady(interp);
+		if (code == TCL_OK) {
+		    code = Tcl_EvalEx(interp,
+			    tokenPtr->start+1, tokenPtr->size-2, 0);
+		}
+		iPtr->numLevels--;
 		if (code != TCL_OK) {
 		    goto done;
 		}
 		valuePtr = Tcl_GetObjResult(interp);
 		break;
+	    }
 
 	    case TCL_TOKEN_VARIABLE:
 		if (tokenPtr->numComponents == 1) {
@@ -3683,16 +3690,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	            parse.commandStart, parse.commandSize, 0);
 	    iPtr->numLevels--;
 	    if (code != TCL_OK) {
-		if (iPtr->numLevels == 0) {
-		    if (code == TCL_RETURN) {
-			code = TclUpdateReturnInfo(iPtr);
-		    }
-		    if ((code != TCL_OK) && (code != TCL_ERROR) 
-			&& !allowExceptions) {
-			ProcessUnexpectedResult(interp, code);
-			code = TCL_ERROR;
-		    }
-		}
 		goto error;
 	    }
 	    for (i = 0; i < objectsUsed; i++) {
@@ -3749,6 +3746,16 @@ Tcl_EvalEx(interp, script, numBytes, flags)
      * to the command.
      */
 
+    if (iPtr->numLevels == 0) {
+	if (code == TCL_RETURN) {
+	    code = TclUpdateReturnInfo(iPtr);
+	}
+	if ((code != TCL_OK) && (code != TCL_ERROR) 
+		&& !allowExceptions) {
+	    ProcessUnexpectedResult(interp, code);
+	    code = TCL_ERROR;
+	}
+    }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) { 
 	commandLength = parse.commandSize;
 	if (parse.term == parse.commandStart + commandLength - 1) {
