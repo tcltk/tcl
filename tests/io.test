@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.56 2004/06/23 15:36:56 dkf Exp $
+# RCS: @(#) $Id: io.test,v 1.57 2004/06/23 22:02:41 patthoyts Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -1762,7 +1762,7 @@ test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} 
 } {0 1 0}
 
 test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
-    file delete $path(test1)
+    file delete -force $path(test1)
     set l ""
     set f [open $path(test1) w]
     lappend l [lindex [testchannel info $f] 15]
@@ -1776,7 +1776,7 @@ test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
 	[list 1 [format "can not find channel named \"%s\"" $f]]
 } 0
 test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
-    file delete $path(test1)
+    file delete -force $path(test1)
     set l ""
     set f [open $path(test1) w]
     lappend l [lindex [testchannel info $f] 15]
