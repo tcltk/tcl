@@ -1,3 +1,8 @@
+2000-09-07  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* win/.cvsignore: changed the glob patterns a bit to exclude VC++
+	project conversion backups.
+
 2000-09-07  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/trace.n: minor doc cleanup
