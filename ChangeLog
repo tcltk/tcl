@@ -1,3 +1,19 @@
+2005-03-11 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: First wordcode machine, instructions and
+	operands are pointer-sized (no other changes or optimisations). 
+	Should run on all platforms. Seems slightly faster than the
+	original on my platform. 
+
+2005-03-10 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.h: storing integers in native format; for the
+	time being, only works in 32b platforms.
+
 2005-03-10 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c:

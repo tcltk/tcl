@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.1 2005/03/10 22:31:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.2 2005/03/11 19:53:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -285,7 +285,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	TclEmitOpcode(INST_EVAL_STK, envPtr);
     }
     envPtr->exceptArrayPtr[range].codeOffset = startOffset;
-    envPtr->exceptArrayPtr[range].numCodeBytes =
+    envPtr->exceptArrayPtr[range].numCodeWords =
 	    (envPtr->codeNext - envPtr->codeStart) - startOffset;
 
     /*
@@ -511,7 +511,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[bodyRange].numCodeBytes =
+    envPtr->exceptArrayPtr[bodyRange].numCodeWords =
 	    (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -526,7 +526,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[nextRange].numCodeBytes =
+    envPtr->exceptArrayPtr[nextRange].numCodeWords =
 	    (envPtr->codeNext - envPtr->codeStart)
 	    - nextCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
@@ -807,7 +807,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[range].numCodeBytes =
+    envPtr->exceptArrayPtr[range].numCodeWords =
 	    (envPtr->codeNext - envPtr->codeStart)
 	    - envPtr->exceptArrayPtr[range].codeOffset;
     TclEmitOpcode(INST_POP, envPtr);
@@ -3095,7 +3095,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[range].numCodeBytes =
+    envPtr->exceptArrayPtr[range].numCodeWords =
 	    (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
 
