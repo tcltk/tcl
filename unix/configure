@@ -533,7 +533,7 @@ else
 fi
 
 
-# RCS: @(#) $Id: configure.in,v 1.67 2001/06/22 23:02:53 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.68 2001/06/26 20:13:20 mdejong Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -560,7 +560,7 @@ TCL_SRC_DIR=`cd $srcdir/..; pwd`
 # If the user did not set CFLAGS, set it now to keep
 # the AC_PROG_CC macro from adding "-g -O2".
 if test "${CFLAGS+set}" != "set" ; then
-    export CFLAGS=""
+    CFLAGS=""
 fi
 
 # Extract the first word of "gcc", so it can be a program name with args.
