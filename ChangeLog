@@ -5,6 +5,10 @@
 	or [package require registry] attempted to load the release version
 	of the DLL into a debug build. [Bug 708218] Thanks to Joe Mistachkin
 	for the patch.
+	* win/makefile.vc: Added quoting around the script name in the
+	'test' target; Joe Mistachkin insists that he has a configuration
+	that fails to launch tcltest without it, and it appears harmless 
+	otherwise.
 
 2003-03-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
