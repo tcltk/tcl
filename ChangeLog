@@ -1,3 +1,10 @@
+2003-05-15  Kevin B. Kenny  <kennykb@hippolyta>
+
+	* generic/tclGetDate.y: added further hackery to the yacc
+	* generic/tclDate.c:    post-processing to arrange for the
+	* unix/Makefile.in:     code to set up exit handlers to free
+	                        the stacks [Bug 736425].
+
 2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/socket.n: 
