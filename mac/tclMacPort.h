@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.1.2.4 1999/03/10 06:49:25 stanton Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.1.2.5 1999/03/11 01:50:32 stanton Exp $
  */
 
 
@@ -223,10 +223,11 @@ extern char **environ;
  * address platform-specific issues.
  */
  
-#define tzset()
+#define TclpAsyncMark(async)
 #define TclpGetPid(pid)	    	((unsigned long) (pid))
 #define TclpGetUserHome(n, b)	(NULL)
 #define TclSetSystemEnv(a,b)
+#define tzset()
 
 /*
  * The following defines replace the Macintosh version of the POSIX

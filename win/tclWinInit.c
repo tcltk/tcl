@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.5 1999/02/10 23:31:28 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.6 1999/03/11 01:50:33 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -75,6 +75,12 @@ static char* processors[NUMPROCESSORS] = {
 };
 
 /*
+ * Thread id used for asynchronous notification from signal handlers.
+ */
+
+static DWORD mainThreadId;
+
+/*
  * The Init script (common to Windows and Unix platforms) is
  * defined in tkInitScript.h
  */
@@ -86,8 +92,6 @@ static void		AppendPath(Tcl_Obj *listPtr, HMODULE hModule,
 			    CONST char *lib);
 static void		AppendRegistry(Tcl_Obj *listPtr, CONST char *lib);
 static int		ToUtf(CONST WCHAR *wSrc, char *dst);
-
-
 
 /*
  *---------------------------------------------------------------------------
@@ -126,6 +130,16 @@ TclpInitPlatform()
      */
 
     SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
+
+    /*
+     * Save the id of the first thread to intialize the Tcl library.  This
+     * thread will be used to handle notifications from async event
+     * procedures.  This is not strictly correct.  A better solution involves
+     * using a designated "main" notifier that is kept up to date as threads
+     * come and go.
+     */
+
+    mainThreadId = GetCurrentThreadId();
 }
 
 /*
@@ -650,4 +664,32 @@ Tcl_SourceRCFile(interp)
 	}
         Tcl_DStringFree(&temp);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpAsyncMark --
+ *
+ *	Wake up the main thread from a signal handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sends a message to the main thread.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpAsyncMark(async)
+    Tcl_AsyncHandler async;		/* Token for handler. */
+{
+    /*
+     * Need a way to kick the Windows event loop and tell it to go look at
+     * asynchronous events.
+     */
+
+    PostThreadMessage(mainThreadId, WM_USER, 0, 0);
 }

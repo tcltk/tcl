@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.3.2.3 1999/03/10 23:44:21 redman Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.3.2.4 1999/03/11 01:50:31 stanton Exp $
  */
 
 #include "tcl.h"
@@ -2708,7 +2708,7 @@ Tcl_GetVersion(major, minor, patchLevel, type)
     int * major;
     int * minor;
     int * patchLevel;
-    Tcl_ReleaseType * type;
+    int * type;
 {
     (tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type);
 }
@@ -2729,14 +2729,6 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
 }
 
 /* Slot 287 */
-void
-Tcl_AlertNotifier(clientData)
-    ClientData clientData;
-{
-    (tclStubsPtr->tcl_AlertNotifier)(clientData);
-}
-
-/* Slot 288 */
 Tcl_Encoding
 Tcl_CreateEncoding(typePtr)
     Tcl_EncodingType * typePtr;
@@ -2744,7 +2736,7 @@ Tcl_CreateEncoding(typePtr)
     return (tclStubsPtr->tcl_CreateEncoding)(typePtr);
 }
 
-/* Slot 289 */
+/* Slot 288 */
 void
 Tcl_CreateThreadExitHandler(proc, clientData)
     Tcl_ExitProc * proc;
@@ -2753,7 +2745,7 @@ Tcl_CreateThreadExitHandler(proc, clientData)
     (tclStubsPtr->tcl_CreateThreadExitHandler)(proc, clientData);
 }
 
-/* Slot 290 */
+/* Slot 289 */
 void
 Tcl_DeleteThreadExitHandler(proc, clientData)
     Tcl_ExitProc * proc;
@@ -2762,7 +2754,7 @@ Tcl_DeleteThreadExitHandler(proc, clientData)
     (tclStubsPtr->tcl_DeleteThreadExitHandler)(proc, clientData);
 }
 
-/* Slot 291 */
+/* Slot 290 */
 void
 Tcl_DiscardResult(statePtr)
     Tcl_SavedResult * statePtr;
@@ -2770,7 +2762,7 @@ Tcl_DiscardResult(statePtr)
     (tclStubsPtr->tcl_DiscardResult)(statePtr);
 }
 
-/* Slot 292 */
+/* Slot 291 */
 int
 Tcl_EvalEx(interp, script, numBytes, flags)
     Tcl_Interp * interp;
@@ -2781,7 +2773,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     return (tclStubsPtr->tcl_EvalEx)(interp, script, numBytes, flags);
 }
 
-/* Slot 293 */
+/* Slot 292 */
 int
 Tcl_EvalObjv(interp, objc, objv, flags)
     Tcl_Interp * interp;
@@ -2792,7 +2784,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
     return (tclStubsPtr->tcl_EvalObjv)(interp, objc, objv, flags);
 }
 
-/* Slot 294 */
+/* Slot 293 */
 int
 Tcl_EvalObjEx(interp, objPtr, flags)
     Tcl_Interp * interp;
@@ -2802,7 +2794,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
     return (tclStubsPtr->tcl_EvalObjEx)(interp, objPtr, flags);
 }
 
-/* Slot 295 */
+/* Slot 294 */
 void
 Tcl_ExitThread(status)
     int status;
@@ -2810,7 +2802,7 @@ Tcl_ExitThread(status)
     (tclStubsPtr->tcl_ExitThread)(status);
 }
 
-/* Slot 296 */
+/* Slot 295 */
 int
 Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr)
     Tcl_Interp * interp;
@@ -2828,7 +2820,7 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, s
     return (tclStubsPtr->tcl_ExternalToUtf)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr);
 }
 
-/* Slot 297 */
+/* Slot 296 */
 char *
 Tcl_ExternalToUtfDString(encoding, src, srcLen, dsPtr)
     Tcl_Encoding encoding;
@@ -2839,14 +2831,14 @@ Tcl_ExternalToUtfDString(encoding, src, srcLen, dsPtr)
     return (tclStubsPtr->tcl_ExternalToUtfDString)(encoding, src, srcLen, dsPtr);
 }
 
-/* Slot 298 */
+/* Slot 297 */
 void
 Tcl_FinalizeThread()
 {
     (tclStubsPtr->tcl_FinalizeThread)();
 }
 
-/* Slot 299 */
+/* Slot 298 */
 void
 Tcl_FinalizeNotifier(clientData)
     ClientData clientData;
@@ -2854,7 +2846,7 @@ Tcl_FinalizeNotifier(clientData)
     (tclStubsPtr->tcl_FinalizeNotifier)(clientData);
 }
 
-/* Slot 300 */
+/* Slot 299 */
 void
 Tcl_FreeEncoding(encoding)
     Tcl_Encoding encoding;
@@ -2862,14 +2854,14 @@ Tcl_FreeEncoding(encoding)
     (tclStubsPtr->tcl_FreeEncoding)(encoding);
 }
 
-/* Slot 301 */
+/* Slot 300 */
 Tcl_ThreadId
 Tcl_GetCurrentThread()
 {
     return (tclStubsPtr->tcl_GetCurrentThread)();
 }
 
-/* Slot 302 */
+/* Slot 301 */
 Tcl_Encoding
 Tcl_GetEncoding(interp, name)
     Tcl_Interp * interp;
@@ -2878,7 +2870,7 @@ Tcl_GetEncoding(interp, name)
     return (tclStubsPtr->tcl_GetEncoding)(interp, name);
 }
 
-/* Slot 303 */
+/* Slot 302 */
 char *
 Tcl_GetEncodingName(encoding)
     Tcl_Encoding encoding;
@@ -2886,7 +2878,7 @@ Tcl_GetEncodingName(encoding)
     return (tclStubsPtr->tcl_GetEncodingName)(encoding);
 }
 
-/* Slot 304 */
+/* Slot 303 */
 void
 Tcl_GetEncodingNames(interp)
     Tcl_Interp * interp;
@@ -2894,7 +2886,7 @@ Tcl_GetEncodingNames(interp)
     (tclStubsPtr->tcl_GetEncodingNames)(interp);
 }
 
-/* Slot 305 */
+/* Slot 304 */
 int
 Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr)
     Tcl_Interp * interp;
@@ -2908,7 +2900,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr
     return (tclStubsPtr->tcl_GetIndexFromObjStruct)(interp, objPtr, tablePtr, offset, msg, flags, indexPtr);
 }
 
-/* Slot 306 */
+/* Slot 305 */
 VOID *
 Tcl_GetThreadData(keyPtr, size)
     Tcl_ThreadDataKey * keyPtr;
@@ -2917,7 +2909,7 @@ Tcl_GetThreadData(keyPtr, size)
     return (tclStubsPtr->tcl_GetThreadData)(keyPtr, size);
 }
 
-/* Slot 307 */
+/* Slot 306 */
 Tcl_Obj *
 Tcl_GetVar2Ex(interp, part1, part2, flags)
     Tcl_Interp * interp;
@@ -2928,14 +2920,14 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
     return (tclStubsPtr->tcl_GetVar2Ex)(interp, part1, part2, flags);
 }
 
-/* Slot 308 */
+/* Slot 307 */
 ClientData
 Tcl_InitNotifier()
 {
     return (tclStubsPtr->tcl_InitNotifier)();
 }
 
-/* Slot 309 */
+/* Slot 308 */
 void
 Tcl_MutexLock(mutexPtr)
     Tcl_Mutex * mutexPtr;
@@ -2943,7 +2935,7 @@ Tcl_MutexLock(mutexPtr)
     (tclStubsPtr->tcl_MutexLock)(mutexPtr);
 }
 
-/* Slot 310 */
+/* Slot 309 */
 void
 Tcl_MutexUnlock(mutexPtr)
     Tcl_Mutex * mutexPtr;
@@ -2951,7 +2943,7 @@ Tcl_MutexUnlock(mutexPtr)
     (tclStubsPtr->tcl_MutexUnlock)(mutexPtr);
 }
 
-/* Slot 311 */
+/* Slot 310 */
 void
 Tcl_ConditionNotify(condPtr)
     Tcl_Condition * condPtr;
@@ -2959,7 +2951,7 @@ Tcl_ConditionNotify(condPtr)
     (tclStubsPtr->tcl_ConditionNotify)(condPtr);
 }
 
-/* Slot 312 */
+/* Slot 311 */
 void
 Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     Tcl_Condition * condPtr;
@@ -2969,7 +2961,7 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     (tclStubsPtr->tcl_ConditionWait)(condPtr, mutexPtr, timePtr);
 }
 
-/* Slot 313 */
+/* Slot 312 */
 int
 Tcl_NumUtfChars(src, len)
     CONST char * src;
@@ -2978,7 +2970,7 @@ Tcl_NumUtfChars(src, len)
     return (tclStubsPtr->tcl_NumUtfChars)(src, len);
 }
 
-/* Slot 314 */
+/* Slot 313 */
 int
 Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag)
     Tcl_Channel channel;
@@ -2989,7 +2981,7 @@ Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag)
     return (tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag);
 }
 
-/* Slot 315 */
+/* Slot 314 */
 void
 Tcl_RestoreResult(interp, statePtr)
     Tcl_Interp * interp;
@@ -2998,7 +2990,7 @@ Tcl_RestoreResult(interp, statePtr)
     (tclStubsPtr->tcl_RestoreResult)(interp, statePtr);
 }
 
-/* Slot 316 */
+/* Slot 315 */
 void
 Tcl_SaveResult(interp, statePtr)
     Tcl_Interp * interp;
@@ -3007,7 +2999,7 @@ Tcl_SaveResult(interp, statePtr)
     (tclStubsPtr->tcl_SaveResult)(interp, statePtr);
 }
 
-/* Slot 317 */
+/* Slot 316 */
 int
 Tcl_SetSystemEncoding(interp, name)
     Tcl_Interp * interp;
@@ -3016,7 +3008,7 @@ Tcl_SetSystemEncoding(interp, name)
     return (tclStubsPtr->tcl_SetSystemEncoding)(interp, name);
 }
 
-/* Slot 318 */
+/* Slot 317 */
 Tcl_Obj *
 Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
     Tcl_Interp * interp;
@@ -3028,7 +3020,7 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
     return (tclStubsPtr->tcl_SetVar2Ex)(interp, part1, part2, newValuePtr, flags);
 }
 
-/* Slot 319 */
+/* Slot 318 */
 void
 Tcl_ThreadAlert(threadId)
     Tcl_ThreadId threadId;
@@ -3036,7 +3028,7 @@ Tcl_ThreadAlert(threadId)
     (tclStubsPtr->tcl_ThreadAlert)(threadId);
 }
 
-/* Slot 320 */
+/* Slot 319 */
 void
 Tcl_ThreadQueueEvent(threadId, evPtr, position)
     Tcl_ThreadId threadId;
@@ -3046,7 +3038,7 @@ Tcl_ThreadQueueEvent(threadId, evPtr, position)
     (tclStubsPtr->tcl_ThreadQueueEvent)(threadId, evPtr, position);
 }
 
-/* Slot 321 */
+/* Slot 320 */
 Tcl_UniChar
 Tcl_UniCharAtIndex(src, index)
     CONST char * src;
@@ -3055,7 +3047,7 @@ Tcl_UniCharAtIndex(src, index)
     return (tclStubsPtr->tcl_UniCharAtIndex)(src, index);
 }
 
-/* Slot 322 */
+/* Slot 321 */
 Tcl_UniChar
 Tcl_UniCharToLower(ch)
     int ch;
@@ -3063,7 +3055,7 @@ Tcl_UniCharToLower(ch)
     return (tclStubsPtr->tcl_UniCharToLower)(ch);
 }
 
-/* Slot 323 */
+/* Slot 322 */
 Tcl_UniChar
 Tcl_UniCharToTitle(ch)
     int ch;
@@ -3071,7 +3063,7 @@ Tcl_UniCharToTitle(ch)
     return (tclStubsPtr->tcl_UniCharToTitle)(ch);
 }
 
-/* Slot 324 */
+/* Slot 323 */
 Tcl_UniChar
 Tcl_UniCharToUpper(ch)
     int ch;
@@ -3079,7 +3071,7 @@ Tcl_UniCharToUpper(ch)
     return (tclStubsPtr->tcl_UniCharToUpper)(ch);
 }
 
-/* Slot 325 */
+/* Slot 324 */
 int
 Tcl_UniCharToUtf(ch, buf)
     int ch;
@@ -3088,7 +3080,7 @@ Tcl_UniCharToUtf(ch, buf)
     return (tclStubsPtr->tcl_UniCharToUtf)(ch, buf);
 }
 
-/* Slot 326 */
+/* Slot 325 */
 char *
 Tcl_UtfAtIndex(src, index)
     CONST char * src;
@@ -3097,7 +3089,7 @@ Tcl_UtfAtIndex(src, index)
     return (tclStubsPtr->tcl_UtfAtIndex)(src, index);
 }
 
-/* Slot 327 */
+/* Slot 326 */
 int
 Tcl_UtfCharComplete(src, len)
     CONST char * src;
@@ -3106,7 +3098,7 @@ Tcl_UtfCharComplete(src, len)
     return (tclStubsPtr->tcl_UtfCharComplete)(src, len);
 }
 
-/* Slot 328 */
+/* Slot 327 */
 int
 Tcl_UtfBackslash(src, readPtr, dst)
     CONST char * src;
@@ -3116,7 +3108,7 @@ Tcl_UtfBackslash(src, readPtr, dst)
     return (tclStubsPtr->tcl_UtfBackslash)(src, readPtr, dst);
 }
 
-/* Slot 329 */
+/* Slot 328 */
 char *
 Tcl_UtfFindFirst(src, ch)
     CONST char * src;
@@ -3125,7 +3117,7 @@ Tcl_UtfFindFirst(src, ch)
     return (tclStubsPtr->tcl_UtfFindFirst)(src, ch);
 }
 
-/* Slot 330 */
+/* Slot 329 */
 char *
 Tcl_UtfFindLast(src, ch)
     CONST char * src;
@@ -3134,7 +3126,7 @@ Tcl_UtfFindLast(src, ch)
     return (tclStubsPtr->tcl_UtfFindLast)(src, ch);
 }
 
-/* Slot 331 */
+/* Slot 330 */
 char *
 Tcl_UtfNext(src)
     CONST char * src;
@@ -3142,7 +3134,7 @@ Tcl_UtfNext(src)
     return (tclStubsPtr->tcl_UtfNext)(src);
 }
 
-/* Slot 332 */
+/* Slot 331 */
 char *
 Tcl_UtfPrev(src, start)
     CONST char * src;
@@ -3151,7 +3143,7 @@ Tcl_UtfPrev(src, start)
     return (tclStubsPtr->tcl_UtfPrev)(src, start);
 }
 
-/* Slot 333 */
+/* Slot 332 */
 int
 Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr)
     Tcl_Interp * interp;
@@ -3169,7 +3161,7 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, s
     return (tclStubsPtr->tcl_UtfToExternal)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr);
 }
 
-/* Slot 334 */
+/* Slot 333 */
 char *
 Tcl_UtfToExternalDString(encoding, src, srcLen, dsPtr)
     Tcl_Encoding encoding;
@@ -3180,7 +3172,7 @@ Tcl_UtfToExternalDString(encoding, src, srcLen, dsPtr)
     return (tclStubsPtr->tcl_UtfToExternalDString)(encoding, src, srcLen, dsPtr);
 }
 
-/* Slot 335 */
+/* Slot 334 */
 int
 Tcl_UtfToLower(src)
     char * src;
@@ -3188,7 +3180,7 @@ Tcl_UtfToLower(src)
     return (tclStubsPtr->tcl_UtfToLower)(src);
 }
 
-/* Slot 336 */
+/* Slot 335 */
 int
 Tcl_UtfToTitle(src)
     char * src;
@@ -3196,7 +3188,7 @@ Tcl_UtfToTitle(src)
     return (tclStubsPtr->tcl_UtfToTitle)(src);
 }
 
-/* Slot 337 */
+/* Slot 336 */
 int
 Tcl_UtfToUniChar(src, chPtr)
     CONST char * src;
@@ -3205,7 +3197,7 @@ Tcl_UtfToUniChar(src, chPtr)
     return (tclStubsPtr->tcl_UtfToUniChar)(src, chPtr);
 }
 
-/* Slot 338 */
+/* Slot 337 */
 int
 Tcl_UtfToUpper(src)
     char * src;
@@ -3213,7 +3205,7 @@ Tcl_UtfToUpper(src)
     return (tclStubsPtr->tcl_UtfToUpper)(src);
 }
 
-/* Slot 339 */
+/* Slot 338 */
 int
 Tcl_WriteChars(chan, src, srcLen)
     Tcl_Channel chan;
@@ -3223,13 +3215,21 @@ Tcl_WriteChars(chan, src, srcLen)
     return (tclStubsPtr->tcl_WriteChars)(chan, src, srcLen);
 }
 
-/* Slot 340 */
+/* Slot 339 */
 int
 Tcl_WriteObj(chan, objPtr)
     Tcl_Channel chan;
     Tcl_Obj * objPtr;
 {
     return (tclStubsPtr->tcl_WriteObj)(chan, objPtr);
+}
+
+/* Slot 340 */
+char *
+Tcl_GetString(objPtr)
+    Tcl_Obj * objPtr;
+{
+    return (tclStubsPtr->tcl_GetString)(objPtr);
 }
 
 

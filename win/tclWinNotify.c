@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.4 1998/12/24 00:14:01 rjohnson Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.5 1999/03/11 01:50:34 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,7 +25,7 @@ static int initialized = 0;
 #define INTERVAL_TIMER 1	/* Handle of interval timer. */
 
 #define WM_WAKEUP WM_USER	/* Message that is send by
-				 * Tcl_AlertNotifier. */
+				 * TclpAlertNotifier. */
 /*
  * The following static structure contains the state information for the
  * Windows implementation of the Tcl notifier.  One of these structures
@@ -178,7 +178,7 @@ Tcl_FinalizeNotifier(clientData)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AlertNotifier --
+ * TclpAlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine
  *	is called by the platform independent notifier code whenever
@@ -197,7 +197,7 @@ Tcl_FinalizeNotifier(clientData)
  */
 
 void
-Tcl_AlertNotifier(clientData)
+TclpAlertNotifier(clientData)
     ClientData clientData;	/* Pointer to thread data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;

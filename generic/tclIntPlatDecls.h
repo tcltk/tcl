@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.1 1999/03/10 06:49:18 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.2 1999/03/11 01:50:30 stanton Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -115,16 +115,21 @@ EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
 EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((CONST char * fname, 
 				int mode));
 /* 20 */
+EXTERN void		TclWinAddProcess _ANSI_ARGS_((HANDLE hProcess, 
+				DWORD id));
+/* 21 */
+EXTERN void		TclpAsyncMark _ANSI_ARGS_((Tcl_AsyncHandler async));
+/* 22 */
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 				CONST char * contents));
-/* 21 */
-EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
-/* 22 */
-EXTERN char *		TclWinNoBackslash _ANSI_ARGS_((char * path));
 /* 23 */
+EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
+/* 24 */
+EXTERN char *		TclWinNoBackslash _ANSI_ARGS_((char * path));
+/* 25 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * string, 
 				int len, Tcl_DString * dsPtr));
-/* 24 */
+/* 26 */
 EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * string, 
 				int len, Tcl_DString * dsPtr));
 #endif /* __WIN32__ */
@@ -233,11 +238,13 @@ typedef struct TclIntPlatStubs {
     void *reserved17;
     TclFile (*tclpMakeFile) _ANSI_ARGS_((Tcl_Channel channel, int direction)); /* 18 */
     TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char * fname, int mode)); /* 19 */
-    TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 20 */
-    char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 21 */
-    char * (*tclWinNoBackslash) _ANSI_ARGS_((char * path)); /* 22 */
-    TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * string, int len, Tcl_DString * dsPtr)); /* 23 */
-    char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * string, int len, Tcl_DString * dsPtr)); /* 24 */
+    void (*tclWinAddProcess) _ANSI_ARGS_((HANDLE hProcess, DWORD id)); /* 20 */
+    void (*tclpAsyncMark) _ANSI_ARGS_((Tcl_AsyncHandler async)); /* 21 */
+    TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 22 */
+    char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 23 */
+    char * (*tclWinNoBackslash) _ANSI_ARGS_((char * path)); /* 24 */
+    TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * string, int len, Tcl_DString * dsPtr)); /* 25 */
+    char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * string, int len, Tcl_DString * dsPtr)); /* 26 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     VOID * (*tclpSysAlloc) _ANSI_ARGS_((long size, int isBin)); /* 0 */
@@ -388,25 +395,33 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclpOpenFile(fname, mode) \
 	(tclIntPlatStubsPtr->tclpOpenFile)(fname, mode) /* 19 */
 #endif
+#ifndef TclWinAddProcess
+#define TclWinAddProcess(hProcess, id) \
+	(tclIntPlatStubsPtr->tclWinAddProcess)(hProcess, id) /* 20 */
+#endif
+#ifndef TclpAsyncMark
+#define TclpAsyncMark(async) \
+	(tclIntPlatStubsPtr->tclpAsyncMark)(async) /* 21 */
+#endif
 #ifndef TclpCreateTempFile
 #define TclpCreateTempFile(contents) \
-	(tclIntPlatStubsPtr->tclpCreateTempFile)(contents) /* 20 */
+	(tclIntPlatStubsPtr->tclpCreateTempFile)(contents) /* 22 */
 #endif
 #ifndef TclpGetTZName
 #define TclpGetTZName(isdst) \
-	(tclIntPlatStubsPtr->tclpGetTZName)(isdst) /* 21 */
+	(tclIntPlatStubsPtr->tclpGetTZName)(isdst) /* 23 */
 #endif
 #ifndef TclWinNoBackslash
 #define TclWinNoBackslash(path) \
-	(tclIntPlatStubsPtr->tclWinNoBackslash)(path) /* 22 */
+	(tclIntPlatStubsPtr->tclWinNoBackslash)(path) /* 24 */
 #endif
 #ifndef Tcl_WinUtfToTChar
 #define Tcl_WinUtfToTChar(string, len, dsPtr) \
-	(tclIntPlatStubsPtr->tcl_WinUtfToTChar)(string, len, dsPtr) /* 23 */
+	(tclIntPlatStubsPtr->tcl_WinUtfToTChar)(string, len, dsPtr) /* 25 */
 #endif
 #ifndef Tcl_WinTCharToUtf
 #define Tcl_WinTCharToUtf(string, len, dsPtr) \
-	(tclIntPlatStubsPtr->tcl_WinTCharToUtf)(string, len, dsPtr) /* 24 */
+	(tclIntPlatStubsPtr->tcl_WinTCharToUtf)(string, len, dsPtr) /* 26 */
 #endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL

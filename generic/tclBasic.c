@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.10 1999/03/10 22:51:13 redman Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.11 1999/03/11 01:50:28 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -4222,7 +4222,7 @@ void Tcl_GetVersion(major, minor, patchLevel, type)
     int *major;
     int *minor;
     int *patchLevel;
-    Tcl_ReleaseType *type;
+    int *type;
 {
     if (major != NULL) {
         *major = TCL_MAJOR_VERSION;

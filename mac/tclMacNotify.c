@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacNotify.c,v 1.1.2.2 1998/09/24 23:59:14 stanton Exp $
+ * RCS: @(#) $Id: tclMacNotify.c,v 1.1.2.3 1999/03/11 01:50:32 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -148,7 +148,7 @@ Tcl_FinalizeNotifier(clientData)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_AlertNotifier --
+ * TclpAlertNotifier --
  *
  *	Wake up the specified notifier from any thread. This routine
  *	is called by the platform independent notifier code whenever
@@ -166,7 +166,7 @@ Tcl_FinalizeNotifier(clientData)
  */
 
 void
-Tcl_AlertNotifier(clientData)
+TclpAlertNotifier(clientData)
     ClientData clientData;	/* Pointer to thread data. */
 {
 

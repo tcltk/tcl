@@ -12,11 +12,19 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.15 1999/03/10 22:51:12 redman Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.16 1999/03/11 01:50:27 stanton Exp $
  */
 
 #ifndef _TCL
 #define _TCL
+
+/*
+ * The following defines are used to indicate the various release levels.
+ */
+
+#define TCL_ALPHA_RELEASE	0
+#define TCL_BETA_RELEASE	1
+#define TCL_FINAL_RELEASE	2
 
 /*
  * When version numbers change here, must also go into the following files
@@ -34,12 +42,6 @@
  * unix/README
  *
  */
-
-typedef enum {
-    TCL_ALPHA_RELEASE = 0,
-    TCL_BETA_RELEASE = 1,
-    TCL_FINAL_RELEASE = 2
-} Tcl_ReleaseType;
 
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   1
@@ -1319,10 +1321,6 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN void Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 	Tcl_AppInitProc *appInitProc));
-
-EXTERN void Tcl_GetVersion _ANSI_ARGS_((int *major, 
-        int *minor, int *patchLevel, Tcl_ReleaseType *type));
-
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility.

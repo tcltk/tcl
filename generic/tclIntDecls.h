@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.1 1999/03/10 06:49:18 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.2 1999/03/11 01:50:30 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -425,8 +425,7 @@ EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize,
 				const char * format, const struct tm * t));
 /* 135 */
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
-/* 136 */
-EXTERN char *		Tcl_GetString _ANSI_ARGS_((Tcl_Obj * objPtr));
+/* Slot 136 is reserved */
 /* 137 */
 EXTERN int		TclpChdir _ANSI_ARGS_((CONST char * dirName));
 /* 138 */
@@ -582,7 +581,7 @@ typedef struct TclIntStubs {
     struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
     size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, const char * format, const struct tm * t)); /* 134 */
     int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
-    char * (*tcl_GetString) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 136 */
+    void *reserved136;
     int (*tclpChdir) _ANSI_ARGS_((CONST char * dirName)); /* 137 */
     char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
     int (*tclpLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr)); /* 139 */
@@ -1102,10 +1101,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclpCheckStackSpace() \
 	(tclIntStubsPtr->tclpCheckStackSpace)() /* 135 */
 #endif
-#ifndef Tcl_GetString
-#define Tcl_GetString(objPtr) \
-	(tclIntStubsPtr->tcl_GetString)(objPtr) /* 136 */
-#endif
+/* Slot 136 is reserved */
 #ifndef TclpChdir
 #define TclpChdir(dirName) \
 	(tclIntStubsPtr->tclpChdir)(dirName) /* 137 */

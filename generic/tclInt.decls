@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.3.2.1 1999/03/10 06:49:17 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.3.2.2 1999/03/11 01:50:29 stanton Exp $
 
 library tcl
 
@@ -512,9 +512,6 @@ declare 135 generic {
 
 # Added in 8.1:
 
-declare 136 generic {
-    char * Tcl_GetString(Tcl_Obj *objPtr)
-}
 declare 137 generic {
     int TclpChdir(CONST char *dirName)
 }
@@ -529,7 +526,6 @@ declare 139 generic {
 declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
-
 
 ##############################################################################
 
@@ -642,7 +638,6 @@ declare 25 mac {
     int TclMacChmod(char *path, int mode)
 }
 
-
 ############################
 # Windows specific internals
 
@@ -717,21 +712,27 @@ declare 18 win {
 declare 19 win {
     TclFile TclpOpenFile(CONST char *fname, int mode)
 }
-
-# Added in 8.1:
 declare 20 win {
-    TclFile TclpCreateTempFile(CONST char *contents)
+    void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
 declare 21 win {
-    char * TclpGetTZName(int isdst)
+    void TclpAsyncMark(Tcl_AsyncHandler async)
 }
+
+# Added in 8.1:
 declare 22 win {
-    char * TclWinNoBackslash(char *path)
+    TclFile TclpCreateTempFile(CONST char *contents)
 }
 declare 23 win {
-    TCHAR * Tcl_WinUtfToTChar(CONST char *string, int len, Tcl_DString *dsPtr)
+    char * TclpGetTZName(int isdst)
 }
 declare 24 win {
+    char * TclWinNoBackslash(char *path)
+}
+declare 25 win {
+    TCHAR * Tcl_WinUtfToTChar(CONST char *string, int len, Tcl_DString *dsPtr)
+}
+declare 26 win {
     char * Tcl_WinTCharToUtf(CONST TCHAR *string, int len, Tcl_DString *dsPtr)
 }
 

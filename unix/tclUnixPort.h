@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.5 1999/03/10 06:49:28 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.6 1999/03/11 01:50:33 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -454,6 +454,7 @@ extern double strtod();
  * address platform-specific issues.
  */
 
+#define TclpAsyncMark(async)
 #define TclpGetPid(pid)		((unsigned long) (pid))
 #define TclpReleaseFile(file)	/* Nothing. */
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.3 1999/03/10 23:44:21 redman Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.4 1999/03/11 01:50:31 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -356,60 +356,60 @@ TclStubs tclStubs = {
     NULL, /* 284 */
     NULL, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
-    Tcl_AlertNotifier, /* 287 */
-    Tcl_CreateEncoding, /* 288 */
-    Tcl_CreateThreadExitHandler, /* 289 */
-    Tcl_DeleteThreadExitHandler, /* 290 */
-    Tcl_DiscardResult, /* 291 */
-    Tcl_EvalEx, /* 292 */
-    Tcl_EvalObjv, /* 293 */
-    Tcl_EvalObjEx, /* 294 */
-    Tcl_ExitThread, /* 295 */
-    Tcl_ExternalToUtf, /* 296 */
-    Tcl_ExternalToUtfDString, /* 297 */
-    Tcl_FinalizeThread, /* 298 */
-    Tcl_FinalizeNotifier, /* 299 */
-    Tcl_FreeEncoding, /* 300 */
-    Tcl_GetCurrentThread, /* 301 */
-    Tcl_GetEncoding, /* 302 */
-    Tcl_GetEncodingName, /* 303 */
-    Tcl_GetEncodingNames, /* 304 */
-    Tcl_GetIndexFromObjStruct, /* 305 */
-    Tcl_GetThreadData, /* 306 */
-    Tcl_GetVar2Ex, /* 307 */
-    Tcl_InitNotifier, /* 308 */
-    Tcl_MutexLock, /* 309 */
-    Tcl_MutexUnlock, /* 310 */
-    Tcl_ConditionNotify, /* 311 */
-    Tcl_ConditionWait, /* 312 */
-    Tcl_NumUtfChars, /* 313 */
-    Tcl_ReadChars, /* 314 */
-    Tcl_RestoreResult, /* 315 */
-    Tcl_SaveResult, /* 316 */
-    Tcl_SetSystemEncoding, /* 317 */
-    Tcl_SetVar2Ex, /* 318 */
-    Tcl_ThreadAlert, /* 319 */
-    Tcl_ThreadQueueEvent, /* 320 */
-    Tcl_UniCharAtIndex, /* 321 */
-    Tcl_UniCharToLower, /* 322 */
-    Tcl_UniCharToTitle, /* 323 */
-    Tcl_UniCharToUpper, /* 324 */
-    Tcl_UniCharToUtf, /* 325 */
-    Tcl_UtfAtIndex, /* 326 */
-    Tcl_UtfCharComplete, /* 327 */
-    Tcl_UtfBackslash, /* 328 */
-    Tcl_UtfFindFirst, /* 329 */
-    Tcl_UtfFindLast, /* 330 */
-    Tcl_UtfNext, /* 331 */
-    Tcl_UtfPrev, /* 332 */
-    Tcl_UtfToExternal, /* 333 */
-    Tcl_UtfToExternalDString, /* 334 */
-    Tcl_UtfToLower, /* 335 */
-    Tcl_UtfToTitle, /* 336 */
-    Tcl_UtfToUniChar, /* 337 */
-    Tcl_UtfToUpper, /* 338 */
-    Tcl_WriteChars, /* 339 */
-    Tcl_WriteObj, /* 340 */
+    Tcl_CreateEncoding, /* 287 */
+    Tcl_CreateThreadExitHandler, /* 288 */
+    Tcl_DeleteThreadExitHandler, /* 289 */
+    Tcl_DiscardResult, /* 290 */
+    Tcl_EvalEx, /* 291 */
+    Tcl_EvalObjv, /* 292 */
+    Tcl_EvalObjEx, /* 293 */
+    Tcl_ExitThread, /* 294 */
+    Tcl_ExternalToUtf, /* 295 */
+    Tcl_ExternalToUtfDString, /* 296 */
+    Tcl_FinalizeThread, /* 297 */
+    Tcl_FinalizeNotifier, /* 298 */
+    Tcl_FreeEncoding, /* 299 */
+    Tcl_GetCurrentThread, /* 300 */
+    Tcl_GetEncoding, /* 301 */
+    Tcl_GetEncodingName, /* 302 */
+    Tcl_GetEncodingNames, /* 303 */
+    Tcl_GetIndexFromObjStruct, /* 304 */
+    Tcl_GetThreadData, /* 305 */
+    Tcl_GetVar2Ex, /* 306 */
+    Tcl_InitNotifier, /* 307 */
+    Tcl_MutexLock, /* 308 */
+    Tcl_MutexUnlock, /* 309 */
+    Tcl_ConditionNotify, /* 310 */
+    Tcl_ConditionWait, /* 311 */
+    Tcl_NumUtfChars, /* 312 */
+    Tcl_ReadChars, /* 313 */
+    Tcl_RestoreResult, /* 314 */
+    Tcl_SaveResult, /* 315 */
+    Tcl_SetSystemEncoding, /* 316 */
+    Tcl_SetVar2Ex, /* 317 */
+    Tcl_ThreadAlert, /* 318 */
+    Tcl_ThreadQueueEvent, /* 319 */
+    Tcl_UniCharAtIndex, /* 320 */
+    Tcl_UniCharToLower, /* 321 */
+    Tcl_UniCharToTitle, /* 322 */
+    Tcl_UniCharToUpper, /* 323 */
+    Tcl_UniCharToUtf, /* 324 */
+    Tcl_UtfAtIndex, /* 325 */
+    Tcl_UtfCharComplete, /* 326 */
+    Tcl_UtfBackslash, /* 327 */
+    Tcl_UtfFindFirst, /* 328 */
+    Tcl_UtfFindLast, /* 329 */
+    Tcl_UtfNext, /* 330 */
+    Tcl_UtfPrev, /* 331 */
+    Tcl_UtfToExternal, /* 332 */
+    Tcl_UtfToExternalDString, /* 333 */
+    Tcl_UtfToLower, /* 334 */
+    Tcl_UtfToTitle, /* 335 */
+    Tcl_UtfToUniChar, /* 336 */
+    Tcl_UtfToUpper, /* 337 */
+    Tcl_WriteChars, /* 338 */
+    Tcl_WriteObj, /* 339 */
+    Tcl_GetString, /* 340 */
 };
 
 TclStubs *tclStubsPtr = &tclStubs;
@@ -553,7 +553,7 @@ TclIntStubs tclIntStubs = {
     TclpGetDate, /* 133 */
     TclpStrftime, /* 134 */
     TclpCheckStackSpace, /* 135 */
-    Tcl_GetString, /* 136 */
+    NULL, /* 136 */
     TclpChdir, /* 137 */
     TclGetEnv, /* 138 */
     TclpLoadFile, /* 139 */
@@ -598,11 +598,13 @@ TclIntPlatStubs tclIntPlatStubs = {
     NULL, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
-    TclpCreateTempFile, /* 20 */
-    TclpGetTZName, /* 21 */
-    TclWinNoBackslash, /* 22 */
-    Tcl_WinUtfToTChar, /* 23 */
-    Tcl_WinTCharToUtf, /* 24 */
+    TclWinAddProcess, /* 20 */
+    TclpAsyncMark, /* 21 */
+    TclpCreateTempFile, /* 22 */
+    TclpGetTZName, /* 23 */
+    TclWinNoBackslash, /* 24 */
+    Tcl_WinUtfToTChar, /* 25 */
+    Tcl_WinTCharToUtf, /* 26 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     TclpSysAlloc, /* 0 */

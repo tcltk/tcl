@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.1 1999/03/10 06:49:19 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.2 1999/03/11 01:50:30 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -281,6 +281,23 @@ TclpOpenFile(fname, mode)
 }
 
 /* Slot 20 */
+void
+TclWinAddProcess(hProcess, id)
+    HANDLE hProcess;
+    DWORD id;
+{
+    (tclIntPlatStubsPtr->tclWinAddProcess)(hProcess, id);
+}
+
+/* Slot 21 */
+void
+TclpAsyncMark(async)
+    Tcl_AsyncHandler async;
+{
+    (tclIntPlatStubsPtr->tclpAsyncMark)(async);
+}
+
+/* Slot 22 */
 TclFile
 TclpCreateTempFile(contents)
     CONST char * contents;
@@ -288,7 +305,7 @@ TclpCreateTempFile(contents)
     return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents);
 }
 
-/* Slot 21 */
+/* Slot 23 */
 char *
 TclpGetTZName(isdst)
     int isdst;
@@ -296,7 +313,7 @@ TclpGetTZName(isdst)
     return (tclIntPlatStubsPtr->tclpGetTZName)(isdst);
 }
 
-/* Slot 22 */
+/* Slot 24 */
 char *
 TclWinNoBackslash(path)
     char * path;
@@ -304,7 +321,7 @@ TclWinNoBackslash(path)
     return (tclIntPlatStubsPtr->tclWinNoBackslash)(path);
 }
 
-/* Slot 23 */
+/* Slot 25 */
 TCHAR *
 Tcl_WinUtfToTChar(string, len, dsPtr)
     CONST char * string;
@@ -314,7 +331,7 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
     return (tclIntPlatStubsPtr->tcl_WinUtfToTChar)(string, len, dsPtr);
 }
 
-/* Slot 24 */
+/* Slot 26 */
 char *
 Tcl_WinTCharToUtf(string, len, dsPtr)
     CONST TCHAR * string;

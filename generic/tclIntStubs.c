@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntStubs.c,v 1.3.2.1 1999/03/10 06:49:19 stanton Exp $
+ * RCS: @(#) $Id: tclIntStubs.c,v 1.3.2.2 1999/03/11 01:50:31 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1215,14 +1215,7 @@ TclpCheckStackSpace()
     return (tclIntStubsPtr->tclpCheckStackSpace)();
 }
 
-/* Slot 136 */
-char *
-Tcl_GetString(objPtr)
-    Tcl_Obj * objPtr;
-{
-    return (tclIntStubsPtr->tcl_GetString)(objPtr);
-}
-
+/* Slot 136 is reserved */
 /* Slot 137 */
 int
 TclpChdir(dirName)
