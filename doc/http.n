@@ -6,14 +6,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.21 2004/08/31 15:19:36 dkf Exp $
+'\" RCS: @(#) $Id: http.n,v 1.22 2004/09/06 09:44:57 dkf Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.5 http "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-http \- Client-side implementation of the HTTP/1.0 protocol.
+http \- Client-side implementation of the HTTP/1.0 protocol
 .SH SYNOPSIS
 \fBpackage require http ?2.5?\fR
 .sp
