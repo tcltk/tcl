@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.14 2003/12/02 09:29:54 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.15 2003/12/17 18:40:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -1736,7 +1736,9 @@ DeleteScanNumberCache(numberCachePtr)
     while (hEntry != NULL) {
 	register Tcl_Obj *value = (Tcl_Obj *) Tcl_GetHashValue(hEntry);
 
-	Tcl_DecrRefCount(value);
+	if (value != NULL) {
+	    Tcl_DecrRefCount(value);
+	}
 	hEntry = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(numberCachePtr);
