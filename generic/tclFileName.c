@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.63 2005/02/10 17:09:49 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.64 2005/03/15 18:07:56 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -160,37 +160,38 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	}
     } else {
 	int abs = 0;
-	if (path[0] == 'c' && path[1] == 'o') {
-	    if (path[2] == 'm' && path[3] >= '1' && path[3] <= '9') {
-		/* May have match for 'com[1-9]:?', which is a serial port */
+	if ((path[0] == 'c' || path[0] == 'C') 
+	    && (path[1] == 'o' || path[1] == 'O')) {
+	    if ((path[2] == 'm' || path[2] == 'M')
+		&& path[3] >= '1' && path[3] <= '4') {
+		/* May have match for 'com[1-4]:?', which is a serial port */
 		if (path[4] == '\0') {
 		    abs = 4;
 		} else if (path [4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
-	    } else if (path[2] == 'n' && path[3] == '\0') {
+	    } else if ((path[2] == 'n' || path[2] == 'N') && path[3] == '\0') {
 		/* Have match for 'con' */
 		abs = 3;
 	    }
-	} else if (path[0] == 'l' && path[1] == 'p' && path[2] == 't') {
-	    if (path[3] >= '1' && path[3] <= '9') {
-		/* May have match for 'lpt[1-9]:?' */
+	} else if ((path[0] == 'l' || path[0] == 'L')
+		   && (path[1] == 'p' || path[1] == 'P')
+		   && (path[2] == 't' || path[2] == 'T')) {
+	    if (path[3] >= '1' && path[3] <= '3') {
+		/* May have match for 'lpt[1-3]:?' */
 		if (path[4] == '\0') {
 		    abs = 4;
 		} else if (path [4] == ':' && path[5] == '\0') {
 		    abs = 5;
 		}
 	    }
-	} else if (path[0] == 'p' && path[1] == 'r'
-		&& path[2] == 'n' && path[3] == '\0') {
+	} else if (stricmp(path, "prn") == 0) {
 	    /* Have match for 'prn' */
 	    abs = 3;
-	} else if (path[0] == 'n' && path[1] == 'u'
-		&& path[2] == 'l' && path[3] == '\0') {
+	} else if (stricmp(path, "nul") == 0) {
 	    /* Have match for 'nul' */
 	    abs = 3;
-	} else if (path[0] == 'a' && path[1] == 'u'
-		&& path[2] == 'x' && path[3] == '\0') {
+	} else if (stricmp(path, "aux") == 0) {
 	    /* Have match for 'aux' */
 	    abs = 3;
 	}
