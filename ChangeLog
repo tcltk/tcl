@@ -1,5 +1,26 @@
 2001-06-22  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/Makefile.in: Set CFLAGS to @CFLAGS@ and @CFLAGS_DEFAULT@.
+	Set LDFLAGS to @LDFLAGS@ and @LDFLAGS_DEFAULT@. Add LDFLAGS_DEBUG
+	and LDFLAGS_OPTIMIZE to match the way CFLAGS_DEFAULT works.
+ 	This will support user set CFLAGS or LDFLAGS at configure time.
+	* unix/configure: Regen.
+	* unix/configure.in: Don't set CFLAGS to CFLAGS_DEFAULT, instead
+	subst CFLAGS_DEFAULT into the Makefile. Add AC_SUBST for CFLAGS_DEFAULT,
+	LDFLAGS_DEFAULT, LDFLAGS_DEBUG, and LDFLAGS_OPTIMIZE.
+	* unix/tcl.m4 (SC_ENABLE_SYMBOLS): Modify LDFLAGS_DEFAULT so that
+	it uses a Makefile variable just like CFLAGS_DEFAULT.
+	* win/Makefile.in: Set CFLAGS to @CFLAGS@ and @CFLAGS_DEFAULT@.
+	Set LDFLAGS to @LDFLAGS@ and @LDFLAGS_DEFAULT@.
+	This will support user set CFLAGS or LDFLAGS at configure time.
+	* win/configure: Regen.
+	* win/configure.in: Don't set CFLAGS or LDFLAGS, instead subst
+	CFLAGS_DEFAULT and LDFLAGS_DEFAULT into the Makefile.
+	* win/tcl.m4 (SC_ENABLE_SYMBOLS): Modify LDFLAGS_DEFAULT so that
+	it uses a Makefile variable just like CFLAGS_DEFAULT.
+
+2001-06-22  Mo DeJong  <mdejong@redhat.com>
+
 	* win/configure:
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): Don't set LDFLAGS_DEBUG
 	to -g or LDFLAGS_OPTIMIZE to -O when compiling with gcc.

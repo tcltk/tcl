@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.66 2001/04/25 21:48:21 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.67 2001/06/22 23:02:53 mdejong Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -351,7 +351,6 @@ SC_CONFIG_CFLAGS
 SC_ENABLE_SYMBOLS
 
 TCL_DBGX=${DBGX}
-CFLAGS=${CFLAGS_DEFAULT}
 
 #--------------------------------------------------------------------
 #	The statements below check for systems where POSIX-style
@@ -493,6 +492,7 @@ AC_SUBST(MAKE_STUB_LIB)
 
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(CFLAGS)
+AC_SUBST(CFLAGS_DEFAULT)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
@@ -500,6 +500,10 @@ AC_SUBST(TCL_DBGX)
 AC_SUBST(DL_OBJS)
 AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(LDFLAGS_DEFAULT)
+# FIXME: Should this be TCL_LDFLAGS_DEBUG ?
+AC_SUBST(LDFLAGS_DEBUG)
+AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(MAKE_LIB)
 AC_SUBST(TCL_SHARED_BUILD)
 AC_SUBST(SHLIB_CFLAGS)

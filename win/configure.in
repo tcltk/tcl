@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.31 2001/05/11 23:02:18 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.32 2001/06/22 23:02:53 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -89,8 +89,6 @@ SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS
 
-CFLAGS=${CFLAGS_DEFAULT}
-LDFLAGS=${LDFLAGS_DEFAULT}
 TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
@@ -185,6 +183,7 @@ AC_SUBST(TCL_SHARED_BUILD)
 AC_SUBST(PATHTYPE)
 AC_SUBST(CYGPATH)
 AC_SUBST(VPSEP)
+AC_SUBST(CFLAGS_DEFAULT)
 AC_SUBST(CFLAGS_DEBUG)
 AC_SUBST(CFLAGS_OPTIMIZE)
 AC_SUBST(CFLAGS_WARNING)
@@ -196,7 +195,7 @@ AC_SUBST(SHLIB_CFLAGS)
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(CC_OBJNAME)
 AC_SUBST(CC_EXENAME)
-AC_SUBST(LDFLAGS)
+AC_SUBST(LDFLAGS_DEFAULT)
 AC_SUBST(LDFLAGS_DEBUG)
 AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(LDFLAGS_CONSOLE)
