@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.47 2004/07/03 02:03:36 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.48 2004/09/26 16:36:04 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -766,19 +766,19 @@ EXTERN int		TclCompEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
  */
 
 EXTERN void		TclCleanupByteCode _ANSI_ARGS_((ByteCode *codePtr));
-EXTERN int		TclCompileCmdWord _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN void		TclCompileCmdWord _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileExpr _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *script, int numBytes,
 			    CompileEnv *envPtr));
-EXTERN int		TclCompileExprWords _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN void		TclCompileExprWords _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr));
-EXTERN int		TclCompileScript _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN void		TclCompileScript _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *script, int numBytes,
 			    CompileEnv *envPtr));
-EXTERN int		TclCompileTokens _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN void		TclCompileTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr));
 EXTERN int		TclCreateAuxData _ANSI_ARGS_((ClientData clientData,
