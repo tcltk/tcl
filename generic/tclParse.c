@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.37 2004/07/12 01:09:10 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.38 2004/10/06 13:50:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -570,8 +570,9 @@ TclParseHex(src, numBytes, resultPtr)
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
 
-	if (!isxdigit(digit))
+	if (!isxdigit(digit)) {
 	    break;
+	}
 
 	++p;
 	result <<= 4;
