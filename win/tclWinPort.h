@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.35 2002/11/27 00:58:01 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36 2002/11/27 18:13:38 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -70,12 +70,8 @@
 #undef WIN32_LEAN_AND_MEAN
 
 /*
- * Ask for the winsock function typedefs, only.  wspiapi.h may be
- * included, 1) isn't used, and 2) can't cope with typedefs only.
- * This appears to be a bug in wspiapi.h, so make sure it is excluded.
+ * Ask for the winsock function typedefs, also.
  */
-#define _WSPIAPI_H_
-#define INCL_WINSOCK_API_PROTOTYPES 0
 #define INCL_WINSOCK_API_TYPEDEFS   1
 #include <winsock2.h>
 
