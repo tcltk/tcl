@@ -1,3 +1,9 @@
+2003-02-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/lsearch.test (lsearch-10.7): 
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Stopped -start option
+	from causing an option when used with an empty list.  [Bug #694232]
+
 2003-02-26  Chengye Mao <chengye.geo@yahoo.com>
 
         * win/tclWinInit.c: fixed a bug in TclpSetVariables by initializing
