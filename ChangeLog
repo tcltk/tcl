@@ -1,3 +1,19 @@
+2000-05-18  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclClock.c (FormatClock): correct code to handle locale
+	specific return values from strftime, if any. [Bug: 3345]
+
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): attempt to
+	correct setlocale calls for XIM support and locale issues.
+	[BUG: 5422 3345 4236 2522 2521]
+
+2000-05-17  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* library/init.tcl (auto_import): added check to see if a valid
+	pattern was coming in, to avoid simple error cases [Bug: 3326]
+
+	* doc/regsub.n: correct regsub docs [Bug: 5346]
+
 2000-05-15  Eric Melski  <ericm@scriptics.com>
 
 	* library/history.tcl: Corrected an off-by-one error in HistIndex,
