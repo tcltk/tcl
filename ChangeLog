@@ -1,3 +1,7 @@
+2003-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/Tcl.n: Updated Tcl version number and changebars.
+
 2003-11-14  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/ParseCmd.3:	Implementation of TIP 157.  Adds recognition
