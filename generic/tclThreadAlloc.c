@@ -4,14 +4,14 @@
  *	This is a very fast storage allocator for used with threads (designed
  *	avoid lock contention).  The basic strategy is to allocate memory in
  *  	fixed size blocks from block caches.
- * 
+ *
  * The Initial Developer of the Original Code is America Online, Inc.
  * Portions created by AOL are Copyright (C) 1999 America Online, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4 2002/08/26 13:05:56 msofer Exp $ */
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.5 2003/05/09 23:33:55 mistachkin Exp $ */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
@@ -44,7 +44,7 @@ extern void TclpSetAllocCache(void *);
  * On a 32 bit system, sizeof(Tcl_Obj) = 24 so 800 * 24 = ~16k.
  *
  */
- 
+
 #define NOBJALLOC	 800
 #define NOBJHIGH	1200
 
@@ -63,7 +63,7 @@ extern void TclpSetAllocCache(void *);
  * free.  The original requested size (not including
  * the Block overhead) is also maintained.
  */
- 
+
 typedef struct Block {
     union {
     	struct Block *next;	  /* Next in free list. */
@@ -111,7 +111,7 @@ typedef struct Cache {
 } Cache;
 
 /*
- * The following array specifies various per-bucket 
+ * The following array specifies various per-bucket
  * limits and locks.  The values are statically initialized
  * to avoid calculating them repeatedly.
  */
@@ -276,11 +276,7 @@ TclFreeAllocCache(void *arg)
     *nextPtrPtr = cachePtr->nextPtr;
     cachePtr->nextPtr = NULL;
     Tcl_MutexUnlock(listLockPtr);
-#ifdef WIN32
-    TlsFree((DWORD) cachePtr);
-#else
     free(cachePtr);
-#endif
 }
 
 
@@ -311,16 +307,16 @@ TclpAlloc(unsigned int reqsize)
     if (cachePtr == NULL) {
 	cachePtr = GetCache();
     }
-    
+
     /*
-     * Increment the requested size to include room for 
+     * Increment the requested size to include room for
      * the Block structure.  Call malloc() directly if the
      * required amount is greater than the largest block,
      * otherwise pop the smallest block large enough,
      * allocating more blocks if necessary.
      */
 
-    blockPtr = NULL;     
+    blockPtr = NULL;
     size = reqsize + sizeof(Block);
 #if RCHECK
     ++size;
@@ -378,7 +374,7 @@ TclpFree(char *ptr)
 	if (cachePtr == NULL) {
 	    cachePtr = GetCache();
 	}
- 
+
 	/*
 	 * Get the block back from the user pointer and
 	 * call system free directly for large blocks.
@@ -523,7 +519,7 @@ TclThreadAllocObj(void)
      * Get this thread's obj list structure and move
      * or allocate new objs if necessary.
      */
-     
+
     if (cachePtr->nobjs == 0) {
     	Tcl_MutexLock(objLockPtr);
 	nmove = sharedPtr->nobjs;
@@ -588,16 +584,16 @@ TclThreadFreeObj(Tcl_Obj *objPtr)
     /*
      * Get this thread's list and push on the free Tcl_Obj.
      */
-     
+
     objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr;
     ++cachePtr->nobjs;
-    
+
     /*
      * If the number of free objects has exceeded the high
      * water mark, move some blocks to the shared list.
      */
-     
+
     if (cachePtr->nobjs > NOBJHIGH) {
 	Tcl_MutexLock(objLockPtr);
 	MoveObjs(cachePtr, sharedPtr, NOBJALLOC);
@@ -691,7 +687,7 @@ MoveObjs(Cache *fromPtr, Cache *toPtr, int nmove)
     while (--nmove) {
 	objPtr = objPtr->internalRep.otherValuePtr;
     }
-    fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;    
+    fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
 
     /*
      * Move all objects as a block - they are already linked to
@@ -720,7 +716,7 @@ MoveObjs(Cache *fromPtr, Cache *toPtr, int nmove)
  */
 
 static char *
-Block2Ptr(Block *blockPtr, int bucket, unsigned int reqsize) 
+Block2Ptr(Block *blockPtr, int bucket, unsigned int reqsize)
 {
     register void *ptr;
 
@@ -870,7 +866,7 @@ GetBlocks(Cache *cachePtr, int bucket)
      * which is a slight performance enhancement.  The value is
      * verified after the lock is actually acquired.
      */
-     
+
     if (cachePtr != sharedPtr && sharedPtr->buckets[bucket].nfree > 0) {
 	LockBucket(cachePtr, bucket);
 	if (sharedPtr->buckets[bucket].nfree > 0) {
@@ -902,7 +898,7 @@ GetBlocks(Cache *cachePtr, int bucket)
 	}
 	UnlockBucket(cachePtr, bucket);
     }
-    
+
     if (cachePtr->buckets[bucket].nfree == 0) {
 
 	/*
@@ -943,7 +939,7 @@ GetBlocks(Cache *cachePtr, int bucket)
 	cachePtr->buckets[bucket].nfree = n;
 	cachePtr->buckets[bucket].firstPtr = blockPtr;
 	while (--n > 0) {
-	    blockPtr->b_next = (Block *) 
+	    blockPtr->b_next = (Block *)
 		((char *) blockPtr + binfo[bucket].blocksize);
 	    blockPtr = blockPtr->b_next;
 	}
