@@ -1,3 +1,9 @@
+2002-10-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/fCmd.test, tests/winFCmd.test:
+	* tools/eolFix.tcl, tools/genStubs.tcl: [file exist] -> [file exists]
+	Thanks to David Welton.
+
 2002-10-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n: fixed typo [Bug 618018].  Thanks to "JJM".
