@@ -47,6 +47,24 @@ if {$::tcl_platform(platform) eq "windows"} {
     # The variable 'drive' will be used below
 }
 
+tcltest::testConstraint moreThanOneDrive 0
+set drives [list]
+if {$::tcl_platform(platform) eq "windows"} {
+    set dir [pwd]
+    foreach vol [file volumes] {
+        if {![catch {cd $vol}]} {
+            lappend drives $vol
+        }
+    }
+    if {[llength $drives] > 1} {
+        tcltest::testConstraint moreThanOneDrive 1
+    }
+    # The variable 'drives' will be used below
+    unset vol
+    cd $dir
+    unset dir
+}
+
 proc testPathEqual {one two} {
     if {[string equal $one $two]} {
 	return 1
@@ -357,6 +375,16 @@ test filesystem-1.37 {file normalisation with '/./'} {
     }
     set res
 } {ok}
+
+test filesystem-1.38 {file normalisation with volume relative} \
+  {winOnly moreThanOneDrive} {
+    set path "[string range [lindex $drives 0] 0 1]foo"
+    set dir [pwd]
+    cd [lindex $drives 1]
+    set res [file norm $path]
+    cd $dir
+    set res
+} "[lindex $drives 0]foo"
 
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
