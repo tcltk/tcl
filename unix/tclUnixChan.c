@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.23 2001/11/21 02:36:21 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.24 2002/01/15 17:55:30 dgp Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -189,8 +189,8 @@ static int		FileGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 		            char *buf, int toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((
-			    ClientData instanceData, char *buf, int toWrite,
-                            int *errorCode));
+			    ClientData instanceData, CONST char *buf,
+			    int toWrite, int *errorCode));
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -203,12 +203,12 @@ static int		TcpCloseProc _ANSI_ARGS_((ClientData instanceData,
 static int		TcpGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 		            int direction, ClientData *handlePtr));
 static int		TcpGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, char *optionName,
+			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static int		TcpInputProc _ANSI_ARGS_((ClientData instanceData,
 		            char *buf, int toRead,  int *errorCode));
 static int		TcpOutputProc _ANSI_ARGS_((ClientData instanceData,
-		            char *buf, int toWrite, int *errorCode));
+		            CONST char *buf, int toWrite, int *errorCode));
 static void		TcpWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 #ifdef SUPPORTS_TTY
@@ -217,7 +217,7 @@ static int		TtyCloseProc _ANSI_ARGS_((ClientData instanceData,
 static void		TtyGetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
 static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, char *optionName,
+			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
 static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
@@ -226,8 +226,8 @@ static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
 static void		TtySetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
 static int		TtySetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, char *optionName, 
-			    char *value));
+			    Tcl_Interp *interp, CONST char *optionName, 
+			    CONST char *value));
 #endif	/* SUPPORTS_TTY */
 static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
 		            int *errorCodePtr));
@@ -421,7 +421,7 @@ FileInputProc(instanceData, buf, toRead, errorCodePtr)
 static int
 FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* File state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -662,8 +662,8 @@ static int
 TtySetOptionProc(instanceData, interp, optionName, value)
     ClientData instanceData;	/* File state. */
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
-    char *optionName;		/* Which option to set? */
-    char *value;		/* New value for option. */
+    CONST char *optionName;	/* Which option to set? */
+    CONST char *value;		/* New value for option. */
 {
     FileState *fsPtr = (FileState *) instanceData;
     unsigned int len;
@@ -713,7 +713,7 @@ static int
 TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;	/* File state. */
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
-    char *optionName;		/* Option to get. */
+    CONST char *optionName;	/* Option to get. */
     Tcl_DString *dsPtr;		/* Where to store value(s). */
 {
     FileState *fsPtr = (FileState *) instanceData;
@@ -1708,7 +1708,7 @@ TcpInputProc(instanceData, buf, bufSize, errorCodePtr)
 static int
 TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* Socket state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -1800,7 +1800,7 @@ static int
 TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;     /* Socket state. */
     Tcl_Interp *interp;          /* For error reporting - can be NULL. */
-    char *optionName;	         /* Name of the option to
+    CONST char *optionName;	 /* Name of the option to
 				  * retrieve the value for, or
 				  * NULL to get all options and
 				  * their values. */

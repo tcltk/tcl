@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.69 2002/01/14 15:07:39 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.70 2002/01/15 17:55:29 dgp Exp $
 
 library tcl
 
@@ -289,8 +289,8 @@ declare 77 generic {
     char Tcl_Backslash(CONST char *src, int *readPtr)
 }
 declare 78 generic {
-    int Tcl_BadChannelOption(Tcl_Interp *interp, char *optionName, \
-	    char *optionList)
+    int Tcl_BadChannelOption(Tcl_Interp *interp, CONST char *optionName, \
+	    CONST char *optionList)
 }
 declare 79 generic {
     void Tcl_CallWhenDeleted(Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, \
@@ -325,8 +325,8 @@ declare 87 generic {
 	    Tcl_Obj *CONST objv[])
 }
 declare 88 generic {
-    Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr, char *chanName, \
-	    ClientData instanceData, int mask)
+    Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr,
+	    CONST char *chanName, ClientData instanceData, int mask)
 }
 declare 89 generic {
     void Tcl_CreateChannelHandler(Tcl_Channel chan, int mask, \
@@ -543,7 +543,7 @@ declare 150 generic {
 	    Tcl_InterpDeleteProc **procPtr)
 }
 declare 151 generic {
-    Tcl_Channel Tcl_GetChannel(Tcl_Interp *interp, char *chanName, \
+    Tcl_Channel Tcl_GetChannel(Tcl_Interp *interp, CONST char *chanName, \
 	    int *modePtr)
 }
 declare 152 generic {
@@ -560,11 +560,11 @@ declare 155 generic {
     int Tcl_GetChannelMode(Tcl_Channel chan)
 }
 declare 156 generic {
-    char * Tcl_GetChannelName(Tcl_Channel chan)
+    CONST char * Tcl_GetChannelName(Tcl_Channel chan)
 }
 declare 157 generic {
     int Tcl_GetChannelOption(Tcl_Interp *interp, Tcl_Channel chan, \
-	    char *optionName, Tcl_DString *dsPtr)
+	    CONST char *optionName, Tcl_DString *dsPtr)
 }
 declare 158 generic {
     Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
@@ -792,7 +792,7 @@ declare 224 generic {
 }
 declare 225 generic {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan, \
-	    char *optionName, char *newValue)
+	    CONST char *optionName, CONST char *newValue)
 }
 declare 226 generic {
     int Tcl_SetCommandInfo(Tcl_Interp *interp, CONST char *cmdName, \
@@ -877,7 +877,7 @@ declare 249 generic {
 	    Tcl_DString *bufferPtr)
 }
 declare 250 generic {
-    int Tcl_Ungets(Tcl_Channel chan, char *str, int len, int atHead)
+    int Tcl_Ungets(Tcl_Channel chan, CONST char *str, int len, int atHead)
 }
 declare 251 generic {
     void Tcl_UnlinkVar(Tcl_Interp *interp, char *varName)
@@ -923,7 +923,7 @@ declare 262 generic {
 	    ClientData prevClientData)
 }
 declare 263 generic {
-    int Tcl_Write(Tcl_Channel chan, char *s, int slen)
+    int Tcl_Write(Tcl_Channel chan, CONST char *s, int slen)
 }
 declare 264 generic {
     void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, \
@@ -1365,7 +1365,7 @@ declare 388 generic {
     int Tcl_GetChannelNames(Tcl_Interp *interp)
 }
 declare 389 generic {
-    int Tcl_GetChannelNamesEx(Tcl_Interp *interp, char *pattern)
+    int Tcl_GetChannelNamesEx(Tcl_Interp *interp, CONST char *pattern)
 }
 declare 390 generic {
     int Tcl_ProcObjCmd(ClientData clientData, Tcl_Interp *interp, \
@@ -1387,7 +1387,7 @@ declare 394 generic {
     int Tcl_ReadRaw (Tcl_Channel chan, char *dst, int bytesToRead)
 }
 declare 395 generic {
-    int Tcl_WriteRaw (Tcl_Channel chan, char *src, int srcLen)
+    int Tcl_WriteRaw (Tcl_Channel chan, CONST char *src, int srcLen)
 }
 declare 396 generic {
     Tcl_Channel Tcl_GetTopChannel (Tcl_Channel chan)
@@ -1396,7 +1396,7 @@ declare 397 generic {
     int Tcl_ChannelBuffered (Tcl_Channel chan)
 }
 declare 398 generic {
-    char * Tcl_ChannelName(Tcl_ChannelType *chanTypePtr)
+    CONST char * Tcl_ChannelName(Tcl_ChannelType *chanTypePtr)
 }
 declare 399 generic {
     Tcl_ChannelTypeVersion Tcl_ChannelVersion(Tcl_ChannelType *chanTypePtr)

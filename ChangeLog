@@ -1,5 +1,47 @@
+2002-01-15  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/CrtChannel.3:
+	* doc/OpenFileChnl.3:
+	* generic/tcl.decls:
+	* generic/tclIO.h:
+	* generic/tclIO.c (DoWrite, Tcl_RegisterChannel, Tcl_GetChannel,
+	  Tcl_CreateChannel, Tcl_GetChannelName, CloseChannel, Tcl_Write,
+	  Tcl_WriteRaw, Tcl_Ungets, Tcl_BadChannelOption, Tcl_GetChannelOption,
+	  Tcl_SetChannelOption, Tcl_GetChannelNamesEx, Tcl_ChannelName):
+	Updated APIs in the file generic/tclIO.c according to the guidelines
+	of TIP 27.  Several minor documentation corrections as well.
+	* generic/tclDecls.h: make genstubs
+
+	* generic/tcl.h (Tcl_DriverOutputProc, Tcl_DriverGetOptionProc,
+	  Tcl_DriverSetOptionProc):
+	* generic/tclIOGT.c (TransformOutputProc, TransformGetOptionProc,
+	  TransformSetOptionProc):
+	* mac/tclMacChan.c (FileOutput, StdIOOutput):
+	* man/tclMacSock.c (TcpGetOptionProc, TcpOutput):
+	* unix/tclUnixChan.c (FileOutputProc, TcpGetOptionProc, TcpOutputProc,
+	  TtyGetOptionProc, TtySetOptionProc):
+	* unix/tclUnixPipe.c (PipeOuputProc):
+	* win/tclWinChan.c (FileOutputProc):
+	* win/tclWinConsole.c (ConsleOutputProc):
+	* win/tclWinPipe.c (PipeOuputProc):
+	* win/tclWinSerial.c (SerialOutputProc, SerialGetOptionProc,
+	  SerialSetOptionProc):
+	* win/tclWinSock.c (TcpGetOptionProc, TcpOutput): Updated channel
+	driver interface according to the guidelines of TIP 27.  See also
+	[Bug 500348].
+
+	* doc/CrtChannel.3:
+	* generic/tcl.h:
+	* generic/tclIO.c:
+	* generic/tclIO.h:
+	* generic/tclInt.h:
+	* tools/checkLibraryDoc.tcl:
+	Moved Tcl_EolTranslation enum declaration from generic/tcl.h to
+	generic/tclInt.h (renamed to TclEolTranslation).  It is not used
+	anywhere in Tcl's public interface.
+
 2002-01-14  Don Porter <dgp@users.sourceforge.net>
-  
+
 	* doc/GetIndex.3:
 	* doc/WrongNumArgs.3:
 	* generic/tcl.decls (Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct,

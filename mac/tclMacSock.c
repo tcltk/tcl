@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.9 2001/11/23 01:28:30 das Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.10 2002/01/15 17:55:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -171,12 +171,12 @@ static int		TcpClose _ANSI_ARGS_((ClientData instanceData,
 static int		TcpGetHandle _ANSI_ARGS_((ClientData instanceData,
 		            int direction, ClientData *handlePtr));
 static int		TcpGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-                            Tcl_Interp *interp, char *optionName,
+                            Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static int		TcpInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCodePtr));
 static int		TcpOutput _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toWrite, int *errorCodePtr));
+			    CONST char *buf, int toWrite, int *errorCodePtr));
 static void		TcpWatch _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static int		WaitForSocketEvent _ANSI_ARGS_((TcpState *infoPtr,
@@ -1201,7 +1201,7 @@ TcpGetHandle(
 static int
 TcpOutput(
     ClientData instanceData, 		/* Channel state. */
-    char *buf, 				/* The data buffer. */
+    CONST char *buf,			/* The data buffer. */
     int toWrite, 			/* How many bytes to write? */
     int *errorCodePtr)			/* Where to store error code. */
 {
@@ -1346,7 +1346,7 @@ static int
 TcpGetOptionProc(
     ClientData instanceData, 		/* Socket state. */
     Tcl_Interp *interp,                 /* For error reporting - can be NULL.*/
-    char *optionName, 			/* Name of the option to
+    CONST char *optionName, 		/* Name of the option to
                                          * retrieve the value for, or
                                          * NULL to get all options and
                                          * their values. */
@@ -1385,7 +1385,7 @@ TcpGetOptionProc(
      * if optionName is NULL.
      */
 
-    if (optionName == (char *) NULL || optionName[0] == '\0') {
+    if (optionName == (CONST char *) NULL || optionName[0] == '\0') {
         doAll = true;
     } else {
 	if (!strcmp(optionName, "-peername")) {
