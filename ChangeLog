@@ -1,5 +1,13 @@
 2002-08-07  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* docs/BoolObj.3: added description of valid string reps for a
+	boolean object [Bug 584794]
+	* generic/tclObj.c: optimised Tcl_GetBooleanFromObj and
+	SetBooleanFromAny to avoid parsing the string rep when it can be
+	avoided [Bugs 584650, 472576]
+	
+2002-08-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclCompile.h:
 	* generic/tclObj.c: making tclCmdNameType static ([Bug 584567],
 	Don Porter).
