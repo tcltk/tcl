@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.19 2002/02/22 14:52:45 dkf Exp $
+# RCS: @(#) $Id: regexp.test,v 1.20 2002/03/01 06:24:07 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -84,6 +84,16 @@ test regexp-2.8 {getting substrings back from regexp} {
     set match {}
     list [regexp {^a*b} aaaab match] $match
 } {1 aaaab}
+test regexp-2.9 {getting substrings back from regexp} {
+    set foo {}
+    set f2 {}
+    list [regexp f\352te(b*)c f\352tebbbbc foo f2] $foo $f2
+} [list 1 f\352tebbbbc bbbb]
+test regexp-2.10 {getting substrings back from regexp} {
+    set foo {}
+    set f2 {}
+    list [regexp f\352te(b*)c eff\352tebbbbc foo f2] $foo $f2
+} [list 1 f\352tebbbbc bbbb]
 
 test regexp-3.1 {-indices option to regexp} {
     set foo {}
