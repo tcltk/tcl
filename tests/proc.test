@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.10 2001/09/10 17:04:10 msofer Exp $
+# RCS: @(#) $Id: proc.test,v 1.11 2002/12/11 21:29:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -315,6 +315,15 @@ test proc-5.1 {Bytecompiling noop; test for correct argument substitution} {
     catch {rename t ""}
     set result
 } {aba}    
+
+test proc-6.1 {ProcessProcResultCode: Bug 647307 (negative return code)} {
+    proc a {} {return -code -5}
+    proc b {} a
+    set result [catch b]
+    rename a {}
+    rename b {}
+    set result
+} -5
 
 # cleanup
 catch {rename p ""}
