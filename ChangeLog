@@ -12,6 +12,11 @@
 	TclFreeObj so it understands the TCL_THREADS case described
 	above.
 
+	* library/http2.1/http.tcl: Fixed a bug in the handling of
+	the state(status) variable when the -timeout flag is specified.
+	Previously it was possible to leave the status undefined
+	instead of empty, which caused errors in http::status
+
 1999-10-28  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/aclocal.m4: made it just include tcl.m4
