@@ -1,3 +1,7 @@
+2004-11-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/binary.n, doc/upvar.n: More minor fixes.
+
 2004-11-12  Daniel Steffen  <das@users.sourceforge.net>
 
 	* doc/CrtChannel.3:
