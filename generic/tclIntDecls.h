@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.49 2003/02/18 02:25:45 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50 2003/04/28 12:34:28 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -378,9 +378,9 @@ EXTERN int		Tcl_Import _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_Namespace * nsPtr, CONST char * pattern, 
 				int allowOverwrite));
 /* 128 */
-EXTERN void		Tcl_PopCallFrame _ANSI_ARGS_((Tcl_Interp* interp));
+EXTERN void		Tcl_PopCallFrame _ANSI_ARGS_((Tcl_Interp * interp));
 /* 129 */
-EXTERN int		Tcl_PushCallFrame _ANSI_ARGS_((Tcl_Interp* interp, 
+EXTERN int		Tcl_PushCallFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_CallFrame * framePtr, 
 				Tcl_Namespace * nsPtr, int isProcCallFrame));
 /* 130 */
@@ -503,6 +503,11 @@ EXTERN int		TclUniCharMatch _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int strLen, 
 				CONST Tcl_UniChar * pattern, int ptnLen, 
 				int nocase));
+/* 174 */
+EXTERN Tcl_Obj *	TclIncrWideVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
+				Tcl_WideInt wideIncrAmount, 
+				int part1NotParsed));
 
 typedef struct TclIntStubs {
     int magic;
@@ -660,8 +665,8 @@ typedef struct TclIntStubs {
     Tcl_Namespace * (*tcl_GetGlobalNamespace) _ANSI_ARGS_((Tcl_Interp * interp)); /* 125 */
     void (*tcl_GetVariableFullName) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Var variable, Tcl_Obj * objPtr)); /* 126 */
     int (*tcl_Import) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Namespace * nsPtr, CONST char * pattern, int allowOverwrite)); /* 127 */
-    void (*tcl_PopCallFrame) _ANSI_ARGS_((Tcl_Interp* interp)); /* 128 */
-    int (*tcl_PushCallFrame) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_CallFrame * framePtr, Tcl_Namespace * nsPtr, int isProcCallFrame)); /* 129 */
+    void (*tcl_PopCallFrame) _ANSI_ARGS_((Tcl_Interp * interp)); /* 128 */
+    int (*tcl_PushCallFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_CallFrame * framePtr, Tcl_Namespace * nsPtr, int isProcCallFrame)); /* 129 */
     int (*tcl_RemoveInterpResolvers) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 130 */
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
@@ -706,6 +711,7 @@ typedef struct TclIntStubs {
     int (*tclCheckExecutionTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 171 */
     int (*tclInThreadExit) _ANSI_ARGS_((void)); /* 172 */
     int (*tclUniCharMatch) _ANSI_ARGS_((CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int nocase)); /* 173 */
+    Tcl_Obj * (*tclIncrWideVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, Tcl_WideInt wideIncrAmount, int part1NotParsed)); /* 174 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1315,6 +1321,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclUniCharMatch
 #define TclUniCharMatch \
 	(tclIntStubsPtr->tclUniCharMatch) /* 173 */
+#endif
+#ifndef TclIncrWideVar2
+#define TclIncrWideVar2 \
+	(tclIntStubsPtr->tclIncrWideVar2) /* 174 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

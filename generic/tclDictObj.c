@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.7 2003/04/16 23:33:43 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.8 2003/04/28 12:34:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1678,8 +1678,9 @@ DictIncrCmd(interp, objc, objv)
     Tcl_Obj *CONST *objv;
 {
     Tcl_Obj *dictPtr, *valuePtr, *resultPtr;
-    int result;
+    int result, isWide;
     long incrValue;
+    Tcl_WideInt wideIncrValue;
 
     if (objc < 4 || objc > 5) {
 	Tcl_WrongNumArgs(interp, 2, objv, "varName key ?increment?");
@@ -1687,18 +1688,40 @@ DictIncrCmd(interp, objc, objv)
     }
 
     if (objc == 5) {
-	result = Tcl_GetLongFromObj(interp, objv[4], &incrValue);
-	if (result != TCL_OK) {
-	    return result;
+	if (objv[4]->typePtr == &tclIntType) {
+	    incrValue = objv[4]->internalRep.longValue;
+	    isWide = 0;
+	} else if (objv[4]->typePtr == &tclWideIntType) {
+	    wideIncrValue = objv[4]->internalRep.wideValue;
+	    isWide = 1;
+	} else {
+	    result = Tcl_GetWideIntFromObj(interp, objv[4], &wideIncrValue);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	    if (wideIncrValue <= Tcl_LongAsWide(LONG_MAX)
+		    && wideIncrValue >= Tcl_LongAsWide(LONG_MIN)) {
+		isWide = 0;
+		incrValue = Tcl_WideAsLong(wideIncrValue);
+		objv[4]->typePtr = &tclIntType;
+	    } else {
+		isWide = 1;
+	    }
 	}
     } else {
 	incrValue = 1;
+	isWide = 0;
     }
 
     dictPtr = Tcl_ObjGetVar2(interp, objv[2], NULL, 0);
     if (dictPtr == NULL) {
 	dictPtr = Tcl_NewDictObj();
-	Tcl_DictObjPut(interp, dictPtr, objv[3], Tcl_NewLongObj(incrValue));
+	if (isWide) {
+	    valuePtr = Tcl_NewWideIntObj(wideIncrValue);
+	} else {
+	    valuePtr = Tcl_NewLongObj(incrValue);
+	}
+	Tcl_DictObjPut(interp, dictPtr, objv[3], valuePtr);
     } else {
 	long lValue;
 	Tcl_WideInt wValue;
@@ -1711,13 +1734,25 @@ DictIncrCmd(interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	if (valuePtr == NULL) {
-	    valuePtr = Tcl_NewLongObj(incrValue);
+	    if (isWide) {
+		valuePtr = Tcl_NewWideIntObj(wideIncrValue);
+	    } else {
+		valuePtr = Tcl_NewLongObj(incrValue);
+	    }
 	} else if (valuePtr->typePtr == &tclWideIntType) {
 	    Tcl_GetWideIntFromObj(NULL, valuePtr, &wValue);
 	    if (Tcl_IsShared(valuePtr)) {
-		valuePtr = Tcl_NewWideIntObj(wValue + incrValue);
+		if (isWide) {
+		    valuePtr = Tcl_NewWideIntObj(wValue + wideIncrValue);
+		} else {
+		    valuePtr = Tcl_NewWideIntObj(wValue + incrValue);
+		}
 	    } else {
-		Tcl_SetWideIntObj(valuePtr, wValue + incrValue);
+		if (isWide) {
+		    Tcl_SetWideIntObj(valuePtr, wValue + wideIncrValue);
+		} else {
+		    Tcl_SetWideIntObj(valuePtr, wValue + incrValue);
+		}
 		if (dictPtr->bytes != NULL) {
 		    Tcl_InvalidateStringRep(dictPtr);
 		}
@@ -1726,9 +1761,17 @@ DictIncrCmd(interp, objc, objv)
 	} else if (valuePtr->typePtr == &tclIntType) {
 	    Tcl_GetLongFromObj(NULL, valuePtr, &lValue);
 	    if (Tcl_IsShared(valuePtr)) {
-		valuePtr = Tcl_NewLongObj(lValue + incrValue);
+		if (isWide) {
+		    valuePtr = Tcl_NewWideIntObj(lValue + wideIncrValue);
+		} else {
+		    valuePtr = Tcl_NewLongObj(lValue + incrValue);
+		}
 	    } else {
-		Tcl_SetLongObj(valuePtr, lValue + incrValue);
+		if (isWide) {
+		    Tcl_SetWideIntObj(valuePtr, lValue + wideIncrValue);
+		} else {
+		    Tcl_SetLongObj(valuePtr, lValue + incrValue);
+		}
 		if (dictPtr->bytes != NULL) {
 		    Tcl_InvalidateStringRep(dictPtr);
 		}
@@ -1749,7 +1792,9 @@ DictIncrCmd(interp, objc, objv)
 	     * Determine if we should have got a standard long instead.
 	     */
 	    if (Tcl_IsShared(valuePtr)) {
-		if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
+		if (isWide) {
+		    valuePtr = Tcl_NewWideIntObj(wValue + wideIncrValue);
+		} else if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
 		    /*
 		     * Convert the type...
 		     */
@@ -1759,7 +1804,9 @@ DictIncrCmd(interp, objc, objv)
 		    valuePtr = Tcl_NewWideIntObj(wValue + incrValue);
 		}
 	    } else {
-		if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
+		if (isWide) {
+		    Tcl_SetWideIntObj(valuePtr, wValue + wideIncrValue);
+		} else if (wValue >= LONG_MIN && wValue <= LONG_MAX) {
 		    Tcl_SetLongObj(valuePtr,
 			    Tcl_WideAsLong(wValue) + incrValue);
 		} else {
