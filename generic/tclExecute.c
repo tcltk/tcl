@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.165 2004/11/01 14:41:16 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.166 2004/11/02 15:32:06 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1034,7 +1034,6 @@ TclExecuteByteCode(interp, codePtr)
     Var *compiledLocals;
     Namespace *namespacePtr;
 
-
     /*
      * Globals: variables that store state, must remain valid at
      * all times.
@@ -1047,7 +1046,6 @@ TclExecuteByteCode(interp, codePtr)
     int instructionCount = 0;	/* Counter that is used to work out
 				 * when to call Tcl_AsyncReady() */
     Tcl_Obj *expandNestList = NULL;
-
 
     /*
      * Transfer variables - needed only between opcodes, but not
@@ -1064,7 +1062,6 @@ TclExecuteByteCode(interp, codePtr)
      */
 
     int result = TCL_OK;	/* Return code returned after execution. */
-
 
     /*
      * Locals - variables that are used within opcodes or bounded sections
@@ -1343,7 +1340,7 @@ TclExecuteByteCode(interp, codePtr)
         {
 	    int opnd;
 	    
-	    opnd = TclGetUInt4AtPtr( pc+1 );
+	    opnd = TclGetUInt4AtPtr(pc+1);
 	    objResultPtr = *(tosPtr - opnd);
 	    TRACE_WITH_OBJ(("=> "), objResultPtr);
 	    NEXT_INST_F(5, 0, 1);
@@ -1485,7 +1482,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * compiler.
 	     */ 
 
-	    length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr( pc+1 );
+	    length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1);
 	    while ((tosPtr + length) > eePtr->endPtr) {
 		DECACHE_STACK_INFO();
 		GrowEvaluationStack(eePtr); 
@@ -2350,7 +2347,6 @@ TclExecuteByteCode(interp, codePtr)
      * ---------------------------------------------------------
      */
 
-
     case INST_JUMP1:
         {
 	    int opnd;
@@ -2721,7 +2717,7 @@ TclExecuteByteCode(interp, codePtr)
 	int numIdx,opnd;
 	Tcl_Obj *valuePtr, *value2Ptr;
 
-	opnd = TclGetUInt4AtPtr( pc + 1 );
+	opnd = TclGetUInt4AtPtr(pc + 1);
 	numIdx = opnd - 2;
 
 	/*
@@ -2742,7 +2738,6 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 	objResultPtr = TclLsetFlat(interp, value2Ptr, numIdx,
 	        tosPtr - numIdx, valuePtr);
-
 
 	/*
 	 * Check for errors
@@ -3242,11 +3237,67 @@ TclExecuteByteCode(interp, codePtr)
 	valuePtr  = *(tosPtr - 1);
 
 	/*
-	 * Can't optimize the equal-object case; 'NaN' isn't supposed
+	 * Be careful in the equal-object case; 'NaN' isn't supposed
 	 * to be equal to even itself. [Bug 761471]
 	 */
 
 	t1Ptr = valuePtr->typePtr;
+	if (valuePtr == value2Ptr) {
+	    /*
+	     * If we are numeric already, or a dictionary (which is
+	     * never like a single-element list), we can proceed to
+	     * the main equality check right now.  Otherwise, we need
+	     * to try to coerce to a numeric type so we can see if
+	     * we've got a NaN but haven't parsed it as numeric.
+	     */
+	    if (!IS_NUMERIC_TYPE(t1Ptr) && (t1Ptr != &tclDictType)) {
+		if (t1Ptr == &tclListType) {
+		    int length;
+		    /*
+		     * Only a list of length 1 can be NaN or such
+		     * things.
+		     */
+		    (void) Tcl_ListObjLength(NULL, valuePtr, &length);
+		    if (length == 1) {
+			goto mustConvertForNaNCheck;
+		    }
+		} else {
+		    /*
+		     * Too bad, we'll have to compute the string and
+		     * try the conversion
+		     */
+
+		  mustConvertForNaNCheck:
+		    s1 = Tcl_GetStringFromObj(valuePtr, &length);
+		    if (TclLooksLikeInt(s1, length)) {
+			GET_WIDE_OR_INT(iResult, valuePtr, i, w);
+		    } else {
+			(void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
+				valuePtr, &d1);
+		    }
+		    t1Ptr = valuePtr->typePtr;
+		}
+	    }
+
+	    switch (*pc) {
+	    case INST_EQ:
+	    case INST_LE:
+	    case INST_GE:
+		iResult = !((t1Ptr == &tclDoubleType)
+			&& IS_NAN(valuePtr->internalRep.doubleValue));
+		break;
+	    case INST_LT:
+	    case INST_GT:
+		iResult = 0;
+		break;
+	    case INST_NEQ:
+		iResult = ((t1Ptr == &tclDoubleType)
+			&& IS_NAN(valuePtr->internalRep.doubleValue));
+		break;
+	    }
+	    goto foundResult;
+	}
+
 	t2Ptr = value2Ptr->typePtr;
 
 	/*
@@ -3420,6 +3471,7 @@ TclExecuteByteCode(interp, codePtr)
 	 * from here.
 	 */
 
+      foundResult:
 	pc++;
 #ifndef TCL_COMPILE_DEBUG
 	switch (*pc) {
