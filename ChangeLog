@@ -1,5 +1,6 @@
 2003-03-26  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n:
 	* library/tcltest/tcltest.tcl:  Added reporting during
 	[configure -debug 1] operations to warn about multiple uses of
 	the same test name.  [FR 576693]
