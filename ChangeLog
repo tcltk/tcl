@@ -1,5 +1,15 @@
 2004-10-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclFileName.c (DoGlob, TclGlob): Stop messy sharing of
+	interpreter result and instead use a private object for collecting
+	the result of the glob. This simplifies TclGlob quite a lot.
+	* generic/tclIOUtil.c (Tcl_FSMatchInDirectory): Simplify by
+	removing some nesting. Also standardize variable names.
+	(FsAddMountsToGlobResult): Force updates to the list to be done
+	in-place, putting a side-condition of non-shared-ness on the
+	resultPtr argument to Tcl_FSMatchInDirectory, but everything would
+	have broken before if that was shared *anyway*.
+
 	* generic/tclEncoding.c (LoadTableEncoding): Removed reference to
 	Tcl interpreter; it wasn't needed as direct object use is more
 	efficient.
