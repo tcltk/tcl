@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.7 1999/08/10 22:45:11 redman Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.7.8.1 2001/04/04 07:38:47 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -265,6 +265,7 @@ Tcl_SetListObj(objPtr, objc, objv)
 	objPtr->typePtr = &tclListType;
     } else {
 	objPtr->bytes = tclEmptyStringRep;
+	objPtr->length = 0;
     }
 }
 

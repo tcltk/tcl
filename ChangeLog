@@ -1,5 +1,9 @@
 2001-04-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclListObj.c (Tcl_SetListObj): set objPtr->length = 0 in
+	empty object case to maintain sanctity of Tcl_Obj bytes/length
+	pairing. (porter) [Patch #405998]
+
 	* README:
 	* mac/README:
 	* win/README:
@@ -16,7 +20,7 @@
 	* unix/tcl.spec: updated patchlevel information to 8.3.3
 
 	***************************************************************
-	** START OF ASYNC BACKPORT LOG (8.4aCVS 2001-04-02 -> 8.3.3) **
+	** START OF ASYNC BACKPORT LOG (8.4aCVS 2001-04-03 -> 8.3.3) **
 	***************************************************************
 
 	* doc/CrtChannel.3:
@@ -433,7 +437,7 @@
 	the flags for the write side.  [Bug: 6261]
 
 	***************************************************************
-	** START OF ASYNC BACKPORT LOG (8.4aCVS 2001-04-02 -> 8.3.3) **
+	**  END OF ASYNC BACKPORT LOG (8.4aCVS 2001-04-03 -> 8.3.3)  **
 	***************************************************************
 
 2000-08-08  Jeff Hobbs  <hobbs@ajubasolutions.com>
