@@ -1,3 +1,12 @@
+2004-11-16  Andreas Kupries <andreask@activestate.com>
+
+	* win/makefile.vc: Fixed bug in installation of http 2.5.
+	* win/makefile.bc: Was installed into directory http2.4.
+	* win/Makefile.in: This has been corrected.
+	* unix/Makefile.in: 
+	* tools/tcl.wse.in:
+	* tools/tclmin.wse:
+
 2004-11-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl:	Updated [tcl_findLibrary] search path 

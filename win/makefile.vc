@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.100.2.4 2003/07/16 19:34:14 mdejong Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.100.2.5 2004/11/16 23:39:52 andreas_kupries Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -738,9 +738,9 @@ install-libraries:
 	@echo installing http1.0
 	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\http1.0\"
-	@echo installing http2.4
+	@echo installing http2.5
 	@$(CPY) "$(ROOT)\library\http\*.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http2.4\"
+		"$(SCRIPT_INSTALL_DIR)\http2.5\"
 	@echo installing opt0.4
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
