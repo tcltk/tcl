@@ -1,3 +1,8 @@
+2000-08-20  Eric Melski  <ericm@ajubasolutions.com>
+
+	* generic/tclVar.c: Added check for non-arrays for [array statistics]
+	command (patch from Mark Patton).
+
 2000-08-19  David Gravereaux <davygrvy@ajubasolutions.com>
 
 	* generic/tclPlatDecls.h: without a previous '#include <windows.h>',
