@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.28.4.1 1999/03/03 00:38:45 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.28.4.2 1999/03/06 00:36:21 stanton Exp $
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -744,7 +744,7 @@ case $system in
 	LD_FLAGS=""
 	LD_SEARCH_FLAGS=""
 	;;
-    HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*)
+    HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*|HP-UX-*.11.*)
 	SHLIB_SUFFIX=".sl"
 	AC_CHECK_LIB(dld, shl_load, tcl_ok=yes, tcl_ok=no)
 	if test "$tcl_ok" = yes; then
@@ -794,8 +794,8 @@ case $system in
 	;;
     IRIX64-6.*)
 	SHLIB_CFLAGS=""
-	SHLIB_LD="ld -32 -shared -rdata_shared -rpath /usr/local/lib"
-	SHLIB_LD_LIBS=""
+	SHLIB_LD="ld -32 -shared -rdata_shared"
+	SHLIB_LD_LIBS='${LIBS}'
 	SHLIB_SUFFIX=".so"
 	DL_OBJS="tclLoadDl.o"
 	DL_LIBS=""
@@ -811,7 +811,7 @@ case $system in
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LD_FLAGS="-rdynamic"
-	    LD_SEARCH_FLAGS=""
+	    LD_SEARCH_FLAGS="-Wl,-rpath,${LIB_RUNTIME_DIR}"
 	else
 	    AC_CHECK_HEADER(dld.h, [
 		SHLIB_LD="ld -shared"
@@ -978,7 +978,7 @@ case $system in
 	DL_OBJS="tclLoadDl.o"
 	DL_LIBS="-ldl"
 	LD_FLAGS=""
-	LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
+	LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	;;
     ULTRIX-4.*)
 	SHLIB_CFLAGS="-G 0"
@@ -1243,7 +1243,7 @@ else
 	    ;;
     esac
     TCL_SHLIB_CFLAGS=""
-    TCL_LD_SEARCH_FLAGS=""
+    TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
     MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
 fi
