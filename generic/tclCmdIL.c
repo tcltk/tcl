@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.2 2003/07/15 15:44:52 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.3 2004/10/14 15:28:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -736,6 +736,14 @@ InfoCommandsCmd(dummy, interp, objc, objv)
     }
 
     /*
+     * Exit as quickly as possible if we couldn't find the namespace.
+     */
+
+    if (nsPtr == NULL) {
+	return TCL_OK;
+    }
+
+    /*
      * Scan through the effective namespace's command table and create a
      * list with all commands that match the pattern. If a specific
      * namespace was requested in the pattern, qualify the command names
@@ -744,7 +752,33 @@ InfoCommandsCmd(dummy, interp, objc, objv)
 
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 
-    if (nsPtr != NULL) {
+    if (simplePattern != NULL && TclMatchIsTrivial(simplePattern)) {
+	/*
+	 * Special case for when the pattern doesn't include any of
+	 * glob's special characters. This lets us avoid scans of any
+	 * hash tables.
+	 */
+	entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
+	if (entryPtr != NULL) {
+	    if (specificNsInPattern) {
+		cmd = (Tcl_Command) Tcl_GetHashValue(entryPtr);
+		elemObjPtr = Tcl_NewObj();
+		Tcl_GetCommandFullName(interp, cmd, elemObjPtr);
+	    } else {
+		cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+		elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+	    }
+	    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+	} else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+	    entryPtr = Tcl_FindHashEntry(&globalNsPtr->cmdTable,
+		    simplePattern);
+	    if (entryPtr != NULL) {
+		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+		Tcl_ListObjAppendElement(interp, listPtr,
+			Tcl_NewStringObj(cmdName, -1));
+	    }
+	}
+    } else {
 	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	while (entryPtr != NULL) {
 	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -1060,18 +1094,26 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
      */
     
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-    for (entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
-            entryPtr != NULL;
-            entryPtr = Tcl_NextHashEntry(&search)) {
-        varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-        if (TclIsVarUndefined(varPtr)) {
-            continue;
-        }
-        varName = Tcl_GetHashKey(&globalNsPtr->varTable, entryPtr);
-        if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-            Tcl_ListObjAppendElement(interp, listPtr,
-		    Tcl_NewStringObj(varName, -1));
-        }
+    if (pattern != NULL && TclMatchIsTrivial(pattern)) {
+	entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable, pattern);
+ 	if (entryPtr != NULL) {
+	    Tcl_ListObjAppendElement(interp, listPtr,
+		    Tcl_NewStringObj(pattern, -1));
+	}
+    } else {
+	for (entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
+		entryPtr != NULL;
+		entryPtr = Tcl_NextHashEntry(&search)) {
+	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+	    if (TclIsVarUndefined(varPtr)) {
+		continue;
+	    }
+	    varName = Tcl_GetHashKey(&globalNsPtr->varTable, entryPtr);
+	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
+		Tcl_ListObjAppendElement(interp, listPtr,
+			Tcl_NewStringObj(varName, -1));
+	    }
+	}
     }
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
@@ -1578,6 +1620,10 @@ InfoProcsCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
+    if (nsPtr == NULL) {
+	return TCL_OK;
+    }
+
     /*
      * Scan through the effective namespace's command table and create a
      * list with all procs that match the pattern. If a specific
@@ -1586,7 +1632,33 @@ InfoProcsCmd(dummy, interp, objc, objv)
      */
 
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-    if (nsPtr != NULL) {
+#ifndef INFO_PROCS_SEARCH_GLOBAL_NS
+    if (simplePattern != NULL && TclMatchIsTrivial(simplePattern)) {
+	entryPtr = Tcl_FindHashEntry(&nsPtr->cmdTable, simplePattern);
+	if (entryPtr != NULL) {
+	    cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+
+	    if (!TclIsProc(cmdPtr)) {
+		realCmdPtr = (Command *)
+			TclGetOriginalCommand((Tcl_Command) cmdPtr);
+		if (realCmdPtr != NULL && TclIsProc(realCmdPtr)) {
+		    goto simpleProcOK;
+		}
+	    } else {
+	      simpleProcOK:
+		if (specificNsInPattern) {
+		    elemObjPtr = Tcl_NewObj();
+		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
+			    elemObjPtr);
+		} else {
+		    elemObjPtr = Tcl_NewStringObj(simplePattern, -1);
+		}
+		Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+	    }
+	}
+    } else
+#endif /* !INFO_PROCS_SEARCH_GLOBAL_NS */
+    {
 	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 	while (entryPtr != NULL) {
 	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
@@ -1594,11 +1666,14 @@ InfoProcsCmd(dummy, interp, objc, objv)
 	            || Tcl_StringMatch(cmdName, simplePattern)) {
 		cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
 
-		realCmdPtr = (Command *)
-		    TclGetOriginalCommand((Tcl_Command) cmdPtr);
-
-		if (TclIsProc(cmdPtr)
-		        || ((realCmdPtr != NULL) && TclIsProc(realCmdPtr))) {
+		if (!TclIsProc(cmdPtr)) {
+		    realCmdPtr = (Command *)
+			    TclGetOriginalCommand((Tcl_Command) cmdPtr);
+		    if (realCmdPtr != NULL && TclIsProc(realCmdPtr)) {
+			goto procOK;
+		    }
+		} else {
+		  procOK:
 		    if (specificNsInPattern) {
 			elemObjPtr = Tcl_NewObj();
 			Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
@@ -1606,7 +1681,6 @@ InfoProcsCmd(dummy, interp, objc, objv)
 		    } else {
 			elemObjPtr = Tcl_NewStringObj(cmdName, -1);
 		    }
-
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
 	    }
@@ -1886,53 +1960,91 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	 * only the variables in the effective namespace's variable table.
 	 */
 	
-	entryPtr = Tcl_FirstHashEntry(&nsPtr->varTable, &search);
-	while (entryPtr != NULL) {
-	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	    if (!TclIsVarUndefined(varPtr)
-		    || (varPtr->flags & VAR_NAMESPACE_VAR)) {
-		varName = Tcl_GetHashKey(&nsPtr->varTable, entryPtr);
-		if ((simplePattern == NULL)
-	                || Tcl_StringMatch(varName, simplePattern)) {
+	if (simplePattern != NULL && TclMatchIsTrivial(simplePattern)) {
+	    /*
+	     * If we can just do hash lookups, that simplifies things
+	     * a lot.
+	     */
+
+	    entryPtr = Tcl_FindHashEntry(&nsPtr->varTable, simplePattern);
+	    if (entryPtr != NULL) {
+		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+		if (!TclIsVarUndefined(varPtr)
+			|| (varPtr->flags & VAR_NAMESPACE_VAR)) {
 		    if (specificNsInPattern) {
 			elemObjPtr = Tcl_NewObj();
 			Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
-			        elemObjPtr);
+				    elemObjPtr);
 		    } else {
-			elemObjPtr = Tcl_NewStringObj(varName, -1);
+			elemObjPtr = Tcl_NewStringObj(simplePattern, -1);
 		    }
 		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		}
+	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+		entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable,
+			simplePattern);
+		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+		if (!TclIsVarUndefined(varPtr)
+			|| (varPtr->flags & VAR_NAMESPACE_VAR)) {
+		    Tcl_ListObjAppendElement(interp, listPtr,
+			    Tcl_NewStringObj(simplePattern, -1));
+		}
 	    }
-	    entryPtr = Tcl_NextHashEntry(&search);
-	}
+	} else {
+	    /*
+	     * Have to scan the tables of variables.
+	     */
 
-	/*
-	 * If the effective namespace isn't the global :: namespace, and a
-	 * specific namespace wasn't requested in the pattern (i.e., the
-	 * pattern only specifies variable names), then add in all global ::
-	 * variables that match the simple pattern. Of course, add in only
-	 * those variables that aren't hidden by a variable in the effective
-	 * namespace.
-	 */
-
-	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
+	    entryPtr = Tcl_FirstHashEntry(&nsPtr->varTable, &search);
 	    while (entryPtr != NULL) {
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
-		        || (varPtr->flags & VAR_NAMESPACE_VAR)) {
-		    varName = Tcl_GetHashKey(&globalNsPtr->varTable,
-			    entryPtr);
+			|| (varPtr->flags & VAR_NAMESPACE_VAR)) {
+		    varName = Tcl_GetHashKey(&nsPtr->varTable, entryPtr);
 		    if ((simplePattern == NULL)
-	                    || Tcl_StringMatch(varName, simplePattern)) {
-			if (Tcl_FindHashEntry(&nsPtr->varTable, varName) == NULL) {
-			    Tcl_ListObjAppendElement(interp, listPtr,
-			            Tcl_NewStringObj(varName, -1));
+			    || Tcl_StringMatch(varName, simplePattern)) {
+			if (specificNsInPattern) {
+			    elemObjPtr = Tcl_NewObj();
+			    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
+				    elemObjPtr);
+			} else {
+			    elemObjPtr = Tcl_NewStringObj(varName, -1);
 			}
+			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
 		    }
 		}
 		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+
+	    /*
+	     * If the effective namespace isn't the global ::
+	     * namespace, and a specific namespace wasn't requested in
+	     * the pattern (i.e., the pattern only specifies variable
+	     * names), then add in all global :: variables that match
+	     * the simple pattern. Of course, add in only those
+	     * variables that aren't hidden by a variable in the
+	     * effective namespace.
+	     */
+
+	    if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+		entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
+		while (entryPtr != NULL) {
+		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+		    if (!TclIsVarUndefined(varPtr)
+			    || (varPtr->flags & VAR_NAMESPACE_VAR)) {
+			varName = Tcl_GetHashKey(&globalNsPtr->varTable,
+				entryPtr);
+			if ((simplePattern == NULL)
+				|| Tcl_StringMatch(varName, simplePattern)) {
+			    if (Tcl_FindHashEntry(&nsPtr->varTable,
+				    varName) == NULL) {
+				Tcl_ListObjAppendElement(interp, listPtr,
+					Tcl_NewStringObj(varName, -1));
+			    }
+			}
+		    }
+		    entryPtr = Tcl_NextHashEntry(&search);
+		}
 	    }
 	}
     } else if (((Interp *)interp)->varFramePtr->procPtr != NULL) {
