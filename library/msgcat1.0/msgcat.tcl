@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.6 2000/07/06 21:05:02 ericm Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.7 2000/07/17 22:25:26 ericm Exp $
 
 package provide msgcat 1.1
 
 namespace eval msgcat {
-    namespace export mc mcset mclocale mcpreferences mcunknown mcmax
+    namespace export mc mcset mcmset mclocale mcpreferences mcunknown mcmax
 
     # Records the current locale as passed to mclocale
     variable locale ""
@@ -134,7 +134,10 @@ proc msgcat::mcload {langdir} {
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
 	    incr x
-	    uplevel [list source $langfile]
+	    set fid [open $langfile "r"]
+	    fconfigure $fid -encoding utf-8
+            uplevel [list eval [read $fid]]
+	    close $fid
 	}
     }
     return $x
@@ -162,6 +165,34 @@ proc msgcat::mcset {locale src {dest ""}} {
 
     set ::msgcat::msgs([string tolower $locale],$ns,$src) $dest
     return $dest
+}
+
+# msgcat::mcmset --
+#
+#	Set the translation for multiple strings in a specified locale.
+#
+# Arguments:
+#	locale		The locale to use.
+#	pairs		One or more src/dest pairs (must be even length)
+#
+# Results:
+#	Returns the number of pairs processed
+
+proc msgcat::mcmset {locale pairs } {
+
+    set length [llength $pairs]
+    if {$length % 2} {
+	error {bad translation list: should be "mcmset locale {src dest ...}"}
+    }
+    
+    set locale [string tolower $locale]
+    set ns [uplevel {namespace current}]
+    
+    foreach {src dest} $pairs {
+        set ::msgcat::msgs($locale,$ns,$src) $dest
+    }
+    
+    return $length
 }
 
 # msgcat::mcunknown --
@@ -218,6 +249,55 @@ namespace eval msgcat {
     if {[info exists ::env(LANG)]} {
         mclocale $::env(LANG)
     } else {
-        mclocale "C"
+        if { $tcl_platform(platform) == "windows" } {
+            # try to set locale depending on registry settings
+            #
+            set key {HKEY_CURRENT_USER\Control Panel\International}
+            if {[catch {package require registry}] || \
+		    [catch {registry get $key "locale"} locale]} {
+                mclocale "C"
+            } else {
+		
+                package forget registry
+                #
+                # Clean up registry value for translating LCID value
+                # by using only the last 2 digits, since first
+                # 2 digits appear to be the country...  For example
+                #     0409 - English - United States
+                #     0809 - English - United Kingdom
+                #
+                set locale [string trimleft $locale "0"]
+                set locale [string range $locale end-1 end]
+                set locale [string tolower $locale]
+                switch -- $locale {
+		    01      { mclocale "ar" }
+		    02      { mclocale "bg" }
+		    03      { mclocale "ca" }
+		    04      { mclocale "zh" }
+		    05      { mclocale "cs" }
+		    06      { mclocale "da" }
+		    07      { mclocale "de" }
+		    08      { mclocale "el" }
+		    09      { mclocale "en" }
+		    0a      { mclocale "es" }
+		    0b      { mclocale "fi" }
+		    0c      { mclocale "fr" }
+		    0d      { mclocale "he" }
+		    0e      { mclocale "hu" }
+		    0f      { mclocale "is" }
+		    10      { mclocale "it" }
+		    11      { mclocale "ja" }
+		    12      { mclocale "ko" }
+		    13      { mclocale "da" }
+		    14      { mclocale "no" }
+		    15      { mclocale "pl" }
+		    16      { mclocale "pt" }
+		    
+		    default  { mclocale "C" }
+		}
+            }
+        } else {
+            mclocale "C"
+        }
     }
 }

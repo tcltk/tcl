@@ -1,6 +1,6 @@
 # Commands covered: ::msgcat::mc ::msgcat::mclocale
 #                   ::msgcat::mcpreferences ::msgcat::mcload
-#                   ::msgcat::mcset ::msgcat::mcunknown
+#                   ::msgcat::mcset ::msgcat::mcmset ::msgcat::mcunknown
 #
 # This file contains a collection of tests for the msgcat script library.
 # Sourcing this file into Tcl runs the tests and
@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.9 2000/07/06 21:05:02 ericm Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.10 2000/07/17 22:25:26 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -84,7 +84,7 @@ test msgcat-1.11 {::msgcat::mcpreferences, three elements} {
 } {en_us_funky en_us en}
 
 #
-# Test mcset and mcc, ensuring that namespace partitioning
+# Test mcset and mc, ensuring that namespace partitioning
 # is working.
 #
 
@@ -106,6 +106,22 @@ test msgcat-2.4 {::msgcat::mcset, namespace overlap} {
     ::msgcat::mclocale foo_BAR
     namespace eval baz {::msgcat::mc con1}
 } {con1baz}
+test msgcat-2.5 {::msgcat::mcmset, global scope} {
+    ::msgcat::mcmset  foo_BAR {
+        src1 trans1
+        src2 trans2
+    }
+    ::msgcat::mc src1
+} {trans1}
+test msgcat-2.6 {::msgcat::mcmset, namespace overlap} {
+    namespace eval bar {::msgcat::mcmset  foo_BAR {con2 con2bar}}
+    namespace eval baz {::msgcat::mcmset  foo_BAR {con2 con2baz}}
+} {2}
+test msgcat-2.7 {::msgcat::mcmset, namespace overlap} {
+    ::msgcat::mclocale foo_BAR
+    namespace eval baz {::msgcat::mc con2}
+} {con2baz}
+
 
 #
 # Test mcset and mc, ensuring that more specific locales

@@ -1,3 +1,15 @@
+2000-07-17  Eric Melski  <ericm@scriptics.com>
+
+	* library/msgcat1.0/msgcat.tcl: 
+	* doc/msgcat.n: 
+	* tests/msgcat.test: Applied patches from Chris Nelson, to provide
+	the mcmset function, which allows the translator to set multiple
+	string translations in a single function call, rather than
+	requiring many calls to mcset. [RFE: 6000, 5993].  In addition,
+	these patches correct mcload to use utf-8 encoding on when reading
+	message catalog files, and provides for better default behavior
+	for determining the locale on a Windows system.
+
 2000-07-17  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/tcl.m4 (SC_ENABLE_GCC): Don't set CC=gcc

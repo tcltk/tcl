@@ -25,6 +25,8 @@ msgcat \- Tcl message catalog
 .sp
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
 .sp
+\fB::msgcat::mcmset \fIlocale src-trans-list\fR
+.sp
 \fB::msgcat::mcunknown \fIlocale src-string\fR
 .BE
 
@@ -98,6 +100,15 @@ Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR
 in the specified \fIlocale\fR.  If \fItranslate-string\fR is not
 specified, \fIsrc-string\fR is used for both.  The function
 returns \fItranslate-string\fR.
+.TP
+\fB::msgcat::mcmset \fIlocale src-trans-list\fR
+Sets the translation for multiple source strings in
+\fIsrc-trans-list\fR in the specified \fIlocale\fR.
+\fIsrc-trans-list\fR must have an even number of elements and is in
+the form {\fIsrc-string translate-string\fR ?\fIsrc-string
+translate-string ...\fR?} \fBmcsetcat::mcmset\fR can be significantly
+faster than multiple invocations of \fBmsgcat::mcset\fR. The function
+returns the number of translations set.
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR
 This routine is called by \fB::msgcat::mc\fR in the case when
