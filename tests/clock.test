@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.10 2000/02/09 03:56:24 ericm Exp $
+# RCS: @(#) $Id: clock.test,v 1.11 2000/02/28 18:49:42 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -182,6 +182,10 @@ test clock-4.17 {clock scan, ISO 8601 point in time format} {
     set time [clock scan "19921023 235959"]
     clock format $time -format {%b %d, %Y %H:%M:%S}
 } "Oct 23, 1992 23:59:59"
+test clock-4.18 {clock scan, ISO 8601 point in time format} {
+    set time [clock scan "19921023T000000"]
+    clock format $time -format {%b %d, %Y %H:%M:%S}
+} "Oct 23, 1992 00:00:00"
 
 # CLOCK SCAN REAL TESTS
 test clock-4.18 {clock scan, number meridian} {

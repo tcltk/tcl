@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.16 2000/02/09 03:56:24 ericm Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.17 2000/02/28 18:49:42 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -765,12 +765,16 @@ TclDatelex()
 	}
 
         if (isdigit(UCHAR(c = *TclDateInput))) { /* INTL: digit */
+	    /* convert the string into a number; count the number of digits */
+	    Count = 0;
             for (TclDatelval.Number = 0;
 		    isdigit(UCHAR(c = *TclDateInput++)); ) { /* INTL: digit */
                 TclDatelval.Number = 10 * TclDatelval.Number + c - '0';
+		Count++;
 	    }
             TclDateInput--;
-	    if (TclDatelval.Number >= 100000) {
+	    /* A number with 6 or more digits is considered an ISO 8601 base */
+	    if (Count >= 6) {
 		return tISOBASE;
 	    } else {
 		return tUNUMBER;

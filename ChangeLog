@@ -1,3 +1,19 @@
+2000-02-28  Eric Melski  <ericm@scriptics.com>
+
+	* tests/clock.test: Added test for ISO bases < 100000
+
+	* generic/tclDate.c: (generated on Solaris)
+	* generic/tclGetDate.y: Changed condition for deciding if a number
+	is an ISO 8601 base from number >= 100000 to numberOfDigits >= 6.
+	Previously it would fail to recognize 000000 as an ISO base.
+
+2000-02-14  Eric Melski  <ericm@scriptics.com>
+
+	* unix/Makefile.in: Added rpm target to generate Tcl binary RPM.
+
+	* unix/tcl.spec: RPM specification file for a Tcl binary RPM for
+	Linux.
+
 2000-02-10  Jeff Hobbs  <hobbs@scriptics.com>
 
 	8.3.0 RELEASE

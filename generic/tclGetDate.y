@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.14 2000/02/09 03:56:24 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.15 2000/02/28 18:49:42 ericm Exp $
  */
 
 %{
@@ -980,12 +980,16 @@ yylex()
 	}
 
         if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
+	    /* convert the string into a number; count the number of digits */
+	    Count = 0;
             for (yylval.Number = 0;
 		    isdigit(UCHAR(c = *yyInput++)); ) { /* INTL: digit */
                 yylval.Number = 10 * yylval.Number + c - '0';
+		Count++;
 	    }
             yyInput--;
-	    if (yylval.Number >= 100000) {
+	    /* A number with 6 or more digits is considered an ISO 8601 base */
+	    if (Count >= 6) {
 		return tISOBASE;
 	    } else {
 		return tUNUMBER;
