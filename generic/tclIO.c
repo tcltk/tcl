@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.2 2003/04/11 17:35:33 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.3 2004/02/02 22:00:30 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -5041,9 +5041,8 @@ Tcl_Ungets(chan, str, len, atEnd)
 
     bufPtr = AllocChannelBuffer(len);
     for (i = 0; i < len; i++) {
-        bufPtr->buf[i] = str[i];
+        bufPtr->buf[bufPtr->nextAdded++] = str[i];
     }
-    bufPtr->nextAdded += len;
 
     if (statePtr->inQueueHead == (ChannelBuffer *) NULL) {
         bufPtr->nextPtr = (ChannelBuffer *) NULL;
