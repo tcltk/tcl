@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.10 2000/09/06 18:46:13 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.11 2001/03/29 19:45:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -186,10 +186,15 @@ TclpCreateTempFile(contents)
     Tcl_DString dstring;
     int fd;
 
+    /*
+     * Linux says we should use mkstemp, but Solaris prefers tmpnam.
+     * We should also check against making more then TMP_MAX of these.
+     */
+
     if (tmpnam(fileName) == NULL) {			/* INTL: Native. */
 	return NULL;
     }
-    fd = open(fileName, O_RDWR|O_CREAT|O_TRUNC, 0666);	/* INTL: Native. */
+    fd = open(fileName, O_RDWR|O_CREAT|O_EXCL, 0666);	/* INTL: Native. */
     if (fd == -1) {
 	return NULL;
     }

@@ -1,8 +1,12 @@
 2001-03-29  Jeff Hobbs  <jeffh@gimlet.activestate.com>
 
+	* unix/tclUnixPipe.c (TclpCreateTempFile): prevent potential race
+	condition and security leak in tmp filename creation.
+ 	(max) [Patch #402924]
+
 	* unix/configure:
 	* unix/tcl.m4: corrected IRIX-5.x config to not use -n32.
- 	(english) [Patch 403626]
+ 	(english) [Patch #403626]
 
 	* unix/tclUnixThrd.c (Tcl_ConditionWait): fixed handling of
 	timeout for threads (corrects excessive CPU usage issue for Tk on
