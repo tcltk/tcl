@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unknown.n,v 1.3 2000/09/07 14:27:52 poenitz Exp $
+'\" RCS: @(#) $Id: unknown.n,v 1.4 2001/06/27 21:00:45 hobbs Exp $
 '\" 
 .so man.macros
 .TH unknown n "" Tcl "Tcl Built-In Commands"
@@ -20,10 +20,11 @@ unknown \- Handle attempts to use non-existent commands
 .SH DESCRIPTION
 .PP
 This command is invoked by the Tcl interpreter whenever a script
-tries to invoke a command that doesn't exist.  The implementation
-of \fBunknown\fR isn't part of the Tcl core;  instead, it is a
-library procedure defined by default when Tcl starts up.  You
-can override the default \fBunknown\fR to change its functionality.
+tries to invoke a command that doesn't exist.  The default implementation
+of \fBunknown\fR is a library procedure defined when Tcl initializes an
+interpreter.  You can override the default \fBunknown\fR to change its
+functionality.  Note that there is no default implementation of
+\fBunknown\fR in a safe interpreter.
 .PP
 If the Tcl interpreter encounters a command name for which there
 is not a defined command, then Tcl checks for the existence of
@@ -72,7 +73,7 @@ is the return value from the command that was eventually
 executed.
 
 .SH "SEE ALSO"
-info(n), proc(n)
+info(n), proc(n), interp(n), library(n)
 
 .SH KEYWORDS
 error, non-existent command

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.5 1999/09/02 16:26:11 hobbs Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.6 2001/06/27 21:00:45 hobbs Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -381,15 +381,15 @@ close	concat	continue	eof
 error	eval	expr	fblocked
 fcopy	fileevent	flush	for
 foreach	format	gets	global
-history	if	incr	info
-interp	join	lappend	lindex
-linsert	list	llength	lrange
-lreplace	lsearch	lsort	namespace
-package	pid	proc	puts
-read	regexp	regsub	rename
-return	scan	seek	set
-split	string	subst	switch
-tell	trace	unset	update
+if	incr	info	interp
+join	lappend	lindex	linsert
+list	llength	lrange	lreplace
+lsearch	lsort	namespace	package
+pid	proc	puts	read
+regexp	regsub	rename	return
+scan	seek	set	split
+string	subst	switch	tell
+time	trace	unset	update
 uplevel	upvar	variable	vwait
 while\fR
 .DE
@@ -398,12 +398,43 @@ The following commands are hidden by \fBinterp create\fR when it
 creates a safe interpreter:
 .DS
 .ta 1.2i 2.4i 3.6i
-\fBcd	exec	exit	fconfigure
-file	glob	load	open
-pwd	socket	source	vwait\fR
+\fBcd	encoding	exec	exit
+fconfigure file	glob	load
+open	pwd	socket	source\fR
 .DE
 These commands can be recreated later as Tcl procedures or aliases, or
 re-exposed by \fBinterp expose\fR.
+.PP
+The following commands from Tcl's library of support procedures are
+not present in a safe interpreter:
+.DS
+.ta 1.6i 3.2i
+\fBauto_exec_ok	auto_import	auto_load
+auto_load_index	auto_qualify	unknown\fR
+.DE
+Note in particular that safe interpreters have no default \fBunknown\fR
+command, so Tcl's default autoloading facilities are not available.  
+Autoload access to Tcl's commands that are normally autoloaded:
+.DS
+.ta 2.1i
+\fB
+auto_mkindex	auto_mkindex_old
+auto_reset	history
+parray	pkg_mkIndex
+::pkg::create	::safe::interpAddToAccessPath
+::safe::interpCreate	::safe::interpConfigure
+::safe::interpDelete	::safe::interpFindInAccessPath
+::safe::interpInit	::safe::setLogCmd
+tcl_endOfWord	tcl_findLibrary
+tcl_startOfNextWord	tcl_startOfPreviousWord
+tcl_wordBreakAfter	tcl_wordBreakBefore\fR
+.DE
+can only be provided by explicit definition of an \fBunknown\fR command
+in the safe interpreter.  This will involve exposing the \fBsource\fR
+command.  This is most easily accomplished by creating the safe interpreter
+with Tcl's \fBSafe\-Tcl\fR mechanism.  \fBSafe\-Tcl\fR provides safe
+versions of \fBsource\fB, \fBload\fR, and other Tcl commands needed
+to support autoloading of commands and the loading of packages.
 .VE
 .PP
 In addition, the \fBenv\fR variable is not present in a safe interpreter,
