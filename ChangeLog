@@ -1,3 +1,18 @@
+2004-06-22  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* generic/tclEvent.c:
+	* generic/tclInt.h:
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixThrd.c:
+	* win/tclWinThrd.c: [Bug #770053]. See bug report for
+	more information about what it does.
+
+	* tests/unixNotfy.test: rewritten to use tcltest::threadReap
+	to gracefully wait for the test thread to exit. Otherwise
+	we got a race condition with main thread exiting before the
+	test thread. This exposed the long-standing Tcl lib issue
+	with resource garbage-collection on application exit.
+
 2004-06-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWin32Dll.c (DllMain, _except_dllmain_detach_handler,
