@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.74 2002/08/05 03:24:40 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.75 2002/08/12 12:23:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3386,6 +3386,8 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 			(sizeof(TraceCommandInfo) - sizeof(tcmdPtr->command)
 				+ length + 1));
 		tcmdPtr->flags = flags;
+		tcmdPtr->stepTrace = NULL;
+		tcmdPtr->startLevel = 0;
 		tcmdPtr->length = length;
 		flags |= TCL_TRACE_DELETE;
 		strcpy(tcmdPtr->command, command);
