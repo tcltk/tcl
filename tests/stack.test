@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.4 1999/06/26 20:55:13 rjohnson Exp $
+# RCS: @(#) $Id: stack.test,v 1.5 1999/11/19 06:35:02 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,8 +19,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Note that a failure in this test results in a crash of the executable.
 
 test stack-1.1 {maxNestingDepth reached on infinite recursion} {
-    proc recurse {} { return [recurse] }
-    catch {recurse} rv
+    proc recurse {i} { return [recurse [incr i]] }
+    catch {recurse 0} rv
     rename recurse {}
     set rv
 } {too many nested calls to Tcl_EvalObj (infinite loop?)}

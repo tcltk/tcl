@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.7 1999/10/29 03:04:37 hobbs Exp $
+# RCS: @(#) $Id: scan.test,v 1.8 1999/11/19 06:35:01 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -580,24 +580,48 @@ test scan-12.2 {Tcl_ScanObjCmd, inline case} {
 test scan-12.3 {Tcl_ScanObjCmd, inline case} {
     scan abc %s%c
 } {abc {}}
-test scan-12.4 {Tcl_ScanObjCmd, inline case} {
+test scan-12.4 {Tcl_ScanObjCmd, inline case, underflow} {
     scan abc abc%c
 } {}
 test scan-12.5 {Tcl_ScanObjCmd, inline case} {
     scan abc bogus%c%c%c
 } {{} {} {}}
 test scan-12.6 {Tcl_ScanObjCmd, inline case} {
-    list [catch {scan abc {%1$s}} msg] $msg
-} {1 {"%n$" argument index out of range}}
-test scan-12.7 {Tcl_ScanObjCmd, inline case} {
     # degenerate case, behavior changed from 8.2 to 8.3
     list [catch {scan foo foobar} msg] $msg
 } {0 {}}
-test scan-9.2 {Tcl_ScanObjCmd, inline case lots of arguments} {
+test scan-12.7 {Tcl_ScanObjCmd, inline case lots of arguments} {
     scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140\
 	    150 160 170 180 190 200" \
 	    "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d"
 } {10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200 {}}
+
+test scan-13.1 {Tcl_ScanObjCmd, inline XPG case} {
+    scan a {%1$c}
+} 97
+test scan-13.2 {Tcl_ScanObjCmd, inline XPG case} {
+    scan abc {%1$c%2$c%3$c%4$c}
+} {97 98 99 {}}
+test scan-13.3 {Tcl_ScanObjCmd, inline XPG case} {
+    list [catch {scan abc {%1$c%1$c}} msg] $msg
+} {1 {variable is assigned by multiple "%n$" conversion specifiers}}
+test scan-13.4 {Tcl_ScanObjCmd, inline XPG case} {
+    scan abc {%2$s%1$c}
+} {{} abc}
+test scan-13.5 {Tcl_ScanObjCmd, inline XPG case, underflow} {
+    scan abc {abc%5$c}
+} {}
+test scan-13.6 {Tcl_ScanObjCmd, inline XPG case} {
+    catch {scan abc {bogus%1$c%5$c%10$c}} msg
+    list [llength $msg] $msg
+} {10 {{} {} {} {} {} {} {} {} {} {}}}
+test scan-13.7 {Tcl_ScanObjCmd, inline XPG case lots of arguments} {
+    scan "10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200" {%20$d %18$d %17$d %16$d %15$d %14$d %13$d %12$d %11$d %10$d %9$d %8$d %7$d %6$d %5$d %4$d %3$d %2$d %1$d}
+} {190 180 170 160 150 140 130 120 110 100 90 80 70 60 50 40 30 20 {} 10}
+test scan-13.8 {Tcl_ScanObjCmd, inline XPG case lots of arguments} {
+    set msg [scan "10 20 30" {%100$d %5$d %200$d}]
+    list [llength $msg] [lindex $msg 99] [lindex $msg 4] [lindex $msg 199]
+} {200 10 20 30}
 
 # cleanup
 ::tcltest::cleanupTests
