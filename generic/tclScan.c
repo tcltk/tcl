@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.8 2001/09/20 01:03:08 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.9 2002/02/07 01:50:46 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -855,10 +855,17 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 			 * a number.  If we are unsure of the base, it
 			 * indicates that we are in base 8 or base 16 (if it is
 			 * followed by an 'x').
+			 *
+			 * 8.1 - 8.3.4 incorrectly handled 0x... base-16
+			 * cases for %x by not reading the 0x as the
+			 * auto-prelude for base-16. [Bug #495213]
 			 */
 			case '0':
 			    if (base == 0) {
 				base = 8;
+				flags |= SCAN_XOK;
+			    }
+			    if (base == 16) {
 				flags |= SCAN_XOK;
 			    }
 			    if (flags & SCAN_NOZERO) {
