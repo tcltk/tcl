@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.8 2004/10/02 17:00:39 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.9 2004/10/08 16:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -38,7 +38,7 @@ test dict-1.1 {dict command basic syntax} {
 } {1 {wrong # args: should be "dict subcommand ?arg ...?"}}
 test dict-1.2 {dict command basic syntax} {
     list [catch {dict ?} msg] $msg
-} {1 {bad subcommand "?": must be append, create, exists, filter, for, get, incr, info, keys, lappend, merge, remove, replace, set, size, unset, or values}}
+} {1 {bad subcommand "?": must be append, create, exists, filter, for, get, incr, info, keys, lappend, merge, remove, replace, set, size, unset, update, values, or with}}
 
 test dict-2.1 {dict create command} {
     dict create
