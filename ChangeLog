@@ -1,3 +1,10 @@
+2000-10-06  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* win/tclWinChan.c: moved Win2K bug case test with GetStdHandle()
+	from TclpGetDefaultStdChannel into Tcl_MakeFileChannel to enable
+	a more general method in detecting invalid OS handles rather than
+	just a specific known case. [BUG: 5971]
+
 2000-10-06  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* tests/cmdAH.test: extra tests for 'file channels' that include
