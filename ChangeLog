@@ -1,5 +1,7 @@
 2005-04-02  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclExecute.c: leak fix in INST_STORE_SCALAR
+
 	*** FROM HEAD ***
 	* doc/ListObj.3:
 	* generic/tclBasic.c:
@@ -26,6 +28,7 @@
 	* generic/tclObj.c:
 	* generic/tclStringObj.c: opt in INST_*_SCALAR, sync with HEAD: 
 
+	*** FROM HEAD ***
 	- (INST_JUMP_TRUE/FALSE): replaced "test and branch" with "compute
 	index into table" 
 

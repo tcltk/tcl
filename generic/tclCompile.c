@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.17 2005/03/31 18:07:10 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.18 2005/04/02 21:04:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2990,8 +2990,8 @@ TclPrintInstruction(codePtr, pc)
 		    break;
 		}
 		if (!procPtr) {
-		    Tcl_Panic("TclPrintInstruction: local var index %u (%u locals) outside of a proc.\n",
-			     (unsigned int) opnd, localCt);
+		    Tcl_Panic("TclPrintInstruction: local var index %u outside of a proc.\n",
+			     (unsigned int) opnd);
 		}
 		localCt = procPtr->numCompiledLocals;
 		localPtr = procPtr->firstLocalPtr;
