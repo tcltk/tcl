@@ -1,3 +1,8 @@
+2003-07-21  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* test/cmdAH.test: ensure certain tests run in local filesystem
+        [Bug 748960]
+
 2003-07-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: added option to allow installing manpages
