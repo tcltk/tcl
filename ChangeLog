@@ -1,3 +1,8 @@
+2005-01-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix for glob failure on Windows shares
+	[Bug 1100542].
+
 2005-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/compile.test (compile-17.1): Document known issue with
