@@ -1,3 +1,11 @@
+2005-03-30 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: using pointer-to-pc instead of jump
+	offsets (not in the packed mode), two new instructions to speed up
+	load/store of indexed scalars, some engine tuning.
+
 2005-03-28 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: avoid compiling a PUSH/POP for empty

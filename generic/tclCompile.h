@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.21 2005/03/28 22:21:28 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.22 2005/03/30 17:06:21 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -238,21 +238,24 @@ typedef struct TclVMWord {
 #define HPINT_MAX  (HP_MASK>>1)
 #define HPINT_MIN  (-HPINT_MAX-1)
 
-#define HP_STASH(full, n, u) \
-    (full) = ((TclPSizedInt) (n) << HP_SHIFT) | ((TclPSizedInt) (u) & HP_MASK)
+#define HP_STASH(n, u) \
+    (((TclPSizedInt) (n) << HP_SHIFT) | ((TclPSizedInt) (u) & HP_MASK))
 
 #define HP_EXTRACT(full, n, u)\
     (n) = ((full) >> HP_SHIFT);\
     (u) = ((full) &  HP_MASK)
     
 #define TclVMGetInstAtPtr(p) (*(p)).inst
-#define TclVMGetOpndAtPtr(p) (*(p)).opnd.i
+#define TclVMGetOpndAtPtr(p) (*(p)).opnd
 
 #define TclVMStoreInstAtPtr(instruction, p) \
     (*(p)).inst = (TclPSizedInt) (instruction)
 
-#define TclVMStoreOpndAtPtr(operand, p) \
-    (*(p)).opnd.i = (TclPSizedInt) (operand)
+#define TclVMStoreOpndAtPtr(operand, pc) \
+    (*(pc)).opnd.i = (TclPSizedInt) (operand)
+
+#define TclVMStorePOpndAtPtr(operand, pc) \
+    (*(pc)).opnd.p = (void *) (operand)
 
 
 #define TclVMGetInstAndOpAtPtr(p, instruction, operand) \
@@ -280,8 +283,12 @@ typedef struct TclVMWord {
 FIXME
 #endif
 
+typedef union TclVMOpnd {
+    void *p; /* unused, does not fit */
+    TclPSizedInt  i;
+} TclVMOpnd;
+
 #define TclVMWord TclPSizedInt 
-#define TclVMOpnd TclPSizedInt 
 
 /*
  * Remark that the names correspond to the interpretation for wcodes, and are
@@ -309,11 +316,11 @@ FIXME
 #define HPINT_MAX  0x7FF
 #define HPINT_MIN  (-HPINT_MAX-1)
 
-#define P_STASH(full, n, u) \
-    (full) = ((((TclPSizedInt) (n)) << P_SHIFT) | (u))
+#define P_STASH(n, u) \
+    ((((TclPSizedInt) (n)) << P_SHIFT) | (u))
 
-#define HP_STASH(full, n, u) \
-    (full) = ((TclPSizedInt) (n) << HP_SHIFT) | ((TclPSizedInt) (u) & HP_MASK)
+#define HP_STASH(n, u) \
+    (((TclPSizedInt) (n) << HP_SHIFT) | ((TclPSizedInt) (u) & HP_MASK))
 
 #define HP_EXTRACT(full, n, u)\
     (n) = (((TclPSizedInt)(full)) >> HP_SHIFT);\
@@ -322,7 +329,7 @@ FIXME
 #define TclVMGetInstAtPtr(p) \
     (*((TclPSizedInt *)(p)) & P_MASK)
 #define TclVMGetOpndAtPtr(p) \
-    (*((TclPSizedInt *)(p)) >> P_SHIFT)
+    ((TclVMOpnd) (*((TclPSizedInt *)(p)) >> P_SHIFT))
 
 #define TclVMStoreInstAtPtr(instruction, p) \
     *(p) = ((*((TclPSizedInt *)(p)) & ~P_MASK)\
@@ -337,7 +344,7 @@ FIXME
     (operand)     = TclVMGetOpndAtPtr(p) 
 
 #define TclVMStoreWordAtPtr(instruction, operand, p) \
-    P_STASH(*((TclPSizedInt *)(p)), (operand), (instruction))
+    *((TclPSizedInt *)(p)) = P_STASH((operand), (instruction))
 
 #endif /* USE_WORDCODES */
 
@@ -476,7 +483,7 @@ typedef struct CompileEnv {
  */
 
 #define TCL_BYTECODE_OPTIMISED                  0x04
-
+#define TCL_BYTECODE_ENGINE_OPTS                0x08
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -631,8 +638,10 @@ typedef struct ByteCode {
 
 /* Opcodes for variable access. */
 #define INST_LOAD		        12  
-#define INST_STORE                      13  					    
-#define INST_INCR                       14   
+#define INST_LOAD_SCALAR		13  
+#define INST_STORE                      14  					    
+#define INST_STORE_SCALAR               15  					    
+#define INST_INCR                       16   
 
 /*
  * Opcodes for flow control
@@ -646,81 +655,81 @@ typedef struct ByteCode {
  * math operators, as the [expr] compiler relies on that property.
  */
 
-#define INST_DONE			15
-#define INST_RETURN			16
+#define INST_DONE			17
+#define INST_RETURN			18
 
-#define INST_BREAK			17
-#define INST_CONTINUE			18
+#define INST_BREAK			19
+#define INST_CONTINUE			20
 
-#define INST_FOREACH_START		19
-#define INST_FOREACH_STEP		20
+#define INST_FOREACH_START		21
+#define INST_FOREACH_STEP		22
 
-#define INST_BEGIN_CATCH		21
-#define INST_END_CATCH			22
+#define INST_BEGIN_CATCH		23
+#define INST_END_CATCH			24
 
-#define INST_JUMP			23
+#define INST_JUMP			25
 
-#define INST_JUMP_TRUE			24
-#define INST_JUMP_FALSE		        25
-#define TclInstIsJump(op) ((op<=25) && (op>=23))
+#define INST_JUMP_TRUE			26
+#define INST_JUMP_FALSE		        27
+#define TclInstIsJump(op) ((op<=27) && (op>=25))
 
-#define FIRST_OPERATOR_INST             26
+#define FIRST_OPERATOR_INST             28
 
-#define INST_EQ				26
-#define INST_NEQ			27
+#define INST_EQ				28
+#define INST_NEQ			29
 
-#define INST_LT				28
-#define INST_GE				29
+#define INST_LT				30
+#define INST_GE				31
 
-#define INST_GT				30
-#define INST_LE				31
+#define INST_GT				32
+#define INST_LE				33
 
-#define INST_STR_EQ			32
-#define INST_STR_NEQ			33
+#define INST_STR_EQ			34
+#define INST_STR_NEQ			35
 
-#define INST_LIST_IN			34
-#define INST_LIST_NOT_IN		35
+#define INST_LIST_IN			36
+#define INST_LIST_NOT_IN		37
 
-#define TclInstIsBoolComp(op) ((op<=35) && (op>=26))
+#define TclInstIsBoolComp(op) ((op<=37) && (op>=28))
 	
 /* Opcodes for the remaining operators */
-#define INST_LNOT			36 /* Keep these at (2n)(2n+1) */
-#define INST_LYES		        37
-#define INST_BITOR			38
-#define INST_BITXOR			39
-#define INST_BITAND			40
-#define INST_LSHIFT			41
-#define INST_RSHIFT			42
-#define INST_ADD			43
-#define INST_SUB			44
-#define INST_MULT			45
-#define INST_DIV			46
-#define INST_MOD			47
-#define INST_UPLUS			48
-#define INST_UMINUS			49
-#define INST_BITNOT			50
-#define INST_EXPON			51
+#define INST_LNOT			38 /* Keep these at (2n)(2n+1) */
+#define INST_LYES		        39
+#define INST_BITOR			40
+#define INST_BITXOR			41
+#define INST_BITAND			42
+#define INST_LSHIFT			43
+#define INST_RSHIFT			44
+#define INST_ADD			45
+#define INST_SUB			46
+#define INST_MULT			47
+#define INST_DIV			48
+#define INST_MOD			49
+#define INST_UPLUS			50
+#define INST_UMINUS			51
+#define INST_BITNOT			52
+#define INST_EXPON			53
 
-#define INST_CALL_BUILTIN_FUNC		52
-#define INST_CALL_FUNC			53
-#define INST_TRY_CVT_TO_NUMERIC		54
+#define INST_CALL_BUILTIN_FUNC		54
+#define INST_CALL_FUNC			55
+#define INST_TRY_CVT_TO_NUMERIC		56
 
-#define INST_STR_CMP			55
-#define INST_STR_LEN			56
-#define INST_STR_INDEX			57
-#define INST_STR_MATCH			58
+#define INST_STR_CMP			57
+#define INST_STR_LEN			58
+#define INST_STR_INDEX			59
+#define INST_STR_MATCH			60
 
-#define INST_LIST			59
-#define INST_LIST_INDEX			60
-#define INST_LIST_LENGTH		61
-#define INST_LIST_INDEX_MULTI		62
-#define INST_LSET_LIST			63
-#define INST_LSET_FLAT			64
-#define INST_LIST_INDEX_IMM		65
-#define INST_LIST_RANGE_IMM		66
+#define INST_LIST			61
+#define INST_LIST_INDEX			62
+#define INST_LIST_LENGTH		63
+#define INST_LIST_INDEX_MULTI		64
+#define INST_LSET_LIST			65
+#define INST_LSET_FLAT			66
+#define INST_LIST_INDEX_IMM		67
+#define INST_LIST_RANGE_IMM		68
 
 /* The last opcode */
-#define LAST_INST_OPCODE		66
+#define LAST_INST_OPCODE		68
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
@@ -743,8 +752,7 @@ typedef enum InstOperandType {
     OPERAND_UINT,		/* Unsigned integer. */
     OPERAND_IDX,	        /* Signed index (actually an integer, but
 				 * displayed differently.) */ 
-    OPERAND_REL_OFFSET,         /* Offset from current pc. */
-    OPERAND_ABS_OFFSET          /* Offset from bytecode's codeStart */
+    OPERAND_OFFSET,             /* Offset from current pc. */
 } InstOperandType;
 
 /*
@@ -1162,8 +1170,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 #define TclEmitInst2(op, n, u, envPtr)\
     {\
-        TclPSizedInt z;\
-        HP_STASH(z, (n), (u));\
+        TclPSizedInt z = HP_STASH((n), (u));\
         TclEmitInst1((op), z, envPtr);\
     }
 

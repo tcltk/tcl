@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.14 2005/03/28 22:21:27 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.15 2005/03/30 17:05:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -89,14 +89,18 @@ InstructionDesc tclInstructionTable[] = {
          /* Expand the list at stacktop: push its elements on the stack */
     {"invokeExpanded", 0, A, A, 0,   {OPERAND_NONE}},
          /* Invoke the command marked by the last 'expandStart' */
-    {"startCmd",     0, V, V, 1,   {OPERAND_REL_OFFSET}},
+    {"startCmd",     0, V, V, 1,   {OPERAND_OFFSET}},
         /* Start of bytecoded command: op is the length of the cmd's code */ 
 
 /* Opcodes for variable access. */
     {"load",	    +1, A, A, 2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Load variable according to the operands*/ 
+    {"loadScalar",  +1, A, A, 2,   {OPERAND_INT, OPERAND_UINT}},
+	/* Load local scalar variable according to the operands*/ 
     {"store",        0, A, A, 2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Store at variable according to the operands */
+    {"storeScalar",  0, A, A, 2,   {OPERAND_INT, OPERAND_UINT}},
+	/* Store at local scalar variable according to the operands */
     {"incr",	     1, I, I, 2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Incr variable according to the operands */
     
@@ -119,37 +123,37 @@ InstructionDesc tclInstructionTable[] = {
     {"foreach_step", +1, V, A, 1,   {OPERAND_INT}},
 	/* "Step" or begin next iteration of foreach loop. Push 0 if to
 	 *  terminate loop, else push 1. */
-    {"beginCatch",    0, V, V, 1,   {OPERAND_REL_OFFSET}},
+    {"beginCatch",    0, V, V, 1,   {OPERAND_OFFSET}},
 	/* Record start of catch with the operand's exception index.
 	 * Push the current stack depth onto a special catch stack. */
     {"endCatch",      0, V, I, 1,   {OPERAND_INT}},
 	/* End of last catch. Pop the bytecode interpreter's catch stack. */
 
-    {"jump",	      0, V, V, 1,   {OPERAND_REL_OFFSET}},
+    {"jump",	      0, V, V, 1,   {OPERAND_OFFSET}},
 	/* Jump relative to (pc + op4) */
-    {"jumpTrue",     -1, B, V, 1,   {OPERAND_REL_OFFSET}},
+    {"jumpTrue",     -1, B, V, 1,   {OPERAND_OFFSET}},
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    {"jumpFalse",    -1, B, V, 1,   {OPERAND_REL_OFFSET}},
+    {"jumpFalse",    -1, B, V, 1,   {OPERAND_OFFSET}},
 	/* Jump relative to (pc + op4) if stktop expr object is false */
-    {"eq",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
+    {"eq",	     -1, N, B, 1,   {OPERAND_OFFSET}},
 	/* Equal:	push (stknext == stktop) */
-    {"neq",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
+    {"neq",	     -1, N, B, 1,   {OPERAND_OFFSET}},
 	/* Not equal:	push (stknext != stktop) */
-    {"lt",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
+    {"lt",	     -1, N, B, 1,   {OPERAND_OFFSET}},
 	/* Less:	push (stknext < stktop) */
-    {"ge",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
+    {"ge",	     -1, N, B, 1,   {OPERAND_OFFSET}},
 	/* Logical or:	push (stknext || stktop) */
-    {"gt",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
+    {"gt",	     -1, N, B, 1,   {OPERAND_OFFSET}},
 	/* Greater:	push (stknext || stktop) */
-    {"le",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
+    {"le",	     -1, N, B, 1,   {OPERAND_OFFSET}},
 	/* Logical or:	push (stknext || stktop) */
-    {"streq",	     -1, A, B, 1,   {OPERAND_REL_OFFSET}},
+    {"streq",	     -1, A, B, 1,   {OPERAND_OFFSET}},
 	/* Str Equal:	push (stknext eq stktop) */
-    {"strneq",	     -1, A, B, 1,   {OPERAND_REL_OFFSET}},
+    {"strneq",	     -1, A, B, 1,   {OPERAND_OFFSET}},
 	/* Str !Equal:	push (stknext neq stktop) */
-    {"listIn",	     -1, A, B, 1,   {OPERAND_REL_OFFSET}},
+    {"listIn",	     -1, A, B, 1,   {OPERAND_OFFSET}},
 	/* List containment: push [lsearch stktop stknext]>=0) */
-    {"listNotIn",    -1, A, B, 1,   {OPERAND_REL_OFFSET}},
+    {"listNotIn",    -1, A, B, 1,   {OPERAND_OFFSET}},
 	/* List negated containment: push [lsearch stktop stknext]<0) */
 
 /* Opcodes for the remaining operators */
@@ -2912,7 +2916,8 @@ TclPrintInstruction(codePtr, pc)
     register InstructionDesc *instDesc;
     TclVMWord *codeStart = codePtr->codeStart;
     ptrdiff_t pcOffset = (pc - codeStart);
-    TclPSizedInt opnd, opnds[2];
+    TclPSizedInt opnds[2], iopnd;
+    TclVMOpnd opnd;
     int i, j;
 
     TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
@@ -2920,100 +2925,108 @@ TclPrintInstruction(codePtr, pc)
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
 
     if (instDesc->numOperands == 2) {
-	HP_EXTRACT(opnd, opnds[0], opnds[1]);
+	HP_EXTRACT(opnd.i, opnds[0], opnds[1]);
     } else {
-	opnds[0] = opnd;
+	opnds[0] = opnd.i;
     }
     for (i = 0;  i < instDesc->numOperands;  i++) {
-	opnd = opnds[i];
+	iopnd = opnds[i];
 	switch (instDesc->opTypes[i]) {
-        case OPERAND_REL_OFFSET:
+        case OPERAND_OFFSET:
 	    if (opCode == INST_START_CMD) {
-		opnd = opnd >> 1;
-	    }
-	    fprintf(stdout, "%d  	# pc %u", (int) opnd,
-		    (unsigned)(pcOffset + opnd));
+		iopnd = iopnd >> 1;
+#ifndef VM_USE_PACKED
+	    } else if ((codePtr->flags & TCL_BYTECODE_ENGINE_OPTS)
+		    && ((TclInstIsBoolComp(opCode) && opnd.i)
+			    || TclInstIsJump(opCode))) {
+		iopnd = ((TclVMWord *) opnd.p) - pc;
+#endif
+		    }
+	    fprintf(stdout, "%d  	# pc %u", (int) iopnd,
+		    (unsigned)(pcOffset + iopnd));
 	    break;	    
         case OPERAND_INT:
-		if ((opCode == INST_STORE) || (opCode == INST_LOAD)) {
-		    fprintf(stdout, "0x%lx |", (long) opnd);
-		    if (opnd & TCL_LIST_ELEMENT) {
+		if ((opCode == INST_STORE) || (opCode == INST_LOAD)
+			|| (opCode == INST_STORE_SCALAR)
+			|| (opCode == INST_LOAD_SCALAR)) {
+		    fprintf(stdout, "0x%lx |", (long) iopnd);
+		    if (iopnd & TCL_LIST_ELEMENT) {
 			fprintf(stdout, "lappend");
-		    } else if (opnd & TCL_APPEND_VALUE) {
+		    } else if (iopnd & TCL_APPEND_VALUE) {
 			fprintf(stdout, "append");
 		    } else {
 			fprintf(stdout, "set");
 		    }
-		    if (opnd & VM_VAR_ARRAY) {
+		    if (iopnd & VM_VAR_ARRAY) {
 			fprintf(stdout, "|array");
 		    }
-		    if (opnd & VM_VAR_OMIT_PUSH) {
+		    if (iopnd & VM_VAR_OMIT_PUSH) {
 			fprintf(stdout, "|drop");
 		    } else {
 			fprintf(stdout, "|push");
 		    }
 		    fprintf(stdout, "| ");
 		} else if (opCode == INST_INCR) {
-		    if ((opnd >> 2) != (HPINT_MIN >> 2)) {
-			fprintf(stdout, "%d ", (opnd>>2));
+		    if ((iopnd >> 2) != (HPINT_MIN >> 2)) {
+			fprintf(stdout, "%d ", (iopnd>>2));
 		    } else {
 			fprintf(stdout, "|stackIncr");
 		    }
-		    if (opnd & VM_VAR_ARRAY) {
+		    if (iopnd & VM_VAR_ARRAY) {
 			fprintf(stdout, "|array");
 		    }
-		    if (opnd & VM_VAR_OMIT_PUSH) {
+		    if (iopnd & VM_VAR_OMIT_PUSH) {
 			fprintf(stdout, "|drop");
 		    } else {
 			fprintf(stdout, "|push");
 		    }
 		    fprintf(stdout, "| ");
 		} else {
-		    fprintf(stdout, "%d ", (int) opnd);
+		    fprintf(stdout, "%d ", (int) iopnd);
 		}
 		break;
 	case OPERAND_UINT:
 	    if (opCode == INST_PUSH) {
-		fprintf(stdout, "%u  	# ", (unsigned) opnd);
-		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
+		fprintf(stdout, "%u  	# ", (unsigned) iopnd);
+		TclPrintObject(stdout, codePtr->objArrayPtr[iopnd], 40);
 	    } else if ((opCode >= INST_LOAD) && (opCode <= INST_INCR)) {
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr;
-		if ((unsigned int) opnd == (unsigned int) HPUINT_MAX) {
+		if ((unsigned int) iopnd == (unsigned int) HPUINT_MAX) {
 		    fprintf(stdout, "#stack var ");
 		    break;
 		}
 		if (!procPtr) {
 		    Tcl_Panic("TclPrintInstruction: local var index %u (%u locals) outside of a proc.\n",
-			     (unsigned int) opnd, localCt);
+			     (unsigned int) iopnd, localCt);
 		}
 		localPtr = procPtr->firstLocalPtr;
-		if (opnd >= localCt) {
+		if (iopnd >= localCt) {
 		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
-			     (unsigned int) opnd, localCt);
+			     (unsigned int) iopnd, localCt);
 		}
-		for (j = 0;  j < opnd;  j++) {
+		for (j = 0;  j < iopnd;  j++) {
 		    localPtr = localPtr->nextPtr;
 		}
 		if (TclIsVarTemporary(localPtr)) {
 		    fprintf(stdout, "%u	# temp var %u",
-			    (unsigned int) opnd, (unsigned int) opnd);
+			    (unsigned int) iopnd, (unsigned int) iopnd);
 		} else {
-		    fprintf(stdout, "%u	# var ", (unsigned int) opnd);
+		    fprintf(stdout, "%u	# var ", (unsigned int) iopnd);
 		    TclPrintSource(stdout, localPtr->name, 40);
 		}
 	    } else {
-		fprintf(stdout, "%u ", (unsigned int) opnd);
+		fprintf(stdout, "%u ", (unsigned int) iopnd);
 	    }
 	    break;
 
 	case OPERAND_IDX:
-	    if (opnd >= -1) {
-		fprintf(stdout, "%d ", (int) opnd);
-	    } else if (opnd == -2) {
+	    if (iopnd >= -1) {
+		fprintf(stdout, "%d ", (int) iopnd);
+	    } else if (iopnd == -2) {
 		fprintf(stdout, "end ");
 	    } else {
-		fprintf(stdout, "end-%d ", (int) (-2-opnd));
+		fprintf(stdout, "end-%d ", (int) (-2-iopnd));
             }
 	    break;
 
@@ -3278,7 +3291,7 @@ OptimiseByteCodeTmp(codePtr)
     int i, pos, targetPos, target2Pos, modified;
     TclVMWord *pc, *targetPc;
     TclVMWord *codeStart = codePtr->codeStart;
-    TclPSizedInt opnd, aux;
+    TclVMOpnd opnd, aux;
     int opCode, targetOpCode, single;
     int zero = -1, one = -1;
                      /* Hold the index of the constants 0 and 1 in the literal
@@ -3286,7 +3299,7 @@ OptimiseByteCodeTmp(codePtr)
     TclPSizedInt noPushFlags;
     InstIOType in, out;
     
-    HP_STASH(noPushFlags, VM_VAR_OMIT_PUSH, 0);
+    noPushFlags = HP_STASH(VM_VAR_OMIT_PUSH, 0);
     
     if (!codePtr->numCodeWords) {
 	return codePtr;
@@ -3363,7 +3376,7 @@ OptimiseByteCodeTmp(codePtr)
 	    targetPc = codeStart+targetPos;
 	    targetOpCode = TclVMGetInstAtPtr(targetPc);
 	    
-	    if (!TclInstIsBoolComp(opCode) || (opnd == 0)) {
+	    if (!TclInstIsBoolComp(opCode) || (opnd.i == 0)) {
 		if (((out == B) && ((targetOpCode == INST_TRY_CVT_TO_NUMERIC)
 				|| (targetOpCode == INST_LYES)))
 			|| (((out == I) || (out == N))
@@ -3378,7 +3391,7 @@ OptimiseByteCodeTmp(codePtr)
 			aux = TclVMGetOpndAtPtr(pc+1);
 			TclVMStoreOpndAtPtr((targetPos-pos), (pc+1));
 			auxCount[targetPos+1]++;
-			OptReduceCount(codePtr, (pos+aux+1), auxCount);
+			OptReduceCount(codePtr, (pos+aux.i+1), auxCount);
 			modified = 1;
 			goto restartThisPc;
 		    }
@@ -3387,7 +3400,7 @@ OptimiseByteCodeTmp(codePtr)
 	    
 
 	    if (TclInstIsBoolComp(opCode)) {
-		if (opnd == 0) {
+		if (opnd.i == 0) {
 		    /* For now: pushing the result; is it used in a
 		     * conditional branch? Then branch ... but first process 
 		     * any intervening negations */
@@ -3421,7 +3434,7 @@ OptimiseByteCodeTmp(codePtr)
 			    aux = TclVMGetOpndAtPtr(pc+1);
 			    TclVMStoreOpndAtPtr((targetPos-pos), (pc+1));
 			    auxCount[targetPos+1]++;
-			    OptReduceCount(codePtr, (pos+1+aux), auxCount);
+			    OptReduceCount(codePtr, (pos+1+aux.i), auxCount);
 			    modified = 1;		    
 			} else {
 			    break;
@@ -3443,8 +3456,8 @@ OptimiseByteCodeTmp(codePtr)
 			if (targetOpCode == INST_JUMP_FALSE) {
 			    TclNegateInstAtPtr(pc);
 			}			    
-			aux = (targetPos+TclVMGetOpndAtPtr(targetPc)-pos);
-			TclVMStoreOpndAtPtr(aux, pc);
+			aux.i = (targetPos+(TclVMGetOpndAtPtr(targetPc)).i-pos);
+			TclVMStoreOpndAtPtr(aux.i, pc);
 			TclStoreNoopAtPtr(targetPc);
 			modified = 1;
 		    } else if ((TclVMGetInstAtPtr(pc+1) == INST_JUMP)
@@ -3454,13 +3467,13 @@ OptimiseByteCodeTmp(codePtr)
 			if (targetOpCode == INST_JUMP_FALSE) {
 			    TclNegateInstAtPtr(pc);
 			}			    
-			aux = (targetPos+TclVMGetOpndAtPtr(targetPc)-pos);
-			TclVMStoreOpndAtPtr(aux, pc); /* jump-if-true */
-			auxCount[pos+aux]++;
+			aux.i = (targetPos+(TclVMGetOpndAtPtr(targetPc)).i-pos);
+			TclVMStoreOpndAtPtr(aux.i, pc); /* jump-if-true */
+			auxCount[pos+aux.i]++;
 			aux = TclVMGetOpndAtPtr(pc+1);
 			TclVMStoreOpndAtPtr((targetPos-pos), (pc+1));
 			auxCount[targetPos+1]++;
-			OptReduceCount(codePtr, (pos+1+aux), auxCount);			    
+			OptReduceCount(codePtr, (pos+1+aux.i), auxCount);			    
 			modified = 1;
 		    } else {
 			continue;
@@ -3469,15 +3482,15 @@ OptimiseByteCodeTmp(codePtr)
 
 		/* Already a jump: can extend it? */
 		TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
-		if(auxCount[pos+opnd] < 0) {
+		if(auxCount[pos+opnd.i] < 0) {
 		    Tcl_Panic("Jump into unreachable code!");
 		}
-		if (TclVMGetInstAtPtr(pc+opnd) == INST_JUMP) {
+		if (TclVMGetInstAtPtr(pc+opnd.i) == INST_JUMP) {
 		    targetPos = OptFollowJumps(codePtr,
-			    pos+opnd, auxCount, &single);
+			    pos+opnd.i, auxCount, &single);
 		    auxCount[targetPos]++;
 		    TclVMStoreOpndAtPtr((targetPos-pos), pc);
-		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 		    modified = 1;
 		    continue;
 		}
@@ -3538,13 +3551,13 @@ OptimiseByteCodeTmp(codePtr)
 
 	    case INST_START_CMD:
 	        {
-		    int omitPush = (opnd & VM_VAR_OMIT_PUSH);
+		    int omitPush = (opnd.i & VM_VAR_OMIT_PUSH);
 		    int extended = 1;
 
-		    opnd = (opnd>>1);
+		    opnd.i = (opnd.i>>1);
 		    while (extended) {
 			extended = 0;
-			targetOpCode = TclVMGetInstAtPtr(pc+opnd);
+			targetOpCode = TclVMGetInstAtPtr(pc+opnd.i);
 
 			/*
 			 * /// This code causes a "following jumps into
@@ -3554,10 +3567,10 @@ OptimiseByteCodeTmp(codePtr)
 			 */
 		    
 			if (targetOpCode == INST_JUMP) {
-			    int old = opnd;
-			    targetPos = OptFollowJumps(codePtr, (pos+opnd), auxCount, &single);
-			    opnd = (targetPos-pos);
-			    TclVMStoreOpndAtPtr((opnd<<1)|omitPush, pc);
+			    int old = opnd.i;
+			    targetPos = OptFollowJumps(codePtr, (pos+opnd.i), auxCount, &single);
+			    opnd.i = (targetPos-pos);
+			    TclVMStoreOpndAtPtr((opnd.i<<1)|omitPush, pc);
 			    auxCount[targetPos]++;
 			    OptReduceCount(codePtr, (pos+old), auxCount);
 			    modified = 1;
@@ -3571,12 +3584,12 @@ OptimiseByteCodeTmp(codePtr)
 			     * needed. Include the (ommitted) POP in within the
 			     * command's instructions.
 			     */
-			    aux = ((opnd+1)<<1) | VM_VAR_OMIT_PUSH;
-			    auxCount[pos+opnd+1]++;
-			    TclVMStoreOpndAtPtr(aux, pc);
-			    OptReduceCount(codePtr, (pos+opnd), auxCount);
+			    aux.i = ((opnd.i+1)<<1) | VM_VAR_OMIT_PUSH;
+			    auxCount[pos+opnd.i+1]++;
+			    TclVMStoreOpndAtPtr(aux.i, pc);
+			    OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 			    omitPush = 1;
-			    opnd++;
+			    opnd.i++;
 			    modified = 1;
 			    extended = 1;
 			    omitPush = 1;
@@ -3586,12 +3599,13 @@ OptimiseByteCodeTmp(codePtr)
 		}
 		
 	    case INST_STORE:
+	    case INST_STORE_SCALAR:
 	    case INST_INCR:
-		if ((targetOpCode == INST_POP) && !(opnd & noPushFlags)) {
+		if ((targetOpCode == INST_POP) && !(opnd.i & noPushFlags)) {
 		    if (single) {
 			/* Avoid pushing the result. */
-			opnd |= noPushFlags;
-			TclVMStoreOpndAtPtr(opnd, pc);
+			opnd.i |= noPushFlags;
+			TclVMStoreOpndAtPtr(opnd.i, pc);
 			TclStoreNoopAtPtr(targetPc);	    
 			/* NO NEED TO RESTART */
 		    } else if (targetPos != (pos+1)
@@ -3599,8 +3613,8 @@ OptimiseByteCodeTmp(codePtr)
 			/* there is a jump at (pos+1): modify it to jump PAST
 			 * the POP, and drop the result. Save the old jump
 			 * target in aux  */			
-			opnd |= noPushFlags;
-			TclVMStoreOpndAtPtr(opnd, pc);
+			opnd.i |= noPushFlags;
+			TclVMStoreOpndAtPtr(opnd.i, pc);
 			targetPos = OptFollowJumps(codePtr, targetPos, auxCount, &single);
 			pos++; pc++;
 			TclVMGetInstAndOpAtPtr(pc, opCode, aux);
@@ -3609,7 +3623,7 @@ OptimiseByteCodeTmp(codePtr)
 			}
 			TclVMStoreOpndAtPtr((targetPos-pos), pc);
 			auxCount[targetPos]++;
-			OptReduceCount(codePtr, (pos+aux), auxCount);			
+			OptReduceCount(codePtr, (pos+aux.i), auxCount);			
 			modified = 1;
 		    }
 		}
@@ -3619,11 +3633,11 @@ OptimiseByteCodeTmp(codePtr)
 	    case INST_JUMP_FALSE:
 		/* Find the branched target */
 		target2Pos = targetPos;
-		if (TclVMGetInstAtPtr(pc+opnd) == INST_JUMP) {
+		if (TclVMGetInstAtPtr(pc+opnd.i) == INST_JUMP) {
 		    /* includes noops */
-		    targetPos = OptFollowJumps(codePtr, (pos+opnd), auxCount, &single);
+		    targetPos = OptFollowJumps(codePtr, (pos+opnd.i), auxCount, &single);
 		} else {
-		    targetPos = pos + opnd;
+		    targetPos = pos + opnd.i;
 		}
 
 		/*
@@ -3641,8 +3655,8 @@ OptimiseByteCodeTmp(codePtr)
 			|| (targetOpCode == INST_BREAK)
 			|| (targetOpCode == INST_CONTINUE)) {
 		    TclVMStoreWordAtPtr(targetOpCode,
-			    TclVMGetOpndAtPtr(targetPc), pc);
-		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+			    (TclVMGetOpndAtPtr(targetPc)).i, pc);
+		    OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 		    /* NO NEED TO RESTART */
 		    continue;
 		}
@@ -3664,18 +3678,18 @@ OptimiseByteCodeTmp(codePtr)
 		    Tcl_Panic("Jump into unreachable code!");
 		}
 		if (targetPos == target2Pos) {
-		    if ((opCode == INST_JUMP) && (opnd != 1)) {
+		    if ((opCode == INST_JUMP) && (opnd.i != 1)) {
 			/* useless jump, noop has the same target */
 			TclStoreNoopAtPtr(pc);
 			auxCount[pos+1]++;
-			OptReduceCount(codePtr, (pos+opnd), auxCount);
+			OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 			modified = 1;
 		    } else if ((opCode == INST_JUMP_TRUE)
 			    || (opCode == INST_JUMP_FALSE)) {
 			/* useless jump, both branches go to the same spot:
 			 * popping the result has the same effect */
 			TclVMStoreWordAtPtr(INST_POP, 0, pc);			
-			OptReduceCount(codePtr, (pos+opnd), auxCount);
+			OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 			modified = 1;
 		    }
 		    continue;
@@ -3686,13 +3700,13 @@ OptimiseByteCodeTmp(codePtr)
 		     * //// */
 		    TclVMStoreOpndAtPtr(1, pc);
 		    auxCount[pos+1]++;
-		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 		    modified = 1;
-		} else if (targetPos != (pos + opnd)) {
+		} else if (targetPos != (pos + opnd.i)) {
 		    /* Can follow a jump; do it */
 		    TclVMStoreOpndAtPtr((targetPos-pos), pc);
 		    auxCount[targetPos]++;
-		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    OptReduceCount(codePtr, (pos+opnd.i), auxCount);
 		    /* NO NEED TO RESTART */
 		}
 		continue;
@@ -3725,6 +3739,7 @@ OptimiseByteCodeTmp(codePtr)
      */
 
     codePtr = OptCleanupByteCode(codePtr, auxCount);
+    codePtr->flags |= TCL_BYTECODE_OPTIMISED;
     ckfree((char *) auxCount);
     return codePtr;
  }
@@ -3758,13 +3773,13 @@ OptFollowJumps(codePtr, pos, auxCount, singlePtr)
     TclVMWord *codeStart = codePtr->codeStart;
     int lastPos = codePtr->numCodeWords;
     int initPos = pos;
-    TclPSizedInt opnd;
+    TclVMOpnd opnd;
 
     
     TclVMGetInstAndOpAtPtr((codeStart+pos), inst, opnd);
     switch (inst) {
 	case INST_JUMP:
-	    pos += opnd;
+	    pos += opnd.i;
 	    break;
 	case INST_DONE:
 	case INST_BREAK:
@@ -3790,7 +3805,7 @@ OptFollowJumps(codePtr, pos, auxCount, singlePtr)
 	}
 	TclVMGetInstAndOpAtPtr((codeStart+pos), inst, opnd);
 	if (inst == INST_JUMP /* includes noops! */)  {
-	    pos += opnd;
+	    pos += opnd.i;
 	    continue;
 	}
 	break;
@@ -3826,7 +3841,7 @@ OptReduceCount(codePtr, pos, auxCount)
     TclVMWord *codeStart = codePtr->codeStart, *pc;
     int lastPos = codePtr->numCodeWords;
     int opCode, i;
-    TclPSizedInt opnd;
+    TclVMOpnd opnd;
 
     /*
      * Problem - break targets when loop is gone?
@@ -3844,28 +3859,28 @@ OptReduceCount(codePtr, pos, auxCount)
 	    TclStoreNoopAtPtr(pc);
 
 	    if (TclInstIsJump(opCode)
-	            || (TclInstIsBoolComp(opCode) && (opnd != 0))) {
-		OptReduceCount(codePtr, pos+opnd, auxCount);
+	            || (TclInstIsBoolComp(opCode) && (opnd.i != 0))) {
+		OptReduceCount(codePtr, pos+opnd.i, auxCount);
 		if (opCode == INST_JUMP) {
 		    break;
 		}		
 	    } else if (opCode == INST_BEGIN_CATCH) {
 		/* Remove everything up to the END_CATCH */
-		for (i = 1; i <= opnd; i++) {
+		for (i = 1; i <= opnd.i; i++) {
 		    TclStoreNoopAtPtr(pc+i);
 		    auxCount[pos+i] = -1;
 		}
-		pos += opnd;
+		pos += opnd.i;
 		break;
 	    } else if (opCode == INST_FOREACH_START) {
 		/* Remove everything up to FOREACH_STEP */
 		{
 		    ForeachInfo *infoPtr = (ForeachInfo *)
-			codePtr->auxDataArrayPtr[opnd].clientData;
-		    opnd = - pos +
+			codePtr->auxDataArrayPtr[opnd.i].clientData;
+		    opnd.i = - pos +
 			codePtr->exceptArrayPtr[infoPtr->rangeIndex].continueOffset;
 		}
-		for (i = 1; i <= opnd; i++) {
+		for (i = 1; i <= opnd.i; i++) {
 		    TclStoreNoopAtPtr(pc+i);
 		    auxCount[pos+i] = -1;
 		}
@@ -3909,7 +3924,7 @@ OptInitCounts(codePtr, auxCount)
     int i, pos;
     TclVMWord *pc;
     TclVMWord *codeStart = codePtr->codeStart;
-    TclPSizedInt opnd;
+    TclVMOpnd opnd;
     int inst;
 
     /*
@@ -3936,8 +3951,9 @@ OptInitCounts(codePtr, auxCount)
     /*
      * Do a first pass to correct the predecessor count stored in auxCount.
      * In this pass we also insure reachability od INST_END_CATCH and
-     * INST_FOREACH_STEP, and rewrite loop exceptions to jumps wherever
-     * possible.  
+     * INST_FOREACH_STEP, rewrite loop exceptions to jumps wherever
+     * possible, and use the direct load/store instructions for local
+     * scalars. 
      */
     
     pc = codeStart;
@@ -3948,26 +3964,26 @@ OptInitCounts(codePtr, auxCount)
 		auxCount[pos+1]--;
 	    case INST_JUMP_TRUE:
 	    case INST_JUMP_FALSE:
-		auxCount[pos+opnd]++;
+		auxCount[pos+opnd.i]++;
 		break;
 	    case INST_START_CMD:
-		auxCount[pos+(opnd>>1)]++;
+		auxCount[pos+(opnd.i>>1)]++;
 		break;
 	    case INST_BREAK:
 		auxCount[pos+1]--;
-		if (opnd >= 0) {
-		    opnd = codePtr->exceptArrayPtr[opnd].breakOffset;
-		    auxCount[opnd]++;
-		    TclVMStoreWordAtPtr(INST_JUMP, (opnd-pos), pc);
+		if (opnd.i >= 0) {
+		    opnd.i = codePtr->exceptArrayPtr[opnd.i].breakOffset;
+		    auxCount[opnd.i]++;
+		    TclVMStoreWordAtPtr(INST_JUMP, (opnd.i-pos), pc);
 		}
 		break;
 	    case INST_CONTINUE:
 		auxCount[pos+1]--;
-		if ((opnd >= 0)
-			&& (codePtr->exceptArrayPtr[opnd].continueOffset != -1)) {
-		    opnd = codePtr->exceptArrayPtr[opnd].continueOffset;
-		    auxCount[opnd]++;
-		    TclVMStoreWordAtPtr(INST_JUMP, (opnd-pos), pc);
+		if ((opnd.i >= 0)
+			&& (codePtr->exceptArrayPtr[opnd.i].continueOffset != -1)) {
+		    opnd.i = codePtr->exceptArrayPtr[opnd.i].continueOffset;
+		    auxCount[opnd.i]++;
+		    TclVMStoreWordAtPtr(INST_JUMP, (opnd.i-pos), pc);
 		}
 		break;		
 	    case INST_DONE:
@@ -3975,7 +3991,7 @@ OptInitCounts(codePtr, auxCount)
 		break;
 	    case INST_BEGIN_CATCH:
 		/* Can reach a seemingly unreachable END_CATCH. */
-		auxCount[pos+opnd]++;
+		auxCount[pos+opnd.i]++;
 		break;
 	    case INST_FOREACH_START: 
 		/* Jumps to FOREACH_STEP, which jumps right back here. Insure
@@ -3983,11 +3999,28 @@ OptInitCounts(codePtr, auxCount)
 		 * instruction immediately following this one. */ 
 		{
 		    ForeachInfo *infoPtr = (ForeachInfo *)
-			codePtr->auxDataArrayPtr[opnd].clientData;
+			codePtr->auxDataArrayPtr[opnd.i].clientData;
 		    int stepPos = 
 			codePtr->exceptArrayPtr[infoPtr->rangeIndex].continueOffset;
 
 		    auxCount[stepPos]++;
+		}
+		break;
+	    case INST_LOAD:
+	    case INST_STORE:
+	        {
+		    int index, flags;
+		    
+		    HP_EXTRACT(opnd.i, flags, index);
+		    
+		    if ((index < HPUINT_MAX)
+			    && ((flags & ~VM_VAR_OMIT_PUSH) == TCL_LEAVE_ERR_MSG)) {
+			/*
+			 * A local scalar, plain load/store instructions: use
+			 * the faster direct instructions. 
+			 */
+			TclVMStoreInstAtPtr((inst+1), pc);
+		    }
 		}
 		break;
 	}
@@ -4020,7 +4053,7 @@ OptCleanupByteCode(codePtr, auxCount)
 			 
 {
     TclVMWord *pc;
-    TclPSizedInt opnd;
+    TclVMOpnd opnd;
     int i, j, noops, opCode;
     unsigned char *pr, *pw, *qr, *qw;
     int oldstart;
@@ -4101,14 +4134,14 @@ OptCleanupByteCode(codePtr, auxCount)
 	    continue;
 	} else if (TclInstIsJump(opCode)
 		|| (opCode == INST_BEGIN_CATCH)) {
-	    if (opnd != 1) {
-		opnd += (auxCount[(i+opnd)] - auxCount[i]);
+	    if (opnd.i != 1) {
+		opnd.i += (auxCount[(i+opnd.i)] - auxCount[i]);
 		if (opCode == INST_JUMP){
-		    if (opnd == 1) {
+		    if (opnd.i == 1) {
 		    /* WHAT IF NEW NOOPS APPEAR HERE? Jumping around
 		     * unreachable code ... redo from scratch?*/ 
 			restart = 1;
-		    } else if (opnd == 0) {
+		    } else if (opnd.i == 0) {
 			/* an infinite empty loop! make it a noop. Note that
 			 * this is WRONG ... //// */
 			TclStoreNoopAtPtr(pc);
@@ -4116,15 +4149,15 @@ OptCleanupByteCode(codePtr, auxCount)
 		    }
 		}
 	    }
-	} else if (TclInstIsBoolComp(opCode) && (opnd != 0)) {
-		opnd += (auxCount[(i+opnd)] - auxCount[i]);	    
+	} else if (TclInstIsBoolComp(opCode) && (opnd.i != 0)) {
+		opnd.i += (auxCount[(i+opnd.i)] - auxCount[i]);	    
 	} else if (opCode == INST_START_CMD) {
 	    /* NOTE: depends on VAR_OMIT_PUSH == 1 */
-	    if ((opnd>>1) != 1) {
-		opnd += ((auxCount[(i+(opnd>>1))] - auxCount[i]) << 1);
+	    if ((opnd.i>>1) != 1) {
+		opnd.i += ((auxCount[(i+(opnd.i>>1))] - auxCount[i]) << 1);
 	    }
 	}
-	TclVMStoreWordAtPtr(opCode, opnd, (pc + auxCount[i]));
+	TclVMStoreWordAtPtr(opCode, opnd.i, (pc + auxCount[i]));
     }
 
     /*
