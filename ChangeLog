@@ -1,5 +1,10 @@
 2001-08-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclBinary.c (FormatNumber): Extract a long from the
+	object and not an int, to stop [binary format] from being unable
+	to format some input numbers on architectures where sizeof(int) is
+	less than sizeof(long) (particularly Alpha.)  [Bug #441861]
+
 	* tests/format.test: Converted conditional execution of tests into
 	a test constraint.
 
