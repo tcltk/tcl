@@ -1,3 +1,15 @@
+2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c:
+	* generic/tclFileSystem.h:
+	* generic/tclIOUtil.c:
+	* generic/tclPathObj.c:
+	* tests/cmdAH.test:
+	* tests/fileSystem.test:
+	* tests/winFCmd.test: fix to bad error message with 'cd' on
+	windows, when permissions are inadequate [Bug 1035462] and
+	to treatment of a volume-relative pwd on Windows [Bug 1018980].
+
 2004-09-27  Kevin Kenny  <kennykb@acm.org>
 
 	* compat/strftime.c (Removed):
