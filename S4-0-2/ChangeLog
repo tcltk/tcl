@@ -1,0 +1,38 @@
+2001-05-19  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* S4-0-2: added directory with differences to HEAD
+	* generic/tclExecute.c: 
+	* generic/tclExecute.h: added append, lappend instructions
+	Many other files updated, brought up to date with HEAD
+
+2001-05-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclParse.c: 
+	* tests/namespace.test: Insure consistent behaviour of the
+	[unknown] command: when a command is unknown, it is always
+	processed by [::unknown], ignoring any namespace proc which
+	happens to be called "unknown" [Patch #421166, Bug #420507]
+
+2001-04-30  Miguel Sofer <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: better comments
+	* generic/tclExecute.h: better comments
+
+2001-04-30  Miguel Sofer <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.h: cleanup, modif of MSVC code
+
+2001-04-27  Miguel Sofer <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: small bugfix
+	* generic/tclExecute.h: small bugfix in MSVC code
+
+2001-04-11  Miguel Sofer <msofer@users.sourceforge.net>
+
+	** First CVS version of the S4 engine **
+	* generic/tclCompile.h: Added compilation flag
+	  TCL_BYTECODE_OPCODES_OK  
+	* generic/tclExecute.c: First CVS version of the engine
+	* generic/tclExecute.h: Compiler dependent macros (new file)
+	* generic/tclInt.h: slight modifs, mainly for the new addressing
+	  mode for the tcl stack

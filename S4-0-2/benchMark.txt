@@ -1,0 +1,329 @@
+**
+** Run on a Thinkpad TP560E (P166), 80MB
+** runbench.tcl -iters 500
+**
+
+TCL_INTERP: 1:8.4a3 2:8.4a3
+STARTED 2001-05-19 10:42:45
+Benchmark 1:8.4a3 /CVS/tcl_SF_clean/unix/tclsh
+MIDPOINT 2001-05-19 11:06:35
+Benchmark 2:8.4a3 /CVS/tcl_SF_S4_new/unix/tclsh
+MIDPOINT 2001-05-19 11:30:50
+000 VERSIONS:                               1:8.4a3 2:8.4a3
+001 CATCH return ok                              13      14
+002 CATCH return error                          165     150
+003 CATCH no catch used                          13      12
+004 IF if true numeric                           26      20
+005 IF elseif true numeric                       33      23
+006 IF else true numeric                         30      24
+007 IF if true num/num                           26      19
+008 IF if false num/num                          28      21
+009 IF if false al/num                           46      34
+010 IF if true al/num                            57      44
+011 IF if false al/num                           54      45
+012 IF if true al/al                             53      43
+013 IF elseif true al/al                         85     111
+014 IF else true al/al                           84      69
+015 SWITCH first true                            83      77
+016 SWITCH second true                           85      81
+017 SWITCH ninth true                           103      96
+018 SWITCH default true                          86      83
+019 DATA create in a list                      4588    2709
+020 DATA create in an array                   12177    8949
+021 DATA access in a list                      6145    4436
+022 DATA access in an array                    8963    7967
+023 EVAL cmd eval in list obj var                44      40
+024 EVAL cmd eval as list                        39      38
+025 EVAL cmd eval as string                     104      98
+026 EVAL cmd and mixed lists                   7830    7895
+027 EVAL list cmd and mixed lists              7866    7930
+028 EVAL list cmd and pure lists               1238    1192
+029 EXPR unbraced                               376     347
+030 EXPR braced                                  51      41
+031 EXPR inline                                  58      59
+032 EXPR one operand                             13      12
+033 EXPR ten operands                            30      23
+034 EXPR fifty operands                          92      68
+035 EXPR incr with incr                          20      14
+036 EXPR incr with expr                          14      12
+037 HEAPSORT size 10                           2350    1984
+038 HEAPSORT size 50                          16510   13773
+039 HEAPSORT size 100                         37516   31309
+040 KLIST shuffle0 llength 1                    207     193
+041 KLIST shuffle0 llength 10                   577     547
+042 KLIST shuffle0 llength 100                 4934    4717
+043 KLIST shuffle0 llength 1000               58638   59244
+044 KLIST shuffle0 llength 10000             804393  742057
+045 KLIST shuffle1-s llength 1                  154     124
+046 KLIST shuffle1-s llength 10                 617     481
+047 KLIST shuffle1-s llength 100              13439    7552
+048 KLIST shuffle1-s llength 1000           1650896 1964249
+049 KLIST shuffle1a llength 1                   184     148
+050 KLIST shuffle1a llength 10                  768     578
+051 KLIST shuffle1a llength 100                7215    5395
+052 KLIST shuffle1a llength 1000              73048   55111
+053 KLIST shuffle1a llength 10000            748935  556800
+054 KLIST shuffle2 llength 1                    176     152
+055 KLIST shuffle2 llength 10                   736     590
+056 KLIST shuffle2 llength 100                 6870    5564
+057 KLIST shuffle2 llength 1000               72602   59582
+058 KLIST shuffle2 llength 10000             829927  701050
+059 KLIST shuffle3 llength 1                    146     122
+060 KLIST shuffle3 llength 10                   541     426
+061 KLIST shuffle3 llength 100                 4905    3820
+062 KLIST shuffle3 llength 1000               58468   48424
+063 KLIST shuffle3 llength 10000            1888493 1816547
+064 KLIST shuffle4 llength 1                    153     129
+065 KLIST shuffle4 llength 10                   577     451
+066 KLIST shuffle4 llength 100                 5215    3904
+067 KLIST shuffle4 llength 1000               51756   39315
+068 KLIST shuffle4 llength 10000             536057  407722
+069 KLIST shuffle5-s llength 1                   72      55
+070 KLIST shuffle5-s llength 10                 403     330
+071 KLIST shuffle5-s llength 100               5052    3691
+072 KLIST shuffle5-s llength 1000            418503  513137
+073 KLIST shuffle5a llength 1                    86      69
+074 KLIST shuffle5a llength 10                  479     431
+075 KLIST shuffle5a llength 100                4356    4006
+076 KLIST shuffle5a llength 1000              53378   50004
+077 KLIST shuffle5a llength 10000           1843622 1767409
+078 STR/LIST length, obj shimmer               5867    5906
+079 LIST length, pure list                       22      21
+080 STR length of a LIST                         19      20
+081 LIST exact search, first item                29      25
+082 LIST exact search, middle item               89      88
+083 LIST exact search, last item                175     171
+084 LIST exact search, non-item                 452     443
+085 LIST sorted search, first item               34      32
+086 LIST sorted search, middle item              34      32
+087 LIST sorted search, last item                34      32
+088 LIST sorted search, non-item                 33      30
+089 LIST exact search, untyped item             175     174
+090 LIST exact search, typed item               161     155
+091 LIST sorted search, typed item               33      31
+092 LIST sort                                  7883    8117
+093 LIST typed sort                            6418    6600
+094 LIST remove first element                   643     690
+095 LIST remove middle element                  640     693
+096 LIST remove last element                    635     689
+097 LIST replace first element                  598     643
+098 LIST replace middle element                 595     643
+099 LIST replace last element                   598     643
+100 LIST replace first el with multiple         659     702
+101 LIST replace middle el with multiple        633     682
+102 LIST replace last el with multiple          602     650
+103 LIST replace range                          601     649
+104 LIST remove in mixed list                   707     759
+105 LIST replace in mixed list                  650     742
+106 LIST index first element                     22      19
+107 LIST index middle element                    20      21
+108 LIST index last element                      22      20
+109 LIST insert an item at start                648     707
+110 LIST insert an item at middle               647     711
+111 LIST insert an item at "end"                602     606
+112 LIST small, early range                      38      39
+113 LIST small, late range                       38      39
+114 LIST large, early range                      60      60
+115 LIST large, late range                       61      64
+116 LIST append to list                        1497    1498
+117 LIST join list                             2787    2790
+118 LIST iterate list                          9072    5473
+119 LOOP for, iterate list                     8213    4807
+120 LOOP foreach, iterate list                 4868    3624
+121 LOOP for (to 1000)                         6011    3299
+122 LOOP while (to 1000)                       6009    3288
+123 LOOP for, iterate string                  12192    8311
+124 LOOP foreach, iterate string               5948    4727
+125 MAP string 1 val                           1716    1759
+126 MAP string 2 val                           4358    4393
+127 MAP string 3 val                           5426    5462
+128 MAP string 4 val                           6670    6682
+129 MAP string 1 val -nocase                   8680    8724
+130 MAP string 2 val -nocase                  15488   15578
+131 MAP string 3 val -nocase                  20885   20986
+132 MAP string 4 val -nocase                  25308   25423
+133 MAP regsub 1 val                          11326   11354
+134 MAP regsub 2 val                          50910   51169
+135 MAP regsub 3 val                          68324   68392
+136 MAP regsub 4 val                          85399   85878
+137 MAP regsub 1 val -nocase                  11333   11379
+138 MAP regsub 2 val -nocase                  50928   51228
+139 MAP regsub 3 val -nocase                  68223   68315
+140 MAP regsub 4 val -nocase                  85376   85150
+141 MAP string, no match                       2964    3579
+142 MAP string -nocase, no match              16691   17733
+143 MAP regsub, no match                       3364    3491
+144 MAP regsub -nocase, no match               3345    3508
+145 MAP string short                             77      68
+146 MAP regsub short                            480     490
+147 MATRIX transposition-0                    17473   14704
+148 MATRIX transposition-1                    12468    8843
+149 MATRIX mult 5x5                            1991    1542
+150 MATRIX mult 10x10                         12912    9967
+151 MATRIX mult 15x15                         41277   32008
+152 MTHD direct ns proc call                     13      12
+153 MTHD imported ns proc call                   14      15
+154 MTHD interp alias proc call                  41      43
+155 MTHD indirect proc eval                      55      55
+156 MTHD indirect proc eval #2                  109      99
+157 MTHD array stored proc call                  20      19
+158 MTHD switch method call                      87      85
+159 MTHD ns lookup call                         195     178
+160 MTHD inline call                              7       7
+161 PROC explicit return                         12      13
+162 PROC implicit return                         16      12
+163 PROC explicit return (2)                     12      11
+164 PROC implicit return (2)                     13      14
+165 PROC explicit return (3)                     14      11
+166 PROC implicit return (3)                     12      11
+167 PROC heavily commented                       14      11
+168 PROC do-nothing, no args                     11      10
+169 PROC do-nothing, one arg                     12      13
+170 PROC local links with global               3990    3414
+171 PROC local links with upvar                2851    2703
+172 PROC local links with variable             2736    2593
+173 READ 595K, gets                          767395  724788
+174 READ 595K, read                          213648  211423
+175 READ 595K, read & size                   213510  211556
+176 READ 3050b, gets                           4187    3940
+177 READ 3050b, read                           1247    1224
+178 READ 3050b, read & size                    1328    1298
+179 BREAD 595K, gets                         778877  753880
+180 BREAD 595K, read                         119753  121253
+181 BREAD 595K, read & size                  119788  121200
+182 BREAD 3050b, gets                          4466    4392
+183 BREAD 3050b, read                           603     550
+184 BREAD 3050b, read & size                    690     673
+185 RE literal regexp                            97      99
+186 RE var-based regexp                         101     104
+187 RE count all matches                        455     454
+188 RE extract all matches                      536     543
+189 RE 1-char short                              62      67
+190 RE 1-char long-start                         63      62
+191 RE 1-char long-middle                       142     143
+192 RE 1-char long-end                          220     221
+193 RE n-char short                              65      65
+194 RE n-char long-start                         65      67
+195 RE n-char long-middle                       144     149
+196 RE n-char long-end                          227     227
+197 RE basic                                     56      56
+198 RE c-comment simple                         153     152
+199 RE c-comment nomatch                         94      93
+200 RE c-comment long                           289     289
+201 RE c-comment long pmatch                    445     455
+202 RE c-comment long nomatch                   409     412
+203 RE c-comment many *s                        460     470
+204 RE 1-char short catching                    247     264
+205 RE 1-char long-start catching               247     261
+206 RE 1-char long-middle catching              333     346
+207 RE 1-char long-end catching                 411     426
+208 RE n-char short catching                    278     298
+209 RE n-char long-start catching               286     305
+210 RE n-char long-middle catching              364     386
+211 RE n-char long-end catching                 453     469
+212 RE basic catching                           280     288
+213 RE c-comment simple catching                584     621
+214 RE c-comment nomatch catching                90     100
+215 RE c-comment long catching                  819     859
+216 RE c-comment long pmatch catching           449     462
+217 RE c-comment long nomatch catching          406     411
+218 RE c-comment many *s catching              1323    1402
+219 STARTUP time to launch tclsh              47389   93217
+220 STR string compare                           46      42
+221 STR string compare long                    1714    1717
+222 STR string compare mixed long              2944    2963
+223 STR string compare uni long                5277    5329
+224 STR string compare ""                        35      26
+225 STR string equal ""                          30      22
+226 STR str $a equal ""                          28      19
+227 STR str num == ""                            31      21
+228 STR str $a eq $b                             40      33
+229 STR str $a ne $b                             41      33
+230 STR str $a eq $b (same obj)                  39      33
+231 STR str $a ne $b (same obj)                  39      32
+232 STR length (==4010)                          21      19
+233 STR length static str                        13      14
+234 STR index 0                                  34      34
+235 STR index 100                                34      32
+236 STR index 500                                34      35
+237 STR first (success)                          30      30
+238 STR first (failure)                         367     368
+239 STR first (total failure)                   343     338
+240 STR last (success)                           29      28
+241 STR last (failure)                          251     250
+242 STR last (total failure)                    229     233
+243 STR match, simple (success early)            27      26
+244 STR match, simple (success late)             27      24
+245 STR match, simple (failure)                  27      27
+246 STR match, simple (total failure)            25      26
+247 STR match, complex (success early)           32      27
+248 STR match, complex (success late)           381     379
+249 STR match, complex (failure)                304     308
+250 STR match, complex (total failure)          232     234
+251 STR range, index 100..200 of 4010            41      41
+252 STR replace, no replacement                 152     163
+253 STR replace, equal replacement              162     167
+254 STR replace, longer replacement             171     176
+255 STR repeat, abcdefghij * 10                  28      26
+256 STR repeat, abcdefghij * 100                 83      80
+257 STR repeat, abcdefghij * 1000               604     609
+258 STR repeat, 4010 chars * 10                 515     522
+259 STR repeat, 4010 chars * 100              24627   24803
+260 STR reverse iter/append, 10 c               184     157
+261 STR reverse iter/append, 10 uc              185     158
+262 STR reverse iter/set, 10 c                  222     159
+263 STR reverse iter/set, 10 uc                 213     168
+264 STR reverse recursive, 10 c                 495     455
+265 STR reverse recursive, 10 uc                469     440
+266 STR reverse iter/append, 100 c             1186     920
+267 STR reverse iter/append, 100 uc            1178     910
+268 STR reverse iter/set, 100 c                1655    1230
+269 STR reverse iter/set, 100 uc               1657    1236
+270 STR reverse recursive, 100 c               5335    5223
+271 STR reverse recursive, 100 uc              5144    5105
+272 STR reverse iter/append, 400 c             4470    3456
+273 STR reverse iter/append, 400 uc            4454    3407
+274 STR reverse iter/set, 400 c                6722    4924
+275 STR reverse iter/set, 400 uc               6750    4970
+276 STR reverse recursive, 400 c              25668   24564
+277 STR reverse recursive, 400 uc             27643   40254
+278 STR split, 4010 chars                      6366    6446
+279 STR split, 12100 uchars                   18520   18734
+280 STR split iter, 4010 chars                25154   20244
+281 STR split iter, 12100 uchars              74926   60378
+282 STR append                                  242     263
+283 STR append (1KB + 1KB)                      104     106
+284 STR append (10KB + 1KB)                     386     247
+285 STR append (1MB + 2b * 1000)              85110   82703
+286 STR append (1MB + 1KB)                    77400   77567
+287 STR append (1MB + 1KB * 20)               78823   78932
+288 STR append (1MB + 1KB * 1000)            147600  145619
+289 STR append (1MB + 1MB * 3)               306243  305241
+290 STR append (1MB + 1MB * 5)               383499  381346
+291 STR append (1MB + (1b + 1K + 1b) * 100)   86053   85554
+292 STR info locals match                      2042    1747
+293 TRACE no trace set                           67      57
+294 TRACE read                                   67      59
+295 TRACE write                                  65      57
+296 TRACE unset                                  66      59
+297 TRACE all set (rwu)                          66      57
+298 UNSET var exists                             20      18
+299 UNSET catch var exists                       22      19
+300 UNSET catch var !exist                      167     153
+301 UNSET info check var exists                  30      26
+302 UNSET info check var !exist                  22      19
+303 UNSET nocomplain var exists                  21      19
+304 UNSET nocomplain var !exist                  20      17
+305 VAR access locally set                       20      16
+306 VAR access local proc arg                    20      16
+307 VAR access global                            60      61
+308 VAR access upvar                             75      70
+309 VAR set scalar                               16      14
+310 VAR set array element                        29      25
+311 VAR 100 'set's in array                     362     298
+312 VAR 'array set' of 100 elems                726     713
+313 WORDCOUNT wc1                             12944   12928
+314 WORDCOUNT wc2                              3489    3764
+315 WORDCOUNT wc3                              3216    3614
+END VERSIONS:                               1:8.4a3 2:8.4a3
+FINISHED 2001-05-19 11:30:50

@@ -1,0 +1,135 @@
+* INFO valid on 19-may-2001 *
+
+*****************************************************************
+ THIS IS EXPERIMENTAL CODE
+ ... but seems to perform quite well!
+
+Purpose: speed increase in the tcl VM, with minimal impact on
+functionality.
+
+Please report bugs/suggestions to <mig@utdt.edu>
+*****************************************************************
+
+The differences to the head are described in this directory. 
+
+Note that, due to my lack of expertise, if you diff this to the HEAD
+you will get *a lot more* differences: the revision numbers for plenty
+of files!
+
+The differences to the head are all in the generic directory:
+
+ * tclCompile.h: minor differences (one #define)
+ * tclExecute.c: major modifications
+ * tclExecute.h: new file
+ * tclInt.h: minor differences
+
+*****************************************************************
+
+* Restrictions: as it is now, the external behaviour is identical to
+  the original, with one  exception: you cannot trace bytecode
+  execution (set tcl_traceExec is broken). 
+
+  If you need the functionality, uncomment line 663 in tclExecute.c  
+
+*****************************************************************
+
+* Description of contents, easy ones first:
+
+** tclCompile.h
+    Define a flag TCL_BYTECODE_OPCODES_OK used by JUMP_version=1
+
+** tclInt.h
+    Modifies the execution environment to use pointers to the stack
+    items instead of stack counts (absolute instead of relative
+    addressing). Add a couple of smallish macros.
+
+** tclExecute.h
+    Compiler-dependent definition of the macros for flow control in
+    function TclExecuteByteCode. Currently three versions are
+    implemented:
+      - SWITCH     the standard 'switch (*pc)', as in the HEAD version
+      - GCC        (gcc only) direct jump from the end of one
+		   instruction to the start of the next one
+      - MSVC       (msvc only) 'switch (*pc)', but without the runtime
+		   check that *pc is within bounds
+
+** tclExecute.c
+    I will try to (remember and) describe the modifications done to
+    the original file
+
+    (a) Almost all changes are in the function TclExecuteByteCode. Some
+    others have suffered minor modifications, all related to the new
+    structure of the execution environment. The main example of this
+    are in TclCreateExecEnv and GrowEvaluationStack.
+
+    (b) removed all debugging code in TclExecuteByteCode. This allowed
+    the recognition and grouping of code common to several
+    instructions. *This still requires rethinking/rebuilding of
+    debugging messages* 
+
+    (c) removed the possibility of tracing each bytecode (at the top
+    of the original execution loop). This does not seem necessary
+    except as debugging code; it has a very small impact on the
+    standard threading model, but much larger on the new (gcc only)
+    model included here too.
+
+    (d) abstracted the flow-control code in six small macros. These
+    are set in tclExecute.h
+
+    (e) reorganised the instructions to exploit common code; redefined
+    all auxiliary variables in blocks as small as possible. The idea
+    is that each instruction is actually a subroutine, and that it is
+    better to avoid global variables anyway. Helps some programmers
+    (me!) to analyse the code, may or may not help the optimiser.
+
+    (f) a few instructions where reprogrammed; the aim was mainly to
+    avoid testing more than once for the same condition, and to reuse
+    auxiliary values already calculated instead of recalculating
+    them. An example: when an object is shared, we now decrease its
+    refCount but do not test again to see if it can be freed ... we
+    KNOW it can't.
+
+    (g) defined a couple of macros to avoid calling very small
+    functions. INLINE_GET_BYTE_ARRAY/INLINE_GET_BYTE_ARRAY_LENGTH
+    replace calls to Tcl_GetByteArrayFromObj. 
+
+    (h) avoided many POP/PUSH pairs: many instructions that POP an
+    object and then PUSH another now avoid decreasing/increasing the
+    stack top pointer (tosPtr) - just leave it where it is ...
+
+    (i) created a small stack for objects to be DecrRef'd. The
+    instructions that may put something in empty it before continuing;
+    all other instructions do not. Allows for simpler code in some
+    cases ('implicit ifs')   
+
+    (j) inlined code from tclVar to access scalar indexed vars. The
+    inlined functions perform a few small chores and, in the normal
+    case, return a simple value: THIS was inlined; if the case is 'not
+    normal' (traced variables, error conditions), we fall back to the
+    original code. Maybe we should inline the whole function (and
+    remove it from tclVar.c?); it would require removing the 'static'
+    from a couple of functions in tclVar.c
+    [Find the spots searching for INLINE]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
