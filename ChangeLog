@@ -33,6 +33,16 @@
 	TclInitObjSubsystem to be with the bulk of the rest.
 	[Patch 424851] Committed by Miguel Sofer <mig@utdt.edu>
 
+2001-05-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclBasic.c (Tcl_GetMathFuncInfo,Tcl_ListMathFuncs): 
+	* generic/tclCmdIL.c (Tcl_InfoObjCmd,InfoFunctionsCmd): 
+	* generic/tcl.decls (generic table, positions 435+436): 
+	* tests/info.test: 
+	* doc/CrtMathFnc.3: 
+	* doc/info.n: Changes due to TIP #15 "Functions to List and Detail
+	Math Functions"
+
 2001-05-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/io.test: changed io-52.[9-11] to not be platform sensitive
