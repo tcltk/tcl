@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.59.2.3 2004/06/05 17:25:40 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.59.2.4 2004/10/14 15:28:38 dkf Exp $
 
 library tcl
 
@@ -704,6 +704,10 @@ declare 182 generic {
 }
 declare 183 generic {
      struct tm *TclpGmtime(TclpTime_t clock)
+}
+
+declare 199 generic {
+    int TclMatchIsTrivial(CONST char *pattern)
 }
 
 ##############################################################################
