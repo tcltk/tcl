@@ -1,3 +1,11 @@
+2003-04-01  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Check for
+	inet_ntoa in -lbind inside the BeOS block since
+	doing it later broke the build under SuSE 7.3.
+	[Bug 713128]
+
 2003-04-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/README:  Direct [source] of *.test files is no longer
