@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.6 2000/09/07 14:27:46 poenitz Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.7 2001/10/04 08:31:52 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -458,7 +458,7 @@ as \fIcount\fR 32-bit signed integers represented in big-endian byte
 order.  For example,
 .RS
 .CS
-\fBbinary \\x00\\x00\\x00\\x05\\x00\\x00\\x00\\x07\\xff\\xff\\xff\\xf0 I2I* var1 var2\fR
+\fBbinary scan \\x00\\x00\\x00\\x05\\x00\\x00\\x00\\x07\\xff\\xff\\xff\\xf0 I2I* var1 var2\fR
 .CE
 will return \fB2\fR with \fB5 7\fR stored in \fBvar1\fR and \fB-16\fR
 stored in \fBvar2\fR.
