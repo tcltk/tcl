@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.21 2002/04/03 08:39:26 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.22 2002/05/02 20:15:20 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -867,7 +867,9 @@ NULL, in which case no type information will be available to users of
 the filesystem.  The 'type' is used only for informational purposes,
 and should be returned as the string representation of the Tcl_Obj
 which is returned.  A typical return value might be "networked", "zip"
-or "ftp".
+or "ftp".  The Tcl_Obj result is owned by the filesystem and so Tcl will 
+increment the refCount of that object if it wishes to retain a reference 
+to it.
 .PP
 .CS
 typedef Tcl_Obj* Tcl_FSFilesystemPathTypeProc(

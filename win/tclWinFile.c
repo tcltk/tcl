@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.27 2002/03/24 11:41:51 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.28 2002/05/02 20:15:20 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -33,8 +33,9 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 static int NativeAccess(CONST TCHAR *path, int mode);
 static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr);
 static int NativeIsExec(CONST TCHAR *path);
-static int NativeMatchType(int isDrive, CONST TCHAR* nativeName, 
-			   Tcl_GlobTypeData *types);
+static int WinIsDrive(CONST char *name, int nameLen);
+static int NativeMatchType(CONST char *name, int nameLen, 
+			   CONST TCHAR* nativeName, Tcl_GlobTypeData *types);
 
 
 /*
@@ -124,27 +125,15 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     CONST TCHAR *nativeName;
 
     if (pattern == NULL || (*pattern == '\0')) {
-	int isDrive = 0;
-	int len;
-	char *str = Tcl_GetStringFromObj(pathPtr,&len);
-	if (len < 4) {
-	    if (len == 0) {
-		/* 
-		 * Not sure if this is possible, but we pass it on
-		 * anyway 
-		 */
-	    } else if (len == 1 && (str[0] == '/' || str[0] == '\\')) {
-		/* Path is pointing to the root volume */
-		isDrive = 1;
-	    } else if ((str[1] == ':') && (len == 2 || (str[2] == '/' || str[2] == '\\'))) {
-		/* Path is of the form 'x:' or 'x:/' or 'x:\' */
-		isDrive = 1;
+	Tcl_Obj *norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	if (norm != NULL) {
+	    int len;
+	    char *str = Tcl_GetStringFromObj(norm,&len);
+	    /* Match a file directly */
+	    nativeName = (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr);
+	    if (NativeMatchType(str, len, nativeName, types)) {
+		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
-	}
-	/* Match a file directly */
-	nativeName = (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr);
-	if (NativeMatchType(isDrive, nativeName, types)) {
-	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
 	return TCL_OK;
     } else {
@@ -214,10 +203,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	}
 
 	/*
-	 * Next check the volume information for the directory to see whether
-	 * comparisons should be case sensitive or not.  If the root is null, then
-	 * we use the root of the current directory.  If the root is just a drive
-	 * specifier, we use the root directory of the given drive.
+	 * Next check the volume information for the directory to see
+	 * whether comparisons should be case sensitive or not.  If the
+	 * root is null, then we use the root of the current directory.
+	 * If the root is just a drive specifier, we use the root
+	 * directory of the given drive.
 	 */
 
 	switch (Tcl_GetPathType(dir)) {
@@ -310,20 +300,23 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    if (!matchSpecialDots) {
 		/* If it is exactly '.' or '..' then we ignore it */
 		if (name[0] == '.') {
-		    if (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')) {
+		    if (name[1] == '\0' 
+		      || (name[1] == '.' && name[2] == '\0')) {
 			continue;
 		    }
 		}
 	    }
 	    
 	    /*
-	     * Check to see if the file matches the pattern.  Note that we
-	     * are ignoring the case sensitivity flag because Windows doesn't honor
-	     * case even if the volume is case sensitive.  If the volume also
-	     * doesn't preserve case, then we previously returned the lower case
-	     * form of the name.  This didn't seem quite right since there are
-	     * non-case-preserving volumes that actually return mixed case.  So now
-	     * we are returning exactly what we get from the system.
+	     * Check to see if the file matches the pattern.  Note that
+	     * we are ignoring the case sensitivity flag because Windows
+	     * doesn't honor case even if the volume is case sensitive.
+	     * If the volume also doesn't preserve case, then we
+	     * previously returned the lower case form of the name.  This
+	     * didn't seem quite right since there are
+	     * non-case-preserving volumes that actually return mixed
+	     * case.  So now we are returning exactly what we get from
+	     * the system.
 	     */
 
 	    nativeMatchResult = NULL;
@@ -338,8 +331,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    }
 
 	    /*
-	     * If the file matches, then we need to process the remainder of the
-	     * path.
+	     * If the file matches, then we need to process the remainder
+	     * of the path.
 	     */
 
 	    name = Tcl_WinTCharToUtf(nativeMatchResult, -1, &ds);
@@ -347,9 +340,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringFree(&ds);
 
 	    fname = Tcl_DStringValue(&dsOrig);
-	    nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(&dsOrig), &ds);
+	    nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(&dsOrig), 
+					   &ds);
 	    
-	    if (NativeMatchType(0, nativeName, types)) {
+	    if (NativeMatchType(fname, Tcl_DStringLength(&dsOrig), 
+				nativeName, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, 
 			Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
 	    }
@@ -381,13 +376,68 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 }
 
 /* 
+ * Does the given path represent a root volume?  We need this special
+ * case because for NTFS root volumes, the getFileAttributesProc returns
+ * a 'hidden' attribute when it should not.
+ */
+static int
+WinIsDrive(
+    CONST char *name,     /* Name (UTF-8) */
+    int len)              /* Length of name */
+{
+    int remove = 0;
+    while (len > 4) {
+        if ((name[len-1] != '.' || name[len-2] != '.') 
+	    || (name[len-3] != '/' && name[len-3] != '\\')) {
+            /* We don't have '/..' at the end */
+	    if (remove == 0) {
+	        break;
+	    }
+	    remove--;
+	    while (len > 0) {
+		len--;
+		if (name[len] == '/' || name[len] == '\\') {
+		    break;
+		}
+	    }
+	    if (len < 4) {
+	        len++;
+		break;
+	    }
+        } else {
+	    /* We do have '/..' */
+	    len -= 3;
+	    remove++;
+        }
+    }
+    if (len < 4) {
+	if (len == 0) {
+	    /* 
+	     * Not sure if this is possible, but we pass it on
+	     * anyway 
+	     */
+	} else if (len == 1 && (name[0] == '/' || name[0] == '\\')) {
+	    /* Path is pointing to the root volume */
+	    return 1;
+	} else if ((name[1] == ':') 
+		   && (len == 2 || (name[2] == '/' || name[2] == '\\'))) {
+	    /* Path is of the form 'x:' or 'x:/' or 'x:\' */
+	    return 1;
+	}
+    }
+    return 0;
+}
+	   
+
+/* 
  * This function needs a special case for a path which is a root
  * volume, because for NTFS root volumes, the getFileAttributesProc
  * returns a 'hidden' attribute when it should not.
  */
 static int 
 NativeMatchType(
-    int isDrive,              /* Is this path a drive (root volume) */
+    CONST char *name,         /* Name */
+    int nameLen,              /* Length of name */
     CONST TCHAR* nativeName,  /* Native path to check */
     Tcl_GlobTypeData *types)  /* Type description to match against */
 {
@@ -408,11 +458,11 @@ NativeMatchType(
     
     if (types == NULL) {
 	/* If invisible, don't return the file */
-	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
+	if (attr & FILE_ATTRIBUTE_HIDDEN && !WinIsDrive(name, nameLen)) {
 	    return 0;
 	}
     } else {
-	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
+	if (attr & FILE_ATTRIBUTE_HIDDEN && !WinIsDrive(name, nameLen)) {
 	    /* If invisible */
 	    if ((types->perm == 0) || 
 	      !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
@@ -1000,11 +1050,11 @@ NativeStat(nativePath, statPtr)
 	    (*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
 		    NULL, NULL, NULL, 0);
 	    /*
-	     * GetFullPathName() turns special devices like "NUL" into "\\.\NUL", 
-	     * but GetVolumeInformation() returns failure for "\\.\NUL".  This 
-	     * will cause "NUL" to get a drive number of -1, which makes about 
-	     * as much sense as anything since the special devices don't live on 
-	     * any drive.
+	     * GetFullPathName() turns special devices like "NUL" into
+	     * "\\.\NUL", but GetVolumeInformation() returns failure for
+	     * "\\.\NUL".  This will cause "NUL" to get a drive number of
+	     * -1, which makes about as much sense as anything since the
+	     * special devices don't live on any drive.
 	     */
 
 	    dev = dw;
@@ -1031,8 +1081,8 @@ NativeStat(nativePath, statPtr)
 	}
 
     
-	(*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH, nativeFullPath,
-		&nativePart);
+	(*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH, 
+					    nativeFullPath, &nativePart);
 
 	fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
 
@@ -1061,11 +1111,11 @@ NativeStat(nativePath, statPtr)
 	    (*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
 		    NULL, NULL, NULL, 0);
 	    /*
-	     * GetFullPathName() turns special devices like "NUL" into "\\.\NUL", 
-	     * but GetVolumeInformation() returns failure for "\\.\NUL".  This 
-	     * will cause "NUL" to get a drive number of -1, which makes about 
-	     * as much sense as anything since the special devices don't live on 
-	     * any drive.
+	     * GetFullPathName() turns special devices like "NUL" into
+	     * "\\.\NUL", but GetVolumeInformation() returns failure for
+	     * "\\.\NUL".  This will cause "NUL" to get a drive number of
+	     * -1, which makes about as much sense as anything since the
+	     * special devices don't live on any drive.
 	     */
 
 	    dev = dw;
@@ -1282,7 +1332,8 @@ TclpObjLink(pathPtr, toPtr)
 	return NULL;
     } else {
 	Tcl_DString ds;
-	if (TclpReadlink(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), &ds) != NULL) {
+	if (TclpReadlink(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), &ds) 
+	  != NULL) {
 	    link = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
 	    Tcl_IncrRefCount(link);
 	    Tcl_DStringFree(&ds);
@@ -1292,3 +1343,64 @@ TclpObjLink(pathPtr, toPtr)
 }
 
 #endif
+
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpFilesystemPathType --
+ *
+ *      This function is part of the native filesystem support, and
+ *      returns the path type of the given path.  Returns NTFS or FAT
+ *      or whatever is returned by the 'volume information' proc.
+ *
+ * Results:
+ *      NULL at present.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj*
+TclpFilesystemPathType(pathObjPtr)
+    Tcl_Obj* pathObjPtr;
+{
+#define VOL_BUF_SIZE 32
+    int found;
+    char volType[VOL_BUF_SIZE];
+    char* firstSeparator;
+    CONST char *path;
+    
+    Tcl_Obj *normPath = Tcl_FSGetNormalizedPath(NULL, pathObjPtr);
+    if (normPath == NULL) return NULL;
+    path = Tcl_GetString(normPath);
+    if (path == NULL) return NULL;
+    
+    firstSeparator = strchr(path, '/');
+    if (firstSeparator == NULL) {
+	found = tclWinProcs->getVolumeInformationProc(
+		Tcl_FSGetNativePath(pathObjPtr), NULL, 0, NULL, NULL, 
+		NULL, (WCHAR *)volType, VOL_BUF_SIZE);
+    } else {
+	Tcl_Obj *driveName = Tcl_NewStringObj(path, firstSeparator - path+1);
+	Tcl_IncrRefCount(driveName);
+	found = tclWinProcs->getVolumeInformationProc(
+		Tcl_FSGetNativePath(driveName), NULL, 0, NULL, NULL, 
+		NULL, (WCHAR *)volType, VOL_BUF_SIZE);
+	Tcl_DecrRefCount(driveName);
+    }
+
+    if (found == 0) {
+	return NULL;
+    } else {
+	Tcl_DString ds;
+	Tcl_Obj *objPtr;
+	
+	Tcl_WinTCharToUtf(volType, -1, &ds);
+	objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+	return objPtr;
+    }
+#undef VOL_BUF_SIZE
+}
