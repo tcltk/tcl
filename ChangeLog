@@ -1,5 +1,10 @@
 2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c (TclExecuteByteCode): fixed the previous
+	patch - wouldn't compile with TCL_COMPILE_DEBUG set.
+
+2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c (TclExecuteByteCode): consolidated the
 	handling of exception returns to INST_INVOKE and INST_EVAL, as
 	well as most of the code for INST_CONTINUE and INST_BREAK, in the
