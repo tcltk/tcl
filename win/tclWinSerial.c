@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.23 2002/11/26 22:35:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.24 2003/01/16 19:02:00 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -963,7 +963,7 @@ SerialOutputProc(
     int *errorCode)             /* Where to store error code. */
 {
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
-    int bytesWritten, timeout;
+    DWORD bytesWritten, timeout;
 
     *errorCode = 0;
 
@@ -1028,9 +1028,9 @@ SerialOutputProc(
                 ckfree(infoPtr->writeBuf);
             }
             infoPtr->writeBufLen = toWrite;
-            infoPtr->writeBuf = ckalloc(toWrite);
+            infoPtr->writeBuf = ckalloc((unsigned int) toWrite);
         }
-        memcpy(infoPtr->writeBuf, buf, toWrite);
+        memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
         infoPtr->toWrite = toWrite;
         ResetEvent(infoPtr->evWritable);
         SetEvent(infoPtr->evStartWriter);
@@ -1272,7 +1272,6 @@ SerialWriterThread(LPVOID arg)
 {
 
     SerialInfo *infoPtr = (SerialInfo *)arg;
-    HANDLE *handle = infoPtr->handle;
     DWORD bytesWritten, toWrite, waitResult;
     char *buf;
     OVERLAPPED myWrite; /* have an own OVERLAPPED in this thread */
@@ -1521,7 +1520,7 @@ SerialErrorStr(error, dsPtr)
     if( (error & CE_PTO) != 0) {    /* PTO used to signal WRITE-TIMEOUT */
                 Tcl_DStringAppendElement(dsPtr, "TIMEOUT");
     }
-    if( (error & ~(SERIAL_READ_ERRORS | SERIAL_WRITE_ERRORS)) != 0) {
+    if( (error & ~((DWORD) (SERIAL_READ_ERRORS | SERIAL_WRITE_ERRORS))) != 0) {
                 char buf[TCL_INTEGER_SPACE + 1];
                 wsprintfA(buf, "%d", error);
                 Tcl_DStringAppendElement(dsPtr, buf);
@@ -1581,7 +1580,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
     Tcl_DString ds;
     CONST TCHAR *native;
     int argc;
-    char **argv;
+    CONST char **argv;
     
     infoPtr = (SerialInfo *) instanceData;
     
@@ -1749,7 +1748,8 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
                 return TCL_ERROR;
             }
             if (strnicmp(argv[0], "DTR", strlen(argv[0])) == 0) {
-                if (! EscapeCommFunction(infoPtr->handle, flag ? SETDTR : CLRDTR)) {
+                if (! EscapeCommFunction(infoPtr->handle, flag ?
+                        (DWORD) SETDTR : (DWORD) CLRDTR)) {
                     if (interp) {
                         Tcl_AppendResult(interp, 
                             "can't set DTR signal", (char *) NULL);
@@ -1757,7 +1757,8 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
                     return TCL_ERROR;
                 }
             } else if (strnicmp(argv[0], "RTS", strlen(argv[0])) == 0) {
-                if (! EscapeCommFunction(infoPtr->handle, flag ? SETRTS : CLRRTS)) {
+                if (! EscapeCommFunction(infoPtr->handle, flag ?
+                        (DWORD) SETRTS : (DWORD) CLRRTS)) {
                     if (interp) {
                         Tcl_AppendResult(interp, 
                             "can't set RTS signal", (char *) NULL);
@@ -1765,7 +1766,8 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
                     return TCL_ERROR;
                 }
             } else if (strnicmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
-                if (! EscapeCommFunction(infoPtr->handle, flag ? SETBREAK : CLRBREAK)) {
+                if (! EscapeCommFunction(infoPtr->handle, flag ?
+                        (DWORD) SETBREAK : (DWORD) CLRBREAK)) {
                     if (interp) {
                         Tcl_AppendResult(interp, 
                             "can't set BREAK signal", (char *) NULL);
@@ -1795,7 +1797,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
         /*
         * -sysbuffer 4096 or -sysbuffer {64536 4096}
         */
-        size_t inSize = -1, outSize = -1;
+        size_t inSize = (size_t) -1, outSize = (size_t) -1;
         
         if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
             return TCL_ERROR;
@@ -2048,7 +2050,7 @@ SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
     if ((len > 1) && (strncmp(optionName, "-queue", len) == 0)) {
         char buf[TCL_INTEGER_SPACE + 1];
         COMSTAT cStat;
-        int error;
+        DWORD error;
 	int inBuffered, outBuffered, count;
 
         valid = 1;

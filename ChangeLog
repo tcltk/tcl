@@ -1,3 +1,26 @@
+2003-01-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWin32Dll.c (squelch_warnings): Squelch
+	compiler warnings from SEH ASM code.
+	* win/tclWinChan.c (squelch_warnings): Squelch
+	compiler warnings from SEH ASM code.
+	* win/tclWinDde.c: Add casts to avoid compiler
+	warnings. Pass pointer to DWORD instead of int
+	to avoid compiler warnings.
+	* win/tclWinFCmd.c (squelch_warnings): Add casts
+	and fixup decls to avoid compiler warnings.
+	Squelch compiler warnings from SEH ASM code.
+	* win/tclWinFile.c: Add casts and fixup decls
+	to avoid compiler warnings. Remove unused variable.
+	* win/tclWinNotify.c: Declare as DWORD instead
+	of int to avoid compiler warning.
+	* win/tclWinReg.c: Add casts to avoid compiler
+	warning. Fix assignment in if expression bug.
+	* win/tclWinSerial.c: Add casts to avoid compiler
+	warnings. Remove unused variable.
+	* win/tclWinSock.c: Add casts and fixup decls
+	to avoid compiler warnings.
+
 2003-01-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclClock.c (FormatClock): corrected typo that

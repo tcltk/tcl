@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.10 2001/12/14 10:32:47 dkf Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.11 2003/01/16 19:02:00 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -533,7 +533,7 @@ Tcl_Sleep(ms)
 
     Tcl_Time now;		/* Current wall clock time */
     Tcl_Time desired;		/* Desired wakeup time */
-    int sleepTime = ms;		/* Time to sleep */
+    DWORD sleepTime = ms;	/* Time to sleep */
 
     Tcl_GetTime( &now );
     desired.sec = now.sec + ( ms / 1000 );
