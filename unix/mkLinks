@@ -1276,7 +1276,7 @@ if test -r WrongNumArgs.3; then
     ln WrongNumArgs.3 Tcl_WrongNumArgs.3
 fi
 if test -r SourceRCFile.3; then
-    rm -f SourceRCFile.3
+    rm -f Tcl_SourceRCFile.3
     ln SourceRCFile.3 Tcl_SourceRCFile.3
 fi
 if test -r pkgMkIndex.n; then
