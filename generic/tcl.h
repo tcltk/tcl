@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.156 2003/04/05 01:25:10 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157 2003/04/16 23:33:43 dgp Exp $
  */
 
 #ifndef _TCL
@@ -632,18 +632,13 @@ typedef struct stat *Tcl_OldStat_;
  */
 typedef enum {
     TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
-#ifdef TCL_WIDE_INT_IS_LONG
-    = TCL_INT
-#endif
 } Tcl_ValueType;
 typedef struct Tcl_Value {
     Tcl_ValueType type;		/* Indicates intValue or doubleValue is
 				 * valid, or both. */
     long intValue;		/* Integer value. */
     double doubleValue;		/* Double-precision floating value. */
-#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
-#endif
 } Tcl_Value;
 
 /*
