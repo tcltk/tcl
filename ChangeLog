@@ -1,3 +1,7 @@
+2004-06-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Added correct option to example. [Bug 968219]
+
 2004-06-05  Kevin B. Kenny  <kennykb@acm.org>
 	
 	* generic/tcl.h: Corrected Tcl_WideInt declarations so that the mingw
