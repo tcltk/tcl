@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.37 2004/05/27 13:18:55 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.38 2004/06/23 00:24:42 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -553,7 +553,7 @@ typedef int socklen_t;
  */
 
 #ifdef TCL_THREADS
-#include <pthread.h>
+#   include <pthread.h>
 typedef pthread_mutex_t TclpMutex;
 EXTERN void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
@@ -562,25 +562,36 @@ EXTERN Tcl_DirEntry * 	TclpReaddir(DIR *);
 EXTERN struct tm *     	TclpLocaltime(CONST time_t *);
 EXTERN struct tm *     	TclpGmtime(CONST time_t *);
 EXTERN char *          	TclpInetNtoa(struct in_addr);
-#define readdir(x)	TclpReaddir(x)
+#   define readdir(x)	TclpReaddir(x)
 /* #define localtime(x)	TclpLocaltime(x)
  * #define gmtime(x)	TclpGmtime(x)    */
-#undef inet_ntoa
-#define inet_ntoa(x)	TclpInetNtoa(x)
-#undef TclOSreaddir
-#define TclOSreaddir(x) TclpReaddir(x)
-#ifdef MAC_OSX_TCL
+#   undef inet_ntoa
+#   define inet_ntoa(x)	TclpInetNtoa(x)
+#   undef TclOSreaddir
+#   define TclOSreaddir(x) TclpReaddir(x)
+#   ifdef MAC_OSX_TCL
 /* 
  * On Mac OS X, realpath is currently not
  * thread safe, c.f. SF bug # 711232.
  */
-#define NO_REALPATH
-#endif
+#	define NO_REALPATH
+#   endif
+#   ifdef HAVE_PTHREAD_ATTR_GET_NP
+#	include <pthread_np.h>
+#	define TclpPthreadGetAttrs	pthread_attr_get_np
+#   else
+#	ifdef HAVE_PTHREAD_GETATTR_NP
+#	    define TclpPthreadGetAttrs	pthread_getattr_np
+#	    ifdef GETATTRNP_NOT_DECLARED
+EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
+#	    endif
+#	endif /* HAVE_PTHREAD_GETATTR_NP */
+#   endif /* HAVE_PTHREAD_ATTR_GET_NP */
 #else
 typedef int TclpMutex;
-#define	TclpMutexInit(a)
-#define	TclpMutexLock(a)
-#define	TclpMutexUnlock(a)
+#   define	TclpMutexInit(a)
+#   define	TclpMutexLock(a)
+#   define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
 
 #endif /* _TCLUNIXPORT */

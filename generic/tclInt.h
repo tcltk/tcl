@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.166 2004/06/22 13:08:59 vasiljevic Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.167 2004/06/23 00:24:42 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1901,6 +1901,7 @@ EXTERN void		TclpThreadDataKeyInit _ANSI_ARGS_((
 EXTERN void		TclpThreadDataKeySet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr, VOID *data));
 EXTERN void		TclpThreadExit _ANSI_ARGS_((int status));
+EXTERN int		TclpThreadGetStackSize _ANSI_ARGS_((void));
 EXTERN void		TclRememberCondition _ANSI_ARGS_((Tcl_Condition *mutex));
 EXTERN void		TclRememberDataKey _ANSI_ARGS_((Tcl_ThreadDataKey *mutex));
 EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
