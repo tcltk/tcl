@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.33 2003/10/13 16:48:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.34 2003/11/03 12:48:30 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -267,6 +267,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		|| !S_ISDIR(statBuf.st_mode)) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
+	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_OK;
 	}
 
