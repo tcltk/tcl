@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.8 2000/04/11 21:16:18 ericm Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.9 2000/07/06 21:05:02 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -401,6 +401,9 @@ test msgcat-7.2 {::msgcat::mc, extra args go through to format} {
 test msgcat-7.3 {::msgcat::mc, errors from format are propagated} {
     catch {::msgcat::mc format3 "good test"}
 } 1
+test msgcat-7.4 {::msgcat::mc, extra args are given to unknown} {
+    ::msgcat::mc "this is a %s" "good test"
+} "this is a good test"
 
 # Reset the locale
 ::msgcat::mclocale $oldlocale

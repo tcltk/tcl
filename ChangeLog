@@ -1,3 +1,11 @@
+2000-07-06  Eric Melski  <ericm@scriptics.com>
+
+	* tests/msgcat.test: 
+	* library/msgcat1.0/msgcat.tcl: Applied patch from Christian
+	Krone, to provide extended args support for msgcat::unknown, which
+	is used for strings without a known translation in the current
+	locale [Bug: 5984].
+
 2000-06-29  Eric Melski  <ericm@scriptics.com>
 
 	* doc/msgcat.n: Doc's for mcmax function.
