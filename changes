@@ -3451,3 +3451,9 @@ Universal Headers V.3.0, so that Tcl will compile with CW Pro 2.
 -gmt flag set.  Thanks to Jan Nijtmans for reporting the problem. (RJ)
 
 ----------------- Released 8.0p2, 11/25/97 -----------------------
+
+5/27/98 (bug fix) Windows socket driver did not notice new data arriving
+on nonblocking sockets until the event loop was entered.
+
+5/27/98 (bug fix) Windows socket driver used FIONREAD, which is not
+supported correctly by WinSock.
