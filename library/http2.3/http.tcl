@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.23 2000/03/19 22:32:26 sandeep Exp $
+# RCS: @(#) $Id: http.tcl,v 1.24 2000/03/19 23:45:38 sandeep Exp $
 
 package provide http 2.3	;# This uses Tcl namespaces
 
@@ -314,10 +314,15 @@ proc http::geturl { url args } {
 	set conStat [catch {eval $defcmd $async {$host $port}} s]
     }
     if {$conStat} {
-	# something went wrong, so unset the state array and propagate the
-	# error to the caller
-	Finish $token $s
-	return $token
+	# something went wrong while trying to establish the connection
+	# The proper response is probably to give the caller a token
+	# containing error info, but that would break backwards compatibility.
+	# So, let's follow tradition and throw an exception (after unsetting
+	# the array).
+	unset $token
+	error $s
+	#Finish $token $s
+	#return $token
     }
     set state(sock) $s
 
