@@ -1,3 +1,12 @@
+2000-09-29  Jennifer Hom  <jenn@ajubasolutions.com>
+
+	* library/tcltest1.0/tcltest2.tcl:
+	* tests/tcltest.test:
+	* doc/tcltest2.n: Modified the new form of the test command to
+	accept both attribute-value pairs and command line options.
+	Updated the tests and the documentation for this new format.
+	Also changed the option names for the test command.
+
 2000-09-29  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* win/Makefile.in: commented use of TESTFLAGS
