@@ -1,3 +1,7 @@
+2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompCmds.c: patch for [Bug 483309] (petasis).
+
 2001-11-16  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclListObj.c: removed a C++-style comment that
