@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.18 2002/01/25 20:40:55 dgp Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.19 2002/07/01 18:24:39 jenglish Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -325,7 +325,7 @@ names of the registered channels to the interpreter's result as a
 list object.  \fBTcl_GetChannelNamesEx\fR will filter these names
 according to the \fIpattern\fR.  If \fIpattern\fR is NULL, then it
 will not do any filtering.  The return value is \fBTCL_OK\fR if no
-errors occured writing to the result, otherwise it is \fBTCL_ERROR\fR,
+errors occurred writing to the result, otherwise it is \fBTCL_ERROR\fR,
 and the error message is left in the interpreter's result.
 
 .SH TCL_REGISTERCHANNEL

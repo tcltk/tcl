@@ -66,7 +66,7 @@ returned from \fB::msgcat::mcunknown\fR is returned.
 .PP
 \fB::msgcat::mc\fR is the main function used to localize an
 application.  Instead of using an English string directly, an
-applicaton can pass the English string through \fB::msgcat::mc\fR and
+application can pass the English string through \fB::msgcat::mc\fR and
 use the result.  If an application is written for a single language in
 this fashion, then it is easy to add support for additional languages
 later simply by defining new message catalog entries.
@@ -74,7 +74,7 @@ later simply by defining new message catalog entries.
 \fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
 Given several source strings, \fB::msgcat::mcmax\fR returns the length
 of the longest translated string.  This is useful when designing
-localized GUI's, which may require that all buttons, for example, be a
+localized GUIs, which may require that all buttons, for example, be a
 fixed width (which will be the width of the widest button).
 .TP
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?  
@@ -131,8 +131,8 @@ current locale.  The default action is to return
 \fIsrc-string\fR.  This procedure can be redefined by the
 application, for example to log error messages for each unknown
 string.  The \fB::msgcat::mcunknown\fR procedure is invoked at the
-same stack context as the call to \fB::msgcat::mc\fR.  The return vaue
-of \fB::msgcat::mcunknown\fR is used as the return vaue for the call
+same stack context as the call to \fB::msgcat::mc\fR.  The return value
+of \fB::msgcat::mcunknown\fR is used as the return value for the call
 to \fB::msgcat::mc\fR.  
 
 .SH "LOCALE SPECIFICATION"
@@ -266,7 +266,7 @@ initialization script:
 ::msgcat::mcload [file join [file dirname [info script]] msgs]
 .CE
 
-.SH "POSTITIONAL CODES FOR FORMAT AND SCAN COMMANDS"
+.SH "POSITIONAL CODES FOR FORMAT AND SCAN COMMANDS"
 .PP
 It is possible that a message string used as an argument
 to \fBformat\fR might have positionally dependent parameters that
