@@ -1,3 +1,7 @@
+2004-02-26  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: fixed copyright year in Tcl.framework Info.plist
+
 2004-02-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/basic.test:	Made several tests more robust to the
