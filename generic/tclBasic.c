@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.9 2004/07/28 16:28:20 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.10 2004/09/29 19:36:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3727,6 +3727,16 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    return TCL_OK;
 	}
     } while (bytesLeft > 0);
+
+    if (nested) {
+	/*
+	 * This nested script did not terminate in ']', it is an error.
+	 */
+	
+	code = TCL_ERROR;
+	goto error;
+    }
+    
     iPtr->termOffset = p - script;
     iPtr->varFramePtr = savedVarFramePtr;
     return TCL_OK;
