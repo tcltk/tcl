@@ -1,3 +1,13 @@
+2002-05-08  David Gravereaux <davygrvy@pobox.com>
+
+	* tools/man2tcl.c:
+	* tools/man2help2.tcl: Proper source of macro error mis-
+	understanding single-quote as the leading macro command found
+	and repaired.
+
+	* doc/file.n: Reverted to prior state before I messed with
+	it.
+
 2002-05-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl: Corrected [uplevel] quoting when
