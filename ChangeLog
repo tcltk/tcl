@@ -1,3 +1,13 @@
+2003-06-16  Andreas Kupries  <andreask@activestate.com>
+
+	* win/Makefile.in:  Haven't heard back from David for a week.
+	* win/configure:    Now committing the remaining changes.
+	* win/configure.in: Note: In active contact with Helmut Giese
+	* win/makefile.vc:  about the borland relatedchanges. This part
+	* win/rules.vc:     will see future updates.
+	* win/tcl.m4:       
+	* win/makefile.bc:
+
 2003-06-10  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclConfig.c (ASSOC_KEY): Changed the key to
