@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.10 2004/09/26 16:36:06 msofer Exp $
+# RCS: @(#) $Id: for.test,v 1.10.2.1 2005/03/15 19:41:46 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -659,10 +659,10 @@ test for-6.6 {Tcl_ForObjCmd: error in initial command} -body {
     ("for" initial command)
     invoked from within
 "$z {set} {$i < 5} {incr i} {body}"}}
-test for-6.7 {Tcl_ForObjCmd: error in test expression} {
+test for-6.7 {Tcl_ForObjCmd: error in test expression} -match glob -body {
     set z for
     list [catch {$z {set i 0} {i < 5} {incr i} {body}} msg] $msg $errorInfo
-} {1 {syntax error in expression "i < 5": variable references require preceding $} {syntax error in expression "i < 5": variable references require preceding $
+} -result {1 {syntax error in expression "i < 5": * preceding $*} {syntax error in expression "i < 5": * preceding $*
     while executing
 "$z {set i 0} {i < 5} {incr i} {body}"}}
 test for-6.8 {Tcl_ForObjCmd: test expression is enclosed in quotes} {

@@ -1,3 +1,26 @@
+2005-03-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+	
+	* generic/tclBasic.c (many):
+	* generic/tclCompExpr.c (CompileMathFuncCall):
+	* generic/tclCompile.h:
+	* generic/tclExecute.c (many):
+	* generic/tclParseExpr.c (ParsePrimaryExpr):
+	* tests/compExpr-old.test:
+	* tests/compExpr.test:
+	* tests/compile.test:
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/for.test:
+	* tests/parseExpr.test:
+	Initial implementation of TIP #232.
+
+	* generic/tclObj.c (Tcl_DbNewBignumObj): Fixed typo that broke
+	--enable-symbols=mem build
+	* tests/binary.test (binary-40.3, binary-40.6): Corrected tests
+	to allow NaN(7ffffffffffff).
+	
 2005-03-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merged from HEAD.

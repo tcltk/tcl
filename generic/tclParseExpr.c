@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.5 2005/03/04 20:43:46 kennykb Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.6 2005/03/15 19:41:45 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1451,43 +1451,32 @@ ParsePrimaryExpr(infoPtr)
 	    return code;
 	}
 	if (infoPtr->lexeme != OPEN_PAREN) {
-	    /*
-	     * Guess what kind of error we have by trying to tell
-	     * whether we have a function or variable name here.
-	     * Alas, this makes the parser more tightly bound with the
-	     * rest of the interpreter, but that is the only way to
-	     * give a sensible message here.  Still, it is not too
-	     * serious as this is only done when generating an error.
-	     */
-	    Interp *iPtr = (Interp *) infoPtr->parsePtr->interp;
-	    Tcl_DString functionName;
-	    Tcl_HashEntry *hPtr;
 
 	    /*
-	     * Look up the name as a function name.  We need a writable
-	     * copy (DString) so we can terminate it with a NULL for
-	     * the benefit of Tcl_FindHashEntry which operates on
-	     * NULL-terminated string keys.
+	     * Either there's a math function without a (, or a
+	     * variable name without a '$'.
 	     */
-	    Tcl_DStringInit(&functionName);
-	    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, 
-	    	Tcl_DStringAppend(&functionName, tokenPtr->start,
-		tokenPtr->size));
-	    Tcl_DStringFree(&functionName);
 
-	    /*
-	     * Assume that we have an attempted variable reference
-	     * unless we've got a function name, as the set of
-	     * potential function names is typically much smaller.
-	     */
-	    if (hPtr != NULL) {
-		LogSyntaxError(infoPtr,
-			"expected parenthesis enclosing function arguments");
-	    } else {
-		LogSyntaxError(infoPtr,
-			"variable references require preceding $");
-	    }
+	    Tcl_Obj* errMsg 
+		= Tcl_NewStringObj( "syntax error in expression \"", -1 );
+	    TclAppendLimitedToObj( errMsg,
+				   infoPtr->originalExpr,
+				   (int) (infoPtr->lastChar
+					  - infoPtr->originalExpr ), 
+				   63,
+				   NULL );
+	    Tcl_AppendToObj( errMsg, "\": the word \"", -1 );
+	    Tcl_AppendToObj( errMsg, tokenPtr->start, tokenPtr->size );
+	    Tcl_AppendToObj( errMsg,
+			     "\" requires a preceding $ if it's a variable ",
+			     -1 );
+	    Tcl_AppendToObj( errMsg,
+			     "or function arguments if it's a function", -1 );
+	    Tcl_SetObjResult( infoPtr->parsePtr->interp, errMsg );
+	    infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;
+	    infoPtr->parsePtr->term = infoPtr->start;
 	    return TCL_ERROR;
+
 	}
 	code = GetLexeme(infoPtr); /* skip over '(' */
 	if (code != TCL_OK) {

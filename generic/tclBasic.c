@@ -13,11 +13,27 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.136.2.4 2005/03/02 21:25:20 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136.2.5 2005/03/15 19:41:42 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include <float.h>
+#ifndef TCL_NO_MATH
+#include <math.h>
+#endif
+
+/*
+ * The following structure defines the client data for a math function
+ * registered with Tcl_CreateMathFunc
+ */
+
+typedef struct OldMathFuncData {
+    Tcl_MathProc* proc;		/* Handler procedure */
+    int numArgs;		/* Number of args expected */
+    Tcl_ValueType* argTypes;	/* Types of the args */
+    ClientData clientData;	/* Client data for the handler function */
+} OldMathFuncData;
 
 /*
  * Static procedures in this file:
@@ -29,6 +45,106 @@ static char *		CallCommandTraces _ANSI_ARGS_((Interp *iPtr,
 static void		DeleteInterpProc _ANSI_ARGS_((Tcl_Interp *interp));
 static void		ProcessUnexpectedResult _ANSI_ARGS_((
 			    Tcl_Interp *interp, int returnCode));
+
+static int		OldMathFuncProc _ANSI_ARGS_((ClientData clientData,
+						     Tcl_Interp* interp,
+						     int argc,
+						     Tcl_Obj *CONST *objv ));
+
+static void		OldMathFuncDeleteProc _ANSI_ARGS_((ClientData));
+
+static int		ExprAbsFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprBinaryFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprDoubleFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprIntFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprRandFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprRoundFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprSrandFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprUnaryFunc _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		ExprWideFunc  _ANSI_ARGS_((ClientData clientData,
+						 Tcl_Interp *interp,
+						 int argc,
+						 Tcl_Obj *CONST *objv));
+static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
+
+static void		MathFuncWrongNumArgs 
+				_ANSI_ARGS_((Tcl_Interp* interp,
+					     int expected,
+					     int actual,
+					     Tcl_Obj *CONST *objv ));
+
+#ifndef TCL_WIDE_INT_IS_LONG
+/*
+ * Extract a double value from a general numeric object.
+ */
+#define GET_DOUBLE_VALUE(doubleVar, objPtr, typePtr)			\
+    if ((typePtr) == &tclIntType) {					\
+	(doubleVar) = (double) (objPtr)->internalRep.longValue;		\
+    } else if ((typePtr) == &tclWideIntType) {				\
+	(doubleVar) = Tcl_WideAsDouble((objPtr)->internalRep.wideValue);\
+    } else {								\
+	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
+    }
+#else /* TCL_WIDE_INT_IS_LONG */
+#define GET_DOUBLE_VALUE(doubleVar, objPtr, typePtr)			\
+    if (((typePtr) == &tclIntType) || ((typePtr) == &tclWideIntType)) { \
+	(doubleVar) = (double) (objPtr)->internalRep.longValue;		\
+    } else {								\
+	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
+    }
+#endif /* TCL_WIDE_INT_IS_LONG */
+#define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
+    (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
+	    &(wideVar));						\
+    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
+	    && (wideVar) <= Tcl_LongAsWide(LONG_MAX)) {			\
+	(objPtr)->typePtr = &tclIntType;				\
+	(objPtr)->internalRep.longValue = (longVar)			\
+		= Tcl_WideAsLong(wideVar);				\
+    }
+#define IS_INTEGER_TYPE(typePtr)					\
+	((typePtr) == &tclIntType || (typePtr) == &tclWideIntType)
+#define IS_NUMERIC_TYPE(typePtr)					\
+	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
+
+/*
+ * Macros for testing floating-point values for certain special cases. Test
+ * for not-a-number by comparing a value against itself; test for infinity
+ * by comparing against the largest floating-point value.
+ */
+
+#ifdef _MSC_VER
+#define IS_NAN(f) (_isnan((f)))
+#define IS_INF(f) ( ! (_finite((f))))
+#else
+#define IS_NAN(f) ((f) != (f))
+#define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
+#endif
 
 extern TclStubs tclStubs;
 
@@ -144,6 +260,55 @@ static CmdInfo builtInCmds[] = {
     {NULL,	(Tcl_ObjCmdProc *) NULL,	(CompileProc *) NULL,	0}
 };
 
+/*
+ * Math functions
+ */
+
+typedef struct {
+    CONST char* name;		/* Name of the function */
+    Tcl_ObjCmdProc* objCmdProc;	/* Procedure that evaluates the function */
+    ClientData clientData;	/* Client data for the procedure */
+} BuiltinFuncDef;
+BuiltinFuncDef BuiltinFuncTable[] = {
+    { "::tcl::mathfunc::abs",	ExprAbsFunc,	NULL 			},
+#ifndef TCL_NO_MATH
+    { "::tcl::mathfunc::acos",	ExprUnaryFunc,	(ClientData) acos 	},
+    { "::tcl::mathfunc::asin",	ExprUnaryFunc,	(ClientData) asin 	},
+    { "::tcl::mathfunc::atan",	ExprUnaryFunc,	(ClientData) atan 	},
+    { "::tcl::mathfunc::atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
+    { "::tcl::mathfunc::ceil",	ExprUnaryFunc,	(ClientData) ceil 	},
+    { "::tcl::mathfunc::cos",	ExprUnaryFunc,	(ClientData) cos 	},
+    { "::tcl::mathfunc::cosh",	ExprUnaryFunc,	(ClientData) cosh	},
+#endif
+    { "::tcl::mathfunc::double",ExprDoubleFunc,	NULL			},
+#ifndef TCL_NO_MATH
+    { "::tcl::mathfunc::exp",	ExprUnaryFunc,	(ClientData) exp	},
+    { "::tcl::mathfunc::floor",	ExprUnaryFunc,	(ClientData) floor 	},
+    { "::tcl::mathfunc::fmod",	ExprBinaryFunc,	(ClientData) fmod	},
+    { "::tcl::mathfunc::hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
+#endif
+    { "::tcl::mathfunc::int",	ExprIntFunc,	NULL			},
+#ifndef TCL_NO_MATH
+    { "::tcl::mathfunc::log",	ExprUnaryFunc,	(ClientData) log 	},
+    { "::tcl::mathfunc::log10",	ExprUnaryFunc,  (ClientData) log10 	},
+    { "::tcl::mathfunc::pow",	ExprBinaryFunc,	(ClientData) pow 	},
+#endif
+    { "::tcl::mathfunc::rand",	ExprRandFunc,	NULL			},
+    { "::tcl::mathfunc::round",	ExprRoundFunc,	NULL			},
+#ifndef TCL_NO_MATH
+    { "::tcl::mathfunc::sin",	ExprUnaryFunc,	(ClientData) sin 	},
+    { "::tcl::mathfunc::sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
+    { "::tcl::mathfunc::sqrt",	ExprUnaryFunc,	(ClientData) sqrt 	},
+#endif
+    { "::tcl::mathfunc::srand",	ExprSrandFunc,	NULL			},
+#ifndef TCL_NO_MATH
+    { "::tcl::mathfunc::tan",	ExprUnaryFunc,	(ClientData) tan 	},
+    { "::tcl::mathfunc::tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
+#endif
+    { "::tcl::mathfunc::wide",	ExprWideFunc,	NULL		 	},
+    { NULL, NULL, NULL }
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -170,10 +335,9 @@ Tcl_CreateInterp()
     Interp *iPtr;
     Tcl_Interp *interp;
     Command *cmdPtr;
-    BuiltinFunc *builtinFuncPtr;
-    MathFunc *mathFuncPtr;
-    Tcl_HashEntry *hPtr;
+    BuiltinFuncDef *builtinFuncPtr;
     const CmdInfo *cmdInfoPtr;
+    Tcl_Namespace* mathfuncNSPtr;
     int i;
     union {
 	char c[sizeof(short)];
@@ -213,7 +377,6 @@ Tcl_CreateInterp()
     iPtr->globalNsPtr		= NULL;
     iPtr->hiddenCmdTablePtr	= NULL;
     iPtr->interpInfo		= NULL;
-    Tcl_InitHashTable(&iPtr->mathFuncTable, TCL_STRING_KEYS);
 
     iPtr->numLevels = 0;
     iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
@@ -399,6 +562,11 @@ Tcl_CreateInterp()
 	    TclClockOldscanObjCmd,	(ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL );
 
+    /*
+     * Register the built-in functions
+     */
+
+
     /* Register the default [interp bgerror] handler. */
 
     Tcl_CreateObjCommand( interp,	"::tcl::Bgerror",
@@ -409,21 +577,25 @@ Tcl_CreateInterp()
      * Register the builtin math functions.
      */
 
+    mathfuncNSPtr = Tcl_CreateNamespace( interp, "::tcl::mathfunc",
+					 (ClientData) NULL,
+					 (Tcl_NamespaceDeleteProc*) NULL );
+    if ( mathfuncNSPtr == NULL ) {
+	Tcl_Panic( "Can't create math function namespace" );
+    }
     i = 0;
-    for (builtinFuncPtr = tclBuiltinFuncTable;  builtinFuncPtr->name != NULL;
-	    builtinFuncPtr++) {
-	Tcl_CreateMathFunc((Tcl_Interp *) iPtr, builtinFuncPtr->name,
-		builtinFuncPtr->numArgs, builtinFuncPtr->argTypes,
-		(Tcl_MathProc *) NULL, (ClientData) 0);
-	hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable,
-		builtinFuncPtr->name);
-	if (hPtr == NULL) {
-	    Tcl_Panic("Tcl_CreateInterp: Tcl_CreateMathFunc incorrectly registered '%s'", builtinFuncPtr->name);
-	    return NULL;
+    for ( ; ; ) {
+	CONST char* tail;
+	builtinFuncPtr = &(BuiltinFuncTable[ i++ ]);
+	if ( builtinFuncPtr->name == NULL ) {
+	    break;
 	}
-	mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
-	mathFuncPtr->builtinFuncIndex = i;
-	i++;
+	Tcl_CreateObjCommand( interp, builtinFuncPtr->name,
+			      builtinFuncPtr->objCmdProc,
+			      builtinFuncPtr->clientData,
+			      (Tcl_CmdDeleteProc*) NULL );
+	tail = builtinFuncPtr->name + strlen( "::tcl::mathfunc::" );
+	Tcl_Export( interp, mathfuncNSPtr, tail, 0 );
     }
 
     /*
@@ -932,16 +1104,6 @@ DeleteInterpProc(interp)
 	Tcl_DeleteHashTable(hTablePtr);
 	ckfree((char *) hTablePtr);
     }
-    /*
-     * Tear down the math function table.
-     */
-
-    for (hPtr = Tcl_FirstHashEntry(&iPtr->mathFuncTable, &search);
-	     hPtr != NULL;
-             hPtr = Tcl_NextHashEntry(&search)) {
-	ckfree((char *) Tcl_GetHashValue(hPtr));
-    }
-    Tcl_DeleteHashTable(&iPtr->mathFuncTable);
 
     /*
      * Invoke deletion callbacks; note that a callback can create new
@@ -2672,52 +2834,176 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
     ClientData clientData;		/* Additional value to pass to the
 					 * function. */
 {
-    Interp *iPtr = (Interp *) interp;
-    Tcl_HashEntry *hPtr;
-    MathFunc *mathFuncPtr;
-    int new, i;
 
-    hPtr = Tcl_CreateHashEntry(&iPtr->mathFuncTable, name, &new);
-    if (new) {
-	Tcl_SetHashValue(hPtr, ckalloc(sizeof(MathFunc)));
+    Tcl_DString bigName;
+
+    OldMathFuncData* data
+	= (OldMathFuncData*) Tcl_Alloc( sizeof ( OldMathFuncData ) );
+
+    if ( numArgs > MAX_MATH_ARGS ) {
+	Tcl_Panic( "attempt to create a math function with too many args" );
     }
-    mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
 
-    if (!new) {	
-	if (mathFuncPtr->builtinFuncIndex >= 0) {
-	    /*
-	     * We are redefining a builtin math function. Invalidate the
-             * interpreter's existing code by incrementing its
-             * compileEpoch member. This field is checked in Tcl_EvalObj
-             * and ObjInterpProc, and code whose compilation epoch doesn't
-             * match is recompiled. Newly compiled code will no longer
-             * treat the function as builtin.
-	     */
+    data->proc = proc;
+    data->numArgs = numArgs;
+    data->argTypes
+	= (Tcl_ValueType*) Tcl_Alloc( numArgs * sizeof( Tcl_ValueType ) );
+    memcpy( data->argTypes, argTypes, numArgs * sizeof( Tcl_ValueType ) );
+    data->clientData = clientData;
 
-	    iPtr->compileEpoch++;
+    Tcl_DStringInit( &bigName );
+    Tcl_DStringAppend( &bigName, "::tcl::mathfunc::", -1 );
+    Tcl_DStringAppend( &bigName, name, -1 );
+
+    Tcl_CreateObjCommand( interp, Tcl_DStringValue( &bigName ),
+			  OldMathFuncProc, (ClientData) data,
+			  OldMathFuncDeleteProc );
+    Tcl_DStringFree( &bigName );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OldMathFuncProc --
+ *
+ *	Dispatch to a math function created with Tcl_CreateMathFunc
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever the math function does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+OldMathFuncProc( clientData, interp, objc, objv )
+     ClientData clientData;	/* Ponter to OldMathFuncData describing
+				 * the function being called */
+     Tcl_Interp* interp;	/* Tcl interpreter */
+     int objc;			/* Actual parameter count */
+     Tcl_Obj *CONST *objv;	/* Parameter vector */
+{
+    Tcl_Obj* valuePtr;
+    OldMathFuncData* dataPtr = (OldMathFuncData*) clientData;
+    Tcl_Value args[MAX_MATH_ARGS];
+    Tcl_Value funcResult;
+    int result;
+    int i, j, k;
+    double d;
+
+    /* Check argument count */
+
+    if ( objc != dataPtr->numArgs + 1 ) {
+	MathFuncWrongNumArgs( interp, dataPtr->numArgs+1, objc, objv );
+	return TCL_ERROR;
+    }
+
+    /* Convert arguments from Tcl_Obj's to Tcl_Value's */
+
+    for ( j = 1, k = 0; j < objc; ++j, ++k ) {
+	valuePtr = objv[j];
+	if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Copy the object's numeric value to the argument record,
+	 * converting it if necessary. 
+	 */
+
+	if (valuePtr->typePtr == &tclIntType) {
+	    i = valuePtr->internalRep.longValue;
+	    if (dataPtr->argTypes[k] == TCL_DOUBLE) {
+		args[k].type = TCL_DOUBLE;
+		args[k].doubleValue = i;
+	    } else if (dataPtr->argTypes[k] == TCL_WIDE_INT) {
+		args[k].type = TCL_WIDE_INT;
+		args[k].wideValue = Tcl_LongAsWide(i);
+	    } else {
+		args[k].type = TCL_INT;
+		args[k].intValue = i;
+	    }
+	} else if (valuePtr->typePtr == &tclWideIntType) {
+	    Tcl_WideInt w;
+	    TclGetWide(w,valuePtr);
+	    if (dataPtr->argTypes[k] == TCL_DOUBLE) {
+		args[k].type = TCL_DOUBLE;
+		args[k].doubleValue = Tcl_WideAsDouble(w);
+	    } else if (dataPtr->argTypes[k] == TCL_INT) {
+		args[k].type = TCL_INT;
+		args[k].intValue = Tcl_WideAsLong(w);
+	    } else {
+		args[k].type = TCL_WIDE_INT;
+		args[k].wideValue = w;
+	    }
 	} else {
-	    /*
-	     * A non-builtin function is being redefined. We must invalidate
-             * existing code if the number of arguments has changed. This
-	     * is because existing code was compiled assuming that number.
-	     */
-
-	    if (numArgs != mathFuncPtr->numArgs) {
-		iPtr->compileEpoch++;
+	    d = valuePtr->internalRep.doubleValue;
+	    if (dataPtr->argTypes[k] == TCL_INT) {
+		args[k].type = TCL_INT;
+		args[k].intValue = (long) d;
+	    } else if (dataPtr->argTypes[k] == TCL_WIDE_INT) {
+		args[k].type = TCL_WIDE_INT;
+		args[k].wideValue = Tcl_DoubleAsWide(d);
+	    } else {
+		args[k].type = TCL_DOUBLE;
+		args[k].doubleValue = d;
 	    }
 	}
     }
-    
-    mathFuncPtr->builtinFuncIndex = -1;	/* can't be a builtin function */
-    if (numArgs > MAX_MATH_ARGS) {
-	numArgs = MAX_MATH_ARGS;
+
+    /* Call the function */
+
+    result = (*dataPtr->proc)(dataPtr->clientData, interp, args,
+	    &funcResult);
+    if (result != TCL_OK) {
+	return result;
     }
-    mathFuncPtr->numArgs = numArgs;
-    for (i = 0;  i < numArgs;  i++) {
-	mathFuncPtr->argTypes[i] = argTypes[i];
+
+    /* Return the result of the call */
+
+    if (funcResult.type == TCL_INT) {
+	valuePtr = Tcl_NewLongObj(funcResult.intValue);
+    } else if (funcResult.type == TCL_WIDE_INT) {
+	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
+    } else {
+	d = funcResult.doubleValue;
+	if (IS_NAN(d) || IS_INF(d)) {
+	    TclExprFloatError(interp, d);
+	    return TCL_ERROR;
+	}
+	valuePtr = Tcl_NewDoubleObj(d);
     }
-    mathFuncPtr->proc = proc;
-    mathFuncPtr->clientData = clientData;
+    Tcl_SetObjResult( interp, valuePtr );
+    return TCL_OK;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OldMathFuncDeleteProc --
+ *
+ *	Cleans up after deleting a math function registered with
+ *	Tcl_CreateMathFunc
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees allocated memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+OldMathFuncDeleteProc( clientData )
+     ClientData clientData;
+{
+    OldMathFuncData* dataPtr = (OldMathFuncData*) clientData;
+    Tcl_Free( (VOID*) dataPtr->argTypes );
+    Tcl_Free( (VOID*) dataPtr );
 }
 
 /*
@@ -2754,39 +3040,50 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
     Tcl_MathProc **procPtr;
     ClientData *clientDataPtr;
 {
-    Interp *iPtr = (Interp *) interp;
-    Tcl_HashEntry *hPtr;
-    MathFunc *mathFuncPtr;
-    Tcl_ValueType *argTypes;
-    int i,numArgs;
 
-    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, name);
-    if (hPtr == NULL) {
-        Tcl_AppendResult(interp, "math function \"", name,
-		"\" not known in this interpreter", (char *) NULL);
+    Tcl_Obj* cmdNameObj;
+    Command* cmdPtr;
+
+    /* Get the command that implements the math function */
+
+    cmdNameObj = Tcl_NewStringObj( "tcl::mathfunc::", -1 );
+    Tcl_AppendToObj( cmdNameObj, name, -1 );
+    Tcl_IncrRefCount( cmdNameObj );
+    cmdPtr = (Command*) Tcl_GetCommandFromObj( interp, cmdNameObj );
+    Tcl_DecrRefCount( cmdNameObj );
+
+    /* Report unknown functions */
+
+    if ( cmdPtr == NULL ) {
+	Tcl_Obj* message = Tcl_NewStringObj( "unknown math function \"", -1 );
+	Tcl_AppendToObj( message, name, -1 );
+	Tcl_AppendToObj( message, "\"", 1 );
+	*numArgsPtr = -1; *argTypesPtr = NULL; 
+	*procPtr = NULL;
+	*clientDataPtr = NULL;
 	return TCL_ERROR;
     }
-    mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
+    
+    /* 
+     * Retrieve function info for user defined functions; return
+     * dummy information for builtins.
+     */
 
-    *numArgsPtr = numArgs = mathFuncPtr->numArgs;
-    if (numArgs == 0) {
-	/* Avoid doing zero-sized allocs... */
-	numArgs = 1;
-    }
-    *argTypesPtr = argTypes =
-	(Tcl_ValueType *)ckalloc(numArgs * sizeof(Tcl_ValueType));
-    for (i = 0; i < mathFuncPtr->numArgs; i++) {
-	argTypes[i] = mathFuncPtr->argTypes[i];
-    }
-
-    if (mathFuncPtr->builtinFuncIndex == -1) {
-	*procPtr = (Tcl_MathProc *) NULL;
+    if ( cmdPtr->objProc == &OldMathFuncProc ) {
+	OldMathFuncData* dataPtr = (OldMathFuncData*) cmdPtr->clientData;
+	*procPtr = dataPtr->proc;
+	*numArgsPtr = dataPtr->numArgs;
+	*argTypesPtr = dataPtr->argTypes;
+	*clientDataPtr = dataPtr->clientData;
     } else {
-	*procPtr = mathFuncPtr->proc;
-	*clientDataPtr = mathFuncPtr->clientData;
+	*procPtr = NULL;
+	*numArgsPtr = -1;
+	*argTypesPtr = NULL;
+	*procPtr = NULL;
+	*clientDataPtr = NULL;
     }
-
     return TCL_OK;
+
 }
 
 /*
@@ -2813,24 +3110,35 @@ Tcl_ListMathFuncs(interp, pattern)
     Tcl_Interp *interp;
     CONST char *pattern;
 {
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *resultList = Tcl_NewObj();
-    register Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hSearch;
-    CONST char *name;
+    Namespace* globalNsPtr = (Namespace*) Tcl_GetGlobalNamespace( interp );
+    Namespace* nsPtr;
+    Namespace* dummy1NsPtr;
+    Namespace* dummy2NsPtr;
+    CONST char* dummyNamePtr;
+    Tcl_Obj* result = Tcl_NewObj();
+    Tcl_HashEntry* cmdHashEntry;
+    Tcl_HashSearch cmdHashSearch;
+    CONST char* cmdNamePtr;
+    
+    TclGetNamespaceForQualName( interp, "::tcl::mathfunc",
+				globalNsPtr, 
+				TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY,
+				&nsPtr, &dummy1NsPtr, &dummy2NsPtr,
+				&dummyNamePtr );
 
-    for (hPtr = Tcl_FirstHashEntry(&iPtr->mathFuncTable, &hSearch);
-	 hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-        name = Tcl_GetHashKey(&iPtr->mathFuncTable, hPtr);
-	if ((pattern == NULL || Tcl_StringMatch(name, pattern)) &&
-	    /* I don't expect this to fail, but... */
-	    Tcl_ListObjAppendElement(interp, resultList,
-				     Tcl_NewStringObj(name,-1)) != TCL_OK) {
-	    Tcl_DecrRefCount(resultList);
-	    return NULL;
+    if ( nsPtr != NULL ) {
+	for ( cmdHashEntry = Tcl_FirstHashEntry( &nsPtr->cmdTable,
+						 &cmdHashSearch );
+	      cmdHashEntry != NULL;
+	      cmdHashEntry = Tcl_NextHashEntry( &cmdHashSearch ) ) {
+	    cmdNamePtr = Tcl_GetHashKey( &nsPtr->cmdTable, cmdHashEntry );
+	    if ( pattern == NULL || Tcl_StringMatch( cmdNamePtr, pattern ) ) {
+		Tcl_ListObjAppendElement( interp, result,
+					  Tcl_NewStringObj( cmdNamePtr, -1 ) );
+	    }
 	}
     }
-    return resultList;
+    return result;
 }
 
 /*
@@ -4735,4 +5043,630 @@ Tcl_GetVersion(majorV, minorV, patchLevelV, type)
         *type = TCL_RELEASE_LEVEL;
     }
 }
- 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Math Functions --
+ *
+ *	This page contains the procedures that implement all of the
+ *	built-in math functions for expressions.
+ *
+ * Results:
+ *	Each procedure returns TCL_OK if it succeeds and pushes an
+ *	Tcl object holding the result. If it fails it returns TCL_ERROR
+ *	and leaves an error message in the interpreter's result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ExprUnaryFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Contains the address of a procedure that
+				 * takes one double argument and returns a
+				 * double result. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter list */
+{
+    double d, dResult;
+    
+    double (*func) _ANSI_ARGS_((double)) =
+	(double (*)_ANSI_ARGS_((double))) clientData;
+
+    /*
+     * Convert the function's argument to a double if necessary.
+     */ 
+
+    if ( objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 2, objc, objv );
+    } else if ( Tcl_GetDoubleFromObj( interp, objv[1], &d ) == TCL_OK ) {
+
+	/* Evaluate the function */
+	
+	dResult = (*func)(d);
+	if ((errno != 0 ) || IS_NAN(dResult)) {
+	    if ( errno != ERANGE || ( dResult != 0.0 && !IS_INF(dResult) )) {
+		TclExprFloatError(interp, dResult);
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	return TCL_OK;
+    }
+
+    return TCL_ERROR;
+}
+
+static int
+ExprBinaryFunc( clientData, interp, objc, objv )
+    ClientData clientData;	/* Contains the address of a procedure that
+				 * takes two double arguments and
+				 * returns a double result. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Parameter vector */
+{
+    double d1, d2, dResult;
+    
+    double (*func) _ANSI_ARGS_((double, double))
+	= (double (*)_ANSI_ARGS_((double, double))) clientData;
+
+    /*
+     * Convert the function's two arguments to doubles if necessary.
+     */
+
+    if ( objc != 3 ) {
+	MathFuncWrongNumArgs( interp, 3, objc, objv );
+    } else if ( Tcl_GetDoubleFromObj( interp, objv[1], &d1 ) == TCL_OK
+		&& Tcl_GetDoubleFromObj( interp, objv[2], &d2 ) == TCL_OK ) {
+
+	/* Evaluate the function */
+
+	errno = 0;
+	dResult = (*func)(d1, d2);
+	if ((errno != 0) || IS_NAN(dResult)) {
+	    if ( errno != ERANGE || ( dResult != 0.0 && !IS_INF( dResult ) ) ) {
+		TclExprFloatError(interp, dResult);
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	return TCL_OK;
+    }
+
+    return TCL_ERROR;
+
+}
+
+static int
+ExprAbsFunc( clientData, interp, objc, objv )
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Parameter vector */
+{
+    register Tcl_Obj *valuePtr;
+    long i, iResult;
+    double d, dResult;
+
+    if ( objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 2, objc, objv );
+	return TCL_ERROR;
+    }
+    valuePtr = objv[1];
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Derive the absolute value according to the arg type.
+     */
+    if (valuePtr->typePtr == &tclIntType) {
+	i = valuePtr->internalRep.longValue;
+	if (i < 0) {
+	    iResult = -i;
+	    if (iResult < 0) {
+		/* FIXME: This should promote to wide! */
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+			"integer value too large to represent", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	} else {
+	    iResult = i;
+	}	    
+	Tcl_SetObjResult( interp, Tcl_NewLongObj( iResult ) );
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wResult, w;
+	TclGetWide(w,valuePtr);
+	if (w < (Tcl_WideInt)0) {
+	    wResult = -w;
+	    if (wResult < 0) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+			"integer value too large to represent", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	} else {
+	    wResult = w;
+	}	    
+	Tcl_SetObjResult( interp, Tcl_NewWideIntObj( wResult ) );
+    } else {
+	d = valuePtr->internalRep.doubleValue;
+	if (d < 0.0) {
+	    dResult = -d;
+	} else {
+	    dResult = d;
+	}
+	if (IS_NAN(dResult)) {
+	    TclExprFloatError(interp, dResult);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+    }
+
+    return TCL_OK;
+}
+
+static int
+ExprDoubleFunc(clientData, interp, objc, objv )
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    Tcl_Obj* valuePtr;
+    double dResult;
+
+    /*
+     * Check parameter type
+     */
+
+    if ( objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 2, objc, objv );
+    } else {
+	valuePtr = objv[1];
+	if ( VerifyExprObjType( interp, valuePtr ) == TCL_OK ) {
+	    GET_DOUBLE_VALUE( dResult, valuePtr, valuePtr->typePtr );
+	    Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+	    return TCL_OK;
+	}
+    }
+
+    return TCL_ERROR;
+}
+
+static int
+ExprIntFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    
+    register Tcl_Obj *valuePtr;
+    long iResult;
+    double d;
+
+    if ( objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 2, objc, objv );
+    } else {
+	valuePtr = objv[1];
+        if (VerifyExprObjType(interp, valuePtr) == TCL_OK) {
+	    if (valuePtr->typePtr == &tclIntType) {
+		iResult = valuePtr->internalRep.longValue;
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		TclGetLongFromWide(iResult,valuePtr);
+	    } else {
+		d = valuePtr->internalRep.doubleValue;
+		if (d < 0.0) {
+		    if (d < (double) (long) LONG_MIN) {
+		    tooLarge:
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		             "integer value too large to represent", -1));
+			Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+			    "integer value too large to represent",
+                            (char *) NULL);
+			return TCL_ERROR;
+		    }
+		} else {
+		    if (d > (double) LONG_MAX) {
+			goto tooLarge;
+		    }
+		}
+		if (IS_NAN(d) || IS_INF(d)) {
+		    TclExprFloatError(interp, d);
+		    return TCL_ERROR;
+		}
+		iResult = (long) d;
+	    }
+	    Tcl_SetObjResult( interp, Tcl_NewLongObj( iResult ) );
+	    return TCL_OK;
+	}
+    }
+    return TCL_ERROR;
+}
+
+static int
+ExprWideFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    
+    register Tcl_Obj *valuePtr;
+    Tcl_WideInt wResult;
+    double d;
+
+    if ( objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 2, objc, objv );
+    } else {
+	valuePtr = objv[1];
+        if (VerifyExprObjType(interp, valuePtr) == TCL_OK) {
+	    if (valuePtr->typePtr == &tclIntType) {
+		wResult = valuePtr->internalRep.longValue;
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		wResult = valuePtr->internalRep.wideValue;
+	    } else {
+		d = valuePtr->internalRep.doubleValue;
+		if (d < 0.0) {
+		    if (d < Tcl_WideAsDouble( LLONG_MIN ) ) {
+		    tooLarge:
+			Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		             "integer value too large to represent", -1));
+			Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+			    "integer value too large to represent",
+                            (char *) NULL);
+			return TCL_ERROR;
+		    }
+		} else {
+		    if (d > Tcl_WideAsDouble( LLONG_MAX ) ) {
+			goto tooLarge;
+		    }
+		}
+		if (IS_NAN(d) || IS_INF(d)) {
+		    TclExprFloatError(interp, d);
+		    return TCL_ERROR;
+		}
+		wResult = (Tcl_WideInt) d;
+	    }
+	    Tcl_SetObjResult( interp, Tcl_NewWideIntObj( wResult ) );
+	    return TCL_OK;
+	}
+    }
+    return TCL_ERROR;
+}
+
+static int
+ExprRandFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    Interp *iPtr = (Interp *) interp;
+    double dResult;
+    long tmp;			/* Algorithm assumes at least 32 bits.
+				 * Only long guarantees that.  See below. */
+
+    if ( objc != 1 ) {
+	MathFuncWrongNumArgs( interp, 1, objc, objv );
+	return TCL_ERROR;
+    }
+
+    if (!(iPtr->flags & RAND_SEED_INITIALIZED)) {
+	iPtr->flags |= RAND_SEED_INITIALIZED;
+        
+        /* 
+	 * Take into consideration the thread this interp is running in order
+	 * to insure different seeds in different threads (bug #416643)
+	 */
+
+	iPtr->randSeed = TclpGetClicks() + ((long)Tcl_GetCurrentThread()<<12);
+
+	/*
+	 * Make sure 1 <= randSeed <= (2^31) - 2.  See below.
+	 */
+
+        iPtr->randSeed &= (unsigned long) 0x7fffffff;
+	if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	    iPtr->randSeed ^= 123459876;
+	}
+    }
+
+    /*
+     * Generate the random number using the linear congruential
+     * generator defined by the following recurrence:
+     *		seed = ( IA * seed ) mod IM
+     * where IA is 16807 and IM is (2^31) - 1.  The recurrence maps
+     * a seed in the range [1, IM - 1] to a new seed in that same range.
+     * The recurrence maps IM to 0, and maps 0 back to 0, so those two
+     * values must not be allowed as initial values of seed.
+     *
+     * In order to avoid potential problems with integer overflow, the
+     * recurrence is implemented in terms of additional constants
+     * IQ and IR such that
+     *		IM = IA*IQ + IR
+     * None of the operations in the implementation overflows a 32-bit
+     * signed integer, and the C type long is guaranteed to be at least
+     * 32 bits wide.
+     *
+     * For more details on how this algorithm works, refer to the following
+     * papers: 
+     *
+     *	S.K. Park & K.W. Miller, "Random number generators: good ones
+     *	are hard to find," Comm ACM 31(10):1192-1201, Oct 1988
+     *
+     *	W.H. Press & S.A. Teukolsky, "Portable random number
+     *	generators," Computers in Physics 6(5):522-524, Sep/Oct 1992.
+     */
+
+#define RAND_IA		16807
+#define RAND_IM		2147483647
+#define RAND_IQ		127773
+#define RAND_IR		2836
+#define RAND_MASK	123459876
+
+    tmp = iPtr->randSeed/RAND_IQ;
+    iPtr->randSeed = RAND_IA*(iPtr->randSeed - tmp*RAND_IQ) - RAND_IR*tmp;
+    if (iPtr->randSeed < 0) {
+	iPtr->randSeed += RAND_IM;
+    }
+
+    /*
+     * Since the recurrence keeps seed values in the range [1, RAND_IM - 1],
+     * dividing by RAND_IM yields a double in the range (0, 1).
+     */
+
+    dResult = iPtr->randSeed * (1.0/RAND_IM);
+
+    /*
+     * Push a Tcl object with the result.
+     */
+
+    Tcl_SetObjResult( interp, Tcl_NewDoubleObj( dResult ) );
+    return TCL_OK;
+}
+
+static int
+ExprRoundFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Parameter vector */
+{
+    Tcl_Obj *valuePtr, *resPtr;
+    double d, a, f;
+
+    /* Check the argument count. */
+
+    if ( objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 1, objc, objv );
+	return TCL_ERROR;
+    }
+    valuePtr = objv[1];
+
+    /* Coerce the argument to a number. Integers are already rounded. */
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if ((valuePtr->typePtr == &tclIntType) ||
+	    (valuePtr->typePtr == &tclWideIntType)) {
+	return TCL_OK;
+    }
+    GET_DOUBLE_VALUE( d, valuePtr, valuePtr->typePtr );
+
+    /* 
+     * Round the number to the nearest integer.  I'd like to use rint()
+     * or nearbyint(), but they are far from universal.
+     */
+
+    a = fabs( d );
+    if ( a < Tcl_WideAsDouble( LLONG_MAX ) + 0.5 ) {
+	d = valuePtr->internalRep.doubleValue;
+	f = floor( d );
+	d -= f;
+	if ( d > 0.5 || ( d == 0.5 && fmod( f, 2.0 ) != 0.0 ) ) {
+	    f = f + 1.0;
+	}
+	if ( f >= (double) LONG_MIN && f <= (double) LONG_MAX ) {
+	    resPtr = Tcl_NewLongObj( (long) f );
+	} else {
+	    resPtr = Tcl_NewWideIntObj( Tcl_DoubleAsWide( f ) );
+	}
+	Tcl_SetObjResult( interp, resPtr );
+	return TCL_OK;
+    }
+
+    /*
+     * Error return: result cannot be represented as an integer.
+     */
+    
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "integer value too large to represent", -1));
+    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+	    "integer value too large to represent",
+	    (char *) NULL);
+
+    return TCL_ERROR;
+
+}
+
+static int
+ExprSrandFunc(clientData, interp, objc, objv)
+    ClientData clientData;	/* Ignored. */
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    int objc;			/* Actual parameter count */
+    Tcl_Obj *CONST *objv;	/* Parameter vector */
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *valuePtr;
+    long i = 0;			/* Initialized to avoid compiler warning. */
+
+    /*
+     * Convert argument and use it to reset the seed.
+     */
+
+    if (objc != 2 ) {
+	MathFuncWrongNumArgs( interp, 2, objc, objv );
+	return TCL_ERROR;
+    }
+    valuePtr = objv[1];
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (valuePtr->typePtr == &tclIntType) {
+	i = valuePtr->internalRep.longValue;
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	TclGetLongFromWide(i,valuePtr);
+    } else {
+	/*
+	 * At this point, the only other possible type is double
+	 */
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't use floating-point value as argument to srand", -1));
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Reset the seed.  Make sure 1 <= randSeed <= 2^31 - 2.
+     * See comments in ExprRandFunc() for more details.
+     */
+
+    iPtr->flags |= RAND_SEED_INITIALIZED;
+    iPtr->randSeed = i;
+    iPtr->randSeed &= (unsigned long) 0x7fffffff;
+    if ((iPtr->randSeed == 0) || (iPtr->randSeed == 0x7fffffff)) {
+	iPtr->randSeed ^= 123459876;
+    }
+
+    /*
+     * To avoid duplicating the random number generation code we simply
+     * clean up our state and call the real random number function. That
+     * function will always succeed.
+     */
+    
+    return ExprRandFunc(clientData, interp, 1, objv);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VerifyExprObjType --
+ *
+ *	This procedure is called by the math functions to verify that
+ *	the object is either an int or double, coercing it if necessary.
+ *	If an error occurs during conversion, an error message is left
+ *	in the interpreter's result unless "interp" is NULL.
+ *
+ * Results:
+ *	TCL_OK if it was int or double, TCL_ERROR otherwise
+ *
+ * Side effects:
+ *	objPtr is ensured to be of tclIntType, tclWideIntType or
+ *	tclDoubleType.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+VerifyExprObjType(interp, objPtr)
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Obj *objPtr;		/* Points to the object to type check. */
+{
+    if (IS_NUMERIC_TYPE(objPtr->typePtr)) {
+	return TCL_OK;
+    } else {
+	int length, result = TCL_OK;
+	char *s = Tcl_GetStringFromObj(objPtr, &length);
+	
+	if (TclLooksLikeInt(s, length)) {
+	    long i;     /* Set but never used, needed in GET_WIDE_OR_INT */
+	    Tcl_WideInt w;
+	    GET_WIDE_OR_INT(result, objPtr, i, w);
+	} else {
+	    double d;
+	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
+	}
+	if ((result != TCL_OK) && (interp != NULL)) {
+	    if (TclCheckBadOctal((Tcl_Interp *) NULL, s)) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"argument to math function was an invalid octal number",
+			-1));
+	    } else {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"argument to math function didn't have numeric value",
+			-1));
+	    }
+	}
+	return result;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MathFuncWrongNumArgs --
+ *
+ *	Generate an error message when a math function presents the
+ *	wrong number of arguments
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	An error message is stored in the interpreter result
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MathFuncWrongNumArgs( interp, expected, found, objv )
+     Tcl_Interp* interp;	/* Tcl interpreter */
+     int expected;		/* Formal parameter count */
+     int found;			/* Actual parameter count */
+     Tcl_Obj *CONST *objv;	/* Actual parameter vector */
+{
+    Tcl_Obj* errorMessage;
+    CONST char* name = Tcl_GetString( objv[0] );
+    CONST char* tail = name + strlen( name );
+    while ( tail > name+1 ) {
+	--tail;
+	if ( *tail == ':' && tail[-1] == ':' ) {
+	    name = tail+1;
+	    break;
+	}
+    }
+    errorMessage = Tcl_NewStringObj( "too ", -1 );
+    if ( found < expected ) {
+	Tcl_AppendToObj( errorMessage, "few", -1 );
+    } else {
+	Tcl_AppendToObj( errorMessage, "many", -1 );
+    }
+    Tcl_AppendToObj( errorMessage, " arguments for math function \"", -1 );
+    Tcl_AppendToObj( errorMessage, name, -1 );
+    Tcl_AppendToObj( errorMessage, "\"", -1 );
+    Tcl_SetObjResult( interp, errorMessage );
+}

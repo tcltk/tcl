@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.6 2005/03/09 14:39:27 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.7 2005/03/15 19:41:46 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -202,10 +202,10 @@ test expr-2.4 {TclCompileExpr: numeric expr string rep == formatted int rep} {
 } 1
 
 test expr-3.1 {CompileCondExpr: just lor expr} {expr 3||0} 1
-test expr-3.2 {CompileCondExpr: error in lor expr} {
+test expr-3.2 {CompileCondExpr: error in lor expr} -body {
     catch {expr x||3} msg
     set msg
-} {syntax error in expression "x||3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x||3": * preceding $*}
 test expr-3.3 {CompileCondExpr: test true arm} {expr 3>2?44:66} 44
 test expr-3.4 {CompileCondExpr: error compiling true arm} {
     catch {expr 3>2?2***3:66} msg
@@ -228,10 +228,10 @@ test expr-3.8 {CompileCondExpr: long arms & nested cond exprs} {unix nonPortable
 catch {unset xxx}
 
 test expr-4.1 {CompileLorExpr: just land expr} {expr 1.3&&3.3} 1
-test expr-4.2 {CompileLorExpr: error in land expr} {
+test expr-4.2 {CompileLorExpr: error in land expr} -body {
     catch {expr x&&3} msg
     set msg
-} {syntax error in expression "x&&3": variable references require preceding $} 
+} -match glob -result {syntax error in expression "x&&3": *preceding $*} 
 test expr-4.3 {CompileLorExpr: simple lor exprs} {expr 0||1.0} 1
 test expr-4.4 {CompileLorExpr: simple lor exprs} {expr 3.0||0.0} 1
 test expr-4.5 {CompileLorExpr: simple lor exprs} {expr 0||0||1} 1
@@ -253,10 +253,10 @@ test expr-4.9 {CompileLorExpr: long lor arm} {
 } 1
 
 test expr-5.1 {CompileLandExpr: just bitor expr} {expr 7|0x13} 23
-test expr-5.2 {CompileLandExpr: error in bitor expr} {
+test expr-5.2 {CompileLandExpr: error in bitor expr} -body {
     catch {expr x|3} msg
     set msg
-} {syntax error in expression "x|3": variable references require preceding $} 
+} -match glob -result {syntax error in expression "x|3": * preceding $*} 
 test expr-5.3 {CompileLandExpr: simple land exprs} {expr 0&&1.0} 0
 test expr-5.4 {CompileLandExpr: simple land exprs} {expr 0&&0} 0
 test expr-5.5 {CompileLandExpr: simple land exprs} {expr 3.0&&1.2} 1
@@ -279,10 +279,10 @@ test expr-5.10 {CompileLandExpr: long land arms} {
 } 1
 
 test expr-6.1 {CompileBitXorExpr: just bitand expr} {expr 7&0x13} 3
-test expr-6.2 {CompileBitXorExpr: error in bitand expr} {
+test expr-6.2 {CompileBitXorExpr: error in bitand expr} -body {
     catch {expr x|3} msg
     set msg
-} {syntax error in expression "x|3": variable references require preceding $} 
+} -match glob -result {syntax error in expression "x|3": * preceding $*} 
 test expr-6.3 {CompileBitXorExpr: simple bitxor exprs} {expr 7^0x13} 20
 test expr-6.4 {CompileBitXorExpr: simple bitxor exprs} {expr 3^0x10} 19
 test expr-6.5 {CompileBitXorExpr: simple bitxor exprs} {expr 0^7} 7
@@ -291,10 +291,10 @@ test expr-6.7 {CompileBitXorExpr: error compiling bitxor arm} {
     catch {expr 2***3|6} msg
     set msg
 } {syntax error in expression "2***3|6": unexpected operator *}
-test expr-6.8 {CompileBitXorExpr: error compiling bitxor arm} {
+test expr-6.8 {CompileBitXorExpr: error compiling bitxor arm} -body {
     catch {expr 2^x} msg
     set msg
-} {syntax error in expression "2^x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2^x": * preceding $**}
 test expr-6.9 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {24.0^3}} msg] $msg
 } {1 {can't use floating-point value as operand of "^"}}
@@ -306,10 +306,10 @@ test expr-7.1 {CompileBitAndExpr: just equality expr} {expr 3==2} 0
 test expr-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
 test expr-7.3 {CompileBitAndExpr: just equality expr} {expr 3.2!=2.2} 1
 test expr-7.4 {CompileBitAndExpr: just equality expr} {expr {"abc" == "abd"}} 0
-test expr-7.5 {CompileBitAndExpr: error in equality expr} {
+test expr-7.5 {CompileBitAndExpr: error in equality expr} -body {
     catch {expr x==3} msg
     set msg
-} {syntax error in expression "x==3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x==3": * preceding $*}
 test expr-7.6 {CompileBitAndExpr: simple bitand exprs} {expr 7&0x13} 3
 test expr-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
 test expr-7.8 {CompileBitAndExpr: simple bitand exprs} {expr 3&6} 2
@@ -318,10 +318,10 @@ test expr-7.10 {CompileBitAndExpr: error compiling bitand arm} {
     catch {expr 2***3&6} msg
     set msg
 } {syntax error in expression "2***3&6": unexpected operator *}
-test expr-7.11 {CompileBitAndExpr: error compiling bitand arm} {
+test expr-7.11 {CompileBitAndExpr: error compiling bitand arm} -body {
     catch {expr 2&x} msg
     set msg
-} {syntax error in expression "2&x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2&x": * preceding $*}
 test expr-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {24.0&3}} msg] $msg
 } {1 {can't use floating-point value as operand of "&"}}
@@ -330,19 +330,19 @@ test expr-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
 } {1 {can't use non-numeric string as operand of "&"}}
 test expr-7.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-7.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
-test expr-7.20 {CompileBitAndExpr: error in equality expr} {
+test expr-7.20 {CompileBitAndExpr: error in equality expr} -body {
     catch {expr xne3} msg
     set msg
-} {syntax error in expression "xne3": variable references require preceding $} 
+} -match glob -result {syntax error in expression "xne3": * preceding $*} 
 
 test expr-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test expr-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
 test expr-8.3 {CompileEqualityExpr: just relational expr} {expr 3.2>"2.2"} 1
 test expr-8.4 {CompileEqualityExpr: just relational expr} {expr {"0y"<"0x12"}} 0
-test expr-8.5 {CompileEqualityExpr: error in relational expr} {
+test expr-8.5 {CompileEqualityExpr: error in relational expr} -body {
     catch {expr x>3} msg
     set msg
-} {syntax error in expression "x>3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x>3": * preceding $*}
 test expr-8.6 {CompileEqualityExpr: simple equality exprs} {expr 7==0x13} 0
 test expr-8.7 {CompileEqualityExpr: simple equality exprs} {expr -0xf2!=0x53} 1
 test expr-8.8 {CompileEqualityExpr: simple equality exprs} {expr {"12398712938788234-1298379" != ""}} 1
@@ -351,10 +351,10 @@ test expr-8.10 {CompileEqualityExpr: error compiling equality arm} {
     catch {expr 2***3==6} msg
     set msg
 } {syntax error in expression "2***3==6": unexpected operator *}
-test expr-8.11 {CompileEqualityExpr: error compiling equality arm} {
+test expr-8.11 {CompileEqualityExpr: error compiling equality arm} -body {
     catch {expr 2!=x} msg
     set msg
-} {syntax error in expression "2!=x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2!=x": * preceding $*}
 test expr-8.12 {CompileBitAndExpr: equality expr} {expr {"a"eq"a"}} 1
 test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq "ü"}} 1
 test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
@@ -363,15 +363,15 @@ test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
 test expr-8.17 {CompileBitAndExpr: equality expr} {expr 01eq1} 0
 test expr-8.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
 test expr-8.19 {CompileBitAndExpr: equality expr} {expr {"abc" ne "abd"}} 1
-test expr-8.20 {CompileBitAndExpr: error in equality expr} {
+test expr-8.20 {CompileBitAndExpr: error in equality expr} -body {
     catch {expr x ne3} msg
     set msg
-} {syntax error in expression "x ne3": variable references require preceding $} 
-test expr-8.21 {CompileBitAndExpr: error in equality expr} {
+} -match glob -result {syntax error in expression "x ne3": * preceding $*} 
+test expr-8.21 {CompileBitAndExpr: error in equality expr} -body {
     # These should be ""ed to avoid the error
     catch {expr a eq b} msg
     set msg
-} {syntax error in expression "a eq b": variable references require preceding $}
+} -match glob -result {syntax error in expression "a eq b": * preceding $*}
 test expr-8.22 {CompileBitAndExpr: error in equality expr} {
     catch {expr {false eqfalse}} msg
     set msg
@@ -398,39 +398,39 @@ if {0x80000000 > 0} {
 	expr {1<<31}
     } -2147483648
 }
-test expr-9.6 {CompileRelationalExpr: error in shift expr} {
+test expr-9.6 {CompileRelationalExpr: error in shift expr} -body {
     catch {expr x>>3} msg
     set msg
-} {syntax error in expression "x>>3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x>>3": * preceding $*}
 test expr-9.7 {CompileRelationalExpr: simple relational exprs} {expr 0xff>=+0x3} 1
 test expr-9.8 {CompileRelationalExpr: simple relational exprs} {expr -0xf2<0x3} 1
 test expr-9.9 {CompileRelationalExpr: error compiling relational arm} {
     catch {expr 2***3>6} msg
     set msg
 } {syntax error in expression "2***3>6": unexpected operator *}
-test expr-9.10 {CompileRelationalExpr: error compiling relational arm} {
+test expr-9.10 {CompileRelationalExpr: error compiling relational arm} -body {
     catch {expr 2<x} msg
     set msg
-} {syntax error in expression "2<x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2<x": * preceding $*}
 
 test expr-10.1 {CompileShiftExpr: just add expr} {expr 4+-2} 2
 test expr-10.2 {CompileShiftExpr: just add expr} {expr 0xff-2} 253
 test expr-10.3 {CompileShiftExpr: just add expr} {expr -1--2} 1
 test expr-10.4 {CompileShiftExpr: just add expr} {expr 1-0123} -82
-test expr-10.5 {CompileShiftExpr: error in add expr} {
+test expr-10.5 {CompileShiftExpr: error in add expr} -body {
     catch {expr x+3} msg
     set msg
-} {syntax error in expression "x+3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x+3": * preceding $*}
 test expr-10.6 {CompileShiftExpr: simple shift exprs} {expr 0xff>>0x3} 31
 test expr-10.7 {CompileShiftExpr: simple shift exprs} {expr -0xf2<<0x3} -1936
 test expr-10.8 {CompileShiftExpr: error compiling shift arm} {
     catch {expr 2***3>>6} msg
     set msg
 } {syntax error in expression "2***3>>6": unexpected operator *}
-test expr-10.9 {CompileShiftExpr: error compiling shift arm} {
+test expr-10.9 {CompileShiftExpr: error compiling shift arm} -body {
     catch {expr 2<<x} msg
     set msg
-} {syntax error in expression "2<<x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2<<x": * preceding $*}
 test expr-10.10 {CompileShiftExpr: runtime error} {
     list [catch {expr {24.0>>43}} msg] $msg
 } {1 {can't use floating-point value as operand of ">>"}}
@@ -442,20 +442,20 @@ test expr-11.1 {CompileAddExpr: just multiply expr} {expr 4*-2} -8
 test expr-11.2 {CompileAddExpr: just multiply expr} {expr 0xff%2} 1
 test expr-11.3 {CompileAddExpr: just multiply expr} {expr -1/2} -1
 test expr-11.4 {CompileAddExpr: just multiply expr} {expr 7891%0123} 6
-test expr-11.5 {CompileAddExpr: error in multiply expr} {
+test expr-11.5 {CompileAddExpr: error in multiply expr} -body {
     catch {expr x*3} msg
     set msg
-} {syntax error in expression "x*3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x*3": * preceding $*}
 test expr-11.6 {CompileAddExpr: simple add exprs} {expr 0xff++0x3} 258
 test expr-11.7 {CompileAddExpr: simple add exprs} {expr -0xf2--0x3} -239
 test expr-11.8 {CompileAddExpr: error compiling add arm} {
     catch {expr 2***3+6} msg
     set msg
 } {syntax error in expression "2***3+6": unexpected operator *}
-test expr-11.9 {CompileAddExpr: error compiling add arm} {
+test expr-11.9 {CompileAddExpr: error compiling add arm} -body {
     catch {expr 2-x} msg
     set msg
-} {syntax error in expression "2-x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2-x": * preceding $*}
 test expr-11.10 {CompileAddExpr: runtime error} {
     list [catch {expr {24.0+"xx"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "+"}}
@@ -476,20 +476,20 @@ test expr-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
 test expr-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5
 test expr-12.3 {CompileMultiplyExpr: just unary expr} {expr !27} 0
 test expr-12.4 {CompileMultiplyExpr: just unary expr} {expr ~0xff00ff} -16711936
-test expr-12.5 {CompileMultiplyExpr: error in unary expr} {
+test expr-12.5 {CompileMultiplyExpr: error in unary expr} -body {
     catch {expr ~x} msg
     set msg
-} {syntax error in expression "~x": variable references require preceding $}
+} -match glob -result {syntax error in expression "~x": * preceding $*}
 test expr-12.6 {CompileMultiplyExpr: simple multiply exprs} {expr 0xff*0x3} 765
 test expr-12.7 {CompileMultiplyExpr: simple multiply exprs} {expr -0xf2%-0x3} -2
 test expr-12.8 {CompileMultiplyExpr: error compiling multiply arm} {
     catch {expr 2*3%%6} msg
     set msg
 } {syntax error in expression "2*3%%6": unexpected operator %}
-test expr-12.9 {CompileMultiplyExpr: error compiling multiply arm} {
+test expr-12.9 {CompileMultiplyExpr: error compiling multiply arm} -body {
     catch {expr 2*x} msg
     set msg
-} {syntax error in expression "2*x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2*x": * preceding $*}
 test expr-12.10 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {24.0*"xx"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "*"}}
@@ -504,10 +504,10 @@ test expr-13.4 {CompileUnaryExpr: unary exprs} {expr !2} 0
 test expr-13.5 {CompileUnaryExpr: unary exprs} {expr +--+-62.0} -62.0
 test expr-13.6 {CompileUnaryExpr: unary exprs} {expr !0.0} 1
 test expr-13.7 {CompileUnaryExpr: unary exprs} {expr !0xef} 0
-test expr-13.8 {CompileUnaryExpr: error compiling unary expr} {
+test expr-13.8 {CompileUnaryExpr: error compiling unary expr} -body {
     catch {expr ~x} msg
     set msg
-} {syntax error in expression "~x": variable references require preceding $}
+} -match glob -result {syntax error in expression "~x": * preceding $*}
 test expr-13.9 {CompileUnaryExpr: error compiling unary expr} {
     catch {expr !1.x} msg
     set msg
@@ -626,7 +626,7 @@ test expr-14.26 {CompilePrimaryExpr: math function primary} {
 test expr-14.27 {CompilePrimaryExpr: error in math function primary} -body {
     catch {expr sinh::(2.0)} msg
     set errorInfo
-} -match glob -result {syntax error in expression "sinh::(2.0)": expected parenthesis enclosing function arguments
+} -match glob -result {syntax error in expression "sinh::(2.0)": * function arguments*
     while *ing
 "expr sinh::(2.0)"}
 test expr-14.28 {CompilePrimaryExpr: subexpression primary} {
@@ -658,31 +658,31 @@ test expr-14.32 {CompilePrimaryExpr: unexpected token} -body {
 test expr-15.1 {CompileMathFuncCall: missing parenthesis} -body {
     catch {expr sinh2.0)} msg
     set errorInfo
-} -match glob -result {syntax error in expression "sinh2.0)": variable references require preceding $
+} -match glob -result {syntax error in expression "sinh2.0)": * preceding $*
     while *ing
 "expr sinh2.0)"}
 test expr-15.2 {CompileMathFuncCall: unknown math function} -body {
     catch {expr whazzathuh(1)} msg
     set errorInfo
-} -match glob -result {unknown math function "whazzathuh"
+} -match glob -result {* "*whazzathuh"
     while *ing
 "expr whazzathuh(1)"}
 test expr-15.3 {CompileMathFuncCall: too many arguments} -body {
     catch {expr sin(1,2,3)} msg
     set errorInfo
-} -match glob -result {too many arguments for math function
+} -match glob -result {too many arguments for math function*
     while *ing
 "expr sin(1,2,3)"}
 test expr-15.4 {CompileMathFuncCall: ')' found before last required arg} -body {
     catch {expr sin()} msg
     set errorInfo
-} -match glob -result {too few arguments for math function
+} -match glob -result {too few arguments for math function*
     while *ing
 "expr sin()"}
 test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
     catch {expr pow(1)} msg
     set errorInfo
-} -match glob -result {too few arguments for math function
+} -match glob -result {too few arguments for math function*
     while *ing
 "expr pow(1)"}
 test expr-15.6 {CompileMathFuncCall: missing ')'} -body {
@@ -881,19 +881,19 @@ test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16
 test expr-23.2 {CompileExponentialExpr: just exponential expr} {expr 0xff**2} 65025
 test expr-23.3 {CompileExponentialExpr: just exponential expr} {expr -1**2} 1
 test expr-23.4 {CompileExponentialExpr: just exponential expr} {expr 18**07} 612220032
-test expr-23.5 {CompileExponentialExpr: error in exponential expr} {
+test expr-23.5 {CompileExponentialExpr: error in exponential expr} -body {
     catch {expr x**3} msg
     set msg
-} {syntax error in expression "x**3": variable references require preceding $}
+} -match glob -result {syntax error in expression "x**3": * preceding $*}
 test expr-23.6 {CompileExponentialExpr: simple expo exprs} {expr 0xff**0x3} 16581375
 test expr-23.7 {CompileExponentialExpr: error compiling expo arm} {
     catch {expr (-3-)**6} msg
     set msg
 } {syntax error in expression "(-3-)**6": unexpected close parenthesis}
-test expr-23.8 {CompileExponentialExpr: error compiling expo arm} {
+test expr-23.8 {CompileExponentialExpr: error compiling expo arm} -body {
     catch {expr 2**x} msg
     set msg
-} {syntax error in expression "2**x": variable references require preceding $}
+} -match glob -result {syntax error in expression "2**x": * preceding $*}
 test expr-23.9 {CompileExponentialExpr: runtime error} {
     list [catch {expr {24.0**"xx"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "**"}}

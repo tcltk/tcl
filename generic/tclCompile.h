@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.51.2.2 2004/12/29 22:46:41 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.51.2.3 2005/03/15 19:41:44 kennykb Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -589,64 +589,6 @@ typedef struct InstructionDesc {
 } InstructionDesc;
 
 MODULE_SCOPE InstructionDesc tclInstructionTable[];
-
-/*
- * Definitions of the values of the INST_CALL_BUILTIN_FUNC instruction's
- * operand byte. Each value denotes a builtin Tcl math function. These
- * values must correspond to the entries in the tclBuiltinFuncTable array
- * below and to the values stored in the tclInt.h MathFunc structure's
- * builtinFuncIndex field.
- */
-
-#define BUILTIN_FUNC_ACOS		0
-#define BUILTIN_FUNC_ASIN		1
-#define BUILTIN_FUNC_ATAN		2
-#define BUILTIN_FUNC_ATAN2		3
-#define BUILTIN_FUNC_CEIL		4
-#define BUILTIN_FUNC_COS		5
-#define BUILTIN_FUNC_COSH		6
-#define BUILTIN_FUNC_EXP		7
-#define BUILTIN_FUNC_FLOOR		8
-#define BUILTIN_FUNC_FMOD		9
-#define BUILTIN_FUNC_HYPOT		10
-#define BUILTIN_FUNC_LOG		11
-#define BUILTIN_FUNC_LOG10		12
-#define BUILTIN_FUNC_POW		13
-#define BUILTIN_FUNC_SIN		14
-#define BUILTIN_FUNC_SINH		15
-#define BUILTIN_FUNC_SQRT		16
-#define BUILTIN_FUNC_TAN		17
-#define BUILTIN_FUNC_TANH		18
-#define BUILTIN_FUNC_ABS		19
-#define BUILTIN_FUNC_DOUBLE		20
-#define BUILTIN_FUNC_INT		21
-#define BUILTIN_FUNC_RAND		22
-#define BUILTIN_FUNC_ROUND		23
-#define BUILTIN_FUNC_SRAND		24
-#define BUILTIN_FUNC_WIDE		25
-
-#define LAST_BUILTIN_FUNC		25
-
-/*
- * Table describing the built-in math functions. Entries in this table are
- * indexed by the values of the INST_CALL_BUILTIN_FUNC instruction's
- * operand byte.
- */
-
-typedef int (CallBuiltinFuncProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	Tcl_Obj **tosPtr, ClientData clientData));
-
-typedef struct {
-    char *name;			/* Name of function. */
-    int numArgs;		/* Number of arguments for function. */
-    Tcl_ValueType argTypes[MAX_MATH_ARGS];
-				/* Acceptable types for each argument. */
-    CallBuiltinFuncProc *proc;	/* Procedure implementing this function. */
-    ClientData clientData;	/* Additional argument to pass to the
-				 * function when invoking it. */
-} BuiltinFunc;
-
-MODULE_SCOPE BuiltinFunc tclBuiltinFuncTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
