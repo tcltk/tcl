@@ -1,5 +1,7 @@
 2000-06-06  Jeff Hobbs  <hobbs@scriptics.com>
 
+	8.4a1 RELEASE
+
 	* generic/tclExecute.c (TclExecuteByteCode INST_STR_CMP): added
 	test of iResult return from memcmp, as memcmp isn't required to
 	return only -1,0,1.
