@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.31 2003/12/24 04:18:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.32 2004/04/06 22:25:50 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The data structure below is used to report background errors.  One

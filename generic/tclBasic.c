@@ -13,14 +13,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.98 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.99 2004/04/06 22:25:48 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#ifndef TCL_GENERIC_ONLY
-#   include "tclPort.h"
-#endif
 
 /*
  * Static procedures in this file:

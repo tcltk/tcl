@@ -13,7 +13,6 @@
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 #ifdef TCL_THREADS
 

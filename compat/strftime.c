@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.14 2003/08/27 19:31:00 davygrvy Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.15 2004/04/06 22:25:48 dgp Exp $
  */
 
 /*
@@ -47,14 +47,13 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.14 2003/08/27 19:31:00 davygrvy Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.15 2004/04/06 22:25:48 dgp Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
 #include <string.h>
 #include <locale.h>
 #include "tclInt.h"
-#include "tclPort.h"
 
 #define TM_YEAR_BASE   1900
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))

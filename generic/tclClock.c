@@ -11,12 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.25 2004/03/18 18:50:40 rmax Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.26 2004/04/06 22:25:48 dgp Exp $
  */
 
-#include "tcl.h"
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The date parsing stuff uses lexx and has tons o statics.

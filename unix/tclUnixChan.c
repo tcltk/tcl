@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.47 2004/03/18 18:55:44 rmax Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.48 2004/04/06 22:25:56 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
-#include "tclPort.h"	/* Portability features for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
 /*

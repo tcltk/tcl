@@ -12,12 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.13 2004/03/30 22:27:49 dkf Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.14 2004/04/06 22:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include "tclPort.h"
 /*
  * When there are this many entries per bucket, on average, rebuild
  * a literal's hash table to make it larger.

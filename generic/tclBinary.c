@@ -10,12 +10,16 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.16 2003/12/24 04:18:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.17 2004/04/06 22:25:48 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
+
+#ifdef TCL_NO_MATH
+#define fabs(x) (x<0 ? -x : x)
+#else
 #include <math.h>
+#endif
 
 /*
  * The following constants are used by GetFormatSpec to indicate various

@@ -17,13 +17,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.98 2004/04/01 11:13:01 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.99 2004/04/06 22:25:53 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #ifdef __WIN32__
-/* for tclWinProcs->useWide */
 #include "tclWinInt.h"
 #endif
 #include "tclFileSystem.h"

@@ -14,11 +14,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.13 2004/03/17 18:14:14 das Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.14 2004/04/06 22:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 extern TclStubs tclStubs;
 
