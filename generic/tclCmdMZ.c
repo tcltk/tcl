@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82 2003/02/27 00:54:36 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.1 2003/03/12 18:04:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2526,17 +2526,12 @@ Tcl_SubstObj(interp, objPtr, flags)
 {
     Tcl_Obj *resultObj;
     char *p, *old;
+    int length;
 
-    old = p = Tcl_GetString(objPtr);
+    old = p = Tcl_GetStringFromObj(objPtr, &length);
     resultObj = Tcl_NewStringObj("", 0);
-    while (1) {
+    while (length) {
 	switch (*p) {
-	case 0:
-	    if (p != old) {
-		Tcl_AppendToObj(resultObj, old, p-old);
-	    }
-	    return resultObj;
-
 	case '\\':
 	    if (flags & TCL_SUBST_BACKSLASHES) {
 		char buf[TCL_UTF_MAX];
@@ -2547,10 +2542,10 @@ Tcl_SubstObj(interp, objPtr, flags)
 		}
 		Tcl_AppendToObj(resultObj, buf,
 				Tcl_UtfBackslash(p, &count, buf));
-		p += count;
+		p += count; length -= count;
 		old = p;
 	    } else {
-		p++;
+		p++; length--;
 	    }
 	    break;
 
@@ -2577,13 +2572,14 @@ Tcl_SubstObj(interp, objPtr, flags)
 		     * There isn't a variable name after all: the $ is
 		     * just a $.
 		     */
-		    p++;
+		    p++; length--;
 		    break;
 		}
 		if (p != old) {
 		    Tcl_AppendToObj(resultObj, old, p-old);
 		}
 		p += parse.tokenPtr->size;
+		length -= parse.tokenPtr->size;
 		code = Tcl_EvalTokensStandard(interp, parse.tokenPtr,
 		        parse.numTokens);
 		if (code == TCL_ERROR) {
@@ -2599,7 +2595,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 		Tcl_ResetResult(interp);
 		old = p;
 	    } else {
-		p++;
+		p++; length--;
 	    }
 	    break;
 
@@ -2624,16 +2620,21 @@ Tcl_SubstObj(interp, objPtr, flags)
 		case TCL_CONTINUE:
 		    Tcl_ResetResult(interp);
 		    old = p = (p+1 + iPtr->termOffset + 1);
+		    length -= (iPtr->termOffset + 2);
 		}
 	    } else {
-		p++;
+		p++; length--;
 	    }
 	    break;
 	default:
-	    p++;
+	    p++; length--;
 	    break;
 	}
     }
+    if (p != old) {
+	Tcl_AppendToObj(resultObj, old, p-old);
+    }
+    return resultObj;
 
  errorResult:
     Tcl_DecrRefCount(resultObj);

@@ -1,5 +1,9 @@
 2003-03-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdMZ.c (Tcl_SubstObj):	Corrected and added test for
+	* tests/subst.test (subst-2.4):		Tcl_SubstObj's incorrect
+	halting of substitution at the first \x00 byte.  [Bug 685106]
+
 	* generic/tclInterp.c (Tcl_InterpObjCmd):	Corrected and added
 	* tests/interp.test (interp-2.13):  		test for option
 	parsing beyond objc for [interp create --].  Thanks to Marco Maggi.
