@@ -1,3 +1,8 @@
+2005-02-16  Miguel Sofer <msofer@users.sf.net>
+
+	* /doc/variable.n: fix for [Bug 1124160], variables are detected
+	by [info vars] but not by [info locals].
+	
 2005-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in: remove SHLIB_LD_FLAGS (only for AIX, inlined
