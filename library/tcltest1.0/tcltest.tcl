@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.7 1999/07/26 22:50:55 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.8 1999/07/28 18:33:20 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -232,9 +232,7 @@ proc ::tcltest::PrintError {errorMsg} {
     set InitialMsgLen  [string length $InitialMessage]
     puts -nonewline $::tcltest::errorChannel $InitialMessage
 
-    # Keep track of where we last started from and where the end of the
-    # string is.
-    set priorBeginningIndex 0
+    # Keep track of where the end of the string is.
     set endingIndex [string length $errorMsg]
 
     if {$endingIndex < 80} {
@@ -243,7 +241,7 @@ proc ::tcltest::PrintError {errorMsg} {
 	# Print up to 80 characters on the first line, including the
 	# InitialMessage. 
 	set beginningIndex [string last " " [string range $errorMsg 0 \
-		[string wordend $errorMsg [expr {80 - $InitialMsgLen}]]]]
+		[expr {80 - $InitialMsgLen}]]]
 	puts $::tcltest::errorChannel [string range $errorMsg 0 $beginningIndex]
 
 	while {$beginningIndex != "end"} {
@@ -254,18 +252,17 @@ proc ::tcltest::PrintError {errorMsg} {
 			[string range $errorMsg $beginningIndex end]]
 		set beginningIndex end
 	    } else {
-		set newEndingIndex [string last " " [string range $errorMsg \
-			$beginningIndex [string wordend $errorMsg \
-			[expr {$beginningIndex + 72}]]]]
+		set newEndingIndex [expr [string last " " [string range \
+			$errorMsg $beginningIndex \
+			[expr {$beginningIndex + 72}]]] + $beginningIndex]
 		if {($newEndingIndex <= 0) \
-			|| ($newEndingIndex == $beginningIndex)} {
+			|| ($newEndingIndex <= $beginningIndex)} {
 		    set newEndingIndex end
 		}
 		puts $::tcltest::errorChannel [string trim \
 			[string range $errorMsg \
 			$beginningIndex $newEndingIndex]]
 		set beginningIndex $newEndingIndex
-		set priorBeginningIndex $beginningIndex
 	    }
 	}
     }
@@ -1266,7 +1263,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 
 # ::tcltest::getMatchingTestFiles
 #
-#       Looks at the patterns given to match and skip directories and files
+#       Looks at the patterns given to match and skip files
 #       and uses them to put together a list of the tests that will be run.
 #
 # Arguments:
@@ -1276,17 +1273,22 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 #       The constructed list is returned to the user.  This will primarily
 #       be used in 'all.tcl' files.
 
-proc ::tcltest::getMatchingFiles {} {
+proc ::tcltest::getMatchingFiles {args} {
     set matchingFiles {}
+    if {[llength $args] > 0} {
+	set searchDirectory $args
+    } else {
+	set searchDirectory $::tcltest::testsDirectory
+    }
     # Find the matching files in the list of directories and then remove the
     # ones that match the skip pattern
-    foreach directory $::tcltest::testsDirectory {
+    foreach directory $searchDirectory {
 	set matchFileList {}
 	foreach match $::tcltest::matchFiles {
 	    set matchFileList [concat $matchFileList \
 		    [glob -nocomplain [file join $directory $match]]]
 	}
-	if {$tcltest::skipFiles != {}} {
+	if {$::tcltest::skipFiles != {}} {
 	    set skipFileList {}
 	    foreach skip $::tcltest::skipFiles {
 		set skipFileList [concat $skipFileList \

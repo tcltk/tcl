@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.2 1999/07/27 01:42:23 redman Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.3 1999/07/28 18:33:23 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -156,6 +156,7 @@ makeFile {
 	    \"Path/that/is/really/long/and/contains/no/spaces\""
     ::tcltest::PrintError "a really really long string containing a \
 	    \"Really/Long/Path/that/contains/no/spaces/and/is/longer/than/eighty/characters/to/see/what/happens\"" 
+    ::tcltest::PrintError "Problem renaming file: error renaming \"Z:/ws/tcl8.2/win32-ix86/tests/core\" to \"Z:/ws/tcl8.2/win32-ix86/tests/movecore-core\""
 } printerror.tcl
 
 # -outfile, -errfile
@@ -289,8 +290,8 @@ test tcltest-11.1 {PrintError} {
     set result [catch {exec $::tcltest::tcltest printerror.tcl} msg]
     list $result [regexp "Error:  a really short string" $msg] \
 	    [regexp "     \"quotes\"" $msg] [regexp "    \"Path" $msg] \
-	    [regexp "    \"Really" $msg] 
-} {1 1 1 1 1}
+	    [regexp "    \"Really" $msg] [regexp Problem $msg]
+} {1 1 1 1 1 1}
 
 # cleanup
 ::tcltest::cleanupTests
