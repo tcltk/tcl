@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.13 1999/04/07 01:59:28 hershey Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.14 1999/04/07 02:38:10 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -1987,7 +1987,8 @@ test interp-26.3 {result code transmission : aliases} {
     set res
 } {-1 0 1 2 3 4 5}
 
-test interp-26.4 {result code transmission: invoke hidden direct} {knownBug} {
+test interp-26.4 {result code transmission: invoke hidden direct--bug 1637} \
+	{knownBug} {
     # The known bug is that code 2 is returned, not the -code argument
     catch {interp delete a}
     interp create a
@@ -2000,7 +2001,8 @@ test interp-26.4 {result code transmission: invoke hidden direct} {knownBug} {
     set res
 } {-1 0 1 2 3 4 5}
 
-test interp-26.5 {result code transmission: invoke hidden indirect} {knownBug} {
+test interp-26.5 {result code transmission: invoke hidden indirect--bug 1637} \
+	{knownBug} {
     # The known bug is that the break and continue should raise errors
     # that they are used outside a loop.
     catch {interp delete a}
@@ -2015,7 +2017,8 @@ test interp-26.5 {result code transmission: invoke hidden indirect} {knownBug} {
     set res
 } {-1 ret-1 0 ret0 1 ret1 0 ret2 3 ret3 4 ret4 5 ret5}
 
-test interp-26.6 {result code transmission: all combined} {knownBug} {
+test interp-26.6 {result code transmission: all combined--bug 1637} \
+	{knownBug} {
     # Test that all the possibles error codes from Tcl get passed
     # In both directions.  This doesn't work.
     set interp [interp create];
@@ -2062,10 +2065,11 @@ test interp-26.7 {errorInfo transmission: regular interps} {
     invoked from within
 "test"}
 
-test interp-26.8 {errorInfo transmission: safe interps} {knownBug} {
+test interp-26.8 {errorInfo transmission: safe interps--bug 1637} {knownBug} {
     # this test fails because the errorInfo is fully transmitted
-    # whether the interp is safe or not. this is maybe a feature
-    # and not a bug.
+    # whether the interp is safe or not.  The errorInfo should never
+    # report data from the master interpreter because it could
+    # contain sensitive information.
     set interp [interp create -safe];
     proc MyError {secret} {
 	return -code error "msg"

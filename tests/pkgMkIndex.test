@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.8 1999/04/01 23:22:32 welch Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.9 1999/04/07 02:38:11 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -330,8 +330,8 @@ test pkgMkIndex-9.1 {circular packages} {
 } {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
 
 # Some tests require the existence of one of the DLLs in the dltest directory
-set x [file join $::tcltest::testsDir \
-	../unix/dltest/pkga[info sharedlibextension]]
+set x [file join [file dirname [info nameofexecutable]] dltest \
+	pkga[info sharedlibextension]]
 set dll "[file tail $x]Required"
 set ::tcltest::testConfig($dll) [file exists $x]
 
