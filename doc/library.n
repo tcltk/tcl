@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.10 2000/02/08 10:05:24 hobbs Exp $
+'\" RCS: @(#) $Id: library.n,v 1.11 2000/04/15 18:42:56 ericm Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -258,9 +258,9 @@ a default value is used.
 .TP
 \fBenv(TCLLIBPATH)\fR
 If set, then it must contain a valid Tcl list giving directories to
-search during auto-load operations.
-This variable is only used when
-initializing the \fBauto_path\fR variable.
+search during auto-load operations.  Directories must be specified in 
+Tcl format, using "/" as the path separator, regardless of platform.
+This variable is only used when initializing the \fBauto_path\fR variable.
 .TP
 \fBtcl_nonwordchars\fR
 .VS
