@@ -1,3 +1,12 @@
+2000-03-29  Sandeep Tamhankar <sandeep@scriptics.com>
+
+	* library/http2.1/http.tcl: For the -querychannel option,
+	fconfigure the socket to be binary so that we don't translate
+	anything while reading the data.  This is because we determine the
+	content length of the data on the channel by using seek (to the end
+	of the file) and tell on the file handle, and we need the
+	content-length to match the amount of data actually sent, and
+	translation can affect the number of bytes posted.
 
 2000-04-03  Andreas Kupries <a.kupries@westend.com>
 

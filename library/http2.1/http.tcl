@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.28 2000/03/29 20:19:59 sandeep Exp $
+# RCS: @(#) $Id: http.tcl,v 1.29 2000/04/05 00:30:15 sandeep Exp $
 
 package provide http 2.3	;# This uses Tcl namespaces
 
@@ -365,7 +365,7 @@ proc http::geturl { url args } {
 	set how POST
 	# The query channel must be blocking for the async Write to
 	# work properly.
-	fconfigure $state(-querychannel) -blocking 1
+	fconfigure $state(-querychannel) -blocking 1 -translation binary
 	set contDone 0
     }
 
