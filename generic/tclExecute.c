@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.84 2002/07/26 18:51:02 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.85 2002/07/27 21:17:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1137,7 +1137,7 @@ TclExecuteByteCode(interp, codePtr)
     cleanupV_pushObjResultPtr:
     switch (cleanup) {
         case 0:
-	    PUSH_OBJECT(objResultPtr);
+	    stackPtr[++stackTop] = (objResultPtr);
 	    goto cleanup0;
         default:
 	    cleanup -= 2;

@@ -1,5 +1,10 @@
 2002-07-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c: fixed Tcl_Obj leak in code corresponding
+	to the macro NEXT_INST_V(x, 0, 1) [Bug 587495].
+	
+2002-07-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclVar.c (TclObjLookupVar): leak fix and improved
 	comments. 
 
