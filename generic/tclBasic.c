@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.101 2004/05/16 20:23:01 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.102 2004/05/20 13:04:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -982,6 +982,15 @@ DeleteInterpProc(interp)
     }
 
     TclHandleFree(iPtr->handle);
+
+    /*
+     * Shut down all limit handler callback scripts that call back
+     * into this interpreter.  Then eliminate all limit handlers for
+     * this interpreter.
+     */
+
+    TclDecommissionLimitCallbacks(interp);
+    TclLimitRemoveAllHandlers(interp);
 
     /*
      * Dismantle everything in the global namespace except for the

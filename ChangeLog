@@ -1,3 +1,11 @@
+2004-05-20  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (TclLimitRemoveAllHandlers): 
+	* generic/tclBasic.c (DeleteInterpProc):	   
+	* tests/interp.test (interp-34.7):		   
+	Ensure that all limit callbacks are deleted when their interpreters
+	are deleted. [Bug 956083]
+
 2004-05-19  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/tclWinFile.c (TclpMatchInDirectory): fix for an issue
