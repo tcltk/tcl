@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.33 2004/04/23 02:04:54 davygrvy Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.34 2004/04/23 07:21:15 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -952,7 +952,7 @@ Tcl_Finalize()
 	TclFinalizeMemorySubsystem();
 	inFinalize = 0;
     }
-    TclpInitUnlock();
+    TclFinalizeLock();
 }
 
 /*
