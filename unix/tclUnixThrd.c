@@ -934,19 +934,20 @@ TclpInetNtoa(struct in_addr addr)
  * Additions by AOL for specialized thread memory allocator.
  */
 #ifdef USE_THREAD_ALLOC
-static int initialized = 0;
+static volatile int initialized = 0;
 static pthread_key_t	key;
-static pthread_once_t	once = PTHREAD_ONCE_INIT;
+
+typedef struct allocMutex {
+    Tcl_Mutex       tlock;
+    pthread_mutex_t plock;
+} allocMutex;
 
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    struct lock {
-        Tcl_Mutex       tlock;
-        pthread_mutex_t plock;
-    } *lockPtr;
+    struct allocMutex *lockPtr;
 
-    lockPtr = malloc(sizeof(struct lock));
+    lockPtr = malloc(sizeof(struct allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
@@ -955,20 +956,41 @@ TclpNewAllocMutex(void)
     return &lockPtr->tlock;
 }
 
-static void
-InitKey(void)
+void
+TclpFreeAllocMutex(mutex)
+    Tcl_Mutex *mutex; /* The alloc mutex to free. */
+{
+    allocMutex* lockPtr = (allocMutex*) mutex;
+    if (!lockPtr) return;
+    pthread_mutex_destroy(&lockPtr->plock);
+    free(lockPtr);
+}
+
+void TclpFreeAllocCache(ptr)
+    void *ptr;
 {
     extern void TclFreeAllocCache(void *);
 
-    pthread_key_create(&key, TclFreeAllocCache);
-    initialized = 1;
+    TclFreeAllocCache(ptr);
+    /*
+     * Perform proper cleanup of things done in TclpGetAllocCache.
+     */
+    if (initialized) {
+        pthread_key_delete(key);
+        initialized = 0;
+    }
 }
 
 void *
 TclpGetAllocCache(void)
 {
     if (!initialized) {
-	pthread_once(&once, InitKey);
+	pthread_mutex_lock(allocLockPtr);
+	if (!initialized) {
+	    pthread_key_create(&key, TclpFreeAllocCache);
+	    initialized = 1;
+	}
+	pthread_mutex_unlock(allocLockPtr);
     }
     return pthread_getspecific(key);
 }

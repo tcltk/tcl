@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.13 2004/06/21 08:54:34 dkf Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.14 2004/07/21 01:45:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -631,7 +631,7 @@ Tcl_GetMemoryInfo(dsPtr)
 	if (cachePtr == sharedPtr) {
 	    Tcl_DStringAppendElement(dsPtr, "shared");
 	} else {
-	    sprintf(buf, "thread%d", (int) cachePtr->owner);
+	    sprintf(buf, "thread%p", cachePtr->owner);
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	}
 	for (n = 0; n < NBUCKETS; ++n) {
@@ -957,4 +957,62 @@ GetBlocks(cachePtr, bucket)
     return 1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeThreadAlloc --
+ *
+ *	This procedure is used to destroy all private resources used in
+ *	this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeThreadAlloc()
+{
+    int i;
+    for (i = 0; i < NBUCKETS; ++i) {
+        TclpFreeAllocMutex(bucketInfo[i].lockPtr); 
+        bucketInfo[i].lockPtr = NULL;
+    }
+
+    TclpFreeAllocMutex(objLockPtr);
+    objLockPtr = NULL;
+
+    TclpFreeAllocMutex(listLockPtr);
+    listLockPtr = NULL;
+}
+
+#else
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeThreadAlloc --
+ *
+ *	This procedure is used to destroy all private resources used in
+ *	this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeThreadAlloc()
+{
+    Tcl_Panic("TclFinalizeThreadAlloc called when threaded memory allocator not in use.");
+}
+
 #endif /* TCL_THREADS */
