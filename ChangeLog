@@ -1,3 +1,9 @@
+2004-10-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclProc.c (TclObjGetFrame, Tcl_UplevelObjCmd): 
+	* generic/tclVar.c (Tcl_UpvarObjCmd): Cache stackframe level
+	references in the level object for speed.
+
 2004-09-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): Removed the flag bit value

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.92 2004/09/29 22:17:28 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.93 2004/10/01 12:45:20 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -3877,7 +3877,7 @@ Tcl_UpvarObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     CallFrame *framePtr;
-    char *frameSpec, *localName;
+    char *localName;
     int result;
 
     if (objc < 3) {
@@ -3892,8 +3892,7 @@ Tcl_UpvarObjCmd(dummy, interp, objc, objv)
      * linked to. 
      */
 
-    frameSpec = TclGetString(objv[1]);
-    result = TclGetFrame(interp, frameSpec, &framePtr);
+    result = TclObjGetFrame(interp, objv[1], &framePtr);
     if (result == -1) {
 	return TCL_ERROR;
     }
