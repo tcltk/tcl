@@ -1,3 +1,18 @@
+1999-05-24    <stanton@scriptics.com>
+
+	* tools/genStubs.tcl: Changed to allow a list of platforms instead
+	of just one at a time.
+
+	* generic/tcl.decls: 
+	* generic/tclCmdMZ.c: 
+	* generic/tclDecls.h: 
+	* generic/tclInt.decls: 
+	* generic/tclIntDecls.h: 
+	* generic/tclPort.h: 
+	* generic/tclStubInit.c: 
+	* generic/tclStubLib.c: Various header file related changes and other
+	lint to try to get the Mac builds working.
+
 1999-05-21    <redman@scriptics.com>
 
 	* win/tclWinPipe.c: Fix bug when launching command.com on
