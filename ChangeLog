@@ -1,3 +1,9 @@
+2004-05-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (unixInit-2.10):	Test correction for Mac OSX.
+	Be sure to consistently compare normalized path names.  Thanks to
+	Steven Abner (tauvan).  [Bug 948177]
+
 2004-05-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/CrtObjCmd.3: Remove reference to Tcl_RenameCommand; there is
