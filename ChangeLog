@@ -1,5 +1,10 @@
 2004-12-12  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclVar.c (TclArrayObjCmd - ARRAY_NAMES): leaking an
+	object [Bug 1084111] - thanks to Rolf Ade.
+
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclObj.c (TclSetCmdNameObj): special handling for fully
 	qualified command names (as in fix [Patch 456668]).
 
