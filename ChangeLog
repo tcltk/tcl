@@ -2,8 +2,10 @@
 
 	* generic/tclCompile.c: moved TclInitCompiledLocals to tclProc.c 
 	* generic/tclProc.c: new static InitCompiledLocals to allow for a
-	single pass over the proc's arguments at procload time (instead of
-	two, asdone previously)
+	single pass over the proc's arguments at proc load time (instead of
+	two as previously). TclObjInterpProc() now allocates the
+	compiledLocals on the tcl execution stack, using the new
+	TclStackAlloc/Free functions.
 
 2004-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
