@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: %Z% $Id: init.tcl,v 1.7 1998/07/14 14:49:54 escoffon Exp $ 
+# SCCS: %Z% $Id: init.tcl,v 1.8 1998/07/20 16:24:45 welch Exp $ 
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -107,9 +107,11 @@ if {[info commands tclLog] == ""} {
 # exist in the interpreter.  It takes the following steps to make the
 # command available:
 #
-#	1. See if the autoload facility can locate the command in a
+#	1. See if the command has the form "namespace inscope ns cmd" and
+#	   if so, concatenate its arguments onto the end and evaluate it.
+#	2. See if the autoload facility can locate the command in a
 #	   Tcl script file.  If so, load it and execute it.
-#	2. If the command was invoked interactively at top-level:
+#	3. If the command was invoked interactively at top-level:
 #	    (a) see if the command exists as an executable UNIX program.
 #		If so, "exec" the command.
 #	    (b) see if the command requests csh-like history substitution
@@ -125,6 +127,20 @@ if {[info commands tclLog] == ""} {
  proc unknown args {
     global auto_noexec auto_noload env unknown_pending tcl_interactive
     global errorCode errorInfo
+
+    # If the command word has the form "namespace inscope ns cmd"
+    # then concatenate its arguments onto the end and evaluate it.
+
+    set cmd [lindex $args 0]
+    if {[regexp "^namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
+        set arglist [lrange $args 1 end]
+	set ret [catch {uplevel $cmd $arglist} result]
+        if {$ret == 0} {
+            return $result
+        } else {
+	    return -code $ret -errorcode $errorCode $result
+        }
+    }
 
     # Save the values of errorCode and errorInfo variables, since they
     # may get modified if caught errors occur below.  The variables will
