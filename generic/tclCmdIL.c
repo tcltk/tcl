@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.59 2004/01/17 00:28:08 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.60 2004/01/17 00:38:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2054,6 +2054,7 @@ Tcl_LassignObjCmd(dummy, interp, objc, objv)
 				 * run out of values from the list object. */
     Tcl_Obj **listObjv;		/* The contents of the list. */
     int listObjc;		/* The length of the list. */
+    int i;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list varname ?varname ...?");

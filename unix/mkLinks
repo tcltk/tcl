@@ -1668,6 +1668,10 @@ if test -r lappend.n; then
     rm -f lappend.n.*
     $ZIP lappend.n
 fi
+if test -r lassign.n; then
+    rm -f lassign.n.*
+    $ZIP lassign.n
+fi
 if test -r library.n; then
     rm -f library.n.*
     $ZIP library.n

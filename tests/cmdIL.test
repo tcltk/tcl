@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.19 2004/01/17 00:28:08 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.20 2004/01/17 00:38:57 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -422,10 +422,10 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 
 test cmdIL-6.1 {lassign command syntax} -body {
     lassign
-} -code 1 -result {wrong # args: should be "lassign list varname ?varname ...?"}
+} -returnCodes 1 -result {wrong # args: should be "lassign list varname ?varname ...?"}
 test cmdIL-6.2 {lassign command syntax} -body {
     lassign x
-} -code 1 -result {wrong # args: should be "lassign list varname ?varname ...?"}
+} -returnCodes 1 -result {wrong # args: should be "lassign list varname ?varname ...?"}
 test cmdIL-6.3 {lassign command} {
     set x FAIL
     list [lassign a x] $x
@@ -462,7 +462,7 @@ test cmdIL-6.9 {lassign command - assignment to arrays} {
 test cmdIL-6.10 {lassign command - variable update error} -body {
     set x(x) {}
     lassign a x
-} -code 1 -result {can't set "x": variable is array} -cleanup {
+} -returnCodes 1 -result {can't set "x": variable is array} -cleanup {
     unset x
 }
 test cmdIL-6.11 {lassign command - variable update error} -body {
