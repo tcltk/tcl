@@ -1,3 +1,10 @@
+2000-05-06  Andreas Kupries <a.kupries@westend.com>
+	operating as proxy for David Gravereaux <davygrvy@pobox.com>
+
+	* tclThreadJoin.c: Fixed several places with missing a & in
+	  arguments to calls of Tcl_Mutex(Un)lock and
+	  Tcl_ConditionNotify functions.
+
 2000-05-02  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* README:

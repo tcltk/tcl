@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadJoin.c,v 1.1 2000/05/02 22:02:36 kupries Exp $
+ * RCS: @(#) $Id: tclThreadJoin.c,v 1.2 2000/05/06 19:51:05 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -100,7 +100,7 @@ TclJoinThread(id, result)
 
     JoinableThread* threadPtr;
 
-    Tcl_MutexLock (joinMutex);
+    Tcl_MutexLock (&joinMutex);
 
     for (threadPtr = firstThreadPtr;
 	 (threadPtr != (JoinableThread*) NULL) && (threadPtr->id != id);
@@ -113,7 +113,7 @@ TclJoinThread(id, result)
 	 * upon and exited. Whatever, an error is in order.
 	 */
 
-      Tcl_MutexUnlock (joinMutex);
+      Tcl_MutexUnlock (&joinMutex);
       return TCL_ERROR;
     }
 
@@ -123,8 +123,8 @@ TclJoinThread(id, result)
      * dangling pointer.
      */
 
-    Tcl_MutexLock   (threadPtr->threadMutex);
-    Tcl_MutexUnlock (joinMutex);
+    Tcl_MutexLock   (&threadPtr->threadMutex);
+    Tcl_MutexUnlock (&joinMutex);
 
     /* [2] Now that we have the structure mutex any other thread that just
      * tries to delete structure will wait at location [3] until we are
@@ -134,7 +134,7 @@ TclJoinThread(id, result)
      */
 
     if (threadPtr->waitedUpon) {
-        Tcl_MutexUnlock (threadPtr->threadMutex);
+        Tcl_MutexUnlock (&threadPtr->threadMutex);
 	return TCL_ERROR;
     }
 
@@ -156,8 +156,8 @@ TclJoinThread(id, result)
      * thread came here before us and is able to delete the structure.
      */
 
-    Tcl_MutexUnlock (threadPtr->threadMutex);
-    Tcl_MutexLock   (joinMutex);
+    Tcl_MutexUnlock (&threadPtr->threadMutex);
+    Tcl_MutexLock   (&joinMutex);
 
     /* We have to search the list again as its structure may (may, almost
      * certainly) have changed while we were waiting. Especially now is the
@@ -179,7 +179,7 @@ TclJoinThread(id, result)
 	prevThreadPtr->nextThreadPtr = threadPtr->nextThreadPtr;
     }
 
-    Tcl_MutexUnlock (joinMutex);
+    Tcl_MutexUnlock (&joinMutex);
 
     /* [3] Now that the structure is not part of the list anymore no other
      * thread can acquire its mutex from now on. But it is possible that
@@ -188,8 +188,8 @@ TclJoinThread(id, result)
      * to finish. We can (and have to) release the mutex immediately.
      */
 
-    Tcl_MutexLock   (threadPtr->threadMutex);
-    Tcl_MutexUnlock (threadPtr->threadMutex);
+    Tcl_MutexLock   (&threadPtr->threadMutex);
+    Tcl_MutexUnlock (&threadPtr->threadMutex);
 
     /* Copy the result to us, finalize the synchronisation objects, then
      * free the structure and return.
@@ -197,8 +197,8 @@ TclJoinThread(id, result)
 
     *result = threadPtr->result;
 
-    Tcl_ConditionFinalize (threadPtr->cond);
-    Tcl_MutexFinalize (threadPtr->threadMutex);
+    Tcl_ConditionFinalize (&threadPtr->cond);
+    Tcl_MutexFinalize (&threadPtr->threadMutex);
     Tcl_Free ((VOID*) threadPtr);
 
     return TCL_OK;
@@ -237,12 +237,12 @@ TclRememberJoinableThread(id)
     threadPtr->threadMutex = (Tcl_Mutex) NULL;
     threadPtr->cond        = (Tcl_Condition) NULL;
 
-    Tcl_MutexLock (joinMutex);
+    Tcl_MutexLock (&joinMutex);
 
     threadPtr->nextThreadPtr = firstThreadPtr;
     firstThreadPtr           = threadPtr;
 
-    Tcl_MutexUnlock (joinMutex);
+    Tcl_MutexUnlock (&joinMutex);
 }
 
 /*
@@ -270,7 +270,7 @@ TclSignalExitThread(id,result)
 {
     JoinableThread* threadPtr;
 
-    Tcl_MutexLock (joinMutex);
+    Tcl_MutexLock (&joinMutex);
 
     for (threadPtr = firstThreadPtr;
 	 (threadPtr != (JoinableThread*) NULL) && (threadPtr->id != id);
@@ -282,7 +282,7 @@ TclSignalExitThread(id,result)
         /* Thread not found. Not joinable. No problem, nothing to do.
 	 */
 
-        Tcl_MutexUnlock (joinMutex);
+        Tcl_MutexUnlock (&joinMutex);
 	return;
     }
 
@@ -292,15 +292,16 @@ TclSignalExitThread(id,result)
      * thread entering 'TclJoinThread' will not interfere with us.
      */
 
-    Tcl_MutexLock   (threadPtr->threadMutex);
-    Tcl_MutexUnlock (joinMutex);
+    Tcl_MutexLock   (&threadPtr->threadMutex);
+    Tcl_MutexUnlock (&joinMutex);
 
     threadPtr->done   = 1;
     threadPtr->result = result;
 
     if (threadPtr->waitedUpon) {
-      Tcl_ConditionNotify (threadPtr->cond);
+      Tcl_ConditionNotify (&threadPtr->cond);
     }
 
-    Tcl_MutexUnlock (threadPtr->threadMutex);
+    Tcl_MutexUnlock (&threadPtr->threadMutex);
 }
+
