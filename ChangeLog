@@ -1,3 +1,8 @@
+2002-03-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:
+	* library/tcltest/pkgIndex.tcl: Bumped tcltest package to 2.0.2.
+
 2002-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl (getMatchingFiles): Pass
