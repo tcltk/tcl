@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.24 2000/09/28 06:38:20 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.25 2000/10/06 21:10:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -8027,15 +8027,30 @@ Tcl_GetChannelNamesEx(interp, pattern)
     Tcl_Interp *interp;		/* Interp for error reporting. */
     char *pattern;		/* pattern to filter on. */
 {
-    ChannelState *statePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    char *name;
-    Tcl_Obj *resultPtr;
+    ChannelState *statePtr;
+    char *name;			/* name for channel */
+    Tcl_Obj *resultPtr;		/* pointer to result object */
+    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
 
-    resultPtr = Tcl_GetObjResult(interp);
-    for (statePtr = tsdPtr->firstCSPtr;
-	 statePtr != NULL;
-	 statePtr = statePtr->nextCSPtr) {
+    if (interp == (Tcl_Interp *) NULL) {
+	return TCL_OK;
+    }
+
+    /*
+     * Get the channel table that stores the channels registered
+     * for this interpreter.
+     */
+    hTblPtr	= GetChannelTable(interp);
+    resultPtr	= Tcl_GetObjResult(interp);
+
+    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
+	 hPtr != (Tcl_HashEntry *) NULL;
+	 hPtr = Tcl_NextHashEntry(&hSearch)) {
+
+	statePtr = ((Channel *) Tcl_GetHashValue(hPtr))->state;
         if (statePtr->topChanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stdoutChannel) {
@@ -8043,8 +8058,13 @@ Tcl_GetChannelNamesEx(interp, pattern)
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stderrChannel) {
 	    name = "stderr";
 	} else {
+	    /*
+	     * This is also stored in Tcl_GetHashKey(hTblPtr, hPtr),
+	     * but it's simpler to just grab the name from the statePtr.
+	     */
 	    name = statePtr->channelName;
 	}
+
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
 			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
