@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17.2.2 2004/03/31 01:55:21 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.17.2.3 2004/03/31 18:51:01 dgp Exp $
 
 package require Tcl 8.2
 # When the version number changes, be sure to update the pkgIndex.tcl file,
@@ -397,8 +397,10 @@ proc msgcat::ConvertLocale {value} {
     #	(@(.*))?	# Match (optional) "modifier"; starts with @
     #	$		# Match all the way to the end
     # } $value -> language _ territory _ codeset _ modifier
-    regexp {^([^_.@]*)(_([^.@]*))?([.]([^@]*))?(@(.*))?$} $value \
-	    -> language _ territory _ codeset _ modifier
+    if {![regexp {^([^_.@]+)(_([^.@]*))?([.]([^@]*))?(@(.*))?$} $value \
+	    -> language _ territory _ codeset _ modifier]} {
+	return -code error "invalid locale '$value': empty language part"
+    }
     set ret $language
     if {[string length $territory]} {
 	append ret _$territory
@@ -417,8 +419,9 @@ proc msgcat::Init {} {
     foreach varName {LC_ALL LC_MESSAGES LANG} {
 	if {[info exists ::env($varName)] 
 		&& ![string equal "" $::env($varName)]} {
-            mclocale [ConvertLocale $::env($varName)]
-	    return
+	    if {![catch {mclocale [ConvertLocale $::env($varName)]}]} {
+		return
+	    }
 	}
     }
     #
