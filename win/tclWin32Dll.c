@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.33 2004/04/20 02:10:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.34 2004/04/23 07:41:08 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -156,7 +156,6 @@ static TclWinProcs unicodeProcs = {
 
 TclWinProcs *tclWinProcs;
 static Tcl_Encoding tclWinTCharEncoding;
-Tcl_ExitProc TclWinUninit;
 
 /*
  * The following declaration is for the VC++ DLL entry point.
@@ -398,34 +397,6 @@ TclWinInit(hInst)
     }
 
     tclWinProcs = &asciiProcs;
-    Tcl_CreateExitHandler(TclWinUninit, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinUninit --
- *
- *	Exit handler callback to remove private components used in this
- *	file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Tcl_WinTCharToUtf and Tcl_WinUtfToTChar will not work during
- *	the latter half of Tcl_Finalize.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclWinUninit (ClientData clientData)
-{
-    if (tclWinTCharEncoding) {
-	Tcl_FreeEncoding(tclWinTCharEncoding);
-	tclWinTCharEncoding = NULL;
-    }
 }
 
 /*
