@@ -1,3 +1,8 @@
+2004-11-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c (InfoVarsCmd):	Corrected segfault in new
+	* tests/info.test (info-19.6):	trivial matching branch [Bug 1072654]
+
 2004-11-23  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix and new test for [Bug 1043129] in
