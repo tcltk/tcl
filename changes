@@ -3453,7 +3453,11 @@ Universal Headers V.3.0, so that Tcl will compile with CW Pro 2.
 ----------------- Released 8.0p2, 11/25/97 -----------------------
 
 5/27/98 (bug fix) Windows socket driver did not notice new data arriving
-on nonblocking sockets until the event loop was entered.
+on nonblocking sockets until the event loop was entered. (SS)
 
 5/27/98 (bug fix) Windows socket driver used FIONREAD, which is not
-supported correctly by WinSock.
+supported correctly by WinSock. (SS)
+
+6/9/98 (bug fix) Generic channel code failed to report readable file
+events on buffered data that was left behind by a gets or read that
+did not consume all available data. (SS)
