@@ -1,3 +1,12 @@
+2003-02-07  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclTest.c:
+	* tests/fileSystem.text: fixed test 7.2 to avoid a possible
+	crash, and not change the pwd.
+	
+	* tests/http.text: added comment to test 4.15, that it may
+	fail if you use a proxy server.
+	
 2003-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileIncrCmd):
