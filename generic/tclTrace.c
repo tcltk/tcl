@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.17 2004/10/19 21:54:07 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.18 2004/10/25 01:06:51 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2429,10 +2429,10 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
      * variable, don't call them again.
      */
 
-    if (varPtr->flags & VAR_TRACE_ACTIVE) {
+    if (TclIsVarTraceActive(varPtr)) {
 	return code;
     }
-    varPtr->flags |= VAR_TRACE_ACTIVE;
+    TclSetVarTraceActive(varPtr);
     varPtr->refCount++;
     if (arrayPtr != NULL) {
 	arrayPtr->refCount++;
@@ -2480,7 +2480,7 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     active.nextPtr = iPtr->activeVarTracePtr;
     iPtr->activeVarTracePtr = &active;
     Tcl_Preserve((ClientData) iPtr);
-    if (arrayPtr != NULL && !(arrayPtr->flags & VAR_TRACE_ACTIVE)) {
+    if (arrayPtr != NULL && !TclIsVarTraceActive(arrayPtr)) {
 	active.varPtr = arrayPtr;
 	for (tracePtr = arrayPtr->tracePtr;  tracePtr != NULL;
 	     tracePtr = active.nextTracePtr) {
@@ -2593,7 +2593,7 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     if (copiedName) {
 	Tcl_DStringFree(&nameCopy);
     }
-    varPtr->flags &= ~VAR_TRACE_ACTIVE;
+    TclClearVarTraceActive(varPtr);
     varPtr->refCount--;
     iPtr->activeVarTracePtr = active.nextPtr;
     Tcl_Release((ClientData) iPtr);
