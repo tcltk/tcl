@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.60 2004/07/25 22:06:21 patthoyts Exp $
+# RCS: @(#) $Id: io.test,v 1.61 2004/10/28 00:04:39 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6292,8 +6292,8 @@ test io-50.4 {testing handler deletion vs reentrant calls} {testchannelevent} {
 	    update
 	}
     }
-    set u toplevel
-    set z ""
+    variable u toplevel
+    variable z ""
     update
     close $f
     string compare [string tolower $z] \
