@@ -1,3 +1,15 @@
+2002-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:		Bumped to version 8.4.1 to avoid confusion
+	* generic/tcl.h:	of CVS snapshots with the actual 8.4.0
+	* tools/tcl.wse.in:	release.
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf
+	* win/configure:
+
 2002-09-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure: regen.
