@@ -1,3 +1,9 @@
+1999-11-23  Scott Stanton  <stanton@scriptics.com>
+
+	* library/tcltest1.0/tcltest.tcl: Fixed bug where tcltest output
+	went to stdout instead of the specified output file in some
+	cases.
+
 1999-11-19  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclProc.c: backed out change from 1999-11-18 as it

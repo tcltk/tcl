@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.19 1999/11/04 18:20:12 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.20 1999/11/23 22:59:13 stanton Exp $
 
 package provide tcltest 1.0
 
@@ -1228,7 +1228,8 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	if {[llength $testFilesThatTurded] > 0} {
 	    puts $::tcltest::outputChannel "Warning: files left behind:"
 	    foreach testFile $testFilesThatTurded {
-		puts "\t$testFile:\t$::tcltest::createdNewFiles($testFile)"
+		puts $::tcltest::outputChannel \
+			"\t$testFile:\t$::tcltest::createdNewFiles($testFile)"
 		unset ::tcltest::createdNewFiles($testFile)
 	    }
 	}
