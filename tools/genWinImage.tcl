@@ -5,7 +5,7 @@
 # Copyright (c) 1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: genWinImage.tcl,v 1.3 1999/04/30 22:45:03 stanton Exp $
+# RCS: @(#) $Id: genWinImage.tcl,v 1.4 1999/05/26 02:39:13 stanton Exp $
 
 
 # This file is insensitive to the directory from which it is invoked.
@@ -116,6 +116,12 @@ proc genWinImage::generateInstallers {} {
     set __TCLBASEDIR__ [file native $tclBuildDir]
     set __TKBASEDIR__ [file native $tkBuildDir]
     set __WISE__ [file native [file join $toolsDir wise]]
+
+    set f [open [file join $__TCLBASEDIR__ generic/tcl.h] r]
+    set s [read $f]
+    close $f
+    regexp {TCL_PATCH_LEVEL\s*\"([^\"]*)\"} $s dummy __TCL_PATCH_LEVEL__
+    
     set f [open tcl.wse.in r]
     set s [read $f]
     close $f

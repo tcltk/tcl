@@ -46,7 +46,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=PATCHLEVEL
-  Value=8.1
+  Value=${__TCL_PATCH_LEVEL__}
 end
 item: Set Variable
   Variable=APPTITLE
