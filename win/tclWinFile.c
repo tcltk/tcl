@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.65 2004/06/02 23:29:30 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.66 2004/06/30 14:46:11 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2366,29 +2366,56 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		    }
 		    Tcl_DStringAppend(&dsNorm,nativePath,Tcl_DStringLength(&ds));
 		} else {
-		    WIN32_FIND_DATA fData;
-		    HANDLE handle;
+		    char *checkDots = NULL;
 		    
-		    handle = FindFirstFileA(nativePath, &fData);
-		    if (handle == INVALID_HANDLE_VALUE) {
-			if (GetFileAttributesA(nativePath) 
-			    == 0xffffffff) {
-			    /* File doesn't exist */
-			    Tcl_DStringFree(&ds);
-			    break;
+		    if (lastValidPathEnd[1] == '.') {
+			checkDots = lastValidPathEnd + 1;
+			while (checkDots < currentPathEndPosition) {
+			    if (*checkDots != '.') {
+				checkDots = NULL;
+				break;
+			    }
+			    checkDots++;
 			}
-			/* This is usually the '/' in 'c:/' at end of string */
-			Tcl_DStringAppend(&dsNorm,"/", 1);
+		    }
+		    if (checkDots != NULL) {
+			int dotLen = currentPathEndPosition - lastValidPathEnd;
+			/* 
+			 * Path is just dots.  We shouldn't really
+			 * ever see a path like that.  However, to be
+			 * nice we at least don't mangle the path -- 
+			 * we just add the dots as a path segment and
+			 * continue
+			 */
+			Tcl_DStringAppend(&dsNorm, (TCHAR*)(nativePath 
+						   + Tcl_DStringLength(&ds)
+						   - dotLen), dotLen);
 		    } else {
-			char *nativeName;
-			if (fData.cFileName[0] != '\0') {
-			    nativeName = fData.cFileName;
+			/* Normal path */
+			WIN32_FIND_DATA fData;
+			HANDLE handle;
+			
+			handle = FindFirstFileA(nativePath, &fData);
+			if (handle == INVALID_HANDLE_VALUE) {
+			    if (GetFileAttributesA(nativePath) 
+				== 0xffffffff) {
+				/* File doesn't exist */
+				Tcl_DStringFree(&ds);
+				break;
+			    }
+			    /* This is usually the '/' in 'c:/' at end of string */
+			    Tcl_DStringAppend(&dsNorm,"/", 1);
 			} else {
-			    nativeName = fData.cAlternateFileName;
+			    char *nativeName;
+			    if (fData.cFileName[0] != '\0') {
+				nativeName = fData.cFileName;
+			    } else {
+				nativeName = fData.cAlternateFileName;
+			    }
+			    FindClose(handle);
+			    Tcl_DStringAppend(&dsNorm,"/", 1);
+			    Tcl_DStringAppend(&dsNorm,nativeName,-1);
 			}
-			FindClose(handle);
-			Tcl_DStringAppend(&dsNorm,"/", 1);
-			Tcl_DStringAppend(&dsNorm,nativeName,-1);
 		    }
 		}
 		Tcl_DStringFree(&ds);
@@ -2491,26 +2518,55 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		    }
 		    Tcl_DStringAppend(&dsNorm,nativePath,Tcl_DStringLength(&ds));
 		} else {
-		    WIN32_FIND_DATAW fData;
-		    HANDLE handle;
+		    char *checkDots = NULL;
 		    
-		    handle = FindFirstFileW((WCHAR*)nativePath, &fData);
-		    if (handle == INVALID_HANDLE_VALUE) {
-			/* This is usually the '/' in 'c:/' at end of string */
-			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
-					  sizeof(WCHAR));
-		    } else {
-			WCHAR *nativeName;
-			if (fData.cFileName[0] != '\0') {
-			    nativeName = fData.cFileName;
-			} else {
-			    nativeName = fData.cAlternateFileName;
+		    if (lastValidPathEnd[1] == '.') {
+			checkDots = lastValidPathEnd + 1;
+			while (checkDots < currentPathEndPosition) {
+			    if (*checkDots != '.') {
+				checkDots = NULL;
+				break;
+			    }
+			    checkDots++;
 			}
-			FindClose(handle);
-			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
-					  sizeof(WCHAR));
-			Tcl_DStringAppend(&dsNorm,(TCHAR*)nativeName, 
-					  (int) (wcslen(nativeName)*sizeof(WCHAR)));
+		    }
+		    if (checkDots != NULL) {
+			int dotLen = currentPathEndPosition - lastValidPathEnd;
+			/* 
+			 * Path is just dots.  We shouldn't really
+			 * ever see a path like that.  However, to be
+			 * nice we at least don't mangle the path -- 
+			 * we just add the dots as a path segment and
+			 * continue
+			 */
+			Tcl_DStringAppend(&dsNorm,
+					  (TCHAR*)((WCHAR*)(nativePath 
+						+ Tcl_DStringLength(&ds)) 
+						- dotLen),
+					  (int)(dotLen * sizeof(WCHAR)));
+		    } else {
+			/* Normal path */
+			WIN32_FIND_DATAW fData;
+			HANDLE handle;
+
+			handle = FindFirstFileW((WCHAR*)nativePath, &fData);
+			if (handle == INVALID_HANDLE_VALUE) {
+			    /* This is usually the '/' in 'c:/' at end of string */
+			    Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
+					      sizeof(WCHAR));
+			} else {
+			    WCHAR *nativeName;
+			    if (fData.cFileName[0] != '\0') {
+				nativeName = fData.cFileName;
+			    } else {
+				nativeName = fData.cAlternateFileName;
+			    }
+			    FindClose(handle);
+			    Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
+					      sizeof(WCHAR));
+			    Tcl_DStringAppend(&dsNorm,(TCHAR*)nativeName, 
+					      (int) (wcslen(nativeName)*sizeof(WCHAR)));
+			}
 		    }
 		}
 #endif

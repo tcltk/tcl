@@ -942,6 +942,73 @@ test filesystem-8.3 {path objects and empty string} {
     lappend res $dst $yyy
 } {foo foo {}}
 
+proc TestFind1 {d f} {
+    set r1 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r1"
+    lappend res "is dir a dir? [file isdirectory $d]"
+    set r2 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r2"
+    set res
+}
+proc TestFind2 {d f} {
+    set r1 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r1"
+    lappend res "is dir a dir? [file isdirectory [file join $d]]"
+    set r2 [file exists [file join $d $f]]
+    lappend res "[file join $d $f] found: $r2"
+    set res
+}
+
+test filesystem-9.1 {path objects and join and object rep} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir [file join a b c]
+    set res [TestFind1 a [file join b . c]]
+    file delete -force [file join a b c]
+    cd $origdir
+    set res
+} {{a/b/./c found: 1} {is dir a dir? 1} {a/b/./c found: 1}}
+
+test filesystem-9.2 {path objects and join and object rep} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir [file join a b c]
+    set res [TestFind2 a [file join b . c]]
+    file delete -force [file join a b c]
+    cd $origdir
+    set res
+} {{a/b/./c found: 1} {is dir a dir? 1} {a/b/./c found: 1}}
+
+test filesystem-9.2.1 {path objects and join and object rep} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir [file join a b c]
+    set res [TestFind2 a [file join b .]]
+    file delete -force [file join a b c]
+    cd $origdir
+    set res
+} {{a/b/. found: 1} {is dir a dir? 1} {a/b/. found: 1}}
+
+test filesystem-9.3 {path objects and join and object rep} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir [file join a b c]
+    set res [TestFind1 a [file join b .. b c]]
+    file delete -force [file join a b c]
+    cd $origdir
+    set res
+} {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
+
+test filesystem-9.4 {path objects and join and object rep} {
+    set origdir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir [file join a b c]
+    set res [TestFind2 a [file join b .. b c]]
+    file delete -force [file join a b c]
+    cd $origdir
+    set res
+} {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
+
 cleanupTests
 unset -nocomplain drive
 }

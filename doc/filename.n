@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: filename.n,v 1.12 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: filename.n,v 1.13 2004/06/30 14:46:10 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH filename n 7.5 Tcl "Tcl Built-In Commands"
@@ -51,7 +51,12 @@ absolute, and file names may contain any character other than slash.
 The file names \fB\&.\fR and \fB\&..\fR are special and refer to the
 current directory and the parent of the current directory respectively.
 Multiple adjacent slash characters are interpreted as a single
-separator.  The following examples illustrate various forms of path
+separator.  Any number of trailing slash characters at the end of a
+path are simply ignored, so the paths \fBfoo\fR, \fBfoo/\fR and
+\fBfoo//\fR are all identical, and in particular \fBfoo/\fR does not
+necessarily mean a directory is being referred.
+.PP
+The following examples illustrate various forms of path
 names:
 .RS
 .TP 15
