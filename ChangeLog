@@ -9,9 +9,11 @@
 	* tests/fileSystem.test: fixed a 'knownBug' with 'file
 	attributes ""'
 	* tests/winFCmd.test: 
+	* tests/winPipe.test:
+	* tests/fCmd.test:
 	* tessts/winFile.test: added 'pcOnly' constraint to some
 	tests to make for more useful 'tests skipped' log from 
-	running all tests.
+	running all tests on non-Windows platforms.
 	
 2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
 
