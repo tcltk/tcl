@@ -1,5 +1,11 @@
 2000-04-14  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* unix/tclUnixChan.c (TtyParseMode): Only allow setting mark/space
+	parity on platforms that support it [Bug: 5089]
+
+	* generic/tclBasic.c (Tcl_GetVersion): adjusted use of major/minor
+	to not conflict with global decl on some systems [Bug: 2882]
+
 	* doc/AppInit.3:
 	* doc/Async.3:
 	* doc/BackgdErr.3:
