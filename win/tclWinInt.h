@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.21 2003/04/11 16:00:17 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.22 2003/04/18 20:17:45 hobbs Exp $
  */
 
 #ifndef _TCLWININT
@@ -37,10 +37,14 @@
 /*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
  * Win32s and for NT, but not for Windows 95.
+ * Define VER_PLATFORM_WIN32_CE for those without newer headers.
  */
 
 #ifndef VER_PLATFORM_WIN32_WINDOWS
 #define VER_PLATFORM_WIN32_WINDOWS 1
+#endif
+#ifndef VER_PLATFORM_WIN32_CE
+#define VER_PLATFORM_WIN32_CE 3
 #endif
 
 /*
