@@ -1,3 +1,15 @@
+2003-02-15  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* tests/notify.test (new-file): 
+	* generic/tclTest.c (TclTest_Init, EventtestObjCmd, EventtestProc,
+	                     EventTestDeleteProc):
+	* generic/tclNotify.c (Tcl_DeleteEvents): Fixed Tcl_DeleteEvents
+	not to get a pointer smash when deleting the last event in the
+	queue. Added test code in 'tcltest' and a new file of test cases
+	'notify.test' to exercise this functionality; several of the new
+	test cases fail for the original code and pass for the corrected
+	code.
+	
 2003-02-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:		Bumped to version 8.4.2.
