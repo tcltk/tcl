@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.98 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.99 2001/09/05 03:12:03 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -330,7 +330,7 @@ typedef long LONG;
 #endif
 
 #ifndef _CLIENTDATA
-#   if defined(__STDC__) || defined(__cplusplus)
+#   if defined(__STDC__) || defined(__cplusplus) || defined(__BORLANDC__)
     typedef void *ClientData;
 #   else
     typedef int *ClientData;
