@@ -3270,7 +3270,14 @@ IsLocalScalar(varName, length)
     char *lastChar = varName + (length - 1);
 
     for (p = varName; p <= lastChar; p++) {
-	if (CHAR_TYPE(p, lastChar) != TCL_NORMAL) {
+	if ((CHAR_TYPE(p, lastChar) != TCL_NORMAL) &&
+	    (CHAR_TYPE(p, lastChar) != TCL_COMMAND_END)) {
+	    /*
+	     * TCL_COMMAND_END is returned for the last character
+	     * of the string.  By this point we know it isn't
+	     * an array or namespace reference.
+	     */
+
 	    return 0;
 	}
 	if  (*p == '(') {
