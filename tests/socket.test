@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.17 2001/09/11 17:30:44 andreas_kupries Exp $
+# RCS: @(#) $Id: socket.test,v 1.18 2001/09/14 00:43:21 hobbs Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1425,7 +1425,7 @@ test socket-12.1 {testing inheritance of server sockets} {socket exec} {
 
     ### exec $::tcltest::tcltest script2 &
     set p [open "|[list $::tcltest::tcltest script2]" r]
-    gets $f listen
+    gets $p listen
 
     after 5000 { set ok_to_proceed 1 }
     vwait ok_to_proceed
