@@ -1281,7 +1281,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-	    PLAT_OBJS="tclMacOSXBundle.o"
+	    PLAT_OBJS="tclMacOSXBundle.o tclMacOSXFCmd.o"
 	    DL_LIBS=""
 	    LDFLAGS="-prebind"
 	    CC_SEARCH_FLAGS=""

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.19 2003/02/04 17:06:51 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.20 2003/05/14 19:21:23 das Exp $
  */
 
 #include "tclInt.h"
@@ -26,6 +26,7 @@
 #include <string.h>
 #include <Finder.h>
 #include <Aliases.h>
+#include <Resources.h>
 
 /*
  * Callback for the file attributes code.
@@ -52,17 +53,19 @@ static int		SetFileReadOnly _ANSI_ARGS_((Tcl_Interp *interp,
 #define MAC_HIDDEN_ATTRIBUTE	1
 #define MAC_READONLY_ATTRIBUTE	2
 #define MAC_TYPE_ATTRIBUTE	3
+#define MAC_RSRCLENGTH_ATTRIBUTE	4
 
 /*
  * Global variables for the file attributes code.
  */
 
 CONST char *tclpFileAttrStrings[] = {"-creator", "-hidden", "-readonly",
-	"-type", (char *) NULL};
+	"-type", "-rsrclength", (char *) NULL};
 CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 	{GetFileFinderAttributes, SetFileFinderAttributes},
 	{GetFileFinderAttributes, SetFileFinderAttributes},
 	{GetFileReadOnly, SetFileReadOnly},
+	{GetFileFinderAttributes, SetFileFinderAttributes},
 	{GetFileFinderAttributes, SetFileFinderAttributes}};
 
 /*
@@ -1102,6 +1105,7 @@ GetFileFinderAttributes(
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
+    CInfoPBRec pb;
     CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
@@ -1109,7 +1113,16 @@ GetFileFinderAttributes(
 	    native, &fileSpec);
 
     if (err == noErr) {
-    	err = FSpGetFInfo(&fileSpec, &finfo);
+    	if (objIndex != MAC_RSRCLENGTH_ATTRIBUTE) {
+    	    err = FSpGetFInfo(&fileSpec, &finfo);
+    	} else {
+    	    pb.hFileInfo.ioCompletion = NULL;
+    	    pb.hFileInfo.ioNamePtr = fileSpec.name;
+    	    pb.hFileInfo.ioVRefNum = fileSpec.vRefNum;
+    	    pb.hFileInfo.ioFDirIndex = 0;
+    	    pb.hFileInfo.ioDirID = fileSpec.parID;
+    	    err = PBGetCatInfo(&pb, 0);
+    	}
     }
     
     if (err == noErr) {
@@ -1124,6 +1137,9 @@ GetFileFinderAttributes(
     	    case MAC_TYPE_ATTRIBUTE:
     	    	*attributePtrPtr = Tcl_NewOSTypeObj(finfo.fdType);
     	    	break;
+    	    case MAC_RSRCLENGTH_ATTRIBUTE:
+    	    	*attributePtrPtr = Tcl_NewLongObj(pb.hFileInfo.ioFlRLgLen);
+    	    	break;
     	}
     } else if (err == fnfErr) {
     	long dirID;
@@ -1134,7 +1150,11 @@ GetFileFinderAttributes(
     	    if (objIndex == MAC_HIDDEN_ATTRIBUTE) {
     	    	*attributePtrPtr = Tcl_NewBooleanObj(0);
     	    } else {
-    	    	*attributePtrPtr = Tcl_NewOSTypeObj('Fldr');
+    	    	/* Directories only support attribute "-hidden" */
+    	    	errno = EISDIR;
+    	    	Tcl_AppendResult(interp, "invalid attribute: ", 
+    	    	        Tcl_PosixError(interp), (char *) NULL);
+    	    	return TCL_ERROR;
     	    }
     	}
     }
@@ -1244,6 +1264,7 @@ SetFileFinderAttributes(
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
+    CInfoPBRec pb;
     CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
@@ -1251,7 +1272,16 @@ SetFileFinderAttributes(
 	    native, &fileSpec);
     
     if (err == noErr) {
-    	err = FSpGetFInfo(&fileSpec, &finfo);
+    	if (objIndex != MAC_RSRCLENGTH_ATTRIBUTE) {
+    	    err = FSpGetFInfo(&fileSpec, &finfo);
+    	} else {
+    	    pb.hFileInfo.ioCompletion = NULL;
+    	    pb.hFileInfo.ioNamePtr = fileSpec.name;
+    	    pb.hFileInfo.ioVRefNum = fileSpec.vRefNum;
+    	    pb.hFileInfo.ioFDirIndex = 0;
+    	    pb.hFileInfo.ioDirID = fileSpec.parID;
+    	    err = PBGetCatInfo(&pb, 0);
+    	}
     }
     
     if (err == noErr) {
@@ -1282,8 +1312,47 @@ SetFileFinderAttributes(
     	    	    return TCL_ERROR;
     	    	}
     	    	break;
+    	    case MAC_RSRCLENGTH_ATTRIBUTE:
+    	    {
+    	    	long newRsrcForkSize;
+    	    	
+    	    	if (Tcl_GetLongFromObj(interp, attributePtr,
+    	    		&newRsrcForkSize) != TCL_OK) {
+    	    	    return TCL_ERROR;
+    	    	}
+		if(newRsrcForkSize != pb.hFileInfo.ioFlRLgLen) {
+		    short rf;
+		    /*
+		     * Only setting rsrclength to 0 to strip
+		     * a file's resource fork is supported.
+		     */
+		    if(newRsrcForkSize != 0) {
+			Tcl_AppendResult(interp,
+				"setting nonzero rsrclength not supported", 
+				(char *) NULL);
+			return TCL_ERROR;
+		    }
+		    	
+		    if ((rf = FSpOpenResFile(&fileSpec, fsWrPerm)) >= 0) {
+			err = SetEOF(rf, 0);
+			CloseResFile(rf);
+		    }
+	
+		    if (err != noErr) {
+		    	errno = TclMacOSErrorToPosixError(err);
+			Tcl_AppendResult(interp, 
+				"could not truncate resource fork of \"",
+				Tcl_GetString(fileName), "\": ",
+				Tcl_PosixError(interp), (char *) NULL);
+			return TCL_ERROR;
+		    }
+		}
+    	    	break;
+    	    }
     	}
-    	err = FSpSetFInfo(&fileSpec, &finfo);
+    	if (objIndex != MAC_RSRCLENGTH_ATTRIBUTE) {
+    	    err = FSpSetFInfo(&fileSpec, &finfo);
+    	}
     } else if (err == fnfErr) {
     	long dirID;
     	Boolean isDirectory = 0;

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.83 2003/05/13 08:40:31 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84 2003/05/14 19:21:23 das Exp $
  */
 
 #include "tclInt.h"
@@ -289,6 +289,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpLocaltime, /* 11 */
     TclpGmtime, /* 12 */
     TclpInetNtoa, /* 13 */
+    TclUnixCopyFile, /* 14 */
 #endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
@@ -350,6 +351,11 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclMacChmod, /* 25 */
     FSpLLocationFromPath, /* 26 */
 #endif /* MAC_TCL */
+#ifdef MAC_OSX_TCL
+    TclMacOSXGetFileAttribute, /* 15 */
+    TclMacOSXSetFileAttribute, /* 16 */
+    TclMacOSXCopyFileAttributes, /* 17 */
+#endif /* MAC_OSX_TCL */
 };
 
 TclPlatStubs tclPlatStubs = {
