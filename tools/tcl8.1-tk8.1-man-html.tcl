@@ -208,11 +208,12 @@ proc process-text {text} {
     regsub -all \" $text {\&quot;} text;
     regsub -all {<} $text {\&lt;} text;
     regsub -all {>} $text {\&gt;} text;
+    regsub -all {\\o'o\^'} $text {\&ocirc;} text; # o-circumflex in re_syntax.n
     regsub -all {\\-\\\|\\-} $text -- text;	# two hyphens
     regsub -all -- {\\-\\\^\\-} $text -- text;	# two hyphens
     regsub -all {\\-} $text - text;		# a hyphen
     regsub -all {\\0} $text { } text;		# a space
-    # regsub -all {\\\|} $text | text;		# a very thin space 
+    regsub -all {\\\|} $text {\&nbsp;} text;	# a very thin space 
     regsub -all {\\e} $text {\&#92;} text;	# reverse solidus, ie backslash
     regsub -all {\\\(\+-} $text {\&#177;} text;	# plus or minus sign
     regsub -all {\\fP} $text {\\fR} text;	# a funky font in expr.n
