@@ -10,13 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.11 2001/08/09 01:06:42 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.12 2002/04/19 23:09:37 dgp Exp $
 
 package require Tcl 8.2
-package provide msgcat 1.2.2
+package provide msgcat 1.2.3
 
 namespace eval msgcat {
-    namespace export mc mcset mcmset mclocale mcpreferences mcunknown mcmax
+    namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
+	    mcunknown
 
     # Records the current locale as passed to mclocale
     variable locale ""
