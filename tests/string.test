@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.31 2002/01/02 13:52:04 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.32 2002/02/07 00:51:55 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -701,6 +701,12 @@ test string-10.16 {string map, one pair case} {
 test string-10.17 {string map, one pair case} {
     string map {Ab 4321} aAbCaBaAbAbcAb
 } {a4321CaBa43214321c4321}
+test string-10.18 {string map, empty argument} {
+    string map -nocase {{} abc} foo
+} foo
+test string-10.19 {string map, empty arguments} {
+    string map -nocase {{} abc f bar {} def} foo
+} baroo
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg
