@@ -1,3 +1,19 @@
+2002-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Make -eofchar and -translation options read only for
+	server sockets. [Bug 496733]
+	
+	* generic/tclIO.c (Tcl_GetChannelOption, Tcl_SetChannelOption):
+	Instead of returning nothing for the -translation option
+	on a server socket, always return "auto". Return the empty
+	string enclosed in quotes for the -eofchar option on
+	a server socket. Fixup -eofchar usage message so that
+	it matches the implementation.
+	* tests/io.test: Add -eofchar tests and -translation tests
+	to ensure options are read only on server sockets.
+	* tests/socket.test: Update tests to account for -eofchar
+	and -translation option changes.
+
 2002-01-25  Don Porter <dgp@users.sourceforge.net>
 
 	* Following is [Patch 501006]
