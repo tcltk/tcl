@@ -97,7 +97,7 @@ struct colormap *cm;
 	cm->magic = 0;
 	if (NBYTS > 1)
 		cmtreefree(cm, cm->tree, 0);
-	for (i = 1; i < cm->max; i++)		/* skip WHITE */
+	for (i = 1; i <= cm->max; i++)		/* skip WHITE */
 		if (!UNUSEDCOLOR(&cm->cd[i])) {
 			cb = cm->cd[i].block;
 			if (cb != NULL)
@@ -456,7 +456,7 @@ struct state *rp;
 	color co;
 	color sco;
 
-	assert((uc & BYTMASK) == 0);
+	assert((uc % BYTTAB) == 0);
 
 	/* find its color block, making new pointer blocks as needed */
 	t = cm->tree;

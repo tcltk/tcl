@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.16 1999/08/19 02:59:09 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.17 1999/10/21 02:16:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1348,7 +1348,6 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     JumpFixup jumpFixup;
     int maxDepth, doExprInline, range, numBytes, i, j, code;
     char *script;
-    char savedChar;
     int saveExprIsJustVarRef = envPtr->exprIsJustVarRef;
     int saveExprIsComparison = envPtr->exprIsComparison;
 
@@ -1370,10 +1369,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 
 	script = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
-	savedChar = script[numBytes];
-	script[numBytes] = 0;
 	code = TclCompileExpr(interp, script, numBytes, envPtr);
-	script[numBytes] = savedChar;
 	return code;
     }
 	

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.3 1999/05/07 20:07:35 stanton Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.4 1999/10/21 02:16:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -455,10 +455,12 @@ Tcl_AppendResultVA (interp, argList)
 				 * return value. */
     va_list argList;		/* Variable argument list. */
 {
+#define STATIC_LIST_SIZE 16
     Interp *iPtr = (Interp *) interp;
-    va_list tmpArgList;
-    char *string;
-    int newSpace;
+    char *string, *static_list[STATIC_LIST_SIZE];
+    char **args = static_list;
+    int nargs_space = STATIC_LIST_SIZE;
+    int nargs, newSpace, i;
 
     /*
      * If the string result is empty, move the object result to the
@@ -472,17 +474,35 @@ Tcl_AppendResultVA (interp, argList)
     }
     
     /*
-     * Scan through all the arguments to see how much space is needed.
+     * Scan through all the arguments to see how much space is needed
+     * and save pointers to the arguments in the args array,
+     * reallocating as necessary.
      */
 
-    memcpy ((VOID *) &tmpArgList, (VOID *) &argList, sizeof (tmpArgList));
+    nargs = 0;
     newSpace = 0;
     while (1) {
-	string = va_arg(tmpArgList, char *);
+ 	string = va_arg(argList, char *);
 	if (string == NULL) {
 	    break;
 	}
-	newSpace += strlen(string);
+ 	if (nargs >= nargs_space) {
+ 	    /* 
+ 	     * Expand the args buffer
+ 	     */
+ 	    nargs_space += STATIC_LIST_SIZE;
+ 	    if (args == static_list) {
+ 	    	args = (void *)ckalloc(nargs_space * sizeof(char *));
+ 		for (i = 0; i < nargs; ++i) {
+ 		    args[i] = static_list[i];
+ 		}
+ 	    } else {
+ 		args = (void *)ckrealloc((void *)args,
+			nargs_space * sizeof(char *));
+ 	    }
+ 	}
+  	newSpace += strlen(string);
+	args[nargs++] = string;
     }
 
     /*
@@ -501,14 +521,21 @@ Tcl_AppendResultVA (interp, argList)
      * buffer.
      */
 
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	strcpy(iPtr->appendResult + iPtr->appendUsed, string);
-	iPtr->appendUsed += strlen(string);
+    for (i = 0; i < nargs; ++i) {
+ 	string = args[i];
+  	strcpy(iPtr->appendResult + iPtr->appendUsed, string);
+  	iPtr->appendUsed += strlen(string);
     }
+ 
+    /*
+     * If we had to allocate a buffer from the heap, 
+     * free it now.
+     */
+ 
+    if (args != static_list) {
+     	ckfree((void *)args);
+    }
+#undef STATIC_LIST_SIZE
 }
 
 /*

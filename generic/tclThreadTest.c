@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.3 1999/05/26 20:24:43 redman Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.4 1999/10/21 02:16:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -135,6 +135,9 @@ static void	ListRemove _ANSI_ARGS_((ThreadSpecificData *tsdPtr));
 static void	ListUpdateInner _ANSI_ARGS_((ThreadSpecificData *tsdPtr));
 static int	ThreadEventProc _ANSI_ARGS_((Tcl_Event *evPtr, int mask));
 static void	ThreadErrorProc _ANSI_ARGS_((Tcl_Interp *interp));
+static void	ThreadFreeProc _ANSI_ARGS_((ClientData clientData));
+static int	ThreadDeleteEvent _ANSI_ARGS_((Tcl_Event *eventPtr,
+	ClientData clientData));
 static void	ThreadExitProc _ANSI_ARGS_((ClientData clientData));
 
 
@@ -351,8 +354,7 @@ TclCreateThread(interp, script)
     ThreadCtrl ctrl;
     Tcl_ThreadId id;
 
-    ctrl.script = (char*)ckalloc( strlen(script) + 1 );
-    strcpy(ctrl.script, script);
+    ctrl.script = (char *) script;
     ctrl.condWait = NULL;
     ctrl.flags = 0;
 
@@ -413,10 +415,8 @@ NewThread(clientData)
 {
     ThreadCtrl *ctrlPtr = (ThreadCtrl*)clientData;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    ThreadCtrl ctrl;
     int result;
-
-    ctrl = *ctrlPtr;
+    char *threadEvalScript;
 
     /*
      * Initialize the interpreter.  This should be more general.
@@ -432,7 +432,14 @@ NewThread(clientData)
 
     Tcl_MutexLock(&threadMutex);
     ListUpdateInner(tsdPtr);
-    Tcl_CreateThreadExitHandler(ThreadExitProc, NULL);
+    /*
+     * We need to keep a pointer to the alloc'ed mem of the script
+     * we are eval'ing, for the case that we exit during evaluation
+     */
+    threadEvalScript = (char *) ckalloc(strlen(ctrlPtr->script)+1);
+    strcpy(threadEvalScript, ctrlPtr->script);
+
+    Tcl_CreateThreadExitHandler(ThreadExitProc, (ClientData) threadEvalScript);
 
     /*
      * Notify the parent we are alive.
@@ -446,7 +453,7 @@ NewThread(clientData)
      */
 
     Tcl_Preserve((ClientData) tsdPtr->interp);
-    result = Tcl_Eval(tsdPtr->interp, ctrl.script);
+    result = Tcl_Eval(tsdPtr->interp, threadEvalScript);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -456,7 +463,6 @@ NewThread(clientData)
      */
 
     ListRemove(tsdPtr);
-    ckfree((char*)ctrl.script);
     Tcl_Release((ClientData) tsdPtr->interp);
     Tcl_DeleteInterp(tsdPtr->interp);
     Tcl_ExitThread(result);
@@ -676,7 +682,7 @@ TclThreadSend(interp, id, script, wait)
     threadEventPtr->script = ckalloc(strlen(script) + 1);
     strcpy(threadEventPtr->script, script);
     if (!wait) {
-	threadEventPtr->resultPtr = NULL;
+	resultPtr = threadEventPtr->resultPtr = NULL;
     } else {
 	resultPtr = (ThreadEventResult *) ckalloc(sizeof(ThreadEventResult));
 	threadEventPtr->resultPtr = resultPtr;
@@ -802,7 +808,11 @@ ThreadEventProc(evPtr, mask)
     } else {
 	Tcl_Preserve((ClientData) interp);
 	Tcl_ResetResult(interp);
+	Tcl_CreateThreadExitHandler(ThreadFreeProc,
+		(ClientData) threadEventPtr->script);
 	code = Tcl_GlobalEval(interp, threadEventPtr->script);
+	Tcl_DeleteThreadExitHandler(ThreadFreeProc,
+		(ClientData) threadEventPtr->script);
 	result = Tcl_GetStringResult(interp);
 	if (code != TCL_OK) {
 	    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
@@ -837,6 +847,65 @@ ThreadEventProc(evPtr, mask)
 /*
  *------------------------------------------------------------------------
  *
+ * ThreadFreeProc --
+ *
+ *    This is called from when we are exiting and memory needs
+ *    to be freed.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *	Clears up mem specified in ClientData
+ *
+ *------------------------------------------------------------------------
+ */
+     /* ARGSUSED */
+void
+ThreadFreeProc(clientData)
+    ClientData clientData;
+{
+    if (clientData) {
+	ckfree((char *) clientData);
+    }
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * ThreadDeleteEvent --
+ *
+ *    This is called from the ThreadExitProc to delete memory related
+ *    to events that we put on the queue.
+ *
+ * Results:
+ *    1 it was our event and we want it removed, 0 otherwise.
+ *
+ * Side effects:
+ *	It cleans up our events in the event queue for this thread.
+ *
+ *------------------------------------------------------------------------
+ */
+     /* ARGSUSED */
+int
+ThreadDeleteEvent(eventPtr, clientData)
+    Tcl_Event *eventPtr;		/* Really ThreadEvent */
+    ClientData clientData;		/* dummy */
+{
+    if (eventPtr->proc == ThreadEventProc) {
+	ckfree((char *) ((ThreadEvent *) eventPtr)->script);
+	return 1;
+    }
+    /*
+     * If it was NULL, we were in the middle of servicing the event
+     * and it should be removed
+     */
+    return (eventPtr->proc == NULL);
+}
+
+/*
+ *------------------------------------------------------------------------
+ *
  * ThreadExitProc --
  *
  *    This is called when the thread exits.  
@@ -852,13 +921,21 @@ ThreadEventProc(evPtr, mask)
  */
      /* ARGSUSED */
 void
-ThreadExitProc(dummy)
-    ClientData dummy;
+ThreadExitProc(clientData)
+    ClientData clientData;
 {
+    char *threadEvalScript = (char *) clientData;
     ThreadEventResult *resultPtr, *nextPtr;
     Tcl_ThreadId self = Tcl_GetCurrentThread();
 
     Tcl_MutexLock(&threadMutex);
+
+    if (threadEvalScript) {
+	ckfree((char *) threadEvalScript);
+	threadEvalScript = NULL;
+    }
+    Tcl_DeleteEvents((Tcl_EventDeleteProc *)ThreadDeleteEvent, NULL);
+
     for (resultPtr = resultList ; resultPtr ; resultPtr = nextPtr) {
 	nextPtr = resultPtr->nextPtr;
 	if (resultPtr->srcThreadId == self) {
