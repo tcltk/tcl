@@ -1,3 +1,10 @@
+2001-08-12  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/configure: Regen.
+	* unix/configure.in:
+	* unix/tcl.m4: Use GCC variable set by AC_PROG_CC instead
+	of defining our own using_gcc variable.
+
 2001-08-11  Vince Darley <vincentdarley@users.sourceforge.net>
 
         Variety of small issues introduced by the vfs code fixed:
