@@ -1,5 +1,9 @@
 2004-03-01  Don Porter  <dgp@users.sourceforge.net>
 
+        * unix/tcl.m4 (SC_CONFIG_CFLAGS):       Allow 64-bit enabling on
+        IRIX64-6.5* systems.  [Bug 218561]
+        * unix/configure:       autoconf-2.57
+
         * generic/tclTrace.c (TclCheckInterpTraces):    The TIP 62
         * generic/tclTest.c (TestcmdtraceCmd):  implementation introduced a
         * tests/trace.test (trace-29.10):       bug by testing the CallFrame
