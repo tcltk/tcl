@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.2 2001/08/07 02:59:14 hobbs Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.3 2001/08/23 17:37:07 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSReadlink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo \- procedures to interact with any filesystem
+Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSReadlink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo \- procedures to interact with any filesystem
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -42,8 +42,8 @@ int
 int
 \fBTcl_FSRenameFile\fR(\fIsrcPathPtr, destPathPtr\fR)
 .sp
-int
-\fBTcl_FSListVolumes\fR(\fIinterp\fR)
+Tcl_Obj*
+\fBTcl_FSListVolumes\fR(\fIvoid\fR)
 .sp
 int
 \fBTcl_FSEvalFile\fR(\fIinterp, fileName\fR)
@@ -55,7 +55,7 @@ int
 \fBTcl_FSMatchInDirectory\fR(\fIinterp, result, pathPtr, pattern, types\fR)
 .sp
 Tcl_Obj*
-\fBTcl_FSReadlink\fR(\fIpathPtr\fR)
+\fBTcl_FSLink\fR(\fIpathPtr, toPtr\fR)
 .sp
 int
 \fBTcl_FSLstat\fR(\fIpathPtr, statPtr\fR)
@@ -111,8 +111,11 @@ int
 ClientData 
 \fBTcl_FSGetInternalRep\fR(\fIpathPtr, fsPtr\fR)
 .sp
-char* 
+Tcl_Obj* 
 \fBTcl_FSGetTranslatedPath\fR(\fIinterp, pathPtr\fR)
+.sp
+char* 
+\fBTcl_FSGetTranslatedStringPath\fR(\fIinterp, pathPtr\fR)
 .sp
 Tcl_Obj*
 \fBTcl_FSNewNativePath\fR(\fIfsPtr, clientData\fR)
@@ -230,7 +233,20 @@ native files in the native filesystem.  If appropriate vfs's have been
 registered, the 'files' may, to give two examples, be remote (e.g.
 situated on a remote ftp server) or archived (e.g. lying inside a .zip
 archive).  Such registered filesystems provide a lookup table of
-functions to implement all or some of the functionality listed here.  
+functions to implement all or some of the functionality listed here.
+.PP
+The \fBTcl_FS...\fR are objectified and may cache internal
+representations and other path-related strings (e.g. the current
+working directory).  One side-effect of this is that one must be
+careful when passing in temporary objects with a refCount of zero. 
+Under some circumstances, the filesystem code may wish to retain a
+reference to the passed in object, and so one must not assume that
+after any of these calls return, the object still has a refCount of
+zero - it may have been incremented.  The practical lesson to learn
+from this is that \fbTcl_Obj *path = Tcl_NewStringObj(...) ;
+Tcl_FS...(path) ; Tcl_DecrRefCount(path)\fR is wrong, and may
+segfault.  The 'path' must have its refCount incremented before
+passing it in, or decrementing it.
 .PP
 \fBTcl_FSCopyFile\fR attempts to copy the file given by srcPathPtr to the
 path name given by destPathPtr.  If the two paths given lie in the same
@@ -267,8 +283,9 @@ sets Tcl's errno to the 'EXDEV' posix error code (which signifies a
 'cross-domain link').
 .PP
 \fBTcl_FSListVolumes\fR calls each filesystem which has a non-NULL 'list
-volumes' function and asks those to append their root volumes to 
-the list in the interpreters result.
+volumes' function and asks them to return their list of root volumes.  It
+accumulates the return values in a list which is returned to the
+caller (with a refCount of 0).
 .PP
 \fBTcl_FSEvalFile\fR reads the file given by \fIpathPtr\fR and evaluates
 its contents as a Tcl script.  It returns the same information as
@@ -305,14 +322,18 @@ matched using the logic of 'string match'.  To handle recursion, Tcl
 will call this function frequently asking only for directories to be
 returned.
 .PP
-\fBTcl_FSReadlink\fR replaces the library version of readlink().
+\fBTcl_FSLink\fR replaces the library version of readlink(), and may
+also be used in the future to allow link creation.
 The appropriate function for the filesystem to which pathPtr
 belongs will be called.
 .PP
+If the \fItoPtr\fR is NULL, a readlink action is performed.
 The result is a Tcl_Obj specifying the contents of the symbolic link
-given by 'path', or NULL if the symbolic link could not be read.  The
+given by \fIpath\fR, or NULL if the symbolic link could not be read.  The
 result is owned by the caller, which should call Tcl_DecrRefCount when
-the result is no longer needed.
+the result is no longer needed.  If the \fItoPtr\fR is not NULL, Tcl
+should create a link, but this option is not currently supported (it
+is left available for future expansion).
 .PP
 \fBTcl_FSLstat\fR fills the stat structure \fIstatPtr\fR with information
 about the specified file.  You do not need any access rights to the
@@ -487,12 +508,15 @@ Returns NULL or a valid internal path representation.  This internal
 representation is cached, so that repeated calls to this function will
 not require additional conversions.
 .PP
-\fBTcl_FSGetTranslatedPath\fR attempts to extract the translated path string
+\fBTcl_FSGetTranslatedPath\fR attempts to extract the translated path
 from the given Tcl_Obj.  
 .PP
 If the translation succeeds (i.e. the object is a valid path), then it
 is returned.  Otherwise NULL will be returned, and an error message may
 be left in the interpreter.
+.PP
+\fBTcl_FSGetTranslatedStringPath\fR does the same as 
+\fBTcl_FSGetTranslatedPath\fR, but returns a character string or NULL.
 .PP
 \fBTcl_FSNewNativePath\fR performs the something like that reverse of the
 usual obj->path->nativerep conversions.  If some code retrieves a path
@@ -915,8 +939,7 @@ Should be implemented only if the filesystem adds volumes at the head
 of the filesystem, so that they can be returned by 'file volumes'.
 .PP
 .CS
-typedef int Tcl_FSListVolumesProc(
-	Tcl_Interp *\fIinterp\fR);
+typedef Tcl_Obj* Tcl_FSListVolumesProc(void);
 .CE
 .PP
 The result should be TCL_OK, since there is no way this function can

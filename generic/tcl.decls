@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.51 2001/07/31 19:12:06 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.52 2001/08/23 17:37:07 vincentdarley Exp $
 
 library tcl
 
@@ -599,7 +599,8 @@ declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, char *str, int forWriting, \
 	    int checkUsage, ClientData *filePtr)
 }
-
+# Obsolete.  Should now use Tcl_FSGetPathType which is objectified
+# and therefore usually faster.
 declare 168 generic {
     Tcl_PathType Tcl_GetPathType(char *path)
 }
@@ -1562,7 +1563,7 @@ declare 445 generic {
 		    char * pattern, Tcl_GlobTypeData * types)
 }
 declare 446 generic {
-    Tcl_Obj*	Tcl_FSReadlink(Tcl_Obj *pathPtr)
+    Tcl_Obj*	Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr)
 }
 declare 447 generic {
     int	Tcl_FSRemoveDirectory(Tcl_Obj *pathPtr, \
@@ -1628,7 +1629,7 @@ declare 465 generic {
     ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathObjPtr, Tcl_Filesystem *fsPtr)
 }
 declare 466 generic {
-    char* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+    Tcl_Obj* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
 }
 declare 467 generic {
     int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
@@ -1646,7 +1647,7 @@ declare 471 generic {
     Tcl_Obj* Tcl_FSPathSeparator(Tcl_Obj* pathObjPtr)
 }
 declare 472 generic {
-    int	Tcl_FSListVolumes(Tcl_Interp *interp)
+    Tcl_Obj* Tcl_FSListVolumes(void)
 }
 declare 473 generic {
     int Tcl_FSRegister(ClientData clientData, Tcl_Filesystem *fsPtr)
@@ -1656,6 +1657,9 @@ declare 474 generic {
 }
 declare 475 generic {
     ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
+}
+declare 476 generic {
+    char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
 }
 
 ##############################################################################

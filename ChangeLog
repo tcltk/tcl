@@ -1,3 +1,87 @@
+2001-08-24 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	Variety of small filesystem and vfs issues fixed or improved.
+	The new fs code allows many new opportunities for efficiency
+	improvements through the objectified API. The main changes
+	integrated here are such efficiency improvements.  Some
+	limitations of the original implementation have also now been
+	lifted.  Meanwhile a variety of fs bugs (some old, some new)
+	have also been fixed.
+	
+	* generic/tclFileName.c: Made Tcl_FSSplitPath more efficient, 
+	and removed some static string-based procedures which are no 
+	longer used.  Much more objectification.  Tcl_FSJoinPath
+	is now very efficient and more aware of virtual filesystems.
+	Clarified where the Mac-specific code attempts to interpret
+	Unix-style paths.  Modified TclDoGlob to use lstat not
+	access to fix [Bug: 434876, L. Virden]
+	* tcl(Win|Unix|Mac)FCmd.c:
+	* tcl(Win|Unix|Mac)File.c: replaced TclpListVolumes with
+	TclpObjListVolumes with different signature, updated code due
+	to more efficient signature of Tcl_FSGetTranslatedPath.  Used
+	cached native paths where possible to improve efficiency --
+	this was completed on MacOS, but on Unix and Win the traversal
+	functions make the task much more complex, so there are still
+	some improvements possible there.  Removed unused 
+	TclpNormalizePath which had been left in tclWinFCmd.c.
+	Objectified all 'file attributes' functions.  Fixed the new
+	[Bug:451571, Bruce Stephens] which is most obvious on Unix, 
+	but could occur on MacOS or Windows.  This bug actually existed
+	in Tcl 8.3.x but was only made obvious by the recent filesystem
+	overhaul when the code was exercised more heavily.  
+	* tests/fileName.test: Three new tests to exercise the above bug,
+	and make sure it is fixed correctly.
+	* unix/tclUnixFile.c: avoid panic in glob when a link
+	doesn't point anywhere.  It would probably be good to define
+	exactly what Tcl should do in circumstances like these, and
+	make sure mac/win/unix all behave accordingly. [Bug: 417111, 
+	Hemang Lavana]. Also fixed misleading/obsolete comment in the code.
+	* generic/tcl.stubs: changed signature of Tcl_FSGetTranslatedPath
+	and added Tcl_FSGetTranslatedStringPath.
+	These changes allow further optimisations in the FS code.
+	* generic/tcl.h: changed signature of Tcl_FSListVolumes so that 
+	it doesn't require a Tcl interpreter plus result.  Renamed 
+	Tcl_FSReadLink to Tcl_FSLink with additional argument so
+	we can support making links in the future. [Patch: 450340]
+	* generic/tclInt.h:
+	added declaration for TclpObjListVolumes.  Objectified 
+	internal call signatures for 'file attributes' functions, and
+	added an internal objectified get path type function.
+	* generic/tclIOUtil.c: added the moved function TclpListVolumes 
+	which calls platform specific code (needed for backwards 
+	compatibility), and improved efficiency of parts of the FS
+	(particularly file normalization).  Much less copying and
+	memory allocation is required now.  added new GetPathType 
+	so that changes in 'file volumes' can actually affect files'
+	types, and objectified more code.  Made current code work
+	with test suite artificially changing current platform.
+	Added 'static' keywords where required.
+	* generic/tclIO.c:
+	* generic/tclTest.c: Added 'static' keywords, fixing 
+	[Bug: 453872, Bob Techentin]
+	* generic/tclCmdAH.c: file command implementation updated for 
+	API changes, removed unnecessary special-case SplitPath static
+	function, since it no longer helps prevent code duplication.
+	Moved setting of interpreter result to each individual location
+	that actually required it, to avoid very large code separation
+	between reading and setting the result.
+	* doc/FileSystem.3: updated documentation for the new or 
+	changed APIs, and clarified some issues.
+	* doc/SplitPath.3: added pointer to newer APIs in FileSystem.3
+	* doc/filename.n: clarified current implementation of tilde
+	support on Mac/Win.  [Bug:453514, Sergey Kuzmin]
+	* doc/glob.n: improved documentation for '-directory' and '-path' 
+	options.
+	
+	There are now many private, obsolete, platform-specific 'Tclp' 
+	string-based filesystem APIs which could be removed.  We should
+	check whether any of these are used by extensions and, at least
+	in Tcl 9, remove them.
+	
+	The above changes signify a ***POTENTIAL INCOMPATIBILITY*** 
+	with 8.4a3, since signatures of two functions in the new API 
+	have changed, but not with older versions of Tcl.
+
 2001-08-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclBinary.c (FormatNumber): Extract a long from the

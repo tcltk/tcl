@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.26 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.27 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -324,7 +324,7 @@ static Tcl_FSCopyDirectoryProc TestReportCopyDirectory;
 static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory; 
 static Tcl_FSLoadFileProc TestReportLoadFile;
 static Tcl_FSUnloadFileProc TestReportUnloadFile;
-static Tcl_FSReadlinkProc TestReportReadlink;
+static Tcl_FSLinkProc TestReportLink;
 static Tcl_FSListVolumesProc TestReportListVolumes;
 static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
 static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
@@ -349,7 +349,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportOpenFileChannel,
     &TestReportMatchInDirectory,
     &TestReportUtime,
-    &TestReportReadlink,
+    &TestReportLink,
     &TestReportListVolumes,
     &TestReportFileAttrStrings,
     &TestReportFileAttrsGet,
@@ -2624,7 +2624,7 @@ TestparsevarnameObjCmd(clientData, interp, objc, objv)
  */
 
 	/* ARGSUSED */
-int
+static int
 TestregexpObjCmd(dummy, interp, objc, objv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
@@ -4427,7 +4427,7 @@ TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
  */
 
 	/* ARGSUSED */
-int
+static int
 TestChannelCmd(clientData, interp, argc, argv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Interpreter for result. */
@@ -4855,7 +4855,7 @@ TestChannelCmd(clientData, interp, argc, argv)
  */
 
 	/* ARGSUSED */
-int
+static int
 TestChannelEventCmd(dummy, interp, argc, argv)
     ClientData dummy;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
@@ -5212,7 +5212,7 @@ TestFilesystemObjCmd(dummy, interp, objc, objv)
     return res;
 }
 
-void
+static void
 TestReport(cmd, arg1, arg2)
     CONST char* cmd;
     Tcl_Obj* arg1;
@@ -5241,7 +5241,7 @@ TestReport(cmd, arg1, arg2)
 	Tcl_RestoreResult(interp, &savedResult);
    }
 }
-int
+static int
 TestReportStat(path, buf)
     Tcl_Obj *path;		/* Path of file to stat (in current CP). */
     struct stat *buf;		/* Filled with results of stat call. */
@@ -5249,7 +5249,7 @@ TestReportStat(path, buf)
     TestReport("stat",path, NULL);
     return -1;
 }
-int
+static int
 TestReportLstat(path, buf)
     Tcl_Obj *path;		/* Path of file to stat (in current CP). */
     struct stat *buf;		/* Filled with results of stat call. */
@@ -5257,7 +5257,7 @@ TestReportLstat(path, buf)
     TestReport("lstat",path, NULL);
     return -1;
 }
-int
+static int
 TestReportAccess(path, mode)
     Tcl_Obj *path;		/* Path of file to access (in current CP). */
     int mode;                   /* Permission setting. */
@@ -5265,7 +5265,7 @@ TestReportAccess(path, mode)
     TestReport("access",path,NULL);
     return -1;
 }
-Tcl_Channel
+static Tcl_Channel
 TestReportOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
@@ -5280,7 +5280,7 @@ TestReportOpenFileChannel(interp, fileName, modeString, permissions)
     return NULL;
 }
 
-int
+static int
 TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive results. */
     Tcl_Obj *resultPtr;		/* Directory separators to pass to TclDoGlob. */
@@ -5292,21 +5292,21 @@ TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
     TestReport("matchindirectory",dirPtr, NULL);
     return -1;
 }
-Tcl_Obj *
+static Tcl_Obj *
 TestReportGetCwd(interp)
     Tcl_Interp *interp;
 {
     TestReport("cwd",NULL,NULL);
     return NULL;
 }
-int
+static int
 TestReportChdir(dirName)
     Tcl_Obj *dirName;
 {
     TestReport("chdir",dirName,NULL);
     return -1;
 }
-int
+static int
 TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *fileName;		/* Name of the file containing the desired
@@ -5323,7 +5323,7 @@ TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataP
     TestReport("loadfile",fileName,NULL);
     return -1;
 }
-void
+static void
 TestReportUnloadFile(clientData)
     ClientData clientData;    /* ClientData returned by a previous call
 			       * to TclpLoadFile().  The clientData is 
@@ -5332,21 +5332,21 @@ TestReportUnloadFile(clientData)
 {
     TestReport("unloadfile",NULL,NULL);
 }
-Tcl_Obj *
-TestReportReadlink(path)
-    Tcl_Obj *path;		/* Path of file to readlink (UTF-8). */
+static Tcl_Obj *
+TestReportLink(path, to)
+    Tcl_Obj *path;		/* Path of file to readlink or link */
+    Tcl_Obj *to;		/* Path of file to link to, or NULL */
 {
-    TestReport("readlink",path,NULL);
+    TestReport("link",path,NULL);
     return NULL;
 }
-int
-TestReportListVolumes(interp)
-    Tcl_Interp *interp;		/* Interpreter for returning volume list. */
+static Tcl_Obj *
+TestReportListVolumes()
 {
     TestReport("listvolumes",NULL,NULL);
-    return TCL_OK;
+    return NULL;
 }
-int
+static int
 TestReportRenameFile(src, dst)
     Tcl_Obj *src;		/* Pathname of file or dir to be renamed
 				 * (UTF-8). */
@@ -5356,7 +5356,7 @@ TestReportRenameFile(src, dst)
     TestReport("renamefile",src,dst);
     return -1;
 }
-int 
+static int 
 TestReportCopyFile(src, dst)
     Tcl_Obj *src;		/* Pathname of file to be copied (UTF-8). */
     Tcl_Obj *dst;		/* Pathname of file to copy to (UTF-8). */
@@ -5364,21 +5364,21 @@ TestReportCopyFile(src, dst)
     TestReport("copyfile",src,dst);
     return -1;
 }
-int
+static int
 TestReportDeleteFile(path)
     Tcl_Obj *path;		/* Pathname of file to be removed (UTF-8). */
 {
     TestReport("deletefile",path,NULL);
     return -1;
 }
-int
+static int
 TestReportCreateDirectory(path)
     Tcl_Obj *path;		/* Pathname of directory to create (UTF-8). */
 {
     TestReport("createdirectory",path,NULL);
     return -1;
 }
-int
+static int
 TestReportCopyDirectory(src, dst, errorPtr)
     Tcl_Obj *src;		/* Pathname of directory to be copied
 				 * (UTF-8). */
@@ -5390,7 +5390,7 @@ TestReportCopyDirectory(src, dst, errorPtr)
     TestReport("copydirectory",src,dst);
     return -1;
 }
-int
+static int
 TestReportRemoveDirectory(path, recursive, errorPtr)
     Tcl_Obj *path;		/* Pathname of directory to be removed
 				 * (UTF-8). */
@@ -5404,7 +5404,7 @@ TestReportRemoveDirectory(path, recursive, errorPtr)
     TestReport("removedirectory",path,NULL);
     return -1;
 }
-char**
+static char**
 TestReportFileAttrStrings(fileName, objPtrRef)
     Tcl_Obj* fileName;
     Tcl_Obj** objPtrRef;
@@ -5412,7 +5412,7 @@ TestReportFileAttrStrings(fileName, objPtrRef)
     TestReport("fileattributestrings",fileName,NULL);
     return NULL;
 }
-int
+static int
 TestReportFileAttrsGet(interp, index, fileName, objPtrRef)
     Tcl_Interp *interp;		/* The interpreter for error reporting. */
     int index;			/* index of the attribute command. */
@@ -5422,7 +5422,7 @@ TestReportFileAttrsGet(interp, index, fileName, objPtrRef)
     TestReport("fileattributesget",fileName,NULL);
     return -1;
 }
-int
+static int
 TestReportFileAttrsSet(interp, index, fileName, objPtr)
     Tcl_Interp *interp;		/* The interpreter for error reporting. */
     int index;			/* index of the attribute command. */
@@ -5432,7 +5432,7 @@ TestReportFileAttrsSet(interp, index, fileName, objPtr)
     TestReport("fileattributesset",fileName,objPtr);
     return -1;
 }
-int 
+static int 
 TestReportUtime (fileName, tval)
     Tcl_Obj* fileName;
     struct utimbuf *tval;
@@ -5440,7 +5440,7 @@ TestReportUtime (fileName, tval)
     TestReport("utime",fileName,NULL);
     return -1;
 }
-int
+static int
 TestReportNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_Interp *interp;
     Tcl_Obj *pathPtr;

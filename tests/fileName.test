@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.11 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.12 2001/08/23 17:37:08 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1143,6 +1143,61 @@ test filename-11.17.1 {Tcl_GlobCmd} {pcOnly macOnly} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.17.2 {Tcl_GlobCmd} {unixOnly notRoot} {
+    set dir [pwd]
+    set ret "error in test"
+    if {[catch {
+	cd $globname
+	exec ln -s a1 link
+	cd $dir
+	set ret [list [catch {
+	    lsort [glob -directory $globname -join * b1]
+	} msg] $msg]
+    }]} {
+	cd $dir
+    }
+    file delete [file join $globname link]
+    set ret
+} [list 0 [lsort [list [file join $globname a1 b1] \
+  [file join $globname link b1]]]]
+# Simpler version of the above test to illustrate a given bug.
+test filename-11.17.3 {Tcl_GlobCmd} {unixOnly notRoot} {
+    set dir [pwd]
+    set ret "error in test"
+    if {[catch {
+	cd $globname
+	exec ln -s a1 link
+	cd $dir
+	set ret [list [catch {
+	    lsort [glob -directory $globname -type d *]
+	} msg] $msg]
+    }]} {
+	cd $dir
+    }
+    file delete [file join $globname link]
+    set ret
+} [list 0 [lsort [list [file join $globname a1] \
+  [file join $globname a2] \
+  [file join $globname a3] \
+  [file join $globname link]]]]
+# Make sure the bugfix isn't too simple.  We don't want
+# to break 'glob -type l'.
+test filename-11.17.4 {Tcl_GlobCmd} {unixOnly notRoot} {
+    set dir [pwd]
+    set ret "error in test"
+    if {[catch {
+	cd $globname
+	exec ln -s a1 link
+	cd $dir
+	set ret [list [catch {
+	    lsort [glob -directory $globname -type l *]
+	} msg] $msg]
+    }]} {
+	cd $dir
+    }
+    file delete [file join $globname link]
+    set ret
+} [list 0 [list [file join $globname link]]]
 test filename-11.18 {Tcl_GlobCmd} {unixOnly} {
     list [catch {lsort [glob -path $globname/ *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
