@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.28 2002/09/03 02:01:42 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.29 2003/01/09 10:38:34 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -812,4 +812,27 @@ TclpFilesystemPathType(pathObjPtr)
 {
     /* All native paths are of the same type */
     return NULL;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpUtime --
+ *
+ *	Set the modification date for a file.
+ *
+ * Results:
+ *	0 on success, -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+int 
+TclpUtime(pathPtr, tval)
+    Tcl_Obj *pathPtr;      /* File to modify */
+    struct utimbuf *tval;  /* New modification date structure */
+{
+    return utime(Tcl_FSGetNativePath(pathPtr),tval);
 }
