@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.4 1998/11/11 04:54:18 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.5 1998/12/02 01:46:07 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -178,6 +178,9 @@ static int		CommandComplete _ANSI_ARGS_((char *script,
 			    int length));
 static int		ParseTokens _ANSI_ARGS_((char *src, int mask,
 			    Tcl_Parse *parsePtr));
+static int		EvalObjv _ANSI_ARGS_((Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[], char *command, int length,
+			    int flags));
 
 /*
  *----------------------------------------------------------------------
@@ -734,7 +737,7 @@ TclExpandTokenArray(parsePtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalObjv --
+ * EvalObjv --
  *
  *	This procedure evaluates a Tcl command that has already been
  *	parsed into words, with one Tcl_Obj holding each word.
@@ -751,8 +754,8 @@ TclExpandTokenArray(parsePtr)
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_EvalObjv(interp, objc, objv, command, length, flags)
+static int
+EvalObjv(interp, objc, objv, command, length, flags)
     Tcl_Interp *interp;		/* Interpreter in which to evaluate the
 				 * command.  Also used for error
 				 * reporting. */
@@ -848,7 +851,7 @@ Tcl_EvalObjv(interp, objc, objv, command, length, flags)
 		    (char *) NULL);
 	    code = TCL_ERROR;
 	} else {
-	    code = Tcl_EvalObjv(interp, objc+1, newObjv, command, length, 0);
+	    code = EvalObjv(interp, objc+1, newObjv, command, length, 0);
 	}
 	Tcl_DecrRefCount(newObjv[0]);
 	ckfree((char *) newObjv);
@@ -859,6 +862,9 @@ Tcl_EvalObjv(interp, objc, objv, command, length, flags)
      * Call trace procedures if needed.
      */
 
+    argv = NULL;
+    commandCopy = command;
+
     for (tracePtr = iPtr->tracePtr; tracePtr != NULL; tracePtr = nextPtr) {
 	nextPtr = tracePtr->nextPtr;
 	if (iPtr->numLevels > tracePtr->level) {
@@ -867,25 +873,32 @@ Tcl_EvalObjv(interp, objc, objv, command, length, flags)
 
 	/*
 	 * This is a bit messy because we have to emulate the old trace
-	 * interface, which uses strings for everything.  This can lose
-	 * information if some of the words contain null characters.
+	 * interface, which uses strings for everything.
 	 */
 
-	argv = (char **) ckalloc((unsigned) (objc + 1) * sizeof(char *));
-	for (i = 0; i < objc; i++) {
-	    argv[i] = Tcl_GetString(objv[i]);
+	if (argv == NULL) {
+	    argv = (char **) ckalloc((unsigned) (objc + 1) * sizeof(char *));
+	    for (i = 0; i < objc; i++) {
+		argv[i] = Tcl_GetString(objv[i]);
+	    }
+	    argv[objc] = 0;
+
+	    if (length < 0) {
+		length = strlen(command);
+	    } else if (length < strlen(command)) {
+		commandCopy = (char *) ckalloc((unsigned) (length + 1));
+		strncpy(commandCopy, command, (size_t) length);
+		commandCopy[length] = 0;
+	    }
 	}
-	argv[objc] = 0;
-	if (length < 0) {
-	    length = strlen(command);
-	}
-	commandCopy = (char *) ckalloc((unsigned) (length + 1));
-	strncpy(commandCopy, command, (size_t) length);
-	commandCopy[length] = 0;
 	(*tracePtr->proc)(tracePtr->clientData, interp, iPtr->numLevels,
 			  commandCopy, cmdPtr->proc, cmdPtr->clientData,
 			  objc, argv);
+    }
+    if (argv != NULL) {
 	ckfree((char *) argv);
+    }
+    if (commandCopy != command) {
 	ckfree((char *) commandCopy);
     }
     
@@ -917,6 +930,89 @@ Tcl_EvalObjv(interp, objc, objv, command, length, flags)
 
     done:
     iPtr->numLevels--;
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EvalObjv --
+ *
+ *	This procedure evaluates a Tcl command that has already been
+ *	parsed into words, with one Tcl_Obj holding each word.
+ *
+ * Results:
+ *	The return value is a standard Tcl completion code such as
+ *	TCL_OK or TCL_ERROR.  A result or error message is left in
+ *	interp's result.
+ *
+ * Side effects:
+ *	Depends on the command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_EvalObjv(interp, objc, objv, flags)
+    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
+				 * command.  Also used for error
+				 * reporting. */
+    int objc;			/* Number of words in command. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to objects that are
+				 * the words that make up the command. */
+    int flags;			/* Collection of OR-ed bits that control
+				 * the evaluation of the script.  Only
+				 * TCL_EVAL_GLOBAL is currently
+				 * supported. */
+{
+    Interp *iPtr = (Interp *)interp;
+    Trace *tracePtr;
+    Tcl_DString cmdBuf;
+    char cmdString[] = "";
+    int cmdLen = 0;
+    int code = TCL_OK;
+
+    for (tracePtr = iPtr->tracePtr; tracePtr; tracePtr = tracePtr->nextPtr) {
+	/*
+	 * EvalObjv will increment numLevels so use "<" rather than "<="
+	 */
+	if (iPtr->numLevels < tracePtr->level) {
+	    int i;
+	    /*
+	     * The command will be needed for an execution trace or stack trace
+	     * generate a command string.
+	     */
+	cmdtraced:
+	    Tcl_DStringInit(&cmdBuf);
+	    for (i = 0; i < objc; i++) {
+		Tcl_DStringAppendElement(&cmdBuf, Tcl_GetString(objv[i]));
+	    }
+	    cmdString = Tcl_DStringValue(&cmdBuf);
+	    cmdLen = Tcl_DStringLength(&cmdBuf);
+	    break;
+	}
+    }
+
+    /*
+     * Execute the command if we have not done so already
+     */
+    switch (code) {
+	case TCL_OK:
+	    code = EvalObjv(interp, objc, objv, cmdString, cmdLen, flags);
+	    if (code == TCL_ERROR && cmdLen == 0)
+		goto cmdtraced;
+	    break;
+	case TCL_ERROR:
+	    Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
+	    break;
+	default:
+	    /*NOTREACHED*/
+	    break;
+    }
+
+    if (cmdLen != 0) {
+	Tcl_DStringFree(&cmdBuf);
+    }
     return code;
 }
 
@@ -1174,7 +1270,7 @@ Tcl_EvalTokens(interp, tokenPtr, count)
  *
  *	This procedure evaluates a Tcl script without using the compiler
  *	or byte-code interpreter.  It just parses the script, creates
- *	values for each word of each command, then calls Tcl_EvalObjv
+ *	values for each word of each command, then calls EvalObjv
  *	to execute each command.
  *
  * Results:
@@ -1276,7 +1372,7 @@ Tcl_Eval2(interp, script, numBytes, flags)
 	     * Execute the command and free the objects for its words.
 	     */
     
-	    code = Tcl_EvalObjv(interp, objectsUsed, objv, p, bytesLeft, 0);
+	    code = EvalObjv(interp, objectsUsed, objv, p, bytesLeft, 0);
 	    if (code != TCL_OK) {
 		goto error;
 	    }

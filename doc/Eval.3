@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.1.2.2 1998/09/24 23:58:23 stanton Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.1.2.3 1998/12/02 01:46:06 stanton Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -24,7 +24,7 @@ int
 \fBTcl_EvalFile\fR(\fIinterp, fileName\fR)
 .sp
 int
-\fBTcl_EvalObjv\fR(\fIinterp, objc, objv, command, numBytes, flags\fR)
+\fBTcl_EvalObjv\fR(\fIinterp, objc, objv, flags\fR)
 .sp
 int
 \fBTcl_Eval\fR(\fIinterp, script\fR)
@@ -55,13 +55,8 @@ this is also the number of words in the command.
 .AP Tcl_Obj **objv in
 Points to an array of pointers to objects; each object holds the
 value of a single word in the command to execute.
-.AP char *command in
-Points to the beginning of the string representation of the
-command, if there is one.  If the string representation of the
-command is unknown then an empty string should be supplied.
-This information is used for command tracing.
 .AP int numBytes in
-The number of bytes in \fIcommand\fR or \fIscript\fR, not including any
+The number of bytes in \fIscript\fR, not including any
 null terminating character.  If \-1, then all characters up to the
 first null byte are used.
 .AP char *script in
@@ -103,11 +98,6 @@ script.  The \fIobjc\fR and \fIobjv\fR arguments contain the values
 of the words for the Tcl command, one word in each object in
 \fIobjv\fR.  \fBTcl_EvalObjv\fR evaluates the command and returns
 a completion code and result just like \fBTcl_EvalObj\fR.
-The \fIcommand\fR argument is used only to provide contextual information
-to command traces.  Note: unlike the other procedures described here,
-\fBTcl_EvalObjv\fR does not add any information to the \fBerrorInfo\fR
-variable after an error.  It is up to the caller to do this, if it
-wishes.
 .PP
 \fBTcl_Eval\fR is similar to \fBTcl_EvalObj\fR except that
 the script to be executed is supplied as a string instead of an

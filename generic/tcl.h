@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.5 1998/11/11 04:08:15 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.6 1998/12/02 01:46:06 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1430,8 +1430,7 @@ EXTERN int		Tcl_Eval2 _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		Tcl_EvalFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *fileName));
 EXTERN int		Tcl_EvalObjv _ANSI_ARGS_ ((Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[], char *string,
-			    int length, int flags));
+			    int objc, Tcl_Obj *CONST objv[], int flags));
 EXTERN int		Tcl_EvalObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int flags));
 EXTERN void		Tcl_EventuallyFree _ANSI_ARGS_((ClientData clientData,

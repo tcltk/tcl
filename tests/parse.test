@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.1.2.3 1998/11/11 04:08:33 stanton Exp $
+# RCS: @(#) $Id: parse.test,v 1.1.2.4 1998/12/02 01:46:08 stanton Exp $
 
 if {[info commands testparser] == {}} {
     puts "This application hasn't been compiled with the \"testparser\""
@@ -203,11 +203,11 @@ test parse-7.1 {Tcl_FreeParse and ExpandTokenArray procedures} {
 } {- {$a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) $a(b) } 16 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 word {$a(b)} 3 variable {$a(b)} 2 text a 0 text b 0 {}}
 
 test parse-8.1 {Tcl_EvalObjv procedure} {
-    testevalobjv "test command" 20 0 concat this is a test
+    testevalobjv 0 concat this is a test
 } {this is a test}
 test parse-8.2 {Tcl_EvalObjv procedure, unknown commands} {
     rename unknown unknown.old
-    set x [catch {testevalobjv "test command" 0 10 asdf poiu} msg]
+    set x [catch {testevalobjv 10 asdf poiu} msg]
     rename unknown.old unknown
     list $x $msg
 } {1 {invalid command name "asdf"}}
@@ -216,7 +216,7 @@ test parse-8.3 {Tcl_EvalObjv procedure, unknown commands} {
     proc unknown args {
 	return "unknown $args"
     }
-    set x [catch {testevalobjv "test command" 10 0 asdf poiu} msg]
+    set x [catch {testevalobjv 0 asdf poiu} msg]
     rename unknown {}
     rename unknown.old unknown
     list $x $msg
@@ -226,21 +226,19 @@ test parse-8.4 {Tcl_EvalObjv procedure, unknown commands} {
     proc unknown args {
 	error "I don't like that command"
     }
-    set x [catch {testevalobjv "test command" 10 0 asdf poiu} msg]
+    set x [catch {testevalobjv 0 asdf poiu} msg]
     rename unknown {}
     rename unknown.old unknown
     list $x $msg
 } {1 {I don't like that command}}
 test parse-8.5 {Tcl_EvalObjv procedure, command traces} {
-    testcmdtrace tracetest {testevalobjv "test command" 10 0 set x 123}
-} {{testevalobjv "test command" 10 0 set x 123} {testevalobjv {test command} 10 0 set x 123} {test comma} {set x 123}}
-test parse-8.6 {Tcl_EvalObjv procedure, command traces} {
-    testcmdtrace tracetest {testevalobjv "" 0 0 set x 123}
-} {{testevalobjv "" 0 0 set x 123} {testevalobjv {} 0 0 set x 123} {} {set x 123}}
+    testevalobjv 0 set x 123
+    testcmdtrace tracetest {testevalobjv 0 set x $x}
+} {{testevalobjv 0 set x $x} {testevalobjv 0 set x 123} {set x 123} {set x 123}}
 test parse-8.7 {Tcl_EvalObjv procedure, TCL_EVAL_GLOBAL flag} {
     proc x {} {
 	set y 23
-	set z [testevalobjv "test command" 10 1 set y]
+	set z [testevalobjv 1 set y]
 	return [list $z $y]
     }
     catch {unset y}
@@ -257,12 +255,12 @@ test parse-8.8 {Tcl_EvalObjv procedure, async handlers} {
     set handler1 [testasync create async1]
     set aresult xxx
     set acode yyy
-    set x [list [catch [list testevalobjv "test command" 10 0 testasync mark $handler1 original 0] msg] $msg $acode $aresult]
+    set x [list [catch [list testevalobjv 0 testasync mark $handler1 original 0] msg] $msg $acode $aresult]
     testasync delete
     set x
 } {0 {new result} 0 original}
 test parse-8.9 {Tcl_EvalObjv procedure, exceptional return} {
-    list [catch {testevalobjv "test command" 10 0 error message} msg] $msg
+    list [catch {testevalobjv 0 error message} msg] $msg
 } {1 message}
 
 test parse-9.1 {Tcl_LogCommandInfo, line numbers} {
