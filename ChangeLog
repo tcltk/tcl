@@ -1,3 +1,16 @@
+2003-04-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinInt.h (VER_PLATFORM_WIN32_CE): conditionally define.
+	* win/tclWinInit.c: recognize Windows CE as a Win platform.
+	This just recognizes CE - full support will come later.
+
+	* win/configure: regen
+	* win/configure.in (SHELL): force it to /bin/sh as autoconf 2.5x
+	uses /bin/bash, which can fail to find exes in the path (ie: lib).
+
+	* generic/tclExecute.c (ExprCallMathFunc): remove incorrect
+	extraneous cast from Tcl_WideAsDouble.
+
 2003-04-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/open.n:		Moved serial port options from [fconfigure]
@@ -7,26 +20,26 @@
 
 2003-04-16  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tcl.h         Made changes so that the "wideInt" Tcl_ObjType
-        * generic/tclObj.c      is defined on all platforms, even those where
-        * generic/tclPort.h     TCL_WIDE_INT_IS_LONG is defined.  Also made
-        the Tcl_Value struct have a wideValue field on all platforms.  This is
-        a ***POTENTIAL INCOMPATIBILITY*** for TCL_WIDE_INT_IS_LONG platforms
-        because that struct changes size.  This is the same TIP 72
-        incompatibility that was seen on other platforms at the 8.4.0 release,
-        when this change should have happened as well.  [Bug 713562]
+	* generic/tcl.h:	Made changes so that the "wideInt" Tcl_ObjType
+	* generic/tclObj.c:	is defined on all platforms, even those where
+	* generic/tclPort.h:	TCL_WIDE_INT_IS_LONG is defined.  Also made
+	the Tcl_Value struct have a wideValue field on all platforms.  This is
+	a ***POTENTIAL INCOMPATIBILITY*** for TCL_WIDE_INT_IS_LONG platforms
+	because that struct changes size.  This is the same TIP 72
+	incompatibility that was seen on other platforms at the 8.4.0 release,
+	when this change should have happened as well.	[Bug 713562]
 
-        * generic/tclInt.h:  New internal macros TclGetWide() and
-        TclGetLongFromWide() to deal with both forms of the "wideInt"
-        Tcl_ObjType, so that conditional TCL_WIDE_INT_IS_LONG code
-        is confined to the header file.
+	* generic/tclInt.h:  New internal macros TclGetWide() and
+	TclGetLongFromWide() to deal with both forms of the "wideInt"
+	Tcl_ObjType, so that conditional TCL_WIDE_INT_IS_LONG code
+	is confined to the header file.
 
-        * generic/tclCmdAH.c:   Replaced most coding that was conditional
-        * generic/tclCmdIL.c:   on TCL_WIDE_INT_IS_LONG with code that
-        * generic/tclExecute.c: works across platforms, sometimes using
-        * generic/tclTest.c:    the new macros above to do it.
-        * generic/tclUtil.c:
-        * generic/tclVar.c:
+	* generic/tclCmdAH.c:	Replaced most coding that was conditional
+	* generic/tclCmdIL.c:	on TCL_WIDE_INT_IS_LONG with code that
+	* generic/tclExecute.c: works across platforms, sometimes using
+	* generic/tclTest.c:	the new macros above to do it.
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
 
 2003-04-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
