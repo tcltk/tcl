@@ -1,5 +1,7 @@
 2004-11-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/SaveResult.3:	Documentation for Tcl_*InterpState (TIP 226).
+
 	* generic/tclEvent.c (HandleBgErrors):	Simplified program flow.
 
 	* tests/basic.test:	Updated functional (not testing) uses of
