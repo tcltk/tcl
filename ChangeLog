@@ -1,19 +1,25 @@
+2004-12-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4.9 TAGGED FOR RELEASE ***
+
+	* changes: updated for 8.4.9 release
+
 2004-12-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix and new tests for [Bug 1074671] to
-	* tests/fileSystem.test:   ensure tilde paths are not returned
+	* tests/fileSystem.test: ensure tilde paths are not returned
 	specially by 'glob'.
 
 2004-12-01  Don Porter  <dgp@users.sourceforge.net>
 
-	* library/auto.tcl (tcl_findLibrary):	Disabled use of [file normalize]
+	* library/auto.tcl (tcl_findLibrary): Disabled use of [file normalize]
 	that caused trouble with freewrap. [Bug 1072136].
 
 2004-11-26  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/reg.test (reg-32.*):	Added missing testregexp constraints.
+	* tests/reg.test (reg-32.*): Added missing testregexp constraints.
 
-	* library/auto.tcl (tcl_findLibrary):	Made sure the uniquifying
+	* library/auto.tcl (tcl_findLibrary): Made sure the uniquifying
 	operations on the search path does not also normalize.  [Bug 1072136]
 
 2004-11-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
@@ -33,8 +39,8 @@
 
 2004-11-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* unix/tcl.m4 (SC_ENABLE_THREADS):      Corrected failure to determine
-	the number of arguments for readdir_r on SunOS systems.  [Bug 1071701]
+	* unix/tcl.m4 (SC_ENABLE_THREADS): Corrected failure to determine
+	the number of arguments for readdir_r on SunOS systems. [Bug 1071701]
 
 	* unix/configure:       autoconf-2.13
 
