@@ -1003,12 +1003,18 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS="-export-dynamic"
 	    LD_SEARCH_FLAGS=""
-
-	    # FreeBSD doesn't handle version numbers with dots.
-
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    if test "${TCL_THREADS}" = "1" ; then
+		EXTRA_CFLAGS="-pthread"
+	    	LDFLAGS="$LDFLAGS -pthread"
+	    fi
+	    case $system in
+	    FreeBSD-3.*)
+	    	# FreeBSD-3 doesn't handle version numbers with dots.
+	    	UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
+	    	SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so'
+	    	TCL_LIB_VERSIONS_OK=nodots
+		;;
+	    esac
 	    ;;
 	Rhapsody-*|Darwin-*)
 	    SHLIB_CFLAGS="-fno-common"
@@ -1163,6 +1169,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # won't define thread-safe library routines.
 
 	    AC_DEFINE(_REENTRANT)
+	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS)
 
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
@@ -1187,6 +1194,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # won't define thread-safe library routines.
 
 	    AC_DEFINE(_REENTRANT)
+	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS)
 
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
