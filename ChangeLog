@@ -1,3 +1,145 @@
+2001-05-04  Daniel Steffen <das@users.sourceforge.net>
+
+        ** Mac 8.3.3 binary release 
+
+	**  detailed change log for changes to mac code for 8.3.3 
+	**  (expands on log entries below marked 2001-04-04  Jeff Hobbs)
+
+	* generic/tcl.h: MAC_TCL: addition of ConditionalMacros.h and use of
+	DLLIMPORT and DLLEXPORT like on other platforms.  ( => no longer need
+	the .exp files and can remove use of #pragma export that never worked
+	well)
+
+	* mac/tclMacShLib.exp:
+	* mac/tclMacOSA.exp:
+	* mac/tclMacMSLPrefix.h: removed files
+
+	* mac/MW_TclBuildLibHeader.h:
+	* mac/MW_TclBuildLibHeader.pch:
+	* mac/MW_TclHeaderCommon.h:
+	* mac/MW_TclStaticHeader.h:
+	* mac/MW_TclStaticHeader.pch: new precompiled header files
+
+	* mac/MW_TclAppleScriptHeader.pch:
+	* mac/MW_TclHeader.pch:
+	* mac/MW_TclTestHeader.pch:
+	* mac/tclMacCommonPch.h: revised precompiled header handling: now
+	include a common header file 'MW_TclHeaderCommon.h' from all .pch
+	files, the .pch files themselves now only setup #defines (e.g.
+	BUILD_tcl, STATIC_BUILD, TCL_DEBUG, TCL_THREADS) like in makefiles on
+	other platforms.
+
+	* mac/tclMac.h:
+	* mac/tclMacPort.h:
+	* mac/tclMacInt.h: use of BUILD_tcl and TCL_STORAGE_CLASS like on other
+	platforms, standardize #include'd files to what's done on other
+	platforms, removed use of #pragma export.
+
+	* mac/tcltkMacBuildSupport.sea.hqx: new archive of mac build support
+	files & suggested build environment directory hierarchy: 
+	- 'Building MacTclTk' & 'CW Pro6 changes' readme's.
+	- projects for MoreFiles 1.5.1 static & shared libraries.
+	- project & sources for 'pseudoCarbonSupport', see below.
+
+	* mac/tclMacProjects.sea.hqx: updated mac build project files:
+	- build support for CodeWarrior Pro6, UnivIntf 3.4 & shared runtime
+	libraries: the MSL libraries and MoreFiles are no longer compiled into
+	Tcl.shlb, all non-static binaries now use the Pro6 shared runtime
+	libraries and MoreFiles.shlb.  These shlbs are merged into the standard
+	Wish and TclShell, but 3rd party applications linking with Tcl.shlb or
+	Tk.shlb need to setup access to them.  (see the "(sh-ppc)" targets
+	for how to do this.)
+	- Merging the full MSL.shlb and the other shlbs into Wish & TclShell
+	makes them a bit larger than before, use unmerged binaries to avoid
+	copying the shared code with every application, e.g. when deploying
+	numerous Wish based droplets.
+	- Note that using CW Pro5 to compile extensions is in principle still
+	possible, but need to link with Pro6 runtime libraries.
+	- Tclapplescript now loads and runs on CFM68k.
+	- Highly experimental "pseudoCarbon" support for Tcl only on OS 8/9:
+	binaries in "Build:(Carbon):" link against CarbonLib instead of
+	InterfaceLib, however the actual code has not been carbonized! i.e. it
+	will not run on OSX and may not even run properly with CarbonLib. 
+	This should in principle allow you to build & test OS9 CFM Carbon
+	binaries that need to link with Tcl.shlb.  On OSX you can use the
+	native Tcl.framework, but you have to build a MachO binary as there
+	is no CFM glue lib for Tcl.framework.
+	the library pseudoCarbonSupport.shlb manually loads the symbols
+	from InterfaceLib that are not in CarbonLib but are needed by the
+	uncarbonized code in Tcl.shlb and TclShell.
+
+	* generic/tclMain.c: MAC_TCL: workaround for broken/non-standard isatty
+	on MW Pro6, #include <unistd.h> instead of defining isatty
+
+	* mac/tclMacPort.h: MW Pro6 changes for MSL fcntl.h, stat.h & isatty
+
+	* mac/tclMacAppInit.c: add EXTERN to InstallConsole to enable DLL
+	export via the TCL_STORAGE_CLASS mechanism.
+
+	* mac/tclMacFCmd.c: fix for FSpDirectoryCopy API change
+
+	* mac/tclMacLibrary.c: emit compile time error when
+	TCL_REGISTER_LIBRARY and USE_TCL_STUBS are both defined at the same
+	time in an extension, this use is not currently supported and will
+	result in a crash when dynamically loading the extension.
+
+	* mac/tclMacApplication.r:
+	* mac/tclMacLibrary.r:
+	* mac/tclMacOSA.r:
+	* mac/tclMacResource.r: fixed obsolete copyrights/dates in version
+	strings; updated version strings to standard usage; added support for
+	'(Support Libraries)' subfolder for shared runtime libraries in
+	unmerged binaries; commented out demo setting of "Tcl Environment
+	Variables"
+
+	* mac/tclMacChan.c:
+	* mac/tclMacSock.c: cast for *BlockMode
+
+	* mac/tclMacUtil.c:
+	* mac/tclMacMath.h: removed obsolete hypot() definition
+
+	* generic/tclIntPlatDecls.h:
+	* generic/tclInt.decls:
+	* generic/tclStubInit.c:
+	* mac/tclMacNotify.c:
+	* mac/tclMacOSA.c:
+	* mac/tclMacUtil.c:
+	* generic/tclThreadTest.c: renamed routines conflicting with standard
+	Apple or MoreFiles headers (at compile or link time):
+	    GetGlobalMouse         -> GetGlobalMouseTcl
+    	FSpGetDirectoryID      -> FSpGetDirectoryIDTcl
+    	FSpOpenResFileCompat   -> FSpOpenResFileCompatTcl
+    	FSpCreateResFileCompat -> FSpCreateResFileCompatTcl
+		NewThread              -> NewTestThread
+	the renamed MoreFiles *Tcl routines are just wrappers calling into the
+	MoreFiles DLL.
+
+	* mac/tclMacCommonPch.h:
+	* mac/tclMacThrd.c:
+	* mac/tclMacPanic.c: removed OLDROUTINENAMES define, renamed obsolete
+	apple API names to modern equivalents; UH3.4 support: added #include
+	<ControlDefinitions.h>, updated New*Proc() calls to New*UPP().
+
+	* mac/tclMacUnix.c: added missing (Tcl_Obj ***) cast to
+	Tcl_ListObjGetElements call
+
+	* mac/tclMacAlloc.c: modernized TclpSysAlloc() to use temporary
+	memory instead of system heap memory when available (MacOS
+	>= 7.5 and possibly earlier, use of system heap has been
+	discouraged for a long time and has many disadvantages, e.g. memory
+	isn't paged out, and errors can very easily bring the system down);
+	fixed crashing bug in TclpSysRealloc() and CleanUpExitProc() where
+	memory was being accessed after having been deallocated; fixed
+	memory leak in (de)allocation code (for every block ever allocated
+	with TclpSysAlloc, a Ptr was leaked), if temporary memory is
+	available, don't track allocated memory, instead use
+	RecoverHandle() to get Handle from Ptr, otherwise use doubly linked
+	list to correctly track memory and free all allocated memory; added
+	new option for ConfigureMemory: MEMORY_DONT_USE_TEMPMEM, disables
+	use of temporary memory even when it would be available, only
+	necessary when writing e.g. a driver (using tcl??); increased
+	fraction of application heap reserved for OS routines to 512K
+
 2001-04-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/install-sh: added -S option
