@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.9 1999/07/08 23:17:56 stanton Exp $
+# RCS: @(#) $Id: reg.test,v 1.10 1999/08/05 01:21:09 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -927,6 +927,7 @@ i  10	?P	abc+?		xyabc	{2 4} {5 4}
 i  11	?P	abc+?		xyabcc	{2 4} {6 5}
 i  12	?P	abc+?		xyabcd	{2 4} {6 5}
 i  13	?	abcd|bc		xyabc	{3 4} {2 4}
+i  14	?	abc+		xyabcdd	{2 4} {7 6}
 
 
 
