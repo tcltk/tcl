@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.51 2002/03/29 21:01:12 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.52 2002/04/15 17:32:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1090,16 +1090,19 @@ TclExecuteByteCode(interp, codePtr)
 #endif
         switch (*pc) {
 	case INST_DONE:
-	    /*
-	     * Pop the topmost object from the stack, set the interpreter's
-	     * object result to point to it, and return.
-	     */
-	    valuePtr = POP_OBJECT();
-	    Tcl_SetObjResult(interp, valuePtr);
-	    TclDecrRefCount(valuePtr);
-	    if (stackTop != initStackTop) {
+	    if (stackTop <= initStackTop) {
 		goto abnormalReturn;
 	    }
+
+	    /*
+	     * Set the interpreter's object result to point to the 
+	     * topmost object from the stack, and check for a possible
+	     * [catch]. The stackTop's level and refCount will be handled 
+	     * by "processCatch" or "abnormalReturn".
+	     */
+
+	    valuePtr = stackPtr[stackTop];
+	    Tcl_SetObjResult(interp, valuePtr);
 	    TRACE_WITH_OBJ(("=> return code=%d, result=", result),
 		    iPtr->objResultPtr);
 #ifdef TCL_COMPILE_DEBUG	    
@@ -1107,7 +1110,7 @@ TclExecuteByteCode(interp, codePtr)
 		fprintf(stdout, "\n");
 	    }
 #endif
-	    goto done;
+	    goto checkForCatch;
 
 	case INST_PUSH1:
 #ifdef TCL_COMPILE_DEBUG
@@ -4387,7 +4390,6 @@ TclExecuteByteCode(interp, codePtr)
      * Free the catch stack array if malloc'ed storage was used.
      */
 
-    done:
     if (catchStackPtr != catchStackStorage) {
 	ckfree((char *) catchStackPtr);
     }

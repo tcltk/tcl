@@ -1,3 +1,10 @@
+2002-04-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c:
+	* tests/compile.test: made bytecodes check for a catch before
+	returning; the compiled [return] is otherwise non-catchable. 
+	[Bug 542588] reported by Andreas Kupries.
+
 2002-04-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:
