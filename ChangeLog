@@ -1,3 +1,12 @@
+2004-11-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/basic.test:	Updated functional (not testing) uses of
+	* tests/io.test:	[bgerror] to make use of [interp bgerror].
+	* tests/socket.test:
+	* tests/timer.test:
+
+	* generic/tclInterp.c:	Corrected [interp bgerror] error message.
+
 2004-11-18  Reinhard Max  <max@suse.de>
 
 	* unix/tcl.m4 (SC_CONFIG_MANPAGES): Applied an improved version of

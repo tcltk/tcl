@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.64 2004/11/11 01:16:06 das Exp $
+# RCS: @(#) $Id: io.test,v 1.65 2004/11/18 19:22:12 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -5380,15 +5380,23 @@ test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs filee
     vwait [namespace which -variable x]
     set x
 } {text}
-test io-44.2 {FileEventProc procedure: error in read event} {stdio unixExecs fileevent} {
-    proc ::bgerror args "set [namespace which -variable x] \$args"
+test io-44.2 {FileEventProc procedure: error in read event} -constraints {
+    stdio unixExecs fileevent
+} -setup {
+    proc myHandler {msg options} {
+	variable x $msg
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
     fileevent $f2 readable {error bogus}
     puts $f2 text; flush $f2
     variable x initial
     vwait [namespace which -variable x]
-    rename ::bgerror {}
     list $x [fileevent $f2 readable]
-} {bogus {}}
+} -cleanup {
+    interp bgerror {} $handler
+} -result {bogus {}}
 test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs fileevent} {
     fileevent $f2 writable [namespace code {
 	lappend x "triggered"
@@ -5404,14 +5412,22 @@ test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs file
     vwait [namespace which -variable x]
     set x
 } {initial triggered triggered triggered}
-test io-44.4 {FileEventProc procedure: eror in write event} {stdio unixExecs fileevent} {
-    proc ::bgerror args "set [namespace which -variable x] \$args"
+test io-44.4 {FileEventProc procedure: eror in write event} -constraints {
+    stdio unixExecs fileevent
+} -setup {
+    proc myHandler {msg options} {
+	variable x $msg
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
     fileevent $f2 writable {error bad-write}
     variable x initial
     vwait [namespace which -variable x]
-    rename ::bgerror {}
     list $x [fileevent $f2 writable]
-} {bad-write {}}
+} -cleanup {
+    interp bgerror {} $handler
+} -result {bad-write {}}
 test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpipe fileevent} {
     set f4 [open "|[list [interpreter] $path(cat) << foo]" r]
     fileevent $f4 readable [namespace code {
@@ -6898,7 +6914,9 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket fileeve
 
 set path(fooBar) [makeFile {} fooBar]
 
-test io-55.1 {ChannelEventScriptInvoker: deletion} {fileevent} {
+test io-55.1 {ChannelEventScriptInvoker: deletion} -constraints {
+    fileevent
+} -setup {
     variable x
     proc eventScript {fd} {
 	variable x
@@ -6906,13 +6924,20 @@ test io-55.1 {ChannelEventScriptInvoker: deletion} {fileevent} {
 	error "planned error"
 	set x whoops
     }
-    proc ::bgerror {args} "set [namespace which -variable x] got_error"
+    proc myHandler args {
+	variable x got_error
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
     set f [open $path(fooBar) w]
     fileevent $f writable [namespace code [list eventScript $f]]
     variable x not_done
     vwait [namespace which -variable x]
     set x
-} {got_error}
+} -cleanup {
+    interp bgerror {} $handler
+} -result {got_error}
 
 test io-56.1 {ChannelTimerProc} {testchannelevent} {
     set f [open $path(fooBar) w]
