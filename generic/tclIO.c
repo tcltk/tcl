@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.21 2000/05/02 22:02:34 kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.22 2000/05/08 22:14:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -7017,7 +7017,7 @@ TclTestChannelCmd(clientData, interp, argc, argv)
     Tcl_HashSearch hSearch;	/* Search variable. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
     Channel *chanPtr;		/* The actual channel. */
-    Tcl_Channel chan;		/* The opaque type. */
+    Tcl_Channel chan = NULL;	/* The opaque type. */
     size_t len;			/* Length of subcommand string. */
     int IOQueued;		/* How much IO is queued inside channel? */
     ChannelBuffer *bufPtr;	/* For iterating over queued IO. */
