@@ -9,10 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtol.c,v 1.2 1998/09/14 18:39:45 stanton Exp $
+ * RCS: @(#) $Id: strtol.c,v 1.3 2002/02/25 10:36:32 dkf Exp $
  */
 
 #include <ctype.h>
+#include "tclInt.h"
+#include "tclPort.h"
 
 
 /*
@@ -37,7 +39,7 @@
 
 long int
 strtol(string, endPtr, base)
-    char *string;		/* String of ASCII digits, possibly
+    CONST char *string;		/* String of ASCII digits, possibly
 				 * preceded by white space.  For bases
 				 * greater than 10, either lower- or
 				 * upper-case digits may be used.
@@ -51,7 +53,7 @@ strtol(string, endPtr, base)
 				 * else means decimal.
 				 */
 {
-    register char *p;
+    register CONST char *p;
     int result;
 
     /*
@@ -59,7 +61,7 @@ strtol(string, endPtr, base)
      */
 
     p = string;
-    while (isspace(*p)) {
+    while (isspace(UCHAR(*p))) {
 	p += 1;
     }
 
@@ -77,7 +79,7 @@ strtol(string, endPtr, base)
 	result = strtoul(p, endPtr, base);
     }
     if ((result == 0) && (endPtr != 0) && (*endPtr == p)) {
-	*endPtr = string;
+	*endPtr = (char *) string;
     }
     return result;
 }
