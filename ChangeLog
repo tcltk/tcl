@@ -1,3 +1,11 @@
+2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure:
+	* unix/tcl.m4: extended test of termios vs. termio vs. sgtty to
+	better detect result on Linux and when certain configure
+	redirections are being used. (max) [Patch #402923; Bug #227412,
+	#219194]
+
 2001-04-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclTest.c:
