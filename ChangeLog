@@ -1,9 +1,19 @@
+2002-07-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* All the bugs below are instances of the same problem: The
+	  testsuite assumes [pwd] = [temporaryDirectory] and writable.
+
+	* tests/iogt.test: Fixed bug #575860.
+	* tests/io.test:   Fixed bug #575862.
+	* tests/exec.test: 
+	* tests/ioCmd.test: Fixed bug #575836.
+
 2002-07-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/pkg1/direct1.tcl: removed
 	* tests/pkg1/pkgIndex.tcl: removed
 	* tests/pkgMkIndex.test:  Imported auxilliary files from tests/pkg1
-	into the test file pkgMkIndex.test itself.  Formatting fixes.
+	  into the test file pkgMkIndex.test itself.  Formatting fixes.
 
 	* unix/Makefile.in: removed tests/pkg/* from `make dist`
 
@@ -23,22 +33,23 @@
 	* tests/pkg/simple.tcl: removed
 	* tests/pkg/spacename.tcl: removed
 	* tests/pkg/std.tcl: removed
-	* tests/pkgMkIndex.test:  Fixed [Bug 575857] where this test file
-	expected to be able to write to [file join [testsDirectory] pkg].
-	Part of the fix was to import several auxilliary files into the
-	test file itself.
+	* tests/pkgMkIndex.test: Fixed [Bug 575857] where this test file
+	  expected to be able to write to [file join [testsDirectory]
+	  pkg].  Part of the fix was to import several auxilliary files
+	  into the test file itself.
 
 	* tests/main.test:	Cheap fix for [Bugs 575851, 575858].  Avoid
 	* tests/tcltest.test:	non-writable . by [cd [temporaryDirectory]].
 
 	* library/auto.tcl: Fix [tcl_findLibrary] to be sure it sets
-	$varName only if a successful library script is found.  [Bug 577033]
+	  $varName only if a successful library script is found.
+	  [Bug 577033]
 
 2002-07-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileCatchCmd): return
-	TCL_OUT_LINE_COMPILE instead of TCL_ERROR: let the failure happen
-	at runtime so that it can be caught [Bug 577015].
+	  TCL_OUT_LINE_COMPILE instead of TCL_ERROR: let the failure
+	  happen at runtime so that it can be caught [Bug 577015].
 
 2002-07-02  Joe English  <jenglish@users.sourceforge.net>
 
@@ -48,8 +59,8 @@
 
 	* doc/tcltest.n: more refinements of the documentation.
 
-	* library/tcltest/tcltest.tcl:	Added trace to be sure the stdio
-	constraint is updated whenever the [interpreter] changes.
+	* library/tcltest/tcltest.tcl: Added trace to be sure the stdio
+	  constraint is updated whenever the [interpreter] changes.
 
 	* doc/tcltest.n:		Reverted [makeFile] and [viewFile] to
 	* library/tcltest/tcltest.tcl:	their former behavior, and documented
@@ -58,11 +69,12 @@
 	* tests/http.test:
 	* tests/io.test:
 
-	* library/tcltest/tcltest.tcl: Simplified logic of [GetMatchingFiles]
-	and [GetMatchingDirectories], removing special case processing.
+	* library/tcltest/tcltest.tcl: Simplified logic of
+	  [GetMatchingFiles] and [GetMatchingDirectories], removing
+	  special case processing.
 
-	* doc/tcltest.n:  More documentation updates.  Reference sections
-	are complete.  Only examples need adding.
+	* doc/tcltest.n: More documentation updates.  Reference sections
+	  are complete.  Only examples need adding.
 
 2002-07-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 

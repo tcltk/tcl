@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.11 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.12 2002/07/04 15:46:55 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -22,19 +22,16 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # Skip them if exec is not defined.
 ::tcltest::testConstraint execCommandExists [expr {[info commands exec] != ""}]
 
-set f [open echo w]
-puts $f {
+set path(echo) [makeFile {
     puts -nonewline [lindex $argv 0]
     foreach str [lrange $argv 1 end] {
 	puts -nonewline " $str"
     }
     puts {}
     exit
-}
-close $f
+} echo]
 
-set f [open cat w]
-puts $f {
+set path(cat) [makeFile {
     if {$argv == {}} {
 	set argv -
     }
@@ -53,22 +50,18 @@ puts $f {
 	}
     }
     exit
-}
-close $f
+} cat]
 
-set f [open wc w]
-puts $f {
+set path(wc) [makeFile {
     set data [read stdin]
     set lines [regsub -all "\n" $data {} dummy]
     set words [regsub -all "\[^ \t\n]+" $data {} dummy]
     set chars [string length $data]
     puts [format "%8.d%8.d%8.d" $lines $words $chars]
     exit
-}
-close $f
+} wc]
 
-set f [open sh w]
-puts $f {
+set path(sh) [makeFile {
     if {[lindex $argv 0] != "-c"} {
 	error "sh: unexpected arguments $argv"
     }
@@ -89,172 +82,170 @@ puts $f {
 	lappend newcmd $arg
     }
     exit
-}
-close $f
+} sh]
 
-set f [open sleep w]
-puts $f {
+set path(sleep) [makeFile {
     after [expr $argv*1000]
     exit
-}
-close $f
+} sleep]
 
-set f [open exit w]
-puts $f {
+set path(exit) [makeFile {
     exit $argv
-}
-close $f
+} exit]
 
 # Basic operations.
 
 test exec-1.1 {basic exec operation} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo a b c
+    exec $::tcltest::tcltest $path(echo) a b c
 } "a b c"
 test exec-1.2 {pipelining} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo a b c d | $::tcltest::tcltest cat | $::tcltest::tcltest cat
+    exec $::tcltest::tcltest $path(echo) a b c d | $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat)
 } "a b c d"
 test exec-1.3 {pipelining} {execCommandExists stdio} {
-    set a [exec $::tcltest::tcltest echo a b c d | $::tcltest::tcltest cat | $::tcltest::tcltest wc]
+    set a [exec $::tcltest::tcltest $path(echo) a b c d | $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(wc)]
     list [scan $a "%d %d %d" b c d] $b $c
 } {3 1 4}
 set arg {12345678901234567890123456789012345678901234567890}
 set arg "$arg$arg$arg$arg$arg$arg"
 test exec-1.4 {long command lines} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo $arg
+    exec $::tcltest::tcltest $path(echo) $arg
 } $arg
 set arg {}
 
 # I/O redirection: input from Tcl command.
 
 test exec-2.1 {redirecting input from immediate source} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat << "Sample text"
+    exec $::tcltest::tcltest $path(cat) << "Sample text"
 } {Sample text}
 test exec-2.2 {redirecting input from immediate source} {execCommandExists stdio} {
-    exec << "Sample text" $::tcltest::tcltest cat | $::tcltest::tcltest cat
+    exec << "Sample text" $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat)
 } {Sample text}
 test exec-2.3 {redirecting input from immediate source} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat << "Sample text" | $::tcltest::tcltest cat
+    exec $::tcltest::tcltest $path(cat) << "Sample text" | $::tcltest::tcltest $path(cat)
 } {Sample text}
 test exec-2.4 {redirecting input from immediate source} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat | $::tcltest::tcltest cat << "Sample text"
+    exec $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat) << "Sample text"
 } {Sample text}
 test exec-2.5 {redirecting input from immediate source} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat "<<Joined to arrows"
+    exec $::tcltest::tcltest $path(cat) "<<Joined to arrows"
 } {Joined to arrows}
 test exec-2.6 {redirecting input from immediate source, with UTF} {execCommandExists stdio} {
     # If this fails, it may give back:
     # "\uC3\uA9\uC3\uA0\uC3\uBC\uC3\uB1"
     # If it does, this means that the UTF -> external conversion did not 
     # occur before writing out the temp file.
-    exec $::tcltest::tcltest cat << "\uE9\uE0\uFC\uF1"
+    exec $::tcltest::tcltest $path(cat) << "\uE9\uE0\uFC\uF1"
 } "\uE9\uE0\uFC\uF1"
 
 # I/O redirection: output to file.
 
-file delete gorp.file
+set path(gorp.file) [makeFile {} gorp.file]
+removeFile gorp.file
+
 test exec-3.1 {redirecting output to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "Some simple words" > gorp.file
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "Some simple words" > $path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "Some simple words"
 test exec-3.2 {redirecting output to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "More simple words" | >gorp.file $::tcltest::tcltest cat | $::tcltest::tcltest cat
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "More simple words" | >$path(gorp.file) $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "More simple words"
 test exec-3.3 {redirecting output to file} {execCommandExists stdio} {
-    exec > gorp.file $::tcltest::tcltest echo "Different simple words" | $::tcltest::tcltest cat | $::tcltest::tcltest cat
-    exec $::tcltest::tcltest cat gorp.file
+    exec > $path(gorp.file) $::tcltest::tcltest $path(echo) "Different simple words" | $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "Different simple words"
 test exec-3.4 {redirecting output to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "Some simple words" >gorp.file
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "Some simple words" >$path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "Some simple words"
 test exec-3.5 {redirecting output to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "First line" >gorp.file
-    exec $::tcltest::tcltest echo "Second line" >> gorp.file
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "First line" >$path(gorp.file)
+    exec $::tcltest::tcltest $path(echo) "Second line" >> $path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "First line\nSecond line"
 test exec-3.6 {redirecting output to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "First line" >gorp.file
-    exec $::tcltest::tcltest echo "Second line" >>gorp.file
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "First line" >$path(gorp.file)
+    exec $::tcltest::tcltest $path(echo) "Second line" >>$path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "First line\nSecond line"
 test exec-3.7 {redirecting output to file} {execCommandExists stdio} {
-    set f [open gorp.file w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec $::tcltest::tcltest echo "More text" >@ $f
-    exec $::tcltest::tcltest echo >@$f "Even more"
+    exec $::tcltest::tcltest $path(echo) "More text" >@ $f
+    exec $::tcltest::tcltest $path(echo) >@$f "Even more"
     puts $f "Line 3"
     close $f
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "Line 1\nMore text\nEven more\nLine 3"
 
 # I/O redirection: output and stderr to file.
 
-file delete gorp.file
+removeFile gorp.file
+
 test exec-4.1 {redirecting output and stderr to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "test output" >& gorp.file
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "test output" >& $path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "test output"
 test exec-4.2 {redirecting output and stderr to file} {execCommandExists stdio} {
-    list [exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" >&gorp.file] \
-	    [exec $::tcltest::tcltest cat gorp.file]
+    list [exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" >&$path(gorp.file)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file)]
 } {{} {foo bar}}
 test exec-4.3 {redirecting output and stderr to file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "first line" > gorp.file
-    list [exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" >>&gorp.file] \
-	    [exec $::tcltest::tcltest cat gorp.file]
+    exec $::tcltest::tcltest $path(echo) "first line" > $path(gorp.file)
+    list [exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" >>&$path(gorp.file)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file)]
 } "{} {first line\nfoo bar}"
 test exec-4.4 {redirecting output and stderr to file} {execCommandExists stdio} {
-    set f [open gorp.file w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec $::tcltest::tcltest echo "More text" >&@ $f
-    exec $::tcltest::tcltest echo >&@$f "Even more"
+    exec $::tcltest::tcltest $path(echo) "More text" >&@ $f
+    exec $::tcltest::tcltest $path(echo) >&@$f "Even more"
     puts $f "Line 3"
     close $f
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "Line 1\nMore text\nEven more\nLine 3"
 test exec-4.5 {redirecting output and stderr to file} {execCommandExists stdio} {
-    set f [open gorp.file w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec >&@ $f $::tcltest::tcltest sh -c "echo foo bar 1>&2"
-    exec >&@$f $::tcltest::tcltest sh -c "echo xyzzy 1>&2"
+    exec >&@ $f $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2"
+    exec >&@$f $::tcltest::tcltest $path(sh) -c "$path(echo) xyzzy 1>&2"
     puts $f "Line 3"
     close $f
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } "Line 1\nfoo bar\nxyzzy\nLine 3"
 
 # I/O redirection: input from file.
 
 if { [set ::tcltest::testConstraints(execCommandExists)] } {
-exec $::tcltest::tcltest echo "Just a few thoughts" > gorp.file
+exec $::tcltest::tcltest $path(echo) "Just a few thoughts" > $path(gorp.file)
 }
 test exec-5.1 {redirecting input from file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat < gorp.file
+    exec $::tcltest::tcltest $path(cat) < $path(gorp.file)
 } {Just a few thoughts}
 test exec-5.2 {redirecting input from file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat | $::tcltest::tcltest cat < gorp.file
+    exec $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat) < $path(gorp.file)
 } {Just a few thoughts}
 test exec-5.3 {redirecting input from file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat < gorp.file | $::tcltest::tcltest cat
+    exec $::tcltest::tcltest $path(cat) < $path(gorp.file) | $::tcltest::tcltest $path(cat)
 } {Just a few thoughts}
 test exec-5.4 {redirecting input from file} {execCommandExists stdio} {
-    exec < gorp.file $::tcltest::tcltest cat | $::tcltest::tcltest cat
+    exec < $path(gorp.file) $::tcltest::tcltest $path(cat) | $::tcltest::tcltest $path(cat)
 } {Just a few thoughts}
 test exec-5.5 {redirecting input from file} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat <gorp.file
+    exec $::tcltest::tcltest $path(cat) <$path(gorp.file)
 } {Just a few thoughts}
 test exec-5.6 {redirecting input from file} {execCommandExists stdio} {
-    set f [open gorp.file r]
-    set result [exec $::tcltest::tcltest cat <@ $f]
+    set f [open $path(gorp.file) r]
+    set result [exec $::tcltest::tcltest $path(cat) <@ $f]
     close $f
     set result
 } {Just a few thoughts}
 test exec-5.7 {redirecting input from file} {execCommandExists stdio} {
-    set f [open gorp.file r]
-    set result [exec <@$f $::tcltest::tcltest cat]
+    set f [open $path(gorp.file) r]
+    set result [exec <@$f $::tcltest::tcltest $path(cat)]
     close $f
     set result
 } {Just a few thoughts}
@@ -262,25 +253,27 @@ test exec-5.7 {redirecting input from file} {execCommandExists stdio} {
 # I/O redirection: standard error through a pipeline.
 
 test exec-6.1 {redirecting stderr through a pipeline} {execCommandExists stdio} {
-    exec $::tcltest::tcltest sh -c "echo foo bar" |& $::tcltest::tcltest cat
+    exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar" |& $::tcltest::tcltest $path(cat)
 } "foo bar"
 test exec-6.2 {redirecting stderr through a pipeline} {execCommandExists stdio} {
-    exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" |& $::tcltest::tcltest cat
+    exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" |& $::tcltest::tcltest $path(cat)
 } "foo bar"
 test exec-6.3 {redirecting stderr through a pipeline} {execCommandExists stdio} {
-    exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" \
-	|& $::tcltest::tcltest sh -c "echo second msg 1>&2 ; cat" |& $::tcltest::tcltest cat
+    exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" \
+	|& $::tcltest::tcltest $path(sh) -c "$path(echo) second msg 1>&2 ; $path(cat)" |& $::tcltest::tcltest $path(cat)
 } "second msg\nfoo bar"
 
 # I/O redirection: combinations.
 
-file delete gorp.file2
+set path(gorp.file2) [makeFile {} gorp.file2]
+removeFile gorp.file2
+
 test exec-7.1 {multiple I/O redirections} {execCommandExists stdio} {
-    exec << "command input" > gorp.file2 $::tcltest::tcltest cat < gorp.file
-    exec $::tcltest::tcltest cat gorp.file2
+    exec << "command input" > $path(gorp.file2) $::tcltest::tcltest $path(cat) < $path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file2)
 } {Just a few thoughts}
 test exec-7.2 {multiple I/O redirections} {execCommandExists stdio} {
-    exec < gorp.file << "command input" $::tcltest::tcltest cat
+    exec < $path(gorp.file) << "command input" $::tcltest::tcltest $path(cat)
 } {command input}
 
 # Long input to command and output from command.
@@ -291,13 +284,13 @@ set a [concat $a $a $a $a]
 set a [concat $a $a $a $a]
 set a [concat $a $a $a $a]
 test exec-8.1 {long input and output} {execCommandExists stdio} {
-    exec $::tcltest::tcltest cat << $a
+    exec $::tcltest::tcltest $path(cat) << $a
 } $a
 
 # More than 20 arguments to exec.
 
-test exec-8.1 {long input and output} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+test exec-8.2 {long input and output} {execCommandExists stdio} {
+    exec $::tcltest::tcltest $path(echo) 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23}
 
 # Commands that return errors.
@@ -310,31 +303,34 @@ test exec-9.2 {commands returning errors} {execCommandExists stdio} {
     string tolower [list [catch {exec $::tcltest::tcltest echo foo | foo123} msg] $msg $errorCode]
 } {1 {couldn't execute "foo123": no such file or directory} {posix enoent {no such file or directory}}}
 test exec-9.3 {commands returning errors} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest sleep 1 | $::tcltest::tcltest exit 43 | $::tcltest::tcltest sleep 1} msg] $msg
+    list [catch {exec $::tcltest::tcltest $path(sleep) 1 | $::tcltest::tcltest $path(exit) 43 | $::tcltest::tcltest $path(sleep) 1} msg] $msg
 } {1 {child process exited abnormally}}
 test exec-9.4 {commands returning errors} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest exit 43 | $::tcltest::tcltest echo "foo bar"} msg] $msg
+    list [catch {exec $::tcltest::tcltest $path(exit) 43 | $::tcltest::tcltest $path(echo) "foo bar"} msg] $msg
 } {1 {foo bar
 child process exited abnormally}}
 test exec-9.5 {commands returning errors} {execCommandExists stdio} {
     list [catch {exec gorp456 | $::tcltest::tcltest echo a b c} msg] [string tolower $msg]
 } {1 {couldn't execute "gorp456": no such file or directory}}
 test exec-9.6 {commands returning errors} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest sh -c "echo error msg 1>&2"} msg] $msg
+    list [catch {exec $::tcltest::tcltest $path(sh) -c "$path(echo) error msg 1>&2"} msg] $msg
 } {1 {error msg}}
 test exec-9.7 {commands returning errors} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest sh -c "echo error msg 1>&2" \
-		     | $::tcltest::tcltest sh -c "echo error msg 1>&2"} msg] $msg
+    list [catch {exec $::tcltest::tcltest $path(sh) -c "$path(echo) error msg 1>&2" \
+		     | $::tcltest::tcltest $path(sh) -c "$path(echo) error msg 1>&2"} msg] $msg
 } {1 {error msg
 error msg}}
+
+set path(err) [makeFile {} err]
+
 test exec-9.8 {commands returning errors} {execCommandExists stdio} {
-    set f [open err w]
+    set f [open $path(err) w]
     puts $f {
 	puts stdout out
 	puts stderr err
     }
     close $f
-    list [catch {exec $::tcltest::tcltest err} msg] $msg
+    list [catch {exec $::tcltest::tcltest $path(err)} msg] $msg
 } {1 {out
 err}}
 
@@ -392,12 +388,12 @@ test exec-10.16 {errors in exec invocation} {execCommandExists stdio} {
 test exec-10.17 {errors in exec invocation} {execCommandExists stdio} {
     list [catch {exec cat << foo > a/b/c} msg] [string tolower $msg]
 } {1 {couldn't write file "a/b/c": no such file or directory}}
-set f [open gorp.file w]
+set f [open $path(gorp.file) w]
 test exec-10.18 {errors in exec invocation} {execCommandExists stdio} {
     list [catch {exec cat <@ $f} msg] $msg
 } "1 {channel \"$f\" wasn't opened for reading}"
 close $f
-set f [open gorp.file r]
+set f [open $path(gorp.file) r]
 test exec-10.19 {errors in exec invocation} {execCommandExists stdio} {
     list [catch {exec cat >@ $f} msg] $msg
 } "1 {channel \"$f\" wasn't opened for writing}"
@@ -412,30 +408,30 @@ test exec-10.21 {errors in exec invocation} {execCommandExists stdio} {
 # Commands in background.
 
 test exec-11.1 {commands in background} {execCommandExists stdio} {
-    set x [lindex [time {exec $::tcltest::tcltest sleep 2 &}] 0]
+    set x [lindex [time {exec $::tcltest::tcltest $path(sleep) 2 &}] 0]
     expr $x<1000000
 } 1
 test exec-11.2 {commands in background} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest echo a &b} msg] $msg
+    list [catch {exec $::tcltest::tcltest $path(echo) a &b} msg] $msg
 } {0 {a &b}}
 test exec-11.3 {commands in background} {execCommandExists stdio} {
-    llength [exec $::tcltest::tcltest sleep 1 &]
+    llength [exec $::tcltest::tcltest $path(sleep) 1 &]
 } 1
 test exec-11.4 {commands in background} {execCommandExists stdio} {
-    llength [exec $::tcltest::tcltest sleep 1 | $::tcltest::tcltest sleep 1 | $::tcltest::tcltest sleep 1 &]
+    llength [exec $::tcltest::tcltest $path(sleep) 1 | $::tcltest::tcltest $path(sleep) 1 | $::tcltest::tcltest $path(sleep) 1 &]
 } 3
 test exec-11.5 {commands in background} {execCommandExists stdio} {
-    set f [open gorp.file w]
-    puts $f { catch { exec [info nameofexecutable] echo foo & } }
+    set f [open $path(gorp.file) w]
+    puts $f [format { catch { exec [info nameofexecutable] %s foo & } } $path(echo)]
     close $f
-    string compare "foo" [exec $::tcltest::tcltest gorp.file]
+    string compare "foo" [exec $::tcltest::tcltest $path(gorp.file)]
 } 0
 
 # Make sure that background commands are properly reaped when
 # they eventually die.
 
 if { [set ::tcltest::testConstraints(execCommandExists)] } {
-exec $::tcltest::tcltest sleep 3
+exec $::tcltest::tcltest $path(sleep) 3
 }
 test exec-12.1 {reaping background processes} \
 	{execCommandExists stdio unixOnly nonPortable} {
@@ -480,10 +476,10 @@ test exec-12.3 {reaping background processes} \
 # Make sure "errorCode" is set correctly.
 
 test exec-13.1 {setting errorCode variable} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest cat < a/b/c} msg] [string tolower $errorCode]
+    list [catch {exec $::tcltest::tcltest $path(cat) < a/b/c} msg] [string tolower $errorCode]
 } {1 {posix enoent {no such file or directory}}}
 test exec-13.2 {setting errorCode variable} {execCommandExists stdio} {
-    list [catch {exec $::tcltest::tcltest cat > a/b/c} msg] [string tolower $errorCode]
+    list [catch {exec $::tcltest::tcltest $path(cat) > a/b/c} msg] [string tolower $errorCode]
 } {1 {posix enoent {no such file or directory}}}
 test exec-13.3 {setting errorCode variable} {execCommandExists stdio} {
     set x [catch {exec _weird_cmd_} msg]
@@ -494,7 +490,7 @@ test exec-13.3 {setting errorCode variable} {execCommandExists stdio} {
 # Switches before the first argument
 
 test exec-14.1 {-keepnewline switch} {execCommandExists stdio} {
-    exec -keepnewline $::tcltest::tcltest echo foo
+    exec -keepnewline $::tcltest::tcltest $path(echo) foo
 } "foo\n"
 test exec-14.2 {-keepnewline switch} {execCommandExists stdio} {
     list [catch {exec -keepnewline} msg] $msg
@@ -509,77 +505,79 @@ test exec-14.4 {-- switch} {execCommandExists stdio} {
 # Redirecting standard error separately from standard output
 
 test exec-15.1 {standard error redirection} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "First line" > gorp.file
-    list [exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" 2> gorp.file] \
-	    [exec $::tcltest::tcltest cat gorp.file]
+    exec $::tcltest::tcltest $path(echo) "First line" > $path(gorp.file)
+    list [exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" 2> $path(gorp.file)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file)]
 } {{} {foo bar}}
 test exec-15.2 {standard error redirection} {execCommandExists stdio} {
-    list [exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" \
-		| $::tcltest::tcltest echo biz baz >gorp.file 2> gorp.file2] \
-	    [exec $::tcltest::tcltest cat gorp.file] \
-	    [exec $::tcltest::tcltest cat gorp.file2]
+    list [exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" \
+		| $::tcltest::tcltest $path(echo) biz baz >$path(gorp.file) 2> $path(gorp.file2)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file2)]
 } {{} {biz baz} {foo bar}}
 test exec-15.3 {standard error redirection} {execCommandExists stdio} {
-    list [exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" \
-	        | $::tcltest::tcltest echo biz baz 2>gorp.file > gorp.file2] \
-	    [exec $::tcltest::tcltest cat gorp.file] \
-	    [exec $::tcltest::tcltest cat gorp.file2]
+    list [exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" \
+	        | $::tcltest::tcltest $path(echo) biz baz 2>$path(gorp.file) > $path(gorp.file2)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file)] \
+	    [exec $::tcltest::tcltest $path(cat) $path(gorp.file2)]
 } {{} {foo bar} {biz baz}}
 test exec-15.4 {standard error redirection} {execCommandExists stdio} {
-    set f [open gorp.file w]
+    set f [open $path(gorp.file) w]
     puts $f "Line 1"
     flush $f
-    exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" 2>@ $f
+    exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" 2>@ $f
     puts $f "Line 3"
     close $f
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } {Line 1
 foo bar
 Line 3}
 test exec-15.5 {standard error redirection} {execCommandExists stdio} {
-    exec $::tcltest::tcltest echo "First line" > gorp.file
-    exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" 2>> gorp.file
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(echo) "First line" > $path(gorp.file)
+    exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" 2>> $path(gorp.file)
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } {First line
 foo bar}
 test exec-15.6 {standard error redirection} {execCommandExists stdio} {
-    exec $::tcltest::tcltest sh -c "echo foo bar 1>&2" > gorp.file2 2> gorp.file \
-	    >& gorp.file 2> gorp.file2 | $::tcltest::tcltest echo biz baz
-    list [exec $::tcltest::tcltest cat gorp.file] [exec $::tcltest::tcltest cat gorp.file2]
+    exec $::tcltest::tcltest $path(sh) -c "$path(echo) foo bar 1>&2" > $path(gorp.file2) 2> $path(gorp.file) \
+	    >& $path(gorp.file) 2> $path(gorp.file2) | $::tcltest::tcltest $path(echo) biz baz
+    list [exec $::tcltest::tcltest $path(cat) $path(gorp.file)] [exec $::tcltest::tcltest $path(cat) $path(gorp.file2)]
 } {{biz baz} {foo bar}}
 
 test exec-16.1 {flush output before exec} {execCommandExists stdio} {
-    set f [open gorp.file w]
+    set f [open $path(gorp.file) w]
     puts $f "First line"
-    exec $::tcltest::tcltest echo "Second line" >@ $f
+    exec $::tcltest::tcltest $path(echo) "Second line" >@ $f
     puts $f "Third line"
     close $f
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } {First line
 Second line
 Third line}
 test exec-16.2 {flush output before exec} {execCommandExists stdio} {
-    set f [open gorp.file w]
+    set f [open $path(gorp.file) w]
     puts $f "First line"
-    exec $::tcltest::tcltest << {puts stderr {Second line}} >&@ $f > gorp.file2
+    exec $::tcltest::tcltest << {puts stderr {Second line}} >&@ $f > $path(gorp.file2)
     puts $f "Third line"
     close $f
-    exec $::tcltest::tcltest cat gorp.file
+    exec $::tcltest::tcltest $path(cat) $path(gorp.file)
 } {First line
 Second line
 Third line}
 
+set path(script) [makeFile {} script]
+
 test exec-17.1 { inheriting standard I/O } {execCommandExists stdio} {
-    set f [open script w]
-    puts $f {close stdout
-	set f [open gorp.file w]
-	catch {exec [info nameofexecutable] echo foobar &}
-	exec [info nameofexecutable] sleep 2
+    set f [open $path(script) w]
+    puts $f [format {close stdout
+	set f [open %s w]
+	catch {exec [info nameofexecutable] %s foobar &}
+	exec [info nameofexecutable] %s 2
 	close $f
-    }
+    } $path(gorp.file) $path(echo) $path(sleep)]
     close $f
-    catch {exec $::tcltest::tcltest script} result
-    set f [open gorp.file r]
+    catch {exec $::tcltest::tcltest $path(script)} result
+    set f [open $path(gorp.file) r]
     lappend result [read $f]
     close $f
     set result
@@ -588,29 +586,20 @@ test exec-17.1 { inheriting standard I/O } {execCommandExists stdio} {
 
 test exec-18.1 { exec cat deals with weird file names} {execCommandExists} {
     set f "foo\[\{blah"
-    set fout [open $f w]
+    set path(fooblah) [makeFile {} $f]
+    set fout [open $path(fooblah) w]
     puts $fout "contents"
     close $fout
-    set res [list [catch {exec cat $f} msg] $msg]
-    file delete $f
+    set res [list [catch {exec cat $path(fooblah)} msg] $msg]
+    removeFile $f
     set res
 } {0 contents}
 
 # cleanup
-file delete script gorp.file gorp.file2
-file delete echo cat wc sh sleep exit
-file delete err
+
+foreach file {script gorp.file gorp.file2 echo cat wc sh sleep exit err} {
+	removeFile $file
+}
+
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
