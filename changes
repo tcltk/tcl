@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.22 1999/03/15 16:20:30 hershey Exp $
+RCS: @(#) $Id: changes,v 1.1.2.23 1999/03/23 21:58:01 hershey Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4193,5 +4193,12 @@ global variables.
     - The test suite can now be run in any working directory.  When
       you run "make test", the working directory is nolonger switched
       to ../tests.
+(hirschl)
+*** POTENTIAL INCOMPATIBILITY ***
+
+3/23/99 (feature change) Test suite now uses "tcltest" namespace to
+define the test procedure and other auxiliary procedures as well as
+global variables.  The previously chosen "test" namespace was thought
+to be too generic and likely to create conflits.
 (hirschl)
 *** POTENTIAL INCOMPATIBILITY ***
