@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.48 2004/10/31 18:44:27 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.49 2004/10/31 23:59:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -633,7 +633,7 @@ foreach outer { {} a .a a. a.a } {
 	set thing [format %s/%s $outer $inner]
 	;test cmdAH-10.$num {Tcl_FileObjCmd: rootname and extension options} testsetplatform "
 	    testsetplatform unix
-	    format %s%s [file rootname $thing] [file ext $thing]
+	    [list format %s%s [file rootname $thing] [file ext $thing]]
 	" $thing
 	incr num
     }
