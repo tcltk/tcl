@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.94 2004/10/06 09:48:40 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.95 2004/10/06 15:59:26 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -2676,7 +2676,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     Interp *iPtr = (Interp *) interp;
     Var *varPtr, *arrayPtr;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *resultPtr, *varNamePtr;
+    Tcl_Obj *varNamePtr;
     int notArray;
     char *varName;
     int index, result;
@@ -2727,13 +2727,6 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	notArray = 1;
     }
 
-    /*
-     * We have to wait to get the resultPtr until here because
-     * TclCallVarTraces can affect the result.
-     */
-
-    resultPtr = Tcl_GetObjResult(interp);
-
     switch (index) {
         case ARRAY_ANYMORE: {
 	    ArraySearch *searchPtr;
@@ -2761,11 +2754,11 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 		searchPtr->nextEntry = Tcl_NextHashEntry(&searchPtr->search);
 		if (searchPtr->nextEntry == NULL) {
-		    Tcl_SetIntObj(resultPtr, 0);
+		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
 		    return TCL_OK;
 		}
 	    }
-	    Tcl_SetIntObj(resultPtr, 1);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
 	    break;
 	}
         case ARRAY_DONESEARCH: {
@@ -2802,7 +2795,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName");
 	        return TCL_ERROR;
 	    }
-	    Tcl_SetIntObj(resultPtr, !notArray);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!notArray));
 	    break;
 	}
         case ARRAY_GET: {
@@ -2914,7 +2907,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    Var *varPtr2;
 	    char *pattern = NULL;
 	    char *name;
-	    Tcl_Obj *namePtr;
+	    Tcl_Obj *namePtr, *resultPtr;
 	    int mode, matched = 0;
 	    static CONST char *options[] = {
 		"-exact", "-glob", "-regexp", (char *) NULL
@@ -2940,6 +2933,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }       		
+	    resultPtr = Tcl_NewObj();
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -2959,6 +2953,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 			    matched = Tcl_RegExpMatch(interp, name,
 				    pattern);
 			    if (matched < 0) {
+				Tcl_DecrRefCount(resultPtr);
 				return TCL_ERROR;
 			    }
 			    break;
@@ -2974,6 +2969,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
 		    return result;
 		}
+		Tcl_SetObjResult(interp, resultPtr);
 	    }
 	    break;
 	}
@@ -3010,8 +3006,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    break;
 		}
 	    }
-	    Tcl_SetStringObj(resultPtr,
-	            Tcl_GetHashKey(varPtr->value.tablePtr, hPtr), -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	            Tcl_GetHashKey(varPtr->value.tablePtr, hPtr), -1));
 	    break;
 	}
         case ARRAY_SET: {
@@ -3042,7 +3038,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    size++;
 		}
 	    }
-	    Tcl_SetIntObj(resultPtr, size);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
 	    break;
 	}
         case ARRAY_STARTSEARCH: {
@@ -3058,15 +3054,13 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    searchPtr = (ArraySearch *) ckalloc(sizeof(ArraySearch));
 	    if (varPtr->searchPtr == NULL) {
 	        searchPtr->id = 1;
-		Tcl_AppendStringsToObj(resultPtr, "s-1-", varName,
-		        (char *) NULL);
+		Tcl_AppendResult(interp, "s-1-", varName, NULL);
 	    } else {
 	        char string[TCL_INTEGER_SPACE];
 
 		searchPtr->id = varPtr->searchPtr->id + 1;
 		TclFormatInt(string, searchPtr->id);
-		Tcl_AppendStringsToObj(resultPtr, "s-", string, "-", varName,
-			(char *) NULL);
+		Tcl_AppendResult(interp, "s-", string, "-", varName, NULL);
 	    }
 	    searchPtr->varPtr = varPtr;
 	    searchPtr->nextEntry = Tcl_FirstHashEntry(varPtr->value.tablePtr,
@@ -3085,7 +3079,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
 	    stats = Tcl_HashStats(varPtr->value.tablePtr);
 	    if (stats != NULL) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), stats, -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
 		ckfree((void *)stats);
 	    } else {
 		Tcl_SetResult(interp, "error reading array statistics",
@@ -3139,8 +3133,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     return TCL_OK;
 
     error:
-    Tcl_AppendStringsToObj(resultPtr, "\"", varName, "\" isn't an array",
-	    (char *) NULL);
+    Tcl_AppendResult(interp, "\"", varName, "\" isn't an array", NULL);
     return TCL_ERROR;
 }
 
@@ -3253,9 +3246,8 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 	    return result;
 	}
 	if (elemLen & 1) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		    "list must have an even number of elements", -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "list must have an even number of elements", -1));
 	    return TCL_ERROR;
 	}
 	if (elemLen == 0) {

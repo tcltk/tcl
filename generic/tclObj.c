@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.71 2004/10/01 12:45:20 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72 2004/10/06 15:59:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1936,9 +1936,9 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
   tooBig:
 #endif
     if (interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"integer value too large to represent as non-long integer", -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"integer value too large to represent as non-long integer",
+		-1));
     }
     return TCL_ERROR;
 }
@@ -1972,9 +1972,8 @@ SetIntFromAny(interp, objPtr)
     }
     if (objPtr->typePtr != &tclIntType) {
 	if (interp != NULL) {
-	    char *s = "integer value too large to represent";
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    CONST char *s = "integer value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
 	}
 	return TCL_ERROR;
@@ -2056,9 +2055,8 @@ SetIntOrWideFromAny(interp, objPtr)
     }
     if (errno == ERANGE) {
 	if (interp != NULL) {
-	    char *s = "integer value too large to represent";
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    CONST char *s = "integer value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
 	}
 	return TCL_ERROR;
@@ -2357,9 +2355,8 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 	    return TCL_OK;
 	} else {
 	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-				"integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"integer value too large to represent", -1));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2444,9 +2441,8 @@ SetWideIntFromAny(interp, objPtr)
     }
     if (errno == ERANGE) {
 	if (interp != NULL) {
-	    char *s = "integer value too large to represent";
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    CONST char *s = "integer value too large to represent";
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, (char *) NULL);
 	}
 	return TCL_ERROR;
