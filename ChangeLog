@@ -1,3 +1,12 @@
+2002-01-21  Don Porter <dgp@users.sourceforge.net>
+
+	* generic/tcl.decls (Tcl_TraceCommand,Tcl_UntraceCommand,
+	  Tcl_CommandTraceInfo):
+	* generic/tclCmdMZ.c (Tcl_TraceCommand,Tcl_UntraceCommand,
+	  Tcl_CommandTraceInfo): Updated APIs in generic/tclCmdMZ.c 
+	according to the guidelines of TIP 27.
+	* generic/tclDecls.h: make genstubs
+
 2002-01-18  Don Porter <dgp@users.sourceforge.net>
 
 	* win/tclWinChan.c:
