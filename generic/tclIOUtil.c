@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.58 2002/07/18 15:14:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.59 2002/07/18 16:26:03 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -514,7 +514,7 @@ static Tcl_FSUnloadFileProc FSUnloadTempFile;
  * operation when we want to unload the code.
  */
 typedef struct FsDivertLoad {
-    TclLoadHandle loadHandle;
+    Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;	
     Tcl_Obj *divertedFile;
     Tcl_Filesystem *divertedFilesystem;
@@ -2557,7 +2557,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		 * Tcl_DecrRefCount(perm);
 		 * 
 		 */
-		TclLoadHandle newLoadHandle = NULL;
+		Tcl_LoadHandle newLoadHandle = NULL;
 		Tcl_FSUnloadFileProc *newUnloadProcPtr = NULL;
 		FsDivertLoad *tvdlPtr;
 		int retVal;
@@ -2650,7 +2650,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * function which should be used for
 				 * this file. */
 {
-    TclLoadHandle handle = NULL;
+    Tcl_LoadHandle handle = NULL;
     int res;
     
     res = TclpDlopen(interp, pathPtr, &handle, unloadProcPtr);
@@ -2691,7 +2691,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
  */
 static void 
 FSUnloadTempFile(loadHandle)
-    TclLoadHandle loadHandle; /* loadHandle returned by a previous call
+    Tcl_LoadHandle loadHandle; /* loadHandle returned by a previous call
 			       * to Tcl_FSLoadFile().  The loadHandle is 
 			       * a token that represents the loaded 
 			       * file. */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.14 2002/07/18 15:04:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.15 2002/07/18 16:26:04 vincentdarley Exp $
  */
 
 #include <CodeFragments.h>
@@ -120,7 +120,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    TclLoadHandle *loadHandle;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr)
@@ -152,7 +152,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 	return TCL_ERROR;
     }
 
-    *loadHandle = (TclLoadHandle)loadInfo;
+    *loadHandle = (Tcl_LoadHandle)loadInfo;
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
 }
@@ -272,7 +272,7 @@ TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo,
 Tcl_PackageInitProc*
 TclpFindSymbol(interp, loadHandle, symbol) 
     Tcl_Interp *interp;
-    TclLoadHandle loadHandle;
+    Tcl_LoadHandle loadHandle;
     CONST char *symbol;
 {
     Tcl_DString ds;
@@ -331,7 +331,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
 
 void
 TclpUnloadFile(loadHandle)
-    TclLoadHandle loadHandle;	/* loadHandle returned by a previous call
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
 				 * to TclpDlopen().  The loadHandle is 
 				 * a token that represents the loaded 
 				 * file. */
