@@ -14,6 +14,12 @@
 
 	* unix/tclLoadDyld.c (TclpLoadFile): removed use of interp->result
 
+2000-04-25  Eric Melski  <ericm@scriptics.com>
+
+	* unix/mkLinks: 
+	* doc/AddErrInfo.3: Added information about Tcl_LogCommandInfo
+	[Bug: 1818].
+
 2000-04-24  Eric Melski  <ericm@scriptics.com>
 
 	* unix/mkLinks: 
