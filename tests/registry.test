@@ -10,10 +10,10 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.12 2002/10/18 23:58:18 hobbs Exp $
+# RCS: @(#) $Id: registry.test,v 1.12.2.1 2003/03/19 01:19:53 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -29,13 +29,15 @@ if {$tcl_platform(platform) == "windows"} {
 }
 
 # determine the current locale
-set old [testlocale all]
-if {![string compare [testlocale all ""] "English_United States.1252"]} {
-	# error messages from registry package are already localized.
-    set ::tcltest::testConstraints(english) 1
+if { [string compare {} [info commands testlocale]] } {
+    set old [testlocale all]
+    testConstraint english \
+	[string equal [testlocale all ""] "English_United States.1252"]
+    testlocale all $old
+    unset old
+} else {
+    testConstraint english false
 }
-testlocale all $old
-unset old
 
 set hostname [info hostname]
 
