@@ -472,7 +472,7 @@ if test -r GetVersion.3; then
 fi
 if test -r Hash.3; then
     rm -f Tcl_InitHashTable.3
-    rm -f Tcl_InitHashTableEx.3
+    rm -f Tcl_InitCustomHashTable.3
     rm -f Tcl_InitObjHashTable.3
     rm -f Tcl_DeleteHashTable.3
     rm -f Tcl_CreateHashEntry.3
@@ -485,7 +485,7 @@ if test -r Hash.3; then
     rm -f Tcl_NextHashEntry.3
     rm -f Tcl_HashStats.3
     ln Hash.3 Tcl_InitHashTable.3
-    ln Hash.3 Tcl_InitHashTableEx.3
+    ln Hash.3 Tcl_InitCustomHashTable.3
     ln Hash.3 Tcl_InitObjHashTable.3
     ln Hash.3 Tcl_DeleteHashTable.3
     ln Hash.3 Tcl_CreateHashEntry.3
