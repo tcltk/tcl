@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.36 2002/11/19 02:34:50 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.36.2.1 2003/04/16 23:31:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2220,9 +2220,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 {
     char *bytes;
     int offset;
-#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt wideOffset;
-#endif
 
     /*
      * If the object is already an integer, use it.
@@ -2237,16 +2235,14 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
      * If the object is already a wide-int, and it is not out of range
      * for an integer, use it. [Bug #526717]
      */
-#ifndef TCL_WIDE_INT_IS_LONG
     if (objPtr->typePtr == &tclWideIntType) {
-	Tcl_WideInt wideOffset = objPtr->internalRep.wideValue;
+	TclGetWide(wideOffset,objPtr);
 	if (wideOffset >= Tcl_LongAsWide(INT_MIN)
 	    && wideOffset <= Tcl_LongAsWide(INT_MAX)) {
 	    *indexPtr = (int) Tcl_WideAsLong(wideOffset);
 	    return TCL_OK;
 	}
     }
-#endif /* TCL_WIDE_INT_IS_LONG */
 
     if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
 	/*
@@ -2256,15 +2252,6 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 
 	*indexPtr = endValue + objPtr->internalRep.longValue;
 
-#ifdef TCL_WIDE_INT_IS_LONG
-    } else if (Tcl_GetIntFromObj(NULL, objPtr, &offset) == TCL_OK) {
-	/*
-	 * If the object can be converted to an integer, use that.
-	 */
-
-	*indexPtr = offset;
-
-#else /* !TCL_WIDE_INT_IS_LONG */
     } else if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideOffset) == TCL_OK) {
 	/*
 	 * If the object can be converted to a wide integer, use
@@ -2283,7 +2270,6 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	}
 	*indexPtr = offset;
 
-#endif /* TCL_WIDE_INT_IS_LONG */
     } else {
 	/*
 	 * Report a parse error.
