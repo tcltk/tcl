@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.2.1 2003/07/04 22:25:23 dkf Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.2.2 2004/10/27 09:35:38 dkf Exp $
 '\" 
 .so man.macros
 .TH expr n 8.4 Tcl "Tcl Built-In Commands"
@@ -19,7 +19,7 @@ expr \- Evaluate an expression
 
 .SH DESCRIPTION
 .PP
-Concatenates \fIarg\fR's (adding separator spaces between them),
+Concatenates \fIarg\fRs (adding separator spaces between them),
 evaluates the result as a Tcl expression, and returns the value.
 The operators permitted in Tcl expressions are a subset of
 the operators permitted in C expressions, and they have the
@@ -51,9 +51,10 @@ ways accepted by an ANSI-compliant C compiler (except that the
 \fBf\fR, \fBF\fR, \fBl\fR, and \fBL\fR suffixes will not be permitted in
 most installations).  For example, all of the
 following are valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
-If no numeric interpretation is possible, then an operand is left
-as a string (and only a limited set of operators may be applied to
-it).
+If no numeric interpretation is possible (note that all literal
+operands that are not numeric or boolean must be quoted with either
+braces or with double quotes), then an operand is left as a string
+(and only a limited set of operators may be applied to it).
 .PP
 .VS 8.4
 On 32-bit systems, integer values MAX_INT (0x7FFFFFFF) and MIN_INT
@@ -64,33 +65,34 @@ possible at all.)
 .PP
 Operands may be specified in any of the following ways:
 .IP [1]
-As an numeric value, either integer or floating-point.
+As a numeric value, either integer or floating-point.
 .IP [2]
+As a boolean value, using any form understood by \fBstring is boolean\fR.
+.IP [3]
 As a Tcl variable, using standard \fB$\fR notation.
 The variable's value will be used as the operand.
-.IP [3]
+.IP [4]
 As a string enclosed in double-quotes.
 The expression parser will perform backslash, variable, and
 command substitutions on the information between the quotes,
 and use the resulting value as the operand
-.IP [4]
+.IP [5]
 As a string enclosed in braces.
 The characters between the open brace and matching close brace
 will be used as the operand without any substitutions.
-.IP [5]
+.IP [6]
 As a Tcl command enclosed in brackets.
 The command will be executed and its result will be used as
 the operand.
-.IP [6]
+.IP [7]
 As a mathematical function whose arguments have any of the above
 forms for operands, such as \fBsin($x)\fR.  See below for a list of defined
 functions.
 .LP
-Where substitutions occur above (e.g. inside quoted strings), they
+Where the above substitutions occur (e.g. inside quoted strings), they
 are performed by the expression's instructions.
-However, an additional layer of substitution may already have
-been performed by the command parser before the expression
-processor was called.
+However, the command parser may already have performed one round of
+substitution before the expression processor was called.
 As discussed below, it is usually best to enclose expressions
 in braces to prevent the command parser from performing substitutions
 on the contents.
@@ -113,12 +115,12 @@ The valid operators are listed below, grouped in decreasing order
 of precedence:
 .TP 20
 \fB\-\0\0+\0\0~\0\0!\fR
-Unary minus, unary plus, bit-wise NOT, logical NOT.  None of these operands
+Unary minus, unary plus, bit-wise NOT, logical NOT.  None of these operators
 may be applied to string operands, and bit-wise NOT may be
 applied only to integers.
 .TP 20
 \fB*\0\0/\0\0%\fR
-Multiply, divide, remainder.  None of these operands may be
+Multiply, divide, remainder.  None of these operators may be
 applied to string operands, and remainder may be applied only
 to integers.
 The remainder will always have the same sign as the divisor and
@@ -169,7 +171,7 @@ Valid for boolean and numeric (integers or floating-point) operands only.
 If-then-else, as in C.  If \fIx\fR
 evaluates to non-zero, then the result is the value of \fIy\fR.
 Otherwise the result is the value of \fIz\fR.
-The \fIx\fR operand must have a numeric value.
+The \fIx\fR operand must have a boolean or numeric value.
 .LP
 See the C manual for more details on the results
 produced by each operator.
@@ -359,7 +361,6 @@ example,
 \fBexpr 20.0/5.0\fR
 .CE
 returns \fB4.0\fR, not \fB4\fR.
-
 .SH "STRING OPERATIONS"
 .PP
 String values may be used as operands of the comparison operators,
@@ -420,9 +421,51 @@ The most expensive code is required for
 unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
+.SH EXAMPLES
+Define a procedure that computes an "interesting" mathematical
+function:
+.CS
+proc calc {x y} {
+    \fBexpr\fR { ($x*$x - $y*$y) / exp($x*$x + $y*$y) }
+}
+.CE
+.PP
+Convert polar coordinates into cartesian coordinates:
+.CS
+# convert from ($radius,$angle)
+set x [\fBexpr\fR { $radius * cos($angle) }]
+set y [\fBexpr\fR { $radius * sin($angle) }]
+.CE
+.PP
+Convert cartesian coordinates into polar coordinates:
+.CS
+# convert from ($x,$y)
+set radius [\fBexpr\fR { hypot($y, $x) }]
+set angle  [\fBexpr\fR { atan2($y, $x) }]
+.CE
+.PP
+Print a message describing the relationship of two string values to
+each other:
+.CS
+puts "a and b are [\fBexpr\fR {$a eq $b ? {equal} : {different}}]"
+.CE
+.PP
+Set a variable to whether an environment variable is both defined at
+all and also set to a true boolean value:
+.CS
+set isTrue [\fBexpr\fR {
+    [info exists ::env(SOME_ENV_VAR)] &&
+    [string is true -strict $::env(SOME_ENV_VAR)]
+}]
+.CE
+.PP
+Generate a random integer in the range 0..99 inclusive:
+.CS
+set randNum [\fBexpr\fR { int(100 * rand()) }]
+.CE
 
 .SH "SEE ALSO"
-array(n), string(n), Tcl(n)
+array(n), for(n), if(n), string(n), Tcl(n), while(n)
 
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison

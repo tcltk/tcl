@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.11.2.5 2003/07/14 18:26:29 hobbs Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.11.2.6 2004/10/27 09:35:38 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -634,12 +634,33 @@ by \fIcount\fR.  Note that position 0 refers to the first byte in
 will return \fB2\fR with \fB1 2\fR stored in \fBvar1\fR and \fB020304\fR
 stored in \fBvar2\fR.
 .RE
-
 .SH "PLATFORM ISSUES"
 Sometimes it is desirable to format or scan integer values in the
 native byte order for the machine.  Refer to the \fBbyteOrder\fR
 element of the \fBtcl_platform\fR array to decide which type character
 to use when formatting or scanning integers.
+.SH EXAMPLES
+This is a procedure to write a Tcl string to a binary-encoded channel as
+UTF-8 data preceded by a length word:
+.CS
+proc writeString {channel string} {
+    set data [encoding convertto utf-8 $string]
+    puts -nonewline [\fBbinary\fR format Ia* \e
+            [string length $data] $data]
+}
+.CE
+.PP
+This procedure reads a string from a channel that was written by the
+previously presented \fBwriteString\fR procedure:
+.CS
+proc readString {channel} {
+    if {![\fBbinary\fR scan [read $channel 4] I length]} {
+        error "missing length"
+    }
+    set data [read $channel $length]
+    return [encoding convertfrom utf-8 $data]
+}
+.CE
 
 .SH "SEE ALSO"
 format(n), scan(n), tclvars(n)
