@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.16 2001/10/23 09:46:53 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.17 2001/10/23 13:13:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -226,6 +226,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * LONG_MAX (inclusive) are represented by normal longs, and integer
  * constants outside that range are represented by wide ints.
  */
+#   define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
+    (resultVar) = Tcl_GetWideIntFromObj(interp, (objPtr), &(wideVar));	\
+    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
+	    && (wideVar) <= Tcl_LongAsWide(LONG_MAX)) {			\
+	(objPtr)->typePtr = &tclIntType;				\
+	(objPtr)->internalRep.longValue = (longVar)			\
+		= Tcl_WideAsLong(wideVar);				\
+    }
 #   define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
     (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
 	    &(wideVar));						\
@@ -257,6 +265,8 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #      define LLONG_MIN (~LLONG_MAX)
 #   endif
 #else /* TCL_WIDE_INT_IS_LONG */
+#   define REQUIRE_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)	\
+    (resultVar) = Tcl_GetLongFromObj(interp, (objPtr), &(longVar));
 #   define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
     (resultVar) = Tcl_GetLongFromObj((Tcl_Interp *) NULL, (objPtr),	\
 	    &(longVar));
@@ -1670,7 +1680,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
 #endif /* TCL_WIDE_INT_IS_LONG */
 	    } else {
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
+		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
 		            opnd, O2S(valuePtr)), Tcl_GetObjResult(interp));
@@ -1705,7 +1715,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
 #endif /* TCL_WIDE_INT_IS_LONG */
 	    } else {
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
+		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("\"%.30s\" (by %s) => ERROR converting increment amount to int: ",
 		            O2S(objPtr), O2S(valuePtr)),
@@ -1746,7 +1756,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
 #endif /* TCL_WIDE_INT_IS_LONG */
 	    } else {
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
+		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("%u \"%.30s\" (by %s) => ERROR converting increment amount to int: ",
 			    opnd, O2S(elemPtr), O2S(valuePtr)),
@@ -1788,7 +1798,7 @@ TclExecuteByteCode(interp, codePtr)
 		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
 #endif /* TCL_WIDE_INT_IS_LONG */
 	    } else {
-		GET_WIDE_OR_INT(result, valuePtr, i, w);
+		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 		if (result != TCL_OK) {
 		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %s) => ERROR converting increment amount to int: ",
 			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
@@ -2676,7 +2686,7 @@ TclExecuteByteCode(interp, codePtr)
 		    w = valuePtr->internalRep.wideValue;
 #endif /* TCL_WIDE_INT_IS_LONG */
 		} else {	/* try to convert to int */
-		    GET_WIDE_OR_INT(result, valuePtr, i, w);
+		    REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 		    if (result != TCL_OK) {
 			TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 			      O2S(valuePtr), O2S(value2Ptr),
@@ -2695,7 +2705,7 @@ TclExecuteByteCode(interp, codePtr)
 		    w2 = value2Ptr->internalRep.wideValue;
 #endif /* TCL_WIDE_INT_IS_LONG */
 		} else {
-		    GET_WIDE_OR_INT(result, value2Ptr, i2, w2);
+		    REQUIRE_WIDE_OR_INT(result, value2Ptr, i2, w2);
 		    if (result != TCL_OK) {
 			TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 			      O2S(valuePtr), O2S(value2Ptr),
@@ -3399,7 +3409,7 @@ TclExecuteByteCode(interp, codePtr)
 		valuePtr = POP_OBJECT();
 		tPtr = valuePtr->typePtr;
 		if (!IS_INTEGER_TYPE(tPtr)) {
-		    GET_WIDE_OR_INT(result, valuePtr, i, w);
+		    REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 		    if (result != TCL_OK) {   /* try to convert to double */
 			TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
 			       O2S(valuePtr), (tPtr? tPtr->name : "null")));
