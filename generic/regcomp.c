@@ -421,7 +421,7 @@ int wanted;			/* want enough room for this one */
 			memcpy(VS(p), VS(v->subs),
 					v->nsubs * sizeof(struct subre *));
 	} else
-		p = REALLOC(v->subs, n * sizeof(struct subre *));
+		p = (struct subre**)REALLOC(v->subs, n*sizeof(struct subre *));
 	if (p == NULL) {
 		ERR(REG_ESPACE);
 		return;
