@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.21 1998/10/20 20:01:23 rjohnson Exp $
+# RCS: @(#) $Id: configure.in,v 1.22 1998/10/28 18:34:23 suresh Exp $
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -747,7 +747,15 @@ case $system in
 	    EXTRA_CFLAGS="-mabi=n32"
 	    LD_FLAGS="-mabi=n32"
 	else
-	    EXTRA_CFLAGS="-n32"
+	    case $system in
+		IRIX-6.3)
+		    # Use to build 6.2 compatible binaries on 6.3.
+		    EXTRA_CFLAGS="-n32 -D_OLD_TERMIOS"
+		    ;;
+		*)
+		    EXTRA_CFLAGS="-n32"
+		    ;;
+	    esac
 	    LD_FLAGS="-n32"
 	fi
 	;;
