@@ -360,6 +360,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	TCL_THREADS=1
 	AC_DEFINE(TCL_THREADS)
 	AC_DEFINE(_REENTRANT)
+	AC_DEFINE(_THREAD_SAFE)
 
 	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
 	if test "$tcl_ok" = "yes"; then
@@ -371,15 +372,17 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 		# The space is needed
 		THREADS_LIBS=" -lpthreads"
 	    else
-	    	TCL_THREADS=0
-	    	AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+		AC_CHECK_LIB(c,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+	    	if test "$tcl_ok" = "no"; then
+	    	    TCL_THREADS=0
+		    AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+	    	fi
 	    fi
 	fi
     else
 	TCL_THREADS=0
 	AC_MSG_RESULT(no (default))
     fi
-
 ])
 
 #------------------------------------------------------------------------
@@ -548,6 +551,14 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	fi
     fi
 
+    AC_MSG_CHECKING([if gcc is being used])
+    if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
+	using_gcc="yes"
+    else
+	using_gcc="no"
+    fi
+    AC_MSG_RESULT([$using_gcc ($CC)])
+
     # Step 2: check for existence of -ldl library.  This is needed because
     # Linux can use either -ldl or -ldld for dynamic loading.
 
@@ -571,6 +582,11 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     STLIB_LD="ar cr"
     case $system in
 	AIX-4.[[2-9]])
+	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
+		# AIX requires the _r compiler when gcc isn't being used
+		CC=${CC}_r
+		AC_MSG_RESULT(Using $CC for compiling with threads)
+	    fi
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
 	    SHLIB_LD_LIBS='${LIBS}'
@@ -583,6 +599,11 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
 	    ;;
 	AIX-*)
+	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
+		# AIX requires the _r compiler when gcc isn't being used
+		CC=${CC}_r
+		AC_MSG_RESULT(Using $CC for compiling with threads)
+	    fi
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
 	    SHLIB_LD_LIBS='${LIBS}'
@@ -657,7 +678,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-	    if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
+	    if test "$using_gcc" = "yes" ; then
 		EXTRA_CFLAGS="-mabi=n32"
 		LDFLAGS="-mabi=n32"
 	    else
@@ -831,16 +852,21 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    ;;
 	SCO_SV-3.2*)
-	    # Note, dlopen is available only on SCO 3.2.5 and greater.  However,
+	    # Note, dlopen is available only on SCO 3.2.5 and greater. However,
 	    # this test works, since "uname -s" was non-standard in 3.2.4 and
 	    # below.
-	    SHLIB_CFLAGS="-Kpic -belf"
+	    if test "$using_gcc" = "yes" ; then
+	    	SHLIB_CFLAGS="-fpic -melf"
+	    	LDFLAGS="-melf -Wl,-Bexport"
+	    else
+	    	SHLIB_CFLAGS="-Kpic -belf"
+	    	LDFLAGS="-belf -Wl,-Bexport"
+	    fi
 	    SHLIB_LD="ld -G"
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS="-belf -Wl,-Bexport"
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	SINIX*5.4*)
@@ -893,18 +919,18 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     
 	    do64bit_ok=no
 	    if test "$do64bit" = "yes" ; then
-	    arch=`isainfo`
-	    if test "$arch" = "sparcv9 sparc" ; then
-		if test "$CC" != "gcc" -a `$CC -v 2>&1 | grep -c gcc` = "0" ; then
-		do64bit_ok=yes
-		EXTRA_CFLAGS="-xarch=v9"
-		LDFLAGS="-xarch=v9"
-		else 
-		AC_MSG_WARN("64bit mode not supported using GCC on $system")
+		arch=`isainfo`
+		if test "$arch" = "sparcv9 sparc" ; then
+			if test "$using_gcc" = "no" ; then
+			    do64bit_ok=yes
+			    EXTRA_CFLAGS="-xarch=v9"
+			    LDFLAGS="-xarch=v9"
+			else 
+			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
+			fi
+		else
+		    AC_MSG_WARN("64bit mode only supported sparcv9 system")
 		fi
-	    else
-		AC_MSG_WARN("64bit mode only supported sparcv9 system")
-	    fi
 	    fi
 	    
 	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
@@ -914,7 +940,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
+	    if test "$using_gcc" = "yes" ; then
 		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    else
 		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
@@ -1063,7 +1089,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # standard manufacturer compiler.
 
     if test "$DL_OBJS" != "tclLoadNone.o" ; then
-	if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
+	if test "$using_gcc" = "yes" ; then
 	    case $system in
 		AIX-*)
 		    ;;
@@ -1074,6 +1100,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		NetBSD-*|FreeBSD-*|OpenBSD-*)
 		    ;;
 		RISCos-*)
+		    ;;
+		SCO_SV-3.2*)
 		    ;;
 		ULTRIX-4.*)
 		    ;;
