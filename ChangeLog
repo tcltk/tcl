@@ -1,3 +1,8 @@
+2001-11-30  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c: Tcl_Preserve'ing VarTrace structures to avoid 
+	memory corruption. Patch for [Bug: 484334] provided by Don Porter 
+
 2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tests/namespace.test: modified namespace-41.2, added 41.3
