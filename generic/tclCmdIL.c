@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.27 2000/05/27 23:58:01 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.28 2000/09/17 22:40:41 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -2759,7 +2759,6 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 			!= TCL_OK) {
 		    return TCL_ERROR;
 		}
-		cmdPtr = objv[i+1];
 		i++;
 		break;
 	    case 6:			/* -integer */
