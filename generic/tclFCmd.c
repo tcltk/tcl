@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.17 2002/03/24 11:41:50 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.18 2002/07/18 16:17:48 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -828,11 +828,23 @@ TclFileAttrsCmd(interp, objc, objv)
     objc -= 3;
     objv += 3;
     result = TCL_ERROR;
+    Tcl_SetErrno(0);
     attributeStrings = Tcl_FSFileAttrStrings(filePtr, &objStrings);
     if (attributeStrings == NULL) {
 	int index;
 	Tcl_Obj *objPtr;
 	if (objStrings == NULL) {
+	    if (Tcl_GetErrno() != 0) {
+		/* 
+		 * There was an error, probably that the filePtr is
+		 * not accepted by any filesystem
+		 */
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
+			"could not read \"", Tcl_GetString(filePtr), 
+			"\": ", Tcl_PosixError(interp), 
+			(char *) NULL);
+		return TCL_ERROR;
+	    }
 	    goto end;
 	}
 	/* We own the object now */

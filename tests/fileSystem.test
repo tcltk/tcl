@@ -266,7 +266,7 @@ test filesystem-6.3 {empty file name} {
     list [catch {file atime ""} msg] $msg
 } {1 {could not read "": no such file or directory}}
 
-test filesystem-6.4 {empty file name} {knownBug} {
+test filesystem-6.4 {empty file name} {
     list [catch {file attributes ""} msg] $msg
 } {1 {could not read "": no such file or directory}}
 
