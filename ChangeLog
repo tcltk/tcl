@@ -1,3 +1,6 @@
+2002-06-19  Joe English  <jenglish@users.sourceforge.net>
+	* doc/file.n: Fixed indentation.  No substantive changes.
+
 2002-06-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): get the resultPtr again
