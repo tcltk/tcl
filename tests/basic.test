@@ -15,13 +15,20 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.11 2000/10/19 18:01:00 jenn Exp $
+# RCS: @(#) $Id: basic.test,v 1.12 2001/09/20 01:02:20 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+set ::tcltest::testConstraints(testcmdtoken) \
+	[llength [info commands testcmdtoken]]
+set ::tcltest::testConstraints(testcmdtrace) \
+	[llength [info commands testcmdtrace]]
+set ::tcltest::testConstraints(testcreatecommand) \
+	[llength [info commands testcreatecommand]]
 
 # This variable needs to be changed when the major or minor version number for
 # Tcl changes.
@@ -202,24 +209,19 @@ test basic-13.2 {Tcl_ExposeCommand, invalidate cached refs to cmd now being expo
          [p]
 } {42 {} {} Hello {} {} 42}
 
-if {[info commands testcreatecommand] == ""} {
-    puts "This application hasn't been compiled with the testcreatecommand"
-    puts "command.  Skipping affected tests."
-} else {
-test basic-14.1 {Tcl_CreateCommand, new cmd goes into a namespace specified in its name, if any} {
+test basic-14.1 {Tcl_CreateCommand, new cmd goes into a namespace specified in its name, if any} {testcreatecommand} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     list [testcreatecommand create] \
 	 [test_ns_basic::createdcommand] \
 	 [testcreatecommand delete]
 } {{} {CreatedCommandProc in ::test_ns_basic} {}}
-test basic-14.2 {Tcl_CreateCommand, namespace code ignore single ":"s in middle or end of names} {
+test basic-14.2 {Tcl_CreateCommand, namespace code ignore single ":"s in middle or end of names} {testcreatecommand} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     catch {rename value:at: ""}
     list [testcreatecommand create2] \
 	 [value:at:] \
 	 [testcreatecommand delete2]
 } {{} {CreatedCommandProc2 in ::} {}}
-}
 
 test basic-15.1 {Tcl_CreateObjCommand, new cmd goes into a namespace specified in its name, if any} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -304,11 +306,7 @@ test basic-18.6 {TclRenameCommand, check for command shadowing by newly renamed 
 test basic-19.1 {Tcl_SetCommandInfo} {emptyTest} {
 } {}
 
-if {[info commands testcmdtoken] == {}} {
-    puts "This application hasn't been compiled with the \"testcmdtoken\""
-    puts "command, so I can't test Tcl_GetCommandInfo."
-} else {
-test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespaces} {
+test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespaces} {testcmdtoken} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     catch {rename p ""}
     catch {rename q ""}
@@ -321,14 +319,13 @@ test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespace
          [rename ::p q] \
          [testcmdtoken name $x]
 } {{p ::p} {} {q ::q}}
-test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespaces} {
+test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespaces} {testcmdtoken} {
     catch {rename q ""}
     set x [testcmdtoken create test_ns_basic::test_ns_basic2::p]
     list [testcmdtoken name $x] \
          [rename test_ns_basic::test_ns_basic2::p q] \
          [testcmdtoken name $x]
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
-}
 
 test basic-21.1 {Tcl_GetCommandName} {emptyTest} {
 } {}
@@ -489,20 +486,16 @@ test basic-37.1 {Tcl_ExprString: see expr.test} {emptyTest} {
 test basic-38.1 {Tcl_ExprObj} {emptyTest} {
 } {}
 
-if {[info commands testcmdtrace] == {}} {
-    puts "This application hasn't been compiled with the \"testcmdtrace\""
-    puts "command, so I can't test Tcl_CreateTrace."
-} else {
-test basic-39.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
+test basic-39.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace tracetest {set stuff [expr 14 + 16]}
 } {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
-test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
+test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace tracetest {set stuff [info tclversion]}
 } [list {info tclversion} {info tclversion} {set stuff [info tclversion]} "set stuff $tclvers"]
-test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
+test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace deletetest {set stuff [info tclversion]}
 } $tclvers
-}
+
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
 } {}
@@ -536,15 +529,3 @@ catch {rename value:at: ""}
 catch {unset x}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
