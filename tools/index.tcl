@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# SCCS: %Z% $Id: index.tcl,v 1.1 1998/04/28 18:53:50 stanton Exp $ 
+# SCCS: %Z% $Id: index.tcl,v 1.2 1998/08/07 18:26:01 stanton Exp $ 
 # 
 
 # Global variables used by these scripts:
@@ -55,6 +55,7 @@ proc getPackages {} {
 
 proc getSections {pkg} {
     global topics
+    regsub -all {[][*?\\]} $pkg {\\&} pkg
     foreach i [array names topics "${pkg},*"] {
 	regsub {^.*,(.*),.*$} $i {\1} i
 	set temp($i) {}
@@ -73,6 +74,8 @@ proc getSections {pkg} {
 
 proc getTopics {pkg sect} {
     global topics
+    regsub -all {[][*?\\]} $pkg {\\&} pkg
+    regsub -all {[][*?\\]} $sect {\\&} sect
     foreach i [array names topics "${pkg},${sect},*"] {
 	regsub {^.*,.*,(.*)$} $i {\1} i
 	set temp($i) {}
@@ -157,6 +160,7 @@ proc macro {name args} {
 	    set topic	[lindex $args 0]	;# Tcl_UpVar
 	    set curPkg	[lindex $args 3]	;# Tcl
 	    set curSect	[lindex $args 4]	;# {Tcl Library Procedures}
+	    regsub -all {\\ } $curSect { } curSect
 	    set index "$curPkg,$curSect,$topic"
 	    set topics($index) $curID
 	    lappend keywords($topic) $curID

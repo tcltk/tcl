@@ -6,14 +6,18 @@
 #
 #    HTML:		 1. Build the html target on Unix
 
-# SCCS: %Z% $Id: Makefile.in,v 1.1 1998/04/28 18:53:49 stanton Exp $ 
+# SCCS: %Z% $Id: Makefile.in,v 1.2 1998/08/07 18:25:56 stanton Exp $ 
 
-TCL = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
-TK = tk@TCL_VERSION@@TCL_PATCH_LEVEL@
+#TCL = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
+#TK = tk@TCL_VERSION@@TCL_PATCH_LEVEL@
+TCL = tcl@TCL_VERSION@
+TK = tk@TCL_VERSION@
 VER=@TCL_WIN_VERSION@
 
 TCL_SOURCE = @srcdir@/..
 TK_SOURCE = @srcdir@/../../$(TK)
+PRO_SOURCE = @srcdir@/../../pro
+ITCL_SOURCE = @srcdir@/../../itcl3.0.1
 
 TCL_DOCS = \
 	$(TCL_SOURCE)/doc/*.[13n]
@@ -21,8 +25,18 @@ TCL_DOCS = \
 TK_DOCS = \
 	$(TK_SOURCE)/doc/*.[13n]
 
-TCLSH = $(TCL_SOURCE)/unix/tclsh
+PRO_DOCS = \
+	$(PRO_SOURCE)/doc/man/*.[13n]
 
+ITCL_DOCS = \
+	$(ITCL_SOURCE)/itcl/doc/*.[13n] \
+	$(ITCL_SOURCE)/itk/doc/*.[13n]
+
+#	$(ITCL_SOURCE)/iwidgets3.0.0/doc/*.[13n]
+
+DOCS = $(TCL_DOCS) $(TK_DOCS) $(PRO_DOCS) $(ITCL_DOCS)
+TCLSH = $(TCL_SOURCE)/unix/tclsh
+CC=@CC@
 
 all: winhelp
 
@@ -32,9 +46,9 @@ html: tcl$(VER).html
 man2tcl: man2tcl.c
 	$(CC) $(CFLAGS) -o man2tcl man2tcl.c
 
-tcl.rtf: man2help.tcl man2tcl $(TCL_DOCS) $(TK_DOCS)
-	$(TCLSH) man2help.tcl tcl $(VER) \
-		$(TCL_SOURCE)/doc $(TK_SOURCE)/doc
+tcl.rtf: man2help.tcl man2tcl $(DOCS)
+	LD_LIBRARY_PATH=$(TCL_SOURCE)/unix \
+	$(TCLSH) man2help.tcl tcl $(VER) $(DOCS)
 
 tcl$(VER).html: man2html.tcl man2tcl $(TCL_DOCS) $(TK_DOCS)
 	$(TCLSH) man2html.tcl tcl$(VER).html \
@@ -44,6 +58,6 @@ clean:
 	-rm -f man2tcl *.o tcl$(VER).cnt tcl$(VER).rtf
 
 helpfile:
-	hc31 tcl.hpj
+	hcw /c tcl.hpj
 	mv tcl.hlp tcl$(VER).hlp
 
