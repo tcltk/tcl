@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.8 1999/04/22 22:57:07 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.9 1999/04/30 22:45:01 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -608,7 +608,13 @@ typedef struct TclIntStubs {
     void (*tclHideLiteral) _ANSI_ARGS_((Tcl_Interp * interp, struct CompileEnv * envPtr, int index)); /* 144 */
 } TclIntStubs;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern TclIntStubs *tclIntStubsPtr;
+#ifdef __cplusplus
+}
+#endif
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.9 1999/04/21 21:50:25 rjohnson Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.10 1999/04/30 22:45:01 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1529,7 +1529,13 @@ typedef struct TclStubs {
     int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
 } TclStubs;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern TclStubs *tclStubsPtr;
+#ifdef __cplusplus
+}
+#endif
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 

@@ -2,9 +2,18 @@
  This directory contains unsupported tools that are used
  during the release engineering process.
 
+Generating HTML files.
+The tcl8.1-tk8.1-man-html.tcl script from Robert Critchlow
+generates a nice set of HTML with good cross references.
+Use it like
+    tclsh8.0 tcl8.1-tk8.1-man-html.tcl --htmldir=/tmp/tcl8.1
+This script is very picky about the organization of man pages,
+effectively acting as a style enforcer.
+
 Generating Windows Help Files:
-1) On UNIX, (after autoconf and configure), do
-	make winhelp
+1) Build tcl in the ../unix directory
+2) On UNIX, (after autoconf and configure), do
+	make
     this converts the Nroff to RTF files.
 2) On Windows, convert the RTF to a Help doc, do
 	nmake helpfile

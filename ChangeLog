@@ -1,3 +1,19 @@
+1999-04-30    <stanton@scriptics.com>
+
+	* Merged changes from 8.1.0 branch:
+
+	* generic/tclParse.c: Fixed memory leak in CommandComplete.
+
+	* generic/tclPlatDecls.h: 
+	* generic/tclIntPlatDecls.h: 
+	* generic/tclIntDecls.h: 
+	* generic/tclDecls.h: 
+	* tools/genStubs.tcl: Added 'extern "C" {}' block around the stub
+	table pointer declaration so the stub library can be used from
+	C++. [Bug: 1934]
+
+	* Lots of documentation and other release engineering fixes.
+
 1999-04-28    <stanton@scriptics.com>
 
 	* mac/tclMacResource.c: 

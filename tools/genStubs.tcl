@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.4 1999/04/24 01:46:53 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.5 1999/04/30 22:45:03 stanton Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -717,7 +717,9 @@ proc genStubs::emitHeader {name} {
 
     append text "} ${capName}Stubs;\n"
 
-    append text "\nextern ${capName}Stubs *${name}StubsPtr;\n"
+    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
+    append text "extern ${capName}Stubs *${name}StubsPtr;\n"
+    append text "#ifdef __cplusplus\n}\n#endif\n"
 
     emitMacros $name text
 
