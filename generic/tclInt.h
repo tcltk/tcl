@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.188 2004/10/26 16:19:58 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.189 2004/10/27 17:13:58 davygrvy Exp $
  */
 
 #ifndef _TCLINT
@@ -1839,8 +1839,6 @@ EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
 			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
 EXTERN int		TclProcessReturn _ANSI_ARGS_((Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts));
-EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
-			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_StatBuf *buf));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
@@ -1883,7 +1881,6 @@ EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, char *tail));
 EXTERN int              TclpObjNormalizePath _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *pathPtr, int nextCheckpoint));
-EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix, 
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -1892,15 +1889,6 @@ EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int 		TclCrossFilesystemCopy _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *source, Tcl_Obj *target));
-EXTERN int		TclpObjDeleteFile _ANSI_ARGS_((Tcl_Obj *pathPtr));
-EXTERN int		TclpObjCopyDirectory _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
-				Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr));
-EXTERN int		TclpObjCopyFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
-				Tcl_Obj *destPathPtr));
-EXTERN int		TclpObjRemoveDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-				int recursive, Tcl_Obj **errorPtr));
-EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
-				Tcl_Obj *destPathPtr));
 EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, 
 			        Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, 
 				CONST char *pattern, Tcl_GlobTypeData *types));
@@ -1911,11 +1899,6 @@ EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr,
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN Tcl_Obj*         TclPathPart _ANSI_ARGS_((Tcl_Interp *interp, 
 				Tcl_Obj *pathPtr, Tcl_PathPart portion));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-						 Tcl_StatBuf *buf));
-EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, int mode,
-			    int permissions));
 EXTERN void		TclpCutFileChannel _ANSI_ARGS_((Tcl_Channel chan));
 EXTERN void		TclpCutSockChannel _ANSI_ARGS_((Tcl_Channel chan));
 EXTERN void		TclpSpliceFileChannel _ANSI_ARGS_((Tcl_Channel chan));
