@@ -1,3 +1,12 @@
+2000-04-13  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/regexp.n: doc clarification [Bug: 5037]
+	* doc/update.n: typo fix [Bug: 4996]
+
+	* unix/tcl.m4 (SC_ENABLE_THREADS): enhanced the detection of
+	pthread_mutex_init [Bug: 4359] and (SC_CONFIG_CFLAGS) added
+	--enable-64bit-vis switch for Sparc VIS compilation [Bug: 4995]
+
 2000-04-12  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/dde.n: corrected dde poke docs. [Bug: 4991]
