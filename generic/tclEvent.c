@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.40 2004/07/15 09:44:46 vasiljevic Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.41 2004/07/15 09:50:11 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -1252,7 +1252,8 @@ NewThreadProc(ClientData clientData)
     ThreadClientData *cdPtr;
     ClientData threadClientData;
     Tcl_ThreadCreateProc *threadProc;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    (void) TCL_TSD_INIT(&dataKey);
 
     cdPtr  = (ThreadClientData *)clientData;
     threadProc = cdPtr->proc;
