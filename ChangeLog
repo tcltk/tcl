@@ -1,5 +1,8 @@
 2002-07-31  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* unix/tcl.m4 (SC_BUGGY_STRTOD): Solaris 2.8 still has a buggy
+	strtod() implementation; make sure we detect it.
+
 	* tests/expr.test (expr-22.*): Marked as non-portable because it
 	seems that these tests have an annoying tendency to fail in
 	unexpected ways.  [Bugs 584825, 584950, 585986]
