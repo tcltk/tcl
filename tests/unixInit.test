@@ -10,12 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.27 2002/07/10 11:56:45 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.28 2002/07/15 20:39:42 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
 
-testConstraint notInstalledInTmp [string match /tmp/lib/* [info library]]
 if {[info exists env(TCL_LIBRARY)]} {
     set oldlibrary $env(TCL_LIBRARY)
     unset env(TCL_LIBRARY)
@@ -197,7 +196,10 @@ test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
 # these tests need paths near the "root" of the file system to present
 # themselves.
 #
-test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly notInstalledInTmp} {
+testConstraint noSparkly [expr {![file exists [file join /tmp sparkly]]}]
+testConstraint noTmpInstall [expr {![file exists \
+				[file join /tmp lib tcl[info tclversion]]]}]
+test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unix noSparkly noTmpInstall} {
     # Checking for Bug 219416
     # When a program that embeds the Tcl library, like tcltest, is
     # installed near the "root" of the file system, there was a problem
@@ -246,8 +248,8 @@ test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly notInst
     if {$deletelib} {file delete -force /tmp/lib}
     set allAbsolute
 } 1
-test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {
-	unixOnly} {
+testConstraint noTmpBuild [expr {![file exists [file join /tmp library]]}]
+test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {unix noSparkly noTmpBuild} {
     # Checking for Bug 438014
     file delete -force /tmp/sparkly
     file delete -force /tmp/library
