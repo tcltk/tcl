@@ -1,5 +1,9 @@
 2002-01-18  Don Porter <dgp@users.sourceforge.net>
 
+	* win/tclWinChan.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinFile.c: Overlooked callers of Tcl_FSGetNativePath
+
 	* win/tclWinDde.c:
 	* win/tclWinReg.c: Overlooked callers of Tcl_GetIndexFromObj
 
