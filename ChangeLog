@@ -1,3 +1,9 @@
+2004-11-10  Andreas Kupries <andreask@activestate.com>
+
+	* unix/tclUnixChan.c: [Bug 727786]. Exterminated the code marked
+	  DEPRECATED. This code has not been used in over a year now, and
+	  we have no complaints.
+
 2004-11-08  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c: The pipe channel driver now respects
