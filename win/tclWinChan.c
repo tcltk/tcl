@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.10.2.3 2001/09/07 17:10:33 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.10.2.4 2002/10/15 20:26:06 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -117,6 +117,11 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
 };
+
+#ifdef HAVE_NO_SEH
+static void *ESP;
+static void *EBP;
+#endif /* HAVE_NO_SEH */
 
 
 /*
@@ -969,8 +974,39 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	 * of this duped handle which might throw EXCEPTION_INVALID_HANDLE.
 	 */
 
+#ifdef HAVE_NO_SEH
+        __asm__ __volatile__ (
+                "movl  %esp, _ESP" "\n\t"
+                "movl  %ebp, _EBP");
+
+        __asm__ __volatile__ (
+                "pushl $__except_makefilechannel_handler" "\n\t"
+                "pushl %fs:0" "\n\t"
+                "mov   %esp, %fs:0");
+
+        result = 0;
+#else
 	__try {
+#endif /* HAVE_NO_SEH */
 	    CloseHandle(dupedHandle);
+#ifdef HAVE_NO_SEH
+        __asm__ __volatile__ (
+                "jmp   makefilechannel_pop" "\n"
+                "makefilechannel_reentry:" "\n\t"
+                "movl  _ESP, %esp" "\n\t"
+                "movl  _EBP, %ebp");
+
+        result = 1;  /* True when exception was raised */
+
+        __asm__ __volatile__ (
+                "makefilechannel_pop:" "\n\t"
+                "mov   (%esp), %eax" "\n\t"
+                "mov   %eax, %fs:0" "\n\t"
+                "add   $8, %esp");
+
+        if (result)
+            return NULL;
+#else
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
 	    /*
@@ -980,6 +1016,7 @@ Tcl_MakeFileChannel(rawHandle, mode)
 
 	    return NULL;
 	}
+#endif /* HAVE_NO_SEH */
 
 	/* Fall through, the handle is valid. */
 
@@ -993,6 +1030,21 @@ Tcl_MakeFileChannel(rawHandle, mode)
 
     return channel;
 }
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_makefilechannel_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp makefilechannel_reentry");
+    return 0; /* Function does not return */
+}
+#endif
 
 /*
  *----------------------------------------------------------------------

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.9 2000/03/31 08:52:30 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.9.2.1 2002/10/15 20:26:01 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -36,6 +36,11 @@ typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 static int platformId;		/* Running under NT, or 95/98? */
+
+#ifdef HAVE_NO_SEH
+static void *ESP;
+static void *EBP;
+#endif /* HAVE_NO_SEH */
 
 /*
  * The following function tables are used to dispatch to either the
@@ -338,6 +343,8 @@ TclWinNoBackslash(
 int
 TclpCheckStackSpace()
 {
+    int retval = 0;
+
     /*
      * We can recurse only if there is at least TCL_WIN_STACK_THRESHOLD
      * bytes of stack space left.  alloca() is cheap on windows; basically
@@ -345,14 +352,56 @@ TclpCheckStackSpace()
      * exception if the stack pointer is set below the bottom of the stack.
      */
 
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "movl  %esp, _ESP" "\n\t"
+            "movl  %ebp, _EBP");
+
+    __asm__ __volatile__ (
+            "pushl $__except_checkstackspace_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "mov   %esp, %fs:0");
+#else
     __try {
+#endif /* HAVE_NO_SEH */
 	alloca(TCL_WIN_STACK_THRESHOLD);
-	return 1;
-    } __except (1) {}
+	retval = 1;
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "jmp   checkstackspace_pop" "\n"
+            "checkstackspace_reentry:" "\n\t"
+            "movl  _ESP, %esp" "\n\t"
+            "movl  _EBP, %ebp");
 
-    return 0;
+    __asm__ __volatile__ (
+            "checkstackspace_pop:" "\n\t"
+            "mov   (%esp), %eax" "\n\t"
+            "mov   %eax, %fs:0" "\n\t"
+            "add   $8, %esp");
+#else
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif /* HAVE_NO_SEH */
+
+    /*
+     * Avoid using control flow statements in the SEH guarded block!
+     */
+    return retval;
 }
-
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_checkstackspace_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp checkstackspace_reentry");
+    return 0; /* Function does not return */
+}
+#endif /* HAVE_NO_SEH */
 
 /*
  *----------------------------------------------------------------------
