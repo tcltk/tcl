@@ -1,3 +1,13 @@
+2000-07-17  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* win/tclWinChan.c: Win2K OS bug with
+	GetStdHandle(STD_OUTPUT_HANDLE)	giving the wrong answer.  This
+	made TclpGetDefaultStdChannel grab what it thought was a valid
+	native stdout handle.  Added a new WriteFile() test to	make sure
+	it's really valid.  This OS bug doesn't affect the shells.  Only
+	-subsystem:windows (aka WinMain) application that dynamically
+	load tclXX.dll
+
 2000-07-17  Eric Melski  <ericm@scriptics.com>
 
 	* library/msgcat1.0/msgcat.tcl: 
