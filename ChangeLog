@@ -1,3 +1,7 @@
+2002-09-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:  Updated changes for 8.4.0 release.
+
 2002-09-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixFile.c (TclpObjLink): removed unnecessary/unfreed
