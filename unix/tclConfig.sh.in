@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.17 2002/07/28 03:15:11 mdejong Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.17.2.1 2004/07/20 11:13:10 das Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -68,7 +68,7 @@ TCL_SHLIB_CFLAGS='@SHLIB_CFLAGS@'
 TCL_CFLAGS_WARNING='@CFLAGS_WARNING@'
 
 # Extra flags to pass to cc:
-TCL_EXTRA_CFLAGS='@EXTRA_CFLAGS@'
+TCL_EXTRA_CFLAGS='@CFLAGS@'
 
 # Base command to use for combining object files into a shared library:
 TCL_SHLIB_LD='@SHLIB_LD@'

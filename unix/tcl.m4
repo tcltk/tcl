@@ -1320,9 +1320,10 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-Os"
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
-	    # for compatibility with autoconf vers 2.13 :
-	    HACK=""
-	    CFLAGS="$CFLAGS -DMA${HACK}C_OSX_TCL -DHAVE_CFBUNDLE -DUSE_VFORK -DTCL_DEFAULT_ENCODING=\\\"utf-8\\\""
+	    AC_DEFINE(MAC_OSX_TCL)
+	    AC_DEFINE(HAVE_CFBUNDLE)
+	    AC_DEFINE(USE_VFORK)
+	    AC_DEFINE_UNQUOTED(TCL_DEFAULT_ENCODING,"utf-8")
 	    LIBS="$LIBS -framework CoreFoundation"
 	    ;;
 	NEXTSTEP-*)
