@@ -20,6 +20,9 @@
 	the dev location.  Kudos to Jennifer Hom for adding -load and
 	-loadfile to the tcltest package. [Bug 926088]
 
+	* win/tclWinThrd.c (TclFinalizeLock): release the critical section
+	before deleting it. [Bug 731778]
+
 2004-10-27  Andreas Kupries <andreask@activestate.com>
 
 	* tests/tm.test:  Expanded on the testsuite entered by Donal.
