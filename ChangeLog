@@ -1,3 +1,11 @@
+2003-02-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:  Filename arguments to [outputChannel]
+	and [errorChannel] (also -outfile and -errfile) were [open]ed but
+	never [closed].  Also, [cleanupTests] could remove output or error
+	files.  [Bug 676978].
+	* library/tcltest/pkgIndex.tcl: Bumped to version 2.2.2.
+
 2003-02-05  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/interp.test:
