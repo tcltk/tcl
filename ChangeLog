@@ -1,3 +1,21 @@
+2000-01-20  Eric Melski  <ericm@scriptics.com>
+
+	* namespace.test: Added test for undefined variables with
+	namespace which (bug #956).
+
+	* tclNamesp.c: Added check for undefined variables in
+	NamespaceWhichCmd (bug #956).
+
+	* var.test: Added tests for corrected variable behavior (bug #981).
+
+	* upvar.n: Expanded explanation of upvar behavior with respect to
+	variable traces.  (bugs 3917 1433 2110).
+
+	* tclVar.c: Changed behavior of variable command when name refers
+	to an element in an array (ie, "variable foo(x)") to always return
+	an error, regardless of existance of that element in the array
+	(now behavior is consistant with docs too) (bug #981).
+
 2000-01-20  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclCmdIL.c (InfoBodyCmd): made [info body] return a
