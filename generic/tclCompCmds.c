@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.6 2005/03/15 14:55:28 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.7 2005/03/19 18:26:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -21,6 +21,8 @@
  * Prototypes for procedures defined later in this file:
  */
 
+static int              CompileSetCmdInternal _ANSI_ARGS_((Tcl_Interp *interp,
+			Tcl_Parse *parsePtr, CompileEnv *envPtr, int varFlags));
 static ClientData	DupForeachInfo _ANSI_ARGS_((ClientData clientData));
 static void		FreeForeachInfo _ANSI_ARGS_((ClientData clientData));
 static int		PushVarName _ANSI_ARGS_((Tcl_Interp *interp,
@@ -32,7 +34,6 @@ static int		PushVarName _ANSI_ARGS_((Tcl_Interp *interp,
  */
 
 #define TCL_CREATE_VAR     1 /* Create a compiled local if none is found */
-#define TCL_NO_LARGE_INDEX 2 /* Do not return localIndex value > HPUINT_MAX */
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -70,8 +71,8 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords;
+    int numWords;
+    int flags = TCL_APPEND_VALUE;
 
     numWords = parsePtr->numWords;
     if (numWords == 1) {
@@ -88,60 +89,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
         return TCL_OUT_LINE_COMPILE;
     }
 
-    /*
-     * Decide if we can use a frame slot for the var/array name or if we
-     * need to emit code to compute and push the name at runtime. We use a
-     * frame slot (entry in the array of local vars) if we are compiling a
-     * procedure body and if the name is simple text that does not include
-     * namespace qualifiers. 
-     */
-
-    varTokenPtr = parsePtr->tokenPtr
-	    + (parsePtr->tokenPtr->numComponents + 1);
-
-    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
-	    &localIndex, &simpleVarName, &isScalar);
-
-    /*
-     * We are doing an assignment, otherwise TclCompileSetCmd was called,
-     * so push the new value.  This will need to be extended to push a
-     * value for each argument.
-     */
-
-    if (numWords > 2) {
-	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, 
-		    valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, valueTokenPtr+1,
-	            valueTokenPtr->numComponents, envPtr);
-	}
-    }
-
-    /*
-     * Emit instructions to set/get the variable.
-     */
-
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex >= 0) {
-		TclEmitInst1(INST_APPEND_SCALAR, localIndex, envPtr);
-	    } else {
-		TclEmitInst0(INST_APPEND_STK, envPtr);
-	    }
-	} else {
-	    if (localIndex >= 0) {
-		TclEmitInst1(INST_APPEND_ARRAY, localIndex, envPtr);
-	    } else {
-		TclEmitInst0(INST_APPEND_ARRAY_STK, envPtr);
-	    }
-	}
-    } else {
-	TclEmitInst0(INST_APPEND_STK, envPtr);
-    }
-
-    return TCL_OK;
+    return CompileSetCmdInternal(interp, parsePtr, envPtr, flags);
 }
 
 /*
@@ -269,7 +217,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	
 	TclCompileTokens(interp, cmdTokenPtr+1,
 	        cmdTokenPtr->numComponents, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
+	TclSetStackDepth((savedStackDepth+1), envPtr);
     }
 
     /*
@@ -294,7 +242,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     } else {
 	TclEmitInst0(INST_EVAL_STK, envPtr);
     }
-    envPtr->currStackDepth = savedStackDepth + 1;    
+    TclSetStackDepth((savedStackDepth+1), envPtr);
 
     /*
      * Store the offset between INST_BEGIN_CATCH and INST_END_CATCH at the
@@ -304,7 +252,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     TclSetJumpTarget(envPtr, startOffset);
     TclEmitInst1(INST_END_CATCH, localIndex, envPtr);
 
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     envPtr->catchDepth--;
     envPtr->exceptArrayCurr = savedOpenRange;
     return TCL_OK;
@@ -480,8 +428,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	    bodyTokenPtr->numComponents, envPtr);
 
     TclEndExceptRange(bodyRange, envPtr);
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     TclEmitInst0(INST_POP, envPtr);
-    envPtr->currStackDepth = savedStackDepth;
 
 
     /*
@@ -495,8 +443,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	    nextTokenPtr->numComponents, envPtr);
 
     TclEndExceptRange(nextRange, envPtr);
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     TclEmitInst0(INST_POP, envPtr);
-    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Compile the test expression then emit the conditional jump that
@@ -505,9 +453,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 
     TclSetJumpTarget(envPtr, jumpEvalCondOffset);
 
-    envPtr->currStackDepth = savedStackDepth;
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
 
     jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
     TclEmitInst1(INST_JUMP_TRUE, -jumpDist, envPtr);
@@ -526,7 +473,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * The for command's result is an empty string.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
+    TclSetStackDepth(savedStackDepth, envPtr);
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
 
     return TCL_OK;
@@ -728,8 +675,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 		    tokenPtr->numComponents, envPtr);
 
 	    tempVar = (firstValueTemp + loopIndex);
-	    TclEmitInst1(INST_STORE_SCALAR, tempVar, envPtr);
-	    TclEmitInst0(INST_POP, envPtr);
+	    TclEmitInst2(INST_STORE, VM_VAR_OMIT_PUSH, tempVar, envPtr);
 	    loopIndex++;
 	}
     }
@@ -752,7 +698,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
 
     TclEndExceptRange(range, envPtr);
     TclEmitInst0(INST_POP, envPtr);
@@ -779,7 +725,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      */
 
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
 
     done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
@@ -977,7 +923,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * around the "then" part. 
 	 */
 
-	envPtr->currStackDepth = savedStackDepth;
+	TclSetStackDepth((savedStackDepth), envPtr);
 	testTokenPtr = tokenPtr;
 
 
@@ -1042,7 +988,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 */
 
 	if (compileScripts) {
-	    envPtr->currStackDepth = savedStackDepth;
+	    TclSetStackDepth((savedStackDepth), envPtr);
 	    TclCompileCmdWord(interp, tokenPtr+1,
 	            tokenPtr->numComponents, envPtr);
 	}
@@ -1095,7 +1041,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
      * "else" clause (or its default) will add 1 to this.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
+    TclSetStackDepth((savedStackDepth), envPtr);
 
     /*
      * Check for the optional else clause. Do not compile
@@ -1161,7 +1107,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
      */
 
     done:
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     TclFreeJumpFixupArray(&jumpFalseFixupArray);
     TclFreeJumpFixupArray(&jumpEndFixupArray);
     return code;
@@ -1193,8 +1139,10 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
-
+    int simpleVarName, isScalar, localIndex;
+    int stackDepth = envPtr->currStackDepth + 1;
+    int valAndFlags = 0;
+    
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	return TCL_OUT_LINE_COMPILE;
     }
@@ -1202,17 +1150,18 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
-    PushVarName(interp, varTokenPtr, envPtr, 
-	    (TCL_NO_LARGE_INDEX | TCL_CREATE_VAR),
+    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &localIndex, &simpleVarName, &isScalar);
+
+    if (localIndex == -1) {
+	localIndex = HPUINT_MAX;
+    }
 
     /*
      * If an increment is given, push it, but see first if it's a small
      * integer.
      */
 
-    haveImmValue = 0;
-    immValue = 0;
     if (parsePtr->numWords == 3) {
 	incrTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -1234,66 +1183,37 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 		Tcl_IncrRefCount(longObj);
 		code = Tcl_GetLongFromObj(NULL, longObj, &n);
 		Tcl_DecrRefCount(longObj);
-		if ((code == TCL_OK) && (HPINT_MIN <= n) && (n <= HPINT_MAX)) {
-		    haveImmValue = 1;
-		    immValue = n;
+		if ((code == TCL_OK) &&
+			((HPINT_MIN < (n<<2)) && ((n<<2) <= HPINT_MAX))) {
+		    valAndFlags = (n << 2);
 		}
 	    }
-	    if (!haveImmValue) {
+	    if (!valAndFlags) {
+		valAndFlags = HPINT_MIN;
 		TclEmitPush(
 			TclRegisterNewLiteral(envPtr, word, numBytes), envPtr);
+		stackDepth--;
 	    }
 	} else {
+	    valAndFlags = HPINT_MIN;
 	    TclCompileTokens(interp, incrTokenPtr+1, 
 	            incrTokenPtr->numComponents, envPtr);
+	    stackDepth--;
 	}
     } else {			/* no incr amount given so use 1 */
-	haveImmValue = 1;
-	immValue = 1;
+	valAndFlags = (1 << 2);
+    }
+
+    if (!isScalar) {
+	valAndFlags |= VM_VAR_ARRAY;
     }
 
     /*
      * Emit the instruction to increment the variable.
      */
 
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex >= 0) {
-		if (haveImmValue) {
-		    TclEmitInst2(INST_INCR_SCALAR_IMM, immValue, localIndex, envPtr);
-		} else {
-		    TclEmitInst1(INST_INCR_SCALAR, localIndex, envPtr);
-		}
-	    } else {
-		if (haveImmValue) {
-		    TclEmitInst1(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
-		} else {
-		    TclEmitInst0(INST_INCR_SCALAR_STK, envPtr);
-		}
-	    }
-	} else {
-	    if (localIndex >= 0) {
-		if (haveImmValue) {
-		    TclEmitInst2(INST_INCR_ARRAY_IMM, immValue, localIndex, envPtr);
-		} else {
-		    TclEmitInst1(INST_INCR_ARRAY, localIndex, envPtr);
-		}
-	    } else {
-		if (haveImmValue) {
-		    TclEmitInst1(INST_INCR_ARRAY_STK_IMM, immValue, envPtr);
-		} else {
-		    TclEmitInst0(INST_INCR_ARRAY_STK, envPtr);
-		}
-	    }
-	}
-    } else {			/* non-simple variable name */
-	if (haveImmValue) {
-	    TclEmitInst1(INST_INCR_STK_IMM, immValue, envPtr);
-	} else {
-	    TclEmitInst0(INST_INCR_STK, envPtr);
-	}
-    }
-
+    TclEmitInst2(INST_INCR, valAndFlags, localIndex, envPtr);
+    TclSetStackDepth((stackDepth+1), envPtr);
     return TCL_OK;
 }
 
@@ -1322,8 +1242,8 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords;
+    int numWords;
+    int flags =(TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_TRACE_READS);    
 
     /*
      * If we're not in a procedure, don't compile.
@@ -1343,63 +1263,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
         return TCL_OUT_LINE_COMPILE;
     }
 
-    /*
-     * Decide if we can use a frame slot for the var/array name or if we
-     * need to emit code to compute and push the name at runtime. We use a
-     * frame slot (entry in the array of local vars) if we are compiling a
-     * procedure body and if the name is simple text that does not include
-     * namespace qualifiers. 
-     */
-
-    varTokenPtr = parsePtr->tokenPtr
-	    + (parsePtr->tokenPtr->numComponents + 1);
-
-    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
-	    &localIndex, &simpleVarName, &isScalar);
-
-    /*
-     * If we are doing an assignment, push the new value.
-     * In the no values case, create an empty object.
-     */
-
-    if (numWords > 2) {
-	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, 
-		    valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
-	} else {
-	    TclCompileTokens(interp, valueTokenPtr+1,
-	            valueTokenPtr->numComponents, envPtr);
-	}
-    }
-
-    /*
-     * Emit instructions to set/get the variable.
-     */
-
-    /*
-     * The *_STK opcodes should be refactored to make better use of existing
-     * LOAD/STORE instructions.
-     */
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex >= 0) {
-		TclEmitInst1(INST_LAPPEND_SCALAR, localIndex, envPtr);
-	    } else {
-		TclEmitInst0(INST_LAPPEND_STK, envPtr);
-	    }
-	} else {
-	    if (localIndex >= 0) {
-		TclEmitInst1(INST_LAPPEND_ARRAY, localIndex, envPtr);
-	    } else {
-		TclEmitInst0(INST_LAPPEND_ARRAY_STK, envPtr);
-	    }
-	}
-    } else {
-	TclEmitInst0(INST_LAPPEND_STK, envPtr);
-    }
-
-    return TCL_OK;
+    return CompileSetCmdInternal(interp, parsePtr, envPtr, flags);
 }
 
 /*
@@ -1461,46 +1325,33 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
      */
     for (idx=0 ; idx<numWords-2 ; idx++) {
 	tokenPtr += tokenPtr->numComponents + 1;
-
+	int flags = (TCL_LEAVE_ERR_MSG|VM_VAR_OMIT_PUSH);
 	/*
 	 * Generate the next variable name
 	 */
 	PushVarName(interp, tokenPtr, envPtr, TCL_CREATE_VAR,
 		&localIndex, &simpleVarName, &isScalar);
 
-	/*
-	 * Emit instructions to get the idx'th item out of the list
-	 * value on the stack and assign it to the variable.
-	 */
-	if (simpleVarName) {
-	    if (isScalar) {
-		if (localIndex >= 0) {
-		    TclEmitInst0(INST_DUP, envPtr);
-		    TclEmitInst1(INST_LIST_INDEX_IMM, idx, envPtr);
-		    TclEmitInst1(INST_STORE_SCALAR, localIndex, envPtr);
-		} else {
-		    TclEmitInst1(INST_OVER, 1, envPtr);
-		    TclEmitInst1(INST_LIST_INDEX_IMM, idx, envPtr);
-		    TclEmitInst0(INST_STORE_SCALAR_STK, envPtr);
-		}
+	if (localIndex < 0) {
+	    localIndex = HPUINT_MAX;
+	}
+	if (isScalar || !simpleVarName) {
+	    if (localIndex != HPUINT_MAX) {
+		TclEmitInst0(INST_DUP, envPtr);
 	    } else {
-		if (localIndex >= 0) {
-		    TclEmitInst1(INST_OVER, 1, envPtr);
-		    TclEmitInst1(INST_LIST_INDEX_IMM, idx, envPtr);
-		    TclEmitInst1(INST_STORE_ARRAY, localIndex, envPtr);
-		} else {
-		    TclEmitInst1(INST_OVER, 2, envPtr);
-		    TclEmitInst1(INST_LIST_INDEX_IMM, idx, envPtr);
-		    TclEmitInst0(INST_STORE_ARRAY_STK, envPtr);
-		}
+		TclEmitInst1(INST_OVER, 1, envPtr);
 	    }
 	} else {
-	    TclEmitInst1(INST_OVER, 1, envPtr);
-	    TclEmitInst1(INST_LIST_INDEX_IMM, idx, envPtr);
-	    TclEmitInst0(INST_STORE_STK, envPtr);
+	    flags |= VM_VAR_ARRAY;
+	    if (localIndex != HPUINT_MAX) {
+		TclEmitInst1(INST_OVER, 1, envPtr);
+	    } else {
+		TclEmitInst1(INST_OVER, 2, envPtr);
+	    }
 	}
-	TclEmitInst0(INST_POP, envPtr);
-    }
+	TclEmitInst1(INST_LIST_INDEX_IMM, idx, envPtr);
+	TclEmitInst2(INST_STORE, flags, localIndex, envPtr);
+    }    
 
     /*
      * Generate code to leave the rest of the list on the stack.
@@ -1728,7 +1579,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
  *	    or either zero or else two or more (FLAT).  This instruction
  *	    removes everything from the stack except for the two names
  *	    and pushes the new value of the variable.
- *	(7) Finally, INST_STORE_* stores the new value in the variable
+ *	(7) Finally, INST_STORE stores the new value in the variable
  *	    and cleans up the stack.
  *
  *----------------------------------------------------------------------
@@ -1749,7 +1600,8 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
     int simpleVarName;		/* Flag == 1 if var name is simple */
     int isScalar;		/* Flag == 1 if scalar, 0 if array */
     int i;
-
+    int varFlags = TCL_LEAVE_ERR_MSG;
+    
     /* Check argument count */
 
     if (parsePtr->numWords < 3) {
@@ -1769,6 +1621,10 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
     PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &localIndex, &simpleVarName, &isScalar);
+
+    if (localIndex < 0) {
+	localIndex = HPUINT_MAX;
+    }
 
     /* Push the "index" args and the new element value. */
 
@@ -1792,7 +1648,7 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
      * Duplicate the variable name if it's been pushed.  
      */
 
-    if (!simpleVarName || localIndex < 0) {
+    if (!simpleVarName || (localIndex == HPUINT_MAX)) {
 	if (!simpleVarName || isScalar) {
 	    tempDepth = parsePtr->numWords - 2;
 	} else {
@@ -1806,63 +1662,27 @@ TclCompileLsetCmd(interp, parsePtr, envPtr)
      */
 
     if (simpleVarName && !isScalar) {
-	if (localIndex < 0) {
+	if (localIndex == HPUINT_MAX) {
 	    tempDepth = parsePtr->numWords - 1;
 	} else {
 	    tempDepth = parsePtr->numWords - 2;
 	}
 	TclEmitInst1(INST_OVER, tempDepth, envPtr);
+	varFlags |= VM_VAR_ARRAY;
     }
 
     /*
-     * Emit code to load the variable's value.
+     * Emit code to load the variable's value, the correct variety of 'lset'
+     * instruction and put the value back in the variable.
      */
 
-    if (!simpleVarName) {
-	TclEmitInst0(INST_LOAD_STK, envPtr);
-    } else if (isScalar) {
-	if (localIndex < 0) {
-	    TclEmitInst0(INST_LOAD_SCALAR_STK, envPtr);
-	} else {
-	    TclEmitInst1(INST_LOAD_SCALAR, localIndex, envPtr);
-	}
-    } else {
-	if (localIndex < 0) {
-	    TclEmitInst0(INST_LOAD_ARRAY_STK, envPtr);
-	} else {
-	    TclEmitInst1(INST_LOAD_ARRAY, localIndex, envPtr);
-	}
-    }
-
-    /*
-     * Emit the correct variety of 'lset' instruction
-     */
-
+    TclEmitInst2(INST_LOAD, varFlags, localIndex, envPtr);
     if (parsePtr->numWords == 4) {
 	TclEmitInst0(INST_LSET_LIST, envPtr);
     } else {
 	TclEmitInst1(INST_LSET_FLAT, (parsePtr->numWords - 1), envPtr);
     }
-
-    /*
-     * Emit code to put the value back in the variable
-     */
-
-    if (!simpleVarName) {
-	TclEmitInst0(INST_STORE_STK, envPtr);
-    } else if (isScalar) {
-	if (localIndex < 0) {
-	    TclEmitInst0(INST_STORE_SCALAR_STK, envPtr);
-	} else {
-	    TclEmitInst1(INST_STORE_SCALAR, localIndex, envPtr);
-	}
-    } else {
-	if (localIndex < 0) {
-	    TclEmitInst0(INST_STORE_ARRAY_STK, envPtr);
-	} else {
-	    TclEmitInst1(INST_STORE_ARRAY, localIndex, envPtr);
-	}
-    }
+    TclEmitInst2(INST_STORE, varFlags, localIndex, envPtr);
 
     return TCL_OK;
 }
@@ -2228,6 +2048,17 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
+    return CompileSetCmdInternal(interp, parsePtr, envPtr, 0);
+}
+
+int
+CompileSetCmdInternal(interp, parsePtr, envPtr, varFlags)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+    int varFlags;
+{
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int isAssignment, isScalar, simpleVarName, localIndex, numWords;
 
@@ -2251,11 +2082,21 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &localIndex, &simpleVarName, &isScalar);
 
-    /*
-     * If we are doing an assignment, push the new value.
-     */
+    if (isScalar) {
+	varFlags |= TCL_LEAVE_ERR_MSG;
+    } else {
+	varFlags |= (TCL_LEAVE_ERR_MSG|VM_VAR_ARRAY);
+    }
+	
+    if (localIndex < 0) {
+	localIndex = HPUINT_MAX;
+    }
 
     if (isAssignment) {
+	/*
+	 * If we are doing an assignment, push the new value and store it. 
+	 */
+
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterNewLiteral(envPtr, valueTokenPtr[1].start,
@@ -2264,36 +2105,14 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	    TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	}
-    }
-
-    /*
-     * Emit instructions to set/get the variable.
-     */
-
-    if (simpleVarName) {
-	if (isScalar) {
-	    if (localIndex >= 0) {
-		TclEmitInst1((isAssignment?
-			INST_STORE_SCALAR : INST_LOAD_SCALAR),
-			localIndex, envPtr);
-	    } else {
-		TclEmitInst0((isAssignment?
-		        INST_STORE_SCALAR_STK : INST_LOAD_SCALAR_STK), envPtr);
-	    }
-	} else {
-	    if (localIndex >= 0) {
-		TclEmitInst1((isAssignment?
-			INST_STORE_ARRAY : INST_LOAD_ARRAY),
-			localIndex, envPtr);
-	    } else {
-		TclEmitInst0((isAssignment?
-		        INST_STORE_ARRAY_STK : INST_LOAD_ARRAY_STK), envPtr);
-	    }
-	}
+	TclEmitInst2(INST_STORE, varFlags, localIndex, envPtr);
     } else {
-	TclEmitInst0((isAssignment? INST_STORE_STK : INST_LOAD_STK), envPtr);
+	/*
+	 * Reading the variable's value.
+	 */
+	
+	TclEmitInst2(INST_LOAD, varFlags, localIndex, envPtr);
     }
-
     return TCL_OK;
 }
 
@@ -2760,7 +2579,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	 * Generate the test for the arm.
 	 */
 
-	envPtr->currStackDepth = savedStackDepth + 1;
+	TclSetStackDepth((savedStackDepth+1), envPtr);
 	if (lastFalseJump != -1) {
 	    TclSetJumpTarget(envPtr, lastFalseJump);
 	    lastFalseJump = -1;
@@ -2818,7 +2637,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	currentFallThroughs = -1;
 
 	TclEmitInst0(INST_POP, envPtr);
-	envPtr->currStackDepth = savedStackDepth;
+	TclSetStackDepth((savedStackDepth), envPtr);
 
 	/*
 	 * Now do the actual compilation.
@@ -2845,7 +2664,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	TclSetJumpTarget(envPtr, lastFalseJump);
     }
 
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     if (!foundDefault) {
 	TclEmitInst0(INST_POP, envPtr);
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
@@ -3029,7 +2848,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     TclEndExceptRange(range, envPtr);
     TclEmitInst0(INST_POP, envPtr);
 
@@ -3041,9 +2860,9 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     if (loopMayEnd) {
 	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	TclSetJumpTarget(envPtr, jumpEvalCondOffset);
-	envPtr->currStackDepth = savedStackDepth;
+	TclSetStackDepth((savedStackDepth), envPtr);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
+	TclSetStackDepth((savedStackDepth+1), envPtr);
 
 	jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
 	TclEmitInst1(INST_JUMP_TRUE, -jumpDist, envPtr);
@@ -3066,7 +2885,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      */
 
     pushResult:
-    envPtr->currStackDepth = savedStackDepth;
+    TclSetStackDepth((savedStackDepth), envPtr);
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     return TCL_OK;
 }
@@ -3096,8 +2915,7 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Token *varTokenPtr;	/* Points to a variable token. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
-    int flags;			/* takes TCL_CREATE_VAR or
-				 * TCL_NO_LARGE_INDEX */
+    int flags;			/* takes TCL_CREATE_VAR */
     int *localIndexPtr;		/* must not be NULL */
     int *simpleVarNamePtr;	/* must not be NULL */
     int *isScalarPtr;		/* must not be NULL */
@@ -3111,6 +2929,7 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     int elemTokenCount = 0;
     int allocedTokens = 0;
     int removedParen = 0;
+    int stackDepth = envPtr->currStackDepth;
 
     /*
      * Decide if we can use a frame slot for the var/array name or if we
@@ -3266,13 +3085,14 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 		    /*create*/ (flags & TCL_CREATE_VAR),
                     /*flags*/ ((elName==NULL)? VAR_SCALAR : VAR_ARRAY),
 		    envPtr->procPtr);
-	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > HPUINT_MAX)) {
+	    if (localIndex >= HPUINT_MAX) {
 		/* we'll push the name */
 		localIndex = -1;
 	    }
 	}
 	if (localIndex < 0) {
 	    TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameChars), envPtr);
+	    stackDepth++;
 	}
 
 	/*
@@ -3285,6 +3105,7 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	    } else {
 		TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
 	    }
+	    stackDepth++;
 	}
     } else {
 	/*
@@ -3293,6 +3114,7 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 
 	TclCompileTokens(interp, varTokenPtr+1,
 		varTokenPtr->numComponents, envPtr);
+	stackDepth++;
     }
 
     if (removedParen) {
@@ -3304,5 +3126,6 @@ PushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     *localIndexPtr	= localIndex;
     *simpleVarNamePtr	= simpleVarName;
     *isScalarPtr	= (elName == NULL);
+    TclSetStackDepth(stackDepth, envPtr);
     return TCL_OK;
 }

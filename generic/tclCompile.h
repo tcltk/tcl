@@ -4,11 +4,12 @@
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2005 by Miguel Sofer.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.13 2005/03/17 01:29:50 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.14 2005/03/19 18:26:40 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -290,17 +291,26 @@ FIXME
  *     instruction
  *   - HPUINT_MAX is the max to be stored as unsigned part in a 2-opnd
  *     instruction 
+ *
+ *   - P_SHIFT, P_MASK describe how to put a 24 bit operand in the word
+ *   - HP_SHIFT and HP_MASK describe how to put two operands in the 24 bits
  */
 
 #define PINT_MAX  0x7FFFFF
 #define PINT_MIN (-PINT_MAX -1)
+#define P_SHIFT   8
+#define P_MASK    0xFF
 
-#define HP_SHIFT  8
-#define HP_MASK   0xFF
+/* Divide the 24 bits in 12 signed + 12 unsigned*/
+#define HP_SHIFT  12      
+#define HP_MASK   0xFFF
 
-#define HPUINT_MAX 0xFF
-#define HPINT_MAX  0x7FFF
+#define HPUINT_MAX 0xFFF
+#define HPINT_MAX  0x7FF
 #define HPINT_MIN  (-HPINT_MAX-1)
+
+#define P_STASH(full, n, u) \
+    (full) = ((((TclPSizedInt) (n)) << P_SHIFT) | (u))
 
 #define HP_STASH(full, n, u) \
     (full) = ((((TclPSizedInt) (n)) << HP_SHIFT) | (u))
@@ -310,24 +320,24 @@ FIXME
     (u) = (((TclPSizedInt)(full)) &  HP_MASK)
     
 #define TclVMGetInstAtPtr(p) \
-    (*((TclPSizedInt *)(p)) & HP_MASK)
+    (*((TclPSizedInt *)(p)) & P_MASK)
 #define TclVMGetOpndAtPtr(p) \
-    (*((TclPSizedInt *)(p)) >> HP_SHIFT)
+    (*((TclPSizedInt *)(p)) >> P_SHIFT)
 
 #define TclVMStoreInstAtPtr(instruction, p) \
-    *(p) = ((*((TclPSizedInt *)(p)) & ~HP_MASK)\
+    *(p) = ((*((TclPSizedInt *)(p)) & ~P_MASK)\
 	 | (instruction))
 
 #define TclVMStoreOpndAtPtr(operand, p) \
-    *(p) = ((*((TclPSizedInt *)(p)) & HP_MASK) \
-         | (((TclPSizedInt) operand) << HP_SHIFT))
+    *(p) = ((*((TclPSizedInt *)(p)) & P_MASK) \
+         | (((TclPSizedInt) operand) << P_SHIFT))
 
 #define TclVMGetInstAndOpAtPtr(p, instruction, operand) \
     (instruction) = TclVMGetInstAtPtr(p);\
     (operand)     = TclVMGetOpndAtPtr(p) 
 
 #define TclVMStoreWordAtPtr(instruction, operand, p) \
-    HP_STASH(*((TclPSizedInt *)(p)), (operand), (instruction))
+    P_STASH(*((TclPSizedInt *)(p)), (operand), (instruction))
 
 #endif /* USE_WORDCODES */
 
@@ -582,29 +592,25 @@ typedef struct ByteCode {
 #define INST_EVAL_STK			6
 #define INST_EXPR_STK			7
 
+/* These should not collide with any of TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
+ * TCL_TRACE_READS, TCL_LEAVE_ERR_MSG.
+ *
+ * NOTE: the code for INST_INSTR depends on these two being 1 and 2.
+ */
+
+#define VM_VAR_OMIT_PUSH             0x01 
+#define VM_VAR_ARRAY                 0x02 
+
+#define VM_STORE_FLAGS_FILTER  (~(VM_VAR_OMIT_PUSH|VM_VAR_ARRAY))
+
 /* Opcodes 8 to 17 */
-#define INST_LOAD_SCALAR		8
-#define INST_LOAD_SCALAR_STK		9
-#define INST_LOAD_ARRAY		        10
-#define INST_LOAD_ARRAY_STK		11
-#define INST_LOAD_STK			12
-#define INST_STORE_SCALAR		13
-#define INST_STORE_SCALAR_STK		14
-#define INST_STORE_ARRAY		15
-#define INST_STORE_ARRAY_STK		16
-#define INST_STORE_STK			17
+#define INST_LOAD		         8  /* Replaces 7 INST_LOAD* */
+#define INST_STORE                      13  /* Replaces 13 INST_STORE* and  
+					     * INST_(L?)APPEND* */
+#define INST_INCR                       18  /* Replaces 10 INST_INCR* */ 
+
 
 /* Opcodes 18 to 27 */
-#define INST_INCR_SCALAR		18
-#define INST_INCR_SCALAR_STK		19
-#define INST_INCR_ARRAY		        20
-#define INST_INCR_ARRAY_STK		21
-#define INST_INCR_STK			22
-#define INST_INCR_SCALAR_IMM		23
-#define INST_INCR_SCALAR_STK_IMM	24
-#define INST_INCR_ARRAY_IMM		25
-#define INST_INCR_ARRAY_STK_IMM		26
-#define INST_INCR_STK_IMM		27
 
 /* Opcodes 28 to 30 */
 #define INST_JUMP			28
@@ -663,18 +669,6 @@ typedef struct ByteCode {
 #define INST_LIST			68
 #define INST_LIST_INDEX			69
 #define INST_LIST_LENGTH		70
-
-/* Opcodes 71 to 74 */
-#define INST_APPEND_SCALAR		71
-#define INST_APPEND_ARRAY		72
-#define INST_APPEND_ARRAY_STK		73
-#define INST_APPEND_STK			74
-
-/* Opcodes 75 to 78 */
-#define INST_LAPPEND_SCALAR		75
-#define INST_LAPPEND_ARRAY		76
-#define INST_LAPPEND_ARRAY_STK		77
-#define INST_LAPPEND_STK		78
 
 /* TIP #22 - LINDEX operator with flat arg list */
 
@@ -742,18 +736,38 @@ typedef enum InstOperandType {
 				 * integer, but displayed differently.) */
 } InstOperandType;
 
+
 typedef struct InstructionDesc {
     char *name;			/* Name of instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the 
 				 * instruction, used for stack requirements 
 				 * computations. The value INT_MIN signals
 				 * that the instruction's worst case effect
-				 * is (1-opnd1).
-				 */
+				 * is (1-opnd1).*/
     int numOperands;		/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
+#if 0
+    int instProps;              /* OR-ed values of the flags below. */
+#endif
 } InstructionDesc;
+
+/*
+ * Flags describing the stack interaction of an instruction, used by the
+ * optimiser to remove unnecessary type conversions or negations. 
+ */
+
+#define IDESC_PUSH          0x01  /* Pushes a result obj */
+#define IDESC_OUT_NUM       0x02  /* Result obj is numeric */
+#define IDESC_OUT_INT       0x04  /* Result obj is integer */
+#define IDESC_OUT_BOOL      0x08  /* Result obj is 0/1; these instructions can
+				   * be negated; they are arranged in pairs so
+				   * that flipping the last bit (^1) negates. */
+
+#define IDESC_IN_NUM        0x10  /* Converts input args to numeric or boolean
+				   * types. */
+
+
 
 MODULE_SCOPE InstructionDesc tclInstructionTable[];
 
@@ -1027,7 +1041,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 
 /*
- * Macro used to manually adjust the stack requirements; used
+ * Macros used to manually adjust the stack requirements; used
  * in cases where the stack effect cannot be computed from
  * the opcode and its operands, but is still known at
  * compile time.
@@ -1040,6 +1054,12 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 	}\
     }\
     (envPtr)->currStackDepth += (delta)
+
+#define TclSetStackDepth(depth, envPtr) \
+    if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\
+	(envPtr)->maxStackDepth = (envPtr)->currStackDepth;\
+    }\
+    (envPtr)->currStackDepth = (depth)
 
 /*
  * Macro used to update the stack requirements.

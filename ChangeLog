@@ -1,3 +1,20 @@
+2005-03-19 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	Massive reduction of variable-related instructions: INST_LOAD,
+	INST_STORE and INST_INCR perform the work of the 20 previous
+	INST_LOAD_*, INST_STORE_*, INST_APPEND_*, INST_LAPPEND_* and
+	INST_INCR_*. Variants, indices and immediate values are packed in
+	the operand (note that performance considerations may later cause
+	some changes here). This is an intermediate commit: the INST
+	numbering is still unchanged, with gaping holes for the removed
+	instructions. 
+	Improved stack depth estimates in tclCompCmds.c.		
+
 2005-03-16 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.h:

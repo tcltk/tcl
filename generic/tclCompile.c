@@ -7,11 +7,12 @@
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2005 by Miguel Sofer.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.7 2005/03/16 10:07:54 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.8 2005/03/19 18:26:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -71,47 +72,48 @@ InstructionDesc tclInstructionTable[] = {
     {"exprStk",		  0,         0,   {OPERAND_NONE}},
 	/* Execute expression in stktop using Tcl_ExprStringObj. */
     
-    {"loadScalar",	  1,         1,   {OPERAND_UINT}},
-	/* Load scalar variable at index op1 >= 256 in call frame */
-    {"loadScalarStk",	  0,         0,   {OPERAND_NONE}},
+    {"load",	         +1,         2,   {OPERAND_UINT, OPERAND_INT}},
+	/* Load scalar variable at index op2 in call frame; op1 contains
+	 * flags*/ 
+    {"loadScalarStk//",	  0,         0,   {OPERAND_NONE}},
 	/* Load scalar variable; scalar's name is stktop */
-    {"loadArray",	  0,         1,   {OPERAND_UINT}},
+    {"loadArray//",	  0,         1,   {OPERAND_UINT}},
 	/* Load array element; array at slot op1 > 255, element is stktop */
-    {"loadArrayStk",	 -1,         0,   {OPERAND_NONE}},
+    {"loadArrayStk//",	 -1,         0,   {OPERAND_NONE}},
 	/* Load array element; element is stktop, array name is stknext */
-    {"loadStk",		  0,         0,   {OPERAND_NONE}},
+    {"loadStk//",		  0,         0,   {OPERAND_NONE}},
 	/* Load general variable; unparsed variable name is stktop */
-    {"storeScalar",	  0,         1,   {OPERAND_UINT}},
+    {"store",   	  0,         1,   {OPERAND_UINT}},
 	/* Store scalar variable at op1 > 255 in frame; value is stktop */
-    {"storeScalarStk",	  -1,        0,   {OPERAND_NONE}},
+    {"storeScalarStk//",	  -1,        0,   {OPERAND_NONE}},
 	/* Store scalar; value is stktop, scalar name is stknext */
-    {"storeArray",        -1,        1,   {OPERAND_UINT}},
+    {"storeArray//",        -1,        1,   {OPERAND_UINT}},
 	/* Store array element; array at op1>=256, value is top then elem */
-    {"storeArrayStk",	  -2,        0,   {OPERAND_NONE}},
+    {"storeArrayStk//",	  -2,        0,   {OPERAND_NONE}},
 	/* Store array element; value is stktop, then elem, array names */
-    {"storeStk",	  -1,        0,   {OPERAND_NONE}},
+    {"storeStk//",	  -1,        0,   {OPERAND_NONE}},
 	/* Store general variable; value is stktop, then unparsed name */
     
-    {"incrScalar",	   0,        1,   {OPERAND_UINT}},
+    {"incr",	   1,                2,   {OPERAND_UINT, OPERAND_INT}},
 	/* Incr scalar at index op1<=255 in frame; incr amount is stktop */
-    {"incrScalarStk",	  -1,        0,   {OPERAND_NONE}},
+    {"incrScalarStk//",	  -1,        0,   {OPERAND_NONE}},
 	/* Incr scalar; incr amount is stktop, scalar's name is stknext */
-    {"incrArray",	  -1,        1,   {OPERAND_UINT}},
+    {"incrArray//",	  -1,        1,   {OPERAND_UINT}},
 	/* Incr array elem; arr at slot op1<=255, amount is top then elem */
-    {"incrArrayStk",	  -2,        0,   {OPERAND_NONE}},
+    {"incrArrayStk//",	  -2,        0,   {OPERAND_NONE}},
 	/* Incr array element; amount is top then elem then array names */
-    {"incrStk",		  -1,        0,   {OPERAND_NONE}},
+    {"incrStk//",		  -1,        0,   {OPERAND_NONE}},
 	/* Incr general variable; amount is stktop then unparsed var name */
-    {"incrScalarImm",	  +1,        2,   {OPERAND_UINT, OPERAND_INT}},
+    {"incrScalarImm//",	  +1,        2,   {OPERAND_UINT, OPERAND_INT}},
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
-    {"incrScalarStkImm",   0,        1,   {OPERAND_INT}},
+    {"incrScalarStkImm//",   0,        1,   {OPERAND_INT}},
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    {"incrArrayImm",	   0,        2,   {OPERAND_UINT, OPERAND_INT}},
+    {"incrArrayImm//",	   0,        2,   {OPERAND_UINT, OPERAND_INT}},
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
-    {"incrArrayStkImm",	  -1,        1,   {OPERAND_INT}},
+    {"incrArrayStkImm//",	  -1,        1,   {OPERAND_INT}},
 	/* Incr array element; elem is top then array name, amount is op1 */
-    {"incrStkImm",	   0,        1,   {OPERAND_INT}},
+    {"incrStkImm//",	   0,        1,   {OPERAND_INT}},
 	/* Incr general variable; unparsed name is top, amount is op1 */
     
     {"jump",		  0,         1,   {OPERAND_INT}},
@@ -184,7 +186,7 @@ InstructionDesc tclInstructionTable[] = {
     {"beginCatch4",	  0,         1,   {OPERAND_UINT}},
 	/* Record start of catch with the operand's exception index.
 	 * Push the current stack depth onto a special catch stack. */
-    {"endCatch",	  0,         0,   {OPERAND_NONE}},
+    {"endCatch",	  0,         1,   {OPERAND_INT}},
 	/* End of last catch. Pop the bytecode interpreter's catch stack. */
     {"pushResult",	 +1,         0,   {OPERAND_NONE}},
 	/* Push the interpreter's object result onto the stack. */
@@ -895,6 +897,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
     int bytesLeft, isFirstCmd, gotParse, wordIdx, currCmdIndex;
     int commandLength, objIndex, code;
     Tcl_DString ds;
+    int savedStackDepth = envPtr->currStackDepth;
 
     Tcl_DStringInit(&ds);
 
@@ -977,6 +980,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			(envPtr->codeNext - envPtr->codeStart)
 			- startCodeOffset;
 	    }
+	    TclSetStackDepth(savedStackDepth, envPtr);
 
 	    /*
 	     * Determine the actual length of the command.
@@ -1221,7 +1225,8 @@ TclCompileScript(interp, script, numBytes, envPtr)
     if (envPtr->codeNext == entryCodeNext) {
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewObj(), NULL), envPtr);
     }
-    
+
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     envPtr->numSrcBytes = (p - script);
     Tcl_DStringFree(&ds);
 }
@@ -1263,7 +1268,9 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
     int numObjsToConcat, nameBytes, localVarName, localVar;
     int length, i;
     TclVMWord *entryCodeNext = envPtr->codeNext;
-
+    int varFlags;
+    int stackDepth = envPtr->currStackDepth;
+        
     Tcl_DStringInit(&textBuffer);
     numObjsToConcat = 0;
     for ( ;  count > 0;  count--, tokenPtr++) {
@@ -1356,34 +1363,30 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		if (localVar < 0) {
 		    TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes),
 			    envPtr); 
+		    localVar = HPUINT_MAX;
 		}
 
 		/*
 		 * Emit instructions to load the variable.
 		 */
 		
-		if (tokenPtr->numComponents == 1) {
-		    if (localVar < 0) {
-			TclEmitInst0(INST_LOAD_SCALAR_STK, envPtr);
-		    } else {
-			TclEmitInst1(INST_LOAD_SCALAR, localVar,
-				envPtr);
-		    }
-		} else {
+		if (tokenPtr->numComponents != 1) {
+		    int stackDepth = envPtr->currStackDepth;
+
 		    TclCompileTokens(interp, tokenPtr+2,
 			    tokenPtr->numComponents-1, envPtr);
-		    if (localVar < 0) {
-			TclEmitInst0(INST_LOAD_ARRAY_STK, envPtr);
-		    } else {
-			TclEmitInst1(INST_LOAD_ARRAY, localVar,
-			        envPtr);
-		    }
-		}
+		    TclSetStackDepth((stackDepth+1), envPtr);
+		    varFlags = (TCL_LEAVE_ERR_MSG|VM_VAR_ARRAY);
+		} else {
+		    varFlags = TCL_LEAVE_ERR_MSG;
+		}		       
+		
+		TclEmitInst2(INST_LOAD, varFlags, localVar, envPtr);
 		numObjsToConcat++;
 		count -= tokenPtr->numComponents;
 		tokenPtr += tokenPtr->numComponents;
 		break;
-
+		
 	    default:
 		Tcl_Panic("Unexpected token type in TclCompileTokens");
 	}
@@ -1419,6 +1422,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 	        envPtr);
     }
     Tcl_DStringFree(&textBuffer);
+    TclSetStackDepth((stackDepth+1), envPtr);    
 }
 
 /*
@@ -2935,7 +2939,7 @@ TclPrintInstruction(codePtr, pc)
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
 
     if (instDesc->numOperands == 2) {
-	HP_EXTRACT(opnd, opnds[0], opnds[1]);
+	HP_EXTRACT(opnd, opnds[1], opnds[0]);
     } else {
 	opnds[0] = opnd;
     }
@@ -2956,13 +2960,13 @@ TclPrintInstruction(codePtr, pc)
 	    if (opCode == INST_PUSH) {
 		fprintf(stdout, "%u  	# ", (unsigned) opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
-	    } else if ((i == 0) && ((opCode == INST_LOAD_SCALAR)
-				    || (opCode == INST_LOAD_ARRAY)
-				    || (opCode == INST_STORE_SCALAR)
-				    || (opCode == INST_STORE_ARRAY))) {
+	    } else if ((i == 0) && (opCode == INST_LOAD) && procPtr) {
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr = procPtr->firstLocalPtr;
-		if (opnd >= localCt) {
+		if (opnds[i] == HPUINT_MAX) {
+		    break;
+		}
+		if (opnds[i] >= localCt) {
 		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
 		}
@@ -2997,7 +3001,7 @@ TclPrintInstruction(codePtr, pc)
 	}
     }
     fprintf(stdout, "\n");
-    return 2; /* Every instruction takes 2 words */
+    return 1; /* Every instruction takes 1 word */
 }
 
 /*

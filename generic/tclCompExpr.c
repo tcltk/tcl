@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.25.4.2 2005/03/13 13:57:34 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.25.4.3 2005/03/19 18:26:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -659,7 +659,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     *endPtrPtr = tokenPtr;
 
     done:
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     return code;
 }
 
@@ -753,7 +753,7 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
      * Compile the "else" expression.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
+    TclSetStackDepth((savedStackDepth), envPtr);
     elseCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     infoPtr->hasOperators = 0;
     code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
@@ -773,7 +773,7 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
     *endPtrPtr = tokenPtr;
 
     done:
-    envPtr->currStackDepth = savedStackDepth + 1;
+    TclSetStackDepth((savedStackDepth+1), envPtr);
     return code;
 }
 
@@ -892,7 +892,7 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
 	}
 	TclEmitInst1(INST_CALL_BUILTIN_FUNC,
 	        mathFuncPtr->builtinFuncIndex, envPtr);
-	envPtr->currStackDepth -= mathFuncPtr->numArgs;
+	TclAdjustStackDepth(-mathFuncPtr->numArgs, envPtr);
     } else {
 	TclEmitInst1(INST_CALL_FUNC, (mathFuncPtr->numArgs+1), envPtr);
     }
