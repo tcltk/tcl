@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.9 2000/03/31 19:39:42 ericm Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.10 2000/09/06 18:46:13 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -444,10 +444,12 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
     if (pid != -1) {
 	/*
 	 * Reap the child process now if an error occurred during its
-	 * startup.
+	 * startup.  We don't call this with WNOHANG because that can lead to
+	 * defunct processes on an MP system.   We shouldn't have to worry
+	 * about hanging here, since this is the error case.  [Bug: 6148]
 	 */
 
-	Tcl_WaitPid((Tcl_Pid) pid, &status, WNOHANG);
+	Tcl_WaitPid((Tcl_Pid) pid, &status, 0);
     }
     
     if (errPipeIn) {
