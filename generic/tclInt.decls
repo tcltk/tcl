@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.75 2004/06/24 01:29:02 mistachkin Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.76 2004/07/03 02:03:37 msofer Exp $
 
 library tcl
 
@@ -786,6 +786,14 @@ declare 195 generic {
 declare 196 generic {
      void TclFinalizeThreadStorageDataKey(Tcl_ThreadDataKey *keyPtr)
 }
+
+#
+# Added in tcl8.5a5 for compiler/executor experimentation.
+#
+declare 197 generic {
+    int TclCompEvalObj (Tcl_Interp *interp, Tcl_Obj *objPtr)
+}
+
 
 ##############################################################################
 
