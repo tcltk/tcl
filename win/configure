@@ -1387,6 +1387,8 @@ else
 fi
 
 
+    SHLIB_SUFFIX=".dll"
+
     # Check for a bug in gcc's windres that causes the
     # compile to fail when a Windows native path is
     # passed into windres. The mingw toolchain requires
@@ -1401,9 +1403,9 @@ fi
 	echo "END" >> $conftest
 
 	echo $ac_n "checking for Windows native path bug in windres""... $ac_c" 1>&6
-echo "configure:1405: checking for Windows native path bug in windres" >&5
+echo "configure:1407: checking for Windows native path bug in windres" >&5
 	cyg_conftest=`$CYGPATH $conftest`
-	if { ac_try='$RC -o conftest.res.o $cyg_conftest'; { (eval echo configure:1407: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } ; then
+	if { ac_try='$RC -o conftest.res.o $cyg_conftest'; { (eval echo configure:1409: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } ; then
 	    echo "$ac_t""no" 1>&6
 	else
 	    echo "$ac_t""yes" 1>&6
@@ -1422,7 +1424,7 @@ echo "configure:1405: checking for Windows native path bug in windres" >&5
     # set various compiler flags depending on whether we are using gcc or cl
 
     echo $ac_n "checking compiler flags""... $ac_c" 1>&6
-echo "configure:1426: checking compiler flags" >&5
+echo "configure:1428: checking compiler flags" >&5
     if test "${GCC}" = "yes" ; then
 	if test "$do64bit" = "yes" ; then
 	    echo "configure: warning: "64bit mode not supported with GCC on Windows"" 1>&2
@@ -1491,6 +1493,7 @@ echo "configure:1426: checking compiler flags" >&5
 	    # -luser32 and -lmsvcrt by default. Make sure CFLAGS is
 	    # included so -mno-cygwin passed the correct libs to the linker.
 	    SHLIB_LD='${CC} -shared ${CFLAGS}'
+	    SHLIB_LD_LIBS='${LIBS}'
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \$@ ${extra_ldflags} \
 	        -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
@@ -1502,6 +1505,7 @@ echo "configure:1426: checking compiler flags" >&5
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
+	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
 
@@ -1540,6 +1544,7 @@ echo "configure:1426: checking compiler flags" >&5
 	    LIBSUFFIX="s\${DBGX}.lib"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s\${DBGX}.exe"
+	    SHLIB_LD_LIBS=""
 	else
 	    # dynamic
             echo "$ac_t""using shared flags" 1>&6
@@ -1549,6 +1554,7 @@ echo "configure:1426: checking compiler flags" >&5
 	    LIBSUFFIX="\${DBGX}.lib"
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
+	    SHLIB_LD_LIBS='${LIBS}'
 	fi
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
@@ -1592,7 +1598,6 @@ echo "configure:1426: checking compiler flags" >&5
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
-	SHLIB_LD_LIBS="user32.lib advapi32.lib"
 	LIBS="user32.lib advapi32.lib"
 	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib"
 	RC_OUT=-fo
@@ -1635,7 +1640,7 @@ echo "configure:1426: checking compiler flags" >&5
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:1639: checking for build with symbols" >&5
+echo "configure:1644: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -1695,7 +1700,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1699: checking how to run the C preprocessor" >&5
+echo "configure:1704: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1710,13 +1715,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1714 "configure"
+#line 1719 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1720: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1725: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1727,13 +1732,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1731 "configure"
+#line 1736 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1737: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1742: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1744,13 +1749,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1748 "configure"
+#line 1753 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1754: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1759: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1776,17 +1781,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1780: checking for errno.h" >&5
+echo "configure:1785: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1785 "configure"
+#line 1790 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1790: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1795: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
