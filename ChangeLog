@@ -1,3 +1,9 @@
+2003-09-29  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c:
+	* tests/fileName.test: fix to inconsistent handling of backslash
+	path separators on Windows in 'file join' [Bug 813273]
+
 2003-09-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclPathObj.c (TclNativePathInFilesystem,TclFSGetPathType): 
