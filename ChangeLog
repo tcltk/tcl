@@ -1,3 +1,8 @@
+2001-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinPipe.c (PipeClose2Proc): constrained the mutex lock to
+	just the TerminateThread call and waiting for termination. (jsmith)
+
 2001-07-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/util.test: added util-4.6
