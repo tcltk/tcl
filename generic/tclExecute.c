@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.5 2001/10/05 14:20:58 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.6 2001/10/05 15:16:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -192,14 +192,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 #ifdef TCL_COMPILE_DEBUG
-#define TRACE(a) \
+#   define TRACE(a) \
     if (traceInstructions) { \
         fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, stackTop, \
 	       (unsigned int)(pc - codePtr->codeStart), \
 	       GetOpcodeName(pc)); \
 	printf a; \
     }
-#define TRACE_WITH_OBJ(a, objPtr) \
+#   define TRACE_WITH_OBJ(a, objPtr) \
     if (traceInstructions) { \
         fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, stackTop, \
 	       (unsigned int)(pc - codePtr->codeStart), \
@@ -208,13 +208,34 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
         TclPrintObject(stdout, objPtr, 30); \
         fprintf(stdout, "\n"); \
     }
-#define O2S(objPtr) \
+#   define O2S(objPtr) \
     (objPtr ? Tcl_GetString(objPtr) : "")
 #else
-#define TRACE(a)
-#define TRACE_WITH_OBJ(a, objPtr)
-#define O2S(objPtr)
+#   define TRACE(a)
+#   define TRACE_WITH_OBJ(a, objPtr)
+#   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
+
+#ifndef TCL_WIDE_INT_IS_LONG
+#   define W0	Tcl_LongAsWide(0)
+/*
+ * Macro to read a string containing either a wide or an int and
+ * decide which it is while decoding it at the same time.
+ */
+#   define GetWideOrInt(resultVar, objPtr, longVar, wideVar)		\
+    (resultVar) = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, (objPtr),	\
+	    &(wideVar));						\
+    if ((resultVar) == TCL_OK && (wideVar) >= Tcl_LongAsWide(LONG_MIN)	\
+	    && (wideVar) <= Tcl_LongAsWide(LONG_MIN)) {			\
+	(objPtr)->typePtr = &tclIntType;				\
+	(objPtr)->internalRep.longValue = (longVar)			\
+		= Tcl_WideAsLong(wideVar);				\
+    }
+#else
+#   define GetWideOrInt(resultVar, objPtr, longVar, wideVar)		\
+    (resultVar) = Tcl_GetLongFromObj((Tcl_Interp *) NULL, (objPtr),	
+	    &(longVar));						\
+#endif
 
 /*
  * Declarations for local procedures to this file:
@@ -1855,7 +1876,7 @@ TclExecuteByteCode(interp, codePtr)
 		    b = (valuePtr->internalRep.doubleValue != 0.0);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (valuePtr->typePtr == &tclWideIntType) {
-		    b = (valuePtr->internalRep.wideValue != Tcl_LongAsWide(0));
+		    b = (valuePtr->internalRep.wideValue != W0);
 #endif
 		} else {
 		    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
@@ -1899,7 +1920,7 @@ TclExecuteByteCode(interp, codePtr)
 		    b = (valuePtr->internalRep.doubleValue != 0.0);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (valuePtr->typePtr == &tclWideIntType) {
-		    b = (valuePtr->internalRep.wideValue != Tcl_LongAsWide(0));
+		    b = (valuePtr->internalRep.wideValue != W0);
 #endif
 		} else {
 		    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
@@ -1945,7 +1966,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i1 = (valuePtr->internalRep.longValue != 0);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (t1Ptr == &tclWideIntType) {
-		    i1 = (valuePtr->internalRep.wideValue!=Tcl_LongAsWide(0));
+		    i1 = (valuePtr->internalRep.wideValue != W0);
 #endif
 		} else if (t1Ptr == &tclDoubleType) {
 		    i1 = (valuePtr->internalRep.doubleValue != 0.0);
@@ -1957,9 +1978,12 @@ TclExecuteByteCode(interp, codePtr)
 				valuePtr, &i);
 			i1 = (i != 0);
 #else
-			result = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
-				valuePtr, &w);
-			i1 = (w != Tcl_LongAsWide(0));
+			GetWideOrInt(result, valuePtr, i, w);
+			if (valuePtr->typePtr == &tclIntObj) {
+			    i1 = (i != 0);
+			} else {
+			    i1 = (w != W0);
+			}
 #endif
 		    } else {
 			result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL,
@@ -1981,7 +2005,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i2 = (value2Ptr->internalRep.longValue != 0);
 #ifndef TCL_WIDE_INT_IS_LONG
 		} else if (t2Ptr == &tclWideIntType) {
-		    i2 = (value2Ptr->internalRep.wideValue!=Tcl_LongAsWide(0));
+		    i2 = (value2Ptr->internalRep.wideValue != W0);
 #endif
 		} else if (t2Ptr == &tclDoubleType) {
 		    i2 = (value2Ptr->internalRep.doubleValue != 0.0);
@@ -1993,9 +2017,12 @@ TclExecuteByteCode(interp, codePtr)
 				value2Ptr, &i);
 			i2 = (i != 0);
 #else
-			result = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
-				value2Ptr, &w);
-			i2 = (w != Tcl_LongAsWide(0));
+			GetWideOrInt(result, value2Ptr, i, w);
+			if (valuePtr->typePtr == &tclIntObj) {
+			    i2 = (i != 0);
+			} else {
+			    i2 = (w != W0);
+			}
 #endif
 		    } else {
 			result = Tcl_GetBooleanFromObj((Tcl_Interp *) NULL,
@@ -2366,14 +2393,14 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		Tcl_ObjType *t1Ptr, *t2Ptr;
-		char *s1 = NULL;   /* Init. avoids compiler warning. */
-		char *s2 = NULL;   /* Init. avoids compiler warning. */
-		long i2 = 0;	   /* Init. avoids compiler warning. */
-		double d1 = 0.0;   /* Init. avoids compiler warning. */
-		double d2 = 0.0;   /* Init. avoids compiler warning. */
-		long iResult = 0;  /* Init. avoids compiler warning. */
+		char *s1 = NULL;     /* Init. avoids compiler warning. */
+		char *s2 = NULL;     /* Init. avoids compiler warning. */
+		long i2 = 0;	     /* Init. avoids compiler warning. */
+		double d1 = 0.0;     /* Init. avoids compiler warning. */
+		double d2 = 0.0;     /* Init. avoids compiler warning. */
+		long iResult = 0;    /* Init. avoids compiler warning. */
 #ifndef TCL_WIDE_INT_IS_LONG
-		Tcl_WideInt w2 = Tcl_LongAsWide(0);	/* ditto. */
+		Tcl_WideInt w2 = W0; /* Init. avoids compiler warning. */
 #endif
 
 		value2Ptr = POP_OBJECT();
@@ -2397,13 +2424,7 @@ TclExecuteByteCode(interp, codePtr)
 			    && (t1Ptr != &tclDoubleType)) {
 			s1 = Tcl_GetStringFromObj(valuePtr, &length);
 			if (TclLooksLikeInt(s1, length)) {
-#ifdef TCL_WIDE_INT_IS_LONG
-			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-				    valuePtr, &i);
-#else
-			    (void) Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
-				    valuePtr, &w);
-#endif
+			    GetWideOrInt(result, valuePtr, i, w);
 			} else {
 			    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &d1);
@@ -2417,13 +2438,7 @@ TclExecuteByteCode(interp, codePtr)
 			    && (t2Ptr != &tclDoubleType)) {
 			s2 = Tcl_GetStringFromObj(value2Ptr, &length);
 			if (TclLooksLikeInt(s2, length)) {
-#ifdef TCL_WIDE_INT_IS_LONG
-			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-				    value2Ptr, &i2);
-#else
-			    (void) Tcl_GetWideIntFromObj((Tcl_Interp *) NULL,
-				    value2Ptr, &w2);
-#endif
+			    GetWideOrInt(result, value2Ptr, i2, w2);
 			} else {
 			    (void) Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
 				    value2Ptr, &d2);
@@ -2615,14 +2630,21 @@ TclExecuteByteCode(interp, codePtr)
 
 		long i2, rem, negative;
 		long iResult = 0; /* Init. avoids compiler warning. */
-		
+#ifndef TCL_WIDE_INT_IS_LONG
+		Tcl_WideInt w2, wResult = W0;
+		int wideResult = 0;
+#endif
+
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT(); 
 		if (valuePtr->typePtr == &tclIntType) {
 		    i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (valuePtr->typePtr == &tclWideIntType) {
+		    w = valuePtr->internalRep.wideValue;
+#endif
 		} else {	/* try to convert to int */
-		    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-			    valuePtr, &i);
+		    GetWideOrInt(result, valuePtr, i, w);
 		    if (result != TCL_OK) {
 			TRACE(("%.20s %.20s => ILLEGAL 1st TYPE %s\n",
 			      O2S(valuePtr), O2S(value2Ptr),
@@ -2636,9 +2658,12 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		if (value2Ptr->typePtr == &tclIntType) {
 		    i2 = value2Ptr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (value2Ptr->typePtr == &tclWideIntType) {
+		    w2 = value2Ptr->internalRep.wideValue;
+#endif
 		} else {
-		    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-			    value2Ptr, &i2);
+		    GetWideOrInt(result, value2Ptr, i2, w2);
 		    if (result != TCL_OK) {
 			TRACE(("%.20s %.20s => ILLEGAL 2nd TYPE %s\n",
 			      O2S(valuePtr), O2S(value2Ptr),
@@ -2659,13 +2684,64 @@ TclExecuteByteCode(interp, codePtr)
 		     * remainder always has the same sign as the divisor and
 		     * a smaller absolute value.
 		     */
+#ifdef TCL_WIDE_INT_IS_LONG
 		    if (i2 == 0) {
 			TRACE(("%ld %ld => DIVIDE BY ZERO\n", i, i2));
 			Tcl_DecrRefCount(valuePtr);
 			Tcl_DecrRefCount(value2Ptr);
 			goto divideByZero;
 		    }
+#else
+		    if (value2Ptr->typePtr == &tclWideIntType && w2 == W0) {
+			if (valuePtr->typePtr == &tclIntType) {
+			    TRACE(("%ld %lld => DIVIDE BY ZERO\n", i, w2));
+			} else {
+			    TRACE(("%lld %lld => DIVIDE BY ZERO\n", w, w2));
+			}
+			Tcl_DecrRefCount(valuePtr);
+			Tcl_DecrRefCount(value2Ptr);
+			goto divideByZero;
+		    }
+		    if (value2Ptr->typePtr == &tclIntType && i2 == 0) {
+			if (valuePtr->typePtr == &tclIntType) {
+			    TRACE(("%ld %ld => DIVIDE BY ZERO\n", i, i2));
+			} else {
+			    TRACE(("%lld %ld => DIVIDE BY ZERO\n", w, i2));
+			}
+			Tcl_DecrRefCount(valuePtr);
+			Tcl_DecrRefCount(value2Ptr);
+			goto divideByZero;
+		    }
+#endif
 		    negative = 0;
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (valuePtr->typePtr == &tclWideIntType
+			    || value2Ptr->typePtr == &tclWideIntType) {
+			/*
+			 * Promote to wide
+			 */
+			if (valuePtr->typePtr == &tclIntType) {
+			    w = Tcl_LongAsWide(i);
+			} else if (value2Ptr->typePtr == &tclIntType) {
+			    w2 = Tcl_LongAsWide(i2);
+			}
+			if (w2 < 0) {
+			    w2 = -w2;
+			    w = -w;
+			    negative = 1;
+			}
+			rem  = w % w2;
+			if (rem < 0) {
+			    rem += w2;
+			}
+			if (negative) {
+			    rem = -rem;
+			}
+			wResult = rem;
+			wideResult = 1;
+			break;
+		    }
+#endif
 		    if (i2 < 0) {
 			i2 = -i2;
 			i = -i;
@@ -2681,6 +2757,19 @@ TclExecuteByteCode(interp, codePtr)
 		    iResult = rem;
 		    break;
 		case INST_LSHIFT:
+#ifndef TCL_WIDE_INT_IS_LONG
+		    /*
+		     * Shifts are never usefully 64-bits wide!
+		     */
+		    if (value2Ptr->typePtr == &tclWideIntType) {
+			i2 = Tcl_WideAsLong(w2);
+		    }
+		    if (valuePtr->typePtr == &tclWideIntType) {
+			wResult = w << i2;
+			wideResult = 1;
+			break;
+		    }
+#endif
 		    iResult = i << i2;
 		    break;
 		case INST_RSHIFT:
@@ -2689,6 +2778,23 @@ TclExecuteByteCode(interp, codePtr)
 		     * right shifts propagate the sign bit even on machines
 		     * where ">>" won't do it by default.
 		     */
+#ifndef TCL_WIDE_INT_IS_LONG
+		    /*
+		     * Shifts are never usefully 64-bits wide!
+		     */
+		    if (value2Ptr->typePtr == &tclWideIntType) {
+			i2 = Tcl_WideAsLong(w2);
+		    }
+		    if (valuePtr->typePtr == &tclWideIntType) {
+			if (w < 0) {
+			    wResult = ~((~w) >> i2);
+			} else {
+			    wResult = w >> i2;
+			}
+			wideResult = 1;
+			break;
+		    }
+#endif
 		    if (i < 0) {
 			iResult = ~((~i) >> i2);
 		    } else {
@@ -2696,12 +2802,60 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    break;
 		case INST_BITOR:
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (valuePtr->typePtr == &tclWideIntType
+			    || value2Ptr->typePtr == &tclWideIntType) {
+			/*
+			 * Promote to wide
+			 */
+			if (valuePtr->typePtr == &tclIntType) {
+			    w = Tcl_LongAsWide(i);
+			} else if (value2Ptr->typePtr == &tclIntType) {
+			    w2 = Tcl_LongAsWide(i2);
+			}
+			wResult = w | w2;
+			wideResult = 1;
+			break;
+		    }
+#endif
 		    iResult = i | i2;
 		    break;
 		case INST_BITXOR:
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (valuePtr->typePtr == &tclWideIntType
+			    || value2Ptr->typePtr == &tclWideIntType) {
+			/*
+			 * Promote to wide
+			 */
+			if (valuePtr->typePtr == &tclIntType) {
+			    w = Tcl_LongAsWide(i);
+			} else if (value2Ptr->typePtr == &tclIntType) {
+			    w2 = Tcl_LongAsWide(i2);
+			}
+			wResult = w ^ w2;
+			wideResult = 1;
+			break;
+		    }
+#endif
 		    iResult = i ^ i2;
 		    break;
 		case INST_BITAND:
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (valuePtr->typePtr == &tclWideIntType
+			    || value2Ptr->typePtr == &tclWideIntType) {
+			/*
+			 * Promote to wide
+			 */
+			if (valuePtr->typePtr == &tclIntType) {
+			    w = Tcl_LongAsWide(i);
+			} else if (value2Ptr->typePtr == &tclIntType) {
+			    w2 = Tcl_LongAsWide(i2);
+			}
+			wResult = w & w2;
+			wideResult = 1;
+			break;
+		    }
+#endif
 		    iResult = i & i2;
 		    break;
 		}
@@ -2711,12 +2865,28 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		
 		if (Tcl_IsShared(valuePtr)) {
-		    PUSH_OBJECT(Tcl_NewLongObj(iResult));
-		    TRACE(("%ld %ld => %ld\n", i, i2, iResult));
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (wideResult) {
+			PUSH_OBJECT(Tcl_NewWideIntObj(wResult));
+		    } else {
+#endif
+			PUSH_OBJECT(Tcl_NewLongObj(iResult));
+			TRACE(("%ld %ld => %ld\n", i, i2, iResult));
+#ifndef TCL_WIDE_INT_IS_LONG
+		    }
+#endif
 		    TclDecrRefCount(valuePtr);
 		} else {	/* reuse the valuePtr object */
-		    TRACE(("%ld %ld => %ld\n", i, i2, iResult));
-		    Tcl_SetLongObj(valuePtr, iResult);
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (wideResult) {
+			Tcl_SetWideIntObj(valuePtr, wResult);
+		    } else {
+#endif
+			TRACE(("%ld %ld => %ld\n", i, i2, iResult));
+			Tcl_SetLongObj(valuePtr, iResult);
+#ifndef TCL_WIDE_INT_IS_LONG
+		    }
+#endif
 		    ++stackTop; /* valuePtr now on stk top has right r.c. */
 		}
 		TclDecrRefCount(value2Ptr);
