@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# SCCS: %Z% $Id: ioUtil.test,v 1.3 1998/07/28 11:09:15 hershey Exp $ 
+# SCCS: %Z% $Id: ioUtil.test,v 1.4 1998/08/07 12:02:42 suresh Exp $ 
  
 if {[string compare test [info procs test]] == 1} then {source defs}
 
