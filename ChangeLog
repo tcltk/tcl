@@ -1,3 +1,9 @@
+2004-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/unixInit.test: unixInit-7.1
+	* unix/tclUnixInit.c (TclpInitPlatform): ensure the std fds exist
+	to prevent crash condition [Bug #772288]
+
 2004-02-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (TclTraceExecutionObjCmd) 
