@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.50 2001/08/04 00:28:25 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.51 2001/08/22 23:55:00 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -421,7 +421,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde1.1 reg1.0; \
+	@for i in dde1.2 reg1.0; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
@@ -445,17 +445,19 @@ install-binaries: binaries
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde1.1; \
-	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl $(LIB_INSTALL_DIR)/dde1.1; \
+	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde1.2; \
+	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
+		$(LIB_INSTALL_DIR)/dde1.2; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde1.1; \
+	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde1.2; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo installing $(REG_DLL_FILE); \
 	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
-	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
+	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
+		$(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo installing $(REG_LIB_FILE); \
