@@ -1,3 +1,9 @@
+2001-10-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclFileName.c (Tcl_SplitPath): corrected mem leak
+	intro'd with VFS code where the result obj from Tcl_FSSplitPath
+	was not getting freed.
+
 2001-10-09  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* generic/tclLiteral.c: (TclReleaseLiteral) reverted previous
