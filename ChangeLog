@@ -1,3 +1,9 @@
+2000-05-15  Eric Melski  <ericm@scriptics.com>
+
+	* library/history.tcl: Corrected an off-by-one error in HistIndex,
+	which was causing [history redo] to start its search at the wrong
+	event index. [Bug: 1269].
+
 2000-05-10  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclPosixStr.c (Tcl_SignalMsg): clarified #defines for
@@ -21,6 +27,13 @@
 	
 	* win/tclWinThrd.c (TclpInitLock, TclpMasterLock): Added missing
 	  initialization of joinLock.
+
+2000-05-09  Eric Melski  <ericm@scriptics.com>
+
+	* tests/lsearch.test: 
+	* doc/lsearch.n: 
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Extended [lsearch] to
+	support sorted list searching and typed list searching. [RFE: 4098].
 
 2000-05-08  Jeff Hobbs  <hobbs@scriptics.com>
 
