@@ -1,5 +1,10 @@
 2004-10-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	TIP#217 IMPLEMENTATION
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Add -indices option from
+	James Salsman. [Patch 1017532]
+
 	* generic/tclUtil.c (TclMatchIsTrivial): Detect degenerate cases
 	of glob matching that let us avoid scanning through hash tables.
 	* generic/tclCmdIL.c (InfoCommandsCmd, InfoGlobalsCmd, InfoProcsCmd):
