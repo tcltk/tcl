@@ -1,3 +1,9 @@
+2003-06-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/tclUnixPort.h: #undef inet_ntoa before
+	#define to avoid compiler warning under freebsd.
+	[Bug 745844]
+
 2003-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* doc/dde.n:                 Committed TIP #135 which changes the
