@@ -3267,25 +3267,6 @@ echo "$as_me: WARNING: \"could not find 64-bit SDK to enable 64bit mode\"" >&2;}
 	    CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
 	    STLIB_LD="lib -nologo"
 	    LINKBIN="link -link50compat"
-
-	    # TIP #59
-	    # A check borrowed from 'rules.vc' to determine if the
-	    # compiler actually supports optimization. If not we do
-	    # not try to use this feature.
-
-	    lines=`$(CC) -nologo -Ox -c -Zs -TC -Fdtemp nul 2>&1 | grep "D4002" | wc -l`
-
-	    for f in temp.idb temp.pdb ; do
-		if  -f $f ; then
-		     rm -f $f
-		fi
-	    done
-	    if  $lines -gt 0 ; then
-		OPTIMIZING=1
-	    else
-		OPTIMIZING=0
-		CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
-	    fi
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
@@ -3354,15 +3335,10 @@ fi;
 	echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 
-	# Use result from SC_CONFIG_CFLAGS to determine if
-	# optimization is truly active.
-
-	if test "$OPTIMIZING" = "1" ; then
-	    cat >>confdefs.h <<\_ACEOF
+	cat >>confdefs.h <<\_ACEOF
 #define TCL_CFG_OPTIMIZED 1
 _ACEOF
 
-	fi
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
