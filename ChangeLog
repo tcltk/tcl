@@ -1,3 +1,12 @@
+2002-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclEncoding.c: Fix typo in comment.
+	* generic/tclIO.c (DoReadChars, ReadBytes, ReadChars):
+	Use NULL value instead of pointer set to NULL to make
+	things more clear. Reorder arguments so that they
+	match the function signatures. Cleanup little typos
+	and add more descriptive comment.
+
 2002-03-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Update to indicate that Mingw 1.1 is
