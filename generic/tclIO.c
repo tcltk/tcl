@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.41 2001/11/07 04:47:54 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.42 2001/12/12 22:32:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -3631,13 +3631,13 @@ Tcl_GetsObj(chan, objPtr)
 	if (statePtr->flags & CHANNEL_EOF) {
 	    skip = 0;
 	    eol = dstEnd;
-	    if (eol == objPtr->bytes) {
+	    if (eol == objPtr->bytes + oldLength) {
 		/*
-		 * If we didn't produce any bytes before encountering EOF,
+		 * If we didn't append any bytes before encountering EOF,
 		 * caller needs to see -1.
 		 */
 
-		Tcl_SetObjLength(objPtr, 0);
+		Tcl_SetObjLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr, encoding);
 		copiedTotal = -1;
 		goto done;
