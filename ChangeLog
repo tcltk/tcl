@@ -1,3 +1,48 @@
+2000-09-20  Jennifer Hom  <jenn@ajubasolutions.com>
+
+	* library/tcltest1.0/pkgIndex.tcl: Updated to load tcltest 2.0.
+	* library/tcltest1.0/tcltest2.tcl: New version of tcltest.  
+	Cleanup of command line parsing: allows users to specify command
+	line arguments through an environment variable named
+	TCLTEST_OPTIONS [RFE: 3748], does not respond to incorrect
+	arguments, and forces usage of entire flag name when using command
+	line arguments.  Defines accessor procs for all tcltest
+	variables.  Allows users to use 'return' in test scripts. Allow
+	users to specify whether test files should be sourced or run in a
+	separate process.  'all.tcl' code moved to tcltest package.
+	'test' proc modified to use attribute-value pairs.  Allow users to
+	specify what return codes, output, and errors can be compared and
+	whether these values should be compared using regexp, glob, or
+	exact matching.  makeDirectory & removeDirectory now operate with
+	respect to temporaryDirectory [Bug: 6001].  Test results from
+	tests run in slave interpreters are now included in test totals
+	[Bug: 1493].  Test files that return error values are now reported.
+	
+	* tests/all.tcl: Added code to check for the tcltest version
+	loaded; modified to figure out which tests to run based on the
+	tcltest version loaded.
+	* tests/tcltest.test: Modified to explicitly load version 1.0 of
+	tcltest.
+	* tests/tcltest2.test: New test suite for tcltest; includes all of
+	the old tests plus new ones reflecting changes made for version
+	2.0.
+	* tests/cmdAH.test: Added singleTestInterp constraint to
+	cmdAH-31.2; this test does not run if tests aren't sourced into a
+	single interpreter.
+	* tests/socket.test: Fixed two tests that were referencing
+	variables outside of scope.
+	
+	* tools/tcl.wse.in: Added code to install tcltest2.tcl.
+
+	* doc/tcltest2.n: New documentation for tcltest version 2.0.
+	Removes documentation for tcltest namespace variables.  Adds
+	documentation for new tcltest procs.
+
+	* unix/mkLinks: Added code to link to tcltest2.n.
+
+	* generic/tcl.h: Added comment to modify tcltest2.tcl as well as
+	tcltest.tcl for version changes.
+
 2000-09-19  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclCmdMZ.c (Tcl_RegexpObjCmd): When using -all, all
