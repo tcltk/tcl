@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.39 2002/07/19 12:31:09 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.40 2002/08/05 03:24:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -292,7 +292,8 @@ static void		FreeByteCodeInternalRep _ANSI_ARGS_((
 static int		GetCmdLocEncodingSize _ANSI_ARGS_((
 			    CompileEnv *envPtr));
 static void		LogCompilationInfo _ANSI_ARGS_((Tcl_Interp *interp,
-        		    char *script, char *command, int length));
+        		    CONST char *script, CONST char *command,
+			    int length));
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats _ANSI_ARGS_((
 			    ByteCode *codePtr));
@@ -798,7 +799,7 @@ TclFreeCompileEnv(envPtr)
 int
 TclCompileScript(interp, script, numBytes, nested, envPtr)
     Tcl_Interp *interp;		/* Used for error and status reporting. */
-    char *script;		/* The source script to compile. */
+    CONST char *script;		/* The source script to compile. */
     int numBytes;		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
@@ -817,7 +818,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     int startCodeOffset = -1;	/* Offset of first byte of current command's
                                  * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
-    char *p, *next;
+    CONST char *p, *next;
     Namespace *cmdNsPtr;
     Command *cmdPtr;
     Tcl_Token *tokenPtr;
@@ -972,18 +973,16 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			 * reduce runtime lookups.
 			 */
 
-			objIndex = TclRegisterLiteral(envPtr,
-				tokenPtr[1].start, tokenPtr[1].size,
-				/*onHeap*/ 0);
+			objIndex = TclRegisterNewLiteral(envPtr,
+				tokenPtr[1].start, tokenPtr[1].size);
 			if (cmdPtr != NULL) {
 			    TclSetCmdNameObj(interp,
 			           envPtr->literalArrayPtr[objIndex].objPtr,
 				   cmdPtr);
 			}
 		    } else {
-			objIndex = TclRegisterLiteral(envPtr,
-				tokenPtr[1].start, tokenPtr[1].size,
-				/*onHeap*/ 0);
+			objIndex = TclRegisterNewLiteral(envPtr,
+				tokenPtr[1].start, tokenPtr[1].size);
 		    }
 		    TclEmitPush(objIndex, envPtr);
 		} else {
@@ -1127,7 +1126,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[TCL_UTF_MAX];
-    char *name, *p;
+    CONST char *name, *p;
     int numObjsToConcat, nameBytes, localVarName, localVar;
     int length, i, code;
     unsigned char *entryCodeNext = envPtr->codeNext;
@@ -1225,8 +1224,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 			        localVarName, /*flags*/ 0, envPtr->procPtr);
 		}
 		if (localVar < 0) {
-		    TclEmitPush(TclRegisterLiteral(envPtr, name,
-		            nameBytes, /*onHeap*/ 0), envPtr); 
+		    TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes),
+			    envPtr); 
 		}
 
 		/*
@@ -1406,7 +1405,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 {
     Tcl_Token *wordPtr;
     int range, numBytes, i, code;
-    char *script;
+    CONST char *script;
 
     range = -1;
     code = TCL_OK;
@@ -1639,15 +1638,15 @@ static void
 LogCompilationInfo(interp, script, command, length)
     Tcl_Interp *interp;		/* Interpreter in which to log the
 				 * information. */
-    char *script;		/* First character in script containing
+    CONST char *script;		/* First character in script containing
 				 * command (must be <= command). */
-    char *command;		/* First character in command that
+    CONST char *command;	/* First character in command that
 				 * generated the error. */
     int length;			/* Number of bytes in command (-1 means
 				 * use all bytes up to first null byte). */
 {
     char buffer[200];
-    register char *p;
+    register CONST char *p;
     char *ellipsis = "";
     Interp *iPtr = (Interp *) interp;
 

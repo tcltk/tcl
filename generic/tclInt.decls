@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.53 2002/07/17 18:21:54 msofer Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.54 2002/08/05 03:24:40 dgp Exp $
 
 library tcl
 
@@ -183,7 +183,7 @@ declare 42 generic {
     char * TclpGetUserHome(CONST char *name, Tcl_DString *bufferPtr)
 }
 declare 43 generic {
-    int TclGlobalInvoke(Tcl_Interp *interp, int argc, char **argv, int flags)
+    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv, int flags)
 }
 declare 44 generic {
     int TclGuessPackageName(CONST char *fileName, Tcl_DString *bufPtr)
@@ -216,11 +216,11 @@ declare 51 generic {
     int TclInterpInit(Tcl_Interp *interp)
 }
 declare 52 generic {
-    int TclInvoke(Tcl_Interp *interp, int argc, char **argv, int flags)
+    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv, int flags)
 }
 declare 53 generic {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, char **argv)
+	    int argc, CONST84 char **argv)
 }
 declare 54 generic {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -240,7 +240,7 @@ declare 55 generic {
 #      int TclLooksLikeInt(char *p)
 #  }
 declare 58 generic {
-    Var * TclLookupVar(Tcl_Interp *interp, char *part1, CONST char *part2,
+    Var * TclLookupVar(Tcl_Interp *interp, CONST char *part1, CONST char *part2,
 	    int flags, CONST char *msg, int createPart1, int createPart2,
 	    Var **arrayPtrPtr)
 }
@@ -351,7 +351,7 @@ declare 81 generic {
 #  }
 declare 88 generic {
     char * TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp,
-	    char *name1, CONST char *name2, int flags)
+	    CONST char *name1, CONST char *name2, int flags)
 }
 declare 89 generic {
     int TclPreventAliasLoop(Tcl_Interp *interp, Tcl_Interp *cmdInterp,
@@ -374,7 +374,7 @@ declare 93 generic {
 }
 declare 94 generic {
     int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    int argc, char **argv)
+	    int argc, CONST84 char **argv)
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 95 generic {
@@ -536,7 +536,7 @@ declare 135 generic {
 #   int TclpChdir(CONST char *dirName)
 #}
 declare 138 generic {
-    CONST char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
+    CONST84_RETURN char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
 }
 #declare 139 generic {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
@@ -548,7 +548,7 @@ declare 140 generic {
 }
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
-    CONST char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -614,13 +614,13 @@ declare 156 generic {
 	    int status)
 }
 declare 157 generic {
-    Var * TclVarTraceExists (Tcl_Interp *interp, char *varName)
+    Var * TclVarTraceExists (Tcl_Interp *interp, CONST char *varName)
 }
 declare 158 generic {
     void TclSetStartupScriptFileName(CONST char *filename)
 }
 declare 159 generic {
-    CONST char *TclGetStartupScriptFileName(void)
+    CONST84_RETURN char *TclGetStartupScriptFileName(void)
 }
 #declare 160 generic {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
@@ -676,12 +676,12 @@ declare 169 generic {
     int TclpUtfNcmp2(CONST char *s1, CONST char *s2, unsigned long n)
 }
 declare 170 generic {
-    int TclCheckInterpTraces (Tcl_Interp *interp, char *command, int numChars, \
+    int TclCheckInterpTraces (Tcl_Interp *interp, CONST char *command, int numChars, \
             Command *cmdPtr, int result, int traceFlags, int objc, \
 	    Tcl_Obj *CONST objv[])
 }
 declare 171 generic {
-    int TclCheckExecutionTraces (Tcl_Interp *interp, char *command, int numChars, \
+    int TclCheckExecutionTraces (Tcl_Interp *interp, CONST char *command, int numChars, \
             Command *cmdPtr, int result, int traceFlags, int objc, \
 	    Tcl_Obj *CONST objv[])
 }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.109 2002/07/31 14:57:09 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.110 2002/08/05 03:24:41 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1594,10 +1594,8 @@ typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
  *----------------------------------------------------------------
  */
 
-typedef int (*TclCmdProcType) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int argc, char *argv[]));
-typedef int (*TclObjCmdProcType) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST objv[]));
+typedef Tcl_CmdProc *TclCmdProcType;
+typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 
 /*
  *----------------------------------------------------------------
@@ -1738,6 +1736,14 @@ EXTERN Tcl_Obj *	TclLsetFlat _ANSI_ARGS_((Tcl_Interp* interp,
 						 Tcl_Obj *CONST indexArray[],
 						 Tcl_Obj* valuePtr
 						 ));
+EXTERN int              TclParseBackslash _ANSI_ARGS_((CONST char *src,
+                            int numBytes, int *readPtr, char *dst));
+EXTERN int		TclParseHex _ANSI_ARGS_((CONST char *src, int numBytes,
+                            Tcl_UniChar *resultPtr));
+EXTERN int		TclParseInteger _ANSI_ARGS_((CONST char *string,
+			    int numBytes));
+EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
+			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -2007,7 +2013,7 @@ EXTERN int	Tcl_WhileObjCmd _ANSI_ARGS_((ClientData clientData,
 
 #ifdef MAC_TCL
 EXTERN int	Tcl_EchoCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
+		    Tcl_Interp *interp, int argc, CONST84 char **argv));
 EXTERN int	Tcl_LsObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_BeepObjCmd _ANSI_ARGS_((ClientData clientData,
@@ -2078,13 +2084,13 @@ EXTERN Var *    TclObjLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
 		    CONST char *msg, CONST int createPart1,
 		    CONST int createPart2, Var **arrayPtrPtr));
 EXTERN Tcl_Obj *TclPtrGetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-		    Var *arrayPtr, char *part1, CONST char *part2,
+		    Var *arrayPtr, CONST char *part1, CONST char *part2,
 		    CONST int flags));
 EXTERN Tcl_Obj *TclPtrSetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-		    Var *arrayPtr, char *part1, CONST char *part2,
+		    Var *arrayPtr, CONST char *part1, CONST char *part2,
 		    Tcl_Obj *newValuePtr, CONST int flags));
 EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-		    Var *arrayPtr, char *part1, CONST char *part2,
+		    Var *arrayPtr, CONST char *part1, CONST char *part2,
 		    CONST long i, CONST int flags));
 
 /*

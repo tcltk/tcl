@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.138 2002/07/29 15:56:53 msofer Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.139 2002/08/05 03:24:40 dgp Exp $
  */
 
 #ifndef _TCL
@@ -249,9 +249,19 @@ extern "C" {
 #endif
 
 #ifdef USE_NON_CONST
+#   ifdef USE_COMPAT_CONST
+#      error define at most one of USE_NON_CONST and USE_COMPAT_CONST
+#   endif
 #   define CONST84
+#   define CONST84_RETURN
 #else
-#   define CONST84 CONST
+#   ifdef USE_COMPAT_CONST
+#      define CONST84 
+#      define CONST84_RETURN CONST
+#   else
+#      define CONST84 CONST
+#      define CONST84_RETURN CONST
+#   endif
 #endif
 
 
@@ -636,10 +646,10 @@ typedef void (Tcl_ChannelProc) _ANSI_ARGS_((ClientData clientData, int mask));
 typedef void (Tcl_CloseProc) _ANSI_ARGS_((ClientData data));
 typedef void (Tcl_CmdDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_CmdProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int argc, char *argv[]));
+	Tcl_Interp *interp, int argc, CONST84 char *argv[]));
 typedef void (Tcl_CmdTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, char *argv[]));
+	ClientData cmdClientData, int argc, CONST84 char *argv[]));
 typedef int (Tcl_CmdObjTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int level, CONST char *command,
 	Tcl_Command commandInfo, int objc, struct Tcl_Obj * CONST * objv));
@@ -680,7 +690,7 @@ typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	struct Tcl_Obj *objPtr));
 typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, char *part1, CONST84 char *part2, int flags));
+	Tcl_Interp *interp, CONST84 char *part1, CONST84 char *part2, int flags));
 typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, CONST char *oldName, CONST char *newName,
 	int flags));
@@ -1583,7 +1593,7 @@ typedef Tcl_Channel (Tcl_FSOpenFileChannelProc)
 	_ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr, 
 	int mode, int permissions));
 typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp, 
-	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST84 char *pattern, 
+	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST char *pattern, 
 	Tcl_GlobTypeData * types));
 typedef Tcl_Obj* (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
@@ -1610,7 +1620,7 @@ typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj **objPtrRef));
-typedef CONST84 char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+typedef CONST char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_Obj** objPtrRef));
 typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
@@ -1934,7 +1944,7 @@ typedef struct Tcl_EncodingType {
 typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD;
 				 * see below for valid types. */
-    char *start;		/* First character in token. */
+    CONST char *start;		/* First character in token. */
     int size;			/* Number of bytes in token. */
     int numComponents;		/* If this token is composed of other
 				 * tokens, this field tells how many of
@@ -2048,14 +2058,14 @@ typedef struct Tcl_Token {
 #define NUM_STATIC_TOKENS 20
 
 typedef struct Tcl_Parse {
-    char *commentStart;		/* Pointer to # that begins the first of
+    CONST char *commentStart;	/* Pointer to # that begins the first of
 				 * one or more comments preceding the
 				 * command. */
     int commentSize;		/* Number of bytes in comments (up through
 				 * newline character that terminates the
 				 * last comment).  If there were no
 				 * comments, this field is 0. */
-    char *commandStart;		/* First character in first word of command. */
+    CONST char *commandStart;	/* First character in first word of command. */
     int commandSize;		/* Number of bytes in command, including
 				 * first character of first word, up
 				 * through the terminating newline,
@@ -2079,13 +2089,13 @@ typedef struct Tcl_Parse {
      * Tcl_ParseCommand.
      */
 
-    char *string;		/* The original command string passed to
+    CONST char *string;		/* The original command string passed to
 				 * Tcl_ParseCommand. */
-    char *end;			/* Points to the character just after the
+    CONST char *end;		/* Points to the character just after the
 				 * last one in the command string. */
     Tcl_Interp *interp;		/* Interpreter to use for error reporting,
 				 * or NULL. */
-    char *term;			/* Points to character in string that
+    CONST char *term;		/* Points to character in string that
 				 * terminated most recent token.  Filled in
 				 * by ParseTokens.  If an error occurs,
 				 * points to beginning of region where the

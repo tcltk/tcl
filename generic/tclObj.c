@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.34 2002/07/29 15:56:54 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.35 2002/08/05 03:24:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1209,7 +1209,7 @@ SetBooleanFromAny(interp, objPtr)
          * Still might be a string containing the characters representing an
          * int or double that wasn't handled above. This would be a string
          * like "27" or "1.0" that is non-zero and not "1". Such a string
-         * whould result in the boolean value true. We try converting to
+         * would result in the boolean value true. We try converting to
          * double. If that succeeds and the resulting double is non-zero, we
          * have a "true". Note that numbers can't have embedded NULLs.
 	 */

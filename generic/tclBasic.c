@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.67 2002/07/29 15:56:53 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.68 2002/08/05 03:24:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1753,8 +1753,8 @@ TclInvokeStringCommand(clientData, interp, objc, objv)
      */
 
 #define NUM_ARGS 20
-    char *(argStorage[NUM_ARGS]);
-    char **argv = argStorage;
+    CONST char *(argStorage[NUM_ARGS]);
+    CONST char **argv = argStorage;
 
     /*
      * Create the string argument array "argv". Make sure argv is large
@@ -1763,7 +1763,7 @@ TclInvokeStringCommand(clientData, interp, objc, objv)
      */
 
     if ((objc + 1) > NUM_ARGS) {
-	argv = (char **) ckalloc((unsigned)(objc + 1) * sizeof(char *));
+	argv = (CONST char **) ckalloc((unsigned)(objc + 1) * sizeof(char *));
     }
 
     for (i = 0;  i < objc;  i++) {
@@ -1814,7 +1814,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
     ClientData clientData;	/* Points to command's Command structure. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int argc;			/* Number of arguments. */
-    register char **argv;	/* Argument strings. */
+    register CONST char **argv;	/* Argument strings. */
 {
     Command *cmdPtr = (Command *) clientData;
     register Tcl_Obj *objPtr;
@@ -2914,7 +2914,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     int objc;			/* Number of words in command. */
     Tcl_Obj *CONST objv[];	/* An array of pointers to objects that are
 				 * the words that make up the command. */
-    char *command;		/* Points to the beginning of the string
+    CONST char *command;	/* Points to the beginning of the string
 				 * representation of the command; this
 				 * is used for traces.  If the string
 				 * representation of the command is
@@ -3308,7 +3308,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
 #endif
     char nameBuffer[MAX_VAR_CHARS+1];
     char *varName, *index;
-    char *p = NULL;		/* Initialized to avoid compiler warning. */
+    CONST char *p = NULL;	/* Initialized to avoid compiler warning. */
     int length, code;
 
     /*
@@ -3516,7 +3516,7 @@ int
 Tcl_EvalEx(interp, script, numBytes, flags)
     Tcl_Interp *interp;		/* Interpreter in which to evaluate the
 				 * script.  Also used for error reporting. */
-    char *script;		/* First character of script to evaluate. */
+    CONST char *script;		/* First character of script to evaluate. */
     int numBytes;		/* Number of bytes in script.  If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
@@ -3526,7 +3526,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 				 * supported. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *p, *next;
+    CONST char *p, *next;
     Tcl_Parse parse;
 #define NUM_STATIC_OBJS 20
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
@@ -3541,7 +3541,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
      * nothing will be read nor written there. 
      */
 
-    char *onePast = NULL;
+    CONST char *onePast = NULL;
 
     /*
      * The variables below keep track of how much state has been
@@ -3712,7 +3712,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	Tcl_FreeParse(&parse);
 
 	if ((nested != 0) && (p > script)) {
-	    char *nextCmd = NULL;	/* pointer to start of next command */
+	    CONST char *nextCmd = NULL;	/* pointer to start of next command */
 
 	    /*
 	     * We get here in the special case where the TCL_BRACKET_TERM
@@ -3791,11 +3791,9 @@ int
 Tcl_Eval(interp, string)
     Tcl_Interp *interp;		/* Token for command interpreter (returned
 				 * by previous call to Tcl_CreateInterp). */
-    char *string;		/* Pointer to TCL command to execute. */
+    CONST char *string;		/* Pointer to TCL command to execute. */
 {
-    int code;
-
-    code = Tcl_EvalEx(interp, string, -1, 0);
+    int code = Tcl_EvalEx(interp, string, -1, 0);
 
     /*
      * For backwards compatibility with old C code that predates the
@@ -4301,7 +4299,7 @@ int
 TclInvoke(interp, argc, argv, flags)
     Tcl_Interp *interp;		/* Where to invoke the command. */
     int argc;			/* Count of args. */
-    register char **argv;	/* The arg strings; argv[0] is the name of
+    register CONST char **argv;	/* The arg strings; argv[0] is the name of
                                  * the command to invoke. */
     int flags;			/* Combination of flags controlling the
 				 * call: TCL_INVOKE_HIDDEN and
@@ -4398,7 +4396,7 @@ int
 TclGlobalInvoke(interp, argc, argv, flags)
     Tcl_Interp *interp;		/* Where to invoke the command. */
     int argc;			/* Count of args. */
-    register char **argv;	/* The arg strings; argv[0] is the name of
+    register CONST char **argv;	/* The arg strings; argv[0] is the name of
                                  * the command to invoke. */
     int flags;			/* Combination of flags controlling the
 				 * call: TCL_INVOKE_HIDDEN and
@@ -4931,7 +4929,7 @@ StringTraceProc( clientData, interp, level, command, commandInfo, objc, objv )
           
     ( data->proc )( data->clientData, interp, level,
 		    (char*) command, cmdPtr->proc, cmdPtr->clientData,
-		    objc, (char**) argv );
+		    objc, argv );
     ckfree( (char*) argv );
 
     return TCL_OK;
@@ -5238,7 +5236,7 @@ Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 int
 Tcl_GlobalEval(interp, command)
     Tcl_Interp *interp;		/* Interpreter in which to evaluate command. */
-    char *command;		/* Command to evaluate. */
+    CONST char *command;	/* Command to evaluate. */
 {
     register Interp *iPtr = (Interp *) interp;
     int result;
