@@ -2,6 +2,9 @@
 
 	* win/tclWinPipe.c (BuildCommandLine): Append a space when the
 	path got primed.
+	(TclpCreateProcess): When under NT, with no console, and executing a
+	DOS application, the path priming does not need an ending space as
+	BuildCommandLine() will append one for us.
 
 2004-05-07  Miguel Sofer <msofer@users.sf.net>
 
