@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.8 2001/09/29 11:09:35 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.9 2001/10/15 10:30:07 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
@@ -225,7 +225,7 @@ required (and may cache the results of such conversions for greater
 efficiency on subsequent calls).  Fourth, and perhaps most importantly,
 all of these functions are 'virtual filesystem aware'.  Any virtual
 filesystem which has been registered (through
-\fBTclRegisterFilesystem\fR) may reroute file access to alternative
+\fBTcl_FSRegister\fR) may reroute file access to alternative
 media or access methods.  This means that all of these functions (and
 therefore the corresponding \fBfile\fR, \fBpwd\fR, \fBcd\fR,
 \fBopen\fR, etc.  Tcl commands) may be operate on 'files' which are not

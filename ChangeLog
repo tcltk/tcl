@@ -1,3 +1,9 @@
+2001-10-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFCmd.c: fix to memory leak in TclFileDeleteCmd on
+	certain error conditions.
+	* doc/FileSystem.3: fix to typo.
+	
 2001-10-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/encoding/ebcdic.enc:
