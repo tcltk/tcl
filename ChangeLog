@@ -1,3 +1,14 @@
+2002-06-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:
+	* library/tcltest/tcltest.tcl:
+	* library/tcltest/pkgIndex.tcl:
+	* tests/tcltest.test:  Implementation of TIP 85.  Allows tcltest
+	users to add new legal values of the -match option to [test],
+	associating each with a Tcl command that does the matching of
+	expected results with actual results of tests.  Thanks to
+	Arjen Markus.  [Patch 521362]
+
 2002-06-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* doc/namespace.n: added description of [namepace forget]
