@@ -1,15 +1,3 @@
-dnl aclocal.m4 generated automatically by aclocal 1.4a
-
-dnl Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
-dnl This file is free software; the Free Software Foundation
-dnl gives unlimited permission to copy and/or distribute it,
-dnl with or without modifications, as long as this notice is preserved.
-
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY, to the extent permitted by law; without
-dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-dnl PARTICULAR PURPOSE.
-
 #------------------------------------------------------------------------
 # SC_PATH_TCLCONFIG --
 #
@@ -712,6 +700,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		    DL_LIBS="-ldld"
 		    LDFLAGS=""
 		    LD_SEARCH_FLAGS=""])
+	    fi
+	    if test "`uname -m`" = "alpha" ; then
+		EXTRA_CFLAGS="-mieee"
 	    fi
 	    ;;
 	MP-RAS-02*)
@@ -1704,4 +1695,3 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     AC_SUBST(TCL_LIBS)
     AC_SUBST(MATH_LIBS)
 ])
-

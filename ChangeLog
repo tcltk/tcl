@@ -1,3 +1,17 @@
+1999-07-16    <redman@scriptics.com>
+
+	* unix/aclocal.m4:
+	* unix/tcl.m4:  Add check for Alpha/Linux to correct the IEEE
+	floating flag to the compiler, should be -mieee.  Patch from Don
+	Porter.
+	
+	* tools/tcl.hpj.in: Change version number of .cnt file referenced
+	in .HPJ file.
+
+1999-07-15    <redman@scriptics.com>
+	
+	* tools/tcl.wse.in: Fixed naming of target files for Windows.
+
 1999-07-14    <jpeek@scriptics.com>
 
 	* doc/re_syntax.n: Deleted sentence as suggested by Scott S.

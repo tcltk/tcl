@@ -701,6 +701,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		    LDFLAGS=""
 		    LD_SEARCH_FLAGS=""])
 	    fi
+	    if test "`uname -m`" = "alpha" ; then
+		EXTRA_CFLAGS="-mieee"
+	    fi
 	    ;;
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
