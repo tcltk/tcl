@@ -1,3 +1,8 @@
+2003-07-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/dltest/pkga.c (Pkga_EqObjCmd): Fix typo
+	that was causing a crash in load.test.
+
 2003-07-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/array.n: Make sure docs are synched with the 8.4 release.
