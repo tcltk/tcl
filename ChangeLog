@@ -1,5 +1,29 @@
 2003-03-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_EvalTokensStandard):
+	* generic/tclCmdMZ.c (Tcl_SubstObj):
+	* generic/tclCompCmds.c (TclCompileSwitchCmd):
+	* generic/tclCompExpr.c (CompileSubExpr):
+	* generic/tclCompile.c (TclSetByteCodeFromAny,TclCompileScript,
+		TclCompileTokens,TclCompileCmdWord):
+	* generic/tclCompile.h (TclCompileScript):
+	* generic/tclExecute.c (TclCompEvalObj):
+	* generic/tclInt.h (Interp,TCL_BRACKET_TERM,TclSubstTokens):
+	* generic/tclParse.c (ParseTokens,Tcl_SubstObj,TclSubstTokens):
+	* tests/subst.test (2.4, 8.7, 8.8, 11.4, 11.5):
+	Substantial refactoring of Tcl_SubstObj to make use of the same
+	parsing and substitution procedures as normal script evaluation.
+	Tcl_SubstObj() moved to tclParse.c.  New routine TclSubstTokens()
+	created in tclParse.c which implements all substantial functioning
+	of Tcl_EvalTokensStandard().  TclCompileScript() loses its
+	"nested" argument, the Tcl_Interp struct loses its termOffset
+	field and the TCL_BRACKET_TERM flag in the evalFlags field, all
+	of which were only used (indirectly) by Tcl_SubstObj().  Tests
+	subst-8.7,8.8,11.4,11.5 modified to accomodate the only behavior
+	change: reporting of parse errors now takes precedence over
+	[return] and [continue] exceptions.  All other behavior should
+	remain compatible.  [RFE 536831,684982] [Bug 685106]
+
         * generic/tcl.h:        Removed TCL_PREFIX_IDENT and TCL_DEBUG_IDENT
         * win/tclWinPipe.c:     from tcl.h -- they are not part of Tcl's
         public interface.  Put them in win/tclWinPipe.c where they are used.

@@ -11,10 +11,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.13 2003/02/16 01:36:32 msofer Exp $
+# RCS: @(#) $Id: subst.test,v 1.14 2003/03/13 02:48:54 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
@@ -34,6 +34,10 @@ test subst-2.2 {simple strings} {
 test subst-2.3 {simple strings} {
     subst abcdefg
 } abcdefg
+test subst-2.4 {simple strings} {
+    # Tcl Bug 685106
+    subst [bytestring bar\x00soom]
+} [bytestring bar\x00soom]
 
 test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
@@ -158,12 +162,12 @@ test subst-8.5 {return in a subst} {
 test subst-8.6 {return in a subst} {
     list [catch {subst {foo [return {x}; bogus code bar}} msg] $msg
 } {1 {missing close-bracket}}
-test subst-8.7 {return in a subst, parse error} {
+test subst-8.7 {return in a subst, parse error} -body {
     subst {foo [return {x} ; set a {}" ; stuff] bar}
-} {foo xset a {}" ; stuff] bar}
-test subst-8.8 {return in a subst, parse error} {
+} -returnCodes error -result {extra characters after close-brace}
+test subst-8.8 {return in a subst, parse error} -body {
     subst {foo [return {x} ; set bar baz ; set a {}" ; stuff] bar}
-} {foo xset bar baz ; set a {}" ; stuff] bar}
+} -returnCodes error -result {extra characters after close-brace}
 test subst-8.9 {return in a variable subst} {
     subst {foo $var([return {x}]) bar}
 } {foo x bar}
@@ -206,12 +210,12 @@ test subst-11.2 {continue in a subst} {
 test subst-11.3 {continue in a subst} {
     subst {foo [if 1 { continue; bogus code}] bar}
 } {foo  bar}
-test subst-11.4 {continue in a subst, parse error} {
+test subst-11.4 {continue in a subst, parse error} -body {
     subst {foo [continue ; set a {}{} ; stuff] bar}
-} {foo set a {}{} ; stuff] bar}
-test subst-11.5 {continue in a subst, parse error} {
+} -returnCodes error -result {extra characters after close-brace}
+test subst-11.5 {continue in a subst, parse error} -body {
     subst {foo [continue ;set bar baz ;set a {}{} ; stuff] bar}
-} {foo set bar baz ;set a {}{} ; stuff] bar}
+} -returnCodes error -result {extra characters after close-brace}
 test subst-11.6 {continue in a variable subst} {
     subst {foo $var([continue]) bar}
 } {foo  bar}
