@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.66 2004/07/03 02:03:37 msofer Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.67 2004/08/25 01:11:04 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -199,11 +199,7 @@ EXTERN CONST char *	TclGetExtension _ANSI_ARGS_((CONST char * name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, CallFrame ** framePtrPtr));
 #endif
-#ifndef TclGetInterpProc_TCL_DECLARED
-#define TclGetInterpProc_TCL_DECLARED
-/* 33 */
-EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
-#endif
+/* Slot 33 is reserved */
 #ifndef TclGetIntForIndex_TCL_DECLARED
 #define TclGetIntForIndex_TCL_DECLARED
 /* 34 */
@@ -466,13 +462,7 @@ EXTERN int		TclProcCompileProc _ANSI_ARGS_((Tcl_Interp * interp,
 /* 93 */
 EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
 #endif
-#ifndef TclProcInterpProc_TCL_DECLARED
-#define TclProcInterpProc_TCL_DECLARED
-/* 94 */
-EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData, 
-				Tcl_Interp * interp, int argc, 
-				CONST84 char ** argv));
-#endif
+/* Slot 94 is reserved */
 /* Slot 95 is reserved */
 #ifndef TclRenameCommand_TCL_DECLARED
 #define TclRenameCommand_TCL_DECLARED
@@ -1097,7 +1087,7 @@ typedef struct TclIntStubs {
     void *reserved30;
     CONST char * (*tclGetExtension) _ANSI_ARGS_((CONST char * name)); /* 31 */
     int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CallFrame ** framePtrPtr)); /* 32 */
-    TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
+    void *reserved33;
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
     void *reserved35;
     int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, long * longPtr)); /* 36 */
@@ -1158,7 +1148,7 @@ typedef struct TclIntStubs {
     void (*tclProcCleanupProc) _ANSI_ARGS_((Proc * procPtr)); /* 91 */
     int (*tclProcCompileProc) _ANSI_ARGS_((Tcl_Interp * interp, Proc * procPtr, Tcl_Obj * bodyPtr, Namespace * nsPtr, CONST char * description, CONST char * procName)); /* 92 */
     void (*tclProcDeleteProc) _ANSI_ARGS_((ClientData clientData)); /* 93 */
-    int (*tclProcInterpProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, CONST84 char ** argv)); /* 94 */
+    void *reserved94;
     void *reserved95;
     int (*tclRenameCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * oldName, char * newName)); /* 96 */
     void (*tclResetShadowedCmdRefs) _ANSI_ARGS_((Tcl_Interp * interp, Command * newCmdPtr)); /* 97 */
@@ -1395,10 +1385,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclGetFrame \
 	(tclIntStubsPtr->tclGetFrame) /* 32 */
 #endif
-#ifndef TclGetInterpProc
-#define TclGetInterpProc \
-	(tclIntStubsPtr->tclGetInterpProc) /* 33 */
-#endif
+/* Slot 33 is reserved */
 #ifndef TclGetIntForIndex
 #define TclGetIntForIndex \
 	(tclIntStubsPtr->tclGetIntForIndex) /* 34 */
@@ -1579,10 +1566,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclProcDeleteProc \
 	(tclIntStubsPtr->tclProcDeleteProc) /* 93 */
 #endif
-#ifndef TclProcInterpProc
-#define TclProcInterpProc \
-	(tclIntStubsPtr->tclProcInterpProc) /* 94 */
-#endif
+/* Slot 94 is reserved */
 /* Slot 95 is reserved */
 #ifndef TclRenameCommand
 #define TclRenameCommand \
