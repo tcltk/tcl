@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.5 1999/07/22 01:08:05 redman Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.6 1999/07/22 01:26:19 redman Exp $
  */
 
 #include "tclInt.h"
@@ -288,12 +288,12 @@ TclpGetDate(time, useGMT)
  *----------------------------------------------------------------------
  */
 
-unsigned long
+size_t
 TclpStrftime(s, maxsize, format, t)
     char *s;
     size_t maxsize;
     CONST char *format;
     CONST struct tm *t;
 {
-    return (unsigned long) strftime(s, maxsize, format, t);
+    return strftime(s, maxsize, format, t);
 }

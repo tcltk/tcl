@@ -8,7 +8,7 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * RCS: @(#) $Id: strftime.c,v 1.4 1999/07/22 01:08:04 redman Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.5 1999/07/22 01:26:18 redman Exp $
  */
 
 /*
@@ -45,7 +45,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.4 1999/07/22 01:08:04 redman Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.5 1999/07/22 01:26:18 redman Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -104,7 +104,7 @@ static int		_secs _ANSI_ARGS_((const struct tm *t));
 static size_t		_fmt _ANSI_ARGS_((const char *format,
 			    const struct tm *t));
 
-unsigned long
+size_t
 TclpStrftime(s, maxsize, format, t)
     char *s;
     size_t maxsize;
@@ -115,12 +115,12 @@ TclpStrftime(s, maxsize, format, t)
 
     pt = s;
     if ((gsize = maxsize) < 1)
-	return (unsigned long)(0);
+	return(0);
     if (_fmt(format, t)) {
 	*pt = '\0';
-	return (unsigned long) (maxsize - gsize);
+	return(maxsize - gsize);
     }
-    return (unsigned long)(0);
+    return(0);
 }
 
 #define SUN_WEEK(t)	(((t)->tm_yday + 7 - \
