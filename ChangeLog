@@ -1,3 +1,8 @@
+2002-09-12  David Gravereaux <davygrvy@pobox.com>
+
+	* win/coffbase.txt: Added BLT to the virtual base address
+	listings table should BLT's build tools decide to use it.
+
 2002-09-12  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tcl.h:
