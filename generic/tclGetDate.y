@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.7 2000/01/11 02:36:15 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.8 2000/01/11 02:59:48 ericm Exp $
  */
 
 %{
@@ -432,7 +432,7 @@ static TABLE    OtherTable[] = {
     { "now",            tMINUTE_UNIT,   0 },
     { "last",           tUNUMBER,       -1 },
     { "this",           tMINUTE_UNIT,   0 },
-    { "next",           tUNUMBER,       2 },
+    { "next",           tUNUMBER,       1 },
 #if 0
     { "first",          tUNUMBER,       1 },
     { "second",         tUNUMBER,       2 },

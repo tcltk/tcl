@@ -20,7 +20,7 @@ static char TclDatesccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.9 2000/01/11 02:36:15 ericm Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.10 2000/01/11 02:59:47 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -417,7 +417,7 @@ static TABLE    OtherTable[] = {
     { "now",            tMINUTE_UNIT,   0 },
     { "last",           tUNUMBER,       -1 },
     { "this",           tMINUTE_UNIT,   0 },
-    { "next",           tUNUMBER,       2 },
+    { "next",           tUNUMBER,       1 },
 #if 0
     { "first",          tUNUMBER,       1 },
     { "second",         tUNUMBER,       2 },
