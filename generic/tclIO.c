@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.5 2000/07/17 22:59:38 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.6 2000/07/25 16:54:49 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -90,6 +90,9 @@ static void		CommonGetsCleanup _ANSI_ARGS_((Channel *chanPtr,
 				Tcl_Encoding encoding));
 static int		CopyAndTranslateBuffer _ANSI_ARGS_((
 				ChannelState *statePtr, char *result,
+				int space));
+static int		CopyBuffer _ANSI_ARGS_((
+				Channel *chanPtr, char *result,
 				int space));
 static int		CopyData _ANSI_ARGS_((CopyState *csPtr, int mask));
 static void		CopyEventProc _ANSI_ARGS_((ClientData clientData,
@@ -1022,6 +1025,8 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
     statePtr->bottomChanPtr	= chanPtr;
     chanPtr->downChanPtr	= (Channel *) NULL;
     chanPtr->upChanPtr		= (Channel *) NULL;
+    chanPtr->inQueueHead        = (ChannelBuffer*) NULL;
+    chanPtr->inQueueTail        = (ChannelBuffer*) NULL;
 
     /*
      * Link the channel into the list of all channels; create an on-exit
@@ -1159,6 +1164,39 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
 
 	statePtr->csPtr = csPtr;
     }
+    /*
+     * Discard any input in the buffers. They are not yet read by the
+     * user of the channel, so they have to go through the new
+     * transformation before reading. As the buffers contain the
+     * untransformed form their contents are not only useless but actually
+     * distorts our view of the system.
+     *
+     * To preserve the information without having to read them again and
+     * to avoid problems with the location in the channel (seeking might
+     * be impossible) we move the buffers from the common state structure
+     * into the channel itself. We use the buffers in the channel below
+     * the new transformation to hold the data. In the future this allows
+     * us to write transformations which pre-read data and push the unused
+     * part back when they are going away.
+     */
+
+    if (((mask & TCL_READABLE) != 0) &&
+	(statePtr->inQueueHead != (ChannelBuffer*) NULL)) {
+      /*
+       * Remark: It is possible that the channel buffers contain data from
+       * some earlier push-backs.
+       */
+
+      statePtr->inQueueTail->nextPtr = prevChanPtr->inQueueHead;
+      prevChanPtr->inQueueHead       = statePtr->inQueueHead;
+
+      if (prevChanPtr->inQueueTail == (ChannelBuffer*) NULL) {
+	prevChanPtr->inQueueTail = statePtr->inQueueTail;
+      }
+
+      statePtr->inQueueHead          = (ChannelBuffer*) NULL;
+      statePtr->inQueueTail          = (ChannelBuffer*) NULL;
+    }
 
     chanPtr = (Channel *) ckalloc((unsigned) sizeof(Channel));
 
@@ -1174,6 +1212,8 @@ Tcl_StackChannel(interp, typePtr, instanceData, mask, prevChan)
     chanPtr->typePtr		= typePtr;
     chanPtr->downChanPtr	= prevChanPtr;
     chanPtr->upChanPtr		= (Channel *) NULL;
+    chanPtr->inQueueHead        = (ChannelBuffer*) NULL;
+    chanPtr->inQueueTail        = (ChannelBuffer*) NULL;
 
     /*
      * Place new block at the head of a possibly existing list of previously
@@ -1251,6 +1291,37 @@ Tcl_UnstackChannel (interp, chan)
 	    }
 
 	    statePtr->csPtr = csPtr;
+	}
+
+	/*
+	 * Anything in the input queue and the push-back buffers of
+	 * the transformation going away is transformed data, but not
+	 * yet read. As unstacking means that the caller does not want
+	 * to see transformed data any more we have to discard these
+	 * bytes. To avoid writing an analogue to 'DiscardInputQueued'
+	 * we move the information in the push back buffers to the
+	 * input queue and then call 'DiscardInputQueued' on that.
+	 */
+
+	if (((statePtr->flags & TCL_READABLE)  != 0) &&
+	    ((statePtr->inQueueHead != (ChannelBuffer*) NULL) ||
+	     (chanPtr->inQueueHead  != (ChannelBuffer*) NULL))) {
+
+	    if ((statePtr->inQueueHead != (ChannelBuffer*) NULL) &&
+		(chanPtr->inQueueHead  != (ChannelBuffer*) NULL)) {
+	        statePtr->inQueueTail->nextPtr = chanPtr->inQueueHead;
+		statePtr->inQueueTail = chanPtr->inQueueTail;
+	        statePtr->inQueueHead = statePtr->inQueueTail;
+
+	    } else if (chanPtr->inQueueHead != (ChannelBuffer*) NULL) {
+	        statePtr->inQueueHead = chanPtr->inQueueHead;
+		statePtr->inQueueTail = chanPtr->inQueueTail;
+	    }
+
+	    chanPtr->inQueueHead          = (ChannelBuffer*) NULL;
+	    chanPtr->inQueueTail          = (ChannelBuffer*) NULL;
+
+	    DiscardInputQueued (statePtr, 0);
 	}
 
 	statePtr->topChanPtr	= downChanPtr;
@@ -3677,14 +3748,15 @@ Tcl_Read(chan, dst, bytesToRead)
  */
 
 int
-Tcl_ReadRaw(chan, dst, bytesToRead)
+Tcl_ReadRaw(chan, bufPtr, bytesToRead)
     Tcl_Channel chan;		/* The channel from which to read. */
-    char *dst;			/* Where to store input read. */
+    char *bufPtr;			/* Where to store input read. */
     int bytesToRead;		/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;		
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int nread, result;
+    int copied, copiedNow;
 
     /*
      * The check below does too much because it will reject a call to this
@@ -3702,41 +3774,76 @@ Tcl_ReadRaw(chan, dst, bytesToRead)
 	return -1;
     }
 
-    /*return DoRead(chanPtr, dst, bytesToRead);*/
-
     /*
-     * Go immediately to the driver, do all the error handling by ourselves.
-     * The code was stolen from 'GetInput' and slightly adapted (different
-     * return value here).
+     * Check for information in the push-back buffers. If there is
+     * some, use it. Go to the driver only if there is none (anymore)
+     * and the caller requests more bytes.
      */
 
-    nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
-	    dst, bytesToRead, &result);
+    for (copied = 0; copied < bytesToRead; copied += copiedNow) {
+        copiedNow = CopyBuffer(chanPtr, bufPtr + copied,
+                bytesToRead - copied);
+        if (copiedNow == 0) {
+            if (statePtr->flags & CHANNEL_EOF) {
+		goto done;
+            }
+            if (statePtr->flags & CHANNEL_BLOCKED) {
+                if (statePtr->flags & CHANNEL_NONBLOCKING) {
+		    goto done;
+                }
+                statePtr->flags &= (~(CHANNEL_BLOCKED));
+            }
 
-    if (nread > 0) {
-	/*
-	 * If we get a short read, signal up that we may be BLOCKED. We
-	 * should avoid calling the driver because on some platforms we
-	 * will block in the low level reading code even though the
-	 * channel is set into nonblocking mode.
-	 */
+	    /*
+	     * Now go to the driver to get as much as is possible to
+	     * fill the remaining request. Do all the error handling
+	     * by ourselves.  The code was stolen from 'GetInput' and
+	     * slightly adapted (different return value here).
+	     *
+	     * The case of 'bytesToRead == 0' at this point cannot happen.
+	     */
+
+	    nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
+			  bufPtr + copied, bytesToRead - copied, &result);
+	    if (nread > 0) {
+	        /*
+		 * If we get a short read, signal up that we may be
+		 * BLOCKED. We should avoid calling the driver because
+		 * on some platforms we will block in the low level
+		 * reading code even though the channel is set into
+		 * nonblocking mode.
+		 */
             
-	if (nread < bytesToRead) {
-	    statePtr->flags |= CHANNEL_BLOCKED;
-	}
-    } else if (nread == 0) {
-	statePtr->flags |= CHANNEL_EOF;
-	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-    } else if (nread < 0) {
-	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
-	    statePtr->flags |= CHANNEL_BLOCKED;
-	    result = EAGAIN;
-	}
-	Tcl_SetErrno(result);
-	return -1;
-    } 
+	        if (nread < (bytesToRead - copied)) {
+		    statePtr->flags |= CHANNEL_BLOCKED;
+		}
+	    } else if (nread == 0) {
+	        statePtr->flags |= CHANNEL_EOF;
+		statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+	    } else if (nread < 0) {
+	        if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
+		    if (copied > 0) {
+		      /*
+		       * Information that was copied earlier has precedence
+		       * over EAGAIN/WOULDBLOCK handling.
+		       */
+		      return copied;
+		    }
 
-    return nread;
+		    statePtr->flags |= CHANNEL_BLOCKED;
+		    result = EAGAIN;
+		}
+
+		Tcl_SetErrno(result);
+		return -1;
+	    } 
+
+	    return copied + nread;
+        }
+    }
+
+done:
+    return copied;
 }
 
 /*
@@ -4596,6 +4703,34 @@ GetInput(chanPtr)
     }
 
     /*
+     * First check for more buffers in the pushback area of the
+     * topmost channel in the stack and use them. They can be the
+     * result of a transformation which went away without reading all
+     * the information placed in the area when it was stacked.
+     *
+     * Two possibilities for the state: No buffers in it, or a single
+     * empty buffer. In the latter case we can recycle it now.
+     */
+
+    if (chanPtr->inQueueHead != (ChannelBuffer*) NULL) {
+        if (statePtr->inQueueHead != (ChannelBuffer*) NULL) {
+	    RecycleBuffer(statePtr, statePtr->inQueueHead, 0);
+	    statePtr->inQueueHead = (ChannelBuffer*) NULL;
+	}
+
+	statePtr->inQueueHead = chanPtr->inQueueHead;
+	statePtr->inQueueTail = chanPtr->inQueueTail;
+	chanPtr->inQueueHead  = (ChannelBuffer*) NULL;
+	chanPtr->inQueueTail  = (ChannelBuffer*) NULL;
+	return 0;
+    }
+
+    /*
+     * Nothing in the pushback area, fall back to the usual handling
+     * (driver, etc.)
+     */
+
+    /*
      * See if we can fill an existing buffer. If we can, read only
      * as much as will fit in it. Otherwise allocate a new buffer,
      * add it to the input queue and attempt to fill it to the max.
@@ -4733,6 +4868,17 @@ Tcl_Seek(chan, offset, mode)
 	 bufPtr = bufPtr->nextPtr) {
         inputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
     }
+
+    /*
+     * Don't forget the bytes in the topmost pushback area.
+     */
+
+    for (bufPtr = statePtr->topChanPtr->inQueueHead;
+	 bufPtr != (ChannelBuffer *) NULL;
+	 bufPtr = bufPtr->nextPtr) {
+        inputBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+    }
+
     for (bufPtr = statePtr->outQueueHead, outputBuffered = 0;
 	 bufPtr != (ChannelBuffer *) NULL;
 	 bufPtr = bufPtr->nextPtr) {
@@ -5089,7 +5235,7 @@ Tcl_InputBlocked(chan)
  * Tcl_InputBuffered --
  *
  *	Returns the number of bytes of input currently buffered in the
- *	internal buffer of a channel.
+ *	common internal buffer of a channel.
  *
  * Results:
  *	The number of input bytes buffered, or zero if the channel is not
@@ -5115,6 +5261,53 @@ Tcl_InputBuffered(chan)
 	 bufPtr = bufPtr->nextPtr) {
         bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
     }
+
+    /*
+     * Don't forget the bytes in the topmost pushback area.
+     */
+
+    for (bufPtr = statePtr->topChanPtr->inQueueHead;
+	 bufPtr != (ChannelBuffer *) NULL;
+	 bufPtr = bufPtr->nextPtr) {
+        bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+    }
+
+    return bytesBuffered;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelBuffered --
+ *
+ *	Returns the number of bytes of input currently buffered in the
+ *	internal buffer (push back area) of a channel.
+ *
+ * Results:
+ *	The number of input bytes buffered, or zero if the channel is not
+ *	open for reading.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ChannelBuffered(chan)
+    Tcl_Channel chan;			/* The channel to query. */
+{
+    Channel *chanPtr = (Channel *) chan;
+					/* State of real channel structure. */
+    ChannelBuffer *bufPtr;
+    int bytesBuffered;
+
+    for (bytesBuffered = 0, bufPtr = chanPtr->inQueueHead;
+	 bufPtr != (ChannelBuffer *) NULL;
+	 bufPtr = bufPtr->nextPtr) {
+        bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+    }
+
     return bytesBuffered;
 }
 
@@ -7242,6 +7435,98 @@ CopyAndTranslateBuffer(statePtr, result, space)
      * Return the number of characters copied into the result buffer.
      * This may be different from the number of bytes consumed, because
      * of EOL translations.
+     */
+
+    return copied;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyBuffer --
+ *
+ *	Copy at most one buffer of input to the result space.
+ *
+ * Results:
+ *	Number of bytes stored in the result buffer.  May return
+ *	zero if no input is available.
+ *
+ * Side effects:
+ *	Consumes buffered input. May deallocate one buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CopyBuffer(chanPtr, result, space)
+    Channel *chanPtr;		/* Channel from which to read input. */
+    char *result;		/* Where to store the copied input. */
+    int space;			/* How many bytes are available in result
+                                 * to store the copied input? */
+{
+    ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
+    int bytesInBuffer;		/* How many bytes are available to be
+                                 * copied in the current input buffer? */
+    int copied;			/* How many characters were already copied
+                                 * into the destination space? */
+    
+    /*
+     * If there is no input at all, return zero. The invariant is that
+     * either there is no buffer in the queue, or if the first buffer
+     * is empty, it is also the last buffer (and thus there is no
+     * input in the queue).  Note also that if the buffer is empty, we
+     * don't leave it in the queue, but recycle it.
+     */
+    
+    if (chanPtr->inQueueHead == (ChannelBuffer *) NULL) {
+        return 0;
+    }
+    bufPtr = chanPtr->inQueueHead;
+    bytesInBuffer = bufPtr->nextAdded - bufPtr->nextRemoved;
+
+    copied = 0;
+
+    if (bytesInBuffer == 0) {
+        RecycleBuffer(chanPtr->state, bufPtr, 0);
+	chanPtr->inQueueHead = (ChannelBuffer*) NULL;
+	chanPtr->inQueueTail = (ChannelBuffer*) NULL;
+        return 0;
+    }
+
+    /*
+     * Copy the current chunk into the result buffer.
+     */
+
+    if (bytesInBuffer < space) {
+        space = bytesInBuffer;
+    }
+
+    memcpy((VOID *) result,
+	   (VOID *) (bufPtr->buf + bufPtr->nextRemoved),
+	   (size_t) space);
+    bufPtr->nextRemoved += space;
+    copied = space;
+
+    /*
+     * We don't care about in-stream EOF characters here as the data
+     * read here may still flow through one or more transformations,
+     * i.e. is not in its final state yet.
+     */
+
+    /*
+     * If the current buffer is empty recycle it.
+     */
+
+    if (bufPtr->nextRemoved == bufPtr->nextAdded) {
+        chanPtr->inQueueHead = bufPtr->nextPtr;
+        if (chanPtr->inQueueHead == (ChannelBuffer *) NULL) {
+            chanPtr->inQueueTail = (ChannelBuffer *) NULL;
+        }
+        RecycleBuffer(chanPtr->state, bufPtr, 0);
+    }
+
+    /*
+     * Return the number of characters copied into the result buffer.
      */
 
     return copied;

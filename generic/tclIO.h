@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.1.2.1 2000/07/17 22:59:40 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.1.2.2 2000/07/25 16:54:52 kupries Exp $
  */
 
 /*
@@ -139,6 +139,13 @@ typedef struct Channel {
 				 * channels.  See Tcl_StackChannel. */
     struct Channel *upChanPtr;	/* Refers to the channel above stacked this
 				 * one. NULL for the top most channel. */
+
+    /*
+     * Intermediate buffers to hold pre-read data for consumption by a
+     * newly stacked transformation. See 'Tcl_StackChannel'.
+     */
+    ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
+    ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 } Channel;
 
 /*

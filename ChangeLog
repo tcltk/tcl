@@ -1,3 +1,32 @@
+2000-07-25 Andreas Kupries <a.kupries@westend.com>
+
+	* tests/iogt.test: (line 866f) New tests iogt-6.[01], highlighting
+ 	  buffering trouble when stacking and unstacking transformations.
+	  iogt-6.0 is solved, see the changes below. iogt-6.1 remains, for
+ 	  now, due to the perceived complexity of solutions.
+
+	* generic/tclIO.h: (line 139f) struct Channel, added a buffer
+	  queue, to hold data pushed back when stacking a transformation.
+
+	* generic/tclIO.c:
+	  (line 91f, line 7434f) New internal function 'CopyBuffer'.
+	  Derived from 'CopyAndTranslateBuffer', with translation
+	  removed.
+	  (line 1025f, line 1212f): Initialization of new queue.
+	  (line 1164f, Tcl_StackChannel): Pushback of input queue.
+	  (line 1293f, Tcl_UnstackChannel): Discard input and pushback.
+	  (line 3748f, Tcl_ReadRaw): Modified to use data in the push back
+	  area before going to the driver. Uses 'CopyBuffer', s.a.
+	  (line 4702f, GetInput): Modified to use data in the push back
+	  area before going to the driver.
+ 	  (line 4867f, Tcl_Seek): Modified to take pushback of the topmost
+	  channel in a stack into account.
+	  (line 5620f, Tcl_InputBuffered): See above. Added
+	  'Tcl_ChannelBuffered'. Analogue to 'Tcl_InputBuffered' but for
+	  the buffer area in the channel.
+
+	* generic/tcl.decls: New public API 'Tcl_ChannelBuffered'. S.a.
+
 2000-07-19  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/socket.test: removed doTestsWithRemoteServer constraint

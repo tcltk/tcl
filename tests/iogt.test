@@ -866,6 +866,65 @@ flush/write {} {}
 delete/write {} *ignored*}
 
 
+
+
+
+proc constX {op data} {
+    # replace anything coming in with a same-length string of x'es.
+    switch -- $op {
+	create/write -	create/read  -
+	delete/write -	delete/read  -
+	clear_read   {;#ignore}
+	flush/write -	flush/read  -
+	write       -
+	read        {
+	    return [string repeat x [string length $data]]
+	}
+	query/maxRead {return -1}
+    }
+}
+
+proc constx {-attach channel} {
+    testchannel transform $channel -command constX
+}
+
+test iogt-6.0 {Push back} {
+    set f [open dummy r]
+
+    # contents of dummy = "abcdefghi..."
+    read $f 3 ; # skip behind "abc"
+
+    constx -attach $f
+
+    # expect to get "xxx" from the transform because
+    # of unread "def" input to transform which returns "xxx".
+    #
+    # Actually the IO layer pre-read the whole file and will
+    # read "def" directly from the buffer without bothering
+    # to consult the newly stacked transformation. This is
+    # wrong.
+
+    set res [read $f 3]
+    close $f
+    set res
+} {xxx}
+
+test iogt-6.1 {Push back and up} {knownBug} {
+    set f [open dummy r]
+
+    # contents of dummy = "abcdefghi..."
+    read $f 3 ; # skip behind "abc"
+
+    constx -attach $f
+    set res [read $f 3]
+
+    testchannel unstack $f
+    append res [read $f 3]
+    close $f
+    set res
+} {xxxghi}
+
+
 # cleanup
 foreach file [list dummy dummyout __echo_srv__.tcl] {
     ::tcltest::removeFile $file

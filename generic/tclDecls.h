@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.34.4.2 2000/07/12 01:41:21 hobbs Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.34.4.3 2000/07/25 16:54:48 kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1236,6 +1236,8 @@ EXTERN int		Tcl_WriteRaw _ANSI_ARGS_((Tcl_Channel chan,
 				char * src, int srcLen));
 /* 396 */
 EXTERN Tcl_Channel	Tcl_GetTopChannel _ANSI_ARGS_((Tcl_Channel chan));
+/* 397 */
+EXTERN int		Tcl_ChannelBuffered _ANSI_ARGS_((Tcl_Channel chan));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1700,6 +1702,7 @@ typedef struct TclStubs {
     int (*tcl_ReadRaw) _ANSI_ARGS_((Tcl_Channel chan, char * dst, int bytesToRead)); /* 394 */
     int (*tcl_WriteRaw) _ANSI_ARGS_((Tcl_Channel chan, char * src, int srcLen)); /* 395 */
     Tcl_Channel (*tcl_GetTopChannel) _ANSI_ARGS_((Tcl_Channel chan)); /* 396 */
+    int (*tcl_ChannelBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 397 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3332,6 +3335,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetTopChannel
 #define Tcl_GetTopChannel \
 	(tclStubsPtr->tcl_GetTopChannel) /* 396 */
+#endif
+#ifndef Tcl_ChannelBuffered
+#define Tcl_ChannelBuffered \
+	(tclStubsPtr->tcl_ChannelBuffered) /* 397 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35.4.3 2000/07/17 22:59:44 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.35.4.4 2000/07/25 16:54:52 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -796,6 +796,7 @@ TclStubs tclStubs = {
     Tcl_ReadRaw, /* 394 */
     Tcl_WriteRaw, /* 395 */
     Tcl_GetTopChannel, /* 396 */
+    Tcl_ChannelBuffered, /* 397 */
 };
 
 /* !END!: Do not edit above this line. */
