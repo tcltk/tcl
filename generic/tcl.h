@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.67 2000/04/10 22:44:15 welch Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.68 2000/04/13 02:30:43 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -395,8 +395,6 @@ typedef struct Tcl_Var_ *Tcl_Var;
 
 #ifdef MAC_TCL
 typedef pascal void *(Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
-#elif defined __WIN32__
-typedef unsigned (__stdcall Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #else
 typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #endif
