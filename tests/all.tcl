@@ -6,9 +6,11 @@
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2000 by Ajuba Solutions
-# All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.15 2001/11/23 01:25:35 das Exp $
+# RCS: @(#) $Id: all.tcl,v 1.16 2002/04/10 19:57:15 hobbs Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force tcltest::*
