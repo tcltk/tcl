@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.36 2002/06/28 09:56:54 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.37 2002/07/08 10:08:58 vincentdarley Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1746,17 +1746,16 @@ TtyInit(fd, initialize)
  */
 
 Tcl_Channel
-TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
+TclpOpenFileChannel(interp, pathPtr, mode, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
 					 * can be NULL. */
     Tcl_Obj *pathPtr;			/* Name of file to open. */
-    CONST char *modeString;		/* A list of POSIX open modes or
-					 * a string such as "rw". */
+    int mode;				/* POSIX open mode. */
     int permissions;			/* If the open involves creating a
 					 * file, with what modes to create
 					 * it? */
 {
-    int fd, seekFlag, mode, channelPermissions;
+    int fd, channelPermissions;
     FileState *fsPtr;
     CONST char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -1768,10 +1767,6 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif /* DEPRECATED */
 
-    mode = TclGetOpenMode(interp, modeString, &seekFlag);
-    if (mode == -1) {
-	return NULL;
-    }
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
 	case O_RDONLY:
 	    channelPermissions = TCL_READABLE;
@@ -1847,18 +1842,6 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 
     fsPtr->channel = Tcl_CreateChannel(channelTypePtr, channelName,
 	    (ClientData) fsPtr, channelPermissions);
-
-    if (seekFlag) {
-	if (Tcl_Seek(fsPtr->channel, (Tcl_WideInt)0,
-		SEEK_END) < (Tcl_WideInt)0) {
-	    if (interp != (Tcl_Interp *) NULL) {
-		Tcl_AppendResult(interp, "couldn't seek to end of file on \"",
-			channelName, "\": ", Tcl_PosixError(interp), NULL);
-	    }
-	    Tcl_Close(NULL, fsPtr->channel);
-	    return NULL;
-	}
-    }
 
     if (translation != NULL) {
 	/*
