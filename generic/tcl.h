@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.132 2002/07/14 17:29:01 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.133 2002/07/18 15:04:53 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -1598,7 +1598,7 @@ typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int recursive, Tcl_Obj **errorPtr));
 typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 			    Tcl_Obj *destPathPtr));
-typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((TclLoadHandle loadHandle));
 typedef Tcl_Obj* (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
 /* We have to declare the utime structure here. */
 struct utimbuf;
