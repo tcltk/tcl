@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.85 2002/04/23 17:03:34 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.86 2002/04/24 20:36:05 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1896,7 +1896,7 @@ EXTERN void		TclpThreadDataKeySet _ANSI_ARGS_((
 EXTERN void		TclpThreadExit _ANSI_ARGS_((int status));
 EXTERN void		TclRememberCondition _ANSI_ARGS_((Tcl_Condition *mutex));
 EXTERN void		TclRememberDataKey _ANSI_ARGS_((Tcl_ThreadDataKey *mutex));
-EXTERN void             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
+EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
 EXTERN void		TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN int		TclRenameCommand _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *oldName, char *newName)) ;
