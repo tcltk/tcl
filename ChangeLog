@@ -1,3 +1,14 @@
+2002-07-19  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+	
+	* generic/tclExecute.c (TclCompileByteCodesForExpr): Bugfix. Added
+	  a missing RELTEMP(compEnv) in line 6043 to release the structure
+	  if the object is not of type 'bytecode'. Reported by Gregory
+	  Thompson <gst@cisco.com>.
+
+	* generic/tclInt.h: Changed NEWTEMP, NEWSTR, and RELTEMP macros to
+	  use 'ckalloc' and 'ckfree' instead of 'Tcl'_Alloc and
+	  'Tcl_Free'. Suggested by Gregory Thompson <gst@cisco.com>.
+
 2002-03-18  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclCompile.c (TclCompileTokens): Modified imported bugfix

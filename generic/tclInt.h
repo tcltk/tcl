@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.2 2002/03/18 22:30:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.3 2002/07/19 17:28:21 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -2255,10 +2255,10 @@ extern Tcl_Mutex tclObjMutex;
 #define TEMP(t)          t *
 #define ITEM(var,item)   var -> item
 #define REF(var)         (var)
-#define NEWTEMP(t,var)   (var) = (t *) Tcl_Alloc(sizeof(t))
-#define RELTEMP(var)     Tcl_Free((void*)(var))
+#define NEWTEMP(t,var)   (var) = (t *) ckalloc(sizeof(t))
+#define RELTEMP(var)     ckfree((void*)(var))
 #define STRING(n,var)    char* var
-#define NEWSTR(n,var)    (var) = (char *) Tcl_Alloc(n)
+#define NEWSTR(n,var)    (var) = (char *) ckalloc(n)
 #else
 #define TEMP(t)         t
 #define ITEM(var,item)  var . item
