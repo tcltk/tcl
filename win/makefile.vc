@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.58 2000/11/03 01:10:23 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.59 2000/11/03 21:23:28 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -391,24 +391,24 @@ install-libraries:
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
 	@echo installing http2.3
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.3"
-	-@copy "$(ROOT)\library\http2.3\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.3"
-	-@copy "$(ROOT)\library\http2.3\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.3"
+	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.3"
+	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.3"
 	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	@echo installing msgcat1.0
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
-	-@copy "$(ROOT)\library\msgcat1.0\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
-	-@copy "$(ROOT)\library\msgcat1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	-@copy "$(ROOT)\library\opt\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@echo installing msgcat1.2
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
+	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
 	@echo installing $(TCLDDEDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.1"
-	-@copy "$(ROOT)\library\dde1.1\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
+	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	@echo installing $(TCLREGDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.0"
-	-@copy "$(ROOT)\library\reg1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	@echo installing encoding files
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
 	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"
