@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: append.test,v 1.6 2001/05/17 02:18:53 hobbs Exp $
+# RCS: @(#) $Id: append.test,v 1.7 2001/07/03 23:39:24 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -131,6 +131,18 @@ test append-4.17 {lappend command} {
     catch {unset x}
     lappend x
 } {}
+test append-4.18 {lappend command} {
+    catch {unset x}
+    lappend x {}
+} {{}}
+test append-4.19 {lappend command} {
+    catch {unset x}
+    lappend x(0)
+} {}
+test append-4.20 {lappend command} {
+    catch {unset x}
+    lappend x(0) abc
+} {abc}
 
 proc check {var size} {
     set l [llength $var]
@@ -146,6 +158,7 @@ proc check {var size} {
     return ok
 }
 test append-5.1 {long lappends} {
+    catch {unset x}
     set x ""
     for {set i 0} {$i < 300} {set i [expr $i+1]} {
 	lappend x "item $i"
@@ -173,6 +186,42 @@ test append-7.1 {lappend-created var and error in trace on that var} {
     lappend x 1
     list [info exists x] [catch {set x} msg] $msg
 } {0 1 {can't read "x": no such variable}}
+test append-7.2 {lappend var triggers read trace} {
+    catch {unset myvar}
+    catch {unset ::result}
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    lappend myvar a
+    list [catch {set ::result} msg] $msg
+} {0 {myvar {} r}}
+test append-7.3 {lappend var triggers read trace, array var} {
+    # The behavior of read triggers on lappend changed in 8.0 to
+    # not trigger them, and was changed back in 8.4.
+    catch {unset myvar}
+    catch {unset ::result}
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    lappend myvar(b) a
+    list [catch {set ::result} msg] $msg
+} {0 {myvar b r}}
+test append-7.4 {lappend var triggers read trace, array var exists} {
+    catch {unset myvar}
+    catch {unset ::result}
+    set myvar(0) 1
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    lappend myvar(b) a
+    list [catch {set ::result} msg] $msg
+} {0 {myvar b r}}
+test append-7.5 {append var does not trigger read trace} {
+    catch {unset myvar}
+    catch {unset ::result}
+    trace variable myvar r foo
+    proc foo {args} {append ::result $args}
+    append myvar a
+    info exists ::result
+} {0}
+
 
 catch {unset i x result y}
 catch {rename foo ""}
