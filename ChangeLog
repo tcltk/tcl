@@ -1,3 +1,13 @@
+2002-02-25  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompCmds: fixing a bug in patch dated 2002-02-22, in
+	the code for [for] and [while]. Under certain conditions, for long
+	bodies, the exception range parameters were badly computed. Tests
+	forthcoming: I still can't reproduce the conditions in the
+	testsuite (!), although the bug (with assorted segfault or panic!)
+	can be triggered from the console or with the new parse.bench in  
+	tclbench.
+	
 2002-02-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* compat/strtoul.c, compat/strtol.c, compat/strtod.c: Added UCHAR,
