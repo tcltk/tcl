@@ -1,3 +1,8 @@
+2002-06-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* doc/Tcl.n: clarify the empty variable name issue ([Bug 549285]
+	reported by Tom Krehbiel, patch by Don Porter).
+
 2002-05-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/package.tcl:  Fixed leak of slave interp in [pkg_mkIndex].
