@@ -1,3 +1,10 @@
+2000-11-02  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* generic/tclEvent.c: tclLibraryPath Tcl_Obj didn't have a way
+	to share its data among threads.  This caused Tcl_Init() to
+	always fail in threads.  Added a way to pass the data around
+	with a global char*.  [BUG: 5301]
+
 2000-11-02  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* win/makefile.vc:
