@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.169 2003/12/23 02:39:08 davygrvy Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.170 2004/01/09 20:55:26 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -2239,28 +2239,30 @@ typedef struct Tcl_Config {
 } Tcl_Config;
 
 
-/*
- * Deprecated Tcl procedures:
- */
 #ifndef TCL_NO_DEPRECATED
+
+    /*
+     * Deprecated Tcl procedures:
+     */
+
 #   define Tcl_EvalObj(interp,objPtr) \
 	Tcl_EvalObjEx((interp),(objPtr),0)
 #   define Tcl_GlobalEvalObj(interp,objPtr) \
 	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+
+    /*
+     * These function have been renamed. The old names are deprecated, but
+     * we define these macros for backwards compatibilty.
+     */
+
+#   define Tcl_Ckalloc Tcl_Alloc
+#   define Tcl_Ckfree Tcl_Free
+#   define Tcl_Ckrealloc Tcl_Realloc
+#   define Tcl_Return Tcl_SetResult
+#   define Tcl_TildeSubst Tcl_TranslateFileName
+#   define panic Tcl_Panic
+#   define panicVA Tcl_PanicVA
 #endif
-
-
-/*
- * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
- */
-#define Tcl_Ckalloc Tcl_Alloc
-#define Tcl_Ckfree Tcl_Free
-#define Tcl_Ckrealloc Tcl_Realloc
-#define Tcl_Return Tcl_SetResult
-#define Tcl_TildeSubst Tcl_TranslateFileName
-#define panic Tcl_Panic
-#define panicVA Tcl_PanicVA
 
 
 /*
