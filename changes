@@ -3523,3 +3523,32 @@ Contributed by Jan Nijtmans (JN)
 
 7/1/97 (bug fix) The commands "info args, body, default, procs" did
 not correctly handle imported procedures. (RJ)
+
+7/6/98 (improvement) pkg_mkIndex now implements the "package require"
+command.  This makes it possible to create index files for packages
+that require another package and then execute code from that package in
+their file. Previously, this would throw an error because the required
+package had not been loaded.  The -nopkgrequied flag is provided to
+revert back to the old functionality. (EMS)
+
+7/6/98 (improvement) back-ported the -direct flag from 8.1 into
+pkg_mkIndex.  This results in pkgIndex.tcl files that contain direct
+source or load commands instead of tclPkgSetup commands. (EMS)
+
+7/6/98 (improvement) made changes to the AuxData items structures to support
+storage of compiled scripts on disk. Also some related minor changes in
+the compilation and execution engine. (EMS)
+
+6/4/98 (enhancement) Added new internal routines to support inserting
+and deleting from the stat, access, and open-file-channel mechanisms.
+TclAccessInsertProc, TclStatInsertProc, & TclOpenFileChannelInsertProc
+insert pointers to such routines; TclAccessDeleteProc, TclStatDeleteProc,
+& TclOpenFileChannelDeleteProc delete pointers to such routines.  See
+the file generic/tclIOUtils.c for more details. (SKS)
+ 
+ 7/1/98 (enhancement) Added a new internal C variable
+ tclPreInitScript.  This is a pointer to a string that may hold an
+ initialization script; If this pointer is non-NULL it is evaluated in
+ Tcl_Init() prior to the built-in initialization script defined in the
+ file generic/tclInitScript.h.  (SKS)
+
