@@ -7,7 +7,10 @@
 
 2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* doc/socket.n: 
+	* win/tclWinFile.c (TclpMatchInDirectory): revert glob code to
+	r1.44 as 2003-04-11 optimizations broke Windows98 glob'ing.
+
+	* doc/socket.n: nroff font handling correction
 
 	* library/encoding/gb2312-raw.enc (new): This is the original
 	gb2312.enc renamed to allow for it to still be used.  This is
