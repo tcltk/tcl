@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.87 2004/07/23 15:06:48 dgp Exp $
+RCS: @(#) $Id: changes,v 1.88 2004/07/23 16:27:28 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6086,8 +6086,7 @@ tclConfig.sh (hobbs)
 
 2004-05-03 (bug fix)[868853] fix leak in [fconfigure $serial -xchar] (cassoff)
 
-2004-04/05 (bug fix)[928353,929892,928808,947440,948177] test fixes: OSX
-(abner)
+2004-05 (bug fix)[928353,929892,928808,947440,948177] test fixes: OSX (abner)
 
 2004-05-05 (bug fix)[794839] socket connect error -> r/w fileevents
 (gravereaux)
@@ -6098,7 +6097,8 @@ tclConfig.sh (hobbs)
 
 2004-05-13 (new feature)[TIP 142] [interp limit] (fellows)
 
-2004-05-14 (bug fix)[940278] [clock] notices $::env(TZ) changes (kenny)
+2004-05-14 (bug fix)[940278,922848] [clock] notices $::env(TZ) changes,
+gmt works on all platforms. (kenny, welton, glessner)
 
 2004-05-16 (feature rewrite) bytecode execution of {expand} changed
         *** POTENTIAL INCOMPATIBILITY with prior 8.5a releases ***
