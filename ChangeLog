@@ -1,3 +1,11 @@
+1999-04-22    <redman@scriptics.com>
+
+	* win/tclWinPort.h:
+	* win/tclWinSock.c: Added code to use WinSock 2.0 API on NT to
+	avoid creating a window to handle sockets.  API not available on
+	Win95 and needs to be fixed on Win98, until then continue to use
+	the older (window-based) scheme on those two OSes.
+	
 1999-04-15    <stanton@scriptics.com>
 
 	* Merged 8.1 back into the main trunk
