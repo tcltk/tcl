@@ -1,3 +1,17 @@
+1998-12-01    <stanton@GASPODE>
+
+	* generic/tclCompCmds.c (TclCompileForeachCmd): Fixed code that
+	corrupted the exceptDepth value in the compile environment when
+	foreach failed to compile inline. [Bug: 884]
+
+	* library/encoding/euc-kr.enc: 
+	* library/encoding/ksc5601.enc: 
+	* tools/encoding/ksc5601.txt: 
+	* unix/tclUnixInit.c: Added support for Korean EUC. 
+
+	* win/tclWinChan.c (TclpGetDefaultStdChannel): added check for a
+	failure during Tcl_MakeFileChannel.
+
 1998-11-30    <stanton@GASPODE>
 
 	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): Fixed hang that occurs
