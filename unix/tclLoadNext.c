@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNext.c,v 1.10 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadNext.c,v 1.11 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -48,25 +48,54 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 				 * function which should be used for
 				 * this file. */
 {
-  struct mach_header *header;
-  char *data;
-  int len, maxlen;
-  char *files[]={fileName,NULL};
-  NXStream *errorStream=NXOpenMemory(0,0,NX_READWRITE);
-  char *fileName = Tcl_GetString(pathPtr);
-  
-  if(!rld_load(errorStream,&header,files,NULL)) {
-    NXGetMemoryBuffer(errorStream,&data,&len,&maxlen);
-    Tcl_AppendResult(interp,"couldn't load file \"",fileName,"\": ",data,NULL);
-    NXCloseMemory(errorStream,NX_FREEBUFFER);
-    return TCL_ERROR;
-  }
-  NXCloseMemory(errorStream,NX_FREEBUFFER);
+    struct mach_header *header;
+    char *fileName;
+    char *files[2];
+    CONST char *native;
+    int result = 1;
+    
+    NXStream *errorStream = NXOpenMemory(0,0,NX_READWRITE);
+    
+    fileName = Tcl_GetString(pathPtr);
 
-  *loadHandle = (Tcl_LoadHandle)1; /* A dummy non-NULL value */
-  *unloadProcPtr = &TclpUnloadFile;
-  
-  return TCL_OK;
+    /* 
+     * First try the full path the user gave us.  This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load
+     * using a relative path.
+     */
+    native = Tcl_FSGetNativePath(pathPtr);
+    files = {native,NULL};
+
+    result = rld_load(errorStream, &header, files, NULL);
+    
+    if (!result) {
+	/* 
+	 * Let the OS loader examine the binary search path for
+	 * whatever string the user gave us which hopefully refers
+	 * to a file on the binary path
+	 */
+	Tcl_DString ds;
+	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	files = {native,NULL};
+	result = rld_load(errorStream, &header, files, NULL);
+	Tcl_DStringFree(&ds);
+    }
+    
+    if (!result) {
+	char *data;
+	int len, maxlen;
+	NXGetMemoryBuffer(errorStream,&data,&len,&maxlen);
+	Tcl_AppendResult(interp, "couldn't load file \"",
+			 fileName, "\": ", data, NULL);
+	NXCloseMemory(errorStream, NX_FREEBUFFER);
+	return TCL_ERROR;
+    }
+    NXCloseMemory(errorStream, NX_FREEBUFFER);
+    
+    *loadHandle = (Tcl_LoadHandle)1; /* A dummy non-NULL value */
+    *unloadProcPtr = &TclpUnloadFile;
+    
+    return TCL_OK;
 }
 
 /*

@@ -1,3 +1,17 @@
+2002-07-22  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* unix/tclLoadAout.c
+	* unix/tclLoadDl.c
+	* unix/tclLoadDld.c
+	* unix/tclLoadDyld.c
+	* unix/tclLoadNext.c
+	* unix/tclLoadOSF.c
+	* unix/tclLoadShl.c
+	* win/tclWinLoad.c: allow either full paths or simply dll names
+	to be specified when loading files (the latter will be looked
+	up by the OS on your PATH/LD_LIBRARY_PATH as appropriate).
+	Fixes [Bug 611108]
+	
 2002-10-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/README: doc'ed --enable-symbols options.
