@@ -1,5 +1,10 @@
 2004-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclInt.h (PendingObjData,TclFreeObjMacro,etc): 
+	* generic/tclObj.c (TclFreeObj): Added scheme for making TclFreeObj()
+	avoid blowing up the C stack when freeing up very large object
+	trees. [Bug 886231]
+
 	* win/tclWinInit.c (SetDefaultLibraryDir): Fix logic, simplify and
 	add comments.
 
