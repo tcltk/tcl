@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.3 1999/04/16 00:46:47 stanton Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.4 2002/01/16 06:02:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -42,7 +42,7 @@ int
 Tcl_RecordAndEval(interp, cmd, flags)
     Tcl_Interp *interp;		/* Token for interpreter in which command
 				 * will be executed. */
-    char *cmd;			/* Command to record. */
+    CONST char *cmd;		/* Command to record. */
     int flags;			/* Additional flags.  TCL_NO_EVAL means
 				 * only record: don't execute command.
 				 * TCL_EVAL_GLOBAL means use Tcl_GlobalEval
