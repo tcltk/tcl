@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.108 2002/07/22 16:51:48 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.109 2002/07/31 14:57:09 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2200,13 +2200,13 @@ EXTERN void TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
 
 #  define TclDecrRefCount(objPtr) \
        if (--(objPtr)->refCount <= 0) { \
-           if (((objPtr)->bytes != NULL) \
-                   && ((objPtr)->bytes != tclEmptyStringRep)) { \
-               ckfree((char *) (objPtr)->bytes); \
-           } \
            if (((objPtr)->typePtr != NULL) \
                    && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
                (objPtr)->typePtr->freeIntRepProc(objPtr); \
+           } \
+           if (((objPtr)->bytes != NULL) \
+                   && ((objPtr)->bytes != tclEmptyStringRep)) { \
+               ckfree((char *) (objPtr)->bytes); \
            } \
            TclThreadFreeObj((objPtr)); \
        }
