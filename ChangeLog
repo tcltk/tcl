@@ -12,6 +12,12 @@
 
 2004-11-03  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/init.tcl ([unknown]):	Corrections to the 2004-10-25 mods
+	to Aunt ??? in [unknown].  Flaws revealed by Itcl test suite, which
+	still apparently relies on this brokenness.  Also added comment
+	suggesting the error message that any code using this hack *ought*
+	to receive in reply.
+
 	* generic/tclTrace.c (TclCallVarTraces):  Improved ability to debug
 	* tests/incr-old.test (incr-old-2.6):	  errors during variable
 	* tests/incr.test (incr-{1,2}.28):	  traces by preserving the

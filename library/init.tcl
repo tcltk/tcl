@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.66 2004/10/25 17:24:40 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.67 2004/11/03 20:30:21 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -171,10 +171,12 @@ proc unknown args {
 
     set cmd [lindex $args 0]
     if {[regexp "^:*namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
+	#return -code error "You need an {expand}"
         set arglist [lrange $args 1 end]
 	set ret [catch {uplevel 1 ::$cmd $arglist} result opts]
 	dict unset opts -errorinfo
-	return -options $opts $ret
+	dict incr opts -level
+	return -options $opts $result
     }
 
     set name [lindex $args 0]
