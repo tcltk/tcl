@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.6 2004/02/25 07:56:21 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.7 2004/05/10 19:10:49 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1567,11 +1567,13 @@ BuildCommandLine(
     Tcl_DStringInit(&ds);
 
     /*
-     * Prime the path.
+     * Prime the path.  Add a space separator if we were primed with
+     * something.
      */
-    
+
     Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
-    
+    if (Tcl_DStringLength(&ds) > 0) Tcl_DStringAppend(&ds, " ", 1);
+
     for (i = 0; i < argc; i++) {
 	if (i == 0) {
 	    arg = executable;
