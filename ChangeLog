@@ -1,3 +1,7 @@
+2005-04-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: converted a few function calls to macros.
+
 2005-04-01  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/ListObj.3:
