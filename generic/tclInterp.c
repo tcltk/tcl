@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.29 2004/05/18 09:29:30 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.30 2004/05/18 10:13:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2794,6 +2794,7 @@ Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
 	break;
     default:
 	Tcl_Panic("unknown type of resource limit");
+	return;
     }
 
     for (; handlerPtr!=NULL ; handlerPtr=handlerPtr->nextPtr) {
