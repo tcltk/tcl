@@ -1,3 +1,10 @@
+2000-05-31  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/set-old.test:
+	* doc/unset.n:
+	* generic/tclVar.c (Tcl_UnsetObjCmd): added -nocomplain and --
+	options to unset, to allow for a silent unset operation.
+
 2000-05-31  Eric Melski  <ericm@scriptics.com>
 
 	* generic/tclVar.c (Tcl_ArrayObjCmd): Added support for regexp and
