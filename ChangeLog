@@ -1,3 +1,9 @@
+1999-04-13    <redman@scriptics.com>
+
+	* win/tclWinSock.c: Apply patch to allow write access to a socket
+	if FD_WRITE is sent but FD_CONNECT is not.  Some strange problem
+	with either Win32 or a socket driver.  [Bug: 1664 1776]
+
 1999-04-09    <redman@scriptics.com>
 
 	* unix/tclUnixNotfy.c: Fixed notifier deadlock situation when the
