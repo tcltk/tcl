@@ -1,3 +1,46 @@
+2004-05-05  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclEvent.c: TclSetLibraryPath's use of caching the
+	stringrep of the pathPtr object to TclGetLibraryPath called from
+	another thread was ineffective if the original's stringrep had
+	been invalidated as what happens when it gets muted to a list.
+
+	* generic/tclEncoding.c: Added FreeEncoding(systemEncoding) in
+	TclFinalizeEncodingSubsystem because its ref count was incremented
+	in TclInitEncodingSubsystem.
+
+	* win/tclWin32Dll.c: Structured Exception Handling added around
+	Tcl_Finalize called from DllMain's DLL_PROCESS_DETACH.  We can't
+	be 100% assured that Tcl is being unloaded by the OS in a stable
+	condition and we need to protect the exit handlers should the
+	stack be in a hosed state.  AT&T style assembly for SEH under
+	MinGW included, too.  [Patch 858493]
+
+	Also added DisableThreadLibraryCalls() for the DLL_PROCESS_ATTACH
+	case.  We're not interested in knowing about DLL_THREAD_ATTACH, so
+	disable the notices.
+
+	* generic/tclInt.h:
+	* generic/tclThread.c:
+	* generic/tclEvent.c:
+	* unix/tclUnixThrd.c:
+	* win/tclWinThrd.c:  Provisions made so masterLock, initLock,
+	allocLock and joinLock mutexes can be recovered during
+	Tcl_Finalize.
+
+	* win/tclWinSock.c:
+	(SocketThreadExitHandler): Don't call TerminateThread when
+	WaitForSingleObject returns a timeout.	Tcl_Finalize called from
+	DllMain will pause all threads.  Trust that the thread will get
+	the close notice at a later time if it does ever wake up before
+	being cleaned up by the system anyway.
+	(SocketEventProc) : connect errors should fire both the readable
+	and writable handlers because this is how it works on UNIX
+	[Bug 794839]
+
+	* win/coffbase.txt: Added the tls extension to the list of
+	preferred load addresses.
+
 2004-05-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (unixInit-2.10):	Test correction for Mac OSX.
