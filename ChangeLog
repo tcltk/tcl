@@ -1,3 +1,16 @@
+2003-02-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure:
+	* win/configure.in: Generate error when attempting
+	to build under Cygwin. The Cygwin port of Tcl/Tk
+	does not build and people are filing bug reports
+	under the mistaken impression that someone is
+	actually maintaining the Cygwin port. A post to
+ 	comp.lang.tcl asking someone to volunteer as an
+	area maintainer has generated no results.
+	Closing bugs 680840, 630199, and 634772 and
+	marking as "Won't fix".
+
 2003-02-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/append.n: Return value was not documented. [Bug 683188]
