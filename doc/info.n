@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.5 2000/09/07 14:27:48 poenitz Exp $
+'\" RCS: @(#) $Id: info.n,v 1.6 2001/03/13 15:10:32 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -87,6 +87,13 @@ are returned.  Matching is determined using the same rules as for
 \fBinfo hostname\fR
 Returns the name of the computer on which this invocation is being
 executed.
+.VS
+Note that this name is not guaranteed to be the fully qualified domain
+name of the host.  Where machines have several different names (as is
+common on systems with both TCP/IP (DNS) and NetBIOS-based networking
+installed,) it is the name that is suitable for TCP/IP networking that
+is returned.
+.VE
 .TP
 \fBinfo level\fR ?\fInumber\fR?
 If \fInumber\fR is not specified, this command returns a number
@@ -190,3 +197,7 @@ global(n), proc(n)
 
 .SH KEYWORDS
 command, information, interpreter, level, namespace, procedure, variable
+
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
