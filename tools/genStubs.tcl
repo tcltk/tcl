@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.9 2001/08/16 09:46:48 davygrvy Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.10 2002/05/08 12:20:15 davygrvy Exp $
 
 package require Tcl 8
 
@@ -348,7 +348,7 @@ proc genStubs::makeDecl {name decl index} {
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
-    set line "EXTERN $rtype"
+    set line "TCL_EXTERN($rtype)"
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
     set pad [expr {24 - [string length $line]}]
