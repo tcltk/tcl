@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.26 2004/05/03 17:04:31 kennykb Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.27 2004/11/01 16:58:38 kennykb Exp $
  */
 
 #ifndef _TCLWININT
@@ -100,7 +100,7 @@ typedef struct TclWinProcs {
     BOOL (WINAPI *createHardLinkProc)(CONST TCHAR*, CONST TCHAR*, 
 				      LPSECURITY_ATTRIBUTES);
     
-    INT (__cdecl *utimeProc)(CONST TCHAR*, struct _utimbuf *);
+    /* deleted INT (__cdecl *utimeProc)(CONST TCHAR*, struct _utimbuf *); */
     /* These two are also NULL at start; see comment above */
     HANDLE (WINAPI *findFirstFileExProc)(CONST TCHAR*, UINT,
 					 LPVOID, UINT,
