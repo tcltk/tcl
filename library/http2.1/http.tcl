@@ -9,9 +9,16 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.29 2000/04/05 00:30:15 sandeep Exp $
+# RCS: @(#) $Id: http.tcl,v 1.30 2000/04/09 23:56:13 welch Exp $
 
-package provide http 2.3	;# This uses Tcl namespaces
+# Rough version history:
+# 1.0	Old http_get interface
+# 2.0	http:: namespace and http::geturl
+# 2.1	Added callbacks to handle arriving data, and timeouts
+# 2.2	Added ability to fetch into a channel
+# 2.3	Added SSL support, and ability to post from a channel
+
+package provide http 2.3
 
 namespace eval http {
     variable http
@@ -19,7 +26,7 @@ namespace eval http {
 	-accept */*
 	-proxyhost {}
 	-proxyport {}
-	-useragent {Tcl http client package 2.2}
+	-useragent {Tcl http client package 2.3}
 	-proxyfilter http::ProxyRequired
     }
 
@@ -224,6 +231,8 @@ proc http::geturl { url args } {
 	meta		{}
 	currentsize	0
 	totalsize	0
+	querylength	0
+	queryoffset	0
         type            text/html
         body            {}
 	status		""
@@ -252,16 +261,15 @@ proc http::geturl { url args } {
     }
 
     # Make sure -query and -querychannel aren't both specified
-    if {[info exists state(-query)] && [info exists state(-querychannel)]} {
+
+    set isQueryChannel [info exists state(-querychannel)]
+    set isQuery [info exists state(-query)]
+    if {$isQuery && $isQueryChannel} {
 	unset $token
 	return -code error "Can't combine -query and -querychannel options!"
     }
 
-    # Set a variable with whether or not we have a querychannel, because
-    # we need to do special logic later if it does exist, and we don't
-    # want to do a lot of [info exists...]
-    set isQueryChannel [info exists state(-querychannel)]
-    set isQuery [info exists state(-query)]
+    # Validate URL, determine the server host and port, and check proxy case
 
     if {![regexp -nocase {^(([^:]*)://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
 	    x prefix proto host y port srvurl]} {
@@ -315,15 +323,12 @@ proc http::geturl { url args } {
 	set conStat [catch {eval $defcmd $async {$host $port}} s]
     }
     if {$conStat} {
+
 	# something went wrong while trying to establish the connection
-	# The proper response is probably to give the caller a token
-	# containing error info, but that would break backwards compatibility.
-	# So, let's follow tradition and throw an exception (after unsetting
-	# the array).
-	unset $token
-	error $s
-	#Finish $token $s
-	#return $token
+
+	Finish $token
+	cleanup $token
+	return -code error $s
     }
     set state(sock) $s
 
@@ -332,8 +337,12 @@ proc http::geturl { url args } {
     if {$state(-timeout) > 0} {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
-	catch {fileevent $s writable {}}
-	if {![string equal $state(status) "connect"]} {
+	if {$state(status) != "connect"} {
+	    
+	    # Likely to be connection timeout.  If there was a connection
+	    # error, (e.g., bad port), then http::wait will have 
+	    # raised an error already
+
 	    return $token
 	}
 	set state(status) ""
@@ -348,7 +357,6 @@ proc http::geturl { url args } {
 
     catch {fconfigure $s -blocking off}
     set how GET
-    set state(querylength) 0
     if {$isQuery} {
 	set state(querylength) [string length $state(-query)]
 	if {$state(querylength) > 0} {
@@ -385,14 +393,15 @@ proc http::geturl { url args } {
 		puts $s "$key: $value"
 	    }
 	}
-	if {$isQueryChannel && $state(querylength)==0} {
+	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel
-	    if {[catch {seek $state(-querychannel) 0 end}]} {
-		Finish $token "Unable to determine size of querychannel data"
-		return $token
-	    }
-	    set state(querylength) [tell $state(-querychannel)]
-	    seek $state(-querychannel) 0
+	    # If we cannot seek, the surrounding catch will trap us
+
+	    set start [tell $state(-querychannel)]
+	    seek $state(-querychannel) 0 end
+	    set state(querylength) \
+		    [expr {[tell $state(-querychannel)] - $start}]
+	    seek $state(-querychannel) $start
 	}
 		
 	if {$isQuery || $isQueryChannel} {
@@ -405,22 +414,31 @@ proc http::geturl { url args } {
 	    fileevent $s writable [list http::Write $token]
 	} else {
 	    puts $s ""
-	    flush $s
-	    fileevent $s readable [list http::Event $token]
+	}
+	# Set up the read file event here in either case.  This seems to
+	# help in the case where the server replies but does not
+	# read the query post data, and the server is on the same
+	# machine so the loopback interface is being used.
+
+	flush $s
+	fileevent $s readable [list http::Event $token]
+
+	if {! [info exists state(-command)]} {
+
+	    # geturl does EVERYTHING asynchronously, so if the user
+	    # calls it synchronously, we just do a wait here.
+
+	    wait $token
 	}
     } err]} {
-	# The socket probably was never connected, or the connection
-	# dropped later.
+	# The socket probably was never connected,
+	# or the connection dropped later.
 
-	reset $token ioerror
-	return $token
+	Finish $token $err
+	cleanup $token
+	return -code error $err
     }
 
-    if {! [info exists state(-command)]} {
-	# geturl does EVERYTHING asynchronously, so if the user
-	# calls it synchronously, we just do a wait here.
-	wait $token
-    }
     return $token
 }
 
@@ -444,6 +462,15 @@ proc http::code {token} {
     variable $token
     upvar 0 $token state
     return $state(http)
+}
+proc http::ncode {token} {
+    variable $token
+    upvar 0 $token state
+    if {[regexp {[0-9]+} $state(http) numeric_code]} {
+	return $numeric_code
+    } else {
+	return $state(http)
+    }
 }
 proc http::size {token} {
     variable $token
@@ -471,7 +498,7 @@ proc http::cleanup {token} {
 
 # http::Connect
 #
-#	Wait for an asynchronous connection to complete
+#	This callback is made when an asyncronous connection completes.
 #
 # Arguments
 #	token	The token returned from http::geturl
@@ -483,12 +510,17 @@ proc http::cleanup {token} {
  proc http::Connect {token} {
     variable $token
     upvar 0 $token state
-    if {[eof $state(sock)] || \
-	[string length [fconfigure $state(sock) -error]]} {
-	set state(status) ioerror
+    global errorInfo errorCode
+    if {[eof $state(sock)] ||
+	    [string length [fconfigure $state(sock) -error]]} {
+	set state(status) error
+	set state(error) [list \
+		"connect failed [fconfigure $state(sock) -error]" \
+		$errorInfo $errorCode]
     } else {
 	set state(status) connect
     }
+    fileevent $state(sock) writable {}
  }
 
 # http::Write
@@ -506,46 +538,53 @@ proc http::Write {token} {
     upvar 0 $token state
     set s $state(sock)
     
-    if {![info exist state(queryoffset)]} {
-	set state(queryoffset) 0
-    }
     # Output a block.  Tcl will buffer this if the socket blocks
     
     if {[catch {
 	
 	# Catch I/O errors on dead sockets
 
+	set done 0
 	if {[info exists state(-query)]} {
-	    set outStr [string range $state(-query) $state(queryoffset) \
+	    
+	    # Chop up large query strings so queryprogress callback
+	    # can give smooth feedback
+
+	    puts -nonewline $s \
+		    [string range $state(-query) $state(queryoffset) \
 		    [expr {$state(queryoffset) + $state(-queryblocksize) - 1}]]
 	    incr state(queryoffset) $state(-queryblocksize)
+	    if {$state(queryoffset) >= $state(querylength)} {
+		set state(queryoffset) $state(querylength)
+		flush $s
+		fileevent $s writable {}
+	    }
 	} else {
-	    # querychannel
-	    set outStr [read $state(-querychannel) $state(-queryblocksize)]
-	    incr state(queryoffset) $state(-queryblocksize)
-	}
-	puts -nonewline $s $outStr
-	
-	if {$state(querylength)>0 && \
-		$state(queryoffset) >= $state(querylength)} {
-	    set state(queryoffset) $state(querylength)
-	}
+	    
+	    # Copy blocks from the query channel
 
-	if {[string length $state(-queryprogress)]} {
-	    eval $state(-queryprogress) [list $token $state(querylength)\
-		    $state(queryoffset)]
-	}
-	
-	if {($state(querylength)>0 && \
-		$state(queryoffset) >= $state(querylength)) || \
-		([info exists state(-querychannel)] && \
-		    [eof $state(-querychannel)])} {
-	    fileevent $s writable {}
-	    flush $s
-	    fileevent $s readable [list http::Event $token]
+	    set outStr [read $state(-querychannel) $state(-queryblocksize)]
+	    puts -nonewline $s $outStr
+	    incr state(queryoffset) [string length $outStr]
+	    if {[eof $state(-querychannel)]} {
+		flush $s
+		fileevent $s writable {}
+	    }
 	}
     } err]} {
-	Finish $token $err
+	# Do not call Finish here, but instead let the read half of
+	# the socket process whatever server reply there is to get.
+	# Simply turn off this write process
+
+	set state(posterror) $err
+	fileevent $s writable {}
+    }
+
+    # Callback to the client after we've completely handled everything
+
+    if {[string length $state(-queryprogress)]} {
+	eval $state(-queryprogress) [list $token $state(querylength)\
+		$state(queryoffset)]
     }
 }
 
@@ -564,7 +603,7 @@ proc http::Write {token} {
     upvar 0 $token state
     set s $state(sock)
 
-     if {[::eof $s]} {
+     if {[eof $s]} {
 	Eof $token
 	return
     }
@@ -667,7 +706,7 @@ proc http::Write {token} {
     # At this point the token may have been reset
     if {[string length $error]} {
 	Finish $token $error
-    } elseif {[catch {::eof $s} iseof] || $iseof} {
+    } elseif {[catch {eof $s} iseof] || $iseof} {
 	Eof $token
     } else {
 	CopyStart $s $token
