@@ -1,3 +1,38 @@
+1999-05-06    <stanton@scriptics.com>
+
+	* tests/http.test: Unset "data" array before running tests to
+	avoid failures due to previous tests.
+
+	* doc/string.n: 
+	* tests/cmdIL.test: 
+	* tests/cmdMZ.test: 
+	* tests/error.test: 
+	* tests/ioCmd.test: 
+	* tests/lindex.test: 
+	* tests/linsert.test: 
+	* tests/lrange.test: 
+	* tests/lreplace.test: 
+	* tests/string.test: 
+	* tests/cmdIL.test: 
+	* generic/tclUtil.c: 
+	* generic/tclCmdMZ.c: Replaced "string icompare/iequal" with
+	-nocase and -length switches to "string compare/equal".  Added a
+	-nocase option to "string map".  Changed index syntax to allow
+	integer or end?-integer? instead of a full expression.  This is
+	much simpler with safeTcl scripts since it avoids double
+	substitution issues.
+
+	* doc/Utf.3: 
+	* generic/tclStubInit.c: 
+	* generic/tclDecls.h: 
+	* generic/tclUtf.c:
+	* generic/tcl.decls: Added Tcl_UtfNcmp and Tcl_UtfNcasecmp.
+
+1999-05-05    <stanton@scriptics.com>
+
+	* win/makefile.vc: Added encoding directory to install-libraries
+	target.
+
 1999-05-03    <stanton@scriptics.com>
 
 	* doc/string.n: 
