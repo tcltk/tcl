@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.114 2003/11/14 20:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.115 2003/11/16 00:49:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -60,6 +60,16 @@ int errno;
 #	define DBL_MAX 1.79769313486231570e+308
 #   endif /* MAXDOUBLE */
 #endif /* !DBL_MAX */
+
+/*
+ * A mask (should be 2**n-1) that is used to work out when the
+ * bytecode engine should call Tcl_AsyncReady() to see whether there
+ * is a signal that needs handling.
+ */
+
+#ifndef ASYNC_CHECK_COUNT_MASK
+#   define ASYNC_CHECK_COUNT_MASK	15
+#endif /* !ASYNC_CHECK_COUNT_MASK */
 
 /*
  * Boolean flag indicating whether the Tcl bytecode interpreter has been
@@ -1088,6 +1098,7 @@ TclExecuteByteCode(interp, codePtr)
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
+    int instructionCount = 0;
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -1202,6 +1213,21 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_STATS    
     iPtr->stats.instructionCount[*pc]++;
 #endif
+
+    /*
+     * Check for asynchronous handlers [Bug 746722]; we
+     * do the check every 16th instruction.
+     */
+
+    if (!(instructionCount++ & ~ASYNC_CHECK_COUNT_MASK) && Tcl_AsyncReady()) {
+	DECACHE_STACK_INFO();
+	result = Tcl_AsyncInvoke(interp, result);
+	CACHE_STACK_INFO();
+	if (result == TCL_ERROR) {
+	    goto checkForCatch;
+	}
+    }
+
     switch (*pc) {
     case INST_RETURN:
 	if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
@@ -1210,6 +1236,7 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_IncrRefCount(iPtr->returnOpts);
 	}
 	result = TCL_RETURN;
+
     case INST_DONE:
 	if (tosPtr <= eePtr->stackPtr + initStackTop) {
 	    tosPtr--;
@@ -1491,6 +1518,14 @@ TclExecuteByteCode(interp, codePtr)
 
 	    preservedStackRefCountPtr = (char **) (eePtr->stackPtr-1);
 	    ++*preservedStackRefCountPtr;
+
+	    /*
+	     * Reset the instructionCount variable, since we're about
+	     * to check for async stuff anyway while processing
+	     * TclEvalObjvInternal.
+	     */
+
+	    instructionCount = 0;
 
 	    /*
 	     * Finally, let TclEvalObjvInternal handle the command. 
