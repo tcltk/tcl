@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.95 2003/04/05 01:25:10 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.96 2003/05/13 08:40:30 das Exp $
 
 library tcl
 
@@ -1872,6 +1872,14 @@ declare 8 mac {
 declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
 	    CONST char *bundleName,
+	    int hasResourceFile,
+	    int maxPathLen,
+	    char *libraryPath)
+}
+declare 1 macosx {
+    int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
+	    CONST char *bundleName,
+	    CONST char *bundleVersion,
 	    int hasResourceFile,
 	    int maxPathLen,
 	    char *libraryPath)
