@@ -6,11 +6,12 @@
  *	sequence of instructions ("bytecodes"). 
  *
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.11 1998/09/14 18:39:58 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.12 1999/02/02 22:26:11 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -6321,9 +6322,10 @@ CompileExprWord(interp, string, lastChar, flags, envPtr)
 		envPtr->excRangeArrayNext = startRangeNext;
 		inlineCode = 0;
 	    } else {
-		TclEmitOpcode(INST_END_CATCH, envPtr);
+		TclEmitOpcode(INST_END_CATCH, envPtr); /* for ok case */
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 		envPtr->excRangeArrayPtr[range].catchOffset = TclCurrCodeOffset();
+		TclEmitOpcode(INST_END_CATCH, envPtr); /* for error case */
 	    }
 	}
 	    
