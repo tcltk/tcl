@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.21 2001/09/27 00:19:57 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.22 2001/10/10 01:05:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -610,6 +610,11 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
     }
     (*argvPtr)[i] = NULL;
 
+    /*
+     * Free the result ptr given to us by Tcl_FSSplitPath
+     */
+
+    Tcl_DecrRefCount(resultPtr);
 }
 
 /*
