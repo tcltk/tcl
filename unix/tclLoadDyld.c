@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.13 2002/10/10 12:25:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14 2002/10/29 00:04:08 das Exp $
  */
 
 #include "tclInt.h"
@@ -151,6 +151,11 @@ TclpFindSymbol(interp, loadHandle, symbol)
 	    dyldModuleHandle->nextModuleHandle = dyldLoadHandle->firstModuleHandle;
 	    dyldLoadHandle->firstModuleHandle = dyldModuleHandle;
 	}
+    } else {
+        NSLinkEditErrors editError;
+        char *name, *msg;
+        NSLinkEditError(&editError, &errno, &name, &msg);
+        Tcl_AppendResult(interp, msg, (char *) NULL);
     }
     Tcl_DStringFree(&newName);
     Tcl_DStringFree(&ds);
