@@ -1,3 +1,14 @@
+2003-10-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	TIP#127 IMPLEMENTATION FROM JOE MICHAEL SCHLENKER
+
+	* generic/tclCmdIL.c (SelectObjFromSublist): Element selection engine.
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd, Tcl_LsortObjCmd): 
+	* tests/lsearch.test:	Set up and use of element selection engine,
+	* tests/cmdIL.test:	plus tests and documentation.
+	* doc/lsearch.n:	Based on [Patch 693836]
+	* doc/lsort.n: 
+
 2003-10-13  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tcl.h: 

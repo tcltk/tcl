@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.13 2003/03/17 14:21:41 dkf Exp $
+'\" RCS: @(#) $Id: lsort.n,v 1.14 2003/10/14 13:38:58 dkf Exp $
 '\" 
 .so man.macros
 .TH lsort n 8.3 Tcl "Tcl Built-In Commands"
@@ -65,32 +65,39 @@ This is the default.
 \fB\-decreasing\fR
 Sort the list in decreasing order (``largest'' items first).
 .TP 20
-\fB\-index\0\fIindex\fR
+\fB\-index\0\fIindexList\fR
 If this option is specified, each of the elements of \fIlist\fR must
 itself be a proper Tcl sublist.  Instead of sorting based on whole
-sublists, \fBlsort\fR will extract the \fIindex\fR'th element from
-each sublist and sort based on the given element.  The keyword
-\fBend\fP is allowed for the \fIindex\fP to sort on the last sublist
-element,
-.VS 8.4
-and \fBend-\fIindex\fR sorts on a sublist element offset from
-the end.
-.VE
+sublists, \fBlsort\fR will extract the \fIindexList\fR'th element from
+each sublist
+.VS 8.5
+(as if the overall element and the \fIindexList\fR were passed to
+\fBlindex\fR) and sort based on the given element.  The keyword
+\fBend\fP is allowed for each element of the \fIindexList\fR to sort
+on the last sublist element, and \fBend-\fIindex\fR sorts on a sublist
+element offset from the end.
+.VE 8.5
 For example,
 .RS
 .CS
 lsort -integer -index 1 {{First 24} {Second 18} {Third 30}}
 .CE
 returns \fB{Second 18} {First 24} {Third 30}\fR, and
-.VS 8.4
 '\"
 '\" This example is from the test suite!
 '\"
 .CS
 lsort -index end-1 {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
 .CE
-returns \fB{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}\fR.
-.VE
+returns \fB{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}\fR,
+.VS 8.5
+and
+.CS
+lsort -index {0 1} {{{b i g} 12345} {{d e m o} 34512} {{c o d e} 54321}}
+.CE
+returns \fB{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}\fR
+(because \fBe\fR sorts before \fBi\fR which sorts before \fBo\fR.)
+.VE 8.5
 This option is much more efficient than using \fB\-command\fR
 to achieve the same effect.
 .RE
@@ -186,10 +193,8 @@ More complex sorting using a comparison function:
 .CE
 
 .SH "SEE ALSO"
-.VS 8.4
 list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), 
 lset(n), lrange(n), lreplace(n)
-.VE
 
 .SH KEYWORDS
 element, list, order, sort
