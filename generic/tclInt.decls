@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.29 2001/07/31 19:12:06 vincentdarley Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.30 2001/08/30 08:53:14 vincentdarley Exp $
 
 library tcl
 
@@ -23,9 +23,10 @@ interface tclInt
 # Use at your own risk.  Note that the position of functions should not
 # be changed between versions to avoid gratuitous incompatibilities.
 
-declare 0 generic {
-    int TclAccess(CONST char *path, int mode)
-}
+# Replaced by Tcl_FSAccess in 8.4:
+#declare 0 generic {
+#    int TclAccess(CONST char *path, int mode)
+#}
 declare 1 generic {
     int TclAccessDeleteProc(TclAccessProc_ *proc)
 }
@@ -268,9 +269,10 @@ declare 66 generic {
 declare 67 generic {
     int TclOpenFileChannelInsertProc(TclOpenFileChannelProc_ *proc)
 }
-declare 68 generic {
-    int TclpAccess(CONST char *path, int mode)
-}
+# Replaced by Tcl_FSAccess in 8.4:
+#declare 68 generic {
+#    int TclpAccess(CONST char *path, int mode)
+#}
 declare 69 generic {
     char * TclpAlloc(unsigned int size)
 }
@@ -302,13 +304,15 @@ declare 77 generic {
 declare 78 generic {
     int TclpGetTimeZone(unsigned long time)
 }
-declare 79 generic {
-    int TclpListVolumes(Tcl_Interp *interp)
-}
-declare 80 generic {
-    Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp, char *fileName, \
-	    char *modeString, int permissions)
-}
+# Replaced by Tcl_FSListVolumes in 8.4:
+#declare 79 generic {
+#    int TclpListVolumes(Tcl_Interp *interp)
+#}
+# Replaced by Tcl_FSOpenFileChannel in 8.4:
+#declare 80 generic {
+#    Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp, char *fileName, \
+#	    char *modeString, int permissions)
+#}
 declare 81 generic {
     char * TclpRealloc(char *ptr, unsigned int size)
 }
@@ -362,9 +366,10 @@ declare 94 generic {
     int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp, \
 	    int argc, char **argv)
 }
-declare 95 generic {
-    int TclpStat(CONST char *path, struct stat *buf)
-}
+# Replaced by Tcl_FSStat in 8.4:
+#declare 95 generic {
+#    int TclpStat(CONST char *path, struct stat *buf)
+#}
 declare 96 generic {
     int TclRenameCommand(Tcl_Interp *interp, char *oldName, char *newName)
 }
@@ -395,9 +400,10 @@ declare 103 generic {
 declare 104 {unix win} {
     int TclSockMinimumBuffers(int sock, int size)
 }
-declare 105 generic {
-    int TclStat(CONST char *path, struct stat *buf)
-}
+# Replaced by Tcl_FSStat in 8.4:
+#declare 105 generic {
+#    int TclStat(CONST char *path, struct stat *buf)
+#}
 declare 106 generic {
     int TclStatDeleteProc(TclStatProc_ *proc)
 }
@@ -520,17 +526,18 @@ declare 135 generic {
 declare 138 generic {
     char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
 }
-declare 139 generic {
-    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1, \
-	    char *sym2, Tcl_PackageInitProc **proc1Ptr, \
-	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
-}
+#declare 139 generic {
+#    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1, \
+#	    char *sym2, Tcl_PackageInitProc **proc1Ptr, \
+#	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
+#}
 declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
-#declare 141 generic {
-#    char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
-#}
+# This is used by TclX, but should otherwise be considered private
+declare 141 generic {
+    char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+}
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr, \
 	    CompileHookProc *hookProc, ClientData clientData)
@@ -616,29 +623,8 @@ declare 161 generic {
 declare 162 generic {
     void TclChannelEventScriptInvoker(ClientData clientData, int flags)
 }
-# for virtual filesystem support.  These should eventually be moved to
-# Tcl's external API and properly documented, to allow extension writers 
-# to use them easily (hence providing automatic VFS support to all
-# extensions)
+# These functions are vfs aware, but are generally only useful internally.
 declare 163 generic {
-    int TclFileCopyCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-}
-declare 164 generic {
-    int TclFileRenameCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-}
-declare 165 generic {
-    int TclFileDeleteCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-}
-declare 166 generic {
-    int TclFileMakeDirsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-}
-declare 167 generic {
-    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-}
-declare 168 generic {
-    Tcl_Obj* TclpTempFileName(void)
-}
-declare 169 generic {
     void TclpSetInitialEncodings(void)
 }
 

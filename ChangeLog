@@ -1,3 +1,48 @@
+2001-08-30 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	Further fs updates.  After examining the most common Tcl
+	extensions (TclX, BLT, Tk, TclPro, Mktclapp), it has been
+	determined that only TclpGetCwd and the Access/Stat/Open
+	insert/delete hooks of the internal fs functions are ever used.
+	The remaining functions from Tcl's internal interfaces have
+	therefore been removed, since Tcl now exports a more suitable
+	public API (Tcl_FS...)
+	
+	* generic/tclInt.stubs:
+	* generic/tclInt.h: updated for removed internal functions.
+	Some new internal functions have been put in tclInt.h (and
+	not exported in the stub table because good public equivalents
+	exist).
+	* generic/tclTest.c: some test functions used the internal private 
+	APIs.  These tests have been retained, but modified to use 
+	public APIs.  Also objectified the internal filesystem tests.
+	* win/tclWinFile.c: removed TclpStat, TclpAccess and refactored
+	code to use NativeAccess, NativeStat.  This should speed up
+	stat, access and glob commands.
+	* win/tclWinFCmd.c: removed all TclpCopy/Rename/Delete 
+	File/Directory string-based procedures which aren't used any more.
+	Improved efficiency of some other procedures. Ensure that filename
+	conversions with a NULL interp do not crash Tcl.
+	* mac/tclMacFCmd.c: wrapped long lines and cleaned up
+	TclpObjNormalizePath, removed all TclpCopy/Rename/Delete 
+	File/Directory string-based procedures which aren't used any more.
+	* mac/tclMacFile.c: removed obsolete TclpStat, TclpAccess, TclpChdir,
+	etc.
+	* unix/tclUnixFCmd.c: removed use of TclpAccess, removed all
+	TclpCopy/Rename/Delete File/Directory string-based procedures which
+	aren't used any more.
+	* unix/tclUnixFile.c: removed obsolete TclpStat, TclpAccess, TclpChdir,
+	etc.
+	* tcl(Unix|Mac|Win)Chan.c: objectified TclpOpenFileChannel.
+	* various 'load' implementations all objectified.
+	* generic/tclFileName.c: removed redundant code.
+	* generic/tclIOUtil.c: removed TclStat, TclAccess, TclpListVolumes.
+	Fix to MatchInDirectory at the root of a volume.  Also improved
+	some documentation, and improved default path joining behaviour
+	for virtual filesystems, especially regarding '~'.
+	* tests/fileName.test: added tests to check for bugs fixed above.
+	* doc/FileName.3: improved documentation
+	
 2001-08-30  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclAsync.c:

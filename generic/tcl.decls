@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.52 2001/08/23 17:37:07 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.53 2001/08/30 08:53:14 vincentdarley Exp $
 
 library tcl
 
@@ -468,6 +468,7 @@ declare 128 generic {
 declare 129 generic {
     int Tcl_Eval(Tcl_Interp *interp, char *string)
 }
+# This is obsolete, use Tcl_FSEvalFile
 declare 130 generic {
     int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 }
@@ -656,6 +657,7 @@ declare 184 generic {
 declare 185 generic {
     int Tcl_IsSafe(Tcl_Interp *interp)
 }
+# Obsolete, use Tcl_FSJoinPath
 declare 186 generic {
     char * Tcl_JoinPath(int argc, char **argv, Tcl_DString *resultPtr)
 }
@@ -698,6 +700,7 @@ declare 197 {unix win} {
     Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc, \
 	    char **argv, int flags)
 }
+# This is obsolete, use Tcl_FSOpenFileChannel
 declare 198 generic {
     Tcl_Channel Tcl_OpenFileChannel(Tcl_Interp *interp, char *fileName, \
 	    char *modeString, int permissions)
@@ -845,6 +848,7 @@ declare 242 generic {
     int Tcl_SplitList(Tcl_Interp *interp, CONST char *listStr, int *argcPtr, \
 	    char ***argvPtr)
 }
+# Obsolete, use Tcl_FSSplitPath
 declare 243 generic {
     void Tcl_SplitPath(CONST char *path, int *argcPtr, char ***argvPtr)
 }
@@ -1279,6 +1283,8 @@ declare 364 generic {
     int Tcl_ParseVarName (Tcl_Interp *interp, char *string, \
 	    int numBytes, Tcl_Parse *parsePtr, int append)
 }
+# These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
+# Tcl_FSAccess and Tcl_FSStat
 declare 365 generic {
     char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }

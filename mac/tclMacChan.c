@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.6 1999/04/16 00:47:19 stanton Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.7 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -753,7 +753,7 @@ Tcl_Channel
 TclpOpenFileChannel(
     Tcl_Interp *interp,			/* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName,			/* Name of file to open. */
+    Tcl_Obj *pathPtr,			/* Name of file to open. */
     char *modeString,			/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions)			/* If the open involves creating a
@@ -763,7 +763,6 @@ TclpOpenFileChannel(
     Tcl_Channel chan;
     int mode;
     char *native;
-    Tcl_DString ds, buffer;
     int errorCode;
     
     mode = GetOpenMode(interp, modeString);
@@ -771,20 +770,18 @@ TclpOpenFileChannel(
 	return NULL;
     }
 
-    if (Tcl_TranslateFileName(interp, fileName, &buffer) == NULL) {
+    native = Tcl_FSGetNativePath(pathPtr);
+    if (native == NULL) {
 	return NULL;
     }
-    native = Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&buffer), 
-    	    Tcl_DStringLength(&buffer), &ds);
     chan = OpenFileChannel(native, mode, permissions, &errorCode);
-    Tcl_DStringFree(&ds);
-    Tcl_DStringFree(&buffer);
 
     if (chan == NULL) {
 	Tcl_SetErrno(errorCode);
 	if (interp != (Tcl_Interp *) NULL) {
-            Tcl_AppendResult(interp, "couldn't open \"", fileName, "\": ",
-                    Tcl_PosixError(interp), (char *) NULL);
+            Tcl_AppendResult(interp, "couldn't open \"", 
+			     Tcl_GetString(pathPtr), "\": ",
+			     Tcl_PosixError(interp), (char *) NULL);
         }
 	return NULL;
     }

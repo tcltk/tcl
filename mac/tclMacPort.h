@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.12 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.13 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 
@@ -247,14 +247,6 @@ extern char **environ;
 #define TclpGetPid(pid)	    	((unsigned long) (pid))
 #define TclSetSystemEnv(a,b)
 #define tzset()
-
-/*
- * The following defines replace the Macintosh version of the POSIX
- * functions "stat" and "access".  The various compilier vendors
- * don't implement this function well nor consistantly.
- */
-/* int TclpStat(const char *path, struct stat *bufPtr); */
-int TclpLstat(const char *path, struct stat *bufPtr);
 
 char *TclpFindExecutable(const char *argv0);
 int TclpFindVariable(CONST char *name, int *lengthPtr);

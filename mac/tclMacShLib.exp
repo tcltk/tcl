@@ -197,7 +197,6 @@ SetIsStationery
 SetNameLocked
 Share
 StrToAddr
-TclAccess
 TclAllocateFreeObjects
 TclChdir
 TclCleanupByteCode
@@ -303,7 +302,6 @@ TclIsProc
 TclLoadFile
 TclLooksLikeInt
 TclLookupVar
-TclpAccess
 TclMacCreateEnv
 TclMacExitHandler
 TclMacFOpenHack
@@ -313,7 +311,6 @@ TclMacOSErrorToPosixError
 TclMacReadlink
 TclMacRemoveTimer
 TclMacStartTimer
-TclpStat
 TclMacTimerExpired
 TclMatchFiles
 TclNeedSpace
@@ -338,7 +335,6 @@ TclSetEnv
 TclSetIndexedScalar
 TclSetupEnv
 TclSockGetPort
-TclStat
 TclTeardownNamespace
 TclTestChannelCmd
 TclTestChannelEventCmd

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.12 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.13 2001/08/30 08:53:15 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -29,6 +29,10 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC
 
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
+
+static int NativeAccess(TCHAR *path, int mode);
+static int NativeStat(TCHAR *path, struct stat *statPtr);
+static int NativeIsExec(TCHAR *path);
 
 
 /*
@@ -266,8 +270,9 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
 	TCHAR *nativeMatchResult;
 	char *name, *fname;
+	
 	int typeOk = 1;
-
+	
 	if (tclWinProcs->useWide) {
 	    nativeName = (TCHAR *) data.w.cFileName;
 	} else {
@@ -316,7 +321,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 	fname = Tcl_DStringValue(&dsOrig);
 	nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(&dsOrig), &ds);
-
+	
 	/*
 	 * 'attr' represents the attributes of the file, but we only
 	 * want to retrieve this info if it is absolutely necessary
@@ -347,16 +352,17 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    typeOk = 0;
 		}
 	    }
+	    
 	    if (typeOk == 1 && types->perm != 0) {
 		if (
 		    ((types->perm & TCL_GLOB_PERM_RONLY) &&
 			    !(attr & FILE_ATTRIBUTE_READONLY)) ||
 		    ((types->perm & TCL_GLOB_PERM_R) &&
-			    (TclpAccess(fname, R_OK) != 0)) ||
+			    (NativeAccess(nativeName, R_OK) != 0)) ||
 		    ((types->perm & TCL_GLOB_PERM_W) &&
-			    (TclpAccess(fname, W_OK) != 0)) ||
+			    (NativeAccess(nativeName, W_OK) != 0)) ||
 		    ((types->perm & TCL_GLOB_PERM_X) &&
-			    (TclpAccess(fname, X_OK) != 0))
+			    (NativeAccess(nativeName, X_OK) != 0))
 		    ) {
 		    typeOk = 0;
 		}
@@ -364,7 +370,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    if (typeOk && types->type != 0) {
 		if (types->perm == 0) {
 		    /* We haven't yet done a stat on the file */
-		    if (TclpStat(fname, &buf) != 0) {
+		    if (NativeStat(nativeName, &buf) != 0) {
 			/* Posix error occurred */
 			typeOk = 0;
 		    }
@@ -394,7 +400,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			typeOk = 0;
 #ifdef S_ISLNK
 			if (types->type & TCL_GLOB_TYPE_LINK) {
-			    if (TclpLstat(fname, &buf) == 0) {
+			    /* 
+			     * We should use 'lstat' but it is the
+			     * same as 'stat' on windows.
+			     */
+			    if (NativeStat(nativeName, &buf) == 0) {
 				if (S_ISLNK(buf.st_mode)) {
 				    typeOk = 1;
 				}
@@ -563,7 +573,7 @@ TclpGetUserHome(name, bufferPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * TclpAccess --
+ * NativeAccess --
  *
  *	This function replaces the library version of access(), fixing the
  *	following bugs:
@@ -579,18 +589,14 @@ TclpGetUserHome(name, bufferPtr)
  *---------------------------------------------------------------------------
  */
 
-int
-TclpAccess(
-    CONST char *path,		/* Path of file to access (UTF-8). */
+static int
+NativeAccess(
+    TCHAR *nativePath,		/* Path of file to access (UTF-8). */
     int mode)			/* Permission setting. */
 {
-    Tcl_DString ds;
-    TCHAR *nativePath;
     DWORD attr;
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
     attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
-    Tcl_DStringFree(&ds);
 
     if (attr == 0xffffffff) {
 	/*
@@ -611,8 +617,6 @@ TclpAccess(
     }
 
     if (mode & X_OK) {
-        CONST char *p;
-
 	if (attr & FILE_ATTRIBUTE_DIRECTORY) {
 	    /*
 	     * Directories are always executable. 
@@ -620,18 +624,8 @@ TclpAccess(
 	    
 	    return 0;
 	}
-	p = strrchr(path, '.');
-	if (p != NULL) {
-	    p++;
-	    if ((stricmp(p, "exe") == 0)
-		    || (stricmp(p, "com") == 0)
-		    || (stricmp(p, "bat") == 0)) {
-		/*
-		 * File that ends with .exe, .com, or .bat is executable.
-		 */
-
-		return 0;
-	    }
+	if (NativeIsExec(nativePath)) {
+	    return 0;
 	}
 	Tcl_SetErrno(EACCES);
 	return -1;
@@ -640,10 +634,47 @@ TclpAccess(
     return 0;
 }
 
+static int
+NativeIsExec(nativePath)
+    TCHAR *nativePath;
+{
+    CONST char *p;
+    char *path;
+    Tcl_DString ds;
+    
+    /* 
+     * This is really not efficient.  We should be able to examine
+     * the native path directly without converting to UTF.
+     */
+    Tcl_DStringInit(&ds);
+    path = Tcl_WinTCharToUtf(nativePath, -1, &ds);
+    
+    p = strrchr(path, '.');
+    if (p != NULL) {
+	p++;
+	/* 
+	 * Note: in the old code, stat considered '.pif' files as
+	 * executable, whereas access did not.
+	 */
+	if ((stricmp(p, "exe") == 0)
+		|| (stricmp(p, "com") == 0)
+		|| (stricmp(p, "bat") == 0)) {
+	    /*
+	     * File that ends with .exe, .com, or .bat is executable.
+	     */
+
+	    Tcl_DStringFree(&ds);
+	    return 1;
+	}
+    }
+    Tcl_DStringFree(&ds);
+    return 0;
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * TclpChdir --
+ * TclpObjChdir --
  *
  *	This function replaces the library version of chdir().
  *
@@ -656,17 +687,15 @@ TclpAccess(
  *----------------------------------------------------------------------
  */
 
-int
-TclpChdir(path)
-    CONST char *path;     	/* Path to new working directory (UTF-8). */
+int 
+TclpObjChdir(pathPtr)
+    Tcl_Obj *pathPtr; 	/* Path to new working directory. */
 {
     int result;
-    Tcl_DString ds;
     TCHAR *nativePath;
 
-    nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
+    nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
-    Tcl_DStringFree(&ds);
 
     if (result == 0) {
 	TclWinConvertError(GetLastError());
@@ -796,10 +825,30 @@ TclpGetCwd(interp, bufferPtr)
     return Tcl_DStringValue(bufferPtr);
 }
 
+int 
+TclpObjStat(pathPtr, statPtr)
+    Tcl_Obj *pathPtr;          /* Path of file to stat */
+    struct stat *statPtr;      /* Filled with results of stat call. */
+{
+    Tcl_Obj *transPtr;
+    /*
+     * Eliminate file names containing wildcard characters, or subsequent 
+     * call to FindFirstFile() will expand them, matching some other file.
+     */
+
+    transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+    if (transPtr == NULL || (strpbrk(Tcl_GetString(transPtr), "?*") != NULL)) {
+	Tcl_SetErrno(ENOENT);
+	return -1;
+    }
+
+    return NativeStat((TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr);
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * TclpObjStat --
+ * NativeStat --
  *
  *	This function replaces the library version of stat(), fixing 
  *	the following bugs:
@@ -819,34 +868,20 @@ TclpGetCwd(interp, bufferPtr)
  *----------------------------------------------------------------------
  */
 
-int 
-TclpObjStat(pathPtr, statPtr)
-    Tcl_Obj *pathPtr;          /* Path of file to stat */
+static int 
+NativeStat(nativePath, statPtr)
+    TCHAR *nativePath;          /* Path of file to stat */
     struct stat *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_DString ds;
-    TCHAR *nativePath;
     WIN32_FIND_DATAT data;
     HANDLE handle;
     DWORD attr;
     WCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
-    char *p, *fullPath;
+    char *fullPath;
     int dev, mode;
-    Tcl_Obj *transPtr;
-    
-    /*
-     * Eliminate file names containing wildcard characters, or subsequent 
-     * call to FindFirstFile() will expand them, matching some other file.
-     */
 
-    transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-    if (transPtr == NULL || (strpbrk(Tcl_GetString(transPtr), "?*") != NULL)) {
-	Tcl_SetErrno(ENOENT);
-	return -1;
-    }
-
-    nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
     handle = (*tclWinProcs->findFirstFileProc)(nativePath, &data);
     if (handle == INVALID_HANDLE_VALUE) {
 	/* 
@@ -918,14 +953,8 @@ TclpObjStat(pathPtr, statPtr)
     attr = data.a.dwFileAttributes;
     mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
     mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD | S_IWRITE;
-    p = strrchr(Tcl_GetString(transPtr), '.');
-    if (p != NULL) {
-	if ((lstrcmpiA(p, ".exe") == 0) 
-		|| (lstrcmpiA(p, ".com") == 0) 
-		|| (lstrcmpiA(p, ".bat") == 0)
-		|| (lstrcmpiA(p, ".pif") == 0)) {
-	    mode |= S_IEXEC;
-	}
+    if (NativeIsExec(nativePath)) {
+	mode |= S_IEXEC;
     }
 
     /*
@@ -1096,85 +1125,18 @@ TclpObjGetCwd(interp)
 }
 
 int 
-TclpObjChdir(pathPtr)
-    Tcl_Obj *pathPtr;
-{
-    int result;
-    TCHAR *nativePath;
-
-    nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
-    result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
-
-    if (result == 0) {
-	TclWinConvertError(GetLastError());
-	return -1;
-    }
-    return 0;
-}
-
-int 
 TclpObjAccess(pathPtr, mode)
     Tcl_Obj *pathPtr;
     int mode;
 {
-    TCHAR *nativePath;
-    DWORD attr;
-
-    nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
-    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
-
-    if (attr == 0xffffffff) {
-	/*
-	 * File doesn't exist. 
-	 */
-
-	TclWinConvertError(GetLastError());
-	return -1;
-    }
-
-    if ((mode & W_OK) && (attr & FILE_ATTRIBUTE_READONLY)) {
-	/*
-	 * File is not writable.
-	 */
-
-	Tcl_SetErrno(EACCES);
-	return -1;
-    }
-
-    if (mode & X_OK) {
-	CONST char *p;
-
-	if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-	    /*
-	     * Directories are always executable. 
-	     */
-	    
-	    return 0;
-	}
-	p = strrchr(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), '.');
-	if (p != NULL) {
-	    p++;
-	    if ((stricmp(p, "exe") == 0)
-		    || (stricmp(p, "com") == 0)
-		    || (stricmp(p, "bat") == 0)) {
-		/*
-		 * File that ends with .exe, .com, or .bat is executable.
-		 */
-
-		return 0;
-	    }
-	}
-	Tcl_SetErrno(EACCES);
-	return -1;
-    }
-
-    return 0;
+    return NativeAccess((TCHAR*) Tcl_FSGetNativePath(pathPtr), mode);
 }
 
 int 
 TclpObjLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;
-    struct stat *buf; {
+    struct stat *buf; 
+{
     return TclpObjStat(pathPtr,buf);
 }
 
@@ -1201,17 +1163,3 @@ TclpObjLink(pathPtr, toPtr)
 }
 
 #endif
-
-/* Obsolete, only called from test suite */
-int
-TclpStat(path, statPtr)
-    CONST char *path;		/* Path of file to stat (UTF-8). */
-    struct stat *statPtr;	/* Filled with results of stat call. */
-{
-    int retVal;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
-    Tcl_IncrRefCount(pathPtr);
-    retVal = TclpObjStat(pathPtr, statPtr);
-    Tcl_DecrRefCount(pathPtr);
-    return retVal;
-}

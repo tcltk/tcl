@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.10 2001/08/23 18:20:50 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.11 2001/08/30 08:53:15 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -150,77 +150,10 @@ static int		TraverseUnixTree _ANSI_ARGS_((
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr));
 
-int 
-TclpObjCreateDirectory(pathPtr)
-    Tcl_Obj *pathPtr;
-{
-    return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
-}
-
-int 
-TclpObjDeleteFile(pathPtr)
-    Tcl_Obj *pathPtr;
-{
-    return DoDeleteFile(Tcl_FSGetNativePath(pathPtr));
-}
-
-int 
-TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
-    Tcl_Obj **errorPtr;
-{
-    Tcl_DString ds;
-    int ret;
-    ret = TclpCopyDirectory(Tcl_FSGetTranslatedStringPath(NULL,srcPathPtr),
-			    Tcl_FSGetTranslatedStringPath(NULL,destPathPtr), &ds);
-    if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_DStringFree(&ds);
-	Tcl_IncrRefCount(*errorPtr);
-    }
-    return ret;
-}
-
-int 
-TclpObjCopyFile(srcPathPtr, destPathPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
-{
-    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
-		      Tcl_FSGetNativePath(destPathPtr));
-}
-
-int 
-TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
-    Tcl_Obj *pathPtr;
-    int recursive;
-    Tcl_Obj **errorPtr;
-{
-    Tcl_DString ds;
-    int ret;
-    ret = TclpRemoveDirectory(Tcl_FSGetTranslatedStringPath(NULL, pathPtr),recursive, &ds);
-    if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_DStringFree(&ds);
-	Tcl_IncrRefCount(*errorPtr);
-    }
-    return ret;
-}
-
-int 
-TclpObjRenameFile(srcPathPtr, destPathPtr)
-    Tcl_Obj *srcPathPtr;
-    Tcl_Obj *destPathPtr;
-{
-    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
-			Tcl_FSGetNativePath(destPathPtr));
-}
-
 /*
  *---------------------------------------------------------------------------
  *
- * TclpRenameFile, DoRenameFile --
+ * TclpObjRenameFile, DoRenameFile --
  *
  *      Changes the name of an existing file or directory, from src to dst.
  *	If src and dst refer to the same file or directory, does nothing
@@ -252,23 +185,14 @@ TclpObjRenameFile(srcPathPtr, destPathPtr)
  *---------------------------------------------------------------------------
  */
 
-int
-TclpRenameFile(src, dst)
-    CONST char *src;		/* Pathname of file or dir to be renamed
-				 * (UTF-8). */
-    CONST char *dst;		/* New pathname of file or directory
-				 * (UTF-8). */
-{
-    int result;
-    Tcl_DString srcString, dstString;
 
-    Tcl_UtfToExternalDString(NULL, src, -1, &srcString);
-    Tcl_UtfToExternalDString(NULL, dst, -1, &dstString);
-    result = DoRenameFile(Tcl_DStringValue(&srcString),
-	    Tcl_DStringValue(&dstString));
-    Tcl_DStringFree(&srcString);
-    Tcl_DStringFree(&dstString);
-    return result;
+int 
+TclpObjRenameFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+{
+    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
+			Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -355,7 +279,7 @@ DoRenameFile(src, dst)
 /*
  *---------------------------------------------------------------------------
  *
- * TclpCopyFile, DoCopyFile --
+ * TclpObjCopyFile, DoCopyFile --
  *
  *      Copy a single file (not a directory).  If dst already exists and
  *	is not a directory, it is removed.
@@ -380,20 +304,12 @@ DoRenameFile(src, dst)
  */
 
 int 
-TclpCopyFile(src, dst)
-    CONST char *src;		/* Pathname of file to be copied (UTF-8). */
-    CONST char *dst;		/* Pathname of file to copy to (UTF-8). */
+TclpObjCopyFile(srcPathPtr, destPathPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
 {
-    int result;
-    Tcl_DString srcString, dstString;
-
-    Tcl_UtfToExternalDString(NULL, src, -1, &srcString);
-    Tcl_UtfToExternalDString(NULL, dst, -1, &dstString);
-    result = DoCopyFile(Tcl_DStringValue(&srcString), 
-			Tcl_DStringValue(&dstString));
-    Tcl_DStringFree(&srcString);
-    Tcl_DStringFree(&dstString);
-    return result;
+    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
+		      Tcl_FSGetNativePath(destPathPtr));
 }
 
 static int
@@ -561,7 +477,7 @@ CopyFile(src, dst, statBufPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * TclpDeleteFile, DoDeleteFile --
+ * TclpObjDeleteFile, DoDeleteFile --
  *
  *      Removes a single file (not a directory).
  *
@@ -580,17 +496,11 @@ CopyFile(src, dst, statBufPtr)
  *---------------------------------------------------------------------------
  */
 
-int
-TclpDeleteFile(path) 
-    CONST char *path;		/* Pathname of file to be removed (UTF-8). */
+int 
+TclpObjDeleteFile(pathPtr)
+    Tcl_Obj *pathPtr;
 {
-    int result;
-    Tcl_DString pathString;
-
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
-    result = DoDeleteFile(Tcl_DStringValue(&pathString));
-    Tcl_DStringFree(&pathString);
-    return result;
+    return DoDeleteFile(Tcl_FSGetNativePath(pathPtr));
 }
 
 static int
@@ -629,17 +539,11 @@ DoDeleteFile(path)
  *---------------------------------------------------------------------------
  */
 
-int
-TclpCreateDirectory(path)
-    CONST char *path;		/* Pathname of directory to create (UTF-8). */
+int 
+TclpObjCreateDirectory(pathPtr)
+    Tcl_Obj *pathPtr;
 {
-    int result;
-    Tcl_DString pathString;
-
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
-    result = DoCreateDirectory(Tcl_DStringValue(&pathString));
-    Tcl_DStringFree(&pathString);
-    return result;
+    return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
 }
 
 static int
@@ -666,7 +570,7 @@ DoCreateDirectory(path)
 /*
  *---------------------------------------------------------------------------
  *
- * TclpCopyDirectory --
+ * TclpObjCopyDirectory --
  *
  *      Recursively copies a directory.  The target directory dst must
  *	not already exist.  Note that this function does not merge two
@@ -677,8 +581,8 @@ DoCreateDirectory(path)
  *	If the directory was successfully copied, returns TCL_OK.
  *	Otherwise the return value is TCL_ERROR, errno is set to indicate
  *	the error, and the pathname of the file that caused the error
- *	is stored in errorPtr.  See TclpCreateDirectory and TclpCopyFile
- *	for a description of possible values for errno.
+ *	is stored in errorPtr.  See TclpObjCreateDirectory and 
+ *	TclpObjCopyFile for a description of possible values for errno.
  *
  * Side effects:
  *      An exact copy of the directory hierarchy src will be created
@@ -689,27 +593,36 @@ DoCreateDirectory(path)
  *---------------------------------------------------------------------------
  */
 
-int
-TclpCopyDirectory(src, dst, errorPtr)
-    CONST char *src;		/* Pathname of directory to be copied
-				 * (UTF-8). */
-    CONST char *dst;		/* Pathname of target directory (UTF-8). */
-    Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
-				 * DString filled with UTF-8 name of file
-				 * causing error. */
+int 
+TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
+    Tcl_Obj *srcPathPtr;
+    Tcl_Obj *destPathPtr;
+    Tcl_Obj **errorPtr;
 {
+    Tcl_DString ds;
     Tcl_DString srcString, dstString;
-    int result;
+    int ret;
 
-    Tcl_UtfToExternalDString(NULL, src, -1, &srcString);
-    Tcl_UtfToExternalDString(NULL, dst, -1, &dstString);
+    Tcl_UtfToExternalDString(NULL, 
+			     Tcl_FSGetTranslatedStringPath(NULL,srcPathPtr), 
+			     -1, &srcString);
+    Tcl_UtfToExternalDString(NULL, 
+			     Tcl_FSGetTranslatedStringPath(NULL,destPathPtr), 
+			     -1, &dstString);
 
-    result = TraverseUnixTree(TraversalCopy, &srcString, &dstString, errorPtr);
+    ret = TraverseUnixTree(TraversalCopy, &srcString, &dstString, &ds);
 
     Tcl_DStringFree(&srcString);
     Tcl_DStringFree(&dstString);
-    return result;
+
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
 }
+
 
 /*
  *---------------------------------------------------------------------------
@@ -737,25 +650,27 @@ TclpCopyDirectory(src, dst, errorPtr)
  *---------------------------------------------------------------------------
  */
  
-int
-TclpRemoveDirectory(path, recursive, errorPtr) 
-    CONST char *path;		/* Pathname of directory to be removed
-				 * (UTF-8). */
-    int recursive;		/* If non-zero, removes directories that
-				 * are nonempty.  Otherwise, will only remove
-				 * empty directories. */
-    Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
-				 * DString filled with UTF-8 name of file
-				 * causing error. */
+int 
+TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
+    Tcl_Obj *pathPtr;
+    int recursive;
+    Tcl_Obj **errorPtr;
 {
-    int result;
+    Tcl_DString ds;
     Tcl_DString pathString;
+    int ret;
 
-    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
-    result = DoRemoveDirectory(&pathString, recursive, errorPtr);
+    Tcl_UtfToExternalDString(NULL, Tcl_FSGetTranslatedStringPath(NULL, pathPtr), 
+			     -1, &pathString);
+    ret = DoRemoveDirectory(&pathString, recursive, &ds);
     Tcl_DStringFree(&pathString);
 
-    return result;
+    if (ret != TCL_OK) {
+	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(*errorPtr);
+    }
+    return ret;
 }
 
 static int
@@ -1696,24 +1611,34 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_Obj *pathPtr;
     int nextCheckpoint;
 {
+    char *currentPathEndPosition;
     char *path = Tcl_GetString(pathPtr);
-    
+
+    currentPathEndPosition = path + nextCheckpoint;
+
     while (1) {
-	char cur = path[nextCheckpoint];
-	if (cur == 0) {
-	    break;
-	}
-	if (cur == '/') {
-	    int access;
-	    path[nextCheckpoint] = 0;
-	    access = TclpAccess(path, F_OK);
-	    path[nextCheckpoint] = '/';
-	    if (access != 0) {
+	char cur = *currentPathEndPosition;
+	if (cur == '/' || cur == 0) {
+	    /* Reached directory separator, or end of string */
+	    Tcl_DString ds;
+	    char *nativePath;
+	    int accessOk;
+
+	    nativePath = Tcl_UtfToExternalDString(NULL, path, 
+			    currentPathEndPosition - path, &ds);
+	    accessOk = access(nativePath, F_OK);
+	    Tcl_DStringFree(&ds);
+	    if (accessOk != 0) {
 		/* File doesn't exist */
 		break;
 	    }
+	    if (cur == 0) {
+		break;
+	    }
 	}
-	nextCheckpoint++;
+	currentPathEndPosition++;
     }
+    nextCheckpoint = currentPathEndPosition - path;
+    /* We should really now convert this to a canonical path */
     return nextCheckpoint;
 }
