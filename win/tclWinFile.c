@@ -522,7 +522,7 @@ TclWinResolveShortcut(bufferPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclWinStat, TclWinLstat --
+ * TclpStat, TclpLstat --
  *
  *	These functions replace the library versions of stat and lstat.
  *
@@ -541,7 +541,7 @@ TclWinResolveShortcut(bufferPtr)
  */
 
 int
-TclWinStat(path, buf)
+TclpStat(path, buf)
     CONST char *path;		/* Path of file to stat (in current CP). */
     struct stat *buf;		/* Filled with results of stat call. */
 {
@@ -588,7 +588,7 @@ TclWinStat(path, buf)
 /*
  *---------------------------------------------------------------------------
  *
- * TclWinAccess --
+ * TclpAccess --
  *
  *	This function replaces the library version of access.
  *
@@ -605,7 +605,7 @@ TclWinStat(path, buf)
  */
 
 int
-TclWinAccess(
+TclpAccess(
     CONST char *path,		/* Path of file to access (in current CP). */
     int mode)			/* Permission setting. */
 {
