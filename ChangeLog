@@ -1,3 +1,21 @@
+2000-01-14  Eric Melski  <ericm@scriptics.com>
+
+	* tests/var.test: Added a test for the array multiple delete
+	protection in Tcl_UnsetVar2.
+
+	* generic/tclVar.c: Added protection in Tcl_UnsetVar2 against
+	attempts to multiply delete arrays when unsetting them (bug
+	#3453).  This could happen if there was an unset trace on an array
+	element and the trace proc made a global or upvar link to the
+	array, and then the array was unset at the global level.  See the
+	bug reference for more information.
+
+	* unix/tclUnixTime.c: New clock format format.
+
+	* compat/strftime.c: New clock format format.
+
+	* generic/tclGetDate.y: New clock scan format.
+
 2000-01-13  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* changes: updated changes file to reflect 8.3b2 mods

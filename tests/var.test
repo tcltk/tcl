@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.10 1999/12/12 02:27:04 hobbs Exp $
+# RCS: @(#) $Id: var.test,v 1.11 2000/01/15 02:52:32 ericm Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -616,6 +616,19 @@ test var-12.1 {TclFindCompiledLocals, {} array name} {
 	lsort -dictionary [array names {}]
     }
 } {0 1 2 2,foo}
+
+test var-13.1 {Tcl_UnsetVar2, unset array with trace set on element} {
+    proc foo {var ind op} {
+	global t
+	set foo bar
+    }
+    namespace eval :: {
+	set t(1) 1
+	trace variable t(1) u foo
+	unset t
+    }
+    set x "If you see this, it worked"
+} "If you see this, it worked"
 
 catch {namespace delete ns}
 catch {unset arr}
