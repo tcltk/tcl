@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.2 1998/09/24 23:58:47 stanton Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.3 1998/10/06 00:36:30 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -774,7 +774,7 @@ TclExecuteByteCode(interp, codePtr)
 		    isUnknownCmd = 1;
 #endif /*TCL_COMPILE_DEBUG*/			
 		    stackTop++; /* need room for new inserted objv[0] */
-		    for (i = objc;  i >= 0;  i--) {
+		    for (i = objc-1;  i >= 0;  i--) {
 			objv[i+1] = objv[i];
 		    }
 		    objc++;
@@ -2903,11 +2903,12 @@ PrintByteCodeInfo(codePtr)
 				 * to stdout. */
 {
     Proc *procPtr = codePtr->procPtr;
+    Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
     fprintf(stdout, "\nExecuting ByteCode 0x%x, refCt %u, epoch %u, interp 0x%x (epoch %u)\n",
 	    (unsigned int) codePtr, codePtr->refCount,
-	    codePtr->compileEpoch, (unsigned int) codePtr->iPtr,
-	    codePtr->iPtr->compileEpoch);
+	    codePtr->compileEpoch, (unsigned int) iPtr,
+	    iPtr->compileEpoch);
     
     fprintf(stdout, "  Source: ");
     TclPrintSource(stdout, codePtr->source, 60);
