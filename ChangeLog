@@ -1,3 +1,17 @@
+2003-02-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): When an
+	error is encountered reading the increment value during
+	a compiled call to incr, add a "(reading increment)"
+	error string to the errorInfo variable. This makes
+	the errorInfo variable set by the compiled incr command
+	match the value set by the non-compiled version.
+	* tests/incr-old.test: Change errorInfo result for
+	the compiled incr command case to match the modified
+	implementation.
+	* tests/incr.test: Add tests to make sure the compiled
+	and non-compiled errorInfo messages are the same.
+
 2003-02-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:  Filename arguments to [outputChannel]
