@@ -2081,13 +2081,16 @@ AC_DEFUN(SC_BUGGY_STRTOD, [
 	AC_MSG_CHECKING([for Solaris2.4/Tru64 strtod bugs])
 	AC_TRY_RUN([
 	    extern double strtod();
-	    int main()
-	    {
-		char *string = "NaN", *spaceString = " ";
+	    int main() {
+		char *infString="Inf", *nanString="NaN", *spaceString=" ";
 		char *term;
 		double value;
-		value = strtod(string, &term);
-		if ((term != string) && (term[-1] == 0)) {
+		value = strtod(infString, &term);
+		if ((term != infString) && (term[-1] == 0)) {
+		    exit(1);
+		}
+		value = strtod(nanString, &term);
+		if ((term != nanString) && (term[-1] == 0)) {
 		    exit(1);
 		}
 		value = strtod(spaceString, &term);
