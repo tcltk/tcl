@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.47 2003/10/14 15:44:53 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.48 2003/10/21 20:42:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1173,9 +1173,6 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {
 #ifdef TCL_COMPILE_DEBUG
- 	int numChars;
- 	char *ellipsis;
- 	
  	if (tclTraceCompile >= 1) {
  	    /*
  	     * Display a line summarizing the top level command we
