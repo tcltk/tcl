@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.53 2000/07/19 18:27:45 ericm Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.54 2000/08/15 00:08:37 ericm Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -396,17 +396,18 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
 	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"
 	@echo installing library files
-	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(GENERICDIR)\tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\history.tcl" "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\init.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\ldAout.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\parray.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\safe.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\tclIndex"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\package.tcl" "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\word.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\auto.tcl"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\package.tcl"  "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)"
 
 #
 # Regenerate the stubs files.

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.75 2000/07/22 01:53:23 ericm Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.76 2000/08/15 00:08:36 ericm Exp $
  */
 
 #ifndef _TCL
@@ -1793,6 +1793,13 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  */
 
 #include "tclDecls.h"
+
+/*
+ * Include platform specific public function declarations that are
+ * accessible via the stubs table.
+ */
+
+#include "tclPlatDecls.h"
 
 /*
  * Public functions that are not accessible via the stubs table.

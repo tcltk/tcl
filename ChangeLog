@@ -1,7 +1,17 @@
 2000-08-14  Eric Melski  <ericm@ajubasolutions.com>
 
-	* README: Updated link for instructions on compiling Tcl from sources to
-	point to correct location (http://dev.scriptics.com/doc/... instead of
+	* win/makefile.vc: 
+	* win/Makefile.in: 
+	* unix/Makefile.in: Added tclPlatDecls.h to the list of installed
+	headers, for more complete stubs support. [Bug: 5241].
+
+	* generic/tcl.h: Added #include "tclPlatDecls.h" to get
+	platform-specific stubs declarations (Tcl_WinTCharToUtf, etc)
+	[Bug: 5241].
+
+	* README: Updated link for instructions on compiling Tcl from
+	sources to point to correct location
+	(http://dev.scriptics.com/doc/... instead of
 	http://dev.scriptics.com/support/...).
 
 2000-08-11  Eric Melski  <ericm@ajubasolutions.com>
