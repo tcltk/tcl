@@ -120,11 +120,11 @@ TclpThreadCreate(idPtr, proc, clientData)
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
 {
-    HANDLE tHandle;
+    unsigned long code;
 
-    tHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) proc,
-		(DWORD *)clientData, 0, (DWORD *)idPtr);
-    if (tHandle == NULL) {
+    code = _beginthreadex(NULL, 0, (LPTHREAD_START_ROUTINE) proc,
+		(void *)clientData, 0, (unsigned *)idPtr);
+    if (code == 0) {
 	return TCL_ERROR;
     } else {
 	return TCL_OK;
@@ -151,7 +151,7 @@ void
 TclpThreadExit(status)
     int status;
 {
-    ExitThread((DWORD)status);
+    _endthreadex((DWORD)status);
 }
 
 
