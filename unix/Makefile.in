@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.9 2001/10/16 23:53:21 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.9.2.1 2002/11/07 19:04:07 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -418,9 +418,7 @@ doc:
 ${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
-	if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
-		$(RANLIB) ${TCL_LIB_FILE}; \
-	fi
+	$(RANLIB) ${TCL_LIB_FILE}
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f ${STUB_LIB_FILE}
@@ -456,6 +454,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 
 test: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -464,10 +463,31 @@ test: tcltest
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
+
+# This target can be used to run tclsh from the build directory
+# via `make shell SCRIPT=/tmp/foo.tcl`
+shell: tclsh
+	@LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
+	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
+	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./tclsh $(SCRIPT)
+
+# This target can be used to run tclsh inside either gdb or insight
+gdb: tclsh
+	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
+	@echo "set env DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}" > gdb.run
+	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
+	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
+	gdb ./tclsh --command=gdb.run
+	rm gdb.run
 
 # The following target outputs the name of the top-level source directory
 # for Tcl (it is used by Tk's configure script, for example).  The
@@ -488,7 +508,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.9 2001/10/16 23:53:21 dgp Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.9.2.1 2002/11/07 19:04:07 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -539,9 +559,7 @@ install-binaries: binaries
 	    fi
 	@echo "Installing $(TCL_LIB_FILE) to $(LIB_INSTALL_DIR)/"
 	@$(INSTALL_LIBRARY) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
-	@if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
-	    (cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE)); \
-	    fi
+	@(cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE))
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
 	@if test "$(TCL_BUILD_EXP_FILE)" != ""; then \
 	    echo "Installing $(TCL_EXP_FILE) to $(LIB_INSTALL_DIR)/"; \
