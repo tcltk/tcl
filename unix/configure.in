@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.99 2002/08/28 08:47:47 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.100 2002/08/28 22:48:39 davygrvy Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -370,6 +370,40 @@ AC_CACHE_VAL(tcl_cv_char_signed,
 AC_MSG_RESULT($tcl_cv_char_signed)
 if test $tcl_cv_char_signed = yes; then
     AC_DEFINE(HAVE_SIGNED_CHAR)
+fi
+
+#--------------------------------------------------------------------
+#  Does putenv() copy or not?  We need to know to avoid memory leaks.
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([for a putenv() that copies the buffer])
+AC_CACHE_VAL(tcl_cv_putenv_copy,
+    AC_TRY_RUN([
+	#include <stdlib.h>
+	#define OURVAR "havecopy=yes"
+	int main (int argc, char *argv[])
+	{
+	    char *foo, *bar;
+	    foo = (char *)strdup(OURVAR);
+	    putenv(foo);
+	    strcpy((char *)(strchr(foo, '=') + 1), "no");
+	    bar = getenv("havecopy");
+	    if (!strcmp(bar, "no")) {
+		/* doesn't copy */
+		return 0;
+	    } else {
+		/* does copy */
+		return 1;
+	    }
+	}
+    ],
+    tcl_cv_putenv_copy=no,
+    tcl_cv_putenv_copy=yes,
+    tcl_cv_putenv_copy=no)
+)
+AC_MSG_RESULT($tcl_cv_putenv_copy)
+if test $tcl_cv_putenv_copy = yes; then
+    AC_DEFINE(HAVE_PUTENV_THAT_COPIES)
 fi
 
 #--------------------------------------------------------------------
