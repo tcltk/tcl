@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.7 2003/12/24 04:18:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.8 2004/02/17 04:56:01 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -604,8 +604,6 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 
 		TraceCommandInfo *tcmdPtr = (TraceCommandInfo *) clientData;
 
-		eachTraceObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-
 		/*
 		 * Build a list with the ops list as the first obj
 		 * element and the tcmdPtr->command string as the
@@ -636,6 +634,7 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 		    Tcl_DecrRefCount(elemObjPtr);
 		    continue;
 		}
+		eachTraceObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 		Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 		Tcl_DecrRefCount(elemObjPtr);
 		elemObjPtr = NULL;
@@ -807,8 +806,6 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 
 		TraceCommandInfo *tcmdPtr = (TraceCommandInfo *) clientData;
 
-		eachTraceObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-
 		/*
 		 * Build a list with the ops list as
 		 * the first obj element and the tcmdPtr->command string
@@ -831,6 +828,7 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 		    Tcl_DecrRefCount(elemObjPtr);
 		    continue;
 		}
+		eachTraceObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 		Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 		Tcl_DecrRefCount(elemObjPtr);
 
@@ -988,7 +986,6 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 
 		TraceVarInfo *tvarPtr = (TraceVarInfo *) clientData;
 
-		eachTraceObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 		/*
 		 * Build a list with the ops list as
 		 * the first obj element and the tcmdPtr->command string
@@ -1013,6 +1010,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 		    Tcl_ListObjAppendElement(NULL, elemObjPtr,
 			    Tcl_NewStringObj("unset", 5));
 		}
+		eachTraceObjPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 		Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);
 
 		elemObjPtr = Tcl_NewStringObj(tvarPtr->command, -1);

@@ -1,3 +1,8 @@
+2004-02-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclTrace.c (TclTraceExecutionObjCmd) 
+	(TclTraceCommandObjCmd): fix possible mem leak in trace info.
+
 2004-02-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWinInit.c (AppendEnvironment):
@@ -624,7 +629,7 @@
 
 2003-11-17  Don Porter	<dgp@users.sourceforge.net>
 
-	* tests/reg.test:  Added tests for [Bugs 230589, 504785, 505048, 840258]
+	* tests/reg.test: Added tests for [Bugs 230589, 504785, 505048, 840258]
 	recently fixed by 2003-11-15 commit to regcomp.c by Pavel Goran.
 	His notes on the fix: This bug results from an error in code that
 	splits states into "progress" and "no-progress" ones. This error
