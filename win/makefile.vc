@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.103 2003/03/23 03:06:31 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.104 2003/04/05 01:25:11 dkf Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -236,6 +236,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclCompExpr.obj \
 	$(TMP_DIR)\tclCompile.obj \
 	$(TMP_DIR)\tclDate.obj \
+	$(TMP_DIR)\tclDictObj.obj \
 	$(TMP_DIR)\tclEncoding.obj \
 	$(TMP_DIR)\tclEnv.obj \
 	$(TMP_DIR)\tclEvent.obj \

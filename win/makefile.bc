@@ -190,6 +190,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclCompExpr.obj \
 	$(TMPDIR)\tclCompile.obj \
 	$(TMPDIR)\tclDate.obj \
+	$(TMPDIR)\tclDictObj.obj \
 	$(TMPDIR)\tclEncoding.obj \
 	$(TMPDIR)\tclEnv.obj \
 	$(TMPDIR)\tclEvent.obj \
