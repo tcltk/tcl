@@ -1,3 +1,26 @@
+2001-05-23  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test: changed io-52.[9-11] to not be platform sensitive
+	with EOL translation.
+
+	* library/encoding/cp1250.enc:
+	* library/encoding/cp1251.enc:
+	* library/encoding/cp1252.enc:
+	* library/encoding/cp1253.enc:
+	* library/encoding/cp1254.enc:
+	* library/encoding/cp1255.enc:
+	* library/encoding/cp1256.enc:
+	* library/encoding/cp1257.enc:
+	* library/encoding/cp1258.enc:
+	* library/encoding/cp874.enc:
+	* library/encoding/iso8859-6.enc:
+	* library/encoding/iso8859-7.enc:
+	* library/encoding/iso8859-8.enc:
+	* library/encoding/iso8859-10.enc (new):
+	* library/encoding/iso8859-13.enc (new):
+	* library/encoding/iso8859-14.enc (new): updated encoding tables
+	based on http://www.unicode.org/Public/MAPPINGS/. (kuhn)
+
 2001-05-23  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/tcl.m4 (SC_PATH_TCLCONFIG): Fix comments,
