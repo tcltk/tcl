@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.22 2002/02/08 02:52:55 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.23 2002/03/08 01:45:52 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -164,17 +164,24 @@ DoRenameFile(
 				 * (native). */
 {    
     DWORD srcAttr, dstAttr;
+    int retval = -1;
 
     /*
-     * Would throw an exception under NT if one of the arguments is a 
-     * char block device.
+     * The moveFileProc below would throw an exception under NT
+     * if one of the arguments is a char block device.
      */
 
     __try {
 	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
-	    return TCL_OK;
+	    retval = TCL_OK;
 	}
-    } __except (-1) {}
+    } __except (EXCEPTION_CONTINUE_EXECUTION) {}
+
+    /*
+     * Avoid using control flow statements in the SEH guarded block!
+     */
+    if (retval != -1)
+        return retval;
 
     TclWinConvertError(GetLastError());
 
@@ -432,9 +439,11 @@ DoCopyFile(
    CONST TCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
    CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
+    int retval = -1;
+
     /*
-     * Would throw an exception under NT if one of the arguments is a char
-     * block device.
+     * The copyFileProc below would throw an exception under NT if one
+     * of the arguments is a char block device.
      */
 
     /* 
@@ -463,9 +472,15 @@ DoCopyFile(
     
     __try {
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
-	    return TCL_OK;
+	    retval = -1;
 	}
-    } __except (-1) {}
+    } __except (EXCEPTION_CONTINUE_EXECUTION) {}
+
+    /*
+     * Avoid using control flow statements in the SEH guarded block!
+     */
+    if (retval != -1)
+        return retval;
 
     TclWinConvertError(GetLastError());
     if (Tcl_GetErrno() == EBADF) {
