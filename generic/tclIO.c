@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.6.2.1 1999/04/19 21:01:42 redman Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.6.2.2 1999/04/21 01:57:24 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -4360,13 +4360,6 @@ GetInput(chanPtr)
 	chanPtr->flags |= CHANNEL_EOF;
 	chanPtr->inputEncodingFlags |= TCL_ENCODING_END;
     } else if (nread < 0) {
-	/*
-	 * DO NOT check for EINTR here.  If you try again during
-	 * an EINTR (interrupt), nothing else can try to detect
-	 * them (such as TclX).  Check with Mark Diekhans for a
-	 * better answer.
-	 */
-
 	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
 	    chanPtr->flags |= CHANNEL_BLOCKED;
 	    result = EAGAIN;
