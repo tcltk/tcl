@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.9 2001/11/29 15:38:40 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.10 2001/12/28 23:36:31 dgp Exp $
  */
 
 #include <math.h>
@@ -180,8 +180,8 @@ Tcl_NewByteArrayObj(bytes, length)
  *	TCL_MEM_DEBUG is defined. It is the same as the Tcl_NewByteArrayObj
  *	above except that it calls Tcl_DbCkalloc directly with the file name
  *	and line number from its caller. This simplifies debugging since then
- *	the checkmem command will report the correct file name and line number
- *	when reporting objects that haven't been freed.
+ *	the [memory active] command will report the correct file name and line
+ *	number when reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewByteArrayObj.
