@@ -1,3 +1,10 @@
+2001-11-20  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd) Added extra parentheses to a
+	cast expression to remove ambiguity and conform with Tcl
+	Engineering Manual. [Suggestion by Donal Fellows in commentary on
+	patch #483500]
+	
 2001-11-19  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 	
 	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): Corrected bug in [time]
