@@ -1,3 +1,48 @@
+2002-01-05  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/Tcl_Main.3:
+	* generic/tclMain.c:  Substantial rewrite and expanded documentation
+	of Tcl_Main to correct a number of bugs and flaws:
+
+		* Interactive Tcl_Main can now enter a main loop, exit
+		  that loop and continue interactive operations.  The loop
+		  may even exit in the midst of interactive command typing
+		  without loss of the partial command.  [Bugs 486453, 474131]
+		* Tcl_Main now gracefully handles deletion of its master
+		  interpreter.
+		* Interactive Tcl_Main can now operate with non-blocking stdin
+		* Interactive Tcl_Main can now detect EOF on stdin even in
+		  mid-command.  [Bug 491341]
+		* Added VFS-aware internal routines for managing the
+		  startup script selection.
+		* Tcl variable 'tcl_interactive' is now linked to C variable
+		  'tty' so that one can disable/enable interactive prompts
+		  at the script level when there is no startup script.  This
+		  is meant for use by the test suite.
+		* Consistent use of the Tcl libraries standard channels as
+		  returned by Tcl_GetStdChannel(); as opposed to the channels
+		  named 'stdin', 'stdout', and 'stderr' in the master interp,
+		  which can be different or unavailable.
+		* Tcl_Main now calls Tcl_Exit() if evaluation of [exit] in the
+		  master interpreter returns, assuring Tcl_Main does not return.
+		* Documented Tcl_Main's absence from public stub table
+		* Documented that Tcl_Main does not return.
+		* Documented Tcl variables set by Tcl_Main.
+		* All prompts are done from a single procedure, Prompt.
+		* Use of Tcl_Obj-enabled interfaces everywhere.
+
+	* generic/tclInt.decls (TclGetStartupScriptPath,
+	  TclSetStartupScriptPath): New internal VFS-aware routines for
+	managing the startup script of Tcl_Main.
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c: make genstubs
+
+	* generic/tclTest.c (TestsetmainloopCmd,TestexitmainloopCmd,
+	  Tcltest_Init,TestinterpdeleteCmd):
+	* tests/main.test (new):  Added new file to test suite that
+	thoroughly tests generic/tclMain.c; added some new test commands
+	for testing Tcl_SetMainLoop().
+
 2002-01-04  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tclThreadJoin.c (TclRememberJoinableThread,TclJoinThread):

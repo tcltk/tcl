@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.65 2001/11/23 01:29:01 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.66 2002/01/05 22:55:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -246,6 +246,8 @@ TclIntStubs tclIntStubs = {
     TclExpandCodeArray, /* 164 */
     TclpSetInitialEncodings, /* 165 */
     TclListObjSetElement, /* 166 */
+    TclSetStartupScriptPath, /* 167 */
+    TclGetStartupScriptPath, /* 168 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
