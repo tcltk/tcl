@@ -1,3 +1,7 @@
+2003-07-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/array.n: add examples from Welton
+
 2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/file.n: clarification of 'file tail' behaviour [Bug 737977]
