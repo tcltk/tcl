@@ -1,3 +1,8 @@
+2005-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure, unix/tcl.m4: add solaris 64-bit gcc build
+	support. [Bug 1021871]
+
 2005-01-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclBasic.c (Tcl_ExprBoolean, Tcl_ExprDouble) 
