@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.5 1999/11/30 08:37:15 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.6 1999/12/01 00:08:36 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -776,7 +776,6 @@ PipeBlockModeProc(instanceData, mode)
         if (fcntl(fd, F_SETFL, curStatus) < 0) {
             return errno;
         }
-        curStatus = fcntl(fd, F_GETFL);
     }
     if (psPtr->outFile) {
         fd = GetFd(psPtr->outFile);
