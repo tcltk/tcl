@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.4 1999/03/24 02:49:03 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.5 1999/03/24 19:26:02 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -26,7 +26,8 @@ if {[info exists tk_version]} {
 namespace eval tcltest {
     set procList [list test cleanupTests dotests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile bytestring set_iso8859_1_locale restore_locale]
+	    viewFile bytestring set_iso8859_1_locale restore_locale \
+	    safeFetch]
     if {[info exists tk_version]} {
 	lappend procList setupbg dobg bgReady cleanupbg fixfocus
     }
@@ -402,6 +403,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
     foreach file $::tcltest::filesMade {
 	if {[file exists $file]} {
 	    catch {file delete -force $file}
+	    puts "removed $file"
 	}
     }
 
@@ -447,6 +449,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	foreach file $currentFiles {
 	    if {[lsearch -exact $::tcltest::filesExisted $file] == -1} {
 		lappend filesNew $file
+		puts "new: $file"
 	    }
 	}
 	if {[llength $filesNew] > 0} {
@@ -966,4 +969,4 @@ if {[info exists tk_version]} {
 # Need to catch the import because it fails if defs.tcl is sourced
 # more than once.
 catch {namespace import ::tcltest::*}
-
+return

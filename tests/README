@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.1.2.4 1999/03/24 02:48:54 hershey Exp $
+RCS: @(#) $Id: README,v 1.1.2.5 1999/03/24 19:26:02 hershey Exp $
 
 Contents:
 ---------
@@ -332,7 +332,11 @@ You can set ::tcltest::matchingTests and/or ::tcltest::skippingTests
 either interactively (after the defs.tcl file has been sourced), or by
 the command line arguments -match and -skip, for example:
 
-       tcltest socket.test -match "*2.* *4.*" -skip "*2.33*"
+       tcltest info.test -match '*-5.* *-7.*' -skip '*-7.1*'
+
+Be sure to use the proper quoting convention so that your shell does
+not perform the glob substitution on the match or skip patterns you
+specify.
 
 The two predefined constraints (knownBug and nonPortable) can be
 overridden either interactively (after the defs.tcl file has been
@@ -357,17 +361,18 @@ You can specify the files you want all.tcl to source on the command
 line with the -file options.  For example, if you call the
 following:
 
-     tcltest all.tcl -file "unix*.test"
+     tcltest all.tcl -file 'unix*.test'
 
 all files in "tests" directory that match the pattern unix*.test will
 be sourced by the all.tcl file.  Another useful example is if a
 particular test hangs, say "get.test", and you just want to run the
 remaining tests, then you can call the following:
 
-     tcltest all.tcl -file "[h-z]*.test"
+     tcltest all.tcl -file '[h-z]*.test'
 
 Note that the argument to -file will be substituted relative to the
-"tests" directory.
+"tests" directory.  Be sure to use the proper quoting convention so
+that your shell does not perform the glob substitution.
 
 
 9. Incompatibilities with prior Tcl versions:
