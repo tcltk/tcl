@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# SCCS: %Z% $Id: tclConfig.sh.in,v 1.2 1998/07/01 18:02:01 escoffon Exp $ 
+# SCCS: %Z% $Id: tclConfig.sh.in,v 1.3 1998/07/21 15:22:15 escoffon Exp $ 
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -82,6 +82,9 @@ TCL_COMPAT_OBJS='@LIBOBJS@'
 
 # Name of the ranlib program to use.
 TCL_RANLIB='@RANLIB@'
+
+# -l flag to pass to the linker to pick up the Tcl library
+TCL_LIB_FLAG='@TCL_LIB_FLAG@'
 
 # String to pass to linker to pick up the Tcl library from its
 # build directory.
