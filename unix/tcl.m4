@@ -562,6 +562,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_NEEDS_EXP_FILE=0
     TCL_BUILD_EXP_FILE=""
     TCL_EXP_FILE=""
+    STLIB_LD="ar cr"
     case $system in
 	AIX-4.[[2-9]])
 	    SHLIB_CFLAGS=""
