@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.56 2003/11/01 01:20:33 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.57 2003/11/03 12:48:52 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2696,7 +2696,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
      * memory, panic() will happen just a few lines lower...
      */
 
-    if (elementCount > INT_MAX/sizeof(Tcl_Obj *)/objc) {
+    if ((unsigned)elementCount > INT_MAX/sizeof(Tcl_Obj *)/objc) {
 	Tcl_AppendResult(interp, "overflow of maximum list length", NULL);
 	return TCL_ERROR;
     }
