@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.14 2004/01/14 22:07:43 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.15 2004/03/12 23:21:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -55,6 +55,8 @@ static int		DictInfoCmd _ANSI_ARGS_((Tcl_Interp *interp,
 static int		DictKeysCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST *objv));
 static int		DictLappendCmd _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST *objv));
+static int		DictMergeCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST *objv));
 static int		DictRemoveCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST *objv));
@@ -1467,6 +1469,89 @@ DictRemoveCmd(interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
+ * DictMergeCmd --
+ *
+ *	This function implements the "dict merge" Tcl command.
+ *	See the user documentation for details on what it does, and
+ *	TIP#163 for the formal specification.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DictMergeCmd(interp, objc, objv)
+    Tcl_Interp *interp;
+    int objc;
+    Tcl_Obj *CONST *objv;
+{
+    Tcl_Obj *targetObj, *keyObj, *valueObj;
+    int allocatedDict = 0;
+    int i, done;
+    Tcl_DictSearch search;
+
+    if (objc == 2) {
+	/*
+	 * No dictionary arguments; return default (empty value).
+	 */
+	return TCL_OK;
+    }
+
+    if (objc == 3) {
+	/*
+	 * Single argument, make sure it is a dictionary, but
+	 * otherwise return it.
+	 */
+	if (objv[2]->typePtr != &tclDictType) {
+	    if (SetDictFromAny(interp, objv[2]) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_SetObjResult(interp, objv[2]);
+	return TCL_OK;
+    }
+
+    /*
+     * Normal behaviour: combining two (or more) dictionaries.
+     */
+
+    targetObj = objv[2];
+    if (Tcl_IsShared(targetObj)) {
+	targetObj = Tcl_DuplicateObj(targetObj);
+	allocatedDict = 1;
+    }
+    for (i=3 ; i<objc ; i++) {
+	if (Tcl_DictObjFirst(interp, objv[i], &search, &keyObj, &valueObj,
+		&done) != TCL_OK) {
+	    if (allocatedDict) {
+		Tcl_DecrRefCount(targetObj);
+	    }
+	    return TCL_ERROR;
+	}
+	while (!done) {
+	    if (Tcl_DictObjPut(interp, targetObj,
+		    keyObj, valueObj) != TCL_OK) {
+		Tcl_DictObjDone(&search);
+		if (allocatedDict) {
+		    Tcl_DecrRefCount(targetObj);
+		}
+		return TCL_ERROR;
+	    }
+	    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+	}
+    }
+    Tcl_SetObjResult(interp, targetObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * DictKeysCmd --
  *
  *	This function implements the "dict keys" Tcl command.
@@ -2595,13 +2680,13 @@ Tcl_DictObjCmd(/*ignored*/ clientData, interp, objc, objv)
 {
     static CONST char *subcommands[] = {
 	"append", "create", "exists", "filter", "for",
-	"get", "incr", "info", "keys", "lappend", "remove",
-	"replace", "set", "size", "unset", "values", NULL
+	"get", "incr", "info", "keys", "lappend", "merge",
+	"remove", "replace", "set", "size", "unset", "values", NULL
     };
     enum DictSubcommands {
 	DICT_APPEND, DICT_CREATE, DICT_EXISTS, DICT_FILTER, DICT_FOR,
-	DICT_GET, DICT_INCR, DICT_INFO, DICT_KEYS, DICT_LAPPEND, DICT_REMOVE,
-	DICT_REPLACE, DICT_SET, DICT_SIZE, DICT_UNSET, DICT_VALUES
+	DICT_GET, DICT_INCR, DICT_INFO, DICT_KEYS, DICT_LAPPEND, DICT_MERGE,
+	DICT_REMOVE, DICT_REPLACE, DICT_SET, DICT_SIZE, DICT_UNSET, DICT_VALUES
     };
     int index;
 
@@ -2624,6 +2709,7 @@ Tcl_DictObjCmd(/*ignored*/ clientData, interp, objc, objv)
     case DICT_INFO:	return DictInfoCmd(interp, objc, objv);
     case DICT_KEYS:	return DictKeysCmd(interp, objc, objv);
     case DICT_LAPPEND:	return DictLappendCmd(interp, objc, objv);
+    case DICT_MERGE:	return DictMergeCmd(interp, objc, objv);
     case DICT_REMOVE:	return DictRemoveCmd(interp, objc, objv);
     case DICT_REPLACE:	return DictReplaceCmd(interp, objc, objv);
     case DICT_SET:	return DictSetCmd(interp, objc, objv);
