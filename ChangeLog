@@ -1,3 +1,24 @@
+2003-12-12  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclCmdAH.c: fix to normalization of non-existent user
+	name ('file normalize ~nobody') [Bug 858937]
+	* doc/file.n: clarify behaviour of 'file link' when the target
+	is not an absolute path.
+	* doc/filename.n: correct documentation to say that Windows Tcl 
+	does handle '~user', for recent Windows releases, and clarified
+	distinction between MacOS 'classic' and MacOS X.
+	* doc/glob.n: clarification of glob's behaviour when returning
+	filenames starting with a '~'.
+	
+	* tests/fileSystem.test:
+	* tests/fileName.test: new tests added for the normalization
+	problem above and other recentlt reported issues.
+
+	* win/tclWinFile.c: corrected unclear comments
+	
+	* unix/tclUnixFile.c: allow creation of relative links
+	[Bug 833713]
+
 2003-12-11  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinSock.c (SocketThreadExitHandler) : added a
