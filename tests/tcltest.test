@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.36 2003/01/31 22:10:24 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37 2003/01/31 22:19:30 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -70,8 +70,10 @@ proc slave {msgVar args} {
     interp create [namespace current]::i
     # Fake the slave interp into dumping output to a file
     i eval {namespace eval ::tcltest {}}
-    i eval "set tcltest::outputChannel \[open [set of [makeFile {} output]] w]"
-    i eval "set tcltest::errorChannel \[open [set ef [makeFile {} error]] w]"
+    i eval "set tcltest::outputChannel\
+	    \[[list open [set of [makeFile {} output]] w]]"
+    i eval "set tcltest::errorChannel\
+	    \[[list open [set ef [makeFile {} error]] w]]"
     i eval [list set argv0 [lindex $args 0]]
     i eval [list set argv [lrange $args 1 end]]
     i eval [list package ifneeded tcltest [package provide tcltest] \
