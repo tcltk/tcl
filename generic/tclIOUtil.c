@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.35 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.36 2002/02/15 23:42:12 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -106,8 +106,19 @@ Tcl_Stat(path, oldStyleBuf)
 	 */
 
         if (OUT_OF_URANGE(buf.st_ino) || OUT_OF_RANGE(buf.st_size)
-		|| OUT_OF_RANGE(buf.st_blocks)) {
+#ifdef HAVE_ST_BLOCKS
+		|| OUT_OF_RANGE(buf.st_blocks)
+#endif
+	    ) {
+#ifdef EFBIG
+	    errno = EFBIG;
+#else
+#  ifdef EOVERFLOW
 	    errno = EOVERFLOW;
+#  else
+#    error  "What status should be returned for file size out of range?"
+#  endif
+#endif
 	    return -1;
 	}
 
@@ -134,8 +145,10 @@ Tcl_Stat(path, oldStyleBuf)
 	oldStyleBuf->st_atime   = buf.st_atime;
 	oldStyleBuf->st_mtime   = buf.st_mtime;
 	oldStyleBuf->st_ctime   = buf.st_ctime;
+#ifdef HAVE_ST_BLOCKS
 	oldStyleBuf->st_blksize = buf.st_blksize;
 	oldStyleBuf->st_blocks  = (blkcnt_t) buf.st_blocks;
+#endif
     }
     return ret;
 }
@@ -1415,7 +1428,7 @@ Tcl_FSStat(pathPtr, buf)
 	 * assignments should all be widening (if not identity.)
 	 */
 	buf->st_mode = oldStyleStatBuffer.st_mode;
-	buf->st_ino = (Tcl_WideUInt) Tcl_LongAsWide(oldStyleStatBuffer.st_ino);
+	buf->st_ino = oldStyleStatBuffer.st_ino;
 	buf->st_dev = oldStyleStatBuffer.st_dev;
 	buf->st_rdev = oldStyleStatBuffer.st_rdev;
 	buf->st_nlink = oldStyleStatBuffer.st_nlink;
@@ -1425,8 +1438,10 @@ Tcl_FSStat(pathPtr, buf)
 	buf->st_atime = oldStyleStatBuffer.st_atime;
 	buf->st_mtime = oldStyleStatBuffer.st_mtime;
 	buf->st_ctime = oldStyleStatBuffer.st_ctime;
+#ifdef HAVE_ST_BLOCKS
 	buf->st_blksize = oldStyleStatBuffer.st_blksize;
 	buf->st_blocks = Tcl_LongAsWide(oldStyleStatBuffer.st_blocks);
+#endif
         return retVal;
     }
 #endif /* USE_OBSOLETE_FS_HOOKS */

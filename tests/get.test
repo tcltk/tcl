@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: get.test,v 1.6 2002/02/15 14:28:50 dkf Exp $
+# RCS: @(#) $Id: get.test,v 1.7 2002/02/15 23:42:12 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -48,7 +48,7 @@ test get-1.6 {Tcl_GetInt procedure} {
 if {wide(0x80000000) > wide(0)} {
     test get-1.7 {Tcl_GetInt procedure} {
 	set x 44
-	list [catch {incr x 18446744073709551616} msg] $msg $errorCode
+	list [catch {eval incr x 18446744073709551616} msg] $msg $errorCode
     } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
     test get-1.8 {Tcl_GetInt procedure} {
 	set x 0
