@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.164 2004/11/01 14:38:24 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.165 2004/11/01 14:41:16 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -3413,7 +3413,6 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	}
 
-    foundResult:
 	TRACE(("%.20s %.20s => %ld\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 
 	/*
