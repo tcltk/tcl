@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.52 2004/12/02 23:24:57 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.53 2004/12/13 22:11:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2636,6 +2636,7 @@ FreeThreadHash(clientData)
     ClientData clientData; 
 {
     Tcl_HashTable *tablePtr = (Tcl_HashTable *) clientData;
+    ClearHash(tablePtr);
     Tcl_DeleteHashTable(tablePtr);
     ckfree((char *) tablePtr);
 }
