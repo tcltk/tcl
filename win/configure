@@ -1960,13 +1960,13 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "d"; then
+    if test "${DBGX}" = "g"; then
         RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
     else
         RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
     fi
 else
-    if test "${DBGX}" = "d"; then
+    if test "${DBGX}" = "g"; then
         RC_DEFINES="${RC_DEFINE} DEBUG"
     else
         RC_DEFINES=""
