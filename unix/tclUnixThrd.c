@@ -883,7 +883,7 @@ TclpInetNtoa(struct in_addr addr)
 #endif
 }
 
-#ifdef TCL_THREADS
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
 /*
  * Additions by AOL for specialized thread memory allocator.
  */

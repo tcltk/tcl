@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.24.2.8 2004/07/21 01:30:58 hobbs Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.24.2.9 2004/10/28 21:12:38 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -680,7 +680,7 @@ TclpFinalizeThreadData(keyPtr)
     DWORD *indexPtr;
     BOOL success;
 
-#ifdef USE_THREAD_ALLOC
+#if defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
     TclWinFreeAllocCache();
 #endif
     if (*keyPtr != NULL) {
@@ -1037,7 +1037,8 @@ TclpFinalizeCondition(condPtr)
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
-#ifdef USE_THREAD_ALLOC
+
+#if defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
 static int once;
 static DWORD key;
 

@@ -11,12 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.4 2004/07/25 21:38:09 patthoyts Exp $ 
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.5 2004/10/28 21:12:38 andreas_kupries Exp $ 
  */
 
 #include "tclInt.h"
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG)
 
 #ifdef WIN32
 #include "tclWinInt.h"
