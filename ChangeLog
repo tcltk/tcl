@@ -1,3 +1,21 @@
+2000-01-10  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* compat/waitpid.c: use pid_t type instead of int [Bug: 3999]
+
+	* generic/tclUtf.c: changed Tcl_UtfBackslash to not allow
+	non-octal digits (8,9) in \ooo substs. [Bug: 3975]
+
+	* generic/tcl.h: noted need to change win/tcl.m4 and
+	tools/tclSplash.bmp for minor version changes
+
+	* library/http2.1/http.tcl: trim value for $state(meta) key
+
+	* unix/tclUnixFile.c: fixed signature style on functions
+
+	* unix/Makefile.in: made sure tcl.m4 would be installed with dist
+
+	* unix/tcl.m4: added ELF support for NetBSD [Bug: 3959]
+
 1999-12-22  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* changes: updated changes file
