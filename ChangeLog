@@ -1,3 +1,11 @@
+1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/tclUnixPipe.c: fixed PipeBlockModeProc to properly set
+	isNonBlocking flag on pipe. [Bug: 1356 710]
+
+	* generic/tclScan.c: fixed scan where %[..] didn't match anything
+	[Bug: 3700]
+
 1999-11-19  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* README:
