@@ -59,6 +59,9 @@ static char initScript[] =
     rename tclInit {}\n\
     set errors {}\n\
     set dirs {}\n\
+    if {[info exists env(tcl_pkgLibrary)]} {\n\
+        lappend dirs $env(tcl_pkgLibrary)\n\
+    }\n\
     if [info exists env(TCL_LIBRARY)] {\n\
 	lappend dirs $env(TCL_LIBRARY)\n\
     }\n\
