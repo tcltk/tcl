@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.31 1999/06/25 23:29:53 welch Exp $
+# RCS: @(#) $Id: init.tcl,v 1.32 1999/08/09 16:30:50 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -223,7 +223,7 @@ proc unknown args {
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
-	    if {$new != ""} {
+	    if {[string compare {} $new]} {
 		set errorCode $savedErrorCode
 		set errorInfo $savedErrorInfo
 		set redir ""
@@ -480,7 +480,7 @@ proc auto_import {pattern} {
 # Arguments: 
 # name -			Name of a command.
 
-if {[string compare $tcl_platform(platform) windows] == 0} {
+if {[string equal windows $tcl_platform(platform)]} {
 # Windows version.
 #
 # Note that info executable doesn't work under Windows, so we have to
@@ -522,14 +522,16 @@ proc auto_execok name {
 	append path "$windir/system;$windir;"
     }
 
-    if {[info exists env(PATH)]} {
-	append path $env(PATH)
+    foreach var {PATH Path path} {
+	if {[info exists env($var)]} {
+	    append path ";$env($var)"
+	}
     }
 
     foreach dir [split $path {;}] {
-	if {$dir == ""} {
-	    set dir .
-	}
+	# Skip already checked directories
+	if {[info exists checked($dir)] || [string equal {} $dir]} { continue }
+	set checked($dir) {}
 	foreach ext {{} .com .exe .bat} {
 	    set file [file join $dir ${name}${ext}]
 	    if {[file exists $file] && ![file isdirectory $file]} {
