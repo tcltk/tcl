@@ -1,3 +1,8 @@
+2003-01-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompilerReturnCmd):  Corrected off-by-one
+	problem with recent commit.  [Bug 633204]
+
 2003-01-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: remove unused variable 'macSpecialCase'
