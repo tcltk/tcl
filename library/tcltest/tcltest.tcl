@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.51 2002/06/03 23:44:32 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.52 2002/06/05 01:12:38 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -316,6 +316,13 @@ proc tcltest::DebugPArray {level arrayvar} {
     }
     return
 }
+
+# Define our own [parray] in ::tcltest that will inherit use of the [puts]
+# defined in ::tcltest.  NOTE: Ought to construct with [info args] and
+# [info default], but can't be bothered now.  If [parray] changes, then
+# this will need changing too.
+auto_load ::parray
+proc tcltest::parray {a {pattern *}} [info body ::parray]
 
 # tcltest::DebugDo --
 #
@@ -1592,10 +1599,10 @@ proc tcltest::Replace::puts {args} {
     }
 
     if {[info exists channel]} {
-	if {[string equal $channel [outputChannel]]
+	if {[string equal $channel [[namespace parent]::outputChannel]]
 		|| [string equal $channel stdout]} {
 	    append outData [lindex $args end]\n
-	} elseif {[string equal $channel [errorChannel]]
+	} elseif {[string equal $channel [[namespace parent]::errorChannel]]
 		|| [string equal $channel stderr]} {
 	    append errData [lindex $args end]\n
 	}
@@ -1633,15 +1640,26 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
     if {!$ignoreOutput} {
 	set outData {}
 	set errData {}
-	# If caller has its own [puts], this may disable it.
-	uplevel 1 [list ::rename puts [namespace current]::Puts]
-	uplevel 1 [list ::namespace import \
-		[namespace origin Replace::puts]]
+	set callerHasPuts [llength [uplevel 1 {
+		::info commands [::namespace current]::puts
+	}]]
+	if {$callerHasPuts} {
+	    uplevel 1 [list ::rename puts [namespace current]::Replace::Puts]
+	} else {
+	    interp alias {} [namespace current]::Replace::Puts {} ::puts
+	}
+	uplevel 1 [list ::namespace import [namespace origin Replace::puts]]
+	namespace import Replace::puts
     }
     set result [uplevel 1 $script]
     if {!$ignoreOutput} {
+	namespace forget puts
 	uplevel 1 ::namespace forget puts
-	uplevel 1 [list ::rename [namespace current]::Puts puts]
+	if {$callerHasPuts} {
+	    uplevel 1 [list ::rename [namespace current]::Replace::Puts puts]
+	} else {
+	    interp alias {} [namespace current]::Replace::Puts {}
+	}
     }
     return $result
 }
@@ -3302,9 +3320,9 @@ namespace eval tcltest {
     }
 
     # Define the standard match commands
-    customMatch exact	[list ::string equal]
-    customMatch glob	[list ::string match]
-    customMatch regexp	[list ::regexp --]
+    customMatch exact	[list string equal]
+    customMatch glob	[list string match]
+    customMatch regexp	[list regexp --]
     unset file
 }
 

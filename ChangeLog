@@ -1,3 +1,12 @@
+2002-06-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:
+	* tests/init.test:
+	* tests/tcltest.test:	Added more TIP 85 tests from Arjen Markus.
+	Converted tcltest.test to use a private namespace.  Fixed bugs in
+	[tcltest::Eval] revealed by calling [tcltest::test] from a non-global
+	namespace, and namespace errors in init.test.
+
 2002-06-04  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Update msys+mingw URL.
