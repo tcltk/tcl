@@ -1062,6 +1062,16 @@ item: Install File
   Flags=0000000010000010
 end
 item: Install File
+  Source=${__TCLBASEDIR__}\library\tcltest1.0\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\tcltest1.0\pkgIndex.tcl
+  Flags=0000000000000010
+end
+item: Install File
+  Source=${__TCLBASEDIR__}\library\tcltest1.0\tcltest.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\tcltest1.0\tcltest.tcl
+  Flags=0000000000000010
+end
+item: Install File
   Source=${__TCLBASEDIR__}\library\encoding\symbol.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\symbol.enc
   Flags=0000000000000010
