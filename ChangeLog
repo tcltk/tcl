@@ -1,3 +1,13 @@
+2004-09-11  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (TclMktimeObjCmd): Corrected a bad check
+	for error return from 'mktime'.
+	* generic/tclObj.c (Tcl_GetIntFromObj): Corrected a problem where
+	demoting a wide to an int failed on a big-endian machine.
+	[Bug 1026125].
+	* tests/clock.test (clock-43.1): Added regression test for
+	error return from 'mktime'.
+
 2004-09-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_CONCAT1): fix for [Bug 1025834];
