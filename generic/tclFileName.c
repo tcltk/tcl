@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.10 2000/01/26 03:37:41 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.11 2000/02/01 11:49:24 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -766,9 +766,12 @@ Tcl_JoinPath(argc, argv, resultPtr)
 		/*
 		 * Check for QNX //<node id> prefix
 		 */
-		if (*p && (strlen(p) > 3) &&
-			(p[0] == '/') && (p[1] == '/') && atoi(&p[2])) {
+		if (*p && (strlen(p) > 3) && (p[0] == '/') && (p[1] == '/')
+			&& isdigit(UCHAR(p[2]))) { /* INTL: digit */
 		    p += 3;
+		    while (isdigit(UCHAR(*p))) { /* INTL: digit */
+			++p;
+		    }
 		}
 #endif
 		if (*p == '/') {
