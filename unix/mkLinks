@@ -1044,13 +1044,9 @@ if test -r Panic.3; then
     rm -f Tcl_Panic.3 Tcl_Panic.3.* 
     rm -f Tcl_PanicVA.3 Tcl_PanicVA.3.* 
     rm -f Tcl_SetPanicProc.3 Tcl_SetPanicProc.3.* 
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f panic.3 panic.3.* ; fi
-    rm -f panicVA.3 panicVA.3.* 
     ln $S Panic.3$Z Tcl_Panic.3$Z 
     ln $S Panic.3$Z Tcl_PanicVA.3$Z 
     ln $S Panic.3$Z Tcl_SetPanicProc.3$Z 
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln $S Panic.3$Z panic.3$Z ; fi
-    ln $S Panic.3$Z panicVA.3$Z 
 fi
 if test -r ParseCmd.3; then
     rm -f ParseCmd.3.*
@@ -1897,6 +1893,10 @@ fi
 if test -r unknown.n; then
     rm -f unknown.n.*
     $ZIP unknown.n
+fi
+if test -r unload.n; then
+    rm -f unload.n.*
+    $ZIP unload.n
 fi
 if test -r unset.n; then
     rm -f unset.n.*
