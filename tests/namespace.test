@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.22 2003/09/29 14:37:14 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -641,7 +641,7 @@ test namespace-20.1 {Tcl_NamespaceObjCmd, bad subcommand} {
 } {1 {wrong # args: should be "namespace subcommand ?arg ...?"}}
 test namespace-20.2 {Tcl_NamespaceObjCmd, bad subcommand} {
     list [catch {namespace wombat {}} msg] $msg
-} {1 {bad option "wombat": must be children, code, current, delete, eval, exists, export, forget, import, inscope, origin, parent, qualifiers, tail, or which}}
+} {1 {bad option "wombat": must be children, code, current, delete, ensemble, eval, exists, export, forget, import, inscope, origin, parent, qualifiers, tail, or which}}
 test namespace-20.3 {Tcl_NamespaceObjCmd, abbreviations are okay} {
     namespace ch :: test_ns_*
 } {}
@@ -748,7 +748,7 @@ test namespace-25.1 {NamespaceEvalCmd, bad args} {
 } {1 {wrong # args: should be "namespace eval name arg ?arg...?"}}
 test namespace-25.2 {NamespaceEvalCmd, bad args} {
     list [catch {namespace test_ns_1} msg] $msg
-} {1 {bad option "test_ns_1": must be children, code, current, delete, eval, exists, export, forget, import, inscope, origin, parent, qualifiers, tail, or which}}
+} {1 {bad option "test_ns_1": must be children, code, current, delete, ensemble, eval, exists, export, forget, import, inscope, origin, parent, qualifiers, tail, or which}}
 catch {unset v}
 test namespace-25.3 {NamespaceEvalCmd, new namespace} {
     set v 123
@@ -1184,6 +1184,453 @@ test namespace-41.3 {Shadowing byte-compiled commands, Bug: 231259} {knownBug} {
     set res
 } {{New proc is called} 0}
 
+# Ensembles (TIP#112)
+
+test namespace-42.1 {ensembles: basic} {
+    namespace eval ns {
+	namespace export x
+	proc x {} {format 1}
+	namespace ensemble create
+    }
+    list [info command ns] [ns x] [namespace delete ns] [info command ns]
+} {ns 1 {} {}}
+test namespace-42.2 {ensembles: basic} {
+    namespace eval ns {
+	namespace export x
+	proc x {} {format 1}
+	namespace ensemble create
+    }
+    rename ns foo
+    list [info command foo] [foo x] [namespace delete ns] [info command foo]
+} {foo 1 {} {}}
+test namespace-42.3 {ensembles: basic} {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {} {format 1}
+	proc x2 {} {format 2}
+	namespace ensemble create
+    }
+    set result [list [ns x1] [ns x2]]
+    lappend result [catch {ns x} msg] $msg
+    rename ns {}
+    lappend result [info command ns::x1]
+    namespace delete ns
+    lappend result [info command ns::x1]
+} {1 2 1 {unknown or ambiguous subcommand "x": must be x1, or x2} ::ns::x1 {}}
+test namespace-42.4 {ensembles: basic} {
+    namespace eval ns {
+	namespace export y*
+	proc x1 {} {format 1}
+	proc x2 {} {format 2}
+	namespace ensemble create
+    }
+    set result [list [catch {ns x} msg] $msg]
+    namespace delete ns
+    set result
+} {1 {unknown subcommand "x": namespace ::ns does not export any commands}}
+test namespace-42.5 {ensembles: basic} {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {} {format 1}
+	proc x2 {} {format 2}
+	proc x3 {} {format 3}
+	namespace ensemble create
+    }
+    set result [list [catch {ns x} msg] $msg]
+    namespace delete ns
+    set result
+} {1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}}
+test namespace-42.6 {ensembles: nested} {
+    namespace eval ns {
+	namespace export x*
+	namespace eval x0 {
+	    proc z {} {format 0}
+	    namespace export z
+	    namespace ensemble create
+	}
+	proc x1 {} {format 1}
+	proc x2 {} {format 2}
+	proc x3 {} {format 3}
+	namespace ensemble create
+    }
+    set result [list [ns x0 z] [ns x1] [ns x2] [ns x3]]
+    namespace delete ns
+    set result
+} {0 1 2 3}
+test namespace-42.7 {ensembles: nested} {
+    namespace eval ns {
+	namespace export x*
+	namespace eval x0 {
+	    proc z {} {list [info level] [info level 1]}
+	    namespace export z
+	    namespace ensemble create
+	}
+	proc x1 {} {format 1}
+	proc x2 {} {format 2}
+	proc x3 {} {format 3}
+	namespace ensemble create
+    }
+    set result [list [ns x0 z] [ns x1] [ns x2] [ns x3]]
+    namespace delete ns
+    set result
+} {{1 ::ns::x0::z} 1 2 3}
+
+test namespace-43.1 {ensembles: dict-driven} {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {} {format 1}
+	proc x2 {} {format 2}
+	namespace ensemble create -map {a x1 b x2}
+    }
+    set result [list [catch {ns c} msg] $msg [namespace ensemble exists ns]]
+    rename ns {}
+    lappend result [namespace ensemble exists ns]
+} {1 {unknown or ambiguous subcommand "c": must be a, or b} 1 0}
+test namespace-43.2 {ensembles: dict-driven} {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {args} {list 1 $args}
+	proc x2 {args} {list 2 [llength $args]}
+	namespace ensemble create -map {
+	    a ::ns::x1 b ::ns::x2 c {::ns::x1 .} d {::ns::x2 .}
+	}
+    }
+    set result [list [ns a] [ns b] [ns c] [ns c foo] [ns d] [ns d foo]]
+    namespace delete ns
+    set result
+} {{1 {}} {2 0} {1 .} {1 {. foo}} {2 1} {2 2}}
+set SETUP {
+    namespace eval ns {
+	namespace export a b
+	proc a args {format 1,[llength $args]}
+	proc b args {format 2,[llength $args]}
+	proc c args {format 3,[llength $args]}
+	proc d args {format 4,[llength $args]}
+	namespace ensemble create -subcommands {b c}
+    }
+}
+test namespace-43.3 {ensembles: list-driven} {
+    eval $SETUP
+    namespace delete ns
+} {}
+test namespace-43.4 {ensembles: list-driven} -setup $SETUP -body {
+    ns a foo bar boo spong wibble
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": must be b, or c}
+test namespace-43.5 {ensembles: list-driven} -setup $SETUP -body {
+    ns b foo bar boo spong wibble
+} -cleanup {namespace delete ns} -result 2,5
+test namespace-43.6 {ensembles: list-driven} -setup $SETUP -body {
+    ns c foo bar boo spong wibble
+} -cleanup {namespace delete ns} -result 3,5
+test namespace-43.7 {ensembles: list-driven} -setup $SETUP -body {
+    ns d foo bar boo spong wibble
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "d": must be b, or c}
+set SETUP {
+    namespace eval ns {
+	namespace export a b
+	proc a args {format 1,[llength $args]}
+	proc b args {format 2,[llength $args]}
+	proc c args {format 3,[llength $args]}
+	proc d args {format 4,[llength $args]}
+	namespace ensemble create -subcommands {b c} -map {c ::ns::d}
+    }
+}
+test namespace-43.8 {ensembles: list-and-map-driven} {
+    eval $SETUP
+    namespace delete ns
+} {}
+test namespace-43.9 {ensembles: list-and-map-driven} -setup $SETUP -body {
+    ns a foo bar boo spong wibble
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": must be b, or c}
+test namespace-43.10 {ensembles: list-and-map-driven} -setup $SETUP -body {
+    ns b foo bar boo spong wibble
+} -cleanup {namespace delete ns} -result 2,5
+test namespace-43.11 {ensembles: list-and-map-driven} -setup $SETUP -body {
+    ns c foo bar boo spong wibble
+} -cleanup {namespace delete ns} -result 4,5
+test namespace-43.12 {ensembles: list-and-map-driven} -setup $SETUP -body {
+    ns d foo bar boo spong wibble
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "d": must be b, or c}
+set SETUP {
+    namespace eval ns {
+	namespace export *
+	proc foo args {format bar}
+	proc spong args {format wibble}
+	namespace ensemble create -prefixes off
+    }
+}
+test namespace-43.13 {ensembles: turn off prefixes} {
+    eval $SETUP
+    namespace delete ns
+} {}
+test namespace-43.14 {ensembles: turn off prefixes} -setup $SETUP -body {
+    ns fo
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "fo": must be foo, or spong}
+test namespace-43.15 {ensembles: turn off prefixes} -setup $SETUP -body {
+    ns foo
+} -cleanup {namespace delete ns} -result bar
+test namespace-43.16 {ensembles: turn off prefixes} -setup $SETUP -body {
+    ns s
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "s": must be foo, or spong}
+test namespace-43.17 {ensembles: turn off prefixes} -setup $SETUP -body {
+    ns spong
+} -cleanup {namespace delete ns} -result wibble
+
+test namespace-44.1 {ensemble: errors} {
+    list [catch {namespace ensemble} msg] $msg
+} {1 {wrong # args: should be "namespace ensemble subcommand ?arg ...?"}}
+test namespace-44.2 {ensemble: errors} {
+    list [catch {namespace ensemble ?} msg] $msg
+} {1 {bad subcommand "?": must be configure, create, or exists}}
+test namespace-44.3 {ensemble: errors} {
+    namespace eval ns {
+	list [catch {namespace ensemble create -map x} msg] $msg
+    }
+} {1 {missing value to go with key}}
+test namespace-44.4 {ensemble: errors} {
+    namespace eval ns {
+	list [catch {namespace ensemble create -map {x {}}} msg] $msg
+    }
+} {1 {ensemble subcommand implementations must be non-empty lists}}
+
+test namespace-45.1 {ensemble: introspection} {
+    namespace eval ns {
+	namespace export x
+	proc x {} {}
+	namespace ensemble create
+	set ::result [namespace ensemble configure ::ns]
+    }
+    namespace delete ns
+    set result
+} {-map {} -namespace ::ns -prefixes 1 -subcommands {} -unknown {}}
+test namespace-45.2 {ensemble: introspection} {
+    namespace eval ns {
+	namespace export x
+	proc x {} {}
+	namespace ensemble create -map {A x}
+	set ::result [namespace ensemble configure ::ns -map]
+    }
+    namespace delete ns
+    set result
+} {A ::ns::x}
+
+test namespace-46.1 {ensemble: modification} {
+    namespace eval ns {
+	namespace export x
+	proc x {} {format 123}
+
+	# Ensemble maps A->x
+	namespace ensemble create -command ns -map {A ::ns::x}
+	set ::result [list [namespace ensemble configure ns -map] [ns A]]
+
+	# Ensemble maps B->x
+	namespace ensemble configure ns -map {B ::ns::x}
+	lappend ::result [namespace ensemble configure ns -map] [ns B]
+
+	# Ensemble maps x->x
+	namespace ensemble configure ns -map {}
+	lappend ::result [namespace ensemble configure ns -map] [ns x]
+    }
+    namespace delete ns
+    set result
+} {{A ::ns::x} 123 {B ::ns::x} 123 {} 123}
+test namespace-46.2 {ensemble: ensembles really use current export list} {
+    namespace eval ns {
+	namespace export x1
+	proc x1 {} {format 1}
+	proc x2 {} {format 1}
+	namespace ensemble create
+    }
+    catch {ns ?} msg; set result [list $msg]
+    namespace eval ns {namespace export x*}
+    catch {ns ?} msg; lappend result $msg
+    rename ns::x1 {}
+    catch {ns ?} msg; lappend result $msg
+    namespace delete ns
+    set result
+} {{unknown or ambiguous subcommand "?": must be x1} {unknown or ambiguous subcommand "?": must be x1, or x2} {unknown or ambiguous subcommand "?": must be x2}}
+test namespace-46.3 {ensemble: implementation errors} {
+    namespace eval ns {
+	variable count 0
+	namespace ensemble create -map {
+	    a {::lappend ::result}
+	    b {::incr ::ns::count}
+	}
+    }
+    set result {}
+    lappend result [catch { ns } msg] $msg
+    ns a [ns b 10]
+    rename ns p
+    p a [p b 3000]
+    lappend result $ns::count
+    namespace delete ns
+    lappend result [info command p]
+} {1 {wrong # args: should be "ns subcommand ?argument ...?"} 10 3010 3010 {}}
+test namespace-46.4 {ensemble: implementation errors} {
+    namespace eval ns {
+	namespace ensemble create
+    }
+    set result [info command ns]
+    lappend result [catch {ns ?} msg] $msg
+    namespace delete ns
+    set result
+} {ns 1 {unknown subcommand "?": namespace ::ns does not export any commands}}
+test namespace-46.5 {ensemble: implementation errors} {
+    namespace eval ns {
+	namespace ensemble create -map {foo ::error}
+    }
+    list [catch {ns foo bar} msg] $msg $::errorInfo [namespace delete ns]
+} {1 bar {bar
+    while executing
+"::error bar"
+    invoked from within
+"ns foo bar"} {}}
+test namespace-46.6 {ensemble: implementation renames/deletes itself} {
+    namespace eval ns {
+	namespace ensemble create -map {to ::rename}
+    }
+    ns to ns foo
+    foo to foo bar
+    bar to bar spong
+    spong to spong {}
+    namespace delete ns
+} {}
+test namespace-46.7 {ensemble: implementation deletes its namespace} {
+    namespace eval ns {
+	namespace ensemble create -map {kill {::namespace delete}}
+    }
+    ns kill ns
+} {}
+test namespace-46.8 {ensemble: implementation deletes its namespace} {
+    namespace eval ns {
+	namespace export *
+	proc foo {} {
+	    variable x 1
+	    bar
+	    # Tricky; what is the correct return value anyway?
+	    info exist x
+	}
+	proc bar {} {
+	    namespace delete [namespace current]
+	}
+	namespace ensemble create
+    }
+    list [ns foo] [info exist ns::x]
+} {1 0}
+test namespace-46.9 {ensemble: configuring really configures things} {
+    namespace eval ns {
+	namespace ensemble create -map {a a} -prefixes 0
+    }
+    set result [list [catch {ns x} msg] $msg]
+    namespace ensemble configure ns -map {b b}
+    lappend result [catch {ns x} msg] $msg
+    namespace delete ns
+    set result
+} {1 {unknown subcommand "x": must be a} 1 {unknown subcommand "x": must be b}}
+
+test namespace-47.1 {ensemble: unknown handler} {
+    set log {}
+    namespace eval ns {
+	namespace export {[a-z]*}
+	proc Magic {ensemble subcmd args} {
+	    global log
+	    if {[string match {[a-z]*} $subcmd]} {
+		lappend log "making $subcmd"
+		proc $subcmd args {
+		    global log
+		    lappend log "running [info level 0]"
+		    llength $args
+		}
+	    } else {
+		lappend log "unknown $subcmd - args = $args"
+		return -code error \
+			"unknown or protected subcommand \"$subcmd\""
+	    }
+	}
+	namespace ensemble create -unknown ::ns::Magic
+    }
+    set result {}
+    lappend result [catch {ns a b c} msg] $msg
+    lappend result [catch {ns a b c} msg] $msg
+    lappend result [catch {ns b c d} msg] $msg
+    lappend result [catch {ns c d e} msg] $msg
+    lappend result [catch {ns Magic foo bar spong wibble} msg] $msg
+    list $result [lsort [info commands ::ns::*]] $log [namespace delete ns]
+} {{0 2 0 2 0 2 0 2 1 {unknown or protected subcommand "Magic"}} {::ns::Magic ::ns::a ::ns::b ::ns::c} {{making a} {running ::ns::a b c} {running ::ns::a b c} {making b} {running ::ns::b c d} {making c} {running ::ns::c d e} {unknown Magic - args = foo bar spong wibble}} {}}
+test namespace-47.2 {ensemble: unknown handler} {
+    namespace eval ns {
+	namespace export {[a-z]*}
+	proc Magic {ensemble subcmd args} {
+	    error foobar
+	}
+	namespace ensemble create -unknown ::ns::Magic
+    }
+    list [catch {ns spong} msg] $msg $errorInfo [namespace delete ns]
+} {1 foobar {foobar
+    while executing
+"error foobar"
+    (procedure "::ns::Magic" line 2)
+    invoked from within
+"::ns::Magic ::ns spong"
+    (ensemble unknown subcommand handler)
+    invoked from within
+"ns spong"} {}}
+test namespace-47.3 {ensemble: unknown handler} {
+    namespace eval ns {
+	variable count 0
+	namespace export {[a-z]*}
+	proc a {} {}
+	proc c {} {}
+	proc Magic {ensemble subcmd args} {
+	    variable count
+	    incr count
+	    proc b {} {}
+	}
+	namespace ensemble create -unknown ::ns::Magic
+    }
+    list [catch {ns spong} msg] $msg $ns::count [namespace delete ns]
+} {1 {unknown or ambiguous subcommand "spong": must be a, b, or c} 1 {}}
+test namespace-47.4 {ensemble: unknown handler} {
+    namespace eval ns {
+	namespace export {[a-z]*}
+	proc Magic {ensemble subcmd args} {
+	    return -code break
+	}
+	namespace ensemble create -unknown ::ns::Magic
+    }
+    list [catch {ns spong} msg] $msg $errorInfo [namespace delete ns]
+} {1 {unknown subcommand handler returned bad code: break} {unknown subcommand handler returned bad code: break
+    result of ensemble unknown subcommand handler: ::ns::Magic ::ns spong
+    invoked from within
+"ns spong"} {}}
+test namespace-47.5 {ensemble: unknown handler} {
+    namespace ensemble create -command foo -unknown bar
+    proc bar {args} {
+	global result target
+	lappend result "LOG $args"
+	return $target
+    }
+    set result {}
+    set target {}
+    lappend result [catch {foo bar} msg] $msg
+    set target {lappend result boo hoo}
+    lappend result [catch {foo bar} msg] $msg [namespace ensemble config foo]
+    rename foo {}
+    set result
+} {{LOG ::foo bar} 1 {unknown subcommand "bar": namespace :: does not export any commands} {LOG ::foo bar} boo hoo 0 {{LOG ::foo bar} 1 {unknown subcommand "bar": namespace :: does not export any commands} {LOG ::foo bar} boo hoo} {-map {} -namespace :: -prefixes 1 -subcommands {} -unknown bar}}
+test namespace-47.6 {ensemble: unknown handler} {
+    namespace ensemble create -command foo -unknown bar
+    proc bar {args} {
+	return "\{"
+    }
+    set result [list [catch {foo bar} msg] $msg $errorInfo]
+    rename foo {}
+    set result
+} {1 {unmatched open brace in list} {unmatched open brace in list
+    while parsing result of ensemble unknown subcommand handler
+    invoked from within
+"foo bar"}}
+
 # cleanup
 catch {rename cmd1 {}}
 catch {unset l}
@@ -1192,15 +1639,3 @@ catch {unset trigger}
 eval namespace delete [namespace children :: test_ns_*]
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

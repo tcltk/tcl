@@ -6,10 +6,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10 2003/04/15 19:50:37 jenglish Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.11 2003/09/29 14:37:14 dkf Exp $
 '\" 
 .so man.macros
-.TH namespace n 8.0 Tcl "Tcl Built-In Commands"
+.TH namespace n 8.5 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -86,6 +86,13 @@ however, the namespace is marked to prevent other code from
 looking it up by name.
 If a namespace doesn't exist, this command returns an error.
 If no namespace names are given, this command does nothing.
+.TP
+\fBnamespace ensemble\fR \fIoption\fR ?\fIarg ...\fR?
+.VS 8.5
+Creates and manipulates a command that is formed out of an ensemble of
+subcommands.  See the section \fBENSEMBLES\fR below for further
+details.
+.VE 8.5
 .TP
 \fBnamespace eval\fR \fInamespace arg\fR ?\fIarg ...\fR?
 Activates a namespace called \fInamespace\fR and evaluates some code
@@ -569,7 +576,7 @@ If a \fBnamespace import\fR command specifies a command
 that is not exported, the command is not imported.
 
 .SH "SCOPED SCRIPTS"
-The \fBnamespace code\fP command is the means by which a script may be
+The \fBnamespace code\fR command is the means by which a script may be
 packaged for evaluation in a namespace other than the one in which it
 was created.  It is used most often to create event handlers, Tk bindings,
 and traces for evaluation in the global context.  For instance, the following
@@ -592,8 +599,167 @@ When executed, it prints the message:
 the value of a::b has changed to c
 .CE
 
+.SH ENSEMBLES
+.PP
+.VS 8.5
+The \fBnamespace ensemble\fR is used to create and manipulate ensemble
+commands, which are commands formed by grouping subcommands together.
+The commands typically come from the current namespace when the
+ensemble was created, though this is configurable.  Note that there
+may be any number of ensembles associated with any namespace
+(including none, which is true of all namespaces by default), though
+all the ensembles associated with a namespace are deleted when that
+namespace is deleted.  The link between an ensemble command and its
+namespace is maintained however the ensemble is renamed.
+.PP
+Three subcommands of the \fBnamespace ensemble\fR command are defined:
+.TP
+\fBnamespace ensemble create\fR ?\fIoption value ...\fR?
+Creates a new ensemble command linked to the current namespace,
+returning the fully qualified name of the command created.  The
+arguments to \fBnamespace ensemble create\fR allow the configuration
+of the command as if with the \fBnamespace ensemble configure\fR
+command.  If not overridden with the \fB\-command\fR option, this
+command creates an ensemble with exactly the same name as the linked
+namespace.  See the section \fBENSEMBLE OPTIONS\fR below for a full
+list of options supported and their effects.
+.TP
+\fBnamespace ensemble configure \fIcommand\fR ?\fIoption\fR? ?\fIvalue ...\fR?
+Retrieves the value of an option associated with the ensemble command
+named \fIcommand\fR, or updates some options associated with that
+ensemble command.  See the section \fBENSEMBLE OPTIONS\fR below for a
+full list of options supported and their effects.
+.TP
+\fBnamespace ensemble exists\fR \fIcommand\fR
+Returns a boolean value that describes whether the command
+\fIcommand\fR exists and is an ensemble command.  This command only
+ever returns an error if the number of arguments to the command is
+wrong.
+.PP
+When called, an ensemble command takes its first argument and looks it
+up (according to the rules described below) to discover a list of
+words to replace the ensemble command and subcommand with.  The
+resulting list of words is then evaluated (with no further
+substitutions) as if that was what was typed originally (i.e. by
+passing the list of words through \fBTcl_EvalObjv\fR) and returning
+the result of the command.  Note that it is legal to make the target
+of an ensemble rewrite be another (or even the same) ensemble
+command.  The ensemble command will not be visible through the use of
+the \fBuplevel\fR or \fBinfo level\fR commands.
+
+.SH "ENSEMBLE OPTIONS"
+.PP
+The following options, supported by the \fBnamespace ensemble
+create\fR and \fBnamespace ensemble configure\fR commands, control how
+an ensemble command behaves:
+.TP
+\fB\-map\fR
+When non-empty, this option supplies a dictionary that provides a
+mapping from subcommand names to a list of prefix words to substitute
+in place of the ensemble command and subcommand words (in a manner
+similar to an alias created with \fBinterp alias\fR; the words are not
+reparsed after substitution).  When this option is empty, the mapping
+will be from the local name of the subcommand to its fully-qualified
+name.  Note that when this option is non-empty and the
+\fB\-subcommands\fR option is empty, the ensemble subcommand names
+will be exactly those words that have mappings in the dictionary.
+.TP
+\fB\-prefixes\fR
+This option (which is enabled by default) controls whether the
+ensemble command recognizes unambiguous prefixes of its subcommands.
+When turned off, the ensemble command requires exact matching of
+subcommand names.
+.TP
+\fB\-subcommands\fR
+When non-empty, this option lists exactly what subcommands are in the
+ensemble.  The mapping for each of those commands will either whatever
+is defined in the \fB\-map\fR option, or to the command with the same
+name in the namespace linked to the ensemble.  If this option is
+empty, the subcommands of the namespace will either be the keys of the
+dictionary listed in the \fB\-map\fR option or the exported commands
+of the linked namespace at the time of the invokation of the ensemble
+command.
+.TP
+\fB\-unknown\fR
+When non-empty, this option provides a partial command (to which all
+the words that are arguments to the ensemble command, including the
+fully-qualified name of the ensemble, are appended) to handle the case
+where an ensemble subcommand is not recognized and would otherwise
+generate an error.  When empty (the default) an error (in the style of
+\fBTcl_GetIndexFromObj\fR) is generated whenever the ensemble is
+unable to determine how to implement a particular subcommand.  See
+\fBUNKNOWN HANDLER BEHAVIOUR\fR for more details.
+.PP
+The following extra option is allowed by \fBnamespace ensemble
+create\fR:
+.TP
+\fB\-command\fR
+This write-only option allows the name of the ensemble created by
+\fBnamespace ensemble create\fR to be anything in any existing
+namespace.  The default value for this option is the fully-qualified
+name of the namespace in which the \fBnamespace ensemble create\fR
+command is invoked.
+.PP
+The following extra option is allowed by \fBnamespace ensemble
+configure\fR:
+.TP
+\fB\-namespace\fR
+This read-only option allows the retrieval of the fully-qualified name
+of the namespace which the ensemble was created within.
+
+.SH "UNKNOWN HANDLER BEHAVIOUR"
+.PP
+If an unknown handler is specified for an ensemble, that handler is
+called when the ensemble command would otherwise return an error due
+to it being unable to decide which subcommand to invoke. The exact
+conditions under which that occurs are controlled by the
+\fB\-subcommands\fR, \fB\-map\fR and \fB\-prefixes\fR options as
+described above.
+.PP
+To execute the unknown handler, the ensemble mechanism takes the
+specified \fB\-unknown\fR option and appends each argument of the
+attempted ensemble command invocation (including the ensemble command
+itself, expressed as a fully qualified name). It invokes the resulting
+command in the scope of the attempted call. If the execution of the
+unknown handler terminates normally, the ensemble engine reparses the
+subcommand (as described below) and tries to dispatch it again, which
+is ideal for when the ensemble's configuration has been updated by the
+unknown subcommand handler. Any other kind of termination of the
+unknown handler is treated as an error.
+.PP
+The result of the unknown handler is expected to be a list (it is an
+error if it is not). If the list is an empty list, the ensemble
+command attempts to look up the original subcommand again and, if it
+is not found this time, an error will be generated just as if the
+\fB\-unknown\fR handler was not there (i.e. for any particular
+invokation of an ensemble, its unknown handler will be called at most
+once.) This makes it easy for the unknown handler to update the
+ensemble or its backing namespace so as to provide an implementation
+of the desired subcommand and reparse.
+.PP
+When the result is a non-empty list, the words of that list are used
+to replace the ensemble command and subcommand, just as if they had
+been looked up in the \fB\-map\fR. It is up to the unknown handler to
+supply all namespace qualifiers if the implementing subcommand is not
+in the namespace of the caller of the ensemble command. Also note that
+when ensemble commands are chained (e.g. if you make one of the
+commands that implement an ensemble subcommand into an ensemble, in a
+manner similar to the text widget's tag and mark subcommands) then the
+rewrite happens in the context of the caller of the outermost
+ensemble. That is to say that ensembles do not in themselves place any
+namespace contexts on the Tcl call stack.
+.PP
+Where an empty \fB\-unknown\fR handler is given (the default), the
+ensemble command will generate an error message based on the list of
+commands that the ensemble has defined (formatted similarly to the
+error message from \fBTcl_GetIndexFromObj\fR). This is the error that
+will be thrown when the subcommand is still not recognized during
+reparsing. It is also an error for an \fB\-unknown\fR handler to
+delete its namespace.
+.VE 8.5
+
 .SH "SEE ALSO"
-variable(n)
+interp(n), variable(n)
 
 .SH KEYWORDS
-exported, internal, variable
+command, ensemble, exported, internal, variable

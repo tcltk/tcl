@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.86 2003/08/11 13:26:13 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.87 2003/09/29 14:37:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1252,6 +1252,14 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     }
 
     /*
+     * The list of command exported from the namespace might have
+     * changed.  However, we do not need to recompute this just yet;
+     * next time we need the info will be soon enough.
+     */
+
+    TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
+
+    /*
      * Now link the hash table entry with the command structure.
      * We ensured above that the nsPtr was right.
      */
@@ -1379,6 +1387,14 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
                 "\" already exists", (char *) NULL);
         return TCL_ERROR;
     }
+
+    /*
+     * The list of command exported from the namespace might have
+     * changed.  However, we do not need to recompute this just yet;
+     * next time we need the info will be soon enough.
+     */
+
+    TclInvalidateNsCmdLookup(nsPtr);
 
     /*
      * Remove the hash entry for the command from the interpreter hidden
@@ -1519,6 +1535,14 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
 
 	     ckfree((char*) Tcl_GetHashValue(hPtr));
 	}
+    } else {
+	/*
+	 * The list of command exported from the namespace might have
+	 * changed.  However, we do not need to recompute this just
+	 * yet; next time we need the info will be soon enough.
+	 */
+
+	TclInvalidateNsCmdLookup(nsPtr);
     }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
@@ -1681,6 +1705,14 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 
 	     ckfree((char *) Tcl_GetHashValue(hPtr));
 	}
+    } else {
+	/*
+	 * The list of command exported from the namespace might have
+	 * changed.  However, we do not need to recompute this just
+	 * yet; next time we need the info will be soon enough.
+	 */
+
+	TclInvalidateNsCmdLookup(nsPtr);
     }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
@@ -2017,6 +2049,16 @@ TclRenameCommand(interp, oldName, newName)
         cmdPtr->nsPtr = cmdNsPtr;
 	goto done;
     }
+
+    /*
+     * The list of command exported from the namespace might have
+     * changed.  However, we do not need to recompute this just yet;
+     * next time we need the info will be soon enough.  These might
+     * refer to the same variable, but that's no big deal.
+     */
+
+    TclInvalidateNsCmdLookup(cmdNsPtr);
+    TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
 
     /*
      * Script for rename traces can delete the command "oldName".
@@ -2463,7 +2505,15 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 	}
 	cmdPtr->tracePtr = NULL;
     }
-    
+
+    /*
+     * The list of command exported from the namespace might have
+     * changed.  However, we do not need to recompute this just yet;
+     * next time we need the info will be soon enough.
+     */
+
+    TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
+
     /*
      * If the command being deleted has a compile procedure, increment the
      * interpreter's compileEpoch to invalidate its compiled code. This
