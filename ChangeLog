@@ -1,3 +1,12 @@
+2002-07-11  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/file.n:
+	* win/tclWinFile.c: on Win 95/98/ME the long form of the path
+	is used as a normalized form.  This is required because short
+	forms are not a robust representation.  The file normalization
+	function has been sped up, but more performance gains might be
+	possible, if speed is still an issue on these platforms.
+
 2002-07-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/Hash.3: Overlooked CONST documentation update.
