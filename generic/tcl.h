@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.193 2004/12/13 22:17:33 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.194 2005/01/19 23:15:14 dkf Exp $
  */
 
 #ifndef _TCL
@@ -1051,6 +1051,13 @@ typedef struct Tcl_DString {
 /* Indicate the semantics of the result of a trace */
 #define TCL_TRACE_RESULT_DYNAMIC 0x8000
 #define TCL_TRACE_RESULT_OBJECT  0x10000
+
+/*
+ * Flag values for ensemble commands.
+ */
+#define TCL_ENSEMBLE_PREFIX 0x02/* Flag value to say whether to allow
+				 * unambiguous prefixes of commands or to
+				 * require exact matches for command names. */
 
 /*
  * Flag values passed to command-related procedures.

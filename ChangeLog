@@ -1,16 +1,22 @@
+2005-01-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	TIP#235 IMPLEMENTATION
+
+	* doc/Ensemble.3: Documentation for the new public API.
+	* generic/tclNamesp.c (Tcl_CreateEnsemble,...): Rename of
+	* generic/tcl.decls:		existing API into TIPped form.
+
 2005-01-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* win/tclWinChan.c (FileCloseProc): Invoke
-	TclpCutFileChannel() to remove a FileInfo from
-	the thread local list before deallocating it.
-	This should have been done via an earlier
-	call to Tcl_CutChannel, but I was running into
-	a crash in the next call to Tcl_CutChannel
-	during the IO finalization stage.
+	* win/tclWinChan.c (FileCloseProc): Invoke TclpCutFileChannel() to
+	remove a FileInfo from the thread local list before deallocating
+	it.  This should have been done via an earlier call to
+	Tcl_CutChannel, but I was running into a crash in the next call to
+	Tcl_CutChannel during the IO finalization stage.
 
 2005-01-18  Kevin Kenny  <kennykb@acm.org>
 
-        * library/tzdata/GMT+0:
+	* library/tzdata/GMT+0:
 	* library/tzdata/GMT-0:
 	* library/tzdata/GMT0:
 	* library/tzdata/Greenwich:
