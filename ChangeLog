@@ -1,5 +1,10 @@
 2004-07-20  Daniel Steffen  <das@users.sourceforge.net>
 
+	* unix/tclUnixFile.c (NativeMatchType): added support for
+	readonly matching of user immutable files (where available).
+
+2004-07-20  Daniel Steffen  <das@users.sourceforge.net>
+
 	* macosx/tclMacOSXBundle.c: dynamically acquire address for
 	CFBundleOpenBundleResourceMap symbol, since it is only present in
 	full CoreFoundation on Mac OS X and not in CFLite on pure Darwin.
