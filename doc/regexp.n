@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.1.2.3 1998/11/18 22:33:58 stanton Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.1.2.4 1998/11/18 23:16:40 stanton Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.1 Tcl "Tcl Built-In Commands"
@@ -31,15 +31,15 @@ the characters in \fIstring\fR that matched the leftmost parenthesized
 subexpression within \fIexp\fR, the next \fIsubMatchVar\fR will
 contain the characters that matched the next parenthesized
 subexpression to the right in \fIexp\fR, and so on.
-.LP
+.PP
 If the initial arguments to \fBregexp\fR start with \fB\-\fR then
 they are treated as switches.  The following switches are
 currently supported:
-.TP 10
+.TP 15
 \fB\-nocase\fR
 Causes upper-case characters in \fIstring\fR to be treated as
 lower case during the matching process.
-.TP 10
+.TP 15
 \fB\-indices\fR
 Changes what is stored in the \fIsubMatchVar\fRs. 
 Instead of storing the matching characters from \fBstring\fR,
@@ -51,7 +51,8 @@ range of characters.
 .TP 15
 \fB\-expanded\fR
 Enables use of the expanded regular expression syntax where
-whitespace and comments are ignored (see below).
+whitespace and comments are ignored.  This is the same as specifying
+the \fB(?x)\fR embedded option (see METASYNTAX, below).
 .TP 15
 \fB\-line\fR
 Enables newline-sensitive matching.  By default, newline is a
@@ -60,15 +61,18 @@ flag, `[^' bracket expressions and `.' never match newline, `^'
 matches an empty string after any newline in addition to its normal
 function, and `$' matches an empty string before any newline in
 addition to its normal function.  This flag is equivalent to
-specifying both \fB\-linestop\fR and \fB\-lineanchor\fR.
+specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
+\fB(?n)\fR embedded option (see METASYNTAX, below).
 .TP 15
 \fB\-linestop\fR
 Changes the behavior of `[^' bracket expressions and `.' so that they
-stop at newlines.
+stop at newlines.  This is the same as specifying the \fB(?p)\fR
+embedded option (see METASYNTAX, below).
 .TP 15
 \fB\-lineanchor\fR
 Changes the behavior of `^' and `$' (the ``anchors'') so they match the
-beginning and end of a line respectively.
+beginning and end of a line respectively.  This is the same as
+specifying the \fB(?w)\fR embedded option (see METASYNTAX, below).
 .TP 15
 \fB\-about\fR
 Instead of attempting to match the regular expression, returns a list
@@ -81,7 +85,7 @@ expression. This switch is primarily intended for debugging purposes.
 \fB\-\|\-\fR
 Marks the end of switches.  The argument following this one will
 be treated as \fIexp\fR even if it starts with a \fB\-\fR.
-.LP
+.PP
 If there are more \fIsubMatchVar\fR's than parenthesized
 subexpressions within \fIexp\fR, or if a particular subexpression
 in \fIexp\fR doesn't match the string (e.g. because it was in a
@@ -124,8 +128,8 @@ by a single \fIquantifier\fR.
 Without a quantifier, it matches a match for the atom.
 The quantifiers,
 and what a so-quantified atom matches, are:
-.RS 2n
-.TP 6n
+.RS 2
+.TP 6
 \fB*\fR
 a sequence of 0 or more matches of the atom
 .TP
@@ -160,8 +164,8 @@ The numbers
 with permissible values from 0 to 255 inclusive.
 .PP
 An atom is one of:
-.RS 2n
-.TP 6n
+.RS 2
+.TP 6
 \fB(\fIre\fB)\fR
 (where \fIre\fR is any regular expression)
 matches a match for
@@ -215,8 +219,8 @@ are met.
 A constraint may not be followed by a quantifier.
 The simple constraints are as follows; some more constraints are
 described later, under ESCAPES.
-.RS 2n
-.TP 8n
+.RS 2
+.TP 8
 \fB^\fR
 matches at the beginning of a line
 .TP
@@ -366,13 +370,11 @@ Standard character class names are:
 .RS
 .ne 5
 .nf
-.ft B
 .ta 3c 6c 9c
-alnum	digit	punct
+\fBalnum	digit	punct
 alpha	graph	space
 blank	lower	upper
-cntrl	print	xdigit
-.ft
+cntrl	print	xdigit\fR
 .fi
 .RE
 .PP
@@ -388,7 +390,7 @@ and
 \fB[[:>:]]\fR
 are constraints, matching empty strings at
 the beginning and end of a word respectively.
-.\" note, discussion of escapes below references this definition of word
+'\" note, discussion of escapes below references this definition of word
 A word is defined as a sequence of
 word characters
 which is neither preceded nor followed by
@@ -398,7 +400,7 @@ A word character is an
 character (as defined by
 \fIctype\fR(3))
 or an underscore
-.RB ( _ ).
+(\fB_\fR).
 These special bracket expressions are deprecated;
 users of AREs should use constraint escapes instead (see below).
 .SH ESCAPES
@@ -424,8 +426,8 @@ is an ordinary character.
 .PP
 Character-entry escapes (AREs only) exist to make it easier to specify
 non-printing and otherwise inconvenient characters in REs:
-.RS 2n
-.TP 5n
+.RS 2
+.TP 5
 \fB\ea\fR
 alert, aka bell, character, as in C
 .TP
@@ -528,15 +530,15 @@ in ASCII,
 but
 \fB\e135\fR
 does not terminate a bracket expression.
-Beware, however, that some applications\(eme.g., C compilers\(eminterpret 
+Beware, however, that some applications (e.g., C compilers) interpret 
 such sequences themselves before the regular-expression package
 gets to see them, which may require doubling (quadrupling, etc.) the
 `\fB\e\fR'.
 .PP
 Class-shorthand escapes (AREs only) provide shorthands for certain commonly-used
 character classes:
-.RS 2n
-.TP 10n
+.RS 2
+.TP 10
 \fB\ed\fR
 \fB[[:digit:]]\fR
 .TP
@@ -574,8 +576,8 @@ are illegal.
 A constraint escape (AREs only) is a constraint,
 matching the empty string if specific conditions are met,
 written as an escape:
-.RS 2n
-.TP 6n
+.RS 2
+.TP 6
 \fB\eA\fR
 matches only at the beginning of the string
 (see MATCHING, below, for how this differs from
@@ -654,10 +656,10 @@ Normally the flavor of RE being used is specified by
 application-dependent means.
 However, this can be overridden by a \fIdirector\fR.
 If an RE of any flavor begins with
-`\fB\**\**\**:\fR',
+`\fB***:\fR',
 the rest of the RE is an ARE.
 If an RE of any flavor begins with
-`\fB\**\**\**=\fR',
+`\fB***=\fR',
 the rest of the RE is taken to be a literal string,
 with all characters considered ordinary characters.
 .PP
@@ -671,42 +673,42 @@ specifies options affecting the rest of the RE.
 These supplement, and can override,
 any options specified by the application.
 The available option letters are:
-.RS 2n
-.TP 3n
+.RS 2
+.TP 3
 \fBb\fR
 rest of RE is a BRE
-.TP
+.TP 3
 \fBc\fR
 case-sensitive matching (usual default)
-.TP
+.TP 3
 \fBe\fR
 rest of RE is an ERE
-.TP
+.TP 3
 \fBi\fR
 case-insensitive matching (see MATCHING, below)
-.TP
+.TP 3
 \fBm\fR
 historical synonym for
 \fBn\fR
-.TP
+.TP 3
 \fBn\fR
 newline-sensitive matching (see MATCHING, below)
-.TP
+.TP 3
 \fBp\fR
 partial newline-sensitive matching (see MATCHING, below)
-.TP
+.TP 3
 \fBq\fR
 rest of RE is a literal (``quoted'') string, all ordinary characters
-.TP
+.TP 3
 \fBs\fR
 non-newline-sensitive matching (usual default)
-.TP
+.TP 3
 \fBt\fR
 tight syntax (usual default; see below)
-.TP
+.TP 3
 \fBw\fR
 inverse partial newline-sensitive (``weird'') matching (see MATCHING, below)
-.TP
+.TP 3
 \fBx\fR
 expanded syntax (see below)
 .RE
@@ -720,7 +722,7 @@ and may not be used later within it.
 In addition to the usual (\fItight\fR) RE syntax, in which all characters are
 significant, there is an \fIexpanded\fR syntax,
 available in all flavors of RE
-by application-specified option, or in AREs by embedded x option.
+with the \fB-expanded\fR switch, or in AREs with the embedded x option.
 In the expanded syntax,
 white-space characters are ignored
 and all characters between a
@@ -728,30 +730,20 @@ and all characters between a
 and the following newline (or the end of the RE) are ignored,
 permitting paragraphing and commenting a complex RE.
 There are three exceptions to that basic rule:
-.RS 2n
+.RS 2
 .PP
-\- a white-space character or
-\fB#\fR
-preceded by
-\fB\e\fR
-is retained
+a white-space character or `\fB#\fR' preceded by `\fB\e\fR' is retained
 .PP
-\- white space or
-\fB#\fR
-within a bracket expression
-is retained
+white space or `\fB#\fR' within a bracket expression is retained
 .PP
-\- white space and comments are illegal within multi-character
-symbols like the ARE
-\fB(?:\fR
-or the BRE
-\fB\e(\fR
+white space and comments are illegal within multi-character symbols
+like the ARE `\fB(?:\fR' or the BRE `\fB\e(\fR'
 .RE
 .PP
 Expanded-syntax
-white-space characters are blank, tab, newline, etc.\(emany character
+white-space characters are blank, tab, newline, etc. (any character
 defined as \fIspace\fR by
-\fIctype\fR(3).
+\fIctype\fR(3)).
 Exactly how a multi-line expanded-syntax RE
 can be entered interactively by a user,
 if at all, is application-specific;
@@ -759,7 +751,7 @@ expanded syntax is primarily a scripting facility.
 .PP
 Finally, in an ARE,
 outside bracket expressions, the sequence 
-\fB(?#\fIttt\fB)\fR
+`\fB(?#\fIttt\fB)\fR'
 (where
 \fIttt\fR
 is any text not containing a 
@@ -775,7 +767,7 @@ use the expanded syntax instead.
 .PP
 \fINone\fR of these metasyntax extensions is available if the application
 (or an initial
-\fB\**\**\**=\fR
+\fB***=\fR
 director)
 has specified that the user's input be treated as a literal string
 rather than as an RE.
@@ -925,7 +917,7 @@ significance inside bracket expressions.
 All other ARE features use syntax which is illegal or has
 undefined or unspecified effects in POSIX EREs;
 the
-\fB\**\**\**\fR
+\fB***\fR
 syntax of directors likewise is outside the POSIX
 syntax for both BREs and EREs.
 .PP
@@ -951,9 +943,8 @@ implemented an early version of today's EREs.
 There are four incompatibilities between \fIregexp\fR's near-EREs
 (`RREs' for short) and AREs.
 In roughly increasing order of significance:
-.RS 2n
-.if n .IP \(bu 3n
-.if t .IP \(bu 2n
+.PP
+.RS
 In AREs,
 \fB\e\fR
 followed by an alphanumeric character is either an
@@ -962,7 +953,7 @@ while in RREs, it was just another way of writing the
 alphanumeric.
 This should not be a problem because there was no reason to write
 such a sequence in RREs.
-.IP \(bu
+.PP
 \fB{\fR
 followed by a digit in an ARE is the beginning of a bound,
 while in RREs,
@@ -971,7 +962,7 @@ was always an ordinary character.
 Such sequences should be rare,
 and will often result in an error because following characters
 will not look like a valid bound.
-.IP \(bu
+.PP
 In AREs,
 \fB\e\fR
 remains a special character within
@@ -989,16 +980,18 @@ within
 \fB[\|]\fR
 in RREs,
 but only truly paranoid programmers routinely doubled the backslash.
-.IP \(bu
+.PP
 AREs report the longest/shortest match for the RE,
 rather than the first found in a specified search order.
 This may affect some RREs which were written in the expectation that
 the first match would be reported.
 (The careful crafting of RREs to optimize the search order for fast
-matching is obsolete\(emAREs examine all possible matches
+matching is obsolete (AREs examine all possible matches
 in parallel, and their performance is largely insensitive to their
-complexity\(embut cases where the search order was exploited to deliberately 
+complexity) but cases where the search order was exploited to deliberately 
 find a match which was \fInot\fR the longest/shortest will need rewriting.)
+.RE
+
 .SH "BASIC REGULAR EXPRESSIONS"
 BREs differ from EREs in several respects.
 `\fB|\fR',
@@ -1032,7 +1025,7 @@ RE or the beginning of a parenthesized subexpression,
 is an ordinary character except at the end of the
 RE or the end of a parenthesized subexpression,
 and
-\fB\**\fR
+\fB*\fR
 is an ordinary character if it appears at the beginning of the
 RE or the beginning of a parenthesized subexpression
 (after a possible leading
