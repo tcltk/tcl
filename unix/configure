@@ -5669,7 +5669,6 @@ fi
 
 
 # Add the threads support libraries
-
 LIBS="$LIBS$THREADS_LIBS"
 
 
@@ -7167,7 +7166,7 @@ rm -f conftest*
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-	    PLAT_OBJS="tclMacOSXBundle.o tclMacOSXFCmd.o"
+	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -prebind"
 	    CC_SEARCH_FLAGS=""
@@ -7186,7 +7185,7 @@ _ACEOF
 #define USE_VFORK 1
 _ACEOF
 
-	    cat >>confdefs.h <<_ACEOF
+	    cat >>confdefs.h <<\_ACEOF
 #define TCL_DEFAULT_ENCODING "utf-8"
 _ACEOF
 
