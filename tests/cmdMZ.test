@@ -11,10 +11,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.13.2.2 2003/11/12 17:29:10 hobbs Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.13.2.3 2004/02/25 23:38:16 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+    package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
@@ -84,16 +84,31 @@ test cmdMZ-3.3 {Tcl_SourceObjCmd: error conditions} {unixOrPc} {
 test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} {unixOrPc} {
     list [catch {source a b} msg] $msg
 } {1 {wrong # args: should be "source fileName"}}
-test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -body {
+
+proc ListGlobMatch {expected actual} {
+    if {[llength $expected] != [llength $actual]} {
+	return 0
+    }
+    foreach e $expected a $actual {
+	if {![string match $e $a]} {
+	    return 0
+	}
+    }
+    return 1
+}
+customMatch listGlob ListGlobMatch
+
+test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -setup {
     set file [makeFile {
 	set x 146
 	error "error in sourced file"
 	set y $x
     } source.file]
-    set result [list [catch {source $file} msg] $msg $errorInfo]
+} -body {
+    list [catch {source $file} msg] $msg $errorInfo
+} -cleanup {
     removeFile source.file
-    set result
-} -match glob -result {1 {error in sourced file} {error in sourced file
+} -match listGlob -result {1 {error in sourced file} {error in sourced file
     while executing
 "error "error in sourced file""
     (file "*" line 3)
