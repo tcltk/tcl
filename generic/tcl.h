@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.80 2000/09/20 23:09:51 jenn Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.81 2000/09/28 06:38:19 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -395,6 +395,7 @@ typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
+typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
 
 /*
  * Definition of the interface to procedures implementing threads.
@@ -1304,6 +1305,13 @@ typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
 #define TCL_CLOSE2PROC	((Tcl_DriverCloseProc *)1)
 
 /*
+ * Channel version tag.  This was introduced in 8.3.2/8.4.
+ */
+
+#define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
+#define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
+
+/*
  * Typedefs for the various operations in a channel type:
  */
 
@@ -1330,6 +1338,10 @@ typedef void	(Tcl_DriverWatchProc) _ANSI_ARGS_((
 typedef int	(Tcl_DriverGetHandleProc) _ANSI_ARGS_((
 		    ClientData instanceData, int direction,
 		    ClientData *handlePtr));
+typedef int	(Tcl_DriverFlushProc) _ANSI_ARGS_((
+		    ClientData instanceData));
+typedef int	(Tcl_DriverHandlerProc) _ANSI_ARGS_((
+		    ClientData instanceData, int interestMask));
 
 /*
  * The following declarations either map ckalloc and ckfree to
@@ -1381,38 +1393,50 @@ typedef enum Tcl_EolTranslation {
  * One such structure exists for each type (kind) of channel.
  * It collects together in one place all the functions that are
  * part of the specific channel type.
+ *
+ * It is recommend that the Tcl_Channel* functions are used to access
+ * elements of this structure, instead of direct accessing.
  */
 
 typedef struct Tcl_ChannelType {
     char *typeName;			/* The name of the channel type in Tcl
                                          * commands. This storage is owned by
                                          * channel type. */
-    Tcl_DriverBlockModeProc *blockModeProc;
-    					/* Set blocking mode for the
-                                         * raw channel. May be NULL. */
+    Tcl_ChannelTypeVersion version;	/* Version of the channel type. */
     Tcl_DriverCloseProc *closeProc;	/* Procedure to call to close the
-                                         * channel, or TCL_CLOSE2PROC if the
-                                         * close2Proc should be used
-                                         * instead. */
+					 * channel, or TCL_CLOSE2PROC if the
+					 * close2Proc should be used
+					 * instead. */
     Tcl_DriverInputProc *inputProc;	/* Procedure to call for input
-                                         * on channel. */
+					 * on channel. */
     Tcl_DriverOutputProc *outputProc;	/* Procedure to call for output
-                                         * on channel. */
+					 * on channel. */
     Tcl_DriverSeekProc *seekProc;	/* Procedure to call to seek
-                                         * on the channel. May be NULL. */
+					 * on the channel. May be NULL. */
     Tcl_DriverSetOptionProc *setOptionProc;
-    					/* Set an option on a channel. */
+					/* Set an option on a channel. */
     Tcl_DriverGetOptionProc *getOptionProc;
-    					/* Get an option from a channel. */
+					/* Get an option from a channel. */
     Tcl_DriverWatchProc *watchProc;	/* Set up the notifier to watch
-                                         * for events on this channel. */
+					 * for events on this channel. */
     Tcl_DriverGetHandleProc *getHandleProc;
 					/* Get an OS handle from the channel
-                                         * or NULL if not supported. */
-    Tcl_DriverClose2Proc *close2Proc;   /* Procedure to call to close the
+					 * or NULL if not supported. */
+    Tcl_DriverClose2Proc *close2Proc;	/* Procedure to call to close the
 					 * channel if the device supports
 					 * closing the read & write sides
 					 * independently. */
+    Tcl_DriverBlockModeProc *blockModeProc;
+					/* Set blocking mode for the
+					 * raw channel. May be NULL. */
+    /*
+     * Only valid in TCL_CHANNEL_VERSION_2 channels
+     */
+    Tcl_DriverFlushProc *flushProc;	/* Procedure to call to flush a
+					 * channel. May be NULL. */
+    Tcl_DriverHandlerProc *handlerProc;	/* Procedure to call to handle a
+					 * channel event.  This will be passed
+					 * up the stacked channel chain. */
 } Tcl_ChannelType;
 
 /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.40 2000/09/14 18:42:29 ericm Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.41 2000/09/28 06:38:19 hobbs Exp $
 
 library tcl
 
@@ -987,7 +987,7 @@ declare 281 generic {
 	    int mask, Tcl_Channel prevChan)
 }
 declare 282 generic {
-    void Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
+    int Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 283 generic {
     Tcl_Channel Tcl_GetStackedChannel(Tcl_Channel chan)
@@ -1357,81 +1357,144 @@ declare 393 generic {
     int Tcl_CreateThread (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc proc, \
 	    ClientData clientData, int stackSize, int flags)
 }
+
+# Introduced in 8.3.2
 declare 394 generic {
-    int Tcl_JoinThread (Tcl_ThreadId id, int* result)
+    int Tcl_ReadRaw (Tcl_Channel chan, char *dst, int bytesToRead)
 }
 declare 395 generic {
-    int Tcl_IsChannelShared (Tcl_Channel channel)
+    int Tcl_WriteRaw (Tcl_Channel chan, char *src, int srcLen)
 }
 declare 396 generic {
-    int Tcl_IsChannelRegistered (Tcl_Interp* interp, Tcl_Channel channel)
+    Tcl_Channel Tcl_GetTopChannel (Tcl_Channel chan)
 }
 declare 397 generic {
-    void Tcl_CutChannel (Tcl_Channel channel)
+    int Tcl_ChannelBuffered (Tcl_Channel chan)
 }
 declare 398 generic {
-    void Tcl_SpliceChannel (Tcl_Channel channel)
+    char * Tcl_ChannelName(Tcl_ChannelType *chanTypePtr)
 }
 declare 399 generic {
-    void Tcl_ClearChannelHandlers (Tcl_Channel channel)
+    Tcl_ChannelTypeVersion Tcl_ChannelVersion(Tcl_ChannelType *chanTypePtr)
 }
 declare 400 generic {
+    Tcl_DriverBlockModeProc * Tcl_ChannelBlockModeProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 401 generic {
+    Tcl_DriverCloseProc * Tcl_ChannelCloseProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 402 generic {
+    Tcl_DriverClose2Proc * Tcl_ChannelClose2Proc(Tcl_ChannelType *chanTypePtr)
+}
+declare 403 generic {
+    Tcl_DriverInputProc * Tcl_ChannelInputProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 404 generic {
+    Tcl_DriverOutputProc * Tcl_ChannelOutputProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 405 generic {
+    Tcl_DriverSeekProc * Tcl_ChannelSeekProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 406 generic {
+    Tcl_DriverSetOptionProc * Tcl_ChannelSetOptionProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 407 generic {
+    Tcl_DriverGetOptionProc * Tcl_ChannelGetOptionProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 408 generic {
+    Tcl_DriverWatchProc * Tcl_ChannelWatchProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 409 generic {
+    Tcl_DriverGetHandleProc * Tcl_ChannelGetHandleProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+declare 410 generic {
+    Tcl_DriverFlushProc * Tcl_ChannelFlushProc(Tcl_ChannelType *chanTypePtr)
+}
+declare 411 generic {
+    Tcl_DriverHandlerProc * Tcl_ChannelHandlerProc(Tcl_ChannelType \
+	    *chanTypePtr)
+}
+
+# Introduced in 8.4a2
+declare 412 generic {
+    int Tcl_JoinThread (Tcl_ThreadId id, int* result)
+}
+declare 413 generic {
+    int Tcl_IsChannelShared (Tcl_Channel channel)
+}
+declare 414 generic {
+    int Tcl_IsChannelRegistered (Tcl_Interp* interp, Tcl_Channel channel)
+}
+declare 415 generic {
+    void Tcl_CutChannel (Tcl_Channel channel)
+}
+declare 416 generic {
+    void Tcl_SpliceChannel (Tcl_Channel channel)
+}
+declare 417 generic {
+    void Tcl_ClearChannelHandlers (Tcl_Channel channel)
+}
+declare 418 generic {
     int Tcl_IsChannelExisting (CONST char* channelName)
 }
 
-declare 401 generic {
+declare 419 generic {
     int Tcl_UniCharNcasecmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,\
 	    unsigned long n)
 }
-declare 402 generic {
+declare 420 generic {
     int Tcl_UniCharCaseMatch(CONST Tcl_UniChar *ustr, \
 	    CONST Tcl_UniChar *pattern, int nocase)
 }
 
-declare 403 generic {
+declare 421 generic {
     Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, \
 	    CONST char *key)
 }
 
-declare 404 generic {
+declare 422 generic {
     Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr, \
 	    CONST char *key, int *newPtr)
 }
 
-declare 405 generic {
+declare 423 generic {
     void Tcl_InitHashTableEx(Tcl_HashTable *tablePtr, int keyType, \
 	    Tcl_HashKeyType *typePtr)
 }
 
-declare 406 generic {
+declare 424 generic {
     void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
 }
-declare 407 generic {
+declare 425 generic {
     ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, char *varName, \
 	    int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData)
 }
-declare 408 generic {
+declare 426 generic {
     int Tcl_TraceCommand(Tcl_Interp *interp, char *varName, int flags, \
 		Tcl_CommandTraceProc *proc, ClientData clientData)
 }
-declare 409 generic {
+declare 427 generic {
     void Tcl_UntraceCommand(Tcl_Interp *interp, char *varName, int flags, \
 		Tcl_CommandTraceProc *proc, ClientData clientData)
 }
-declare 410 generic {
+declare 428 generic {
     char * Tcl_AttemptAlloc(unsigned int size)
 }
-declare 411 generic {
+declare 429 generic {
     char * Tcl_AttemptDbCkalloc(unsigned int size, char *file, int line)
 }
-declare 412 generic {
+declare 430 generic {
     char * Tcl_AttemptRealloc(char *ptr, unsigned int size)
 }
-declare 413 generic {
+declare 431 generic {
     char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size, char *file, 
 	int line)
 }
-declare 414 generic {
+declare 432 generic {
     int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
 }
 
