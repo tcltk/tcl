@@ -1,3 +1,9 @@
+2004-10-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): Reorganized to have fewer
+	magic flag variables and to separate the code that scans for a
+	match from the code that processes a match body.
+
 2004-10-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:
