@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.23 2004/02/01 09:37:49 davygrvy Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.24 2004/02/01 23:37:52 davygrvy Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -342,49 +342,73 @@ test winpipe-7.7 {BuildCommandLine: dbl quote quoting #5} {pcOnly exec} {
 test winpipe-7.8 {BuildCommandLine: dbl quote quoting #6} {pcOnly exec} {
     exec $env(COMSPEC) /c echo {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}
 } {\"hello\" \"\"hello\"\" \"\"\"hello\"\"\" \"\\\"hello\\\"\" "he llo" "he \" llo"}
-test winpipe-7.9 {BuildCommandLine: special chars #1} {pcOnly exec} {
+test winpipe-7.9 {BuildCommandLine: N backslashes followed a quote rule #1} {pcOnly exec} {
     exec $env(COMSPEC) /c echo foo \\ bar
 } "foo \\ bar"
-test winpipe-7.10 {BuildCommandLine: special chars #2} {pcOnly exec} {
+test winpipe-7.10 {BuildCommandLine: N backslashes followed a quote rule #2} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\\ bar
+} "foo \\\\ bar"
+test winpipe-7.11 {BuildCommandLine: N backslashes followed a quote rule #3} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\ bar
+} "foo \"\\\ \\\\\" bar"
+test winpipe-7.12 {BuildCommandLine: N backslashes followed a quote rule #4} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\ bar
+} "foo \"\\\ \\\\\\\\\" bar"
+test winpipe-7.13 {BuildCommandLine: N backslashes followed a quote rule #5} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\\\ bar
+} "foo \"\\\ \\\\\\\\\\\\\" bar"
+test winpipe-7.14 {BuildCommandLine: special chars #4} {pcOnly exec} {
     exec $env(COMSPEC) /c echo foo \{ bar
 } "foo \{ bar"
-test winpipe-7.11 {BuildCommandLine: special chars #3} {pcOnly exec} {
+test winpipe-7.15 {BuildCommandLine: special chars #5} {pcOnly exec} {
     exec $env(COMSPEC) /c echo foo \} bar
 } "foo \} bar"
 
-### validate the pass-thru from BuildCommandLine() to the crt's setargv().
+### validate the pass-thru from BuildCommandLine() to the crt's parse_cmdline().
 ###
-test winpipe-8.1 {BuildCommandLine/setargv pass-thru: null arguments} {pcOnly exec} {
+test winpipe-8.1 {BuildCommandLine/parse_cmdline pass-thru: null arguments} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo "" bar
 } [list $path(echoArgs.tcl) [list foo {} bar]]
-test winpipe-8.2 {BuildCommandLine/setargv pass-thru: null arguments} {pcOnly exec} {
+test winpipe-8.2 {BuildCommandLine/parse_cmdline pass-thru: null arguments} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {} bar
 } [list $path(echoArgs.tcl) [list foo {} bar]]
-test winpipe-8.3 {BuildCommandLine/setargv pass-thru: dbl quote quoting #1} {pcOnly exec} {
+test winpipe-8.3 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #1} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {"} bar
 } [list $path(echoArgs.tcl) [list foo {"} bar]]
-test winpipe-8.4 {BuildCommandLine/setargv pass-thru: dbl quote quoting #2} {pcOnly exec} {
+test winpipe-8.4 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #2} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {""} bar
 } [list $path(echoArgs.tcl) [list foo {""} bar]]
-test winpipe-8.5 {BuildCommandLine/setargv pass-thru: dbl quote quoting #3} {pcOnly exec} {
+test winpipe-8.5 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #3} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {" } bar
 } [list $path(echoArgs.tcl) [list foo {" } bar]]
-test winpipe-8.6 {BuildCommandLine/setargv pass-thru: dbl quote quoting #4} {pcOnly exec} {
+test winpipe-8.6 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #4} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {a="b"} bar
 } [list $path(echoArgs.tcl) [list foo {a="b"} bar]]
-test winpipe-8.7 {BuildCommandLine/setargv pass-thru: dbl quote quoting #5} {pcOnly exec} {
+test winpipe-8.7 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #5} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo {a = "b"} bar
 } [list $path(echoArgs.tcl) [list foo {a = "b"} bar]]
-test winpipe-8.8 {BuildCommandLine/setargv pass-thru: dbl quote quoting #6} {pcOnly exec} {
-    exec [interpreter] $path(echoArgs.tcl) {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo}
-} [list $path(echoArgs.tcl) [list {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo}]]
-test winpipe-8.9 {BuildCommandLine/setargv pass-thru: special chars #1} {pcOnly exec} {
+test winpipe-8.8 {BuildCommandLine/parse_cmdline pass-thru: dbl quote quoting #6} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}
+} [list $path(echoArgs.tcl) [list {"hello"} {""hello""} {"""hello"""} {"\"hello\""} {he llo} {he " llo}]]
+test winpipe-8.9 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #1} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo \\ bar
 } [list $path(echoArgs.tcl) [list foo \\ bar]]
-test winpipe-8.10 {BuildCommandLine/setargv pass-thru: special chars #2} {pcOnly exec} {
+test winpipe-8.10 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #2} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\\ bar
+} [list $path(echoArgs.tcl) [list foo \\\\ bar]]
+test winpipe-8.11 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #3} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\ bar
+} [list $path(echoArgs.tcl) [list foo \\\ \\ bar]]
+test winpipe-8.12 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #4} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\ bar
+} [list $path(echoArgs.tcl) [list foo \\\ \\\\ bar]]
+test winpipe-8.13 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #5} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\\ bar
+} [list $path(echoArgs.tcl) [list foo \\\ \\\\\\ bar]]
+test winpipe-8.14 {BuildCommandLine/parse_cmdline pass-thru: special chars #1} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo \{ bar
 } [list $path(echoArgs.tcl) [list foo \{ bar]]
-test winpipe-8.11 {BuildCommandLine/setargv pass-thru: special chars #3} {pcOnly exec} {
+test winpipe-8.15 {BuildCommandLine/parse_cmdline pass-thru: special chars #2} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo \} bar
 } [list $path(echoArgs.tcl) [list foo \} bar]]
 
