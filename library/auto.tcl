@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.12.2.2 2004/11/26 19:42:06 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.12.2.3 2004/12/01 22:07:57 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -129,7 +129,17 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     # uniquify $dirs in order
     array set seen {}
     foreach i $dirs {
-	if {[interp issafe]} {
+	# For Tcl 8.4.9, we've disabled the use of [file normalize] here.
+	# This means that two different path names that are the same path
+	# in normalized form, will both remain on the search path.  There
+	# should be no harm in that, just a bit more file system access
+	# than is strictly necessary.
+	#
+	# [file normalize] has been disabled because of reports it has
+	# caused difficulties with the freewrap utility.  To keep
+	# compatibility with freewrap's needs, we'll keep this disabled
+	# throughout the 8.4.x (x >= 9) releases.  See Bug 1072136.
+	if {1 || [interp issafe]} {
 	    set norm $i
 	} else {
 	    set norm [file normalize $i]
