@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.15 2002/02/10 20:36:34 kennykb Exp $
+# RCS: @(#) $Id: basic.test,v 1.16 2002/03/23 01:39:57 msofer Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -558,8 +558,30 @@ test basic-44.1 {Tcl_GlobalEval} {emptyTest} {
 test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {emptyTest} {
 } {}
 
-test basic-46.1 {Tcl_AllowExceptions} {emptyTest} {
-} {}
+test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {
+    catch {close $f}
+    set res [catch {
+	set f [open |[info nameofexecutable] w+]
+	fconfigure $f -buffering line
+	puts $f {fconfigure stdout -buffering line}
+	puts $f continue
+	puts $f {puts $errorInfo}
+	puts $f {puts DONE}
+	set newMsg {}
+	set msg {}
+	while {$newMsg != "DONE"} {
+	    set newMsg [gets $f]
+	    append msg "${newMsg}\n"
+	}
+	close $f
+    }]
+    list $res $msg   
+} {1 {invoked "continue" outside of a loop
+    while executing
+"continue
+"
+DONE
+}}
 
 # cleanup
 catch {eval namespace delete [namespace children :: test_ns_*]}
