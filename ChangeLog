@@ -1,6 +1,6 @@
 2002-10-29  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/tclLoadDyld.c (Tcl_PackageInitProc): pass all dyld error
+	* unix/tclLoadDyld.c (TclpFindSymbol): pass all dyld error
 	messages upstream [Bug #627546].
 
 2002-10-28  Andreas Kupries  <andreask@activestate.com>
