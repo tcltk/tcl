@@ -1,0 +1,75 @@
+'\"
+'\" Copyright (c) 1999 Scriptics Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+'\" RCS: @(#) $Id: ChnlReplace.3,v 1.1 1999/06/25 23:29:25 welch Exp $
+.so man.macros
+.TH Tcl_ReplaceChannel 3 8.2 Tcl "Tcl Library Procedures"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_ReplaceChannel, Tcl_UndoReplaceChannel \- stack an I/O channel on top of another, and undo it
+.SH SYNOPSIS
+.nf
+.nf
+\fB#include <tcl.h>\fR
+.sp
+void
+\fBTcl_ReplaceChannel\fR(\fIinterp, typePtr, clientData, mask, channel\fR)
+.sp
+void
+\fBTcl_UndoReplaceChannel\fR(\fIinterp, channel\fR)
+.sp
+.SH ARGUMENTS
+.AS Tcl_ChannelType
+.AP Tcl_Interp *interp in
+The Tcl interpreter in which \fIchannel\fP is registered.
+.AP Tcl_ChannelType *typePtr in
+The new channel I/O procedures to use for \fIchannel\fP.
+.AP ClientData clientData in
+Arbitrary one-word value to pass to channel I/O procedures.
+.AP int mask in
+Conditions under which \fIchannel\fR will be used: OR-ed combination of
+\fBTCL_READABLE\fR, \fBTCL_WRITABLE\fR and \fBTCL_EXCEPTION\fR.
+This can be a subset of the operations currently allowed on \fIchannel\fP.
+.AP Tcl_Channel channel in
+An existing Tcl channel such as returned by \fBTcl_CreateChannel\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+These functions are for use by extensions that add processing
+layers on top of Tcl I/O channels.  Examples include compression
+and encryption modules.  These functions transparently stack and unstack
+a new channel on top of an existing one.
+.PP
+\fBTcl_ReplaceChannel\fR
+interposes a new channel type on an existing \fIchannel\fP.
+After the call to \fBTcl_ReplaceChannel\fR,
+any operation on \fIchannel\fP uses the I/O channel functions
+defined in \fItypePtr\fP, and the channel functions are passed
+the new \fIclientData\fP instead of the existing client data
+for \fIchannel\fP.
+A new channel structure is created under the same name that
+exists for \fIchannel\fP, and the existing Tcl_Channel data structure
+is linked using the chanPtr->supercedes structure member.
+The new channel 
+should use Tcl_Read and Tcl_Write to get at the underlying channel.
+Closing the new channel closes the channels stacked below it.
+Any number of channels can be stacked together using \fBTcl_ReplaceChannel\fR.
+.PP
+The set of operations allowed on the new channel can be restricted
+by the new channel type. For example, a read-write channel may become
+read-only after the \fBTcl_ReplaceChannel\fR
+call.
+
+.PP
+\fBTcl_UndoReplaceChannel\fP restores the channel to its original state.
+
+.SH "SEE ALSO"
+Notifier(3), Tcl_CreateChannel(3), Tcl_OpenFileChannel(3), vwait(n).
+
+.SH KEYWORDS
+channel, compression
