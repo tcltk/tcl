@@ -1,3 +1,8 @@
+2004-01-09  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to infinite loop in 
+	TclFinalizeFilesystem [Bug 873311]
+
 2003-12-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWin32Dll.c (DllMain): Add HAVE_NO_SEH
