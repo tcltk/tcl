@@ -1,3 +1,8 @@
+2002-03-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclScan.c (Tcl_ScanObjCmd): prevented ckfree being
+	called on a pointer to NULL.
+
 2002-03-15  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	Backport of Donal Fellows patch:

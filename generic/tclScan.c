@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.6.2.3 2002/02/07 01:54:04 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.6.2.4 2002/03/18 20:56:17 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1124,7 +1124,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    ckfree((char*) objs);
+    if (objs != NULL) {
+	ckfree((char*) objs);
+    }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {
