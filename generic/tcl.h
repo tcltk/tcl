@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.12 2001/10/05 13:48:34 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.13 2001/10/15 10:52:39 dkf Exp $
  */
 
 #ifndef _TCL
@@ -355,10 +355,6 @@ typedef int *ClientData;
  * Also defines the following macros:
  * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on
  *	a real 64-bit system.)
- * TCL_FILE_OFFSETS_ARE_LONG - if we should be using longs for file
- *	offsets; this may occur if either longs are 64-bits or there
- *	is no transitional large-file interface in the system
- *	libraries.
  * TCL_PRINTF_SUPPORTS_LL - if we can do sprintf("%lld",wideVal) safely,
  *	which controls the feature set supported by [format] and the
  *	implementation of the wideInt Tcl_ObjType.
@@ -386,44 +382,49 @@ typedef int *ClientData;
  * Longs are 64-bit, so use them in all appropriate spots.
  */
 typedef long		Tcl_WideInt;
+typedef off_t		Tcl_SeekOffset;
+typedef struct stat	Tcl_StatBuf;
+typedef struct dirent	Tcl_DirEntry;
 #   define TCL_WIDE_INT_IS_LONG
-#   define TCL_FILE_OFFSETS_ARE_LONG
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
+#   define Tcl_PlatformStat		stat
+#   define Tcl_PlatformLStat		lstat
+#   define Tcl_PlatformSeek		lseek
+#   define Tcl_PlatformOpen		open
+#   define Tcl_PlatformReaddir		readdir
 #else
 /*
  * Type of 64-bit values on 32-bit systems.  I think this is the ISO
  * C99 standard way of writing this type.
  */
+#   define TCL_PRINTF_SUPPORTS_LL
+#   ifdef __WIN32__
+typedef __int64		Tcl_WideInt;
+typedef Tcl_WideInt	Tcl_SeekOffset;
+typedef struct _stati64	Tcl_StatBuf;
+#      define TCL_LL_MODIFIER		"I32"
+#      define TCL_LL_MODIFIER_SIZE	3
+#   else
 typedef long long	Tcl_WideInt;
-#   define TCL_PRINTF_SUPPORTS_LL /*True on Solaris/SPARC and Linux/glibc2.1*/
+typedef off64_t		Tcl_SeekOffset;
+typedef struct stat64	Tcl_StatBuf;
+#      define TCL_LL_MODIFIER		"ll"
+#      define TCL_LL_MODIFIER_SIZE	2
+#   endif
+typedef struct dirent64	Tcl_DirEntry;
 #   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
 #   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
+#   define Tcl_PlatformStat		stat64
+#   define Tcl_PlatformLStat		lstat64
+#   define Tcl_PlatformSeek		lseek64
+#   define Tcl_PlatformOpen		open64
+#   define Tcl_PlatformReaddir		readdir64
 #endif /* _LP64 */
-
-#ifdef TCL_FILE_OFFSETS_ARE_LONG
-typedef struct stat	Tcl_StatBuf;
-typedef off_t		Tcl_SeekOffset;
-typedef struct dirent	Tcl_DirEntry;
-#   define Tcl_PlatformStat    stat
-#   define Tcl_PlatformLStat   lstat
-#   define Tcl_PlatformSeek    lseek
-#   define Tcl_PlatformOpen    open
-#   define Tcl_PlatformReaddir readdir
-#else /* TCL_FILE_OFFSETS_ARE_LONG */
-typedef struct stat64	Tcl_StatBuf;
-typedef off64_t		Tcl_SeekOffset;
-typedef struct dirent64	Tcl_DirEntry;
-#   define Tcl_PlatformStat    stat64
-#   define Tcl_PlatformLStat   lstat64
-#   define Tcl_PlatformSeek    lseek64
-#   define Tcl_PlatformOpen    open64
-#   define Tcl_PlatformReaddir readdir64
-#endif /* TCL_FILE_OFFSETS_ARE_LONG */
 
 
 /*

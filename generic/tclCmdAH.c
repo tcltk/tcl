@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.8 2001/10/08 08:22:00 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.9 2001/10/15 10:52:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1830,7 +1830,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * string. */
     int formatLen;		/* The length of the format string */
     char *endPtr;		/* Points to the last char in format array */
-    char newFormat[41];		/* A new format specifier is generated here. */
+    char newFormat[43];		/* A new format specifier is generated here. */
     int width;			/* Field width from field specifier, or 0 if
 				 * no width given. */
     int precision;		/* Field precision from field specifier, or 0
@@ -2066,9 +2066,8 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	if (*format == 'l') {
 #ifdef TCL_PRINTF_SUPPORTS_LL
 	    useWide = 1;
-	    newPtr[0] = 'l';
-	    newPtr[1] = 'l';
-	    newPtr += 2;
+	    strcpy(newPtr, TCL_LL_MODIFIER);
+	    newPtr += TCL_LL_MODIFIER_SIZE;
 #endif
 	    format++;
 	} else if (*format == 'h') {

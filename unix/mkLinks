@@ -484,6 +484,7 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSNewNativePath.3
     rm -f Tcl_FSGetNativePath.3
     rm -f Tcl_FSFileSystemInfo.3
+    rm -f Tcl_AllocStatBuf.3
     ln FileSystem.3 Tcl_FSRegister.3
     ln FileSystem.3 Tcl_FSUnregister.3
     ln FileSystem.3 Tcl_FSData.3
@@ -521,6 +522,7 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSNewNativePath.3
     ln FileSystem.3 Tcl_FSGetNativePath.3
     ln FileSystem.3 Tcl_FSFileSystemInfo.3
+    ln FileSystem.3 Tcl_AllocStatBuf.3
 fi
 if test -r FindExec.3; then
     rm -f Tcl_FindExecutable.3

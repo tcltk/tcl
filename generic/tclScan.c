@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.8.2.3 2001/10/09 15:30:51 dkf Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.8.2.4 2001/10/15 10:52:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1014,8 +1014,8 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 			wideValue = (Tcl_WideInt) (*lfn)(buf, NULL, base);
 #   ifdef TCL_PRINTF_SUPPORTS_LL
 			if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
-			    sprintf(buf, "%llu",        /* INTL: ISO digit */
-				    wideValue);
+			    /* INTL: ISO digit */
+			    sprintf(buf, "%" TCL_LL_FORMAT "u", wideValue);
 			    objPtr = Tcl_NewStringObj(buf, -1);
 			} else {
 			    objPtr = Tcl_NewWideIntObj(wideValue);

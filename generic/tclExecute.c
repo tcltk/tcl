@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.12 2001/10/11 14:55:17 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.13 2001/10/15 10:52:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -260,8 +260,9 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #define IS_NUMERIC_TYPE(typePtr)					\
 	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
 #ifdef TCL_PRINTF_SUPPORTS_LL
-#   define LLTRACE(a) TRACE(a)
-#   define LLTRACE_WITH_OBJ(a,b) TRACE_WITH_OBJ(a,b)
+#   define LLTRACE(a)			TRACE(a)
+#   define LLTRACE_WITH_OBJ(a,b)	TRACE_WITH_OBJ(a,b)
+#   define LLD				"%" TCL_LL_MODIFIER "d"
 #else
 #   define LLTRACE(a)
 #   define LLTRACE_WITH_OBJ(a,b)
@@ -2691,9 +2692,9 @@ TclExecuteByteCode(interp, codePtr)
 #else /* !TCL_WIDE_INT_IS_LONG */
 		    if (value2Ptr->typePtr == &tclWideIntType && w2 == W0) {
 			if (valuePtr->typePtr == &tclIntType) {
-			    LLTRACE(("%ld %lld => DIVIDE BY ZERO\n", i, w2));
+			    LLTRACE(("%ld "LLD" => DIVIDE BY ZERO\n", i, w2));
 			} else {
-			    LLTRACE(("%lld %lld => DIVIDE BY ZERO\n", w, w2));
+			    LLTRACE((LLD" "LLD" => DIVIDE BY ZERO\n", w, w2));
 			}
 			TclDecrRefCount(valuePtr);
 			TclDecrRefCount(value2Ptr);
@@ -2701,9 +2702,9 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    if (value2Ptr->typePtr == &tclIntType && i2 == 0) {
 			if (valuePtr->typePtr == &tclIntType) {
-			    LLTRACE(("%ld %ld => DIVIDE BY ZERO\n", i, i2));
+			    TRACE(("%ld %ld => DIVIDE BY ZERO\n", i, i2));
 			} else {
-			    LLTRACE(("%lld %ld => DIVIDE BY ZERO\n", w, i2));
+			    LLTRACE((LLD" %ld => DIVIDE BY ZERO\n", w, i2));
 			}
 			TclDecrRefCount(valuePtr);
 			TclDecrRefCount(value2Ptr);
@@ -2872,7 +2873,7 @@ TclExecuteByteCode(interp, codePtr)
 #ifndef TCL_WIDE_INT_IS_LONG
 		    if (doWide) {
 			PUSH_OBJECT(Tcl_NewWideIntObj(wResult));
-			LLTRACE(("%lld %lld => %lld\n", w, w2, wResult));
+			LLTRACE((LLD" "LLD" => "LLD"\n", w, w2, wResult));
 		    } else {
 #endif /* TCL_WIDE_INT_IS_LONG */
 			PUSH_OBJECT(Tcl_NewLongObj(iResult));
@@ -2884,7 +2885,7 @@ TclExecuteByteCode(interp, codePtr)
 		} else {	/* reuse the valuePtr object */
 #ifndef TCL_WIDE_INT_IS_LONG
 		    if (doWide) {
-			LLTRACE(("%lld %lld => %lld\n", w, w2, wResult));
+			LLTRACE((LLD" "LLD" => "LLD"\n", w, w2, wResult));
 			Tcl_SetWideIntObj(valuePtr, wResult);
 		    } else {
 #endif /* TCL_WIDE_INT_IS_LONG */
@@ -3078,7 +3079,7 @@ TclExecuteByteCode(interp, codePtr)
 			 * divisor and a smaller absolute value.
 			 */
 			if (w2 == W0) {
-			    LLTRACE(("%lld %lld => DIVIDE BY ZERO\n", w, w2));
+			    LLTRACE((LLD" "LLD" => DIVIDE BY ZERO\n", w, w2));
 			    TclDecrRefCount(valuePtr);
 			    TclDecrRefCount(value2Ptr);
 			    goto divideByZero;
@@ -3148,7 +3149,7 @@ TclExecuteByteCode(interp, codePtr)
 #ifndef TCL_WIDE_INT_IS_LONG
 		    } else if (doWide) {
 			PUSH_OBJECT(Tcl_NewWideIntObj(wResult));
-			LLTRACE(("%lld %lld => %lld\n", w, w2, wResult));
+			LLTRACE((LLD" "LLD" => "LLD"\n", w, w2, wResult));
 #endif /* TCL_WIDE_INT_IS_LONG */
 		    } else {
 			PUSH_OBJECT(Tcl_NewLongObj(iResult));
@@ -3161,7 +3162,7 @@ TclExecuteByteCode(interp, codePtr)
 			Tcl_SetDoubleObj(valuePtr, dResult);
 #ifndef TCL_WIDE_INT_IS_LONG
 		    } else if (doWide) {
-			LLTRACE(("%lld %lld => %lld\n", w, w2, wResult));
+			LLTRACE((LLD" "LLD" => "LLD"\n", w, w2, wResult));
 			Tcl_SetWideIntObj(valuePtr, wResult);
 #endif /* TCL_WIDE_INT_IS_LONG */
 		    } else {
@@ -3300,7 +3301,7 @@ TclExecuteByteCode(interp, codePtr)
 			} else {
 			    objPtr = Tcl_NewLongObj(w == W0);
 			}
-			LLTRACE_WITH_OBJ(("%lld => ", w), objPtr);
+			LLTRACE_WITH_OBJ((LLD" => ", w), objPtr);
 #endif /* TCL_WIDE_INT_IS_LONG */
 		    } else {
 			d = valuePtr->internalRep.doubleValue;
@@ -3334,7 +3335,7 @@ TclExecuteByteCode(interp, codePtr)
 			} else {
 			    Tcl_SetLongObj(valuePtr, w == W0);
 			}
-			LLTRACE_WITH_OBJ(("%lld => ", w), valuePtr);
+			LLTRACE_WITH_OBJ((LLD" => ", w), valuePtr);
 #endif /* TCL_WIDE_INT_IS_LONG */
 		    } else {
 			d = valuePtr->internalRep.doubleValue;
