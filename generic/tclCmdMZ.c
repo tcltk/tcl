@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.31 2001/02/16 09:26:30 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.32 2001/03/13 11:10:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1663,6 +1663,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * empty charMap, just return whatever string was given
 		 */
 		Tcl_SetObjResult(interp, objv[objc-1]);
+		return TCL_OK;
 	    } else if (mapElemc & 1) {
 		/*
 		 * The charMap must be an even number of key/value items
