@@ -3,7 +3,7 @@
 	* unix/configure: Regen.
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Don't include . characters
 	in the Tcl library name when building on FreeBSD 3.X and later
-	systems. [Bug 450725]
+	systems. [Patch 450725]
 
 2001-09-10  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
