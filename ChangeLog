@@ -1,3 +1,7 @@
+2003-03-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4.2 TAGGED FOR RELEASE ***
+
 2003-03-03  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/Makefile.vc: corrected bug introduced by 'g' for debug builds.

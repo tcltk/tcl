@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.78 2003/03/03 17:14:10 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79 2003/03/03 20:04:50 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5756,4 +5756,4 @@ packages in multiple interps.
 
 2003-02-27 (bug fix)[694232] stop [lsearch -start 0 {} x] segfault
 
---- Released 8.4.2, March X, 2003 --- See ChangeLog for details ---
+--- Released 8.4.2, March 3, 2003 --- See ChangeLog for details ---
