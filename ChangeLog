@@ -4,6 +4,23 @@
         * tests/split.test:  Corrected tests to better isolate tests in
         one file from influencing tests in other files.  [Bug 460591]
 
+	* unix/tclLoadShl.c:  Added #include of tclInt.h; access to Tcl
+        internals, notably TclpUnloadFile(), is required.  Thanks to
+        Bob Techentin for report and patch.  [Bug 459305]
+
+	* generic/tclInitScript.h (initScript):
+        * win/tclWinInit.c (TCL_REGISTRY_KEY, TclpSetVariables):  Removed
+        vestiges of Tcl's old initialization from registry variables.
+        [Bug 455645]
+
+	* tests/unixInit.test (unixInit-3.2): Updated test to support
+        newer HP-UX releases that properly report euc-jp as the system
+        encoding for Japanese.  Bug report and patch verification by Bob
+        Techentin.  [Bug 453883]
+
+	* compat/strtod.c (strtod):  Fixed failure to handle expressions
+        like 3eq2 and failure to set errno on overflow.  [Bug 440894]
+
 2001-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEvent.c (TclInExit): Corrected handling of tsd in
