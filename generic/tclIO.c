@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.25 2000/10/06 21:10:50 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.26 2000/10/27 22:34:23 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2139,10 +2139,13 @@ CloseChannel(interp, chanPtr, errorCode)
 
     /*
      * There is only the TOP Channel, so we free the remaining
-     * pointers we have and then ourselves.
+     * pointers we have and then ourselves.  Since this is the
+     * last of the channels in the stack, make sure to free the
+     * ChannelState structure associated with it.
      */
     chanPtr->typePtr = NULL;
 
+    Tcl_EventuallyFree((ClientData) statePtr, TCL_DYNAMIC);
     Tcl_EventuallyFree((ClientData) chanPtr, TCL_DYNAMIC);
 
     return errorCode;
