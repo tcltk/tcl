@@ -1,4 +1,14 @@
+2003-07-16  Mumit Khan  <khan@nanotech.wisc.edu>
+
+	* generic/tclIOUtil.c (SetFsPathFromAny): Add Cygwin specific
+	code to convert POSIX filename to native format.
+	* generic/tclFileName.c (Tcl_TranslateFileName): And remove from here.
+	(TclDoGlob): Adjust for cygwin and append / for dirs instead of \
+	* win/tclWinFile.c (TclpObjChdir): Use chdir on Cygwin.
+
 2003-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFile.c (TclpObjChdir): 
 
 	* library/safe.tcl (FileInAccessPath): normalize paths before
 	comparison. [Bug 759607] (myers)
