@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.20 2004/08/31 15:19:36 dkf Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.21 2004/09/02 13:55:55 dkf Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.5 Tcl "Tcl Built-In Commands"
@@ -87,7 +87,10 @@ for backward-compatibility reasons.)
 .TP
 \fB\-dictionary\fR
 The list elements are to be compared using dictionary-style
-comparisons.
+comparisons (see \fBlsort\fR for a fuller description). Note that this
+only makes a meaningful difference from the \fB\-ascii\fR option when
+the \fB\-sorted\fR option is given, because values are only
+dictionary-equal when exactly equal.
 .TP
 \fB\-integer\fR
 The list elements are to be compared as integers.
