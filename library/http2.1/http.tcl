@@ -9,9 +9,9 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.5 1999/02/02 22:28:30 stanton Exp $
+# RCS: @(#) $Id: http.tcl,v 1.6 1999/06/30 17:43:51 welch Exp $
 
-package provide http 2.0	;# This uses Tcl namespaces
+package provide http 2.1	;# This uses Tcl namespaces
 
 namespace eval http {
     variable http
@@ -134,15 +134,20 @@ proc http::reset { token {why reset} } {
 #	Establishes a connection to a remote url via http.
 #
 # Arguments:
-#        url		The http URL to goget.
-#        args		Option value pairs. Valid options include:
+#       url		The http URL to goget.
+#       args		Option value pairs. Valid options include:
 #				-blocksize, -validate, -headers, -timeout
 # Results:
-#        Returns a token for this connection.
-
+#	Returns a token for this connection.
+#	This token is the name of an array that the caller should
+#	unset to garbage collect the state.
 
 proc http::geturl { url args } {
     variable http
+
+    # Initialize the state variable, an array.  We'll return the
+    # name of this array as the token for the transaction.
+
     if {![info exists http(uid)]} {
 	set http(uid) 0
     }
@@ -150,6 +155,9 @@ proc http::geturl { url args } {
     variable $token
     upvar 0 $token state
     reset $token
+
+    # Process command options.
+
     array set state {
 	-blocksize 	8192
 	-validate 	0
@@ -170,7 +178,9 @@ proc http::geturl { url args } {
     set pat ^-([join $options |])$
     foreach {flag value} $args {
 	if {[regexp $pat $flag]} {
+
 	    # Validate numbers
+
 	    if {[info exists state($flag)] && \
 		    [regexp {^[0-9]+$} $state($flag)] && \
 		    ![regexp {^[0-9]+$} $value]} {
@@ -199,16 +209,38 @@ proc http::geturl { url args } {
 	set phost [lindex $proxy 0]
 	set pport [lindex $proxy 1]
     }
+
+    # If a timeout is specified we set up the after event
+    # and arrange for an asynchronous socket connection.
+
     if {$state(-timeout) > 0} {
-	set state(after) [after $state(-timeout) [list http::reset $token timeout]]
+	set state(after) [after $state(-timeout) \
+		[list http::reset $token timeout]]
+	set async -async
+    } else {
+	set async ""
     }
+
+    # If we are using the proxy, we must pass in the full URL that
+    # includes the server name.
+
     if {[info exists phost] && [string length $phost]} {
 	set srvurl $url
-	set s [socket $phost $pport]
+	set s [eval socket $async {$phost $pport}]
     } else {
-	set s [socket $host $port]
+	set s [eval socket $async {$host $port}]
     }
     set state(sock) $s
+
+    # Wait for the connection to complete
+
+    if {$state(-timeout) > 0} {
+	#fileevent $s writable [list set $token\(status) connect]
+	fileevent $s writable [list http::Connect $token]
+	http::wait $token
+	fileevent $s writable {}
+	unset state(status)
+    }
 
     # Send data in cr-lf format, but accept any line terminators
 
@@ -282,6 +314,29 @@ proc http::size {token} {
     upvar 0 $token state
     return $state(currentsize)
 }
+
+# http::cleanup
+#
+#	Garbage collect the state associated with a transaction
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	unsets the state array
+
+proc http::cleanup {token} {
+    variable $token
+    upvar 0 $token state
+    if {[info exist state]} {
+	unset state
+    }
+}
+ proc http::Connect {token} {
+    variable $token
+    upvar 0 $token state
+    set state(status) connect
+ }
 
  proc http::Event {token} {
     variable $token
@@ -399,6 +454,9 @@ proc http::wait {token} {
     upvar 0 $token state
 
     if {![info exists state(status)] || [string length $state(status)] == 0} {
+
+	# We must wait on the original variable name, not the upvar alias
+
 	vwait $token\(status)
     }
     if {[info exists state(error)]} {
