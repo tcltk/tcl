@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.20 2000/01/12 11:12:52 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.21 2000/01/13 20:33:10 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -2991,7 +2991,7 @@ static int
 DictionaryCompare(left, right)
     char *left, *right;          /* The strings to compare */
 {
-    Tcl_UniChar uniLeft, uniRight;
+    Tcl_UniChar uniLeft, uniRight, uniLeftLower, uniRightLower;
     int diff, zeros;
     int secondaryDiff = 0;
 
@@ -3063,32 +3063,30 @@ DictionaryCompare(left, right)
 	if ((*left != '\0') && (*right != '\0')) {
 	    left += Tcl_UtfToUniChar(left, &uniLeft);
 	    right += Tcl_UtfToUniChar(right, &uniRight);
+	    /*
+	     * Convert both chars to lower for the comparison, because
+	     * dictionary sorts are case insensitve.  Covert to lower, not
+	     * upper, so chars between Z and a will sort before A (where most
+	     * other interesting punctuations occur)
+	     */
+	    uniLeftLower = Tcl_UniCharToLower(uniLeft);
+	    uniRightLower = Tcl_UniCharToLower(uniRight);
 	} else {
 	    diff = UCHAR(*left) - UCHAR(*right);
 	    break;
 	}
 
-        diff = uniLeft - uniRight;
+        diff = uniLeftLower - uniRightLower;
         if (diff) {
+	    return diff;
+	} else if (secondaryDiff == 0) {
 	    if (Tcl_UniCharIsUpper(uniLeft) &&
 		    Tcl_UniCharIsLower(uniRight)) {
-		diff = Tcl_UniCharToLower(uniLeft) - uniRight;
-		if (diff) {
-		    return diff;
-                } else if (secondaryDiff == 0) {
-		    secondaryDiff = -1;
-                }
+		secondaryDiff = -1;
 	    } else if (Tcl_UniCharIsUpper(uniRight)
 		    && Tcl_UniCharIsLower(uniLeft)) {
-                diff = uniLeft - Tcl_UniCharToLower(uniRight);
-                if (diff) {
-		    return diff;
-                } else if (secondaryDiff == 0) {
-		    secondaryDiff = 1;
-                }
-            } else {
-                return diff;
-            }
+		secondaryDiff = 1;
+	    }
         }
     }
     if (diff == 0) {

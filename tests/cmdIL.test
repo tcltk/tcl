@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.10 1999/12/21 23:58:22 hobbs Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.11 2000/01/13 20:33:10 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -315,6 +315,24 @@ test cmdIL-4.27 {DictionaryCompare procedure, signed characters} {
     }
     set viewlist
 } [list "abc" "abc\\200"]
+test cmdIL-4.28 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ` c CC]
+} [list ` AA c CC]
+test cmdIL-4.29 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ` c ^ \\ CC \[ \]]
+} [list \[ \\ \] ^ ` AA c CC]
+test cmdIL-4.30 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ` c ^ _ \\ CC \[ dude \] funky]
+} [list \[ \\ \] ^ _ ` AA c CC dude funky]
+test cmdIL-4.31 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA c ` CC]
+} [list ` AA c CC]
+test cmdIL-4.32 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA c CC `]
+} [list ` AA c CC]
+test cmdIL-4.33 {DictionaryCompare procedure, chars between Z and a in ASCII} {
+    lsort -dictionary [list AA ! c CC `]
+} [list ! ` AA c CC]
 
 # cleanup
 ::tcltest::cleanupTests

@@ -1,4 +1,19 @@
+2000-01-13  Eric Melski  <ericm@scriptics.com>
+
+	* tests/cmdIL.test: Added tests for lsort -dictionary with
+	characters that occur between Z and a in ASCII.
+
+	* generic/tclCmdIL.c: Modified DictionaryCompare function (used by
+	lsort -dictionary) to do upper/lower case equivalency before doing
+	character comparisons, instead of after.  This fixes bug #1357, in
+	which lsort -dictionary [list ` AA c CC] and lsort -dictionary
+	[list AA c ` CC] gave different (and both wrong) results.
+
 2000-01-12  Eric Melski  <ericm@scriptics.com>
+
+	* tests/clock.test: Added tests for "next <day-of-week>" and
+	"<day-of-week>"
+	Added tests for "monday 1 week ago", etc, from RFE #3671.
 
 	* doc/tests/clock.test: Added numerous tests for clock scan.
 
