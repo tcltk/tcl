@@ -259,6 +259,7 @@ test basic-7.6 {TclRenameCommand, check for command shadowing by newly renamed c
          [test_ns_basic::callP]
 } {{p in ::} {} {q in ::test_ns_basic}}
 
+if {[info command testcmdtoken] != {}} {
 test basic-8.1 {Tcl_GetCommandInfo, names for commands created inside namespaces} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
     catch {rename p ""}
@@ -279,6 +280,7 @@ test basic-8.2 {Tcl_GetCommandInfo, names for commands created outside namespace
          [rename test_ns_basic::test_ns_basic2::p q] \
          [testcmdtoken name $x]
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
+}
 
 test basic-9.1 {Tcl_GetCommandFullName} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
@@ -380,12 +382,14 @@ test basic-11.1 {TclObjInvoke, lookup of "unknown" command} {
          [interp delete test_interp]
 } {newAlias 0 {global unknown} {}}
 
+if {[info command testcmdtrace] != {}} {
 test basic-12.1 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace tracetest {set stuff [info tclversion]}
 } {{info tclversion} {info tclversion} {set stuff [info tclversion]} {set stuff 8.0}}
 test basic-12.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace deletetest {set stuff [info tclversion]}
 } 8.0
+}
 
 catch {eval namespace delete [namespace children :: test_ns_*]}
 catch {namespace delete george}
