@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.98 2004/06/07 16:48:45 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.99 2004/06/24 01:29:03 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -268,6 +268,19 @@ TclIntStubs tclIntStubs = {
     TclDbNewListObjDirect, /* 181 */
     TclpLocaltime, /* 182 */
     TclpGmtime, /* 183 */
+    TclThreadStorageLockInit, /* 184 */
+    TclThreadStorageLock, /* 185 */
+    TclThreadStorageUnlock, /* 186 */
+    TclThreadStoragePrint, /* 187 */
+    TclThreadStorageGetHashTable, /* 188 */
+    TclThreadStorageInit, /* 189 */
+    TclThreadStorageDataKeyInit, /* 190 */
+    TclThreadStorageDataKeyGet, /* 191 */
+    TclThreadStorageDataKeySet, /* 192 */
+    TclFinalizeThreadStorageThread, /* 193 */
+    TclFinalizeThreadStorage, /* 194 */
+    TclFinalizeThreadStorageData, /* 195 */
+    TclFinalizeThreadStorageDataKey, /* 196 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

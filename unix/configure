@@ -2854,6 +2854,12 @@ _ACEOF
 #define USE_THREAD_ALLOC 1
 _ACEOF
 
+	# USE_THREAD_STORAGE tells us to use the new generic thread
+	# storage subsystem.
+	cat >>confdefs.h <<\_ACEOF
+#define USE_THREAD_STORAGE 1
+_ACEOF
+
 	cat >>confdefs.h <<\_ACEOF
 #define _REENTRANT 1
 _ACEOF

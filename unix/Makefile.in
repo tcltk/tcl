@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.138 2004/06/11 21:30:08 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.139 2004/06/24 01:29:03 mistachkin Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -313,8 +313,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
-	 tclThreadAlloc.o tclThreadJoin.o tclStubInit.o tclStubLib.o \
-	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o
+	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
+	tclStubLib.o tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -402,6 +402,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclThread.c \
 	$(GENERIC_DIR)/tclThreadAlloc.c \
 	$(GENERIC_DIR)/tclThreadJoin.c \
+	$(GENERIC_DIR)/tclThreadStorage.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclTrace.c \
 	$(GENERIC_DIR)/tclUtil.c \
@@ -1049,6 +1050,9 @@ tclThreadAlloc.o: $(GENERIC_DIR)/tclThreadAlloc.c
 
 tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
+
+tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadStorage.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
