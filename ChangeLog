@@ -1,3 +1,10 @@
+2003-12-11  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinSock.c (SocketThreadExitHandler) : added a
+	TerminateThread fallback just in case the socket handler thread
+	is really in a paused state.  This can happen when Tcl is being
+	unloaded by the OS from an exception handler.
+
 2003-12-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
