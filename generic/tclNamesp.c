@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.62 2004/10/15 04:01:32 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.63 2004/10/22 15:46:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5049,7 +5049,8 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
     tempObjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
     memcpy(tempObjv,            prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
     memcpy(tempObjv+prefixObjc, objv+2,     sizeof(Tcl_Obj *) * (objc-2));
-    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv, 0);
+    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
+	    TCL_EVAL_INVOKE);
     Tcl_DecrRefCount(prefixObj);
     ckfree((char *)tempObjv);
     return result;
