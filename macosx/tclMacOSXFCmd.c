@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1 2003/05/14 19:21:24 das Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.2 2004/04/06 22:25:56 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 #ifdef HAVE_GETATTRLIST
 #include <sys/attr.h>

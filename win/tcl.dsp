@@ -1232,10 +1232,6 @@ SOURCE=..\generic\tclMain.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclMath.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\generic\tclNamesp.c
 # End Source File
 # Begin Source File
@@ -1541,10 +1537,6 @@ SOURCE=.\tclWinInt.h
 # Begin Source File
 
 SOURCE=.\tclWinLoad.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\tclWinMtherr.c
 # End Source File
 # Begin Source File
 

@@ -9,10 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.5 2002/05/27 10:14:21 dkf Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.6 2004/04/06 22:25:58 dgp Exp $
  */
 
-#include "tclWinInt.h"
+#include "tclInt.h"
 
 /*
  * The following table contains the mapping from Win32 errors to

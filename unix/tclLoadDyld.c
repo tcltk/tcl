@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14 2002/10/29 00:04:08 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.15 2004/04/06 22:25:56 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include <mach-o/dyld.h>
 
 typedef struct Tcl_DyldModuleHandle {

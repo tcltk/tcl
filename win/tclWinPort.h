@@ -10,15 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.39 2004/03/05 21:27:46 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.40 2004/04/06 22:25:58 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
-
-#ifndef _TCLINT
-#   include "tclInt.h"
-#endif
 
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
@@ -499,24 +495,6 @@
 #define TclpExit		exit
 
 /*
- * Declarations for Windows-only functions.
- */
-
-EXTERN HANDLE	    TclWinSerialReopen _ANSI_ARGS_(( HANDLE handle,
-			CONST TCHAR *name, DWORD access));
-
-EXTERN Tcl_Channel  TclWinOpenSerialChannel _ANSI_ARGS_((HANDLE handle,
-                        char *channelName, int permissions));
-					 
-EXTERN Tcl_Channel  TclWinOpenConsoleChannel _ANSI_ARGS_((HANDLE handle,
-                        char *channelName, int permissions));
-
-EXTERN Tcl_Channel  TclWinOpenFileChannel _ANSI_ARGS_((HANDLE handle,
-                        char *channelName, int permissions, int appendMode));
-
-EXTERN TclFile TclWinMakeFile _ANSI_ARGS_((HANDLE handle));
-
-/*
  * Platform specific mutex definition used by memory allocators.
  * These mutexes are statically allocated and explicitly initialized.
  * Most modules do not use this, but instead use Tcl_Mutex types and
@@ -545,9 +523,6 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF
 #endif /* INVALID_SET_FILE_POINTER */
-
-#include "tclPlatDecls.h"
-#include "tclIntPlatDecls.h"
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT

@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.14 2003/12/24 04:18:22 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.15 2004/04/06 22:25:57 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include <signal.h> 
 
 extern TclStubs tclStubs;

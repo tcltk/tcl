@@ -13,11 +13,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.35 2004/03/08 16:34:22 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.36 2004/04/06 22:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The following table provides parsing information about each possible

@@ -8,11 +8,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.17 2003/12/24 04:18:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.18 2004/04/06 22:25:50 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 typedef size_t (LengthProc)_ANSI_ARGS_((CONST char *src));
 

@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.71 2004/03/09 12:59:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.72 2004/04/06 22:25:51 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include "tclIO.h"
 #include <assert.h>
 
