@@ -309,6 +309,12 @@ typedef struct CompileEnv {
  * CmdLocation map, and the compilation AuxData array.
  */
 
+/*
+ * A PRECOMPILED bytecode struct is one that was generated from a compiled
+ * image rather than implicitly compiled from source
+ */
+#define TCL_BYTECODE_PRECOMPILED		0x0001
+
 typedef struct ByteCode {
     Interp *iPtr;		/* Interpreter containing the code being
 				 * compiled. Commands and their compile
@@ -323,6 +329,9 @@ typedef struct ByteCode {
 				 * plus 1 for each execution of the code
 				 * currently active. This structure can be
 				 * freed when refCount becomes zero. */
+    unsigned int flags;	/* flags describing state for the codebyte.
+                         * this variable holds ORed values from the
+                         * TCL_BYTECODE_ masks defined above */
     char *source;		/* The source string from which this
 				 * ByteCode was compiled. Note that this
 				 * pointer is not owned by the ByteCode and
@@ -758,6 +767,7 @@ EXTERN void		TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
 EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
 			    unsigned char *pc, int catchOnly,
 			    ByteCode* codePtr));
+EXTERN InstructionDesc * TclGetInstructionTable _ANSI_ARGS_(());
 EXTERN int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    ByteCode *codePtr));
 EXTERN void		TclExpandCodeArray _ANSI_ARGS_((
