@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.2 1999/04/16 00:46:43 stanton Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.2.6.1 1999/10/30 11:05:58 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1341,7 +1341,16 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+    /*
+     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
+     * curly braces surround the variable name.
+     * This really matters for array elements to handle things like
+     *    set {x($foo)} 5
+     * which raises an undefined var error if we are not careful here.
+     * This goes with the hack in TclCompileSetCmd.
+     */
+    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
+	    (varTokenPtr->start[0] != '{')) {
 	/*
 	 * A simple variable name. Divide it up into "name" and "elName"
 	 * strings. If it is not a local variable, look it up at runtime.
@@ -1446,7 +1455,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 
 	    word[numBytes] = '\0';
 	    if (TclLooksLikeInt(word, numBytes)
-		     && (TclGetLong((Tcl_Interp *) NULL, word, &n) == TCL_OK)) {
+		    && (TclGetLong((Tcl_Interp *) NULL, word, &n) == TCL_OK)) {
 		if ((-127 <= n) && (n <= 127)) {
 		    haveImmValue = 1;
 		    immValue = n;
@@ -1600,8 +1609,18 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+    /*
+     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
+     * curly braces surround the variable name.
+     * This really matters for array elements to handle things like
+     *    set {x($foo)} 5
+     * which raises an undefined var error if we are not careful here.
+     * This goes with the hack in TclCompileIncrCmd.
+     */
+    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
+	    (varTokenPtr->start[0] != '{')) {
 	simpleVarName = 1;
+
 	name = varTokenPtr[1].start;
 	nameChars = varTokenPtr[1].size;
 	/* last char is ')' => potential array reference */

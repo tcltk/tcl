@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.4 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.4.6.1 1999/10/30 11:06:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -225,23 +225,23 @@ TclSetEnv(name, value)
     p[nameLength] = '=';
     strcpy(p+nameLength+1, value);
     p2 = Tcl_UtfToExternalDString(NULL, p, -1, &envString);
-    ckfree(p);
+
+    /*
+     * Copy the native string to heap memory.
+     */
     
+    p = (char *) ckrealloc(p, (unsigned) (strlen(p2) + 1));
+    strcpy(p, p2);
+    Tcl_DStringFree(&envString);
 
 #ifdef USE_PUTENV
     /*
      * Update the system environment.
      */
 
-    putenv(p2);
+    putenv(p);
     index = TclpFindVariable(name, &length);
 #else
-    /*
-     * Copy the native string to heap memory.
-     */
-    
-    p = (char *) ckalloc((unsigned) (strlen(p2) + 1));
-    strcpy(p, p2);
     environ[index] = p;
 #endif
 
@@ -251,9 +251,7 @@ TclSetEnv(name, value)
      * update the string in the cache.
      */
 
-    if (environ[index] != p) {
-	Tcl_DStringFree(&envString);
-    } else {
+    if ((index != -1) && (environ[index] == p)) {
 	ReplaceString(oldValue, p);
     }
 
@@ -381,8 +379,10 @@ TclUnsetEnv(name)
     string[length+1] = '\0';
     
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
-    ckfree(string);
-    string = Tcl_DStringValue(&envString);
+    string = ckrealloc(string, (unsigned) (Tcl_DStringLength(&envString)+1));
+    strcpy(string, Tcl_DStringValue(&envString));
+    Tcl_DStringFree(&envString);
+
     putenv(string);
 
     /*
@@ -391,9 +391,7 @@ TclUnsetEnv(name)
      * update the string in the cache.
      */
 
-    if (environ[index] != string) {
-	Tcl_DStringFree(&envString);
-    } else {
+    if (environ[index] == string) {
 	ReplaceString(oldValue, string);
     }
 #else
@@ -663,7 +661,3 @@ TclFinalizeEnvironment()
 #endif
     }
 }
-
-	
-    
-    

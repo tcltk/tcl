@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.12.4.1 1999/09/22 04:12:50 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.12.4.2 1999/10/30 11:06:01 hobbs Exp $ */
 
 #include "tclInt.h"
 
@@ -1170,10 +1170,14 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
     Tcl_Obj *objPtr;		/* Points to the object to append to. */
     va_list argList;		/* Variable argument list. */
 {
+#define STATIC_LIST_SIZE 16
     String *stringPtr;
-    va_list tmpArgList;
     int newLength, oldLength;
     register char *string, *dst;
+    char *static_list[STATIC_LIST_SIZE];
+    char **args = static_list;
+    int nargs_space = STATIC_LIST_SIZE;
+    int nargs, i;
 
     if (Tcl_IsShared(objPtr)) {
 	panic("Tcl_AppendStringsToObj called with shared object");
@@ -1188,17 +1192,33 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
      * (notably OS/390) the argList is an array so we need to use memcpy.
      */
 
-    memcpy ((VOID *) &tmpArgList, (VOID *) &argList, sizeof (tmpArgList));
+    nargs = 0;
     newLength = oldLength = objPtr->length;
     while (1) {
-	string = va_arg(tmpArgList, char *);
+	string = va_arg(argList, char *);
 	if (string == NULL) {
 	    break;
 	}
+ 	if (nargs >= nargs_space) {
+ 	    /* 
+ 	     * Expand the args buffer
+ 	     */
+ 	    nargs_space += STATIC_LIST_SIZE;
+ 	    if (args == static_list) {
+ 	    	args = (void *)ckalloc(nargs_space * sizeof(char *));
+ 		for (i = 0; i < nargs; ++i) {
+ 		    args[i] = static_list[i];
+ 		}
+ 	    } else {
+ 		args = (void *)ckrealloc((void *)args,
+			nargs_space * sizeof(char *));
+ 	    }
+ 	}
 	newLength += strlen(string);
+	args[nargs++] = string;
     }
     if (newLength == oldLength) {
-	return;
+	goto done;
     }
 
     stringPtr = GET_STRING(objPtr);
@@ -1222,8 +1242,8 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
      */
 
     dst = objPtr->bytes + oldLength;
-    while (1) {
-	string = va_arg(argList, char *);
+    for (i = 0; i < nargs; ++i) {
+ 	string = args[i];
 	if (string == NULL) {
 	    break;
 	}
@@ -1245,6 +1265,17 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
 	*dst = 0;
     }
     objPtr->length = newLength;
+
+    done:
+    /*
+     * If we had to allocate a buffer from the heap, 
+     * free it now.
+     */
+ 
+    if (args != static_list) {
+     	ckfree((void *)args);
+    }
+#undef STATIC_LIST_SIZE
 }
 
 /*
