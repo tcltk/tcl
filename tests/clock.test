@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.39 2004/08/21 18:03:07 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.40 2004/09/07 17:38:59 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -34684,7 +34684,9 @@ test clock-31.1 {system locale} \
 	}
 	::tcl::clock::ClearCaches
     } \
-    -result {01-Jan-1970}
+    -result [clock format 0 -timezone :UTC -locale current \
+		 -format {%d-%b-%Y}]
+
 test clock-31.2 {system locale} \
     -constraints win \
     -setup { 
@@ -34702,7 +34704,9 @@ test clock-31.2 {system locale} \
 	}
 	::tcl::clock::ClearCaches
     } \
-    -result {the 01' day of January 1970}
+    -result [clock format 0 -timezone :UTC -locale current \
+		 -format {the %d' day of %B %Y}]
+
 test clock-31.3 {system locale} \
     -constraints win \
     -setup { 
@@ -34720,7 +34724,9 @@ test clock-31.3 {system locale} \
 	}
 	::tcl::clock::ClearCaches
     } \
-    -result {12:00:00 AM}
+    -result [clock format 0 -timezone :UTC -locale current \
+		 -format {%l:%M:%S %p}]
+
 test clock-31.4 {system locale} \
     -constraints win \
     -setup { 
@@ -34738,7 +34744,9 @@ test clock-31.4 {system locale} \
 	}
 	::tcl::clock::ClearCaches
     } \
-    -result {31-Dec-1969}
+    -result [clock format 0 -locale current -timezone EST5 \
+		 -format {%d-%b-%Y}]
+
 test clock-31.5 {system locale} \
     -constraints win \
     -setup { 
@@ -34756,7 +34764,9 @@ test clock-31.5 {system locale} \
 	}
 	::tcl::clock::ClearCaches
     } \
-    -result {the 31' day of December 1969}
+    -result [clock format 0 -locale current -timezone EST5 \
+		 -format {the %d' day of %B %Y}]
+
 test clock-31.6 {system locale} \
     -constraints win \
     -setup { 
@@ -34774,7 +34784,8 @@ test clock-31.6 {system locale} \
 	}
 	::tcl::clock::ClearCaches
     } \
-    -result { 7:00:00 PM EST}
+    -result [clock format 0 -locale current -timezone EST5 \
+		 -format {%l:%M:%S %p %Z}]
 
 test clock-32.1 {scan/format across the Gregorian change} {
     set problems {}
@@ -35220,6 +35231,10 @@ test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
 	}
     } \
     -result {01:00:00}
+
+test clock-39.1 {regression - synonym timezones} {
+    clock format 0 -format {%H:%M:%S} -timezone :US/Eastern
+} {19:00:00}
 
 # cleanup
 

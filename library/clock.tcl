@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.3 2004/08/19 18:55:09 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4 2004/09/07 17:38:56 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -85,15 +85,19 @@ namespace eval ::tcl::clock {
 
     # Define the Greenwich time zone
 
-    variable TZData
-    set TZData(:Etc/GMT) {
-	{-9223372036854775808 0 0 GMT}
+    proc initTZData {} {
+	variable TZData
+	array unset TZData
+	set TZData(:Etc/GMT) {
+	    {-9223372036854775808 0 0 GMT}
+	}
+	set TZData(:GMT) $TZData(:Etc/GMT)
+	set TZData(:Etc/UTC) {
+	    {-9223372036854775808 0 0 UTC}
+	}
+	set TZData(:UTC) $TZData(:Etc/UTC)
     }
-    set TZData(:GMT) $TZData(:Etc/GMT)
-    set TZData(:Etc/UTC) {
-	{-9223372036854775808 0 0 UTC}
-    }
-    set TZData(:UTC) $TZData(:Etc/UTC)
+    initTZData
 
     # Define the message catalog for the root locale.
 
@@ -4911,6 +4915,6 @@ proc ::tcl::clock::ClearCaches {} {
     set LocaleNumeralCache {}
     set McLoaded {}
     catch {unset CachedSystemTimeZone}
-    array unset TZData
+    initTZData
 
 }

@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.1 2004/08/18 19:59:09 kennykb Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.2 2004/09/07 17:38:59 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1383,9 +1383,9 @@ proc writeLinks { outDir } {
 	# Create code for the synonym
 
 	set linkTo $links($zoneName)
-	set sourceCmd "\n    [list loadTimeZoneFile $linkTo]\n"
+	set sourceCmd "\n    [list LoadTimeZoneFile $linkTo]\n"
 	set ifCmd [list if "!\[info exists TZData($linkTo)\]" $sourceCmd]
-	set setCmd "set tzdata(:$zoneName) \$TZData(:$linkTo)"
+	set setCmd "set TZData(:$zoneName) \$TZData(:$linkTo)"
 
 	# Write the file
 
