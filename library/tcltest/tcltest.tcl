@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.25 2000/05/03 00:15:07 hobbs Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.26 2000/08/15 18:10:34 ericm Exp $
 
 package provide tcltest 1.0
 
@@ -1637,7 +1637,7 @@ proc ::tcltest::leakfiles {old} {
 
 proc ::tcltest::saveState {} {
     uplevel #0 {set ::tcltest::saveState [list [info procs] [info vars]]}
-    DebugPuts  2 "::tcltest::saveState: $::tcltest::saveState"
+    DebugPuts 2 "::tcltest::saveState: $::tcltest::saveState"
 }
 
 # ::tcltest::restoreState --
@@ -1657,13 +1657,13 @@ proc ::tcltest::restoreState {} {
 	if {([lsearch [lindex $::tcltest::saveState 0] $p] < 0) && \
 		(![string equal ::tcltest::$p [namespace origin $p]])} {
 	    
-	    DebugPuts 3 "::tcltest::restoreState: Removing proc $p"
+	    DebugPuts 2 "::tcltest::restoreState: Removing proc $p"
 	    rename $p {}
 	}
     }
     foreach p [uplevel #0 {info vars}] {
 	if {[lsearch [lindex $::tcltest::saveState 1] $p] < 0} {
-	    DebugPuts 3 "::tcltest::restoreState: Removing variable $p"
+	    DebugPuts 2 "::tcltest::restoreState: Removing variable $p"
 	    uplevel #0 "catch {unset $p}"
 	}
     }
