@@ -1,5 +1,10 @@
 2003-01-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* win/README: Update msys+mingw URL to release 6.
+	This version bundles gcc 3.
+
+2003-01-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/configure: Regen.
 	* win/configure.in: Add test that checks to
 	see if the compiler can cast to a union type.
