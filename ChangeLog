@@ -1,3 +1,11 @@
+2003-06-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFCmd.c:
+        * tests/fCmd.test: fix to [Bug #747575] in which a bad error
+        message is given when trying to rename a busy directory to
+        one with the same prefix, but not the same name.  Added three
+        new tests.
+        
 2003-05-23  D. Richard Hipp <drh@hwaci.com>
 
 	* win/tclWinTime.c: Add tests to detect and avoid a division by zero
