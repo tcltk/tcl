@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.53 2003/11/17 15:23:10 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.54 2003/11/19 22:04:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -923,7 +923,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 		    wordIdx < parse.numWords; delta++, wordIdx++,
 		    tokenPtr += (tokenPtr->numComponents + 1)) {
 
-		if ((delta == 255)
+		if (expand && (delta == 255)
 			&& (tokenPtr->type != TCL_TOKEN_EXPAND_WORD)) {
 		    /*
 		     * Push an empty list for expansion so our delta
