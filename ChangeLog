@@ -1,3 +1,24 @@
+1999-11-09  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/open.n: corrected docs for 'a' open mode.
+
+	* generic/tclIOUtil.c: changed Tcl_Alloc to ckalloc
+
+	* generic/tclInt.h:
+	* generic/tclObj.c: rolled back changes from 1999-10-29
+	Purify noted new leaks with that code
+
+	* generic/tclParse.c: added code in Tcl_ParseBraces to test for
+	possible unbalanced open brace in a comment
+
+	* library/init.tcl: removed the installed binary directory from
+	the auto_path variable
+
+	* tools/tcl.wse.in: updated to 8.3a1, fixed install of twind.tcl
+	and koi8-r.enc files
+
+	* unix/tcl.m4: added recognition of pthreads library for AIX
+
 1999-10-29  Brent Welch <welch@scriptics.com>
 	* generic/tclInt.h: Modified the TclNewObj and TclDecrRefCount
 	in two ways.  First, in the case of TCL_THREADS, we do not use
@@ -24,7 +45,7 @@
 	* library/tcltest1.0/tcltest.tcl: updated makeFile to return
 	full pathname of file created
 
-	* generic/tclStringObj.c: fixed Tcl_AppendResultVA so it only
+	* generic/tclStringObj.c: fixed Tcl_AppendStringsToObjVA so it only
 	iterates once over the va_list (avoiding a memcpy of it,
 	which is not portable).
 
