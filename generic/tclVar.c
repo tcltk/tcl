@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.68 2002/10/17 17:41:44 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69 2002/11/12 02:23:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4021,7 +4021,7 @@ Tcl_UpvarObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 DisposeTraceResult(flags, result)
     int flags;			/* Indicates type of result to determine
 				 * proper disposal method */
@@ -4059,7 +4059,7 @@ DisposeTraceResult(flags, result)
  *----------------------------------------------------------------------
  */
 
-int 
+static int
 CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     Interp *iPtr;		/* Interpreter containing variable. */
     register Var *arrayPtr;	/* Pointer to array variable that contains
