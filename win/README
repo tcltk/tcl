@@ -91,6 +91,7 @@ EXPORT - this is really an import/export flag, depending on if you are
 	described below.
 STATIC_BUILD - define this if you are *not* building a DLL
 	(e.g., a main program)
+DLL_BUILD - define this if you *are* building a DLL
 DLLIMPORT - If STATIC_BUILD is defined, this becomes nothing.
 	(On UNIX, DLLIMPORT is defined to be empty)
 	Otherwise, this this expands to __declspec(dllimport)
@@ -114,7 +115,7 @@ presense of BUILD_Foo, like this:
  * if the BUILD_foo macro is defined, the assumption is that we are
  * building the dynamic library.
  */
-#ifdef BUILD_foo
+#ifdef BUILD_Foo
 #  undef EXPORT
 #  define EXPORT DLLEXPORT
 #endif
