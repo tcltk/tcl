@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.25.2.6 2005/02/10 18:58:36 msofer Exp $
+# RCS: @(#) $Id: basic.test,v 1.25.2.7 2005/03/18 16:33:43 dgp Exp $
 #
 
 package require tcltest 2
@@ -652,9 +652,7 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} -setup {
 } -cleanup {
     removeFile BREAKtest
 } -returnCodes error -match glob -result {invoked "break" outside of a loop
-    while executing
-"break"
-    invoked from within
+    while executing*
 "foo \[set a 1] \[break]"
     (file "*BREAKtest" line 2)}
 
