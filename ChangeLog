@@ -1,6 +1,9 @@
 2005-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* win/tclWinTime.c (TclpGetDate): use time_t for 'time'
+	* win/tcl.m4, win/configure: do not require cygpath in macros to
+	allow msys alone as an alternative.
+
+	* win/tclWinTime.c (TclpGetDate): use time_t for 'time' [Bug 1163422]
 
 2005-03-18  Don Porter  <dgp@users.sourceforge.net>
 
