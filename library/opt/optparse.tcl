@@ -3,18 +3,12 @@
 #       (private) Option parsing package
 #       Primarily used internally by the safe:: code.
 #
-#       This might be fully documented and exported in a later 8.x version
-#       and some function hopefully moved to the C core for
-#       efficiency, if there is enough demand. (mail! ;-)
+#	WARNING: This code will go away in a future release
+#	of Tcl.  It is NOT supported and you should not rely
+#	on it.  If your code does rely on this package you
+#	may directly incorporate this code into your application.
 #
-#  Author:    Laurent Demailly  - Laurent.Demailly@sun.com - dl@mail.org
-#
-#  Credits:
-#             this is a complete 'over kill' rewrite by me, from a version
-#             written initially with Brent Welch, itself initially
-#             based on work with Steve Uhler. Thanks to them !
-#
-# SCCS: @(#) optparse.tcl 1.18 98/01/07 17:04:39
+# RCS: @(#) $Id: optparse.tcl,v 1.1.2.2 1999/03/12 23:20:44 rjohnson Exp $
 
 package provide opt 0.4.1
 
