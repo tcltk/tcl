@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.12 2003/02/03 20:16:52 kennykb Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.13 2003/02/04 00:56:20 hobbs Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -107,7 +107,7 @@ will not result in an error and is simply ignored.
 When the trace triggers, depending on the operations being traced, a 
 number of arguments are appended to \fIcommand\fR so that the actual 
 command is as follows:
-
+.PP
 For \fBenter\fR and \fBenterstep\fR operations:
 .CS
 \fIcommand command-string op\fR
@@ -122,7 +122,7 @@ defined above.  The trace operation can be used to stop the
 command from executing, by deleting the command in question.  Of
 course when the command is subsequently executed, an 'invalid command'
 error will occur.
-.TP
+.PP
 For \fBleave\fR and \fBleavestep\fR operations:
 .CS
 \fIcommand command-string code result op\fR
