@@ -1,3 +1,12 @@
+2002-09-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.h:
+	* mac/tclMacApplication.r:
+	* mac/tclMacLibrary.r:
+	* mac/tclMacResource.r: unified use of the two equivalent 
+	resource compiler header inclusion defines RC_INVOKED and
+	RESOURCE_INCLUDED, now use RC_INVOKED throughout. 
+
 2002-09-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/README: Add note about building extensions
