@@ -10,7 +10,7 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.8 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: iogt.test,v 1.9 2004/06/01 18:08:14 davygrvy Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -498,7 +498,7 @@ test iogt-2.1 {basic I/O, operation trail} {testchannel unixOnly} {
     audit_ops aout -attach $fout
 
     fconfigure $fin  -buffersize 10
-    fconfigure $fout -buffersize 5
+    fconfigure $fout -buffersize 10
 
     fcopy $fin $fout
 
@@ -548,7 +548,7 @@ test iogt-2.2 {basic I/O, data trail} {testchannel unixOnly} {
     audit_flow aout -attach $fout
 
     fconfigure $fin  -buffersize 10
-    fconfigure $fout -buffersize 5
+    fconfigure $fout -buffersize 10
 
     fcopy $fin $fout
 
