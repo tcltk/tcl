@@ -9,10 +9,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
+package require tcltest
+namespace eval ::tcl::test::fileSystem {
+
+    namespace import ::tcltest::cleanupTests
+    namespace import ::tcltest::makeDirectory
+    namespace import ::tcltest::makeFile
+    namespace import ::tcltest::removeDirectory
+    namespace import ::tcltest::removeFile
+    namespace import ::tcltest::test
 
 makeFile "test file" gorp.file
 makeDirectory dir.file
@@ -60,7 +65,10 @@ test filesystem-1.8 {link normalisation} {unixOnly} {
    string equal [file normalize dir.file/linkinside.filefoo] [file normalize dir.link/inside.filefoo]
 } {0}
 
-file delete -force gorp.file link.file dir.file dir.link
+file delete -force link.file dir.link
+removeFile [file join dir.file inside.file]
+removeDirectory dir.file
+removeFile gorp.file
 
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
@@ -70,39 +78,52 @@ test filesystem-2.0 {new native path} {unixOnly} {
    expr 1
 } {1}
 
+if {[catch {package require tcltest 2}]} {
+    puts stderr "Skipping tests filesystem-{3,4}.*: tcltest 2 required."
+} else {
+    namespace import ::tcltest::testConstraint
+
+    # Is the Tcltest package loaded?
+    #   - that is, the special C-coded testing commands in tclTest.c
+    #   - tests use testing commands introduced in Tcltest 8.4
+    testConstraint Tcltest [expr {
+        [llength [package provide Tcltest]]
+        && [package vsatisfies [package provide Tcltest] 8.4]}]
+
 # Make sure the testfilesystem hasn't been registered.
 while {![catch {testfilesystem 0}]} {}
 
-test filesystem-3.0 {Tcl_FSRegister} {
+test filesystem-3.0 {Tcl_FSRegister} Tcltest {
     testfilesystem 1
 } {registered}
 
-test filesystem-3.1 {Tcl_FSUnregister} {
+test filesystem-3.1 {Tcl_FSUnregister} Tcltest {
     testfilesystem 0
 } {unregistered}
 
-test filesystem-3.2 {Tcl_FSUnregister} {
+test filesystem-3.2 {Tcl_FSUnregister} Tcltest {
     list [catch {testfilesystem 0} err] $err
 } {1 failed}
 
-test filesystem-3.3 {Tcl_FSRegister} {
+test filesystem-3.3 {Tcl_FSRegister} Tcltest {
     testfilesystem 1
     testfilesystem 1
     testfilesystem 0
     testfilesystem 0
 } {unregistered}
 
-test filesystem-3.4 {Tcl_FSRegister} {
+test filesystem-3.4 {Tcl_FSRegister} Tcltest {
     testfilesystem 1
     file system bar
 } {reporting}
 
-test filesystem-3.5 {Tcl_FSUnregister} {
+test filesystem-3.5 {Tcl_FSUnregister} Tcltest {
     testfilesystem 0
     file system bar
 } {native}
 
 test filesystem-4.0 {testfilesystem} {
+    -constraints Tcltest
     -match glob
     -body {
 	testfilesystem 1
@@ -115,6 +136,7 @@ test filesystem-4.0 {testfilesystem} {
 }
 
 test filesystem-4.1 {testfilesystem} {
+    -constraints Tcltest
     -match glob
     -body {
 	testfilesystem 1
@@ -127,6 +149,7 @@ test filesystem-4.1 {testfilesystem} {
 }
 
 test filesystem-4.2 {testfilesystem} {
+    -constraints Tcltest
     -match glob
     -body {
 	testfilesystem 1
@@ -139,6 +162,7 @@ test filesystem-4.2 {testfilesystem} {
 }
 
 test filesystem-4.3 {testfilesystem} {
+    -constraints Tcltest
     -match glob
     -body {
 	testfilesystem 1
@@ -151,7 +175,8 @@ test filesystem-4.3 {testfilesystem} {
 }
 
 test filesystem-5.1 {cache and ~} {
-	-match regexp
+    -constraints Tcltest
+    -match regexp
     -body {
 	set orig $env(HOME)
 	set ::env(HOME) /foo/bar/blah
@@ -164,12 +189,12 @@ test filesystem-5.1 {cache and ~} {
     }
     -result {{Parent of ~ \(/foo/bar/blah\) is (/foo/bar|foo:bar)} {Parent of ~ \(/a/b/c\) is (/a/b|a:b)}}
 }
-
 	
-# cleanup
-catch {unset filesystemReport}
 # Make sure the testfilesystem hasn't been registered.
 while {![catch {testfilesystem 0}]} {}
+}
 
-::tcltest::cleanupTests
+cleanupTests
+}
+namespace delete ::tcl::test::fileSystem
 return
