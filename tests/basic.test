@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.25.2.1 2003/05/05 16:52:33 dkf Exp $
+# RCS: @(#) $Id: basic.test,v 1.25.2.2 2004/02/25 23:38:15 dgp Exp $
 #
 
 package require tcltest 2
@@ -580,63 +580,71 @@ test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {stdio} {
 DONE
 }}
 
-test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} {exec} {
+test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} -setup {
     set fName [makeFile {
 	puts hello
 	break
     } BREAKtest]
-    set res [list [catch {exec [interpreter] $fName} msg] $msg]
+} -constraints {
+    exec
+} -body {
+    exec [interpreter] $fName
+} -cleanup {
     removeFile BREAKtest
-    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
-    set res
-} {1 {hello
+} -returnCodes error -match glob -result {hello
 invoked "break" outside of a loop
     while executing
 "break"
-    (file "BREAKtest" line 3)}}    
+    (file "*BREAKtest" line 3)}    
 
-test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {exec} {
+test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} -setup {
     set fName [makeFile {
 	interp alias {} patch {} info patchlevel
 	patch
 	break
     } BREAKtest]
-    set res [list [catch {exec [interpreter] $fName} msg] $msg]
+} -constraints {
+    exec
+} -body {
+    exec [interpreter] $fName
+} -cleanup {
     removeFile BREAKtest
-    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
-    set res
-} {1 {invoked "break" outside of a loop
+} -returnCodes error -match glob -result {invoked "break" outside of a loop
     while executing
 "break"
-    (file "BREAKtest" line 4)}}    
+    (file "*BREAKtest" line 4)}    
 
-test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {exec} {
+test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} -setup {
     set fName [makeFile {
 	foo [set a 1] [break]
     } BREAKtest]
-    set res [list [catch {exec [interpreter] $fName} msg] $msg]
+} -constraints {
+    exec
+} -body {
+    exec [interpreter] $fName
+} -cleanup {
     removeFile BREAKtest
-    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
-    set res
-} {1 {invoked "break" outside of a loop
+} -returnCodes error -match glob -result {invoked "break" outside of a loop
     while executing
 "break"
     invoked from within
-"foo [set a 1] [break]"
-    (file "BREAKtest" line 2)}}
+"foo \[set a 1] \[break]"
+    (file "*BREAKtest" line 2)}
 
-test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} {exec} {
+test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} -setup {
     set fName [makeFile {
 	return -code return
     } BREAKtest]
-    set res [list [catch {exec [interpreter] $fName} msg] $msg]
+} -constraints {
+    exec
+} -body {
+    exec [interpreter] $fName
+} -cleanup {
     removeFile BREAKtest
-    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
-    set res
-} {1 {command returned bad code: 2
+} -returnCodes error -match glob -result {command returned bad code: 2
     while executing
 "return -code return"
-    (file "BREAKtest" line 2)}}
+    (file "*BREAKtest" line 2)}
 
 test basic-47.1 {Tcl_EvalEx: check for missing close-bracket} -body {
     subst {a[set b [format cd]}
