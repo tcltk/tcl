@@ -874,6 +874,7 @@ e  1	&	***		BADRPT
 m  2	N	a?b*		abb	abb
 m  3	N	a?b*		bb	bb
 m  4	&	a*b		aab	aab
+m  5	&	^a*b		aaaab aaaab
 
 
 

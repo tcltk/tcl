@@ -481,27 +481,26 @@ struct nfa *nfa;
 	struct arc *b;
 	struct state *pre = nfa->pre;
 	struct state *s;
-	struct state *s2;
-	struct state *slist;
-
-	/* no changes are needed if it's anchored */
-	for (a = pre->outs; a != NULL; a = a->outchain) {
+  	struct state *s2;
+  	struct state *slist;
+  
+ 	/* no loops are needed if it's anchored */
+ 	for (a = pre->outs; a != NULL; a = a->outchain) {
 		assert(a->type == PLAIN);
 		if (a->co != nfa->bos[0] && a->co != nfa->bos[1])
 			break;
-	}
-	if (a == NULL)
-		return;
+ 	}
+ 	if (a != NULL) {
+		/* add implicit .* in front */
+		rainbow(nfa, v->cm, PLAIN, COLORLESS, pre, pre);
 
-	/* add implicit .* in front */
-	rainbow(nfa, v->cm, PLAIN, COLORLESS, pre, pre);
-
-	/* and ^* and \Z* too -- not always necessary, but harmless */
-	newarc(nfa, PLAIN, nfa->bos[0], pre, pre);
-	newarc(nfa, PLAIN, nfa->bos[1], pre, pre);
-
-	/*
-	 * Now here's the subtle part.  Because many REs have no lookback
+		/* and ^* and \Z* too -- not always necessary, but harmless */
+		newarc(nfa, PLAIN, nfa->bos[0], pre, pre);
+		newarc(nfa, PLAIN, nfa->bos[1], pre, pre);
+ 	}
+ 
+ 	/*
+  	 * Now here's the subtle part.  Because many REs have no lookback
 	 * constraints, often knowing when you were in the pre state tells
 	 * you little; it's the next state(s) that are informative.  But
 	 * some of them may have other inarcs, i.e. it may be possible to
