@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.86 2003/06/26 08:43:15 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.87 2003/08/25 20:06:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -948,6 +948,18 @@ TclStubs tclStubs = {
     Tcl_NewDictObj, /* 503 */
     Tcl_DbNewDictObj, /* 504 */
     Tcl_RegisterConfig, /* 505 */
+    Tcl_CreateNamespace, /* 506 */
+    Tcl_DeleteNamespace, /* 507 */
+    Tcl_AppendExportList, /* 508 */
+    Tcl_Export, /* 509 */
+    Tcl_Import, /* 510 */
+    Tcl_ForgetImport, /* 511 */
+    Tcl_GetCurrentNamespace, /* 512 */
+    Tcl_GetGlobalNamespace, /* 513 */
+    Tcl_FindNamespace, /* 514 */
+    Tcl_FindCommand, /* 515 */
+    Tcl_GetCommandFromObj, /* 516 */
+    Tcl_GetCommandFullName, /* 517 */
 };
 
 /* !END!: Do not edit above this line. */
