@@ -1,3 +1,7 @@
+2002-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4.0 TAGGED FOR RELEASE ***
+
 2002-09-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/file.n:  Format correction, and clarified [file normalize]
@@ -19,7 +23,7 @@
 	Hemang Lavana for the fix.  [Bug 604609]
 
 	* generic/tclVar.c (TclDeleteVars):  Corrected logic for setting the
-	TCL_INTERP_DESTROYED flag when calling variable traces.  [Tk Bug 605121]
+	TCL_INTERP_DESTROYED flag when calling variable traces. [Tk Bug 605121]
 
 2002-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
 
