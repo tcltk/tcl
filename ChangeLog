@@ -1,3 +1,8 @@
+2002-06-20  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclCompEvalObj): clarified and simplified
+	the logic for compilation/recompilation.
+
 2002-06-19  Joe English  <jenglish@users.sourceforge.net>
 	* doc/file.n: Fixed indentation.  No substantive changes.
 
