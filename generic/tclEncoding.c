@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.9 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.10 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -781,7 +781,7 @@ Tcl_CreateEncoding(typePtr)
  *-------------------------------------------------------------------------
  */
 
-CONST char * 
+char * 
 Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
     Tcl_Encoding encoding;	/* The encoding for the source string, or
 				 * NULL for the default system encoding. */
@@ -944,7 +944,7 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
  *-------------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_UtfToExternalDString(encoding, src, srcLen, dstPtr)
     Tcl_Encoding encoding;	/* The encoding for the converted string,
 				 * or NULL for the default system encoding. */

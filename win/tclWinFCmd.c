@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.21 2002/01/31 21:07:32 uid37547 Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.22 2002/02/08 02:52:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1407,9 +1407,8 @@ ConvertFileNameFormat(
 	     */
 	    Tcl_DStringInit(&ds);
 	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
 	    Tcl_DecrRefCount(tempPath);
-	    nativeName = Tcl_DStringValue(&ds);
 	    handle = (*tclWinProcs->findFirstFileProc)(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
 		/*

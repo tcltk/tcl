@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.24 2002/01/25 21:36:10 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.25 2002/02/08 02:52:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -499,7 +499,7 @@ TclpGetUserHome(name, bufferPtr)
 	    Tcl_DString ds;
 	    int nameLen, badDomain;
 	    char *domain;
-	    WCHAR *wHomeDir, *wDomain;
+	    WCHAR *wName, *wHomeDir, *wDomain;
 	    WCHAR buf[MAX_PATH];
 
 	    badDomain = 0;
@@ -508,18 +508,16 @@ TclpGetUserHome(name, bufferPtr)
 	    domain = strchr(name, '@');
 	    if (domain != NULL) {
 		Tcl_DStringInit(&ds);
-		Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = (*netGetDCNameProc)(NULL,
-			(LPWSTR) Tcl_DStringValue(&ds),
+		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+		badDomain = (*netGetDCNameProc)(NULL, wName,
 			(LPBYTE *) &wDomain);
 		Tcl_DStringFree(&ds);
 		nameLen = domain - name;
 	    }
 	    if (badDomain == 0) {
 		Tcl_DStringInit(&ds);
-		Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if ((*netUserGetInfoProc)(wDomain, 
-			(LPWSTR) Tcl_DStringValue(&ds), 1, 
+		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+		if ((*netUserGetInfoProc)(wDomain, wName, 1,
 			(LPBYTE *) &uiPtr) == 0) {
 		    wHomeDir = uiPtr->usri1_home_dir;
 		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {

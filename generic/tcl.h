@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.112 2002/01/31 04:39:43 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.113 2002/02/08 02:52:54 dgp Exp $
  */
 
 #ifndef _TCL
@@ -857,8 +857,8 @@ typedef struct Tcl_CmdInfo {
 
 /*
  * The structure defined below is used to hold dynamic strings.  The only
- * field that clients should use is the string field, and they should
- * never modify it.
+ * field that clients should use is the string field, accessible via the
+ * macro Tcl_DStringValue.  
  */
 
 #define TCL_DSTRING_STATIC_SIZE 200
