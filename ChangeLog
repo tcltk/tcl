@@ -1,3 +1,19 @@
+2001-06-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.decls:
+	* generic/tclInt.h: 
+	* generic/tclPanic.c (Tcl_PanicVA):
+	* mac/tclMacAppInit.c (main):
+	* mac/tclMacPanic.c (TclpPanic):
+	* unix/tclUnixPort.h:
+	* win/tclWinPort.h: Replaced TclMacSetPanic with TclpPanic
+	for setting a platform-specific panic handler.  TclpPanic
+	is NULL on Unix and Windows.  Fixes broken wish on Mac due
+	to earlier patches.  [Patch 415648]
+	
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c: `make gentubs` after above changes.
+
 2001-06-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* mac/tclMacAppInit.c (main, Macintosh_Init):
