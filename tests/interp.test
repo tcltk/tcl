@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.37 2004/05/25 17:44:30 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.38 2004/05/27 15:05:28 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2914,7 +2914,7 @@ test interp-34.3 {basic test of limits - pure bytecode loop} -body {
 } -returnCodes error -result {time limit exceeded} -cleanup {
     interp delete $i
 }
-test interp-34.3.1 {basic test of limits - pure bytecode loop} -body {
+test interp-34.3.1 {basic test of limits - pure inside-command loop} -body {
     set i [interp create]
     $i eval {
 	proc foobar {} {
