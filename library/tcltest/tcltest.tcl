@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.77 2003/02/06 16:29:19 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.78 2003/02/17 19:12:06 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -504,7 +504,7 @@ namespace eval tcltest {
 	    }
 	    namespace eval [namespace current] \
 	    	    [list upvar 0 Option($option) $varName]
-	    # Workaround for Bug 572889.  Grrrr....
+	    # Workaround for Bug (now Feature Request) 572889.  Grrrr....
 	    # Track all the variables tied to options
 	    lappend OptionControlledVariables $varName
 	    # Later, set auto-configure read traces on all
