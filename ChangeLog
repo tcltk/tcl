@@ -1,3 +1,10 @@
+2002-02-22  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompCmds: [FR 465811]. Optimising [if], [for] and
+	[while] for constant conditions; in addition, [for] and [while]
+	are now compiled with the "loop rotation" optimisation (thanks to
+	Kevin Kenny). 
+
 2002-02-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	--- TIP#76 CHANGES ---
