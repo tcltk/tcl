@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.14 1999/06/17 19:32:16 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.15 1999/08/04 15:58:42 redman Exp $
  */
 
 #define TCL_TEST
@@ -26,11 +26,6 @@
 /*
  * Declare external functions used in Windows tests.
  */
-
-#if defined(__WIN32__)
-extern TclPlatformType *TclWinGetPlatform(void);
-EXTERN void		TclWinSetInterfaces(int);
-#endif
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc;  used
