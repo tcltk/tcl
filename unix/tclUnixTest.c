@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.12 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.13 2002/08/20 03:03:54 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -299,7 +299,7 @@ TestfilehandlerCmd(clientData, interp, argc, argv)
     } else if (strcmp(argv[1], "wait") == 0) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
-                    argv[0], " wait index readable/writable timeout\"",
+                    argv[0], " wait index readable|writable timeout\"",
                     (char *) NULL);
 	    return TCL_ERROR;
 	}
