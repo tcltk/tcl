@@ -1,3 +1,33 @@
+2003-04-14  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	Merged various bug fixes from current cvs head:
+	
+	* tests/cmdAH.test: better fix to test suite problem 
+	if /home is a symlink [Bug #703264]
+	
+	* generic/tclIOUtil.c: fix bad error message with 'cd ""'
+	[Bug #704917]
+	* win/tclWinFile.c: 
+	* win/tclWin32Dll.c: 
+	* win/tclWinInt.h: allow Tcl to differentiate between reparse
+	points which are symlinks and mounted volumes, and correctly
+	handle the latter. This involves some elaborate code to find
+	the actual drive letter (if possible) corresponding to a mounted
+	volume.  [Bug #697862]
+	* tests/fileSystem.test: add constraints to stop tests running
+	in ordinary tcl interpreter. [Bug #705675]
+	* generic/tclIOUtil.c: Some re-arrangement of code to bring it
+	closer to cvs head.  No functional changes.
+	
+	* tests/fCmd.test: 
+	* win/tclWinFile.c: added some filesystem optimisation to the
+	'glob' implementation, and some new tests.
+	
+	* tests/winFile.test:
+	* tests/ioUtil.test:
+	* tests/unixFCmd.test: renumbered tests with duplicate numbers.
+	(Bug #710361)
+	
 2003-04-12  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/clock.test: Renumbered test cases to avoid 
