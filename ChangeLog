@@ -1,3 +1,8 @@
+2001-05-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: insure different rand() seeds in different
+	threads [Bug 416643]
+
 2001-05-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/tcltest.test: removed extraneous 'c' (doh!) [Bug: 414031]
