@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.32 2003/10/13 16:48:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.33 2003/11/18 23:13:34 davygrvy Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -471,11 +471,17 @@ TclUnixCopyFile(src, dst, statBufPtr, dontCopyAtts)
     char *buffer;      /* Data buffer for copy */
     size_t nread;
 
-    if ((srcFd = TclOSopen(src, O_RDONLY, 0)) < 0) {	/* INTL: Native. */
+#ifdef DJGPP
+#define BINMODE |O_BINARY
+#else
+#define BINMODE
+#endif
+
+    if ((srcFd = TclOSopen(src, O_RDONLY BINMODE, 0)) < 0) {	/* INTL: Native. */
 	return TCL_ERROR;
     }
 
-    dstFd = TclOSopen(dst, O_CREAT|O_TRUNC|O_WRONLY,	/* INTL: Native. */
+    dstFd = TclOSopen(dst, O_CREAT|O_TRUNC|O_WRONLY BINMODE,	/* INTL: Native. */
 	    statBufPtr->st_mode);
     if (dstFd < 0) {
 	close(srcFd); 
