@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.20 2002/07/10 16:03:46 dgp Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.21 2002/07/18 16:39:50 vincentdarley Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -72,15 +72,15 @@ test winpipe-1.2 {32 bit comprehensive tests: from big file} {pcOnly exec cat32}
     exec $cat32 < $path(big) > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } "{$big} stderr32"
-test winpipe-1.3 {32 bit comprehensive tests: a little from pipe} {nt exec cat32} {
+test winpipe-1.3 {32 bit comprehensive tests: a little from pipe} {pcOnly nt exec cat32} {
     exec [interpreter] more < little | $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } {little stderr32}
-test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {nt exec cat32} {
+test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {pcOnly nt exec cat32} {
     exec [interpreter] more < big | $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } "{$big} stderr32"
-test winpipe-1.5 {32 bit comprehensive tests: a lot from pipe} {95 exec cat32} {
+test winpipe-1.5 {32 bit comprehensive tests: a lot from pipe} {pcOnly 95 exec cat32} {
     exec command /c type big |& $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } "{$big} stderr32"
@@ -172,13 +172,13 @@ test winpipe-1.21 {32 bit comprehensive tests: read/write application} \
     catch {close $f}
     set r
 } "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-test winpipe-1.22 {Checking command.com for Win95/98 hanging} {95 exec} {
+test winpipe-1.22 {Checking command.com for Win95/98 hanging} {pcOnly 95 exec} {
     exec command.com /c dir /b
     set result 1
 } 1
 file delete more
 
-test winpipe-4.1 {Tcl_WaitPid} {nt exec cat32} {
+test winpipe-4.1 {Tcl_WaitPid} {pcOnly nt exec cat32} {
     proc readResults {f} {
 	global x result
 	if { [eof $f] } {
