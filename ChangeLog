@@ -1,3 +1,10 @@
+1999-06-08    <stanton@scriptics.com>
+
+	* win/tclWinSock.c: Rolled back to the 8.1.0 implementation
+	because of serious problems with the new driver.  Basically no
+	incoming socket connections would be reported to a server port.
+	The 8.1.1 code needs to be redesigned and fixed correctly.
+
 1999-06-07  Melissa Hirschl  <hershey@matisse.scriptics.com>
 
 	* tests/string.test: 
