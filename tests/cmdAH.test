@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.27 2002/07/08 08:50:23 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.28 2002/07/10 10:48:20 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1156,11 +1156,11 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
     file delete -force /tmp/tcl.foo.dir
     makeDirectory /tmp/tcl.foo.dir
     makeFile 12345 /tmp/tcl.foo.dir/file
-    exec chmod 000 /tmp/tcl.foo.dir
+    file attributes /tmp/tcl.foo.dir -permissions 0000
 
     set result [file exists /tmp/tcl.foo.dir/file]
 
-    exec chmod 775 /tmp/tcl.foo.dir
+    file attributes /tmp/tcl.foo.dir -permissions 0775
     removeFile /tmp/tcl.foo.dir/file
     removeDirectory /tmp/tcl.foo.dir
     set result
@@ -1171,7 +1171,7 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
-catch {exec chmod 765 $gorpfile}
+file attributes $gorpfile -permissions 0765
 
 # atime
 
@@ -1426,8 +1426,8 @@ test cmdAH-27.3 {Tcl_FileObjCmd: size} {
 
 catch {testsetplatform $platform}
 removeFile $gorpfile
-set gorpFile [makeFile "Test string" gorp.file]
-catch {exec chmod 765 $gorpfile}
+set gorpfile [makeFile "Test string" gorp.file]
+file attributes $gorpfile -permissions 0765
 
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} {
     list [catch {file stat _bogus_} msg] $msg $errorCode
@@ -1530,8 +1530,10 @@ test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {unixOnly nonPo
 test cmdAH-29.3 {Tcl_FileObjCmd: type} {
     file type $gorpfile
 } file
-test cmdAH-29.4 {Tcl_FileObjCmd: type} {unixOnly nonPortable} {
-    exec ln -s a/b/c $linkfile
+test cmdAH-29.4 {Tcl_FileObjCmd: type} {unixOnly} {
+    catch {file delete $linkfile}
+    # Unlike [exec ln -s], [file link] requires an existing target
+    file link -symbolic $linkfile $gorpfile
     set result [file type $linkfile]
     file delete $linkfile
     set result
@@ -1666,7 +1668,7 @@ catch {unset platform}
 
 # Tcl_ForObjCmd is tested in for.test
 
-catch {exec chmod 777 $dirfile}
+file attributes $dirfile -permissions 0777
 removeDirectory $dirfile
 removeFile $gorpfile
 # No idea how well [removeFile] copes with links...
