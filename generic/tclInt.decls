@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.73 2004/05/14 21:43:29 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.74 2004/06/05 17:31:08 kennykb Exp $
 
 library tcl
 
@@ -863,6 +863,10 @@ declare 27 win {
 
 declare 28 win {
     void TclWinResetInterfaces(void)
+}
+
+declare 29 win {
+    int TclWinCPUID( unsigned int index, unsigned int *regs )
 }
 
 #########################

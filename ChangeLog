@@ -1,3 +1,24 @@
+2004-06-05  Kevin B. Kenny  <kennykb@acm.org>
+	
+	* generic/tcl.h: Corrected Tcl_WideInt declarations so that the mingw
+	build works again.
+	* generic/tclDecls.h:			Changes to the tests for
+	* generic/tclInt.decls:			clock frequency in
+	* generic/tclIntDecls.h:		Tcl_WinTime
+	* generic/tclIntPlatDecls.h:		so that any clock frequency
+	* generic/tclPlatDecls.h:		is accepted provided that
+	* generic/tclStubInit.c:		all CPU's in the system share
+	* tests/platform.test (platform-1.3):	a common chip, and hence,
+	* win/tclWin32Dll.c (TclWinCPUID):	presumably, a common clock.
+	* win/tclWinTest.c (TestwincpuidCmd)	This change necessitated a 
+	* win/tclWinTime.c (Tcl_GetTime):	small burst of assembly code 
+	to read CPU ID information, which was added as TclWinCPUID in the
+	internal Stubs.  To test this code in the common case of a
+	single-processor machine, a 'testwincpuid' command was added to
+	tclWinTest.c, and a test case in platform.test.  Thanks to Jeff
+	Godfrey and Richard Suchenwirth for reporting this bug. [Bug
+	#976722]
+
 2004-06-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Restored #include <stdio.h> to tcl.h,
