@@ -5749,9 +5749,22 @@ rm -f conftest*
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-Os"
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
-	    # for compatibility with autoconf vers 2.13 :
-	    HACK=""
-	    CFLAGS="$CFLAGS -DMA${HACK}C_OSX_TCL -DHAVE_CFBUNDLE -DUSE_VFORK -DTCL_DEFAULT_ENCODING=\\\"utf-8\\\""
+	    cat >>confdefs.h <<\_ACEOF
+#define MAC_OSX_TCL 1
+_ACEOF
+
+	    cat >>confdefs.h <<\_ACEOF
+#define HAVE_CFBUNDLE 1
+_ACEOF
+
+	    cat >>confdefs.h <<\_ACEOF
+#define USE_VFORK 1
+_ACEOF
+
+	    cat >>confdefs.h <<_ACEOF
+#define TCL_DEFAULT_ENCODING "utf-8"
+_ACEOF
+
 	    LIBS="$LIBS -framework CoreFoundation"
 	    ;;
 	NEXTSTEP-*)
