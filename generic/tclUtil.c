@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.3 1998/11/11 04:54:21 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.4 1998/12/03 23:59:33 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1106,6 +1106,7 @@ Tcl_StringMatch(string, pattern)
 				 * characters. */
 {
     int p, s;
+    CONST char *pstart = pattern;
     
     while (1) {
 	p = *pattern;
@@ -1198,7 +1199,8 @@ Tcl_StringMatch(string, pattern)
 	    }
 	    while (*pattern != ']') {
 		if (*pattern == '\0') {
-		    return 0;
+		    pattern = Tcl_UtfPrev(pattern, pstart);
+		    break;
 		}
 		pattern++;
 	    }
