@@ -1,4 +1,19 @@
-2002-06-10  Miguel Sofer  <msofer@users.sourceforge.net>
+2002-06-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* doc/global.n:
+	* doc/info.n:
+	* test/info.test:
+	* generic/tclCmdIL.c: fix for [Bug 567386], [info locals] was
+	reporting some linked variables.
+	
+	* generic/tclBasic.c: 
+	* generic/tclCompCmds.c:
+	* generic/tclInt.h: added compile functions for [global],
+	[variable] and [upvar]. They just declare the new local variables,
+	the commands themselves are not compiled-in. This gives a notably
+	faster read access to these linked variables.
+
+2002-06-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: optimised algorithm for exception range
 	lookup; part of [Patch 453709].

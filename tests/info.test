@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.20 2002/04/18 18:05:59 msofer Exp $
+# RCS: @(#) $Id: info.test,v 1.21 2002/06/11 13:22:36 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -371,6 +371,8 @@ test info-12.1 {info locals option} {
         set b 13
         set c testing
         global a
+	global aa
+	set aa 23
         return [info locals]
     }
     lsort [t1 23 24]
