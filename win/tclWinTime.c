@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.11 2002/10/09 23:57:25 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.12 2002/11/26 22:35:21 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -304,7 +304,7 @@ Tcl_GetTime(timePtr)
 		timeInfo.readyEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
 		timeInfo.exitEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
 		timeInfo.calibrationThread = CreateThread( NULL,
-							   8192,
+							   256,
 							   CalibrationThread,
 							   (LPVOID) NULL,
 							   0,

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.21 2002/11/19 01:29:27 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.22 2002/11/26 22:35:21 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -825,7 +825,7 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 
     /*
      * Be careful on timeouts because the signal might arrive right around
-     * time time limit and someone else could have taken us off the queue.
+     * the time limit and someone else could have taken us off the queue.
      */
     
     if (timeout) {

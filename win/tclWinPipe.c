@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.26 2002/11/07 02:13:37 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.27 2002/11/26 22:35:20 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -120,6 +120,8 @@ typedef struct PipeInfo {
     HANDLE startWriter;		/* Auto-reset event used by the main thread to
 				 * signal when the writer thread should attempt
 				 * to write to the pipe. */
+    HANDLE stopWriter;		/* Manual-reset event used to alert the reader
+				 * thread to fall-out and exit */
     HANDLE startReader;		/* Auto-reset event used by the main thread to
 				 * signal when the reader thread should attempt
 				 * to read from the pipe. */
@@ -1685,7 +1687,7 @@ TclpCreateCommandChannel(
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopReader = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->readThread = CreateThread(NULL, 512, PipeReaderThread,
+	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
 		infoPtr, 0, &id);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
         infoPtr->validMask |= TCL_READABLE;
@@ -1699,7 +1701,8 @@ TclpCreateCommandChannel(
 
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
-	infoPtr->writeThread = CreateThread(NULL, 512, PipeWriterThread,
+	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
+	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
 		infoPtr, 0, &id);
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
         infoPtr->validMask |= TCL_WRITABLE;
@@ -1873,13 +1876,11 @@ PipeClose2Proc(
 		SetEvent(pipePtr->stopReader);
 
 		/*
-		 * Wait at most 10 milliseconds for the reader thread to close.
+		 * Wait at most 20 milliseconds for the reader thread to close.
 		 */
 
-		WaitForSingleObject(pipePtr->readThread, 10);
-		GetExitCodeThread(pipePtr->readThread, &exitCode);
-
-		if (exitCode == STILL_ACTIVE) {
+		if (WaitForSingleObject(pipePtr->readThread, 20)
+			== WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
 		     * become readable in ReadFile().  There isn't a clean way
@@ -1898,10 +1899,6 @@ PipeClose2Proc(
 
 		    /* BUG: this leaks memory */
 		    TerminateThread(pipePtr->readThread, 0);
-
-		    /* Wait for the thread to terminate. */
-		    WaitForSingleObject(pipePtr->readThread, INFINITE);
-
 		    Tcl_MutexUnlock(&pipeMutex);
 		}
 	    }
@@ -1920,40 +1917,65 @@ PipeClose2Proc(
     }
     if ((!flags || (flags & TCL_CLOSE_WRITE))
 	    && (pipePtr->writeFile != NULL)) {
-	/*
-	 * Wait for the writer thread to finish the current buffer, then
-	 * terminate the thread and close the handles.  If the channel is
-	 * nonblocking, there should be no pending write operations.
-	 */
 
 	if (pipePtr->writeThread) {
+	    /*
+	     * Wait for the writer thread to finish the current buffer,
+	     * then terminate the thread and close the handles.  If the
+	     * channel is nonblocking, there should be no pending write
+	     * operations.
+	     */
+
 	    WaitForSingleObject(pipePtr->writable, INFINITE);
 
 	    /*
-	     * Forcibly terminate the background thread.  We cannot rely on the
-	     * thread to cleanly terminate itself because we have no way of
-	     * closing the pipe handle without blocking in the case where the
-	     * thread is in the middle of an I/O operation.  Note that we need
-	     * to guard against terminating the thread while it is in the
-	     * middle of Tcl_ThreadAlert because it won't be able to release
-	     * the notifier lock.
+	     * The thread may already have closed on it's own.  Check it's
+	     * exit code.
 	     */
 
-	    Tcl_MutexLock(&pipeMutex);
-	    TerminateThread(pipePtr->writeThread, 0);
+	    GetExitCodeThread(pipePtr->writeThread, &exitCode);
 
-	    /*
-	     * Wait for the thread to terminate.  This ensures that we are
-	     * completely cleaned up before we leave this function. 
-	     */
+	    if (exitCode == STILL_ACTIVE) {
+		/*
+		 * Set the stop event so that if the reader thread is blocked
+		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
+		 * cleanly.
+		 */
 
-	    WaitForSingleObject(pipePtr->writeThread, INFINITE);
-	    Tcl_MutexUnlock(&pipeMutex);
+		SetEvent(pipePtr->stopWriter);
 
+		/*
+		 * Wait at most 20 milliseconds for the reader thread to close.
+		 */
+
+		if (WaitForSingleObject(pipePtr->writeThread, 20)
+			== WAIT_TIMEOUT) {
+		    /*
+		     * The thread must be blocked waiting for the pipe to
+		     * consume input in WriteFile().  There isn't a clean way
+		     * to exit the thread from this condition.  We should
+		     * terminate the child process instead to get the writer
+		     * thread to fall out of WriteFile with a FALSE.  (below) is
+		     * not the correct way to do this, but will stay here until
+		     * a better solution is found.
+		     *
+		     * Note that we need to guard against terminating the
+		     * thread while it is in the middle of Tcl_ThreadAlert
+		     * because it won't be able to release the notifier lock.
+		     */
+
+		    Tcl_MutexLock(&pipeMutex);
+
+		    /* BUG: this leaks memory */
+		    TerminateThread(pipePtr->writeThread, 0);
+		    Tcl_MutexUnlock(&pipeMutex);
+		}
+	    }
 
 	    CloseHandle(pipePtr->writeThread);
 	    CloseHandle(pipePtr->writable);
 	    CloseHandle(pipePtr->startWriter);
+	    CloseHandle(pipePtr->stopWriter);
 	    pipePtr->writeThread = NULL;
 	}
 	if (TclpCloseFile(pipePtr->writeFile) != 0) {
@@ -2745,7 +2767,7 @@ PipeReaderThread(LPVOID arg)
     DWORD count, err;
     int done = 0;
     HANDLE wEvents[2];
-    DWORD dwWait;
+    DWORD waitResult;
 
     wEvents[0] = infoPtr->stopReader;
     wEvents[1] = infoPtr->startReader;
@@ -2756,15 +2778,15 @@ PipeReaderThread(LPVOID arg)
 	 * on the pipe becoming readable.
 	 */
 
-	dwWait = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
+	waitResult = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
 
-	if (dwWait != (WAIT_OBJECT_0 + 1)) {
+	if (waitResult != (WAIT_OBJECT_0 + 1)) {
 	    /*
 	     * The start event was not signaled.  It might be the stop event
 	     * or an error, so exit.
 	     */
 
-	    return 0;
+	    break;
 	}
 
 	/*
@@ -2832,6 +2854,7 @@ PipeReaderThread(LPVOID arg)
 	Tcl_ThreadAlert(infoPtr->threadId);
 	Tcl_MutexUnlock(&pipeMutex);
     }
+
     return 0;
 }
 
@@ -2862,13 +2885,27 @@ PipeWriterThread(LPVOID arg)
     DWORD count, toWrite;
     char *buf;
     int done = 0;
+    HANDLE wEvents[2];
+    DWORD waitResult;
+
+    wEvents[0] = infoPtr->stopWriter;
+    wEvents[1] = infoPtr->startWriter;
 
     while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to write.
 	 */
 
-	WaitForSingleObject(infoPtr->startWriter, INFINITE);
+	waitResult = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
+
+	if (waitResult != (WAIT_OBJECT_0 + 1)) {
+	    /*
+	     * The start event was not signaled.  It might be the stop event
+	     * or an error, so exit.
+	     */
+
+	    break;
+	}
 
 	buf = infoPtr->writeBuf;
 	toWrite = infoPtr->toWrite;
@@ -2905,6 +2942,7 @@ PipeWriterThread(LPVOID arg)
 	Tcl_ThreadAlert(infoPtr->threadId);
 	Tcl_MutexUnlock(&pipeMutex);
     }
+
     return 0;
 }
 
