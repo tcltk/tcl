@@ -1,19 +1,20 @@
 #
-#    Name:     cp1250_WinLatin2 to Unicode table
+#    Name:     cp1250 to Unicode table
 #    Unicode version: 2.0
-#    Table version: 2.00
+#    Table version: 2.01
 #    Table format:  Format A
-#    Date:          04/24/96
-#    Authors:       Lori Brownell <loribr@microsoft.com>
-#                   K.D. Chang    <a-kchang@microsoft.com>
+#    Date:          04/15/98
+#
+#    Contact:       cpxlate@microsoft.com
+#
 #    General notes: none
 #
 #    Format: Three tab-separated columns
-#        Column #1 is the cp1250_WinLatin2 code (in hex)
+#        Column #1 is the cp1250 code (in hex)
 #        Column #2 is the Unicode (in hex as 0xXXXX)
 #        Column #3 is the Unicode name (follows a comment sign, '#')
 #
-#    The entries are in cp1250_WinLatin2 order
+#    The entries are in cp1250 order
 #
 0x00	0x0000	#NULL
 0x01	0x0001	#START OF HEADING
@@ -143,15 +144,15 @@
 0x7D	0x007D	#RIGHT CURLY BRACKET
 0x7E	0x007E	#TILDE
 0x7F	0x007F	#DELETE
-0x80		#UNDEFINED
-0x81		#UNDEFINED
+0x80	0x20AC	#EURO SIGN
+0x81	      	#UNDEFINED
 0x82	0x201A	#SINGLE LOW-9 QUOTATION MARK
-0x83		#UNDEFINED
+0x83	      	#UNDEFINED
 0x84	0x201E	#DOUBLE LOW-9 QUOTATION MARK
 0x85	0x2026	#HORIZONTAL ELLIPSIS
 0x86	0x2020	#DAGGER
 0x87	0x2021	#DOUBLE DAGGER
-0x88		#UNDEFINED
+0x88	      	#UNDEFINED
 0x89	0x2030	#PER MILLE SIGN
 0x8A	0x0160	#LATIN CAPITAL LETTER S WITH CARON
 0x8B	0x2039	#SINGLE LEFT-POINTING ANGLE QUOTATION MARK
@@ -159,7 +160,7 @@
 0x8D	0x0164	#LATIN CAPITAL LETTER T WITH CARON
 0x8E	0x017D	#LATIN CAPITAL LETTER Z WITH CARON
 0x8F	0x0179	#LATIN CAPITAL LETTER Z WITH ACUTE
-0x90		#UNDEFINED
+0x90	      	#UNDEFINED
 0x91	0x2018	#LEFT SINGLE QUOTATION MARK
 0x92	0x2019	#RIGHT SINGLE QUOTATION MARK
 0x93	0x201C	#LEFT DOUBLE QUOTATION MARK
@@ -167,7 +168,7 @@
 0x95	0x2022	#BULLET
 0x96	0x2013	#EN DASH
 0x97	0x2014	#EM DASH
-0x98		#UNDEFINED
+0x98	      	#UNDEFINED
 0x99	0x2122	#TRADE MARK SIGN
 0x9A	0x0161	#LATIN SMALL LETTER S WITH CARON
 0x9B	0x203A	#SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
@@ -187,7 +188,7 @@
 0xA9	0x00A9	#COPYRIGHT SIGN
 0xAA	0x015E	#LATIN CAPITAL LETTER S WITH CEDILLA
 0xAB	0x00AB	#LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
-0xAC		#UNDEFINED
+0xAC	0x00AC	#NOT SIGN
 0xAD	0x00AD	#SOFT HYPHEN
 0xAE	0x00AE	#REGISTERED SIGN
 0xAF	0x017B	#LATIN CAPITAL LETTER Z WITH DOT ABOVE
@@ -271,5 +272,3 @@
 0xFD	0x00FD	#LATIN SMALL LETTER Y WITH ACUTE
 0xFE	0x0163	#LATIN SMALL LETTER T WITH CEDILLA
 0xFF	0x02D9	#DOT ABOVE
-
-

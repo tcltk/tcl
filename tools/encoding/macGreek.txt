@@ -1,11 +1,29 @@
+#=======================================================================
+#   FTP file name:  GREEK.TXT
 #
-#   Name:             MacOS_Greek [to Unicode]
-#   Unicode versions: 1.1, 2.0
-#   Table version:    0.2 (from internal ufrm version <7>)
-#   Date:             15 April 1995
-#   Author:           Peter Edberg <edberg1@applelink.apple.com>
+#   Contents:       Map (external version) from Mac OS Greek
+#                   character set to Unicode 2.1
 #
-#   Copyright (c) 1995 Apple Computer, Inc.  All Rights reserved.
+#   Copyright:      (c) 1995-1999 by Apple Computer, Inc., all rights
+#                   reserved.
+#
+#   Contact:        charsets@apple.com
+#
+#   Changes:
+#
+#       b02  1999-Sep-22    Update contact e-mail address. Matches
+#                           internal utom<b1>, ufrm<b1>, and Text
+#                           Encoding Converter version 1.5.
+#       n06  1998-Feb-05    Update to match internal utom<n4>, ufrm<n17>,
+#                           and Text Encoding Converter versions 1.3:
+#                           Change mapping for 0xAF from U+0387 to its
+#                           canonical decomposition, U+00B7. Also
+#                           update header comments to new format.
+#       n04  1995-Apr-15    First version (after fixing some typos).
+#                           Matches internal ufrm<n7>.
+#
+# Standard header:
+# ----------------
 #
 #   Apple, the Apple logo, and Macintosh are trademarks of Apple
 #   Computer, Inc., registered in the United States and other countries.
@@ -17,50 +35,80 @@
 #   Apple makes no warranty or representation, either express or
 #   implied, with respect to these tables, their quality, accuracy, or
 #   fitness for a particular purpose. In no event will Apple be liable
-#   for direct, indirect, special, incidental, or consequential damages
+#   for direct, indirect, special, incidental, or consequential damages 
 #   resulting from any defect or inaccuracy in this document or the
 #   accompanying tables.
 #
-#   These mapping tables and character lists are preliminary and
-#   subject to change. Updated tables will be available from the
-#   Unicode Inc. ftp site (unicode.org), the Apple Computer ftp site
-#   (ftp.info.apple.com), the Apple Computer World-Wide Web pages
-#   (http://www.info.apple.com), and possibly on diskette from APDA
-#   (Apple's mail-order distribution service for developers).
+#   These mapping tables and character lists are subject to change.
+#   The latest tables should be available from the following:
 #
-#   Format:
-#   -------
+#   <ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/APPLE/>
+#   <ftp://dev.apple.com/devworld/Technical_Documentation/Misc._Standards/>
+#
+#   For general information about Mac OS encodings and these mapping
+#   tables, see the file "README.TXT".
+#
+# Format:
+# -------
 #
 #   Three tab-separated columns;
 #   '#' begins a comment which continues to the end of the line.
-#     Column #1 is the MacOS Greek code (in hex as 0xNN)
-#     Column #2 is the Unicode (in hex as 0xNNNN)
-#     Column #3 is the Unicode name (follows a comment sign, '#')
+#     Column #1 is the Mac OS Greek code (in hex as 0xNN)
+#     Column #2 is the corresponding Unicode (in hex as 0xNNNN)
+#     Column #3 is a comment containing the Unicode name
 #
-#   The entries are in MacOS Greek code order.
+#   The entries are in Mac OS Greek code order.
 #
-#   One of these mappings requires the use of a corporate character
-#   (for an undefined code point). See the file "MacOS-CorpCharList".
+#   One of these mappings requires the use of a corporate character.
+#   See the file "CORPCHAR.TXT" and notes below.
 #
-#   Notes on MacOS Greek:
-#   ---------------------
+#   Control character mappings are not shown in this table, following
+#   the conventions of the standard UTC mapping tables. However, the
+#   Mac OS Greek character set uses the standard control characters at
+#   0x00-0x1F and 0x7F.
 #
-#   Although a MacOS script code is defined for Greek (smGreek = 6),
+# Notes on Mac OS Greek:
+# ----------------------
+#
+#   Although a Mac OS script code is defined for Greek (smGreek = 6),
 #   the Greek localized system does not currently use it (the font
-#   family IDs are in the MacOS Roman range). To determine if the
+#   family IDs are in the Mac OS Roman range). To determine if the
 #   Greek encoding is being used when the script code is smRoman (0),
 #   you must check if the system region code is 20, verGreece.
 #
-#   The MacOS Greek encoding is a superset of the repertoire of
-#   ISO 8859-5 (although characters are not at the same code points).
+#   The Mac OS Greek encoding is a superset of the repertoire of
+#   ISO 8859-7 (although characters are not at the same code points),
+#   except that LEFT & RIGHT SINGLE QUOTATION MARK replace the
+#   MODIFIER LETTER REVERSED COMMA & APOSTROPHE (spacing versions of
+#   Greek rough & smooth breathing marks) that are in ISO 8859-7.
+#   The added characters in Mac OS Greek include more punctuation and
+#   symbols and several accented Latin letters.
 #
-#   This character set was used by all MacOS Greek systems 6.x and
+#   This character set was used by all Mac OS Greek systems 6.x and
 #   7.x except for system 6.0.7, which used a variant character set
 #   but was quickly replaced with Greek system 6.0.7.1 using the
 #   standard character set documented here. Greek system 4.1 used a
 #   variant Greek set that had ISO 8859-7 in 0xA0-0xFF (with some
-#   holes filled in with DTP characters), and MacOS Roman accented
+#   holes filled in with DTP characters), and Mac OS Roman accented
 #   Roman letters in 0x80-0x9F.
+#
+# Unicode mapping issues and notes:
+# ---------------------------------
+#
+#   The following corporate zone Unicode character is used in this
+#   mapping:
+#
+#     0xF8A0  undefined1, used to map the single undefined code point
+#             in Mac OS Greek and Turkish (to obtain roundtrip
+#             fidelity for all code points).
+#
+# Details of mapping changes in each version:
+# -------------------------------------------
+#
+#   Changes from version n04 to version n06:
+#
+#   - Change mapping of 0xAF from U+0387 to its canonical
+#     decomposition, U+00B7.
 #
 ##################
 
@@ -196,7 +244,7 @@
 0xA1	0x0393	# GREEK CAPITAL LETTER GAMMA
 0xA2	0x0394	# GREEK CAPITAL LETTER DELTA
 0xA3	0x0398	# GREEK CAPITAL LETTER THETA
-0xA4	0x039B	# GREEK CAPITAL LETTER LAMBDA
+0xA4	0x039B	# GREEK CAPITAL LETTER LAMDA
 0xA5	0x039E	# GREEK CAPITAL LETTER XI
 0xA6	0x03A0	# GREEK CAPITAL LETTER PI
 0xA7	0x00DF	# LATIN SMALL LETTER SHARP S
@@ -207,7 +255,7 @@
 0xAC	0x00A7	# SECTION SIGN
 0xAD	0x2260	# NOT EQUAL TO
 0xAE	0x00B0	# DEGREE SIGN
-0xAF	0x0387	# GREEK ANO TELEIA
+0xAF	0x00B7	# MIDDLE DOT
 0xB0	0x0391	# GREEK CAPITAL LETTER ALPHA
 0xB1	0x00B1	# PLUS-MINUS SIGN
 0xB2	0x2264	# LESS-THAN OR EQUAL TO
@@ -268,7 +316,7 @@
 0xE9	0x03B9	# GREEK SMALL LETTER IOTA
 0xEA	0x03BE	# GREEK SMALL LETTER XI
 0xEB	0x03BA	# GREEK SMALL LETTER KAPPA
-0xEC	0x03BB	# GREEK SMALL LETTER LAMBDA
+0xEC	0x03BB	# GREEK SMALL LETTER LAMDA
 0xED	0x03BC	# GREEK SMALL LETTER MU
 0xEE	0x03BD	# GREEK SMALL LETTER NU
 0xEF	0x03BF	# GREEK SMALL LETTER OMICRON
