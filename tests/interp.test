@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.15 2002/07/01 07:52:03 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.16 2002/07/29 00:25:49 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2433,7 +2433,7 @@ test interp-29.3.1 {recursion limit} {
     }]
     interp delete $i
     set r
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 
 test interp-29.3.2 {recursion limit} {
     set i [interp create]
@@ -2445,7 +2445,7 @@ test interp-29.3.2 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 
 test interp-29.3.3 {recursion limit} {
     set i [interp create]
@@ -2457,7 +2457,7 @@ test interp-29.3.3 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 
 test interp-29.3.4 {recursion limit error reporting} {
     interp create slave
@@ -2542,7 +2542,7 @@ test interp-29.3.7 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.8 {recursion limit error reporting} {
     interp create slave
@@ -2564,7 +2564,7 @@ test interp-29.3.8 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.9 {recursion limit error reporting} {
     interp create slave
@@ -2608,7 +2608,7 @@ test interp-29.3.10 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.11 {recursion limit error reporting} {
     interp create slave
@@ -2630,7 +2630,7 @@ test interp-29.3.11 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.12 {recursion limit error reporting} {
     interp create slave

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.136 2002/07/22 16:51:47 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.137 2002/07/29 00:25:49 msofer Exp $
  */
 
 #ifndef _TCL
@@ -984,6 +984,7 @@ typedef struct Tcl_DString {
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
 #define TCL_EVAL_DIRECT		0x40000
+#define TCL_EVAL_NO_TRACEBACK	0x80000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see
