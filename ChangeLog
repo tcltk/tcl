@@ -1,3 +1,8 @@
+2004-01-09  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to infinite loop in 
+	TclFinalizeFilesystem [Bug 873311]
+
 2003-12-17  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclBinary.c (DeleteScanNumberCache): fixed crashing bug
