@@ -1,3 +1,16 @@
+2004-10-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp):
+	* generic/tclCmdAH.c (Tcl_CatchObjCmd):
+	* generic/tclCmdMZ.c (TclMergeReturnOptions,TclProcessReturn):
+	* generic/tclCompCmds.c (TclCompileReturnCmd):
+	* generic/tclExecute.c (TclCompEvalObj):
+	* generic/tclInt.h (Interp):
+	* generic/tclProc.c (TclUpdateReturnInfo):
+	Place primary storage of the -level and -code information in private
+	fields of the Interp struct, rather than in a DictObj.  This should
+	significantly improve performance of TclUpdateReturnInfo.
+
 2004-10-17  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclResult.c: removed unused variable [Bug 1048588]. 

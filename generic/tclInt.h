@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.181 2004/10/15 04:01:31 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.182 2004/10/18 21:15:41 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1222,7 +1222,7 @@ typedef struct Interp {
     ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for
 				 * interp, or NULL if no active traces. */
-    int unused2;		/* No longer used (was returnCode) */
+    int returnCode;		/* [return -code] parameter */
     char *unused3;		/* No longer used (was errorInfo) */
     char *unused4;		/* No longer used (was errorCode) */
 
@@ -1322,7 +1322,6 @@ typedef struct Interp {
     /* Fields used to manage extensible return options (TIP 90) */
     Tcl_Obj *returnOpts;	/* A dictionary holding the options to the
 				 * last [return] command */
-    Tcl_Obj *defaultReturnOpts; /* Default [return] options */
     Tcl_Obj *returnCodeKey;	/* holds "-code" */
     Tcl_Obj *returnErrorcodeKey;	/* holds "-errorcode" */
     Tcl_Obj *returnErrorinfoKey;	/* holds "-errorinfo" */
@@ -1334,6 +1333,7 @@ typedef struct Interp {
     Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable */
     Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj) */
     Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable */
+    int returnLevel;		/* [return -level] parameter */
 
     /*
      * Resource limiting framework support (TIP#143).
