@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.14 2004/05/21 23:49:30 dkf Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.15 2004/05/21 23:50:26 dkf Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -131,7 +131,7 @@ Find the first occurrence of a word starting with \fBfoo\fR in a
 string that is not actually an instance of \fBfoobar\fR, and get the
 letters following it up to the end of the word into a variable:
 .CS
-regexp {\\<foo(?!bar\\>)(\\w*)} $string -> restOfWord
+regexp {\\<foo(?!bar\\>)(\\w*)} $string \-> restOfWord
 .CE
 Note that the whole matched substring has been placed in the variable
 \fB\->\fR which is a name chosen to look nice given that we are not
@@ -140,18 +140,18 @@ actually interested in its contents.
 Find the index of the word \fBbadger\fR (in any case) within a string
 and store that in the variable \fBlocation\fR:
 .CS
-regexp -indices {(?i)\\<badger\\>} $string location
+regexp \-indices {(?i)\\<badger\\>} $string location
 .CE
 
 Count the number of octal digits in a string:
 .CS
-regexp -all {[0-7]} $string
+regexp \-all {[0\-7]} $string
 .CE
 
 List all words (consisting of all sequences of non-whitespace
 characters) in a string:
 .CS
-regexp -all -inline {\\S+} $string
+regexp \-all \-inline {\\S+} $string
 .CE
 
 .SH "SEE ALSO"
