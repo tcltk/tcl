@@ -1,5 +1,17 @@
 2003-12-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
+	* generic/tclCmdAH.c: 
+	* unix/tclUnixFile.c: 
+	* win/tclWinFCmd.c: 
+	* tests/fCmd.test: 
+	* tests/fileSystem.test: 
+	* doc/file.n: final fix to support for relative links and
+	its implications on normalization and other parts of the
+	filesystem code.  Fixes [Bug 859251] and some Windows
+	problems with recursive file delete/copy and symbolic links.
+	
+2003-12-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
 	* generic/tclPathObj.c: 
 	* tests/fileSystem.test: fix and tests for [Bug 860402] in new 
 	file normalization code.

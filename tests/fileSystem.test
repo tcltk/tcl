@@ -41,13 +41,17 @@ proc testPathEqual {one two} {
 }
 
 if {[catch {
-    file link link.file gorp.file 
+    file link link.file gorp.file
+    cd dir.dir
     file link \
-      [file join dir.dir linkinside.file] \
-      [file join dir.dir inside.file]
+      [file join linkinside.file] \
+      [file join inside.file]
+    cd ..
     file link dir.link dir.dir
-    file link [file join dir.dir dirinside.link] \
-      [file join dir.dir dirinside.dir]
+    cd dir.dir
+    file link [file join dirinside.link] \
+      [file join dirinside.dir]
+    cd ..
 }]} {
     tcltest::testConstraint hasLinks 0
 } else {
@@ -121,7 +125,7 @@ test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
 makeDirectory dir2.file
 
 test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
-    file link [file join dir2.file dir2.link] dir2.link
+    file link [file join dir2.file dir2.link] [file join .. dir2.link]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
 } {1}
