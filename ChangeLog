@@ -1,5 +1,9 @@
 2004-12-13  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tcl.h:	Restored extern "C" guards so that C++ code
+	sees function pointer typedef linkage consistent with earlier Tcl
+	releases. [Bug 1082349].
+
 	* generic/tclEncoding.c:	Plugged some memory leaks.  Thanks to
 	* generic/tclUtil.c:	 Rolf Ade for reports and testing [Bug 1083082]
 
