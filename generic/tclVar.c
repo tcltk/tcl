@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.2 2003/04/16 23:31:47 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.3 2003/05/12 17:31:51 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -551,6 +551,17 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	procPtr->refCount++;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
+#if 0
+    /*
+     * TEMPORARYLY DISABLED tclNsVarNameType
+     *
+     * This is a stop-gap fix for [Bug 735335]; it may not address the 
+     * real issue (which I haven't pinned down yet), but it avoids the 
+     * segfault in the test case.
+     * This optimisation will hopefully be turned back on soon.
+     *      Miguel Sofer, 2003-05-12
+     */
+
     } else if (index > -3) {
 	Namespace *nsPtr;
     
@@ -559,6 +570,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	part1Ptr->typePtr = &tclNsVarNameType;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) nsPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) varPtr;
+#endif
     } else {
 	/*
 	 * At least mark part1Ptr as already parsed.
