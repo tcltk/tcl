@@ -1,3 +1,9 @@
+2002-07-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/winFCmd.test: renamed 'win2000' and 'notWin2000' to
+	more appropriate constraint names.
+	* win/tclWinFile.c: updated comments to reflect 07-11 changes.
+	
 2002-07-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Removed declarations that duplicated entries
