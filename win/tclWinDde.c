@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.18 2003/11/10 22:55:48 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.19 2004/02/25 14:12:35 patthoyts Exp $
  */
 
 #include "tclPort.h"
@@ -995,7 +995,7 @@ DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
 	&& (es->topic == (ATOM)NULL || es->topic == topic)) {
 	Tcl_Obj *matchPtr = Tcl_NewListObj(0, NULL);
 
-	GlobalGetAtomName(service, sz, 255);
+	GlobalGetAtomName((ATOM)service, sz, 255);
 	Tcl_ListObjAppendElement(es->interp, matchPtr,
 		Tcl_NewStringObj(sz, -1));
 	GlobalGetAtomName(topic, sz, 255);
@@ -1034,7 +1034,7 @@ static int
 DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
 {
     ddeEnumServices es;
-    int r = TCL_OK;
+
     es.interp = interp;
     es.result = TCL_OK;
     es.service = (serviceName == NULL) 
@@ -1158,9 +1158,9 @@ Tcl_DdeObjCmd(
     HDDEDATA ddeItemData = NULL;
     HCONV hConv = NULL;
     HSZ ddeCookie = 0;
-    char *serviceName, *topicName, *itemString, *dataString;
+    char *serviceName = NULL, *topicName = NULL, *itemString, *dataString;
     char *string;
-    int firstArg, length, dataLength;
+    int firstArg = 0, length, dataLength;
     DWORD ddeResult;
     HDDEDATA ddeReturn;
     RegisteredInterp *riPtr;
