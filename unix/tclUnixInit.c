@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.3 1998/09/30 23:01:16 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.4 1998/12/01 22:39:35 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -72,6 +72,13 @@ static CONST LocaleTable localeTable[] = {
     {"japanese.euc",	"euc-jp"},
     {"japanese-sjis",	"shiftjis"},
     {"japanese-ujis",	"euc-jp"},
+
+    {"ko",              "euc-kr"},
+    {"ko_KR",           "euc-kr"},
+    {"ko_KR.EUC",       "euc-kr"},
+    {"ko_KR.euc",       "euc-kr"},
+    {"ko_KR.eucKR",     "euc-kr"},
+    {"korean",          "euc-kr"},
 
     {"zh",		"cp936"},
 
