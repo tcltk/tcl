@@ -1,3 +1,17 @@
+2002-04-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.decls:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c:
+	* mac/tclMacFCmd.c:
+	* mac/tclMacFile.c:
+	* mac/tclMacUtil.c: Modified TclpObjNormalizePath to be alias
+	file aware, and replaced various calls to FSpLocationFrom*Path
+	by calls to new alias file aware versions FSpLLocationFrom*Path.
+	The alias file aware routines don't resolve the last component of
+	a path if it is an alias. This allows [file copy/delete] etc. to
+	act correctly on alias files. (c.f. discussion in Bug #511666)
+
 2002-04-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/lindex.test (lindex-3.7): 
