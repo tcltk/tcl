@@ -4,12 +4,13 @@
  *	This file provides the generic portions (those that are the same on
  *	all platforms and for all channel types) of Tcl's IO facilities.
  *
+ * Copyright (c) 1998 Scriptics Corporation
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclIO.c 1.272 97/10/22 10:27:53
+ * SCCS: %Z% $Id: tclIO.c,v 1.2 1998/06/09 13:08:16 stanton Exp $ 
  */
 
 #include	"tclInt.h"
@@ -3140,24 +3141,33 @@ DoRead(chanPtr, bufPtr, toRead)
                 toRead - copied);
         if (copiedNow == 0) {
             if (chanPtr->flags & CHANNEL_EOF) {
-                return copied;
+		goto done;
             }
             if (chanPtr->flags & CHANNEL_BLOCKED) {
                 if (chanPtr->flags & CHANNEL_NONBLOCKING) {
-                    return copied;
+		    goto done;
                 }
                 chanPtr->flags &= (~(CHANNEL_BLOCKED));
             }
             result = GetInput(chanPtr);
             if (result != 0) {
-                if (result == EAGAIN) {
-                    return copied;
+                if (result != EAGAIN) {
+		    copied = -1;
                 }
-                return -1;
+		goto done;
             }
         }
     }
+
     chanPtr->flags &= (~(CHANNEL_BLOCKED));
+
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return copied;
 }
 
@@ -3208,7 +3218,8 @@ Tcl_Gets(chan, lineRead)
 
     lineLen = GetEOL(chanPtr);
     if (lineLen < 0) {
-        return -1;
+	copiedTotal = -1;
+	goto done;
     }
     offset = Tcl_DStringLength(lineRead);
     Tcl_DStringSetLength(lineRead, lineLen + offset);
@@ -3222,6 +3233,14 @@ Tcl_Gets(chan, lineRead)
         copiedTotal--;
     }
     Tcl_DStringSetLength(lineRead, copiedTotal + offset);
+
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return copiedTotal;
 }
 
@@ -3272,8 +3291,10 @@ Tcl_GetsObj(chan, objPtr)
 
     lineLen = GetEOL(chanPtr);
     if (lineLen < 0) {
-        return -1;
+	copiedTotal = -1;
+	goto done;
     }
+
     (void) Tcl_GetStringFromObj(objPtr, &offset);
     Tcl_SetObjLength(objPtr, lineLen + offset);
     buf = Tcl_GetStringFromObj(objPtr, NULL) + offset;
@@ -3286,6 +3307,14 @@ Tcl_GetsObj(chan, objPtr)
         copiedTotal--;
     }
     Tcl_SetObjLength(objPtr, copiedTotal + offset);
+
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return copiedTotal;
 }
 
@@ -3383,6 +3412,12 @@ Tcl_Ungets(chan, str, len, atEnd)
         chanPtr->inQueueHead = bufPtr;
     }
 
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return len;
 }
 
