@@ -1,3 +1,13 @@
+2002-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Generate a fatal
+	configure error if no ar program can be found on the
+	path. [Bug #582039]
+	* win/configure: Regen.
+	* win/configure.in: Check that AR, RANLIB, and RC
+	are found on the path when building with gcc.
+
 2002-11-03  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclAppInit.c:  Calls Registry_Init() and Dde_Init() when
