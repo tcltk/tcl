@@ -2,21 +2,70 @@
 # tests.  Execute it by invoking "source all" when running tclTest
 # in this directory.
 #
-# RCS: @(#) $Id: all,v 1.2 1998/09/14 18:40:07 stanton Exp $
+# RCS: @(#) $Id: all,v 1.3 1998/11/19 21:46:59 hershey Exp $
 
-if {$tcl_platform(os) == "Win32s"} {
-    set files [glob *.tes]
-} else {
-    set files [glob *.test]
+set TESTS_DIR [file join [pwd] [file dirname [info script]]]
+source [file join $TESTS_DIR defs]
+set currentDir [pwd]
+
+catch {array set flag $argv}
+set requiredSourceFiles [list autoMkindex.tcl remote.tcl]
+
+#
+# Set the TMP_DIR to pwd or the arg of -tmpdir, if given.
+# 
+
+if {[info exists flag(-tmpdir)]} {
+    set TMP_DIR $flag(-tmpdir)
+    if {![file exists $TMP_DIR]} {
+	if {[catch {file mkdir $TMP_DIR}]} {
+	    error "could not create directory $TMP_DIR"
+	}
+	file mkdir $TMP_DIR
+    } elseif {![file isdir $TMP_DIR]} {
+	error "$TMP_DIR already exists but is not a directory"
+    }
+    if {[string compare [file pathtype $TMP_DIR] absolute] != 0} {
+	set TMP_DIR [file join [pwd] $TMP_DIR]
+    }
+    cd $TMP_DIR
 }
 
-foreach i [lsort $files] {
-    if [string match l.*.test $i] {
+#
+# copy the required source files to the current dir.
+#
+
+if {[string compare $TESTS_DIR [pwd]] != 0} {
+
+    foreach file $requiredSourceFiles {
+	if {![file exists $file]} {
+	    catch {file copy [file join $TESTS_DIR $file] .}
+	}
+    }
+}
+
+if {$tcl_platform(os) == "Win32s"} {
+    set globPattern [file join $TESTS_DIR *.tes]
+} else {
+    set globPattern [file join $TESTS_DIR *.test]
+}
+
+foreach file [lsort [glob $globPattern]] {
+    set tail [file tail $file]
+    if [string match l.*.test $tail] {
 	# This is an SCCS lockfile
 	continue
     }
-    puts stdout $i
-    if [catch {source $i} msg] {
+    puts stdout $tail
+    if [catch {source $file} msg] {
 	puts $msg
-    }	
+    }
+}
+
+# remove the required source files from the current dir.
+if {[info exists TMP_DIR]} {
+    foreach file $requiredSourceFiles {
+        catch {file delete -force $file}
+    }
+    cd $currentDir
 }
