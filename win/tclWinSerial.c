@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.2 1999/03/14 18:55:12 stanton Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.3 1999/03/24 02:37:14 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -38,8 +38,8 @@ TCL_DECLARE_MUTEX(procMutex)
  * Bit masks used in the sharedFlags field of the SerialInfo structure below.
  */
 
-#define SERIAL_EOF	(1<<2)	/* Serial has reached EOF. */
-
+#define SERIAL_EOF	 (1<<2)  /* Serial has reached EOF. */
+#define SERIAL_EXTRABYTE (1<<3)  /* Extra byte consumed while waiting for data */
 /*
  * This structure describes per-instance data for a serial based channel.
  */
@@ -93,6 +93,8 @@ typedef struct SerialInfo {
 				 * thread.  Access is synchronized with the
 				 * readable object.  */
     int readyMask;              /* Events that need to be checked on. */
+    char extraByte;
+    
 } SerialInfo;
 
 typedef struct ThreadSpecificData {
@@ -468,6 +470,7 @@ SerialCloseProc(
 
     if (serialPtr->writeThread) {
 	WaitForSingleObject(serialPtr->writable, INFINITE);
+	TerminateThread(serialPtr->writeThread, 0);
 
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
@@ -475,7 +478,6 @@ SerialCloseProc(
 	 */
 
 	WaitForSingleObject(serialPtr->writeThread, INFINITE);
-	TerminateThread(serialPtr->writeThread, 0);
 	CloseHandle(serialPtr->writeThread);
 	CloseHandle(serialPtr->writable);
 	CloseHandle(serialPtr->startWriter);
@@ -550,9 +552,7 @@ SerialInputProc(
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
     DWORD bytesRead = 0;
     int result;
-    DWORD errors, err;
-    DWORD mask = 0;
-    COMSTAT stat;
+    DWORD err;
 
     *errorCode = 0;
 
@@ -571,44 +571,23 @@ SerialInputProc(
 	return -1;
     }
 
-    infoPtr->readyMask &= ~TCL_READABLE;
-    
-    if (ClearCommError(infoPtr->handle, &errors, &stat)) {
+    if (infoPtr->readFlags & SERIAL_EXTRABYTE) {
 
 	/*
-	 * If there are errors, then signal an I/O error.
+	 * If a byte was consumed waiting, then put it in the buffer.
 	 */
 
-	if (errors != 0) {
-	    *errorCode = EIO;
-	    return -1;
-	}
+	*buf = infoPtr->extraByte;
+	infoPtr->readFlags &= ~SERIAL_EXTRABYTE;
+	buf++;
+	bufSize--;
+	bytesRead = 1;
 
-	/*
-	 * Otherwise, it's not that fatal, so check the queue
-	 */
-
-	if (stat.cbInQue != 0) {
-	    
-	    /* 
-	     * If the buffer is bigger than the data in the queue,
-	     * shrink the buffer size to match.
-	     */
-	    
-	    if ((DWORD) bufSize > stat.cbInQue) {
-		bufSize = stat.cbInQue;
-	    }
-
-	} else {
-	    if (infoPtr->flags & SERIAL_ASYNC) {
-		errno = *errorCode = EAGAIN;
-		return -1;
-	    } else {
-		bufSize = 1;
-	    }
+	if (result == 0) {
+	    return bytesRead;
 	}
     }
-    
+
     if (ReadFile(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &bytesRead,
 		 NULL) == FALSE) {
 	err = GetLastError();
@@ -927,52 +906,71 @@ WaitForRead(
     int blocking)		/* Indicates whether call should be
 				 * blocking or not. */
 {
-    DWORD timeout, err, mask;
+    DWORD timeout, errors;
     HANDLE *handle = infoPtr->handle;
-
-    /*
-     * Synchronize with the reader thread.
-     */
+    COMSTAT stat;
     
-    timeout = blocking ? INFINITE : 0;
-    if (WaitForSingleObject(infoPtr->readable, timeout) == WAIT_TIMEOUT) {
+    while (1) {
 	/*
-	 * The reader thread is blocked waiting for data and the channel
-	 * is in non-blocking mode.
+	 * Synchronize with the reader thread.
 	 */
 	
-	errno = EAGAIN;
-	return -1;
-    }
-    
-    /*
-     * At this point, the two threads are synchronized, so it is safe
-     * to access shared state.  This code is not called in the ReaderThread
-     * in blocking mode, so it needs to be checked here.
-     */
+	timeout = blocking ? INFINITE : 0;
+	if (WaitForSingleObject(infoPtr->readable, timeout) == WAIT_TIMEOUT) {
+	    /*
+	     * The reader thread is blocked waiting for data and the channel
+	     * is in non-blocking mode.
+	     */
+	    
+	    errno = EAGAIN;
+	    return -1;
+	}
+	
+	/*
+	 * At this point, the two threads are synchronized, so it is safe
+	 * to access shared state.  This code is not called in the ReaderThread
+	 * in blocking mode, so it needs to be checked here.
+	 */
 
-    while (1) {
-	if (WaitCommEvent(handle, &mask, NULL) == FALSE) {
-	    err = GetLastError();
-	    infoPtr->readFlags |= SERIAL_EOF;
-	    break;
+	/*
+	 * If the serial has hit EOF, it is always readable.
+	 */
+    
+	if (infoPtr->readFlags & SERIAL_EOF) {
+	    return 1;
 	}
-	if (mask & EV_RXCHAR) {
-	    break;
+	
+	if (ClearCommError(infoPtr->handle, &errors, &stat)) {
+	    /*
+	     * If there are errors, then signal an I/O error.
+	     */
+
+	    if (errors != 0) {
+		errno = EIO;
+		return -1;
+	    }
 	}
+	
+	/*
+	 * If data is in the queue return 1
+	 */
+	
+	if (stat.cbInQue != 0) {
+	    return 1;
+	}
+
+	/*
+	 * if there is an extra byte that was consumed while
+	 * waiting, but no data in the queue, return 0
+	 */
+	
+	if (infoPtr->readFlags & SERIAL_EXTRABYTE) {
+	    return 0;
+	}
+	    
 	ResetEvent(infoPtr->readable);
 	SetEvent(infoPtr->startReader);
     }
-    
-    /*
-     * If the serial has hit EOF, it is always readable.
-     */
-    
-    if (infoPtr->readFlags & SERIAL_EOF) {
-	return 1;
-    }
-    
-    return 1;
 }
 
 /*
@@ -1000,7 +998,8 @@ SerialReaderThread(LPVOID arg)
     SerialInfo *infoPtr = (SerialInfo *)arg;
     HANDLE *handle = infoPtr->handle;
     DWORD mask = EV_RXCHAR;
-
+    DWORD count;
+    
     for (;;) {
 	/*
 	 * Wait for the main thread to signal before attempting to wait.
@@ -1011,29 +1010,40 @@ SerialReaderThread(LPVOID arg)
 	/*
 	 * Try waiting for a Comm event.
 	 */
-
 	
-	while (1) {
-	    if (WaitCommEvent(handle, &mask, NULL) == FALSE) {
-		/*
-		 * There is an error, signal an EOF.
-		 */
+	WaitCommEvent(handle, NULL, NULL);
+	
 
-		infoPtr->readFlags |= SERIAL_EOF;
-		break;
-	    }
+	/*
+	 * try to read one byte
+	 */
+	
+	if (ReadFile(handle, &(infoPtr->extraByte), 1, &count, NULL)
+		!= FALSE) {
 
 	    /*
-	     * Signal the main thread by signalling the readable event and
-	     * then waking up the notifier thread.
+	     * one byte was consumed while waiting to read, keep it
 	     */
 
-	    if (mask & EV_RXCHAR) {
-		SetEvent(infoPtr->readable);
-		Tcl_ThreadAlert(infoPtr->threadId);
-		break;
+	    if (count != 0) {
+		infoPtr->readFlags |= SERIAL_EXTRABYTE;
 	    }
+
+	} else {
+            /*
+	     * There is an error, signal an EOF.
+	     */
+	    
+	    infoPtr->readFlags |= SERIAL_EOF;
 	}
+
+	/*
+	 * Signal the main thread by signalling the readable event and
+	 * then waking up the notifier thread.
+	 */
+
+	SetEvent(infoPtr->readable);
+	Tcl_ThreadAlert(infoPtr->threadId);
     }
     return 0;			/* NOT REACHED */
 }
@@ -1143,8 +1153,8 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
     PurgeComm(handle, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR
 	      | PURGE_RXCLEAR);
     cto.ReadIntervalTimeout = MAXDWORD;
-    cto.ReadTotalTimeoutMultiplier = 0;
-    cto.ReadTotalTimeoutConstant = 0;
+    cto.ReadTotalTimeoutMultiplier = MAXDWORD;
+    cto.ReadTotalTimeoutConstant = 1;
     cto.WriteTotalTimeoutMultiplier = 0;
     cto.WriteTotalTimeoutConstant = 0;
     SetCommTimeouts(handle, &cto);
