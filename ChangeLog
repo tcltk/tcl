@@ -1,3 +1,15 @@
+2003-04-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in: Set stub lib flag based
+	on new LIBFLAGSUFFIX variable.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Set new
+	LIBFLAGSUFFIX that works like LIBSUFFIX,
+	it is used when creating library names.
+	The previous implementation would generate
+	-ltclstub85 instead of -ltclstub85s when
+	configured with --disable-shared.
+
 2003-04-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c (TclSubstTokens):  Moved declaration of
