@@ -492,4 +492,20 @@ extern double strtod();
 EXTERN int	TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
 		    int timeout));
 
+/*
+ * Substitute Tcl's own versions for several system calls.  The
+ * Tcl versions retry automatically if interrupted by signals.
+ * (see tclUnixUtil.c).
+ */
+
+#define open(a,b,c) TclOpen(a,b,c)
+#define read(a,b,c) TclRead(a,b,c)
+#define waitpid(a,b,c) TclWaitpid(a,b,c)
+#define write(a,b,c) TclWrite(a,b,c)
+EXTERN int	TclOpen _ANSI_ARGS_((char *path, int oflag, int mode));
+EXTERN int	TclRead _ANSI_ARGS_((int fd, VOID *buf, size_t numBytes));
+EXTERN int	TclWaitpid _ANSI_ARGS_((pid_t pid, int *statPtr, int options));
+EXTERN int	TclWrite _ANSI_ARGS_((int fd, VOID *buf, size_t numBytes));
+
+
 #endif /* _TCLUNIXPORT */
