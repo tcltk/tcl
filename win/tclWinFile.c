@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.5 1999/04/16 00:48:08 stanton Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.6 1999/04/21 21:50:34 rjohnson Exp $
  */
 
 #include "tclWinInt.h"
@@ -224,9 +224,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 
     Tcl_DStringInit(&patternString);
     newPattern = Tcl_DStringAppend(&patternString, pattern, tail - pattern);
-    if ((volFlags & FS_CASE_SENSITIVE) == 0) {
-	Tcl_UtfToLower(newPattern);
-    }
+    Tcl_UtfToLower(newPattern);
 
     /*
      * We need to check all files in the directory, so append a *.*
@@ -306,6 +304,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	    nativeMatchResult = nativeName;
 	}
         Tcl_DStringFree(&ds);
+
 	if (nativeMatchResult == NULL) {
 	    continue;
 	}

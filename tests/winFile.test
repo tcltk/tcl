@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.2 1999/04/16 00:47:37 stanton Exp $
+# RCS: @(#) $Id: winFile.test,v 1.3 1999/04/21 21:50:32 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -46,6 +46,20 @@ test winFile-1.2 {TclpGetUserHome} {95} {
 test winFile-1.3 {TclpGetUserHome} {nt nonPortable} {
     catch {glob ~stanton@workgroup}
 } {0}
+
+test winFile-2.1 {TclpMatchFiles: case sensitivity} {pcOnly} {
+    makeFile {} GlobCapS
+    set result [list [glob -nocomplain GlobC*] [glob -nocomplain globc*]]
+    removeFile GlobCapS
+    set result
+} {GlobCapS GlobCapS}
+
+test winFile-2.2 {TclpMatchFiles: case sensitivity} {pcOnly} {
+    makeFile {} globlower
+    set result [list [glob -nocomplain globl*] [glob -nocomplain gLOBl*]]
+    removeFile globlower
+    set result
+} {globlower globlower}
 
 # cleanup
 ::tcltest::cleanupTests

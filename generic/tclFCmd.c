@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.4 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.5 1999/04/21 21:50:25 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -172,7 +172,7 @@ FileCopyRename(interp, argc, argv, copyFlag)
      * Move each source file into target directory.  Extract the basename
      * from each source, and append it to the end of the target path.
      */
-    
+
     for ( ; i < argc - 1; i++) {
 	char *jargv[2];
 	char *source, *newFileName;
@@ -432,7 +432,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
     Tcl_DString sourcePath, targetPath, errorBuffer;
     char *targetName, *sourceName, *errfile;
     struct stat sourceStatBuf, targetStatBuf;
-	
+
     sourceName = Tcl_TranslateFileName(interp, source, &sourcePath);
     if (sourceName == NULL) {
 	return TCL_ERROR;

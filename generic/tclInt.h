@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.26 1999/04/17 00:32:29 hershey Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.27 1999/04/21 21:50:26 rjohnson Exp $
  */
 
 #ifndef _TCLINT

@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.4 1999/04/20 19:19:35 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.5 1999/04/21 21:50:30 rjohnson Exp $
 
 # Initialize wish shell
 

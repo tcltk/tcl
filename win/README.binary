@@ -1,14 +1,14 @@
-Tcl/Tk 8.1b3 for Windows, Binary Distribution
+Tcl/Tk 8.1 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.4 1999/04/16 00:48:06 stanton Exp $ 
+RCS: @(#) $Id: README.binary,v 1.5 1999/04/21 21:50:33 rjohnson Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.1b3 for
+This directory contains the binary distribution of Tcl/Tk 8.1.0 for
 Windows.  It was compiled with Microsoft Visual C++ 5.0 using Win32
 API, so that it will run under Windows NT and Windows 95.  The
-information here corresponds to the second beta release of 8.1.
+information here corresponds to the first release of 8.1.
 
 2. Documentation
 ----------------

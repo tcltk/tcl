@@ -3,7 +3,7 @@ README:  Tcl
 	Tcl is maintained, enhanced, and distributed freely as a
 	service to the Tcl community by Scriptics Corporation.
 
-RCS: @(#) $Id: README,v 1.16 1999/04/16 00:46:29 stanton Exp $
+RCS: @(#) $Id: README,v 1.17 1999/04/21 21:50:22 rjohnson Exp $
 
 Contents
 --------
@@ -31,20 +31,16 @@ variety of web-related tasks and for creating powerful command
 languages for applications.
 
 This directory contains the sources and documentation for Tcl.  The
-information here corresponds to release 8.1b3, which is the third
-beta release for Tcl 8.1.  This release is mostly feature complete but
-may have bugs and be missing some minor features.  This release is for
-early adopters who are willing to help us find and fix problems.
-Please let us know about any problems you uncover.
+information here corresponds to release 8.1.0.
 
 Tcl 8.1 includes four major new features: Unicode support (all internal
 strings are now stored in UTF-8 form), a new regular expression matcher
-with most of the Perl features, support for multithreading, and a new
-message catalog package.  For details on features, incompatibilities, and
-potential problems with this release, see the Tcl/Tk 8.1 Web page at
-http://www.scriptics.com/software/8.1.html or refer to the "changes" file
-in this directory, which contains a historical record of all changes to
-Tcl.
+which surpass the features of Perl, support for multithreading, and a
+new message catalog package.  For details on features,
+incompatibilities, and potential problems with this release, see the
+Tcl/Tk 8.1 Web page at http://www.scriptics.com/software/8.1.html or
+refer to the "changes" file in this directory, which contains a
+historical record of all changes to Tcl.
 
 Tcl is a freely available open source package.  You can do virtually
 anything you like with it, such as modifying it, redistributing it,
