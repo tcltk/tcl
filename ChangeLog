@@ -1,3 +1,8 @@
+2001-12-10  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* unix/tclUnixPipe.c (TclpCreateProcess): Applied Don Porter's
+	  patch fixing bug #437489.
+
 2001-12-10  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclEvent.c:
