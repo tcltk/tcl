@@ -172,7 +172,8 @@ TclPlatformInit(interp)
 	 * name.version and the minor version number is in name.release.
 	 */
 
-	if ((strchr(name.release, '.') != NULL) || !isdigit(name.version[0])) {
+	if ((strchr(name.release, '.') != NULL)
+		|| !isdigit(UCHAR(name.version[0]))) {
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
 		    TCL_GLOBAL_ONLY);
 	} else {

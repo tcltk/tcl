@@ -829,7 +829,7 @@ GetFormatSpec(formatPtr, cmdPtr, countPtr)
     if (**formatPtr == '*') {
 	(*formatPtr)++;
 	(*countPtr) = BINARY_ALL;
-    } else if (isdigit(**formatPtr)) {
+    } else if (isdigit(UCHAR(**formatPtr))) {
 	(*countPtr) = strtoul(*formatPtr, formatPtr, 10);
     } else {
 	(*countPtr) = BINARY_NOCOUNT;
