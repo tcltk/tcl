@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.65 2003/03/06 10:10:24 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.66 2003/03/06 20:14:51 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -5464,7 +5464,18 @@ Tcl_Seek(chan, offset, mode)
             statePtr->flags &= (~(BG_FLUSH_SCHEDULED));
         }
     }
-    
+
+    /*
+     * If there is data buffered in statePtr->curOutPtr then mark
+     * the channel as ready to flush before invoking FlushChannel.
+     */
+
+    if ((statePtr->curOutPtr != (ChannelBuffer *) NULL) &&
+	    (statePtr->curOutPtr->nextAdded >
+	            statePtr->curOutPtr->nextRemoved)) {
+	statePtr->flags |= BUFFER_READY;
+    }
+
     /*
      * If the flush fails we cannot recover the original position. In
      * that case the seek is not attempted because we do not know where
@@ -5880,7 +5891,6 @@ Tcl_OutputBuffered(chan)
     }
     if ((statePtr->curOutPtr != (ChannelBuffer *) NULL) &&
 	(statePtr->curOutPtr->nextAdded > statePtr->curOutPtr->nextRemoved)) {
-	statePtr->flags |= BUFFER_READY;
 	bytesBuffered +=
 	    (statePtr->curOutPtr->nextAdded - statePtr->curOutPtr->nextRemoved);
     }
