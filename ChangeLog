@@ -1,3 +1,13 @@
+2001-12-10  Don Porter <dgp@users.sourceforge.net>
+  
+	* doc/Access.3:
+	* doc/DString.3:
+	* doc/ExprLong.3:
+	* doc/TCL_MEM_DEBUG.3:
+	* doc/Utf.3:
+	* doc/file.n: Several typo and formatting corrections discovered
+	during conversion to TMML.  Thanks to Joe English.  [Patch 490514]
+
 2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclInt.h:
