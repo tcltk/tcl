@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.27 2002/02/26 17:26:25 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.28 2002/05/29 09:09:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2793,12 +2793,6 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 			strncmp(str, "-nocase", (size_t) length) == 0) {
 		    nocase = 1;
 		} else {
-		    c = str[length];
-		    str[length] = '\0';
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "bad option \"", str, "\": must be -nocase",
-			    (char *) NULL);
-		    str[length] = c;
 		    /* Fail at run time, not in compilation */
 		    return TCL_OUT_LINE_COMPILE;
 		}
