@@ -1,7 +1,9 @@
 2001-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
 
-	* generic/tclProc.c: made [proc] check that formal args have
+	* generic/tclProc.c:
+	* tests/proc.test: made [proc] check that formal args have
 	simple names [Bug: 458548] 
+	
 
 2001-09-04 Vince Darley <vincentdarley@users.sourceforge.net>
 
