@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.69 2002/07/05 07:15:18 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.70 2002/07/05 20:18:05 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5535,5 +5535,15 @@ default; older compilers may need configuration (english)
  * (performance enhancment) optimizations of bytecode execution (sofer)
 
 2002-06-21 (new feature)[TIP 99,562970] new [file link] command (darley)
+
+2002-06-24 (new feature)[TIP 101] new [tcltest::configure] command (porter)
+
+2002-06-25 (new feature) --enable-man-symlinks and --enable-man-compression
+options to configure (max)
+
+2002-06-26 (bug fix)[565880] [clock format] now respects locale (max)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2002-07-03 (bug fix)[577015] [catch] catches even compile errors (sofer)
 
 --- Released 8.4b1, July 5, 2002 --- See ChangeLog for details ---
