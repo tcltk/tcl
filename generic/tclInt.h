@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.214 2005/01/27 00:23:26 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.215 2005/03/10 22:10:38 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -745,6 +745,21 @@ typedef struct ActiveInterpTrace {
 				 * trace gets deleted, must update pointer
 				 * to avoid using free'd memory. */
 } ActiveInterpTrace;
+
+/*
+ * Flag values designating types of execution traces.
+ * See tclTrace.c for related flag values.
+ *
+ * TCL_TRACE_ENTER_EXEC         - triggers enter/enterstep traces.
+ * 				- passed to Tcl_CreateObjTrace to set up
+ *                                "enterstep" traces.
+ * TCL_TRACE_LEAVE_EXEC         - triggets leave/leavestep traces.
+ * 				- passed to Tcl_CreateObjTrace to set up
+ *                                "leavestep" traces.
+ *
+ */
+#define TCL_TRACE_ENTER_EXEC            1
+#define TCL_TRACE_LEAVE_EXEC            2
 
 /*
  * The structure below defines an entry in the assocData hash table which
