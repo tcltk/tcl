@@ -1,3 +1,30 @@
+1999-03-14    <stanton@GASPODE>
+
+	* win/tclWinConsole.c: 
+	* win/tclWinPipe.c: 
+	* win/tclWinSerial.c: Changed so channel drivers wait for the
+	reader/writer threads to exit before returning during a close
+	operation.  This ensures that the main thread is the last thread
+	to exit, so the process return value is set properly.
+
+	* generic/tclIntDecls.h: 
+	* generic/tclIntPlatDecls.h: 
+	* generic/tclIntPlatStubs.c: 
+	* generic/tclIntStubs.c: 
+	* generic/tclPlatDecls.h: 
+	* generic/tclPlatStubs.c: 
+	* generic/tclStubInit.c: 
+	* generic/tclStubs.c: Fixed bad eol characters.
+	
+	* generic/tclInt.decls: Changed "const" to "CONST" in
+	declarations for better portability.
+
+	* generic/tcl.decls: Renamed panic and panicVA to Tcl_Panic and
+	Tcl_PanicVA in the stub files.
+
+	* generic/tclInterp.c (Tcl_MakeSafe): Remove tcl_platform(user)
+	from safe interps.
+
 1999-03-11    <stanton@GASPODE>
 
 	* unix/Makefile.in:
