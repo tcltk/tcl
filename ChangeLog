@@ -1,3 +1,7 @@
+2002-07-02  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/tcltest.n: Markup fixes, spellcheck.
+
 2002-07-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:		Reverted [makeFile] and [viewFile] to

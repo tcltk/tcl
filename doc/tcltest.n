@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.26 2002/07/02 19:10:57 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.27 2002/07/02 23:34:08 jenglish Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -91,7 +91,7 @@ commands provided by \fBtcltest\fR govern the configuration of
 [\fBtest\fR] and the collection of many [\fBtest\fR] commands into
 test suites.
 .PP
-See \fBCREATING TEST SUITES WITH TCLTEST\fR below for an extended example
+See \fBCONTENTS OF A TEST FILE\fR below for an extended example
 of how to use the commands of \fBtcltest\fR to produce test suites
 for your Tcl-enabled code.
 .SH COMMANDS
@@ -198,7 +198,7 @@ as a convenient way to turn the contents of a file generated
 by a test into the result of that test for matching against
 an expected result.  The contents of the file are read using
 the binary encoding, so the exact byte for byte contents are
-returned, with the execption of the final newline, if any.
+returned, with the exception of the final newline, if any.
 .TP
 \fBcleanupTests\fR
 Intended to clean up and summarize after several tests have been
@@ -218,7 +218,7 @@ array. Returns an empty string.
 \fBrunAllTests\fR
 This is a master command meant to run an entire suite of tests,
 spanning multiple files and/or directories, as governed by
-the configurable options of \fBtcltest\fR.  See RUNNING ALL TESTS
+the configurable options of \fBtcltest\fR.  See \fBRUNNING ALL TESTS\fR
 below for a complete description of the many variations possible
 with [\fBrunAllTests\fR].
 .SH "CONFIGURATION COMMANDS"
@@ -398,7 +398,7 @@ a \fIname\fR according to the pattern:
 .CE
 For white-box (regression) tests, the target should be the name of the
 C function or Tcl procedure being tested.  For black-box tests, the
-target should be the name of the feature being tested.  Some convetions
+target should be the name of the feature being tested.  Some conventions
 call for the names of black-box tests to have the suffix \fB_bb\fR.
 Related tests should share a major number.  As a test suite evolves,
 it is best to have the same test name continue to correspond to the
@@ -411,7 +411,7 @@ to the lists of string matching patterns returned by
 [\fBconfigure -match\fR], and [\fBconfigure -skip\fR].  The test
 will be run only if \fIname\fR matches one of the patterns from
 [\fBconfigure -match\fR] and matches none of the patterns
-from [\fRconfigure -skip\fB].
+from [\fBconfigure -skip\fR].
 .PP
 The \fIdescription\fR should be a short textual description of the
 test.  The \fIdescription\fR is included in output produced by the
@@ -435,9 +435,9 @@ Note that the expression form of \fIconstraints\fR may interfere with the
 operation of [\fBconfigure -constraints\fR] and
 [\fBconfigure -limitconstraints\fR], and is not recommended.
 Appropriate constraints should be added to any tests that should
-not always be run.  The default value is an empty list.  See TEST
-CONSTRAINTS below for a list of built-in constraints and information
-on how to add your own constraints.
+not always be run.  The default value is an empty list.  
+See \fBTEST CONSTRAINTS\fR below for a list of built-in constraints 
+and information on how to add your own constraints.
 .TP
 \fB-setup \fIscript\fR
 The optional \fIsetup\fR attribute indicates a \fIscript\fR that will be run
@@ -460,8 +460,8 @@ The default value is an empty script.
 \fB-match \fImode\fR
 The \fImatch\fR attribute determines how expected answers supplied in
 \fIresult\fR, \fIoutput\fR, and \fIerrorOutput\fR are compared.  Valid
-values for \fImode\fR are \fBregexp\fR, \fBglob\fR, \fRexact\fR, and
-any value registered by a prior call to [\fIcustomMatch\fR].  The default
+values for \fImode\fR are \fBregexp\fR, \fBglob\fR, \fBexact\fR, and
+any value registered by a prior call to [\fBcustomMatch\fR].  The default
 value is \fBexact\fR.
 .TP
 \fB-result \fIexpectedValue\fR
@@ -506,7 +506,7 @@ values for all attributes, it will not raise an error.  Test
 failures are instead reported as output written to [\fBoutputChannel\fR].
 In default operation, a successful test produces no output.  The output
 messages produced by [\fBtest\fR] are controlled by the
-[\fBconfigure -verbose\fR] option as described in CONFIGURABLE OPTIONS
+[\fBconfigure -verbose\fR] option as described in \fBCONFIGURABLE OPTIONS\fR
 below.  Any output produced by the test scripts themselves should be
 produced using [\fBputs\fR] to [\fBoutputChannel\fR] or
 [\fBerrorChannel\fR], so that users of the test suite may
@@ -658,7 +658,9 @@ only constraints from the [\fBconfigure -constraints\fR] list
 are run; all others are skipped.  For example, one might set
 up a configuration with
 .CS
-configure -constraints knownBug -limitconstraints true -verbose pass
+configure -constraints knownBug \e
+          -limitconstraints true \e
+          -verbose pass
 .CE
 to run exactly those tests that exercise known bugs, and discover
 whether any of them pass, indicating the bug had been fixed.  
@@ -673,7 +675,7 @@ configuration to [\fBoutputChannel\fR].
 Test files to be evaluated are sought in the directory
 [\fBconfigure -testdir\fR].  The list of files in that directory
 that match any of the patterns in [\fBconfigure -file\fR] and
-match none of the patterns in [\fBconfigure -notfile] is generated
+match none of the patterns in [\fBconfigure -notfile\fR] is generated
 and sorted.  Then each file will be evaluated in turn.  If
 [\fBconfigure -singleproc\fR] is true, then each file will
 be [\fBsource\fR]d in the caller's context.  If if is false,
@@ -757,15 +759,15 @@ a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
 \fBskip\fR, \fBstart\fR, and \fBerror\fR.  Default value is \fBbody\fR.
 Levels are defined as: 
 .RS
-.IP body (b)
+.IP "body (b)"
 Display the body of failed tests
-.IP pass (p)
+.IP "pass (p)"
 Print output when a test passes
-.IP skip (s)
+.IP "skip (s)"
 Print output when a test is skipped
-.IP start (t)
+.IP "start (t)"
 Print output whenever a test starts
-.IP error (e)
+.IP "error (e)"
 Print errorInfo and errorCode, if they exist, when a test return code
 does not match its expected return code
 .RE
@@ -791,13 +793,13 @@ copy of each core file produced in [\fBconfigure -tmpdir\fR].
 .TP
 \fB-limitconstraints \fIboolean\fR
 Sets the mode by which [\fBtest\fR] honors constraints as described
-in TESTS above.  Default value is false.
+in \fBTESTS\fR above.  Default value is false.
 .TP
 \fB-constraints \fIlist\fR
 Sets all the constraints in \fIlist\fR to true.  Also used in
 combination with \fB-limitconstraints true\fR to control an
-alternative constraint mode as described in TESTS above.  Default
-value is an empty list.
+alternative constraint mode as described in \fBTESTS\fR above.
+Default value is an empty list.
 .TP
 \fB-tmpdir \fIdirectory\fR
 Sets the temporary directory to be used by [\fBmakeFile\fR],
@@ -856,8 +858,6 @@ Sets the file to which all error output produced by tcltest
 should be written.  A file named \fIfilename\fR will be [\fBopen\fR]ed
 for writing, and the resulting channel will be set as the value
 of [\fBerrorChannel\fR].
-
-.SH "CREATING TEST SUITES WITH TCLTEST"
 
 .SH "CONTENTS OF A TEST FILE"
 Test files should begin by loading the \fBtcltest\fR package:
@@ -957,8 +957,6 @@ test testOnUnixWithoutThreads-1.1 {
 }
 .CE
 
-.SH COMPATIBILITY
-
 .SH "KNOWN ISSUES"
 There are two known issues related to nested evaluations of [\fBtest\fR].  
 The first issue relates to the stack level in which test scripts are
@@ -975,8 +973,8 @@ test level-1.1 {level 1} {
 any script executed in level-2.1 may be executed at the same stack
 level as the script defined for level-1.1.  
 .PP
-In addition, while two [\fBtestfR]s have been run, results will only
-be reported by [\fRcleanupTests\fB] for tests at the same level as
+In addition, while two [\fBtest\fR]s have been run, results will only
+be reported by [\fBcleanupTests\fR] for tests at the same level as
 test level-1.1.  However, test results for all tests run prior to
 level-1.1 will be available when test level-2.1 runs.  What this
 means is that if you try to access the test results for test level-2.1,
