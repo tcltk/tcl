@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.99 2003/09/05 21:52:12 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.100 2003/09/29 21:45:35 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3218,6 +3218,11 @@ EXTERN int		Tcl_FSEvalFileEx _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_Obj * fileName, 
 				CONST char * encodingName));
 #endif
+#ifndef Tcl_SetExitProc_TCL_DECLARED
+#define Tcl_SetExitProc_TCL_DECLARED
+/* 519 */
+EXTERN Tcl_ExitProc *	Tcl_SetExitProc _ANSI_ARGS_((Tcl_ExitProc * proc));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -3796,6 +3801,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_GetCommandFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 516 */
     void (*tcl_GetCommandFullName) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command command, Tcl_Obj * objPtr)); /* 517 */
     int (*tcl_FSEvalFileEx) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * fileName, CONST char * encodingName)); /* 518 */
+    Tcl_ExitProc * (*tcl_SetExitProc) _ANSI_ARGS_((Tcl_ExitProc * proc)); /* 519 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -5911,6 +5917,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_FSEvalFileEx
 #define Tcl_FSEvalFileEx \
 	(tclStubsPtr->tcl_FSEvalFileEx) /* 518 */
+#endif
+#ifndef Tcl_SetExitProc
+#define Tcl_SetExitProc \
+	(tclStubsPtr->tcl_SetExitProc) /* 519 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
