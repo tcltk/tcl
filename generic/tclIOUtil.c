@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.52 2002/07/08 10:08:57 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.53 2002/07/08 10:11:22 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1727,7 +1727,7 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
 	    if (retVal != NULL) {
 		if (seekFlag) {
 		    if (Tcl_Seek(retVal, (Tcl_WideInt)0, 
-				 (Tcl_WideInt)SEEK_END) < (Tcl_WideInt)0) {
+				 SEEK_END) < (Tcl_WideInt)0) {
 			if (interp != (Tcl_Interp *) NULL) {
 			    Tcl_AppendResult(interp,
 			      "could not seek to end of file while opening \"",
