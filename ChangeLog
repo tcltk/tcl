@@ -1,3 +1,8 @@
+2004-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixChan.c (TtySetOptionProc): fixed crash configuring
+	-ttycontrol on a channel. [Bug 1067708]
+
 2004-11-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c (TclFSEpochOk):	There were two code paths
