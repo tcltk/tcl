@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.8 2004/09/14 16:30:32 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.9 2004/10/27 15:39:36 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1118,11 +1118,7 @@ SetBooleanFromAny(interp, objPtr)
     } else if (objPtr->typePtr == &tclDoubleType) {
 	newBool = (objPtr->internalRep.doubleValue != 0.0);
     } else if (objPtr->typePtr == &tclWideIntType) {
-#ifdef TCL_WIDE_INT_IS_LONG
-	newBool = (objPtr->internalRep.longValue != 0);
-#else /* !TCL_WIDE_INT_IS_LONG */
-	newBool = (objPtr->internalRep.wideValue != Tcl_LongAsWide(0));
-#endif /* TCL_WIDE_INT_IS_LONG */
+	newBool = (objPtr->internalRep.wideValue != 0);
     } else {
 	/*
 	 * Copy the string converting its characters to lower case.

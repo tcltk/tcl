@@ -1,3 +1,12 @@
+2004-10-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Backport a missing bit 
+	                                         of the bug 868486 fix.
+	* generic/tclObj.c (SetBooleanFromAny): Backport fix for Bug
+	                                        1026125.
+	* tests/format.test (format-19.1): Additional regression test for
+	                                   Bug 868489.
+	
 2004-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/*.n: Backporting of documentation updates.
