@@ -150,8 +150,10 @@ test filesystem-4.3 {testfilesystem} {
     -result {* {matchindirectory *} *}
 }
 
+# cleanup
 catch {unset filesystemReport}
 # Make sure the testfilesystem hasn't been registered.
 while {![catch {testfilesystem 0}]} {}
 
-
+::tcltest::cleanupTests
+return
