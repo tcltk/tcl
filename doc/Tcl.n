@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.7 2002/11/11 16:05:37 kennykb Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.8 2002/11/11 16:08:28 kennykb Exp $
 '\"
 .so man.macros
 .TH Tcl n "8.1" Tcl "Tcl Built-In Commands"
@@ -191,6 +191,7 @@ no substitutions are performed before making the recursive
 call and no additional substitutions are performed on the result
 of the nested script.
 .RS
+.LP
 Substitutions take place from left to right, and each substitution is
 evaluated completely before attempting to evaluate the next.  Thus, a
 sequence like
