@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.154 2004/10/06 14:59:01 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.155 2004/10/06 20:09:37 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1670,7 +1670,7 @@ TclExecuteByteCode(interp, codePtr)
 		     */
 		    
 		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
-					   objc, cmdNameBuf), Tcl_GetObjResult(interp));
+			    objc, cmdNameBuf), Tcl_GetObjResult(interp));
 		    
 		    objResultPtr = Tcl_GetObjResult(interp);
 		    
@@ -1757,8 +1757,8 @@ TclExecuteByteCode(interp, codePtr)
 	    result = Tcl_ExprObj(interp, objPtr, &valuePtr);
 	    CACHE_STACK_INFO();
 	    if (result != TCL_OK) {
-		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", 
-				       O2S(objPtr)), Tcl_GetObjResult(interp));
+		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
+			Tcl_GetObjResult(interp));
 		goto checkForCatch;
 	    }
 	    objResultPtr = valuePtr;
@@ -2206,7 +2206,7 @@ TclExecuteByteCode(interp, codePtr)
 		 REQUIRE_WIDE_OR_INT(result, objPtr, i, w);
 		 if (result != TCL_OK) {
 		     TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
-					    opnd, O2S(objPtr)), Tcl_GetObjResult(interp));
+			     opnd, O2S(objPtr)), Tcl_GetObjResult(interp));
 		     DECACHE_STACK_INFO();
 		     Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 		     CACHE_STACK_INFO();
@@ -4611,8 +4611,8 @@ TclExecuteByteCode(interp, codePtr)
 			    CACHE_STACK_INFO();
 			    if (value2Ptr == NULL) {
 				TRACE_WITH_OBJ(("%u => ERROR init. index temp %d: ",
-						opnd, varIndex),
-					       Tcl_GetObjResult(interp));
+					opnd, varIndex),
+					Tcl_GetObjResult(interp));
 				if (setEmptyStr) {
 				    TclDecrRefCount(valuePtr);
 				}
@@ -4661,7 +4661,7 @@ TclExecuteByteCode(interp, codePtr)
 	    
     case INST_PUSH_RESULT:
 	objResultPtr = Tcl_GetObjResult(interp);
-	TRACE_WITH_OBJ(("=> "), Tcl_GetObjResult(interp));
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
 
 	/*
 	 * See the comments at INST_INVOKE_STK
