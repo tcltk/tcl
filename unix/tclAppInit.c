@@ -11,12 +11,8 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.5 1999/04/16 00:48:03 stanton Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.6 1999/05/14 02:18:32 stanton Exp $
  */
-
-#ifdef TCL_XT_TEST
-#include <X11/Intrinsic.h>
-#endif
 
 #include "tcl.h"
 
@@ -44,6 +40,7 @@ extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif /* TCL_TEST */
 
 #ifdef TCL_XT_TEST
+extern void		XtToolkitInitialize _ANSI_ARGS_((void));
 extern int		Tclxttest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif
 

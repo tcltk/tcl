@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.24 1999/04/21 21:50:32 rjohnson Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.25 1999/05/14 02:18:31 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -256,8 +256,8 @@ TCLSH_OBJS = tclAppInit.o
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o	tclUnixTest.o
 
-XTTEST_OBJS = tclTest.o tclTestObj.o tclUnixTest.o tclXtNotify.o \
-	tclXtTest.o xtTestInit.o
+XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
+	tclThreadTest.o	tclUnixTest.o tclXtNotify.o tclXtTest.o 
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAsync.o tclBasic.o tclBinary.o \
@@ -424,12 +424,6 @@ tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 	${CC} @LD_FLAGS@ ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tcltest
-
-xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
-	@DL_OBJS@ ${BUILD_DLTEST}
-	${CC} ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
-		@DL_OBJS@ @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -lXt -o xttest
 
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
@@ -652,8 +646,9 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
 	fi;
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST -DTCL_XT_TEST \
-		$(UNIX_DIR)/tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) \
+		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
+		-DTCL_TEST -DTCL_XT_TEST $(UNIX_DIR)/tclAppInit.c
 	rm -f xtTestInit.o
 	mv tclAppInit.o xtTestInit.o
 	@if test -f tclAppInit.sav ; then \
@@ -922,6 +917,24 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
+
+# The following targets are not completely general.  They are provide
+# purely for documentation purposes so people who are interested in
+# the Xt based notifier can modify them to suit their own installation.
+
+xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
+	@DL_OBJS@ ${BUILD_DLTEST}
+	${CC} ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
+		@DL_OBJS@ @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+		@TCL_LD_SEARCH_FLAGS@ -L/usr/openwin/lib -lXt -o xttest
+
+tclXtNotify.o: $(UNIX_DIR)/tclXtNotify.c
+	$(CC) -c $(CC_SWITCHES) -I/usr/openwin/include \
+		$(UNIX_DIR)/tclXtNotify.c
+
+tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
+	$(CC) -c $(CC_SWITCHES) -I/usr/openwin/include \
+		$(UNIX_DIR)/tclXtTest.c
 
 # compat binaries, these must be compiled for use in a shared library
 # even though they may be placed in a static executable or library.  Since
