@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.5 2004/07/02 16:52:19 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.6 2004/09/01 17:28:04 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1120,7 +1120,7 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 #  endif
 
 
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && !defined(_WIN64)
 
     /* Define a structure in the stack frame to hold the registers */
 
@@ -1163,7 +1163,7 @@ TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
 
 #else
 				/* Don't know how to do assembly code for
-				 * this compiler */
+				 * this compiler and/or architecture */
 #endif
     return status;
 }
