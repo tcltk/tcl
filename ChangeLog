@@ -1,3 +1,10 @@
+2003-03-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Only add the modifier
+	that indicates we've got a wide int when we're formatting in an
+	integer style.  Stops some libc's from going mad.  [Bug #702622]
+	Also tidied whitespace.
+
 2003-03-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tcl.m4 (SC_WITH_TCL): Port version number
