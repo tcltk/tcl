@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.13 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.14 1999/02/02 22:25:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -188,7 +188,7 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		1},
     {"glob",		Tcl_GlobCmd,		(Tcl_ObjCmdProc *) NULL,
         (CompileProc *) NULL,		0},
-    {"open",		Tcl_OpenCmd,		(Tcl_ObjCmdProc *) NULL,
+    {"open",		(Tcl_CmdProc *) NULL,	Tcl_OpenObjCmd,
         (CompileProc *) NULL,		0},
     {"pid",		(Tcl_CmdProc *) NULL,	Tcl_PidObjCmd,
         (CompileProc *) NULL,		1},

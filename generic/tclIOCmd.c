@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.3 1998/09/14 18:39:59 stanton Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.4 1999/02/02 22:25:42 stanton Exp $
  */
 
 #include	"tclInt.h"
@@ -949,7 +949,7 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenCmd --
+ * Tcl_OpenObjCmd --
  *
  *	This procedure is invoked to process the "open" Tcl command.
  *	See the user documentation for details on what it does.
@@ -965,35 +965,35 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-Tcl_OpenCmd(notUsed, interp, argc, argv)
+Tcl_OpenObjCmd(notUsed, interp, argc, objv)
     ClientData notUsed;			/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
     int argc;				/* Number of arguments. */
-    char **argv;			/* Argument strings. */
+    Tcl_Obj * CONST objv[];		/* Argument objects. */
 {
     int pipeline, prot;
-    char *modeString;
+    char *modeString, *arg1;
     Tcl_Channel chan;
 
     if ((argc < 2) || (argc > 4)) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" fileName ?access? ?permissions?\"", (char *) NULL);
+	Tcl_WrongNumArgs(interp, 1, objv, "fileName ?access? ?permissions?");
 	return TCL_ERROR;
     }
     prot = 0666;
     if (argc == 2) {
 	modeString = "r";
     } else {
-	modeString = argv[2];
+	modeString = Tcl_GetStringFromObj(objv[2], NULL);
 	if (argc == 4) {
-	    if (Tcl_GetInt(interp, argv[3], &prot) != TCL_OK) {
+	    if (Tcl_GetIntFromObj(interp, objv[3], &prot) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
     }
 
+    arg1 = Tcl_GetStringFromObj(objv[1], NULL);
     pipeline = 0;
-    if (argv[1][0] == '|') {
+    if (arg1[0] == '|') {
 	pipeline = 1;
     }
 
@@ -1002,10 +1002,10 @@ Tcl_OpenCmd(notUsed, interp, argc, argv)
      */
 
     if (!pipeline) {
-        chan = Tcl_OpenFileChannel(interp, argv[1], modeString, prot);
+        chan = Tcl_OpenFileChannel(interp, arg1, modeString, prot);
     } else {
 #ifdef MAC_TCL
-	Tcl_AppendResult(interp,
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"command pipelines not supported on Macintosh OS",
 		(char *)NULL);
 	return TCL_ERROR;
@@ -1013,7 +1013,7 @@ Tcl_OpenCmd(notUsed, interp, argc, argv)
 	int mode, seekFlag, cmdArgc;
 	char **cmdArgv;
 
-        if (Tcl_SplitList(interp, argv[1]+1, &cmdArgc, &cmdArgv) != TCL_OK) {
+	if (Tcl_SplitList(interp, arg1+1, &cmdArgc, &cmdArgv) != TCL_OK) {
             return TCL_ERROR;
         }
 
@@ -1045,7 +1045,8 @@ Tcl_OpenCmd(notUsed, interp, argc, argv)
         return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
-    Tcl_AppendResult(interp, Tcl_GetChannelName(chan), (char *) NULL);
+    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	Tcl_GetChannelName(chan), (char *) NULL);
     return TCL_OK;
 }
 
