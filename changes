@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.75 2002/11/07 02:19:16 mdejong Exp $
+RCS: @(#) $Id: changes,v 1.76 2003/02/28 21:32:34 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5665,7 +5665,88 @@ in DYLD_FRAMEWORK_PATH (if set). (steffen)
 
 --- Released 8.4.1, October 22, 2002 --- See ChangeLog for details ---
 
-2001-11-6 (feature enhancement) added new TclInThreadExit function to
+2002-10-28 (bug fix)[627660] [package unknown] chaining for platform specifics
+
+2002-10-29 (bug fix)[627546] verbose [load] (dyld) error mesages on MacOSX
+
+2002-11-06 (bug fix)[582039] missing ar program -> configuration error
+
+2002-11-06 (feature enhancement) added new TclInThreadExit function to
 test for thread exit vs whole process exit condition. The TclInExit
-function now correctly returns 1 during Tcl_Finalize processing. (mdejong)
+function now correctly returns 1 during Tcl_Finalize processing.
         *** POTENTIAL INCOMPATIBILITY ***
+
+2002-11-13 (bug fix)[615043] some execution traces were not firing
+
+2002-11-18 (bug fix)[634856] multiple signs no longer accepted as valid integer
+[string is integer ++1] => 0
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2002-11-26 (bug fix)[593810,597924] clean exit of channel worker threads on Win
+
+2002-11-28 (new feature) `make valgrind` target
+
+2002-12-03 (bug fix)[615304] repeated load/unload of Tcl now possible
+
+2002-12-11 (bug fix)[647307] negative return codes now propagated by procs
+
+2002-12-11 (bug fix)[648441] syntax error in [expr 0x] now detected.
+
+2003-01-07 (bug fix)[633204] [catch {return}] => 2 (not 0)
+
+2003-01-07 (bug fix)[634151] [file (a|m)time $nonASCIIpath $time] now works
+
+2003-01-16 (bug fix)[635200,655645,615043,571385] many command trace fixes
+
+2003-01-31 (bug fix)[675614,678415,676978] tcltest conflicts in cleanup
+and -outfile; also failure in space-containing path; also missing [close]
+=> tcltest 2.2.2
+
+2003-02-01 (bug fix)[670042] corrected [info loaded {}] for static
+packages in multiple interps.
+
+2003-02-01 (bug fix)[675356] [clock clicks {}]; [clock clicks -] - syntax errs
+
+2003-02-01 (bug fix)[656660] MT-safety for [clock format] 
+
+2003-02-03 (bug fix)[651271] command rename traces get fully-qualified names
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2003-02-07 (performance improvement) [glob] on Windows is 2.5 times faster
+
+2003-02-07 (feature change) lack of Cygwin support indicated by config error
+
+2003-02-11 (bug fix)[684744] [info complete] stopped by \x00
+
+2003-02-11 (bug fix)[685445] [glob -types l] missed broken symlinks on Unix
+
+2003-02-13 (bug fix)[685926] accept non-ASCII7 for tcl_platform(user) on Win
+
+2003-02-15 (bug fix)[673714] stop crash when Tcl_DeleteEvents deletes last
+
+2003-02-15 (bug fix)[681841] parser missed some missing ] syntax errors
+
+2003-02-17 (bug fix)[684756] memory leak during command rename plugged
+
+2003-02-18 (bug fix)[689100] reduced per-thread memory overhead
+
+2003-02-18 (platform support)[651811] use xnet library on HP 11 (64 bit).
+
+2003-02-20 (bug fix)[Patch 689341] correct jis round-trip encoding
+
+2003-02-20 (bug fix)[689835] stop MacOSX hang trying to read a write-only pipe
+
+2003-02-07 (performance improvement) [tclPkgUnknown]: fewer vfs calls
+
+2003-02-18 (platform support) cut and splice procs for file channels on Mac
+
+2003-02-21 (bug fix)[690774] [binary scan] failed on some wide ints
+
+2003-02-22 (bug fix)[571002] plugged data leak during thread exit
+
+2003-02-25 (feature change) [pkg_mkIndex -load]: case-insensitive match
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2003-02-27 (bug fix)[694232] stop [lsearch -start 0 {} x] segfault
+
+--- Released 8.4.2, March X, 2003 --- See ChangeLog for details ---
