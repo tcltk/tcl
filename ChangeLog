@@ -1,3 +1,10 @@
+2002-03-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:  Keep the value of $::auto_path
+	unchanged, so that the tcltest package can test code that depends
+	on auto-loading.  If a testing application needs $::auto_path pruned,
+	it should do that itself.  [Bug 495726]
+
 2002-03-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* doc/CrtTrace.3: small doc correction
