@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20 2001/09/08 14:05:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.21 2001/09/28 01:21:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2236,7 +2236,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
-    char *sym1, *sym2;		/* Names of two procedures to look up in
+    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
 				 * the file's symbol table. */
     Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
 				/* Where to return the addresses corresponding
@@ -2300,8 +2300,9 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		FsDivertLoad *tvdlPtr;
 		int retVal;
 		
-		retVal = Tcl_FSLoadFile(interp, copyToPtr, sym1, sym2, proc1Ptr, 
-			       proc2Ptr, &newClientData, &newUnloadProcPtr);
+		retVal = Tcl_FSLoadFile(interp, copyToPtr, sym1, sym2,
+					proc1Ptr, proc2Ptr, &newClientData,
+					&newUnloadProcPtr);
 	        if (retVal == -1) {
 		    /* The file didn't load successfully */
 		    Tcl_FSDeleteFile(copyToPtr);

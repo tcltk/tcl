@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.62 2001/09/27 20:32:35 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.63 2001/09/28 01:21:53 dgp Exp $
 
 library tcl
 
@@ -1560,7 +1560,7 @@ declare 443 generic {
 }
 declare 444 generic {
     int	Tcl_FSLoadFile(Tcl_Interp * interp, \
-		    Tcl_Obj *pathPtr, char * sym1, char * sym2, \
+		    Tcl_Obj *pathPtr, CONST char * sym1, CONST char * sym2, \
 		    Tcl_PackageInitProc ** proc1Ptr, \
 		    Tcl_PackageInitProc ** proc2Ptr, \
 		    ClientData * clientDataPtr, \
