@@ -1,3 +1,9 @@
+2001-11-29  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* tests/namespace.test: backporting patch for [Bug 231259]
+
 2001-11-20  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_TimeObjCmd) Added extra parentheses to a

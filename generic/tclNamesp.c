@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.17.2.1 2001/04/03 22:54:37 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.17.2.2 2001/11/29 20:08:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2277,6 +2277,17 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
             hPtr = Tcl_FindHashEntry(&shadowNsPtr->cmdTable, cmdName);
             if (hPtr != NULL) {
                 nsPtr->cmdRefEpoch++;
+
+		/* 
+		 * If the shadowed command was compiled to bytecodes, we
+		 * invalidate all the bytecodes in nsPtr, to force a new
+		 * compilation. We use the resolverEpoch to signal the need
+		 * for a fresh compilation of every bytecode.
+		 */
+
+		if ((((Command *) Tcl_GetHashValue(hPtr))->compileProc) != NULL) {
+		    nsPtr->resolverEpoch++;
+		}
             }
         }
 
