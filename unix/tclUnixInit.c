@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.26 2001/11/16 23:40:41 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.27 2001/11/17 00:10:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -68,6 +68,25 @@ typedef struct LocaleTable {
 static CONST LocaleTable localeTable[] = {
 #ifdef HAVE_LANGINFO
     {"gb2312-1980",	"gb2312"},
+#ifdef __hpux
+    {"SJIS",		"shiftjis"},
+    {"eucjp",		"euc-jp"},
+    {"euckr",		"euc-kr"},
+    {"euctw",		"euc-cn"},
+    {"greek8",		"cp869"},
+    {"iso88591",	"iso8859-1"},
+    {"iso88592",	"iso8859-2"},
+    {"iso88595",	"iso8859-5"},
+    {"iso88596",	"iso8859-6"},
+    {"iso88597",	"iso8859-7"},
+    {"iso88598",	"iso8859-8"},
+    {"iso88599",	"iso8859-9"},
+    {"iso885915",	"iso8859-15"},
+    {"roman8",		"iso8859-1"},
+    {"tis620",		"tis-620"},
+    {"turkish8",	"cp857"},
+    {"utf8",		"utf-8"},
+#endif
 #else
     {"ja_JP.SJIS",	"shiftjis"},
     {"ja_JP.EUC",	"euc-jp"},
