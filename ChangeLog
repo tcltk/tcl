@@ -2,6 +2,14 @@
 
 	* Changed version to 8.2b2.
 
+	* win/tclWinSock.c: Fixed hang with threads enabled, fixed
+	semaphores with threads disabled.
+
+	* win/safe.test: Fixed safe-6.3 with threads enabled.
+	
+	* win/Makefile.in:  Fixed calling of tcltest to fix safe.test
+	failures due to path TCL_LIBRARY path.
+
 	* win/tclWinPort.h: Block out include of sys/*.h in order to
 	build extensions with MetroWerks compiler for Win32. [Bug: 2385]
 	
