@@ -1,8 +1,3 @@
-2002-02-04  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	* unix/configure: regen'ed
-	* unix/configure.in: call /bin/pwd on AIX-4.3 to avoid pwd errors.
-
 2002-02-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* unix/tclUnixChan.c (FileOutputProc): Fixed [bug 465765] reported
