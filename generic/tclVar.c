@@ -15,9 +15,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.84 2004/05/27 13:18:53 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.85 2004/05/27 20:08:21 msofer Exp $
  */
 
+#include <stddef.h>
 #include "tclInt.h"
 
 /*
@@ -402,7 +403,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     
     if (typePtr == &tclLocalVarNameType) {
 	Proc *procPtr = (Proc *) part1Ptr->internalRep.twoPtrValue.ptr1;
-	int localIndex = (int) part1Ptr->internalRep.twoPtrValue.ptr2;
+	ptrdiff_t localIndex = (ptrdiff_t) part1Ptr->internalRep.twoPtrValue.ptr2;
 	int useLocal;
 
 	useLocal = ((varFramePtr != NULL) && varFramePtr->isProcCallFrame
@@ -555,7 +556,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	part1Ptr->typePtr = &tclLocalVarNameType;
 	procPtr->refCount++;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
-	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
+	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *)(ptrdiff_t) index;
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
 	/*
@@ -4611,7 +4612,7 @@ UpdateLocalVarName(objPtr)
     Tcl_Obj *objPtr;
 {
     Proc *procPtr = (Proc *) objPtr->internalRep.twoPtrValue.ptr1;
-    unsigned int index = (unsigned int) objPtr->internalRep.twoPtrValue.ptr2;
+    ptrdiff_t index = (ptrdiff_t) objPtr->internalRep.twoPtrValue.ptr2;
     CompiledLocal *localPtr = procPtr->firstLocalPtr;
     unsigned int nameLen;
 
