@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.13 2003/12/24 04:18:22 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.14 2004/03/03 10:44:41 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -458,18 +458,27 @@ Tcl_WaitForEvent(
     if (!PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 	/*
 	 * Wait for something to happen (a signal from another thread, a
-	 * message, or timeout).
+	 * message, or timeout) or loop servicing asynchronous procedure
+	 * calls queued to this thread.
 	 */
 
-	result = MsgWaitForMultipleObjects(1, &tsdPtr->event, FALSE, timeout,
-		QS_ALLINPUT);
+again:
+	result = MsgWaitForMultipleObjectsEx(1, &tsdPtr->event, timeout,
+		QS_ALLINPUT, MWMO_ALERTABLE);
+	if (result == WAIT_IO_COMPLETION) {
+	    goto again;
+	} else if (result == WAIT_FAILED) {
+	    status = -1;
+	    goto end;
+	}
     }
 
     /*
      * Check to see if there are any messages to process.
      */
 
-    if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+    if (result == (WAIT_OBJECT_0 + 1) ||
+	    PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
 	/*
 	 * Retrieve and dispatch the first message.
 	 */
@@ -499,6 +508,7 @@ Tcl_WaitForEvent(
 	status = 0;
     }
 
+end:
     ResetEvent(tsdPtr->event);
     return status;
 }
