@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.7 2000/11/24 14:17:12 dkf Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.8 2001/11/10 02:34:57 hobbs Exp $
 # 
 
 #
@@ -99,7 +99,7 @@ proc doFile {file} {
 proc doDir dir {
     puts "Generating man pages for $dir..."
     foreach f [lsort [glob -directory $dir "*.\[13n\]"]] {
-	do $f
+	doFile $f
     }
 }
 
