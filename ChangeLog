@@ -1,5 +1,10 @@
 2003-03-13  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* win/tcl.m4 (SC_WITH_TCL): Port version number
+	fix that was made in tk instead of tcl sources.
+
+2003-03-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Require autoconf 2.57 or newer, see TIP 34
 	for a detailed explanation of why this is good.
 	This will no doubt break the build on some
