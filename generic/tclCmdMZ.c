@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.1 2003/03/12 18:04:39 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.2 2003/04/07 16:54:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4534,7 +4534,9 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 		/* Restore result if trace execution was successful */
 		Tcl_RestoreResult(interp, &state);
 		iPtr->returnCode = stateCode;
-            }
+            } else {
+		Tcl_DiscardResult(&state);
+	    }
 
 	    Tcl_DStringFree(&cmd);
 	}
