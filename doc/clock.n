@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.11.2.4 2004/10/27 14:23:41 dkf Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.11.2.5 2004/11/12 09:02:30 das Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -29,8 +29,8 @@ or manipulate strings or values that represent some notion of
 time.  The \fIoption\fR argument determines what action is carried
 out by the command.  The legal \fIoptions\fR (which may be
 abbreviated) are:
-.TP
 .VS 8.3
+.TP
 \fBclock clicks\fR ?\fB\-milliseconds\fR?
 Return a high-resolution time value as a system-dependent integer
 value.  The unit of the value is system-dependent but should be the
@@ -268,10 +268,10 @@ different results will be given for \fBclock scan "1 day"\fR and
 \fBclock scan "24 hours"\fR:
 .CS
 .ta 6c
-\fB% \fBclock scan\fR "1 day" -base [\fBclock scan\fR 1999-10-31]
+% \fBclock scan\fR "1 day" -base [\fBclock scan\fR 1999-10-31]
 941443200
 % \fBclock scan\fR "24 hours" -base [\fBclock scan\fR 1999-10-31]
-941439600\fR
+941439600
 .CE
 .RE
 .TP

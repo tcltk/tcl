@@ -1,3 +1,13 @@
+2004-11-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* doc/clock.n:
+	* doc/registry.n:
+	* doc/upvar.n: fixed *roff errors uncovered by running 'make html'.
+	
+	* tools/tcltk-man2html.tcl: added faked support for bullet point
+	lists, i.e. *nroff ".IP \(bu" syntax.
+	Synced other changes from HEAD.
+
 2004-11-11  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tests/fCmd.test:
