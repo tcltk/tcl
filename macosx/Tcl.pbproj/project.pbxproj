@@ -478,7 +478,7 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "# build html documentation\nif [ \"${BUILD_STYLE}\" = \"Deployment\" ]; then\n    cd \"${TEMP_DIR}/..\"\n    gnumake html DISTDIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    cd \"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    ln -fs contents.htm html/index.html\n    rm -f \"${PRODUCT_NAME}\"; ln -fs html \"${PRODUCT_NAME}\"\nfi";
+			shellScript = "if [ `echo \"${DYLIB_INSTALL_PATH:-}\" | grep -c \"@executable_path\"` -eq 0 ]; then\n# build html documentation\nif [ \"${BUILD_STYLE}\" = \"Deployment\" ]; then\n    cd \"${TEMP_DIR}/..\"\n    gnumake html DISTDIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    cd \"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    ln -fs contents.htm html/index.html\n    rm -f \"${PRODUCT_NAME}\"; ln -fs html \"${PRODUCT_NAME}\"\nfi\nfi";
 		};
 		F5A1836F018242A501DC9062 = {
 			isa = PBXFileReference;
