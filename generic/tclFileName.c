@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.4 2003/10/03 17:45:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.5 2003/10/06 09:49:19 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1392,7 +1392,8 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_DStringInit(bufferPtr);
     Tcl_DStringAppend(bufferPtr, Tcl_GetString(transPtr), -1);
     Tcl_DecrRefCount(path);
-
+    Tcl_DecrRefCount(transPtr);
+    
     /*
      * Convert forward slashes to backslashes in Windows paths because
      * some system interfaces don't accept forward slashes.

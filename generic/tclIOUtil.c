@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.9 2003/10/03 17:45:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.10 2003/10/06 09:49:20 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -4515,52 +4515,6 @@ Tcl_FSJoinPath(listObj, elements)
 	}
     }
     
-    if (elements == 2) {
-	/* 
-	 * This is a special case where we can be much more
-	 * efficient
-	 */
-	Tcl_Obj *base;
-	
-	Tcl_ListObjIndex(NULL, listObj, 0, &base);
-	/* 
-	 * There is only any value in doing this if the first object is
-	 * of path type, otherwise we'll never actually get any
-	 * efficiency benefit elsewhere in the code (from re-using the
-	 * normalized representation of the base object).
-	 */
-	if (base->typePtr == &tclFsPathType
-		&& !(base->bytes != NULL && base->bytes[0] == '\0')) {
-	    Tcl_Obj *tail;
-	    Tcl_PathType type;
-	    Tcl_ListObjIndex(NULL, listObj, 1, &tail);
-	    type = GetPathType(tail, NULL, NULL, NULL);
-	    if (type == TCL_PATH_RELATIVE) {
-		CONST char *str;
-		int len;
-		str = Tcl_GetStringFromObj(tail,&len);
-		if (len == 0) {
-		    /* 
-		     * This happens if we try to handle the root volume
-		     * '/'.  There's no need to return a special path
-		     * object, when the base itself is just fine!
-		     */
-		    return base;
-		}
-		if (str[0] != '.') {
-		    return TclNewFSPathObj(base, str, len);
-		}
-		/* 
-		 * Otherwise we don't have an easy join, and
-		 * we must let the more general code below handle
-		 * things
-		 */
-	    } else {
-		return tail;
-	    }
-	}
-    }
-    
     res = Tcl_NewObj();
     
     for (i = 0; i < elements; i++) {
@@ -4574,6 +4528,76 @@ Tcl_FSJoinPath(listObj, elements)
 	Tcl_Obj *driveName = NULL;
 	
 	Tcl_ListObjIndex(NULL, listObj, i, &elt);
+	
+	/* 
+	 * This is a special case where we can be much more
+	 * efficient, where we are joining a single relative path
+	 * onto an object that is already of path type.  The 
+	 * 'TclNewFSPathObj' call below creates an object which
+	 * can be normalized more efficiently.  Currently we only
+	 * use the special case when we have exactly two elements,
+	 * but we could expand that in the future.
+	 */
+	if ((i == (elements-2)) && (i == 0) && (elt->typePtr == &tclFsPathType)
+	  && !(elt->bytes != NULL && (elt->bytes[0] == '\0'))) {
+	    Tcl_Obj *tail;
+	    Tcl_PathType type;
+	    Tcl_ListObjIndex(NULL, listObj, i+1, &tail);
+	    type = GetPathType(tail, NULL, NULL, NULL);
+	    if (type == TCL_PATH_RELATIVE) {
+		CONST char *str;
+		int len;
+		str = Tcl_GetStringFromObj(tail,&len);
+		if (len == 0) {
+		    /* 
+		     * This happens if we try to handle the root volume
+		     * '/'.  There's no need to return a special path
+		     * object, when the base itself is just fine!
+		     */
+		    Tcl_DecrRefCount(res);
+		    return elt;
+		}
+		/* 
+		 * If it doesn't begin with '.'  and is a mac or unix
+		 * path or it a windows path without backslashes, then we
+		 * can be very efficient here.  (In fact even a windows
+		 * path with backslashes can be joined efficiently, but
+		 * the path object would not have forward slashes only,
+		 * and this would therefore contradict our 'file join'
+		 * documentation).
+		 */
+		if (str[0] != '.' && ((tclPlatform != TCL_PLATFORM_WINDOWS) 
+				      || (strchr(str, '\\') == NULL))) {
+		    Tcl_DecrRefCount(res);
+		    return TclNewFSPathObj(elt, str, len);
+		}
+		/* 
+		 * Otherwise we don't have an easy join, and
+		 * we must let the more general code below handle
+		 * things
+		 */
+	    } else {
+		if (tclPlatform == TCL_PLATFORM_UNIX) {
+		    Tcl_DecrRefCount(res);
+		    return tail;
+		} else {
+		    CONST char *str;
+		    int len;
+		    str = Tcl_GetStringFromObj(tail,&len);
+		    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+			if (strchr(str, '\\') == NULL) {
+			    Tcl_DecrRefCount(res);
+			    return tail;
+			}
+		    } else if (tclPlatform == TCL_PLATFORM_MAC) {
+			if (strchr(str, '/') == NULL) {
+			    Tcl_DecrRefCount(res);
+			    return tail;
+			}
+		    }
+		}
+	    }
+	}
 	strElt = Tcl_GetStringFromObj(elt, &strEltLen);
 	type = GetPathType(elt, &fsPtr, &driveNameLength, &driveName);
 	if (type != TCL_PATH_RELATIVE) {
