@@ -23,12 +23,12 @@ test -z "$S" && S="$DIR/"
 # Backslashes are trippled in the sed script, because it is in backticks
 # which don't pass backslashes literally.
 NAMES=`sed -n '
-    /^\\.SH NAME/{    # Look for a line, that starts with .SH NAME
-	s/^.*$//      # Delete the content of this line from the buffer
-	n             # Read next line
-	s/,\|\\\ //g  # Remove all commas
-	s/ \\\-.*//   # Delete from \- to the end of line
-	p             # print the result
+    /^\\.SH NAME/{    ;# Look for a line, that starts with .SH NAME
+	s/^.*$//      ;# Delete the content of this line from the buffer
+	n             ;# Read next line
+	s/,\|\\\ //g  ;# Remove all commas
+	s/ \\\-.*//   ;# Delete from \- to the end of line
+	p             ;# print the result
 	q
     }' $MANPAGE`
 
