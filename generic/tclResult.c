@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.2 1999/04/16 00:46:53 stanton Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.3 1999/05/07 20:07:35 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -475,7 +475,7 @@ Tcl_AppendResultVA (interp, argList)
      * Scan through all the arguments to see how much space is needed.
      */
 
-    tmpArgList = argList;
+    memcpy ((VOID *) &tmpArgList, (VOID *) &argList, sizeof (tmpArgList));
     newSpace = 0;
     while (1) {
 	string = va_arg(tmpArgList, char *);

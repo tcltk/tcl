@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.5 1999/04/28 17:06:06 stanton Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.6 1999/05/07 20:07:35 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -426,10 +426,11 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
     /*
      * Figure out how much space is needed for all the strings, and
      * expand the string representation if it isn't big enough. If no
-     * bytes would be appended, just return.
+     * bytes would be appended, just return.  Note that on some platforms
+     * (notably OS/390) the argList is an array so we need to use memcpy.
      */
 
-    tmpArgList = argList;
+    memcpy ((VOID *) &tmpArgList, (VOID *) &argList, sizeof (tmpArgList));
     newLength = oldLength = objPtr->length;
     while (1) {
 	string = va_arg(tmpArgList, char *);
