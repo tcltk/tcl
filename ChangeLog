@@ -1,3 +1,8 @@
+2002-09-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c (Tcl_UpVar2): a Tcl_Obj was being leaked on
+	error return from TclGetFrame.
+
 2002-09-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:  Updated changes for 8.4.0 release.
