@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.9 2003/02/08 22:03:20 hobbs Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10 2003/03/19 21:57:44 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -673,7 +673,7 @@ proc ::safe::setLogCmd {args} {
     proc TranslatePath {slave path} {
 	# somehow strip the namespaces 'functionality' out (the danger
 	# is that we would strip valid macintosh "../" queries... :
-	if {[regexp {(::)|(\.\.)} $path]} {
+	if {[string match "*::*" $path] || [string match "*..*" $path]} {
 	    error "invalid characters in path $path"
 	}
 	set n [expr {[Set [PathNumberName $slave]]-1}]

@@ -75,7 +75,7 @@ foreach file $argv {
     while {[gets $in line] >= 0} {
 	switch $state {
 	    begin {
-		if {[regexp "^.SH NAME" $line]} {
+		if {[string match ".SH NAME*" $line]} {
 		    set state name
 		}
 	    }
