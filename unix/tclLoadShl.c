@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.7 2001/09/10 21:18:19 dgp Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.8 2001/09/28 01:21:53 dgp Exp $
  */
 
 #include <dl.h>
@@ -52,7 +52,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
-    char *sym1, *sym2;		/* Names of two procedures to look up in
+    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
 				 * the file's symbol table. */
     Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
 				/* Where to return the addresses corresponding
