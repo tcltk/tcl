@@ -2,7 +2,7 @@
 
 	* win/tclWinThrd.c (Tcl_ConditionNotify): condPtr must be
 	dereferenced to see if there are waiters else uninitialized
-	datum is manipulated.  [Bug 849007]
+	datum is manipulated.  [Bug 849007 789338 745068]
 
 2004-01-09  David Gravereaux <davygrvy@pobox.com>
 
