@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.29 2001/03/30 23:06:39 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.30 2001/05/19 16:59:04 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -112,6 +112,10 @@ static int		DoRead _ANSI_ARGS_((Channel *chanPtr, char *srcPtr,
 				int slen));
 static int		DoWrite _ANSI_ARGS_((Channel *chanPtr, char *src,
 				int srcLen));
+static int		DoReadChars _ANSI_ARGS_ ((Channel* chan,
+				Tcl_Obj* objPtr, int toRead, int appendFlag));
+static int		DoWriteChars _ANSI_ARGS_ ((Channel* chan,
+				CONST char* src, int len));
 static int		FilterInputBytes _ANSI_ARGS_((Channel *chanPtr,
 				GetsState *statePtr));
 static int		FlushChannel _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2508,7 +2512,10 @@ Tcl_ClearChannelHandlers (channel)
  *	Puts a sequence of bytes into an output buffer, may queue the
  *	buffer for output if it gets full, and also remembers whether the
  *	current buffer is ready e.g. if it contains a newline and we are in
- *	line buffering mode.
+ *	line buffering mode. Compensates stacking, i.e. will redirect the
+ *	data from the specified channel to the topmost channel in a stack.
+ *
+ *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
  *	The number of bytes written or -1 in case of error. If -1,
@@ -2555,7 +2562,10 @@ Tcl_Write(chan, src, srcLen)
  *	Puts a sequence of bytes into an output buffer, may queue the
  *	buffer for output if it gets full, and also remembers whether the
  *	current buffer is ready e.g. if it contains a newline and we are in
- *	line buffering mode.
+ *	line buffering mode. Writes directly to the driver of the channel,
+ *	does not compensate for stacking.
+ *
+ *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
  *	The number of bytes written or -1 in case of error. If -1,
@@ -2611,7 +2621,8 @@ Tcl_WriteRaw(chan, src, srcLen)
  *	using the channel's current encoding, may queue the buffer for
  *	output if it gets full, and also remembers whether the current
  *	buffer is ready e.g. if it contains a newline and we are in
- *	line buffering mode.
+ *	line buffering mode. Compensates stacking, i.e. will redirect the
+ *	data from the specified channel to the topmost channel in a stack.
  *
  * Results:
  *	The number of bytes written or -1 in case of error. If -1,
@@ -2631,18 +2642,55 @@ Tcl_WriteChars(chan, src, len)
     int len;			/* Length of string in bytes, or < 0 for 
 				 * strlen(). */
 {
-    /*
-     * Always use the topmost channel of the stack
-     */
-    Channel *chanPtr;
     ChannelState *statePtr;	/* state info for channel */
 
     statePtr = ((Channel *) chan)->state;
-    chanPtr  = statePtr->topChanPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
 	return -1;
     }
+
+    return DoWriteChars ((Channel*) chan, src, len);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * DoWriteChars --
+ *
+ *	Takes a sequence of UTF-8 characters and converts them for output
+ *	using the channel's current encoding, may queue the buffer for
+ *	output if it gets full, and also remembers whether the current
+ *	buffer is ready e.g. if it contains a newline and we are in
+ *	line buffering mode. Compensates stacking, i.e. will redirect the
+ *	data from the specified channel to the topmost channel in a stack.
+ *
+ * Results:
+ *	The number of bytes written or -1 in case of error. If -1,
+ *	Tcl_GetErrno will return the error code.
+ *
+ * Side effects:
+ *	May buffer up output and may cause output to be produced on the
+ *	channel.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+DoWriteChars(chanPtr, src, len)
+    Channel* chanPtr;		/* The channel to buffer output for. */
+    CONST char *src;		/* UTF-8 characters to queue in output buffer. */
+    int len;			/* Length of string in bytes, or < 0 for 
+				 * strlen(). */
+{
+    /*
+     * Always use the topmost channel of the stack
+     */
+    ChannelState *statePtr;	/* state info for channel */
+
+    statePtr = chanPtr->state;
+    chanPtr  = statePtr->topChanPtr;
+
     if (len < 0) {
         len = strlen(src);
     }
@@ -4037,7 +4085,61 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
 				 * of the object. */
 
 {
-    Channel *chanPtr = (Channel *) chan;
+    Channel*      chanPtr  = (Channel *) chan;
+    ChannelState* statePtr = chanPtr->state;	/* state info for channel */
+    
+    /*
+     * This operation should occur at the top of a channel stack.
+     */
+
+    chanPtr = statePtr->topChanPtr;
+
+    if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
+        /*
+	 * Update the notifier state so we don't block while there is still
+	 * data in the buffers.
+	 */
+        UpdateInterest(chanPtr);
+	return -1;
+    }
+
+    return DoReadChars (chanPtr, objPtr, toRead, appendFlag);
+}
+/*
+ *---------------------------------------------------------------------------
+ *
+ * DoReadChars --
+ *
+ *	Reads from the channel until the requested number of characters
+ *	have been seen, EOF is seen, or the channel would block.  EOL
+ *	and EOF translation is done.  If reading binary data, the raw
+ *	bytes are wrapped in a Tcl byte array object.  Otherwise, the raw
+ *	bytes are converted to UTF-8 using the channel's current encoding
+ *	and stored in a Tcl string object.
+ *
+ * Results:
+ *	The number of characters read, or -1 on error. Use Tcl_GetErrno()
+ *	to retrieve the error code for the error that occurred.
+ *
+ * Side effects:
+ *	May cause input to be buffered.
+ *
+ *---------------------------------------------------------------------------
+ */
+ 
+int
+DoReadChars(chanPtr, objPtr, toRead, appendFlag)
+    Channel* chanPtr;		/* The channel to read. */
+    Tcl_Obj *objPtr;		/* Input data is stored in this object. */
+    int toRead;			/* Maximum number of characters to store,
+				 * or -1 to read all available data (up to EOF
+				 * or when channel blocks). */
+    int appendFlag;		/* If non-zero, data read from the channel
+				 * will be appended to the object.  Otherwise,
+				 * the data will replace the existing contents
+				 * of the object. */
+
+{
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
     int offset, factor, copied, copiedNow, result;
@@ -4048,15 +4150,9 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
      * This operation should occur at the top of a channel stack.
      */
 
-    chanPtr = statePtr->topChanPtr;
-
-    if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	copied = -1;
-	goto done;
-    }
-
+    chanPtr  = statePtr->topChanPtr;
     encoding = statePtr->encoding;
-    factor = UTF_EXPANSION_FACTOR;
+    factor   = UTF_EXPANSION_FACTOR;
 
     if (appendFlag == 0) {
 	if (encoding == NULL) {
@@ -7037,6 +7133,11 @@ CopyData(csPtr, mask)
     int result = TCL_OK;
     int size;
     int total;
+    int sizeb;
+    Tcl_Obj* bufObj = NULL;
+    char* buffer;
+
+    int inBinary, outBinary, sameEncoding; /* Encoding control */
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
@@ -7053,8 +7154,16 @@ CopyData(csPtr, mask)
      * thus gets the bottom of the stack.
      */
 
-    while (csPtr->toRead != 0) {
+    inBinary     = (inStatePtr->encoding  == NULL);
+    outBinary    = (outStatePtr->encoding == NULL);
+    sameEncoding = (inStatePtr->encoding  == outStatePtr->encoding);
 
+    if (!(inBinary || sameEncoding)) {
+        bufObj = Tcl_NewObj ();
+	Tcl_IncrRefCount (bufObj);
+    }
+
+    while (csPtr->toRead != 0) {
 	/*
 	 * Check for unreported background errors.
 	 */
@@ -7079,7 +7188,12 @@ CopyData(csPtr, mask)
 	} else {
 	    size = csPtr->toRead;
 	}
-	size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, size);
+
+	if (inBinary || sameEncoding) {
+	    size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, size);
+	} else {
+	    size = DoReadChars(inStatePtr->topChanPtr, bufObj, size, 0 /* No append */);
+	}
 
 	if (size < 0) {
 	    readError:
@@ -7105,6 +7219,10 @@ CopyData(csPtr, mask)
 		Tcl_CreateChannelHandler(inChan, TCL_READABLE,
 			CopyEventProc, (ClientData) csPtr);
 	    }
+	    if (bufObj != (Tcl_Obj*) NULL) {
+	        Tcl_DecrRefCount (bufObj);
+		bufObj = (Tcl_Obj*) NULL;
+	    }
 	    return TCL_OK;
 	}
 
@@ -7112,8 +7230,25 @@ CopyData(csPtr, mask)
 	 * Now write the buffer out.
 	 */
 
-	size = DoWrite(outStatePtr->topChanPtr, csPtr->buffer, size);
-	if (size < 0) {
+	if (inBinary || sameEncoding) {
+	    buffer = csPtr->buffer;
+	    sizeb = size;
+	} else {
+	    buffer = Tcl_GetStringFromObj (bufObj, &sizeb);
+	}
+
+	if (outBinary || sameEncoding) {
+	    sizeb = DoWrite(outStatePtr->topChanPtr, buffer, sizeb);
+	} else {
+	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeb);
+	}
+
+	if (inBinary || sameEncoding) {
+	    /* Both read and write counted bytes */
+	    size = sizeb;
+	} /* else : Read counted characters, write counted bytes, i.e. size != sizeb */
+
+	if (sizeb < 0) {
 	    writeError:
 	    errObj = Tcl_NewObj();
 	    Tcl_AppendStringsToObj(errObj, "error writing \"",
@@ -7148,6 +7283,10 @@ CopyData(csPtr, mask)
 		Tcl_CreateChannelHandler(outChan, TCL_WRITABLE,
 			CopyEventProc, (ClientData) csPtr);
 	    }
+	    if (bufObj != (Tcl_Obj*) NULL) {
+	        Tcl_DecrRefCount (bufObj);
+		bufObj = (Tcl_Obj*) NULL;
+	    }
 	    return TCL_OK;
 	}
 
@@ -7166,8 +7305,17 @@ CopyData(csPtr, mask)
 		Tcl_CreateChannelHandler(outChan, TCL_WRITABLE,
 			CopyEventProc, (ClientData) csPtr);
 	    }
+	    if (bufObj != (Tcl_Obj*) NULL) {
+	        Tcl_DecrRefCount (bufObj);
+		bufObj = (Tcl_Obj*) NULL;
+	    }
 	    return TCL_OK;
 	}
+    } /* while */
+
+    if (bufObj != (Tcl_Obj*) NULL) {
+        Tcl_DecrRefCount (bufObj);
+	bufObj = (Tcl_Obj*) NULL;
     }
 
     /*
@@ -7217,6 +7365,8 @@ CopyData(csPtr, mask)
  * DoRead --
  *
  *	Reads a given number of bytes from a channel.
+ *
+ *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
  *	The number of characters read, or -1 on error. Use Tcl_GetErrno()
