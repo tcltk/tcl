@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.5 2002/02/15 14:28:49 dkf Exp $
+ * CVS: $Id: tclIOGT.c,v 1.6 2002/02/15 19:58:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -850,7 +850,7 @@ TransformSeekProc (instanceData, offset, mode, errorCodePtr)
     int         mode;		/* How to move */
     int*        errorCodePtr;	/* Location of error flag. */
 {
-    int result;
+    Tcl_WideInt result;
     TransformChannelData* dataPtr	= (TransformChannelData*) instanceData;
     Tcl_Channel           parent        = Tcl_GetStackedChannel(dataPtr->self);
     Tcl_ChannelType*      parentType	= Tcl_GetChannelType(parent);
