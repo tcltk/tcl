@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.20 2002/08/29 19:02:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.21 2002/11/19 01:29:27 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -133,7 +133,7 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 
     EnterCriticalSection(&joinLock);
 
-#if defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize, proc,
 	clientData, 0, (unsigned *)idPtr);
 #else
@@ -212,7 +212,7 @@ TclpThreadExit(status)
     TclSignalExitThread (Tcl_GetCurrentThread (), status);
     LeaveCriticalSection(&joinLock);
 
-#if defined(__MSVCRT__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
     _endthreadex((unsigned) status);
 #else
     ExitThread((DWORD) status);
