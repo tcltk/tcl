@@ -347,6 +347,17 @@ test winpipe-3.3 {TclpCreateTempFile: TEMP specifies non-existent directory} {
     set x {}
 } {}
 
+makeFile {
+    puts "[list $argv0 $argv]"
+} echoArgs.tcl
+
+test winpipe-4.1 {BuildCommandLine: null arguments} {
+    exec $tcltest echoArgs.tcl foo "" bar
+} {echoArgs.tcl {foo {} bar}}
+test winpipe-4.1 {BuildCommandLine: null arguments} {
+    exec $tcltest echoArgs.tcl foo \" bar
+} {echoArgs.tcl {foo {"} bar}}
+
 # restore old values fro env(TMP) and env(TEMP)
 
 if {[catch {set env(TMP) $env_tmp}]} {
@@ -356,4 +367,4 @@ if {[catch {set env(TEMP) $env_temp}]} {
     unset $env(TEMP)
 }
 
-file delete big little stdout stderr nothing
+file delete big little stdout stderr nothing dummy.tcl
