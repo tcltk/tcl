@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.6 2000/02/01 01:14:01 ericm Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.7 2000/02/08 10:06:12 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -182,7 +182,7 @@ proc auto_mkindex {dir args} {
     auto_mkindex_parser::cleanup
 
     set fid [open "tclIndex" w]
-    puts $fid $index nonewline
+    puts -nonewline $fid $index
     close $fid
     cd $oldDir
 }
@@ -229,7 +229,7 @@ proc auto_mkindex_old {dir args} {
     set f ""
     set error [catch {
 	set f [open tclIndex w]
-	puts $f $index nonewline
+	puts -nonewline $f $index
 	close $f
 	cd $oldDir
     } msg]
