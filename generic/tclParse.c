@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.13.2.1 2001/04/03 22:54:38 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.13.2.2 2002/03/27 19:50:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1390,7 +1390,8 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	     * Execute the command and free the objects for its words.
 	     */
     
-	    code = EvalObjv(interp, objectsUsed, objv, p, bytesLeft, 0);
+	    code = EvalObjv(interp, objectsUsed, objv, p,
+	            parse.commandStart + parse.commandSize - p, 0);
 	    if (code != TCL_OK) {
 		goto error;
 	    }
