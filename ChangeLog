@@ -1,3 +1,7 @@
+2003-12-01  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/lset.n: fix typo [Bug 852224]
+
 2003-11-24  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclParse.c:	Corrected faulty check for trailing white
