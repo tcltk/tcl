@@ -1,3 +1,7 @@
+2004-08-31  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in (install-libraries): portable sh fix.
+
 2004-08-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Stop [string map] from
