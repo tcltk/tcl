@@ -1,3 +1,9 @@
+2002-10-28  Andreas Kupries  <andreask@activestate.com>
+
+	* library/dde1.1/pkgIndex.tcl:
+	* library/reg1.0/pkgIndex.tcl: Changed the hardwired debug suffix
+	  (d) to the correct suffix (g).
+
 2002-10-25  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* The changes below update the windows side to the extended
