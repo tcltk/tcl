@@ -807,12 +807,12 @@ if test -r Panic.3; then
     rm -f Tcl_Panic.3
     rm -f Tcl_PanicVA.3
     rm -f Tcl_SetPanicProc.3
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then; rm -f panic.3; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f panic.3; fi
     rm -f panicVA.3
     ln Panic.3 Tcl_Panic.3
     ln Panic.3 Tcl_PanicVA.3
     ln Panic.3 Tcl_SetPanicProc.3
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then; ln Panic.3 panic.3; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln Panic.3 panic.3; fi
     ln Panic.3 panicVA.3
 fi
 if test -r ParseCmd.3; then
@@ -1172,8 +1172,8 @@ if test -r WrongNumArgs.3; then
     ln WrongNumArgs.3 Tcl_WrongNumArgs.3
 fi
 if test -r http.n; then
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then; rm -f Http.n; fi
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then; ln http.n Http.n; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f Http.n; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln http.n Http.n; fi
 fi
 if test -r library.n; then
     rm -f auto_execok.n
