@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.14 1999/03/10 06:49:27 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.15 1999/03/11 01:59:03 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -686,10 +686,10 @@ tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
 # On unix we want to use the normal malloc/free implementation, so we
-# specifically set the USE_NATIVE_MALLOC flag.
+# specifically set the USE_TCLALLOC flag.
 
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_NATIVE_MALLOC $(GENERIC_DIR)/tclAlloc.c
+	$(CC) -c $(CC_SWITCHES) -DUSE_TCLALLOC=0 $(GENERIC_DIR)/tclAlloc.c
 
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
