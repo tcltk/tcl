@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28 2003/02/10 12:50:31 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29 2003/05/14 19:21:30 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -91,6 +91,14 @@ static int		SetPermissionsAttribute _ANSI_ARGS_((
 static int		GetModeFromPermString _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *modeStringPtr,
 			    mode_t *modePtr));
+#ifdef HAVE_CHFLAGS
+static int		GetReadOnlyAttribute _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objIndex, Tcl_Obj *fileName,
+			    Tcl_Obj **attributePtrPtr));
+static int		SetReadOnlyAttribute _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objIndex, Tcl_Obj *fileName,
+			    Tcl_Obj *attributePtr));
+#endif
 
 /*
  * Prototype for the TraverseUnixTree callback function.
@@ -107,28 +115,53 @@ typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
 enum {
     UNIX_GROUP_ATTRIBUTE,
     UNIX_OWNER_ATTRIBUTE,
-    UNIX_PERMISSIONS_ATTRIBUTE
+    UNIX_PERMISSIONS_ATTRIBUTE,
+#ifdef HAVE_CHFLAGS
+    UNIX_READONLY_ATTRIBUTE,
+#endif
+#ifdef MAC_OSX_TCL
+    MACOSX_CREATOR_ATTRIBUTE,
+    MACOSX_TYPE_ATTRIBUTE,
+    MACOSX_HIDDEN_ATTRIBUTE,
+    MACOSX_RSRCLENGTH_ATTRIBUTE,
+#endif
 };
 
 CONST char *tclpFileAttrStrings[] = {
     "-group",
     "-owner",
     "-permissions",
+#ifdef HAVE_CHFLAGS
+    "-readonly",
+#endif
+#ifdef MAC_OSX_TCL
+    "-creator",
+    "-type",
+    "-hidden",
+    "-rsrclength",
+#endif
     (char *) NULL
 };
 
 CONST TclFileAttrProcs tclpFileAttrProcs[] = {
     {GetGroupAttribute,		SetGroupAttribute},
     {GetOwnerAttribute,		SetOwnerAttribute},
-    {GetPermissionsAttribute,	SetPermissionsAttribute}
+    {GetPermissionsAttribute,	SetPermissionsAttribute},
+#ifdef HAVE_CHFLAGS
+    {GetReadOnlyAttribute,	SetReadOnlyAttribute},
+#endif
+#ifdef MAC_OSX_TCL
+    {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
+    {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
+    {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
+    {TclMacOSXGetFileAttribute,	TclMacOSXSetFileAttribute},
+#endif
 };
 
 /*
  * Declarations for local procedures defined in this file:
  */
 
-static int		CopyFile _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		CopyFileAtts _ANSI_ARGS_((CONST char *src,
 			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		DoCopyFile _ANSI_ARGS_((CONST char *srcPtr,
@@ -400,7 +433,7 @@ DoCopyFile(src, dst)
 	    return CopyFileAtts(src, dst, &srcStatBuf);
 	}
         default: {
-	    return CopyFile(src, dst, &srcStatBuf);
+	    return TclUnixCopyFile(src, dst, &srcStatBuf, 0);
 	}
     }
     return TCL_OK;
@@ -409,7 +442,7 @@ DoCopyFile(src, dst)
 /*
  *----------------------------------------------------------------------
  *
- * CopyFile - 
+ * TclUnixCopyFile - 
  *
  *      Helper function for TclpCopyFile.  Copies one regular file,
  *	using read() and write().
@@ -423,13 +456,14 @@ DoCopyFile(src, dst)
  *----------------------------------------------------------------------
  */
 
-static int 
-CopyFile(src, dst, statBufPtr) 
+int 
+TclUnixCopyFile(src, dst, statBufPtr, dontCopyAtts) 
     CONST char *src;		/* Pathname of file to copy (native). */
     CONST char *dst;		/* Pathname of file to create/overwrite
 				 * (native). */
     CONST Tcl_StatBuf *statBufPtr;
 				/* Used to determine mode and blocksize. */
+    int dontCopyAtts;		/* if flag set, don't copy attributes. */
 {
     int srcFd;
     int dstFd;
@@ -483,7 +517,7 @@ CopyFile(src, dst, statBufPtr)
 	unlink(dst);					/* INTL: Native. */
 	return TCL_ERROR;
     }
-    if (CopyFileAtts(src, dst, statBufPtr) == TCL_ERROR) {
+    if (!dontCopyAtts && CopyFileAtts(src, dst, statBufPtr) == TCL_ERROR) {
 	/*
 	 * The copy succeeded, but setting the permissions failed, so be in
 	 * a consistent state, we remove the file that was created by the
@@ -1071,6 +1105,9 @@ CopyFileAtts(src, dst, statBufPtr)
     if (utime(dst, &tval)) {				/* INTL: Native. */
 	return TCL_ERROR;
     }
+#ifdef MAC_OSX_TCL
+    TclMacOSXCopyFileAttributes(src, dst, statBufPtr);
+#endif
     return TCL_OK;
 }
 
@@ -1781,6 +1818,105 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 
     return nextCheckpoint;
 }
+
+#ifdef HAVE_CHFLAGS
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetReadOnlyAttribute
+ *
+ *      Gets the readonly attribute (user immutable flag) of a file.
+ *
+ * Results:
+ *	Standard TCL result. Returns a new Tcl_Obj in attributePtrPtr
+ *	if there is no error. The object will have ref count 0.
+ *
+ * Side effects:
+ *      A new object is allocated.
+ *      
+ *----------------------------------------------------------------------
+ */
 
+static int
+GetReadOnlyAttribute(interp, objIndex, fileName, attributePtrPtr)
+    Tcl_Interp *interp;		    /* The interp we are using for errors. */
+    int objIndex;		    /* The index of the attribute. */
+    Tcl_Obj *fileName;  	    /* The name of the file (UTF-8). */
+    Tcl_Obj **attributePtrPtr;	    /* A pointer to return the object with. */
+{
+    Tcl_StatBuf statBuf;
+    int result;
 
+    result = TclpObjStat(fileName, &statBuf);
+    
+    if (result != 0) {
+	Tcl_AppendResult(interp, "could not read \"", 
+		Tcl_GetString(fileName), "\": ",
+		Tcl_PosixError(interp), (char *) NULL);
+	return TCL_ERROR;
+    }
 
+    *attributePtrPtr = Tcl_NewBooleanObj((statBuf.st_flags & UF_IMMUTABLE) != 0);
+    
+    return TCL_OK;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * SetReadOnlyAttribute
+ *
+ *      Sets the readonly attribute (user immutable flag) of a file.
+ *
+ * Results:
+ *      Standard TCL result.
+ *
+ * Side effects:
+ *      The readonly attribute of the file is changed.
+ *      
+ *---------------------------------------------------------------------------
+ */
+
+static int
+SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
+    Tcl_Interp *interp;		    /* The interp we are using for errors. */
+    int objIndex;		    /* The index of the attribute. */
+    Tcl_Obj *fileName;  	    /* The name of the file (UTF-8). */
+    Tcl_Obj *attributePtr;	    /* The attribute to set. */
+{
+    Tcl_StatBuf statBuf;
+    int result;
+    int readonly;
+    CONST char *native;
+
+    if (Tcl_GetBooleanFromObj(interp, attributePtr, &readonly) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    result = TclpObjStat(fileName, &statBuf);
+    
+    if (result != 0) {
+	Tcl_AppendResult(interp, "could not read \"", 
+		Tcl_GetString(fileName), "\": ",
+		Tcl_PosixError(interp), (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (readonly) {
+        statBuf.st_flags |= UF_IMMUTABLE;
+    } else {
+        statBuf.st_flags &= ~UF_IMMUTABLE;
+    }
+
+    native = Tcl_FSGetNativePath(fileName);
+    result = chflags(native, statBuf.st_flags);		/* INTL: Native. */
+    if (result != 0) {
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"could not set flags for file \"", 
+		Tcl_GetString(fileName), "\": ",
+		Tcl_PosixError(interp), (char *) NULL);
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+#endif /* HAVE_CHFLAGS */

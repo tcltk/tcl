@@ -1,3 +1,47 @@
+2003-05-15  Daniel Steffen  <das@users.sourceforge.net>
+
+	Implementation of TIP 118:
+	
+	* generic/tclFCmd.c (TclFileAttrsCmd): return the list of attributes
+	that can be retrieved without error for a given file, instead of
+	aborting the whole command when any error occurs.
+
+	* unix/tclUnixFCmd.c: added support for new file attributes and for
+	copying Mac OS X file attributes & resource fork during [file copy].
+
+	* generic/tclInt.decls: added declarations of new external commands
+	needed by new file attributes support in tclUnixFCmd.c.
+
+	* macosx/tclMacOSXFCmd.c (new): Mac OS X specific implementation of
+	new file attributes and of attribute & resource fork copying.
+
+	* mac/tclMacFCmd.c: added implementation of -rsrclength attribute &
+	fixes to other attributes for consistency with OSX implementation.
+
+	* mac/tclMacResource.c: fixes to OSType handling.
+
+	* doc/file.n: documentation of [file attributes] changes.
+
+	* unix/configure.in: check for APIs needed by new file attributes.
+
+	* unix/Makefile.in:
+	* unix/tcl.m4: added new platform specifc tclMacOSXFCmd.c source.
+
+	* unix/configure:
+	* generic/tclStubInit.c:
+	* generic/tclIntPlatDecls.h: regen.
+
+	* tools/genStubs.tcl: fixes to completely broken code trying to
+	prevent overlap of "aqua", "macosx", "x11" and "unix" stub entries.
+
+	* tests/unixFCmd.test: added tests of -readonly attribute.
+	
+	* tests/macOSXFCmd.test (new): tests of macosx file attributes and
+	of preservation of attributes & resource fork during [file copy].
+	
+	* tests/macFCmd.test: restore -readonly attribute of test dir, as
+	otherwise its removal can fail on unices supporting -readonly.
+
 2003-05-13  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclEnv.c: Another putenv() copy behavior problem
