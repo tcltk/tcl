@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.35 2001/04/06 10:50:00 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.36 2001/04/24 20:59:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -89,8 +89,8 @@ static char *		TraceVarProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, char *name1, char *name2,
 			    int flags));
 static void		TraceCommandProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *oldName, char *newName,
-			    int flags));
+			    Tcl_Interp *interp, CONST char *oldName,
+                            CONST char *newName, int flags));
 
 
 /*
@@ -3432,8 +3432,8 @@ static void
 TraceCommandProc(clientData, interp, oldName, newName, flags)
     ClientData clientData;	/* Information about the command trace. */
     Tcl_Interp *interp;		/* Interpreter containing command. */
-    char *oldName;		/* Name of command being changed. */
-    char *newName;		/* New name of command.  Empty string
+    CONST char *oldName;	/* Name of command being changed. */
+    CONST char *newName;	/* New name of command.  Empty string
                   		 * or NULL means command is being deleted
                   		 * (renamed to ""). */
     int flags;			/* OR-ed bits giving operation and other

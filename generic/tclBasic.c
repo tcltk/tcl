@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.29 2000/08/25 02:04:28 ericm Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.30 2001/04/24 20:59:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -26,8 +26,8 @@
  */
 
 static char *		CallCommandTraces _ANSI_ARGS_((Interp *iPtr, 
-			    Command *cmdPtr, char *oldName, 
-			    char* newName, int flags));
+			    Command *cmdPtr, CONST char *oldName, 
+			    CONST char* newName, int flags));
 static void		DeleteInterpProc _ANSI_ARGS_((Tcl_Interp *interp));
 static void		ProcessUnexpectedResult _ANSI_ARGS_((
 			    Tcl_Interp *interp, int returnCode));
@@ -720,7 +720,7 @@ Tcl_DontCallWhenDeleted(interp, proc, clientData)
 void
 Tcl_SetAssocData(interp, name, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter to associate with. */
-    char *name;			/* Name for association. */
+    CONST char *name;		/* Name for association. */
     Tcl_InterpDeleteProc *proc;	/* Proc to call when interpreter is
                                  * about to be deleted. */
     ClientData clientData;	/* One-word value to pass to proc. */
@@ -766,7 +766,7 @@ Tcl_SetAssocData(interp, name, proc, clientData)
 void
 Tcl_DeleteAssocData(interp, name)
     Tcl_Interp *interp;			/* Interpreter to associate with. */
-    char *name;				/* Name of association. */
+    CONST char *name;			/* Name of association. */
 {
     Interp *iPtr = (Interp *) interp;
     AssocData *dPtr;
@@ -808,7 +808,7 @@ Tcl_DeleteAssocData(interp, name)
 ClientData
 Tcl_GetAssocData(interp, name, procPtr)
     Tcl_Interp *interp;			/* Interpreter associated with. */
-    char *name;				/* Name of association. */
+    CONST char *name;			/* Name of association. */
     Tcl_InterpDeleteProc **procPtr;	/* Pointer to place to store address
 					 * of current deletion callback. */
 {
@@ -1103,8 +1103,8 @@ DeleteInterpProc(interp)
 int
 Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     Tcl_Interp *interp;		/* Interpreter in which to hide command. */
-    char *cmdName;		/* Name of command to hide. */
-    char *hiddenCmdToken;	/* Token name of the to-be-hidden command. */
+    CONST char *cmdName;	/* Name of command to hide. */
+    CONST char *hiddenCmdToken;	/* Token name of the to-be-hidden command. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Command cmd;
@@ -1266,8 +1266,8 @@ int
 Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
     Tcl_Interp *interp;		/* Interpreter in which to make command
                                  * callable. */
-    char *hiddenCmdToken;	/* Name of hidden command. */
-    char *cmdName;		/* Name of to-be-exposed command. */
+    CONST char *hiddenCmdToken;	/* Name of hidden command. */
+    CONST char *cmdName;	/* Name of to-be-exposed command. */
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr;
@@ -1420,7 +1420,7 @@ Tcl_Command
 Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     Tcl_Interp *interp;		/* Token for command interpreter returned by
 				 * a previous call to Tcl_CreateInterp. */
-    char *cmdName;		/* Name of command. If it contains namespace
+    CONST char *cmdName;	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put
 				 * in the global namespace. */
@@ -1435,7 +1435,7 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     Namespace *nsPtr, *dummy1, *dummy2;
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
-    char *tail;
+    CONST char *tail;
     int new;
     ImportedCmdData *dataPtr;
 
@@ -1565,7 +1565,7 @@ Tcl_Command
 Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     Tcl_Interp *interp;		/* Token for command interpreter (returned
 				 * by previous call to Tcl_CreateInterp). */
-    char *cmdName;		/* Name of command. If it contains namespace
+    CONST char *cmdName;	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put
 				 * in the global namespace. */
@@ -1582,7 +1582,7 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     Namespace *nsPtr, *dummy1, *dummy2;
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
-    char *tail;
+    CONST char *tail;
     int new;
     ImportedCmdData *dataPtr;
 
@@ -2033,7 +2033,7 @@ int
 Tcl_SetCommandInfo(interp, cmdName, infoPtr)
     Tcl_Interp *interp;			/* Interpreter in which to look
 					 * for command. */
-    char *cmdName;			/* Name of desired command. */
+    CONST char *cmdName;		/* Name of desired command. */
     Tcl_CmdInfo *infoPtr;		/* Where to find information
 					 * to store in the command. */
 {
@@ -2088,7 +2088,7 @@ int
 Tcl_GetCommandInfo(interp, cmdName, infoPtr)
     Tcl_Interp *interp;			/* Interpreter in which to look
 					 * for command. */
-    char *cmdName;			/* Name of desired command. */
+    CONST char *cmdName;		/* Name of desired command. */
     Tcl_CmdInfo *infoPtr;		/* Where to store information about
 					 * command. */
 {
@@ -2137,7 +2137,7 @@ Tcl_GetCommandInfo(interp, cmdName, infoPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetCommandName(interp, command)
     Tcl_Interp *interp;		/* Interpreter containing the command. */
     Tcl_Command command;	/* Token for command returned by a previous
@@ -2234,7 +2234,7 @@ int
 Tcl_DeleteCommand(interp, cmdName)
     Tcl_Interp *interp;		/* Token for command interpreter (returned
 				 * by a previous Tcl_CreateInterp call). */
-    char *cmdName;		/* Name of command to remove. */
+    CONST char *cmdName;	/* Name of command to remove. */
 {
     Tcl_Command cmd;
 
@@ -2421,9 +2421,9 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     Interp *iPtr;		/* Interpreter containing variable. */
     Command *cmdPtr;		/* Variable whose traces are to be
 				 * invoked. */
-    char *oldName;	        /* Command's old name, or NULL if we
+    CONST char *oldName;        /* Command's old name, or NULL if we
                                  * must get the name from cmdPtr */
-    char *newName;	        /* Command's new name, or NULL if
+    CONST char *newName;        /* Command's new name, or NULL if
                                  * the command is not being renamed */
     int flags;			/* Flags passed to trace procedures:
 				 * indicates what's happening to variable,
@@ -2545,7 +2545,7 @@ void
 Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
     Tcl_Interp *interp;			/* Interpreter in which function is
 					 * to be available. */
-    char *name;				/* Name of function (e.g. "sin"). */
+    CONST char *name;			/* Name of function (e.g. "sin"). */
     int numArgs;			/* Nnumber of arguments required by
 					 * function. */
     Tcl_ValueType *argTypes;		/* Array of types acceptable for
@@ -3018,7 +3018,7 @@ int
 Tcl_ExprLong(interp, string, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    char *string;		/* Expression to evaluate. */
+    CONST char *string;		/* Expression to evaluate. */
     long *ptr;			/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
@@ -3069,7 +3069,7 @@ int
 Tcl_ExprDouble(interp, string, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    char *string;		/* Expression to evaluate. */
+    CONST char *string;		/* Expression to evaluate. */
     double *ptr;		/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
@@ -3120,7 +3120,7 @@ int
 Tcl_ExprBoolean(interp, string, ptr)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 			         * expression. */
-    char *string;		/* Expression to evaluate. */
+    CONST char *string;		/* Expression to evaluate. */
     int *ptr;			/* Where to store 0/1 result. */
 {
     register Tcl_Obj *exprPtr;
@@ -3641,7 +3641,7 @@ int
 Tcl_ExprString(interp, string)
     Tcl_Interp *interp;		/* Context in which to evaluate the
 				 * expression. */
-    char *string;		/* Expression to evaluate. */
+    CONST char *string;		/* Expression to evaluate. */
 {
     register Tcl_Obj *exprPtr;
     Tcl_Obj *resultPtr;
@@ -4336,7 +4336,8 @@ Tcl_AllowExceptions(interp)
  *----------------------------------------------------------------------
  */
 
-void Tcl_GetVersion(majorV, minorV, patchLevelV, type)
+void
+Tcl_GetVersion(majorV, minorV, patchLevelV, type)
     int *majorV;
     int *minorV;
     int *patchLevelV;

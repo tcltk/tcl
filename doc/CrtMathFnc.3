@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.3 2000/04/14 23:01:49 hobbs Exp $
+'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.4 2001/04/24 20:59:17 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateMathFunc 3 7.0 Tcl "Tcl Library Procedures"
@@ -21,7 +21,9 @@ Tcl_CreateMathFunc \- Define a new math function for expressions
 .AS Tcl_ValueType clientData
 .AP Tcl_Interp *interp in
 Interpreter in which new function will be defined.
-.AP char *name in
+.VS 8.4
+.AP "CONST char" *name in
+.VE
 Name for new function.
 .AP int numArgs in
 Number of arguments to new function;  also gives size of \fIargTypes\fR array.

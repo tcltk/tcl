@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.20 2001/04/07 02:09:18 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.21 2001/04/24 20:59:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -430,7 +430,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     Tcl_Interp *interp;             /* Interpreter in which a new namespace
 				     * is being created. Also used for
 				     * error reporting. */
-    char *name;                     /* Name for the new namespace. May be a
+    CONST char *name;               /* Name for the new namespace. May be a
 				     * qualified name with names of ancestor
 				     * namespaces separated by "::"s. */
     ClientData clientData;	    /* One-word value to store with
@@ -1610,7 +1610,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	nsPtrPtr, altNsPtrPtr, actualCxtPtrPtr, simpleNamePtr)
     Tcl_Interp *interp;		 /* Interpreter in which to find the
 				  * namespace containing qualName. */
-    register char *qualName;	 /* A namespace-qualified name of an
+    CONST char *qualName;	 /* A namespace-qualified name of an
 				  * command, variable, or namespace. */
     Namespace *cxtNsPtr;	 /* The namespace in which to start the
 				  * search for qualName's namespace. If NULL
@@ -1642,7 +1642,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 				  * the :: namespace if TCL_GLOBAL_ONLY was
 				  * specified, or the current namespace if
 				  * cxtNsPtr was NULL. */
-    char **simpleNamePtr;	 /* Address where procedure stores the
+    CONST char **simpleNamePtr;	 /* Address where procedure stores the
 				  * simple name at end of the qualName, or
 				  * NULL if qualName is "::" or the flag
 				  * FIND_ONLY_NS was specified. */
@@ -1651,8 +1651,8 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     Namespace *nsPtr = cxtNsPtr;
     Namespace *altNsPtr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
-    register char *start, *end;
-    char *nsName;
+    CONST char *start, *end;
+    CONST char *nsName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer;
     int len;
@@ -1934,7 +1934,7 @@ Tcl_Command
 Tcl_FindCommand(interp, name, contextNsPtr, flags)
     Tcl_Interp *interp;         /* The interpreter in which to find the
 				  * command and to report errors. */
-    char *name;		         /* Command's name. If it starts with "::",
+    CONST char *name;	         /* Command's name. If it starts with "::",
 				  * will be looked up in global namespace.
 				  * Else, looked up first in contextNsPtr
 				  * (current namespace if contextNsPtr is
