@@ -1,3 +1,19 @@
+2004-06-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWin32Dll.c (DllMain, _except_dllmain_detach_handler,
+	TclpCheckStackSpace, _except_checkstackspace_handler,
+	TclWinCPUID, _except_TclWinCPUID_detach_handler):
+	* win/tclWinChan.c (Tcl_MakeFileChannel,
+	_except_makefilechannel_handler):
+	* win/tclWinFCmd.c (DoRenameFile,
+	_except_dorenamefile_handler, DoCopyFile,
+	_except_docopyfile_handler):
+	Rework pushing of exception handler function pointer
+	so that compiling with gcc -O3 works. Remove empty
+	function call to avoid compiler warning. Mark the
+	DllMain function as noinline to avoid compiler
+	error from duplicated asm labels in generated code.
+
 2004-06-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/winDde.test: Fixed -async test
