@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.163 2004/10/28 17:21:23 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.164 2004/11/01 14:38:24 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -3241,24 +3241,10 @@ TclExecuteByteCode(interp, codePtr)
 	value2Ptr = *tosPtr;
 	valuePtr  = *(tosPtr - 1);
 
-	if (valuePtr == value2Ptr) {
-	    /*
-	     * Optimize the equal object case.
-	     */
-	    switch (*pc) {
-	        case INST_EQ:
-	        case INST_LE:
-	        case INST_GE:
-		    iResult = 1;
-		    break;
-	        case INST_NEQ:
-	        case INST_LT:
-	        case INST_GT:
-		    iResult = 0;
-		    break;
-	    }
-	    goto foundResult;
-	}
+	/*
+	 * Can't optimize the equal-object case; 'NaN' isn't supposed
+	 * to be equal to even itself. [Bug 761471]
+	 */
 
 	t1Ptr = valuePtr->typePtr;
 	t2Ptr = value2Ptr->typePtr;
