@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.18 1999/03/11 23:49:27 hershey Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.19 1999/03/14 23:57:45 surles Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -429,45 +429,45 @@ $(TCLOBJS)
 <<
 
 install-binaries: $(TCLSH)
-	@mkd $(BIN_INSTALL_DIR)
-	@mkd $(LIB_INSTALL_DIR)
+	mkd "$(BIN_INSTALL_DIR)"
+	mkd "$(LIB_INSTALL_DIR)"
 	@echo installing $(TCLDLLNAME)
-	@copy $(TCLDLL) $(BIN_INSTALL_DIR)
-	@copy $(TCLLIB) $(LIB_INSTALL_DIR)
-	@echo installing $(TCLSH)
-	@copy $(TCLSH) $(BIN_INSTALL_DIR)
+	@copy "$(TCLDLL)" "$(BIN_INSTALL_DIR)"
+	@copy "$(TCLLIB)" "$(LIB_INSTALL_DIR)"
+	@echo installing "$(TCLSH)"
+	@copy "$(TCLSH)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLPIPEDLLNAME)
-	@copy $(TCLPIPEDLL) $(BIN_INSTALL_DIR)
+	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLREGDLLNAME)
-	@copy $(TCLREGDLL) $(LIB_INSTALL_DIR)
+	@copy "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)"
 	echo installing $(TCLSTUBLIBNAME)
-	copy $(TCLSTUBLIB) $(LIB_INSTALL_DIR)
+	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
 
 install-libraries:
-	-@mkd $(LIB_INSTALL_DIR)
-	-@mkd $(INCLUDE_INSTALL_DIR)
-	-@mkd $(SCRIPT_INSTALL_DIR)
-	-@mkd $(SCRIPT_INSTALL_DIR)\http1.0
+	-@mkd "$(LIB_INSTALL_DIR)"
+	-@mkd "$(INCLUDE_INSTALL_DIR)"
+	-@mkd "$(SCRIPT_INSTALL_DIR)"
+	-@mkd "$(SCRIPT_INSTALL_DIR)\http1.0"
 	@copy << "$(SCRIPT_INSTALL_DIR)\pkgIndex.tcl"
 package ifneeded registry 1.0 "load [list [file join $$dir .. $(TCLREGDLLNAME)]] registry"
 <<
-	-@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
-	-@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
-	-@mkd $(SCRIPT_INSTALL_DIR)\http2.0
-	-@copy $(ROOT)\library\http2.0\http.tcl $(SCRIPT_INSTALL_DIR)\http2.0
-	-@copy $(ROOT)\library\http2.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http2.0
-	-@mkd $(SCRIPT_INSTALL_DIR)\opt0.4
-	-@copy $(ROOT)\library\opt0.4\optparse.tcl $(SCRIPT_INSTALL_DIR)\opt0.4
-	-@copy $(ROOT)\library\opt0.4\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\opt0.4
-	-@copy $(GENERICDIR)\tcl.h $(INCLUDE_INSTALL_DIR)
-	-@copy $(ROOT)\library\history.tcl $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\init.tcl $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\ldAout.tcl $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\parray.tcl $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\safe.tcl $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\tclIndex $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
-	-@copy $(ROOT)\library\auto.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
+	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
+	-@mkd  "$(SCRIPT_INSTALL_DIR)\http2.0"
+	-@copy "$(ROOT)\library\http2.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.0"
+	-@copy "$(ROOT)\library\http2.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.0"
+	-@mkd  "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\history.tcl" "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\init.tcl"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\ldAout.tcl"  "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\parray.tcl"  "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\safe.tcl"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\tclIndex"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\word.tcl"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\auto.tcl"    "$(SCRIPT_INSTALL_DIR)"
 
 #
 # Regenerate the stubs files.
