@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121 2003/01/28 11:03:52 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.122 2003/04/03 22:12:53 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -107,8 +107,6 @@ PROTO_FLAGS		=
 # following pairs of lines:
 MATH_FLAGS		=
 #MATH_FLAGS		= -DTCL_NO_MATH
-MATH_LIBS		= @MATH_LIBS@
-#MATH_LIBS		=
 
 # If you use the setenv, putenv, or unsetenv procedures to modify
 # environment variables in your application and you'd like those
@@ -288,7 +286,7 @@ STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 ${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
 
-LIBS		= @DL_LIBS@ @LIBS@ $(MATH_LIBS)
+LIBS		= @TCL_LIBS@
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} \

@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.17 2002/07/28 03:15:11 mdejong Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.18 2003/04/03 22:13:00 mdejong Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -51,7 +51,7 @@ TCL_NEEDS_EXP_FILE=@TCL_NEEDS_EXP_FILE@
 TCL_EXPORT_FILE_SUFFIX='@CFG_TCL_EXPORT_FILE_SUFFIX@'
 
 # Additional libraries to use when linking Tcl.
-TCL_LIBS='@DL_LIBS@ @LIBS@ @MATH_LIBS@'
+TCL_LIBS='@TCL_LIBS@'
 
 # Top-level directory in which Tcl's platform-independent files are
 # installed.

@@ -705,6 +705,9 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #                       The name of the built export / import file which
 #                       should be used to link to the Tcl shared library.
 #                       Empty if Tcl is unshared.
+#       TCL_LIBS -
+#                       Libs to use when linking Tcl shell or some other
+#                       shell that includes Tcl libs.
 #	CFLAGS_DEBUG -
 #			Flags used when running the compiler in debug mode
 #	CFLAGS_OPTIMIZE -
@@ -1739,7 +1742,13 @@ dnl        esac
         INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) $(LIB_INSTALL_DIR)/$(STUB_LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(STUB_LIB_FILE))'
     fi
 
+    # Define TCL_LIBS now that we know what DL_LIBS is.
+    TCL_LIBS="${DL_LIBS} ${LIBS} ${MATH_LIBS}"
+    AC_SUBST(TCL_LIBS)
 
+    # FIXME: This subst was left in only because the TCL_DL_LIBS
+    # entry in tclConfig.sh uses it. It is not clear why someone
+    # would use TCL_DL_LIBS instead of TCL_LIBS.
     AC_SUBST(DL_LIBS)
 
     AC_SUBST(DL_OBJS)
@@ -2274,19 +2283,13 @@ AC_DEFUN(SC_BUGGY_STRTOD, [
 #	-lnsl) are dealt with here.
 #
 # Arguments:
-#	Requires the following vars to be set in the Makefile:
-#		DL_LIBS
-#		LIBS
-#		MATH_LIBS
+#	None.
 #	
 # Results:
 #
-#	Subst's the following var:
-#		TCL_LIBS
-#		MATH_LIBS
-#
 #	Might append to the following vars:
 #		LIBS
+#		MATH_LIBS
 #
 #	Might define the following vars:
 #		HAVE_NET_ERRNO_H
@@ -2343,13 +2346,6 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     fi
     AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"])])
-
-    # Don't perform the eval of the libraries here because DL_LIBS
-    # won't be set until we call SC_CONFIG_CFLAGS
-
-    TCL_LIBS='${DL_LIBS} ${LIBS} ${MATH_LIBS}'
-    AC_SUBST(TCL_LIBS)
-    AC_SUBST(MATH_LIBS)
 ])
 
 #--------------------------------------------------------------------
