@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.98 2002/07/15 22:18:04 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.99 2002/07/16 01:12:50 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -910,6 +910,8 @@ typedef struct ExecEnv {
     int stackTop;		/* Index of current top of stack; -1 when
 				 * the stack is empty. */
     int stackEnd;		/* Index of last usable item in stack. */
+    Tcl_Obj *errorInfo;
+    Tcl_Obj *errorCode;
 } ExecEnv;
 
 /*
