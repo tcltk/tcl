@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.78 2002/02/15 14:28:51 dkf Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.79 2002/02/15 23:42:12 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -219,7 +219,7 @@ TCLOBJS = \
 	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\strftime.obj \
 	$(TMP_DIR)\strtoll.obj \
-	$(TMP_DIR)\strtoul.obj
+	$(TMP_DIR)\strtoull.obj \
 	$(TMP_DIR)\tclAlloc.obj \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \

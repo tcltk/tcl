@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.44 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.45 2002/02/15 23:42:12 kennykb Exp $
  */
 
 #define TCL_TEST
@@ -4347,8 +4347,19 @@ static int PretendTclpStat(path, buf)
 	 */
 
         if (OUT_OF_URANGE(realBuf.st_ino) || OUT_OF_RANGE(realBuf.st_size)
-		|| OUT_OF_RANGE(realBuf.st_blocks)) {
+#   ifdef HAVE_ST_BLOCKS
+		|| OUT_OF_RANGE(realBuf.st_blocks)
+#   endif
+	    ) {
+#   ifdef EOVERFLOW
 	    errno = EOVERFLOW;
+#   else
+#       ifdef EFBIG
+            errno = EFBIG;
+#       else
+#           error "what error should be returned for a value out of range?"
+#       endif
+#   endif
 	    return -1;
 	}
 
@@ -4374,8 +4385,10 @@ static int PretendTclpStat(path, buf)
 	buf->st_atime   = realBuf.st_atime;
 	buf->st_mtime   = realBuf.st_mtime;
 	buf->st_ctime   = realBuf.st_ctime;
+#   ifdef HAVE_ST_BLOCKS
 	buf->st_blksize = realBuf.st_blksize;
 	buf->st_blocks  = (blkcnt_t) realBuf.st_blocks;
+#   endif
     }
     return ret;
 #endif /* TCL_WIDE_INT_IS_LONG */
