@@ -552,7 +552,7 @@ fi
 if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
-TCL_SRC_DIR=`cd $srcdir/..; pwd`
+TCL_SRC_DIR=`cd $srcdir/..; /bin/pwd`
 
 #------------------------------------------------------------------------
 # Standard compiler checks
@@ -1338,7 +1338,7 @@ EOF
 fi
 done
 
-# Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
+# Nb: if getcwd uses popen and /bin/pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
 for ac_func in opendir strstr
@@ -5096,7 +5096,7 @@ fi
 	IRIX-4.*)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_SUFFIX=".a"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
+	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `/bin/pwd`/tclsh -r -G 0"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
@@ -5366,7 +5366,7 @@ else
   echo "$ac_t""no" 1>&6
 
 		SHLIB_CFLAGS=""
-		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r"
+		SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `/bin/pwd`/tclsh -r"
 		SHLIB_LD_LIBS='${LIBS}'
 		SHLIB_SUFFIX=".a"
 		DL_OBJS="tclLoadAout.o"
@@ -5492,7 +5492,7 @@ EOF
 	    ;;
 	RISCos-*)
 	    SHLIB_CFLAGS="-G 0"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
+	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `/bin/pwd`/tclsh -r -G 0"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".a"
 	    DL_OBJS="tclLoadAout.o"
@@ -5620,7 +5620,7 @@ EOF
 	ULTRIX-4.*)
 	    SHLIB_CFLAGS="-G 0"
 	    SHLIB_SUFFIX=".a"
-	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `pwd`/tclsh -r -G 0"
+	    SHLIB_LD="echo tclLdAout $CC \{$SHLIB_CFLAGS\} | `/bin/pwd`/tclsh -r -G 0"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
@@ -6140,7 +6140,7 @@ if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
     else
         TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
     fi
-    TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
+    TCL_BUILD_LIB_SPEC="-L`/bin/pwd` ${TCL_LIB_FLAG}"
     TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
 else
     TCL_BUILD_EXP_FILE="lib.exp"
@@ -6150,10 +6150,10 @@ else
     eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
     
     if test "$GCC" = "yes" ; then
-	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
-	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"    
+	TCL_BUILD_LIB_SPEC="-Wl,-bI:`/bin/pwd`/${TCL_BUILD_EXP_FILE} -L`/bin/pwd`"
+	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`/bin/pwd`"    
     else
-	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
+	TCL_BUILD_LIB_SPEC="-bI:`/bin/pwd`/${TCL_BUILD_EXP_FILE}"
 	TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
     fi
 fi
@@ -6194,9 +6194,9 @@ else
     TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
 fi
 
-TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
+TCL_BUILD_STUB_LIB_SPEC="-L`/bin/pwd` ${TCL_STUB_LIB_FLAG}"
 TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
-TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
+TCL_BUILD_STUB_LIB_PATH="`/bin/pwd`/${TCL_STUB_LIB_FILE}"
 TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
 
 #------------------------------------------------------------------------
