@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.32 2002/06/13 10:43:41 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.33 2002/06/21 14:22:29 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -162,7 +162,7 @@ static int WinIsDrive(CONST char *name, int nameLen);
 static Tcl_Obj* WinReadLink(CONST TCHAR* LinkSource);
 static Tcl_Obj* WinReadLinkDirectory(CONST TCHAR* LinkDirectory);
 static int WinLink(CONST TCHAR* LinkSource, CONST TCHAR* LinkTarget, 
-		   int linkType);
+		   int linkAction);
 static int WinSymLinkDirectory(CONST TCHAR* LinkDirectory, 
 			       CONST TCHAR* LinkTarget);
 extern Tcl_Filesystem nativeFilesystem;
@@ -177,10 +177,10 @@ extern Tcl_Filesystem nativeFilesystem;
  *--------------------------------------------------------------------
  */
 static int 
-WinLink(LinkSource, LinkTarget, linkType)
+WinLink(LinkSource, LinkTarget, linkAction)
     CONST TCHAR* LinkSource;
     CONST TCHAR* LinkTarget;
-    int linkType;
+    int linkAction;
 {
     WCHAR	tempFileName[MAX_PATH];
     TCHAR*	tempFilePart;
@@ -220,21 +220,31 @@ WinLink(LinkSource, LinkTarget, linkType)
 	    Tcl_SetErrno(ENOTDIR);
 	    return -1;
 	}
-	if (linkType == 1) {
+	if (linkAction & TCL_CREATE_HARD_LINK) {
+	    if (!(*tclWinProcs->createHardLinkProc)(LinkSource, LinkTarget, NULL)) {
+		TclWinConvertError(GetLastError());
+		return -1;
+	    }
+	    return 0;
+	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
 	    /* Can't symlink files */
+	    Tcl_SetErrno(ENOTDIR);
+	    return -1;
+	} else {
+	    Tcl_SetErrno(ENODEV);
 	    return -1;
 	}
-	if (!(*tclWinProcs->createHardLinkProc)(LinkSource, LinkTarget, NULL)) {
-	    TclWinConvertError(GetLastError());
-	    return -1;
-	}
-	return 0;
     } else {
-	if (linkType == 2) {
+	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
+	    return WinSymLinkDirectory(LinkSource, LinkTarget);
+	} else if (linkAction & TCL_CREATE_HARD_LINK) {
 	    /* Can't hard link directories */
+	    Tcl_SetErrno(EISDIR);
+	    return -1;
+	} else {
+	    Tcl_SetErrno(ENODEV);
 	    return -1;
 	}
-	return WinSymLinkDirectory(LinkSource, LinkTarget);
     }
 }
 
@@ -1855,10 +1865,10 @@ TclpObjLstat(pathPtr, statPtr)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr, linkType)
+TclpObjLink(pathPtr, toPtr, linkAction)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
-    int linkType;
+    int linkAction;
 {
     if (toPtr != NULL) {
 	int res;
@@ -1867,9 +1877,7 @@ TclpObjLink(pathPtr, toPtr, linkType)
 	if (LinkSource == NULL || LinkTarget == NULL) {
 	    return NULL;
 	}
-	/* We don't recognise these codes */
-	if (linkType < 0 || linkType > 2) return NULL;
-	res = WinLink(LinkSource, LinkTarget, linkType);
+	res = WinLink(LinkSource, LinkTarget, linkAction);
 	if (res == 0) {
 	    return toPtr;
 	} else {
@@ -1948,11 +1956,11 @@ TclpFilesystemPathType(pathObjPtr)
 }
 
 
+#if 0
 /* 
  * This function could be thoroughly tested and then substituted in
  * below to speed up file normalization on Windows NT/2000/XP
  */
-#if 0
 
 void WinGetLongPathName(CONST TCHAR* origPath, Tcl_DString *dsPtr);
 
@@ -2023,15 +2031,24 @@ void WinGetLongPathName(CONST TCHAR* pszOriginal, Tcl_DString *dsPtr) {
     
 #endif
 
+/* 
+ * We have two different implementations of file normalization which
+ * can be turned on or off here.  They should both agree for all files,
+ * and timings show the 'TCLWIN_NEW_NORM' version is about 10% faster.
+ */
+#define TCLWIN_NEW_NORM
 
 /*
  *---------------------------------------------------------------------------
  *
  * TclpObjNormalizePath --
  *
- *	This function scans through a path specification and replaces
- *	it, in place, with a normalized version.  On windows this
- *	means using the 'longname'.
+ *	This function scans through a path specification and replaces it,
+ *	in place, with a normalized version.  On Windows NT/2000/XP this
+ *	means using the 'longname', and expanding any symbolic links
+ *	contained within the path.  On Win95/98/ME it means using the
+ *	short form of the name (because the APIs to get at the long form
+ *	are much too slow).
  *
  * Results:
  *	The new 'nextCheckpoint' value, giving as far as we could
@@ -2100,9 +2117,10 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    *lastValidPathEnd = '\0';
 	}
 	/* 
-	 * If we get here, we found a valid path, which we've converted to
-	 * short form, and the valid string ends at or before 'lastValidPathEnd'
-	 * and the invalid string starts at 'lastValidPathEnd'.
+	 * If we get here, we found a valid path, which we've converted
+	 * to short form, and the valid string ends at or before
+	 * 'lastValidPathEnd' and the invalid string starts at
+	 * 'lastValidPathEnd'.
 	 */
 
 	/* Copy over the valid part of the path and find its length */
@@ -2129,115 +2147,165 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     } else {
 	/* We're on WinNT or 2000 or XP */
 	CONST char *nativePath;
-#if 0
-	/* 
-	 * We don't use this simpler version, because the speed
-	 * increase does not seem significant at present and the version
-	 * below is thoroughly debugged.
-	 */
-	int nativeLen;
-	Tcl_DString eDs;
-	nativePath = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
-	nativeLen = Tcl_DStringLength(&ds);
-	WinGetLongPathName(nativePath, &eDs);
-	/* 
-	 * We need to add code here to calculate the new value of 
-	 * 'nextCheckpoint' -- i.e. the longest part of the path
-	 * which is an existing file.
-	 */
-	Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&eDs), Tcl_DStringLength(&eDs));
-	Tcl_DStringFree(&eDs);
-	Tcl_DStringFree(&ds);
-#else
 	char *currentPathEndPosition;
 	Tcl_Obj *temp = NULL;
 	WIN32_FILE_ATTRIBUTE_DATA data;
+	int isDrive = 1;
+#ifdef TCLWIN_NEW_NORM
+	/* This will hold the normalized string */
+	Tcl_DString dsNorm;
+	Tcl_DStringInit(&dsNorm);
+#endif
 	nativePath = Tcl_WinUtfToTChar(path, -1, &ds);
 
-	/* 
-	 * We currently don't use this because we have to check
-	 * each path component for reparse points.
-	 */
-	if (0 && (*tclWinProcs->getFileAttributesExProc)(nativePath, 
-						    GetFileExInfoStandard, 
-						    &data) == TRUE) {
-	    currentPathEndPosition = path + pathLen;
-	    nextCheckpoint = pathLen;
-	    lastValidPathEnd = currentPathEndPosition;
-	    Tcl_DStringFree(&ds);
-	} else {
-	    int isDrive = 1;
-	    Tcl_DStringFree(&ds);
-	    currentPathEndPosition = path + nextCheckpoint;
-	    while (1) {
-		char cur = *currentPathEndPosition;
-		if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
-		    /* Reached directory separator, or end of string */
-		    nativePath = Tcl_WinUtfToTChar(path, 
-				currentPathEndPosition - path, &ds);
-		    if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
-			GetFileExInfoStandard, &data) != TRUE) {
-			/* File doesn't exist */
-			Tcl_DStringFree(&ds);
-			break;
-		    }
-
-		    /* File does exist if we get here */
-		    
-		    /* 
-		     * Check for symlinks, except at last component
-		     * of path (we don't follow final symlinks) 
-		     */
-		    if (cur != 0 && !isDrive && (data.dwFileAttributes 
-				     & FILE_ATTRIBUTE_REPARSE_POINT)) {
-			Tcl_Obj *to = WinReadLinkDirectory(nativePath);
-			if (to != NULL) {
-			    /* Read the reparse point ok */
-			    Tcl_GetStringFromObj(to, &pathLen);
-			    nextCheckpoint = pathLen;
-			    Tcl_AppendToObj(to, currentPathEndPosition, -1);
-			    path = Tcl_GetString(to);
-			    currentPathEndPosition = path + nextCheckpoint;
-			    if (temp != NULL) {
-			        Tcl_DecrRefCount(temp);
-			    }
-			    temp = to;
-			}
-		    }
-
+	Tcl_DStringFree(&ds);
+	currentPathEndPosition = path + nextCheckpoint;
+	while (1) {
+	    char cur = *currentPathEndPosition;
+	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
+		/* Reached directory separator, or end of string */
+		nativePath = Tcl_WinUtfToTChar(path, 
+			    currentPathEndPosition - path, &ds);
+		if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
+		    GetFileExInfoStandard, &data) != TRUE) {
+		    /* File doesn't exist */
 		    Tcl_DStringFree(&ds);
-		    lastValidPathEnd = currentPathEndPosition;
-		    if (0) {
-			WIN32_FIND_DATAT fdata;
-			CONST TCHAR *nativeName;
-			(*tclWinProcs->findFirstFileProc)(nativePath, &fdata);
-			nativeName = (TCHAR *) fdata.w.cAlternateFileName;
-			if (fdata.w.cFileName[0] != '\0') {
-			    nativeName = (TCHAR *) fdata.w.cFileName;
-			} 
-		    }
-		    if (cur == 0) {
-			break;
-		    }
-		    /* 
-		     * If we get here, we've got past one directory
-		     * delimiter, so we know it is no longer a drive 
-		     */
-		    isDrive = 0;
+		    break;
 		}
-		currentPathEndPosition++;
+
+		/* 
+		 * File 'nativePath' does exist if we get here.  We
+		 * now want to check if it is a symlink and otherwise
+		 * continue with the rest of the path.
+		 */
+		
+		/* 
+		 * Check for symlinks, except at last component
+		 * of path (we don't follow final symlinks). Also
+		 * a drive (C:/) for example, may sometimes have
+		 * the reparse flag set for some reason I don't
+		 * understand.  We therefore don't perform this
+		 * check for drives.
+		 */
+		if (cur != 0 && !isDrive && (data.dwFileAttributes 
+				 & FILE_ATTRIBUTE_REPARSE_POINT)) {
+		    Tcl_Obj *to = WinReadLinkDirectory(nativePath);
+		    if (to != NULL) {
+			/* Read the reparse point ok */
+			Tcl_GetStringFromObj(to, &pathLen);
+			nextCheckpoint = 0; /* pathLen */
+			Tcl_AppendToObj(to, currentPathEndPosition, -1);
+			/* Convert link to forward slashes */
+			for (path = Tcl_GetString(to); *path != 0; path++) {
+			    if (*path == '\\') *path = '/';
+			}
+			path = Tcl_GetString(to);
+			currentPathEndPosition = path + nextCheckpoint;
+			if (temp != NULL) {
+			    Tcl_DecrRefCount(temp);
+			}
+			temp = to;
+			/* Reset variables so we can restart normalization */
+			isDrive = 1;
+#ifdef TCLWIN_NEW_NORM
+			Tcl_DStringFree(&dsNorm);
+			Tcl_DStringInit(&dsNorm);
+#endif
+			Tcl_DStringFree(&ds);
+			continue;
+		    }
+		}
+#ifdef TCLWIN_NEW_NORM
+		/*
+		 * Now we convert the tail of the current path to its
+		 * 'long form', and append it to 'dsNorm' which holds
+		 * the current normalized path
+		 */
+		if (isDrive) {
+		    WCHAR drive = ((WCHAR*)nativePath)[0];
+		    if (drive >= L'a') {
+		        drive -= (L'a' - L'A');
+			((WCHAR*)nativePath)[0] = drive;
+		    }
+		    Tcl_DStringAppend(&dsNorm,nativePath,Tcl_DStringLength(&ds));
+		} else {
+		    WIN32_FIND_DATAW fData;
+		    HANDLE handle;
+		    
+		    handle = FindFirstFileW((WCHAR*)nativePath, &fData);
+		    if (handle == INVALID_HANDLE_VALUE) {
+			/* This is usually the '/' in 'c:/' at end of string */
+			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
+					  sizeof(WCHAR));
+		    } else {
+			WCHAR *nativeName;
+			if (fData.cFileName[0] != '\0') {
+			    nativeName = fData.cFileName;
+			} else {
+			    nativeName = fData.cAlternateFileName;
+			}
+			FindClose(handle);
+			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
+					  sizeof(WCHAR));
+			Tcl_DStringAppend(&dsNorm,(TCHAR*)nativeName, 
+					  wcslen(nativeName)*sizeof(WCHAR));
+		    }
+		}
+#endif		
+		Tcl_DStringFree(&ds);
+		lastValidPathEnd = currentPathEndPosition;
+		if (cur == 0) {
+		    break;
+		}
+		/* 
+		 * If we get here, we've got past one directory
+		 * delimiter, so we know it is no longer a drive 
+		 */
+		isDrive = 0;
 	    }
-	    nextCheckpoint = currentPathEndPosition - path;
+	    currentPathEndPosition++;
 	}
+	nextCheckpoint = currentPathEndPosition - path;
+	
 	if (lastValidPathEnd != NULL) {
-	    Tcl_Obj *tmpPathPtr;
+#ifdef TCLWIN_NEW_NORM
+	    /* 
+	     * Concatenate the normalized string in dsNorm with the
+	     * tail of the path which we didn't recognise.  The
+	     * string in dsNorm is in the native encoding, so we
+	     * have to convert it to Utf.
+	     */
+	    Tcl_DString dsTemp;
+	    Tcl_WinTCharToUtf(Tcl_DStringValue(&dsNorm), 
+			      Tcl_DStringLength(&dsNorm), &dsTemp);
+	    nextCheckpoint = Tcl_DStringLength(&dsTemp);
+	    if (*lastValidPathEnd != 0) {
+		/* Not the end of the string */
+		int len;
+		char *path;
+		Tcl_Obj *tmpPathPtr;
+		tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsTemp), 
+					      nextCheckpoint);
+		Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
+		path = Tcl_GetStringFromObj(tmpPathPtr, &len);
+		Tcl_SetStringObj(pathPtr, path, len);
+		Tcl_DecrRefCount(tmpPathPtr);
+	    } else {
+		/* End of string was reached above */
+		Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&dsTemp),
+				 nextCheckpoint);
+	    }
+	    Tcl_DStringFree(&dsTemp);
+#else
 	    /* 
 	     * The leading end of the path description was acceptable to
-	     * us.  We therefore convert it to its long form, and return
+	     * us.  We therefore convert it to its long form (which is
+	     * used by Tcl as a unique normalized form), and return
 	     * that.
 	     */
-	    Tcl_Obj* objPtr = NULL;
 	    int endOfString;
+	    Tcl_Obj *tmpPathPtr;
+	    Tcl_Obj* objPtr = NULL;
 	    int useLength = lastValidPathEnd - path;
 	    if (*lastValidPathEnd == 0) {
 		tmpPathPtr = Tcl_NewStringObj(path, useLength);
@@ -2269,7 +2337,10 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		Tcl_DecrRefCount(objPtr);
 	    }
 	    Tcl_DecrRefCount(tmpPathPtr);
+#endif
 	}
+#ifdef TCLWIN_NEW_NORM
+	Tcl_DStringFree(&dsNorm);
 #endif
     }
     return nextCheckpoint;

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.128 2002/06/18 00:12:44 davygrvy Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.129 2002/06/21 14:22:28 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -1840,6 +1840,17 @@ typedef struct Tcl_Filesystem {
 			     */
 } Tcl_Filesystem;
 
+/*
+ * The following definitions are used as values for the 'linkAction' flag
+ * to Tcl_FSLink, or the linkProc of any filesystem.  Any combination
+ * of flags can be given.  For link creation, the linkProc should create
+ * a link which matches any of the types given.
+ * 
+ * TCL_CREATE_SYMBOLIC_LINK:  Create a symbolic or soft link.
+ * TCL_CREATE_HARD_LINK:      Create a hard link.
+ */
+#define TCL_CREATE_SYMBOLIC_LINK   0x01
+#define TCL_CREATE_HARD_LINK       0x02
 
 /*
  * The following structure represents the Notifier functions that

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.20 2002/05/07 18:03:04 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.21 2002/06/21 14:22:29 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -168,7 +168,7 @@ test cmdAH-5.1 {Tcl_FileObjCmd} {
 } {1 {wrong # args: should be "file option ?arg ...?"}}
 test cmdAH-5.2 {Tcl_FileObjCmd} {
     list [catch {file x} msg] $msg
-} {1 {bad option "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {bad option "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-5.3 {Tcl_FileObjCmd} {
     list [catch {file exists} msg] $msg
 } {1 {wrong # args: should be "file exists name"}}
@@ -1220,7 +1220,7 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile dir.file} 0
 # lstat and readlink:  don't run these tests everywhere, since not all
 # sites will have symbolic links
 
-catch {exec ln -s gorp.file link.file}
+catch {file link -symbolic link.file gorp.file}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} {
     list [catch {file lstat a} msg] $msg
 } {1 {wrong # args: should be "file lstat name varName"}}
@@ -1517,6 +1517,14 @@ test cmdAH-29.4 {Tcl_FileObjCmd: type} {unixOnly nonPortable} {
     file delete link.file
     set result
 } link
+test cmdAH-29.4.1 {Tcl_FileObjCmd: type} {
+    file mkdir temp
+    file link -symbolic link.dir temp
+    set result [file type link.dir]
+    file delete link.dir
+    file delete temp
+    set result
+} link
 test cmdAH-29.5 {Tcl_FileObjCmd: type} {
     string tolower [list [catch {file type _bogus_} msg] $msg $errorCode]
 } {1 {could not read "_bogus_": no such file or directory} {posix enoent {no such file or directory}}}
@@ -1525,25 +1533,25 @@ test cmdAH-29.5 {Tcl_FileObjCmd: type} {
 
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} {
     list [catch {file gorp x} msg] $msg
-} {1 {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} {
     list [catch {file ex x} msg] $msg
-} {1 {ambiguous option "ex": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {ambiguous option "ex": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.3 {Tcl_FileObjCmd: error conditions} {
     list [catch {file is x} msg] $msg
-} {1 {ambiguous option "is": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {ambiguous option "is": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.4 {Tcl_FileObjCmd: error conditions} {
     list [catch {file z x} msg] $msg
-} {1 {bad option "z": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {bad option "z": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.5 {Tcl_FileObjCmd: error conditions} {
     list [catch {file read x} msg] $msg
-} {1 {ambiguous option "read": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {ambiguous option "read": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.6 {Tcl_FileObjCmd: error conditions} {
     list [catch {file s x} msg] $msg
-} {1 {ambiguous option "s": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {ambiguous option "s": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.7 {Tcl_FileObjCmd: error conditions} {
     list [catch {file t x} msg] $msg
-} {1 {ambiguous option "t": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
+} {1 {ambiguous option "t": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}}
 test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} {
     list [catch {file dirname ~woohgy} msg] $msg
 } {1 {user "woohgy" doesn't exist}}
