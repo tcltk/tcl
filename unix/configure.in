@@ -1,8 +1,9 @@
+#! /bin/bash -norc
 dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.55 2000/02/08 10:06:58 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.56 2000/02/10 08:55:27 hobbs Exp $
 
 TCL_VERSION=8.3
 TCL_MAJOR_VERSION=8
@@ -35,18 +36,6 @@ AC_HAVE_HEADERS(unistd.h limits.h)
 #------------------------------------------------------------------------
 
 SC_ENABLE_THREADS
-
-#------------------------------------------------------------------------
-# set the warning flags depending on whether or not we are using gcc
-#------------------------------------------------------------------------
-
-if test "${GCC}" = "yes" ; then
-    CFLAGS_WARNING="-Wall -Wconversion"
-else
-    CFLAGS_WARNING=""
-fi
-
-AC_SUBST(CFLAGS_WARNING)
 
 #------------------------------------------------------------------------------
 # If we're using GCC, see if the compiler understands -pipe.  If so, use it.
@@ -499,8 +488,13 @@ else
     # Replace DBGX with TCL_DBGX
     eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
     
-    TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
-    TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
+    if test "$using_gcc" = "yes" ; then
+	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
+	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"    
+    else
+	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
+	TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
+    fi
 fi
 VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"

@@ -1,18 +1,35 @@
-2000-02-09  Jim Ingham   <jingham@cygnus.com>
+2000-02-10  Jeff Hobbs  <hobbs@scriptics.com>
 
-        * mac/tclMacSock.c: Don't panic when you get an error closing an async 
-        socket.  This doesn't seem to hurt anything, and we return the error so
-        the caller can do the right thing.
-        
-        New Files:
-        * mac/MW_TclHeader.h:
-        * mac/MW_TclTestHeader.h:
-        * mac/MW_TclTestHeader.pch:
-        * mac/MW_TclAppleScriptHeader.h: More convenient to use .h prefix files
-        in the preference panels...
-        
-        The above are curtesy of Daniel Steffen (steffen@math.mq.edu.au)
-        
+	* unix/README:
+	* unix/Makefile.in (dist): removed porting.notes and porting.old
+	from distribution and CVS.  The information was very outdated.  Now
+	refer to http://dev.scriptics.com/services/support/platforms.html
+
+	* tests/unixInit.test: fixed japanese LANG encoding test [Bug: 3549]
+
+	* unix/configure.in:
+	* unix/tcl.m4: correct CFLAG_WARNING setting,
+	fixed gcc config for AIX,
+	added -export-dynamic to LDFLAGS for FreeBSD-3+ [Bug: 2998]
+
+	* win/tclWinLoad.c (TclpLoadFile): improved error message for load
+	failures, could perhaps be even more intelligent.
+
+2000-02-09  Jim Ingham	 <jingham@cygnus.com>
+
+	* mac/tclMacSock.c: Don't panic when you get an error closing an async 
+	socket.	 This doesn't seem to hurt anything, and we return the error so
+	the caller can do the right thing.
+
+	New Files:
+	* mac/MW_TclHeader.h:
+	* mac/MW_TclTestHeader.h:
+	* mac/MW_TclTestHeader.pch:
+	* mac/MW_TclAppleScriptHeader.h: More convenient to use .h prefix files
+	in the preference panels...
+
+	The above are curtesy of Daniel Steffen (steffen@math.mq.edu.au)
+
 2000-02-08  Eric Melski  <ericm@scriptics.com>
 
 	* tests/clock.test: Added tests for "next monthname" constructs.

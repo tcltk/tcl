@@ -557,6 +557,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     else
 	using_gcc="no"
     fi
+
     AC_MSG_RESULT([$using_gcc ($CC)])
 
     # Step 2: check for existence of -ldl library.  This is needed because
@@ -576,6 +577,11 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
+    if test "$using_gcc" = "yes" ; then
+	CFLAGS_WARNING="-Wall -Wconversion -Wno-implicit-int"
+    else
+	CFLAGS_WARNING=""
+    fi
     TCL_NEEDS_EXP_FILE=0
     TCL_BUILD_EXP_FILE=""
     TCL_EXP_FILE=""
@@ -805,7 +811,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LDFLAGS=""
+	    LDFLAGS="-export-dynamic"
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	NEXTSTEP-*)
@@ -1155,6 +1161,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_SUBST(DL_LIBS)
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
+    AC_SUBST(CFLAGS_WARNING)
 ])
 
 #--------------------------------------------------------------------
