@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.7 1999/02/03 00:55:06 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.8 1999/02/03 02:58:25 stanton Exp $
  */
 
 #define TCL_TEST
@@ -217,10 +217,12 @@ static int		TestwordendObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Obj *CONST objv[]));
 
 /*
- * External (platform specific) initialization routine:
+ * External (platform specific) initialization routine, this declaration
+ * explicitly does not use EXTERN since this code does not get compiled
+ * into the library:
  */
 
-EXTERN int		TclplatformtestInit _ANSI_ARGS_((
+extern int		TclplatformtestInit _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 
 /*

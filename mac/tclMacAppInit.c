@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAppInit.c,v 1.3 1998/11/10 06:49:25 jingham Exp $
+ * RCS: @(#) $Id: tclMacAppInit.c,v 1.4 1999/02/03 02:58:25 stanton Exp $
  */
 
 #include "tcl.h"
@@ -26,10 +26,10 @@ short InstallConsole _ANSI_ARGS_((short fd));
 #endif
 
 #ifdef TCL_TEST
-EXTERN int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
+extern int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 #endif /* TCL_TEST */
 
 /*
