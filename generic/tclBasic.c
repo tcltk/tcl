@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.132 2004/10/21 17:07:31 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.133 2004/10/24 22:25:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3251,9 +3251,6 @@ Tcl_LogCommandInfo(interp, script, command, length)
     Tcl_AppendToObj(message, "\"", -1);
     TclAppendObjToErrorInfo(interp, message);
     Tcl_DecrRefCount(message);
-    if (!iPtr->errorCode) {
-	Tcl_SetErrorCode(interp, "NONE", NULL);
-    }
 }
 
 /*
@@ -4425,6 +4422,9 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	    iPtr->errorInfo = iPtr->objResultPtr;
 	}
 	Tcl_IncrRefCount(iPtr->errorInfo);
+	if (!iPtr->errorCode) {
+	    Tcl_SetErrorCode(interp, "NONE", NULL);
+	}
     }
 
     /*
