@@ -1,5 +1,15 @@
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIO.c (WriteBytes, WriteChars,
+	Tcl_GetsObj, ReadBytes): Rework calls to
+	TranslateOutputEOL to make it clear that
+	a boolean value is being returned.
+	Add some comments in an effort to make
+	the code more clear. This patch makes
+	no functional changes.
+
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tclIO.c (Tcl_SetChannelOption):
 	Invoke the Tcl_SetChannelBufferSize method
 	as a result of changing the -buffersize
