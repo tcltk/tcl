@@ -1,5 +1,10 @@
 2003-07-16  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclFileName.c (Tcl_GlobObjCmd):       [Bug 771840]
+	* generic/tclPathObj.c (Tcl_FSConvertToPathType):[Bug 771947]
+	* unix/tclUnixFCmd.c (GetModeFromPermString):   [Bug 771949]
+	Silence compiler warnings about unreached lines.
+
         * library/tcltest/tcltest.tcl (ProcessFlags):   Corrected broken call
         * library/tcltest/pkgIndex.tcl:                 to [lrange].  Bumped
         to version 2.2.4. [Bug 772333]
