@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.4 1999/04/16 00:46:31 stanton Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.5 1999/08/19 02:58:34 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -55,7 +55,7 @@ ORed combination of flag bits that specify additional options.
 \fBTCL_EVAL_GLOBAL\fR and \fBTCL_EVAL_DIRECT\fR are currently supported.
 .AP char *fileName in
 Name of a file containing a Tcl script.
-.AP int *objc in
+.AP int objc in
 The number of objects in the array pointed to by \fIobjPtr\fR;
 this is also the number of words in the command.
 .AP Tcl_Obj **objv in

@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.5 1999/05/06 19:14:41 stanton Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.6 1999/08/19 02:58:34 hobbs Exp $
 .so man.macros
-.TH Tcl_OpenFileChannel 3 8.1 Tcl "Tcl Library Procedures"
+.TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -30,6 +30,14 @@ Tcl_Channel
 .sp
 Tcl_Channel
 \fBTcl_GetChannel\fR(\fIinterp, channelName, modePtr\fR)
+.VS 8.3
+.sp
+int
+\fBTcl_GetChannelNames\fR(\fIinterp\fR)
+.sp
+int
+\fBTcl_GetChannelNamesEx\fR(\fIinterp, pattern\fR)
+.VE
 .sp
 void
 \fBTcl_RegisterChannel\fR(\fIinterp, channel\fR)
@@ -182,6 +190,10 @@ Where to store the value of an option or a list of all options and their
 values. Must have been initialized by the caller.
 .AP char *newValue in
 New value for the option given by \fIoptionName\fR.
+.VS 8.3
+.AP char *pattern in
+The pattern to match on, passed to Tcl_StringMatch, or NULL.
+.VE
 .BE
 
 .SH DESCRIPTION
@@ -279,6 +291,14 @@ the procedure returns NULL. If the \fImode\fR argument is not NULL, it
 points at an integer variable that will receive an OR-ed combination of
 \fBTCL_READABLE\fR and \fBTCL_WRITABLE\fR describing whether the channel is
 open for reading and writing.
+.PP
+\fBTcl_GetChannelNames\fR and \fBTcl_GetChannelNamesEx\fR write the
+names of the registered channels to the interpreter's result as a
+list object.  \fBTcl_GetChannelNamesEx\fR will filter these names
+according to the \fIpattern\fR.  If \fIpattern\fR is NULL, then it
+will not do any filtering.  The return value is \fBTCL_OK\fR if no
+errors occured writing to the result, otherwise it is \fBTCL_ERROR\fR,
+and the error message is left in the interpreter's result.
 
 .SH TCL_REGISTERCHANNEL
 .PP
@@ -330,7 +350,7 @@ If an error occurs, \fBTcl_Close\fR returns \fBTCL_ERROR\fR and records a
 POSIX error code that can be retrieved with \fBTcl_GetErrno\fR.
 If the channel is being closed synchronously and an error occurs during
 closing of the channel and \fIinterp\fR is not NULL, an error message is
-left in \fIinterp->result\fR.
+left in the interpreter's result.
 .PP
 Note: it is not safe to call \fBTcl_Close\fR on a channel that has been
 registered using \fBTcl_RegisterChannel\fR; see the documentation for
