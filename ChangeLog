@@ -1,3 +1,19 @@
+2003-07-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tcl.h: Revert change made on 2003-07-21
+	since it made the sizeof(Tcl_Obj) different for
+	regular vs mem debug builds.
+	* generic/tclInt.h: Define TclDecrRefCount in terms
+	of Tcl_DbDecrRefCount which removes one layer of
+	inderection.
+	* generic/tclObj.c (TclDbInitNewObj, Tcl_DbIncrRefCount,
+	Tcl_DbDecrRefCount, Tcl_DbIsShared):
+	Define ThreadSpecificData that contains a hashtable.
+	The table is used to ensure that a Tcl_Obj is only
+	acted upon in the thread that allocated it. This
+	checking code is enabled only when mem debug and
+	threads are enabled.
+
 2003-07-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/async.test:	Added several tests that demonstrate Tcl
