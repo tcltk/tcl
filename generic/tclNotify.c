@@ -13,11 +13,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.4 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.5 1999/07/02 06:04:26 welch Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+extern TclStubs tclStubs;
 
 /*
  * For each event source (created with Tcl_CreateEventSource) there
@@ -158,6 +160,36 @@ TclFinalizeNotifier()
     }
 
     Tcl_MutexUnlock(&listLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetNotifier --
+ *
+ *	Install a set of alternate functions for use with the notifier.
+ #	In particular, this can be used to install the Xt-based
+ *	notifier for use with the Browser plugin.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Overstomps part of the stub vector.  This relies on hooks
+ *	added to the default procedures in case those are called
+ *	directly (i.e., not through the stub table.)
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetNotifier(notifierProcPtr)
+    Tcl_NotifierProcs *notifierProcPtr;
+{
+    tclStubs.tcl_CreateFileHandler = notifierProcPtr->createFileHandlerProc;
+    tclStubs.tcl_DeleteFileHandler = notifierProcPtr->deleteFileHandlerProc;
+    tclStubs.tcl_SetTimer = notifierProcPtr->setTimerProc;
+    tclStubs.tcl_WaitForEvent = notifierProcPtr->waitForEventProc;
 }
 
 /*

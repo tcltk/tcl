@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.50 1999/06/28 19:02:52 wart Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.51 1999/07/02 06:04:26 welch Exp $
  */
 
 #ifndef _TCL
@@ -540,6 +540,9 @@ typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, char *part1, char *part2, int flags));
+typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
+	Tcl_FileProc *proc, ClientData clientData));
+typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
 
 /*
  * The following structure represents a type of object, which is a
@@ -1053,6 +1056,9 @@ typedef struct Tcl_Time {
     long usec;			/* Microseconds. */
 } Tcl_Time;
 
+typedef void (Tcl_SetTimerProc) _ANSI_ARGS_((Tcl_Time *timePtr));
+typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
+
 /*
  * Bits to pass to Tcl_CreateFileHandler and Tcl_CreateChannelHandler
  * to indicate what sorts of events are of interest:
@@ -1216,6 +1222,18 @@ typedef enum Tcl_PathType {
     TCL_PATH_RELATIVE,
     TCL_PATH_VOLUME_RELATIVE
 } Tcl_PathType;
+
+/*
+ * The following structure represents the Notifier functions that
+ * you can override with the Tcl_SetNotifier call.
+ */
+
+typedef struct Tcl_NotifierProcs {
+    Tcl_SetTimerProc *setTimerProc;
+    Tcl_WaitForEventProc *waitForEventProc;
+    Tcl_CreateFileHandlerProc *createFileHandlerProc;
+    Tcl_DeleteFileHandlerProc *deleteFileHandlerProc;
+} Tcl_NotifierProcs;
 
 /*
  * The following structure represents a user-defined encoding.  It collects
