@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.72 2003/11/15 23:42:42 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.73 2003/11/16 00:49:20 dkf Exp $
  */
 
 #define TCL_TEST
@@ -129,6 +129,9 @@ typedef struct TestEvent {
 int			Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 static int		AsyncHandlerProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int code));
+#ifdef TCL_THREADS
+static Tcl_ThreadCreateType AsyncThreadProc _ANSI_ARGS_((ClientData));
+#endif
 static void		CleanupTestSetassocdataTests _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp));
 static void		CmdDelProc1 _ANSI_ARGS_((ClientData clientData));
@@ -840,11 +843,39 @@ TestasyncCmd(dummy, interp, argc, argv)
 	}
 	Tcl_SetResult(interp, (char *)argv[3], TCL_VOLATILE);
 	return code;
+#ifdef TCL_THREADS
+    } else if (strcmp(argv[1], "marklater") == 0) {
+	if (argc != 3) {
+	    goto wrongNumArgs;
+	}
+	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (asyncPtr = firstHandler; asyncPtr != NULL;
+		asyncPtr = asyncPtr->nextPtr) {
+	    if (asyncPtr->id == id) {
+		Tcl_ThreadId threadID;
+		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
+			(ClientData) asyncPtr, TCL_THREAD_STACK_DEFAULT,
+			TCL_THREAD_NOFLAGS) != TCL_OK) {
+		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    return TCL_ERROR;
+		}
+		break;
+	    }
+	}
+    } else {
+	Tcl_AppendResult(interp, "bad option \"", argv[1],
+		"\": must be create, delete, int, mark, or marklater",
+		(char *) NULL);
+	return TCL_ERROR;
+#else /* !TCL_THREADS */
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, or mark",
 		(char *) NULL);
 	return TCL_ERROR;
+#endif
     }
     return TCL_OK;
 }
@@ -878,6 +909,36 @@ AsyncHandlerProc(clientData, interp, code)
     ckfree((char *)cmd);
     return code;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncThreadProc --
+ *
+ *	Delivers an asynchronous event to a handler in another thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invokes Tcl_AsyncMark on the handler
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_THREADS
+static Tcl_ThreadCreateType
+AsyncThreadProc(clientData)
+    ClientData clientData;	/* Parameter is a pointer to a
+				 * TestAsyncHandler, defined above. */
+{
+    TestAsyncHandler* asyncPtr = clientData;
+    Tcl_Sleep(1);
+    Tcl_AsyncMark(asyncPtr->handler);
+    Tcl_ExitThread(TCL_OK);
+    TCL_THREAD_CREATE_RETURN;
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
