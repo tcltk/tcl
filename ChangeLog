@@ -1,3 +1,9 @@
+2004-04-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/Thread.3: Reworked to remove references to testing interfaces
+	and instead promote the use of the Thread package. [Patch 932527]
+	Also reworked and reordered the page for better readability.
+
 2004-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Removed obsolete declarations and #include's.
