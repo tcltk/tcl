@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.24 2002/03/08 23:46:27 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.25 2002/03/12 11:32:19 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -167,7 +167,18 @@ DoRenameFile(
     int retval = -1;
 
     /*
-     * The moveFileProc below would throw an exception under NT
+     * The MoveFile API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
+     */
+
+    if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
+        nativeDst == NULL || nativeDst[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	return TCL_ERROR;
+    }
+
+    /*
+     * The MoveFile API would throw an exception under NT
      * if one of the arguments is a char block device.
      */
 
@@ -442,32 +453,19 @@ DoCopyFile(
     int retval = -1;
 
     /*
-     * The copyFileProc below would throw an exception under NT if one
-     * of the arguments is a char block device.
+     * The CopyFile API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
      */
 
-    /* 
-     * If 'nativeDst' is NULL, the following code can lock the process
-     * up, at least under Windows2000.  Therefore we have to bail at
-     * that point.
-     */
-    if (nativeDst == NULL) {
-	Tcl_SetErrno(ENOENT);
-        return TCL_ERROR;
-    }
-    
-    /*
-     * Similarly, if 'nativeSrc' is NULL or empty, the following code
-     * locks up the process on WinNT; bail out.
-     */
-    
-    if (nativeSrc == NULL || nativeSrc[0] == '\0') {
+    if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
+        nativeDst == NULL || nativeDst[0] == '\0') {
 	Tcl_SetErrno(ENOENT);
 	return TCL_ERROR;
     }
     
     /*
-     * OK, now try the copy.
+     * The CopyFile API would throw an exception under NT if one
+     * of the arguments is a char block device.
      */
     
     __try {
@@ -556,33 +554,22 @@ DoDeleteFile(
     CONST TCHAR *nativePath)	/* Pathname of file to be removed (native). */
 {
     DWORD attr;
+
+    /*
+     * The DeleteFile API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
+     */
+
+    if (nativePath == NULL || nativePath[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	return TCL_ERROR;
+    }
     
     if ((*tclWinProcs->deleteFileProc)(nativePath) != FALSE) {
 	return TCL_OK;
     }
     TclWinConvertError(GetLastError());
 
-    /*
-     * Win32s thinks that "" is the same as "." and then reports EISDIR
-     * instead of ENOENT.
-     */
-
-    if (nativePath == NULL) {
-	Tcl_SetErrno(ENOENT);
-	return TCL_ERROR;
-    }
-        
-    if (tclWinProcs->useWide) {
-	if (((WCHAR *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    } else {
-	if (((char *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    }
     if (Tcl_GetErrno() == EACCES) {
         attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
 	if (attr != 0xffffffff) {
@@ -802,32 +789,21 @@ DoRemoveJustDirectory(
 {
     DWORD attr;
 
+    /*
+     * The RemoveDirectory API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
+     */
+
+    if (nativePath == NULL || nativePath[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	goto end;
+    }
+
     if ((*tclWinProcs->removeDirectoryProc)(nativePath) != FALSE) {
 	return TCL_OK;
     }
     TclWinConvertError(GetLastError());
 
-    /*
-     * Win32s thinks that "" is the same as "." and then reports EACCES
-     * instead of ENOENT.
-     */
-
-    if (nativePath == NULL) {
-	Tcl_SetErrno(ENOENT);
-	goto end;
-    }
-	
-    if (tclWinProcs->useWide) {
-	if (((WCHAR *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    } else {
-	if (((char *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    }
     if (Tcl_GetErrno() == EACCES) {
 	attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
 	if (attr != 0xffffffff) {
