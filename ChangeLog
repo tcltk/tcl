@@ -1,3 +1,11 @@
+1999-04-06    <stanton@scriptics.com>
+
+	* tests/unixInit.test: 
+	* tests/fileName.test: Minor test nits.
+
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): Fixed bad initial
+	encoding string.
+
 1999-04-06    <surles@scriptics.com>
 
 	* generic/tclVar.c: 

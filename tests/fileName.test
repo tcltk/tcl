@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.1.2.7 1999/04/05 23:14:18 stanton Exp $
+# RCS: @(#) $Id: fileName.test,v 1.1.2.8 1999/04/06 20:21:25 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -1401,6 +1401,7 @@ test filename-16.13 {windows specific globbing} {pcOnly} {
 # cleanup
 file delete -force //[info hostname]/c/globTest
 cd $temp
+file delete -force globTest
 set env(HOME) $oldhome
 testsetplatform $platform
 catch {unset oldhome platform temp result}

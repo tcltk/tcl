@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.13 1999/04/06 19:06:56 surles Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.14 1999/04/06 20:21:27 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -335,7 +335,7 @@ TclpSetInitialEncodings()
 	langEnv = NULL;
     }
 
-    encoding = "iso-8859-1";
+    encoding = "iso8859-1";
     if (langEnv != NULL) {
 	for (i = 0; localeTable[i].lang != NULL; i++) {
 	    if (strcmp(localeTable[i].lang, langEnv) == 0) {
