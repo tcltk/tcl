@@ -1,3 +1,16 @@
+2002-09-26  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: preserve environment value of INSTALL_ROOT.
+	When embedding only use deployment build. Force relink before
+	embedded build to ensure new linker flags are picked up.
+
+	* macosx/Tcl.pbproj/project.pbxproj: add symbolic links to
+	debug lib, stub libs and tclConfig.sh in framework toplevel.
+	Configure target dependency fix. Fix to 'clean' action. Added
+	private tcl headers to framework. Install tclsh symbolic link.
+	Html doc build works when no installed tclsh available. Made
+	html doc structure in framework more like in Apple frameworks.
+
 2002-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* unix/tcl.m4 (SC_TCL_64BIT_FLAGS): Yet more robust 64-bit value
