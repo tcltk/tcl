@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.21 2002/07/18 16:39:50 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.22 2002/08/08 08:56:21 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1889,21 +1889,20 @@ test fCmd-21.7 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
     file mkdir tfad1
     file link -symbolic tfalink tfad1
     file delete tfad1
-    file copy tfalink tfalink2
-    set result [string match [file type tfalink2] link]
-    file delete tfalink tfalink2 
+    set result [list [catch {file copy tfalink tfalink2} msg] $msg]
+    file delete -force tfalink tfalink2 
     set result
-} {1}
+} {1 {error copying "tfalink": the target of this link doesn't exist}}
 
 test fCmd-21.8 {TclCopyFilesCmd : copy a link } {unixOnly notRoot} {
     file mkdir tfad1
     file link -symbolic tfalink tfad1
     file copy tfalink tfalink2
-    set r1 [file type tfalink]
-    set r2 [file type tfalink2]
-    set r3 [file isdir tfad1]
-    set result [expr {("$r1" == "link" ) && ("$r2" == "link" ) && $r3}]
-    file delete tfad1 tfalink tfalink2
+    set r1 [file type tfalink]; # link
+    set r2 [file type tfalink2]; # directory
+    set r3 [file isdir tfad1]; # 1
+    set result [expr {("$r1" == "link") && ("$r2" == "directory") && $r3}]
+    file delete -force tfad1 tfalink tfalink2
     set result
 } {1}
 
@@ -2300,10 +2299,12 @@ test fCmd-28.15 {file link: copies link not dir} {linkDirectory} {
     file delete -force abc.link
     file link abc.link abc.dir
     file copy abc.link abc2.link
-    set res [list [file type abc2.link] [file tail [file link abc2.link]]]
+    # abc2.linkdir was a copy of a link to a dir, so it should end up as
+    # a directory, not a link (links trace to endpoint).
+    set res [list [file type abc2.link] [file tail [file link abc.link]]]
     cd [workingDirectory]
     set res
-} {link abc.dir}
+} {directory abc.dir}
 
 cd [temporaryDirectory]
 file delete -force abc.link

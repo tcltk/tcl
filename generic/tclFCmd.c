@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.18 2002/07/18 16:17:48 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.19 2002/08/08 08:56:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -448,6 +448,8 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 {
     int result;
     Tcl_Obj *errfile, *errorBuffer;
+    /* If source is a link, then this is the real file/directory */
+    Tcl_Obj *actualSource = NULL;
     Tcl_StatBuf sourceStatBuf, targetStatBuf;
 
     if (Tcl_FSConvertToPathType(interp, source) != TCL_OK) {
@@ -549,8 +551,53 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	 */
     }
 
+    actualSource = source;
+    Tcl_IncrRefCount(actualSource);
+#ifdef S_ISLNK
+    /* 
+     * To add a flag to make 'copy' copy links instead of files, we could
+     * add a condition to ignore this 'if' here.
+     */
+    if (copyFlag && S_ISLNK(sourceStatBuf.st_mode)) {
+	/* 
+	 * We want to copy files not links.  Therefore we must follow the
+	 * link.  There are two purposes to this 'stat' call here.  First
+	 * we want to know if the linked-file/dir actually exists, and
+	 * second, in the block of code which follows, some 20 lines
+	 * down, we want to check if the thing is a file or directory.
+	 */
+	if (Tcl_FSStat(source, &sourceStatBuf) != 0) {
+	    /* Actual file doesn't exist */
+	    Tcl_AppendResult(interp, 
+		    "error copying \"", Tcl_GetString(source), 
+		    "\": the target of this link doesn't exist",
+		    (char *) NULL);
+	    goto done;
+	} else {
+	    int counter = 0;
+	    while (1) {
+		Tcl_Obj *path = Tcl_FSLink(actualSource,NULL,0);
+		if (path == NULL) {
+		    break;
+		}
+		Tcl_DecrRefCount(actualSource);
+		actualSource = path;
+		counter++;
+		/* Arbitrary limit of 20 links to follow */
+		if (counter > 20) {
+		    /* Too many links */
+		    Tcl_SetErrno(EMLINK);
+		    errfile = source;
+		    goto done;
+		}
+	    }
+	    /* Now 'actualSource' is the correct file */
+	}
+    }
+#endif
+
     if (S_ISDIR(sourceStatBuf.st_mode)) {
-	result = Tcl_FSCopyDirectory(source, target, &errorBuffer);
+	result = Tcl_FSCopyDirectory(actualSource, target, &errorBuffer);
 	if (result != TCL_OK) {
 	    if (errno == EXDEV) {
 		/* 
@@ -598,7 +645,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    }
 	}
     } else {
-	result = Tcl_FSCopyFile(source, target);
+	result = Tcl_FSCopyFile(actualSource, target);
 	if ((result != TCL_OK) && (errno == EXDEV)) {
 	    result = TclCrossFilesystemCopy(interp, source, target);
 	}
@@ -651,6 +698,9 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
     }
     if (errorBuffer != NULL) {
         Tcl_DecrRefCount(errorBuffer);
+    }
+    if (actualSource != NULL) {
+	Tcl_DecrRefCount(actualSource);
     }
     return result;
 }
