@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.46 1999/07/13 22:21:56 redman Exp $
+RCS: @(#) $Id: changes,v 1.47 1999/08/04 20:58:48 redman Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4509,3 +4509,81 @@ code. (stanton)
 
 --------------- Released 8.2b1, July 14, 1999 ----------------------
 
+7/16/99 (bug fix) Added Tcl_SetNotifier to stub table. [Bug: 2364]
+Added check for Alpha/Linux to correct the IEEE  floating point flag,
+patch from Don Porter. (redman)
+
+7/20/99 (bug fix) Merged 8.0.5 code to handle tcl_library properly,
+also fixed a bug that caused TCL_LIBRARY to be ignored. (hershey)
+
+7/21/99 (bug fix) Implemented modified socket driver for Windows that
+uses a thread to manage the socket event window.  Code works the same
+on all supported versions of Windows and was based on original 8.1.0
+code.  [Bug: 2178 2256 2259 2329 2323 2355] (redman)
+
+7/21/99 (new feature) Applied patch from Rolf Schroedter to add
+-pollinterval option to fconfigure for Windows serial ports.  Allows
+the maxblocktime to be modified to control how often serial ports are
+checked for fileevents.  Also added documentation for \\.\comX
+notation for opening serial ports on Windows.  (redman)
+
+7/21/99 (bug fix) Changed APIs in stub tables to use "unsigned long"
+instead of the platform-specific "size_t", primarily after SunOS 4
+users could no longer compile. (redman)
+
+7/22/99 (bug fix) Fixed crashing during "array set a(b) {}". 
+[Bug: 2427] (redman)
+
+7/22/99 (bug fix) The install-sh script must be given execute
+permissions prior to running.  [Bug: 2413] (redman)
+
+7/22/99 (bug fix) Applied patch from Ulrich Ring to remove ANSI-style
+prototypes in the code.  [Bug: 2391] (redman)
+
+7/22/99 (bug fix) Added #if blocks around #includes of sys/*.h header
+files, to allow an extension author on Windows to use the MetroWerks
+compiler. [Bug: 2385] (redman)
+
+7/22/99 (bug fix) Fixed running the safe.test test suite, one change
+to the Windows Makefile.in to fix paths and another in safe.test to
+check for the tcl_platform(threaded) variable properly. (redman)
+
+7/22/99 (bug fix) Fixed hanging in new Win32 socket driver with
+threads enabled. (redman)
+
+7/26/99 (bug fix) Fixed terminating of helper threads by holding any
+mutexes from the primary thread while waiting for the helper thread to
+terminate.  Fixes dual-CPU WinNT hangs, only one rare sporadic hang
+that still exists with dual-CPU WinNT.  Also fixed test cases so that
+they would not depend as much on timing for dual-CPU WinNT. (redman)
+
+7/27/99 (bug fix) Some test suite cleanup. (jenn)
+
+7/29/99 (bug fix) Applied patch to fix typo in .SH NAME line in
+doc/Encoding.n [Bug: 2451].  Applied patch to avoid linking pack.n to
+pack-old.n [Bug: 2469]. Patches from Don Porter. (redman)
+
+7/29/99 (bug fix) Allow tcl to open CON and NUL, even for redirection
+of std channels.  [Bug: 2393 2392 2209 2458] (redman)
+
+7/30/99 (bug fix) Applied fixed Trf patch from Andreas Kupries. 
+[Bug: 2386] (hobbs)
+
+7/30/99 (bug fix) Fixed bug in info complete. [Bug: 2383 2466] (hobbs)
+
+7/30/99 (bug fix) Applied patch to fix threading on Irix 6.5, patch
+provided by James Dennett.  [Bug: 2450] (redman)
+
+7/30/99 (bug fix) Fixed launching of 16bit applications on Win9x from
+wish.  The command line was being primed with tclpip82.dll, but it was
+ignored later. 
+
+7/30/99 (bug fix) Added functions to stub table, patch provided by Jan
+Njitmans. [Bug: 2445] (hobbs)
+
+8/1/99  (bug fix) Changed Windows socket driver to terminate threads
+by sending a message to the window rather than calling
+TerminateThread(), which seems to leak about 4k from the helper
+thread's stack space. (redman)
+
+--------------- Released 8.2b2, August 5, 1999 ----------------------
