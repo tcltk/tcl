@@ -1,5 +1,8 @@
 2000-05-22  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* doc/scan.n: 
+	* doc/array.n: minor doc fixes [Bug: 5396]
+
 	* generic/tclEnv.c: cast cleanup [Bug: 5624]
 	* win/tclWinConsole.c: cast and header cleanup [Bug: 5625]
 	* win/tclWinSerial.c: cast cleanup [Bug: 5626]
