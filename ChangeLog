@@ -1,5 +1,8 @@
 2003-05-22  Daniel Steffen  <das@users.sourceforge.net>
 
+	* macosx/Tcl.pbproj/project.pbxproj: added missing references to
+	new source files tclPathObj.c and tclMacOSXFCmd.c.
+
 	* macosx/tclMacOSXBundle.c: fixed a problem that caused only the
 	first call to Tcl_MacOSXOpenVersionedBundleResources() for a given
 	bundle identifier to succeed. This caused the tcl runtime library
