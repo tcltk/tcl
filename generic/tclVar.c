@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.55 2002/07/16 12:54:34 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.56 2002/07/16 16:29:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -26,12 +26,14 @@
  * variable access is denied.
  */
 
-static CONST char *noSuchVar =	"no such variable";
+static CONST char *noSuchVar =		"no such variable";
 static CONST char *isArray =		"variable is array";
-static CONST char *needArray =	"variable isn't array";
+static CONST char *needArray =		"variable isn't array";
 static CONST char *noSuchElement =	"no such element in array";
-static CONST char *danglingElement =	"upvar refers to element in deleted array";
-static CONST char *danglingVar =     "upvar refers to variable in deleted namespace";
+static CONST char *danglingElement =
+				"upvar refers to element in deleted array";
+static CONST char *danglingVar =	
+				"upvar refers to variable in deleted namespace";
 static CONST char *badNamespace =	"parent namespace doesn't exist";
 static CONST char *missingName =	"missing variable name";
 static CONST char *isArrayElement =	"name refers to an element in an array";
@@ -56,10 +58,11 @@ static int              ObjMakeUpvar _ANSI_ARGS_((Tcl_Interp *interp,
 		            CONST char *myName, CONST int myFlags, int index));
 static Var *		NewVar _ANSI_ARGS_((void));
 static ArraySearch *	ParseSearchId _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST Var *varPtr, CONST char *varName, Tcl_Obj *handleObj));
+			    CONST Var *varPtr, CONST char *varName,
+			    Tcl_Obj *handleObj));
 static void		VarErrMsg _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *part1, CONST char *part2, CONST char *operation,
-			    CONST char *reason));
+			    CONST char *part1, CONST char *part2,
+			    CONST char *operation, CONST char *reason));
 static int		SetArraySearchObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 
@@ -70,24 +73,28 @@ static int		SetArraySearchObj _ANSI_ARGS_((Tcl_Interp *interp,
  * in the public interface.
  */
 
-Var *          TclLookupArrayElement _ANSI_ARGS_((Tcl_Interp *interp, 
-	           CONST char *arrayName, CONST char *elName, CONST int flags, CONST char *msg, 
-		   CONST int createPart1, CONST int createPart2, Var *arrayPtr));	
-Var *          TclLookupSimpleVar _ANSI_ARGS_((Tcl_Interp *interp, CONST char *varName, 
-		   int flags, CONST int create, CONST char **errMsgPtr, int *indexPtr));
-Var *          TclObjLookupVar _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *part1Ptr, 
-                   CONST char *part2, int flags, CONST char *msg, CONST int createPart1, 
-                   CONST int createPart2, Var **arrayPtrPtr));
-int            TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *part1Ptr, 
-		   CONST char *part2, int flags));
-Tcl_Obj *      TclPtrGetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-                   Var *arrayPtr, char *part1, CONST char *part2, CONST int flags));
-Tcl_Obj *      TclPtrSetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-                   Var *arrayPtr, char *part1, CONST char *part2, 
-		   Tcl_Obj *newValuePtr, CONST int flags));
-Tcl_Obj *      TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
-                   Var *arrayPtr, char *part1, CONST char *part2, 
-		   CONST long i, CONST int flags));
+Var *		TclLookupArrayElement _ANSI_ARGS_((Tcl_Interp *interp,
+		    CONST char *arrayName, CONST char *elName, CONST int flags,
+		    CONST char *msg, CONST int createPart1,
+		    CONST int createPart2, Var *arrayPtr));	
+Var *		TclLookupSimpleVar _ANSI_ARGS_((Tcl_Interp *interp,
+		    CONST char *varName, int flags, CONST int create,
+		    CONST char **errMsgPtr, int *indexPtr));
+Var *		TclObjLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Obj *part1Ptr, CONST char *part2, int flags,
+		    CONST char *msg, CONST int createPart1,
+		    CONST int createPart2, Var **arrayPtrPtr));
+int		TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Obj *part1Ptr, CONST char *part2, int flags));
+Tcl_Obj *	TclPtrGetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
+		    Var *arrayPtr, char *part1, CONST char *part2,
+		    CONST int flags));
+Tcl_Obj *	TclPtrSetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
+		    Var *arrayPtr, char *part1, CONST char *part2,
+		    Tcl_Obj *newValuePtr, CONST int flags));
+Tcl_Obj *	TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
+		    Var *arrayPtr, char *part1, CONST char *part2,
+		    CONST long i, CONST int flags));
 
 static Tcl_FreeInternalRepProc FreeLocalVarName;
 static Tcl_DupInternalRepProc DupLocalVarName;
@@ -565,7 +572,8 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
     if (varPtr == NULL) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    part1 = TclGetString(part1Ptr);
-	    VarErrMsg(interp, part1, part2, msg, "Cached variable reference is NULL.");
+	    VarErrMsg(interp, part1, part2, msg, 
+		    "Cached variable reference is NULL.");
 	}
 	return NULL;
     }
@@ -617,14 +625,15 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  *                    . resolution by a namespace or interp resolver
  *
  *	If the variable isn't found and creation wasn't specified, or some
- *	other error occurs, NULL is returned and the corresponding error message 
- *      is left in *errMsgPtr. 
+ *	other error occurs, NULL is returned and the corresponding error
+ *	message is left in *errMsgPtr. 
  *
  *	Note: it's possible for the variable returned to be VAR_UNDEFINED
- *	even if create is 1 (this only causes the hash table entry to be created). 
- *      For example, the variable might be a global that has been unset but is still 
- *      referenced by a procedure, or a variable that has been unset but it only being 
- *      kept in existence (if VAR_UNDEFINED) by a trace.
+ *	even if create is 1 (this only causes the hash table entry to be
+ *	created).  For example, the variable might be a global that has been
+ *	unset but is still referenced by a procedure, or a variable that has
+ *	been unset but it only being kept in existence (if VAR_UNDEFINED) by
+ *	a trace.
  *
  * Side effects:
  *	A new hashtable entry may be created if create is 1.
@@ -1270,14 +1279,18 @@ TclGetIndexedScalar(interp, localIndex, flags)
     int localCt = varFramePtr->procPtr->numCompiledLocals;
 
     if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclGetIndexedScalar: can't get local %i in frame 0x%x, no compiled locals\n",
-		localIndex, (unsigned int) varFramePtr);
+	fprintf(stderr, "\nTclGetIndexedScalar: can't get ");
+	fprintf(stderr, "local %i in frame 0x%x, ", localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "no compiled locals\n");
 	panic("TclGetIndexedScalar: no compiled locals in frame 0x%x",
 		(unsigned int) varFramePtr);
     }
     if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclGetIndexedScalar: can't get local %i in frame 0x%x with %i locals\n",
-		localIndex, (unsigned int) varFramePtr, localCt);
+	fprintf(stderr, "\nTclGetIndexedScalar: can't get ");
+	fprintf(stderr, "local %i in frame 0x%x " localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "with %i locals\n", localCt);
 	panic("TclGetIndexedScalar: bad local index %i in frame 0x%x",
 		localIndex, (unsigned int) varFramePtr);
     }
@@ -1386,14 +1399,17 @@ TclGetElementOfIndexedArray(interp, localIndex, elemPtr, flags)
     int localCt = procPtr->numCompiledLocals;
 
     if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclGetElementOfIndexedArray: can't get element of local %i in frame 0x%x, no compiled locals\n",
-		localIndex, (unsigned int) varFramePtr);
+	fprintf(stderr, "\nTclGetElementOfIndexedArray: can't get element ");
+	fprintf(stderr, "of local %i in frame 0x%x, " localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "no compiled locals\n");
 	panic("TclGetIndexedScalar: no compiled locals in frame 0x%x",
 		(unsigned int) varFramePtr);
     }
     if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclGetIndexedScalar: can't get element of local %i in frame 0x%x with %i locals\n",
-		localIndex, (unsigned int) varFramePtr, localCt);
+	fprintf(stderr, "\nTclGetIndexedScalar: can't get element of "
+		"local %i in frame 0x%x with %i locals\n", localIndex,
+		(unsigned int) varFramePtr, localCt);
 	panic("TclGetElementOfIndexedArray: bad local index %i in frame 0x%x",
 		localIndex, (unsigned int) varFramePtr);
     }
@@ -2019,14 +2035,18 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
     int localCt = procPtr->numCompiledLocals;
 
     if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set local %i in frame 0x%x, no compiled locals\n",
-		localIndex, (unsigned int) varFramePtr);
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set ");
+	fprintf(stderr, "local %i in ", localIndex);
+	fprintf(stderr, "frame 0x%x, no compiled locals\n",
+		(unsigned int) varFramePtr);
 	panic("TclSetIndexedScalar: no compiled locals in frame 0x%x",
 		(unsigned int) varFramePtr);
     }
     if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set local %i in frame 0x%x with %i locals\n",
-		localIndex, (unsigned int) varFramePtr, localCt);
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set ");
+	fprintf(stderr, "local %i in " localIndex);
+	fprintf(stderr, "frame 0x%x with %i locals\n",
+		(unsigned int) varFramePtr, localCt);
 	panic("TclSetIndexedScalar: bad local index %i in frame 0x%x",
 		localIndex, (unsigned int) varFramePtr);
     }
@@ -2254,14 +2274,18 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
     int localCt = procPtr->numCompiledLocals;
 
     if (compiledLocals == NULL) {
-	fprintf(stderr, "\nTclSetElementOfIndexedArray: can't set element of local %i in frame 0x%x, no compiled locals\n",
-		localIndex, (unsigned int) varFramePtr);
+	fprintf(stderr, "\nTclSetElementOfIndexedArray: can't set element ");
+	fprintf(stderr, "of local %i in frame 0x%x, ", localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "no compiled locals\n");
 	panic("TclSetIndexedScalar: no compiled locals in frame 0x%x",
 		(unsigned int) varFramePtr);
     }
     if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set element of local %i in frame 0x%x with %i locals\n",
-		localIndex, (unsigned int) varFramePtr, localCt);
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set element of ");
+	fprintf(stderr,	"local %i in frame 0x%x ", localIndex,
+		(unsigned int) varFramePtr);
+	fprintf(stderr, "with %i locals\n", localCt);
 	panic("TclSetElementOfIndexedArray: bad local index %i in frame 0x%x",
 		localIndex, (unsigned int) varFramePtr);
     }
@@ -2502,13 +2526,15 @@ TclIncrVar2(interp, part1Ptr, part2Ptr, incrAmount, flags)
     part1 = TclGetString(part1Ptr);
     part2 = ((part2Ptr == NULL)? NULL : TclGetString(part2Ptr));
 
-    varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read", 0, 1, &arrayPtr);
+    varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
+	    0, 1, &arrayPtr);
     if (varPtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
 		"\n    (reading value of variable to increment)", -1);
 	return NULL;
     }
-    return TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags);
+    return TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2,
+	    incrAmount, flags);
 }
 
 /*
@@ -2620,7 +2646,8 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
      * Store the variable's new value and run any write traces.
      */
     
-    return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, varValuePtr, flags);
+    return TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2,
+	    varValuePtr, flags);
 }
 
 /*
@@ -3036,7 +3063,8 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	 */
 	varPtr->refCount++;
 	DeleteArray(iPtr, part1, dummyVarPtr,
-		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) | TCL_TRACE_UNSETS);
+		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) 
+		| TCL_TRACE_UNSETS);
 	/* Decr ref count */
 	varPtr->refCount--;
     }
@@ -3559,8 +3587,8 @@ Tcl_AppendObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
     } else {
-	varPtr = TclObjLookupVar(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG, "set",
-			      /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	varPtr = TclObjLookupVar(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG,
+		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	part1 = TclGetString(objv[1]);
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
@@ -3659,8 +3687,8 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	 * even if the variable was undefined and unused.
 	 */
 
-	varPtr = TclObjLookupVar(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG, "set",
-			      /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
+	varPtr = TclObjLookupVar(interp, objv[1], NULL, TCL_LEAVE_ERR_MSG,
+		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
 	}
@@ -4323,8 +4351,9 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 	}
     }
 
-    varPtr = TclObjLookupVar(interp, arrayNameObj, NULL, /*flags*/ TCL_LEAVE_ERR_MSG,
-            /*msg*/ "set", /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+    varPtr = TclObjLookupVar(interp, arrayNameObj, NULL,
+	    /*flags*/ TCL_LEAVE_ERR_MSG, /*msg*/ "set", /*createPart1*/ 1,
+	    /*createPart2*/ 0, &arrayPtr);
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
@@ -4353,8 +4382,8 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 		Var *elemVarPtr = TclLookupArrayElement(interp, varName, 
                         part2, TCL_LEAVE_ERR_MSG, "set", 1, 1, varPtr);
 		if ((elemVarPtr == NULL) ||
-		        (TclPtrSetVar(interp, elemVarPtr, varPtr, varName, part2,
-			   elemPtrs[i+1], TCL_LEAVE_ERR_MSG) == NULL)) {
+		        (TclPtrSetVar(interp, elemVarPtr, varPtr, varName,
+			 part2, elemPtrs[i+1], TCL_LEAVE_ERR_MSG) == NULL)) {
 		    result = TCL_ERROR;
 		    break;
 		}
@@ -4474,8 +4503,8 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 		|| !varFramePtr->isProcCallFrame
 		|| (strstr(myName, "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-			     myName, "\": upvar won't create namespace variable that refers to procedure variable",
-			     (char *) NULL);
+		    myName, "\": upvar won't create namespace variable that ",
+		    "refers to procedure variable", (char *) NULL);
 	    return TCL_ERROR;
 	}
 	
@@ -4855,8 +4884,8 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 	 */
 
 	if (i+1 < objc) {	/* a value was specified */
-	    varValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, varName, NULL, objv[i+1],
-		    (TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG));
+	    varValuePtr = TclPtrSetVar(interp, varPtr, arrayPtr, varName, NULL,
+		    objv[i+1], (TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG));
 	    if (varValuePtr == NULL) {
 		return TCL_ERROR;
 	    }
@@ -4962,8 +4991,8 @@ Tcl_UpvarObjCmd(dummy, interp, objc, objv)
 
     for ( ;  objc > 0;  objc -= 2, objv += 2) {
 	localName = TclGetString(objv[1]);
-	result = ObjMakeUpvar(interp, framePtr, /* othervarName */ objv[0], NULL, 
-	        0, /* myVarName */ localName, /*flags*/ 0, -1);
+	result = ObjMakeUpvar(interp, framePtr, /* othervarName */ objv[0],
+		NULL, 0, /* myVarName */ localName, /*flags*/ 0, -1);
 	if (result != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -5341,7 +5370,7 @@ static ArraySearch *
 ParseSearchId(interp, varPtr, varName, handleObj)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
     CONST Var *varPtr;		/* Array variable search is for. */
-    CONST char *varName;		/* Name of array variable that search is
+    CONST char *varName;	/* Name of array variable that search is
 				 * supposed to be for. */
     Tcl_Obj *handleObj;		/* Object containing id of search. Must have
 				 * form "search-num-var" where "num" is a
@@ -5829,9 +5858,9 @@ VarErrMsg(interp, part1, part2, operation, reason)
     Tcl_Interp *interp;         /* Interpreter in which to record message. */
     CONST char *part1;
     CONST char *part2;		/* Variable's two-part name. */
-    CONST char *operation;            /* String describing operation that failed,
+    CONST char *operation;      /* String describing operation that failed,
                                  * e.g. "read", "set", or "unset". */
-    CONST char *reason;               /* String describing why operation failed. */
+    CONST char *reason;         /* String describing why operation failed. */
 {
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, "can't ", operation, " \"", part1,
@@ -6032,7 +6061,8 @@ static void
 FreeParsedVarName(objPtr)
     Tcl_Obj *objPtr;
 {
-    register Tcl_Obj *arrayPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
+    register Tcl_Obj *arrayPtr =
+	    (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr1;
     register char *elem = (char *) objPtr->internalRep.twoPtrValue.ptr2;
     
     if (arrayPtr != NULL) {
@@ -6046,7 +6076,8 @@ DupParsedVarName(srcPtr, dupPtr)
     Tcl_Obj *srcPtr;
     Tcl_Obj *dupPtr;
 {
-    register Tcl_Obj *arrayPtr = (Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr1;
+    register Tcl_Obj *arrayPtr =
+	    (Tcl_Obj *) srcPtr->internalRep.twoPtrValue.ptr1;
     register char *elem = (char *) srcPtr->internalRep.twoPtrValue.ptr2;
     char *elemCopy;
     unsigned int elemLen;
