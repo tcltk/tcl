@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.4 1999/07/01 17:36:17 jenn Exp $
+# RCS: @(#) $Id: encoding.test,v 1.5 1999/07/02 06:41:29 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -263,7 +263,7 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
 
 test encoding-13.1 {LoadEscapeTable} {
     set x [encoding convertto iso2022 ab\u4e4e\u68d9g]
-} "\x1b(Bab\x1b$@8C\x1b$(DD%\x1b(Bg"
+} "\x1b(Bab\x1b$@8C\x1b$\(DD%\x1b(Bg"
 
 test encoding-14.1 {BinaryProc} {
     encoding convertto identity \x12\x34\x56\xff\x69

@@ -1,4 +1,4 @@
-# Commands covered:  set (plus basic command syntax).  Also tests the
+\\\\\# Commands covered:  set (plus basic command syntax).  Also tests the
 # procedures in the file tclOldParse.c.  This set of tests is an old
 # one that predates the new parser in Tcl 8.1.
 #
@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseOld.test,v 1.4 1999/06/26 20:55:08 rjohnson Exp $
+# RCS: @(#) $Id: parseOld.test,v 1.5 1999/07/02 06:41:29 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -185,10 +185,9 @@ test parseOld-5.11 {array variable substitution} {
     set b a$!
     set b
 } {a$!}
-test parseOld-5.12 {array variable substitution} {
-    set b a$()
-    set b
-} {a$()}
+test parseOld-5.12 {empty array name support} {
+    list [catch {set b a$()} msg] $msg
+} {1 {can't read "()": no such variable}}
 catch {unset a}
 test parseOld-5.13 {array variable substitution} {
     catch {unset a}

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.7 1999/05/04 01:32:12 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.8 1999/07/02 06:41:23 welch Exp $
  */
 
 #include "tclInt.h"
@@ -1592,6 +1592,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
     unsigned char c;
     int varIndex, offset;
     Tcl_UniChar ch;
+    unsigned array;
 
     if (numBytes >= 0) {
 	end = string + numBytes;
@@ -1698,12 +1699,17 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	    }
 	    break;
 	}
+
+	/*
+	 * Support for empty array names here.
+	 */
+	array = ((src != end) && (*src == '('));
 	tokenPtr->size = src - tokenPtr->start;
-	if (tokenPtr->size == 0) {
+	if (tokenPtr->size == 0 && !array) {
 	    goto justADollarSign;
 	}
 	parsePtr->numTokens++;
-	if ((src != end) && (*src == '(')) {
+	if (array) {
 	    /*
 	     * This is a reference to an array element.  Call
 	     * ParseTokens recursively to parse the element name,
