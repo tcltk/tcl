@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.9 2000/04/18 23:06:39 hobbs Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.10 2002/02/12 14:23:33 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -177,6 +177,10 @@ Tcl_AppInit(interp)
      * then no user-specific startup file will be run under any conditions.
      */
 
+#ifdef DJGPP
+    Tcl_SetVar(interp, "tcl_rcFileName", "~/tclsh.rc", TCL_GLOBAL_ONLY);
+#else
     Tcl_SetVar(interp, "tcl_rcFileName", "~/.tclshrc", TCL_GLOBAL_ONLY);
+#endif
     return TCL_OK;
 }
