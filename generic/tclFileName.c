@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.29 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.30 2002/02/08 02:52:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1268,7 +1268,7 @@ TclpNativeJoinPath(prefix, joining)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_JoinPath(argc, argv, resultPtr)
     int argc;
     CONST char * CONST *argv;
@@ -1326,7 +1326,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
 				 * message (if necessary). */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.80 2002/01/31 04:39:43 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.81 2002/02/08 02:52:54 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -403,10 +403,10 @@ EXTERN int		Tcl_DoOneEvent _ANSI_ARGS_((int flags));
 EXTERN void		Tcl_DoWhenIdle _ANSI_ARGS_((Tcl_IdleProc * proc, 
 				ClientData clientData));
 /* 117 */
-EXTERN CONST char *	Tcl_DStringAppend _ANSI_ARGS_((Tcl_DString * dsPtr, 
+EXTERN char *		Tcl_DStringAppend _ANSI_ARGS_((Tcl_DString * dsPtr, 
 				CONST char * str, int length));
 /* 118 */
-EXTERN CONST char *	Tcl_DStringAppendElement _ANSI_ARGS_((
+EXTERN char *		Tcl_DStringAppendElement _ANSI_ARGS_((
 				Tcl_DString * dsPtr, CONST char * string));
 /* 119 */
 EXTERN void		Tcl_DStringEndSublist _ANSI_ARGS_((
@@ -599,7 +599,7 @@ EXTERN int		Tcl_InterpDeleted _ANSI_ARGS_((Tcl_Interp * interp));
 /* 185 */
 EXTERN int		Tcl_IsSafe _ANSI_ARGS_((Tcl_Interp * interp));
 /* 186 */
-EXTERN CONST char *	Tcl_JoinPath _ANSI_ARGS_((int argc, 
+EXTERN char *		Tcl_JoinPath _ANSI_ARGS_((int argc, 
 				CONST84 char * CONST * argv, 
 				Tcl_DString * resultPtr));
 /* 187 */
@@ -807,7 +807,7 @@ EXTERN int		Tcl_TraceVar2 _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_VarTraceProc * proc, 
 				ClientData clientData));
 /* 249 */
-EXTERN CONST char *	Tcl_TranslateFileName _ANSI_ARGS_((
+EXTERN char *		Tcl_TranslateFileName _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name, 
 				Tcl_DString * bufferPtr));
 /* 250 */
@@ -962,7 +962,7 @@ EXTERN int		Tcl_ExternalToUtf _ANSI_ARGS_((Tcl_Interp * interp,
 				int dstLen, int * srcReadPtr, 
 				int * dstWrotePtr, int * dstCharsPtr));
 /* 296 */
-EXTERN CONST char *	Tcl_ExternalToUtfDString _ANSI_ARGS_((
+EXTERN char *		Tcl_ExternalToUtfDString _ANSI_ARGS_((
 				Tcl_Encoding encoding, CONST char * src, 
 				int srcLen, Tcl_DString * dsPtr));
 /* 297 */
@@ -1072,7 +1072,7 @@ EXTERN int		Tcl_UtfToExternal _ANSI_ARGS_((Tcl_Interp * interp,
 				int dstLen, int * srcReadPtr, 
 				int * dstWrotePtr, int * dstCharsPtr));
 /* 333 */
-EXTERN CONST char *	Tcl_UtfToExternalDString _ANSI_ARGS_((
+EXTERN char *		Tcl_UtfToExternalDString _ANSI_ARGS_((
 				Tcl_Encoding encoding, CONST char * src, 
 				int srcLen, Tcl_DString * dsPtr));
 /* 334 */
@@ -1121,11 +1121,11 @@ EXTERN int		Tcl_UniCharLen _ANSI_ARGS_((CONST Tcl_UniChar * str));
 EXTERN int		Tcl_UniCharNcmp _ANSI_ARGS_((CONST Tcl_UniChar * cs, 
 				CONST Tcl_UniChar * ct, unsigned long n));
 /* 354 */
-EXTERN CONST char *	Tcl_UniCharToUtfDString _ANSI_ARGS_((
+EXTERN char *		Tcl_UniCharToUtfDString _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int numChars, 
 				Tcl_DString * dsPtr));
 /* 355 */
-EXTERN CONST Tcl_UniChar * Tcl_UtfToUniCharDString _ANSI_ARGS_((
+EXTERN Tcl_UniChar *	Tcl_UtfToUniCharDString _ANSI_ARGS_((
 				CONST char * string, int length, 
 				Tcl_DString * dsPtr));
 /* 356 */
@@ -1164,7 +1164,7 @@ EXTERN int		Tcl_ParseVarName _ANSI_ARGS_((Tcl_Interp * interp,
 				char * string, int numBytes, 
 				Tcl_Parse * parsePtr, int append));
 /* 365 */
-EXTERN CONST char *	Tcl_GetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN char *		Tcl_GetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_DString * cwdPtr));
 /* 366 */
 EXTERN int		Tcl_Chdir _ANSI_ARGS_((CONST char * dirName));
@@ -1671,8 +1671,8 @@ typedef struct TclStubs {
     void (*tcl_DontCallWhenDeleted) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 114 */
     int (*tcl_DoOneEvent) _ANSI_ARGS_((int flags)); /* 115 */
     void (*tcl_DoWhenIdle) _ANSI_ARGS_((Tcl_IdleProc * proc, ClientData clientData)); /* 116 */
-    CONST char * (*tcl_DStringAppend) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * str, int length)); /* 117 */
-    CONST char * (*tcl_DStringAppendElement) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * string)); /* 118 */
+    char * (*tcl_DStringAppend) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * str, int length)); /* 117 */
+    char * (*tcl_DStringAppendElement) _ANSI_ARGS_((Tcl_DString * dsPtr, CONST char * string)); /* 118 */
     void (*tcl_DStringEndSublist) _ANSI_ARGS_((Tcl_DString * dsPtr)); /* 119 */
     void (*tcl_DStringFree) _ANSI_ARGS_((Tcl_DString * dsPtr)); /* 120 */
     void (*tcl_DStringGetResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * dsPtr)); /* 121 */
@@ -1748,7 +1748,7 @@ typedef struct TclStubs {
     int (*tcl_InputBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 183 */
     int (*tcl_InterpDeleted) _ANSI_ARGS_((Tcl_Interp * interp)); /* 184 */
     int (*tcl_IsSafe) _ANSI_ARGS_((Tcl_Interp * interp)); /* 185 */
-    CONST char * (*tcl_JoinPath) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv, Tcl_DString * resultPtr)); /* 186 */
+    char * (*tcl_JoinPath) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv, Tcl_DString * resultPtr)); /* 186 */
     int (*tcl_LinkVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, char * addr, int type)); /* 187 */
     void *reserved188;
     Tcl_Channel (*tcl_MakeFileChannel) _ANSI_ARGS_((ClientData handle, int mode)); /* 189 */
@@ -1827,7 +1827,7 @@ typedef struct TclStubs {
     int (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
     int (*tcl_TraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 247 */
     int (*tcl_TraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 248 */
-    CONST char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_DString * bufferPtr)); /* 249 */
+    char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_DString * bufferPtr)); /* 249 */
     int (*tcl_Ungets) _ANSI_ARGS_((Tcl_Channel chan, CONST char * str, int len, int atHead)); /* 250 */
     void (*tcl_UnlinkVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 251 */
     int (*tcl_UnregisterChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 252 */
@@ -1874,7 +1874,7 @@ typedef struct TclStubs {
     int (*tcl_EvalObjEx) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int flags)); /* 293 */
     void (*tcl_ExitThread) _ANSI_ARGS_((int status)); /* 294 */
     int (*tcl_ExternalToUtf) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 295 */
-    CONST char * (*tcl_ExternalToUtfDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 296 */
+    char * (*tcl_ExternalToUtfDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 296 */
     void (*tcl_FinalizeThread) _ANSI_ARGS_((void)); /* 297 */
     void (*tcl_FinalizeNotifier) _ANSI_ARGS_((ClientData clientData)); /* 298 */
     void (*tcl_FreeEncoding) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 299 */
@@ -1911,7 +1911,7 @@ typedef struct TclStubs {
     CONST char * (*tcl_UtfNext) _ANSI_ARGS_((CONST char * src)); /* 330 */
     CONST char * (*tcl_UtfPrev) _ANSI_ARGS_((CONST char * src, CONST char * start)); /* 331 */
     int (*tcl_UtfToExternal) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 332 */
-    CONST char * (*tcl_UtfToExternalDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 333 */
+    char * (*tcl_UtfToExternalDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 333 */
     int (*tcl_UtfToLower) _ANSI_ARGS_((char * src)); /* 334 */
     int (*tcl_UtfToTitle) _ANSI_ARGS_((char * src)); /* 335 */
     int (*tcl_UtfToUniChar) _ANSI_ARGS_((CONST char * src, Tcl_UniChar * chPtr)); /* 336 */
@@ -1932,8 +1932,8 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsWordChar) _ANSI_ARGS_((int ch)); /* 351 */
     int (*tcl_UniCharLen) _ANSI_ARGS_((CONST Tcl_UniChar * str)); /* 352 */
     int (*tcl_UniCharNcmp) _ANSI_ARGS_((CONST Tcl_UniChar * cs, CONST Tcl_UniChar * ct, unsigned long n)); /* 353 */
-    CONST char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
-    CONST Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
+    char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
+    Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * patObj, int flags)); /* 356 */
     Tcl_Obj * (*tcl_EvalTokens) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Token * tokenPtr, int count)); /* 357 */
     void (*tcl_FreeParse) _ANSI_ARGS_((Tcl_Parse * parsePtr)); /* 358 */
@@ -1943,7 +1943,7 @@ typedef struct TclStubs {
     int (*tcl_ParseExpr) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr)); /* 362 */
     int (*tcl_ParseQuotedString) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append, char ** termPtr)); /* 363 */
     int (*tcl_ParseVarName) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append)); /* 364 */
-    CONST char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
+    char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
     int (*tcl_Chdir) _ANSI_ARGS_((CONST char * dirName)); /* 366 */
     int (*tcl_Access) _ANSI_ARGS_((CONST char * path, int mode)); /* 367 */
     int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
