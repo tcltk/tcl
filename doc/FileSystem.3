@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.20 2002/03/24 11:41:48 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.21 2002/04/03 08:39:26 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -239,7 +239,7 @@ all of these functions are 'virtual filesystem aware'.  Any virtual
 filesystem which has been registered (through
 \fBTcl_FSRegister\fR) may reroute file access to alternative
 media or access methods.  This means that all of these functions (and
-therefore the corresponding \fBfile\fR, \fBpwd\fR, \fBcd\fR,
+therefore the corresponding \fBfile\fR, \fBglob\fR, \fBpwd\fR, \fBcd\fR,
 \fBopen\fR, etc.  Tcl commands) may be operate on 'files' which are not
 native files in the native filesystem.  If appropriate vfs's have been
 registered, the 'files' may, to give two examples, be remote (e.g.
@@ -1301,12 +1301,11 @@ error message is left in the interp's result.
 Function to process a \fBTcl_FSChdir()\fR call.  If filesystems do not
 implement this, it will be emulated by a series of directory access
 checks.  Otherwise, virtual filesystems which do implement it need only
-respond with a positive return result if the dirName is a valid
-directory in their filesystem.  They need not remember the result,
-since that will be automatically remembered for use by GetCwd.  Real
-filesystems should carry out the correct action (i.e. call the correct
-system 'chdir' api).  If not implemented, then 'cd' and 'pwd' will fail
-inside the filesystem.
+respond with a positive return result if the dirName is a valid,
+accessible directory in their filesystem.  They need not remember the
+result, since that will be automatically remembered for use by GetCwd.
+Real filesystems should carry out the correct action (i.e. call the
+correct system 'chdir' api).
 .PP
 .CS
 typedef int Tcl_FSChdirProc(

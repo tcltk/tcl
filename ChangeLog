@@ -1,3 +1,10 @@
+2002-04-01  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclEnv.c:
+	* generic/tclIOUtil.c: invalidate filesystem cache when the
+	user changes env(HOME).  Fixes [Bug #535621].  Also cleaned up
+	some of the documentation.
+	
 2002-04-01  Kevin Kenny  <kennykb@acm.org>
 
 	* win/tclWinTime.c (Tcl_GetTime): made the checks of clock

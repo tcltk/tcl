@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.13 2002/03/20 22:47:36 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.14 2002/04/03 08:39:27 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -272,6 +272,15 @@ TclSetEnv(name, value)
     }
 
     Tcl_MutexUnlock(&envMutex);
+    
+    if (!strcmp(name, "HOME")) {
+	/* 
+	 * If the user's home directory has changed, we must invalidate
+	 * the filesystem cache, because '~' expansions will now be
+	 * incorrect.
+	 */
+        Tcl_FSMountsChanged(NULL);
+    }
 }
 
 /*
