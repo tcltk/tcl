@@ -1,3 +1,9 @@
+2004-07-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/cmdMZ.test (cmdMZ-return-2.15,cmdMZ-return-2.16):
+	Added a test that a return code containing spaces is correctly
+	returned.
+	
 2004-07-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/man2html2.tcl (IPmacro, setTabs): Added support for the
