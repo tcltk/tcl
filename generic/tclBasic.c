@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.21 2005/02/24 19:53:24 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.22 2005/02/24 20:45:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3828,6 +3828,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    Tcl_DecrRefCount(objv[i]);
 	}
 	TclStackFree(interp);
+	return result;
     } else {
 	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 /*
