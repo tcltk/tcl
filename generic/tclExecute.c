@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.22.2.1 2001/05/11 20:47:44 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.22.2.2 2001/05/12 00:01:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1429,7 +1429,7 @@ TclExecuteByteCode(interp, codePtr)
 	    /*
 	     * START LAPPEND INSTRUCTIONS
 	     */
-#if 1
+
 	case INST_LAPPEND_SCALAR4:
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pcAdjustment = 5;
@@ -1574,7 +1574,7 @@ TclExecuteByteCode(interp, codePtr)
 	    /*
 	     * END (L)APPEND INSTRUCTIONS
 	     */
-#endif
+
 	case INST_INCR_SCALAR1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    valuePtr = POP_OBJECT(); 

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.31.2.1 2001/05/11 20:47:44 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.31.2.2 2001/05/12 00:01:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1500,25 +1500,38 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
 	}
 
 	/*
-	 * We append newValuePtr's data but don't change its ref count.
+	 * We only handle TCL_LIST_ELEMENT in the TCL_APPEND_VALUE case
 	 */
-
-	if (oldValuePtr == NULL) {
-	    varPtr->value.objPtr = newValuePtr;
-	    Tcl_IncrRefCount(newValuePtr);
-	} else {
-	    if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
+	    if (oldValuePtr == NULL) {
+		TclNewObj(oldValuePtr);
+		varPtr->value.objPtr = oldValuePtr;
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
+	    } else if (Tcl_IsShared(oldValuePtr)) {
 		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		TclDecrRefCount(oldValuePtr);
+		Tcl_DecrRefCount(oldValuePtr);
 		oldValuePtr = varPtr->value.objPtr;
-		Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
 	    }
-	    if (flags & TCL_LIST_ELEMENT) {	/* append list element */
-		if (Tcl_ListObjAppendElement(interp, oldValuePtr,
-			newValuePtr) != TCL_OK) {
-		    return NULL;
+	    if (Tcl_ListObjAppendElement(interp, oldValuePtr,
+		    newValuePtr) != TCL_OK) {
+		return NULL;
+	    }
+	} else {				/* append string */
+	    /*
+	     * We append newValuePtr's bytes but don't change its ref count.
+	     */
+
+	    if (oldValuePtr == NULL) {
+		varPtr->value.objPtr = newValuePtr;
+		Tcl_IncrRefCount(newValuePtr);
+	    } else {
+		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		    TclDecrRefCount(oldValuePtr);
+		    oldValuePtr = varPtr->value.objPtr;
+		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
 		}
-	    } else {				/* append string */
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
 	    }
 	}
@@ -1749,25 +1762,38 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 	}
 
 	/*
-	 * We append newValuePtr's bytes but don't change its ref count.
+	 * We only handle TCL_LIST_ELEMENT in the TCL_APPEND_VALUE case
 	 */
-
-	if (oldValuePtr == NULL) {
-	    varPtr->value.objPtr = newValuePtr;
-	    Tcl_IncrRefCount(newValuePtr);
-	} else {
-	    if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
+	    if (oldValuePtr == NULL) {
+		TclNewObj(oldValuePtr);
+		varPtr->value.objPtr = oldValuePtr;
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
+	    } else if (Tcl_IsShared(oldValuePtr)) {
 		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
-		TclDecrRefCount(oldValuePtr);
+		Tcl_DecrRefCount(oldValuePtr);
 		oldValuePtr = varPtr->value.objPtr;
-		Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
 	    }
-	    if (flags & TCL_LIST_ELEMENT) {	/* append list element */
-		if (Tcl_ListObjAppendElement(interp, oldValuePtr,
-			newValuePtr) != TCL_OK) {
-		    return NULL;
+	    if (Tcl_ListObjAppendElement(interp, oldValuePtr,
+		    newValuePtr) != TCL_OK) {
+		return NULL;
+	    }
+	} else {				/* append string */
+	    /*
+	     * We append newValuePtr's bytes but don't change its ref count.
+	     */
+
+	    if (oldValuePtr == NULL) {
+		varPtr->value.objPtr = newValuePtr;
+		Tcl_IncrRefCount(newValuePtr);
+	    } else {
+		if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		    TclDecrRefCount(oldValuePtr);
+		    oldValuePtr = varPtr->value.objPtr;
+		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
 		}
-	    } else {				/* append string */
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
 	    }
 	}
