@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.19 2002/04/20 01:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20 2002/05/29 22:59:33 dgp Exp $
  */
 
 #include "tcl.h"
@@ -18,16 +18,6 @@
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
- * The following code ensures that tclLink.c is linked whenever
- * Tcl is linked.  Without this code there's no reference to the
- * code in that file from anywhere in Tcl, so it may not be
- * linked into the application.
- */
-
-EXTERN int Tcl_LinkVar();
-int (*tclDummyLinkVarPtr)() = Tcl_LinkVar;
 
 /*
  * Declarations for various library procedures and variables (don't want
