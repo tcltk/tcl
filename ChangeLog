@@ -1,3 +1,12 @@
+2004-03-15  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinNotify.c: Fixed a mistake where the return value of
+	MsgWaitForMultipleObjectsEx for "a message is in the queue" wasn't
+	accurate.  I removed the check on the case result==(WAIT_OBJECT_0 + 1)
+	This was having the error of falling into GetMessage and waiting
+	there by accident, which wasn't alertable through Tcl_AlertNotifier.
+	I'll do some more study on this and try to find-out why.
+
 2004-03-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	IMPLEMENTATION OF TIP#163
