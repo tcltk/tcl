@@ -1,5 +1,25 @@
 2002-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/regexpComp.test (new):
+	* generic/tclInt.h:
+	* generic/tclBasic.c: added TclCompileRegexpCmd entry
+	* generic/tclCompCmds.c (TclCompileStringCmd): corrected to return
+	TCL_OUT_LINE_COMPILE instead of TCL_ERROR for parsing errors, so
+	it only throws the error for runtime compile, in case the user
+	modifies 'string'.
+	(TclCompileRegexpCmd): first try at a byte-compiled regexp
+	command.  It handles static strings and ^$ bounded static strings.
+	(TclCompileAppendCmd): made TclPushVarName call always use
+	TCL_CREATE_VAR as numWords is always > 2 at that point.
+
+	* generic/tclExecute.c (TclExecuteByteCode:INST_LIST): correct
+	possibly dangerous decr in macro call.
+
+	* win/tclWinInit.c (TclpFindVariable): CONSTification touch-up
+
+	* win/tclWinReg.c (OpenSubKey): corrected bug introduced in
+	CONSTification that dropped pointer reference.
+
 	* ChangeLog.2000 (new file):
 	* ChangeLog: broke changes from 2000 into ChangeLog.2000 to reduce
 	  size of the main ChangeLog.
