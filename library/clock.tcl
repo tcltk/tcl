@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.2 2004/08/18 20:59:33 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.3 2004/08/19 18:55:09 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -677,7 +677,7 @@ proc ::tcl::clock::format { args } {
     # Set defaults
 
     set clockval [lindex $args 0]
-    set format {%a %b %d %H:%M:%S %Z %Y}
+    set format {%a %b %d %H:%M:%S %z %Y}
     set gmt 0
     set locale C
     set timezone [GetSystemTimeZone]
