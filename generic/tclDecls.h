@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.76 2002/01/21 16:15:03 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.77 2002/01/23 20:46:01 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -535,7 +535,7 @@ EXTERN CONST char *	Tcl_GetCommandName _ANSI_ARGS_((Tcl_Interp * interp,
 /* 161 */
 EXTERN int		Tcl_GetErrno _ANSI_ARGS_((void));
 /* 162 */
-EXTERN char *		Tcl_GetHostName _ANSI_ARGS_((void));
+EXTERN CONST char *	Tcl_GetHostName _ANSI_ARGS_((void));
 /* 163 */
 EXTERN int		Tcl_GetInterpPath _ANSI_ARGS_((
 				Tcl_Interp * askInterp, 
@@ -549,8 +549,8 @@ EXTERN Tcl_Obj *	Tcl_GetObjResult _ANSI_ARGS_((Tcl_Interp * interp));
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 167 */
 EXTERN int		Tcl_GetOpenFile _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, int forWriting, int checkUsage, 
-				ClientData * filePtr));
+				CONST char * str, int forWriting, 
+				int checkUsage, ClientData * filePtr));
 #endif /* UNIX */
 /* 168 */
 EXTERN Tcl_PathType	Tcl_GetPathType _ANSI_ARGS_((CONST char * path));
@@ -647,11 +647,11 @@ EXTERN Tcl_Channel	Tcl_OpenFileChannel _ANSI_ARGS_((Tcl_Interp * interp,
 				CONST char * modeString, int permissions));
 /* 199 */
 EXTERN Tcl_Channel	Tcl_OpenTcpClient _ANSI_ARGS_((Tcl_Interp * interp, 
-				int port, char * address, char * myaddr, 
-				int myport, int async));
+				int port, CONST char * address, 
+				CONST char * myaddr, int myport, int async));
 /* 200 */
 EXTERN Tcl_Channel	Tcl_OpenTcpServer _ANSI_ARGS_((Tcl_Interp * interp, 
-				int port, char * host, 
+				int port, CONST char * host, 
 				Tcl_TcpAcceptProc * acceptProc, 
 				ClientData callbackData));
 /* 201 */
@@ -1711,13 +1711,13 @@ typedef struct TclStubs {
     int (*tcl_GetCommandInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * cmdName, Tcl_CmdInfo * infoPtr)); /* 159 */
     CONST char * (*tcl_GetCommandName) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command command)); /* 160 */
     int (*tcl_GetErrno) _ANSI_ARGS_((void)); /* 161 */
-    char * (*tcl_GetHostName) _ANSI_ARGS_((void)); /* 162 */
+    CONST char * (*tcl_GetHostName) _ANSI_ARGS_((void)); /* 162 */
     int (*tcl_GetInterpPath) _ANSI_ARGS_((Tcl_Interp * askInterp, Tcl_Interp * slaveInterp)); /* 163 */
     Tcl_Interp * (*tcl_GetMaster) _ANSI_ARGS_((Tcl_Interp * interp)); /* 164 */
     CONST char * (*tcl_GetNameOfExecutable) _ANSI_ARGS_((void)); /* 165 */
     Tcl_Obj * (*tcl_GetObjResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 166 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    int (*tcl_GetOpenFile) _ANSI_ARGS_((Tcl_Interp * interp, char * str, int forWriting, int checkUsage, ClientData * filePtr)); /* 167 */
+    int (*tcl_GetOpenFile) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int forWriting, int checkUsage, ClientData * filePtr)); /* 167 */
 #endif /* UNIX */
 #ifdef __WIN32__
     void *reserved167;
@@ -1764,8 +1764,8 @@ typedef struct TclStubs {
     void *reserved197;
 #endif /* MAC_TCL */
     Tcl_Channel (*tcl_OpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * fileName, CONST char * modeString, int permissions)); /* 198 */
-    Tcl_Channel (*tcl_OpenTcpClient) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * address, char * myaddr, int myport, int async)); /* 199 */
-    Tcl_Channel (*tcl_OpenTcpServer) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * host, Tcl_TcpAcceptProc * acceptProc, ClientData callbackData)); /* 200 */
+    Tcl_Channel (*tcl_OpenTcpClient) _ANSI_ARGS_((Tcl_Interp * interp, int port, CONST char * address, CONST char * myaddr, int myport, int async)); /* 199 */
+    Tcl_Channel (*tcl_OpenTcpServer) _ANSI_ARGS_((Tcl_Interp * interp, int port, CONST char * host, Tcl_TcpAcceptProc * acceptProc, ClientData callbackData)); /* 200 */
     void (*tcl_Preserve) _ANSI_ARGS_((ClientData data)); /* 201 */
     void (*tcl_PrintDouble) _ANSI_ARGS_((Tcl_Interp * interp, double value, char * dst)); /* 202 */
     int (*tcl_PutEnv) _ANSI_ARGS_((CONST char * string)); /* 203 */
