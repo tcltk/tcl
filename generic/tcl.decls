@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.63 2001/09/28 01:21:53 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.64 2001/10/16 05:10:34 dgp Exp $
 
 library tcl
 
@@ -759,8 +759,8 @@ declare 214 generic {
     int Tcl_RegExpMatch(Tcl_Interp *interp, char *str, char *pattern)
 }
 declare 215 generic {
-    void Tcl_RegExpRange(Tcl_RegExp regexp, int index, char **startPtr, \
-	    char **endPtr)
+    void Tcl_RegExpRange(Tcl_RegExp regexp, int index, \
+	    CONST char **startPtr, CONST char **endPtr)
 }
 declare 216 generic {
     void Tcl_Release(ClientData clientData)
@@ -1151,7 +1151,7 @@ declare 324 generic {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 generic {
-    char * Tcl_UtfAtIndex(CONST char *src, int index)
+    CONST char * Tcl_UtfAtIndex(CONST char *src, int index)
 }
 declare 326 generic {
     int Tcl_UtfCharComplete(CONST char *src, int len)
@@ -1160,16 +1160,16 @@ declare 327 generic {
     int Tcl_UtfBackslash(CONST char *src, int *readPtr, char *dst)
 }
 declare 328 generic {
-    char * Tcl_UtfFindFirst(CONST char *src, int ch)
+    CONST char * Tcl_UtfFindFirst(CONST char *src, int ch)
 }
 declare 329 generic {
-    char * Tcl_UtfFindLast(CONST char *src, int ch)
+    CONST char * Tcl_UtfFindLast(CONST char *src, int ch)
 }
 declare 330 generic {
-    char * Tcl_UtfNext(CONST char *src)
+    CONST char * Tcl_UtfNext(CONST char *src)
 }
 declare 331 generic {
-    char * Tcl_UtfPrev(CONST char *src, CONST char *start)
+    CONST char * Tcl_UtfPrev(CONST char *src, CONST char *start)
 }
 declare 332 generic {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding, \
@@ -1236,7 +1236,7 @@ declare 351 generic {
     int Tcl_UniCharIsWordChar(int ch)
 }
 declare 352 generic {
-    int Tcl_UniCharLen(Tcl_UniChar *str)
+    int Tcl_UniCharLen(CONST Tcl_UniChar *str)
 }
 declare 353 generic {
     int Tcl_UniCharNcmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,\
