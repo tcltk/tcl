@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.1 2003/05/13 08:41:26 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.2 2003/11/10 20:32:34 dgp Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -338,7 +338,25 @@ CONST char *path;		/* Path to the executable in native
       */
 
     if (path != NULL) {
-	Tcl_SplitPath(path, &pathc, &pathv);
+	int i, origc;
+	CONST char **origv;
+
+	Tcl_SplitPath(path, &origc, &origv);
+	pathc = 0;
+	pathv = (CONST char **) ckalloc((unsigned int)(origc * sizeof(char *)));
+	for (i=0; i< origc; i++) {
+	    if (origv[i][0] == '.') {
+		if (strcmp(origv[i], ".") == 0) {
+		    /* do nothing */
+		} else if (strcmp(origv[i], "..") == 0) {
+		    pathc--;
+		} else {
+		    pathv[pathc++] = origv[i];
+		}
+	    } else {
+		pathv[pathc++] = origv[i];
+	    }
+	}
 	if (pathc > 2) {
 	    str = pathv[pathc - 2];
 	    pathv[pathc - 2] = installLib;
@@ -393,6 +411,7 @@ CONST char *path;		/* Path to the executable in native
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
+	ckfree((char *) origv);
 	ckfree((char *) pathv);
     }
 
