@@ -1,3 +1,8 @@
+2004-04-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (unixInit-3.1):	Default encoding on Darwin
+	systems is utf-8.  Thanks to Steven Abner (tauvan).  [Bug 928808]
+
 2004-04-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/cmdAH.test (cmdAH-18.2): Added constraint because
