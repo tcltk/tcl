@@ -32,7 +32,7 @@
 #include <FSpCompat.h>
 
 /*
- * Static variables used by the TclMacStat function.
+ * Static variables used by the TclpStat function.
  */
 static int initalized = false;
 static long gmt_offset;
@@ -399,7 +399,7 @@ TclMatchFiles(
 /*
  *----------------------------------------------------------------------
  *
- * TclMacStat --
+ * TclpStat --
  *
  *	This function replaces the library version of stat.  The stat
  *	function provided by most Mac compiliers is rather broken and
@@ -415,7 +415,7 @@ TclMatchFiles(
  */
 
 int
-TclMacStat(
+TclpStat(
     char *path,
     struct stat *buf)
 {
@@ -646,7 +646,7 @@ TclMacReadlink(
 /*
  *----------------------------------------------------------------------
  *
- * TclMacAccess --
+ * TclpAccess --
  *
  *	This function replaces the library version of access.  The
  *	access function provided by most Mac compiliers is rather 
@@ -662,7 +662,7 @@ TclMacReadlink(
  */
 
 int
-TclMacAccess(
+TclpAccess(
     const char *path,
     int mode)
 {
