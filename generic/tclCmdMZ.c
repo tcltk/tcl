@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.103 2004/06/30 12:34:35 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.104 2004/07/07 14:00:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -988,7 +988,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad ",
 			compare, " value: expected dictionary but got \"",
 			Tcl_GetString(objv[1]), "\"", (char *) NULL);
-		return TCL_ERROR;
+		goto error;
 	    }
 
 	    while (!done) {
@@ -1025,7 +1025,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		    Tcl_GetString(valuePtr),
 		    "\": must be ok, error, return, break, ",
 		    "continue, or an integer", (char *) NULL);
-	    return TCL_ERROR;
+	    goto error;
 	}
 	/* Have a legal string value for a return code; convert to integer */
 	Tcl_DictObjPut(NULL, returnOpts,
@@ -1040,7 +1040,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad -level value: expected non-negative integer but got \"",
 		Tcl_GetString(valuePtr), "\"", (char *) NULL);
-	return TCL_ERROR;
+	goto error;
     }
 
     /* 
@@ -1055,29 +1055,36 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
     }
 
-    /*
-     * Check if we just have the default options.  If so, use them.
-     * A dictionary equality test would be more robust, but seems
-     * tricky, to say the least.
-     */
-    Tcl_DictObjSize(NULL, returnOpts, &size);
-    if (size == 2 && code == TCL_OK && level == 1) {
-	Tcl_DecrRefCount(returnOpts);
-	returnOpts = iPtr->defaultReturnOpts;
-    }
     if (codePtr != NULL) {
 	*codePtr = code;
     }
     if (levelPtr != NULL) {
 	*levelPtr = level;
     }
-    if ((optionsPtrPtr == NULL) && (returnOpts != iPtr->defaultReturnOpts)) {
-	/* not passing back the options (?!), so clean them up */
+    if (optionsPtrPtr == NULL) {
+	/* Not passing back the options (?!), so clean them up */
 	Tcl_DecrRefCount(returnOpts);
+	return TCL_OK;
+    }
+
+    /*
+     * Check if we just have the default options.  If so, use them.
+     * A dictionary equality test would be more robust, but seems
+     * tricky, to say the least.
+     */
+
+    Tcl_DictObjSize(NULL, returnOpts, &size);
+    if (size == 2 && code == TCL_OK && level == 1) {
+	Tcl_DecrRefCount(returnOpts);
+	*optionsPtrPtr = iPtr->defaultReturnOpts;
     } else {
 	*optionsPtrPtr = returnOpts;
     }
     return TCL_OK;
+
+error:
+    Tcl_DecrRefCount(returnOpts);
+    return TCL_ERROR;
 }
 
 /*
