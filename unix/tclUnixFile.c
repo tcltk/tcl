@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.24 2002/06/21 14:22:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.25 2002/06/28 09:56:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -118,8 +118,8 @@ TclpFindExecutable(argv0)
 	 * strings directly.
 	 */
 
-	if ((access(name, X_OK) == 0)			   /* INTL: Native. */
-		&& (Tcl_PlatformStat(name, &statBuf) == 0) /* INTL: Native. */
+	if ((access(name, X_OK) == 0)			/* INTL: Native. */
+		&& (TclOSstat(name, &statBuf) == 0)	/* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
@@ -273,7 +273,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 	native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
 
-	if ((Tcl_PlatformStat(native, &statBuf) != 0)		/* INTL: UTF-8. */
+	if ((TclOSstat(native, &statBuf) != 0)		/* INTL: Native. */
 		|| !S_ISDIR(statBuf.st_mode)) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
@@ -313,7 +313,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    CONST char *utf;
 	    Tcl_DirEntry *entryPtr;
 	    
-	    entryPtr = Tcl_PlatformReaddir(d);		/* INTL: Native. */
+	    entryPtr = TclOSreaddir(d);			/* INTL: Native. */
 	    if (entryPtr == NULL) {
 		break;
 	    }
@@ -378,12 +378,12 @@ NativeMatchType(
 	 * doesn't exist (since that case would not show up
 	 * if we used 'access' or 'stat')
 	 */
-	if (Tcl_PlatformLStat(nativeEntry, &buf) != 0) {
+	if (TclOSlstat(nativeEntry, &buf) != 0) {
 	    return 0;
 	}
     } else {
 	if (types->perm != 0) {
-	    if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
+	    if (TclOSstat(nativeEntry, &buf) != 0) {
 		/* 
 		 * Either the file has disappeared between the
 		 * 'readdir' call and the 'stat' call, or
@@ -417,7 +417,7 @@ NativeMatchType(
 	if (types->type != 0) {
 	    if (types->perm == 0) {
 		/* We haven't yet done a stat on the file */
-		if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
+		if (TclOSstat(nativeEntry, &buf) != 0) {
 		    /* Posix error occurred */
 		    return 0;
 		}
@@ -436,22 +436,22 @@ NativeMatchType(
 			S_ISFIFO(buf.st_mode)) ||
 		((types->type & TCL_GLOB_TYPE_FILE) &&
 			S_ISREG(buf.st_mode))
-    #ifdef S_ISSOCK
+#ifdef S_ISSOCK
 		|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
 			S_ISSOCK(buf.st_mode))
-    #endif
+#endif /* S_ISSOCK */
 		) {
 		/* Do nothing -- this file is ok */
 	    } else {
-    #ifdef S_ISLNK
+#ifdef S_ISLNK
 		if (types->type & TCL_GLOB_TYPE_LINK) {
-		    if (Tcl_PlatformLStat(nativeEntry, &buf) == 0) {
+		    if (TclOSlstat(nativeEntry, &buf) == 0) {
 			if (S_ISLNK(buf.st_mode)) {
 			    return 1;
 			}
 		    }
 		}
-    #endif
+#endif /* S_ISLNK */
 		return 0;
 	    }
 	}
@@ -581,7 +581,7 @@ TclpObjLstat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
     Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
-    return Tcl_PlatformLStat(Tcl_FSGetNativePath(pathPtr), bufPtr);
+    return TclOSlstat(Tcl_FSGetNativePath(pathPtr), bufPtr);
 }
 
 /*
@@ -716,7 +716,7 @@ TclpObjStat(pathPtr, bufPtr)
     if (path == NULL) {
 	return -1;
     } else {
-	return Tcl_PlatformStat(path, bufPtr);
+	return TclOSstat(path, bufPtr);
     }
 }
 
