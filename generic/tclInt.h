@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.17 1999/04/01 21:58:17 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.18 1999/04/02 23:44:56 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -2010,22 +2010,7 @@ EXTERN int		TclTestChannelEventCmd _ANSI_ARGS_((
 			    int argc, char **argv));
 EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 			    int result, Tcl_Interp *targetInterp));
-EXTERN int		TclUniCharIsAlnum _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharIsAlpha _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharIsDigit _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharIsLower _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharIsSpace _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharIsUpper _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharIsWordChar _ANSI_ARGS_((int ch));
-EXTERN int		TclUniCharLen _ANSI_ARGS_((Tcl_UniChar *str));
-EXTERN int		TclUniCharNcmp _ANSI_ARGS_((const Tcl_UniChar *cs,
-	const Tcl_UniChar *ct, size_t n));
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
-char *			TclUniCharToUtfDString _ANSI_ARGS_((
-			    CONST Tcl_UniChar *string, int numChars,
-			    Tcl_DString *dsPtr));
-Tcl_UniChar *		TclUtfToUniCharDString _ANSI_ARGS_((CONST char *string,
-			    int length, Tcl_DString *dsPtr));
 
 /*
  *----------------------------------------------------------------

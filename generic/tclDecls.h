@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.13 1999/04/01 21:52:55 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.14 1999/04/02 23:44:55 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1052,6 +1052,33 @@ EXTERN void		Tcl_SetDefaultEncodingDir _ANSI_ARGS_((char * path));
 EXTERN void		Tcl_AlertNotifier _ANSI_ARGS_((ClientData clientData));
 /* 344 */
 EXTERN void		Tcl_ServiceModeHook _ANSI_ARGS_((int mode));
+/* 345 */
+EXTERN int		Tcl_UniCharIsAlnum _ANSI_ARGS_((int ch));
+/* 346 */
+EXTERN int		Tcl_UniCharIsAlpha _ANSI_ARGS_((int ch));
+/* 347 */
+EXTERN int		Tcl_UniCharIsDigit _ANSI_ARGS_((int ch));
+/* 348 */
+EXTERN int		Tcl_UniCharIsLower _ANSI_ARGS_((int ch));
+/* 349 */
+EXTERN int		Tcl_UniCharIsSpace _ANSI_ARGS_((int ch));
+/* 350 */
+EXTERN int		Tcl_UniCharIsUpper _ANSI_ARGS_((int ch));
+/* 351 */
+EXTERN int		Tcl_UniCharIsWordChar _ANSI_ARGS_((int ch));
+/* 352 */
+EXTERN int		Tcl_UniCharLen _ANSI_ARGS_((Tcl_UniChar * str));
+/* 353 */
+EXTERN int		Tcl_UniCharNcmp _ANSI_ARGS_((const Tcl_UniChar * cs, 
+				const Tcl_UniChar * ct, size_t n));
+/* 354 */
+EXTERN char *		Tcl_UniCharToUtfDString _ANSI_ARGS_((
+				CONST Tcl_UniChar * string, int numChars, 
+				Tcl_DString * dsPtr));
+/* 355 */
+EXTERN Tcl_UniChar *	Tcl_UtfToUniCharDString _ANSI_ARGS_((
+				CONST char * string, int length, 
+				Tcl_DString * dsPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1432,6 +1459,17 @@ typedef struct TclStubs {
     void (*tcl_SetDefaultEncodingDir) _ANSI_ARGS_((char * path)); /* 342 */
     void (*tcl_AlertNotifier) _ANSI_ARGS_((ClientData clientData)); /* 343 */
     void (*tcl_ServiceModeHook) _ANSI_ARGS_((int mode)); /* 344 */
+    int (*tcl_UniCharIsAlnum) _ANSI_ARGS_((int ch)); /* 345 */
+    int (*tcl_UniCharIsAlpha) _ANSI_ARGS_((int ch)); /* 346 */
+    int (*tcl_UniCharIsDigit) _ANSI_ARGS_((int ch)); /* 347 */
+    int (*tcl_UniCharIsLower) _ANSI_ARGS_((int ch)); /* 348 */
+    int (*tcl_UniCharIsSpace) _ANSI_ARGS_((int ch)); /* 349 */
+    int (*tcl_UniCharIsUpper) _ANSI_ARGS_((int ch)); /* 350 */
+    int (*tcl_UniCharIsWordChar) _ANSI_ARGS_((int ch)); /* 351 */
+    int (*tcl_UniCharLen) _ANSI_ARGS_((Tcl_UniChar * str)); /* 352 */
+    int (*tcl_UniCharNcmp) _ANSI_ARGS_((const Tcl_UniChar * cs, const Tcl_UniChar * ct, size_t n)); /* 353 */
+    char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
+    Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2809,6 +2847,50 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ServiceModeHook
 #define Tcl_ServiceModeHook \
 	(tclStubsPtr->tcl_ServiceModeHook) /* 344 */
+#endif
+#ifndef Tcl_UniCharIsAlnum
+#define Tcl_UniCharIsAlnum \
+	(tclStubsPtr->tcl_UniCharIsAlnum) /* 345 */
+#endif
+#ifndef Tcl_UniCharIsAlpha
+#define Tcl_UniCharIsAlpha \
+	(tclStubsPtr->tcl_UniCharIsAlpha) /* 346 */
+#endif
+#ifndef Tcl_UniCharIsDigit
+#define Tcl_UniCharIsDigit \
+	(tclStubsPtr->tcl_UniCharIsDigit) /* 347 */
+#endif
+#ifndef Tcl_UniCharIsLower
+#define Tcl_UniCharIsLower \
+	(tclStubsPtr->tcl_UniCharIsLower) /* 348 */
+#endif
+#ifndef Tcl_UniCharIsSpace
+#define Tcl_UniCharIsSpace \
+	(tclStubsPtr->tcl_UniCharIsSpace) /* 349 */
+#endif
+#ifndef Tcl_UniCharIsUpper
+#define Tcl_UniCharIsUpper \
+	(tclStubsPtr->tcl_UniCharIsUpper) /* 350 */
+#endif
+#ifndef Tcl_UniCharIsWordChar
+#define Tcl_UniCharIsWordChar \
+	(tclStubsPtr->tcl_UniCharIsWordChar) /* 351 */
+#endif
+#ifndef Tcl_UniCharLen
+#define Tcl_UniCharLen \
+	(tclStubsPtr->tcl_UniCharLen) /* 352 */
+#endif
+#ifndef Tcl_UniCharNcmp
+#define Tcl_UniCharNcmp \
+	(tclStubsPtr->tcl_UniCharNcmp) /* 353 */
+#endif
+#ifndef Tcl_UniCharToUtfDString
+#define Tcl_UniCharToUtfDString \
+	(tclStubsPtr->tcl_UniCharToUtfDString) /* 354 */
+#endif
+#ifndef Tcl_UtfToUniCharDString
+#define Tcl_UtfToUniCharDString \
+	(tclStubsPtr->tcl_UtfToUniCharDString) /* 355 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

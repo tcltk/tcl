@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.9 1999/02/01 21:29:50 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.10 1999/04/02 23:44:55 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -224,7 +224,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     Tcl_DStringInit(&valueBuffer);
     
     Tcl_DStringInit(&stringBuffer);
-    wStart = TclUtfToUniCharDString(string, stringLength, &stringBuffer);
+    wStart = Tcl_UtfToUniCharDString(string, stringLength, &stringBuffer);
     wLen = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
 
     match = TclRegExpExecUniChar(interp, regExpr, wStart, wLen, objc-2, eflags);
@@ -269,7 +269,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		sprintf(info, "%d %d", start, end - 1);
 		value = Tcl_SetVar(interp, varName, info, 0);
 	    } else {
-		value = TclUniCharToUtfDString(wStart + start, end - start,
+		value = Tcl_UniCharToUtfDString(wStart + start, end - start,
 			&valueBuffer);
 		value = Tcl_SetVar(interp, varName, value, 0);
 		Tcl_DStringSetLength(&valueBuffer, 0);
@@ -390,7 +390,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      */
 
     Tcl_DStringInit(&stringBuffer);
-    wStart = TclUtfToUniCharDString(string, stringLength, &stringBuffer);
+    wStart = Tcl_UtfToUniCharDString(string, stringLength, &stringBuffer);
     wEnd = wStart + Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
 
     numMatches = 0;
@@ -421,7 +421,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 */
 
 	TclRegExpRangeUniChar(regExpr, 0, &start, &end);
-	TclUniCharToUtfDString(w, start, &resultBuffer);
+	Tcl_UniCharToUtfDString(w, start, &resultBuffer);
     
 	/*
 	 * Append the subSpec argument to the variable, making appropriate
@@ -459,7 +459,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    }
 	    TclRegExpRangeUniChar(regExpr, index, &subStart, &subEnd);
 	    if ((subStart >= 0) && (subEnd >= 0)) {
-		TclUniCharToUtfDString(w + subStart, subEnd - subStart,
+		Tcl_UniCharToUtfDString(w + subStart, subEnd - subStart,
 			&resultBuffer);
 	    }
 	    if (*src == '\\') {
@@ -476,7 +476,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	     * in order to prevent infinite loops.
 	     */
 
-	    TclUniCharToUtfDString(w, 1, &resultBuffer);
+	    Tcl_UniCharToUtfDString(w, 1, &resultBuffer);
 	    w++;
 	}
 	w += end;
@@ -491,7 +491,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      */
 
     if ((w < wEnd) || (numMatches == 0)) {
-	TclUniCharToUtfDString(w, wEnd - w, &resultBuffer);
+	Tcl_UniCharToUtfDString(w, wEnd - w, &resultBuffer);
     }
     if (Tcl_SetVar(interp, varname, Tcl_DStringValue(&resultBuffer),
 	    0) == NULL) {
@@ -1158,7 +1158,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		end = string1+length1;
 		for (cur = index; p < end; cur++) {
 		    p += Tcl_UtfToUniChar(p, &ch);
-		    if (!TclUniCharIsWordChar(ch)) {
+		    if (!Tcl_UniCharIsWordChar(ch)) {
 			break;
 		    }
 		}
@@ -1195,7 +1195,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		p = Tcl_UtfAtIndex(string1, index);
 	        for (cur = index; cur >= 0; cur--) {
 		    Tcl_UtfToUniChar(p, &ch);
-		    if (!TclUniCharIsWordChar(ch)) {
+		    if (!Tcl_UniCharIsWordChar(ch)) {
 			break;
 		    }
 		    p = Tcl_UtfPrev(p, string1);

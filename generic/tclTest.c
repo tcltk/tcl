@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.13 1999/03/10 06:49:23 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.14 1999/04/02 23:44:58 stanton Exp $
  */
 
 #define TCL_TEST
@@ -2647,7 +2647,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     Tcl_DStringInit(&valueBuffer);
     
     Tcl_DStringInit(&stringBuffer);
-    wStart = TclUtfToUniCharDString(string, stringLength, &stringBuffer);
+    wStart = Tcl_UtfToUniCharDString(string, stringLength, &stringBuffer);
     wLen = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
 
     match = TclRegExpExecUniChar(interp, regExpr, wStart, wLen, objc-2, eflags);
@@ -2692,7 +2692,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 		sprintf(info, "%d %d", start, end - 1);
 		value = Tcl_SetVar(interp, varName, info, 0);
 	    } else {
-		value = TclUniCharToUtfDString(wStart + start, end - start,
+		value = Tcl_UniCharToUtfDString(wStart + start, end - start,
 			&valueBuffer);
 		value = Tcl_SetVar(interp, varName, value, 0);
 		Tcl_DStringSetLength(&valueBuffer, 0);

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.10 1999/03/26 22:39:52 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.11 1999/04/02 23:44:54 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2963,16 +2963,16 @@ DictionaryCompare(left, right)
 
         diff = uniLeft - uniRight;
         if (diff) {
-	    if (TclUniCharIsUpper(uniLeft) &&
-		    TclUniCharIsLower(uniRight)) {
+	    if (Tcl_UniCharIsUpper(uniLeft) &&
+		    Tcl_UniCharIsLower(uniRight)) {
 		diff = Tcl_UniCharToLower(uniLeft) - uniRight;
 		if (diff) {
 		    return diff;
                 } else if (secondaryDiff == 0) {
 		    secondaryDiff = -1;
                 }
-	    } else if (TclUniCharIsUpper(uniRight)
-		    && TclUniCharIsLower(uniLeft)) {
+	    } else if (Tcl_UniCharIsUpper(uniRight)
+		    && Tcl_UniCharIsLower(uniLeft)) {
                 diff = uniLeft - Tcl_UniCharToLower(uniRight);
                 if (diff) {
 		    return diff;

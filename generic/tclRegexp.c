@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.6 1998/11/17 21:38:39 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.7 1999/04/02 23:44:57 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -224,7 +224,7 @@ Tcl_RegExpExec(interp, re, string, start)
     regexpPtr->string = string;
 
     Tcl_DStringInit(&stringBuffer);
-    uniString = TclUtfToUniCharDString(string, -1, &stringBuffer);
+    uniString = Tcl_UtfToUniCharDString(string, -1, &stringBuffer);
     numChars = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
 
     /*
@@ -757,7 +757,7 @@ CompileRegexp(interp, string, length, flags)
      */
 
     Tcl_DStringInit(&stringBuf);
-    uniString = TclUtfToUniCharDString(string, length, &stringBuf);
+    uniString = Tcl_UtfToUniCharDString(string, length, &stringBuf);
     numChars = Tcl_DStringLength(&stringBuf) / sizeof(Tcl_UniChar);
 
     /*

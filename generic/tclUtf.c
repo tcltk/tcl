@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.1.2.5 1998/11/04 04:39:53 stanton Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.1.2.6 1999/04/02 23:44:58 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -152,7 +152,7 @@ Tcl_UniCharToUtf(ch, str)
 /*
  *---------------------------------------------------------------------------
  *
- * TclUniCharToUtfDString --
+ * Tcl_UniCharToUtfDString --
  *
  *	Convert the given Unicode string to UTF-8.
  *
@@ -168,7 +168,7 @@ Tcl_UniCharToUtf(ch, str)
  */
  
 char *
-TclUniCharToUtfDString(wString, numChars, dsPtr)
+Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
     CONST Tcl_UniChar *wString;	/* Unicode string to convert to UTF-8. */
     int numChars;		/* Length of Unicode string in Tcl_UniChars
 				 * (must be >= 0). */
@@ -313,7 +313,7 @@ Tcl_UtfToUniChar(str, chPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * TclUtfToUniCharDString --
+ * Tcl_UtfToUniCharDString --
  *
  *	Convert the UTF-8 string to Unicode.
  *
@@ -330,7 +330,7 @@ Tcl_UtfToUniChar(str, chPtr)
  */
 
 Tcl_UniChar *
-TclUtfToUniCharDString(string, length, dsPtr)
+Tcl_UtfToUniCharDString(string, length, dsPtr)
     CONST char *string;		/* UTF-8 string to convert to Unicode. */
     int length;			/* Length of UTF-8 string in bytes, or -1
 				 * for strlen(). */
@@ -1045,7 +1045,7 @@ Tcl_UniCharToTitle(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharLen --
+ * Tcl_UniCharLen --
  *
  *	Find the length of a UniChar string.  The str input must be null
  *	terminated.
@@ -1060,7 +1060,7 @@ Tcl_UniCharToTitle(ch)
  */
 
 int
-TclUniCharLen(str)
+Tcl_UniCharLen(str)
     Tcl_UniChar *str;		/* Unicode string to find length of. */
 {
     int len = 0;
@@ -1075,7 +1075,7 @@ TclUniCharLen(str)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharNcmp --
+ * Tcl_UniCharNcmp --
  *
  *	Compare at most n unichars of string cs to string ct.  Both cs
  *	and ct are assumed to be at least n unichars long.
@@ -1090,7 +1090,7 @@ TclUniCharLen(str)
  */
 
 int
-TclUniCharNcmp(cs, ct, n)
+Tcl_UniCharNcmp(cs, ct, n)
     CONST Tcl_UniChar *cs;		/* Unicode string to compare to ct. */
     CONST Tcl_UniChar *ct;		/* Unicode string cs is compared to. */
     size_t n;				/* Number of unichars to compare. */
@@ -1109,7 +1109,7 @@ TclUniCharNcmp(cs, ct, n)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsAlnum --
+ * Tcl_UniCharIsAlnum --
  *
  *	Test if a character is an alphanumeric Unicode character.
  *
@@ -1123,7 +1123,7 @@ TclUniCharNcmp(cs, ct, n)
  */
 
 int
-TclUniCharIsAlnum(ch)
+Tcl_UniCharIsAlnum(ch)
     int ch;			/* Unicode character to test. */
 {
     register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
@@ -1134,7 +1134,7 @@ TclUniCharIsAlnum(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsAlpha --
+ * Tcl_UniCharIsAlpha --
  *
  *	Test if a character is an alphabetic Unicode character.
  *
@@ -1148,7 +1148,7 @@ TclUniCharIsAlnum(ch)
  */
 
 int
-TclUniCharIsAlpha(ch)
+Tcl_UniCharIsAlpha(ch)
     int ch;			/* Unicode character to test. */
 {
     register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
@@ -1158,7 +1158,7 @@ TclUniCharIsAlpha(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsDigit --
+ * Tcl_UniCharIsDigit --
  *
  *	Test if a character is a numeric Unicode character.
  *
@@ -1172,7 +1172,7 @@ TclUniCharIsAlpha(ch)
  */
 
 int
-TclUniCharIsDigit(ch)
+Tcl_UniCharIsDigit(ch)
     int ch;			/* Unicode character to test. */
 {
     return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK)
@@ -1182,7 +1182,7 @@ TclUniCharIsDigit(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsLower --
+ * Tcl_UniCharIsLower --
  *
  *	Test if a character is a lowercase Unicode character.
  *
@@ -1196,7 +1196,7 @@ TclUniCharIsDigit(ch)
  */
 
 int
-TclUniCharIsLower(ch)
+Tcl_UniCharIsLower(ch)
     int ch;			/* Unicode character to test. */
 {
     return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == LOWERCASE_LETTER);
@@ -1205,7 +1205,7 @@ TclUniCharIsLower(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsSpace --
+ * Tcl_UniCharIsSpace --
  *
  *	Test if a character is a whitespace Unicode character.
  *
@@ -1219,7 +1219,7 @@ TclUniCharIsLower(ch)
  */
 
 int
-TclUniCharIsSpace(ch)
+Tcl_UniCharIsSpace(ch)
     int ch;			/* Unicode character to test. */
 {
     register int category;
@@ -1240,7 +1240,7 @@ TclUniCharIsSpace(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsUpper --
+ * Tcl_UniCharIsUpper --
  *
  *	Test if a character is a uppercase Unicode character.
  *
@@ -1254,7 +1254,7 @@ TclUniCharIsSpace(ch)
  */
 
 int
-TclUniCharIsUpper(ch)
+Tcl_UniCharIsUpper(ch)
     int ch;			/* Unicode character to test. */
 {
     return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == UPPERCASE_LETTER);
@@ -1263,7 +1263,7 @@ TclUniCharIsUpper(ch)
 /*
  *----------------------------------------------------------------------
  *
- * TclUniCharIsWordChar --
+ * Tcl_UniCharIsWordChar --
  *
  *	Test if a character is alphanumeric or a connector punctuation
  *	mark.
@@ -1278,7 +1278,7 @@ TclUniCharIsUpper(ch)
  */
 
 int
-TclUniCharIsWordChar(ch)
+Tcl_UniCharIsWordChar(ch)
     int ch;			/* Unicode character to test. */
 {
     register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);

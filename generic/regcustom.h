@@ -67,10 +67,10 @@ typedef int celt;		/* type to hold chr, MCCE number, or NOCELT */
 #define	CHR_MAX	0xffff		/*  CHR_MAX-CHR_MIN+1 should fit in uchr */
 
 /* functions operating on chr */
-#define	iscalnum(x)	TclUniCharIsAlnum(x)
-#define	iscalpha(x)	TclUniCharIsAlpha(x)
-#define	iscdigit(x)	TclUniCharIsDigit(x)
-#define	iscspace(x)	TclUniCharIsSpace(x)
+#define	iscalnum(x)	Tcl_UniCharIsAlnum(x)
+#define	iscalpha(x)	Tcl_UniCharIsAlpha(x)
+#define	iscdigit(x)	Tcl_UniCharIsDigit(x)
+#define	iscspace(x)	Tcl_UniCharIsSpace(x)
 
 /* name the external functions */
 #define	compile		TclReComp

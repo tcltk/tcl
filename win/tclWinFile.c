@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.5 1999/03/19 04:01:27 stanton Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.6 1999/04/02 23:45:00 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -416,7 +416,7 @@ TclpGetUserHome(name, bufferPtr)
 	    domain = strchr(name, '@');
 	    if (domain != NULL) {
 		Tcl_DStringInit(&ds);
-		wName = TclUtfToUniCharDString(domain + 1, -1, &ds);
+		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
 		badDomain = (*netGetDCNameProc)(NULL, wName,
 			(LPBYTE *) &wDomain);
 		Tcl_DStringFree(&ds);
@@ -424,12 +424,12 @@ TclpGetUserHome(name, bufferPtr)
 	    }
 	    if (badDomain == 0) {
 		Tcl_DStringInit(&ds);
-		wName = TclUtfToUniCharDString(name, nameLen, &ds);
+		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
 		if ((*netUserGetInfoProc)(wDomain, wName, 1, 
 			(LPBYTE *) &uiPtr) == 0) {
 		    wHomeDir = uiPtr->usri1_home_dir;
 		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
-			TclUniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
+			Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
 				bufferPtr);
 		    } else {
 			/* 
@@ -438,7 +438,7 @@ TclpGetUserHome(name, bufferPtr)
 			 */
 
 			GetWindowsDirectoryW(buf, MAX_PATH);
-			TclUniCharToUtfDString(buf, 2, bufferPtr);
+			Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
 			Tcl_DStringAppend(bufferPtr, "/users/default", -1);
 		    }
 		    result = Tcl_DStringValue(bufferPtr);

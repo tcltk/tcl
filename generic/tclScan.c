@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.1.2.3 1999/02/10 23:31:19 stanton Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.1.2.4 1999/04/02 23:44:57 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -539,9 +539,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	 * If we see whitespace in the format, skip whitespace in the string.
 	 */
 
-	if (TclUniCharIsSpace(ch)) {
+	if (Tcl_UniCharIsSpace(ch)) {
 	    offset = Tcl_UtfToUniChar(string, &sch);
-	    while (TclUniCharIsSpace(sch)) {
+	    while (Tcl_UniCharIsSpace(sch)) {
 		if (*string == '\0') {
 		    goto done;
 		}
@@ -684,7 +684,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	if (!(flags & SCAN_NOSKIP)) {
 	    while (*string != '\0') {
 		offset = Tcl_UtfToUniChar(string, &sch);
-		if (!TclUniCharIsSpace(sch)) {
+		if (!Tcl_UniCharIsSpace(sch)) {
 		    break;
 		}
 		string += offset;
@@ -711,7 +711,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		end = string;
 		while (*end != '\0') {
 		    offset = Tcl_UtfToUniChar(end, &sch);
-		    if (TclUniCharIsSpace(sch)) {
+		    if (Tcl_UniCharIsSpace(sch)) {
 			break;
 		    }
 		    end += offset;
