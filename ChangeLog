@@ -1,3 +1,10 @@
+2004-08-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLiteral.c (TclCleanupLiteralTable):	Corrected
+	* tests/compile.test (compile-12.4):	flawed deletion of literal
+	internal reps that could lead to accessing of freed memory.
+	Thanks to Kevin Kenny for test case and fix [Bug 1001997].
+
 2004-07-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/safe.test (safe-2.1):  Disabled senseless test.  [Bug 999612]

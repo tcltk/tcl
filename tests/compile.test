@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.30 2003/11/20 00:16:00 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.31 2004/08/02 15:33:36 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -319,6 +319,63 @@ test compile-12.3 {check for a buffer overrun} {
     }
     list [catch crash msg] $msg
 } {1 {syntax error in expression "a+2": variable references require preceding $}}
+
+test compile-12.4 {TclCleanupLiteralTable segfault} {
+    # Tcl Bug 1001997
+    # Here, we're trying to test a case that causes a crash in
+    # TclCleanupLiteralTable.  The conditions that we're trying to
+    # establish are:
+    # - TclCleanupLiteralTable is attempting to clean up a bytecode
+    #   object in the literal table.
+    # - The bytecode object in question contains the only reference
+    #   to another literal.
+    # - The literal in question is in the same hash bucket as the bytecode
+    #   object, and immediately follows it in the chain.
+    # Since newly registered literals are added at the FRONT of the
+    # bucket chains, and since the bytecode object is registered before
+    # its literals, this is difficult to achieve.  What we do is:
+    #  (a) do a [namespace eval] of a string that's calculated to
+    #      hash into the same bucket as a literal that it contains.
+    #      In this case, the script and the variable 'bugbug' 
+    #      land in the same bucket.
+    #  (b) do a [namespace eval] of a string that contains enough
+    #      literals to force TclRegisterLiteral to rebuild the global
+    #      literal table.  The newly created hash buckets will contain
+    #      the literals, IN REVERSE ORDER, thus putting the bytecode
+    #      immediately ahead of 'bugbug' and 'bug4345bug'.  The bytecode
+    #      object will contain the only references to those two literals.
+    #  (c) Delete the interpreter to invoke TclCleanupLiteralTable
+    #      and tickle the bug.
+    proc foo {} {
+    set i [interp create]
+    $i eval {
+	namespace eval ::w {concat 4649; variable bugbug}
+	namespace eval ::w {
+	    concat x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 \
+		x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 \
+		x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 \
+		x31 x32 X33 X34 X35 X36 X37 X38 X39 X40 \
+		x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 \
+		x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 \
+		x61 x62 x63 x64
+	    concat y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 \
+		y11 y12 y13 y14 y15 y16 y17 y18 y19 y20 \
+		y21 y22 y23 y24 y25 y26 y27 y28 y29 y30 \
+		y31 y32 Y33 Y34 Y35 Y36 Y37 Y38 Y39 Y40 \
+		y41 y42 y43 y44 y45 y46 y47 y48 y49 y50 \
+		y51 y52 y53 y54 y55 y56 y57 y58 y59 y60 \
+		y61 y62 y63 y64
+	    concat z1 z2 z3 z4 z5 z6 z7 z8 z9 z10 \
+		z11 z12 z13 z14 z15 z16 z17 z18 z19 z20 \
+		z21 z22 z23 z24 z25 z26 z27 z28 z29 z30 \
+		z31 z32
+	}
+    }
+    interp delete $i; # must not crash
+    return ok
+    }
+    foo
+} ok
 
 # Special test for underestimating the maxStackSize required for a
 # compiled command. A failure will cause a segfault in the child 
