@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.19 1998/08/04 09:57:24 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.20 1998/08/04 10:15:50 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -203,7 +203,6 @@
 #ifndef STATIC_BUILD
 # ifdef _MSC_VER
 #  define EXPORT(a,b) __declspec(dllexport) a b
-#  define DllEntryPoint DllMain
 #else
 #  ifdef __BORLANDC__
 #   define EXPORT(a,b) a _export b
