@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.9 1999/05/11 07:12:45 jingham Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.10 1999/12/08 03:50:04 hobbs Exp $
  */
 
 
@@ -48,6 +48,7 @@
 #elif defined(__MWERKS__)
 #   include <time.h>
 #   include <unistd.h>
+#   include <utime.h>
 
 /*
  * The following definitions are usually found if fcntl.h.
