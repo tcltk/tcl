@@ -1,12 +1,12 @@
 @echo off
-rem RCS: @(#) $Id: mkd.bat,v 1.3 1998/09/14 18:40:19 stanton Exp $
+rem RCS: @(#) $Id: mkd.bat,v 1.4 1998/09/30 20:19:35 escoffon Exp $
 
-if exist %1 goto end
+if exist %1\tag.txt goto end
 
-if %OS% == Windows_NT goto winnt
+if "%OS%" == "Windows_NT" goto winnt
 
-echo Add support for Win 95 please
-goto end
+md %1
+if errorlevel 1 goto end
 
 goto success
 
@@ -15,6 +15,7 @@ md %1
 if errorlevel 1 goto end
 
 :success
+echo TAG >%1\tag.txt
 echo created directory %1
 
 :end
