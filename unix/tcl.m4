@@ -784,6 +784,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
     AC_CHECK_LIB(dl, dlopen, have_dl=yes, have_dl=no)
 
+    # Require ranlib early so we can override it in special cases below.
+
+    AC_REQUIRE([AC_PROG_RANLIB])
+
     # Step 3: set configuration options based on system name and version.
 
     do64bit_ok=no
@@ -849,6 +853,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		    do64bit_ok=yes
 		    EXTRA_CFLAGS="-q64"
 		    LDFLAGS="-q64"
+		    RANLIB="${RANLIB} -X64"
+		    AR="${AR} -X64"
+		    SHLIB_LD_FLAGS="-b64"
 		fi
 	    fi
 	    ;;
@@ -906,6 +913,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		    do64bit_ok=yes
 		    EXTRA_CFLAGS="-q64"
 		    LDFLAGS="-q64"
+		    RANLIB="${RANLIB} -X64"
+		    AR="${AR} -X64"
+		    SHLIB_LD_FLAGS="-b64"
 		fi
 	    fi
 	    ;;
@@ -1664,8 +1674,6 @@ dnl AC_CHECK_TOOL(AR, ar, :)
     if test "$UNSHARED_LIB_SUFFIX" = "" ; then
 	UNSHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
     fi
-
-    AC_REQUIRE([AC_PROG_RANLIB])
 
     if test "${SHARED_BUILD}" = "1" && test "${SHLIB_SUFFIX}" != "" ; then
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
