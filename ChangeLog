@@ -1,3 +1,8 @@
+2001-10-09  Miguel Sofer  <msofer@users.sourceforge.net>
+	
+	* generic/tclLiteral.c: (TclReleaseLiteral) reverted previous
+	patch for [Bug 467523] - cure is worse than the illness.
+
 2001-10-05  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* generic/tclLiteral.c: (TclReleaseLiteral) insured that
