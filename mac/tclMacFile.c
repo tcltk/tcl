@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.18 2002/03/24 11:41:50 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.19 2002/04/08 09:02:43 das Exp $
  */
 
 /*
@@ -177,10 +177,10 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	}
 
 	if (NativeMatchType(fileNamePtr, types, paramBlock.hFileInfo,
-			    okType, okCreator) {
-	    int len;
-	    char *fname = Tcl_GetStringFromObj(pathPtr,&len);
-	    if ((len > 1) && (strchr(fname+1, ':') == NULL)) {
+			    okType, okCreator)) {
+	    int fnameLen;
+	    char *fname = Tcl_GetStringFromObj(pathPtr,&fnameLen);
+	    if ((fnameLen > 1) && (strchr(fname+1, ':') == NULL)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, 
 			Tcl_NewStringObj(fname+1, fnameLen-1));
 	    } else {
@@ -292,7 +292,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 		/* Is the type acceptable? */
 		if (NativeMatchType(tempName, types, pb.hFileInfo,
-				    okType, okCreator) {
+				    okType, okCreator)) {
 		    if ((fnameLen > 1) && (strchr(fname+1, ':') == NULL)) {
 			Tcl_ListObjAppendElement(interp, resultPtr, 
 				Tcl_NewStringObj(fname+1, fnameLen-1));
@@ -405,7 +405,7 @@ NativeMatchType(
 	    return 0;
 	}
     }
-    return 1
+    return 1;
 }
 
 
