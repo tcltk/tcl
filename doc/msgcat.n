@@ -132,7 +132,10 @@ For example, the locale ``en'' specifies English and
  ``en_US'' specifes  U.S. English.
 .PP
 The locale defaults to the value in \fBenv(LANG)\fR at the time the
-\fBmsgcat\fR package is loaded.  If \fBenv(LANG)\fR is not defined, then the
+\fBmsgcat\fR package is loaded.  On Windows, if \fBenv(LANG)\fR is not
+set, the package will attempt to extract locale information from the
+registry.  If it cannot find this information in the registry, or on
+non-Windows platforms when \fBenv(LANG)\fR is not defined, the
 locale defaults to ``C''.
 .PP
 When a locale is specified by the user, a ``best match'' search is
