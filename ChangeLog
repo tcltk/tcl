@@ -1,3 +1,7 @@
+2004-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* changes: updated for 8.5a2 release
+
 2004-12-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c (TclSetProcessGlobalValue):  Handle the case
@@ -18,7 +22,7 @@
 	* win/Makefile.in: Added a 'sed' in the setting of ROOT_DIR_NATIVE
 	to compensate for a bug in cygpath (at least version 1.36) that
 	leaves a trailing backslash on the end of the converted path.
-	
+
 2004-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c (Alias,Target,Master): Rewrote these so that
