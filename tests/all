@@ -2,14 +2,14 @@
 # tests.  Execute it by invoking "source all" when running tclTest
 # in this directory.
 #
-# RCS: @(#) $Id: all,v 1.4 1998/12/04 04:18:20 hershey Exp $
+# RCS: @(#) $Id: all,v 1.5 1998/12/07 23:33:53 hershey Exp $
 
 set TESTS_DIR [file join [pwd] [file dirname [info script]]]
 source [file join $TESTS_DIR defs]
 set currentDir [pwd]
 
 catch {array set flag $argv}
-set requiredSourceFiles [list autoMkindex.tcl remote.tcl defs]
+set requiredSourceFiles [list autoMkindex.tcl remote.tcl defs pkg pkg1]
 
 #
 # Set the TMP_DIR to pwd or the arg of -tmpdir, if given.
