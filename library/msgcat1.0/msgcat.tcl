@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.7 2000/07/17 22:25:26 ericm Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.8 2000/08/10 22:24:55 ericm Exp $
 
 package provide msgcat 1.1
 
@@ -258,7 +258,6 @@ namespace eval msgcat {
                 mclocale "C"
             } else {
 		
-                package forget registry
                 #
                 # Clean up registry value for translating LCID value
                 # by using only the last 2 digits, since first
