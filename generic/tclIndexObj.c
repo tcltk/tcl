@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.4 1999/06/28 23:49:31 redman Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.4.10.1 2000/08/07 21:33:15 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -213,7 +213,11 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	objPtr->typePtr->freeIntRepProc(objPtr);
     }
     objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) tablePtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
+    /*
+     * Make sure to account for offsets != sizeof(char *).  [Bug 5153]
+     */
+    objPtr->internalRep.twoPtrValue.ptr2 =
+	(VOID *) (index * (offset / sizeof(char *)));
     objPtr->typePtr = &tclIndexType;
     *indexPtr = index;
     return TCL_OK;
