@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.51 2004/06/17 19:41:45 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.52 2004/06/17 20:17:48 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -848,7 +848,7 @@ TclpSetVariables(interp)
     if (TclGetEnv("USERNAME", &ds) == NULL) {
 
 	if ( GetUserName( szUserName, &dwUserNameLen ) != 0 ) {
-	    Tcl_WinTCharToUtf( szUserName, dwUserNameLen, &ds );
+	    Tcl_WinTCharToUtf( szUserName, (int)dwUserNameLen, &ds );
 	}	
     }
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
