@@ -12,12 +12,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.16 2003/02/19 16:43:30 das Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.17 2003/03/07 22:03:43 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint fcopy [llength [info commands fcopy]]
 
 removeFile test1
 removeFile pipe
@@ -501,19 +503,19 @@ test iocmd-14.10 {file id parsing errors} {
     list [catch {eof $f} msg] $msg
 } $expect
 
-test iocmd-15.1 {Tcl_FcopyObjCmd} {
+test iocmd-15.1 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy} msg] $msg
 } {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
-test iocmd-15.2 {Tcl_FcopyObjCmd} {
+test iocmd-15.2 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy 1} msg] $msg
 } {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
-test iocmd-15.3 {Tcl_FcopyObjCmd} {
+test iocmd-15.3 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy 1 2 3 4 5 6 7} msg] $msg
 } {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
-test iocmd-15.4 {Tcl_FcopyObjCmd} {
+test iocmd-15.4 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy 1 2 3} msg] $msg
 } {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
-test iocmd-15.5 {Tcl_FcopyObjCmd} {
+test iocmd-15.5 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy 1 2 3 4 5} msg] $msg
 } {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
 
@@ -525,25 +527,25 @@ close $f
 set rfile [open $path(test1) r]
 set wfile [open $path(test2) w]
 
-test iocmd-15.6 {Tcl_FcopyObjCmd} {
+test iocmd-15.6 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy foo $wfile} msg] $msg
 } {1 {can not find channel named "foo"}}
-test iocmd-15.7 {Tcl_FcopyObjCmd} {
+test iocmd-15.7 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile foo} msg] $msg
 } {1 {can not find channel named "foo"}}
-test iocmd-15.8 {Tcl_FcopyObjCmd} {
+test iocmd-15.8 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $wfile $wfile} msg] $msg
 } "1 {channel \"$wfile\" wasn't opened for reading}"
-test iocmd-15.9 {Tcl_FcopyObjCmd} {
+test iocmd-15.9 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $rfile} msg] $msg
 } "1 {channel \"$rfile\" wasn't opened for writing}"
-test iocmd-15.10 {Tcl_FcopyObjCmd} {
+test iocmd-15.10 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile foo bar} msg] $msg
 } {1 {bad switch "foo": must be -size or -command}}
-test iocmd-15.11 {Tcl_FcopyObjCmd} {
+test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
-test iocmd-15.12 {Tcl_FcopyObjCmd} {
+test iocmd-15.12 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -command bar -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
 
