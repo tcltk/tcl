@@ -4,6 +4,9 @@
 	* generic/tclIOUtil.c: fix to handling of empty paths ""
 	which are not claimed by any filesystem (Bug #573758).
 	Ensure good error messages are given in all cases.
+	* tests/cmdAH.test:
+	* unix/tclUnixFCmd.c: fix to bug reported as part of
+	(Patch #566669).  Thanks to Taguchi, Takeshi for the report.
 	
 2002-06-26  Reinhard Max  <max@suse.de>
 
