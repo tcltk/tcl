@@ -1,5 +1,14 @@
 2001-11-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/Makefile.in: Add comments to better describe
+	TCL_EXE and when it should be available.
+	* win/Makefile.in: Add TCL_EXE variable to be used
+	by rules like `make genstubs`. Don't set TCL_LIBRARY
+	before running `make genstubs` since we will be running
+	with a tclsh from the PATH not the one we build.
+
+2001-11-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/configure: Regen.
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): Add comctl32.lib
 	to wish link libs. This change was originally added
