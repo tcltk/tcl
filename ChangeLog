@@ -1,5 +1,8 @@
 1999-07-21    <redman@scriptics.com>
 	
+	* win/makefile.vc: Changed version number of DDE package in VC++
+	makefile to use 1.1 instead of 1.0.
+
 	* doc/open.n: Added documentation of \\.\comX notation for opening
 	serial ports on Windows (alternative to comX:).
 	

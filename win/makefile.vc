@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.39 1999/07/20 00:11:57 hershey Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.40 1999/07/22 00:13:13 redman Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -464,9 +464,9 @@ install-libraries:
 	-@copy "$(ROOT)\library\msgcat1.0\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
 	-@copy "$(ROOT)\library\msgcat1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
 	@echo installing $(TCLDDEDLLNAME)
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.0"
-	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.0"
-	-@copy "$(ROOT)\library\dde1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.0"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.1"
+	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.1"
+	-@copy "$(ROOT)\library\dde1.1\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	@echo installing $(TCLREGDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.0"
