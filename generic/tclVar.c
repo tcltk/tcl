@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.22 2000/08/25 02:04:29 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.23 2000/08/25 20:39:31 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -2947,7 +2947,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
      * array names, array get, etc.
      */
 
-    if (varPtr != NULL && varPtr->tracePtr != NULL) {
+    if (varPtr != NULL && varPtr->tracePtr != NULL
+	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
 	msg = CallTraces(iPtr, arrayPtr, varPtr, varName, NULL,
 		(TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY|
 		TCL_TRACE_ARRAY));
