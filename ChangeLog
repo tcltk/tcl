@@ -1,3 +1,13 @@
+1999-11-19  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclProc.c: backed out change from 1999-11-18 as it
+	could affect return string from upvar as well.
+
+	* tools/tcl.wse.in: added tcltest1.0 library to distribution list
+
+	* library/http2.1/http.tcl:
+	* library/http2.1/pkgIndex.tcl: updated http package to 2.2
+
 1999-11-18  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/tcl.m4: added defined for _THREAD_SAFE in --enable-threads
