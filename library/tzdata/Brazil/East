@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Sao_Paulo)]} {
+    loadTimeZoneFile America/Sao_Paulo
+}
+set tzdata(:Brazil/East) $TZData(:America/Sao_Paulo)

@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Australia/Darwin)]} {
+    loadTimeZoneFile Australia/Darwin
+}
+set tzdata(:Australia/North) $TZData(:Australia/Darwin)

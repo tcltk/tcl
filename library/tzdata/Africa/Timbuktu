@@ -1,0 +1,6 @@
+# created by ../tools/tclZIC.tcl - do not edit
+
+set TZData(:Africa/Timbuktu) {
+    {-9223372036854775808 -724 0 LMT}
+    {-1830383276 0 0 GMT}
+}

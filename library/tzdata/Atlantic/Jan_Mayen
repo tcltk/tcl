@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Europe/Oslo)]} {
+    loadTimeZoneFile Europe/Oslo
+}
+set tzdata(:Atlantic/Jan_Mayen) $TZData(:Europe/Oslo)

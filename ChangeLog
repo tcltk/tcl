@@ -1,3 +1,47 @@
+2004-08-18  Kevin Kenny  <kennykb@acm.org>
+
+	* doc/clock.n
+	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_HideUnsafeCommands):
+	* generic/tclClock.c (all):
+	* generic/tclInt.h:
+	* generic/tclInterp.c (CreateSlave):
+	* library/clock.tcl: (new file)
+	* library/init.tcl (clock):
+	* library/msgs/*.msg:(new files)
+	* library/tzdata/*:
+	* library/tzdata/*/*:
+	* library/tzdata/*/*/*: (new files)
+	* tools/installData.tcl: (new file)
+	* tools/loadICU.tcl: (new file)
+	* tools/makeTestCases.tcl: (new file)
+	* tools/tclZIC.tcl: (new file)
+	* unix/Makefile.in:
+	* unix/configure: (regenerated)
+	* unix/tcl.m4:
+		Implementation of TIPs #173 and #209.
+
+	The [clock] command is now a Tcl ensemble, with most of its
+	functionality written in Tcl and callouts to C code only to
+	access low-level functions such as localtime, mktime and
+	tzset.
+
+	In addition to the functionality changes called out in the two
+	TIPs, it is worth noting that the [clock] command in a safe
+	slave interpreter is now an alias to the [clock] command in the
+	master, and that [clock] is otherwise not expected to function
+	entirely correctly in safe interps.  C code that simply does
+	Tcl_MakeSafe needs to be aware that [clock] may need special
+	handling.  (It appears unlikely that such code actually exists.)
+
+	Many thanks to all the many people who assisted with testing,
+	debugging, criticism of the specification, and localisation.
+	Deserving of particular mention are Joe English, Clif Flynt, Donal
+	K. Fellows, Jeff Hobbs, Cameron Laird, Arjen Markus, Reinhard Max,
+	Christopher Nelson, Steve Offutt, Donald G. Porter, Pascal
+	Scheffers, Peter da Silva and Richard Suchenwirth-Bauersachs.
+
+	*** POTENTIAL INCOMPATIBILITY ***
+	
 2004-08-16  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/SetVar.3:

@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Asia/Seoul)]} {
+    loadTimeZoneFile Asia/Seoul
+}
+set tzdata(:ROK) $TZData(:Asia/Seoul)

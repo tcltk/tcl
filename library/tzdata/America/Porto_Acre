@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Rio_Branco)]} {
+    loadTimeZoneFile America/Rio_Branco
+}
+set tzdata(:America/Porto_Acre) $TZData(:America/Rio_Branco)

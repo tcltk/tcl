@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Asia/Hong_Kong)]} {
+    loadTimeZoneFile Asia/Hong_Kong
+}
+set tzdata(:Hongkong) $TZData(:Asia/Hong_Kong)
