@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.30 2002/12/04 07:07:40 hobbs Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.30.2.1 2003/11/05 20:52:39 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -266,6 +266,40 @@ test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {unix noSp
     set x
 } [list /tmp/lib/tcl[info tclversion] /lib/tcl[info tclversion] \
         /tmp/library /library /tcl[info patchlevel]/library]
+
+test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
+	unixOnly stdio
+} -setup {
+    set tmpDir [makeDirectory tmp]
+    set sparklyDir [makeDirectory sparkly $tmpDir]
+    set execPath [file join [makeDirectory bin $sparklyDir] tcltest]
+    file copy [interpreter] $execPath
+    set libDir [makeDirectory lib $sparklyDir]
+    set scriptDir [makeDirectory tcl[info tclversion] $libDir]
+    makeFile {} init.tcl $scriptDir
+    set saveDir [pwd]
+    cd $libDir
+} -body {
+    # Checking for Bug 832657
+    lrange [getlibpath [file join .. bin tcltest]] 2 3
+} -cleanup {
+    cd $saveDir
+    unset saveDir
+    removeFile init.tcl $scriptDir
+    unset scriptDir
+    removeDirectory tcl[info tclversion] $libDir
+    unset libDir
+    file delete $execPath
+    unset execPath
+    removeDirectory bin $sparklyDir
+    removeDirectory lib $sparklyDir
+    unset sparklyDir
+    removeDirectory sparkly $tmpDir
+    unset tmpDir
+    removeDirectory tmp
+} -result [list [file join [temporaryDirectory] tmp sparkly library] \
+	[file join [temporaryDirectory] tmp library] ]
+
 test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 	unixOnly stdio
 } -body {

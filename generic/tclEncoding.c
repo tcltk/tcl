@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16 2003/02/21 02:40:58 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.1 2003/11/05 20:52:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2827,8 +2827,7 @@ TclFindEncodings(argv0)
     CONST char *argv0;		/* Name of executable from argv[0] to main()
 				 * in native multi-byte encoding. */
 {
-    char *native;
-    Tcl_Obj *pathPtr;
+    Tcl_Obj *pathPtr, *normPtr;
     Tcl_DString libPath, buffer;
 
     if (encodingsInitialized == 0) {
@@ -2846,8 +2845,13 @@ TclFindEncodings(argv0)
 
 	    encodingsInitialized = 1;
 
-	    native = TclpFindExecutable(argv0);
-	    TclpInitLibraryPath(native);
+	    pathPtr = Tcl_NewStringObj(TclpFindExecutable(argv0), -1);
+	    Tcl_IncrRefCount(pathPtr);
+	    normPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	    Tcl_IncrRefCount(normPtr);
+	    Tcl_DecrRefCount(pathPtr);
+	    TclpInitLibraryPath(Tcl_GetString(normPtr));
+	    Tcl_DecrRefCount(normPtr);
 
 	    /*
 	     * The library path was set in the TclpInitLibraryPath routine.
