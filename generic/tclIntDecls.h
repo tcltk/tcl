@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.26.6.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.26.6.3 2001/09/27 14:56:34 dkf Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -133,7 +133,7 @@ EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 /* 34 */
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * objPtr, Tcl_Length endValue, 
+				Tcl_Obj * objPtr, int endValue, 
 				int * indexPtr));
 /* 35 */
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -237,7 +237,7 @@ EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 				TclOpenFileChannelProc_ * proc));
 /* Slot 68 is reserved */
 /* 69 */
-EXTERN char *		TclpAlloc _ANSI_ARGS_((Tcl_Length size));
+EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 /* Slot 70 is reserved */
 /* Slot 71 is reserved */
 /* Slot 72 is reserved */
@@ -255,7 +255,8 @@ EXTERN int		TclpGetTimeZone _ANSI_ARGS_((unsigned long time));
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
-EXTERN char *		TclpRealloc _ANSI_ARGS_((char * ptr, Tcl_Length size));
+EXTERN char *		TclpRealloc _ANSI_ARGS_((char * ptr, 
+				unsigned int size));
 /* Slot 82 is reserved */
 /* Slot 83 is reserved */
 /* Slot 84 is reserved */
@@ -542,7 +543,7 @@ typedef struct TclIntStubs {
     char * (*tclGetExtension) _ANSI_ARGS_((char * name)); /* 31 */
     int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, char * str, CallFrame ** framePtrPtr)); /* 32 */
     TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
-    int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Length endValue, int * indexPtr)); /* 34 */
+    int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
     Tcl_Obj * (*tclGetIndexedScalar) _ANSI_ARGS_((Tcl_Interp * interp, int localIndex, int flags)); /* 35 */
     int (*tclGetLong) _ANSI_ARGS_((Tcl_Interp * interp, char * str, long * longPtr)); /* 36 */
     int (*tclGetLoadedPackages) _ANSI_ARGS_((Tcl_Interp * interp, char * targetName)); /* 37 */
@@ -577,7 +578,7 @@ typedef struct TclIntStubs {
     int (*tclOpenFileChannelDeleteProc) _ANSI_ARGS_((TclOpenFileChannelProc_ * proc)); /* 66 */
     int (*tclOpenFileChannelInsertProc) _ANSI_ARGS_((TclOpenFileChannelProc_ * proc)); /* 67 */
     void *reserved68;
-    char * (*tclpAlloc) _ANSI_ARGS_((Tcl_Length size)); /* 69 */
+    char * (*tclpAlloc) _ANSI_ARGS_((unsigned int size)); /* 69 */
     void *reserved70;
     void *reserved71;
     void *reserved72;
@@ -589,7 +590,7 @@ typedef struct TclIntStubs {
     int (*tclpGetTimeZone) _ANSI_ARGS_((unsigned long time)); /* 78 */
     void *reserved79;
     void *reserved80;
-    char * (*tclpRealloc) _ANSI_ARGS_((char * ptr, Tcl_Length size)); /* 81 */
+    char * (*tclpRealloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 81 */
     void *reserved82;
     void *reserved83;
     void *reserved84;
