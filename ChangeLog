@@ -1,3 +1,9 @@
+2003-03-18  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* tests/registry.test: Changed the conditionals to avoid an
+	abort if [testlocale] is missing, as when running the test in
+	tclsh rather than tcltest. [Bug #705677]
+	
 2003-03-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/tcltk-man2html.tcl: added support for building 'make html'
