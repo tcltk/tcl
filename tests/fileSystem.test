@@ -24,12 +24,13 @@ namespace eval ::tcl::test::fileSystem {
     catch {
 	file delete -force link.file
 	file delete -force dir.link
-	file delete -force [file join dir.file linkinside.file]
+	file delete -force [file join dir.dir linkinside.file]
     }
 
 makeFile "test file" gorp.file
-makeDirectory dir.file
-makeFile "test file in directory" [file join dir.file inside.file]
+makeDirectory dir.dir
+makeDirectory [file join dir.dir dirinside.dir]
+makeFile "test file in directory" [file join dir.dir inside.file]
 
 proc testPathEqual {one two} {
     if {[string equal $one $two]} {
@@ -42,9 +43,11 @@ proc testPathEqual {one two} {
 if {[catch {
     file link link.file gorp.file 
     file link \
-      [file join dir.file linkinside.file] \
-      [file join dir.file inside.file]
-    file link dir.link dir.file
+      [file join dir.dir linkinside.file] \
+      [file join dir.dir inside.file]
+    file link dir.link dir.dir
+    file link [file join dir.dir dirinside.link] \
+      [file join dir.dir dirinside.dir]
 }]} {
     tcltest::testConstraint hasLinks 0
 } else {
@@ -64,7 +67,7 @@ test filesystem-1.0 {link normalisation} {hasLinks} {
 } {0}
 
 test filesystem-1.1 {link normalisation} {hasLinks} {
-   string equal [file normalize dir.file] [file normalize dir.link]
+   string equal [file normalize dir.dir] [file normalize dir.link]
 } {0}
 
 test filesystem-1.2 {link normalisation} {hasLinks macOrUnix} {
@@ -73,45 +76,45 @@ test filesystem-1.2 {link normalisation} {hasLinks macOrUnix} {
 } {1}
 
 test filesystem-1.3 {link normalisation} {hasLinks} {
-    testPathEqual [file normalize [file join dir.file foo]] \
+    testPathEqual [file normalize [file join dir.dir foo]] \
      [file normalize [file join dir.link foo]]
 } {1}
 
 test filesystem-1.4 {link normalisation} {hasLinks} {
-    testPathEqual [file normalize [file join dir.file inside.file]] \
+    testPathEqual [file normalize [file join dir.dir inside.file]] \
      [file normalize [file join dir.link inside.file]]
 } {1}
 
 test filesystem-1.5 {link normalisation} {hasLinks} {
-    testPathEqual [file normalize [file join dir.file linkinside.file]] \
-     [file normalize [file join dir.file linkinside.file]]
+    testPathEqual [file normalize [file join dir.dir linkinside.file]] \
+     [file normalize [file join dir.dir linkinside.file]]
 } {1}
 
 test filesystem-1.6 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file linkinside.file]] \
+   string equal [file normalize [file join dir.dir linkinside.file]] \
      [file normalize [file join dir.link inside.file]]
 } {0}
 
 test filesystem-1.7 {link normalisation} {hasLinks macOrUnix} {
     testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
-     [file normalize [file join dir.file inside.file foo]]
+     [file normalize [file join dir.dir inside.file foo]]
 } {1}
 
 test filesystem-1.8 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file linkinside.filefoo]] \
+   string equal [file normalize [file join dir.dir linkinside.filefoo]] \
      [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
 test filesystem-1.9 {link normalisation} {macOrUnix hasLinks} {
     file delete -force dir.link
-    file link dir.link [file nativename dir.file]
-    testPathEqual [file normalize [file join dir.file linkinside.file foo]] \
+    file link dir.link [file nativename dir.dir]
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
 } {1}
 
 test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
     file link dir2.link dir.link
-    testPathEqual [file normalize [file join dir.file linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
 } {1}
 
@@ -119,7 +122,7 @@ makeDirectory dir2.file
 
 test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
     file link [file join dir2.file dir2.link] dir2.link
-    testPathEqual [file normalize [file join dir.file linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
 } {1}
 
@@ -252,12 +255,19 @@ test filesystem-1.29 {link normalisation: link with ..} {hasLinks} {
     }
 } {ok}
 
+test filesystem-1.29.1 {link normalisation with two consecutive links} {hasLinks} {
+    testPathEqual [file normalize [file join dir.link dirinside.link abc]] \
+      [file normalize [file join dir.dir dirinside.dir abc]]
+} {1}
+
 file delete -force dir2.file
 file delete -force dir2.link
 file delete -force link.file dir.link
 file delete -force dir2
-removeFile [file join dir.file inside.file]
-removeDirectory dir.file
+file delete -force [file join dir.dir dirinside.link]
+removeFile [file join dir.dir inside.file]
+removeDirectory [file join dir.dir dirinside.dir]
+removeDirectory dir.dir
 
 test filesystem-1.30 {normalisation of nonexistent user} {
     list [catch {file normalize ~noonewiththisname} err] $err
