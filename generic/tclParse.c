@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.9.2.1 1999/03/08 20:14:10 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.9.2.2 1999/03/09 02:37:17 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1671,7 +1671,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	while (src != end) {
 	    offset = Tcl_UtfToUniChar(src, &ch);
 	    c = UCHAR(ch);
-	    if (isalnum(c) || (c == '_')) { /* INTL: ISO only. */
+	    if (isalnum(c) || (c == '_')) { /* INTL: ISO only, UCHAR. */
 		src += offset;
 		continue;
 	    }

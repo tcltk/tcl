@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.7 1999/02/10 23:31:14 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.7.2.1 1999/03/09 02:37:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2829,9 +2829,6 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
   
   	if (infoPtr->resultCode != TCL_OK) {
-	    Tcl_Obj *errorPtr = Tcl_NewListObj(3, objv);
-	    int length;
-	    char *compareCmd = Tcl_GetStringFromObj(errorPtr, &length);
 	    Tcl_AddErrorInfo(infoPtr->interp,
 		    "\n    (-compare command)");
 	    return order;

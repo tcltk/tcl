@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.13.2.1 1999/03/08 20:14:04 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.13.2.2 1999/03/09 02:37:13 stanton Exp $
  */
 
 #ifndef _TCL
@@ -140,6 +140,18 @@
 #else
 #define TCL_DECLARE_MUTEX(name)
 #endif
+
+/*
+ * Macros that eliminate the overhead of the thread synchronization
+ * functions when compiling without thread support.
+ */
+
+#ifndef TCL_THREADS
+#define Tcl_MutexLock(mutexPtr)
+#define Tcl_MutexUnlock(mutexPtr)
+#define Tcl_ConditionNotify(condPtr)
+#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+#endif /* TCL_THREADS */
 
 /* 
  * A special definition used to allow this header file to be included 
@@ -1325,19 +1337,6 @@ EXTERN void		Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 #define TCL_STORAGE_CLASS
 
 EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
-
-/*
- ***************************************************************************
- * new Functions
- ***************************************************************************
- */
-
-#ifndef TCL_THREADS
-#define Tcl_MutexLock(mutexPtr)
-#define Tcl_MutexUnlock(mutexPtr)
-#define Tcl_ConditionNotify(condPtr)
-#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-#endif /* TCL_THREADS */
 
 #endif /* RESOURCE_INCLUDED */
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.1.2.3 1999/02/10 23:31:17 stanton Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.1.2.3.2.1 1999/03/09 02:37:15 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -337,7 +337,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
 	char *arg;
 	
 	arg = Tcl_GetString(objv[i]);
-	if (isdigit((unsigned char) arg[0])) { /* INTL: digit */
+	if (isdigit(UCHAR(arg[0]))) { /* INTL: digit */
 	    if (Tcl_GetIntFromObj(interp, objv[i], &toRead) != TCL_OK) {
                 return TCL_ERROR;
 	    }

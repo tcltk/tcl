@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.1.2.2.2.1 1999/03/08 20:14:12 stanton Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.1.2.2.2.2 1999/03/09 02:37:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -416,7 +416,6 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
     int newLength, oldLength;
     register char *string, *dst;
 
-    objPtr = (Tcl_Obj *) TCL_VARARGS_START(Tcl_Obj *,objPtr,argList);
     if (Tcl_IsShared(objPtr)) {
 	panic("Tcl_AppendStringsToObj called with shared object");
     }

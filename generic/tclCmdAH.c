@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.9 1999/02/10 23:31:13 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.9.2.1 1999/03/09 02:37:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -155,7 +155,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 
 	pat = Tcl_GetString(caseObjv[i]);
 	for (p = (unsigned char *) pat; *p != '\0'; p++) {
-	    if (isspace(*p) || (*p == '\\')) {	/* INTL: ISO space */
+	    if (isspace(*p) || (*p == '\\')) {	/* INTL: ISO space, UCHAR */
 		break;
 	    }
 	}
@@ -1960,7 +1960,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	*newPtr = '%';
 	newPtr++;
 	format++;
-	if (isdigit(*((unsigned char *) format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
 	    int tmp;
 
 	    /*
@@ -2001,7 +2001,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    newPtr++;
 	    format++;
 	}
-	if (isdigit(*((unsigned char *) format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
 	    width = strtoul(format, &end, 10);	/* INTL: Tcl source. */
 	    format = end;
 	} else if (*format == '*') {
@@ -2044,7 +2044,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    format++;
 	    gotPrecision = 1;
 	}
-	if (isdigit(*((unsigned char *) format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
 	    precision = strtoul(format, &end, 10);  /* INTL: "C" locale. */
 	    format = end;
 	} else if (*format == '*') {

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.5 1998/12/12 01:37:03 lfb Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.5.2.1 1999/03/09 02:37:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -368,7 +368,7 @@ TclCreateThread(interp, script)
      * Wait for the thread to start because it is using something on our stack!
      */
 
-    TclpConditionWait(&ctrl.condWait, &threadMutex, NULL);
+    Tcl_ConditionWait(&ctrl.condWait, &threadMutex, NULL);
     Tcl_MutexUnlock(&threadMutex);
     TclFinalizeCondition(&ctrl.condWait);
     Tcl_SetObjResult(interp, Tcl_NewIntObj((int)id));
@@ -438,7 +438,7 @@ NewThread(clientData)
      * Notify the parent we are alive.
      */
 
-    TclpConditionNotify(&ctrlPtr->condWait);
+    Tcl_ConditionNotify(&ctrlPtr->condWait);
     Tcl_MutexUnlock(&threadMutex);
 
     /*
@@ -727,7 +727,7 @@ TclThreadSend(interp, id, script, wait)
     Tcl_ResetResult(interp);
     Tcl_MutexLock(&threadMutex);
     if (resultPtr->result == NULL) {
-        TclpConditionWait(&resultPtr->done, &threadMutex, NULL);
+        Tcl_ConditionWait(&resultPtr->done, &threadMutex, NULL);
     }
     Tcl_MutexUnlock(&threadMutex);
     if (resultPtr->code != TCL_OK) {
@@ -820,7 +820,7 @@ ThreadEventProc(evPtr, mask)
 	    resultPtr->errorInfo = ckalloc(strlen(errorInfo) + 1);
 	    strcpy(resultPtr->errorInfo, errorInfo);
 	}
-	TclpConditionNotify(&resultPtr->done);
+	Tcl_ConditionNotify(&resultPtr->done);
 	Tcl_MutexUnlock(&threadMutex);
     }
     if (interp != NULL) {
@@ -878,7 +878,7 @@ ThreadExitProc(dummy)
 	     */
 	    resultPtr->result = "target thread died";
 	    resultPtr->code = TCL_ERROR;
-	    TclpConditionNotify(&resultPtr->done);
+	    Tcl_ConditionNotify(&resultPtr->done);
 	}
     }
     Tcl_MutexUnlock(&threadMutex);

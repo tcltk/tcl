@@ -568,6 +568,7 @@ struct arc *a;
  - singleton - is this character in its own color?
  ^ static int singleton(struct colormap *, pchr c);
  */
+#if 0
 static int			/* predicate */
 singleton(cm, c)
 struct colormap *cm;
@@ -580,7 +581,7 @@ pchr c;
 		return 1;
 	return 0;
 }
-
+#endif
 /*
  - rainbow - add arcs of all full colors (but one) between specified states
  ^ static VOID rainbow(struct nfa *, struct colormap *, int, pcolor,
