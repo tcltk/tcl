@@ -1,3 +1,8 @@
+2001-09-05 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	* tests/winFCmd.test: made notWin2000 constraint false if not
+	running on Windows at all.
+	
 2001-09-04  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinThrd.c:  Revisited _beginthreadex() stuff.  Instead
