@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.75 2004/09/26 16:36:04 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.76 2004/09/29 22:17:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1732,10 +1732,7 @@ TclInitByteCodeObj(objPtr, envPtr)
      * compiled ByteCode.
      */
 	    
-    if ((objPtr->typePtr != NULL) &&
-	    (objPtr->typePtr->freeIntRepProc != NULL)) {
-	(*objPtr->typePtr->freeIntRepProc)(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.otherValuePtr = (VOID *) codePtr;
     objPtr->typePtr = &tclByteCodeType;
 }

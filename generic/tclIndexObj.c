@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.18 2004/04/06 22:25:53 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.19 2004/09/29 22:17:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -249,10 +249,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     if (objPtr->typePtr == &tclIndexType) {
  	indexRep = (IndexRep *) objPtr->internalRep.otherValuePtr;
     } else {
- 	if ((objPtr->typePtr != NULL)
-		&& (objPtr->typePtr->freeIntRepProc != NULL)) {
- 	    objPtr->typePtr->freeIntRepProc(objPtr);
- 	}
+	TclFreeIntRep(objPtr);
  	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
  	objPtr->internalRep.otherValuePtr = (VOID *) indexRep;
  	objPtr->typePtr = &tclIndexType;

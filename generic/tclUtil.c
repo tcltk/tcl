@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.45 2004/06/18 20:38:01 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.46 2004/09/29 22:17:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2410,8 +2410,6 @@ SetEndOffsetFromAny(interp, objPtr)
      Tcl_Obj* objPtr;		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
-    Tcl_ObjType* oldTypePtr = objPtr->typePtr;
-				/* Old internal rep type of the object */
     register char* bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
@@ -2468,10 +2466,7 @@ SetEndOffsetFromAny(interp, objPtr)
      * the new one.
      */
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-    
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.longValue = offset;
     objPtr->typePtr = &tclEndOffsetType;
 
