@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.42 2001/11/20 22:47:58 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.43 2001/12/10 15:44:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -268,8 +268,7 @@ static void		RecordTracebackInfo _ANSI_ARGS_((
 static char *		StringForResultCode _ANSI_ARGS_((int result));
 static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    ByteCode *codePtr, unsigned char *pc,
-			    int stackTop, int stackLowerBound,
-			    int stackUpperBound));
+			    int stackTop, int stackLowerBound));
 #endif
 static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
@@ -1049,8 +1048,7 @@ TclExecuteByteCode(interp, codePtr)
 
     for (;;) {
 #ifdef TCL_COMPILE_DEBUG
-	ValidatePcAndStackTop(codePtr, pc, stackTop, initStackTop,
-		eePtr->stackEnd);
+	ValidatePcAndStackTop(codePtr, pc, stackTop, initStackTop);
         if (traceInstructions) {
             fprintf(stdout, "%2d: %2d ", iPtr->numLevels, stackTop);
             TclPrintInstruction(codePtr, pc);
@@ -4090,8 +4088,7 @@ PrintByteCodeInfo(codePtr)
 
 #ifdef TCL_COMPILE_DEBUG
 static void
-ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound,
-        stackUpperBound)
+ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
     register ByteCode *codePtr; /* The bytecode whose summary is printed
 				 * to stdout. */
     unsigned char *pc;		/* Points to first byte of a bytecode
@@ -4100,8 +4097,9 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound,
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
     int stackLowerBound;	/* Smallest legal value for stackTop. */
-    int stackUpperBound;	/* Greatest legal value for stackTop. */
 {
+    int stackUpperBound = stackLowerBound +  codePtr->maxStackDepth;	
+                                /* Greatest legal value for stackTop. */
     unsigned int relativePc = (unsigned int) (pc - codePtr->codeStart);
     unsigned int codeStart = (unsigned int) codePtr->codeStart;
     unsigned int codeEnd = (unsigned int)
@@ -4116,15 +4114,15 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound,
     if ((unsigned int) opCode > LAST_INST_OPCODE) {
 	fprintf(stderr, "\nBad opcode %d at pc %u in TclExecuteByteCode\n",
 		(unsigned int) opCode, relativePc);
-	panic("TclExecuteByteCode execution failure: bad opcode");
+        panic("TclExecuteByteCode execution failure: bad opcode");
     }
     if ((stackTop < stackLowerBound) || (stackTop > stackUpperBound)) {
 	int numChars;
 	char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
 	char *ellipsis = "";
 	
-	fprintf(stderr, "\nBad stack top %d at pc %u in TclExecuteByteCode",
-		stackTop, relativePc);
+	fprintf(stderr, "\nBad stack top %d at pc %u in TclExecuteByteCode (min %i, max %i)",
+		stackTop, relativePc, stackLowerBound, stackUpperBound);
 	if (cmd != NULL) {
 	    if (numChars > 100) {
 		numChars = 100;
