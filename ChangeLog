@@ -1,3 +1,7 @@
+2003-05-16  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.pbproj/project.pbxproj: updated copyright year.
+	
 2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinFile.c (TclpMatchInDirectory): revert glob code to
