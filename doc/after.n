@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: after.n,v 1.4 2004/04/21 12:05:35 dkf Exp $
+'\" RCS: @(#) $Id: after.n,v 1.5 2004/10/27 09:36:58 dkf Exp $
 '\" 
 .so man.macros
 .TH after n 7.5 Tcl "Tcl Built-In Commands"
@@ -108,7 +108,7 @@ seconds:
 
 .CS
 proc sleep {N} {
-    after [expr {int($N * 1000)}]
+    \fBafter\fR [expr {int($N * 1000)}]
 }
 .CE
 
@@ -116,7 +116,7 @@ This arranges for the command \fIwake_up\fR to be run in eight hours
 (providing the event loop is active at that time):
 
 .CS
-after [expr {1000 * 60 * 60 * 8}] wake_up
+\fBafter\fR [expr {1000 * 60 * 60 * 8}] wake_up
 .CE
 
 The following command can be used to do long-running calculations (as
@@ -133,7 +133,7 @@ responsive during a slow task.
 .CS
 proc doOneStep {} {
     if {[::my_calc::one_step]} {
-        after idle [list after 0 doOneStep]
+        \fBafter\fR idle [list \fBafter\fR 0 doOneStep]
     }
 }
 doOneStep

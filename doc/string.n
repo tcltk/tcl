@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.22 2004/10/25 22:11:11 dkf Exp $
+'\" RCS: @(#) $Id: string.n,v 1.23 2004/10/27 09:36:58 dkf Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -321,11 +321,11 @@ single character other than these.
 Test if the string in the variable \fIstring\fR is a proper non-empty
 prefix of the string \fBfoobar\fR.
 .CS
-set length [string length $string]
+set length [\fBstring\fR length $string]
 if {$length == 0} {
     set isPrefix 0
 } else {
-    set isPrefix [string equal -length $string $string "foobar"]
+    set isPrefix [\fBstring\fR equal -length $string $string "foobar"]
 }
 .CE
 
