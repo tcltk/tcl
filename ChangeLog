@@ -1,3 +1,7 @@
+2003-05-16  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.pbproj/project.pbxproj: updated copyright year.
+	
 2003-05-15  Kevin B. Kenny  <kennykb@hippolyta>
 
 	* generic/tclGetDate.y: added further hackery to the yacc
@@ -29,7 +33,7 @@
 	uses of gb2312 really mean euc-cn (which may be the cause of the
 	problem). [Bug 557030]
 
-2003-05-15  Daniel Steffen  <das@users.sourceforge.net>
+2003-05-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	Implementation of TIP 118:
 	
