@@ -1,3 +1,8 @@
+2003-06-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_Export): removed erroneous comments
+	[Bug 756744]
+
 2003-06-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/makefile.vc:  fixes to check-in below so compilation now
