@@ -1,3 +1,9 @@
+2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c:
+	* generic/tclProc.c: restoring the computations of iPtr->numLevels
+	to the original logic (previous to buggy modifs on 2001-11-16).
+
 2001-11-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixInit.c (TclpSetInitialEncodings): update of patch
@@ -73,7 +79,7 @@
 	TclDeleteVars, TclDeleteCompiledLocalVars, DeleteArray,
 	TclVarTraceExists): Support for those new trace flags.
 
-2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
+2001-11-19  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c: patch for [Bug 483309] (petasis).
 

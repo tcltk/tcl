@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.32 2001/11/16 20:01:04 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.33 2001/11/20 16:36:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1069,18 +1069,9 @@ TclObjInterpProc(clientData, interp, objc, objv)
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
-    /*
-     * Tcl_EvalObjEx will increase the level count again while evaluating
-     * the body, resulting in a total level increase of 2; correct this 
-     * behaviour before evaling the body, restore afterwards.
-     */
-
-    iPtr->numLevels--;
-
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
     result = Tcl_EvalObjEx(interp, procPtr->bodyPtr, 0);
-    iPtr->numLevels++;
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
