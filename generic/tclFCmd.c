@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.26 2004/04/06 22:25:51 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.27 2004/10/06 13:09:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -609,7 +609,9 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		 */
 		if (Tcl_FSGetPathType(path) == TCL_PATH_RELATIVE) {
 		    Tcl_Obj *abs = Tcl_FSJoinToPath(actualSource, 1, &path);
-		    if (abs == NULL) break;
+		    if (abs == NULL) {
+			break;
+		    }
 		    Tcl_IncrRefCount(abs);
 		    Tcl_DecrRefCount(path);
 		    path = abs;
