@@ -1,3 +1,10 @@
+2003-10-04  Chengye Mao <chengye.geo@yahoo.com>
+
+	* win/tclWinPipe.c: fixed a bug in BuildCommandLine.
+	This bug built a command line with a missing space between
+	tclpipe.dll and the following arguments.  It caused error
+	in Windows 98 when exec command.com (e.g. dir) [Bug 789040]
+
 2003-10-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Fixed error in ref count management of command
