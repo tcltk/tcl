@@ -1,3 +1,8 @@
+2000-11-03  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* win/.cvsignore: Removed 'configure' from the glob list now
+	that it's included.
+
 2000-11-03  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	8.4a2 RELEASE
