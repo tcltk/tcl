@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.61 2004/03/19 18:43:15 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.62 2004/05/14 21:43:29 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -959,6 +959,16 @@ EXTERN Tcl_Obj *	TclNewListObjDirect _ANSI_ARGS_((int objc,
 EXTERN Tcl_Obj *	TclDbNewListObjDirect _ANSI_ARGS_((int objc, 
 				Tcl_Obj ** objv, CONST char * file, int line));
 #endif
+#ifndef TclpLocaltime_TCL_DECLARED
+#define TclpLocaltime_TCL_DECLARED
+/* 182 */
+EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((CONST time_t * clock));
+#endif
+#ifndef TclpGmtime_TCL_DECLARED
+#define TclpGmtime_TCL_DECLARED
+/* 183 */
+EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((CONST time_t * clock));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1161,6 +1171,8 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tcl_GetStartupScript) _ANSI_ARGS_((CONST char ** encodingNamePtr)); /* 179 */
     Tcl_Obj * (*tclNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv)); /* 180 */
     Tcl_Obj * (*tclDbNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv, CONST char * file, int line)); /* 181 */
+    struct tm * (*tclpLocaltime) _ANSI_ARGS_((CONST time_t * clock)); /* 182 */
+    struct tm * (*tclpGmtime) _ANSI_ARGS_((CONST time_t * clock)); /* 183 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1796,6 +1808,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclDbNewListObjDirect
 #define TclDbNewListObjDirect \
 	(tclIntStubsPtr->tclDbNewListObjDirect) /* 181 */
+#endif
+#ifndef TclpLocaltime
+#define TclpLocaltime \
+	(tclIntStubsPtr->tclpLocaltime) /* 182 */
+#endif
+#ifndef TclpGmtime
+#define TclpGmtime \
+	(tclIntStubsPtr->tclpGmtime) /* 183 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
