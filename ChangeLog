@@ -1,3 +1,9 @@
+2002-02-05  Don Porter <dgp@users.sourceforge.net>
+
+        * library/http/http.tcl:
+        * library/http/pkgIndex.tcl:  Corrected use of http::error when
+        ::error was intended.  Bump to http 2.4.2.
+
 2002-02-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* tests/io.test: io-39.22 split into two tests, one platform
