@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.6 1999/04/16 00:48:07 stanton Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.7 1999/04/23 01:57:23 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -445,10 +445,10 @@ TclpCheckStackSpace()
      * exception if the stack pointer is set below the bottom of the stack.
      */
 
-    try {
+    __try {
 	alloca(TCL_WIN_STACK_THRESHOLD);
 	return 1;
-    } except (1) {}
+    } __except (1) {}
 
     return 0;
 }

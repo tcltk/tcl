@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.5 1999/04/21 21:50:34 rjohnson Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.6 1999/04/23 01:57:23 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -195,11 +195,11 @@ DoRenameFile(
      * char block device.
      */
 
-    try {
+    __try {
 	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
 	    return TCL_OK;
 	}
-    } except (-1) {}
+    } __except (-1) {}
 
     TclWinConvertError(GetLastError());
 
@@ -484,11 +484,11 @@ DoCopyFile(
      * block device.
      */
 
-    try {
+    __try {
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
 	    return TCL_OK;
 	}
-    } except (-1) {}
+    } __except (-1) {}
 
     TclWinConvertError(GetLastError());
     if (Tcl_GetErrno() == EBADF) {
