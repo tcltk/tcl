@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.9 2000/02/01 01:14:01 ericm Exp $
+'\" RCS: @(#) $Id: library.n,v 1.10 2000/02/08 10:05:24 hobbs Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -131,7 +131,7 @@ namespace commands that are executed.
 Extensions can use the (undocumented)
 auto_mkindex_parser package to register other commands that
 can contribute to the auto_load index.
-You will have to read through init.tcl to see how this works.
+You will have to read through auto.tcl to see how this works.
 .PP
 \fBAuto_mkindex_old\fR parses the Tcl scripts in a relatively
 unsophisticated way:  if any line contains the word \fBproc\fR
