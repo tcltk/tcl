@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.33 2002/03/24 11:41:50 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.34 2002/05/02 20:15:20 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -416,7 +416,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 					    (*(c-1) == ':')) {
 					/* We have an extra colon */
 				        Tcl_SetObjLength(*driveNameRef, 
-						c - Tcl_GetString(*driveNameRef) - 1);
+					  c - Tcl_GetString(*driveNameRef) - 1);
 				    }
 				}
 			    }
@@ -1695,6 +1695,10 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	}
     }
     
+    if (pathOrDir != NULL) {
+	Tcl_IncrRefCount(pathOrDir);
+    }
+    
     if (typePtr != NULL) {
 	/* 
 	 * The rest of the possible type arguments (except 'd') are
@@ -1802,10 +1806,6 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	}
     }
 
-    if (pathOrDir != NULL) {
-        Tcl_IncrRefCount(pathOrDir);
-    }
-    
     /* 
      * Now we perform the actual glob below.  This may involve joining
      * together the pattern arguments, dealing with particular file types

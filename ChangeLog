@@ -1,3 +1,26 @@
+2002-05-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix to freeing a bad object 
+	(i.e. segfault) when using 'glob -types nonsense -dir dirname'.
+	* generic/tclWinFile.c: fix to [Bug 551306], also wrapped some 
+	long lines.
+	* tests/fileName.test: added several tests for the above bugs.
+	* doc/FileSystem.3: clarified documentation on refCount
+	requirements of the object returned by the path type function.
+	* generic/tclIOUtil.c:
+	* win/tclWinFile.c:
+	* unix/tclUnixFile.c:
+	* mac/tclMacFile.c: moved TclpFilesystemPathType to the
+	platform specific directories, so we can add missing platform-
+	specific implementations.  On Windows, 'file system' now returns 
+	useful results like "native NTFS", "native FAT" for that system.  
+	Unix and MacOS still only return "native".
+	* doc/file.n: clarified documentation.
+	* tests/winFile.test: test for 'file system' returning correct
+	values.
+	* tests/fileSystem.test: test for 'file system' returning correct
+	values.
+
 2002-04-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
