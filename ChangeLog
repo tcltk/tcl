@@ -1,5 +1,12 @@
 2003-03-26  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl:  Added reporting during
+	[configure -debug 1] operations to warn about multiple uses of
+	the same test name.  [FR 576693]
+
+	* tests/msgcat.test (msgcat-2.2.1): changed test name to avoid
+	duplication.  [Bug 710356]
+
 	* unix/dltest/pkg?.c:  Changed all Tcl_InitStubs calls to pass
 	argument exact = 0, so that rebuilds are not required when Tcl
 	bumps to a new version.  [Bug 701926]
