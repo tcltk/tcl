@@ -1,3 +1,7 @@
+2002-10-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/binary.n: More clarification of [binary scan]'s behaviour.
+
 2002-10-09  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclIntDecls.h: fixed botched regen.
