@@ -71,9 +71,19 @@ MAN3_INSTALL_DIR =	$(MAN_INSTALL_DIR)/man3
 # Tcl commands:
 MANN_INSTALL_DIR =	$(MAN_INSTALL_DIR)/mann
 
-# To change the compiler switches, for example to change from -O
-# to -g, change the following line:
-CFLAGS = -O
+# Libraries built with optimization switches have this additional extension
+DBGX =			@DBGX@
+
+# The default switches for optimization or debugging
+CFLAGS_DEBUG =		@CFLAGS_DEBUG@
+CFLAGS_OPTIMIZE =	@CFLAGS_OPTIMIZE@
+
+# To change the compiler switches, for example to change from optimization to
+# debugging symbols, change the following line:
+#CFLAGS = 		$(CFLAGS_DEBUG)
+#CFLAGS = 		$(CFLAGS_OPTIMIZE)
+#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+CFLAGS = 		$(@CFLAGS_DEFAULT@)
 
 # To disable ANSI-C procedure prototypes reverse the comment characters
 # on the following lines:
