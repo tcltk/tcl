@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.23 1999/01/04 19:25:02 rjohnson Exp $
+# RCS: @(#) $Id: init.tcl,v 1.24 1999/02/02 18:36:36 stanton Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -54,7 +54,7 @@ if {[info exist tcl_pkgPath]} {
 	}
     }
 }
-unset __dir
+catch {unset __dir}
 
 # Windows specific initialization to handle case isses with envars
 
