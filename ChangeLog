@@ -2,6 +2,8 @@
 
 	* doc/tcltest.n:  Removed [saveState] and [restoreState] from
 	tcltest 2 documentation, effectively deprecating them.  [Bug 495660]
+	* library/tcltest/tcltest.tcl: Made separate export for commands
+	kept only for tcltest 1 compatibility.
 
 	* tests/iogt.test: Revised to run tests in a namespace, rather than
 	use the useless and buggy [saveState] and [restoreState] commands
