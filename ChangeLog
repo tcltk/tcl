@@ -1,9 +1,10 @@
 2002-08-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/fCmd.test: Added test to make sure that the cause of the
+	problem is detectable with an unpatched Tcl.
 	* doc/ObjectType.3: Added note on the root cause of this problem
 	to the documentation, since it is possible for user code to
 	trigger this sort of behaviour too.
-
 	* generic/tclIOUtil.c (SetFsPathFromAny): Objects should only have
 	their old representation deleted when we know that we are about to
 	install a new one.  This stops a weird TclX bug under Linux with
