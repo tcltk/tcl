@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.33 2001/06/23 02:05:05 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.34 2001/06/26 00:53:01 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -143,21 +143,15 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 # on symbols and static vs. shared.
 #--------------------------------------------------------------------
 
-if test "${GCC}" = "yes" ; then
-    RC_DEFINE_FLAG=--define
-else
-    RC_DEFINE_FLAG=-d
-fi
-
 if test ${SHARED_BUILD} = 0 ; then
     if test "${DBGX}" = "d"; then
-        RC_DEFINES="${RC_DEFINE_FLAG} STATIC_BUILD ${RC_DEFINE_FLAG} DEBUG"
+        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
     else
-        RC_DEFINES="${RC_DEFINE_FLAG} STATIC_BUILD"
+        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
     fi
 else
     if test "${DBGX}" = "d"; then
-        RC_DEFINES="${RC_DEFINE_FLAG} DEBUG"
+        RC_DEFINES="${RC_DEFINE} DEBUG"
     else
         RC_DEFINES=""
     fi
@@ -212,6 +206,7 @@ AC_SUBST(RC)
 AC_SUBST(RC_OUT)
 AC_SUBST(RC_TYPE)
 AC_SUBST(RC_INCLUDE)
+AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 AC_SUBST(LIBS)
