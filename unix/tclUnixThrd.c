@@ -494,6 +494,7 @@ TclpFinalizeMutex(mutexPtr)
 {
     pthread_mutex_t *pmutexPtr = *(pthread_mutex_t **)mutexPtr;
     if (pmutexPtr != NULL) {
+        pthread_mutex_destroy(pmutexPtr);
 	ckfree((char *)pmutexPtr);
 	*mutexPtr = NULL;
     }
