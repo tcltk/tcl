@@ -1,6 +1,14 @@
 2004-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_TCL_64BIT_FLAGS): Define HAVE_TYPE_OFF64_T
+	only when off64_t, open64(), and lseek64() are defined.
+	IRIX 5.3 is known to not include an open64 function.
+	[Bug 1030465]
+
+2004-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
 	* unix/tcl.m4 (SC_ENABLE_THREADS): Check for a 2
 	argument version of readdir_r that is known to
 	exists under IRIX 5.3.
