@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.2.5 2004/10/26 20:14:37 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.2.6 2004/11/02 19:03:08 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1739,6 +1739,47 @@ test tcltest-25.3 {
 	set ::tcltest::currentFailure $fail
 	verbose $v
 } -match glob -output {*generated error; Return code was: 1*}
+
+test tcltest-26.1 {Bug/RFE 1017151} -setup {
+    makeFile {
+	package require tcltest
+	set errorInfo "Should never see this"
+	tcltest::test tcltest-26.1.0 {
+	    no errorInfo when only return code mismatch
+	} -body {
+	    set x 1
+	} -returnCodes error -result 1
+	tcltest::cleanupTests
+    } test.tcl
+} -body {
+    slave msg test.tcl
+    set msg
+} -cleanup {
+    removeFile test.tcl
+} -match glob -result {*
+---- Return code should have been one of: 1
+==== tcltest-26.1.0 FAILED*}
+
+test tcltest-26.2 {Bug/RFE 1017151} -setup {
+    makeFile {
+	package require tcltest
+	set errorInfo "Should never see this"
+	tcltest::test tcltest-26.2.0 {do not mask body errorInfo} -body {
+	    error "body error"
+	} -cleanup {
+	    error "cleanup error"
+	} -result 1
+	tcltest::cleanupTests
+    } test.tcl
+} -body {
+    slave msg test.tcl
+    set msg
+} -cleanup {
+    removeFile test.tcl
+} -match glob -result {*
+---- errorInfo: body error
+*
+---- errorInfo(cleanup): cleanup error*}
 
 cleanupTests
 }
