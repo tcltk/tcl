@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.10 2003/01/16 20:51:57 hobbs Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.11 2003/01/18 01:05:17 mdejong Exp $
  */
 
 #include "tclPort.h"
@@ -637,6 +637,8 @@ DdeServerProc (
 	    if (convPtr != NULL) {
 		Tcl_IncrRefCount(returnPackagePtr);
 		convPtr->returnPackagePtr = returnPackagePtr;
+	    } else {
+		Tcl_DecrRefCount(returnPackagePtr);
 	    }
 	    Tcl_DecrRefCount(ddeObjectPtr);
 	    if (returnPackagePtr == NULL) {
