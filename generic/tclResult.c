@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.7 2003/07/16 21:24:12 hobbs Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.8 2003/09/04 16:44:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -634,6 +634,12 @@ Tcl_AppendElement(interp, string)
 	iPtr->appendUsed++;
 	*dst = ' ';
 	dst++;
+	/*
+	 * If we need a space to separate this element from preceding
+	 * stuff, then this element will not lead a list, and need not
+	 * have it's leading '#' quoted.
+	 */
+	flags |= TCL_DONT_QUOTE_HASH;
     }
     iPtr->appendUsed += Tcl_ConvertElement(string, dst, flags);
 }
