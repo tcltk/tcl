@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.46 2004/04/07 22:04:31 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.47 2004/06/10 22:21:54 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -258,7 +258,7 @@ TclpInitLibraryPath(path)
      * overwrite pathv[0] since that might produce a relative path.
      */
 
-    if (path != NULL) {
+    if (0 && path != NULL) {
 	int i, origc;
 	CONST char **origv;
 
