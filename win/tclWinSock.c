@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.39 2003/10/23 16:28:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.40 2003/12/12 00:59:09 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -626,6 +626,7 @@ SocketThreadExitHandler(clientData)
 
 	GetExitCodeThread(tsdPtr->socketThread, &exitCode);
 	if (exitCode == STILL_ACTIVE) {
+	    DWORD dwWait;
 	    PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
 
 	    /*
@@ -633,7 +634,16 @@ SocketThreadExitHandler(clientData)
 	     * completely cleaned up before we leave this function. 
 	     */
 
-	    WaitForSingleObject(tsdPtr->socketThread, INFINITE);
+	    dwWait = WaitForSingleObject(tsdPtr->socketThread, 100);
+	    if (dwWait == WAIT_TIMEOUT) {
+		/*
+		 * Avoids a lock-up, just in case it is needed from an
+		 * unclean exit condition when the thread appears
+		 * running, but isn't.
+		 */
+
+		TerminateThread(tsdPtr->socketThread, EXIT_FAILURE);
+	    }
 	}
 	CloseHandle(tsdPtr->socketThread);
 	tsdPtr->socketThread = NULL;
