@@ -1,10 +1,10 @@
-Tcl 8.0p2 for Windows
+Tcl 8.0.3 for Windows
 
 by Scott Stanton
-Sun Microsystems Laboratories
-scott.stanton@eng.sun.com
+Scriptics Corporation
+scott.stanton@scriptics.com
 
-SCCS: @(#) README 1.25 97/11/21 15:15:40
+SCCS: %Z% $Id: README,v 1.5 1998/08/04 23:31:19 welch Exp $ 
 
 1. Introduction
 ---------------
@@ -83,11 +83,11 @@ EXTERN - all Tcl_ function prototypes use this macro, which implies
 	they are exported.  You'll see this used in tcl.h and tk.h.
 	You should use this in your exported procedures.
 	However, this is not the whole story.
-EXPORT - this is really an import/export flag, depending on if you are
+TCL_STORAGE_CLASS - this is really an import/export flag, depending on if you are
 	importing symbols from a DLL (i.e., a user of the DLL), or if
 	you are exporting symbols from the DLL (i.e., you are building it.)
-	The EXTERN macro includes EXPORT.
-	EXPORT is defined to be either DLLIMPORT or DLLEXPORT as
+	The EXTERN macro includes TCL_STORAGE_CLASS.
+	TCL_STORAGE_CLASS is defined to be either DLLIMPORT or DLLEXPORT as
 	described below.
 STATIC_BUILD - define this if you are *not* building a DLL
 	(e.g., a main program)
@@ -98,6 +98,27 @@ DLLIMPORT - If STATIC_BUILD is defined, this becomes nothing.
 DLLEXPORT - If STATIC_BUILD is defined, this becomes nothing.
 	(On UNIX, DLLEXPORT is defined to be empty)
 	Otherwise, this this expands to __declspec(dllexport)
+
+EXPORT(type, func)
+	For the Borland compiler, you need to export functions differently.
+	The DLLEXPORT macro is empty, and instead you need to use
+	EXPORT because they had a different order.  Your declaration will
+	look like
+	EXTERN EXPORT(int, Foo_Init)(Tcl_Interp *interp);
+We have not defined EXPORT anywhere.  You can paste this into your C file:
+#ifndef STATIC_BUILD
+#if defined(_MSC_VER)
+#   define EXPORT(a,b) __declspec(dllexport) a b
+#   define DllEntryPoint DllMain
+#else
+#   if defined(__BORLANDC__)
+#       define EXPORT(a,b) a _export b
+#   else
+#       define EXPORT(a,b) a b
+#   endif
+#endif
+#endif
+
 
 How to use these:
 
@@ -116,8 +137,8 @@ presense of BUILD_Foo, like this:
  * building the dynamic library.
  */
 #ifdef BUILD_Foo
-#  undef EXPORT
-#  define EXPORT DLLEXPORT
+#  undef TCL_STORAGE_CLASS
+#  define TCL_STORAGE_CLASS DLLEXPORT
 #endif
 /*
  * Function prototypes for this module.
@@ -127,11 +148,14 @@ EXTERN int Foo_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
 /* Additional prototypes go here */
 /*
  * end of foo.h
- * reset EXPORT to DLLIMPORT.
+ * reset TCL_STORAGE_CLASS to DLLIMPORT.
  */
-# undef EXPORT
-# define EXPORT DLLIMPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
 #endif /* _FOO */
+
+In your C file, put EXTERN before then functions you need to export.
+If you use Borland, you'll need to use the old EXPORT macro, too.
 
 5. Test suite
 -------------
