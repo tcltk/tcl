@@ -1,3 +1,7 @@
+2003-04-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/binary.n: Fixed typo in [binary format w] desc. [Bug 718543]
+
 2003-04-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdAH.c (Tcl_ErrorObjCmd): Strings are only empty if
