@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.5 2001/11/20 15:14:09 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.6 2002/03/29 22:42:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2654,7 +2654,8 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		while ((clientData = Tcl_VarTraceInfo(interp, name, 0,
 			TraceVarProc, clientData)) != 0) {
 		    tvarPtr = (TraceVarInfo *) clientData;
-		    if ((tvarPtr->length == length) && (tvarPtr->flags == flags)
+		    if ((tvarPtr->length == length)
+			    && (tvarPtr->flags == flags)
 			    && (strncmp(command, tvarPtr->command,
 				    (size_t) length) == 0)) {
 			Tcl_UntraceVar(interp, name, flags | TCL_TRACE_UNSETS,
@@ -2778,13 +2779,10 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	 * and the terminating null.
 	 */
 
-	if (name2 == NULL) {
-	    name2 = "";
-	}
 	Tcl_DStringInit(&cmd);
 	Tcl_DStringAppend(&cmd, tvarPtr->command, (int) tvarPtr->length);
 	Tcl_DStringAppendElement(&cmd, name1);
-	Tcl_DStringAppendElement(&cmd, name2);
+	Tcl_DStringAppendElement(&cmd, (name2 ? name2 : ""));
 	if (flags & TCL_TRACE_READS) {
 	    Tcl_DStringAppend(&cmd, " r", 2);
 	} else if (flags & TCL_TRACE_WRITES) {
@@ -2796,9 +2794,17 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	/*
 	 * Execute the command.  Save the interp's result used for
 	 * the command. We discard any object result the command returns.
+	 *
+	 * Add the TCL_TRACE_DESTROYED flag to tvarPtr to indicate to
+	 * other areas that this will be destroyed by us, otherwise a
+	 * double-free might occur depending on what the eval does.
+	 * [Bug #536937]
 	 */
 
 	Tcl_SaveResult(interp, &state);
+	if (flags & TCL_TRACE_DESTROYED) {
+	    tvarPtr->flags |= TCL_TRACE_DESTROYED;
+	}
 
 	code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
 	if (code != TCL_OK) {	     /* copy error msg to result */

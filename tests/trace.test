@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.6.2.1 2001/10/16 05:46:04 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.6.2.2 2002/03/29 22:42:50 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -977,6 +977,17 @@ test trace-18.1 {test for Tcl Bug 219393} {
     trace variable x r p1
     catch {set x}
 } 1
+test trace-18.2 {namespace delete / trace vdelete combo} {
+    namespace eval ::foo {
+	variable x 123
+    }
+    proc p1 args {
+	trace vdelete ::foo::x u p1
+    }
+    trace variable ::foo::x u p1
+    namespace delete ::foo
+    info exists ::foo::x
+} 0
 
 # Delete arrays when done, so they can be re-used as scalars
 # elsewhere.
@@ -987,15 +998,3 @@ catch {unset y}
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
