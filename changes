@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.11 1998/11/18 04:15:44 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.12 1998/12/02 20:07:52 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3665,11 +3665,17 @@ close in a fileevent script are actually reflected by the close command. (BW)
 package requires and packages split among scripts and binary files.
 Also fixed ommision of global for errorInfo in tcl_findLibrary. (BW)
 
-11/08/98 (bug fix) Fixed TclMacRegisterResourceFork to always detect
+11/08/98 (bug fix) Fixed the resource command to always detect
 the case where a file is opened a second time with the same
-permissions.  In IM, it claims that this will always cause the same
+permissions.  IM claims that this will always cause the same
 FileRef to be returned, but in MacOS 8.1+, this is no longer the case,
-so we have to test for this explicitly.
+so we have to test for this explicitly. (JI)
+
+11/10/98 (feature change) When compiling with Metrowerk's MSL, use the exit function from
+MSL rather than ExitToShell.  This allows MSL to clean up its temporary files. Thanks to
+Vince Darley for this improvement. (JI)
+
+----------------- Released 8.0.4, 11/20/98 -------------------------
 
 ======== Changes for 8.0 go above this line ========
 ======== Changes for 8.1 go below this line ========

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.1.2.4 1998/11/11 04:08:25 stanton Exp $
+# RCS: @(#) $Id: package.tcl,v 1.1.2.5 1998/12/02 20:08:06 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -27,20 +27,16 @@
 # Results:
 #  Returns 1 if the extension matches, 0 otherwise
 
-if {$::tcl_platform(platform) == "windows"} {
-    proc pkg_compareExtension { fileName {ext {}} } {
-	if {[string compare $ext {}] == 0} {
-	    set ext [info sharedlibextension]
-	}
+proc pkg_compareExtension { fileName {ext {}} } {
+    global tcl_platform
+    if {[string length $ext] == 0} {
+	set ext [info sharedlibextension]
+    }
+    if {[string compare $tcl_platform(platform) "windows"] == 0} {
 	return [expr {[string compare \
 		[string tolower [file extension $fileName]] \
 		[string tolower $ext]] == 0}]
-    }
-} else {
-    proc pkg_compareExtension { fileName {ext {}} } {
-	if {[string compare $ext {}] == 0} {
-	    set ext [info sharedlibextension]
-	}
+    } else {
 	return [expr {[string compare [file extension $fileName] $ext] == 0}]
     }
 }
@@ -61,6 +57,9 @@ if {$::tcl_platform(platform) == "windows"} {
 # -verbose		(optional) Verbose output; the name of each file that
 #			was successfully rocessed is printed out. Additionally,
 #			if processing of a file failed a message is printed.
+# -load pat		(optional) Preload any packages whose names match
+#			the pattern.  Used to handle DLLs that depend on
+#			other packages during their Init procedure.
 # dir -			Name of the directory in which to create the index.
 # args -		Any number of additional arguments, each giving
 #			a glob pattern that matches the names of one or
@@ -69,7 +68,7 @@ if {$::tcl_platform(platform) == "windows"} {
 
 proc pkg_mkIndex {args} {
     global errorCode errorInfo
-    set usage {"pkg_mkIndex ?-direct? ?-verbose? dir ?pattern ...?"};
+    set usage {"pkg_mkIndex ?-direct? ?-verbose? ?-load pattern? ?--? dir ?pattern ...?"};
 
     set argCount [llength $args]
     if {$argCount < 1} {
@@ -79,6 +78,7 @@ proc pkg_mkIndex {args} {
     set more ""
     set direct 0
     set doVerbose 0
+    set loadPat ""
     for {set idx 0} {$idx < $argCount} {incr idx} {
 	set flag [lindex $args $idx]
 	switch -glob -- $flag {
@@ -93,6 +93,11 @@ proc pkg_mkIndex {args} {
 	    -direct {
 		set direct 1
 		append more " -direct"
+	    }
+	    -load {
+		incr idx
+		set loadPat [lindex $args $idx]
+		append more " -load $loadPat"
 	    }
 	    -* {
 		return -code error "unknown flag $flag: should be\n$usage"
@@ -144,14 +149,27 @@ proc pkg_mkIndex {args} {
 	cd $oldDir
 	set c [interp create]
 
-	# Load into the child all packages currently loaded in the parent
-	# interpreter, in case the extension depends on some of them.
+	# Load into the child any packages currently loaded in the parent
+	# interpreter that match the -load pattern.
 
 	foreach pkg [info loaded] {
+	    if {! [string match $loadPat [lindex $pkg 1]]} {
+		continue
+	    }
 	    if {[lindex $pkg 1] == "Tk"} {
 		$c eval {set argv {-geometry +0+0}}
 	    }
-	    load [lindex $pkg 0] [lindex $pkg 1] $c
+	    if {[catch {
+		load [lindex $pkg 0] [lindex $pkg 1] $c
+	    } err]} {
+		if {$doVerbose} {
+		    tclLog "warning: load [lindex $pkg 0] [lindex $pkg 1]\nfailed with: $err"
+		}
+	    } else {
+		if {$doVerbose} {
+		    tclLog "loaded [lindex $pkg 0] [lindex $pkg 1]"
+		}
+	    }
 	}
 	cd $dir
 
@@ -198,6 +216,15 @@ proc pkg_mkIndex {args} {
 
 	$c eval [list set ::tcl::file $file]
 	$c eval [list set ::tcl::direct $direct]
+
+	# Download needed procedures into the slave because we've
+	# just deleted the unknown procedure.  This doesn't handle
+	# procedures with default arguments.
+
+	foreach p {pkg_compareExtension} {
+	    $c eval [list proc $p [info args $p] [info body $p]]
+	}
+
 	if {[catch {
 	    $c eval {
 		set ::tcl::debug "loading or sourcing"
@@ -312,8 +339,8 @@ proc pkg_mkIndex {args} {
 	    if {$doVerbose} {
 		tclLog "processed $file"
 	    }
+	    interp delete $c
 	}
-	interp delete $c
     }
 
     foreach pkg [lsort [array names files]] {
@@ -444,5 +471,3 @@ proc tclPkgUnknown {name version {exact {}}} {
 	}
     }
 }
-
-

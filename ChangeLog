@@ -1,3 +1,7 @@
+1998-12-02    <welch@SAGE>
+
+	* Merged changes from 8.0.4, especially the new pkg_mkIndex
+
 1998-12-01    <stanton@GASPODE>
 
 	* generic/tclIO.c (Tcl_ReadChars): Added a call to UpdateInterest

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.4 1998/11/11 04:54:13 stanton Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.5 1998/12/02 20:08:04 welch Exp $
  */
 
 #include "tclInt.h"
@@ -3300,11 +3300,16 @@ GetExceptRangeForPc(pc, catchOnly, codePtr)
     ByteCode* codePtr;		/* Points to the ByteCode in which to search
 				 * for the enclosing ExceptionRange. */
 {
-    ExceptionRange *rangeArrayPtr = codePtr->exceptArrayPtr;
+    ExceptionRange *rangeArrayPtr;
     int numRanges = codePtr->numExceptRanges;
     register ExceptionRange *rangePtr;
     int pcOffset = (pc - codePtr->codeStart);
     register int i, level;
+
+    if (numRanges == 0) {
+	return NULL;
+    }
+    rangeArrayPtr = codePtr->exceptArrayPtr;
 
     for (level = codePtr->maxExceptDepth;  level >= 0;  level--) {
 	for (i = 0;  i < numRanges;  i++) {

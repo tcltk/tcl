@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.1.2.4 1998/11/11 04:08:24 stanton Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.1.2.5 1998/12/02 20:08:05 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -119,10 +119,6 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 }
 
 
-# OPTIONAL SUPPORT PROCEDURES
-# In Tcl 8.1 all the code below here has been moved to other files to
-# reduce the size of init.tcl
-
 # ----------------------------------------------------------------------
 # auto_mkindex
 # ----------------------------------------------------------------------
@@ -134,9 +130,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 # special parser and mess with its commands.  
 
 if {[interp issafe]} {
-    proc auto_mkindex {dir args} {
-        error "can't generate index within safe interpreter"
-    }
+    return	;# Stop sourcing the file here
 }
 
 # auto_mkindex --

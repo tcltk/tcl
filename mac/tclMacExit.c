@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacExit.c,v 1.1.2.2 1998/09/24 23:59:11 stanton Exp $
+ * RCS: @(#) $Id: tclMacExit.c,v 1.1.2.3 1998/12/02 20:08:07 welch Exp $
  */
 
 #include "tclInt.h"
@@ -108,7 +108,23 @@ TclpExit(
     int status)		/* Ignored. */
 {
     TclMacExitHandler();
+
+/* 
+ * If we are using the Metrowerks Standard Library, then we will call its exit so that it
+ * will get a chance to clean up temp files, and so forth.  It always calls the standard 
+ * ExitToShell, so the Tcl handlers will also get called.
+ *   
+ * If you have another exit, make sure that it does not patch ExitToShell, and does
+ * call it.  If so, it will probably work as well.
+ *
+ */
+ 
+#ifdef __MSL__    
+    exit(status);
+#else
     ExitToShell();
+#endif
+
 }
 
 /*

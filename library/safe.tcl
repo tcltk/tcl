@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.1.2.2 1998/09/24 23:59:07 stanton Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.1.2.3 1998/12/02 20:08:06 welch Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -31,12 +31,6 @@ namespace eval ::safe {
     namespace export interpCreate interpInit interpConfigure interpDelete \
 	    interpAddToAccessPath interpFindInAccessPath \
 	    setLogCmd ;
-
-# Proto/dummy declarations for auto_mkIndex
-proc ::safe::interpCreate {} {}
-proc ::safe::interpInit {} {}
-proc ::safe::interpConfigure {} {}
-
 
     ####
     #
