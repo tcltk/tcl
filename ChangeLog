@@ -1,3 +1,10 @@
+2003-04-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/open.n:		Moved serial port options from [fconfigure]
+	* doc/fconfigure.n:	to [open] as it is up to the creator of a
+				channel to describe the channel's special
+				config options. [Bug 679010] 
+
 2003-04-16  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tcl.h         Made changes so that the "wideInt" Tcl_ObjType
