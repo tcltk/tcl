@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.10 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.11 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -637,7 +637,7 @@ ReplaceString(oldStr, newStr)
 	    ckfree((char *) environCache);
 	}
 	environCache = newCache;
-	environCache[cacheSize] = (char *) newStr;
+	environCache[cacheSize] = newStr;
 	environCache[cacheSize+1] = NULL;
 	cacheSize += 5;
     }

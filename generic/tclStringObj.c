@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.23 2002/01/08 17:14:38 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.24 2002/01/26 01:10:08 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -1221,7 +1221,7 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     int numChars;	        /* Number of chars of "unicode" to convert. */
 {
     Tcl_DString dsPtr;
-    char *bytes;
+    CONST char *bytes;
     
     if (numChars < 0) {
 	numChars = 0;
@@ -1234,7 +1234,7 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     }
 
     Tcl_DStringInit(&dsPtr);
-    bytes = (char *)Tcl_UniCharToUtfDString(unicode, numChars, &dsPtr);
+    bytes = Tcl_UniCharToUtfDString(unicode, numChars, &dsPtr);
     AppendUtfToUtfRep(objPtr, bytes, Tcl_DStringLength(&dsPtr));
     Tcl_DStringFree(&dsPtr);
 }

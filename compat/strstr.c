@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strstr.c,v 1.2 1998/09/14 18:39:45 stanton Exp $
+ * RCS: @(#) $Id: strstr.c,v 1.3 2002/01/26 01:10:08 dgp Exp $
  */
 
 /*
@@ -64,5 +64,5 @@ strstr(string, substring)
 	}
 	b = substring;
     }
-    return (char *) 0;
+    return NULL;
 }

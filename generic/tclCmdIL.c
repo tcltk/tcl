@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.39 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.40 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1421,7 +1421,7 @@ InfoNameOfExecutableCmd(dummy, interp, objc, objv)
     nameOfExecutable = Tcl_GetNameOfExecutable();
     
     if (nameOfExecutable != NULL) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp), (char *)nameOfExecutable, -1);
+	Tcl_SetStringObj(Tcl_GetObjResult(interp), nameOfExecutable, -1);
     }
     return TCL_OK;
 }
