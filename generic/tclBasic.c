@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.64 2002/07/18 13:37:45 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.65 2002/07/19 12:31:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -482,7 +482,7 @@ Tcl_CreateInterp()
      */
 
     i = 0;
-    for (builtinFuncPtr = builtinFuncTable;  builtinFuncPtr->name != NULL;
+    for (builtinFuncPtr = tclBuiltinFuncTable;  builtinFuncPtr->name != NULL;
 	    builtinFuncPtr++) {
 	Tcl_CreateMathFunc((Tcl_Interp *) iPtr, builtinFuncPtr->name,
 		builtinFuncPtr->numArgs, builtinFuncPtr->argTypes,

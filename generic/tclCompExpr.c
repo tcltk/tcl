@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.10 2002/06/21 21:17:39 jenglish Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.11 2002/07/19 12:31:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -110,7 +110,7 @@ typedef struct OperatorDesc {
 				 * Ignored if numOperands is 0. */
 } OperatorDesc;
 
-OperatorDesc operatorTable[] = {
+static OperatorDesc operatorTable[] = {
     {"*",   2,  INST_MULT},
     {"/",   2,  INST_DIV},
     {"%",   2,  INST_MOD},
