@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.41 2002/05/29 09:09:57 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.42 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -506,6 +506,18 @@ EXTERN Tcl_Obj *	TclGetStartupScriptPath _ANSI_ARGS_((void));
 /* 169 */
 EXTERN int		TclpUtfNcmp2 _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2, unsigned long n));
+/* 170 */
+EXTERN int		TclCheckInterpTraces _ANSI_ARGS_((
+				Tcl_Interp * interp, char * command, 
+				int numChars, Command * cmdPtr, int result, 
+				int traceFlags, int objc, 
+				Tcl_Obj *CONST objv[]));
+/* 171 */
+EXTERN int		TclCheckExecutionTraces _ANSI_ARGS_((
+				Tcl_Interp * interp, char * command, 
+				int numChars, Command * cmdPtr, int result, 
+				int traceFlags, int objc, 
+				Tcl_Obj *CONST objv[]));
 
 typedef struct TclIntStubs {
     int magic;
@@ -713,6 +725,8 @@ typedef struct TclIntStubs {
     void (*tclSetStartupScriptPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 167 */
     Tcl_Obj * (*tclGetStartupScriptPath) _ANSI_ARGS_((void)); /* 168 */
     int (*tclpUtfNcmp2) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 169 */
+    int (*tclCheckInterpTraces) _ANSI_ARGS_((Tcl_Interp * interp, char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 170 */
+    int (*tclCheckExecutionTraces) _ANSI_ARGS_((Tcl_Interp * interp, char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 171 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1332,6 +1346,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpUtfNcmp2
 #define TclpUtfNcmp2 \
 	(tclIntStubsPtr->tclpUtfNcmp2) /* 169 */
+#endif
+#ifndef TclCheckInterpTraces
+#define TclCheckInterpTraces \
+	(tclIntStubsPtr->tclCheckInterpTraces) /* 170 */
+#endif
+#ifndef TclCheckExecutionTraces
+#define TclCheckExecutionTraces \
+	(tclIntStubsPtr->tclCheckExecutionTraces) /* 171 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

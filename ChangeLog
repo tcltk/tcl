@@ -1,5 +1,21 @@
+2002-06-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/CrtTrace.3:        Added TIP#62 implementation of command
+	* doc/trace.n:           execution tracing [FR #462580] (lavana).
+	* generic/tcl.h:         This includes enter/leave tracing as well
+	* generic/tclBasic.c:    as inter-procedure stepping.
+	* generic/tclCmdMZ.c:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclVar.c:
+	* tests/trace.test:
+
 2002-06-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
-	
+
 	* win/tclWinPipe.c (BuildCommandLine): Fixed bug #554068 ([exec]
 	  on windows did not treat { in filenames well.). Bug reported by
 	  Vince Darley <vincentdarley@users.sourceforge.net>, patch
@@ -53,17 +69,11 @@
 	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
 	optimisation of variables (INST_STORE, INST_INCR) and commands
 	(INST_INVOKE); faster check for the existence of a catch.
-
-2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
-
-	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
-	optimisation of comparisons.
-
-2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
-
-	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
-	optimisation of INST_FOREACH - relies on peculiarities of the code
-	produced by the bytecode compiler.
+	(TclExecuteByteCode): runtime peep-hole optimisation of
+	comparisons.
+	(TclExecuteByteCode): runtime peep-hole optimisation of
+	INST_FOREACH - relies on peculiarities of the code produced by the
+	bytecode compiler.
 
 2002-06-14  David Gravereaux <davygrvy@pobox.com>
 

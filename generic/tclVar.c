@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.52 2002/06/13 19:47:58 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.53 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -40,7 +40,7 @@ static char *isArrayElement =	"name refers to an element in an array";
  * Forward references to procedures defined later in this file:
  */
 
-static int		CallTraces _ANSI_ARGS_((Interp *iPtr, Var *arrayPtr,
+static int		CallVarTraces _ANSI_ARGS_((Interp *iPtr, Var *arrayPtr,
 			    Var *varPtr, char *part1, CONST char *part2,
 			    int flags, int leaveErrMsg));
 static void		CleanupVar _ANSI_ARGS_((Var *varPtr,
@@ -636,7 +636,7 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
 
     if ((varPtr->tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, part1, part2,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 		(flags & (TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY))
 		| TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto errorReturn;
@@ -757,7 +757,7 @@ TclGetIndexedScalar(interp, localIndex, flags)
      */
 
     if (varPtr->tracePtr != NULL) {
-	if (TCL_ERROR == CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
+	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
 		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    return NULL;
 	}
@@ -910,7 +910,7 @@ TclGetElementOfIndexedArray(interp, localIndex, elemPtr, flags)
 
     if ((varPtr->tracePtr != NULL)
             || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
 	        TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto errorReturn;
 	}
@@ -1249,7 +1249,7 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 
     if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL) 
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, part1, part2,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    return NULL;
 	}
@@ -1328,7 +1328,7 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 
     if ((varPtr->tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, part1, part2,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2,
 	        (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto cleanup;
@@ -1459,7 +1459,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
      */
 
     if ((flags & TCL_TRACE_READS) && (varPtr->tracePtr != NULL)) {
-	if (TCL_ERROR == CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
+	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
 		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    return NULL;
 	}
@@ -1559,7 +1559,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
      */
 
     if (varPtr->tracePtr != NULL) {
-	if (TCL_ERROR == CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
+	if (TCL_ERROR == CallVarTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
 		NULL, TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto cleanup;
 	}
@@ -1760,7 +1760,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 
     if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL)
 		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
 		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto errorReturn;
 	}
@@ -1831,7 +1831,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 
     if ((varPtr->tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
 		TCL_TRACE_WRITES, (flags & TCL_LEAVE_ERR_MSG))) {
 	    goto errorReturn;
 	}
@@ -2287,7 +2287,7 @@ Tcl_UnsetVar2(interp, part1, part2, flags)
      * Call trace procedures for the variable being deleted. Then delete
      * its traces. Be sure to abort any other traces for the variable
      * that are still pending. Special tricks:
-     * 1. We need to increment varPtr's refCount around this: CallTraces
+     * 1. We need to increment varPtr's refCount around this: CallVarTraces
      *    will use dummyVar so it won't increment varPtr's refCount itself.
      * 2. Turn off the VAR_TRACE_ACTIVE flag in dummyVar: we want to
      *    call unset traces even if other traces are pending.
@@ -2297,7 +2297,7 @@ Tcl_UnsetVar2(interp, part1, part2, flags)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
 	varPtr->refCount++;
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
-	CallTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
+	CallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_UNSETS, /* leaveErrMsg */ 0);
 	while (dummyVar.tracePtr != NULL) {
@@ -2305,7 +2305,7 @@ Tcl_UnsetVar2(interp, part1, part2, flags)
 	    dummyVar.tracePtr = tracePtr->nextPtr;
 	    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	}
-	for (activePtr = iPtr->activeTracePtr;  activePtr != NULL;
+	for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
 	     activePtr = activePtr->nextPtr) {
 	    if (activePtr->varPtr == varPtr) {
 		activePtr->nextTracePtr = NULL;
@@ -2610,10 +2610,10 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
     /*
      * The code below makes it possible to delete traces while traces
      * are active: it makes sure that the deleted trace won't be
-     * processed by CallTraces.
+     * processed by CallVarTraces.
      */
 
-    for (activePtr = iPtr->activeTracePtr;  activePtr != NULL;
+    for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
 	 activePtr = activePtr->nextPtr) {
 	if (activePtr->nextTracePtr == tracePtr) {
 	    activePtr->nextTracePtr = tracePtr->nextPtr;
@@ -3120,7 +3120,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
     if (varPtr != NULL && varPtr->tracePtr != NULL
 	    && (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
-	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, varName, NULL,
+	if (TCL_ERROR == CallVarTraces(iPtr, arrayPtr, varPtr, varName, NULL,
 		(TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|TCL_GLOBAL_ONLY|
 		TCL_TRACE_ARRAY), /* leaveErrMsg */ 1)) {
 	    return TCL_ERROR;
@@ -3141,7 +3141,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
     /*
      * We have to wait to get the resultPtr until here because
-     * CallTraces can affect the result.
+     * CallVarTraces can affect the result.
      */
 
     resultPtr = Tcl_GetObjResult(interp);
@@ -4407,7 +4407,7 @@ DisposeTraceResult(flags, result)
 /*
  *----------------------------------------------------------------------
  *
- * CallTraces --
+ * CallVarTraces --
  *
  *	This procedure is invoked to find and invoke relevant
  *	trace procedures associated with a particular operation on
@@ -4429,7 +4429,7 @@ DisposeTraceResult(flags, result)
  */
 
 int 
-CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
+CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     Interp *iPtr;		/* Interpreter containing variable. */
     register Var *arrayPtr;	/* Pointer to array variable that contains
 				 * the variable, or NULL if the variable
@@ -4506,8 +4506,8 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
      */
 
     result = NULL;
-    active.nextPtr = iPtr->activeTracePtr;
-    iPtr->activeTracePtr = &active;
+    active.nextPtr = iPtr->activeVarTracePtr;
+    iPtr->activeVarTracePtr = &active;
     Tcl_Preserve((ClientData) iPtr);
     if (arrayPtr != NULL && !(arrayPtr->flags & VAR_TRACE_ACTIVE)) {
 	active.varPtr = arrayPtr;
@@ -4609,7 +4609,7 @@ CallTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     }
     varPtr->flags &= ~VAR_TRACE_ACTIVE;
     varPtr->refCount--;
-    iPtr->activeTracePtr = active.nextPtr;
+    iPtr->activeVarTracePtr = active.nextPtr;
     Tcl_Release((ClientData) iPtr);
     return code;
 }
@@ -4909,7 +4909,7 @@ TclDeleteVars(iPtr, tablePtr)
 	 * free up the variable's space (no need to free the hash entry
 	 * here, unless we're dealing with a global variable: the
 	 * hash entries will be deleted automatically when the whole
-	 * table is deleted). Note that we give CallTraces the variable's
+	 * table is deleted). Note that we give CallVarTraces the variable's
 	 * fully-qualified name so that any called trace procedures can
 	 * refer to these variables being deleted.
 	 */
@@ -4918,7 +4918,7 @@ TclDeleteVars(iPtr, tablePtr)
 	    objPtr = Tcl_NewObj();
 	    Tcl_IncrRefCount(objPtr); /* until done with traces */
 	    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
-	    CallTraces(iPtr, (Var *) NULL, varPtr, Tcl_GetString(objPtr),
+	    CallVarTraces(iPtr, (Var *) NULL, varPtr, Tcl_GetString(objPtr),
 		    NULL, flags, /* leaveErrMsg */ 0);
 	    Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 
@@ -4927,7 +4927,7 @@ TclDeleteVars(iPtr, tablePtr)
 		varPtr->tracePtr = tracePtr->nextPtr;
 		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    }
-	    for (activePtr = iPtr->activeTracePtr; activePtr != NULL;
+	    for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
 		 activePtr = activePtr->nextPtr) {
 		if (activePtr->varPtr == varPtr) {
 		    activePtr->nextTracePtr = NULL;
@@ -5044,14 +5044,14 @@ TclDeleteCompiledLocalVars(iPtr, framePtr)
 	 */
 
 	if (varPtr->tracePtr != NULL) {
-	    CallTraces(iPtr, (Var *) NULL, varPtr, varPtr->name, NULL,
+	    CallVarTraces(iPtr, (Var *) NULL, varPtr, varPtr->name, NULL,
 		    flags, /* leaveErrMsg */ 0);
 	    while (varPtr->tracePtr != NULL) {
 		VarTrace *tracePtr = varPtr->tracePtr;
 		varPtr->tracePtr = tracePtr->nextPtr;
 		Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 	    }
-	    for (activePtr = iPtr->activeTracePtr; activePtr != NULL;
+	    for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
 		 activePtr = activePtr->nextPtr) {
 		if (activePtr->varPtr == varPtr) {
 		    activePtr->nextTracePtr = NULL;
@@ -5108,7 +5108,7 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
     char *arrayName;			/* Name of array (used for trace
 					 * callbacks). */
     Var *varPtr;			/* Pointer to variable structure. */
-    int flags;				/* Flags to pass to CallTraces:
+    int flags;				/* Flags to pass to CallVarTraces:
 					 * TCL_TRACE_UNSETS and sometimes
 					 * TCL_INTERP_DESTROYED,
 					 * TCL_NAMESPACE_ONLY, or
@@ -5132,7 +5132,7 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 	elPtr->hPtr = NULL;
 	if (elPtr->tracePtr != NULL) {
 	    elPtr->flags &= ~VAR_TRACE_ACTIVE;
-	    CallTraces(iPtr, (Var *) NULL, elPtr, arrayName,
+	    CallVarTraces(iPtr, (Var *) NULL, elPtr, arrayName,
 		    Tcl_GetHashKey(varPtr->value.tablePtr, hPtr), flags,
 		    /* leaveErrMsg */ 0);
 	    while (elPtr->tracePtr != NULL) {
@@ -5140,7 +5140,7 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
 		elPtr->tracePtr = tracePtr->nextPtr;
 		Tcl_EventuallyFree((ClientData) tracePtr,TCL_DYNAMIC);
 	    }
-	    for (activePtr = iPtr->activeTracePtr; activePtr != NULL;
+	    for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
 		 activePtr = activePtr->nextPtr) {
 		if (activePtr->varPtr == elPtr) {
 		    activePtr->nextTracePtr = NULL;
@@ -5289,7 +5289,7 @@ TclVarTraceExists(interp, varName)
 
     if ((varPtr->tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	CallTraces((Interp *)interp, arrayPtr, varPtr, varName, NULL,
+	CallVarTraces((Interp *)interp, arrayPtr, varPtr, varName, NULL,
 		TCL_TRACE_READS, /* leaveErrMsg */ 0);
     }
 
