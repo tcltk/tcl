@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.2 2004/02/07 05:48:12 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.3 2004/02/18 22:30:56 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -369,6 +369,25 @@ AppendEnvironment(
     Tcl_Obj *objPtr;
     Tcl_DString ds;
     CONST char **pathv;
+    char *shortlib;
+
+    /*
+     * The shortlib value needs to be the tail component of the
+     * lib path. For example, "lib/tcl8.4" -> "tcl8.4" while
+     * "usr/share/tcl8.5" -> "tcl8.5".
+     */
+    for (shortlib = (char *) (lib + strlen(lib) - 1); shortlib > lib ; shortlib--) {
+        if (*shortlib == '/') { 
+            if (shortlib == (lib + strlen(lib) - 1)) {
+                Tcl_Panic("last character in lib cannot be '/'");
+            }
+            shortlib++;
+            break;
+        }
+    }
+    if (shortlib == lib) {
+        Tcl_Panic("no '/' character found in lib");
+    }
 
     /*
      * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
@@ -391,10 +410,10 @@ AppendEnvironment(
 
 	/* 
 	 * The lstrcmpi() will work even if pathv[pathc - 1] is random
-	 * UTF-8 chars because I know lib is ascii.
+	 * UTF-8 chars because I know shortlib is ascii.
 	 */
 
-	if ((pathc > 0) && (lstrcmpiA(lib + 4, pathv[pathc - 1]) != 0)) {
+	if ((pathc > 0) && (lstrcmpiA(shortlib, pathv[pathc - 1]) != 0)) {
 	    CONST char *str;
 	    /*
 	     * TCL_LIBRARY is set but refers to a different tcl
@@ -404,7 +423,7 @@ AppendEnvironment(
 	     * version string.
 	     */
 	    
-	    pathv[pathc - 1] = (lib + 4);
+	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));

@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.4 2004/02/07 05:48:12 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.5 2004/02/18 22:30:55 dgp Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -64,7 +64,7 @@ the environment.  Jump to this line to read the new instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,staticpkg,threads,symbols,profile,loimpact,none
+#	OPTS=static,msvcrt,staticpkg,threads,symbols,profile,loimpact,unchecked,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -84,6 +84,9 @@ the environment.  Jump to this line to read the new instructions.
 #		profile =  Adds profiling hooks.  Map file is assumed.
 #		loimpact =  Adds a flag for how NT treats the heap to keep memory
 #			   in use, low.  This is said to impact alloc performance.
+#		unchecked = Allows a symbols build to not use the debug
+#			   enabled runtime (msvcrt.dll not msvcrtd.dll
+#			   or libcmt.lib not libcmtd.lib).
 #
 #	STATS=memdbg,compdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -376,13 +379,13 @@ cflags = $(cflags) -QIA64_Bx
 !endif
 
 !if $(MSVCRT)
-!if $(DEBUG)
+!if $(DEBUG) && !$(UNCHECKED)
 crt = -MDd
 !else
 crt = -MD
 !endif
 !else
-!if $(DEBUG)
+!if $(DEBUG) && !$(UNCHECKED)
 crt = -MTd
 !else
 crt = -MT
@@ -691,7 +694,7 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 
 ### The following objects are part of the stub library and should not
 ### be built as DLL objects.  -Zl is used to avoid a dependancy on any
-### specific c-runtime.
+### specific C run-time.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
@@ -752,7 +755,8 @@ $<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
 	$(rc32) -fo $@ -r -i "$(GENERICDIR)" \
-	    -d DEBUG=$(DEBUG) -d TCL_THREADS=$(TCL_THREADS) \
+	    -d DEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
+	    -d TCL_THREADS=$(TCL_THREADS) \
 	    -d STATIC_BUILD=$(STATIC_BUILD) \
 	    $<
 

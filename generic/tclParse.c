@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.2 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.3 2004/02/18 22:30:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2187,6 +2187,7 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
     int *tokensLeftPtr;		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
+    int flags;
 {
     Tcl_Obj *result;
     int code = TCL_OK;

@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.1 2003/08/07 21:35:59 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.2 2004/02/18 22:30:53 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.2 tcltest "Tcl Bundled Packages"
@@ -18,7 +18,7 @@
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require tcltest ?2.2.3?\fR
+\fBpackage require tcltest ?2.2.5?\fR
 .sp
 \fBtcltest::test \fIname description ?option value ...?\fR
 \fBtcltest::test \fIname description ?constraints? body result\fR
@@ -763,7 +763,8 @@ harness are doing.
 \fB-verbose \fIlevel\fR
 Sets the type of output verbosity desired to \fIlevel\fR,
 a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
-\fBskip\fR, \fBstart\fR, and \fBerror\fR.  Default value is \fBbody\fR.
+\fBskip\fR, \fBstart\fR, and \fBerror\fR.  Default value
+is \fB{body error}\fR.
 Levels are defined as: 
 .RS
 .IP "body (b)"

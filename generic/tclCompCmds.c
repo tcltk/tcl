@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.2 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.3 2004/02/18 22:30:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3283,7 +3283,6 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	code = TclCompileScript(interp, bodyTokenArray[i+1].start,
 		bodyTokenArray[i+1].size, envPtr);
 	if (code != TCL_OK) {
-	    ckfree((char *)argv);
 	    ckfree((char *)bodyTokenArray);
 	    ckfree((char *)fixupArray);
 	    ckfree((char *)fixupTargetArray);
@@ -3297,6 +3296,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 		Tcl_AddObjErrorInfo(interp, errInfBuf, -1);
 		ckfree(errInfBuf);
 	    }
+	    ckfree((char *)argv);
 	    return code;
 	}
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.3 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.4 2004/02/18 22:30:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -937,6 +937,9 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	CONST char * commandStart = tokenPtr->start;
 	int cmdIndex = envPtr->numCommands;
 	int wordIndex = 0;
+	int expand = 0;
+	unsigned char delta = 1;
+	Tcl_DString deltaList;
 
 	if (tokenPtr > lastTokenPtr) {
 	    Tcl_Panic("TclCompileScriptTokens: overran token array");
@@ -974,6 +977,23 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
 #endif
 
+	/*
+	 * Check whether expansion has been requested for any of 
+	 * the words.
+	 */
+
+	for (wordIndex = 0;
+		wordIndex <numWords;
+		wordIndex++, tokenPtr += (tokenPtr->numComponents + 1)) {
+	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		expand = 1;
+		Tcl_DStringInit(&deltaList);
+		break;
+	    }
+	}
+
+	wordIndex = 0;
+	tokenPtr = commandTokenPtr + 1;
 	envPtr->numCommands++;
 	startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	EnterCmdStartData(envPtr, cmdIndex, (commandStart - envPtr->source),
@@ -984,11 +1004,11 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
 
 	/*
-	 * If we have a simple word, attempt to call compile procedure
-	 * for that command.
+	 * If we have a simple word command, and no word expansion,
+	 * attempt to call compile procedure for that command.
 	 */
 
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	if (!expand && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    Interp *iPtr = (Interp *) interp;
 	    int objIndex = TclRegisterNewLiteral(envPtr, tokenPtr[1].start,
 		    tokenPtr[1].size);
@@ -1039,17 +1059,31 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
 
 	for (; wordIndex < numWords;
-		wordIndex++, tokenPtr += (tokenPtr->numComponents + 1)) {
+		delta++, wordIndex++,
+		tokenPtr += (tokenPtr->numComponents + 1)) {
 
 	    if (tokenPtr > lastTokenPtr) {
 		Tcl_Panic("TclCompileScript: overran token array");
 	    }
-            if (!(tokenPtr->type & (TCL_TOKEN_WORD | TCL_TOKEN_SIMPLE_WORD))) {
+            if (!(tokenPtr->type & (TCL_TOKEN_WORD 
+		    | TCL_TOKEN_SIMPLE_WORD | TCL_TOKEN_EXPAND_WORD))) {
         	Tcl_Panic("TclCompileScript: invalid token array, expected word: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
             }
 	    if (lastTokenPtr < tokenPtr + tokenPtr->numComponents) {
 		Tcl_Panic("TclCompileScript: overran token array");
 	    }
+
+	    if (expand && (delta == 255)
+		    && (tokenPtr->type != TCL_TOKEN_EXPAND_WORD)) {
+		/*
+                 * Push an empty list for expansion so our delta
+                 * between expanded words doesn't overflow a byte
+                 */
+                int objIndex = TclRegisterNewLiteral(envPtr, "", 0);
+                TclEmitPush(objIndex, envPtr);
+                Tcl_DStringAppend(&deltaList, (CONST char *)&delta, 1);
+                delta = 1;
+            }
 
 	    if (TCL_OK != TclCompileTokens(interp, tokenPtr+1,
 		    tokenPtr->numComponents, envPtr)) {
@@ -1058,6 +1092,38 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 			commandTokenPtr->start, commandTokenPtr->size);
 		return TCL_ERROR;
 	    }
+
+	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		if ((tokenPtr->numComponents == 1)
+			&& (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
+		    /*
+                     * The value to be expanded is fully known
+                     * now at compile time.  We can check list
+                     * validity, so we do not have to do so at
+                     * runtime
+                     */
+                    int length;
+                    Tcl_Obj *testObj = Tcl_NewStringObj(tokenPtr[1].start,
+			    tokenPtr[1].size);
+                    if (TCL_OK !=
+			    Tcl_ListObjLength(NULL, testObj, &length)) {
+			/*
+                         * Not a valid list, so emit instructions to
+                         * test list validity (and fail) at runtime
+                         */
+                        TclEmitOpcode(INST_LIST_VERIFY, envPtr);
+                    }
+		} else {
+	            /* 
+                     * Value to expand unknown until runtime, so
+                     * include a runtime check for valid list
+                     */
+                    TclEmitOpcode(INST_LIST_VERIFY, envPtr);
+                }
+                Tcl_DStringAppend(&deltaList, (char *)&delta, 1);
+                delta = 0;
+	    }
+
 	}
 
 	/*
@@ -1065,7 +1131,11 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	 * if a compile procedure was found for the command.
 	 */
 	    
-	if (numWords > 0) {
+	if (expand) {
+	    TclEmitInstInt4(INST_INVOKE_EXP, wordIndex, envPtr);
+	    TclEmitImmDeltaList1(&deltaList, envPtr);
+	    Tcl_DStringFree(&deltaList);
+	} else if (numWords > 0) {
 	    if (numWords <= 255) {
 		TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
 	    } else {

@@ -1,8 +1,59 @@
+2004-02-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:
+	* library/tcltest/tcltest.tcl:	Changed -verbose default value to
+	{body error} so that detailed information on unexpected errors in
+	tests is provided by default, even after the fix for [Bug 725253]
+
+2004-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/unixInit.test (unixInit-7.1):
+	* unix/tclUnixInit.c (TclpInitPlatform): ensure the std fds exist
+	to prevent crash condition [Bug #772288]
+
+2004-02-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Bozo mistake in
+	memory releasing order when in an error case.  [Bug 898910]
+
+2004-02-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclTrace.c (TclTraceExecutionObjCmd) 
+	(TclTraceCommandObjCmd): fix possible mem leak in trace info.
+
+2004-02-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWinInit.c (AppendEnvironment):
+	Use the tail component of the passed in
+	lib path instead of just blindly using
+	lib+4. That worked when lib was "lib/..."
+	but fails for other values. Thanks go to
+	Patrick Samson for pointing this out.
+
+2004-02-10  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/nmakehlp.c: better macro grepping logic.
+
+2004-02-07  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/makefile.vc:
+	* win/rules.vc:
+	* win/tcl.rc:
+	* win/tclsh.rc:  Added an 'unchecked' option to the OPTS macro so a
+	core built with symbols can be linked to the non-debug enabled C
+	run-time.  As per discussion with Kevin Kenny.  Called like this:
+
+		nmake -af makefile.vc OPTS=unchecked,symbols
+
+	This clarifies the meaning of the 'g' naming suffix to mean only that
+	the binary requires the debug enabled C run-time.  Whether the binary
+	contains symbols or not is a different condition.
+
 2004-02-06  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/clock.n:	Removed reference to non-existent [file ctime].
 
-2004-02-05  David Gravereaux <davygrvy@pobo.co>
+2004-02-05  David Gravereaux  <davygrvy@pobox.com>
 
 	* docs/tclvars.n: Added clarification of the tcl_platform(debug)
 	var that it only refers to the flavor of the C run-time, and not
@@ -596,7 +647,7 @@
 
 2003-11-17  Don Porter	<dgp@users.sourceforge.net>
 
-	* tests/reg.test:  Added tests for [Bugs 230589, 504785, 505048, 840258]
+	* tests/reg.test: Added tests for [Bugs 230589, 504785, 505048, 840258]
 	recently fixed by 2003-11-15 commit to regcomp.c by Pavel Goran.
 	His notes on the fix: This bug results from an error in code that
 	splits states into "progress" and "no-progress" ones. This error
@@ -701,14 +752,14 @@
 
 2003-11-10  Don Porter	<dgp@users.sourceforge.net>
 
-        * unix/tclUnixInit.c (TclpInitLibraryPath):     
-        * win/tclWinInit.c (TclpInitLibraryPath):       Fix for [Bug 832657]
-        that should not run afoul of startup constraints.
+	* unix/tclUnixInit.c (TclpInitLibraryPath):	
+	* win/tclWinInit.c (TclpInitLibraryPath):	Fix for [Bug 832657]
+	that should not run afoul of startup constraints.
 
-        * library/dde/pkgIndex.tcl:     Added safeguards so that registry
-        * library/reg/pkgIndex.tcl:     and dde packages are not offered
-        * win/tclWinDde.c:      on non-Windows platforms.  Bumped to
-        * win/tclWinReg.c:      registry 1.1.3 and dde 1.3.
+	* library/dde/pkgIndex.tcl:	Added safeguards so that registry
+	* library/reg/pkgIndex.tcl:	and dde packages are not offered
+	* win/tclWinDde.c:	on non-Windows platforms.  Bumped to
+	* win/tclWinReg.c:	registry 1.1.3 and dde 1.3.
 	* win/Makefile.in:
 	* win/configure.in:
 	* win/makefile.bc:

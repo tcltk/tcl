@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.6 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.7 2004/02/18 22:30:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3560,8 +3560,10 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
     int code = TCL_OK;
 #define NUM_STATIC_OBJS 20
     int objLength = NUM_STATIC_OBJS;
+    int expandStatic[NUM_STATIC_OBJS];
+    int *expand = expandStatic;
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS];
-    Tcl_Obj **objv = staticObjArray;
+    Tcl_Obj **objvSpace = staticObjArray;
 
     if (length == 0) {
         Tcl_Panic("EvalScriptTokens: can't eval zero tokens");
@@ -3575,8 +3577,10 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
 	return TclInterpReady(interp);
     }
     while (numCommands-- && (code == TCL_OK)) {
-        int objc;
+	int expandRequested = 0;
+        int objc, objectsNeeded = 0;
         int numWords = tokenPtr->numComponents;
+	Tcl_Obj **objv;
         Tcl_Token *commandTokenPtr = tokenPtr;
 
         if (length == 0) {
@@ -3589,21 +3593,27 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
 
         if (numWords == 0) continue;
 	if (numWords > objLength) {
-	    if (objv != staticObjArray) {
-		ckfree((char *) objv);
+	    if (expand != expandStatic) {
+		ckfree((char *) expand);
 	    }
-            objv = (Tcl_Obj **)
+            expand = (int *) ckalloc((unsigned int) (numWords * sizeof(int)));
+	    if (objvSpace != staticObjArray) {
+		ckfree((char *) objvSpace);
+	    }
+            objvSpace = (Tcl_Obj **)
                     ckalloc((unsigned int) (numWords * sizeof(Tcl_Obj *)));
 	    objLength = numWords;
 	}
 
+	objv = objvSpace;
         for (objc = 0; objc < numWords;
                 objc++, length -= (tokenPtr->numComponents + 1),
                 tokenPtr += (tokenPtr->numComponents + 1)) {
             if (length == 0) {
                 Tcl_Panic("EvalScriptTokens: overran token array");
             }
-            if (!(tokenPtr->type & (TCL_TOKEN_WORD | TCL_TOKEN_SIMPLE_WORD))) {
+            if (!(tokenPtr->type & (TCL_TOKEN_WORD 
+		    | TCL_TOKEN_SIMPLE_WORD | TCL_TOKEN_EXPAND_WORD))) {
                 Tcl_Panic("EvalScriptTokens: invalid token array, expected word: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
             }
             if (length < tokenPtr->numComponents + 1) {
@@ -3611,27 +3621,97 @@ TclEvalScriptTokens(interp, tokenPtr, length, flags)
             }
             code = TclSubstTokens(interp, tokenPtr+1, tokenPtr->numComponents,
                     NULL,flags);
-            if (code == TCL_OK) {
-                objv[objc] = Tcl_GetObjResult(interp);
-		Tcl_IncrRefCount(objv[objc]);
-            } else {
-                goto error;
-            }
+            if (code != TCL_OK) {
+		goto error;
+	    }
+	    objv[objc] = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(objv[objc]);
+	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		int numElements;
+
+		code = Tcl_ListObjLength(interp, objv[objc], &numElements);
+		if (code == TCL_ERROR) {
+		    /* Attempt to expand a non-list */
+		    Tcl_Obj *msg = 
+			    Tcl_NewStringObj("\n    (expanding word ", -1);
+		    Tcl_Obj *wordNum = Tcl_NewIntObj(objc);
+		    Tcl_IncrRefCount(wordNum);
+		    Tcl_IncrRefCount(msg);
+		    Tcl_AppendObjToObj(msg, wordNum);
+		    Tcl_DecrRefCount(wordNum);
+		    Tcl_AppendToObj(msg, ")", -1);
+		    TclAppendObjToErrorInfo(interp, msg);
+		    Tcl_DecrRefCount(msg);
+		    objc++;
+		    goto error;
+		}
+		expandRequested = 1;
+		expand[objc] = 1;
+		objectsNeeded += (numElements ? numElements : 1);
+	    } else {
+		expand[objc] = 0;
+		objectsNeeded++;
+	    }
         }
+	if (expandRequested) {
+	    /* Some word expansion was requested.  Check for objv resize */
+	    Tcl_Obj **copy = objvSpace;
+	    int wordIdx = numWords;
+	    int objIdx = objectsNeeded - 1;
+	    int inPlaceCopy = 1;
+
+	    if (objectsNeeded > objLength) {
+		inPlaceCopy = 0;
+		objv = objvSpace = (Tcl_Obj **) ckalloc((unsigned)
+			(objectsNeeded * sizeof (Tcl_Obj *)));
+	    }
+
+	    objc = 0;
+	    while (wordIdx--) {
+		if (expand[wordIdx]) {
+		    int numElements;
+		    Tcl_Obj **elements, *temp = copy[wordIdx];
+		    Tcl_ListObjGetElements(NULL, temp,
+			    &numElements, &elements);
+		    objc += numElements;
+		    while (numElements--) {
+			objv[objIdx--] = elements[numElements];
+			Tcl_IncrRefCount(elements[numElements]);
+		    }
+		    Tcl_DecrRefCount(temp);
+	        } else {
+		    objv[objIdx--] = copy[wordIdx];
+		    objc++;
+		}
+	    }
+	    objv += objIdx+1;
+
+            if (!inPlaceCopy && (copy != staticObjArray)) {
+		ckfree((char *) copy);
+	    }
+	}
+
+	/*
+	 * Execute the command and free the objects for its words.
+	 */
+
         code = TEOVI(interp, objc, objv,
                 commandTokenPtr->start, commandTokenPtr->size, flags);
+
+        error:
 	while (--objc >= 0) {
 	    Tcl_DecrRefCount(objv[objc]);
 	}
-
-        error:
         if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
             Tcl_LogCommandInfo(interp, scriptTokenPtr->start,
                     commandTokenPtr->start, commandTokenPtr->size);
         }
     }
-    if (objv != staticObjArray) {
-        ckfree((char *) objv);
+    if (expand != expandStatic) {
+	ckfree((char *) expand);
+    }
+    if (objvSpace != staticObjArray) {
+        ckfree((char *) objvSpace);
     }
     return code;
 }
