@@ -1,5 +1,10 @@
 2004-10-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/expr.test: Basic tests of 'in' and 'ni' behaviour.
+
+	* tests/dict.test (dict-21.*,dict-22.*): Tests for [dict update]
+	and [dict with].
+
 	* generic/tclExecute.c (TclExecuteByteCode): Implementation of the
 	INST_LIST_IN and INST_LIST_NOT_IN bytecodes.
 	* generic/tclParseExpr.c (GetLexeme): Parse the 'in' and 'ni'
