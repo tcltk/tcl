@@ -1,3 +1,13 @@
+2004-09-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinReg.c (BroadcastValue): WIN64 cast corrections
+
+	* win/tclWinDde.c (DdeClientWindowProc): 
+	(DdeServicesOnAck, DdeEnumWindowsCallback): WIN64 corrections
+
+	* win/tclWin32Dll.c (TclWinCPUID): need _asm for WIN64 (Itanium),
+	until we have it, just return unknown. [Bug 1020445]
+
 2004-09-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/regsub.n, doc/RegConfig.3, doc/Environment.3: 
