@@ -845,7 +845,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)
 	mkdir $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.c $(UNIX_DIR)/*.h $(DISTDIR)/unix
-	rm -f $(DISTDIR)/unix/bp.c $(DISTDIR)/unix/tclXtNotify.c
+	rm -f $(DISTDIR)/unix/bp.c
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
 	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
