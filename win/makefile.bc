@@ -1,5 +1,5 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.bc,v 1.1.2.3 1998/10/21 20:40:12 stanton Exp $
+# RCS: @(#) $Id: makefile.bc,v 1.1.2.4 1998/12/11 00:55:53 stanton Exp $
 #
 # Borland C++ 4.5 makefile
 #
@@ -52,6 +52,7 @@ TCLSHOBJS = \
 TCLTESTOBJS = \
 	$(TMPDIR)\tclTest.obj \
 	$(TMPDIR)\tclTestObj.obj \
+	$(TMPDIR)\tclTestProcBodyObj.obj \
 	$(TMPDIR)\tclThreadTest.obj \
 	$(TMPDIR)\tclWinTest.obj \
 	$(TMPDIR)\testMain.obj
@@ -109,6 +110,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclRegexp.obj \
 	$(TMPDIR)\tclResolve.obj \
 	$(TMPDIR)\tclResult.obj \
+	$(TMPDIR)\tclScan.obj \
 	$(TMPDIR)\tclStringObj.obj \
 	$(TMPDIR)\tclThread.obj \
 	$(TMPDIR)\tclTimer.obj \
