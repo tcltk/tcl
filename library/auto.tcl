@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.4 2000/01/28 00:09:15 ericm Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.5 2000/01/28 16:38:34 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -319,8 +319,11 @@ proc auto_mkindex_parser::mkindex {file} {
     # interpreter:  references like "$x" will fail since code is not
     # really being executed and variables do not really exist.
     # Be careful to escape all naked "$" before evaluating.
-
-    regsub -all {([^\$])\$([^\$])} $contents {\1\\$\2} contents
+    regsub -expanded -all {
+	([^\\](?:(?:\\\\)*)) # match any even number of backslashes ...
+	\$                   # ... followed by an unescaped dollar sign ...
+	([^\$])              # ... followed by anything but another dollar sign
+    } $contents {\1\\$\2} contents; # add one backslash for the dollar sign
 
     set index ""
     set contextStack ""

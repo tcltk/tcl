@@ -1,3 +1,20 @@
+2000-01-28  Eric Melski  <ericm@scriptics.com>
+
+	* tests/pkg/magicchar.tcl: 
+	* tests/autoMkindex.test: Test for fix for bug #2611.
+
+	* library/auto.tcl: Fixed the regular expression that performs $
+	escaping before sourcing a file to index.  It was erroneously
+	adding \ escapes even to $'s that were already escaped,
+	effectively "un-escaping" those $'s.  (bug #2611).
+
+2000-01-27  Eric Melski  <ericm@scriptics.com>
+
+	* tests/autoMkindex.test: 
+	* library/auto.tcl: Applied patch (with slight modification) from
+	bug #2701:  auto_mkIndex uses platform dependent file paths.
+	Added test for fix.
+
 2000-01-27  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl: Changed NormalizePath to
@@ -9,12 +26,18 @@
 
 2000-01-27  Eric Melski  <ericm@scriptics.com>
 
+	* tests/pkg/samename.tcl: test file for bug #1983
+	
 	* tests/pkgMkIndex.test: 
 	* doc/pkgMkIndex.n: 
 	* library/package.tcl: Per rfe #4097, optimized creation of direct
 	load packages to bypass computing the list of commands added by
 	the new package.  Also made direct loading the default, and added
 	a -lazy option.
+	Fixed bug #1983, dealing with pkg_mkIndex incorrectly handling
+	situations with two procs by the same name but in different
+	namespaces (ie, foo::baz and bar::baz).
+	
 
 2000-01-26  Eric Melski  <ericm@scriptics.com>
 
