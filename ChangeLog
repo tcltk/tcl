@@ -1,3 +1,8 @@
+2003-05-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclProc.c (TclCloneProc): Fixed leaking of 'procNew',
+	  reported by Cisco.
+
 2003-04-15  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c (Tcl_CloneInterp): Added code to propagate

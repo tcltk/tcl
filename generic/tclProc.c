@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.23.6.3 2002/11/26 19:48:57 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.23.6.4 2003/05/07 16:01:32 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1341,6 +1341,7 @@ TclCloneProc (interp, nsPtr, procSrcPtr)
 				Tcl_GetHashKey (procSrcPtr->cmdPtr->hPtr->tablePtr,
 						procSrcPtr->cmdPtr->hPtr));
     if (result != TCL_OK) {
+      ckfree((char*)procNew);
       return NULL;
     }
 
