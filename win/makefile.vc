@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.97 2002/12/18 22:47:01 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.98 2003/01/05 00:44:24 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -25,7 +25,7 @@ the environment.  Jump to this line to read the new instructions.
 #------------------------------------------------------------------------------
 # HOW TO USE this makefile:
 #
-# 1)  It is now necessary to have MSVCDir set in the environment.  This is used
+# 1)  It is now necessary to have %MSVCDir% set in the environment.  This is used
 #     as a check to see if vcvars32.bat had been run prior to running nmake or
 #     during the installation of Microsoft Visual C++, MSVCDir had been set
 #     globally and the PATH adjusted.  Either way is valid.
@@ -64,7 +64,7 @@ the environment.  Jump to this line to read the new instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,linkexten,threads,symbols,profile,loimpact,none
+#	OPTS=static,msvcrt,staticpkg,threads,symbols,profile,loimpact,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -75,10 +75,11 @@ the environment.  Jump to this line to read the new instructions.
 #			   using libcmt(d) as the C runtime [by default] to
 #			   msvcrt(d). This is useful for static embedding
 #			   support.
-#		linkexten = Effects the static option only to switch
+#		staticpkg = Effects the static option only to switch
 #			   tclshXX.exe to have the dde and reg extension linked
 #			   inside it.
 #		threads =  Turns on full multithreading support.
+#		thrdalloc = Use the thread allocator (shared global free pool).
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
 #		loimpact =  Adds a flag for how NT treats the heap to keep memory
@@ -188,7 +189,6 @@ TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
 CAT32		= $(OUT_DIR)\cat32.exe
 
 ### Make sure we use backslash only.
-_INSTALLDIR		= $(INSTALLDIR:/=\)
 LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
 BIN_INSTALL_DIR		= $(_INSTALLDIR)\bin
 DOC_INSTALL_DIR		= $(_INSTALLDIR)\doc
@@ -338,11 +338,6 @@ cflags = $(cflags) -QI0f
 
 !if $(ITAN_B_ERRATA)
 cflags = $(cflags) -QIA64_Bx
-!endif
-
-### Turn on the thread allocator, too.
-!if $(TCL_THREADS)
-cflags = $(cflags) -DUSE_THREAD_ALLOC=1
 !endif
 
 !if $(MSVCRT)
@@ -612,6 +607,7 @@ $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 !endif
 
 ### The following objects should be built using the stub interfaces
+### *ALL* extensions need to built with -DTCL_THREADS=1
 
 $(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
 !if $(STATIC_BUILD)
@@ -630,7 +626,8 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 
 
 ### The following objects are part of the stub library and should not
-### be built as DLL objects but none of the symbols should be exported
+### be built as DLL objects.  -Zl is used to avoid a dependancy on any
+### specific c-runtime.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(cdebug) $(cflags) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
@@ -711,6 +708,8 @@ $<
 #---------------------------------------------------------------------
 
 install-binaries:
+	@echo Installing to '$(_INSTALLDIR)'
+	@echo.
 	@echo installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@$(CPY) "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
@@ -781,21 +780,22 @@ install-libraries:
 # Clean up
 #---------------------------------------------------------------------
 
-!if "$(OS)" == "Windows_NT"
-RMDIR	= rmdir /S /Q
-!else
-RMDIR	= deltree /Y
-!endif
-
 tidy:
-	if exist $(TCLLIB) del $(TCLLIB)
-	if exist $(TCLSH) del $(TCLSH)
-	if exist $(TCLTEST) del $(TCLTEST)
-	if exist $(TCLDDELIB) del $(TCLDDELIB)
-	if exist $(TCLREGLIB) del $(TCLREGLIB)
+	@echo Removing $(TCLLIB) ...
+	@if exist $(TCLLIB) del $(TCLLIB)
+	@echo Removing $(TCLSH) ...
+	@if exist $(TCLSH) del $(TCLSH)
+	@echo Removing $(TCLTEST) ...
+	@if exist $(TCLTEST) del $(TCLTEST)
+	@echo Removing $(TCLDDELIB) ...
+	@if exist $(TCLDDELIB) del $(TCLDDELIB)
+	@echo Removing $(TCLREGLIB) ...
+	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
 clean:
-	if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
+	@echo Cleaning $(TMP_DIR)\* ...
+	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
 
 hose:
-	if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
+	@echo Hosing $(OUT_DIR)\* ...
+	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
