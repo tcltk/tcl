@@ -1,3 +1,11 @@
+2002-11-13  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/regexpComp.test: added tests 22.*
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): add left and right
+	anchoring (^ and $) recognition and check starting or ending .* to
+	extend the number of REs that can be compiled to string match or
+	string equal.
+
 2002-11-13  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:
