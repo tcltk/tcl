@@ -113,7 +113,7 @@
 			shouldUseHeadermap = 0;
 		};
 		00E2F84C016E8B780ACA28DC = {
-			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then gnumake tclsh tcltest TCL_LIBRARY=\\\"@TCL_IN_FRAMEWORK@\\\" TCL_PACKAGE_PATH=\\\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl\\\" DYLIB_INSTALL_DIR=\\\"${DYLIB_INSTALL_DIR}\\\" ${EXTRA_MAKE_FLAGS}; else gnumake distclean; fi\"";
+			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then gnumake tclsh tcltest TCL_LIBRARY=\\\"@TCL_IN_FRAMEWORK@\\\" TCL_PACKAGE_PATH=\\\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks\\\" DYLIB_INSTALL_DIR=\\\"${DYLIB_INSTALL_DIR}\\\" ${EXTRA_MAKE_FLAGS}; else gnumake distclean; fi\"";
 			buildPhases = (
 			);
 			buildSettings = {
