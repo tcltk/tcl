@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.12.2.3 2001/07/16 23:14:13 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.12.2.4 2001/10/09 20:42:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -48,15 +48,6 @@ Tcl_Mutex tclObjMutex;
 static char emptyString;
 char *tclEmptyStringRep = &emptyString;
 
-/*
- * The number of Tcl objects ever allocated (by Tcl_NewObj) and freed
- * (by TclFreeObj).
- */
-
-#ifdef TCL_COMPILE_STATS
-long tclObjsAlloced = 0;
-long tclObjsFreed = 0;
-#endif /* TCL_COMPILE_STATS */
 
 /*
  * Prototypes for procedures defined later in this file:
