@@ -1,3 +1,8 @@
+2004-03-08  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c:  Fix to 'glob -path' near the root
+	* tests/fileName.test:    of the filesystem. [Bug 910525]
+
 2004-03-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c (TclParseInit):	Modified TclParseInit so
