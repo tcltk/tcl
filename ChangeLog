@@ -1,5 +1,12 @@
 2003-04-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclDictObj.c: Removed commented out notes on
+	declarations to be moved to elsewhere in the Tcl core.
+
+	* generic/tclInt.h:	Final stages of plumbing in.
+	* generic/tclBasic.c: 
+	* generic/tclObj.c (TclInitObjSubsystem): 
+
 	* unix/Makefile.in, win/Makefile.in, win/makefile.[bv]c: Build support.
 	* generic/tcl.decls: Added dict public API to stubs table.
 	* generic/tcl.h (Tcl_DictSearch): Added declaration of structure

@@ -9,49 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.1 2003/04/05 01:03:20 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.2 2003/04/05 01:41:23 dkf Exp $
  */
 
 #include "tclInt.h"
-
-#if 0
-/*
- * Declarations to go to tcl.h
- */
-typedef struct {
-    Tcl_HashSearch search;
-    int epoch;
-    Dict *dictionaryPtr;
-} Tcl_DictSearch;
-/*
- * Prototypes to be moved to tcl.decls...
- */
-int Tcl_DictObjPut(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	Tcl_Obj *keyPtr, Tcl_Obj *valuePtr);
-int Tcl_DictObjGet(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr,
-	Tcl_Obj **valuePtrPtr);
-int Tcl_DictObjRemove(Tcl_Interp *interp, Tcl_Obj *dictPtr, Tcl_Obj *keyPtr);
-int Tcl_DictObjSize(Tcl_Interp *interp, Tcl_Obj *dictPtr, int *sizePtr);
-int Tcl_DictObjFirst(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	Tcl_DictSearch *searchPtr,
-	Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr, int *donePtr);
-void Tcl_DictObjNext(Tcl_DictSearch *searchPtr,
-	Tcl_Obj **keyPtrPtr, Tcl_Obj **valuePtrPtr, int *donePtr);
-void Tcl_DictObjDone(Tcl_DictSearch *searchPtr);
-int Tcl_DictObjPutKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	int keyc, Tcl_Obj *CONST *keyv, Tcl_Obj *valuePtr);
-int Tcl_DictObjRemoveKeyList(Tcl_Interp *interp, Tcl_Obj *dictPtr,
-	int keyc, Tcl_Obj *CONST *keyv);
-Tcl_Obj *Tcl_NewDictObj(void);
-Tcl_Obj *Tcl_DbNewDictObj(CONST char *file, int line);
-/*
- * Prototypes to be moved to tclInt.h
- */
-int Tcl_DictObjCmd(ClientData clientData, Tcl_Interp *interp,
-	int objc, Tcl_Obj *CONST *objv);
-#endif
-
-/*----------------------------------------------------------------------*/
 
 /*
  * Prototypes for procedures defined later in this file:
