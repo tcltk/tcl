@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.12 1999/08/12 23:14:42 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.13 1999/11/10 02:51:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1973,8 +1973,43 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 		src += length;
 	    }
 	} else if (src == end) {
+	    int openBrace;
+
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "missing close-brace", TCL_STATIC);
+	    }
+	    /*
+	     *  Search the source string for a possible open
+	     *  brace within the context of a comment.  Since we
+	     *  aren't performing a full Tcl parse, just look for
+	     *  an open brace preceeded by a '<whitspace>#' on 
+	     *  the same line.
+	     */
+	    openBrace = 0;
+	    while (src > string ) {
+		switch (*src) {
+		    case '{': 
+			openBrace = 1; 
+			break;
+		    case '\n':
+			openBrace = 0; 
+			break;
+		    case '#':
+			if ((openBrace == 1) && (isspace(UCHAR(src[-1])))) {
+			    if (interp != NULL) {
+				Tcl_AppendResult(interp,
+					": possible unbalanced brace in comment",
+					(char *) NULL);
+			    }
+			    openBrace = -1;
+			    break;
+			}
+			break;
+		}
+		if (openBrace == -1) {
+		    break;
+		}
+		src--;
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
 	    parsePtr->term = string;

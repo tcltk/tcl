@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.8 1999/04/21 21:50:26 rjohnson Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.9 1999/11/10 02:51:56 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -593,7 +593,7 @@ TclStatInsertProc (proc)
     if (proc != NULL) {
 	StatProc *newStatProcPtr;
 
-	newStatProcPtr = (StatProc *)Tcl_Alloc(sizeof(StatProc));;
+	newStatProcPtr = (StatProc *)ckalloc(sizeof(StatProc));
 
 	if (newStatProcPtr != NULL) {
 	    newStatProcPtr->proc = proc;
@@ -696,7 +696,7 @@ TclAccessInsertProc(proc)
     if (proc != NULL) {
 	AccessProc *newAccessProcPtr;
 
-	newAccessProcPtr = (AccessProc *)Tcl_Alloc(sizeof(AccessProc));;
+	newAccessProcPtr = (AccessProc *)ckalloc(sizeof(AccessProc));
 
 	if (newAccessProcPtr != NULL) {
 	    newAccessProcPtr->proc = proc;
@@ -801,7 +801,7 @@ TclOpenFileChannelInsertProc(proc)
 	OpenFileChannelProc *newOpenFileChannelProcPtr;
 
 	newOpenFileChannelProcPtr =
-		(OpenFileChannelProc *)Tcl_Alloc(sizeof(OpenFileChannelProc));;
+		(OpenFileChannelProc *)ckalloc(sizeof(OpenFileChannelProc));
 
 	if (newOpenFileChannelProcPtr != NULL) {
 	    newOpenFileChannelProcPtr->proc = proc;

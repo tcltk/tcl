@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.36 1999/10/30 00:27:26 welch Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.37 1999/11/10 02:51:56 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -2025,33 +2025,14 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
  *
  * EXTERN void	TclNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
  * EXTERN void	TclDecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
- *
- * There are three variations on these routines for:
- *	TCL_MEM_DEBUG
- *	TCL_THREADS
- *	the normal case
  *----------------------------------------------------------------
  */
 
-/*
- * TclDecrRefCount is the same for all cases.  The three cases
- * are handled inside TclFreeObj.
- */
-
-#define TclDecrRefCount(objPtr) \
-    if (--(objPtr)->refCount <= 0) { \
-	TclFreeObj(objPtr); \
-    }
-
 #ifdef TCL_COMPILE_STATS
 #  define TclIncrObjsAllocated() \
-    Tcl_MutexLock(&tclCompStatsMutex); \
-    tclObjsAlloced++;
-    Tcl_MutexUnLock(&tclCompStatsMutex)
+    tclObjsAlloced++
 #  define TclIncrObjsFreed() \
-    Tcl_MutexLock(&tclCompStatsMutex); \
-    tclObjsFreed++; \
-    Tcl_MutexUnLock(&tclCompStatsMutex)
+    tclObjsFreed++
 #else
 #  define TclIncrObjsAllocated()
 #  define TclIncrObjsFreed()
@@ -2059,7 +2040,13 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 
 #ifdef TCL_MEM_DEBUG
 #  define TclNewObj(objPtr) \
-    TclDbNewObj(objPtr, __FILE__, __LINE__)
+    (objPtr) = (Tcl_Obj *) \
+	 Tcl_DbCkalloc(sizeof(Tcl_Obj), __FILE__, __LINE__); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes    = tclEmptyStringRep; \
+    (objPtr)->length   = 0; \
+    (objPtr)->typePtr  = NULL; \
+    TclIncrObjsAllocated()
      
 #  define TclDbNewObj(objPtr, file, line) \
     (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
@@ -2069,30 +2056,31 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
     (objPtr)->typePtr  = NULL; \
     TclIncrObjsAllocated()
      
+#  define TclDecrRefCount(objPtr) \
+    if (--(objPtr)->refCount <= 0) { \
+	if ((objPtr)->refCount < -1) \
+	    panic("Reference count for %lx was negative: %s line %d", \
+		  (objPtr), __FILE__, __LINE__); \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
+	} \
+	if (((objPtr)->typePtr != NULL) \
+		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	ckfree((char *) (objPtr)); \
+	TclIncrObjsFreed(); \
+    }
+
 #else /* not TCL_MEM_DEBUG */
 
 #ifdef TCL_THREADS
-
-/*
- * The TclAllocateFreeObjects is a source of lock contention,
- * so we just don't use it and rely on a good threaded memory allocator.
- */
+extern Tcl_Mutex tclObjMutex;
+#endif
 
 #  define TclNewObj(objPtr) \
-    (objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj)); \
-    (objPtr)->refCount = 0; \
-    (objPtr)->bytes    = tclEmptyStringRep; \
-    (objPtr)->length   = 0; \
-    (objPtr)->typePtr  = NULL; \
-    TclIncrObjsAllocated()
-
-#else
-
-/*
- * Unthreaded case uses a special allocator.
- */
-
-#  define TclNewObj(objPtr) \
+    Tcl_MutexLock(&tclObjMutex); \
     if (tclFreeObjList == NULL) { \
 	TclAllocateFreeObjects(); \
     } \
@@ -2103,10 +2091,25 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
     (objPtr)->bytes    = tclEmptyStringRep; \
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL; \
-    TclIncrObjsAllocated()
+    TclIncrObjsAllocated(); \
+    Tcl_MutexUnlock(&tclObjMutex)
 
-#endif /* TCL_THREADS */
-
+#  define TclDecrRefCount(objPtr) \
+    if (--(objPtr)->refCount <= 0) { \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
+	} \
+	if (((objPtr)->typePtr != NULL) \
+		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	Tcl_MutexLock(&tclObjMutex); \
+	(objPtr)->internalRep.otherValuePtr = (VOID *) tclFreeObjList; \
+	tclFreeObjList = (objPtr); \
+	TclIncrObjsFreed(); \
+	Tcl_MutexUnlock(&tclObjMutex); \
+    }
 #endif /* TCL_MEM_DEBUG */
 
 /*
