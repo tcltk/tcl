@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.58 2003/01/24 11:59:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.59 2003/01/26 05:59:37 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -2409,6 +2409,8 @@ Tcl_CutChannel(chan)
     }
 
     statePtr->nextCSPtr = (ChannelState *) NULL;
+
+    TclpCutFileChannel(chan);
 }
 
 /*
@@ -2460,6 +2462,8 @@ Tcl_SpliceChannel(chan)
      */
 
     statePtr->managingThread = Tcl_GetCurrentThread ();
+
+    TclpSpliceFileChannel(chan);
 }
 
 /*
