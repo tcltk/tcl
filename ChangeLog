@@ -1,3 +1,15 @@
+2001-04-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/string.test (string-2.30): Test for this case
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd, STR_COMPARE branch): Fixed
+	problem caused by Utf-rep of \x00 being more than Utf-rep of \x01
+	fooling memcmp by forcing everything through Utf-based
+	comparisons.  Added optimizations for case where objects have a
+	string/unicode-rep or a bytearray-rep (i.e. where we can perform
+	comparisons on fixed-size units.) [Bug #219201]
+	* generic/tclUtf.c (Tcl_UtfNcmp): Corrected seriously erroneous
+	comment.
+
 2001-04-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* doc/Macintosh.3: Removed duplicates from .SH line
