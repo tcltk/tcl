@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.45.2.3 2001/09/27 13:46:00 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.45.2.4 2001/10/12 12:57:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1496,7 +1496,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     */
 		    if (TclLooksLikeInt(string1, length1)) {
 			errno = 0;
-			strtoul(string1, &stop, 0);
+#ifdef TCL_WIDE_INT_IS_LONG
+			strtoul(string1, &stop, 0); /* INTL: Tcl source. */
+#else
+			strtoull(string1, &stop, 0); /* INTL: Tcl source. */
+#endif
 			if (stop == end) {
 			    if (errno == ERANGE) {
 				result = 0;
@@ -1550,7 +1554,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     */
 		    result = 0;
 		    errno = 0;
+#ifdef TCL_WIDE_INT_IS_LONG
 		    strtoul(string1, &stop, 0); /* INTL: Tcl source. */
+#else
+		    strtoull(string1, &stop, 0); /* INTL: Tcl source. */
+#endif
 		    if (errno == ERANGE) {
 			/*
 			 * if (errno == ERANGE), then it was an over/underflow
