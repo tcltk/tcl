@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: seek.n,v 1.4 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: seek.n,v 1.5 2001/09/14 19:20:40 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH seek n 8.1 Tcl "Tcl Built-In Commands"
@@ -20,8 +20,14 @@ seek \- Change the access position for an open channel
 .SH DESCRIPTION
 .PP
 Changes the current access position for \fIchannelId\fR.
-\fIChannelId\fR must be a channel identifier such as returned from a
-previous invocation of \fBopen\fR or \fBsocket\fR.
+.PP
+.VS
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
+the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
+the result of a channel creation command provided by a Tcl extension.
+.VE
+.PP
 The \fIoffset\fR and \fIorigin\fR
 arguments specify the position at which the next read or write will occur
 for \fIchannelId\fR. \fIOffset\fR must be an integer (which may be
@@ -58,7 +64,7 @@ not characters, unlike \fBread\fR.
 .VE 8.1
 
 .SH "SEE ALSO"
-file(n), open(n), close(n), gets(n), tell(n)
+file(n), open(n), close(n), gets(n), tell(n), Tcl_StandardChannels(3)
  
 .SH KEYWORDS
 access position, file, seek

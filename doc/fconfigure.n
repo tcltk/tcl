@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.4 1999/07/07 18:59:52 stanton Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.5 2001/09/14 19:20:40 andreas_kupries Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.1 Tcl "Tcl Built-In Commands"
@@ -19,11 +19,18 @@ fconfigure \- Set and get options on a channel
 \fBfconfigure \fIchannelId\fR \fIname value \fR?\fIname value ...\fR?
 .fi
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBfconfigure\fR command sets and retrieves options for channels.
-\fIChannelId\fR identifies the channel for which to set or query an option.
+.PP
+.VS
+\fIChannelId\fR identifies the channel for which to set or query an
+option and must refer to an open channel such as a Tcl standard
+channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR), the return
+value from an invocation of \fBopen\fR or \fBsocket\fR, or the result
+of a channel creation command provided by a Tcl extension.
+.VE
+.PP
 If no \fIname\fR or \fIvalue\fR arguments are supplied, the command
 returns a list containing alternating option names and values for the channel.
 If \fIname\fR is supplied but no \fIvalue\fR then the command returns
@@ -192,8 +199,20 @@ platforms.
 .RE
 .PP
 
+.VS
+.SH "STANDARD CHANNELS"
+.PP
+The Tcl standard channels (\fBstdin\fR, \fBstdout\fR, and \fBstderr\fR)
+can be configured through this command like every other channel opened
+by the Tcl library. Beyond the standard options described above they
+will also support any special option according to their current type.
+If, for example, a Tcl application is started by the \fBinet\fR
+super-server common on Unix system its Tcl standard channels will be
+sockets and thus support the socket options.
+.VE
+
 .SH "SEE ALSO"
-close(n), flush(n), gets(n), puts(n), read(n), socket(n)
+close(n), flush(n), gets(n), puts(n), read(n), socket(n), Tcl_StandardChannels(3)
 
 .SH KEYWORDS
 blocking, buffering, carriage return, end of line, flushing, linemode,
