@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.11 2001/08/13 12:40:15 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.12 2001/11/19 14:35:55 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -476,6 +476,27 @@ test trace-8.7 {error returns from traces} {
     catch {set x}
     catch {set x}
     trace remove variable x read traceError
+} {}
+test trace-8.8 {error returns from traces} {
+    # Yet more elaborate memory corruption testing that checks nothing
+    # bad happens when the trace deletes itself and installs something
+    # new.  Alas, there is no neat way to guarantee that this test will
+    # fail if there is a problem, but that's life and with the new code
+    # it should *never* fail.
+    #
+    # Adapted from Bug #219393 reported by Don Porter.
+    catch {rename ::foo {}}
+    proc foo {old args} {
+	trace remove variable ::x write [list foo $old]
+	trace add    variable ::x write [list foo $::x]
+	error "foo"
+    }
+    catch {unset ::x ::y}
+    set x junk
+    trace add variable ::x write [list junk $x]
+    for {set y 0} {$y<100} {incr y} {
+	catch {set x junk}
+    }
 } {}
 
 # Check to see that variables are expunged before trace
