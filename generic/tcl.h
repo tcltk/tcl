@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.45 1999/06/10 04:28:49 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.46 1999/06/17 19:32:14 stanton Exp $
  */
 
 #ifndef _TCL
@@ -392,24 +392,41 @@ typedef struct Tcl_Var_ *Tcl_Var;
 					 * matches */
 
 /*
+ * The following flag is experimental and only intended for use by Expect.  It
+ * will probably go away in a later release.
+ */
+
+#define TCL_REG_BOSONLY		002000	/* prepend \A to pattern so it only
+					 * matches at the beginning of the
+					 * string. */
+
+/*
+ * Flags values passed to Tcl_RegExpExecObj.
+ */
+
+#define	TCL_REG_NOTBOL	0001	/* Beginning of string does not match ^.  */
+#define	TCL_REG_NOTEOL	0002	/* End of string does not match $. */
+
+/*
  * Structures filled in by Tcl_RegExpInfo.  Note that all offset values are
  * relative to the start of the match string, not the beginning of the
  * entire string.
  */
 
 typedef struct Tcl_RegExpIndices {
-	long start;	/* character offset of first character in match */
-	long end;	/* character offset of first character after the
+    long start;		/* character offset of first character in match */
+    long end;		/* character offset of first character after the
 			 * match. */
 } Tcl_RegExpIndices;
 
 typedef struct Tcl_RegExpInfo {
-	int nsubs;			/* number of subexpressions in the
-					 * compiled expression*/
-	Tcl_RegExpIndices *matches;	/* array of nsubs match offset
-					 * pairs */
-	long extendStart;		/* The offset at which a subsequent
-					 * match might begin. */
+    int nsubs;			/* number of subexpressions in the
+				 * compiled expression */
+    Tcl_RegExpIndices *matches;	/* array of nsubs match offset
+				 * pairs */
+    long extendStart;		/* The offset at which a subsequent
+				 * match might begin. */
+    long reserved;		/* Reserved for later use. */
 } Tcl_RegExpInfo;
 
 /*

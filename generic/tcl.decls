@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.16 1999/06/15 01:16:21 hershey Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.17 1999/06/17 19:32:14 stanton Exp $
 
 library tcl
 
@@ -1278,7 +1278,7 @@ declare 375 generic {
     int Tcl_UniCharIsPunct(int ch)
 }
 declare 376 generic {
-    int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_RegExp regexp, \
+    int Tcl_RegExpExecObj(Tcl_Interp *interp, Tcl_RegExp regexp, \
 	    Tcl_Obj *objPtr, int offset, int nmatches, int flags)
 }
 declare 377 generic {
@@ -1306,6 +1306,10 @@ declare 383 generic {
 declare 384 generic {
     void Tcl_AppendUnicodeToObj (register Tcl_Obj *objPtr, \
 	    Tcl_UniChar *unicode, int length)
+}
+declare 385 generic {
+    int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *stringObj, \
+	    Tcl_Obj *patternObj)
 }
 
 ##############################################################################

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.13 1999/06/02 01:53:31 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.14 1999/06/17 19:32:16 stanton Exp $
  */
 
 #define TCL_TEST
@@ -2528,12 +2528,12 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int i, ii, result, indices, stringLength, wLen, match, about;
+    int i, ii, indices, stringLength, match, about;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     char *string;
-    Tcl_DString stringBuffer, valueBuffer;
-    Tcl_UniChar *wStart;
+    Tcl_Obj *objPtr;
+    Tcl_RegExpInfo info;
     static char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",
@@ -2625,6 +2625,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     if (regExpr == NULL) {
 	return TCL_ERROR;
     }
+    objPtr = objv[1];
 
     if (about) {
 	if (TclRegAbout(interp, regExpr) < 0) {
@@ -2633,23 +2634,16 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	return TCL_OK;
     }
 
-    result = TCL_OK;
-    string = Tcl_GetStringFromObj(objv[1], &stringLength);
+    match = Tcl_RegExpExecObj(interp, regExpr, objPtr, 0 /* offset */,
+	    objc-2 /* nmatches */, eflags);
 
-    Tcl_DStringInit(&valueBuffer);
-    
-    Tcl_DStringInit(&stringBuffer);
-    wStart = Tcl_UtfToUniCharDString(string, stringLength, &stringBuffer);
-    wLen = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
-
-    match = TclRegExpExecUniChar(interp, regExpr, wStart, wLen, objc-2, eflags);
     if (match < 0) {
-	result = TCL_ERROR;
-	goto done;
+	return TCL_ERROR;
     }
     if (match == 0) {
 	/*
-	 * Set the interpreter's object result to an integer object w/ value 0. 
+	 * Set the interpreter's object result to an integer object w/
+	 * value 0. 
 	 */
 	
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
@@ -2665,10 +2659,10 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", (char *) NULL);
-		result = TCL_ERROR;
+		return TCL_ERROR;
 	    }
 	}
-	goto done;
+	return TCL_OK;
     }
 
     /*
@@ -2679,38 +2673,56 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     objc -= 2;
     objv += 2;
 
+    Tcl_RegExpGetInfo(regExpr, &info);
     for (i = 0; i < objc; i++) {
-	char *varName, *value;
 	int start, end;
+	Tcl_Obj *newPtr, *varPtr, *valuePtr;
 	
-	varName = Tcl_GetString(objv[i]);
-
+	varPtr = objv[i];
 	ii = ((cflags&REG_EXPECT) && i == objc-1) ? -1 : i;
-	TclRegExpRangeUniChar(regExpr, ii, &start, &end);
-	if (start < 0) {
-	    if (indices) {
-		value = Tcl_SetVar(interp, varName, "-1 -1", 0);
-	    } else {
-		value = Tcl_SetVar(interp, varName, "", 0);
-	    }
-	} else {
-	    if (indices) {
-		char info[TCL_INTEGER_SPACE * 2];
+	if (indices) {
+	    Tcl_Obj *objs[2];
 
-		sprintf(info, "%d %d", start, end - 1);
-		value = Tcl_SetVar(interp, varName, info, 0);
+	    if (ii == -1) {
+		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
+	    } else if (ii > info.nsubs) {
+		start = -1;
+		end = -1;
 	    } else {
-		value = Tcl_UniCharToUtfDString(wStart + start, end - start,
-			&valueBuffer);
-		value = Tcl_SetVar(interp, varName, value, 0);
-		Tcl_DStringSetLength(&valueBuffer, 0);
+		start = info.matches[ii].start;
+		end = info.matches[ii].end;
+	    }
+
+	    /*
+	     * Adjust index so it refers to the last character in the
+	     * match instead of the first character after the match.
+	     */
+	    
+	    if (end >= 0) {
+		end--;
+	    }
+
+	    objs[0] = Tcl_NewLongObj(start);
+	    objs[1] = Tcl_NewLongObj(end);
+
+	    newPtr = Tcl_NewListObj(2, objs);
+	} else {
+	    if (ii == -1) {
+		TclRegExpRangeUniChar(regExpr, ii, &start, &end);
+		newPtr = Tcl_GetRange(objPtr, start, end);
+	    } else if (ii > info.nsubs) {
+		newPtr = Tcl_NewObj();
+	    } else {
+		newPtr = Tcl_GetRange(objPtr, info.matches[ii].start,
+			info.matches[ii].end - 1);
 	    }
 	}
-	if (value == NULL) {
+	valuePtr = Tcl_ObjSetVar2(interp, varPtr, NULL, newPtr, 0);
+	if (valuePtr == NULL) {
+	    Tcl_DecrRefCount(newPtr);
 	    Tcl_AppendResult(interp, "couldn't set variable \"",
-		    varName, "\"", (char *) NULL);
-	    result = TCL_ERROR;
-	    goto done;
+		    Tcl_GetString(varPtr), "\"", (char *) NULL);
+	    return TCL_ERROR;
 	}
     }
 
@@ -2719,11 +2731,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
      */
 	
     Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
-
-    done:
-    Tcl_DStringFree(&stringBuffer);
-    Tcl_DStringFree(&valueBuffer);
-    return result;
+    return TCL_OK;
 }
 
 /*
@@ -2778,6 +2786,10 @@ TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
 	    }
 	    case 'o': {			/* o for opaque */
 		cflags |= REG_NOSUB;
+		break;
+	    }
+	    case 's': {			/* s for start */
+		cflags |= REG_BOSONLY;
 		break;
 	    }
 	    case '+': {
