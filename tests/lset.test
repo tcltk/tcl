@@ -1,0 +1,236 @@
+# This file is a -*- tcl -*- test script
+
+# Commands covered: lset
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id$
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+proc failTrace {name1 name2 op} {
+    error "trace failed"
+}
+
+test lset-1.1 {Tcl_LsetObjCmd, arg count} {
+    set z {lset}
+    list [catch {$z} msg] $msg
+} "1 {wrong \# args: should be \"lset listVar index ?index...? value\"}"
+
+test lset-1.2 {Tcl_LsetObjCmd, no such var} {
+    set z {lset}
+    list [catch {$z noSuchVar 0 {}} msg] $msg
+} "1 {can't read \"noSuchVar\": no such variable}"
+
+test lset-1.3 {Tcl_LsetObjCmd, shared data} {
+    set z {lset}
+    set a {x y}
+    set b $a
+    list [catch {$z a 0 z} msg] $msg $a $b
+} {0 {z y} {z y} {x y}}
+
+test lset-1.4 {Tcl_LsetObjCmd, not a list} {
+    set z {lset}
+    set a "x \{"
+    list [catch {$z a 0 y} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test lset-1.5 {Tcl_LsetObjCmd, bad index} {
+    set z {lset}
+    set a {x y z}
+    list [catch {$z a 2a2 w} msg] $msg
+} {1 {bad index "2a2": must be integer or end?-integer?}}
+
+test lset-1.6 {Tcl_LsetObjCmd, index out of range} {
+    set z {lset}
+    set a {x y z}
+    list [catch {$z a -1 w} msg] $msg
+} {1 {list index out of range}}
+
+test lset-1.7 {Tcl_LsetObjCmd, index out of range} {
+    set z {lset}
+    set a {x y z}
+    list [catch {$z a 3 w} msg] $msg
+} {1 {list index out of range}}
+
+test lset-1.8 {Tcl_LsetObjCmd, index out of range} {
+    set z {lset}
+    set a {x y z}
+    list [catch {$z a end--1 w} msg] $msg
+} {1 {list index out of range}}
+
+test lset-1.9 {Tcl_LsetObjCmd, index out of range} {
+    set z {lset}
+    set a {x y z}
+    list [catch {$z a end-3 w} msg] $msg
+} {1 {list index out of range}}
+
+test lset-1.10 {Tcl_LsetObjCmd, can't set variable} {
+    set nowrite {a b c}
+    trace add variable nowrite write failTrace
+    set z {lset}
+    list [catch {$z nowrite 0 d} msg] $msg $nowrite
+} {1 {can't set "nowrite": trace failed} {d b c}}
+
+test lset-2.1 {Tcl_LsetObjCmd, 1-d list basics} {
+    set z {lset}
+    set a {x y z}
+    list [$z a 0 a] $a
+} {{a y z} {a y z}}
+
+test lset-2.2 {Tcl_LsetObjCmd, 1-d list basics} {
+    set z {lset}
+    set a {x y z}
+    list [$z a 2 a] $a
+} {{x y a} {x y a}}
+
+test lset-2.3 {Tcl_LsetObjCmd, 1-d list basics} {
+    set z {lset}
+    set a {x y z}
+    list [$z a end a] $a
+} {{x y a} {x y a}}
+
+test lset-2.4 {Tcl_LsetObjCmd, 1-d list basics} {
+    set z {lset}
+    set a {x y z}
+    list [$z a end-0 a] $a
+} {{x y a} {x y a}}
+
+test lset-2.5 {Tcl_LsetObjCmd, 1-d list basics} {
+    set z {lset}
+    set a {x y z}
+    list [$z a end-2 a] $a
+} {{a y z} {a y z}}
+
+test lset-2.6 {Tcl_LsetObjCmd, data sharing} {
+    set z {lset}
+    set a 0
+    list [$z a $a {gag me}] $a
+} {{{gag me}} {{gag me}}}
+
+test lset-2.7 {Tcl_LsetObjCmd, data sharing} {
+    set z {lset}
+    set a {x y}
+    list [$z a 0 $a] $a
+} {{{x y} y} {{x y} y}}
+
+test lset-2.8 {Tcl_LsetObjCmd, data sharing} {
+    set z {lset}
+    set n 0
+    set a {x y}
+    list [$z a $n $n] $a $n
+} {{0 y} {0 y} 0}
+
+test lset-2.9 {Tcl_LsetObjCmd, data sharing} {
+    set z {lset}
+    set n 0
+    set a [list $n $n]
+    list [$z a $n 1] $a $n
+} {{1 0} {1 0} 0}
+
+test lset-2.10 {Tcl_LsetObjCmd, data sharing} {
+    set z {lset}
+    set a 0
+    list [$z a $a $a] $a
+} {0 0}
+
+test lset-3.1 {Tcl_LsetObjCmd, malformed sublist} {
+    set z {lset}
+    set a [list "a \{" b]
+    list [catch {$z a 0 1 c} msg] $msg
+} {1 {unmatched open brace in list}}
+
+test lset-3.2 {Tcl_LsetObjCmd, bad second index} {
+    set z {lset}
+    set a {{b c} {d e}}
+    list [catch {$z a 0 2a2 f} msg] $msg
+} {1 {bad index "2a2": must be integer or end?-integer?}}
+
+test lset-3.3 {Tcl_LsetObjCmd, second index out of range} {
+    set z {lset}
+    set a {{b c} {d e} {f g}}
+    list [catch {$z a 2 -1 h} msg] $msg
+} {1 {list index out of range}}
+
+test lset-3.4 {Tcl_LsetObjCmd, second index out of range} {
+    set z {lset}
+    set a {{b c} {d e} {f g}}
+    list [catch {$z a 2 2 h} msg] $msg
+} {1 {list index out of range}}
+
+test lset-3.5 {Tcl_LsetObjCmd, second index out of range} {
+    set z {lset}
+    set a {{b c} {d e} {f g}}
+    list [catch {$z a 2 end--1 h} msg] $msg
+} {1 {list index out of range}}
+
+test lset-3.6 {Tcl_LsetObjCmd, second index out of range} {
+    set z {lset}
+    set a {{b c} {d e} {f g}}
+    list [catch {$z a 2 end-2 h} msg] $msg
+} {1 {list index out of range}}
+
+test lset-3.7 {Tcl_LsetObjCmd, shared data} {
+    set z {lset}
+    set row {p q}
+    set a [list $row $row]
+    list [$z a 0 0 x] $a
+} {{{x q} {p q}} {{x q} {p q}}}
+
+test lset-4.1 {Tcl_LsetObjCmd, 2-d basics} {
+    set z {lset}
+    set a {{b c} {d e}}
+    list [$z a 0 0 f] $a
+} {{{f c} {d e}} {{f c} {d e}}}
+
+test lset-4.1 {Tcl_LsetObjCmd, 2-d basics} {
+    set z {lset}
+    set a {{b c} {d e}}
+    list [$z a 0 1 f] $a
+} {{{b f} {d e}} {{b f} {d e}}}
+
+test lset-4.3 {Tcl_LsetObjCmd, 2-d basics} {
+    set z {lset}
+    set a {{b c} {d e}}
+    list [$z a 1 0 f] $a
+} {{{b c} {f e}} {{b c} {f e}}}
+
+test lset-4.4 {Tcl_LsetObjCmd, 2-d basics} {
+    set z {lset}
+    set a {{b c} {d e}}
+    list [$z a 1 1 f] $a
+} {{{b c} {d f}} {{b c} {d f}}}
+
+test lset-5.0 {Tcl_LsetObjCmd, typical sharing pattern} {
+    set z {lset}
+    set zero 0
+    set row [list $zero $zero $zero $zero]
+    set ident [list $row $row $row $row]
+    for { set i 0 } { $i < 4 } { incr i } {
+	$z ident $i $i 1
+    }
+    set ident
+} {{1 0 0 0} {0 1 0 0} {0 0 1 0} {0 0 0 1}}
+
+test lset-6.0 {Tcl_LsetObjCmd, shimmering hell} {
+    set z {lset}
+    set a 0
+    list [$z a $a $a $a $a {gag me}] $a
+} {{{{{{gag me}}}}} {{{{{gag me}}}}}}
+
+catch {unset nowrite}
+catch {rename failTrace {}}
+
+# cleanup
+::tcltest::cleanupTests
+return
