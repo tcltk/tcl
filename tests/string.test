@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.23 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: string.test,v 1.24 2000/05/08 22:04:16 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -797,6 +797,39 @@ test string-11.37 {string match nocase} {
 } 0
 test string-11.38 {string match case, reverse range} {
     string match {[A-fh-Z]} g
+} 1
+test string-11.39 {string match, *\ case} {
+    string match {*\abc} abc
+} 1
+test string-11.40 {string match, *special case} {
+    string match {*[ab]} abc
+} 0
+test string-11.41 {string match, *special case} {
+    string match {*[ab]*} abc
+} 1
+test string-11.42 {string match, *special case} {
+    string match "*\\" "\\"
+} 0
+test string-11.43 {string match, *special case} {
+    string match "*\\\\" "\\"
+} 1
+test string-11.44 {string match, *special case} {
+    string match "*???" "12345"
+} 1
+test string-11.45 {string match, *special case} {
+    string match "*???" "12"
+} 0
+test string-11.46 {string match, *special case} {
+    string match "*\\*" "abc*"
+} 1
+test string-11.47 {string match, *special case} {
+    string match "*\\*" "*"
+} 1
+test string-11.47 {string match, *special case} {
+    string match "*\\*" "*abc"
+} 0
+test string-11.48 {string match, *special case} {
+    string match "?\\*" "a*"
 } 1
 
 test string-12.1 {string range} {
