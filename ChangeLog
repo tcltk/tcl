@@ -1,3 +1,15 @@
+2002-01-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/tcl.m4 (SC_LOAD_TCLCONFIG):
+	* win/tcl.m4 (SC_LOAD_TCLCONFIG): Set TCL_LIB_SPEC,
+	TCL_STUB_LIB_SPEC, and TCL_STUB_LIB_PATH to the
+	values of TCL_BUILD_LIB_SPEC, TCL_BUILD_STUB_LIB_SPEC,
+	and TCL_BUILD_STUB_LIB_PATH when tclConfig.sh is loaded
+	from the build directory. A Tcl extension should
+	make use of the non-build versions of these variables
+	since they will work in both cases. This modification
+	was described in TIP 34.
+
 2002-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinReg.c (regConnectRegistryProc,RecursiveDeleteKey)
