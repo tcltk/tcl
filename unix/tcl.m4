@@ -955,7 +955,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	HP-UX-*.11.*)
 	    # Use updated header definitions where possible
-	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED)
+	    AC_DEFINE(_XOPEN_SOURCE)          # Use the XOPEN network library
+	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED) # Use the XOPEN network library
+	    LIBS="$LIBS -lxnet"               # Use the XOPEN network library
 
 	    SHLIB_SUFFIX=".sl"
 	    AC_CHECK_LIB(dld, shl_load, tcl_ok=yes, tcl_ok=no)
