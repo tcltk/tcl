@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27.6.2 2001/12/03 18:23:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.3 2002/11/05 01:49:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -415,33 +415,7 @@ Tcl_CreateInterp()
 
 #ifdef TCL_COMPILE_STATS
     statsPtr = &(iPtr->stats);
-    statsPtr->numExecutions = 0;
-    statsPtr->numCompilations = 0;
-    statsPtr->numByteCodesFreed = 0;
-    (VOID *) memset(statsPtr->instructionCount, 0,
-	    sizeof(statsPtr->instructionCount));
-
-    statsPtr->totalSrcBytes = 0.0;
-    statsPtr->totalByteCodeBytes = 0.0;
-    statsPtr->currentSrcBytes = 0.0;
-    statsPtr->currentByteCodeBytes = 0.0;
-    (VOID *) memset(statsPtr->srcCount, 0, sizeof(statsPtr->srcCount));
-    (VOID *) memset(statsPtr->byteCodeCount, 0,
-	    sizeof(statsPtr->byteCodeCount));
-    (VOID *) memset(statsPtr->lifetimeCount, 0,
-	    sizeof(statsPtr->lifetimeCount));
-    
-    statsPtr->currentInstBytes   = 0.0;
-    statsPtr->currentLitBytes    = 0.0;
-    statsPtr->currentExceptBytes = 0.0;
-    statsPtr->currentAuxBytes    = 0.0;
-    statsPtr->currentCmdMapBytes = 0.0;
-    
-    statsPtr->numLiteralsCreated    = 0;
-    statsPtr->totalLitStringBytes   = 0.0;
-    statsPtr->currentLitStringBytes = 0.0;
-    (VOID *) memset(statsPtr->literalCount, 0,
-            sizeof(statsPtr->literalCount));
+    (VOID *) memset(statsPtr, 0, sizeof(ByteCodeStats));
 #endif /* TCL_COMPILE_STATS */    
 
     /*
@@ -450,7 +424,6 @@ Tcl_CreateInterp()
 
     iPtr->stubTable = &tclStubs;
 
-    
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for
