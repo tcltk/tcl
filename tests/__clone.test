@@ -12,13 +12,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clone.test,v 1.1.2.1 2002/11/26 19:49:00 andreas_kupries Exp $
+# RCS: @(#) $Id: __clone.test,v 1.1.2.1 2002/11/26 20:14:50 hobbs Exp $
+
+# allow the process to exit without calling the system exit,
+# to improve finalization cleanup
+proc exit args {}
 
 # Prevent execution of these tests when running in the cloned interpreter !!
 if {[info exists __clone__]} return
 
-memory validate on
-
+#memory validate on
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
