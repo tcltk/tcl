@@ -26,6 +26,10 @@
 	  "gethostbyaddr" for address "0.0.0.0" to prevent delays on
 	  Win/NT.
 
+2001-12-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/Preserve.3: doc'd TCL_DYNAMIC use. [Patch #483989] (porter)
+
 2001-12-12  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* generic/tclIO.c (Tcl_GetsObj): Applied patch for bug #491341 as
