@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.4 1998/10/21 20:40:03 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.5 1998/11/10 02:40:58 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1867,6 +1867,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define CHAR_VALUE 1
 #   define PTR_VALUE 2
 #   define DOUBLE_VALUE 3
+#   define STRING_VALUE 4
 #   define MAX_FLOAT_SIZE 320
     
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
@@ -1887,6 +1888,12 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * seen. */
     int useShort;		/* Value to be printed is short (half word). */
     char *end;			/* Used to locate end of numerical fields. */
+    int stringLen = 0;		/* Length of string in characters rather
+				 * than bytes.  Used for %s substitution. */
+    int gotMinus;		/* Non-zero indicates that a minus flag has
+				 * been seen in the current field. */
+    int gotPrecision;		/* Non-zero indicates that a precision has
+				 * been set for the current field. */
 
     /*
      * This procedure is a bit nasty.  The goal is to use sprintf to
@@ -1915,6 +1922,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	register char *newPtr = newFormat;
 
 	width = precision = noPercent = useShort = 0;
+	gotMinus = gotPrecision = 0;
 	whichValue = PTR_VALUE;
 
 	/*
@@ -1980,6 +1988,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	xpgCheckDone:
 	while ((*format == '-') || (*format == '#') || (*format == '0')
 		|| (*format == ' ') || (*format == '+')) {
+	    if (*format == '-') {
+		gotMinus = 1;
+	    }
 	    *newPtr = *format;
 	    newPtr++;
 	    format++;
@@ -1998,6 +2009,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    if (width < 0) {
 		width = -width;
 		*newPtr = '-';
+		gotMinus = 1;
 		newPtr++;
 	    }
 	    objIndex++;
@@ -2024,6 +2036,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    *newPtr = '.';
 	    newPtr++;
 	    format++;
+	    gotPrecision = 1;
 	}
 	if (isdigit(*((unsigned char *) format))) { /* INTL: Tcl source. */
 	    precision = strtoul(format, &end, 10);  /* INTL: "C" locale. */
@@ -2039,7 +2052,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    objIndex++;
 	    format++;
 	}
-	if (precision != 0) {
+	if (gotPrecision) {
 	    TclFormatInt(newPtr, precision);	/* INTL: printf format. */
 	    while (*newPtr != 0) {
 		newPtr++;
@@ -2075,7 +2088,23 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		size = 40 + precision;
 		break;
 	    case 's':
+		/*
+		 * Compute the length of the string in characters and add
+		 * any additional space required by the field width.  All of
+		 * the extra characters will be spaces, so one byte per
+		 * character is adequate.
+		 */
+
+		whichValue = STRING_VALUE;
 		ptrValue = Tcl_GetStringFromObj(objv[objIndex], &size);
+		stringLen = Tcl_NumUtfChars(ptrValue, size);
+		if (gotPrecision && (precision < stringLen)) {
+		    stringLen = precision;
+		}
+		size = Tcl_UtfAtIndex(ptrValue, stringLen) - ptrValue;
+		if (width > stringLen) {
+		    size += (width - stringLen);
+		}
 		break;
 	    case 'c':
 		if (Tcl_GetIntFromObj(interp,	/* INTL: Tcl source. */
@@ -2149,9 +2178,8 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		}
 		case CHAR_VALUE: {
 		    char *ptr;
-
 		    ptr = dst;
-		    if (newFormat[1] != '-') {
+		    if (!gotMinus) {
 			for ( ; --width > 0; ptr++) {
 			    *ptr = ' ';
 			}
@@ -2159,6 +2187,36 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		    ptr += Tcl_UniCharToUtf(intValue, ptr);
 		    for ( ; --width > 0; ptr++) {
 			*ptr = ' ';
+		    }
+		    *ptr = '\0';
+		    break;
+		}
+		case STRING_VALUE: {
+		    char *ptr;
+		    int pad;
+
+		    ptr = dst;
+		    if (width > stringLen) {
+			pad = width - stringLen;
+		    } else {
+			pad = 0;
+		    }
+
+		    if (!gotMinus) {
+			while (pad > 0) {
+			    *ptr++ = ' ';
+			    pad--;
+			}
+		    }
+
+		    size = Tcl_UtfAtIndex(ptrValue, stringLen) - ptrValue; 
+		    if (size) {
+			memcpy(ptr, ptrValue, size);
+			ptr += size;
+		    }
+		    while (pad > 0) {
+			*ptr++ = ' ';
+			pad--;
 		    }
 		    *ptr = '\0';
 		    break;
