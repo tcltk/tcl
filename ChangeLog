@@ -1,5 +1,13 @@
 2001-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* doc/FileSystem.3:
+	* doc/StdChannels.3:
+	* doc/file.n:
+	* doc/tcltest.n:
+	* tools/man2help.tcl: 
+	* tools/man2help2.tcl: fixed winhelp generation problems
+	[Patch #480268]
+
 	* unix/configure:
 	* unix/tcl.m4: added -lc to AIX libs, fixed path to ldAix
 
