@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.4 1998/11/11 04:08:15 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.5 1998/12/23 02:56:22 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ typedef struct SortInfo {
     int isIncreasing;		/* Nonzero means sort in increasing order. */
     int sortMode;		/* The sort mode.  One of SORTMODE_*
 				 * values defined below */
-    Tcl_DString compareCmd;	/* The Tcl comparison command when sortMode
+    Tcl_Obj *compareCmdPtr;     /* The Tcl comparison command when sortMode
 				 * is SORTMODE_COMMAND.  Pre-initialized to
 				 * hold base of command.*/
     int index;			/* If the -index option was specified, this
@@ -2514,8 +2514,21 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	}
     }
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
-	Tcl_DStringInit(&sortInfo.compareCmd);
-	Tcl_DStringAppend(&sortInfo.compareCmd, Tcl_GetString(cmdPtr), -1);
+	/*
+	 * The existing command is a list. We want to flatten it, append
+	 * two dummy arguments on the end, and replace these arguments
+	 * later.
+	 */
+
+        Tcl_Obj *newCommandPtr = Tcl_DuplicateObj(cmdPtr);
+
+	if (Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj()) 
+	        != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj());
+	sortInfo.compareCmdPtr = newCommandPtr;
+	Tcl_IncrRefCount(newCommandPtr);
     }
 
     sortInfo.resultCode = Tcl_ListObjGetElements(interp, objv[objc-1],
@@ -2549,7 +2562,8 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
     done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
-	Tcl_DStringFree(&sortInfo.compareCmd);
+	Tcl_DecrRefCount(sortInfo.compareCmdPtr);
+	sortInfo.compareCmdPtr = NULL;
     }
     return sortInfo.resultCode;
 }
@@ -2805,22 +2819,26 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	    order = -1;
 	}
     } else {
-	int oldLength;
+	Tcl_Obj **objv, *paramObjv[2] = {objPtr1, objPtr2};
+	int objc;
 
-	/*
-	 * Generate and evaluate a command to determine which string comes
-	 * first.
+  	/*
+ 	 * We made space in the command list for the two things to
+	 * compare. Replace them and evaluate the result.
 	 */
 
-	oldLength = Tcl_DStringLength(&infoPtr->compareCmd);
-	Tcl_DStringAppendElement(&infoPtr->compareCmd,
-		Tcl_GetString(objPtr1));
-	Tcl_DStringAppendElement(&infoPtr->compareCmd,
-		Tcl_GetString(objPtr2));
-	infoPtr->resultCode = Tcl_Eval(infoPtr->interp, 
-		Tcl_DStringValue(&infoPtr->compareCmd));
-	Tcl_DStringTrunc(&infoPtr->compareCmd, oldLength);
-	if (infoPtr->resultCode != TCL_OK) {
+	Tcl_ListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
+	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
+		2, 2, paramObjv);
+   	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
+		&objc, &objv);
+
+	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
+  
+  	if (infoPtr->resultCode != TCL_OK) {
+	    Tcl_Obj *errorPtr = Tcl_NewListObj(3, objv);
+	    int length;
+	    char *compareCmd = Tcl_GetStringFromObj(errorPtr, &length);
 	    Tcl_AddErrorInfo(infoPtr->interp,
 		    "\n    (-compare command)");
 	    return order;
