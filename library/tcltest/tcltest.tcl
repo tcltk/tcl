@@ -1,6 +1,6 @@
 # tcltest.tcl --
 #
-#	This file contains support code for the Tcl test suite.  It defines the
+#	This file contains support code for the Tcl test suite.  It 
 #       defines the ::tcltest namespace and finds and defines the output
 #       directory, constraints available, output and error channels, etc. used
 #       by Tcl tests.  See the README file for more details.
@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.1 1999/06/26 03:53:45 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.2 1999/06/29 20:14:15 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -27,7 +27,7 @@ namespace eval tcltest {
     set procList [list test cleanupTests dotests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
 	    viewFile grep bytestring set_iso8859_1_locale restore_locale \
-	    safeFetch threadReap]
+	    safeFetch threadReap getMatchingTestFiles]
     foreach proc $procList {
 	namespace export $proc
     }
@@ -36,13 +36,20 @@ namespace eval tcltest {
 
     variable verbose "b"
 
-    # match defaults to the empty list
+    # Match and skip patterns default to the empty list, except for
+    # matchFiles, which defaults to all .test files in the testsDirectory
 
     variable match {}
-
-    # skip defaults to the empty list
-
     variable skip {}
+
+    variable matchFiles {*.test}
+    variable skipFiles {}
+
+    variable matchDirectories {}
+    variable skipDirectories {}
+
+    # By default, don't save core files
+    variable preserveCore false
 
     # output goes to stdout by default
 
@@ -104,10 +111,13 @@ namespace eval tcltest {
     array set ::tcltest::skippedBecause {}
 
     # initialize the ::tcltest::testConstraints array to keep track of valid
-    # predefined constraints (see the explanation for the ::tcltest::initConstraints
-    # proc for more details).
+    # predefined constraints (see the explanation for the
+    # ::tcltest::initConstraints proc for more details).
 
     array set ::tcltest::testConstraints {}
+
+    # Don't run only the constrained tests by default
+    variable limitConstraints false
 
     # tests that use thread need to know which is the main thread
 
@@ -120,9 +130,6 @@ namespace eval tcltest {
     
     array set ::tcltest::originalEnv [array get ::env]
 
-    # TclPro has other variables that need to be set, including the locations
-    # of various directories.
-    
     # Set ::tcltest::workingDirectory to [pwd]. The default output directory
     # for Tcl tests is the working directory.
 
@@ -135,6 +142,8 @@ namespace eval tcltest {
 
     variable testsDirectory [pwd]
 
+    # the variables and procs that existed when ::tcltest::saveState was
+    # called are stored in a variable of the same name
     variable saveState {}
 
     # Internationalization support
@@ -174,17 +183,19 @@ namespace eval tcltest {
 
     # Set the location of the execuatble
     variable tcltest [info nameofexecutable]
-
-    # If there is no "memory" command (because memory debugging isn't
-    # enabled), generate a dummy command that does nothing.
-    
-    if {[info commands memory] == {}} {
-	namespace eval :: {
-	    proc memory args {}
-	}
-    }
 }   
 
+# ::tcltest::AddToSkippedBecause --
+#
+#	Increments the variable used to track how many tests were skipped
+#       because of a particular constraint.
+#
+# Arguments:
+#	constraint     The name of the constraint to be modified
+#
+# Results:
+#	Modifies ::tcltest::skippedBecause; sets the variable to 1 if didn't
+#       previously exist - otherwise, it just increments it.
 
 proc ::tcltest::AddToSkippedBecause { constraint } {
     # add the constraint to the list of constraints the kept tests
@@ -250,10 +261,10 @@ proc ::tcltest::initConstraints {} {
     catch {unset ::tcltest::testConstraints}
 
     # The following trace procedure makes it so that we can safely refer to
-    # non-existent members of the ::tcltest::testConstraints array without causing an
-    # error.  Instead, reading a non-existent member will return 0.  This is
-    # necessary because tests are allowed to use constraint "X" without ensuring
-    # that ::tcltest::testConstraints("X") is defined.
+    # non-existent members of the ::tcltest::testConstraints array without
+    # causing an error.  Instead, reading a non-existent member will return 0.
+    # This is necessary because tests are allowed to use constraint "X" without
+    # ensuring that ::tcltest::testConstraints("X") is defined.
 
     trace variable ::tcltest::testConstraints r ::tcltest::safeFetch
 
@@ -283,9 +294,14 @@ proc ::tcltest::initConstraints {} {
     set ::tcltest::testConstraints(macOrUnix) \
 	    [expr {$::tcltest::testConstraints(mac) || $::tcltest::testConstraints(unix)}]
 
-    set ::tcltest::testConstraints(nt) [string equal $tcl_platform(os) "Windows NT"]
-    set ::tcltest::testConstraints(95) [string equal $tcl_platform(os) "Windows 95"]
-    set ::tcltest::testConstraints(win32s) [string equal $tcl_platform(os) "Win32s"]
+    set ::tcltest::testConstraints(nt) [string equal $tcl_platform(os) \
+	    "Windows NT"]
+    set ::tcltest::testConstraints(95) [string equal $tcl_platform(os) \
+	    "Windows 95"]
+    set ::tcltest::testConstraints(98) [string equal $tcl_platform(os) \
+	    "Windows 98"]
+    set ::tcltest::testConstraints(win32s) [string equal $tcl_platform(os) \
+	    "Win32s"]
 
     # The following Constraints switches are used to mark tests that should work,
     # but have been temporarily disabled on certain platforms because they don't
@@ -467,7 +483,8 @@ proc ::tcltest::initConstraints {} {
     catch {file delete -force tmp}
 
     # Deliberately call socket with the wrong number of arguments.  The error
-    # message you get will indicate whether sockets are available on this system.
+    # message you get will indicate whether sockets are available on this
+    # system. 
 
     catch {socket} msg
     set ::tcltest::testConstraints(socket) \
@@ -485,7 +502,86 @@ proc ::tcltest::initConstraints {} {
     }
 }   
 
+# ::tcltest::PrintUsageInfoHook
+#
+#       Hook used for customization of display of usage information.
+#
+
+proc ::tcltest::PrintUsageInfoHook {} {}
+
+# ::tcltest::PrintUsageInfo
+#
+#	Prints out the usage information for package tcltest.  This can be
+#       customized with the redefinition of ::tcltest::PrintUsageInfoHook.
+#
+# Arguments:
+#	none
+#
+
+proc ::tcltest::PrintUsageInfo {} {
+    puts [format "Usage: [file tail [info nameofexecutable]] \
+	    script ?-help? ?flag value? ... \n\
+	    Available flags (and valid input values) are: \n\
+	        -help          \t Display this usage information. \n\
+		-verbose level \t Takes any combination of the values \n\
+		\t                 'p', 's' and 'b'.  Test suite will \n\
+		\t                 display all passed tests if 'p' is \n\
+		\t                 specified, all skipped tests if 's' \n\
+		\t                 is specified, and the bodies of \n\
+		\t                 failed tests if 'b' is specified. \n\
+		\t                 The default value is 'b'. \n\
+		-constraints list\t Do not skip the listed constraints\n\
+		-limitconstraints bool\t Only run tests with the constraints\n\
+		\t                 listed in -constraints.\n\
+		-match pattern \t Run all tests within the specified \n\
+		\t                 files that match the glob pattern \n\
+		\t                 given. \n\
+		-skip pattern  \t Skip all tests within the set of \n\
+		\t                 specified tests (via -match) and \n\
+		\t                 files that match the glob pattern \n\
+		\t                 given. \n\
+		-file pattern  \t Run tests in all test files that \n\
+		\t                 match the glob pattern given. \n\
+		-notfile pattern\t Skip all test files that match the \n\
+		\t                 glob pattern given. \n\
+		-relateddir pattern\t Run tests in directories that match \n\
+		\t                 the glob pattern given. \n\
+                -asidefromdir pattern\t Skip tests in directories that match \n\
+		\t                 the glob pattern given. \n\
+		-preservecore bool \t If true, save any core files produced \n\
+		\t                 during testing in the directory \n\
+		\t                 specified by -tmpdir. The default \n\
+		\t                 is $::tcltest::preserveCore. \n\
+		-tmpdir directory\t Save temporary files in the specified\n\
+		\t                 directory.  The default value is \n\
+		\t                 $::tcltest::temporaryDirectory. \n\
+		-outfile file    \t Send output from test runs to the \n\
+		\t                 specified file.  The default is \n\
+		\t                 stdout. \n\
+		-errfile file    \t Send errors from test runs to the \n\
+		\t                 specified file.  The default is \n\
+		\t                 stderr. \n\
+		-debug level     \t Internal debug flag."]
+    ::tcltest::PrintUsageInfoHook
+    return
+}
+
+# ::tcltest::processCmdLineArgsFlagsHook --
+#
+#	This hook is used to add to the list of command line arguments that are
+#       processed by ::tcltest::processCmdLineArgs. 
+#
+
 proc ::tcltest::processCmdLineArgsAddFlagsHook {} {}
+
+# ::tcltest::processCmdLineArgsHook --
+#
+#	This hook is used to actually process the flags added by
+#       ::tcltest::processCmdLineArgsAddFlagsHook.
+#
+# Arguments:
+#	flags      The flags that have been pulled out of argv
+#
 
 proc ::tcltest::processCmdLineArgsHook {flag} {}
 
@@ -509,7 +605,7 @@ proc ::tcltest::processCmdLineArgs {} {
 
     # The "argv" var doesn't exist in some cases, so use {}.
 
-    if {(![info exists argv]) || ([llength $argv] < 2)} {
+    if {(![info exists argv]) || ([llength $argv] < 1)} {
 	set flagArray {}
     } else {
 	set flagArray $argv
@@ -519,14 +615,24 @@ proc ::tcltest::processCmdLineArgs {} {
     # Note that -verbose cannot be abbreviated to -v in wish because it
     # conflicts with the wish option -visual.
 
+    # Process -help first
+    if {([lsearch -exact $flagArray {-help}] != -1) || \
+	    ([lsearch -exact $flagArray {-h}] != -1)} {
+	::tcltest::PrintUsageInfo
+	exit
+    }
+
     if {[catch {array set flag $flagArray}]} {
 	::tcltest::PrintError "odd number of arguments specified on command line: \ 
 		$argv"
+	::tcltest::PrintUsageInfo
 	exit
     }
-    
+
+    # -help is not listed since it has already been processed
     lappend defaultFlags {-verbose -match -skip -constraints \
-	    -outfile -errfile -debug -tmpdir}
+	    -outfile -errfile -debug -tmpdir -file -notfile -relateddir \
+	    -asidefromdir -preservecore -limitconstraints}
     lappend defaultFlags [ ::tcltest::processCmdLineArgsAddFlagsHook ]
 
     foreach arg $defaultFlags {
@@ -556,6 +662,22 @@ proc ::tcltest::processCmdLineArgs {} {
 	set ::tcltest::skip $flag(-skip)
     }
 
+    # Handle the -file and -notfile flags
+    if {[info exists flag(-file)]} {
+	set ::tcltest::matchFiles $flag(-file)
+    }
+    if {[info exists flag(-notfile)]} {
+	set ::tcltest::skipFiles $flag(-notfile)
+    }
+
+    # Handle -relateddir and -asidefromdir flags
+    if {[info exists flag(-relateddir)]} {
+	set ::tcltest::matchDirectories $flag(-relateddir)
+    }
+    if {[info exists flag(-asidefromdir)]} {
+	set ::tcltest::skipDirectories $flag(-asidefromdir)
+    }
+
     # Use the -constraints flag, if given, to turn on constraints that are
     # turned off by default: userInteractive knownBug nonPortable.  This
     # code fragment must be run after constraints are initialized.
@@ -563,6 +685,23 @@ proc ::tcltest::processCmdLineArgs {} {
     if {[info exists flag(-constraints)]} {
 	foreach elt $flag(-constraints) {
 	    set ::tcltest::testConstraints($elt) 1
+	}
+    }
+
+    # Use the -limitconstraints flag, if given, to tell the harness to limit
+    # tests run to those that were specified using the -constraints flag.  If
+    # the -constraints flag was not specified, print out an error and exit.
+    if {[info exists flag(-limitconstraints)]} {
+	if {![info exists flag(-constraints)]} {
+	    puts "You can only use the -limitconstraints flag with \
+		    -constraints"
+	    exit
+	}
+	set ::tcltest::limitConstraints $flag(-limitconstraints)
+	foreach elt [array names ::tcltest::testConstraints] {
+	    if {[lsearch -exact $flag(-constraints) $elt] == -1} {
+		set ::tcltest::testConstraints($elt) 0
+	    }
 	}
     }
 
@@ -640,6 +779,35 @@ proc ::tcltest::processCmdLineArgs {} {
 	lappend ::tcltest::filesExisted [file tail $file]
     }
 
+    # Handle -preservecore
+    if {[info exists flag(-preservecore)]} {
+	set ::tcltest::preserveCore $flag(-preserveCore)
+    }
+
+    # Find the matching directories and then remove the ones that are 
+    # specified in the skip pattern; if no match pattern is specified, use
+    # the default value specified for ::tcltest::testsDirectory - ignore the
+    # value of ::tcltest::skipDirectories if the default value is being used.
+    if {$::tcltest::matchDirectories != {}} {
+	set matchDir {}
+	set skipDir {}
+	if {$::tcltest::skipDirectories != {}} {
+	    set skipDir [glob -nocomplain $::tcltest::skipDirectories]
+	}
+	foreach dir [glob -nocomplain $::tcltest::matchDirectories] {
+	    if {[lsearch -exact $skipDir $dir] == -1} {
+		lappend matchDir $dir
+	    }
+	}
+	
+	# Only reset ::tcltest::testsDirectory if anything actually matched
+	# after removing the skip patterns.
+	if {[llength $matchDir] > 0} {
+	    set ::tcltest::testsDirectory $matchDir
+	}
+    }
+
+    # Call the hook
     ::tcltest::processCmdLineArgsHook [array get flag]
 
     # Spit out everything you know if ::tcltest::debug is set.
@@ -655,6 +823,8 @@ proc ::tcltest::processCmdLineArgs {} {
 	puts "::tcltest::errorChannel = $::tcltest::errorChannel"
 	puts "Original environment (::tcltest::originalEnv):"
 	parray ::tcltest::originalEnv
+	puts "Constraints:"
+	parray ::tcltest::testConstraints
     }
 }
 
@@ -764,42 +934,6 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    set ::tcltest::numTests($index) 0
 	}
 
-	# restore the environment to the state it was in before this package
-	# was loaded
-
-	set newEnv {}
-	set changedEnv {}
-	set removedEnv {}
-	foreach index [array names env] {
-	    if {![info exists ::tcltest::originalEnv($index)]} {
-		lappend newEnv $index
-		unset env($index)
-	    } else {
-		if {$env($index) != $::tcltest::originalEnv($index)} {
-		    lappend changedEnv $index
-		    set env($index) $::tcltest::originalEnv($index)
-		}
-	    }
-	}
-	foreach index [array names ::tcltest::originalEnv] {
-	    if {![info exists ::env($index)]} {
-		lappend removedEnv $index
-		set env($index) $::tcltest::originalEnv($index)
-	    }
-	}
-	if {[llength $newEnv] > 0} {
-	    puts $::tcltest::outputChannel \
-		    "\t\tenv array elements created:\t$newEnv"
-	}
-	if {[llength $changedEnv] > 0} {
-	    puts $::tcltest::outputChannel \
-		    "\t\tenv array elements changed:\t$changedEnv"
-	}
-	if {[llength $removedEnv] > 0} {
-	    puts $::tcltest::outputChannel \
-		    "\t\tenv array elements removed:\t$removedEnv"
-	}
-
 	# exit only if running Tk in non-interactive mode
 
 	global tk_version tcl_interactive
@@ -818,8 +952,51 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    lappend ::tcltest::failFiles $testFileName
 	}
 	set ::tcltest::currentFailure false
+
+	# restore the environment to the state it was in before this package
+	# was loaded
+
+	set newEnv {}
+	set changedEnv {}
+	set removedEnv {}
+	foreach index [array names ::env] {
+	    if {![info exists ::tcltest::originalEnv($index)]} {
+		lappend newEnv $index
+		unset ::env($index)
+	    } else {
+		if {$::env($index) != $::tcltest::originalEnv($index)} {
+		    lappend changedEnv $index
+		    set ::env($index) $::tcltest::originalEnv($index)
+		}
+	    }
+	}
+	foreach index [array names ::tcltest::originalEnv] {
+	    if {![info exists ::env($index)]} {
+		lappend removedEnv $index
+		set ::env($index) $::tcltest::originalEnv($index)
+	    }
+	}
+	if {[llength $newEnv] > 0} {
+	    puts $::tcltest::outputChannel \
+		    "env array elements created:\t$newEnv"
+	}
+	if {[llength $changedEnv] > 0} {
+	    puts $::tcltest::outputChannel \
+		    "env array elements changed:\t$changedEnv"
+	}
+	if {[llength $removedEnv] > 0} {
+	    puts $::tcltest::outputChannel \
+		    "env array elements removed:\t$removedEnv"
+	}
+
     }
 }
+
+# ::tcltest::cleanupTestsHook --
+#
+#	This hook allows a harness that builds upon tcltest to specify
+#       additional things that should be done at cleanup.
+#
 
 proc ::tcltest::cleanupTestsHook {} {}
 
@@ -882,6 +1059,13 @@ proc ::tcltest::test {name description script expectedAnswer args} {
     set i [llength $args]
     if {$i == 0} {
 	set constraints {}
+	# If we're limited to the listed constraints and there aren't any
+	# listed, then we shouldn't run the test.
+	if {$::tcltest::limitConstraints} {
+	    ::tcltest::AddToSkippedBecause userSpecifiedLimitConstraint
+	    incr ::tcltest::numTests(Skipped)
+	    return
+	}
     } elseif {$i == 1} {
 
 	# "constraints" argument exists;  shuffle arguments down, then
@@ -892,49 +1076,50 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	set expectedAnswer [lindex $args 0]
 	set doTest 0
 	if {[string match {*[$\[]*} $constraints] != 0} {
-
 	    # full expression, e.g. {$foo > [info tclversion]}
-
 	    catch {set doTest [uplevel #0 expr $constraints]}
 
 	} elseif {[regexp {[^.a-zA-Z0-9 ]+} $constraints] != 0} {
-
 	    # something like {a || b} should be turned into 
 	    # $::tcltest::testConstraints(a) || $::tcltest::testConstraints(b).
-
  	    regsub -all {[.a-zA-Z0-9]+} $constraints \
 		    {$::tcltest::testConstraints(&)} c
 	    catch {set doTest [eval expr $c]}
 	} else {
-
 	    # just simple constraints such as {unixOnly fonts}.
 
 	    set doTest 1
 	    foreach constraint $constraints {
-		if {![info exists ::tcltest::testConstraints($constraint)]
-		|| !$::tcltest::testConstraints($constraint)} {
+		if {(![info exists ::tcltest::testConstraints($constraint)]) \
+			|| (!$::tcltest::testConstraints($constraint))} {
 		    set doTest 0
 
 		    # store the constraint that kept the test from running
-
 		    set constraints $constraint
 		    break
 		}
 	    }
 	}
 	if {$doTest == 0} {
-	    incr ::tcltest::numTests(Skipped)
 	    if {[string first s $::tcltest::verbose] != -1} {
 		puts $::tcltest::outputChannel "++++ $name SKIPPED: $constraints"
 	    }
 
+	    incr ::tcltest::numTests(Skipped)
 	    ::tcltest::AddToSkippedBecause $constraints
 	    return	
 	}
     } else {
 	error "wrong # args: must be \"test name description ?constraints? script expectedAnswer\""
     }   
-    memory tag $name
+
+    # If there is no "memory" command (because memory debugging isn't
+    # enabled), then don't attempt to use the command.
+    
+    if {[info commands memory] != {}} {
+	memory tag $name
+    }
+
     set code [catch {uplevel $script} actualAnswer]
     if {([string compare $actualAnswer $expectedAnswer] == 0) && ($code == 0)} {
 	incr ::tcltest::numTests(Passed)
@@ -973,6 +1158,65 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	puts $::tcltest::outputChannel "---- Result should have been:\n$expectedAnswer"
 	puts $::tcltest::outputChannel "==== $name FAILED\n"
     }
+    if {[file exists [file join $::tcltest::workingDirectory core]]} {
+	if {$::tcltest::preserveCore} {
+	    file rename -force [file join $::tcltest::workingDirectory core] \
+		    [file join $::tcltest::temporaryDirectory core-$name]
+	    
+	    puts $::tcltest::outputChannel "==== $name produced core file! \
+		    Moved file to: \
+		    [file join $::tcltest::temporaryDirectory core-$name]"
+	} else {
+	    puts $::tcltest::outputChannel "==== $name produced core file!"
+	}
+    }
+}
+
+# ::tcltest::getMatchingTestFiles
+#
+#       Looks at the patterns given to match and skip directories and files
+#       and uses them to put together a list of the tests that will be run.
+#
+# Arguments:
+#       none
+#
+# Results:
+#       The constructed list is returned to the user.  This will primarily
+#       be used in 'all.tcl' files.
+
+proc ::tcltest::getMatchingFiles {} {
+    set matchingFiles {}
+    # Find the matching files in the list of directories and then remove the
+    # ones that match the skip pattern
+    foreach directory $::tcltest::testsDirectory {
+	set matchFileList {}
+	foreach match $::tcltest::matchFiles {
+	    set matchFileList [concat $matchFileList \
+		    [glob -nocomplain [file join $directory $match]]]
+	}
+	if {$tcltest::skipFiles != {}} {
+	    set skipFileList {}
+	    foreach skip $::tcltest::skipFiles {
+		set skipFileList [concat $skipFileList \
+			[glob -nocomplain [file join $directory $skip]]]
+	    }
+	    foreach file $matchFileList {
+		# Only include files that don't match the skip pattern and
+		# aren't SCCS lock files.
+		if {([lsearch -exact $skipFileList $file] == -1) && \
+			(![string match l.*.test [file tail $file]])} {
+		    lappend matchingFiles $file
+		}
+	    }   
+	} else {
+	    set matchingFiles [concat $matchingFiles $matchFileList]
+	}
+    }
+    if {$matchingFiles == {}} {
+	::tcltest::PrintError "No test files remain after applying \
+		your match and skip patterns!"
+    }
+    return $matchingFiles
 }
 
 # ::tcltest::dotests --
@@ -997,6 +1241,9 @@ proc ::tcltest::dotests {file args} {
     set ::tcltest::match $savedTests
 }
 
+
+# The following two procs are used in the io tests.
+
 proc ::tcltest::openfiles {} {
     if {[catch {testchannel open} result]} {
 	return {}
@@ -1017,12 +1264,34 @@ proc ::tcltest::leakfiles {old} {
     return $leak
 }
 
+# ::tcltest::saveState --
+#
+#	Save information regarding what procs and variables exist.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Modifies the variable ::tcltest::saveState
+
 proc ::tcltest::saveState {} {
     uplevel #0 {set ::tcltest::saveState [list [info procs] [info vars]]}
     if {($::tcltest::debug) && ($::tcltest::debugLevel > 1)} {
 	puts "::tcltest::saveState: $::tcltest::saveState"
     }
 }
+
+# ::tcltest::restoreState --
+#
+#	Remove procs and variables that didn't exist before the call to
+#       ::tcltest::saveState.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	Removes procs and variables from your environment if they don't exist
+#       in the ::tcltest::saveState variable.
 
 proc ::tcltest::restoreState {} {
     foreach p [info procs] {
@@ -1043,6 +1312,14 @@ proc ::tcltest::restoreState {} {
 	}
     }
 }
+
+# ::tcltest::normalizeMsg --
+#
+#	Removes "extra" newlines from a string.
+#
+# Arguments:
+#	msg        String to be modified
+#
 
 proc ::tcltest::normalizeMsg {msg} {
     regsub "\n$" [string tolower $msg] "" msg
@@ -1088,6 +1365,14 @@ proc ::tcltest::makeFile {contents name} {
     }
 }
 
+# ::tcltest::removeFile --
+#
+#	Removes the named file from the filesystem
+#
+# Arguments:
+#	name     file to be removed
+#
+
 proc ::tcltest::removeFile {name} {
     if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
 	puts "::tcltest::removeFile: removing $name"
@@ -1111,6 +1396,14 @@ proc ::tcltest::makeDirectory {name} {
 	lappend ::tcltest::filesMade $fullName
     }
 }
+
+# ::tcltest::removeDirectory --
+#
+#	Removes a named directory from the file system.
+#
+# Arguments:
+#	name    Name of the directory to remove
+#
 
 proc ::tcltest::removeDirectory {name} {
     file delete -force $name
