@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.96 2002/11/04 05:50:19 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.97 2002/12/18 22:47:01 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -541,7 +541,7 @@ docsetup:
 	@if not exist $(DOCTMP_DIR)\nul mkdir $(DOCTMP_DIR)
 
 $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(BMP): $(TOOLSDIR)\$$(@F)
-	copy $(TOOLSDIR)\$(@F) $(@D)
+	@$(CPY) $(TOOLSDIR)\$(@F) $(@D)
 
 $(HELPFILE): $(HELPRTF) $(BMP)
 	cd $(DOCTMP_DIR)
@@ -568,8 +568,8 @@ CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
 CreateButton(4, "FAQ", ExecFile("http://www.purl.org/NET/Tcl-FAQ/"))
 <<
 	cd $(MAKEDIR)
-	copy "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
-	copy "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
+	@$(CPY) "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
+	@$(CPY) "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
 
 $(MAN2TCL): $(TOOLSDIR)\$$(@B).c
 	$(cc32) -nologo -G4 -ML -O2 -Fo$(@D)\ $(TOOLSDIR)\$(@B).c -link -out:$@
@@ -579,8 +579,8 @@ $(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
 
 install-docs:
 !if exist($(HELPFILE))
-	@xcopy /i /y "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
-	@xcopy /i /y "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
+	@$(CPY) "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
+	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
 
 
