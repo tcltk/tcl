@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.12 2003/01/31 18:54:32 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.13 2003/02/16 01:36:32 msofer Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -277,13 +277,13 @@ namespace eval ::tcl::test::main {
     } -body {
 	set code [catch {exec [interpreter] script >& result} result]
 	set f [open result]
-	list $code $result [read $f]
+	join [list $code $result [read $f]] \n
     } -cleanup {
 	close $f
 	file delete result
 	removeFile script
-    } -match glob -result [list 1 {child process exited abnormally}\
-	"missing close-brace\n    while executing*"]
+    } -match glob -result [join [list 1 {child process exited abnormally}\
+	"missing close-brace\n    while executing*"] \n]
 
     test Tcl_Main-3.5 {
 	Tcl_Main: startup script sets main loop
