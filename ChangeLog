@@ -1,11 +1,19 @@
 2001-09-26  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
+	* doc/fileevent.n: Accepted [Patch #465279] adding an example to
+	  the fileevent manpage. Minor modifications to get a better
+	  formatting. Report and patch by David N. Welton
+	  <davidw@users.sourceforge.net>.
+
 	* The changes below fix [Bug #462317] where Expect tried to read
 	  more than was in the buffers and then blocked in the OS call as
 	  its pty channel driver provides no blockmodeproc through which
 	  the OS could be notified of blocking-behaviour. Because of this
 	  the general I/O core has to take more care than usual to
 	  preserve the semantics of non-blocking channels.
+
+	  The problem was reported by "Kevin O'Gorman"
+	  <kevin@kosmanor.com>.
 
 	* generic/tclIO.c (Tcl_ReadRaw): Do not read from the driver if
 	  the channel is non-blocking and the fileevent causing the read
