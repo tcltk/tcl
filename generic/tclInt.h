@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.3 2003/04/16 23:31:44 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.4 2004/03/29 18:49:36 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1636,7 +1636,6 @@ EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
-EXTERN void		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
@@ -1699,7 +1698,7 @@ EXTERN char *		TclpFindExecutable _ANSI_ARGS_((
 			    CONST char *argv0));
 EXTERN int		TclpFindVariable _ANSI_ARGS_((CONST char *name,
 			    int *lengthPtr));
-EXTERN void		TclpInitLibraryPath _ANSI_ARGS_((CONST char *argv0));
+EXTERN int		TclpInitLibraryPath _ANSI_ARGS_((CONST char *argv0));
 EXTERN void		TclpInitLock _ANSI_ARGS_((void));
 EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
