@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.47 2004/10/06 15:59:25 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.48 2004/10/14 15:06:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1408,6 +1408,43 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		return 0;
 	    }
 	} else if (ch1 != ch2) {
+	    return 0;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMatchIsTrivial --
+ *
+ *	Test whether a particular glob pattern is a trivial pattern.
+ *	(i.e. where matching is the same as equality testing).
+ *
+ * Results:
+ *	A boolean indicating whether the pattern is free of all of the
+ *	glob special chars.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMatchIsTrivial(pattern)
+    CONST char *pattern;
+{
+    CONST char *p = pattern;
+
+    while (1) {
+	switch (*p++) {
+	case '\0':
+	    return 1;
+	case '*':
+	case '?':
+	case '[':
+	case '\\':
 	    return 0;
 	}
     }

@@ -1,3 +1,10 @@
+2004-10-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclUtil.c (TclMatchIsTrivial): Detect degenerate cases
+	of glob matching that let us avoid scanning through hash tables.
+	* generic/tclCmdIL.c (InfoCommandsCmd, InfoGlobalsCmd, InfoProcsCmd):
+	(InfoVarsCmd): Use this to speed up some [info] subcommands.
+
 2004-10-12  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/America/Campo_Grande:
