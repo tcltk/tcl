@@ -1,6 +1,32 @@
 2000-08-07  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* doc/ChnlStack.3:
+	* doc/CrtChannel.3: updated the docs to be aware of the
+	TCL_CHANNEL_VERSION_2 style of Tcl channels.
+
+	* generic/tclIO.c (Tcl_CreateChannel): added assertion to verify
+	that the new channel versioning will be binary compatible with
+	older channel drivers.
+
 	* BACKPORTED FROM 8.4 (HEAD) BRANCH:
+
+	* doc/memory.n: Man page for Tcl "memory" command, which is
+	created when TCL_MEM_DEBUG is defined at compile time.
+
+	* doc/TCL_MEM_DEBUG.3: Man page with overall information about
+	TCL_MEM_DEBUG usage.
+
+	* doc/DumpActiveMemory.3: Man page for Tcl_DumpActiveMemory,
+	Tcl_InitMemory, and Tcl_ValidateAllMemory [Bug: 1816, 1835].
+
+	* doc/Init.3: Man page for Tcl_Init [Bug: 1820].
+
+	* unix/Makefile.in: add tclsh.ico and tcl.spec to dist target
+
+	* unix/mkLinks: Regen'd with new mkLinks.tcl.
+	* unix/mkLinks.tcl: Fixed indentation, made link setup more
+	intelligent (only do one existance test per man page, instead of
+	one per function).
 
 	* doc/AddErrInfo.3:
 	* doc/ChnlStack.3:
@@ -17,8 +43,6 @@
 	* doc/CrtObjCmd.3:
 	* doc/RecEvalObj.3: Changed Tcl_EvalObj to Tcl_EvalObjEx
 
-	* generic/tclCkalloc.c: Fixed some function headers.
-
 	* doc/library.n: Added entries for auto_qualify and auto_import
 	[Bug: 1271].
 	* doc/library.n: Fixed .SH NAME macro to include each function
@@ -28,6 +52,18 @@
 
 	* doc/expr.n: Added documentation for each of the math library
 	functions that expr supports [Bug: 1054].
+
+	* doc/regsub.n: correct regsub docs [Bug: 5346]
+
+	* doc/scan.n: minor doc fixes [Bug: 5396]
+
+	* doc/RegExp.3: Replaced instances of "Tcl_GetRegExpInfo" with
+	"Tcl_RegExpGetInfo", the correct name of the function [Bug: 5901].
+
+	* doc/package.n: Corrected information about [package forget]
+	arguments [Bug: 5418].
+
+	* generic/tclCkalloc.c: Fixed some function headers.
 
 	* tests/clock.test: Added test for "2 days 2 hours ago" style
 	specifications.
@@ -48,16 +84,12 @@
 	* library/init.tcl (auto_import): added check to see if a valid
 	pattern was coming in, to avoid simple error cases [Bug: 3326]
 
-	* doc/regsub.n: correct regsub docs [Bug: 5346]
-
 	* library/history.tcl: Corrected an off-by-one error in HistIndex,
 	which was causing [history redo] to start its search at the wrong
 	event index. [Bug: 1269].
 
 	* generic/tclPosixStr.c (Tcl_SignalMsg): clarified #defines for
 	Linux on Sparc to compile correctly. [Bug: 5364]
-
-	* doc/scan.n: minor doc fixes [Bug: 5396]
 
 	* generic/tclEnv.c: cast cleanup [Bug: 5624]
 	* win/tclWinFCmd.c: cast cleanup [Bug: 5627]
@@ -66,15 +98,9 @@
 	caching of the index ptr to account for offsets != sizeof(char *).
 	[Bug: 5153]
 
-	* doc/RegExp.3: Replaced instances of "Tcl_GetRegExpInfo" with
-	"Tcl_RegExpGetInfo", the correct name of the function [Bug: 5901].
-
 	* tests/opt.test:
 	* library/opt0.4/optparse.tcl: Applied patch from [Bug: 5922], which 
 	corrected an incorrect use of [string match].
-
-	* doc/package.n: Corrected information about [package forget]
-	arguments [Bug: 5418].
 
 	* tests/stringObj.test: Tweaked tests to avoid hardcoded
 	high-ASCII characters (which will fail in multibyte locales);
