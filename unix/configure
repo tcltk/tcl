@@ -850,7 +850,7 @@ Optional Features:
   --enable-64bit-vis      enable 64bit Sparc VIS support
   --disable-load          disallow dynamic loading and "load" command
   --enable-symbols        build with debugging symbols --disable-symbols
-  --enable-framework      package shared libraries in frameworks --disable-framework
+  --enable-framework      package shared libraries in MacOSX frameworks --disable-framework
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
