@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.91 2003/10/08 23:18:35 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.92 2003/10/14 15:44:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3337,10 +3337,9 @@ Tcl_LogCommandInfo(interp, script, command, length)
     int length;			/* Number of bytes in command (-1 means
 				 * use all bytes up to first null byte). */
 {
-    char buffer[200];
     register CONST char *p;
-    char *ellipsis = "";
     Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *message;
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
 	/*
@@ -3362,26 +3361,16 @@ Tcl_LogCommandInfo(interp, script, command, length)
 	}
     }
 
-    /*
-     * Create an error message to add to errorInfo, including up to a
-     * maximum number of characters of the command.
-     */
-
-    if (length < 0) {
-	length = strlen(command);
-    }
-    if (length > 150) {
-	length = 150;
-	ellipsis = "...";
-    }
     if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-	sprintf(buffer, "\n    while executing\n\"%.*s%s\"",
-		length, command, ellipsis);
+	message = Tcl_NewStringObj("\n    while executing\n\"", -1);
     } else {
-	sprintf(buffer, "\n    invoked from within\n\"%.*s%s\"",
-		length, command, ellipsis);
+	message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
     }
-    Tcl_AddObjErrorInfo(interp, buffer, -1);
+    Tcl_IncrRefCount(message);
+    TclAppendLimitedToObj(message, command, length, 153, NULL);
+    Tcl_AppendToObj(message, "\"", -1);
+    TclAppendObjToErrorInfo(interp, message);
+    Tcl_DecrRefCount(message);
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 }
 
@@ -4384,8 +4373,7 @@ TclObjInvoke(interp, objc, objv, flags)
     int localObjc;		/* Used to invoke "unknown" if the */
     Tcl_Obj **localObjv = NULL;	/* command is not found. */
     register int i;
-    int length, result;
-    char *bytes;
+    int result;
 
     if (interp == (Tcl_Interp *) NULL) {
         return TCL_ERROR;
@@ -4478,29 +4466,23 @@ TclObjInvoke(interp, objc, objv, flags)
     if ((result == TCL_ERROR)
 	    && ((flags & TCL_INVOKE_NO_TRACEBACK) == 0)
 	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
-        Tcl_DString ds;
-        
-        Tcl_DStringInit(&ds);
+	int length;
+	CONST char* cmdString;
+	Tcl_Obj *message, *command = Tcl_NewListObj(objc, objv);
+
         if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-            Tcl_DStringAppend(&ds, "\n    while invoking\n\"", -1);
+	    message = Tcl_NewStringObj("\n    while invoking\n\"", -1);
         } else {
-            Tcl_DStringAppend(&ds, "\n    invoked from within\n\"", -1);
+	    message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
         }
-        for (i = 0;  i < objc;  i++) {
-	    bytes = Tcl_GetStringFromObj(objv[i], &length);
-            Tcl_DStringAppend(&ds, bytes, length);
-            if (i < (objc - 1)) {
-                Tcl_DStringAppend(&ds, " ", -1);
-            } else if (Tcl_DStringLength(&ds) > 100) {
-                Tcl_DStringSetLength(&ds, 100);
-                Tcl_DStringAppend(&ds, "...", -1);
-                break;
-            }
-        }
-        
-        Tcl_DStringAppend(&ds, "\"", -1);
-        Tcl_AddObjErrorInfo(interp, Tcl_DStringValue(&ds), -1);
-        Tcl_DStringFree(&ds);
+	Tcl_IncrRefCount(message);
+	Tcl_IncrRefCount(command);
+	cmdString = Tcl_GetStringFromObj(command, &length);
+	TclAppendLimitedToObj(message, cmdString, length, 100, NULL);
+	Tcl_DecrRefCount(command);
+        Tcl_AppendToObj(message, "\"", -1);
+        TclAppendObjToErrorInfo(interp, message);
+	Tcl_DecrRefCount(message);
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
     }
 
@@ -4593,6 +4575,38 @@ Tcl_ExprString(interp, string)
 	Tcl_SetResult(interp, "0", TCL_VOLATILE);
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAppendObjToErrorInfo --
+ *
+ *	Add a Tcl_Obj value to the "errorInfo" variable that describes the
+ *	current error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ * 	The value of the Tcl_obj is added to the "errorInfo" variable.
+ *	If Tcl_Eval has been called since the current value of errorInfo
+ *	was set, errorInfo is cleared before adding the new message.
+ *	If we are just starting to log an error, errorInfo is initialized
+ *	from the error message in the interpreter's result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclAppendObjToErrorInfo(interp, objPtr)
+    Tcl_Interp *interp;		/* Interpreter to which error information
+				 * pertains. */
+    Tcl_Obj *objPtr;		/* Message to record. */
+{
+    int length;
+    CONST char *message = Tcl_GetStringFromObj(objPtr, &length);
+    Tcl_AddObjErrorInfo(interp, message, length);
 }
 
 /*
