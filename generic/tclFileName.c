@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.9 2000/01/24 02:29:58 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.10 2000/01/26 03:37:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -762,6 +762,15 @@ Tcl_JoinPath(argc, argv, resultPtr)
 		 * beginning of the path.
 		 */
 
+#ifdef __QNX__
+		/*
+		 * Check for QNX //<node id> prefix
+		 */
+		if (*p && (strlen(p) > 3) &&
+			(p[0] == '/') && (p[1] == '/') && atoi(&p[2])) {
+		    p += 3;
+		}
+#endif
 		if (*p == '/') {
 		    Tcl_DStringSetLength(resultPtr, oldLength);
 		    Tcl_DStringAppend(resultPtr, "/", 1);

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.22 2000/01/21 02:25:26 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.23 2000/01/26 03:37:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2600,14 +2600,18 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	 */
 
         Tcl_Obj *newCommandPtr = Tcl_DuplicateObj(cmdPtr);
+	Tcl_Obj *newObjPtr = Tcl_NewObj();
 
-	if (Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj()) 
-	        != TCL_OK) {
+	Tcl_IncrRefCount(newCommandPtr);
+	if (Tcl_ListObjAppendElement(interp, newCommandPtr, newObjPtr)
+		!= TCL_OK) {
+	    Tcl_DecrRefCount(newCommandPtr);
+	    Tcl_IncrRefCount(newObjPtr);
+	    Tcl_DecrRefCount(newObjPtr);
 	    return TCL_ERROR;
 	}
 	Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj());
 	sortInfo.compareCmdPtr = newCommandPtr;
-	Tcl_IncrRefCount(newCommandPtr);
     }
 
     sortInfo.resultCode = Tcl_ListObjGetElements(interp, objv[objc-1],

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.29 2000/01/24 02:29:57 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.30 2000/01/26 03:37:40 hobbs Exp $
 
 library tcl
 
@@ -972,7 +972,7 @@ declare 280 generic {
 #
 # C-Level API for (un)stacking of channels. This allows the introduction
 # of filtering channels with relatively little changes to the core.
-# This patch was created in cooperation with Jan Nijtmans <nijtmans@wxs.nl>
+# This patch was created in cooperation with Jan Nijtmans j.nijtmans@chello.nl
 # and is therefore part of his plus-patches too.
 #
 # It would have been possible to place the following definitions according
