@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.15 2001/07/16 23:30:16 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.16 2001/07/17 18:33:24 mdejong Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -342,6 +342,13 @@ typedef float *TCHAR;
 #	define timezone _timezone
 #    endif
 #endif /* _MSC_VER || __MINGW32__ */
+
+#ifdef __CYGWIN__
+/* On cygwin32, the environment is imported from the cygwin32 DLL. */
+     DLLIMPORT extern char **__cygwin_environ;
+#    define environ __cygwin_environ
+#    define timezone _timezone
+#endif /* __CYGWIN__ */
 
 /*
  * There is no platform-specific panic routine for Windows in the Tcl internals.
