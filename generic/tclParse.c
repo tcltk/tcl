@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.3 1999/04/16 00:46:51 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.4 1999/04/21 18:16:45 surles Exp $
  */
 
 #include "tclInt.h"
@@ -262,6 +262,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
     parsePtr->end = string + numBytes;
     parsePtr->interp = interp;
     parsePtr->incomplete = 0;
+    parsePtr->errorType = TCL_PARSE_SUCCESS;
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
@@ -458,14 +459,18 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	if (src == parsePtr->end) {
 	    break;
 	}
-	if (interp != NULL) {
-	    if (src[-1] == '"') { 
+	if (src[-1] == '"') { 
+	    if (interp != NULL) {
 		Tcl_SetResult(interp, "extra characters after close-quote",
 			TCL_STATIC);
-	    } else {
+	    }
+	    parsePtr->errorType = TCL_PARSE_QUOTE_EXTRA;
+	} else {
+	    if (interp != NULL) {
 		Tcl_SetResult(interp, "extra characters after close-brace",
 			TCL_STATIC);
 	    }
+	    parsePtr->errorType = TCL_PARSE_BRACE_EXTRA;
 	}
 	parsePtr->term = src;
 	goto error;
@@ -590,6 +595,7 @@ ParseTokens(src, mask, parsePtr)
 	    while (1) {
 		if (Tcl_ParseCommand(parsePtr->interp, src,
 			parsePtr->end - src, 1, &nested) != TCL_OK) {
+		    parsePtr->errorType = nested.errorType;
 		    parsePtr->term = nested.term;
 		    parsePtr->incomplete = nested.incomplete;
 		    return TCL_ERROR;
@@ -606,6 +612,7 @@ ParseTokens(src, mask, parsePtr)
 			Tcl_SetResult(parsePtr->interp,
 			    "missing close-bracket", TCL_STATIC);
 		    }
+		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
 		    return TCL_ERROR;
@@ -734,7 +741,6 @@ TclExpandTokenArray(parsePtr)
 	    (size_t) (parsePtr->tokensAvailable * sizeof(Tcl_Token)));
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
-	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
     parsePtr->tokenPtr = newPtr;
     parsePtr->tokensAvailable = newCount;
@@ -1598,6 +1604,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	parsePtr->string = string;
 	parsePtr->end = end;
 	parsePtr->interp = interp;
+	parsePtr->errorType = TCL_PARSE_SUCCESS;
 	parsePtr->incomplete = 0;
     }
 
@@ -1654,6 +1661,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 			"missing close-brace for variable name",
 			TCL_STATIC);
 		}
+		parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 		parsePtr->term = tokenPtr->start-1;
 		parsePtr->incomplete = 1;
 		goto error;
@@ -1708,6 +1716,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 		    Tcl_SetResult(parsePtr->interp, "missing )",
 			    TCL_STATIC);
 		}
+		parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		parsePtr->term = src;
 		parsePtr->incomplete = 1;
 		goto error;
@@ -1880,6 +1889,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 	parsePtr->string = string;
 	parsePtr->end = end;
 	parsePtr->interp = interp;
+	parsePtr->errorType = TCL_PARSE_SUCCESS;
     }
 
     src = string+1;
@@ -1945,6 +1955,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "missing close-brace", TCL_STATIC);
 	    }
+	    parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
 	    parsePtr->term = string;
 	    parsePtr->incomplete = 1;
 	    goto error;
@@ -2047,6 +2058,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
 	parsePtr->string = string;
 	parsePtr->end = end;
 	parsePtr->interp = interp;
+	parsePtr->errorType = TCL_PARSE_SUCCESS;
     }
     
     if (ParseTokens(string+1, TYPE_QUOTE, parsePtr) != TCL_OK) {
@@ -2056,6 +2068,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
 	if (interp != NULL) {
 	    Tcl_SetResult(parsePtr->interp, "missing \"", TCL_STATIC);
 	}
+	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
 	parsePtr->term = string;
 	parsePtr->incomplete = 1;
 	goto error;
