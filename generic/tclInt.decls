@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.52 2002/07/15 22:18:04 msofer Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.53 2002/07/17 18:21:54 msofer Exp $
 
 library tcl
 
@@ -130,10 +130,11 @@ declare 27 generic {
 declare 28 generic {
     Tcl_Channel TclpGetDefaultStdChannel(int type)
 }
-declare 29 generic {
-    Tcl_Obj * TclGetElementOfIndexedArray(Tcl_Interp *interp,
-	    int localIndex, Tcl_Obj *elemPtr, int flags)
-}
+# Removed in 8.4b2:
+#declare 29 generic {
+#    Tcl_Obj * TclGetElementOfIndexedArray(Tcl_Interp *interp,
+#	    int localIndex, Tcl_Obj *elemPtr, int flags)
+#}
 # Replaced by char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr) in 8.1:
 #  declare 30 generic {
 #      char * TclGetEnv(CONST char *name)
@@ -152,10 +153,11 @@ declare 34 generic {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
 }
-declare 35 generic {
-    Tcl_Obj * TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,
-	    int flags)
-}
+# Removed in 8.4b2:
+#declare 35 generic {
+#    Tcl_Obj * TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,
+#	    int flags)
+#}
 declare 36 generic {
     int TclGetLong(Tcl_Interp *interp, CONST char *str, long *longPtr)
 }
@@ -192,14 +194,16 @@ declare 45 generic {
 declare 46 generic {
     int TclInExit(void)
 }
-declare 47 generic {
-    Tcl_Obj * TclIncrElementOfIndexedArray(Tcl_Interp *interp,
-	    int localIndex, Tcl_Obj *elemPtr, long incrAmount)
-}
-declare 48 generic {
-    Tcl_Obj * TclIncrIndexedScalar(Tcl_Interp *interp, int localIndex,
-	    long incrAmount)
-}
+# Removed in 8.4b2:
+#declare 47 generic {
+#    Tcl_Obj * TclIncrElementOfIndexedArray(Tcl_Interp *interp,
+#	    int localIndex, Tcl_Obj *elemPtr, long incrAmount)
+#}
+# Removed in 8.4b2:
+#declare 48 generic {
+#    Tcl_Obj * TclIncrIndexedScalar(Tcl_Interp *interp, int localIndex,
+#	    long incrAmount)
+#}
 declare 49 generic {
     Tcl_Obj * TclIncrVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, long incrAmount, int part1NotParsed)
@@ -385,14 +389,16 @@ declare 97 generic {
 declare 98 generic {
     int TclServiceIdle(void)
 }
-declare 99 generic {
-    Tcl_Obj * TclSetElementOfIndexedArray(Tcl_Interp *interp, int localIndex,
-	    Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int flags)
-}
-declare 100 generic {
-    Tcl_Obj * TclSetIndexedScalar(Tcl_Interp *interp, int localIndex,
-	    Tcl_Obj *objPtr, int flags)
-}
+# Removed in 8.4b2:
+#declare 99 generic {
+#    Tcl_Obj * TclSetElementOfIndexedArray(Tcl_Interp *interp, int localIndex,
+#	    Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int flags)
+#}
+# Removed in 8.4b2:
+#declare 100 generic {
+#    Tcl_Obj * TclSetIndexedScalar(Tcl_Interp *interp, int localIndex,
+#	    Tcl_Obj *objPtr, int flags)
+#}
 declare 101 {unix win} {
     char * TclSetPreInitScript(char *string)
 }
