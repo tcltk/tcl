@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.24 2000/05/08 22:04:16 hobbs Exp $
+# RCS: @(#) $Id: string.test,v 1.25 2000/05/26 08:50:35 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -155,13 +155,13 @@ test string-3.8 {string equal with length, unequal strings} {
 
 test string-4.1 {string first, too few args} {
     list [catch {string first a} msg] $msg
-} {1 {wrong # args: should be "string first string1 string2 ?startIndex?"}}
+} {1 {wrong # args: should be "string first subString string ?startIndex?"}}
 test string-4.2 {string first, bad args} {
     list [catch {string first a b c} msg] $msg
 } {1 {bad index "c": must be integer or end?-integer?}}
 test string-4.3 {string first, too many args} {
     list [catch {string first a b 5 d} msg] $msg
-} {1 {wrong # args: should be "string first string1 string2 ?startIndex?"}}
+} {1 {wrong # args: should be "string first subString string ?startIndex?"}}
 test string-4.4 {string first} {
     string first bq abcdefgbcefgbqrs
 } 12
@@ -191,9 +191,6 @@ test string-4.12 {string first, start index} {
 } -1
 test string-4.13 {string first, start index} {
     string first \u7266 abc\u7266x end-2
-} 3
-test string-4.14 {string first, start index} {
-    string first a abcabc end-4
 } 3
 
 test string-5.1 {string index} {
@@ -255,6 +252,12 @@ test string-5.17 {string index, bad integer} {
 test string-5.18 {string index, bad integer} {
     list [catch {string index "abc" end-00289} msg] $msg
 } {1 {expected integer but got "-00289" (looks like invalid octal number)}}
+test string-5.19 {string index, bytearray object out of bounds} {
+    string index [binary format I* {0x50515253 0x52}] -1
+} {}
+test string-5.20 {string index, bytearray object out of bounds} {
+    string index [binary format I* {0x50515253 0x52}] 20
+} {}
 
 
 proc largest_int {} {
@@ -554,13 +557,13 @@ catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last string1 string2 ?startIndex?"}}
+} {1 {wrong # args: should be "string last subString string ?startIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
 } {1 {bad index "c": must be integer or end?-integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
-} {1 {wrong # args: should be "string last string1 string2 ?startIndex?"}}
+} {1 {wrong # args: should be "string last subString string ?startIndex?"}}
 test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1
@@ -680,6 +683,15 @@ test string-10.13 {string map, -nocase unicode} {
 test string-10.14 {string map, -nocase null arguments} {
     string map -nocase {{} abc} foo
 } foo
+test string-10.15 {string map, one pair case} {
+    string map -nocase {abc 32} aAbCaBaAbAbcAb
+} {a32aBaAb32Ab}
+test string-10.16 {string map, one pair case} {
+    string map -nocase {ab 4321} aAbCaBaAbAbcAb
+} {a4321C4321a43214321c4321}
+test string-10.17 {string map, one pair case} {
+    string map {Ab 4321} aAbCaBaAbAbcAb
+} {a4321CaBa43214321c4321}
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg
@@ -890,8 +902,8 @@ test string-12.19 {string range, bytearray object} {
     set b [binary format I* {0x50515253 0x52}]
     set r1 [string range $b 1 end-1]
     set r2 [string range $b 1 6]
-    string compare $r1 $r2
-} 0
+    string equal $r1 $r2
+} 1
 test string-12.20 {string range, out of bounds indices} {
     string range \u00ff 0 1
 } \u00ff
@@ -1196,9 +1208,3 @@ test string-22.13 {string wordstart, unicode} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
