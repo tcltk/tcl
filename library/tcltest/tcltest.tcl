@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.48 2002/04/15 17:04:29 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.49 2002/04/18 00:04:55 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -30,10 +30,11 @@ namespace eval tcltest {
 	    loadTestedCommands mainThread makeDirectory makeFile match \
 	    matchDirectories matchFiles normalizeMsg normalizePath \
 	    outputChannel outputFile preserveCore removeDirectory \
-	    removeFile restoreState runAllTests saveState \
-	    singleProcess skip skipDirectories skipFiles \
-	    temporaryDirectory test testConstraint testsDirectory \
-	    threadReap verbose viewFile workingDirectory
+	    removeFile runAllTests singleProcess skip skipDirectories \
+	    skipFiles temporaryDirectory test testConstraint \
+	    testsDirectory threadReap verbose viewFile workingDirectory
+    # Export the tcltest 1 compatibility procs
+    namespace export getMatchingFiles restoreState saveState
 
     proc Default {varName value} {
 	variable $varName
