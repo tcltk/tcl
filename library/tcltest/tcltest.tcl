@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.92 2004/10/30 02:16:52 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.93 2004/11/02 19:03:29 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1949,6 +1949,10 @@ proc tcltest::test {name description args} {
 
     # First, run the setup script
     set code [catch {uplevel 1 $setup} setupMsg]
+    if {$code == 1} {
+	set errorInfo(setup) $::errorInfo
+	set errorCode(setup) $::errorCode
+    }
     set setupFailure [expr {$code != 0}]
 
     # Only run the test body if the setup was successful
@@ -1967,10 +1971,18 @@ proc tcltest::test {name description args} {
 	    set testResult [uplevel 1 [list [namespace origin Eval] $command 1]]
 	}
 	foreach {actualAnswer returnCode} $testResult break
+	if {$returnCode == 1} {
+	    set errorInfo(body) $::errorInfo
+	    set errorCode(body) $::errorCode
+	}
     }
 
     # Always run the cleanup script
     set code [catch {uplevel 1 $cleanup} cleanupMsg]
+    if {$code == 1} {
+	set errorInfo(cleanup) $::errorInfo
+	set errorCode(cleanup) $::errorCode
+    }
     set cleanupFailure [expr {$code != 0}]
 
     set coreFailure 0
@@ -2084,6 +2096,10 @@ proc tcltest::test {name description args} {
     if {$setupFailure} {
 	puts [outputChannel] "---- Test setup\
 		failed:\n$setupMsg"
+	if {[info exists errorInfo(setup)]} {
+	    puts [outputChannel] "---- errorInfo(setup): $errorInfo(setup)"
+	    puts [outputChannel] "---- errorCode(setup): $errorCode(setup)"
+	}
     }
     if {$scriptFailure} {
 	if {$scriptCompare} {
@@ -2107,9 +2123,9 @@ proc tcltest::test {name description args} {
 	puts [outputChannel] "---- Return code should have been\
 		one of: $returnCodes"
 	if {[IsVerbose error]} {
-	    if {[info exists ::errorInfo]} {
-		puts [outputChannel] "---- errorInfo: $::errorInfo"
-		puts [outputChannel] "---- errorCode: $::errorCode"
+	    if {[info exists errorInfo(body)] && ([lsearch $returnCodes 1]<0)} {
+		puts [outputChannel] "---- errorInfo: $errorInfo(body)"
+		puts [outputChannel] "---- errorCode: $errorCode(body)"
 	    }
 	}
     }
@@ -2133,6 +2149,10 @@ proc tcltest::test {name description args} {
     }
     if {$cleanupFailure} {
 	puts [outputChannel] "---- Test cleanup failed:\n$cleanupMsg"
+	if {[info exists errorInfo(cleanup)]} {
+	    puts [outputChannel] "---- errorInfo(cleanup): $errorInfo(cleanup)"
+	    puts [outputChannel] "---- errorCode(cleanup): $errorCode(cleanup)"
+	}
     }
     if {$coreFailure} {
 	puts [outputChannel] "---- Core file produced while running\
