@@ -12,14 +12,14 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.13 1999/11/20 17:57:43 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.14 1999/11/22 20:15:04 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
 }
 
-if {[catch {package require http 2.2}]} {
+if {[catch {package require http 2}]} {
     if {[info exist http2]} {
 	catch {puts "Cannot load http 2.2 package"}
 	return
@@ -109,6 +109,7 @@ test http-3.2 {http::geturl} {
 } {Unsupported URL: http:junk}
 
 set url [info hostname]:$port
+set badurl www.scriptics.com:6666
 test http-3.3 {http::geturl} {
     set token [http::geturl $url]
     http::data $token
@@ -265,16 +266,55 @@ test http-4.10 {http::Event} {
     set token [http::geturl $url -progress myProgress]
     http::size $token
 } {111}
-test http-4.11 {http::Event} nonPortable {
+
+# Timeout cases
+#	Short timeout to working server  (the test server)
+#	Short timeout to working server that waits longer
+#	Short timeout to good host, bad port, hits in connection phase
+#	Longer timeout to good host, bad port, hits in I/O phase
+
+test http-4.11 {http::Event} {
     set token [http::geturl $url -timeout 1 -command {#}]
     http::reset $token
     http::status $token
 } {reset}
-test http-4.12 {http::Event} nonPortable {
+test http-4.12 {http::Event} {
     set token [http::geturl $url?timeout=10 -timeout 1 -command {#}]
     http::wait $token
     http::status $token
 } {timeout}
+
+test http-4.13 {http::Event} {
+    set token [http::geturl $badurl/?timeout=10 -timeout 1 -command {#}]
+    if {[string length $token] == 0} {
+	error "bogus return from http::geturl"
+    }
+    http::wait $token
+    http::status $token
+} {timeout}
+
+# Longer timeout hits after connection (to a bad socket!) completes
+
+test http-4.14 {http::Event} {
+    set token [http::geturl $badurl/?timeout=10 -timeout 10000 -command {#}]
+    if {[string length $token] == 0} {
+	error "bogus return from http::geturl"
+    }
+    http::wait $token
+    http::status $token
+} {ioerror}
+
+# Bogus host
+
+test http-4.15 {http::Event} {
+    set code [catch {
+	set token [http::geturl not_a_host.scriptics.com -timeout 1000 -command {#}]
+	http::wait $token
+	http::status $token
+    } err]
+    # error code varies among platforms.
+    list $code [string match "couldn't open socket*" $err]
+} {1 1}
 
 test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
@@ -302,6 +342,7 @@ test http-6.1 {http::ProxyRequired} {
 
 # cleanup
 catch {unset url}
+catch {unset badurl}
 catch {unset port}
 catch {unset data}
 if {[info exists httpthread]} {
