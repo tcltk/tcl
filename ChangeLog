@@ -3,7 +3,7 @@
 	* generic/tclBasic.c (Tcl_EvalEx): avoiding a buffer overrun
 	reported by Joe English, and restoring tcl7.6 behaviour for
 	[subst]: badly terminated nested scripts will raise an error
-	andnot be evaluated. [Bug #495207]
+	and not be evaluated. [Bug #495207]
 
 2002-02-25  Don Porter  <dgp@users.sourceforge.net>
 
