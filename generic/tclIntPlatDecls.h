@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.19.2.1 2004/05/14 21:41:11 kennykb Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.19.2.2 2004/05/17 14:26:49 kennykb Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -62,9 +62,9 @@ EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir _ANSI_ARGS_((DIR * dir));
 /* 11 */
-EXTERN struct tm *	TclpLocaltime_unix _ANSI_ARGS_((CONST time_t * clock));
+EXTERN struct tm *	TclpLocaltime_unix _ANSI_ARGS_((TclpTime_t clock));
 /* 12 */
-EXTERN struct tm *	TclpGmtime_unix _ANSI_ARGS_((CONST time_t * clock));
+EXTERN struct tm *	TclpGmtime_unix _ANSI_ARGS_((TclpTime_t clock));
 /* 13 */
 EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
 #endif /* UNIX */
@@ -229,8 +229,8 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 8 */
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR * dir)); /* 10 */
-    struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((CONST time_t * clock)); /* 11 */
-    struct tm * (*tclpGmtime_unix) _ANSI_ARGS_((CONST time_t * clock)); /* 12 */
+    struct tm * (*tclpLocaltime_unix) _ANSI_ARGS_((TclpTime_t clock)); /* 11 */
+    struct tm * (*tclpGmtime_unix) _ANSI_ARGS_((TclpTime_t clock)); /* 12 */
     char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
 #endif /* UNIX */
 #ifdef __WIN32__

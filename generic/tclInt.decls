@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.59.2.1 2004/05/14 21:41:11 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.59.2.2 2004/05/17 14:26:49 kennykb Exp $
 
 library tcl
 
@@ -700,10 +700,10 @@ declare 173 generic {
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 generic {
-     struct tm *TclpLocaltime(CONST time_t *clock)
+     struct tm *TclpLocaltime(TclpTime_t clock)
 }
 declare 183 generic {
-     struct tm *TclpGmtime(CONST time_t *clock)
+     struct tm *TclpGmtime(TclpTime_t clock)
 }
 
 ##############################################################################
@@ -990,11 +990,11 @@ declare 10 unix {
 # generic Stubs
 
 declare 11 unix {
-    struct tm * TclpLocaltime_unix(CONST time_t * clock)
+    struct tm * TclpLocaltime_unix(TclpTime_t clock)
 }
 
 declare 12 unix {
-    struct tm * TclpGmtime_unix(CONST time_t * clock)
+    struct tm * TclpGmtime_unix(TclpTime_t clock)
 }
 
 declare 13 unix {
