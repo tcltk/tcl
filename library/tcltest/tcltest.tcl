@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.29 2000/10/28 00:00:00 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.30 2000/11/24 14:17:11 dkf Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -2836,13 +2836,13 @@ proc tcltest::getMatchingFiles { {searchDirectory ""} } {
 	set matchFileList {}
 	foreach match $tcltest::matchFiles {
 	    set matchFileList [concat $matchFileList \
-		    [glob -nocomplain [file join $directory $match]]]
+		    [glob -directory $directory -nocomplain -- $match]]
 	}
 	if {[string compare {} $tcltest::skipFiles]} {
 	    set skipFileList {}
 	    foreach skip $tcltest::skipFiles {
 		set skipFileList [concat $skipFileList \
-			[glob -nocomplain [file join $directory $skip]]]
+			[glob -directory $directory -nocomplain -- $skip]]
 	    }
 	    foreach file $matchFileList {
 		# Only include files that don't match the skip pattern and
@@ -2887,7 +2887,7 @@ proc tcltest::getMatchingDirectories {rootdir} {
     # Find the matching directories in tcltest::testsDirectory and then
     # remove the ones that match the skip pattern
     foreach match $tcltest::matchDirectories {
-	foreach file [glob -nocomplain [file join $rootdir $match]] {
+	foreach file [glob -directory $rootdir -nocomplain -- $match] {
 	    if {([file isdirectory $file]) && ($file != $rootdir)} {
 		set matchDirList [concat $matchDirList \
 			[tcltest::getMatchingDirectories $file]]
@@ -2901,8 +2901,7 @@ proc tcltest::getMatchingDirectories {rootdir} {
 	set skipDirs {} 
 	foreach skip $tcltest::skipDirectories {
 	    set skipDirs [concat $skipDirs \
-		    [glob -nocomplain [file join $tcltest::testsDirectory \
-			$skip]]]
+		[glob -nocomplain -directory $tcltest::testsDirectory $skip]]
 	}
 	foreach dir $matchDirList {
 	    # Only include directories that don't match the skip pattern
@@ -3477,8 +3476,7 @@ namespace eval tcltest {
 
     # Save the names of files that already exist in
     # the output directory.
-    foreach file [glob -nocomplain \
-	    [file join $tcltest::temporaryDirectory *]] {
+    foreach file [glob -nocomplain -directory $tcltest::temporaryDirectory *] {
 	lappend tcltest::filesExisted [file tail $file]
     }
 }
