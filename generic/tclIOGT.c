@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.9 2004/09/10 19:54:06 andreas_kupries Exp $
+ * CVS: $Id: tclIOGT.c,v 1.10 2004/10/06 13:47:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -409,9 +409,9 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     }
 
     res = Tcl_ListObjAppendElement(dataPtr->interp, command, temp);
-
-    if (res != TCL_OK)
+    if (res != TCL_OK) {
 	goto cleanup;
+    }
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data
@@ -427,9 +427,9 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     }
 
     res = Tcl_ListObjAppendElement (dataPtr->interp, command, temp);
-
-    if (res != TCL_OK)
+    if (res != TCL_OK) {
         goto cleanup;
+    }
 
     /*
      * Step 2, execute the command at the global level of the interpreter
