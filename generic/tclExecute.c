@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.85 2002/07/27 21:17:15 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.86 2002/07/31 09:57:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2088,7 +2088,7 @@ TclExecuteByteCode(interp, codePtr)
 	/*
 	 * Operands must be boolean or numeric. No int->double
 	 * conversions are performed.
-		 */
+	 */
 		
 	int i1, i2;
 	int iResult;
@@ -2197,9 +2197,9 @@ TclExecuteByteCode(interp, codePtr)
 
     case INST_LIST:
 	/*
-	     * Pop the opnd (objc) top stack elements into a new list obj
-	     * and then decrement their ref counts. 
-	     */
+	 * Pop the opnd (objc) top stack elements into a new list obj
+	 * and then decrement their ref counts. 
+	 */
 
 	opnd = TclGetUInt4AtPtr(pc+1);
 	objResultPtr = Tcl_NewListObj(opnd, &(stackPtr[stackTop - (opnd-1)]));
@@ -2222,15 +2222,15 @@ TclExecuteByteCode(interp, codePtr)
     case INST_LIST_INDEX:
 	/*** lindex with objc == 3 ***/
 		
-	    /*
-	     * Pop the two operands
-	     */
+	/*
+	 * Pop the two operands
+	 */
 	value2Ptr = stackPtr[stackTop];
 	valuePtr  = stackPtr[stackTop- 1];
 
-	    /*
-	     * Extract the desired list element
-	     */
+	/*
+	 * Extract the desired list element
+	 */
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
 	if (objResultPtr == NULL) {
 	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ", O2S(valuePtr), O2S(value2Ptr)),
@@ -2240,8 +2240,8 @@ TclExecuteByteCode(interp, codePtr)
 	}
 
 	/*
-	     * Stash the list element on the stack
-	     */
+	 * Stash the list element on the stack
+	 */
 	TRACE(("%.20s %.20s => %s\n",
 	        O2S(valuePtr), O2S(value2Ptr), O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, -1); /* already has the correct refCount */
@@ -2398,7 +2398,7 @@ TclExecuteByteCode(interp, codePtr)
 		/*
 		 * We only need to check (in)equality when
 		 * we have equal length strings.
-			 */
+		 */
 		if (*pc == INST_STR_NEQ) {
 		    iResult = (strcmp(s1, s2) != 0);
 		} else {
@@ -2586,8 +2586,8 @@ TclExecuteByteCode(interp, codePtr)
 	value2Ptr = stackPtr[stackTop - 1];	/* Pattern */
 
 	/*
-	 * Check that at least one of the objects
-	 * is Unicode before promoting both.
+	 * Check that at least one of the objects is Unicode before
+	 * promoting both.
 	 */
 	if ((valuePtr->typePtr == &tclStringType)
 	        || (value2Ptr->typePtr == &tclStringType)) {
@@ -2623,7 +2623,7 @@ TclExecuteByteCode(interp, codePtr)
 	/*
 	 * Any type is allowed but the two operands must have the
 	 * same type. We will compute value op value2.
-		 */
+	 */
 
 	Tcl_ObjType *t1Ptr, *t2Ptr;
 	char *s1 = NULL;	/* Init. avoids compiler warning. */
@@ -2659,10 +2659,10 @@ TclExecuteByteCode(interp, codePtr)
 	t2Ptr = value2Ptr->typePtr;
 
 	/*
-		 * We only want to coerce numeric validation if
-		 * neither type is NULL.  A NULL type means the arg is
-		 * essentially an empty object ("", {} or [list]).
-		 */
+	 * We only want to coerce numeric validation if neither type
+	 * is NULL.  A NULL type means the arg is essentially an empty
+	 * object ("", {} or [list]).
+	 */
 	if (!(     (!t1Ptr && !valuePtr->bytes)
 	        || (valuePtr->bytes && !valuePtr->length)
 		   || (!t2Ptr && !value2Ptr->bytes)
@@ -2690,11 +2690,11 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	if (!IS_NUMERIC_TYPE(t1Ptr) || !IS_NUMERIC_TYPE(t2Ptr)) {
 	    /*
-	     * One operand is not numeric. Compare as strings.
-	     * NOTE: strcmp is not correct for \x00 < \x01, but
-	     * that is unlikely to occur here.  We could use the
-	     * TclUtfNCmp2 to handle this.
-		     */
+	     * One operand is not numeric. Compare as strings.  NOTE:
+	     * strcmp is not correct for \x00 < \x01, but that is
+	     * unlikely to occur here.  We could use the TclUtfNCmp2
+	     * to handle this.
+	     */
 	    int s1len, s2len;
 	    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 	    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
@@ -2729,8 +2729,8 @@ TclExecuteByteCode(interp, codePtr)
 	} else if ((t1Ptr == &tclDoubleType)
 		   || (t2Ptr == &tclDoubleType)) {
 	    /*
-		     * Compare as doubles.
-		     */
+	     * Compare as doubles.
+	     */
 	    if (t1Ptr == &tclDoubleType) {
 		d1 = valuePtr->internalRep.doubleValue;
 		GET_DOUBLE_VALUE(d2, value2Ptr, t2Ptr);
@@ -2798,8 +2798,8 @@ TclExecuteByteCode(interp, codePtr)
 #endif /* TCL_WIDE_INT_IS_LONG */
 	} else {
 	    /*
-		     * Compare as ints.
-		     */
+	     * Compare as ints.
+	     */
 	    i  = valuePtr->internalRep.longValue;
 	    i2 = value2Ptr->internalRep.longValue;
 	    switch (*pc) {
@@ -3086,8 +3086,8 @@ TclExecuteByteCode(interp, codePtr)
 	}
 
 	/*
-		 * Reuse the valuePtr object already on stack if possible.
-		 */
+	 * Reuse the valuePtr object already on stack if possible.
+	 */
 		
 	if (Tcl_IsShared(valuePtr)) {
 #ifndef TCL_WIDE_INT_IS_LONG
@@ -3249,8 +3249,8 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 		    
 	    /*
-		     * Check now for IEEE floating-point error.
-		     */
+	     * Check now for IEEE floating-point error.
+	     */
 		    
 	    if (IS_NAN(dResult) || IS_INF(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
@@ -3448,7 +3448,7 @@ TclExecuteByteCode(interp, codePtr)
 	 * create a copy to modify: this is "copy on write".
 	 * Free any old string representation since it is now
 	 * invalid.
-		 */
+	 */
 
 	double d;
 	int boolvar;
@@ -3486,7 +3486,7 @@ TclExecuteByteCode(interp, codePtr)
 	if (Tcl_IsShared(valuePtr)) {
 	    /*
 	     * Create a new object.
-		     */
+	     */
 	    if ((tPtr == &tclIntType) || (tPtr == &tclBooleanType)) {
 		i = valuePtr->internalRep.longValue;
 		objResultPtr = Tcl_NewLongObj(
@@ -3801,9 +3801,9 @@ TclExecuteByteCode(interp, codePtr)
 	    
 #ifndef TCL_COMPILE_DEBUG
 	/* 
-	 * Remark that the compiler ALWAYS sets INST_FOREACH_STEP4 immediately
-	 * after INST_FOREACH_START4 - let us just fall through instead of
-	 * jumping back to the top.
+	 * Remark that the compiler ALWAYS sets INST_FOREACH_STEP4
+	 * immediately after INST_FOREACH_START4 - let us just fall
+	 * through instead of jumping back to the top.
 	 */
 
 	pc += 5;
@@ -4344,8 +4344,8 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	s = Tcl_GetStringFromObj(opndPtr, &length);
 	p = s;
 	/*
-	 * strtod() isn't particularly consistent about detecting Inf
-	 * and NaN between platforms.
+	 * strtod() isn't at all consistent about detecting Inf and
+	 * NaN between platforms.
 	 */
 	if (length == 3) {
 	    if ((s[0]=='n' || s[0]=='N') && (s[1]=='a' || s[1]=='A') &&
@@ -4407,9 +4407,9 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	}
 	if (looksLikeInt) {
 	    /*
-	     * If something that looks like an integer could not be converted, 
-	     * then it *must* be a bad octal or too large to represent 
-	     * [Bug  542588].
+	     * If something that looks like an integer could not be
+	     * converted, then it *must* be a bad octal or too large
+	     * to represent [Bug 542588].
 	     */
 
 	    if (TclCheckBadOctal(NULL, s)) {
@@ -4421,8 +4421,8 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	    }
 	} else {
 	    /*
-	     * See if the operand can be interpreted as a double in order to
-	     * improve the error message.
+	     * See if the operand can be interpreted as a double in
+	     * order to improve the error message.
 	     */
 
 	    double d;
