@@ -1,5 +1,12 @@
 2000-04-25  Mo DeJong  <mdejong@redhat.com>
 
+	* unix/configure: Regen.
+	* unix/configure.in: Use $@ in MAKE_LIB and MAKE_STUB_LIB
+	commands instead of using a delayed subst variable. Replace
+	instances of STUB_LIB_FILE with TCL_STUB_LIB_FILE.
+
+2000-04-25  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: Use TCL_STUB_LIB_FILE instead of STUB_LIB_FILE.
 	* unix/configure: Regen.
 	* unix/configure.in: Don't subst STUB_LIB_FILE, use TCL_STUB_LIB_FILE
