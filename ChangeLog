@@ -1,3 +1,14 @@
+2001-07-10  Mo DeJong  <mdejong@redhat.com>
+
+	* win/tclWinConsole.c:
+	* win/tclWinPipe.c:
+	* win/tclWinPort.h:
+	* win/tclWinSerial.c:
+	* win/tclWinThrd.c:
+	Remove unnecessary #includes of dos.h, direct.h,
+	and tchar.h. This will help the Cygwin porting
+	effort since these headers do not exist under Cygwin.
+
 2001-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c: Removed extra copy of the SCAN_* macros
