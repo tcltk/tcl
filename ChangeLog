@@ -1,3 +1,12 @@
+2001-08-02  Mo DeJong  <mdejong@redhat.com>
+
+	* generic/tclPlatDecls.h:
+	* win/tclWinPort.h:
+	Revert <tchar.h> related changes made to improve
+	Cygwin support on 2001-07-18. This change ended
+	up breaking the VC++ build because of conflicts
+	between Windows APIs and internal Tk APIs.
+
 2001-07-31  Vince Darley <vincentdarley@users.sourceforge.net>
 
         Changes from TIP#17 "Redo Tcl's filesystem"

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.17 2001/07/19 06:40:09 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.18 2001/08/02 20:15:40 mdejong Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -18,6 +18,19 @@
 
 #ifndef _TCLINT
 #   include "tclInt.h"
+#endif
+
+#ifdef CHECK_UNICODE_CALLS
+
+#define _UNICODE
+#define UNICODE
+
+#define __TCHAR_DEFINED
+typedef float *_TCHAR;
+
+#define _TCHAR_DEFINED
+typedef float *TCHAR;
+
 #endif
 
 /*
@@ -52,6 +65,10 @@
 
 #include <time.h>
 #include <winsock.h>
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
 
 #ifdef BUILD_tcl
 # undef TCL_STORAGE_CLASS
