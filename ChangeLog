@@ -18,6 +18,9 @@
 	* unix/Makefile.in:
 	* unix/configure: (regenerated)
 	* unix/tcl.m4:
+	* tests/clock.test (all):
+	* win/Makefile.in:
+	* win/Makefile.vc:
 		Implementation of TIPs #173 and #209.
 
 	The [clock] command is now a Tcl ensemble, with most of its

@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.129 2004/06/24 01:29:07 mistachkin Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.130 2004/08/18 20:59:36 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if !defined(MSDEVDIR) && !defined(MSVCDIR)
@@ -863,7 +863,7 @@ install-binaries:
 	@echo installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
-install-libraries: tclConfig
+install-libraries: tclConfig install-msgs install-tzdata
 	@echo installing tclConfig.sh
 	@$(CPY) "$(OUT_DIR)\tclConfig.sh" "$(LIB_INSTALL_DIR)\"
 	@echo installing http1.0
@@ -914,6 +914,17 @@ install-libraries: tclConfig
 	@$(CPY) "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 
+install-tzdata:
+	@echo "Installing time zone data"
+	set TCL_LIBRARY="$(ROOT)/library"
+	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	    "$(ROOT)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+
+install-msgs:
+	@echo "Installing message catalogs"
+	set TCL_LIBRARY="$(ROOT)/library"
+	$(TCLSH) "$(ROOT)/tools/installData.tcl" \
+	    "$(ROOT)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 #---------------------------------------------------------------------
 # Clean up
