@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.41 1999/02/03 19:12:25 stanton Exp $
+RCS: @(#) $Id: changes,v 1.42 1999/04/15 22:40:33 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3740,3 +3740,5 @@ panic. (stanton)
 extension" so that it splits at the last period.  Now the extension of
 a file like "foo..o" is ".o" instead of "..o" as in previous versions. 
 *** POTENTIAL INCOMPATIBILITY ***
+
+----------------- Released 8.0.5, 3/9/99 -----------------------
