@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.4 2003/07/23 15:40:39 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.5 2004/07/19 20:12:24 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -90,12 +90,12 @@ CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 #CFLAGS			= $(CFLAGS_DEBUG)
 #CFLAGS			= $(CFLAGS_OPTIMIZE)
 #CFLAGS			= $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS			= @CFLAGS@ @CFLAGS_DEFAULT@ -DTCL_DBGX=$(TCL_DBGX)
+CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@ -DTCL_DBGX=$(TCL_DBGX)
 
 # Flags to pass to the linker
 LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE	= @LDFLAGS_OPTIMIZE@
-LDFLAGS			= @LDFLAGS@ @LDFLAGS_DEFAULT@
+LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
 
 # To disable ANSI-C procedure prototypes reverse the comment characters
 # on the following lines:
@@ -239,7 +239,7 @@ DYLIB_INSTALL_DIR	= ${LIB_RUNTIME_DIR}
 
 COMPAT_OBJS		= @LIBOBJS@
 
-AC_FLAGS		= @EXTRA_CFLAGS@ @DEFS@
+AC_FLAGS		= @DEFS@
 AR			= @AR@
 RANLIB			= @RANLIB@
 SRC_DIR			= @srcdir@
