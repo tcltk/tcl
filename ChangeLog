@@ -1,5 +1,18 @@
 2005-04-06  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/upvar.n, doc/unset.n, doc/tell.n, doc/tclvars.n, doc/subst.n: 
+	* doc/seek.n, doc/scan.n, doc/regsub.n, doc/registry.n, doc/regexp.n:
+	* doc/read.n, doc/puts.n, doc/pkgMkIndex.n, doc/open.n, doc/lreplace.n:
+	* doc/lrange.n, doc/load.n, doc/llength.n, doc/linsert.n, doc/lindex.n:
+	* doc/lappend.n, doc/info.n, doc/gets.n, doc/format.n, doc/flush.n: 
+	* doc/fileevent.n, doc/file.n, doc/fblocked.n, doc/close.n: 
+	* doc/array.n, doc/Utf.3, doc/TraceVar.3, doc/StrMatch.3, doc/RegExp.3:
+	* doc/PrintDbl.3, doc/OpenTcp.3, doc/OpenFileChnl.3, doc/Object.3:
+	* doc/Notifier.3, doc/LinkVar.3, doc/IntObj.3, doc/Interp.3:
+	* doc/GetOpnFl.3, doc/GetIndex.3, doc/Eval.3, doc/CrtMathFnc.3:
+	* doc/CrtFileHdlr.3, doc/CrtCommand.3, doc/CrtChannel.3:
+	* doc/Backslash.3: Purge old .VS/.VE macro instances.
+
 	* tools/man2html2.tcl (IPmacro): Rewrote to understand what .IP
 	really is (.IP and .TP are really just two ways of doing the same
 	thing). Change below made this relevant.
