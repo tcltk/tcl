@@ -1,3 +1,11 @@
+2002-07-23  Joe English  <jenglish@users.sourceforge.net>
+	* doc/OpenFileChnl.3: (Updates from Larry Virden)
+	* doc/open.n:
+	* doc/tclsh.1: Fix section numbers in Unix man page references.
+	* doc/lset.n:  In EXAMPLES section, include command to set the 
+	initial value used in subsequent examples.
+	* doc/http.n: Package version updated to 2.4.
+
 2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
