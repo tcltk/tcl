@@ -1,3 +1,13 @@
+2004-04-24  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclPort.h:
+	* macosx/Makefile:
+	* unix/Makefile.in: followup on tcl header reform [FR 922727]:
+	removed use of relative #include paths in tclPort.h to allow
+	installation of private headers outside of tcl source tree; added
+	'unix' dir to compiler header search path; add newly required
+	tcl private headers to Tcl.framework on Mac OSX.
+
 2004-04-23  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (Tcl_SetChannelOption): Fixed [SF Tcl Bug
