@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.6 2001/09/19 10:57:32 dkf Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.7 2002/10/01 10:03:19 dkf Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -37,7 +37,9 @@ connection is opened and the command returns a channel identifier
 that can be used for both reading and writing.
 \fIPort\fR and \fIhost\fR specify a port
 to connect to;  there must be a server accepting connections on
-this port.  \fIPort\fR is an integer port number and \fIhost\fR
+this port.  \fIPort\fR is an integer port number
+(or service name, where supported and understood by the host operating
+system) and \fIhost\fR
 is either a domain-style name such as \fBwww.sunlabs.com\fR or
 a numerical IP address such as \fB127.0.0.1\fR.
 Use \fIlocalhost\fR to refer to the host on which the command is invoked.
@@ -53,7 +55,9 @@ interfaces.  If the option is omitted then the client-side interface
 will be chosen by the system software.
 .TP
 \fB\-myport\fI port\fR
-\fIPort\fR specifies an integer port number to use for the client's
+\fIPort\fR specifies an integer port number (or service name, where
+supported and understood by the host operating system) to use for the
+client's
 side of the connection.  If this option is omitted, the client's
 port number will be chosen at random by the system software.
 .TP
@@ -71,7 +75,9 @@ returns immediately and \fBfblocked\fR on the socket returns 1.
 .SH "SERVER SOCKETS"
 .PP
 If the \fB\-server\fR option is specified then the new socket
-will be a server for the port given by \fIport\fR.
+will be a server for the port given by \fIport\fR (either an integer
+or a service name, where supported and understood by the host
+operating system).
 Tcl will automatically accept connections to the given port.
 For each connection Tcl will create a new channel that may be used to
 communicate with the client.  Tcl then invokes \fIcommand\fR
