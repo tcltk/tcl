@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.18 1999/12/04 06:15:40 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.19 1999/12/12 02:26:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1700,8 +1700,7 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	for (i = 0;  i < localCt;  i++) {
 	    if (!TclIsVarTemporary(localPtr)) {
 		char *localName = localPtr->name;
-		if ((name[0] == localName[0])
-	                && (nameBytes == localPtr->nameLength)
+		if ((nameBytes == localPtr->nameLength)
 	                && (strncmp(name, localName, (unsigned) nameBytes) == 0)) {
 		    return i;
 		}

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.22 1999/10/29 03:03:59 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.23 1999/12/12 02:26:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -995,7 +995,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    if ((enum options) index == STR_EQUAL) {
-		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
+		Tcl_SetBooleanObj(resultPtr, (match) ? 0 : 1);
 	    } else {
 		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
 					  (match < 0) ? -1 : 0));

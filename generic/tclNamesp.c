@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.12 1999/10/05 22:45:40 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.13 1999/12/12 02:26:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2909,13 +2909,12 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     if (objc == 4) {
         result = Tcl_EvalObjEx(interp, objv[3], 0);
     } else {
-        objPtr = Tcl_ConcatObj(objc-3, objv+3);
-
-	/* 
-	 * Tcl_EvalObj will delete the object when it decrements its
-	 * refcount after eval'ing it.
+	/*
+	 * More than one argument: concatenate them together with spaces
+	 * between, then evaluate the result.  Tcl_EvalObjEx will delete
+	 * the object when it decrements its refcount after eval'ing it.
 	 */
-
+        objPtr = Tcl_ConcatObj(objc-3, objv+3);
         result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {

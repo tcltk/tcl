@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.22 1999/11/19 23:02:12 hobbs Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.23 1999/12/12 02:26:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -601,8 +601,13 @@ Tcl_UplevelObjCmd(dummy, interp, objc, objv)
      */
 
     if (objc == 1) {
-	result = Tcl_EvalObjEx(interp, objv[0], 0);
+	result = Tcl_EvalObjEx(interp, objv[0], TCL_EVAL_DIRECT);
     } else {
+	/*
+	 * More than one argument: concatenate them together with spaces
+	 * between, then evaluate the result.  Tcl_EvalObjEx will delete
+	 * the object when it decrements its refcount after eval'ing it.
+	 */
 	Tcl_Obj *objPtr;
 
 	objPtr = Tcl_ConcatObj(objc, objv);

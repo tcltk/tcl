@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.6 1999/12/02 02:03:27 redman Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.7 1999/12/12 02:26:42 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -291,7 +291,9 @@ Tcl_Main(argc, argv, appInitProc)
 	inChannel = Tcl_GetStdChannel(TCL_STDIN);
 	outChannel = Tcl_GetStdChannel(TCL_STDOUT);
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	Tcl_SetObjLength(commandPtr, 0);
+	Tcl_DecrRefCount(commandPtr);
+	commandPtr = Tcl_NewObj();
+	Tcl_IncrRefCount(commandPtr);
 	if (code != TCL_OK) {
 	    if (errChannel) {
 		Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));

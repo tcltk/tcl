@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.22 1999/11/19 06:34:22 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.23 1999/12/12 02:26:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2495,7 +2495,8 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
  * Tcl_EvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are
- *	compiled into bytecodes if necessary.
+ *	compiled into bytecodes if necessary, unless TCL_EVAL_DIRECT
+ *	is specified.
  *
  * Results:
  *	The return value is one of the return codes defined in tcl.h
@@ -2539,10 +2540,6 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 					 * in case TCL_EVAL_GLOBAL was set. */
     Namespace *namespacePtr;
 
-    /*
-     * Prevent the object from being deleted as a side effect of evaling it.
-     */
-
     Tcl_IncrRefCount(objPtr);
 
     if ((iPtr->flags & USE_EVAL_DIRECT) || (flags & TCL_EVAL_DIRECT)) {
@@ -2550,16 +2547,35 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	 * We're not supposed to use the compiler or byte-code interpreter.
 	 * Let Tcl_EvalEx evaluate the command directly (and probably
 	 * more slowly).
+	 *
+	 * Pure List Optimization (no string representation).  In this
+	 * case, we can safely use Tcl_EvalObjv instead and get an
+	 * appreciable improvement in execution speed.  This is because it
+	 * allows us to avoid a setFromAny step that would just pack
+	 * everything into a string and back out again.
+	 *
+	 * USE_EVAL_DIRECT is a special flag used for testing purpose only
+	 * (ensure we go into the TCL_EVAL_DIRECT path, avoiding opt)
 	 */
-
-	char *p;
-	int length;
-
-	p = Tcl_GetStringFromObj(objPtr, &length);
-	result = Tcl_EvalEx(interp, p, length, flags);
+	if (!(iPtr->flags & USE_EVAL_DIRECT) &&
+		(objPtr->typePtr == &tclListType) && /* is a list... */
+		(objPtr->bytes == NULL) /* ...without a string rep */) {
+	    register List *listRepPtr =
+		(List *) objPtr->internalRep.otherValuePtr;
+	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
+		    listRepPtr->elements, flags);
+	} else {
+	    register char *p;
+	    p = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	    result = Tcl_EvalEx(interp, p, numSrcBytes, flags);
+	}
 	Tcl_DecrRefCount(objPtr);
 	return result;
     }
+
+    /*
+     * Prevent the object from being deleted as a side effect of evaling it.
+     */
 
     savedVarFramePtr = iPtr->varFramePtr;
     if (flags & TCL_EVAL_GLOBAL) {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.16 1999/12/08 03:49:52 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.17 1999/12/12 02:26:43 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1004,6 +1004,38 @@ Tcl_ConcatObj(objc, objv)
     char *element;
     char *concatStr;
     Tcl_Obj *objPtr;
+
+    /*
+     * Check first to see if all the items are of list type.  If so,
+     * we will concat them together as lists, and return a list object.
+     * This is only valid when the lists have no current string
+     * representation, since we don't know what the original type was.
+     * An original string rep may have lost some whitespace info when
+     * converted which could be important.
+     */
+    for (i = 0;  i < objc;  i++) {
+	objPtr = objv[i];
+	if ((objPtr->typePtr != &tclListType) || (objPtr->bytes != NULL)) {
+	    break;
+	}
+    }
+    if (i == objc) {
+	Tcl_Obj **listv;
+	int listc;
+
+	objPtr = Tcl_NewListObj(0, NULL);
+	for (i = 0;  i < objc;  i++) {
+	    /*
+	     * Tcl_ListObjAppendList could be used here, but this saves
+	     * us a bit of type checking (since we've already done it)
+	     * Use of INT_MAX tells us to always put the new stuff on
+	     * the end.  It will be set right in Tcl_ListObjReplace.
+	     */
+	    Tcl_ListObjGetElements(NULL, objv[i], &listc, &listv);
+	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, listc, listv);
+	}
+	return objPtr;
+    }
 
     allocSize = 0;
     for (i = 0;  i < objc;  i++) {

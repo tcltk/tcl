@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.8 1999/12/04 06:15:41 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.9 1999/12/12 02:26:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2311,20 +2311,25 @@ TclExecuteByteCode(interp, codePtr)
 		tPtr = valuePtr->typePtr;
 		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
 			|| (valuePtr->bytes != NULL))) {
-		    char *s = Tcl_GetStringFromObj(valuePtr, &length);
-		    if (TclLooksLikeInt(s, length)) {
-			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-				valuePtr, &i);
+		    if ((tPtr == &tclBooleanType) 
+			    && (valuePtr->bytes == NULL)) {
+			valuePtr->typePtr = &tclIntType;
 		    } else {
-			result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-				valuePtr, &d);
-		    }
-		    if (result != TCL_OK) {
-			TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
-			        s, (tPtr? tPtr->name : "null")));
-			IllegalExprOperandType(interp, pc, valuePtr);
-			Tcl_DecrRefCount(valuePtr);
-			goto checkForCatch;
+			char *s = Tcl_GetStringFromObj(valuePtr, &length);
+			if (TclLooksLikeInt(s, length)) {
+			    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
+				    valuePtr, &i);
+			} else {
+			    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
+				    valuePtr, &d);
+			}
+			if (result != TCL_OK) {
+			    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
+				    s, (tPtr? tPtr->name : "null")));
+			    IllegalExprOperandType(interp, pc, valuePtr);
+			    Tcl_DecrRefCount(valuePtr);
+			    goto checkForCatch;
+			}
 		    }
 		    tPtr = valuePtr->typePtr;
 		}
@@ -2495,18 +2500,24 @@ TclExecuteByteCode(interp, codePtr)
 		converted = 0;
 		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
 			|| (valuePtr->bytes != NULL))) {
-		    s = Tcl_GetStringFromObj(valuePtr, &length);
-		    if (TclLooksLikeInt(s, length)) {
-			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
-				valuePtr, &i);
-		    } else {
-			result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-				valuePtr, &d);
-		    }
-		    if (result == TCL_OK) {
+		    if ((tPtr == &tclBooleanType) 
+			    && (valuePtr->bytes == NULL)) {
+			valuePtr->typePtr = &tclIntType;
 			converted = 1;
+		    } else {
+			s = Tcl_GetStringFromObj(valuePtr, &length);
+			if (TclLooksLikeInt(s, length)) {
+			    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
+				    valuePtr, &i);
+			} else {
+			    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
+				    valuePtr, &d);
+			}
+			if (result == TCL_OK) {
+			    converted = 1;
+                       }
+			result = TCL_OK; /* reset the result variable */
 		    }
-		    result = TCL_OK; /* reset the result variable */
 		    tPtr = valuePtr->typePtr;
 		}
 
@@ -2525,18 +2536,24 @@ TclExecuteByteCode(interp, codePtr)
 		    shared = 0;
 		    if (Tcl_IsShared(valuePtr)) {
 			shared = 1;
-			if (tPtr == &tclIntType) {
-			    i = valuePtr->internalRep.longValue;
-			    objPtr = Tcl_NewLongObj(i);
-			} else {
-			    d = valuePtr->internalRep.doubleValue;
-			    objPtr = Tcl_NewDoubleObj(d);
+			if (valuePtr->bytes != NULL) {
+			    /*
+			     * We only need to make a copy of the object
+			     * when it already had a string rep
+			     */
+			    if (tPtr == &tclIntType) {
+				i = valuePtr->internalRep.longValue;
+				objPtr = Tcl_NewLongObj(i);
+			    } else {
+				d = valuePtr->internalRep.doubleValue;
+				objPtr = Tcl_NewDoubleObj(d);
+			    }
+			    Tcl_IncrRefCount(objPtr);
+			    TclDecrRefCount(valuePtr);
+			    valuePtr = objPtr;
+			    stackPtr[stackTop] = valuePtr;
+			    tPtr = valuePtr->typePtr;
 			}
-			Tcl_IncrRefCount(objPtr);
-			TclDecrRefCount(valuePtr);
-			valuePtr = objPtr;
-			stackPtr[stackTop] = valuePtr;
-			tPtr = valuePtr->typePtr;
 		    } else {
 			Tcl_InvalidateStringRep(valuePtr);
 		    }
