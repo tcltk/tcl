@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacTest.c,v 1.2 1998/09/14 18:40:07 stanton Exp $
+ * RCS: @(#) $Id: tclMacTest.c,v 1.3 1998/11/10 06:49:51 jingham Exp $
  */
 
 #define TCL_TEST
@@ -188,11 +188,11 @@ WriteTextResource(
     strcpy((char *) resourceName, rsrcName);
     c2pstr((char *) resourceName);
     
-    dataHandle = NewHandle(strlen(data) + 1);
+    dataHandle = NewHandle(strlen(data));
     HLock(dataHandle);
     strcpy(*dataHandle, data);
     HUnlock(dataHandle);
-    
+     
     /*
      * Add the resource to the file and close it.
      */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMac.h,v 1.2 1998/09/14 18:40:04 stanton Exp $
+ * RCS: @(#) $Id: tclMac.h,v 1.3 1998/11/10 06:49:22 jingham Exp $
  */
 
 #ifndef _TCLMAC
@@ -79,7 +79,7 @@ EXTERN pascal	void	FSpCreateResFileCompat(const FSSpec *spec,
  * Mac calls.  These routines is from tclMacUtils.h.
  */
 
-EXTERN int 	FSpLocationFromPath _ANSI_ARGS_((int length, char *path,
+EXTERN int 	FSpLocationFromPath _ANSI_ARGS_((int length, CONST char *path,
 		    FSSpecPtr theSpec));
 EXTERN OSErr 	FSpPathFromLocation _ANSI_ARGS_((FSSpecPtr theSpec,
 		    int *length, Handle *fullPath));
