@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.36 2003/10/23 10:10:31 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.37 2003/12/16 18:20:49 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -524,13 +524,16 @@ either path is NULL, 0 is always returned.
 from the given Tcl_Obj a unique normalized path representation, whose
 string value can be used as a unique identifier for the file.
 .PP
-It returns the normalized path object, with refCount of zero, or NULL 
-if the path was invalid or could otherwise not be successfully
-converted.  Extraction of absolute, normalized paths is very
-efficient (because the filesystem operates on these representations
-internally), although the result when the filesystem contains
-numerous symbolic links may not be the most user-friendly
-version of a path.
+It returns the normalized path object, owned by Tcl, or NULL if the path
+was invalid or could otherwise not be successfully converted.
+Extraction of absolute, normalized paths is very efficient (because the
+filesystem operates on these representations internally), although the
+result when the filesystem contains numerous symbolic links may not be
+the most user-friendly version of a path.  The return value is owned by
+Tcl and has a lifetime equivalent to that of the \fIpathPtr\fR passed in
+(unless that is a relative path, in which case the normalized path
+object may be freed any time the cwd changes) - the caller can of
+course increment the refCount if it wishes to maintain a copy for longer.
 .PP
 \fBTcl_FSJoinToPath\fR takes the given object, which should usually be a
 valid path or NULL, and joins onto it the array of paths segments
@@ -592,16 +595,21 @@ a Utf-8 string representation if that is required by some Tcl code.
 filesystems, so that they can easily retrieve the native (char* or
 TCHAR*) representation of a path.  This function is a convenience
 wrapper around \fBTcl_FSGetInternalRep\fR, and assumes the native
-representation is string-based.  It may be desirable in the future
-to have non-string-based native representations (for example, on
-MacOS, a representation using a fileSpec of FSRef structure would
-probably be more efficient).  On Windows a full Unicode
-representation would allow for paths of unlimited length.  Currently
-the representation is simply a character string containing the
-complete, absolute path in the native encoding.
+representation is string-based.  It may be desirable in the future to
+have non-string-based native representations (for example, on MacOS, a
+representation using a fileSpec of FSRef structure would probably be
+more efficient).  On Windows a full Unicode representation would allow
+for paths of unlimited length.  Currently the representation is simply a
+character string containing the complete, absolute normalized path in
+the native encoding.  If for some reason a non-absolute or
+non-normalized version of the path is needed, that must be constructed
+separately (e.g. using \fBTcl_FSGetTranslatedPath\fR).
 .PP
 The native representation is cached so that repeated calls to this
-function will not require additional conversions.
+function will not require additional conversions.  The return value is
+owned by Tcl and has a lifetime equivalent to that of the \fIpathPtr\fR
+passed in (unless that is a relative path, in which case the native
+representation may be freed any time the cwd changes).
 .PP
 \fBTcl_FSFileSystemInfo\fR returns a list of two elements.  The first
 element is the name of the filesystem (e.g. "native" or "vfs" or "zip"

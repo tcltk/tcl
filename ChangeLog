@@ -3,6 +3,8 @@
 	* tests/fCmd.test: marking fCmd-9.14.2, as nonPortable, since
 	on Solaris one can change the name of the current directory
 	with 'file rename'.
+	* doc/FileSystem.3: clarified documentation on ownership
+	of return objects/strings of some Tcl_FS* calls.
 
 2003-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
