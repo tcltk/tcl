@@ -10,19 +10,19 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: word.tcl,v 1.5 1999/08/19 02:59:40 hobbs Exp $
+# RCS: @(#) $Id: word.tcl,v 1.6 2000/01/21 02:25:38 hobbs Exp $
 
 # The following variables are used to determine which characters are
 # interpreted as white space.  
 
 if {[string equal $tcl_platform(platform) "windows"]} {
-    # Windows style - any but space, tab, or newline
-    set tcl_wordchars "\[^ \t\n\]"
-    set tcl_nonwordchars "\[ \t\n\]"
+    # Windows style - any but a unicode space char
+    set tcl_wordchars "\\S"
+    set tcl_nonwordchars "\\s"
 } else {
-    # Motif style - any number, letter, or underscore
-    set tcl_wordchars {[a-zA-Z0-9_]}
-    set tcl_nonwordchars {[^a-zA-Z0-9_]}
+    # Motif style - any unicode word char (number, letter, or underscore)
+    set tcl_wordchars "\\w"
+    set tcl_nonwordchars "\\W"
 }
 
 # tcl_wordBreakAfter --
