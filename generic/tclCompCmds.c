@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.14.2.1 2001/09/26 14:23:09 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.14.2.2 2001/09/27 13:46:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -129,7 +129,7 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, valueTokenPtr[1].start,
-		    (int)valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
+		    valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
 	    maxDepth += 1;
 	} else {
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
@@ -297,7 +297,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 		return TCL_OUT_LINE_COMPILE;
 	    }
 	    localIndex = TclFindCompiledLocal(nameTokenPtr[1].start,
-		    (int)nameTokenPtr[1].size, /*create*/ 1, 
+		    nameTokenPtr[1].size, /*create*/ 1, 
 		    /*flags*/ VAR_SCALAR, envPtr->procPtr);
 	} else {
 	   return TCL_OUT_LINE_COMPILE;
@@ -1726,7 +1726,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, valueTokenPtr[1].start,
-		    (int)valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
+		    valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
 	    maxDepth += 1;
 	} else {
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
@@ -1839,7 +1839,7 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
     for (i = 0; i < 2; i++) {
 	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr,
-		    varTokenPtr[1].start, (int)varTokenPtr[1].size,
+		    varTokenPtr[1].start, varTokenPtr[1].size,
 		    0), envPtr);
 	    depth++;
 	} else {
@@ -1920,7 +1920,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 	for (i = 1; i < numWords; i++) {
 	    if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		TclEmitPush(TclRegisterLiteral(envPtr,
-			valueTokenPtr[1].start, (int)valueTokenPtr[1].size,
+			valueTokenPtr[1].start, valueTokenPtr[1].size,
 			/*onHeap*/ 0), envPtr);
 		depth++;
 	    } else {
@@ -1988,7 +1988,7 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
 	 * that value, but that is too rare a case to waste the code space.
 	 */
 	TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
-		(int)varTokenPtr[1].size, 0), envPtr);
+		varTokenPtr[1].size, 0), envPtr);
 	envPtr->maxStackDepth = 1;
     } else {
 	code = TclCompileTokens(interp, varTokenPtr+1,
@@ -2070,7 +2070,7 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 		 * so just push it.
 		 */
 		TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
-			(int)varTokenPtr[1].size, /*onHeap*/ 0), envPtr);
+			varTokenPtr[1].size, /*onHeap*/ 0), envPtr);
 		envPtr->maxStackDepth = 1;
 	    } else {
 		/*
@@ -2180,7 +2180,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	valueTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, valueTokenPtr[1].start,
-		    (int)valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
+		    valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
 	    maxDepth += 1;
 	} else {
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
@@ -2298,7 +2298,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     opTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
 
-    opObj = Tcl_NewStringObj(opTokenPtr->start, (int)opTokenPtr->size);
+    opObj = Tcl_NewStringObj(opTokenPtr->start, opTokenPtr->size);
     if (Tcl_GetIndexFromObj(interp, opObj, options, "option", 0,
 	    &index) != TCL_OK) {
 	Tcl_DecrRefCount(opObj);
@@ -2352,7 +2352,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    for (i = 0; i < 2; i++) {
 		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		    TclEmitPush(TclRegisterLiteral(envPtr,
-			    varTokenPtr[1].start, (int)varTokenPtr[1].size,
+			    varTokenPtr[1].start, varTokenPtr[1].size,
 			    0), envPtr);
 		    depth++;
 		} else {
@@ -2389,7 +2389,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    for (i = 0; i < 2; i++) {
 		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		    TclEmitPush(TclRegisterLiteral(envPtr,
-			    varTokenPtr[1].start, (int)varTokenPtr[1].size,
+			    varTokenPtr[1].start, varTokenPtr[1].size,
 			    0), envPtr);
 		    depth++;
 		} else {
@@ -2421,7 +2421,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		 */
 		char buf[TCL_INTEGER_SPACE];
 		int len = Tcl_NumUtfChars(varTokenPtr[1].start,
-			(int)varTokenPtr[1].size);
+			varTokenPtr[1].size);
 		len = sprintf(buf, "%d", len);
 		TclEmitPush(TclRegisterLiteral(envPtr, buf, len, 0), envPtr);
 		return TCL_OK;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.6.12.1 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.6.12.2 2001/09/27 13:46:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -424,7 +424,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
         case TCL_TOKEN_TEXT:
 	    if (tokenPtr->size > 0) {
 		objIndex = TclRegisterLiteral(envPtr, tokenPtr->start,
-	                (int)tokenPtr->size, /*onHeap*/ 0);
+	                tokenPtr->size, /*onHeap*/ 0);
 	    } else {
 		objIndex = TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0);
 	    }
@@ -451,7 +451,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    
         case TCL_TOKEN_COMMAND:
 	    code = TclCompileScript(interp, tokenPtr->start+1,
-		    (int)tokenPtr->size-2, /*nested*/ 1, envPtr);
+		    tokenPtr->size-2, /*nested*/ 1, envPtr);
 	    if (code != TCL_OK) {
 		goto done;
 	    }
