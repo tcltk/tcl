@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.37 1999/07/11 20:29:57 redman Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.38 1999/07/13 22:23:45 redman Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -323,10 +323,7 @@ plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
 install:    install-binaries install-libraries
 test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLTEST) << "$(TCLREGDLL)"
-		load [lindex $$argv 0] registry
-		source $(ROOT)/tests/all.tcl
-<<
+	$(TCLTEST) $(ROOT)/tests/all.tcl
 
 setup:
 	@$(MKDIR) $(TMPDIR)

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.14 1999/07/08 23:17:56 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.15 1999/07/13 22:23:44 redman Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -283,8 +283,10 @@ $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
 $(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32)
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
 
-$(CAT32): cat.c
+cat32.obj: cat.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+
+$(CAT32): cat32.obj
 	$(CC) $(CFLAGS) cat32.obj $(CC_EXENAME) -link $(LDFLAGS_CONSOLE)
 
 # The following targets are configured by autoconf to generate either
