@@ -1,3 +1,8 @@
+2004-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/expr.n: Clarified that non-num/non-bool literals require
+	quoting. [Bug 1027849]. Also listed booleans as acceptable values.
+
 2004-10-26  Kevin B. Kenny <kennykb@acm.org>
 
 	* library/clock.tcl (FreeScan): Fixed a bug that caused relative
