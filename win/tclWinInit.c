@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.60 2004/07/08 08:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.61 2004/07/08 16:53:54 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -527,7 +527,7 @@ AppendEnvironment(
      */
     for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
 	if (*shortlib == '/') {
-	    if (shortlib - lib == strlen(lib) - 1) {
+	    if ((unsigned)(shortlib - lib) == strlen(lib) - 1) {
 		Tcl_Panic("last character in lib cannot be '/'");
 	    }
 	    shortlib++;
