@@ -1,3 +1,11 @@
+2004-12-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4, win/configure: update MSVC CFLAGS_OPT to -O2, remove
+	-Gs (included in -O2) and -GD (outdated).  Use "link -lib" instead
+	of "lib" binary and remove -YX for MSVC7 portability.  Add
+	-fomit-frame-pointer for gcc OPT compiles. [Bug 1092952, 1091967]
+	Align LIBS_GUI with Tk head needs.
+
 2004-12-29  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclDate.c: Regen
