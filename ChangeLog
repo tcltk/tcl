@@ -1,3 +1,8 @@
+2005-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure, unix/tcl.m4: add solaris 64-bit gcc build
+	support. [Bug 1021871]
+
 2005-01-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/expr-old.test (expr-old-37.2): Added test for [Bug 1109484]
