@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.11 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.12 2003/02/19 14:33:42 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -695,7 +695,7 @@ test execute-7.29 {Wide int handling in INST_BITNOT} {longIs32bit} {
 test execute-7.30 {Wide int handling in function call} {longIs32bit} {
     set x 0x12345687123456
     incr x
-    expr {sin($x) == sin(double($x))}
+    expr {log($x) == log(double($x))}
 } 1
 test execute-7.31 {Wide int handling in abs()} {longIs32bit} {
     set x 0xa23456871234568
