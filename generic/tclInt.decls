@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.55 2002/08/06 01:49:27 das Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.56 2002/10/09 11:54:09 das Exp $
 
 library tcl
 
@@ -399,7 +399,7 @@ declare 98 generic {
 #    Tcl_Obj * TclSetIndexedScalar(Tcl_Interp *interp, int localIndex,
 #	    Tcl_Obj *objPtr, int flags)
 #}
-declare 101 {unix win} {
+declare 101 generic {
     char * TclSetPreInitScript(char *string)
 }
 declare 102 generic {

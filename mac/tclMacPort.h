@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.15 2002/06/05 11:59:44 das Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.16 2002/10/09 11:54:34 das Exp $
  */
 
 
@@ -58,54 +58,8 @@
 #   include <time.h>
 #   include <unistd.h>
 #   include <utime.h>
-
-/*
- * The following definitions are usually found if fcntl.h.
- * However, MetroWerks has screwed that file up a couple of times
- * and all we need are the defines.
- */
-#ifndef	_FCNTL
-#   define O_RDWR	  	0x0	/* open the file in read/write mode */
-#   define O_RDONLY  		0x1	/* open the file in read only mode */
-#   define O_WRONLY  		0x2	/* open the file in write only mode */
-#   define O_APPEND  		0x0100	/* open the file in append mode */
-#   define O_CREAT	  	0x0200	/* create the file if it doesn't exist */
-#   define O_EXCL	  	0x0400	/* if the file exists don't create it again */
-#   define O_TRUNC	  	0x0800	/* truncate the file after opening it */
-#endif
-/*
- * MetroWerks stat.h file is rather weak.  The defines
- * after the include are needed to fill in the missing
- * defines.
- */
-
+#   include <fcntl.h>
 #   include <stat.h>
-#   ifndef S_IFIFO
-#	define S_IFIFO		0x0100
-#   endif
-#   ifndef S_IFBLK
-#	define S_IFBLK		0x0600
-#   endif
-#   ifndef S_ISLNK
-#	define S_ISLNK(m)	(((m)&(S_IFMT)) == (S_IFLNK))
-#   endif
-#   ifndef S_ISSOCK
-#	define S_ISSOCK(m)	(((m)&(S_IFMT)) == (S_IFSOCK))
-#   endif
-#   ifndef S_IRWXU
-#	define S_IRWXU		00007	/* read, write, execute: owner */
-#   	define S_IRUSR		00004	/* read permission: owner */
-#   	define S_IWUSR		00002	/* write permission: owner */
-#   	define S_IXUSR		00001	/* execute permission: owner */
-#   	define S_IRWXG		00007	/* read, write, execute: group */
-#   	define S_IRGRP		00004	/* read permission: group */
-#   	define S_IWGRP		00002	/* write permission: group */
-#   	define S_IXGRP		00001	/* execute permission: group */
-#   	define S_IRWXO		00007	/* read, write, execute: other */
-#   	define S_IROTH		00004	/* read permission: other */
-#   	define S_IWOTH		00002	/* write permission: other */
-#   	define S_IXOTH		00001	/* execute permission: other */
-#   endif
 
 #if __MSL__ < 0x6000
 #   define isatty(arg) 		1

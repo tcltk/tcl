@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.75 2002/08/31 06:09:45 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.76 2002/10/09 11:54:48 das Exp $
  */
 
 #include "tclInt.h"
@@ -164,15 +164,7 @@ TclIntStubs tclIntStubs = {
     TclServiceIdle, /* 98 */
     NULL, /* 99 */
     NULL, /* 100 */
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclSetPreInitScript, /* 101 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    TclSetPreInitScript, /* 101 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    NULL, /* 101 */
-#endif /* MAC_TCL */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
