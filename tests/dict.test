@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.1 2003/04/05 01:03:21 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.2 2003/04/07 10:12:12 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -62,6 +62,14 @@ test dict-2.4 {dict create command} {
 test dict-2.5 {dict create command} {
     list [catch {dict create a b c} msg] $msg
 } {1 {wrong # args: should be "dict create ?key value ...?"}}
+test dict-2.6 {dict create command - initialse refcount field!} {
+    # Bug 715751 will show up in memory debuggers like purify
+    for {set i 0} {$i<10} {incr i} { 
+	set dictv [dict create a 0] 
+	set share [dict values $dictv] 
+	list [dict incr dictv a] 
+    } 
+} {}
 
 test dict-3.1 {dict get command} {dict get {a b} a} b
 test dict-3.2 {dict get command} {dict get {a b c d} a} b
