@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.5 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.6 1999/12/02 02:03:27 redman Exp $
  */
 
 #include "tcl.h"
@@ -40,6 +40,57 @@ int (*tclDummyLinkVarPtr)() = Tcl_LinkVar;
 extern int		isatty _ANSI_ARGS_((int fd));
 extern char *		strcpy _ANSI_ARGS_((char *dst, CONST char *src));
 
+static char *tclStartupScriptFileName = NULL;
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetStartupScriptFileName --
+ *
+ *	Primes the startup script file name, used to override the
+ *      command line processing.
+ *
+ * Results:
+ *	None. 
+ *
+ * Side effects:
+ *	This procedure initializes the file name of the Tcl script to
+ *      run at startup.
+ *
+ *----------------------------------------------------------------------
+ */
+void TclSetStartupScriptFileName(fileName)
+    char *fileName;
+{
+    tclStartupScriptFileName = fileName;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetStartupScriptFileName --
+ *
+ *	Gets the startup script file name, used to override the
+ *      command line processing.
+ *
+ * Results:
+ *	The startup script file name, NULL if none has been set.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *TclGetStartupScriptFileName()
+{
+    return tclStartupScriptFileName;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -53,7 +104,7 @@ extern char *		strcpy _ANSI_ARGS_((char *dst, CONST char *src));
  *	it's done.
  *
  * Side effects:
- *	This procedure initializes the Tk world and then starts
+ *	This procedure initializes the Tcl world and then starts
  *	interpreting commands;  almost anything could happen, depending
  *	on the script being interpreted.
  *
@@ -72,7 +123,7 @@ Tcl_Main(argc, argv, appInitProc)
 {
     Tcl_Obj *resultPtr;
     Tcl_Obj *commandPtr = NULL;
-    char buffer[1000], *args, *fileName;
+    char buffer[1000], *args;
     int code, gotPartial, tty, length;
     int exitCode = 0;
     Tcl_Channel inChannel, outChannel, errChannel;
@@ -91,11 +142,12 @@ Tcl_Main(argc, argv, appInitProc)
      * strip it off and use it as the name of a script file to process.
      */
 
-    fileName = NULL;
-    if ((argc > 1) && (argv[1][0] != '-')) {
-	fileName = argv[1];
-	argc--;
-	argv++;
+    if (tclStartupScriptFileName == NULL) {
+	if ((argc > 1) && (argv[1][0] != '-')) {
+	    tclStartupScriptFileName = argv[1];
+	    argc--;
+	    argv++;
+	}
     }
     args = Tcl_Merge(argc-1, argv+1);
     Tcl_ExternalToUtfDString(NULL, args, -1, &argString);
@@ -103,10 +155,11 @@ Tcl_Main(argc, argv, appInitProc)
     Tcl_DStringFree(&argString);
     ckfree(args);
 
-    if (fileName == NULL) {
+    if (tclStartupScriptFileName == NULL) {
 	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &argString);
     } else {
-	fileName = Tcl_ExternalToUtfDString(NULL, fileName, -1, &argString);
+	tclStartupScriptFileName = Tcl_ExternalToUtfDString(NULL,
+		tclStartupScriptFileName, -1, &argString);
     }
 
     TclFormatInt(buffer, argc-1);
@@ -119,7 +172,8 @@ Tcl_Main(argc, argv, appInitProc)
 
     tty = isatty(0);
     Tcl_SetVar(interp, "tcl_interactive",
-	    ((fileName == NULL) && tty) ? "1" : "0", TCL_GLOBAL_ONLY);
+	    ((tclStartupScriptFileName == NULL) && tty) ? "1" : "0",
+	    TCL_GLOBAL_ONLY);
     
     /*
      * Invoke application-specific initialization.
@@ -140,8 +194,8 @@ Tcl_Main(argc, argv, appInitProc)
      * and quit.
      */
 
-    if (fileName != NULL) {
-	code = Tcl_EvalFile(interp, fileName);
+    if (tclStartupScriptFileName != NULL) {
+	code = Tcl_EvalFile(interp, tclStartupScriptFileName);
 	if (code != TCL_OK) {
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {

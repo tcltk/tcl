@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.2 1999/04/16 00:46:45 stanton Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.3 1999/12/02 02:03:22 redman Exp $
  */
 
 #include "tclInt.h"
@@ -142,6 +142,8 @@ typedef struct EscapeEncodingData {
  */
 
 char *tclDefaultEncodingDir = NULL;
+
+static int encodingsInitialized  = 0;
 
 /*
  * Hash table that keeps track of all loaded Encodings.  Keys are
@@ -311,6 +313,7 @@ TclFinalizeEncodingSubsystem()
     Encoding *encodingPtr;
 
     Tcl_MutexLock(&encodingMutex);
+    encodingsInitialized  = 0;
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
 	encodingPtr = (Encoding *) Tcl_GetHashValue(hPtr);
@@ -2682,4 +2685,83 @@ unilen(src)
     return (char *) p - src;
 }
 
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclFindEncodings --
+ *
+ *	Find and load the encoding file for this operating system.
+ *	Before this is called, Tcl makes assumptions about the
+ *	native string representation, but the true encoding is not
+ *	assured.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Varied, see the respective initialization routines.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+TclFindEncodings(argv0)
+    CONST char *argv0;		/* Name of executable from argv[0] to main()
+				 * in native multi-byte encoding. */
+{
+    char *native;
+    Tcl_Obj *pathPtr;
+    Tcl_DString libPath, buffer;
+
+    if (encodingsInitialized == 0) {
+	/* 
+	 * Double check inside the mutex.  There may be calls
+	 * back into this routine from some of the procedures below.
+	 */
+
+	TclpInitLock();
+	if (encodingsInitialized == 0) {
+	    /*
+	     * Have to set this bit here to avoid deadlock with the
+	     * routines below us that call into TclInitSubsystems.
+	     */
+
+	    encodingsInitialized = 1;
+
+	    native = TclpFindExecutable(argv0);
+	    TclpInitLibraryPath(native);
+
+	    /*
+	     * The library path was set in the TclpInitLibraryPath routine.
+	     * The string set is a dirty UTF string.  To preserve the value
+	     * convert the UTF string back to native before setting the new
+	     * default encoding.
+	     */
+	    
+	    pathPtr = TclGetLibraryPath();
+	    if (pathPtr != NULL) {
+		Tcl_UtfToExternalDString(NULL, Tcl_GetString(pathPtr), -1,
+			&libPath);
+	    }
+
+	    TclpSetInitialEncodings();
+
+	    /*
+	     * Now convert the native string back to UTF.
+	     */
+	     
+	    if (pathPtr != NULL) {
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&libPath), -1,
+			&buffer);
+		pathPtr = Tcl_NewStringObj(Tcl_DStringValue(&buffer), -1);
+		TclSetLibraryPath(pathPtr);
+
+		Tcl_DStringFree(&libPath);
+		Tcl_DStringFree(&buffer);
+	    }
+	}
+	TclpInitUnlock();
+    }
+}
 	

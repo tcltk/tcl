@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.5 1999/04/16 00:48:07 stanton Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.6 1999/12/02 02:03:37 redman Exp $
  */
 
 #include "tcl.h"
@@ -54,6 +54,30 @@ main(argc, argv)
     char **argv;		/* Values of command-line arguments. */
 {
     /*
+     * The following #if block allows you to change the AppInit
+     * function by using a #define of TCL_LOCAL_APPINIT instead
+     * of rewriting this entire file.  The #if checks for that
+     * #define and uses Tcl_AppInit if it doesn't exist.
+     */
+    
+#ifndef TCL_LOCAL_APPINIT
+#define TCL_LOCAL_APPINIT Tcl_AppInit    
+#endif
+    extern int TCL_LOCAL_APPINIT _ANSI_ARGS_((Tcl_Interp *interp));
+    
+    /*
+     * The following #if block allows you to change how Tcl finds the startup
+     * script, prime the library or encoding paths, fiddle with the argv,
+     * etc., without needing to rewrite Tcl_Main()
+     */
+    
+#ifdef TCL_LOCAL_MAIN_HOOK
+    extern int TCL_LOCAL_MAIN_HOOK _ANSI_ARGS_((int *argc, char ***argv));
+#endif
+
+    char buffer[MAX_PATH +1];
+    char *p;
+    /*
      * Set up the default locale to be standard "C" locale so parsing
      * is performed correctly.
      */
@@ -61,7 +85,25 @@ main(argc, argv)
     setlocale(LC_ALL, "C");
     setargv(&argc, &argv);
 
-    Tcl_Main(argc, argv, Tcl_AppInit);
+    /*
+     * Replace argv[0] with full pathname of executable, and forward
+     * slashes substituted for backslashes.
+     */
+
+    GetModuleFileName(NULL, buffer, sizeof(buffer));
+    argv[0] = buffer;
+    for (p = buffer; *p != '\0'; p++) {
+	if (*p == '\\') {
+	    *p = '/';
+	}
+    }
+
+#ifdef TCL_LOCAL_MAIN_HOOK
+    TCL_LOCAL_MAIN_HOOK(&argc, &argv);
+#endif
+
+    Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
+
     return 0;			/* Needed only to prevent compiler warning. */
 }
 

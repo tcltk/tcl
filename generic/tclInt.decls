@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.17 1999/08/10 02:42:14 welch Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.18 1999/12/02 02:03:25 redman Exp $
 
 library tcl
 
@@ -591,6 +591,12 @@ declare 156 generic {
 }
 declare 157 generic {
     Var * TclVarTraceExists (Tcl_Interp *interp, char *varName)
+}
+declare 158 generic {
+    void TclSetStartupScriptFileName(char *filename)
+}
+declare 159 generic {
+    char *TclGetStartupScriptFileName(void)
 }
 
 ##############################################################################

@@ -1,3 +1,19 @@
+1999-12-01  Scott Redman <redman@scriptics.com>
+
+	* generic/tcl.decls :
+	* generic/tclMain.c :
+	* unix/tclAppInit.c: 
+	* win/tclAppInit.c: Added two new internal functions,
+	TclSetStartupScriptFileName() and TclGetStartupScriptFileName()
+	and added hooks into the main() code for supporting TclPro and
+	other "big" shells more easily without requiring a copy of the
+	main() code.
+	
+	* generic/tclEncoding.c:
+	* generic/tclEvent.c:  Moved encoding-related startup code from
+	tclEvent.c into the more appropriate tclEncoding.c.
+
+	
 1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclIO.c: fix from Kupries for	Tcl_UnstackChannel that

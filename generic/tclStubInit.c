@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.28 1999/08/19 02:59:10 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.29 1999/12/02 02:03:27 redman Exp $
  */
 
 #include "tclInt.h"
@@ -233,6 +233,8 @@ TclIntStubs tclIntStubs = {
     TclTestChannelEventCmd, /* 155 */
     TclRegError, /* 156 */
     TclVarTraceExists, /* 157 */
+    TclSetStartupScriptFileName, /* 158 */
+    TclGetStartupScriptFileName, /* 159 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
