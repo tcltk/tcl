@@ -9,11 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoll.c,v 1.1.2.1 2001/10/15 10:48:49 dkf Exp $
+ * RCS: @(#) $Id: strtoll.c,v 1.1.2.2 2001/10/19 12:52:33 dkf Exp $
  */
 
 #include "tcl.h"
+#include "tclPort.h"
 #include <ctype.h>
+
+#define TCL_WIDEINT_MAX	(((Tcl_WideUInt)Tcl_LongAsWide(-1))>>1)
 
 
 /*
@@ -54,6 +57,7 @@ strtoll(string, endPtr, base)
 {
     register char *p;
     Tcl_WideInt result;
+    Tcl_WideUInt uwResult;
 
     /*
      * Skip any leading blanks.
@@ -70,12 +74,30 @@ strtoll(string, endPtr, base)
 
     if (*p == '-') {
 	p += 1;
-	result = -(strtoull(p, endPtr, base));
+	uwResult = strtoull(p, endPtr, base);
+	if (errno != ERANGE) {
+	    if (uwResult > TCL_WIDEINT_MAX+1) {
+		errno = ERANGE;
+		return Tcl_LongAsWide(-1);
+	    } else if (uwResult > TCL_WIDEINT_MAX) {
+		return ~((Tcl_WideInt)TCL_WIDEINT_MAX);
+	    } else {
+		result = -uwResult;
+	    }
+	}
     } else {
 	if (*p == '+') {
 	    p += 1;
 	}
-	result = strtoull(p, endPtr, base);
+	uwResult = strtoull(p, endPtr, base);
+	if (errno != ERANGE) {
+	    if (uwResult > TCL_WIDEINT_MAX) {
+		errno = ERANGE;
+		return Tcl_LongAsWide(-1);
+	    } else {
+		result = uwResult;
+	    }
+	}
     }
     if ((result == 0) && (endPtr != 0) && (*endPtr == p)) {
 	*endPtr = string;

@@ -9,10 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoull.c,v 1.1.2.2 2001/10/18 09:03:58 dkf Exp $
+ * RCS: @(#) $Id: strtoull.c,v 1.1.2.3 2001/10/19 12:52:33 dkf Exp $
  */
 
 #include "tcl.h"
+#include "tclPort.h"
 #include <ctype.h>
 
 /*
@@ -31,6 +32,7 @@ static char cvtIn[] = {
     10, 11, 12, 13, 14, 15, 16, 17, 18, 19,	/* 'a' - 'z' */
     20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
     30, 31, 32, 33, 34, 35};
+
 
 /*
  *----------------------------------------------------------------------
@@ -71,15 +73,29 @@ strtoull(string, endPtr, base)
     register char *p;
     register Tcl_WideUInt result = 0;
     register unsigned digit;
-    int anyDigits = 0;
+    register Tcl_WideUInt shifted;
+    int anyDigits = 0, negative = 0;
 
     /*
      * Skip any leading blanks.
      */
 
     p = string;
-    while (isspace(*p)) {
+    while (isspace(*p)) {	/* INTL: locale-dependent */
 	p += 1;
+    }
+
+    /*
+     * Check for a sign.
+     */
+
+    if (*p == '-') {
+	p += 1;
+	negative = 1;
+    } else {
+	if (*p == '+') {
+	    p += 1;
+	}
     }
 
     /*
@@ -87,11 +103,10 @@ strtoull(string, endPtr, base)
      * of the string.
      */
     
-    if (base == 0)
-    {
+    if (base == 0) {
 	if (*p == '0') {
 	    p += 1;
-	    if (*p == 'x') {
+	    if (*p == 'x' || *p == 'X') {
 		p += 1;
 		base = 16;
 	    } else {
@@ -104,15 +119,16 @@ strtoull(string, endPtr, base)
 		anyDigits = 1;
 		base = 8;
 	    }
+	} else {
+	    base = 10;
 	}
-	else base = 10;
     } else if (base == 16) {
 
 	/*
 	 * Skip a leading "0x" from hex numbers.
 	 */
 
-	if ((p[0] == '0') && (p[1] == 'x')) {
+	if ((p[0] == '0') && (p[1] == 'x' || *p == 'X')) {
 	    p += 2;
 	}
     }
@@ -128,7 +144,11 @@ strtoull(string, endPtr, base)
 	    if (digit > 7) {
 		break;
 	    }
-	    result = (result << 3) + digit;
+	    shifted = result << 3;
+	    if ((shifted >> 3) != result) {
+		goto overflow;
+	    }
+	    result = shifted + digit;
 	    anyDigits = 1;
 	}
     } else if (base == 10) {
@@ -137,7 +157,11 @@ strtoull(string, endPtr, base)
 	    if (digit > 9) {
 		break;
 	    }
-	    result = (10*result) + digit;
+	    shifted = 10 * result;
+	    if ((shifted / 10) != result) {
+		goto overflow;
+	    }
+	    result = shifted + digit;
 	    anyDigits = 1;
 	}
     } else if (base == 16) {
@@ -150,7 +174,11 @@ strtoull(string, endPtr, base)
 	    if (digit > 15) {
 		break;
 	    }
-	    result = (result << 4) + digit;
+	    shifted = result << 4;
+	    if ((shifted >> 4) != result) {
+		goto overflow;
+	    }
+	    result = shifted + digit;
 	    anyDigits = 1;
 	}
     } else {
@@ -163,9 +191,21 @@ strtoull(string, endPtr, base)
 	    if (digit >= base) {
 		break;
 	    }
-	    result = result*base + digit;
+	    shifted = result * base;
+	    if ((shifted/base) != result) {
+		goto overflow;
+	    }
+	    result = shifted + digit;
 	    anyDigits = 1;
 	}
+    }
+
+    /*
+     * Negate if we found a '-' earlier.
+     */
+
+    if (negative) {
+	result = (Tcl_WideUInt)(-((Tcl_WideInt)result));
     }
 
     /*
@@ -181,4 +221,25 @@ strtoull(string, endPtr, base)
     }
 
     return result;
+
+    /*
+     * On overflow generate the right output
+     */
+
+ overflow:
+    errno = ERANGE;
+    if (endPtr != 0) {
+	for ( ; ; p += 1) {
+	    digit = *p - '0';
+	    if (digit > ('z' - '0')) {
+		break;
+	    }
+	    digit = cvtIn[digit];
+	    if (digit >= base) {
+		break;
+	    }
+	}
+	*endPtr = p;
+    }
+    return (Tcl_WideUInt)Tcl_LongAsWide(-1);
 }
