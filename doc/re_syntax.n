@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.1 1999/06/24 21:15:13 jpeek Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.2 1999/07/13 02:07:37 jpeek Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -20,7 +20,6 @@ A \fIregular expression\fR describes strings of characters.
 It's a pattern that matches certain strings and doesn't match others.
 
 .SH "DIFFERENT FLAVORS OF REs"
-.VS 8.1
 Regular expressions (``RE''s), as defined by POSIX, come in two
 flavors: \fIextended\fR REs (``EREs'') and \fIbasic\fR REs (``BREs'').
 EREs are roughly those of the traditional \fIegrep\fR, while BREs are
@@ -223,24 +222,23 @@ enclosed in
 stands for the
 sequence of characters of that collating element.
 The sequence is a single element of the bracket expression's list.
-A bracket expression in a locale which has
+A bracket expression in a locale that has
 multi-character collating elements
 can thus match more than one character.
-Most insidiously, if
-\fB^\fR
-is used,
-this can happen even if no multi-character collating 
-elements appear in the bracket expression!
-If the collating sequence includes a
-\fBch\fR
-multi-character collating element,
-then the RE
-\fB[[.ch.]]*c\fR
-matches the first five characters
-of `\fBchchcc\fR',
-and the RE
-\fB[^c]b\fR
-matches all of `\fBchb\fR'.
+.VS 8.2
+So (insidiously), a bracket expression that starts with \fB^\fR
+can match multi-character collating elements even if none of them
+appear in the bracket expression!
+(\fINote:\fR Tcl currently has no multi-character collating elements.
+This information is only for illustration.)
+.PP
+For example, assume the collating sequence includes a \fBch\fR
+multi-character collating element.
+Then the RE \fB[[.ch.]]*c\fR (zero or more \fBch\fP's followed by \fBc\fP)
+matches the first five characters of `\fBchchcc\fR'.
+Also, the RE \fB[^c]b\fR matches all of `\fBchb\fR'
+(because \fB[^c]\fR matches the multi-character \fBch\fR).
+.VE 8.2
 .PP
 Within a bracket expression, a collating element enclosed in
 \fB[=\fR
@@ -261,6 +259,12 @@ and `\fB[o\o'o^']\fR'\&
 are all synonymous.
 An equivalence class may not be an endpoint
 of a range.
+.VS 8.2
+(\fINote:\fR 
+Tcl currently implements only the Unicode locale.
+It doesn't define any equivalence classes.
+The examples above are just illustrations.)
+.VE 8.2
 .PP
 Within a bracket expression, the name of a \fIcharacter class\fR enclosed
 in
@@ -271,7 +275,7 @@ stands for the list of all characters
 (not all collating elements!)
 belonging to that
 class.
-Standard character classes are (*** CHECK THESE! ***):
+Standard character classes are:
 .PP
 .RS
 .ne 5
@@ -283,15 +287,20 @@ Standard character classes are (*** CHECK THESE! ***):
 \fBdigit\fR	A decimal digit. 
 \fBxdigit\fR	A hexadecimal digit. 
 \fBalnum\fR	An alphanumeric (letter or digit). 
+\fBprint\fR	An alphanumeric (same as alnum).
+\fBblank\fR	A space or tab character.
 \fBspace\fR	A character producing white space in displayed text. 
 \fBpunct\fR	A punctuation character. 
-\fBprint\fR	A printing character. 
 \fBgraph\fR	A character with a visible representation. 
 \fBcntrl\fR	A control character. 
 .fi
 .RE
 .PP
-A locale may provide others. (*** NOT ANYMORE, TRUE? ***)
+A locale may provide others.
+.VS 8.2
+(Note that the current Tcl implementation has only one locale:
+the Unicode locale.)
+.VE 8.2
 A character class may not be used as an endpoint of a range.
 .PP
 There are two special cases of bracket expressions:
@@ -304,12 +313,11 @@ the beginning and end of a word respectively.
 '\" note, discussion of escapes below references this definition of word
 A word is defined as a sequence of
 word characters
-which is neither preceded nor followed by
+that is neither preceded nor followed by
 word characters.
 A word character is an
 \fIalnum\fR
-character (as defined by
-\fIctype\fR(3))
+character
 or an underscore
 (\fB_\fR).
 These special bracket expressions are deprecated;
@@ -340,7 +348,7 @@ non-printing and otherwise inconvenient characters in REs:
 .RS 2
 .TP 5
 \fB\ea\fR
-alert, aka bell, character, as in C
+alert (bell) character, as in C
 .TP
 \fB\eb\fR
 backspace, as in C
@@ -471,6 +479,10 @@ lose their outer brackets,
 and `\fB\eD\fR', `\fB\eS\fR',
 and `\fB\eW\fR'\&
 are illegal.
+.VS 8.2
+(So, for example, \fB[a-c\ed]\fR is equivalent to \fB[a-c[:digit:]]\fR.
+Also, \fB[a-c\eD]\fR, which is equivalent to \fB[a-c^[:digit:]]\fR, is illegal.)
+.VE 8.2
 .PP
 A constraint escape (AREs only) is a constraint,
 matching the empty string if specific conditions are met,
@@ -491,7 +503,7 @@ matches only at the end of a word
 matches only at the beginning or end of a word
 .TP
 \fB\eY\fR
-matches only at a point which is not the beginning or end of a word
+matches only at a point that is not the beginning or end of a word
 .TP
 \fB\eZ\fR
 matches only at the end of the string
@@ -634,10 +646,10 @@ white space and comments are illegal within multi-character symbols
 like the ARE `\fB(?:\fR' or the BRE `\fB\e(\fR'
 .RE
 .PP
-Expanded-syntax
-white-space characters are blank, tab, newline, etc. (any character
-defined as \fIspace\fR by
-\fIctype\fR(3)).
+Expanded-syntax white-space characters are blank, tab, newline, and
+.VS 8.2
+any character that belongs to the \fIspace\fR character class.
+.VE 8.2
 Exactly how a multi-line expanded-syntax RE
 can be entered interactively by a user,
 if at all, is application-specific;
@@ -916,8 +928,6 @@ and
 \fB[[:>:]]\fR
 respectively;
 no other escapes are available.
-
-.VE 8.1
 
 .SH "SEE ALSO"
 RegExp(3), regexp(n), regsub(n), lsearch(n), switch(n), text(n)
