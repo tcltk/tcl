@@ -1,5 +1,8 @@
 2004-11-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* unix/Makefile.in: Add (commented-out) code to integrate tclConfig.h
+	into the dependency tree and 'make distclean'. [Bug 1068171]
+
 	* generic/tclResult.c (Tcl_AppendResultVA): Remove call to
 	Tcl_GetStringResult to speed up repeated calls to Tcl_AppendResult
 	with the side effect that code that wants to access interp->result
