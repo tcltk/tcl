@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.15 1999/11/18 02:22:44 welch Exp $
+# RCS: @(#) $Id: http.tcl,v 1.16 1999/11/19 06:34:44 hobbs Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
@@ -38,8 +38,48 @@ namespace eval http {
 	" " +   \n %0d%0a
     }
 
-    namespace export geturl config reset wait formatQuery 
+    variable urlTypes
+    array set urlTypes {
+	http	{80 ::socket}
+    }
+
+    namespace export geturl config reset wait formatQuery register unregister
     # Useful, but not exported: data size status code
+}
+
+# http::register --
+#
+#     See documentaion for details.
+#
+# Arguments:
+#     proto           URL protocol prefix, e.g. https
+#     port            Default port for protocol
+#     command         Command to use to create socket
+# Results:
+#     list of port and command that was registered.
+
+proc http::register {proto port command} {
+    variable urlTypes
+    set urlTypes($proto) [list $port $command]
+}
+
+# http::unregister --
+#
+#     Unregisters URL protocol handler
+#
+# Arguments:
+#     proto           URL protocol prefix, e.g. https
+# Results:
+#     list of port and command that was unregistered.
+
+proc http::unregister {proto} {
+    variable urlTypes
+    if {![info exists urlTypes($proto)]} {
+	return -code error "unsupported url type \"$proto\""
+    }
+    set old $urlTypes($proto)
+    unset urlTypes($proto)
+    return $old
 }
 
 # http::config --
@@ -156,6 +196,7 @@ proc http::reset { token {why reset} } {
 
 proc http::geturl { url args } {
     variable http
+    variable urlTypes
 
     # Initialize the state variable, an array.  We'll return the
     # name of this array as the token for the transaction.
@@ -175,6 +216,7 @@ proc http::geturl { url args } {
 	-validate 	0
 	-headers 	{}
 	-timeout 	0
+	-type           application/x-www-form-urlencoded
 	state		header
 	meta		{}
 	currentsize	0
@@ -184,7 +226,7 @@ proc http::geturl { url args } {
 	status		""
     }
     set options {-blocksize -channel -command -handler -headers \
-		-progress -query -validate -timeout}
+		-progress -query -validate -timeout -type}
     set usage [join $options ", "]
     regsub -all -- - $options {} options
     set pat ^-([join $options |])$
@@ -201,12 +243,22 @@ proc http::geturl { url args } {
 	    return -code error "Unknown option $flag, can be: $usage"
 	}
     }
-    if {![regexp -nocase {^(http://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
-	    x proto host y port srvurl]} {
+    if {![regexp -nocase {^(([^:]*)://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
+	    x prefix proto host y port srvurl]} {
 	error "Unsupported URL: $url"
     }
+    if {[string length $proto] == 0} {
+	set proto http
+	set url ${proto}://$url
+    }
+    if {![info exists urlTypes($proto)]} {
+	return -code error "unsupported url type \"$proto\""
+    }
+    set defport [lindex $urlTypes($proto) 0]
+    set defcmd [lindex $urlTypes($proto) 1]
+
     if {[string length $port] == 0} {
-	set port 80
+	set port $defport
     }
     if {[string length $srvurl] == 0} {
 	set srvurl /
@@ -236,9 +288,9 @@ proc http::geturl { url args } {
 
     if {[info exists phost] && [string length $phost]} {
 	set srvurl $url
-	set s [eval socket $async {$phost $pport}]
+	set s [eval $defcmd $async {$phost $pport}]
     } else {
-	set s [eval socket $async {$host $port}]
+	set s [eval $defcmd $async {$host $port}]
     }
     set state(sock) $s
 
@@ -286,7 +338,7 @@ proc http::geturl { url args } {
 	}
 	if {$len > 0} {
 	    puts $s "Content-Length: $len"
-	    puts $s "Content-Type: application/x-www-form-urlencoded"
+	    puts $s "Content-Type: $state(-type)"
 	    puts $s ""
 	    fconfigure $s -translation {auto binary}
 	    puts $s $state(-query)
