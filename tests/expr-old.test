@@ -2,7 +2,7 @@
 #
 # This file contains the original set of tests for Tcl's expr command.
 # Since the expr command is now compiled, a new set of tests covering
-# the new implementation are in the files "parseExpr.test and
+# the new implementation are in the files "parseExpr.test" and
 # "compExpr.test". Sourcing this file into Tcl runs the tests and generates
 # output for errors. No output means no errors were found.
 #
@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.10 2000/12/14 22:24:48 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.11 2001/04/09 09:45:01 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
