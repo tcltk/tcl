@@ -1,3 +1,12 @@
+2001-11-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclBinary.c (BINARY_SCAN_MAX_CACHE, Tcl_BinaryObjCmd,
+	ScanNumber): Added caching scheme to reduce number of object
+	allocations when doing scans of large repetitive binary strings.
+	See comments in file for reasoning behind implementation.
+	Suggested by Miguel Sofer in Patch #429916, but independently
+	implemented.
+
 2001-11-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/regsub.n, doc/regexp.n: Converted dangling references to
