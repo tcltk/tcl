@@ -1,5 +1,10 @@
 2001-04-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tools/encoding/iso8859-15.txt:
+	* library/encoding/iso8859-15.enc:
+	* tools/tcl.wse.in: Added ISO 8859-15 (a.k.a. Latin-1 + Euro
+	currency symbol) support.
+
 	* generic/tclNamesp.c:
 	* generic/tclBasic.c (TclRenameCommand): Missing CONST from
 	several declarations relating to use of TclGetNamespaceForQualName
