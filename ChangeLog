@@ -1,3 +1,8 @@
+2003-04-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/socket.n: Added a paragraph to remind people to specify
+	their encodings when using sockets. [Bug 630621]
+
 2003-04-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/CrtMathFnc.3: Functions also have to deal with wide ints,
