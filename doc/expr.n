@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.4 2000/05/09 00:00:35 hobbs Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.5 2000/09/07 14:27:47 poenitz Exp $
 '\" 
 .so man.macros
 .TH expr n 8.4 Tcl "Tcl Built-In Commands"
@@ -394,6 +394,9 @@ The most expensive code is required for
 unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
+
+.SH "SEE ALSO"
+array(n), string(n), Tcl(n)
 
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison

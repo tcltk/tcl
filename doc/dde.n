@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: dde.n,v 1.5 2000/04/12 18:41:54 hobbs Exp $
+'\" RCS: @(#) $Id: dde.n,v 1.6 2000/09/07 14:27:47 poenitz Exp $
 '\" 
 .so man.macros
 .TH dde n 8.1 Tcl "Tcl Built-In Commands"
@@ -128,7 +128,9 @@ without adding the \fB&\fR to place the process in the background).
 If for any reason the event queue is not flushed, DDE commands may
 hang until the event queue is flushed.  This can create a deadlock
 situation.
+
 .SH "SEE ALSO"
-tk, winfo, send
+tk(n), winfo(n), send(n)
+
 .SH KEYWORDS
 application, dde, name, remote execution
