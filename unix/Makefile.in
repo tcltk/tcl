@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.101 2002/06/21 22:23:21 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.102 2002/06/25 15:20:44 rmax Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -237,6 +237,10 @@ TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
 CC			= @CC@
 #CC			= purify -best-effort @CC@ -DPURIFY
+
+# Flags to be passed to mkLinks to control whether the manpages
+# should be compressed and linked with softlinks
+MKLINKS_FLAGS           = @MKLINKS_FLAGS@
 
 #----------------------------------------------------------------
 # The information below should be usable as is.  The configure
@@ -665,7 +669,7 @@ install-doc: doc
 	    chmod 444 $(MAN1_INSTALL_DIR)/$$i; \
 	    done;
 	@echo "Cross-linking top-level (.1) docs";
-	@$(UNIX_DIR)/mkLinks $(MAN1_INSTALL_DIR)
+	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MAN1_INSTALL_DIR)
 	@echo "Installing C API (.3) docs";
 	@cd $(TOP_DIR)/doc; for i in *.3; \
 	    do \
@@ -675,7 +679,7 @@ install-doc: doc
 	    chmod 444 $(MAN3_INSTALL_DIR)/$$i; \
 	    done;
 	@echo "Cross-linking C API (.3) docs";
-	@$(UNIX_DIR)/mkLinks $(MAN3_INSTALL_DIR)
+	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MAN3_INSTALL_DIR)
 	@echo "Installing command (.n) docs";
 	@cd $(TOP_DIR)/doc; for i in *.n; \
 	    do \
@@ -685,7 +689,7 @@ install-doc: doc
 	    chmod 444 $(MANN_INSTALL_DIR)/$$i; \
 	    done;
 	@echo "Cross-linking command (.n) docs";
-	@$(UNIX_DIR)/mkLinks $(MANN_INSTALL_DIR)
+	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MANN_INSTALL_DIR)
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
