@@ -10,9 +10,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.9 2000/08/11 00:45:32 ericm Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.10 2000/12/11 04:17:38 dgp Exp $
 
-package provide msgcat 1.2
+package provide msgcat 1.2.1
 
 namespace eval msgcat {
     namespace export mc mcset mcmset mclocale mcpreferences mcunknown mcmax
@@ -49,7 +49,7 @@ proc msgcat::mc {src args} {
     # Check for the src in each namespace starting from the local and
     # ending in the global.
 
-    set ns [uplevel {namespace current}]
+    set ns [uplevel 1 [list ::namespace current]]
     
     while {$ns != ""} {
 	foreach loc $::msgcat::loclist {
@@ -66,7 +66,7 @@ proc msgcat::mc {src args} {
 	set ns [namespace parent $ns]
     }
     # we have not found the translation
-    return [uplevel 1 [list [namespace origin mcunknown] \
+    return [uplevel 1 [list [::namespace origin mcunknown] \
 	    $::msgcat::locale $src] $args]
 }
 
@@ -136,7 +136,7 @@ proc msgcat::mcload {langdir} {
 	    incr x
 	    set fid [open $langfile "r"]
 	    fconfigure $fid -encoding utf-8
-            uplevel [list eval [read $fid]]
+            uplevel 1 [read $fid]
 	    close $fid
 	}
     }
@@ -161,7 +161,7 @@ proc msgcat::mcset {locale src {dest ""}} {
 	set dest $src
     }
 
-    set ns [uplevel {namespace current}]
+    set ns [uplevel 1 [list ::namespace current]]
 
     set ::msgcat::msgs([string tolower $locale],$ns,$src) $dest
     return $dest
@@ -186,7 +186,7 @@ proc msgcat::mcmset {locale pairs } {
     }
     
     set locale [string tolower $locale]
-    set ns [uplevel {namespace current}]
+    set ns [uplevel 1 [list ::namespace current]]
     
     foreach {src dest} $pairs {
         set ::msgcat::msgs($locale,$ns,$src) $dest
