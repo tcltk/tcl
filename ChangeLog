@@ -57,7 +57,6 @@
 	* library/package.tcl:
 	* library/safe.tcl:
 	* library/tclIndex:
-	* library/tcltest/tcltest.tcl:
 	* mac/AppleScript.html (removed):
 	* mac/Background.doc (removed):
 	* mac/MW_TclAppleScriptHeader.h (removed):
@@ -131,7 +130,6 @@
 	* tests/resource.test (removed):
 	* tests/socket.test:
 	* tests/source.test:
-	* tests/tcltest.test:
 	* tests/unload.test:
 	* tools/cvtEOL.tcl (removed):
 	* tools/genStubs.tcl:
