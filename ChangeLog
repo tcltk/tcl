@@ -1,7 +1,10 @@
 2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	** Start changes for improved mac build (steffen)  **
-	
+
+	* mac/tclMacShLib.exp:
+	* mac/tclMacMSLPrefix.h: removed files
+
 	* generic/tcl.h: addition of ConditionalMacros.h and use of
 	DLLIMPORT and DLLEXPORT.
 
