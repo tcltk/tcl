@@ -1,3 +1,8 @@
+2004-03-26  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+        * generic/tclPathObj.c:   Fix to Windows-only volume relative
+        * tests/fileSystem.test:  path normalization. [Bug 923586]
+
 2004-03-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (NsEnsembleImplementationCmd): Fix messed up
