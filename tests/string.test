@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.40 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.41 2004/06/30 12:34:36 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -310,10 +310,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, lower, print, punct, space, true, upper, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, lower, print, punct, space, true, upper, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -613,6 +613,51 @@ test string-6.94 {string is double, 32-bit overflow} {
     set x 0x100000000
     list [string is integer -failindex var [expr {$x}]] $var
 } {0 -1}
+test string-6.95 {string is wideinteger, true} {
+    string is wideinteger +1234567890
+} 1
+test string-6.96 {string is wideinteger, true on type} {
+    string is wideinteger [expr wide(50.0)]
+} 1
+test string-6.97 {string is wideinteger, true} {
+    string is wideinteger [list -10]
+} 1
+test string-6.98 {string is wideinteger, true as hex} {
+    string is wideinteger 0xabcdef
+} 1
+test string-6.99 {string is wideinteger, true as octal} {
+    string is wideinteger 0123456
+} 1
+test string-6.100 {string is wideinteger, true with whitespace} {
+    string is wideinteger "  \n1234\v"
+} 1
+test string-6.101 {string is wideinteger, false} {
+    list [string is wideinteger -fail var 123abc] $var
+} {0 3}
+test string-6.102 {string is wideinteger, false on overflow} {
+    list [string is wideinteger -fail var +[largest_int]0] $var
+} {0 -1}
+test string-6.103 {string is wideinteger, false} {
+    list [string is wideinteger -fail var [expr double(1)]] $var
+} {0 1}
+test string-6.104 {string is wideinteger, false} {
+    list [string is wideinteger -fail var "    "] $var
+} {0 0}
+test string-6.105 {string is wideinteger, false on bad octal} {
+    list [string is wideinteger -fail var 036963] $var
+} {0 3}
+test string-6.106 {string is wideinteger, false on bad hex} {
+    list [string is wideinteger -fail var 0X345XYZ] $var
+} {0 5}
+test string-6.105 {string is integer, bad integers} {
+    # SF bug #634856
+    set result ""
+    set numbers [list 1 +1 ++1 +-1 -+1 -1 --1 "- +1"]
+    foreach num $numbers {
+	lappend result [string is wideinteger -strict $num]
+    }
+    set result
+} {1 1 0 0 0 1 0 0}
 
 catch {rename largest_int {}}
 
@@ -1342,3 +1387,7 @@ test string-22.13 {string wordstart, unicode} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
