@@ -1,3 +1,11 @@
+2004-11-02  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclInt.h: added a check for #ifdef __cplusplus around
+	the #define of MODULE_SCOPE.  About the only time it would be
+	problem is when someone is statically linking to Tcl and accessing
+	internals from a C++ file and has name mangling issues from the
+	lack of "C" after 'extern'.
+
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:		Corrected some misleading
