@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBigInt.c,v 1.1.2.3 2004/12/13 21:23:10 kennykb Exp $"
+ * RCS: @(#) $Id: tclBigInt.c,v 1.1.2.4 2004/12/14 18:43:41 kennykb Exp $"
  *
  *----------------------------------------------------------------------
  */
@@ -31,7 +31,7 @@ typedef struct BigInt {
 
     size_t len;			/* Number of values in the array */
     int signum;			/* Sign of the integer */
-    Tcl_NarrowUInt v[0];	/* Little-endian array containing
+    Tcl_NarrowUInt v[1];	/* Little-endian array containing
 				 * the absolute value of the integer */
 
 } BigInt;
@@ -61,7 +61,7 @@ typedef struct BigInt {
 
 #define NewBigInt(n) \
     ( (BigInt*) ( ckalloc( sizeof( BigInt ) \
-                  + (n) * sizeof( Tcl_NarrowUInt ) ) ) )
+                  + ((n)-1) * sizeof( Tcl_NarrowUInt ) ) ) )
 
 /*
  * Static functions defined in this file

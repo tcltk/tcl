@@ -1,3 +1,12 @@
+2004-12-14  Kevin Kenny  <kennykb@acm.org>
+
+        * generic/tclBigInt.c: Avoid zero-length array in 'BigInt'
+                               structure (thanks to dgp for pointing this
+                               out.)
+        * tests/expr.test: Added torture-test vectors for correct
+                           rounding in string->double and double->string
+                           conversions.
+
 2004-12-13  Kevin Kenny  <kennykb@acm.org>
 
 	* doc/BigInt.3:        Added Tcl_MultiplyBigIntByNarrowInt and
