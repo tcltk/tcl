@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.3 1999/08/19 02:59:08 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.4 1999/10/29 03:04:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1341,7 +1341,16 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+    /*
+     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
+     * curly braces surround the variable name.
+     * This really matters for array elements to handle things like
+     *    set {x($foo)} 5
+     * which raises an undefined var error if we are not careful here.
+     * This goes with the hack in TclCompileSetCmd.
+     */
+    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
+	    (varTokenPtr->start[0] != '{')) {
 	/*
 	 * A simple variable name. Divide it up into "name" and "elName"
 	 * strings. If it is not a local variable, look it up at runtime.
@@ -1600,8 +1609,18 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+    /*
+     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
+     * curly braces surround the variable name.
+     * This really matters for array elements to handle things like
+     *    set {x($foo)} 5
+     * which raises an undefined var error if we are not careful here.
+     * This goes with the hack in TclCompileIncrCmd.
+     */
+    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
+	    (varTokenPtr->start[0] != '{')) {
 	simpleVarName = 1;
+
 	name = varTokenPtr[1].start;
 	nameChars = varTokenPtr[1].size;
 	/* last char is ')' => potential array reference */

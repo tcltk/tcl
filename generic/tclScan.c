@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.2 1999/04/16 00:46:53 stanton Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.3 1999/10/29 03:04:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -54,7 +54,7 @@ static char *	BuildCharSet _ANSI_ARGS_((CharSet *cset, char *format));
 static int	CharInSet _ANSI_ARGS_((CharSet *cset, int ch));
 static void	ReleaseCharSet _ANSI_ARGS_((CharSet *cset));
 static int	ValidateFormat _ANSI_ARGS_((Tcl_Interp *interp, char *format,
-		    int numVars));
+		    int numVars, int *totalVars));
 
 /*
  *----------------------------------------------------------------------
@@ -255,17 +255,21 @@ ReleaseCharSet(cset)
  */
 
 static int
-ValidateFormat(interp, format, numVars)
+ValidateFormat(interp, format, numVars, totalSubs)
     Tcl_Interp *interp;		/* Current interpreter. */
     char *format;		/* The format string. */
     int numVars;		/* The number of variables passed to the
 				 * scan command. */
+    int *totalSubs;		/* The number of variables that will be
+				 * required. */
 {
+#define STATIC_LIST_SIZE 16
     int gotXpg, gotSequential, value, i, flags;
     char *end;
     Tcl_UniChar ch;
-    int *nassign = (int*)ckalloc(sizeof(int) * numVars);
-    int objIndex;
+    int staticAssign[STATIC_LIST_SIZE];
+    int *nassign = staticAssign;
+    int objIndex, nspace = STATIC_LIST_SIZE;
 
     /*
      * Initialize an array that records the number of times a variable
@@ -273,9 +277,14 @@ ValidateFormat(interp, format, numVars)
      * a variable is multiply assigned or left unassigned.
      */
 
-    for (i = 0; i < numVars; i++) {
+    if (numVars > nspace) {
+	nassign = (int*)ckalloc(sizeof(int) * numVars);
+	nspace = numVars;
+    }
+    for (i = 0; i < nspace; i++) {
 	nassign[i] = 0;
     }
+    //memset(nassign, 0, nspace * sizeof(int));
 
     objIndex = gotXpg = gotSequential = 0;
 
@@ -350,7 +359,7 @@ ValidateFormat(interp, format, numVars)
 	    format += Tcl_UtfToUniChar(format, &ch);
 	}
 
-	if (!(flags & SCAN_SUPPRESS) && objIndex >= numVars) {
+	if (!(flags & SCAN_SUPPRESS) && numVars && (objIndex >= numVars)) {
 	    goto badIndex;
 	}
 
@@ -415,6 +424,26 @@ ValidateFormat(interp, format, numVars)
 	    }
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
+	    if (objIndex >= nspace) {
+		/*
+		 * Expand the nassign buffer
+		 */
+		nspace += STATIC_LIST_SIZE;
+		if (nassign == staticAssign) {
+		    nassign = (void *)ckalloc(nspace * sizeof(int));
+		    for (i = 0; i < STATIC_LIST_SIZE; ++i) {
+			nassign[i] = staticAssign[i];
+		    }
+		} else {
+		    nassign = (void *)ckrealloc((void *)nassign,
+			    nspace * sizeof(int));
+		}
+		for (i = nspace-STATIC_LIST_SIZE; i < nspace; i++) {
+		    nassign[i] = 0;
+		}
+		//memset((VOID *) nassign[nspace-STATIC_LIST_SIZE], 0,
+		//	STATIC_LIST_SIZE * sizeof(int));
+	    }
 	    nassign[objIndex]++;
 	    objIndex++;
 	}
@@ -424,17 +453,25 @@ ValidateFormat(interp, format, numVars)
      * Verify that all of the variable were assigned exactly once.
      */
 
+    if (numVars == 0) {
+	numVars = objIndex;
+    }
+    if (totalSubs) {
+	*totalSubs = numVars;
+    }
     for (i = 0; i < numVars; i++) {
 	if (nassign[i] > 1) {
 	    Tcl_SetResult(interp, "variable is assigned by multiple \"%n$\" conversion specifiers", TCL_STATIC);
 	    goto error;
 	} else if (nassign[i] == 0) {
-	    Tcl_SetResult(interp, "variable is not assigend by any conversion specifiers", TCL_STATIC);
+	    Tcl_SetResult(interp, "variable is not assigned by any conversion specifiers", TCL_STATIC);
 	    goto error;
 	}
     }
 
-    ckfree((char *)nassign);
+    if (nassign != staticAssign) {
+	ckfree((char *)nassign);
+    }
     return TCL_OK;
 
     badIndex:
@@ -448,8 +485,11 @@ ValidateFormat(interp, format, numVars)
     }
 
     error:
-    ckfree((char *)nassign);
+    if (nassign != staticAssign) {
+	ckfree((char *)nassign);
+    }
     return TCL_ERROR;
+#undef STATIC_LIST_SIZE
 }
 
 /*
@@ -478,7 +518,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     char *format;
-    int numVars, nconversions;
+    int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, value, result, code;
     char *string, *end, *baseString;
     char op = 0;
@@ -487,7 +527,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     size_t width;
     long (*fn)() = NULL;
     Tcl_UniChar ch, sch;
-    Tcl_Obj **objs, *objPtr;
+    Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
     char buf[513];			  /* Temporary buffer to hold scanned
 					   * number strings before they are
@@ -506,17 +546,19 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
      * Check for errors in the format string.
      */
     
-    if (ValidateFormat(interp, format, numVars) == TCL_ERROR) {
+    if (ValidateFormat(interp, format, numVars, &totalVars) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
     /*
      * Allocate space for the result objects.
      */
-    
-    objs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj*) * numVars);
-    for (i = 0; i < numVars; i++) {
-	objs[i] = NULL;
+
+    if (totalVars > 0) {
+	objs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj*) * totalVars);
+	for (i = 0; i < totalVars; i++) {
+	    objs[i] = NULL;
+	}
     }
 
     string = Tcl_GetStringFromObj(objv[1], NULL);
@@ -1009,24 +1051,57 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     result = 0;
     code = TCL_OK;
 
-    for (i = 0; i < numVars; i++) {
-	if (objs[i] != NULL) {
-	    result++;
-	    if (Tcl_ObjSetVar2(interp, objv[i+3], NULL, objs[i], 0) == NULL) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"couldn't set variable \"",
-			Tcl_GetString(objv[i+3]), "\"", (char *) NULL);
-		code = TCL_ERROR;
+    if (numVars) {
+	/*
+	 * In this case, variables were specified (classic scan)
+	 */
+	for (i = 0; i < totalVars; i++) {
+	    if (objs[i] != NULL) {
+		result++;
+		if (Tcl_ObjSetVar2(interp, objv[i+3], NULL,
+			objs[i], 0) == NULL) {
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			    "couldn't set variable \"",
+			    Tcl_GetString(objv[i+3]), "\"", (char *) NULL);
+		    code = TCL_ERROR;
+		}
+		Tcl_DecrRefCount(objs[i]);
 	    }
-	    Tcl_DecrRefCount(objs[i]);
+	}
+    } else {
+	/*
+	 * Here no vars were specified, we want a list returned (inline scan)
+	 */
+	objPtr = Tcl_NewObj();
+	for (i = 0; i < totalVars; i++) {
+	    if (objs[i] != NULL) {
+		Tcl_ListObjAppendElement(NULL, objPtr, objs[i]);
+		Tcl_DecrRefCount(objs[i]);
+	    } else {
+		/*
+		 * More %-specifiers than matching chars, so we
+		 * just spit out empty strings for these
+		 */
+		Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewObj());
+	    }
 	}
     }
     ckfree((char*) objs);
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
-	    result = -1;
+	    if (numVars) {
+		objPtr = Tcl_NewIntObj(-1);
+	    } else {
+		if (objPtr) {
+		    Tcl_SetListObj(objPtr, 0, NULL);
+		} else {
+		    objPtr = Tcl_NewObj();
+		}
+	    }
+	} else if (numVars) {
+	    objPtr = Tcl_NewIntObj(result);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+	Tcl_SetObjResult(interp, objPtr);
     }
     return code;
 }

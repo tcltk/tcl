@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.21 1999/10/21 02:16:21 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.22 1999/10/29 03:03:59 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1109,7 +1109,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			&index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetByteArrayObj(resultPtr, &string1[index], 1);
+		Tcl_SetByteArrayObj(resultPtr,
+			(unsigned char *)(&string1[index]), 1);
 	    } else {
 		string1 = Tcl_GetStringFromObj(objv[2], &length1);
 		

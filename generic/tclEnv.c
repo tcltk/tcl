@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.5 1999/10/13 00:32:17 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.6 1999/10/29 03:04:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -251,7 +251,7 @@ TclSetEnv(name, value)
      * update the string in the cache.
      */
 
-    if (environ[index] == p) {
+    if ((index != -1) && (environ[index] == p)) {
 	ReplaceString(oldValue, p);
     }
 
