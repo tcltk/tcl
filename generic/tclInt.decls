@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.15 1999/08/01 20:44:10 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.16 1999/08/02 17:45:37 redman Exp $
 
 library tcl
 
@@ -582,6 +582,10 @@ declare 154 generic {
 declare 155 generic {
     int TclTestChannelEventCmd(ClientData clientData, \
 	    Tcl_Interp *interp, int argc, char **argv)
+}
+declare 156 generic {
+    void TclRegError (Tcl_Interp *interp, char *msg, \
+	    int status)
 }
 
 ##############################################################################

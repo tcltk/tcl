@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.10 1999/06/17 19:32:15 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.11 1999/08/02 17:45:38 redman Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -47,23 +47,5 @@ typedef struct TclRegexp {
     int refCount;		/* Count of number of references to this
 				 * compiled regexp. */
 } TclRegexp;
-
-/*
- * Functions exported for use within the rest of Tcl.
- */
-
-EXTERN int		TclRegAbout _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_RegExp re));
-EXTERN int		TclRegExpMatchObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, Tcl_Obj *patObj));
-EXTERN void		TclRegExpRangeUniChar _ANSI_ARGS_((Tcl_RegExp re,
-			    int index, int *startPtr, int *endPtr));
-
-/*
- * Functions exported from the regexp package for the test package to use.
- */
-
-EXTERN void		TclRegError _ANSI_ARGS_((Tcl_Interp *interp, char *msg,
-			    int status));
 
 #endif /* _TCLREGEXP */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.15 1999/08/01 20:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.16 1999/08/02 17:45:37 redman Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -513,6 +513,9 @@ EXTERN int		TclTestChannelCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int		TclTestChannelEventCmd _ANSI_ARGS_((
 				ClientData clientData, Tcl_Interp * interp, 
 				int argc, char ** argv));
+/* 156 */
+EXTERN void		TclRegError _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * msg, int status));
 
 typedef struct TclIntStubs {
     int magic;
@@ -706,6 +709,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclGetLibraryPath) _ANSI_ARGS_((void)); /* 153 */
     int (*tclTestChannelCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, char ** argv)); /* 154 */
     int (*tclTestChannelEventCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, char ** argv)); /* 155 */
+    void (*tclRegError) _ANSI_ARGS_((Tcl_Interp * interp, char * msg, int status)); /* 156 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1338,6 +1342,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclTestChannelEventCmd
 #define TclTestChannelEventCmd \
 	(tclIntStubsPtr->tclTestChannelEventCmd) /* 155 */
+#endif
+#ifndef TclRegError
+#define TclRegError \
+	(tclIntStubsPtr->tclRegError) /* 156 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

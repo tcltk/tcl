@@ -1,4 +1,18 @@
-1999-08-01    <redman@scriptics.com>
+1999-08-02  Scott Redman  <redman@scriptics.com>
+
+	* generic/tcl.h:
+	* generic/tcl.decls:
+	* generic/tclDecls.h:
+	* generic/tclInt.h:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclRegexp.h:
+	* generic/tclStubInit.c: Move some exported public and internal
+	functions to the stub tables.  Removed functions that are in the
+	stub tables (from this and previous changes) from the original
+	header files.
+
+1999-08-01  Scott Redman  <redman@scriptics.com>
 
 	* win/tclWinSock.c: Added comment block to SocketThread()
 	function.  Added code to avoid calling TerminateThread(), but

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.55 1999/07/22 21:50:54 redman Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.56 1999/08/02 17:45:36 redman Exp $
  */
 
 #ifndef _TCL
@@ -616,9 +616,9 @@ typedef struct Tcl_Obj {
  * expression that is expensive to compute or has side effects.
  */
 
-EXTERN void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
-EXTERN void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
-EXTERN int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
+void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
+void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
+int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 #ifdef TCL_MEM_DEBUG
 #   define Tcl_IncrRefCount(objPtr) \
