@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.17 2001/12/06 10:59:17 dkf Exp $
+# RCS: @(#) $Id: compile.test,v 1.18 2002/03/15 15:39:07 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -285,6 +285,13 @@ test compile-12.2 {testing error on literal deletion} {memDebug execCommandExist
     catch {::tcltest::removeFile source.file}
     set res
 } 0
+# Test to catch buffer overrun in TclCompileTokens from buf 530320
+test compile-12.3 {check for a buffer overrun} {
+    proc crash {} {
+	puts $array([expr {a+2}])
+    }
+    list [catch crash msg] $msg
+} {1 {syntax error in expression "a+2": variable references require preceding $}}
 
 # Special test for underestimating the maxStackSize required for a
 # compiled command. A failure will cause a segfault in the child 
