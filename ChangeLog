@@ -1,5 +1,11 @@
 2004-07-03  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclExecute.c (ExprRoundFunc):
+	* tests/expr-old.test (39.1): added support for wide integers to
+	round(); [Bug 908375], reported by Hemang Lavana. 
+
+2004-07-03  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.h:
 	* generic/tclInt.decls:
 	* generic/tclIntDecls.h:
