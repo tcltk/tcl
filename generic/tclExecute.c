@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.18 2000/12/14 22:24:46 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.19 2001/03/02 15:31:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -438,7 +438,7 @@ void
 TclDeleteExecEnv(eePtr)
     ExecEnv *eePtr;		/* Execution environment to free. */
 {
-    ckfree((char *) eePtr->stackPtr);
+    Tcl_EventuallyFree(eePtr->stackPtr, TCL_DYNAMIC);
     ckfree((char *) eePtr);
 }
 
@@ -508,7 +508,7 @@ GrowEvaluationStack(eePtr)
  
     memcpy((VOID *) newStackPtr, (VOID *) eePtr->stackPtr,
 	   (size_t) currBytes);
-    ckfree((char *) eePtr->stackPtr);
+    Tcl_EventuallyFree(eePtr->stackPtr, TCL_DYNAMIC);
     eePtr->stackPtr = newStackPtr;
     eePtr->stackEnd = (newElems - 1); /* i.e. index of last usable item */
 }
@@ -745,15 +745,19 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_Obj **objv;	 /* The array of argument objects. */
 		Command *cmdPtr; /* Points to command's Command struct. */
 		int newPcOffset; /* New inst offset for break, continue. */
+		Tcl_Obj **preservedStack;
+				 /* Reference to memory block containing
+				  * objv array (must be kept live throughout
+				  * trace and command invokations.) */
 #ifdef TCL_COMPILE_DEBUG
 		int isUnknownCmd = 0;
 		char cmdNameBuf[21];
 #endif /* TCL_COMPILE_DEBUG */
-		
+
 		/*
 		 * If the interpreter was deleted, return an error.
 		 */
-		
+
 		if (iPtr->flags & DELETED) {
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -764,7 +768,7 @@ TclExecuteByteCode(interp, codePtr)
 		    result = TCL_ERROR;
 		    goto checkForCatch;
 		}
-    
+
 		/*
 		 * Find the procedure to execute this command. If the
 		 * command is not found, handle it with the "unknown" proc.
@@ -796,14 +800,26 @@ TclExecuteByteCode(interp, codePtr)
 		    objv[0] = Tcl_NewStringObj("unknown", -1);
 		    Tcl_IncrRefCount(objv[0]);
 		}
-		
+
+		/*
+		 * A reference to part of the stack vector itself
+		 * escapes our control, so must use preserve/release
+		 * to stop it from being deallocated by a recursive
+		 * call to ourselves.  The extra variable is needed
+		 * because all others are liable to change due to the
+		 * trace procedures.
+		 */
+
+		Tcl_Preserve(stackPtr);
+		preservedStack = stackPtr;
+
 		/*
 		 * Call any trace procedures.
 		 */
 
 		if (iPtr->tracePtr != NULL) {
 		    Trace *tracePtr, *nextTracePtr;
-
+		    
 		    for (tracePtr = iPtr->tracePtr;  tracePtr != NULL;
 		            tracePtr = nextTracePtr) {
 			nextTracePtr = tracePtr->nextPtr;
@@ -820,14 +836,14 @@ TclExecuteByteCode(interp, codePtr)
 			}
 		    }
 		}
-		
+
 		/*
 		 * Finally, invoke the command's Tcl_ObjCmdProc. First reset
 		 * the interpreter's string and object results to their
 		 * default empty values since they could have gotten changed
 		 * by earlier invocations.
 		 */
-		
+
 		Tcl_ResetResult(interp);
 		if (tclTraceExec >= 2) {
 #ifdef TCL_COMPILE_DEBUG
@@ -861,6 +877,14 @@ TclExecuteByteCode(interp, codePtr)
 		    result = Tcl_AsyncInvoke(interp, result);
 		}
 		CACHE_STACK_INFO();
+
+		/*
+		 * If the old stack is going to be released, it is
+		 * safe to do so now, since no references to objv are
+		 * going to be used from now on.
+		 */
+
+		Tcl_Release(preservedStack);
 
 		/*
 		 * If the interpreter has a non-empty string result, the
