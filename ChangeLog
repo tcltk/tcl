@@ -1,3 +1,9 @@
+2004-12-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix and new tests for [Bug 1074671] to
+	* tests/fileSystem.test:   ensure tilde paths are not returned
+	specially by 'glob'.
+
 2004-12-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl (tcl_findLibrary):	Disabled use of [file normalize]

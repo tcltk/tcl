@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.19 2004/11/23 15:23:13 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.20 2004/12/02 18:48:14 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -5050,11 +5050,23 @@ TclNewFSPathObj(Tcl_Obj *dirPtr, CONST char *addStrRep, int len)
  *
  * TclFSMakePathRelative --
  *
- *      Like SetFsPathFromAny, but assumes the given object is an
- *      absolute normalized path. Only for internal use.
+ *      Only for internal use.
+ *      
+ *      Takes a path and a directory, where we _assume_ both path and
+ *      directory are absolute, normalized and that the path lies
+ *      inside the directory.  Returns a Tcl_Obj representing filename 
+ *      of the path relative to the directory.
+ *      
+ *      In the case where the resulting path would start with a '~', we
+ *      take special care to return an ordinary string.  This means to
+ *      use that path (and not have it interpreted as a user name),
+ *      one must prepend './'.  This may seem strange, but that is how
+ *      'glob' is currently defined.
  *      
  * Results:
- *      Standard Tcl error code.
+ *      NULL on error, otherwise a valid object, typically with
+ *      refCount of zero, which it is assumed the caller will
+ *      increment.
  *
  * Side effects:
  *	The old representation may be freed, and new memory allocated.
@@ -5093,6 +5105,16 @@ TclFSMakePathRelative(interp, objPtr, cwdPtr)
 		if ((objPtr->typePtr->freeIntRepProc) != NULL) {
 		    (*objPtr->typePtr->freeIntRepProc)(objPtr);
 		}
+	    }
+	    /* Now objPtr is a string object */
+	    
+	    if (Tcl_GetString(objPtr)[0] == '~') {
+		/* 
+		 * If the first character of the path is a tilde,
+		 * we must just return the path as is, to agree
+		 * with the defined behaviour of 'glob'.
+		 */
+		return objPtr;
 	    }
 
 	    fsPathPtr = (FsPath*)ckalloc((unsigned)sizeof(FsPath));
