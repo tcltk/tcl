@@ -7,12 +7,9 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.49 2004/09/22 15:51:53 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.50 2004/11/12 19:08:10 das Exp $
  */
 
-#if defined(HAVE_CFBUNDLE)
-#include <CoreFoundation/CoreFoundation.h>
-#endif
 #include "tclInt.h"
 #include <stddef.h>
 #include <locale.h>
@@ -28,6 +25,9 @@
 #   if _BSDI_VERSION > 199501
 #	include <dlfcn.h>
 #   endif
+#endif
+#ifdef HAVE_CFBUNDLE
+#include <CoreFoundation/CoreFoundation.h>
 #endif
 
 /*
