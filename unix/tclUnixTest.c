@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.16 2004/04/06 22:25:57 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.17 2004/05/27 13:18:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -81,7 +81,7 @@ static int		TestalarmCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
 static int		TestgotsigCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
-static void 		AlarmHandler _ANSI_ARGS_(());
+static void		AlarmHandler _ANSI_ARGS_((int signum));
 
 /*
  *----------------------------------------------------------------------
@@ -671,7 +671,8 @@ TestalarmCmd(clientData, interp, argc, argv)
  */
 
 static void
-AlarmHandler()
+AlarmHandler(signum)
+    int signum;
 {
     gotsig = "1";
 }
