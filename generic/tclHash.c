@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.14 2003/11/14 23:21:02 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.15 2003/11/15 23:35:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -627,11 +627,11 @@ Tcl_DeleteHashTable(tablePtr)
      */
 
     if (tablePtr->buckets != tablePtr->staticBuckets) {
-        if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
+	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) tablePtr->buckets);
-        } else {
-	ckfree((char *) tablePtr->buckets);
-    }
+	} else {
+	    ckfree((char *) tablePtr->buckets);
+	}
     }
 
     /*
@@ -800,9 +800,9 @@ Tcl_HashStats(tablePtr)
      * Print out the histogram and a few other pieces of information.
      */
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-        result = (char *) TclpSysAlloc((unsigned) ((NUM_COUNTERS*60) + 300), 0);
+	result = (char *) TclpSysAlloc((unsigned) (NUM_COUNTERS*60) + 300, 0);
     } else {
-    result = (char *) ckalloc((unsigned) ((NUM_COUNTERS*60) + 300));
+	result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
     }
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
@@ -1175,11 +1175,11 @@ RebuildTable(tablePtr)
 
     tablePtr->numBuckets *= 4;
     if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-        tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
-    	        (tablePtr->numBuckets * sizeof(Tcl_HashEntry *)), 0);
+	tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
+		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)), 0);
     } else {
-    tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
-	    (tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
+	tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
+		(tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
     }
     for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
 	    count > 0; count--, newChainPtr++) {
@@ -1233,10 +1233,10 @@ RebuildTable(tablePtr)
      */
 
     if (oldBuckets != tablePtr->staticBuckets) {
-        if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
+	if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
 	    TclpSysFree((char *) oldBuckets);
-        } else {
-	ckfree((char *) oldBuckets);
-        }
+	} else {
+	    ckfree((char *) oldBuckets);
+	}
     }
 }
