@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.155 2004/11/18 00:45:03 rmax Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.156 2004/11/18 13:00:20 rmax Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -331,8 +331,7 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
-	$(GENERIC_DIR)/tclRegexp.h \
-	$(BUILD_DIR)/tclConfig.h
+	$(GENERIC_DIR)/tclRegexp.h
 
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regcomp.c \
@@ -650,7 +649,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h $(BUILD_DIR)/tclConfig.h; \
+		$(GENERIC_DIR)/tclPlatDecls.h; \
 	    do \
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
@@ -713,17 +712,17 @@ install-doc: doc
 		fi; \
 	    done;
 	@echo "Installing and cross-linking top-level (.1) docs";
-	@cd $(TOP_DIR)/doc; for i in *.1; do \
+	@for i in $(TOP_DIR)/doc/*.1; do \
 	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MAN1_INSTALL_DIR); \
 	done
 
 	@echo "Installing and cross-linking C API (.3) docs";
-	@cd $(TOP_DIR)/doc; for i in *.3; do \
+	@for i in $(TOP_DIR)/doc/*.3; do \
 	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MAN3_INSTALL_DIR); \
 	done
 
 	@echo "Installing and cross-linking command (.n) docs";
-	@cd $(TOP_DIR)/doc; for i in *.n; do \
+	@for i in $(TOP_DIR)/doc/*.n; do \
 	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MANN_INSTALL_DIR); \
 	done
 
