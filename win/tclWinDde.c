@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.2 1999/04/16 00:48:08 stanton Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.3 1999/05/28 23:02:38 stanton Exp $
  */
 
 #include "tclPort.h"
@@ -136,6 +136,21 @@ Dde_Init(
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Initialize --
+ *
+ *	Initialize the global DDE instance.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Registers the DDE server proc.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static void
 Initialize()
@@ -185,7 +200,6 @@ Initialize()
 	Tcl_MutexUnlock(&ddeMutex);
     }
 }    
-
 
 /*
  *--------------------------------------------------------------
@@ -657,7 +671,6 @@ DdeServerProc (
     }
     return NULL;
 }
-
 
 /*
  *--------------------------------------------------------------
@@ -679,8 +692,6 @@ static void
 DdeExitProc(
     ClientData clientData)	    /* Not used in this handler. */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
     DdeNameService(ddeInstance, NULL, 0, DNS_UNREGISTER);
     DdeUninitialize(ddeInstance);
     ddeInstance = 0;
@@ -757,7 +768,6 @@ SetDdeError(
 {
     Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
     int err;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     err = DdeGetLastError(ddeInstance);
     switch (err) {
@@ -936,6 +946,7 @@ Tcl_DdeObjCmd(
 	serviceName = NULL;
     }
 
+    Initialize();
     if (length == 0) {
 	serviceName = NULL;
     } else if (index != DDE_SERVERNAME) {
@@ -959,14 +970,12 @@ Tcl_DdeObjCmd(
 	    if (serviceName != NULL) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			serviceName, -1);
-		Initialize();
 	    } else {
 		Tcl_ResetResult(interp);
 	    }
 	    break;
 	}
 	case DDE_EXECUTE: {
-	    Initialize();
 	    dataString = Tcl_GetStringFromObj(objv[firstArg + 2], &dataLength);
 	    if (dataLength == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
@@ -1008,7 +1017,6 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 	case DDE_REQUEST: {
-	    Initialize();
 	    itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	    if (length == 0) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
@@ -1054,7 +1062,6 @@ Tcl_DdeObjCmd(
 	    Tcl_DString dString;
 	    char *name;
 	    
-	    Initialize();
 	    convInfo.cb = sizeof(CONVINFO);
 	    hConvList = DdeConnectList(ddeInstance, ddeService, 
                     ddeTopic, 0, NULL);
@@ -1089,7 +1096,6 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 	case DDE_EVAL: {
-	    Initialize();
 	    objc -= (async + 3);
 	    ((Tcl_Obj **) objv) += (async + 3);
 
