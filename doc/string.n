@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.18 2003/04/11 20:50:47 dgp Exp $
+'\" RCS: @(#) $Id: string.n,v 1.19 2004/05/27 18:50:09 dkf Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -303,6 +303,17 @@ specified as for the \fBindex\fR method.  A word is considered to be any
 contiguous range of alphanumeric (Unicode letters or decimal digits)
 or underscore (Unicode connector punctuation) characters, or any
 single character other than these.
+.SH EXAMPLE
+Test if the string in the variable \fIstring\fR is a proper non-empty
+prefix of the string \fBfoobar\fR.
+.CS
+set length [string length $string]
+if {$length == 0} {
+    set isPrefix 0
+} else {
+    set isPrefix [string equal -length $string $string "foobar"]
+}
+.CE
 
 .SH "SEE ALSO"
 expr(n), list(n)
