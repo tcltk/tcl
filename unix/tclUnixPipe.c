@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.11 2001/03/29 19:45:20 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.12 2001/05/15 21:23:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -67,16 +67,20 @@ static int	SetupStdFile _ANSI_ARGS_((TclFile file, int type));
  */
 
 static Tcl_ChannelType pipeChannelType = {
-    "pipe",				/* Type name. */
-    PipeBlockModeProc,			/* Set blocking/nonblocking mode.*/
-    PipeCloseProc,			/* Close proc. */
-    PipeInputProc,			/* Input proc. */
-    PipeOutputProc,			/* Output proc. */
-    NULL,				/* Seek proc. */
-    NULL,				/* Set option proc. */
-    NULL,				/* Get option proc. */
-    PipeWatchProc,			/* Initialize notifier. */
-    PipeGetHandleProc,			/* Get OS handles out of channel. */
+    "pipe",			/* Type name. */
+    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    PipeCloseProc,		/* Close proc. */
+    PipeInputProc,		/* Input proc. */
+    PipeOutputProc,		/* Output proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Set option proc. */
+    NULL,			/* Get option proc. */
+    PipeWatchProc,		/* Initialize notifier. */
+    PipeGetHandleProc,		/* Get OS handles out of channel. */
+    NULL,			/* close2proc. */
+    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
+    NULL,			/* flush proc. */
+    NULL,			/* handler proc. */
 };
 
 /*
