@@ -12,8 +12,8 @@
 
 2004-10-05  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclNamesp.c (Tcl_PopCallFrame):       Removed Bug 1038021
-        workaround.  That bug is now fixed.
+	* generic/tclNamesp.c (Tcl_PopCallFrame): Removed Bug 1038021
+	workaround.  That bug is now fixed.
 
 2004-09-30  Don Porter  <dgp@users.sourceforge.net>
 
@@ -78,15 +78,15 @@
 	* generic/tclIOGT.c: Channel version fixed, must be 3, to have
 	  wideseekProc. Thanks to David Graveraux <davygrvy@pobox.com>.
 
-2004-09-11  Don Porter  <dgp@users.sourceforge.net>
+2004-09-11  Don Porter	<dgp@users.sourceforge.net>
 
-        * generic/tclNamespace.c (TclGetNamespaceForQualName):  Resolved
-        longstanding inconsistency in the treatment of the TCL_NAMESPACE_ONLY
-        flag revealed by testing the 2004-09-09 commits against Itcl.
-        TCL_NAMESPACE_ONLY now acts as specified in the pre-function
-        comment, forcing resolution in the passed in context namespace.
-        It has been incorrectly forcing resolution in the interp's current
-        namespace.
+	* generic/tclNamespace.c (TclGetNamespaceForQualName):	Resolved
+	longstanding inconsistency in the treatment of the TCL_NAMESPACE_ONLY
+	flag revealed by testing the 2004-09-09 commits against Itcl.
+	TCL_NAMESPACE_ONLY now acts as specified in the pre-function
+	comment, forcing resolution in the passed in context namespace.
+	It has been incorrectly forcing resolution in the interp's current
+	namespace.
 
 2004-09-10  Miguel Sofer <msofer@users.sf.net>
 
@@ -181,10 +181,10 @@
 
 2004-07-28  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclMain.c (Tcl_Main, StdinProc):      Append newline only
-        * tests/basic.test (basic-46.1):                to incomplete scripts
-        as part of multi-line script construction.  Do not add an extra
-        trailing newline to the complete script.  [Bug 833150]
+	* generic/tclMain.c (Tcl_Main, StdinProc):  Append newline only
+	* tests/basic.test (basic-46.1):	    to incomplete scripts
+	as part of multi-line script construction.  Do not add an extra
+	trailing newline to the complete script.  [Bug 833150]
 
 2004-07-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
