@@ -1,3 +1,8 @@
+2004-05-10  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c (BuildCommandLine): Append a space when the
+	path got primed.
+
 2004-05-07  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/unset.n: added upvar.n to the "see also" list
