@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pid.n,v 1.3 2000/09/07 14:27:50 poenitz Exp $
+'\" RCS: @(#) $Id: pid.n,v 1.4 2004/05/28 12:40:29 dkf Exp $
 '\" 
 .so man.macros
 .TH pid n 7.0 Tcl "Tcl Built-In Commands"
@@ -29,6 +29,19 @@ that isn't a process pipeline.
 If no \fIfileId\fR argument is given then \fBpid\fR returns the process
 identifier of the current process.
 All process identifiers are returned as decimal strings.
+.SH EXAMPLE
+Print process information about the processes in a pipeline using the
+SysV \fBps\fR program before reading the output of that pipeline:
+
+.CS
+set pipeline [open "| zcat somefile.gz | grep foobar | sort -u"]
+# Print process information
+exec ps -fp [\fBpid\fR $pipeline] >@stdout
+# Print a separator and then the output of the pipeline
+puts [string repeat - 70]
+puts [read $pipeline]
+close $pipeline
+.CE
 
 .SH "SEE ALSO"
 exec(n), open(n)
