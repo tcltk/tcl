@@ -1,3 +1,13 @@
+2001-09-13  Miguel Sofer  <msofer@users.sourceforge.net>
+	
+	* doc/tclvars.n:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclProc.c: disbabled all compile and execution tracing
+	functionality in standard builds; TCL_COMPILE_DEBUG is now
+	necessary to enable it. [Bug 451858]
+
 2001-09-14  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* doc/gets.n: 
@@ -60,8 +70,8 @@
 	by the new Tcl_EvalTokensStandard. The new function performs the
 	same duties but adheres to the standard return convention for Tcl
 	evaluations; the deprecated function could only return TCL_OK or
-	TCL_ERROR, which caused [Bug: 219384] and [Bug: 455151].
-	This patch implements [TIP: 56].
+	TCL_ERROR, which caused [Bug 219384] and [Bug 455151].
+	This patch implements [TIP 56].
 	
 2001-09-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
@@ -371,7 +381,7 @@
 
 	* generic/tclProc.c:
 	* tests/proc.test: made [proc] check that formal args have
-	simple names [Bug: 458548] 
+	simple names [Bug 458548] 
 
 2001-09-04 Vince Darley <vincentdarley@users.sourceforge.net>
 

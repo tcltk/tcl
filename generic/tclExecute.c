@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.29 2001/09/03 17:34:16 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.30 2001/09/17 11:51:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -51,6 +51,7 @@ int errno;
 static int execInitialized = 0;
 TCL_DECLARE_MUTEX(execMutex)
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  * Variable that controls whether execution tracing is enabled and, if so,
  * what level of tracing is desired:
@@ -62,6 +63,7 @@ TCL_DECLARE_MUTEX(execMutex)
  */
 
 int tclTraceExec = 0;
+#endif
 
 typedef struct ThreadSpecificData {
     /*
@@ -358,11 +360,12 @@ InitByteCodeExecution(interp)
 				 * instruction tracing. */
 {
     Tcl_RegisterObjType(&tclCmdNameType);
+#ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
 		    TCL_LINK_INT) != TCL_OK) {
 	panic("InitByteCodeExecution: can't create link for tcl_traceExec variable");
     }
-
+#endif
 #ifdef TCL_COMPILE_STATS    
     Tcl_CreateCommand(interp, "evalstats", EvalStatsCmd,
 		      (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
@@ -555,7 +558,9 @@ TclExecuteByteCode(interp, codePtr)
 				 * instructions and processCatch to
 				 * process break, continue, and errors. */
     int result = TCL_OK;	/* Return code returned after execution. */
+#ifdef TCL_COMPILE_DEBUG
     int traceInstructions = (tclTraceExec == 3);
+#endif
     Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr;
     char *bytes;
     int length;
@@ -614,7 +619,6 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_DEBUG
 	ValidatePcAndStackTop(codePtr, pc, stackTop, initStackTop,
 		eePtr->stackEnd);
-#else /* not TCL_COMPILE_DEBUG */
         if (traceInstructions) {
             fprintf(stdout, "%2d: %2d ", iPtr->numLevels, stackTop);
             TclPrintInstruction(codePtr, pc);
@@ -849,8 +853,8 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		Tcl_ResetResult(interp);
-		if (tclTraceExec >= 2) {
 #ifdef TCL_COMPILE_DEBUG
+		if (tclTraceExec >= 2) {
 		    if (traceInstructions) {
 			strncpy(cmdNameBuf, Tcl_GetString(objv[0]), 20);
 			TRACE(("%u => call ", (isUnknownCmd? objc-1:objc)));
@@ -865,13 +869,8 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    fprintf(stdout, "\n");
 		    fflush(stdout);
-#else /* TCL_COMPILE_DEBUG */
-		    fprintf(stdout, "%d: (%u) invoking %s\n",
-			    iPtr->numLevels,
-		            (unsigned int)(pc - codePtr->codeStart),
-			    Tcl_GetString(objv[0]));
-#endif /*TCL_COMPILE_DEBUG*/
 		}
+#endif /*TCL_COMPILE_DEBUG*/
 
 		iPtr->cmdCount++;
 		DECACHE_STACK_INFO();
