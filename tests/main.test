@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.5 2002/03/25 20:18:05 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.6 2002/03/27 05:28:25 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -538,8 +538,9 @@ namespace eval ::tcl::main::test {
 	variable wait
 	fileevent $f readable \
 		[list set [namespace which -variable wait] "child exit"]
-	after 2000 [list set [namespace which -variable wait] timeout]
+	set id [after 2000 [list set [namespace which -variable wait] timeout]]
 	vwait [namespace which -variable wait]
+	after cancel $id
 	set wait
     } -cleanup {
 	if {[string equal timeout $wait]
@@ -561,8 +562,9 @@ namespace eval ::tcl::main::test {
 	variable wait
 	fileevent $f readable \
 		[list set [namespace which -variable wait] "child exit"]
-	after 2000 [list set [namespace which -variable wait] timeout]
+	set id [after 2000 [list set [namespace which -variable wait] timeout]]
 	vwait [namespace which -variable wait]
+	after cancel $id
 	set wait
     } -cleanup {
 	if {[string equal timeout $wait]
