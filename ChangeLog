@@ -1,5 +1,9 @@
 2001-11-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/cmdAH.test (cmdAH-24.2): Made test less sensitive to OS
+	preemption, but perfection isn't practical [Bug 463189, reported
+	by Don Porter.]
+
 	* tests/switch.test (switch-9.*): Added tests to exercise more of
 	the argument checking.  (switch-7.2,switch-7.3): Test changed
 	behaviour slightly.
