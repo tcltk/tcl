@@ -17,14 +17,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.5 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.6 2004/03/26 22:28:26 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
-#ifdef MAC_TCL
-#include "tclMacInt.h"
-#endif
 #ifdef __WIN32__
 /* for tclWinProcs->useWide */
 #include "tclWinInt.h"
@@ -52,7 +49,7 @@ static void FsRecacheFilesystemList(void);
 /* 
  * These form part of the native filesystem support.  They are needed
  * here because we have a few native filesystem functions (which are
- * the same for mac/win/unix) in this file.  There is no need to place
+ * the same for win/unix) in this file.  There is no need to place
  * them in tclInt.h, because they are not (and should not be) used
  * anywhere else.
  */
@@ -307,7 +304,7 @@ static Tcl_FSFileAttrsSetProc NativeFileAttrsSet;
 
 /* 
  * The only reason these functions are not static is that they
- * are either called by code in the native (win/unix/mac) directories
+ * are either called by code in the native (win/unix) directories
  * or they are actually implemented in those directories.  They
  * should simply not be called by code outside Tcl's native
  * filesystem core.  i.e. they should be considered 'static' to
@@ -1302,7 +1299,7 @@ Tcl_FSData(fsPtr)
  * Description:
  *	Takes a path specification containing no ../, ./ sequences,
  *	and converts it into a unique path for the given platform.
- *      On MacOS, Unix, this means the path must be free of
+ *      On Unix, this means the path must be free of
  *	symbolic links/aliases, and on Windows it means we want the
  *	long form, with that long form's case-dependence (which gives
  *	us a unique, case-dependent path).
@@ -1319,7 +1316,7 @@ Tcl_FSData(fsPtr)
  *	If the filesystem-specific normalizePathProcs can re-introduce
  *	../, ./ sequences into the path, then this function will
  *	not return the correct result.  This may be possible with
- *	symbolic links on unix/macos.
+ *	symbolic links on unix.
  *
  *      Important assumption: if startAt is non-zero, it must point
  *      to a directory separator that we know exists and is already
@@ -2142,7 +2139,7 @@ Tcl_FSUtime (pathPtr, tval)
  *	attributes' subcommand, for the native filesystem, for listing
  *	the set of possible attribute strings.  This function is part
  *	of Tcl's native filesystem support, and is placed here because
- *	it is shared by Unix, MacOS and Windows code.
+ *	it is shared by Unix and Windows code.
  *
  * Results:
  *      An array of strings
@@ -2170,7 +2167,7 @@ NativeFileAttrStrings(pathPtr, objPtrRef)
  *	'file attributes' subcommand, for the native
  *	filesystem, for 'get' operations.  This function is part
  *	of Tcl's native filesystem support, and is placed here
- *	because it is shared by Unix, MacOS and Windows code.
+ *	because it is shared by Unix and Windows code.
  *
  * Results:
  *      Standard Tcl return code.  The object placed in objPtrRef
@@ -2205,7 +2202,7 @@ NativeFileAttrsGet(interp, index, pathPtr, objPtrRef)
  *	'file attributes' subcommand, for the native
  *	filesystem, for 'set' operations. This function is part
  *	of Tcl's native filesystem support, and is placed here
- *	because it is shared by Unix, MacOS and Windows code.
+ *	because it is shared by Unix and Windows code.
  *
  * Results:
  *      Standard Tcl return code.
@@ -2883,7 +2880,7 @@ TclLoadFile(interp, pathPtr, symc, symbols, procPtrs,
 		FsDivertLoad *tvdlPtr;
 		int retVal;
 
-#if !defined(__WIN32__) && !defined(MAC_TCL)
+#if !defined(__WIN32__)
 		/* 
 		 * Do we need to set appropriate permissions 
 		 * on the file?  This may be required on some
@@ -3470,7 +3467,7 @@ TclGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 	 * We want to skip the native filesystem in this loop because
 	 * otherwise we won't necessarily pass all the Tcl testsuite --
 	 * this is because some of the tests artificially change the
-	 * current platform (between mac, win, unix) but the list
+	 * current platform (between win, unix) but the list
 	 * of volumes we get by calling (*proc) will reflect the current
 	 * (real) platform only and this may cause some tests to fail.
 	 * In particular, on unix '/' will match the beginning of 
@@ -3958,7 +3955,7 @@ Tcl_FSGetFileSystemForPath(pathPtr)
  *
  * Tcl_FSGetNativePath --
  *
- *      This function is for use by the Win/Unix/MacOS native filesystems,
+ *      This function is for use by the Win/Unix native filesystems,
  *      so that they can easily retrieve the native (char* or TCHAR*)
  *      representation of a path.  Other filesystems will probably
  *      want to implement similar functions.  They basically act as a 
@@ -3971,10 +3968,9 @@ Tcl_FSGetFileSystemForPath(pathPtr)
  *      
  *      Note: in the future it might be desireable to have separate
  *      versions of this function with different signatures, for
- *      example Tcl_FSGetNativeMacPath, Tcl_FSGetNativeUnixPath etc.
+ *      example Tcl_FSGetNativeWinPath, Tcl_FSGetNativeUnixPath etc.
  *      Right now, since native paths are all string based, we use just
- *      one function.  On MacOS we could possibly use an FSSpec or
- *      FSRef as the native representation.
+ *      one function.
  *
  * Results:
  *      NULL or a valid native path.
@@ -4156,7 +4152,7 @@ TclNativeDupInternalRep(clientData)
 	len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
     }
 #else
-    /* ansi representation when running on Unix/MacOS */
+    /* ansi representation when running on Unix */
     len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
 #endif
     
@@ -4294,9 +4290,6 @@ NativeFilesystemSeparator(pathPtr)
 	    break;
 	case TCL_PLATFORM_WINDOWS:
 	    separator = "\\";
-	    break;
-	case TCL_PLATFORM_MAC:
-	    separator = ":";
 	    break;
     }
     return Tcl_NewStringObj(separator,1);

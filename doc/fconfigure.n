@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.8 2003/04/18 00:28:14 dkf Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.1 2004/03/26 22:28:25 dgp Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -153,10 +153,9 @@ newline (\fBcrlf\fP) as the end of line representation.  The end of line
 representation can even change from line-to-line, and all cases are
 translated to a newline.  As the output translation mode, \fBauto\fR
 chooses a platform specific representation; for sockets on all platforms
-Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR, for the
-Macintosh platform it chooses \fBcr\fR and for the various flavors of
-Windows it chooses \fBcrlf\fR.  The default setting for
-\fB\-translation\fR is \fBauto\fR for both input and output.
+Tcl chooses \fBcrlf\fR, for all Unix flavors, it chooses \fBlf\fR, and
+for the various flavors of Windows it chooses \fBcrlf\fR.  The default
+setting for \fB\-translation\fR is \fBauto\fR for both input and output.
 .TP
 \fBbinary\fR 
 .
@@ -172,7 +171,7 @@ The end of a line in the underlying file or device is represented by a
 single carriage return character.  As the input translation mode,
 \fBcr\fP mode converts carriage returns to newline characters.  As the
 output translation mode, \fBcr\fP mode translates newline characters to
-carriage returns.  This mode is typically used on Macintosh platforms.
+carriage returns.
 .TP
 \fBcrlf\fR
 .

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.8 2004/03/04 17:26:15 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.9 2004/03/26 22:28:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -226,25 +226,10 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		1},
     {"vwait",		(Tcl_CmdProc *) NULL,	Tcl_VwaitObjCmd,
         (CompileProc *) NULL,		1},
-    
-#ifdef MAC_TCL
-    {"beep",		(Tcl_CmdProc *) NULL,	Tcl_BeepObjCmd,
-        (CompileProc *) NULL,		0},
-    {"echo",		Tcl_EchoCmd,		(Tcl_ObjCmdProc *) NULL,
-        (CompileProc *) NULL,		0},
-    {"ls",		(Tcl_CmdProc *) NULL, 	Tcl_LsObjCmd,
-        (CompileProc *) NULL,		0},
-    {"resource",	(Tcl_CmdProc *) NULL,	Tcl_ResourceObjCmd,
-        (CompileProc *) NULL,		1},
-    {"source",		(Tcl_CmdProc *) NULL,	Tcl_MacSourceObjCmd,
-        (CompileProc *) NULL,		0},
-#else
     {"exec",		(Tcl_CmdProc *) NULL,	Tcl_ExecObjCmd,
         (CompileProc *) NULL,		0},
     {"source",		(Tcl_CmdProc *) NULL,	Tcl_SourceObjCmd,
         (CompileProc *) NULL,		0},
-#endif /* MAC_TCL */
-    
 #endif /* TCL_GENERIC_ONLY */
     {NULL,		(Tcl_CmdProc *) NULL,	(Tcl_ObjCmdProc *) NULL,
         (CompileProc *) NULL,		0}

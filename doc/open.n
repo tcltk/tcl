@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.17.2.1 2004/03/04 17:26:14 dgp Exp $
+'\" RCS: @(#) $Id: open.n,v 1.17.2.2 2004/03/26 22:28:25 dgp Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -370,12 +370,6 @@ standard output.  If a command pipeline is opened for writing to a 16-bit DOS
 application, no data will be sent to the command pipeline's standard output
 until the pipe is actually closed.  This problem occurs because 16-bit DOS
 applications are run synchronously, as described above.  
-.TP
-\fBMacintosh\fR
-Opening a serial port is not currently implemented under Macintosh.
-.sp
-Opening a command pipeline is not supported under Macintosh, since 
-applications do not support the concept of standard input or output.
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 Valid values for \fIfileName\fR to open a serial port are generally of the

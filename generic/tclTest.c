@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.3 2004/03/04 17:26:16 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.4 2004/03/26 22:28:27 dgp Exp $
  */
 
 #define TCL_TEST
@@ -2056,7 +2056,8 @@ TesteventObjCmd( ClientData unused,      /* Not used */
 	NULL
     };
     int posIndex;		/* Index of the chosen position */
-    static CONST int posNum[] = { /* Interpretation of the chosen position */
+    static CONST Tcl_QueuePosition posNum[] = { 
+				/* Interpretation of the chosen position */
 	TCL_QUEUE_HEAD,
 	TCL_QUEUE_TAIL,
 	TCL_QUEUE_MARK
@@ -3066,6 +3067,10 @@ TestexprparserObjCmd(clientData, interp, objc, objv)
     if (length == 0) {
 	length = dummy;
     }
+    parse.commentStart = NULL;
+    parse.commentSize = 0;
+    parse.commandStart = NULL;
+    parse.commandSize = 0;
     if (Tcl_ParseExpr(interp, script, length, &parse) != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (remainder of expr: \"");
 	Tcl_AddErrorInfo(interp, parse.term);
@@ -3724,13 +3729,11 @@ TestsetplatformCmd(clientData, interp, argc, argv)
     length = strlen(argv[1]);
     if (strncmp(argv[1], "unix", length) == 0) {
 	*platform = TCL_PLATFORM_UNIX;
-    } else if (strncmp(argv[1], "mac", length) == 0) {
-	*platform = TCL_PLATFORM_MAC;
     } else if (strncmp(argv[1], "windows", length) == 0) {
 	*platform = TCL_PLATFORM_WINDOWS;
     } else {
         Tcl_AppendResult(interp, "unsupported platform: should be one of ",
-		"unix, mac, or windows", (char *) NULL);
+		"unix, or windows", (char *) NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -4038,7 +4041,7 @@ TestpanicCmd(dummy, interp, argc, argv)
  * TestchmodCmd --
  *
  *	Implements the "testchmod" cmd.  Used when testing "file"
- *	command.  The only attribute used by the Mac and Windows platforms
+ *	command.  The only attribute used by the Windows platform
  *	is the user write flag; if this is not set, the file is
  *	made read-only.  Otehrwise, the file is made read-write.
  *
@@ -4804,11 +4807,6 @@ static int PretendTclpStat(path, buf)
     return ret;
 #endif /* TCL_WIDE_INT_IS_LONG */
 }
-
-/* Be careful in the compares in these tests, since the Macintosh puts a  
- * leading : in the beginning of non-absolute paths before passing them 
- * into the file command procedures.
- */
 
 static int
 TestStatProc1(path, buf)

@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.3 2004/03/04 17:26:29 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.4 2004/03/26 22:28:30 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -16,7 +16,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL="a1"
+TCL_PATCH_LEVEL="a2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.3
@@ -285,6 +285,27 @@ AC_TRY_COMPILE([
 if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
             [Defined when enums are missing from winbase.h])
+fi
+
+# See if MWMO_ALERTABLE is missing from winuser.h
+# This is known to be a problem with Mingw.
+
+AC_CACHE_CHECK(for MWMO_ALERTABLE in winuser.h,
+    tcl_cv_mwmo_alertable,
+AC_TRY_COMPILE([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+],
+[
+  int i = MWMO_ALERTABLE;
+],
+        tcl_cv_mwmo_alertable=yes,
+        tcl_cv_mwmo_alertable=no)
+)
+if test "$tcl_cv_mwmo_alertable" = "no"; then
+    AC_DEFINE(HAVE_NO_MWMO_ALERTABLE, 1,
+            [Defined when MWMO_ALERTABLE is missing from winuser.h])
 fi
 
 #--------------------------------------------------------------------

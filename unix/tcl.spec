@@ -1,7 +1,7 @@
-# $Id: tcl.spec,v 1.17.2.1 2004/03/04 17:26:28 dgp Exp $
+# $Id: tcl.spec,v 1.17.2.2 2004/03/26 22:28:30 dgp Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
-%define version 8.5a1
+%define version 8.5a2
 %define directory /usr/local
 
 Summary: Tcl scripting language development environment
@@ -20,7 +20,7 @@ The Tcl (Tool Command Language) provides a powerful platform for
 creating integration applications that tie together diverse
 applications, protocols, devices, and frameworks.  When paired with
 the Tk toolkit, Tcl provides the fastest and most powerful way to
-create GUI applications that run on PCs, Unix, and the Macintosh.  Tcl
+create GUI applications that run on PCs, Unix, and Mac OS X.  Tcl
 can also be used for a variety of web-related tasks and for creating
 powerful command languages for applications.
 

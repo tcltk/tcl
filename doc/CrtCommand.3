@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtCommand.3,v 1.5 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: CrtCommand.3,v 1.5.4.1 2004/03/26 22:28:24 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateCommand 3 "" Tcl "Tcl Library Procedures"
@@ -111,7 +111,7 @@ the interpreter result to point to a string value;
 in the case of a \fBTCL_OK\fR return code this gives the result
 of the command, and in the case of \fBTCL_ERROR\fR it gives an error message.
 The \fBTcl_SetResult\fR procedure provides an easy interface for setting
-the return value;  for complete details on how the the interpreter result
+the return value;  for complete details on how the interpreter result
 field is managed, see the \fBTcl_Interp\fR man page.
 Before invoking a command procedure,
 \fBTcl_Eval\fR sets the interpreter result to point to an empty string,

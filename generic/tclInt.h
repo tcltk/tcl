@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.8 2004/03/04 23:33:15 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.9 2004/03/26 22:28:26 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -238,7 +238,7 @@ typedef struct Namespace {
  *		variables and command have already been destroyed. This bit
  *		allows the namespace resolution code to recognize that the
  *		namespace is "deleted". When the last namespaceName object
- *		in any byte code code unit that refers to the namespace has
+ *		in any byte code unit that refers to the namespace has
  *		been freed (i.e., when the namespace's refCount is 0), the
  *		namespace's storage will be freed.
  */
@@ -1430,9 +1430,8 @@ typedef struct Interp {
  */
 
 typedef enum {
-    TCL_PLATFORM_UNIX,		/* Any Unix-like OS. */
-    TCL_PLATFORM_MAC,		/* MacOS. */
-    TCL_PLATFORM_WINDOWS	/* Any Microsoft Windows OS. */
+    TCL_PLATFORM_UNIX = 0,	/* Any Unix-like OS. */
+    TCL_PLATFORM_WINDOWS = 2	/* Any Microsoft Windows OS. */
 } TclPlatformType;
 
 /*
@@ -1525,12 +1524,6 @@ typedef struct TclFileAttrProcs {
 
 typedef struct TclFile_ *TclFile;
     
-/*
- * Opaque names for platform specific types.
- */
-
-typedef struct TclpTime_t_    *TclpTime_t;
-
 /*
  * The "globParameters" argument of the function TclGlob is an
  * or'ed combination of the following values:
@@ -2113,25 +2106,6 @@ EXTERN int	Tcl_VwaitObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_WhileObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-
-/*
- *----------------------------------------------------------------
- * Command procedures found only in the Mac version of the core:
- *----------------------------------------------------------------
- */
-
-#ifdef MAC_TCL
-EXTERN int	Tcl_EchoCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, CONST84 char **argv));
-EXTERN int	Tcl_LsObjCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-EXTERN int	Tcl_BeepObjCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-EXTERN int	Tcl_MacSourceObjCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-EXTERN int	Tcl_ResourceObjCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-#endif
 
 /*
  *----------------------------------------------------------------

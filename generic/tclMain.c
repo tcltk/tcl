@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.1 2003/09/05 23:08:07 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.2 2004/03/26 22:28:27 dgp Exp $
  */
 
 #include "tcl.h"
@@ -25,11 +25,7 @@
  * the Tcl source directory to make their own modified versions).
  */
 
-#if !defined(MAC_TCL)
-extern int		isatty _ANSI_ARGS_((int fd));
-#else
-#include <unistd.h>
-#endif
+extern DLLIMPORT int		isatty _ANSI_ARGS_((int fd));
 
 static Tcl_Obj *tclStartupScriptPath = NULL;
 static Tcl_Obj *tclStartupScriptEncoding = NULL;

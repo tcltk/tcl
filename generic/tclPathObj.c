@@ -10,14 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.4 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.5 2004/03/26 22:28:27 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
-#ifdef MAC_TCL
-#include "tclMacInt.h"
-#endif
 #include "tclFileSystem.h"
 
 /*
@@ -131,7 +128,7 @@ typedef struct FsPath {
  *	
  *	A normalized path is one which has all '../', './' removed.
  *	Also it is one which is in the 'standard' format for the native
- *	platform.  On MacOS, Unix, this means the path must be free of
+ *	platform.  On Unix, this means the path must be free of
  *	symbolic links/aliases, and on Windows it means we want the
  *	long form, with that long form's case-dependence (which gives
  *	us a unique, case-dependent path).
@@ -363,7 +360,7 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
      * platform.  For instance, Unix is case-sensitive, so the
      * path is ok.  Windows is case-insensitive, and also has the
      * weird 'longname/shortname' thing (e.g. C:/Program Files/ and
-     * C:/Progra~1/ are equivalent).  MacOS is case-insensitive.
+     * C:/Progra~1/ are equivalent).
      * 
      * Virtual file systems which may be registered may have
      * other criteria for normalizing a path.
@@ -460,7 +457,7 @@ TclFSGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr)
  *
  * TclPathPart
  *
- *	This procedure calculates the requested part of the the given
+ *	This procedure calculates the requested part of the given
  *	path, which can be:
  *	
  *	- the directory above ('file dirname')
@@ -627,8 +624,7 @@ TclPathPart(interp, pathPtr, portion)
 		resultPtr = Tcl_FSJoinPath(splitPtr, splitElements - 1);
 	    } else if (splitElements == 0 || 
 	      (Tcl_FSGetPathType(pathPtr) == TCL_PATH_RELATIVE)) {
-		resultPtr = Tcl_NewStringObj(
-			((tclPlatform == TCL_PLATFORM_MAC) ? ":" : "."), 1);
+		resultPtr = Tcl_NewStringObj(".", 1);
 	    } else {
 		Tcl_ListObjIndex(NULL, splitPtr, 0, &resultPtr);
 	    }
@@ -755,7 +751,7 @@ Tcl_FSJoinPath(listObj, elements)
 		    return elt;
 		}
 		/* 
-		 * If it doesn't begin with '.'  and is a mac or unix
+		 * If it doesn't begin with '.'  and is a unix
 		 * path or it a windows path without backslashes, then we
 		 * can be very efficient here.  (In fact even a windows
 		 * path with backslashes can be joined efficiently, but
@@ -783,11 +779,6 @@ Tcl_FSJoinPath(listObj, elements)
 		    str = Tcl_GetStringFromObj(tail,&len);
 		    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 			if (strchr(str, '\\') == NULL) {
-			    if (res != NULL) Tcl_DecrRefCount(res);
-			    return tail;
-			}
-		    } else if (tclPlatform == TCL_PLATFORM_MAC) {
-			if (strchr(str, '/') == NULL) {
 			    if (res != NULL) Tcl_DecrRefCount(res);
 			    return tail;
 			}
@@ -841,7 +832,7 @@ Tcl_FSJoinPath(listObj, elements)
 		    equal = 0;
 		}
 	    }
-	    if (equal && (tclPlatform != TCL_PLATFORM_MAC)) {
+	    if (equal) {
 		ptr = strElt;
 		while (*ptr != '\0') {
 		    if (*ptr == '/' && (ptr[1] == '/' || ptr[1] == '\0')) {
@@ -850,27 +841,6 @@ Tcl_FSJoinPath(listObj, elements)
 		    }
 		    ptr++;
 		}
-	    }
-	    if (equal && (tclPlatform == TCL_PLATFORM_MAC)) {
-		/*
-		 * If it contains any colons, then it mustn't contain
-		 * any duplicates.  Otherwise, the path is in unix-form
-		 * and is no good.
-		 */
-		if (strchr(strElt, ':') != NULL) {
-		    ptr = strElt;
-		    while (*ptr != '\0') {
-			if (*ptr == ':' && (ptr[1] == ':' || ptr[1] == '\0')) {
-			    equal = 0;
-			    break;
-			}
-			ptr++;
-		    }
-		} else {
-		    equal = 0;
-		}
-	    }
-	    if (equal) {
 		if (res != NULL) Tcl_DecrRefCount(res);
 		/* 
 		 * This element is just what we want to return already -
@@ -1036,9 +1006,6 @@ IsSeparatorOrNull(ch)
 	case TCL_PLATFORM_UNIX: {
 	    return (ch == '/' ? 1 : 0);
 	}
-	case TCL_PLATFORM_MAC: {
-	    return (ch == ':' ? 1 : 0);
-	}
 	case TCL_PLATFORM_WINDOWS: {
 	    return ((ch == '/' || ch == '\\') ? 1 : 0);
 	}
@@ -1059,7 +1026,6 @@ FindSplitPos(path, separator)
     int count = 0;
     switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX:
-	case TCL_PLATFORM_MAC:
 	    while (path[count] != 0) {
 		if (path[count] == separator) {
 		    return count;
@@ -1115,18 +1081,6 @@ TclNewFSPathObj(Tcl_Obj *dirPtr, CONST char *addStrRep, int len)
     pathPtr = Tcl_NewObj();
     fsPathPtr = (FsPath*)ckalloc((unsigned)sizeof(FsPath));
     
-    if (tclPlatform == TCL_PLATFORM_MAC) { 
-	/* 
-	 * Mac relative paths may begin with a directory separator ':'. 
-	 * If present, we need to skip this ':' because we assume that 
-	 * we can join dirPtr and addStrRep by concatenating them as 
-	 * strings (and we ensure that dirPtr is terminated by a ':'). 
-	 */ 
-	if (addStrRep[0] == ':') { 
-	    addStrRep++; 
-	    len--; 
-	} 
-    }
     /* Setup the path */
     fsPathPtr->translatedPathPtr = NULL;
     fsPathPtr->normPathPtr = Tcl_NewStringObj(addStrRep, len);
@@ -1248,11 +1202,6 @@ TclFSMakePathRelative(interp, pathPtr, cwdPtr)
 	case TCL_PLATFORM_WINDOWS:
 	    if (tempStr[cwdLen-1] != '/' 
 		    && tempStr[cwdLen-1] != '\\') {
-		cwdLen++;
-	    }
-	    break;
-	case TCL_PLATFORM_MAC:
-	    if (tempStr[cwdLen-1] != ':') {
 		cwdLen++;
 	    }
 	    break;
@@ -1574,12 +1523,6 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 		    cwdLen++;
 		}
 		break;
-	    case TCL_PLATFORM_MAC:
-		if (cwdStr[cwdLen-1] != ':') {
-		    Tcl_AppendToObj(copy, ":", 1);
-		    cwdLen++;
-		}
-		break;
 	}
 	Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
 	/* 
@@ -1662,12 +1605,6 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 			cwdLen++;
 		    }
 		    break;
-		case TCL_PLATFORM_MAC:
-		    if (cwdStr[cwdLen-1] != ':') {
-			Tcl_AppendToObj(copy, ":", 1);
-			cwdLen++;
-		    }
-		    break;
 	    }
 	    Tcl_AppendObjToObj(copy, pathPtr);
 	    /* 
@@ -1713,7 +1650,7 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 	    } else if (type == TCL_PATH_VOLUME_RELATIVE) {
 		/* 
 		 * Only Windows has volume-relative paths.  These
-		 * paths are rather rare, but is is nice if Tcl can
+		 * paths are rather rare, but it is nice if Tcl can
 		 * handle them.  It is much better if we can
 		 * handle them here, rather than in the native fs code,
 		 * because we really need to have a real absolute path
@@ -1752,7 +1689,20 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 		    }
 		    if (drive[0] == drive_cur) {
 			absolutePath = Tcl_DuplicateObj(useThisCwd);
-			/* We have a refCount on the cwd */
+			/* 
+			 * We have a refCount on the cwd, which we
+			 * will release later.
+			 */
+
+                        if (drive[cwdLen-1] != '/' && (path[2] != '\0')) {
+                            /* 
+                             * Only add a trailing '/' if needed, which
+                             * is if there isn't one already, and if we
+                             * are going to be adding some more
+                             * characters.
+                             */
+                            Tcl_AppendToObj(absolutePath, "/", 1);
+                        }
 		    } else {
 			Tcl_DecrRefCount(useThisCwd);
 			useThisCwd = NULL;
@@ -1764,12 +1714,9 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 			 * therefore behave the same here.
 			 */
 			absolutePath = Tcl_NewStringObj(path, 2);
+                        Tcl_AppendToObj(absolutePath, "/", 1);
 		    }
 		    Tcl_IncrRefCount(absolutePath);
-		    if (drive[cwdLen-1] != '/') {
-			/* Only add a trailing '/' if needed */
-		        Tcl_AppendToObj(absolutePath, "/", 1);
-		    }
 		    Tcl_AppendToObj(absolutePath, path+2, -1);
 		}
 #endif /* __WIN32__ */
@@ -2104,8 +2051,8 @@ SetFsPathFromAny(interp, pathPtr)
      * We remove any trailing directory separator.
      * 
      * However, the split/join routines are quite complex, and
-     * one has to make sure not to break anything on Unix, Win
-     * or MacOS (fCmd.test, fileName.test and cmdAH.test exercise
+     * one has to make sure not to break anything on Unix or Win
+     * (fCmd.test, fileName.test and cmdAH.test exercise
      * most of the code).
      */
     name = Tcl_GetStringFromObj(pathPtr,&len);
@@ -2118,10 +2065,6 @@ SetFsPathFromAny(interp, pathPtr)
 	Tcl_DString temp;
 	int split;
 	char separator='/';
-	
-	if (tclPlatform==TCL_PLATFORM_MAC) {
-	    if (strchr(name, ':') != NULL) separator = ':';
-	}
 	
 	split = FindSplitPos(name, separator);
 	if (split != len) {
@@ -2416,12 +2359,6 @@ UpdateStringOfFsPath(pathPtr)
 		    Tcl_AppendToObj(copy, "/", 1);
 		    cwdLen++;
 		}
-	    }
-	    break;
-	case TCL_PLATFORM_MAC:
-	    if (cwdStr[cwdLen-1] != ':') {
-		Tcl_AppendToObj(copy, ":", 1);
-		cwdLen++;
 	    }
 	    break;
     }

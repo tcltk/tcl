@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19 2003/05/15 21:51:46 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.1 2004/03/26 22:28:26 dgp Exp $
  */
 
 %{
@@ -33,15 +33,9 @@
 #include "tclInt.h"
 #include "tclPort.h"
 
-#if defined(MAC_TCL) && !defined(TCL_MAC_USE_MSL_EPOCH)
-#   define EPOCH           1904
-#   define START_OF_TIME   1904
-#   define END_OF_TIME     2039
-#else
-#   define EPOCH           1970
-#   define START_OF_TIME   1902
-#   define END_OF_TIME     2037
-#endif
+#define EPOCH           1970
+#define START_OF_TIME   1902
+#define END_OF_TIME     2037
 
 /*
  * The offset of tm_year of struct tm returned by localtime, gmtime, etc.
@@ -791,7 +785,7 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
 
     /* Perform a preliminary DST compensation ?? */
     if (DSTmode == DSTon
-     || (DSTmode == DSTmaybe && TclpGetDate((TclpTime_t)&Julian, 0)->tm_isdst))
+     || (DSTmode == DSTmaybe && TclpGetDate(Julian, 0)->tm_isdst))
         Julian -= 60 * 60;
     *TimePtr = Julian;
     return 0;
@@ -805,8 +799,8 @@ DSTcorrect(Start, Future)
 {
     time_t      StartDay;
     time_t      FutureDay;
-    StartDay = (TclpGetDate((TclpTime_t)&Start, 0)->tm_hour + 1) % 24;
-    FutureDay = (TclpGetDate((TclpTime_t)&Future, 0)->tm_hour + 1) % 24;
+    StartDay = (TclpGetDate(Start, 0)->tm_hour + 1) % 24;
+    FutureDay = (TclpGetDate(Future, 0)->tm_hour + 1) % 24;
     return (Future - Start) + (StartDay - FutureDay) * 60L * 60L;
 }
 
@@ -821,7 +815,7 @@ NamedDay(Start, DayOrdinal, DayNumber)
     time_t      now;
 
     now = Start;
-    tm = TclpGetDate((TclpTime_t)&now, 0);
+    tm = TclpGetDate(now, 0);
     now += SECSPERDAY * ((DayNumber - tm->tm_wday + 7) % 7);
     now += 7 * SECSPERDAY * (DayOrdinal <= 0 ? DayOrdinal : DayOrdinal - 1);
     return DSTcorrect(Start, now);
@@ -838,7 +832,7 @@ NamedMonth(Start, MonthOrdinal, MonthNumber)
     int result;
     
     now = Start;
-    tm = TclpGetDate((TclpTime_t)&now, 0);
+    tm = TclpGetDate(now, 0);
     /* To compute the next n'th month, we use this alg:
      * add n to year value
      * if currentMonth < requestedMonth decrement year value by 1 (so that
@@ -873,7 +867,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
         *TimePtr = 0;
         return 0;
     }
-    tm = TclpGetDate((TclpTime_t)&Start, 0);
+    tm = TclpGetDate(Start, 0);
     Month = 12 * (tm->tm_year + TM_YEAR_BASE) + tm->tm_mon + RelMonth;
     Year = Month / 12;
     Month = Month % 12 + 1;
@@ -1146,7 +1140,7 @@ TclGetDate(p, now, zone, timePtr)
     yyInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
     Start = now;
-    tm = TclpGetDate((TclpTime_t) &Start, 0);
+    tm = TclpGetDate(Start, (zone == -50000));
     thisyear = tm->tm_year + TM_YEAR_BASE;
     yyYear = thisyear;
     yyMonth = tm->tm_mon + 1;

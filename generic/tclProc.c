@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.3 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.4 2004/03/26 22:28:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -311,7 +311,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
      * Break up the argument list into argument specifiers, then process
      * each argument specifier.
      * If the body is precompiled, processing is limited to checking that
-     * the the parsed argument is consistent with the one stored in the
+     * the parsed argument is consistent with the one stored in the
      * Proc.
      * THIS FAILS IF THE ARG LIST OBJECT'S STRING REP CONTAINS NULLS.
      */

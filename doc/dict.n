@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.2 2003/04/10 13:11:06 dkf Exp $
+'\" RCS: @(#) $Id: dict.n,v 1.2.2.1 2004/03/26 22:28:24 dgp Exp $
 '\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
@@ -132,6 +132,13 @@ the resulting dictionary value back to that variable. Non-existent
 keys are treated as if they map to an empty list, and it is legal for
 there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list.
+.TP
+\fBdict merge \fR?\fIdictionaryValue ...\fR?
+Return a dictionary that contains the contents of each of the
+\fIdictionaryValue\fR arguments.  Where two (or more) dictionaries
+contain a mapping for the same key, the resulting dictionary maps that
+key to the value according to the last dictionary on the command line
+containing a mapping for that key.
 .TP
 \fBdict remove \fIdictionaryValue \fR?\fIkey ...\fR?
 Return a new dictionary that is a copy of an old one passed in as

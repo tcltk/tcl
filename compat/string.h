@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: string.h,v 1.4 2000/07/18 18:16:17 ericm Exp $
+ * RCS: @(#) $Id: string.h,v 1.4.20.1 2004/03/26 22:28:24 dgp Exp $
  */
 
 #ifndef _STRING
@@ -24,9 +24,7 @@
  * it exists everywhere)
  */
 
-#ifndef MAC_TCL
 #include <sys/types.h>
-#endif
 
 extern char *		memchr _ANSI_ARGS_((CONST VOID *s, int c, size_t n));
 extern int		memcmp _ANSI_ARGS_((CONST VOID *s1, CONST VOID *s2,

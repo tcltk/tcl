@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.12.2.2 2004/03/04 17:26:13 dgp Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.12.2.3 2004/03/26 22:28:24 dgp Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -83,7 +83,7 @@ Full month name.
 .VS 8.4
 .IP \fB%c\fR
 Locale specific date and time.  The format for date and time
-in the default "C" locale on Unix/Mac is "%a %b %d %H:%M:%S %Y".
+in the default "C" locale on Unix is "%a %b %d %H:%M:%S %Y".
 On Windows, this value is the locale specific long date and time, as
 specified in the Regional Options control panel settings.
 .IP \fB%C\fR
@@ -158,12 +158,12 @@ Week of year (00 - 52), Monday is the first day of the week.
 .VS 8.4
 .IP \fB%x\fR
 Locale specific date format.  The format for a date in the default "C"
-locale for Unix/Mac is "%m/%d/%y".
+locale for Unix is "%m/%d/%y".
 On Windows, this value is the locale specific short date format, as
 specified in the Regional Options control panel settings.
 .IP \fB%X\fR
 Locale specific 24-hour time format.  The format for a 
-24-hour time in the default "C" locale for Unix/Mac is "%H:%M:%S".
+24-hour time in the default "C" locale for Unix is "%H:%M:%S".
 On Windows, this value is the locale specific time format, as
 specified in the Regional Options control panel settings.
 .VE 8.4

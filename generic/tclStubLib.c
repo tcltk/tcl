@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6 2002/12/04 07:07:59 hobbs Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.1 2004/03/26 22:28:27 dgp Exp $
  */
 
 /*
@@ -88,6 +88,7 @@ Tcl_InitStubs (interp, version, exact)
 {
     CONST char *actualVersion = NULL;
     TclStubs *tmp;
+    TclStubs **tmpp;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because
@@ -100,8 +101,10 @@ Tcl_InitStubs (interp, version, exact)
 	return NULL;
     }
 
+    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+    tmpp = &tmp;
     actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact,
-	    (ClientData *) &tmp);
+	    (ClientData *) tmpp);
     if (actualVersion == NULL) {
 	tclStubsPtr = NULL;
 	return NULL;

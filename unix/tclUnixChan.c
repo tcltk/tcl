@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.2 2004/03/04 17:26:28 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.3 2004/03/26 22:28:30 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3165,6 +3165,7 @@ TclUnixWaitForFile(fd, mask, timeout)
     struct timeval blockTime, *timeoutPtr;
     int index, bit, numFound, result = 0;
     fd_mask readyMasks[3*MASK_SIZE];
+    fd_mask *maskp[3];
 				/* This array reflects the readable/writable
 				 * conditions that were found to exist by the
 				 * last call to select. */
@@ -3239,9 +3240,13 @@ TclUnixWaitForFile(fd, mask, timeout)
 	 * Wait for the event or a timeout.
 	 */
 
-	numFound = select(fd+1, (SELECT_MASK *) &readyMasks[0],
-		(SELECT_MASK *) &readyMasks[MASK_SIZE],
-		(SELECT_MASK *) &readyMasks[2*MASK_SIZE], timeoutPtr);
+       /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+	maskp[0] = &readyMasks[0];
+	maskp[1] = &readyMasks[MASK_SIZE];
+	maskp[2] = &readyMasks[2*MASK_SIZE];
+	numFound = select(fd+1, (SELECT_MASK *) maskp[0],
+		(SELECT_MASK *) maskp[1],
+		(SELECT_MASK *) maskp[2], timeoutPtr);
 	if (numFound == 1) {
 	    if (readyMasks[index] & bit) {
 		result |= TCL_READABLE;

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.2 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.3 2004/03/26 22:28:28 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -426,37 +426,37 @@ test binary-13.2 {Tcl_BinaryObjCmd: format} {
 test binary-13.3 {Tcl_BinaryObjCmd: format} {
     binary format f0 1.6
 } {}
-test binary-13.4 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-13.4 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format f 1.6
 } \x3f\xcc\xcc\xcd
 test binary-13.5 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format f 1.6
 } \xcd\xcc\xcc\x3f
-test binary-13.6 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-13.6 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format f* {1.6 3.4}
 } \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
 test binary-13.7 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format f* {1.6 3.4}
 } \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
-test binary-13.8 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-13.8 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format f2 {1.6 3.4}
 } \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
 test binary-13.9 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format f2 {1.6 3.4}
 } \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
-test binary-13.10 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-13.10 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format f2 {1.6 3.4 5.6}
 } \x3f\xcc\xcc\xcd\x40\x59\x99\x9a
 test binary-13.11 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format f2 {1.6 3.4 5.6}
 } \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
-test binary-13.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable macOrUnix} {
+test binary-13.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable unixOnly} {
     binary format f -3.402825e+38
 } \xff\x7f\xff\xff
 test binary-13.13 {Tcl_BinaryObjCmd: float overflow} {nonPortable pcOnly} {
     binary format f -3.402825e+38
 } \xff\xff\x7f\xff
-test binary-13.14 {Tcl_BinaryObjCmd: float underflow} {nonPortable macOrUnix} {
+test binary-13.14 {Tcl_BinaryObjCmd: float underflow} {nonPortable unixOnly} {
     binary format f -3.402825e-100
 } \x80\x00\x00\x00
 test binary-13.15 {Tcl_BinaryObjCmd: float underflow} {nonPortable pcOnly} {
@@ -469,7 +469,7 @@ test binary-13.17 {Tcl_BinaryObjCmd: format} {
     set a {1.6 3.4}
     list [catch {binary format f $a} msg] $msg
 } [list 1 "expected floating-point number but got \"1.6 3.4\""]
-test binary-13.18 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-13.18 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     set a {1.6 3.4}
     binary format f1 $a
 } \x3f\xcc\xcc\xcd
@@ -487,25 +487,25 @@ test binary-14.2 {Tcl_BinaryObjCmd: format} {
 test binary-14.3 {Tcl_BinaryObjCmd: format} {
     binary format d0 1.6
 } {}
-test binary-14.4 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-14.4 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format d 1.6
 } \x3f\xf9\x99\x99\x99\x99\x99\x9a
 test binary-14.5 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format d 1.6
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f
-test binary-14.6 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-14.6 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format d* {1.6 3.4}
 } \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
 test binary-14.7 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format d* {1.6 3.4}
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
-test binary-14.8 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-14.8 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format d2 {1.6 3.4}
 } \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
 test binary-14.9 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
     binary format d2 {1.6 3.4}
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
-test binary-14.10 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-14.10 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     binary format d2 {1.6 3.4 5.6}
 } \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33
 test binary-14.11 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
@@ -514,9 +514,6 @@ test binary-14.11 {Tcl_BinaryObjCmd: format} {nonPortable pcOnly} {
 test binary-14.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable unixOnly} {
     binary format d NaN
 } \x7f\xff\xff\xff\xff\xff\xff\xff
-test binary-14.13 {Tcl_BinaryObjCmd: float overflow} {nonPortable macOnly} {
-    binary format d NaN
-} \x7f\xf8\x02\xa0\x00\x00\x00\x00
 test binary-14.14 {Tcl_BinaryObjCmd: format} {
     list [catch {binary format d2 {1.6}} msg] $msg
 } {1 {number of elements in list does not match count}}
@@ -524,7 +521,7 @@ test binary-14.15 {Tcl_BinaryObjCmd: format} {
     set a {1.6 3.4}
     list [catch {binary format d $a} msg] $msg
 } [list 1 "expected floating-point number but got \"1.6 3.4\""]
-test binary-14.16 {Tcl_BinaryObjCmd: format} {nonPortable macOrUnix} {
+test binary-14.16 {Tcl_BinaryObjCmd: format} {nonPortable unixOnly} {
     set a {1.6 3.4}
     binary format d1 $a
 } \x3f\xf9\x99\x99\x99\x99\x99\x9a
@@ -1069,7 +1066,7 @@ test binary-30.9 {Tcl_BinaryObjCmd: scan} {
 test binary-31.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc f} msg] $msg
 } {1 {not enough arguments for all format specifiers}}
-test binary-31.2 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-31.2 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f* arg1] $arg1
 } {1 {1.60000002384 3.40000009537}}
@@ -1077,7 +1074,7 @@ test binary-31.3 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f* arg1] $arg1
 } {1 {1.60000002384 3.40000009537}}
-test binary-31.4 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-31.4 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f arg1] $arg1
 } {1 1.60000002384}
@@ -1085,7 +1082,7 @@ test binary-31.5 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 f arg1] $arg1
 } {1 1.60000002384}
-test binary-31.6 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-31.6 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd f1 arg1] $arg1
 } {1 1.60000002384}
@@ -1093,7 +1090,7 @@ test binary-31.7 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f f1 arg1] $arg1
 } {1 1.60000002384}
-test binary-31.8 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-31.8 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd f0 arg1] $arg1
 } {1 {}}
@@ -1101,7 +1098,7 @@ test binary-31.9 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f f0 arg1] $arg1
 } {1 {}}
-test binary-31.10 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-31.10 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a f2 arg1] $arg1
 } {1 {1.60000002384 3.40000009537}}
@@ -1119,7 +1116,7 @@ test binary-31.13 {Tcl_BinaryObjCmd: scan} {
     set arg1 1
     list [catch {binary scan \x3f\xcc\xcc\xcd f1 arg1(a)} msg] $msg
 } {1 {can't set "arg1(a)": variable isn't array}}
-test binary-31.14 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-31.14 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1 arg2}
     set arg1 foo
     set arg2 bar
@@ -1135,7 +1132,7 @@ test binary-31.15 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
 test binary-32.1 {Tcl_BinaryObjCmd: scan} {
     list [catch {binary scan abc d} msg] $msg
 } {1 {not enough arguments for all format specifiers}}
-test binary-32.2 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-32.2 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d* arg1] $arg1
 } {1 {1.6 3.4}}
@@ -1143,7 +1140,7 @@ test binary-32.3 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d* arg1] $arg1
 } {1 {1.6 3.4}}
-test binary-32.4 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-32.4 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d arg1] $arg1
 } {1 1.6}
@@ -1151,7 +1148,7 @@ test binary-32.5 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40 d arg1] $arg1
 } {1 1.6}
-test binary-32.6 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-32.6 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d1 arg1] $arg1
 } {1 1.6}
@@ -1159,7 +1156,7 @@ test binary-32.7 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f d1 arg1] $arg1
 } {1 1.6}
-test binary-32.8 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-32.8 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d0 arg1] $arg1
 } {1 {}}
@@ -1167,7 +1164,7 @@ test binary-32.9 {Tcl_BinaryObjCmd: scan} {nonPortable pcOnly} {
     catch {unset arg1}
     list [binary scan \x9a\x99\x99\x99\x99\x99\xf9\x3f d0 arg1] $arg1
 } {1 {}}
-test binary-32.10 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-32.10 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a\x40\x0b\x33\x33\x33\x33\x33\x33 d2 arg1] $arg1
 } {1 {1.6 3.4}}
@@ -1185,7 +1182,7 @@ test binary-32.13 {Tcl_BinaryObjCmd: scan} {
     set arg1 1
     list [catch {binary scan \x3f\xf9\x99\x99\x99\x99\x99\x9a d1 arg1(a)} msg] $msg
 } {1 {can't set "arg1(a)": variable isn't array}}
-test binary-32.14 {Tcl_BinaryObjCmd: scan} {nonPortable macOrUnix} {
+test binary-32.14 {Tcl_BinaryObjCmd: scan} {nonPortable unixOnly} {
     catch {unset arg1 arg2}
     set arg1 foo
     set arg2 bar
@@ -1351,13 +1348,13 @@ test binary-38.3 {FormatNumber: word alignment} {
 test binary-38.4 {FormatNumber: word alignment} {
     set x [binary format c1I1 1 1]
 } \x01\x00\x00\x00\x01
-test binary-38.5 {FormatNumber: word alignment} {nonPortable macOrUnix} {
+test binary-38.5 {FormatNumber: word alignment} {nonPortable unixOnly} {
     set x [binary format c1d1 1 1.6]
 } \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a
 test binary-38.6 {FormatNumber: word alignment} {nonPortable pcOnly} {
     set x [binary format c1d1 1 1.6]
 } \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f
-test binary-38.7 {FormatNumber: word alignment} {nonPortable macOrUnix} {
+test binary-38.7 {FormatNumber: word alignment} {nonPortable unixOnly} {
     set x [binary format c1f1 1 1.6]
 } \x01\x3f\xcc\xcc\xcd
 test binary-38.8 {FormatNumber: word alignment} {nonPortable pcOnly} {
@@ -1389,10 +1386,6 @@ test binary-40.1 {ScanNumber: floating point overflow} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
 } {1 -NaN}
-test binary-40.2 {ScanNumber: floating point overflow} {nonPortable macOnly} {
-    catch {unset arg1}
-    list [binary scan \xff\xff\xff\xff f1 arg1] $arg1
-} {1 -NAN(255)}
 test binary-40.3 {ScanNumber: floating point overflow} {nonPortable pcOnly} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff f1 arg1]
@@ -1407,10 +1400,6 @@ test binary-40.4 {ScanNumber: floating point overflow} {nonPortable unixOnly} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
 } {1 -NaN}
-test binary-40.5 {ScanNumber: floating point overflow} {nonPortable macOnly} {
-    catch {unset arg1}
-    list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
-} {1 -NAN(255)}
 test binary-40.6 {ScanNumber: floating point overflow} {nonPortable pcOnly} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1]
@@ -1438,7 +1427,7 @@ test binary-41.4 {ScanNumber: word alignment} {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x00\x00\x00\x01 c1I1 arg1 arg2] $arg1 $arg2
 } {2 1 1}
-test binary-41.5 {ScanNumber: word alignment} {nonPortable macOrUnix} {
+test binary-41.5 {ScanNumber: word alignment} {nonPortable unixOnly} {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x3f\xcc\xcc\xcd c1f1 arg1 arg2] $arg1 $arg2
 } {2 1 1.60000002384}
@@ -1446,7 +1435,7 @@ test binary-41.6 {ScanNumber: word alignment} {nonPortable pcOnly} {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\xcd\xcc\xcc\x3f c1f1 arg1 arg2] $arg1 $arg2
 } {2 1 1.60000002384}
-test binary-41.7 {ScanNumber: word alignment} {nonPortable macOrUnix} {
+test binary-41.7 {ScanNumber: word alignment} {nonPortable unixOnly} {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a c1d1 arg1 arg2] $arg1 $arg2
 } {2 1 1.6}

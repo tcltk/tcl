@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.6 2002/04/23 19:06:10 hobbs Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.6.4.1 2004/03/26 22:28:24 dgp Exp $
 '\" 
 .so man.macros
 .TH exec n 7.6 Tcl "Tcl Built-In Commands"
@@ -315,9 +315,6 @@ rather than reading from their standard input and writing to their standard
 output may fail, hang Tcl, or even hang the system if their own private
 console window is not available to them.
 .RE
-.TP
-\fBMacintosh\fR
-The \fBexec\fR command is not implemented and does not exist under Macintosh.
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 The \fBexec\fR command is fully functional and works as described.

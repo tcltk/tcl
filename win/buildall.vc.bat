@@ -3,7 +3,7 @@
 ::  edit this (or make your own) for your needs and wants using
 ::  the instructions for calling makefile.vc found in makefile.vc
 ::
-::  RCS: @(#) $Id: buildall.vc.bat,v 1.6.4.1 2003/08/27 21:07:21 dgp Exp $
+::  RCS: @(#) $Id: buildall.vc.bat,v 1.6.4.2 2004/03/26 22:28:30 dgp Exp $
 
 if "%1" == "/?" goto help
 if /i "%1" == "/help" goto help
@@ -15,7 +15,7 @@ cd > nul
 :: with developer studio (v4,5,6,7,etc...)  All have it.  These paths
 :: might not be correct.  You may need to edit these.
 ::
-if not defined MSVCDir (
+if not defined MSDevDir (
     call "C:\Program Files\Microsoft Developer Studio\vc98\bin\vcvars32.bat"
     ::call "C:\Program Files\Microsoft Developer Studio\vc\bin\vcvars32.bat"
     ::call c:\dev\devstudio60\vc98\bin\vcvars32.bat

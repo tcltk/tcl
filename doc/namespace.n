@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.2 2004/03/04 17:26:14 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.3 2004/03/26 22:28:25 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -332,7 +332,7 @@ The topmost or global namespace has the name ``'' (i.e., an empty string),
 although \fB::\fR is a synonym.
 As an example, the name \fB::safe::interp::create\fR
 refers to the command \fBcreate\fR in the namespace \fBinterp\fR
-that is a child of of namespace \fB::safe\fR,
+that is a child of namespace \fB::safe\fR,
 which in turn is a child of the global namespace \fB::\fR.
 .PP
 If you want to access commands and variables from another namespace,

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: source.test,v 1.8.4.3 2004/03/04 17:26:20 dgp Exp $
+# RCS: @(#) $Id: source.test,v 1.8.4.4 2004/03/26 22:28:29 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
@@ -190,109 +190,6 @@ test source-3.5 {return with special code etc.} -setup {
 } -result {1 {} {Simulated errorInfo stuff
     invoked from within
 "source $sourcefile"} {a b c}}
-
-
-# Test for the Macintosh specfic features of the source command
-test source-4.1 {source error conditions} -constraints macOnly -body {
-    source -rsrc _no_exist_
-} -result {The resource "_no_exist_" could not be loaded from application.} \
-  -returnCodes error 
-
-test source-4.2 {source error conditions} -constraints macOnly -body {
-    source -rsrcid bad_id
-} -returnCodes error -result {expected integer but got "bad_id"}
-
-test source-4.3 {source error conditions} -constraints macOnly -body {
-    source -rsrc rsrcName fileName extra
-} -returnCodes error -result {wrong # args: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?" or "source -encoding name fileName"}
-
-test source-4.4 {source error conditions} -constraints macOnly -body {
-    source non_switch rsrcName
-} -returnCodes error -result {bad argument: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?" or "source -encoding name fileName"}
-
-test source-4.5 {source error conditions} -constraints macOnly -body {
-    source -bad_switch argument
-} -returnCodes error -result {bad argument: should be "source fileName" or "source -rsrc name ?fileName?" or "source -rsrcid id ?fileName?" or "source -encoding name fileName"}
-
- 
-testConstraint testWriteTextResource \
-	[llength [info commands testWriteTextResource]]
-
-test source-5.1 {source resource files} -constraints macOnly -setup {
-    set sourcefile [makeFile {} bad_file]
-    removeFile bad_file
-} -body {
-    source -rsrc rsrcName $sourcefile
-} -returnCodes error -match glob -result {Error finding the file: "*bad_file".}
-
-test source-5.2 {source resource files} -constraints macOnly -setup {
-    set sourcefile [makeFile {return} source.file]
-} -body {
-    source -rsrc rsrcName $sourcefile
-} -cleanup {
-    removeFile source.file
-} -returnCodes error -match glob \
-  -result {Error reading the file: "*source.file".}
-
-test source-5.3 {source resource files} -constraints {
-    macOnly testWriteTextResource
-} -setup {
-    set msg2 unset
-    set rsrcFile [makeFile {} rsrc.file]
-    removeFile rsrc.file
-    testWriteTextResource -rsrc rsrcName -file $rsrc.file {set msg2 ok; return}
-} -body {
-    set result [catch {source -rsrc rsrcName rsrc.file} msg]
-    list $msg2 $result $msg
-} -cleanup {
-    removeFile rsrc.file
-} -result [list ok 0 {}]
-
-test source-5.4 {source resource files} -constraints {
-    macOnly testWriteTextResource
-} -setup {
-    set msg2 unset
-    set rsrsFile [makeFile {} rsrc.file]
-    removeFile rsrc.file
-    testWriteTextResource -rsrc fileRsrcName \
-	    -file $rsrcFile {set msg2 ok; return}
-} -body {
-    source -rsrc fileRsrcName $rsrcFile
-    set result [catch {source -rsrc fileRsrcName} msg]    
-    list $msg2 $result $msg
-} -cleanup {
-    removeFile rsrc.file
-} -result [list ok 1 {The resource "fileRsrcName" could not be loaded from application.}]
-
-test source-5.5 {source resource files} -constraints {
-    macOnly testWriteTextResource
-} -setup {
-    set msg2 unset
-    set rsrcFile [makeFile {} rsrc.file]
-    removeFile rsrc.file
-    testWriteTextResource -rsrcid 200 \
-	    -file $rsrcFile {set msg2 hello; set msg3 bye}
-} -body {
-    set result [catch {source -rsrcid 200 $rsrcFile} msg]
-    list $msg2 $result $msg
-} -cleanup {
-    removeFile rsrc.file
-} -result [list hello 0 bye]
-
-test source-5.6 {source resource files} -constraints {
-    macOnly testWriteTextResource
-} -setup {
-    set msg2 unset
-    set rsrcFile [makeFile {} rsrc.file]
-    removeFile rsrc.file
-    testWriteTextResource -rsrcid 200 \
-	    -file $rsrcFile {set msg2 hello; error bad; set msg3 bye}
-} -body {
-    set result [catch {source -rsrcid 200 rsrc.file} msg]
-    list $msg2 $result $msg
-} -cleanup {
-    removeFile rsrc.file
-} -result [list hello 1 bad]
 
 
 test source-6.1 {source is binary ok} -setup {

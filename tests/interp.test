@@ -10,20 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.3 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.4 2004/03/26 22:28:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
 
-# The set of hidden commands is platform dependent:
-
-if {"$tcl_platform(platform)" == "macintosh"} {
-    set hidden_cmds {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source}
-} else {
-    set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source}
-}
+set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source}
 
 foreach i [interp slaves] {
   interp delete $i
@@ -1742,24 +1736,6 @@ test interp-23.2 {testing hiding vs aliases} {unixOrPc} {
     interp delete a
     set l
 } {{cd encoding exec exit fconfigure file glob load open pwd socket source} bar {cd encoding exec exit fconfigure file glob load open pwd socket source} bar {bar cd encoding exec exit fconfigure file glob load open pwd socket source} {} {cd encoding exec exit fconfigure file glob load open pwd socket source}} 
-
-test interp-23.3 {testing hiding vs aliases} {macOnly} {
-    catch {interp delete a}
-    interp create a -safe
-    set l ""
-    lappend l [lsort [interp hidden a]]
-    a alias bar bar
-    lappend l [interp aliases a]
-    lappend l [lsort [interp hidden a]]
-    a hide bar
-    lappend l [interp aliases a]
-    lappend l [lsort [interp hidden a]]
-    a alias bar {}
-    lappend l [interp aliases a]
-    lappend l [lsort [interp hidden a]]
-    interp delete a
-    set l
-} {{beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} bar {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} bar {bar beep cd echo encoding exit fconfigure file glob load ls open pwd socket source} {} {beep cd echo encoding exit fconfigure file glob load ls open pwd socket source}} 
 
 test interp-24.1 {result resetting on error} {
     catch {interp delete a}

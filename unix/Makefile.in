@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.5 2004/03/04 17:26:24 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.6 2004/03/26 22:28:29 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1329,14 +1329,6 @@ dist: $(UNIX_DIR)/configure mklinks
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.ds*
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
-	mkdir $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/tcl*.sea.hqx \
-		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
-		$(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/macosx
 	cp -p $(TOP_DIR)/macosx/Makefile \
 		$(TOP_DIR)/macosx/*.c \
@@ -1403,20 +1395,6 @@ html-tk:
 BUILD_HTML = \
 	$(TCL_EXE) $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(DISTDIR)/html \
 		--srcdir=$(TOP_DIR)/..
-
-#
-# Target to create a Macintosh version of the distribution.  This will
-# do a normal distribution and then massage the output to prepare it
-# for moving to the Mac platform.  This requires a few scripts and
-# programs found only in the Tcl group's tool workspace.
-#
-
-macdist: dist machtml
-
-machtml:
-	rm -f $(DISTDIR)/mac/tclMacProjects.sea.hqx
-	rm -rf $(DISTDIR)/doc
-	$(TCL_EXE) $(TOOL_DIR)/cvtEOL.tcl $(DISTDIR)
 
 #
 # Targets to build Solaris package of the distribution for the current

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.2 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.3 2004/03/26 22:28:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -533,7 +533,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	 * permissions, we'll let the actual copy/rename return
 	 * an error later.
 	 */
-#if !defined(__WIN32__) && !defined(MAC_TCL)
+#if !defined(__WIN32__)
 	{
 	Tcl_Obj* perm = Tcl_NewStringObj("u+w",-1);
 	Tcl_IncrRefCount(perm);

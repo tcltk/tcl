@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.2 2004/03/04 17:26:20 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.3 2004/03/26 22:28:29 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -93,7 +93,7 @@ if {![info exists remoteServerPort]} {
 #
 
 set doTestsWithRemoteServer 1
-if {![info exists remoteServerIP] && ($tcl_platform(platform) != "macintosh")} {
+if {![info exists remoteServerIP]} {
     set remoteServerIP 127.0.0.1
 }
 if {($doTestsWithRemoteServer == 1) && (![info exists remoteServerPort])} {
@@ -1149,12 +1149,6 @@ test socket-11.5 {remote echo, 50 lines} {socket doTestsWithRemoteServer} {
     sendCommand {close $socket10_7_test_server}
     set cnt
 } 50
-# Macintosh sockets can have more than one server per port
-if {$tcl_platform(platform) == "macintosh"} {
-    set conflictResult {0 2836}
-} else {
-    set conflictResult {1 {couldn't open socket: address already in use}}
-}
 test socket-11.6 {socket conflict} {socket doTestsWithRemoteServer} {
     set s1 [socket -server accept 2836]
     if {[catch {set s2 [socket -server accept 2836]} msg]} {
@@ -1165,7 +1159,7 @@ test socket-11.6 {socket conflict} {socket doTestsWithRemoteServer} {
     }
     close $s1
     set result
-} $conflictResult
+} {1 {couldn't open socket: address already in use}}
 test socket-11.7 {server with several clients} {socket doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_9_test_server [socket -server accept 2836]

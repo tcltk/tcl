@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.3 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.4 2004/03/26 22:28:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3093,6 +3093,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
 {
     Tcl_Namespace *namespacePtr;
     CallFrame frame;
+    CallFrame *framep;
     Tcl_Obj *objPtr;
     char *name;
     int length, result;
@@ -3130,7 +3131,9 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      * the command(s).
      */
 
-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) &frame, 
+    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+    framep = &frame;
+    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framep, 
             namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
         return TCL_ERROR;
@@ -4877,7 +4880,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		    goto unknownOrAmbiguousSubcommand;
 		}
 		fullName = ensemblePtr->subcommandArrayPtr[i];
-	    } else if (cmp == 1) {
+	    } else if (cmp < 0) {
 		/*
 		 * Because we are searching a sorted table, we can now
 		 * stop searching because we have gone past anything

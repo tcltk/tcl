@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.9.4.1 2004/03/04 17:26:16 dgp Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.9.4.2 2004/03/26 22:28:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -251,7 +251,7 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
     /*
      * Scan through the list of packages already loaded in the target
      * interpreter.  If the package we want is already loaded there,
-     * then there's nothing for us to to.
+     * then there's nothing for us to do.
      */
 
     if (pkgPtr != NULL) {

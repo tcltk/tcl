@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.9.4.1 2004/02/07 05:47:59 dgp Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.9.4.2 2004/03/26 22:28:24 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl n "8.5" Tcl "Tcl Built-In Commands"
@@ -53,7 +53,7 @@ The double-quotes are not retained as part of the word.
 .IP "[5] \fBArgument expansion.\fR"
 If a word starts with the string ``{expand}'' followed by a 
 non-whitespace character, then the leading ``{expand}'' is removed
-and the rest of the word is parsed and substituted as any other other 
+and the rest of the word is parsed and substituted as any other  
 word. After substitution, the word is parsed again without
 substitutions, and its words are added to the command being
 substituted. For instance, ``cmd a {expand}{b c} d {expand}{e f}'' is

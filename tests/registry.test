@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.14.2.1 2004/03/04 23:33:15 dgp Exp $
+# RCS: @(#) $Id: registry.test,v 1.14.2.2 2004/03/26 22:28:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -30,7 +30,7 @@ if {$tcl_platform(platform) == "windows"} {
 
 # determine the current locale
 testConstraint english [expr {[llength [info commands testlocale]]
-	&& [string equal [testlocale all ""] "English_United States.1252"]
+	&& [string match "English*" [testlocale all ""]]
 }]
 
 set hostname [info hostname]
@@ -528,7 +528,7 @@ test registry-9.3 {ParseKeyName: bad keys} {pcOnly} {
 test registry-9.4 {ParseKeyName: bad keys} {pcOnly} {
     list [catch {registry values \\\\\\} msg] $msg
 } {1 {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
-test registry-9.5 {ParseKeyName: bad keys} {pcOnly english} {
+test registry-9.5 {ParseKeyName: bad keys} {pcOnly english nt} {
     list [catch {registry values \\\\\\HKEY_CLASSES_ROOT} msg] $msg
 } {1 {unable to open key: The network address is invalid.}}
 test registry-9.6 {ParseKeyName: bad keys} {pcOnly} {

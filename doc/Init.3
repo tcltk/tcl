@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: Init.3,v 1.1 2000/04/28 00:47:48 ericm Exp $
+'\" RCS: @(#) $Id: Init.3,v 1.1.24.1 2004/03/26 22:28:24 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Init 3 8.0 Tcl "Tcl Library Procedures"
@@ -24,9 +24,7 @@ Interpreter to initialize.
 .PP
 \fBTcl_Init\fR is a helper procedure that finds and \fBsource\fR's the
 \fBinit.tcl\fR script, which should exist somewhere on the Tcl library
-path.  On Macintosh systems, it additionally checks for an \fBInit\fR
-resource and sources the contents of that resource if \fBinit.tcl\fR
-cannot be found.
+path.
 .PP
 \fBTcl_Init\fR is typically called from \fBTcl_AppInit\fR procedures.
 

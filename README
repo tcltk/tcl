@@ -1,11 +1,11 @@
 README:  Tcl
-    This is the Tcl 8.5a1 source distribution.
+    This is the Tcl 8.5a2 source distribution.
     Tcl/Tk is also available through NetCVS:
 	http://tcl.sourceforge.net/
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.50.2.1 2004/03/04 17:26:12 dgp Exp $
+RCS: @(#) $Id: README,v 1.50.2.2 2004/03/26 22:28:24 dgp Exp $
 
 Contents
 --------
@@ -25,7 +25,7 @@ Contents
 Tcl provides a powerful platform for creating integration applications that
 tie together diverse applications, protocols, devices, and frameworks.
 When paired with the Tk toolkit, Tcl provides the fastest and most powerful
-way to create GUI applications that run on PCs, Unix, and the Macintosh.
+way to create GUI applications that run on PCs, Unix, and Mac OS X.
 Tcl can also be used for a variety of web-related tasks and for creating
 powerful command languages for applications.
 
@@ -92,7 +92,7 @@ Windows help Tcl documentation will appear in the "Start" menu:
 3. Compiling and installing Tcl
 -------------------------------
 
-There are brief notes in the unix/README, win/README, and mac/README about
+There are brief notes in the unix/README, win/README, and macosx/README about
 compiling on these different platforms.  There is additional information
 about building Tcl from sources at
 

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.23.4.3 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.23.4.4 2004/03/26 22:28:27 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -461,8 +461,7 @@ proc tclPkgSetup {dir pkg version files} {
 # It is invoked when a package that's needed can't be found.  It scans
 # the auto_path directories and their immediate children looking for
 # pkgIndex.tcl files and sources any such files that are found to setup
-# the package database.  (On the Macintosh we also search for pkgIndex
-# TEXT resources in all files.)  As it searches, it will recognize changes
+# the package database. As it searches, it will recognize changes
 # to the auto_path and scan any new directories.
 #
 # Arguments:
@@ -604,95 +603,6 @@ proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
 	}
 	set use_path [lrange $use_path 0 end-1]
 
-	# Check whether any of the index scripts we [source]d above
-	# set a new value for $::auto_path.  If so, then find any
-	# new directories on the $::auto_path, and lappend them to
-	# the $use_path we are working from.  This gives index scripts
-	# the (arguably unwise) power to expand the index script search
-	# path while the search is in progress.
-	set index 0
-	if {[llength $old_path] == [llength $auto_path]} {
-	    foreach dir $auto_path old $old_path {
-		if {$dir ne $old} {
-		    # This entry in $::auto_path has changed.
-		    break
-		}
-		incr index
-	    }
-	}
-
-	# $index now points to the first element of $auto_path that
-	# has changed, or the beginning if $auto_path has changed length
-	# Scan the new elements of $auto_path for directories to add to
-	# $use_path.  Don't add directories we've already seen, or ones
-	# already on the $use_path.
-	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)] 
-		    && ([lsearch -exact $use_path $dir] == -1) } {
-		lappend use_path $dir
-	    }
-	}
-	set old_path $auto_path
-    }
-}
-
-# tcl::MacPkgUnknown --
-# This procedure extends the "package unknown" function for Mac.
-# It searches for pkgIndex TEXT resources in all files
-# Only installed in interps that are not safe so we don't check
-# for [interp issafe] as in tclPkgUnknown.
-#
-# Arguments:
-# original -		original [package unknown] procedure
-# name -		Name of desired package.  Not used.
-# version -		Version of desired package.  Not used.
-# exact -		Either "-exact" or omitted.  Not used.
-
-proc tcl::MacPkgUnknown {original name version {exact {}}} {
-
-    #  First do the cross-platform default search
-    uplevel 1 $original [list $name $version $exact]
-
-    # Now do Mac specific searching
-    global auto_path
-
-    if {![info exists auto_path]} {
-	return
-    }
-    # Cache the auto_path, because it may change while we run through
-    # the first set of pkgIndex.tcl files
-    set old_path [set use_path $auto_path]
-    while {[llength $use_path]} {
-	# We look for pkgIndex TEXT resources in the resource fork of
-	# shared libraries
-	set dir [lindex $use_path end]
-
-	# Make sure we only scan each directory one time.
-	if {[info exists tclSeenPath($dir)]} {
-	    set use_path [lrange $use_path 0 end-1]
-	    continue
-	}
-	set tclSeenPath($dir) 1
-
-	foreach x [concat [list $dir] [glob -directory $dir -nocomplain *] ] {
-	    if {![info exists procdDirs($x)] && [file isdirectory $x]} {
-		set dir $x
-		foreach x [glob -directory $dir -nocomplain *.shlb] {
-		    if {[file isfile $x]} {
-			set res [resource open $x]
-			foreach y [resource list TEXT $res] {
-			    if {[string equal $y "pkgIndex"]} {
-				source -rsrc pkgIndex
-			    }
-			}
-			catch {resource close $res}
-		    }
-		}
-		set procdDirs($dir) 1
-	    }
-	}
-	set use_path [lrange $use_path 0 end-1]
-	
 	# Check whether any of the index scripts we [source]d above
 	# set a new value for $::auto_path.  If so, then find any
 	# new directories on the $::auto_path, and lappend them to

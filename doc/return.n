@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.3.20.1 2003/09/05 23:08:05 dgp Exp $
+'\" RCS: @(#) $Id: return.n,v 1.3.20.2 2004/03/26 22:28:25 dgp Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -140,7 +140,7 @@ The \fB-level\fR and \fB-code\fR options work together to set the return
 code to be returned by one of the commands currently being evaluated.
 The \fIlevel\fR value must be a non-negative integer representing a number
 of levels on the call stack.  It defines the number of levels up the stack
-at which the return code of command currently being evaluated should
+at which the return code of a command currently being evaluated should
 be \fIcode\fR.  If no \fB-level\fR option is provided, the default value
 of \fIlevel\fR is 1, so that \fBreturn\fR sets the return code that the
 current procedure returns to its caller, 1 level up the call stack.  The
@@ -298,8 +298,7 @@ proc myReturn {args} {
         set result [lindex $args end]
         set args [lrange $args 0 end-1]
     }
-    set options [eval \\
-            [list dict create -level 1] $args]
+    set options [dict merge {-level 1} $args]
     dict incr options -level
     return -options $options $result
 }

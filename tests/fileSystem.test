@@ -47,6 +47,24 @@ if {$::tcl_platform(platform) eq "windows"} {
     # The variable 'drive' will be used below
 }
 
+tcltest::testConstraint moreThanOneDrive 0
+set drives [list]
+if {$::tcl_platform(platform) eq "windows"} {
+    set dir [pwd]
+    foreach vol [file volumes] {
+        if {![catch {cd $vol}]} {
+            lappend drives $vol
+        }
+    }
+    if {[llength $drives] > 1} {
+        tcltest::testConstraint moreThanOneDrive 1
+    }
+    # The variable 'drives' will be used below
+    unset vol
+    cd $dir
+    unset dir
+}
+
 proc testPathEqual {one two} {
     if {[string equal $one $two]} {
 	return 1
@@ -89,7 +107,7 @@ test filesystem-1.1 {link normalisation} {hasLinks} {
    string equal [file normalize dir.dir] [file normalize dir.link]
 } {0}
 
-test filesystem-1.2 {link normalisation} {hasLinks macOrUnix} {
+test filesystem-1.2 {link normalisation} {hasLinks unixOnly} {
     testPathEqual [file normalize [file join gorp.file foo]] \
      [file normalize [file join link.file foo]]
 } {1}
@@ -114,7 +132,7 @@ test filesystem-1.6 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.file]]
 } {0}
 
-test filesystem-1.7 {link normalisation} {hasLinks macOrUnix} {
+test filesystem-1.7 {link normalisation} {hasLinks unixOnly} {
     testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
      [file normalize [file join dir.dir inside.file foo]]
 } {1}
@@ -124,14 +142,14 @@ test filesystem-1.8 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
-test filesystem-1.9 {link normalisation} {macOrUnix hasLinks} {
+test filesystem-1.9 {link normalisation} {unixOnly hasLinks} {
     file delete -force dir.link
     file link dir.link [file nativename dir.dir]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
 } {1}
 
-test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
+test filesystem-1.10 {link normalisation: double link} {unixOnly hasLinks} {
     file link dir2.link dir.link
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
@@ -139,7 +157,7 @@ test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
 
 makeDirectory dir2.file
 
-test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
+test filesystem-1.11 {link normalisation: double link, back in tree} {unixOnly hasLinks} {
     file link [file join dir2.file dir2.link] [file join .. dir2.link]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
@@ -356,6 +374,30 @@ test filesystem-1.37 {file normalisation with '/./'} {
 	set res "ok"
     }
     set res
+} {ok}
+
+test filesystem-1.38 {file normalisation with volume relative} \
+  {winOnly moreThanOneDrive} {
+    set path "[string range [lindex $drives 0] 0 1]foo"
+    set dir [pwd]
+    cd [lindex $drives 1]
+    set res [file norm $path]
+    cd $dir
+    set res
+} "[lindex $drives 0]foo"
+
+test filesystem-1.39 {file normalisation with volume relative} {winOnly} {
+    set drv [lindex [file volumes] 0]
+    set dir [lindex [glob -type d -dir $drv *] 0]
+    set old [pwd]
+    cd $dir
+    set res [file norm [string range $drv 0 1]]
+    cd $old
+    if {[string index $res end] eq "/"} {
+        set res "Bad normalized path: $res"
+    } else {
+        set res "ok"
+    }
 } {ok}
 
 test filesystem-2.0 {new native path} {unixOnly} {

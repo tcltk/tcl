@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.2 2004/02/07 05:48:11 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.3 2004/03/26 22:28:30 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -135,7 +135,6 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
  * Socket support stuff: This likely needs more work to parameterize for
  * each system.
  */
-
 #include <sys/socket.h>		/* struct sockaddr, SOCK_STREAM, ... */
 #ifndef NO_UNAME
 #   include <sys/utsname.h>	/* uname system call. */

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.5.20.1 2003/09/05 23:08:05 dgp Exp $
+'\" RCS: @(#) $Id: source.n,v 1.5.20.2 2004/03/26 22:28:25 dgp Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -20,10 +20,6 @@ source \- Evaluate a file or resource as a Tcl script
 .VS 8.5
 \fBsource\fR \fB\-encoding \fIencodingName fileName\fR
 .VE 8.5
-.sp
-\fBsource\fR \fB\-rsrc \fIresourceName \fR?\fIfileName\fR?
-.sp
-\fBsource\fR \fB\-rsrcid \fIresourceId \fR?\fIfileName\fR?
 .BE
 
 .SH DESCRIPTION
@@ -50,14 +46,6 @@ The \fB-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB-encoding\fR option
 is omitted, the system encoding is assumed.
 .VE 8.5
-.PP
-The \fI\-rsrc\fR and \fI\-rsrcid\fR forms of this command are only
-available on Macintosh computers.  These versions of the command
-allow you to source a script from a \fBTEXT\fR resource.  You may specify
-what \fBTEXT\fR resource to source by either name or id.  By default Tcl
-searches all open resource files, which include the current
-application and any loaded C extensions.  Alternatively, you may
-specify the \fIfileName\fR where the \fBTEXT\fR resource can be found.
 
 .SH "SEE ALSO"
 file(n), cd(n), encoding(n)

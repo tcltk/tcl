@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11 2003/02/15 20:24:10 kennykb Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.1 2004/03/26 22:28:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -200,7 +200,7 @@ void
 Tcl_SetNotifier(notifierProcPtr)
     Tcl_NotifierProcs *notifierProcPtr;
 {
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if !defined(__WIN32__) /* UNIX */
     tclStubs.tcl_CreateFileHandler = notifierProcPtr->createFileHandlerProc;
     tclStubs.tcl_DeleteFileHandler = notifierProcPtr->deleteFileHandlerProc;
 #endif
@@ -818,7 +818,7 @@ Tcl_DoOneEvent(flags)
      * The first thing we do is to service any asynchronous event
      * handlers.
      */
-    
+
     if (Tcl_AsyncReady()) {
 	(void) Tcl_AsyncInvoke((Tcl_Interp *) NULL, 0);
 	return 1;
@@ -827,7 +827,7 @@ Tcl_DoOneEvent(flags)
     /*
      * No event flags is equivalent to TCL_ALL_EVENTS.
      */
-    
+
     if ((flags & TCL_ALL_EVENTS) == 0) {
 	flags |= TCL_ALL_EVENTS;
     }
@@ -864,7 +864,7 @@ Tcl_DoOneEvent(flags)
 	 */
 
 	if (Tcl_ServiceEvent(flags)) {
-	    result = 1;	    
+	    result = 1;
 	    break;
 	}
 

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.3 2004/03/04 17:26:18 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.4 2004/03/26 22:28:29 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -1550,11 +1550,7 @@ test io-13.12 {TranslateInputEOL: find EOF char in src} {
 # also testing channel table management.
 
 if {[info commands testchannel] != ""} {
-    if {$tcl_platform(platform) == "macintosh"} {
-	set consoleFileNames [list console0 console1 console2]
-    } else {
-	set consoleFileNames [lsort [testchannel open]]
-    }
+    set consoleFileNames [lsort [testchannel open]]
 } else {
     # just to avoid an error
     set consoleFileNames [list]
@@ -1871,12 +1867,6 @@ test io-20.3 {Tcl_CreateChannel: initial settings} {unixOnly} {
     close $f
     set x
 } {{{} {}} {auto lf}}
-test io-20.4 {Tcl_CreateChannel: initial settings} {macOnly} {
-    set f [open $path(test1) w+]
-    set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
-    close $f
-    set x
-} {{{} {}} {auto cr}}
 
 set path(stdout) [makeFile {} stdout]
 
@@ -5252,7 +5242,7 @@ test io-40.8 {POSIX open access modes: TRUNC} {
     close $f
     set x
 } abc
-test io-40.9 {POSIX open access modes: NONBLOCK} {nonPortable macOrUnix} {
+test io-40.9 {POSIX open access modes: NONBLOCK} {nonPortable unixOnly} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY NONBLOCK CREAT}]
     puts $f "NONBLOCK test"
