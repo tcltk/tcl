@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.28 2003/10/13 16:48:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.29 2004/01/21 19:59:33 vincentdarley Exp $
  */
 
 /*
@@ -583,11 +583,73 @@ TclpObjChdir(pathPtr)
 }
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
- * TclpObjGetCwd --
+ * TclpGetNativeCwd --
  *
  *	This function replaces the library version of getcwd().
+ *
+ * Results:
+ *	The input and output are filesystem paths in native form.  The
+ *	result is either the given clientData, if the working directory
+ *	hasn't changed, or a new clientData (owned by our caller),
+ *	giving the new native path, or NULL if the current directory
+ *	could not be determined.  If NULL is returned, the caller can
+ *	examine the standard posix error codes to determine the cause of
+ *	the problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpGetNativeCwd(clientData)
+    ClientData clientData;
+{
+    FSSpec theSpec;
+    int length;
+    Handle pathHandle = NULL;
+    OSErr err;
+    
+    err = FSpGetDefaultDir(&theSpec);
+    if (err != noErr) {
+	errno = TclMacOSErrorToPosixError(err);
+	return NULL;
+    }
+    err = FSpPathFromLocation(&theSpec, &length, &pathHandle);
+    if (err != noErr) {
+	errno = TclMacOSErrorToPosixError(err);
+	return NULL;
+    }
+    
+    if ((clientData != NULL) 
+      && strcmp((CONST char*)(*pathHandle), (CONST char*)clientData) == 0) {
+	/* No change to pwd */
+	DisposeHandle(pathHandle);	
+        return clientData;
+    } else {
+	char *newCd;
+	
+	HLock(pathHandle);
+	newCd = (char *) ckalloc((unsigned) 
+		(strlen((CONST char*)(*pathHandle)) + 1));
+	strcpy(newCd, (CONST char*)(*pathHandle));
+	HUnlock(pathHandle);
+	DisposeHandle(pathHandle);
+	return (ClientData) newCd;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetCwd --
+ *
+ *	This function replaces the library version of getcwd().
+ *      (Obsolete function, only retained for old extensions which
+ *      may call it directly).
  *
  * Results:
  *	The result is a pointer to a string specifying the current
@@ -602,21 +664,6 @@ TclpObjChdir(pathPtr)
  *
  *----------------------------------------------------------------------
  */
-
-Tcl_Obj* 
-TclpObjGetCwd(interp)
-    Tcl_Interp *interp;
-{
-    Tcl_DString ds;
-    if (TclpGetCwd(interp, &ds) != NULL) {
-	Tcl_Obj *cwdPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(cwdPtr);
-	Tcl_DStringFree(&ds);
-	return cwdPtr;
-    } else {
-	return NULL;
-    }
-}
 
 CONST char *
 TclpGetCwd(
@@ -1242,8 +1289,8 @@ TclpObjLink(pathPtr, toPtr, linkAction)
  *---------------------------------------------------------------------------
  */
 Tcl_Obj*
-TclpFilesystemPathType(pathObjPtr)
-    Tcl_Obj* pathObjPtr;
+TclpFilesystemPathType(pathPtr)
+    Tcl_Obj* pathPtr;
 {
     /* All native paths are of the same type */
     return NULL;
