@@ -1,3 +1,12 @@
+1999-02-11    <stanton@GASPODE>
+
+	* README: 
+	* generic/tcl.h: 
+	* win/README.binary: 
+	* win/README: 
+	* unix/configure.in: 
+	* mac/README: Updated version numbers to 8.1b2.
+
 1999-02-10    <stanton@GASPODE>
 
 	* library/auto.tcl: Fixed auto_mkindex so it handles .tbc files.

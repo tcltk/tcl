@@ -1,13 +1,13 @@
 Tcl
 
-RCS: @(#) $Id: README,v 1.1.2.5 1998/12/11 01:32:13 stanton Exp $
+RCS: @(#) $Id: README,v 1.1.2.6 1999/02/12 00:57:58 stanton Exp $
 
 1. Introduction
 ---------------
 
 This directory and its descendants contain the sources and
 documentation for Tcl, an embeddable scripting language.  The
-information here constitutes the 8.1b1 release, which is the first beta
+information here constitutes the 8.1b2 release, which is the second beta
 release for Tcl 8.1.  This release is mostly feature complete but may
 have bugs and be missing some minor features.  This release is for
 early adopters who are willing to help us find and fix problems.
