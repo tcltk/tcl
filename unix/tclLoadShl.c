@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.9 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.10 2002/07/17 20:00:46 vincentdarley Exp $
  */
 
 #include <dl.h>
@@ -47,17 +47,11 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    TclLoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -66,7 +60,6 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * this file. */
 {
     shl_t handle;
-    Tcl_DString newName;
     char *fileName = Tcl_GetString(pathPtr);
     
     /*
@@ -87,38 +80,38 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	return TCL_ERROR;
     }
-    *clientDataPtr = (ClientData) handle;
-
+    *loadHandle = (TclLoadHandle) handle;
+    *unloadProcPtr = &TclpUnloadFile;
+    return TCL_OK;
+}
+
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    TclLoadHandle loadHandle;
+    CONST char *symbol;
+{
+    Tcl_DString newName;
+    Tcl_PackageInitProc *proc=NULL;
+    shl_t handle = (shl_t)loadHandle;
     /*
      * Some versions of the HP system software still use "_" at the
      * beginning of exported symbols while others don't;  try both
      * forms of each name.
      */
 
-    if (shl_findsym(&handle, sym1, (short) TYPE_PROCEDURE, (void *) proc1Ptr)
+    if (shl_findsym(&handle, symbol, (short) TYPE_PROCEDURE, (void *) &proc)
 	    != 0) {
 	Tcl_DStringInit(&newName);
 	Tcl_DStringAppend(&newName, "_", 1);
-	Tcl_DStringAppend(&newName, sym1, -1);
+	Tcl_DStringAppend(&newName, symbol, -1);
 	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
-		(short) TYPE_PROCEDURE, (void *) proc1Ptr) != 0) {
-	    *proc1Ptr = NULL;
+		(short) TYPE_PROCEDURE, (void *) &proc) != 0) {
+	    proc = NULL;
 	}
 	Tcl_DStringFree(&newName);
     }
-    if (shl_findsym(&handle, sym2, (short) TYPE_PROCEDURE, (void *) proc2Ptr)
-	    != 0) {
-	Tcl_DStringInit(&newName);
-	Tcl_DStringAppend(&newName, "_", 1);
-	Tcl_DStringAppend(&newName, sym2, -1);
-	if (shl_findsym(&handle, Tcl_DStringValue(&newName),
-		(short) TYPE_PROCEDURE, (void *) proc2Ptr) != 0) {
-	    *proc2Ptr = NULL;
-	}
-	Tcl_DStringFree(&newName);
-    }
-    *unloadProcPtr = &TclpUnloadFile;
-    return TCL_OK;
+    return proc;
 }
 
 /*
