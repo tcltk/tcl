@@ -13,10 +13,10 @@
  */
 
 #include "tclInt.h"
+#include "tclPort.h"
 
 #ifdef TCL_THREADS
 
-#include "tclPort.h"
 #include "pthread.h"
 
 typedef struct ThreadSpecificData {
@@ -772,6 +772,7 @@ TclpFinalizeCondition(condPtr)
 	*condPtr = NULL;
     }
 }
+#endif /* TCL_THREADS */
 
 /*
  *----------------------------------------------------------------------
@@ -790,7 +791,7 @@ TclpFinalizeCondition(condPtr)
  *----------------------------------------------------------------------
  */
 
-#ifndef HAVE_READDIR_R
+#if defined(TCL_THREADS) && !defined(HAVE_READDIR_R)
 TCL_DECLARE_MUTEX( rdMutex )
 #undef readdir
 #endif
@@ -798,8 +799,9 @@ TCL_DECLARE_MUTEX( rdMutex )
 Tcl_DirEntry *
 TclpReaddir(DIR * dir)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_DirEntry *ent;
+#ifdef TCL_THREADS
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef HAVE_READDIR_R
     ent = &tsdPtr->rdbuf.ent; 
@@ -823,10 +825,17 @@ TclpReaddir(DIR * dir)
     Tcl_MutexUnlock(&rdMutex);
 
 #endif /* HAVE_READDIR_R */
+#else
+#   ifdef HAVE_STRUCT_DIRENT64
+    ent = readdir64(dir);
+#   else /* !HAVE_STRUCT_DIRENT64 */
+    ent = readdir(dir);
+#   endif /* HAVE_STRUCT_DIRENT64 */
+#endif
     return ent;
 }
 
-#if !defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R)
+#if defined(TCL_THREADS) && (!defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R))
 TCL_DECLARE_MUTEX( tmMutex )
 #undef localtime
 #undef gmtime
@@ -835,6 +844,7 @@ TCL_DECLARE_MUTEX( tmMutex )
 struct tm *
 TclpLocaltime(time_t * clock)
 {
+#ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef HAVE_LOCALTIME_R
@@ -843,13 +853,17 @@ TclpLocaltime(time_t * clock)
     Tcl_MutexLock( &tmMutex );
     memcpy( (VOID *) &tsdPtr->ltbuf, (VOID *) localtime( clock ), sizeof (struct tm) );
     Tcl_MutexUnlock( &tmMutex );
-	return &tsdPtr->ltbuf;
+    return &tsdPtr->ltbuf;
 #endif    
+#else
+    return localtime(clock);
+#endif
 }
 
 struct tm *
 TclpGmtime(time_t * clock)
 {
+#ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef HAVE_GMTIME_R
@@ -860,11 +874,15 @@ TclpGmtime(time_t * clock)
     Tcl_MutexUnlock( &tmMutex );
     return &tsdPtr->gtbuf;
 #endif    
+#else
+    return gmtime(clock);
+#endif
 }
 
 char *
 TclpInetNtoa(struct in_addr addr)
 {
+#ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     union {
     	unsigned long l;
@@ -874,8 +892,12 @@ TclpInetNtoa(struct in_addr addr)
     u.l = (unsigned long) addr.s_addr;
     sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", u.b[0], u.b[1], u.b[2], u.b[3]);
     return tsdPtr->nabuf;
+#else
+    return inet_ntoa(addr);
+#endif
 }
 
+#ifdef TCL_THREADS
 /*
  * Additions by AOL for specialized thread memory allocator.
  */

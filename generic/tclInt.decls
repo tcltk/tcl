@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.54 2002/08/05 03:24:40 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.55 2002/08/06 01:49:27 das Exp $
 
 library tcl
 
@@ -952,5 +952,23 @@ declare 8 unix {
 
 declare 9 unix {
     TclFile TclpCreateTempFile(CONST char *contents)
+}
+
+# Added in 8.4:
+
+declare 10 unix {
+    Tcl_DirEntry * TclpReaddir(DIR * dir)
+}
+
+declare 11 unix {
+    struct tm * TclpLocaltime(time_t * clock)
+}
+
+declare 12 unix {
+    struct tm * TclpGmtime(time_t * clock)
+}
+
+declare 13 unix {
+    char * TclpInetNtoa(struct in_addr addr)
 }
 
