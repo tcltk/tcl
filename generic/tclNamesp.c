@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.2 2004/09/09 15:45:28 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.3 2004/09/09 17:12:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1117,7 +1117,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    Command *cmdPtr, *realCmdPtr;
+    Command *cmdPtr;
     ImportRef *refPtr;
     Tcl_Command autoCmd, importedCmd;
     ImportedCmdData *dataPtr;
@@ -1217,6 +1217,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	     * pattern. Check whether it was exported. If it wasn't,
 	     * we ignore it.
 	     */
+	    Tcl_HashEntry *found;
 
 	    wasExported = 0;
 	    for (i = 0;  i < importNsPtr->numExportPatterns;  i++) {
@@ -1234,9 +1235,9 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	     * Unless there is a name clash, create an imported command
 	     * in the current namespace that refers to cmdPtr.
 	     */
-	    
-            if ((Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName) == NULL)
-		    || allowOverwrite) {
+
+	    found = Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName);
+	    if ((found == NULL) || allowOverwrite) {
 		/*
 		 * Create the imported command and its client data.
 		 * To create the new command in the current namespace, 
@@ -1254,25 +1255,30 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 
 		/*
 		 * Check whether creating the new imported command in the
-		 * current namespace would create a cycle of imported->real
-		 * command references that also would destroy an existing
-		 * "real" command already in the current namespace.
+		 * current namespace would create a cycle of imported
+		 * command references.
 		 */
 
 		cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
-		if (cmdPtr->deleteProc == DeleteImportedCmd) {
-		    realCmdPtr = (Command *) TclGetOriginalCommand(
-			    (Tcl_Command) cmdPtr);
-		    if ((realCmdPtr != NULL)
-			    && (realCmdPtr->nsPtr == currNsPtr)
-			    && (Tcl_FindHashEntry(&currNsPtr->cmdTable,
-			            cmdName) != NULL)) {
-			Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			        "import pattern \"", pattern,
-				"\" would create a loop containing command \"",
-				Tcl_DStringValue(&ds), "\"", (char *) NULL);
-			Tcl_DStringFree(&ds);
-			return TCL_ERROR;
+		if ((found != NULL)
+			&& cmdPtr->deleteProc == DeleteImportedCmd) {
+
+		    Command *overwrite = (Command *) Tcl_GetHashValue(found);
+		    Command *link = cmdPtr;
+		    while (link->deleteProc == DeleteImportedCmd) {
+			ImportedCmdData *dataPtr;
+		       
+			dataPtr = (ImportedCmdData *) link->objClientData;
+			link = dataPtr->realCmdPtr;
+			if (overwrite == link) {
+			    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+				    "import pattern \"", pattern,
+				    "\" would create a loop containing ",
+				    "command \"", Tcl_DStringValue(&ds),
+				    "\"", (char *) NULL);
+			    Tcl_DStringFree(&ds);
+			    return TCL_ERROR;
+			}
 		    }
 		}
 
