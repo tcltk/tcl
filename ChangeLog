@@ -1,5 +1,14 @@
 2002-03-27  David Gravereaux <davygrvy@pobox.com>
 
+	* tools/man2help.tcl:
+	* win/makefile.vc:  winhelp target now copies all needed files
+	from tools/ to a workarea under $(OUT_DIR) and builds it from
+	there.  No build cruft is left in tools/ anymore.  All paths
+	used in man2help.tcl are now relative to where the script is.
+	[Bug 527941]
+
+2002-03-27  David Gravereaux <davygrvy@pobox.com>
+
 	* win/.cvsignore:
 	* win/buildall.vc.bat:
 	* win/coffbase.txt:
