@@ -1,3 +1,10 @@
+2004-07-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/package.tcl:		Moved private command
+	* library/tclIndex:		[pkg_compareExtension] into ::tcl::Pkg.
+	* tests/pkg_mkIndex.test:	Also moved implementation of
+	[::pkg::create] to [::tcl::Pkg::Create].
+
 2004-07-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/io.test: Make io-61.1 create file as binary to pass on Win32
