@@ -1,3 +1,11 @@
+1999-03-17    <stanton@GASPODE>
+
+	* win/README.binary: 
+	* win/README: 
+	* unix/configure.in: 
+	* generic/tcl.h: 
+	* README: Updated version to 8.1b3.
+
 1999-03-14    <stanton@GASPODE>
 
 	* win/tclWinConsole.c: 
