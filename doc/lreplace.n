@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lreplace.n,v 1.3 2000/01/21 02:25:05 hobbs Exp $
+'\" RCS: @(#) $Id: lreplace.n,v 1.4 2000/01/21 18:24:06 ericm Exp $
 '\" 
 .so man.macros
 .TH lreplace n 7.4 Tcl "Tcl Built-In Commands"
@@ -21,24 +21,27 @@ lreplace \- Replace elements in a list with new elements
 .PP
 \fBlreplace\fR returns a new list formed by replacing one or more elements of
 \fIlist\fR with the \fIelement\fR arguments.
-\fIfirst\fR gives the index in \fIlist\fR of the first element
-to be replaced (0 refers to the first element).
-If \fIfirst\fR is less than zero then it refers to the first
-element of \fIlist\fR;  the element indicated by \fIfirst\fR
-must exist in the list.
-\fIlast\fR gives the index in \fIlist\fR of the last element
-to be replaced.  If it is less than zero but greater than \fIfirst\fR,
-then any specified elements will be prepended to the list.
-If \fIlast\fR is less than \fIfirst\fR then no elements are deleted;
-the new elements are simply inserted before \fIfirst\fR.
-\fIfirst\fR or \fIlast\fR may be \fBend\fR
-(or any abbreviation of it) to refer to the last element of the list.
+\fIfirst\fR and \fIlast\fR specify the first and last index of the
+range of elements to replace.  0 refers to the first element of the
+list, and \fBend\fR (or any abbreviation of it) may be used to refer
+to the last element of the list.  If \fIlist\fR is empty, then
+\fIfirst\fR and \fIlast\fR are ignored.
+
+If \fIfirst\fR is less than zero, it is considered to refer to the
+first element of the list.  For non-empty lists, the element indicated
+by \fIfirst\fR must exist.
+
+If \fIlast\fR is less than zero but greater than \fIfirst\fR, then any
+specified elements will be prepended to the list.  If \fIlast\fR is
+less than \fIfirst\fR then no elements are deleted; the new elements
+are simply inserted before \fIfirst\fR.
+
 The \fIelement\fR arguments specify zero or more new arguments to
 be added to the list in place of those that were deleted.
 Each \fIelement\fR argument will become a separate element of
-the list.
-If no \fIelement\fR arguments are specified, then the elements
-between \fIfirst\fR and \fIlast\fR are simply deleted.
+the list.  If no \fIelement\fR arguments are specified, then the elements
+between \fIfirst\fR and \fIlast\fR are simply deleted.  If \fIlist\fR
+is empty, any \fIelement\fR arguments are added to the end of the list.
 
 .SH KEYWORDS
 element, list, replace

@@ -1,20 +1,26 @@
+2000-01-21  Eric Melski  <ericm@scriptics.com>
+
+	* doc/lreplace.n: Corrected man page with respect to treatment of
+	empty lists, and "prettied up" the page. (bug #1705).
+
 2000-01-20  Eric Melski  <ericm@scriptics.com>
 
-	* namespace.test: Added test for undefined variables with
+	* tests/namespace.test: Added test for undefined variables with
 	namespace which (bug #956).
 
-	* tclNamesp.c: Added check for undefined variables in
+	* generic/tclNamesp.c: Added check for undefined variables in
 	NamespaceWhichCmd (bug #956).
 
-	* var.test: Added tests for corrected variable behavior (bug #981).
+	* tests/var.test: Added tests for corrected variable behavior 
+	(bug #981).
 
-	* upvar.n: Expanded explanation of upvar behavior with respect to
+	* doc/upvar.n: Expanded explanation of upvar behavior with respect to
 	variable traces.  (bugs 3917 1433 2110).
 
-	* tclVar.c: Changed behavior of variable command when name refers
-	to an element in an array (ie, "variable foo(x)") to always return
-	an error, regardless of existance of that element in the array
-	(now behavior is consistant with docs too) (bug #981).
+	* generic/tclVar.c: Changed behavior of variable command when name
+	refers to an element in an array (ie, "variable foo(x)") to always
+	return an error, regardless of existance of that element in the
+	array (now behavior is consistant with docs too) (bug #981).
 
 2000-01-20  Jeff Hobbs  <hobbs@scriptics.com>
 
