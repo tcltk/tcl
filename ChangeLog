@@ -1,3 +1,11 @@
+2003-03-22  Kevin Kenny  <kennykb@acm.org>
+	
+	* library/dde/pkgIndex.tcl:
+	* library/reg/pkgIndex.tcl: Fixed a bug where [package require dde]
+	or [package require registry] attempted to load the release version
+	of the DLL into a debug build. [Bug 708218] Thanks to Joe Mistachkin
+	for the patch.
+
 2003-03-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWinDde.c: Make dde services conform the the documentation
