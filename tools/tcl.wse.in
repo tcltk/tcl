@@ -1177,6 +1177,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=${__TCLBASEDIR__}\library\encoding\iso8859-15.enc
+  Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-15.enc
+  Flags=0000000000000010
+end
+item: Install File
   Source=${__TCLBASEDIR__}\library\encoding\iso8859-9.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-9.enc
   Flags=0000000000000010
