@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.47 2001/05/03 22:38:20 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.48 2001/05/28 22:27:08 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -241,7 +241,7 @@ proc unknown args {
 		#
 		if {$errorInfo ne "$einfo$expect"} {
 		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $expect $errorInfo"]
+			[list CORE UNKNOWN BADTRACE $expect $errorInfo]
 		}
 		return -code error -errorcode $errorCode \
 			-errorinfo $einfo $msg
