@@ -1,3 +1,11 @@
+2004-07-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEvent.c:       Correct threaded obj allocator to
+	* generic/tclInt.h:         fully cleanup on exit and allow for
+	* generic/tclThreadAlloc.c: reinitialization. [Bug #736426]
+	* unix/tclUnixThrd.c:       (mistachkin, kenny)
+	* win/tclWinThrd.c:
+
 2004-07-21  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclBasic.c (DeleteInterpProc):
