@@ -1,3 +1,8 @@
+2003-09-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/tcl.m4 (SC_ENABLE_FRAMEWORK): Added note to make it clearer
+	that this is an OSX feature, not a general Unix feature. [Bug 619440]
+
 2003-09-28  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c: The windows port of expect can call
