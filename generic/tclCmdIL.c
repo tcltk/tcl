@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.42 2002/03/06 11:28:08 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.43 2002/04/18 14:12:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -611,6 +611,13 @@ InfoBodyCmd(dummy, interp, objc, objv)
      */
 
     bodyPtr = procPtr->bodyPtr;
+    if (bodyPtr->bytes == NULL) {
+	/*
+	 * The string rep might not be valid if the procedure has
+	 * never been run before.  [Bug #545644]
+	 */
+	(void) Tcl_GetString(bodyPtr);
+    }
     resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
     
     Tcl_SetObjResult(interp, resultPtr);
