@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.21 2004/06/23 15:36:55 dkf Exp $
+# RCS: @(#) $Id: exec.test,v 1.22 2004/07/02 23:31:30 hobbs Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -541,6 +541,10 @@ test exec-15.6 {standard error redirection} {exec stdio} {
 	    >& "$path(gorp.file)" 2> "$path(gorp.file2)" | [interpreter] "$path(echo)" biz baz
     list [exec [interpreter] "$path(cat)" "$path(gorp.file)"] [exec [interpreter] "$path(cat)" "$path(gorp.file2)"]
 } {{biz baz} {foo bar}}
+test exec-15.7 {standard error redirection 2>@1} {exec stdio} {
+    # This redirects stderr output into normal result output from exec
+    exec [interpreter] "$path(sh)" -c "\"$path(echo)\" foo bar 1>&2" 2>@1
+} {foo bar}
 
 test exec-16.1 {flush output before exec} {exec} {
     set f [open $path(gorp.file) w]
