@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.19 2000/09/28 06:38:23 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.20 2001/03/31 05:44:31 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -836,9 +836,9 @@ SocketEventProc(evPtr, flags)
 	if ((*winSock.select)(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
 	} else {
+	    infoPtr->readyEvents &= ~(FD_READ);
 	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		    (WPARAM) SELECT, (LPARAM) infoPtr);
-	    infoPtr->readyEvents &= ~(FD_READ);
 	}
     }
     if (events & (FD_WRITE | FD_CONNECT)) {
