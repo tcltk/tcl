@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.53 2004/11/30 19:34:49 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.54 2004/12/02 15:31:28 dkf Exp $
  */
 
 #include "tclInt.h"
-#include <stdio.h>
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -25,12 +24,8 @@
 static char *          tclPreInitScript = NULL;
 
 
-/*
- * Counter for how many aliases were created (global)
- */
-
-static int aliasCounter = 0;
-TCL_DECLARE_MUTEX(cntMutex)
+/* Forward declaration */
+struct Target;
 
 /*
  * struct Alias:
@@ -55,13 +50,10 @@ typedef struct Alias {
                                  * This is used by alias deletion to remove
                                  * the alias from the slave interpreter
                                  * alias table. */
-    Tcl_HashEntry *targetEntryPtr;
-				/* Entry for target command in master.
+    struct Target *targetPtr;	/* Entry for target command in master.
                                  * This is used in the master interpreter to
                                  * map back from the target command to aliases
-                                 * redirecting to it. Random access to this
-                                 * hash table is never required - we are using
-                                 * a hash table only for convenience. */
+                                 * redirecting to it. */
     int objc;                   /* Count of Tcl_Obj in the prefix of the
 				 * target command to be invoked in the
 				 * target interpreter. Additional arguments
@@ -106,15 +98,19 @@ typedef struct Slave {
  * interpreters and must be deleted when the target interpreter is deleted. In
  * case they would not be deleted the source interpreter would be left with a
  * "dangling pointer". One such record is stored in the Master record of the
- * master interpreter (in the targetTable hashtable, see below) with the
- * master for each alias which directs to a command in the master. These
- * records are used to remove the source command for an from a slave if/when
- * the master is deleted.
+ * master interpreter with the master for each alias which directs to a
+ * command in the master. These records are used to remove the source command
+ * for an from a slave if/when the master is deleted. They are organized in a
+ * doubly-linked list attached to the master interpreter.
  */
 
 typedef struct Target {
     Tcl_Command	slaveCmd;	/* Command for alias in slave interp. */
     Tcl_Interp *slaveInterp;	/* Slave Interpreter. */
+    struct Target *nextPtr;	/* Next in list of target records, or NULL if
+				 * at the end of the list of targets. */
+    struct Target *prevPtr;	/* Previous in list of target records, or NULL
+				 * if at the start of the list of targets. */
 } Target;
 
 /*
@@ -125,7 +121,7 @@ typedef struct Target {
  * used to store information about slave interpreters of this interpreter,
  * to map over all slaves, etc. The second purpose is to store information
  * about all aliases in slaves (or siblings) which direct to target commands
- * in this interpreter (using the targetTable hashtable).
+ * in this interpreter (using the targetsPtr doubly-linked list).
  * 
  * NB: the flags field in the interp structure, used with SAFE_INTERP
  * mask denotes whether the interpreter is safe or not. Safe
@@ -136,13 +132,13 @@ typedef struct Target {
 typedef struct Master {
     Tcl_HashTable slaveTable;	/* Hash table for slave interpreters.
                                  * Maps from command names to Slave records. */
-    Tcl_HashTable targetTable;	/* Hash table for Target Records. Contains
-                                 * all Target records which denote aliases
-                                 * from slaves or sibling interpreters that
-                                 * direct to commands in this interpreter. This
-                                 * table is used to remove dangling pointers
-                                 * from the slave (or sibling) interpreters
-                                 * when this interpreter is deleted. */
+    Target *targetsPtr;		/* The head of a doubly-linked list of all the
+				 * target records which denote aliases from
+				 * slaves or sibling interpreters that direct
+				 * to commands in this interpreter. This list
+				 * is used to remove dangling pointers from
+				 * the slave (or sibling) interpreters when
+				 * this interpreter is deleted. */
 } Master;
 
 /*
@@ -511,7 +507,7 @@ TclInterpInit(interp)
 
     masterPtr = &interpInfoPtr->master;
     Tcl_InitHashTable(&masterPtr->slaveTable, TCL_STRING_KEYS);
-    Tcl_InitHashTable(&masterPtr->targetTable, TCL_ONE_WORD_KEYS);
+    masterPtr->targetsPtr = NULL;
 
     slavePtr = &interpInfoPtr->slave;
     slavePtr->masterInterp	= NULL;
@@ -553,8 +549,6 @@ InterpInfoDeleteProc(clientData, interp)
     InterpInfo *interpInfoPtr;
     Slave *slavePtr;
     Master *masterPtr;
-    Tcl_HashSearch hSearch;
-    Tcl_HashEntry *hPtr;
     Target *targetPtr;
 
     interpInfoPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
@@ -575,14 +569,12 @@ InterpInfoDeleteProc(clientData, interp)
      * would have removed the target record already. 
      */
 
-    hPtr = Tcl_FirstHashEntry(&masterPtr->targetTable, &hSearch);
-    while (hPtr != NULL) {
-	targetPtr = (Target *) Tcl_GetHashValue(hPtr);
+    for (targetPtr = masterPtr->targetsPtr; targetPtr != NULL; ) {
+	Target *tmpPtr = targetPtr->nextPtr;
 	Tcl_DeleteCommandFromToken(targetPtr->slaveInterp,
 		targetPtr->slaveCmd);
-	hPtr = Tcl_NextHashEntry(&hSearch);
+	targetPtr = tmpPtr;
     }
-    Tcl_DeleteHashTable(&masterPtr->targetTable);
 
     slavePtr = &interpInfoPtr->slave;
     if (slavePtr->interpCmd != NULL) {
@@ -1502,9 +1494,9 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 
     aliasPtr = (Alias *) ckalloc((unsigned) (sizeof(Alias) 
             + objc * sizeof(Tcl_Obj *)));
-    aliasPtr->token		= namePtr;
+    aliasPtr->token = namePtr;
     Tcl_IncrRefCount(aliasPtr->token);
-    aliasPtr->targetInterp	= masterInterp;
+    aliasPtr->targetInterp = masterInterp;
 
     aliasPtr->objc = objc + 1;
     prefv = &aliasPtr->objPtr;
@@ -1608,17 +1600,14 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
     targetPtr->slaveCmd = aliasPtr->slaveCmd;
     targetPtr->slaveInterp = slaveInterp;
 
-    Tcl_MutexLock(&cntMutex);
-    masterPtr = &((InterpInfo *) ((Interp *) masterInterp)->interpInfo)->master;
-    do {
-        hPtr = Tcl_CreateHashEntry(&masterPtr->targetTable,
-                (char *) aliasCounter, &new);
-	aliasCounter++;
-    } while (new == 0);
-    Tcl_MutexUnlock(&cntMutex);
-
-    Tcl_SetHashValue(hPtr, (ClientData) targetPtr);
-    aliasPtr->targetEntryPtr = hPtr;
+    masterPtr = &((InterpInfo *) ((Interp*) masterInterp)->interpInfo)->master;
+    targetPtr->nextPtr = masterPtr->targetsPtr;
+    targetPtr->prevPtr = NULL;
+    if (masterPtr->targetsPtr != NULL) {
+	masterPtr->targetsPtr->prevPtr = targetPtr;
+    }
+    masterPtr->targetsPtr = targetPtr;
+    aliasPtr->targetPtr = targetPtr;
 
     Tcl_SetObjResult(interp, aliasPtr->token);
 
@@ -1874,10 +1863,23 @@ AliasObjCmdDeleteProc(clientData)
     }
     Tcl_DeleteHashEntry(aliasPtr->aliasEntryPtr);
 
-    targetPtr = (Target *) Tcl_GetHashValue(aliasPtr->targetEntryPtr);
-    ckfree((char *) targetPtr);
-    Tcl_DeleteHashEntry(aliasPtr->targetEntryPtr);
+    /*
+     * Splice the target record out of the target interpreter's master list.
+     */
 
+    targetPtr = aliasPtr->targetPtr;
+    if (targetPtr->prevPtr != NULL) {
+	targetPtr->prevPtr->nextPtr = targetPtr->nextPtr;
+    } else {
+	Master *masterPtr = &((InterpInfo *) ((Interp *)
+		aliasPtr->targetInterp)->interpInfo)->master;
+	masterPtr->targetsPtr = targetPtr->nextPtr;
+    }
+    if (targetPtr->nextPtr != NULL) {
+	targetPtr->nextPtr->prevPtr = targetPtr->prevPtr;
+    }
+
+    ckfree((char *) targetPtr);
     ckfree((char *) aliasPtr);
 }
 

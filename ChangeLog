@@ -1,7 +1,11 @@
 2004-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclInterp.c (Alias,Target,Master): Rewrote these so that
+	the aliases that refer to an interpreter are stored in a list and
+	not a hashtable (which was only ever a convenience, and forced the
+	use of a global mutex to generate keys!) [FRQ 1077210]
 	* generic/tclNamesp.c (numNsCreated): Moved into thread-local
-	storage to remove a global mutex. Part of [FRQ 1077210]
+	storage to remove a global mutex. [FRQ 1077210]
 
 2004-12-01  Don Porter  <dgp@users.sourceforge.net>
 
