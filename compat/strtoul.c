@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoul.c,v 1.2 1998/09/14 18:39:45 stanton Exp $
+ * RCS: @(#) $Id: strtoul.c,v 1.3 2002/02/15 23:42:12 kennykb Exp $
  */
 
 #include <ctype.h>
@@ -152,14 +152,14 @@ strtoul(string, endPtr, base)
 	    result = (result << 4) + digit;
 	    anyDigits = 1;
 	}
-    } else {
+    } else if ( base >= 2 && base <= 36 ) {
 	for ( ; ; p += 1) {
 	    digit = *p - '0';
 	    if (digit > ('z' - '0')) {
 		break;
 	    }
 	    digit = cvtIn[digit];
-	    if (digit >= base) {
+	    if (digit >= ( (unsigned) base )) {
 		break;
 	    }
 	    result = result*base + digit;

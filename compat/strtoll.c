@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoll.c,v 1.2 2002/02/15 14:28:47 dkf Exp $
+ * RCS: @(#) $Id: strtoll.c,v 1.3 2002/02/15 23:42:12 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -82,7 +82,7 @@ strtoll(string, endPtr, base)
 	    } else if (uwResult > TCL_WIDEINT_MAX) {
 		return ~((Tcl_WideInt)TCL_WIDEINT_MAX);
 	    } else {
-		result = -uwResult;
+		result = -((Tcl_WideInt) uwResult);
 	    }
 	}
     } else {
