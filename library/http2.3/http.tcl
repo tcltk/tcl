@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.17 1999/11/19 23:02:29 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.18 1999/11/19 23:10:08 hobbs Exp $
 
 package provide http 2.2	;# This uses Tcl namespaces
 
@@ -19,7 +19,7 @@ namespace eval http {
 	-accept */*
 	-proxyhost {}
 	-proxyport {}
-	-useragent {Tcl http client package 2.1}
+	-useragent {Tcl http client package 2.2}
 	-proxyfilter http::ProxyRequired
     }
 
