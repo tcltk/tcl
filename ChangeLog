@@ -1,3 +1,10 @@
+2004-06-02  David Gravereaux <davygrvy@pobox.com>
+
+	* tests/winPipe.c (winpipe-6.1): blocking set to 1 before
+	closing to ensure we get an exitcode.  The windows pipe channel
+	driver doesn't differentiate between a blocking and non-blocking
+	close just yet, but will soon.  Part of [Bug 947693]
+
 2004-06-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/file.n: fix to documentation of 'file volumes' (Bug 962435)
