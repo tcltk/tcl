@@ -4,6 +4,18 @@
 	* generic/tclFCmd.c: Call TclStat instead of TclpStat in order to
 	allow Tcl_Stat hooks to work properly.
 
+1999-06-29  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/pkgIndex.tcl:
+	* library/tcltest1.0/tcltest.tcl:
+	* doc/tcltest.n:
+	* tests/all.tcl: Added -preservecore, -limitconstraints, -help,
+	-file, -notfile, -relateddir and -asidefromdir flags to the
+	tcltest package along with exported proc
+	::tcltest::getMatchingFiles.  The documentation was modified to
+	match and all.tcl was modified to use the new functionality
+	instead of implementing -file itself. 
+
 1999-06-28    <redman@scriptics.com>
 
 	* generic/tclIndexObj.c:
@@ -22,6 +34,25 @@
 	command to dde.  Also rev'd version of dde package to 1.1.
 	[Bug: 1738]
 
+1999-06-25  Jennifer Hom  <jenn@scriptics.com>
+
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* library/tcltest1.0/pkgIndex.tcl:
+	* library/tcltest1.0/tcltest.tcl:
+	* library/tcltest1.0: Added initial implementation of the Tcl test
+	harness package.  This package was based on the defs.tcl file that
+	was part of the tests directory. 
+
+	* doc/tcltest.n: Added documentation for the tcltest package.
+
+	* tests/README:
+	* tests/defs.tcl:
+	* tests/all.tcl: Modified all test files (tests/*.test) and
+	all.tcl to use the new tcltest package and removed references to
+	the defs.tcl file. Modified the README file to point to the man
+	page for tcltest. 
+	
 1999-06-25    <stanton@scriptics.com>
 
 	* tests/reg.test: 
