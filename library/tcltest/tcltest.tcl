@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.54 2002/06/06 20:54:03 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.55 2002/06/22 04:19:46 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -684,6 +684,9 @@ proc tcltest::testConstraint {constraint {value ""}} {
     # Check for boolean values
     if {[catch {expr {$value && $value}} msg]} {
 	return -code error $msg
+    }
+    if {[limitConstraints]} {
+	set value 0
     }
     set testConstraints($constraint) $value
 }

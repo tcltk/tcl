@@ -8,10 +8,10 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.19 2002/05/07 18:03:05 vincentdarley Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.20 2002/06/22 04:19:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -332,7 +332,7 @@ test pkgMkIndex-9.1 {circular packages} {
 set x [file join [file dirname [info nameofexecutable]] dltest \
 	pkga[info sharedlibextension]]
 set dll "[file tail $x]Required"
-set ::tcltest::testConstraints($dll) [file exists $x]
+::tcltest::testConstraint $dll [file exists $x]
 
 test pkgMkIndex-10.1 {package in DLL and script} $dll {
     file copy -force $x $fullPkgPath

@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.25 2001/10/12 19:44:56 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.26 2002/06/22 04:19:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -27,6 +27,7 @@ if {[catch {package require http 2} version]} {
 	catch {puts "Running http 2.* tests in slave interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
+	$interp eval [list set argv $argv]
 	$interp eval [list source [info script]]
 	interp delete $interp
 	return
