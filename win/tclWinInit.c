@@ -183,22 +183,29 @@ TclPlatformInit(interp)
 	    RegQueryValueEx(key, "PkgPath", NULL, NULL,
 		    (LPBYTE)Tcl_DStringValue(&ds), &size);
 	    argc = 0;
-	    for (p = Tcl_DStringValue(&ds); *p || *(p+1);
-		 p += strlen(p) + 1) {
-		argc++;
-	    }
+	    p = Tcl_DStringValue(&ds);
+	    do {
+		if (*p) {
+		    argc++;
+		}
+		p += strlen(p) + 1;
+	    } while (*p);
 
 	    argv = (char **) ckalloc((sizeof(char *) * argc) + 1);
 	    argc = 0;
-	    for (p = Tcl_DStringValue(&ds); *p || *(p+1); p++) {
-		argv[argc++] = p;
-		while (*p) {
-		    if (*p == '\\') {
-			*p = '/';
+	    p = Tcl_DStringValue(&ds);
+	    do {
+		if (*p) {
+		    argv[argc++] = p;
+		    while (*p) {
+			if (*p == '\\') {
+			    *p = '/';
+			}
+			p++;
 		    }
-		    p++;
 		}
-	    }
+		p++;
+	    } while (*p);
 
 	    p = Tcl_Merge(argc, argv);
 	    Tcl_SetVar(interp, "tcl_pkgPath", p, TCL_GLOBAL_ONLY);
