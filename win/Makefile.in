@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.19 1999/07/31 01:24:25 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.20 1999/08/12 20:02:51 wart Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -372,6 +372,7 @@ install: all install-binaries install-libraries install-doc
 install-binaries:
 	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
 	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
+	$(COPY) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
 	@for i in dde1.1 reg1.0; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
