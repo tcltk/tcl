@@ -1,3 +1,32 @@
+1999-06-09    <stanton@scriptics.com>
+
+	* generic/tclUnicodeObj.c: Lots of cleanup and simplification.
+	Fixed several memory bugs.  Added TclAppendUnicodeToObj.  
+
+	* generic/tclInt.h: Added declarations for various Unicode string
+	functions.  
+
+	* generic/tclRegexp.c: 
+	* generic/tclCmdMZ.c: Changed to use new Unicode string interfaces
+	for better performance. 
+	
+	* generic/tclRegexp.h: 
+	* generic/tclRegexp.c: 
+	* generic/tcl.h: 
+	* generic/tcl.decls: Added Tcl_RegExpMatchObj and
+	Tcl_RegExpGetInfo calls to access lower level regexp API.  These
+	features are needed by Expect.  This is a preliminary
+	implementation pending final review and cleanup.
+
+	* generic/tclCmdMZ.c:
+	* tests/string.test: Fixed bug where string map failed on null
+	strings. 
+
+	* generic/regexec.c: 
+	* unix/tclUnixNotfy.c: lint
+
+	* tools/genStubs.tcl: Changed to always write output in LF mode.
+
 1999-06-08    <stanton@scriptics.com>
 
 	* win/tclWinSock.c: Rolled back to the 8.1.0 implementation
