@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.31 2001/11/14 23:17:03 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.32 2002/01/05 22:55:51 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -477,9 +477,9 @@ EXTERN Var *		TclVarTraceExists _ANSI_ARGS_((Tcl_Interp * interp,
 				char * varName));
 /* 158 */
 EXTERN void		TclSetStartupScriptFileName _ANSI_ARGS_((
-				char * filename));
+				CONST char * filename));
 /* 159 */
-EXTERN char *		TclGetStartupScriptFileName _ANSI_ARGS_((void));
+EXTERN CONST char *	TclGetStartupScriptFileName _ANSI_ARGS_((void));
 /* Slot 160 is reserved */
 /* 161 */
 EXTERN int		TclChannelTransform _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -497,6 +497,11 @@ EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN int		TclListObjSetElement _ANSI_ARGS_((Tcl_Interp* interp, 
 				Tcl_Obj* listPtr, int index, 
 				Tcl_Obj* valuePtr));
+/* 167 */
+EXTERN void		TclSetStartupScriptPath _ANSI_ARGS_((
+				Tcl_Obj * pathPtr));
+/* 168 */
+EXTERN Tcl_Obj *	TclGetStartupScriptPath _ANSI_ARGS_((void));
 
 typedef struct TclIntStubs {
     int magic;
@@ -692,8 +697,8 @@ typedef struct TclIntStubs {
     void *reserved155;
     void (*tclRegError) _ANSI_ARGS_((Tcl_Interp * interp, char * msg, int status)); /* 156 */
     Var * (*tclVarTraceExists) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 157 */
-    void (*tclSetStartupScriptFileName) _ANSI_ARGS_((char * filename)); /* 158 */
-    char * (*tclGetStartupScriptFileName) _ANSI_ARGS_((void)); /* 159 */
+    void (*tclSetStartupScriptFileName) _ANSI_ARGS_((CONST char * filename)); /* 158 */
+    CONST char * (*tclGetStartupScriptFileName) _ANSI_ARGS_((void)); /* 159 */
     void *reserved160;
     int (*tclChannelTransform) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan, Tcl_Obj * cmdObjPtr)); /* 161 */
     void (*tclChannelEventScriptInvoker) _ANSI_ARGS_((ClientData clientData, int flags)); /* 162 */
@@ -701,6 +706,8 @@ typedef struct TclIntStubs {
     void (*tclExpandCodeArray) _ANSI_ARGS_((void * envPtr)); /* 164 */
     void (*tclpSetInitialEncodings) _ANSI_ARGS_((void)); /* 165 */
     int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* listPtr, int index, Tcl_Obj* valuePtr)); /* 166 */
+    void (*tclSetStartupScriptPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 167 */
+    Tcl_Obj * (*tclGetStartupScriptPath) _ANSI_ARGS_((void)); /* 168 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1308,6 +1315,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclListObjSetElement
 #define TclListObjSetElement \
 	(tclIntStubsPtr->tclListObjSetElement) /* 166 */
+#endif
+#ifndef TclSetStartupScriptPath
+#define TclSetStartupScriptPath \
+	(tclIntStubsPtr->tclSetStartupScriptPath) /* 167 */
+#endif
+#ifndef TclGetStartupScriptPath
+#define TclGetStartupScriptPath \
+	(tclIntStubsPtr->tclGetStartupScriptPath) /* 168 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
