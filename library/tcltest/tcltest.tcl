@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.41 2002/03/25 21:34:34 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.42 2002/03/25 22:05:03 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -22,18 +22,14 @@ package require Tcl 8.3
 namespace eval tcltest { 
 
     # Export the public tcltest procs
-    set procList [list test cleanupTests saveState restoreState \
-	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile bytestring threadReap debug testConstraint \
-	    limitConstraints loadTestedCommands normalizePath verbose match \
-	    skip matchFiles skipFiles preserveCore  loadScript loadFile \
-	    mainThread workingDirectory singleProcess interpreter runAllTests \
-	    outputChannel outputFile errorChannel \
-	    errorFile temporaryDirectory testsDirectory  matchDirectories \
-	    skipDirectories ]
-    foreach proc $procList {
-	namespace export $proc
-    }
+    namespace export bytestring cleanupTests debug errorChannel errorFile \
+	    interpreter limitConstraints loadFile loadScript \
+	    loadTestedCommands mainThread makeDirectory makeFile match \
+	    matchDirectories matchFiles normalizeMsg normalizePath \
+	    outputChannel outputFile preserveCore removeDirectory removeFile \
+	    restoreState runAllTests saveState singleProcess skip \
+	    skipDirectories skipFiles temporaryDirectory test testConstraint \
+	    testsDirectory threadReap verbose viewFile workingDirectory
 
     proc Default {varName value} {
 	variable $varName
@@ -3375,16 +3371,16 @@ proc tcltest::threadReap {} {
 
 # Initialize the constraints and set up command line arguments 
 namespace eval tcltest {
-    tcltest::initConstraints
-    if {[namespace children [namespace current]] == {}} {
-	tcltest::processCmdLineArgs
-    }
+    initConstraints
+    processCmdLineArgs
 
     # Save the names of files that already exist in
     # the output directory.
-    foreach file [glob -nocomplain -directory $tcltest::temporaryDirectory *] {
-	lappend tcltest::filesExisted [file tail $file]
+    variable file {}
+    foreach file [glob -nocomplain -directory $temporaryDirectory *] {
+	lappend filesExisted [file tail $file]
     }
+    unset file
 }
 
 package provide tcltest 2.0.2
