@@ -15,10 +15,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.85 2004/05/27 20:08:21 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.86 2004/05/27 20:44:37 msofer Exp $
  */
 
+#ifdef STDC_HEADERS
 #include <stddef.h>
+#else
+typedef int ptrdiff_t;
+#endif
+
 #include "tclInt.h"
 
 /*
