@@ -1,3 +1,12 @@
+2004-10-20  Andreas Kupries <andreask@activestate.com>
+
+	* win/Makefile.in (install-msgs):   Fixed a problem with the
+	* win/Makefile.in (install-tzdata): installation of timezone data
+	  and message catalogs. They used the installed tcl library
+	  directory, not the source library. Before it was installed.
+	  Switched to source lib dir. Thanks to Kevin for the help in
+	  figuring this out.
+
 2004-10-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclThreadTest.c (ThreadEventProc):	Corrected subtle

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.81 2004/09/27 14:31:21 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.82 2004/10/20 18:12:25 andreas_kupries Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -586,13 +586,13 @@ install-libraries: libraries install-tzdata install-msgs
 
 install-tzdata:
 	@echo "Installing time zone data"
-	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	@TCL_LIBRARY="${LIBRARY_DIR}"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
 	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
 
 install-msgs:
 	@echo "Installing message catalogs"
-	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	@TCL_LIBRARY="${LIBRARY_DIR}"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
 	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
