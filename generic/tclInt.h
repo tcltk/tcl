@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.147 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.148 2004/03/18 18:54:02 rmax Exp $
  */
 
 #ifndef _TCLINT
@@ -1524,12 +1524,6 @@ typedef struct TclFileAttrProcs {
 
 typedef struct TclFile_ *TclFile;
     
-/*
- * Opaque names for platform specific types.
- */
-
-typedef struct TclpTime_t_    *TclpTime_t;
-
 /*
  * The "globParameters" argument of the function TclGlob is an
  * or'ed combination of the following values:
