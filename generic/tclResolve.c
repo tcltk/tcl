@@ -9,15 +9,10 @@
  *
  * Copyright (c) 1998 Lucent Technologies, Inc.
  *
- * Originally implemented by
- *   Michael J. McLennan
- *   Bell Labs Innovations for Lucent Technologies
- *   mmclennan@lucent.com
- *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResolve.c,v 1.2 1998/09/14 18:40:02 stanton Exp $
+ * RCS: @(#) $Id: tclResolve.c,v 1.3 1998/10/06 19:12:06 rjohnson Exp $
  */
 
 #include "tclInt.h"
