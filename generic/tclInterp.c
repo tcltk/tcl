@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.51 2004/11/18 21:00:50 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.52 2004/11/22 21:24:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -61,26 +61,44 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
   proc tclInit {} {\n\
     global tcl_libPath tcl_library\n\
     global env tclDefaultLibrary\n\
+    variable ::tcl::LibPath\n\
     rename tclInit {}\n\
     set errors {}\n\
-    set dirs {}\n\
+    set LibPath {}\n\
     if {[info exists tcl_library]} {\n\
-	lappend dirs $tcl_library\n\
+	lappend LibPath $tcl_library\n\
     } else {\n\
 	if {[info exists env(TCL_LIBRARY)]} {\n\
-	    set env(TCL_LIBRARY) [file join [pwd] $env(TCL_LIBRARY)]\n\
-	    lappend dirs $env(TCL_LIBRARY)\n\
+	    lappend LibPath $env(TCL_LIBRARY)\n\
+	    if {[regexp ^tcl(.*)$ [file tail $env(TCL_LIBRARY)] -> tail]} {\n\
+		if {$tail ne [info tclversion]} {\n\
+		    lappend LibPath [file join [file dirname\\\n\
+			    $env(TCL_LIBRARY)] tcl[info tclversion]]\n\
+		}\n\
+	    }\n\
 	}\n\
-	catch {\n\
-	    lappend dirs $tclDefaultLibrary\n\
+	if {[catch {\n\
+	    lappend LibPath $tclDefaultLibrary\n\
 	    unset tclDefaultLibrary\n\
+	}]} {\n\
+	    lappend LibPath [::tcl::pkgconfig get scriptdir,runtime]\n\
 	}\n\
+	set parentDir [file normalize [file dirname [file dirname\\\n\
+		[info nameofexecutable]]]]\n\
+	set grandParentDir [file dirname $parentDir]\n\
+	lappend LibPath [file join $parentDir lib tcl[info tclversion]]\n\
+	lappend LibPath [file join $grandParentDir lib tcl[info tclversion]]\n\
+	lappend LibPath [file join $parentDir library]\n\
+	lappend LibPath [file join $grandParentDir library]\n\
+	lappend LibPath [file join $grandParentDir\\\n\
+       		tcl[info patchlevel] library]\n\
+	lappend LibPath [file join [file dirname $grandParentDir]\\\n\
+       		tcl[info patchlevel] library]\n\
 	catch {\n\
-            set dirs [concat $dirs $tcl_libPath]\n\
+            set LibPath [concat $LibPath $tcl_libPath]\n\
 	}\n\
-	lappend dirs [::tcl::pkgconfig get scriptdir,runtime]\n\
     }\n\
-    foreach i $dirs {\n\
+    foreach i $LibPath {\n\
 	set tcl_library $i\n\
 	set tclfile [file join $i init.tcl]\n\
 	if {[file exists $tclfile]} {\n\
@@ -93,7 +111,7 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	}\n\
     }\n\
     set msg \"Can't find a usable init.tcl in the following directories: \n\"\n\
-    append msg \"    $dirs\n\n\"\n\
+    append msg \"    $LibPath\n\n\"\n\
     append msg \"$errors\n\n\"\n\
     append msg \"This probably means that Tcl wasn't installed properly.\n\"\n\
     error $msg\n\
