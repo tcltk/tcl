@@ -1,3 +1,7 @@
+2004-12-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h: Move ensemble API decls here from tclNamesp.c
+
 2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (TclMakeEnsembleCmd, TclSetEnsemble*)
