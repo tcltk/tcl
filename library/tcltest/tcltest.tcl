@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.64 2002/07/01 22:33:20 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.65 2002/07/02 13:28:51 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -59,7 +59,7 @@ namespace eval tcltest {
     namespace export temporaryDirectory	;#	[configure -tmpdir]
     namespace export testsDirectory	;#	[configure -testdir]
     namespace export verbose		;#	[configure -verbose]
-    namespace export viewFile		;#	bizarre [read]-ish thing
+    namespace export viewFile		;#	binary encoding [read]
     namespace export workingDirectory	;#	[cd] [pwd]
 
     # Export deprecated commands for tcltest 1 compatibility
@@ -575,7 +575,8 @@ namespace eval tcltest {
 	Run tests in all test files that match the glob pattern given.
     } AcceptPattern matchFiles
 
-    Option -notfile {} {
+    # By default, skip files that appear to be SCCS lock files.
+    Option -notfile l.*.test {
 	Skip all test files that match the glob pattern given.
     } AcceptPattern skipFiles
 
@@ -2378,10 +2379,12 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	}
 
 	# exit only if running Tk in non-interactive mode
-
-	global tk_version tcl_interactive
+	# This should be changed to determine if an event
+	# loop is running, which is the real issue.
+	# Actually, this doesn't belong here at all.  A package
+	# really has no business [exit]-ing an application.
 	if {![catch {package present Tk}]
-		&& ![info exists tcl_interactive]} {
+		&& ![info exists ::tcl_interactive]} {
 	    exit
 	}
     } else {
@@ -2503,42 +2506,42 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 # a lower case version is needed for compatibility with tcltest 1.0
 proc tcltest::getMatchingFiles args {eval GetMatchingFiles $args}
 
-proc tcltest::GetMatchingFiles { {searchDirectory ""} } {
-    if {[llength [info level 0]] == 1} {
-	set searchDirectory [testsDirectory]
+proc tcltest::GetMatchingFiles { args } {
+    if {[llength $args]} {
+	set dirList $args
+    } else {
+	# Finding tests only in [testsDirectory] is normal operation.
+	# This procedure is written to accept multiple directory arguments
+	# only to satisfy version 1 compatibility.
+	set dirList [list [testsDirectory]]
     }
-    set matchingFiles {}
 
-    # Find the matching files in the list of directories and then remove
-    # the ones that match the skip pattern. Passing a list to foreach is
-    # required so that a patch like D:\Foo\Bar does not get munged into
-    # D:FooBar.
-    foreach directory [list $searchDirectory] {
-	set matchFileList {}
+    set matchingFiles [list]
+    foreach directory $dirList {
+
+	# List files in $directory that match patterns to run.
+	set matchFileList [list]
 	foreach match [matchFiles] {
 	    set matchFileList [concat $matchFileList \
 		    [glob -directory $directory -nocomplain -- $match]]
 	}
-	if {[string compare {} [skipFiles]]} {
-	    set skipFileList {}
-	    foreach skip [skipFiles] {
-		set skipFileList [concat $skipFileList \
-			[glob -directory $directory \
-			-nocomplain -- $skip]]
+
+	# List files in $directory that match patterns to skip.
+	set skipFileList [list]
+	foreach skip [skipFiles] {
+	    set skipFileList [concat $skipFileList \
+		    [glob -directory $directory -nocomplain -- $skip]]
+	}
+
+	# Add to result list all files in match list and not in skip list
+	foreach file $matchFileList {
+	    if {[lsearch -exact $skipFileList $file] == -1} {
+		lappend matchingFiles $file
 	    }
-	    foreach file $matchFileList {
-		# Only include files that don't match the skip pattern
-		# and aren't SCCS lock files.
-		if {([lsearch -exact $skipFileList $file] == -1) && \
-			(![string match l.*.test [file tail $file]])} {
-		    lappend matchingFiles $file
-		}
-	    }
-	} else {
-	    set matchingFiles [concat $matchingFiles $matchFileList]
 	}
     }
-    if {[string equal $matchingFiles {}]} {
+
+    if {[llength $matchingFiles] == 0} {
 	PrintError "No test files remain after applying your match and\
 		skip patterns!"
     }
@@ -2563,42 +2566,41 @@ proc tcltest::GetMatchingFiles { {searchDirectory ""} } {
 #       None.
 
 proc tcltest::GetMatchingDirectories {rootdir} {
-    set matchingDirs {}
-    set matchDirList {}
-    # Find the matching directories in testsDirectory and then remove
-    # the ones that match the skip pattern
-    foreach match [matchDirectories] {
-	foreach file [glob -directory $rootdir -nocomplain -- $match] {
-	    if {[file isdirectory $file]
-		    && [string compare $file $rootdir]} {
-		set matchDirList [concat $matchDirList \
-			[GetMatchingDirectories $file]]
-		if {[file exists [file join $file all.tcl]]} {
-		    lappend matchDirList $file
+
+    # Determine the skip list first, to avoid [glob]-ing over subdirectories
+    # we're going to throw away anyway.  Be sure we skip the $rootdir if it
+    # comes up to avoid infinite loops.
+    set skipDirs [list $rootdir]
+    foreach pattern [skipDirectories] {
+	foreach path [glob -directory $rootdir -nocomplain -- $pattern] {
+	    if {[file isdirectory $path]} {
+		lappend skipDirs $path
+	    }
+	}
+    }
+
+    # Now step through the matching directories, prune out the skipped ones
+    # as you go.
+    set matchDirs [list]
+    foreach pattern [matchDirectories] {
+	foreach path [glob -directory $rootdir -nocomplain -- $pattern] {
+	    if {[file isdirectory $path]} {
+		if {[lsearch -exact $skipDirs $path] == -1} {
+		    set matchDirs [concat $matchDirs \
+			    [GetMatchingDirectories $path]]
+		    if {[file exists [file join $path all.tcl]]} {
+			lappend matchDirs $path
+		    }
 		}
 	    }
 	}
     }
-    if {[llength [skipDirectories]]} {
-	set skipDirs {}
-	foreach skip [skipDirectories] {
-	    set skipDirs [concat $skipDirs \
-		[glob -nocomplain -directory [testsDirectory] $skip]]
-	}
-	foreach dir $matchDirList {
-	    # Only include directories that don't match the skip pattern
-	    if {[lsearch -exact $skipDirs $dir] == -1} {
-		lappend matchingDirs $dir
-	    }
-	}
-    } else {
-	set matchingDirs $matchDirList
-    }
-    if {[llength $matchingDirs] == 0} {
+
+    if {[llength $matchDirs] == 0} {
 	DebugPuts 1 "No test directories remain after applying match\
 		and skip patterns!"
     }
-    return $matchingDirs
+    return $matchDirs
 }
 
 # tcltest::runAllTests --
