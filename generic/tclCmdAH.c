@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.37 2003/12/12 17:02:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.38 2003/12/17 17:47:28 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1071,7 +1071,19 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 				Tcl_GetString(objv[index]), 
 				"\": that path already exists", (char *) NULL);
 		    } else if (errno == ENOENT) {
-			if (Tcl_FSAccess(objv[index+1], F_OK) == 0) {
+			/*
+			 * There are two cases here: either the target
+			 * doesn't exist, or the directory of the src
+			 * doesn't exist.
+			 */
+			int access;
+			Tcl_Obj *dirPtr = TclFileDirname(interp, objv[index]);
+			if (dirPtr == NULL) {
+			    return TCL_ERROR;
+			}
+			access = Tcl_FSAccess(dirPtr, F_OK);
+			Tcl_DecrRefCount(dirPtr);
+			if (access != 0) {
 			    Tcl_AppendResult(interp, 
 			            "could not create new link \"", 
 				    Tcl_GetString(objv[index]), 
@@ -1081,7 +1093,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 			    Tcl_AppendResult(interp, 
 			            "could not create new link \"", 
 				    Tcl_GetString(objv[index]), 
-				    "\" since target \"", 
+				    "\": target \"", 
 				    Tcl_GetString(objv[index+1]), 
 				    "\" doesn't exist", 
 				    (char *) NULL);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.35 2003/12/12 17:09:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.36 2003/12/17 17:47:28 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -715,19 +715,55 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 {
     if (toPtr != NULL) {
 	CONST char *src = Tcl_FSGetNativePath(pathPtr);
-	CONST char *target = Tcl_FSGetNativePath(toPtr);
+	CONST char *target = NULL;
+	if (src == NULL) return NULL;
 	
-	if (src == NULL || target == NULL) {
-	    return NULL;
+	/* 
+	 * If we're making a symbolic link and the path is relative,
+	 * then we must check whether it exists _relative_ to the
+	 * directory in which the src is found (not relative to the
+	 * current cwd which is just not relevant in this case).
+	 * 
+	 * If we're making a hard link, then a relative path is
+	 * just converted to absolute relative to the cwd.
+	 */
+	if ((linkAction & TCL_CREATE_SYMBOLIC_LINK)
+	  && (Tcl_FSGetPathType(toPtr) == TCL_PATH_RELATIVE)) {
+	    Tcl_Obj *dirPtr, *absPtr;
+	    dirPtr = TclFileDirname(NULL, pathPtr);
+	    if (dirPtr == NULL) {
+	        return NULL;
+	    }
+	    absPtr = Tcl_FSJoinToPath(dirPtr, 1, &toPtr);
+	    Tcl_IncrRefCount(absPtr);
+	    if (Tcl_FSAccess(absPtr, F_OK) == -1) {
+		Tcl_DecrRefCount(absPtr);
+		Tcl_DecrRefCount(dirPtr);
+		/* target doesn't exist */
+		errno = ENOENT;
+	        return NULL;
+	    }
+	    /* 
+	     * Target exists; we'll construct the relative
+	     * path we want below.
+	     */
+	    Tcl_DecrRefCount(absPtr);
+	    Tcl_DecrRefCount(dirPtr);
+	} else {
+	    target = Tcl_FSGetNativePath(toPtr);
+	    if (access(target, F_OK) == -1) {
+		/* target doesn't exist */
+		errno = ENOENT;
+		return NULL;
+	    }
+	    if (target == NULL) {
+		return NULL;
+	    }
 	}
+	
 	if (access(src, F_OK) != -1) {
 	    /* src exists */
 	    errno = EEXIST;
-	    return NULL;
-	}
-	if (access(target, F_OK) == -1) {
-	    /* target doesn't exist */
-	    errno = ENOENT;
 	    return NULL;
 	}
 	/* 
@@ -740,8 +776,8 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	    Tcl_Obj *transPtr;
 	    /* 
 	     * Now we don't want to link to the absolute, normalized path.
-	     * Relative links are quite acceptable, as are links to '~user',
-	     * for example.
+	     * Relative links are quite acceptable (but links to ~user
+	     * are not -- these must be expanded first).
 	     */
 	    transPtr = Tcl_FSGetTranslatedPath(NULL, toPtr);
 	    if (transPtr == NULL) {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.34 2003/12/16 15:26:44 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.35 2003/12/17 17:47:28 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2154,7 +2154,7 @@ test fCmd-26.2 {TclDeleteFilesCmd: delete dir with symlink} {unixOnly notRoot} {
 		
     file mkdir tfad1
     file mkdir tfad2
-    file link -symbolic [file join tfad2 link] tfad1
+    file link -symbolic [file join tfad2 link] [file join .. tfad1]
     file delete -force tfad2
 
     set r1 [file isdir tfad1]
@@ -2306,7 +2306,7 @@ test fCmd-28.10 {file link: linking to nonexistent path} {linkDirectory} {
     set res [list [catch {file link abc.link abc2.doesnt} msg] $msg]
     cd [workingDirectory]
     set res
-} {1 {could not create new link "abc.link" since target "abc2.doesnt" doesn't exist}}
+} {1 {could not create new link "abc.link": target "abc2.doesnt" doesn't exist}}
 
 test fCmd-28.10.1 {file link: linking to nonexistent path} {linkDirectory} {
     cd [temporaryDirectory]
@@ -2388,7 +2388,10 @@ test fCmd-28.15.2 {file link: copies link not dir} {linkDirectory} {
 cd [temporaryDirectory]
 file delete -force abc.link
 file delete -force abc2.link
-
+cd abc.dir
+file delete -force abc.file
+file delete -force abc2.file
+cd ..
 file copy abc.file abc.dir
 file copy abc2.file abc.dir
 cd [workingDirectory]
@@ -2416,12 +2419,40 @@ test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
     set res
 } [lsort [list abc.link abc.dir abc2.dir]]
 
+test fCmd-28.19 {file link: relative paths} {winOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    set res [list [catch {file link d1/l2 d1/d2} err] $err]
+    lappend res [catch {file delete -force d1} err] $err
+} {0 d1/d2 0 {}}
+
+test fCmd-28.20 {file link: relative paths} {unixOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    list [catch {file link d1/l2 d1/d2} res] $res
+} {1 {could not create new link "d1/l2": target "d1/d2" doesn't exist}}
+
+test fCmd-28.21 {file link: relative paths} {unixOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    list [catch {file link d1/l2 d2} res] $res
+} {0 d2}
+
+test fCmd-28.22 {file link: relative paths} {unixOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    catch {file delete -force d1/l2}
+    list [catch {file link d1/l2 d2/d3} res] $res
+} {0 d2/d3}
+
 test fCmd-29.1 {weird memory corruption fault} {
     catch {set res [open [file join ~a_totally_bogus_user_id/foo bar]]}
 } 1
 
 cd [temporaryDirectory]
 file delete -force abc.link
+file delete -force d1/d2
+file delete -force d1
 cd [workingDirectory]
 
 removeFile abc2.file
