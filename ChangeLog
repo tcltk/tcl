@@ -1,3 +1,8 @@
+2003-09-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: ensure SYMROOT exists if OBJROOT is overridden 
+	on command line. Replaced explict use of /usr/bin by ${BINDIR}.
+
 2003-09-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c ():		Fixed [Bug 807243] where
@@ -5,10 +10,10 @@
 	of both [trace info command] and [trace info execution] were getting
 	co-mingled.  Thanks to Mark Saye for the report.
 
-        * library/init.tcl (auto_load, auto_import):  Expanded Eric Melski's
-        2000-01-28 fix for [Bug 218871] to all potentially troubled uses of
-        [info commands] on input data, where glob-special characters could
-        cause problems.
+	* library/init.tcl (auto_load, auto_import):  Expanded Eric Melski's
+	2000-01-28 fix for [Bug 218871] to all potentially troubled uses of
+	[info commands] on input data, where glob-special characters could
+	cause problems.
 
 2003-09-19  Miguel Sofer <msofer@users.sf.net>
 
