@@ -1,6 +1,15 @@
+2001-06-25  Mo DeJong  <mdejong@redhat.com>
+
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): When building with
+	gcc, don't attempt to link with LD or support dllwrap.
+	Simply require a recent version of Cygwin gcc or Mingw
+	gcc that supports -shared. When linking, use gcc instead
+	of ld since gcc automatically includes libs like -lmsvcrt.
+
 2001-06-22  Mo DeJong  <mdejong@redhat.com>
 
-	* win/configure:
+	* win/configure: Regen.
 	* win/configure.in: Add resource compiler fix from
 	8.3.3 to fix compiling with mingw.
 
