@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.13 2002/04/18 01:51:20 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.14 2002/11/12 02:25:37 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1795,8 +1795,12 @@ UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	src += Tcl_UtfToUniChar(src, &ch);
-	dst += Tcl_UniCharToUtf(ch, dst);
+	if (UCHAR(*src) < 0x80) {
+	    *dst++ = *src++;
+	} else {
+	    src += Tcl_UtfToUniChar(src, &ch);
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	}
     }
 
     *srcReadPtr = src - srcStart;
@@ -1873,7 +1877,14 @@ UnicodeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
 	}
-	dst += Tcl_UniCharToUtf(*wSrc, dst);
+	/*
+	 * Special case for 1-byte utf chars for speed.
+	 */
+	if (*wSrc && *wSrc < 0x80) {
+	    *dst++ = (char) *wSrc;
+	} else {
+	    dst += Tcl_UniCharToUtf(*wSrc, dst);
+	}
 	wSrc++;
     }
 
@@ -1957,7 +1968,7 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
         }
-	src += Tcl_UtfToUniChar(src, wDst);
+	src += TclUtfToUniChar(src, wDst);
 	wDst++;
     }
     *srcReadPtr = src - srcStart;
@@ -2059,7 +2070,14 @@ TableToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    }
 	    ch = (Tcl_UniChar) byte;
 	}
-	dst += Tcl_UniCharToUtf(ch, dst);
+	/*
+	 * Special case for 1-byte utf chars for speed.
+	 */
+	if (ch && ch < 0x80) {
+	    *dst++ = (char) ch;
+	} else {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	}
         src++;
     }
     *srcReadPtr = src - srcStart;
@@ -2147,7 +2165,7 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    result = TCL_CONVERT_MULTIBYTE;
 	    break;
 	}
-        len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	word = fromUnicode[(ch >> 8)][ch & 0xff];
 	if ((word == 0) && (ch != 0)) {
 	    if (flags & TCL_ENCODING_STOPONERROR) {
@@ -2531,7 +2549,7 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    result = TCL_CONVERT_MULTIBYTE;
 	    break;
 	}
-        len = Tcl_UtfToUniChar(src, &ch);
+	len = TclUtfToUniChar(src, &ch);
 	word = tableFromUnicode[(ch >> 8)][ch & 0xff];
 
 	if ((word == 0) && (ch != 0)) {
