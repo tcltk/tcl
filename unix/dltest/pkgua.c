@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgua.c,v 1.2 2004/03/04 09:40:51 dkf Exp $
+ * RCS: @(#) $Id: pkgua.c,v 1.3 2004/06/08 19:18:39 dgp Exp $
  */
 
 #include "tcl.h"
@@ -51,7 +51,7 @@ PkguaInitTokensHashTable(void)
     interpTokenMapInitialised = 1;
 }
 
-static int
+void 
 PkguaFreeTokensHashTable(void)
 {
     Tcl_HashSearch search;
@@ -126,7 +126,7 @@ PkguaEqObjCmd(dummy, interp, objc, objv)
 {
     int result;
     CONST char *str1, *str2;
-    int len1, len2, n;
+    int len1, len2;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
