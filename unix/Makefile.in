@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.36 1999/06/26 03:56:25 jenn Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.37 1999/06/30 05:51:51 hershey Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1063,7 +1063,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.0 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.0 tcltest1.0; \
+	for i in http2.0 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
@@ -1109,7 +1109,6 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/tools
 	cp -p $(TOP_DIR)/tools/Makefile.in \
 	    $(TOP_DIR)/tools/README \
-	    $(TOP_DIR)/tools/configure \
 	    $(TOP_DIR)/tools/configure.in \
 	    $(TOP_DIR)/tools/*.tcl \
 	    $(TOP_DIR)/tools/man2tcl.c \
@@ -1155,7 +1154,7 @@ allpatch: dist
 # This target creates the HTML folder for Tcl & Tk and places it
 # in DISTDIR/html.  It uses the tcl8.1-tk8.1-man-html.tcl tool from
 # the Tcl group's tool workspace.  It depends on the Tcl & Tk being
-# in directories called tcl8.1 & tk8.1 up two directories from the
+# in directories called tcl8.2 & tk8.2 up two directories from the
 # TOOL_DIR.
 #
 
