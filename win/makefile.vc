@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.125 2004/04/06 22:25:57 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.126 2004/05/18 20:02:38 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSDEVDIR)" == ""
@@ -634,6 +634,80 @@ install-docs:
 	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
 
+#---------------------------------------------------------------------
+# Build tclConfig.sh for the TEA build system.
+#---------------------------------------------------------------------
+
+tclConfig:
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	@echo Creating tclConfig.sh
+	@$(TCLSH) <<
+	set debug $(DEBUG)
+	set thread $(TCL_THREADS)
+	set static $(STATIC_BUILD)
+	set config(@TCL_DLL_FILE@)       {$(TCLLIBNAME)}
+	set config(@TCL_VERSION@)        [info tcl]
+	set config(@TCL_MAJOR_VERSION@)  [lindex [split [info tclversion] .] 0]
+	set config(@TCL_MINOR_VERSION@)  [lindex [split [info tclversion] .] 1]
+	set config(@TCL_PATCH_LEVEL@)    [string range [info patchlevel] [string length [info tclversion]] end]
+	set config(@CC@)                 {$(CC)}
+	set config(@DEFS@)               {}
+	if {$$static} {lappend config(@DEFS@) "-DSTATIC_BUILD=1"}
+	if {$$thread} {lappend config(@DEFS@) "-DTHREAD=1"}
+	set config(@TCL_DBGX@)           {$(DBGX)}
+	set config(@CFLAGS_DEBUG@)       {-nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MDd}
+	set config(@CFLAGS_OPTIMIZE@)    {-nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MD}
+	set config(@LDFLAGS_DEBUG@)      {-nologo -machine:$(MACHINE) -debug:full -debugtype:cv}
+	set config(@LDFLAGS_OPTIMIZE@)   {-nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3}
+	set config(@TCL_SHARED_BUILD@)   [expr {$$static ? 0 : 1}]
+	set config(@TCL_LIB_FILE@)       {$(PROJECT)$(VERSION)$(SUFX).lib}
+	set config(@TCL_NEEDS_EXP_FILE@) {}
+	set config(@CFG_TCL_EXPORT_FILE_SUFFIX@) {$${NODOT_VERSION}$${DBGX}.lib}
+	set config(@LIBS@)               {$(baselibs)}
+	set config(@prefix@)             {$(_INSTALLDIR)}
+	set config(@exec_prefix@)        {$(BIN_INSTALL_DIR)}
+	set config(@SHLIB_CFLAGS@)       {}
+	set config(@STLIB_CFLAGS@)       {}
+	set config(@CFLAGS_WARNING@)     {-W3}
+	set config(@EXTRA_CFLAGS@)       {-YX}
+	set config(@SHLIB_LD@)           {$(link32) $(dlllflags)}
+	set config(@STLIB_LD@)           {$(lib32) -nologo}
+	set config(@SHLIB_LD_LIBS@)      {$(baselibs)}
+	set config(@SHLIB_SUFFIX@)       {.dll}
+	set config(@DL_LIBS@)            {}
+	set config(@LDFLAGS@)            {}
+	set config(@TCL_LD_SEARCH_FLAGS@) {}
+	set config(@LIBOBJS@)            {}
+	set config(@RANLIB@)             {}
+	set config(@TCL_LIB_FLAG@)       {}
+	set config(@TCL_BUILD_LIB_SPEC@) {}
+	set config(@TCL_LIB_SPEC@)       {$(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib}
+	set config(@TCL_INCLUDE_SPEC@)   {-I$(INCLUDE_INSTALL_DIR)}
+	set config(@TCL_LIB_VERSIONS_OK@)  {}
+	set config(@CFG_TCL_SHARED_LIB_SUFFIX@) {$${NODOT_VERSION}$${DBGX}.dll}
+	set config(@CFG_TCL_UNSHARED_LIB_SUFFIX@) {$${NODOT_VERSION}$${DBGX}.lib}
+	set config(@TCL_SRC_DIR@)        [file nativename [file normalize {$(ROOT)}]]
+	set config(@TCL_PACKAGE_PATH@)   {}
+	set config(@TCL_STUB_LIB_FILE@)   {$(TCLSTUBLIBNAME)}
+	set config(@TCL_STUB_LIB_FLAG@)  {$(TCLSTUBLIBNAME)}
+	set config(@TCL_BUILD_STUB_LIB_SPEC@) "-L[file nativename [file normalize {$(OUT_DIR)}]] $(TCLSTUBLIBNAME)"
+	set config(@TCL_STUB_LIB_SPEC@)  {-L$(LIB_INSTALL_DIR) $(TCLSTUBLIBNAME)}
+	set config(@TCL_BUILD_STUB_LIB_PATH@) [file nativename [file normalize {$(TCLSTUBLIB)}]]
+	set config(@TCL_STUB_LIB_PATH@) [file nativename [file normalize {$(LIB_INSTALL_DIR)\\$(TCLSTUBLIBNAME)}]]
+	set config(@TCL_THREADS@)       {$(TCL_THREADS)}
+	set f [open tclConfig.sh.in r]
+	set data [read $$f]
+	close $$f
+	foreach {anchor subst} [array get config] {
+	   regsub -all $$anchor $$data $$subst data
+	}
+	set f [open [file join [file normalize {$(OUT_DIR)}] tclConfig.sh] w]
+	puts $$f $$data
+	close $$f
+<<
+!endif
 
 #---------------------------------------------------------------------
 # Special case object file targets
@@ -785,7 +859,9 @@ install-binaries:
 	@echo installing $(TCLSTUBLIBNAME)
 	@$(CPY) "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 
-install-libraries:
+install-libraries: tclConfig
+	@echo installing tclConfig.sh
+	@$(CPY) "$(OUT_DIR)\tclConfig.sh" "$(LIB_INSTALL_DIR)\"
 	@echo installing http1.0
 	@$(CPY) "$(ROOT)\library\http1.0\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\http1.0\"
