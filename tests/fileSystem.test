@@ -964,7 +964,7 @@ test filesystem-9.1 {path objects and join and object rep} {
     cd [tcltest::temporaryDirectory]
     file mkdir [file join a b c]
     set res [TestFind1 a [file join b . c]]
-    file delete -force [file join a b c]
+    file delete -force a
     cd $origdir
     set res
 } {{a/b/./c found: 1} {is dir a dir? 1} {a/b/./c found: 1}}
@@ -974,7 +974,7 @@ test filesystem-9.2 {path objects and join and object rep} {
     cd [tcltest::temporaryDirectory]
     file mkdir [file join a b c]
     set res [TestFind2 a [file join b . c]]
-    file delete -force [file join a b c]
+    file delete -force a
     cd $origdir
     set res
 } {{a/b/./c found: 1} {is dir a dir? 1} {a/b/./c found: 1}}
@@ -984,7 +984,7 @@ test filesystem-9.2.1 {path objects and join and object rep} {
     cd [tcltest::temporaryDirectory]
     file mkdir [file join a b c]
     set res [TestFind2 a [file join b .]]
-    file delete -force [file join a b c]
+    file delete -force a
     cd $origdir
     set res
 } {{a/b/. found: 1} {is dir a dir? 1} {a/b/. found: 1}}
@@ -994,7 +994,7 @@ test filesystem-9.3 {path objects and join and object rep} {
     cd [tcltest::temporaryDirectory]
     file mkdir [file join a b c]
     set res [TestFind1 a [file join b .. b c]]
-    file delete -force [file join a b c]
+    file delete -force a
     cd $origdir
     set res
 } {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
@@ -1004,7 +1004,7 @@ test filesystem-9.4 {path objects and join and object rep} {
     cd [tcltest::temporaryDirectory]
     file mkdir [file join a b c]
     set res [TestFind2 a [file join b .. b c]]
-    file delete -force [file join a b c]
+    file delete -force a
     cd $origdir
     set res
 } {{a/b/../b/c found: 1} {is dir a dir? 1} {a/b/../b/c found: 1}}
