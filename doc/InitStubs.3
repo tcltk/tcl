@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: InitStubs.3,v 1.1.2.1 1999/04/28 19:26:32 kenj Exp $
+'\" RCS: @(#) $Id: InitStubs.3,v 1.1.2.2 1999/04/29 02:06:53 stanton Exp $
 '\" 
 .so man.macros
 .TH Tcl_InitStubs 3 8.1 Tcl "Tcl Library Procedures"
@@ -36,11 +36,11 @@ as \fIversion\fR.
 The Tcl stubs mechanism defines a way to dynamically bind
 extensions to a particular Tcl implementation at run time.
 This provides two significant benefits to Tcl users:
-.IP 1) 0.5i
+.IP 1) 5
 Extensions that use the stubs mechanism can be loaded into
 multiple versions of Tcl without being recompiled or
 relinked.
-.IP 2) 0.5i
+.IP 2) 5
 Extensions that use the stubs mechanism can be dynamically
 loaded into statically-linked Tcl applications.
 .PP
@@ -57,13 +57,13 @@ need to take steps to use the stubs mechanism with their extensions.
 .PP
 Enabling the stubs mechanism for an extension requires the following
 steps:
-.IP 1) 0.5i
+.IP 1) 5
 Call \fBTcl_InitStubs\fR in the extension before calling any other
 Tcl functions.
-.IP 2) 0.5i
+.IP 2) 5
 Define the USE_TCL_STUBS symbol.  Typically, you would include the
 -DUSE_TCL_STUBS flag when compiling the extension.
-.IP 3) 0.5i
+.IP 3) 5
 Link the extension with the Tcl stubs library instead of the standard
 Tcl library.  On Unix platforms, the library name is
 \fIlibtclstub8.1.a\fR; on Windows platforms, the library name is
