@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.26 2002/06/28 09:56:54 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27 2003/02/20 00:34:09 hobbs Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -386,7 +386,7 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #endif /* !S_ISSOCK */
 
 /*
- * Make sure that MAXPATHLEN is defined.
+ * Make sure that MAXPATHLEN and MAXNAMLEN are defined.
  */
 
 #ifndef MAXPATHLEN
@@ -394,6 +394,14 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #       define MAXPATHLEN PATH_MAX
 #   else
 #       define MAXPATHLEN 2048
+#   endif
+#endif
+
+#ifndef MAXNAMLEN
+#   ifdef NAME_MAX
+#	define MAXNAMLEN NAME_MAX
+#   else
+#	define MAXNAMLEN 255
 #   endif
 #endif
 
