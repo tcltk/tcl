@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.101 2004/04/06 22:25:49 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.102 2004/05/27 13:18:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1325,12 +1325,14 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	     * comparison in INST_EQ/INST_NEQ/INST_LT/...).
 	     */
 	    int i, match, length, nocase = 0, reqlength = -1;
-	    int (*strCmpFn)();
+	    typedef int (*strCmpFn_t) _ANSI_ARGS_((const char *, const char *,
+		    unsigned int));
+	    strCmpFn_t strCmpFn;
 
 	    if (objc < 4 || objc > 7) {
 	    str_cmp_args:
 	        Tcl_WrongNumArgs(interp, 2, objv,
-				 "?-nocase? ?-length int? string1 string2");
+			"?-nocase? ?-length int? string1 string2");
 		return TCL_ERROR;
 	    }
 
@@ -1381,7 +1383,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 */
 		string1 = (char*) Tcl_GetByteArrayFromObj(objv[0], &length1);
 		string2 = (char*) Tcl_GetByteArrayFromObj(objv[1], &length2);
-		strCmpFn = memcmp;
+		strCmpFn = (strCmpFn_t) memcmp;
 	    } else if ((objv[0]->typePtr == &tclStringType)
 		    && (objv[1]->typePtr == &tclStringType)) {
 		/*
@@ -1392,7 +1394,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 */
 		string1 = (char*) Tcl_GetUnicodeFromObj(objv[0], &length1);
 		string2 = (char*) Tcl_GetUnicodeFromObj(objv[1], &length2);
-		strCmpFn = nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp;
+		strCmpFn = (strCmpFn_t)
+			(nocase ? Tcl_UniCharNcasecmp : Tcl_UniCharNcmp);
 	    } else {
 		/*
 		 * As a catch-all we will work with UTF-8.  We cannot use
@@ -1404,11 +1407,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		string1 = (char*) Tcl_GetStringFromObj(objv[0], &length1);
 		string2 = (char*) Tcl_GetStringFromObj(objv[1], &length2);
 		if ((reqlength < 0) && !nocase) {
-		    strCmpFn = TclpUtfNcmp2;
+		    strCmpFn = (strCmpFn_t) TclpUtfNcmp2;
 		} else {
 		    length1 = Tcl_NumUtfChars(string1, length1);
 		    length2 = Tcl_NumUtfChars(string2, length2);
-		    strCmpFn = nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp;
+		    strCmpFn = (strCmpFn_t)
+			    (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
 		}
 	    }
 

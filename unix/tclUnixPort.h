@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.36 2004/05/14 21:43:29 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.37 2004/05/27 13:18:55 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -493,7 +493,9 @@ extern char **environ;
  * up being too many conflicts with slightly-different prototypes.
  */
 
+#ifdef NO_STDLIB_H
 extern double strtod();
+#endif
 
 /*
  * There is no platform-specific panic routine for Unix in the Tcl internals.
