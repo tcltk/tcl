@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.7 2000/04/24 06:43:29 jingham Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.7.2.1 2001/04/04 14:47:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -75,7 +75,7 @@ typedef struct TcpState {
 				    * TCL_WRITABLE as set by an asynchronous
 				    * event handler. */
     int watchMask;		   /* OR'ed combination of TCL_READABLE and
-				    * TCL_WRITABLE as set by Tcl_WatchFile. */
+				    * TCL_WRITABLE as set by TcpWatch. */
     Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
     ClientData acceptProcData;	   /* The data for the accept proc. */
     wdsEntry dataSegment[2];       /* List of buffers to be written async. */
