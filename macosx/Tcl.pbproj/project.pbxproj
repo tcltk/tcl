@@ -98,7 +98,7 @@
 			);
 			buildSettings = {
 				EXTRA_CONFIGURE_FLAGS = "";
-				FRAMEWORK_VERSION = 8.4;
+				FRAMEWORK_VERSION = 8.5;
 				INSTALL_PATH = /Library/Frameworks;
 				LIBDIR = "${INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Tcl;
@@ -123,7 +123,7 @@
 				DYLIB_INSTALL_DIR = "${DYLIB_INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${FRAMEWORK_VERSION}";
 				DYLIB_INSTALL_PATH = "${INSTALL_PATH}";
 				EXTRA_MAKE_FLAGS = "";
-				FRAMEWORK_VERSION = 8.4;
+				FRAMEWORK_VERSION = 8.5;
 				INSTALL_PATH = /Library/Frameworks;
 				PRODUCT_NAME = Tcl;
 			};
@@ -161,7 +161,7 @@
 			buildSettings = {
 				DSTROOT = "${TEMP_DIR}";
 				EXTRA_MAKE_INSTALL_FLAGS = "";
-				FRAMEWORK_VERSION = 8.4;
+				FRAMEWORK_VERSION = 8.5;
 				INSTALL_PATH = /Library/Frameworks;
 				LIBDIR = "${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Tcl;
@@ -184,7 +184,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Tcl</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Tcl Library 8.4, Copyright Â© 2002 Tcl Core Team.
+	<string>Tcl Library 8.5, Copyright Â© 2002 Tcl Core Team.
 MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â© 2001-2002, Apple Computer, Inc.</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
@@ -193,15 +193,15 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Tcl Library 8.4</string>
+	<string>Tcl Library 8.5</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>8.4.2</string>
+	<string>8.5a0</string>
 	<key>CFBundleSignature</key>
 	<string>Tcl </string>
 	<key>CFBundleVersion</key>
-	<string>8.4.2</string>
+	<string>8.5a0</string>
 </dict>
 </plist>
 ";
@@ -475,8 +475,8 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 		};
 		F53ACC5C031D9D11016F146B = {
 			isa = PBXExecutableFileReference;
-			name = tclsh8.4;
-			path = ../../build/tclsh8.4;
+			name = tclsh8.5;
+			path = ../../build/tclsh8.5;
 			refType = 2;
 		};
 		F53ACC73031DA405016F146B = {

@@ -1,6 +1,6 @@
-Tcl 8.4 for Windows
+Tcl 8.5 for Windows
 
-RCS: @(#) $Id: README,v 1.30 2003/01/27 03:34:04 mdejong Exp $
+RCS: @(#) $Id: README,v 1.31 2003/03/04 23:46:21 dgp Exp $
 
 1. Introduction
 ---------------
@@ -20,7 +20,7 @@ when compiling Tcl extensions that will be dynamically loaded.
 
 In order to compile Tcl for Windows, you need the following:
 
-	Tcl 8.4 Source Distribution (plus any patches)
+	Tcl 8.5 Source Distribution (plus any patches)
 
 	and
 
@@ -82,7 +82,7 @@ find them.  Tcl looks in one of following places for the library files:
 	1) The path specified in the environment variable "TCL_LIBRARY".
 
 	2) Relative to the directory containing the current .exe.
-	   Tcl will look for a directory "..\lib\tcl8.4" relative to the
+	   Tcl will look for a directory "..\lib\tcl8.5" relative to the
 	   directory containing the currently running .exe.
 
 Note that in order to run tclsh84.exe, you must ensure that tcl84.dll

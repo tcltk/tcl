@@ -1,6 +1,6 @@
-Tcl 8.4 for Macintosh
+Tcl 8.5 for Macintosh
 
-RCS: @(#) $Id: README,v 1.17 2002/03/04 23:26:03 hobbs Exp $
+RCS: @(#) $Id: README,v 1.18 2003/03/04 23:46:08 dgp Exp $
 
 1. Introduction
 ---------------
@@ -10,7 +10,7 @@ scripting language.  The home page for the Mac/Tcl info is
 	http://www.tcl.tk/software/mac/
 
 A summary of what's new in this release is at
-	http://www.tcl.tk/software/tcltk/8.4.html
+	http://www.tcl.tk/software/tcltk/8.5.html
 
 A summary of Macintosh-specific features is at
 	http://www.tcl.tk/software/mac/features.html
