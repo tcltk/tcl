@@ -1,3 +1,12 @@
+2004-10-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclDictObj.c (TraceDictPath, Tcl_DictObjPutKeyList): Add
+	support for automatic creation of dictionary paths since that is
+	what everyone seems to actually expect of the API!
+	(Tcl_DictObjNext): Make calling this after Tcl_DictObjDone non-fatal
+	as that simplifies a number of internal APIs. This doesn't break any
+	existing working code as it is a case which previously caused a panic.
+
 2004-10-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/namespace.test (namespace-8.7):	Another test for save/restore
