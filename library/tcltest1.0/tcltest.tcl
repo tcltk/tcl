@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.9.4.1 1999/09/22 21:05:50 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.9.4.2 1999/09/25 02:12:15 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -445,7 +445,7 @@ proc ::tcltest::initConstraints {} {
 
     # Some tests must be skipped if the interpreter is not in interactive mode
 
-    set ::tcltest::testConstraints(interactive) $tcl_interactive
+    set ::tcltest::testConstraints(interactive) [info exists tcl_interactive]
 
     # Some tests can only be run if the installation came from a CD image
     # instead of a web image
@@ -1022,7 +1022,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# exit only if running Tk in non-interactive mode
 
 	global tk_version tcl_interactive
-	if {[info exists tk_version] && !$tcl_interactive} {
+	if {[info exists tk_version] && ![info exists tcl_interactive]} {
 	    exit
 	}
     } else {
