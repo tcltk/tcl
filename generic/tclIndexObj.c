@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.7 2000/11/02 09:20:44 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.8 2000/11/24 11:27:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -34,6 +34,16 @@ Tcl_ObjType tclIndexType = {
     (Tcl_UpdateStringProc *) NULL,	/* updateStringProc */
     SetIndexFromAny			/* setFromAnyProc */
 };
+
+/*
+ * DKF - Just noting that the data format used in objects with the
+ * above type is that the ptr1 field will contain a pointer to the
+ * table that the last lookup was performed in, and the ptr2 field
+ * will contain the sizeof(char) offset of the string within that
+ * table.  Note that we assume that each table is only ever called
+ * with a single offset, but this is a pretty safe assumption in
+ * practise...
+ */
 
 /*
  * Boolean flag indicating whether or not the tclIndexType object
@@ -90,7 +100,8 @@ Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
 
     if ((objPtr->typePtr == &tclIndexType)
 	    && (objPtr->internalRep.twoPtrValue.ptr1 == (VOID *) tablePtr)) {
-	*indexPtr = (int) objPtr->internalRep.twoPtrValue.ptr2;
+	*indexPtr = ((int) objPtr->internalRep.twoPtrValue.ptr2)
+	                   / sizeof(char *);
 	return TCL_OK;
     }
     return Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, sizeof(char *),
@@ -151,7 +162,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 
     if ((objPtr->typePtr == &tclIndexType)
 	    && (objPtr->internalRep.twoPtrValue.ptr1 == (VOID *) tablePtr)) {
-	*indexPtr = (int) objPtr->internalRep.twoPtrValue.ptr2;
+	*indexPtr = ((int) objPtr->internalRep.twoPtrValue.ptr2) / offset;
 	return TCL_OK;
     }
 
@@ -216,8 +227,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     /*
      * Make sure to account for offsets != sizeof(char *).  [Bug 5153]
      */
-    objPtr->internalRep.twoPtrValue.ptr2 =
-	(VOID *) (index * (offset / sizeof(char *)));
+    objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) (index * offset);
     objPtr->typePtr = &tclIndexType;
     *indexPtr = index;
     return TCL_OK;
@@ -314,7 +324,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 {
     Tcl_Obj *objPtr;
     char **tablePtr;
-    int i;
+    int i, offset;
 
     objPtr = Tcl_GetObjResult(interp);
     Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
@@ -327,8 +337,9 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 	
 	if (objv[i]->typePtr == &tclIndexType) {
 	    tablePtr = ((char **) objv[i]->internalRep.twoPtrValue.ptr1);
+	    offset = ((int) objv[i]->internalRep.twoPtrValue.ptr2);
 	    Tcl_AppendStringsToObj(objPtr,
-		    tablePtr[(int) objv[i]->internalRep.twoPtrValue.ptr2],
+		    *((char **)(((char *)tablePtr)+offset)),
 		    (char *) NULL);
 	} else {
 	    Tcl_AppendStringsToObj(objPtr, Tcl_GetString(objv[i]),
