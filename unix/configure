@@ -4218,6 +4218,13 @@ cat >>confdefs.h <<\_ACEOF
 #define _REENTRANT 1
 _ACEOF
 
+	if test "`uname -s`" = "SunOS" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define _POSIX_PTHREAD_SEMANTICS 1
+_ACEOF
+
+	fi
 
 cat >>confdefs.h <<\_ACEOF
 #define _THREAD_SAFE 1
@@ -4982,7 +4989,13 @@ cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/dir.h>
+#ifdef NO_DIRENT_H
+# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
+# define dirent direct  *                                */
+#else
+# include <dirent.h>
+#endif
+
 int
 main ()
 {
@@ -5025,7 +5038,13 @@ cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <stdlib.h>
 #include <sys/types.h>
-#include <sys/dir.h>
+#ifdef NO_DIRENT_H
+# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
+# define dirent direct  *                                */
+#else
+# include <dirent.h>
+#endif
+
 int
 main ()
 {
