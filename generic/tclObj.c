@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.60 2004/06/17 21:39:03 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.61 2004/06/18 13:42:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -60,6 +60,29 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 #endif /* TCL_MEM_DEBUG && TCL_THREADS */
+
+/*
+ * Nested Tcl_Obj deletion management support.  Note that the code
+ * that implements all this is written as macros in tclInt.h
+ */
+
+#ifdef TCL_THREADS
+
+/*
+ * Lookup key for the thread-local data used in the implementation in
+ * tclInt.h.
+ */
+Tcl_ThreadDataKey tclPendingObjDataKey;
+
+#else
+
+/*
+ * Declaration of the singleton structure referenced in the
+ * implementation in tclInt.h.
+ */
+PendingObjData tclPendingObjData = { 0, NULL };
+
+#endif
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -739,22 +762,51 @@ TclFreeObj(objPtr)
     register Tcl_Obj *objPtr;	/* The object to be freed. */
 {
     register Tcl_ObjType *typePtr = objPtr->typePtr;
+    /*
+     * This macro declares a variable, so must come here...
+     */
+    TclObjInitDeletionContext(context);
 
-    if ((objPtr)->refCount < -1) {
+    if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
 
-    if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-	typePtr->freeIntRepProc(objPtr);
-    }
-    Tcl_InvalidateStringRep(objPtr);
+    if (TclObjDeletePending(context)) {
+	TclPushObjToDelete(context, objPtr);
+    } else {
+	if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
+	    TclObjDeletionLock(context);
+	    typePtr->freeIntRepProc(objPtr);
+	    TclObjDeletionUnlock(context);
+	}
+	Tcl_InvalidateStringRep(objPtr);
 
-    Tcl_MutexLock(&tclObjMutex);
-    ckfree((char *) objPtr);
-    Tcl_MutexUnlock(&tclObjMutex);
+	Tcl_MutexLock(&tclObjMutex);
+	ckfree((char *) objPtr);
+	Tcl_MutexUnlock(&tclObjMutex);
 #ifdef TCL_COMPILE_STATS
-    tclObjsFreed++;
+	tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
+	TclObjDeletionLock(context);
+	while (TclObjOnStack(context)) {
+	    Tcl_Obj *objToFree;
+
+	    TclPopObjToDelete(context,objToFree);
+
+	    if ((objToFre->typePtr != NULL)
+		    && (objToFree->typePtr->freeIntRepProc != NULL)) {
+		objToFree->typePtr->freeIntRepProc(objToFree);
+	    }
+
+	    Tcl_MutexLock(&tclObjMutex);
+	    ckfree((char *) objToFree);
+	    Tcl_MutexUnlock(&tclObjMutex);
+#ifdef TCL_COMPILE_STATS
+	    tclObjsFreed++;
+#endif /* TCL_COMPILE_STATS */
+	}
+	TclObjDeletionUnlock(context);
+    }
 }
 #else /* TCL_MEM_DEBUG */
 
@@ -762,7 +814,12 @@ void
 TclFreeObj(objPtr)
     register Tcl_Obj *objPtr;	/* The object to be freed. */
 {
-    TclFreeObjMacro(objPtr);
+    TclObjInitDeletionContext(context);
+    if (TclObjDeletePending(context)) {
+	TclPushObjToDelete(context, objPtr);
+    } else {
+	TclFreeObjMacro(context, objPtr);
+    }
 }
 #endif
 

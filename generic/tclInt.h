@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.162 2004/05/30 12:18:25 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.163 2004/06/18 13:42:41 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2209,20 +2209,115 @@ EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-        TclFreeObjMacro(objPtr); \
-    } 
+        TclObjInitDeletionContext(contextPtr); \
+	if (TclObjDeletePending(contextPtr)) { \
+	    TclPushObjToDelete(contextPtr,objPtr); \
+	} else { \
+	    TclFreeObjMacro(contextPtr,objPtr); \
+	} \
+    }
 
-#define TclFreeObjMacro(objPtr) \
+/*
+ * Note that the contents of the while loop assume that the string rep
+ * has already been freed and we don't want to do anything fancy with
+ * adding to the queue inside ourselves. Must take care to unstack the
+ * object first since freeing the internal rep can add further objects
+ * to the stack. The code assumes that it is the first thing in a
+ * block; all current usages in the core satisfy this.
+ *
+ * Optimization opportunity: Allocate the context once in a large
+ * function (e.g. TclExecuteByteCode) and use it directly instead of
+ * looking it up each time.
+ */
+#define TclFreeObjMacro(contextPtr,objPtr) \
     if (((objPtr)->typePtr != NULL) \
 	    && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+	TclObjDeletionLock(contextPtr); \
 	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+	TclObjDeletionUnlock(contextPtr); \
     } \
     if (((objPtr)->bytes != NULL) \
             && ((objPtr)->bytes != tclEmptyStringRep)) { \
         ckfree((char *) (objPtr)->bytes); \
     } \
     TclFreeObjStorage(objPtr); \
-    TclIncrObjsFreed()
+    TclIncrObjsFreed(); \
+    TclObjDeletionLock(contextPtr); \
+    while (TclObjOnStack(contextPtr)) { \
+	Tcl_Obj *objToFree; \
+	TclPopObjToDelete(contextPtr,objToFree); \
+	if ((objToFre->typePtr != NULL) \
+		&& (objToFree->typePtr->freeIntRepProc != NULL)) { \
+	    objToFree->typePtr->freeIntRepProc(objToFree); \
+	} \
+	TclFreeObjStorage(objToFree); \
+	TclIncrObjsFreed(); \
+    } \
+    TclObjDeletionUnlock(contextPtr)
+
+/*
+ * All context references are pointers to this structure; every thread
+ * will have its own reference.
+ */
+
+typedef struct PendingObjData {
+    int deletionCount;		/* Count of the number of invokations of
+				 * TclFreeObj() are on the stack (at least
+				 * conceptually; many are actually expanded
+				 * macros). */
+    Tcl_Obj *deletionStack;	/* Stack of objects that have had TclFreeObj()
+				 * invoked upon them but which can't be deleted
+				 * yet because they are in a nested invokation
+				 * of TclFreeObj(). By postponing this way, we
+				 * limit the maximum overall C stack depth when
+				 * deleting a complex object. The down-side is
+				 * that we alter the overall behaviour by
+				 * altering the order in which objects are
+				 * deleted, and we change the order in which
+				 * the string rep and the internal rep of an
+				 * object are deleted. Note that code which
+				 * assumes the previous behaviour in either of
+				 * these respects is unsafe anyway; it was
+				 * never documented as to exactly what would
+				 * happen in these cases, and the overall
+				 * contract of a user-level Tcl_DecrRefCount()
+				 * is still preserved (assuming that a
+				 * particular T_DRC would delete an object is
+				 * not very safe). */
+} PendingObjData;
+
+/*
+ * These are separated out so that some semantic content is attached
+ * to them.
+ */
+#define TclObjDeletionLock(contextPtr)   (contextPtr)->deletionCount++
+#define TclObjDeletionUnlock(contextPtr) (contextPtr)->deletionCount--
+#define TclObjDeletePending(contextPtr)  (contextPtr)->deletionCount > 0
+#define TclObjOnStack(contextPtr)        (contextPtr)->deletionStack != NULL
+#define TclPushObjToDelete(contextPtr,objPtr) \
+    /* Invalidate the string rep first so we can use the bytes value \
+     * for our pointer chain. */ \
+    if (((objPtr)->bytes != NULL) \
+            && ((objPtr)->bytes != tclEmptyStringRep)) { \
+        ckfree((char *) (objPtr)->bytes); \
+    } \
+    /* Now push onto the head of the stack. */ \
+    (objPtr)->bytes = (char *) ((contextPtr)->deletionStack); \
+    (contextPtr)->deletionStack = (objPtr)
+#define TclPopObjToDelete(contextPtr,objPtrVar) \
+    (objPtrVar) = (contextPtr)->deletionStack; \
+    (contextPtr)->deletionStack = (Tcl_Obj *) (objPtrVar)->bytes
+
+#ifndef TCL_THREADS
+extern PendingObjData tclPendingObjData;
+#define TclObjInitDeletionContext(contextPtr) \
+    PendingObjData *CONST contextPtr = &tclPendingObjData
+#else
+extern Tcl_ThreadDataKey tclPendingObjDataKey;
+#define TclObjInitDeletionContext(contextPtr) \
+    PendingObjData *CONST contextPtr = (PendingObjData *) \
+	    Tcl_GetThreadData(&pendingObjDataKey, sizeof(PendingObjData))
+#endif
 
 #if defined(PURIFY)
 
