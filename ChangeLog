@@ -1,5 +1,12 @@
 2002-06-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/README:		Updated the instructions on running and
+	* tests/cmdMZ.test:	adding to the test suite.  Also updated
+	* tests/encoding.test:	several tests, mostly to correctly create
+	* tests/fCmd.test:	and destroy any temporary files in the
+	* tests/info.test:	[temporaryDirectory] of tcltest.
+	* tests/interp.test:
+
 	* library/tcltest/tcltest.tcl:	Stopped checking for writeability
 	of -tmpdir value because no default directory can be guaranteed to
 	be writeable.

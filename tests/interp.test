@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.14 2002/03/07 20:17:23 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.15 2002/07/01 07:52:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -481,74 +481,74 @@ test interp-15.1 {testing file sharing} {
     z eval close stdout
     list [catch {z eval puts hello} msg] $msg
 } {1 {can not find channel named "stdout"}}
-catch {removeFile file-15.2}
-test interp-15.2 {testing file sharing} {
+test interp-15.2 {testing file sharing} -body {
     catch {interp delete z}
     interp create z
-    set f [open file-15.2 w]
+    set f [open [makeFile {} file-15.2] w]
     interp share "" $f z
     z eval puts $f hello
     z eval close $f
     close $f
-} ""
-catch {removeFile file-15.2}
+} -cleanup {
+    removeFile file-15.2
+} -result ""
 test interp-15.3 {testing file sharing} {
     catch {interp delete xsafe}
     interp create xsafe -safe
     list [catch {xsafe eval puts hello} msg] $msg
 } {1 {can not find channel named "stdout"}}
-catch {removeFile file-15.4}
-test interp-15.4 {testing file sharing} {
+test interp-15.4 {testing file sharing} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.4 w]
+    set f [open [makeFile {} file-15.4] w]
     interp share "" $f xsafe
     xsafe eval puts $f hello
     xsafe eval close $f
     close $f
-} ""
-catch {removeFile file-15.4}
+} -cleanup {
+    removeFile file-15.4
+} -result ""
 test interp-15.5 {testing file sharing} {
     catch {interp delete xsafe}
     interp create xsafe -safe
     interp share "" stdout xsafe
     list [catch {xsafe eval gets stdout} msg] $msg
 } {1 {channel "stdout" wasn't opened for reading}}
-catch {removeFile file-15.6}
-test interp-15.6 {testing file sharing} {
+test interp-15.6 {testing file sharing} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.6 w]
+    set f [open [makeFile {} file-15.6] w]
     interp share "" $f xsafe
     set x [list [catch [list xsafe eval gets $f] msg] $msg]
     xsafe eval close $f
     close $f
     string compare [string tolower $x] \
 		[list 1 [format "channel \"%s\" wasn't opened for reading" $f]]
-} 0
-catch {removeFile file-15.6}
-catch {removeFile file-15.7}
-test interp-15.7 {testing file transferring} {
+} -cleanup {
+    removeFile file-15.6
+} -result 0
+test interp-15.7 {testing file transferring} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.7 w]
+    set f [open [makeFile {} file-15.7] w]
     interp transfer "" $f xsafe
     xsafe eval puts $f hello
     xsafe eval close $f
-} ""
-catch {removeFile file-15.7}
-catch {removeFile file-15.8}
-test interp-15.8 {testing file transferring} {
+} -cleanup {
+    removeFile file-15.7
+} -result ""
+test interp-15.8 {testing file transferring} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.8 w]
+    set f [open [makeFile {} file-15.8] w]
     interp transfer "" $f xsafe
     xsafe eval close $f
     set x [list [catch {close $f} msg] $msg]
     string compare [string tolower $x] \
 		[list 1 [format "can not find channel named \"%s\"" $f]]
-} 0
-catch {removeFile file-15.8}
+} -cleanup {
+    removeFile file-15.8
+} -result 0
 
 #
 # Torture tests for interpreter deletion order
@@ -2868,6 +2868,7 @@ test interp-31.1 {alias invocation scope} {
 
 test interp-32.1 { parent's working directory should
                    be inherited by a child interp } {
+    cd [temporaryDirectory]
     set parent [pwd]
     set i [interp create]
     set child [$i eval pwd]
@@ -2880,6 +2881,7 @@ test interp-32.1 { parent's working directory should
     cd ..
     file delete cwd_test
     interp delete $i
+    cd [workingDirectory]
     expr {[string equal $parent $child] ? 1 :
              "\{$parent\} != \{$child\}"}
 } 1

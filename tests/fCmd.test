@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.15 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.16 2002/07/01 07:52:02 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2195,13 +2195,12 @@ test fCmd-28.4 {file link} {hasLinks} {
     list [catch {file link -abc b c} msg] $msg
 } {1 {bad switch "-abc": must be -symbolic or -hard}}
 
-catch {file delete -force abc.dir}
-catch {file delete -force abc2.dir}
 makeDirectory abc.dir
 makeDirectory abc2.dir
 makeFile contents abc.file
 makeFile contents abc2.file
 
+cd [temporaryDirectory]
 test fCmd-28.5 {file link: source already exists} {linkDirectory} {
     list [catch {file link abc.dir abc2.dir} msg] $msg
 } {1 {could not create new link "abc.dir": that path already exists}}
@@ -2295,6 +2294,12 @@ test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
 } [lsort [list abc.link abc.dir abc2.dir]]
 
 file delete -force abc.link
+cd [workingDirectory]
+
+removeFile abc2.file
+removeFile abc.file
+removeDirectory abc2.dir
+removeDirectory abc.dir
 
 # cleanup
 cleanup
