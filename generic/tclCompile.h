@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.20 2005/03/23 00:44:25 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.21 2005/03/28 22:21:28 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -585,14 +585,19 @@ typedef struct ByteCode {
  * Flag values for the variable-access opcodes
  *
  * These should not collide with any of TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
- * TCL_TRACE_READS, TCL_LEAVE_ERR_MSG.
+ * TCL_TRACE_READS, TCL_LEAVE_ERR_MSG:
+     #define TCL_APPEND_VALUE	 4
+     #define TCL_LIST_ELEMENT	 8
+     #define TCL_TRACE_READS	 0x10
+     #define TCL_LEAVE_ERR_MSG	 0x200
  *
- * NOTE: the code for INST_INSTR depends on these two being 1 and 2.
+ * NOTE: the code for INST_INCR depends on these two being 1 and 2.
  */
 
 #define VM_VAR_OMIT_PUSH             0x01 
-#define VM_VAR_ARRAY                 0x02 
-#define VM_STORE_FLAGS_FILTER  (~(VM_VAR_OMIT_PUSH|VM_VAR_ARRAY))
+#define VM_VAR_ARRAY                 0x02
+#define VM_STORE_FLAGS_FILTER \
+     (TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_TRACE_READS|TCL_LEAVE_ERR_MSG)
 
 /*
  * Opcodes for the Tcl bytecode instructions. These must correspond to
@@ -676,7 +681,7 @@ typedef struct ByteCode {
 #define INST_LIST_IN			34
 #define INST_LIST_NOT_IN		35
 
-#define TclInstIsBoolJump(op) ((op<=35) && (op>=24))
+#define TclInstIsBoolComp(op) ((op<=35) && (op>=26))
 	
 /* Opcodes for the remaining operators */
 #define INST_LNOT			36 /* Keep these at (2n)(2n+1) */
@@ -1116,7 +1121,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 #ifdef VM_USE_PACKED
 #define TclInstIsNoop(op) \
-    ((op) == ((((TclPSizedInt) INST_JUMP) << P_SHIFT) | 1))
+    ((op) == ((((TclPSizedInt) 1 << P_SHIFT) | INST_JUMP) ))
 #define TclNegateInstAtPtr(p) *(p)^=1
 #else
 #define TclNegateInstAtPtr(p) (*(p)).inst^=1

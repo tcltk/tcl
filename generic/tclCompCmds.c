@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.12 2005/03/24 17:16:30 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.13 2005/03/28 22:21:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2849,8 +2849,22 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     TclSetStackDepth((savedStackDepth+1), envPtr);
-    TclEndExceptRange(range, envPtr);
-    TclEmitInst0(INST_POP, envPtr);
+
+    /*
+     * Avoid compiling a PUSH/POP for loops like 'while 1 {}'
+     */
+
+    if (((envPtr->codeNext - envPtr->codeStart) == bodyCodeOffset + 1)
+	    && (TclVMGetInstAtPtr(envPtr->codeNext-1) == INST_PUSH)) {
+	envPtr->codeNext--;
+	TclEndExceptRange(range, envPtr);
+	if (!loopMayEnd) {
+	    goto finish;
+	}
+    } else {
+	TclEndExceptRange(range, envPtr);
+	TclEmitInst0(INST_POP, envPtr);
+    }
 
     /*
      * Compile the test expression then emit the conditional jump that
@@ -2876,6 +2890,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * Set the loop's body, continue and break offsets.
      */
 
+    finish:
     envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
     envPtr->exceptArrayPtr[range].breakOffset =
 	    (envPtr->codeNext - envPtr->codeStart);

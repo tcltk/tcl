@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.13 2005/03/23 16:51:05 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.14 2005/03/28 22:21:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1066,8 +1066,6 @@ TclCompileScript(interp, script, numBytes, envPtr)
 
 			    if (savedCodeNext != 0) {
 				TclEmitInst1(INST_START_CMD, 0, envPtr);
-				/* TESTING CODE: remove //// */
-				TclEmitInst1(INST_JUMP, 1,envPtr);
 			    }
 			    
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
@@ -1083,8 +1081,8 @@ TclCompileScript(interp, script, numBytes, envPtr)
 				    ptrdiff_t fixLen = envPtr->codeNext
 					    - envPtr->codeStart
 					    - savedCodeNext;
-				
-				    TclVMStoreOpndAtPtr(fixLen, fixPtr);
+				    /*NOTE: depends on (VM_VAR_OMIT_PUSH == 1) */
+				    TclVMStoreOpndAtPtr((fixLen << 1), fixPtr);
 				}				
 				goto finishCommand;
 			    } else if (code == TCL_OUT_LINE_COMPILE) {
@@ -2930,6 +2928,9 @@ TclPrintInstruction(codePtr, pc)
 	opnd = opnds[i];
 	switch (instDesc->opTypes[i]) {
         case OPERAND_REL_OFFSET:
+	    if (opCode == INST_START_CMD) {
+		opnd = opnd >> 1;
+	    }
 	    fprintf(stdout, "%d  	# pc %u", (int) opnd,
 		    (unsigned)(pcOffset + opnd));
 	    break;	    
@@ -2946,7 +2947,9 @@ TclPrintInstruction(codePtr, pc)
 		    if (opnd & VM_VAR_ARRAY) {
 			fprintf(stdout, "|array");
 		    }
-		    if (!(opnd & VM_VAR_OMIT_PUSH)) {
+		    if (opnd & VM_VAR_OMIT_PUSH) {
+			fprintf(stdout, "|drop");
+		    } else {
 			fprintf(stdout, "|push");
 		    }
 		    fprintf(stdout, "| ");
@@ -2959,7 +2962,9 @@ TclPrintInstruction(codePtr, pc)
 		    if (opnd & VM_VAR_ARRAY) {
 			fprintf(stdout, "|array");
 		    }
-		    if (!(opnd & VM_VAR_OMIT_PUSH)) {
+		    if (opnd & VM_VAR_OMIT_PUSH) {
+			fprintf(stdout, "|drop");
+		    } else {
 			fprintf(stdout, "|push");
 		    }
 		    fprintf(stdout, "| ");
@@ -2972,7 +2977,7 @@ TclPrintInstruction(codePtr, pc)
 		fprintf(stdout, "%u  	# ", (unsigned) opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
 	    } else if ((opCode >= INST_LOAD) && (opCode <= INST_INCR)) {
-		int localCt;
+		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr;
 		if ((unsigned int) opnd == (unsigned int) HPUINT_MAX) {
 		    fprintf(stdout, "#stack var ");
@@ -2982,7 +2987,6 @@ TclPrintInstruction(codePtr, pc)
 		    Tcl_Panic("TclPrintInstruction: local var index %u (%u locals) outside of a proc.\n",
 			     (unsigned int) opnd, localCt);
 		}
-		localCt = procPtr->numCompiledLocals;
 		localPtr = procPtr->firstLocalPtr;
 		if (opnd >= localCt) {
 		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
@@ -3253,6 +3257,10 @@ TclOptimiseByteCode (interp, objPtr)
 
 static ByteCode *OptCleanupByteCode _ANSI_ARGS_((ByteCode *codePtr, int *auxCount));
 static void      OptInitCounts _ANSI_ARGS_((ByteCode *codePtr, int *auxCount));
+static int       OptFollowJumps _ANSI_ARGS_((ByteCode *codePtr, int pos,
+		     int *auxCount, int *singlePtr));
+static void      OptReduceCount _ANSI_ARGS_((ByteCode *codePtr, int pos, int *auxCount));
+
 
 static ByteCode *
 OptimiseByteCodeTmp(codePtr)
@@ -3267,11 +3275,18 @@ OptimiseByteCodeTmp(codePtr)
 		     * instruction - 0 means single predecessor, negative
 		     * values indicate unreachable code. */
 
-    int i, pos;
-    TclVMWord *pc, *target;
+    int i, pos, targetPos, target2Pos, modified;
+    TclVMWord *pc, *targetPc;
     TclVMWord *codeStart = codePtr->codeStart;
-    TclPSizedInt opnd;
-    int inst;
+    TclPSizedInt opnd, aux;
+    int opCode, targetOpCode, single;
+    int zero = -1, one = -1;
+                     /* Hold the index of the constants 0 and 1 in the literal
+		      * table; these will be set on first usage. */
+    TclPSizedInt noPushFlags;
+    InstIOType in, out;
+    
+    HP_STASH(noPushFlags, VM_VAR_OMIT_PUSH, 0);
     
     if (!codePtr->numCodeWords) {
 	return codePtr;
@@ -3292,7 +3307,419 @@ OptimiseByteCodeTmp(codePtr)
      */
     
     OptInitCounts(codePtr, auxCount);
-    
+
+    /*
+     * Main loop - apply reduction rules. We keep passing through the code
+     * until there are no more changes - speak about a suboptimal optimiser :)
+     *
+     * Note: this algorithm *will* miss some "obvious" optimisations, at
+     * points in the code where different code paths merge.
+     *
+     */
+
+    modified = 1;
+    while (modified) {
+	modified = 0;
+	pc = codeStart;
+	for (pos = 0; pos < codePtr->numCodeWords; pos++) {
+	    pc = codePtr->codeStart+pos;
+	    if (auxCount[pos] < 0) {
+		TclStoreNoopAtPtr(pc);
+		continue;
+	    }
+	    if (TclInstIsNoop(*pc)) {
+		continue;
+	    }
+
+	    TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
+	    out = tclInstructionTable[opCode].input;
+	
+#if 0
+	    if ((opCode != INST_JUMP)
+		    && (auxCount[pos] == 0) /* not a branch target */
+		    && ((TclVMGetInstAtPtr(pc+1) != INST_JUMP)
+			    || (auxCount(pos+1)>0))
+		    && TclInstIsNoop(*(pc-1))) {
+		/*
+		 * No wiggle room, but can create some by moving this
+		 * instruction back by one: do it, can't hurt.
+		 *
+		 * More involved gymnastics (including copying to a malloced
+		 * buffer, maybe even losing monotonicity) are possible.
+		 */
+
+		/*
+		 * MISSING: ////
+		 * Attention range targets should NOT be moved like this - we
+		 * are protecting only break targets.
+		 */ 
+		
+	    }
+#endif
+		    	    
+	    restartThisPc:
+		    
+	    targetPos = OptFollowJumps(codePtr, pos, auxCount, &single);
+	    targetPc = codeStart+targetPos;
+	    targetOpCode = TclVMGetInstAtPtr(targetPc);
+	    
+	    if (!TclInstIsBoolComp(opCode) || (opnd == 0)) {
+		if (((out == B) && ((targetOpCode == INST_TRY_CVT_TO_NUMERIC)
+				|| (targetOpCode == INST_LYES)))
+			|| (((out == I) || (out == N))
+				&& (targetOpCode == INST_TRY_CVT_TO_NUMERIC))) {
+		    if (single) {
+			TclStoreNoopAtPtr(targetPc);
+			modified = 1;
+			goto restartThisPc;
+		    } else if ((targetPos != (pos+1)) && (auxCount[pos+1] == 0)) {
+			/* Followed by an unshared jump: jump past the useless
+			 * conversion. */
+			aux = TclVMGetOpndAtPtr(pc+1);
+			TclVMStoreOpndAtPtr((targetPos-pos), (pc+1));
+			auxCount[targetPos+1]++;
+			OptReduceCount(codePtr, (pos+aux+1), auxCount);
+			modified = 1;
+			goto restartThisPc;
+		    }
+		}
+	    }
+	    
+
+	    if (TclInstIsBoolComp(opCode)) {
+		if (opnd == 0) {
+		    /* For now: pushing the result; is it used in a
+		     * conditional branch? Then branch ... but first process 
+		     * any intervening negations */
+
+		    while (1) {
+			targetPos = OptFollowJumps(codePtr,
+				pos, auxCount, &single);
+			targetPc = codeStart+targetPos;
+			targetOpCode = TclVMGetInstAtPtr(targetPc);
+			if ((targetOpCode != INST_LYES)
+				&& (targetOpCode != INST_TRY_CVT_TO_NUMERIC)
+				&& (targetOpCode != INST_LNOT)) {
+			    break;
+			}
+			if (single) {
+			    if (targetOpCode == INST_LNOT) {
+				TclNegateInstAtPtr(pc);
+			    }
+			    TclStoreNoopAtPtr(codeStart+targetPos);
+			    modified = 1;
+			} else if ((TclVMGetInstAtPtr(pc+1) == INST_JUMP)
+				&& (auxCount[pos+1] == 0)) {
+			    /*
+			     * maybe you can jump around the target, if you
+			     * are immediately followed by an unshared
+			     * uncond. jump or noop ...  
+			     */
+			    if (targetOpCode == INST_LNOT) {
+				TclNegateInstAtPtr(pc);
+			    }
+			    aux = TclVMGetOpndAtPtr(pc+1);
+			    TclVMStoreOpndAtPtr((targetPos-pos), (pc+1));
+			    auxCount[targetPos+1]++;
+			    OptReduceCount(codePtr, (pos+1+aux), auxCount);
+			    modified = 1;		    
+			} else {
+			    break;
+			}
+		    }
+
+		    if (!TclInstIsJump(targetOpCode)) {
+			continue;
+		    }
+		    
+		    /*
+		     * If we get here, there are only noops and jumps between
+		     * the comp and the conditional jump, in a single path: we
+		     * can replace the jump with a noop and jump directly from
+		     * the comp.
+		     */
+
+		    if (single) {
+			if (targetOpCode == INST_JUMP_FALSE) {
+			    TclNegateInstAtPtr(pc);
+			}			    
+			aux = (targetPos+TclVMGetOpndAtPtr(targetPc)-pos);
+			TclVMStoreOpndAtPtr(aux, pc);
+			TclStoreNoopAtPtr(targetPc);
+			modified = 1;
+		    } else if ((TclVMGetInstAtPtr(pc+1) == INST_JUMP)
+			    && (auxCount[pos+1] == 0)) {
+			/* make a second branch jump past the conditional
+			 * jump, to the 'fail' target */
+			if (targetOpCode == INST_JUMP_FALSE) {
+			    TclNegateInstAtPtr(pc);
+			}			    
+			aux = (targetPos+TclVMGetOpndAtPtr(targetPc)-pos);
+			TclVMStoreOpndAtPtr(aux, pc); /* jump-if-true */
+			auxCount[pos+aux]++;
+			aux = TclVMGetOpndAtPtr(pc+1);
+			TclVMStoreOpndAtPtr((targetPos-pos), (pc+1));
+			auxCount[targetPos+1]++;
+			OptReduceCount(codePtr, (pos+1+aux), auxCount);			    
+			modified = 1;
+		    } else {
+			continue;
+		    }
+		}
+
+		/* Already a jump: can extend it? */
+		TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
+		if(auxCount[pos+opnd] < 0) {
+		    Tcl_Panic("Jump into unreachable code!");
+		}
+		if (TclVMGetInstAtPtr(pc+opnd) == INST_JUMP) {
+		    targetPos = OptFollowJumps(codePtr,
+			    pos+opnd, auxCount, &single);
+		    auxCount[targetPos]++;
+		    TclVMStoreOpndAtPtr((targetPos-pos), pc);
+		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    modified = 1;
+		    continue;
+		}
+	    }
+	    
+	    switch (opCode) {
+	    case INST_TRY_CVT_TO_NUMERIC:
+	    case INST_LYES:
+		/* If next takes nums or ints or bools, noop: the conversion
+		 * will be handled by the next instruction. */
+		in = tclInstructionTable[targetOpCode].input;
+		if ((in == B) || (in == I) || (in == N)) {
+		    TclStoreNoopAtPtr(pc);	    
+		    modified = 1;
+		}
+		continue;
+		
+	    case INST_LNOT:
+		/* If next is a conditional jump,and this is the only
+		 * predecessor, change the jump and make this a noop. Make
+		 * sequential LNOTs cancel. Note that the case of following
+		 * LYES or TRY_CONVERT have already been handled. */
+		if (single) {
+		    switch (targetOpCode) {
+			case INST_JUMP_TRUE:
+			case INST_JUMP_FALSE:
+			case INST_LNOT:
+			    TclStoreNoopAtPtr(pc);
+			    TclNegateInstAtPtr(targetPc);
+			    modified = 1;
+			    break;
+		    }
+		}
+		continue;
+
+	    case INST_PUSH:
+		if (targetOpCode == INST_POP) {
+		    if (single) {
+			TclStoreNoopAtPtr(pc);	    
+			TclStoreNoopAtPtr(targetPc);	    
+			/* NO NEED TO RESTART */
+		    } else {
+			targetPos = OptFollowJumps(codePtr, targetPos, auxCount, &single);
+			TclVMStoreWordAtPtr(INST_JUMP, (targetPos-pos), pc);
+			auxCount[targetPos]++;
+			OptReduceCount(codePtr, (pos+1), auxCount);
+			modified = 1;
+		    }
+		} else if ((targetOpCode == INST_JUMP_TRUE)
+			|| (targetOpCode == INST_JUMP_FALSE)) {
+		    /* Check if we are pushing a constant 0/1 (as compiled by &&
+		     * and ||), in which case we replace the PUSH with an
+		     * unconditional jump (do not forget to fix the auxCounts). */
+		    
+		    /* //// MISSING, to do */
+		}
+		continue;
+
+	    case INST_START_CMD:
+	        {
+		    int omitPush = (opnd & VM_VAR_OMIT_PUSH);
+		    int extended = 1;
+
+		    opnd = (opnd>>1);
+		    while (extended) {
+			extended = 0;
+			targetOpCode = TclVMGetInstAtPtr(pc+opnd);
+
+			/*
+			 * /// This code causes a "following jumps into
+			 * unreachable code" error - can't find how or why its
+			 * interaction with the other INST_START_CMD opt leads
+			 * to this.
+			 */
+		    
+			if (targetOpCode == INST_JUMP) {
+			    int old = opnd;
+			    targetPos = OptFollowJumps(codePtr, (pos+opnd), auxCount, &single);
+			    opnd = (targetPos-pos);
+			    TclVMStoreOpndAtPtr((opnd<<1)|omitPush, pc);
+			    auxCount[targetPos]++;
+			    OptReduceCount(codePtr, (pos+old), auxCount);
+			    modified = 1;
+			    extended = 1;
+			    targetOpCode = TclVMGetInstAtPtr(codeStart+targetPos);
+			}
+
+			if ((targetOpCode == INST_POP) && !omitPush) {
+			    /*
+			     * Omit pushing the command's result if it is not
+			     * needed. Include the (ommitted) POP in within the
+			     * command's instructions.
+			     */
+			    aux = ((opnd+1)<<1) | VM_VAR_OMIT_PUSH;
+			    auxCount[pos+opnd+1]++;
+			    TclVMStoreOpndAtPtr(aux, pc);
+			    OptReduceCount(codePtr, (pos+opnd), auxCount);
+			    omitPush = 1;
+			    opnd++;
+			    modified = 1;
+			    extended = 1;
+			    omitPush = 1;
+			}
+		    }
+		    continue;
+		}
+		
+	    case INST_STORE:
+	    case INST_INCR:
+		if ((targetOpCode == INST_POP) && !(opnd & noPushFlags)) {
+		    if (single) {
+			/* Avoid pushing the result. */
+			opnd |= noPushFlags;
+			TclVMStoreOpndAtPtr(opnd, pc);
+			TclStoreNoopAtPtr(targetPc);	    
+			/* NO NEED TO RESTART */
+		    } else if (targetPos != (pos+1)
+			    && (auxCount[pos+1] == 0)) {
+			/* there is a jump at (pos+1): modify it to jump PAST
+			 * the POP, and drop the result. Save the old jump
+			 * target in aux  */			
+			opnd |= noPushFlags;
+			TclVMStoreOpndAtPtr(opnd, pc);
+			targetPos = OptFollowJumps(codePtr, targetPos, auxCount, &single);
+			pos++; pc++;
+			TclVMGetInstAndOpAtPtr(pc, opCode, aux);
+			if (opCode != INST_JUMP) {
+			    Tcl_Panic("Error in OptFollowJumps");
+			}
+			TclVMStoreOpndAtPtr((targetPos-pos), pc);
+			auxCount[targetPos]++;
+			OptReduceCount(codePtr, (pos+aux), auxCount);			
+			modified = 1;
+		    }
+		}
+		continue;
+		
+	    case INST_JUMP_TRUE:
+	    case INST_JUMP_FALSE:
+		/* Find the branched target */
+		target2Pos = targetPos;
+		if (TclVMGetInstAtPtr(pc+opnd) == INST_JUMP) {
+		    /* includes noops */
+		    targetPos = OptFollowJumps(codePtr, (pos+opnd), auxCount, &single);
+		} else {
+		    targetPos = pos + opnd;
+		}
+
+		/*
+		 * Missing:
+		 *   (INST_JUMP_TRUE 2) (INST_JUMP OPND) ==>
+		 *   (NOOP) (INST_JUMP_FALSE OPND)
+		 * (Simpler after cleaning up, actually)
+		 * ////
+		 */
+		
+		goto modifyJumps;
+		    
+	    case INST_JUMP:
+		if ((targetOpCode == INST_DONE)
+			|| (targetOpCode == INST_BREAK)
+			|| (targetOpCode == INST_CONTINUE)) {
+		    TclVMStoreWordAtPtr(targetOpCode,
+			    TclVMGetOpndAtPtr(targetPc), pc);
+		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    /* NO NEED TO RESTART */
+		    continue;
+		}
+
+		if (auxCount[pos+1] >= 0) {
+		    if (TclVMGetInstAtPtr(pc+1) == INST_JUMP) {
+			target2Pos = OptFollowJumps(codePtr, (pos+1), auxCount, &single);
+		    } else {
+			target2Pos = pos+1;
+		    }
+		} else {
+		    /* Use an impossible jump width - insure that it is never
+		     * equal to the jump target */
+		    target2Pos = -(pos+1);
+		}
+
+		modifyJumps:
+		if(auxCount[targetPos] < 0) {
+		    Tcl_Panic("Jump into unreachable code!");
+		}
+		if (targetPos == target2Pos) {
+		    if ((opCode == INST_JUMP) && (opnd != 1)) {
+			/* useless jump, noop has the same target */
+			TclStoreNoopAtPtr(pc);
+			auxCount[pos+1]++;
+			OptReduceCount(codePtr, (pos+opnd), auxCount);
+			modified = 1;
+		    } else if ((opCode == INST_JUMP_TRUE)
+			    || (opCode == INST_JUMP_FALSE)) {
+			/* useless jump, both branches go to the same spot:
+			 * popping the result has the same effect */
+			TclVMStoreWordAtPtr(INST_POP, 0, pc);			
+			OptReduceCount(codePtr, (pos+opnd), auxCount);
+			modified = 1;
+		    }
+		    continue;
+		} else if (targetPos == pos) {
+		    /* Got an infinite empty loop! Set it to a continue at the
+		     * next instruction - but what if it was unreachable?
+		     * Also: what if it was a conditional jump?
+		     * //// */
+		    TclVMStoreOpndAtPtr(1, pc);
+		    auxCount[pos+1]++;
+		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    modified = 1;
+		} else if (targetPos != (pos + opnd)) {
+		    /* Can follow a jump; do it */
+		    TclVMStoreOpndAtPtr((targetPos-pos), pc);
+		    auxCount[targetPos]++;
+		    OptReduceCount(codePtr, (pos+opnd), auxCount);
+		    /* NO NEED TO RESTART */
+		}
+		continue;
+	    }
+	}
+	/*
+	 * If some range became unreachable, remove the extra reference to the
+	 * break and continue targets. 
+	 */
+
+	for (i = 0; i < codePtr->numExceptRanges; i++) {
+	    pos = codePtr->exceptArrayPtr[i].codeOffset;
+	    if (auxCount[pos] < 0) {
+		pos = codePtr->exceptArrayPtr[i].breakOffset;
+		if (pos!= -1) {
+		    OptReduceCount(codePtr, pos, auxCount);
+		    modified = 1;
+		}
+		pos = codePtr->exceptArrayPtr[i].continueOffset;
+		if (pos!= -1) {
+		    OptReduceCount(codePtr, pos, auxCount);
+		    modified = 1;
+		}
+	    }
+	}
+    }
+
     /*
      * Finally remove all unreachable code and noops.
      */
@@ -3300,8 +3727,158 @@ OptimiseByteCodeTmp(codePtr)
     codePtr = OptCleanupByteCode(codePtr, auxCount);
     ckfree((char *) auxCount);
     return codePtr;
-}
+ }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OptFollowJumps --
+ *
+ *      Computes the position of the next effective instruction after 'pos',
+ *      following unconditional jumps (including noops). Also indicates in
+ *      *singlePtr if no other execution path merges into this code segment.  
+ *
+ * Results:
+ *      Position of next effective instruction.
+ *
+ * Side effects:
+ *      None
+ */
+
+static int
+OptFollowJumps(codePtr, pos, auxCount, singlePtr)
+    ByteCode *codePtr;
+    int pos;           /* Position after which to follow jumps */
+    int *auxCount;
+    int *singlePtr;    /* Indicator of simple path (no merges) */
+{
+    
+    int inst;
+    TclVMWord *codeStart = codePtr->codeStart;
+    int lastPos = codePtr->numCodeWords;
+    int initPos = pos;
+    TclPSizedInt opnd;
+
+    
+    TclVMGetInstAndOpAtPtr((codeStart+pos), inst, opnd);
+    switch (inst) {
+	case INST_JUMP:
+	    pos += opnd;
+	    break;
+	case INST_DONE:
+	case INST_BREAK:
+	case INST_CONTINUE:
+	case INST_FOREACH_START:
+	case INST_FOREACH_STEP:
+	case INST_BEGIN_CATCH:
+	case INST_START_CMD:
+	    *singlePtr = 1;
+	    return pos;
+	default:
+	    pos++;
+    }
+	
+
+    *singlePtr = (auxCount[pos] == 0);
+    
+    while ((pos < lastPos) && (pos != initPos)) {
+	if (auxCount[pos] > 0) {
+	    *singlePtr = 0;
+	} else if (auxCount[pos] < 0) {
+	    break;
+	}
+	TclVMGetInstAndOpAtPtr((codeStart+pos), inst, opnd);
+	if (inst == INST_JUMP /* includes noops! */)  {
+	    pos += opnd;
+	    continue;
+	}
+	break;
+    }
+    if (auxCount[pos] < 0) {
+	Tcl_Panic("Following jumps into unreachable code.");
+    }
+    return pos;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OptReduceCount --
+ *
+ *      Reduces the predecessor count at pos. Checks if the position has
+ *      become unreachable, in which case it replaces the word with a noop and
+ *      follows the execution path(s) from it, reducing the predecessor counts.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Reduces predecessor counts, replaces instructions with noops.
+ */
+
+static void
+OptReduceCount(codePtr, pos, auxCount)
+    ByteCode *codePtr;
+    int pos;
+    int *auxCount;
+{
+    TclVMWord *codeStart = codePtr->codeStart, *pc;
+    int lastPos = codePtr->numCodeWords;
+    int opCode, i;
+    TclPSizedInt opnd;
+
+    /*
+     * Problem - break targets when loop is gone?
+     */
+
+    if (auxCount[pos] < 0) {
+	Tcl_Panic("Reducing auxCount of unreachable code.");
+    }
+    
+    while ((pos < lastPos) && (auxCount[pos] >= 0)) {
+	if (--auxCount[pos]>= 0) break;
+	pc = (codeStart+pos);
+	if (!TclInstIsNoop(*pc)) {
+	    TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
+	    TclStoreNoopAtPtr(pc);
+
+	    if (TclInstIsJump(opCode)
+	            || (TclInstIsBoolComp(opCode) && (opnd != 0))) {
+		OptReduceCount(codePtr, pos+opnd, auxCount);
+		if (opCode == INST_JUMP) {
+		    break;
+		}		
+	    } else if (opCode == INST_BEGIN_CATCH) {
+		/* Remove everything up to the END_CATCH */
+		for (i = 1; i <= opnd; i++) {
+		    TclStoreNoopAtPtr(pc+i);
+		    auxCount[pos+i] = -1;
+		}
+		pos += opnd;
+		break;
+	    } else if (opCode == INST_FOREACH_START) {
+		/* Remove everything up to FOREACH_STEP */
+		{
+		    ForeachInfo *infoPtr = (ForeachInfo *)
+			codePtr->auxDataArrayPtr[opnd].clientData;
+		    opnd = - pos +
+			codePtr->exceptArrayPtr[infoPtr->rangeIndex].continueOffset;
+		}
+		for (i = 1; i <= opnd; i++) {
+		    TclStoreNoopAtPtr(pc+i);
+		    auxCount[pos+i] = -1;
+		}
+		break;
+	    } else if ((opCode == INST_DONE) 
+		    || (opCode == INST_BREAK ) 
+		    || (opCode == INST_CONTINUE)) {	    
+		break;
+	    }
+	}
+	pos++;
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3337,46 +3914,44 @@ OptInitCounts(codePtr, auxCount)
 
     /*
      * Insure that words that may *seem* unreachable but are not are
-     * processed correctly. These are the different targets for loop ranges,
-     * INST_END_CATCH (as long as the corresponding INST_BEGIN_CATCH is
-     * reachable), INST_FOREACH_STEP (as long as INST_FOREACH_START is
-     * reachable, but this is kept alive as the 'continue' target for the loop
-     * range).
+     * processed correctly. These are the break and continue targets for loop
+     * ranges, INST_END_CATCH (as long as the corresponding INST_BEGIN_CATCH
+     * is reachable), INST_FOREACH_STEP (as long as INST_FOREACH_START is
+     * reachable).
      *
      * First handle loop exception ranges.
      */
 
     for (i = 0; i < codePtr->numExceptRanges; i++) {
 	pos = codePtr->exceptArrayPtr[i].breakOffset;
-	if (pos!= -1) {
+	if (pos >= 0) {
 	    auxCount[pos]++;
 	}
 	pos = codePtr->exceptArrayPtr[i].continueOffset;
-	if (pos!= -1) {
+	if (pos >= 0) {
 	    auxCount[pos]++;
 	}
-	pos = codePtr->exceptArrayPtr[i].codeOffset;
-	auxCount[pos]++;
     }
 
     /*
      * Do a first pass to correct the predecessor count stored in auxCount.
-     * In this pass we also insure reachability od INST_END_CATCH, and rewrite
-     * loop exceptions to jumps wherever possible. 
+     * In this pass we also insure reachability od INST_END_CATCH and
+     * INST_FOREACH_STEP, and rewrite loop exceptions to jumps wherever
+     * possible.  
      */
     
     pc = codeStart;
     for (pos = 0; pos < codePtr->numCodeWords; pos++, pc++) {
-	pc = codeStart + pos;
 	TclVMGetInstAndOpAtPtr(pc, inst, opnd);
 	switch (inst) {
 	    case INST_JUMP:
 		auxCount[pos+1]--;
-		auxCount[pos+opnd]++;
-		break;
 	    case INST_JUMP_TRUE:
 	    case INST_JUMP_FALSE:
 		auxCount[pos+opnd]++;
+		break;
+	    case INST_START_CMD:
+		auxCount[pos+(opnd>>1)]++;
 		break;
 	    case INST_BREAK:
 		auxCount[pos+1]--;
@@ -3399,12 +3974,13 @@ OptInitCounts(codePtr, auxCount)
 		auxCount[pos+1]--;
 		break;
 	    case INST_BEGIN_CATCH:
-		auxCount[pos]++;
+		/* Can reach a seemingly unreachable END_CATCH. */
 		auxCount[pos+opnd]++;
 		break;
-	    case INST_FOREACH_START:
-		auxCount[pos]++;
-		auxCount[pos+1]--;
+	    case INST_FOREACH_START: 
+		/* Jumps to FOREACH_STEP, which jumps right back here. Insure
+		 * that the FOREACH_STEP is reachable, as well as the
+		 * instruction immediately following this one. */ 
 		{
 		    ForeachInfo *infoPtr = (ForeachInfo *)
 			codePtr->auxDataArrayPtr[opnd].clientData;
@@ -3448,6 +4024,16 @@ OptCleanupByteCode(codePtr, auxCount)
     int i, j, noops, opCode;
     unsigned char *pr, *pw, *qr, *qw;
     int oldstart;
+    int restart;
+    int lastOp;
+
+    pc = codePtr->codeStart;
+    for (i = 0; i < codePtr->numCodeWords; pc++, i++) {
+	if (auxCount[i]<0) {
+	    /* unreachable code */
+	    TclStoreNoopAtPtr(pc);
+	}
+    }
     
     /*
      * Compute the shifts after the NOOPs and unreachable codes 
@@ -3465,19 +4051,20 @@ OptCleanupByteCode(codePtr, auxCount)
      * takes some place.
      */
 
+    restartTarget:
+    restart = 0;
     noops = 0;
     pc = codePtr->codeStart;
+    lastOp = 0;
     for (i = 0; i < codePtr->numCodeWords; pc++, i++) {
-	if (auxCount[i]<0) {
-	    /* unreachable code */
-	    TclStoreNoopAtPtr(pc);
-	}
 	auxCount[i] = -noops;
 	if (TclInstIsNoop(*pc)) {
 	    noops++;
+	} else {
+	    lastOp = i;
 	}
     }
-
+    
     if (!noops) {
 	return codePtr;
     }
@@ -3507,21 +4094,38 @@ OptCleanupByteCode(codePtr, auxCount)
      */
 
     pc = codePtr->codeStart;
-    for (i = 0; i < codePtr->numCodeWords; pc++, i++) {
+    for (i = 0; i <= lastOp; pc++, i++) {
 	TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
 
 	if (TclInstIsNoop(*pc)) {
 	    continue;
 	} else if (TclInstIsJump(opCode)
-		|| (opCode == INST_BEGIN_CATCH)
-		|| (opCode == INST_START_CMD)) {
+		|| (opCode == INST_BEGIN_CATCH)) {
 	    if (opnd != 1) {
 		opnd += (auxCount[(i+opnd)] - auxCount[i]);
+		if (opCode == INST_JUMP){
+		    if (opnd == 1) {
+		    /* WHAT IF NEW NOOPS APPEAR HERE? Jumping around
+		     * unreachable code ... redo from scratch?*/ 
+			restart = 1;
+		    } else if (opnd == 0) {
+			/* an infinite empty loop! make it a noop. Note that
+			 * this is WRONG ... //// */
+			TclStoreNoopAtPtr(pc);
+			restart = 1;
+		    }
+		}
+	    }
+	} else if (TclInstIsBoolComp(opCode) && (opnd != 0)) {
+		opnd += (auxCount[(i+opnd)] - auxCount[i]);	    
+	} else if (opCode == INST_START_CMD) {
+	    /* NOTE: depends on VAR_OMIT_PUSH == 1 */
+	    if ((opnd>>1) != 1) {
+		opnd += ((auxCount[(i+(opnd>>1))] - auxCount[i]) << 1);
 	    }
 	}
 	TclVMStoreWordAtPtr(opCode, opnd, (pc + auxCount[i]));
     }
-    codePtr->numCodeWords -= noops;
 
     /*
      * Regen codeDelta/codeLen
@@ -3554,7 +4158,7 @@ OptCleanupByteCode(codePtr, auxCount)
 	    len = TclGetInt4AtPtr(qr);
 	    qr += 4;	    
 	}
-	len += auxCount[newstart + len] - auxCount[newstart];
+	len += auxCount[newstart + len-1] - auxCount[newstart];
 	if (len <= 127) {
 	    TclStoreInt1AtPtr(len, qw++);
 	} else {
@@ -3563,13 +4167,19 @@ OptCleanupByteCode(codePtr, auxCount)
 	    qw += 4;
 	}
 	oldstart = newstart;
-    }    
+    }
+    lastOp += auxCount[lastOp];
+    codePtr->numCodeWords = lastOp + 1;
 
+    if (restart) {
+	goto restartTarget;
+    }    
+    
     /*
      * Should we move all unused space to the back, and realloc? If the
      * optimisation-shrinkage is important, could be interesting.
      */
-
+    
     return codePtr;
 }
     

@@ -1,3 +1,26 @@
+2005-03-28 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c: avoid compiling a PUSH/POP for empty
+	loops like 'while 1 {}' - as it creates code that the optimiser
+	cannot yet handle very well. 
+	*** Currently causes test interp-34.3 to fail.***
+	*** NEEDS REVISITING ***
+
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: A (very ugly, naïve and horribly coded)
+	bytecode optimiser as proof of concept. The code iterates over the
+	compiled code, simplifying the logic and removing unneeded
+	instructions. Performs the job of a few of the "runtime peephole
+	optimisations" in TEBC, which have now been removed. The optimiser
+	is located in tclCompile.c, at the end of the file.
+	Runtimes not yet benchmarked. Code reduction example: the body of
+	heapsortLset (in the heapsort benchmark) is compiled to 153
+	intructions instead of 184. The reduction should be larger for
+	code with many branches.
+
+	*** NEEDS REDESIGN ***
+	
 2005-03-23 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: porting fix of [Bug 1165671] from HEAD
