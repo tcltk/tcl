@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.70 2004/07/08 18:46:05 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.71 2004/07/15 17:42:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1208,11 +1208,16 @@ TclCompileScript(interp, script, numBytes, envPtr)
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
      * push an empty string as the command's result.
+     *
+     * WARNING: push an unshared object! If the script being compiled is a
+     * shared empty string, it will otherwise be self-referential and cause
+     * difficulties with literal management [Bugs 467523, 983660]. We used to
+     * have special code in TclReleaseLiteral to handle this particular
+     * self-reference, but now opt for avoiding its creation altogether.
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0),
-	        envPtr);
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewObj(), NULL), envPtr);
     }
     
     envPtr->numSrcBytes = (p - script);
