@@ -1111,6 +1111,14 @@ if test -r ToUpper.3; then
     ln ToUpper.3 Tcl_UtfToLower.3
     ln ToUpper.3 Tcl_UtfToTitle.3
 fi
+if test -r TraceCmd.3; then
+    rm -f Tcl_CommandTraceInfo.3
+    rm -f Tcl_TraceCommand.3
+    rm -f Tcl_UntraceCommand.3
+    ln TraceCmd.3 Tcl_CommandTraceInfo.3
+    ln TraceCmd.3 Tcl_TraceCommand.3
+    ln TraceCmd.3 Tcl_UntraceCommand.3
+fi
 if test -r TraceVar.3; then
     rm -f Tcl_TraceVar.3
     rm -f Tcl_TraceVar2.3
