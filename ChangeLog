@@ -1,3 +1,45 @@
+2001-09-04 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	Minor bug fixes in filesystem, plus small vfs changes as a 
+	result of enabling the test filesystem to work properly.
+	* tests/fileName.test: ensure new test cleans up after itself
+	* doc/filename.n: 
+	* generic/tclFileName.c: improved Mac path handling and document
+	why [Bug: 421842] on Windows handling of UNC paths is not valid.
+	Documentation and code now much clearer on what is and is not a 
+	UNC path.
+	* doc/FileSystem.3:
+	* unix/tclUnixPipe.c:
+	* generic/tclFCmd.c:
+	* generic/tclIOUtil.c: fixed error message, fixed [Bug: 453512]
+	about dangerous use of tmpnam, replaced with mkstemp.  
+	Documented all the changes.
+	* generic/tclTest.c: made test vfs fully functional as a 
+	'reporting filesystem'.
+	* generic/tcl.stubs:
+	* generic/tcl.h:
+	* generic/tclInt.h: 
+	* generic/tclIOUtil.c:
+	* doc/file.n:
+	* various platform-specific 'TclpLoadFile': fixed comments about 
+	unload behaviour, and completed objectification of loading.
+	Required change to Tcl_Filesystem lookup table, so incompatible
+	with 8.4a3, but not older versions of Tcl.  The change also
+	allows 'link' and 'reporting' filesystems to function correctly
+	when loading files.  Implementation of 'file delete -force'
+	copes with case where cwd is inside the directory.  Moved
+	overlooked Tcl_FSGetPathType from internal to external API.
+	Made sure filesystems which are registered and then unregistered
+	are only freed when all references to them are gone.
+	Documented changes.
+	* unix/tclUnixFCmd.c: when deleting directories recursively,
+	make sure permissions are ok.  Together with the above, this
+	fixes [Bug: 219139]
+	* tests/winFCmd.test: differentiated test results for win2k 
+	versus not.  This fixes [Bug: 219239]
+	* tests/fCmd.test: added tests for 'file delete -force' where
+	the cwd is inside, and when permissions are inadequate.
+	
 2001-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompile.c: fixed incorrect opreands for INST_LIST

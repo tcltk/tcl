@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.11 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12 2001/09/04 18:06:34 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -685,19 +685,37 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
 				 * causing error. */
 {
     CONST char *path;
-
+    mode_t oldPerm = 0;
+    int result;
+    
     path = Tcl_DStringValue(pathPtr);
+    
+    if (recursive != 0) {
+	/* We should try to change permissions so this can be deleted */
+	struct stat statBuf;
+	int newPerm;
+
+	if (stat(path, &statBuf) == 0) {
+	    oldPerm = (mode_t) (statBuf.st_mode & 0x00007FFF);
+	}
+	
+	newPerm = oldPerm | (64+128+256);
+	chmod(path, (mode_t) newPerm);
+    }
+    
     if (rmdir(path) == 0) {				/* INTL: Native. */
 	return TCL_OK;
     }
     if (errno == ENOTEMPTY) {
 	errno = EEXIST;
     }
+
+    result = TCL_OK;
     if ((errno != EEXIST) || (recursive == 0)) {
 	if (errorPtr != NULL) {
 	    Tcl_ExternalToUtfDString(NULL, path, -1, errorPtr);
 	}
-	return TCL_ERROR;
+	result = TCL_ERROR;
     }
     
     /*
@@ -705,7 +723,15 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
      * specified, so we recursively remove all the files in the directory.
      */
 
-    return TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr);
+    if (result == TCL_OK) {
+	result = TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr);
+    }
+    
+    if ((result != TCL_OK) && (recursive != 0)) {
+        /* Try to restore permissions */
+        chmod(path, oldPerm);
+    }
+    return result;
 }
 	
 /*

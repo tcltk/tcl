@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.11 2001/08/30 08:53:14 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.12 2001/09/04 18:06:34 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -599,53 +599,13 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	}
     } else {
 	result = Tcl_FSCopyFile(source, target);
-	if ((result != TCL_OK) && (errno == EXDEV)) {
-	    /*
-	     * Well, there really shouldn't be a problem with source,
-	     * because up there we checked to see if it was ok to copy it.
-	     * 
-	     * Either there is a problem with target, or we're trying
-	     * to do a cross-filesystem copy.  We open the target for
-	     * writing to decide between those two cases.
+	if (result != TCL_OK) {
+	    /* 
+	     * We could examine 'errno' to double-check if the problem
+	     * was with the target, but we checked the source above,
+	     * so it should be quite clear 
 	     */
-	    int prot = 0666;
-	    Tcl_Channel out = Tcl_FSOpenFileChannel(interp, target, "w", prot);
-	    if (out == NULL) {
-		/* There was a problem with the target */
-	        errfile = target;
-	    } else {
-		/* It looks like we can copy it over */
-		Tcl_Channel in = Tcl_FSOpenFileChannel(interp, source, 
-						     "r", prot);
-		if (in == NULL) {
-		    /* This is very strange, we checked this above */
-		    Tcl_Close(interp, out);
-		    errfile = source;
-		} else {
-		    struct utimbuf tval;
-		    /* 
-		     * Copy it synchronously.  We might wish to add an
-		     * asynchronous option to support vfs's which are
-		     * slow (e.g. network sockets).
-		     */
-		    Tcl_SetChannelOption(interp, in, "-translation", "binary");
-		    Tcl_SetChannelOption(interp, out, "-translation", "binary");
-		    
-		    if (TclCopyChannel(interp, in, out, -1, NULL) == TCL_OK) {
-			result = TCL_OK;
-		    }
-		    /* 
-		     * If the copy failed, assume that copy channel left
-		     * a good error message.
-		     */
-		    Tcl_Close(interp, in);
-		    Tcl_Close(interp, out);
-		    /* Set modification date of copied file */
-		    tval.actime = sourceStatBuf.st_atime;
-		    tval.modtime = sourceStatBuf.st_mtime;
-		    Tcl_FSUtime(source, &tval);
-		}
-	    }
+	    errfile = target;
 	}
     }
     if ((copyFlag == 0) && (result == TCL_OK)) {
@@ -792,7 +752,7 @@ FileBasename(interp, pathPtr)
 	if (objc > 0) {
 	    Tcl_ListObjIndex(NULL, splitPtr, objc-1, &resultPtr);
 	    if ((objc == 1) &&
-	      (Tcl_FSGetPathType(resultPtr, NULL, NULL) != TCL_PATH_RELATIVE)) {
+	      (Tcl_FSGetPathType(resultPtr) != TCL_PATH_RELATIVE)) {
 		resultPtr = NULL;
 	    }
 	}

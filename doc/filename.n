@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: filename.n,v 1.6 2001/08/24 16:40:18 vincentdarley Exp $
+'\" RCS: @(#) $Id: filename.n,v 1.7 2001/09/04 18:06:34 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH filename n 7.5 Tcl "Tcl Built-In Commands"
@@ -136,7 +136,9 @@ On Microsoft Windows platforms, Tcl supports both drive-relative and UNC
 style names.  Both \fB/\fR and \fB\e\fR may be used as directory separators
 in either type of name.  Drive-relative names consist of an optional drive
 specifier followed by an absolute or relative path.  UNC paths follow the
-general form \fB\e\eservername\esharename\epath\efile\fR.  In both forms,
+general form \fB\e\eservername\esharename\epath\efile\fR, but must at
+the very least contain the server and share components, i.e. 
+\fB\e\eservername\esharename\fR.  In both forms,
 the file names \fB.\fR and \fB..\fR are special and refer to the current
 directory and the parent of the current directory respectively.  The
 following examples illustrate various forms of path names:
@@ -144,7 +146,9 @@ following examples illustrate various forms of path names:
 .TP 15
 \fB\&\e\eHost\eshare/file\fR
 Absolute UNC path to a file called \fBfile\fR in the root directory of
-the export point \fBshare\fR on the host \fBHost\fR.
+the export point \fBshare\fR on the host \fBHost\fR.  Note that
+repeated use of \fBfile dirname\fR on this path will give
+\fB//Host/share\fR, and will never give just /fB//Host/fR.
 .TP 15
 \fBc:foo\fR
 Volume-relative path to a file \fBfoo\fR in the current directory on drive
@@ -161,6 +165,11 @@ directory on the current volume.
 \fB\&\efoo\fR
 Volume-relative path to a file \fBfoo\fR in the root directory of the current
 volume.
+.TP 15
+\fB\&\e\efoo\fR
+Volume-relative path to a file \fBfoo\fR in the root directory of the current
+volume.  This is not a valid UNC path, so the assumption is that the
+extra backslashes are superfluous.
 .RE
 
 .SH "TILDE SUBSTITUTION"
