@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.13 2003/02/04 00:56:20 hobbs Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.14 2003/05/07 21:30:13 dkf Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -72,7 +72,8 @@ in which they appear.
 .TP
 \fBtrace add execution\fR \fIname ops command\fR
 Arrange for \fIcommand\fR to be executed whenever command \fIname\fR
-is modified in one of the ways given by the list \fIops\fR.  \fIName\fR will be
+is executed, with traces occurring at the points indicated by the list
+\fIops\fR.  \fIName\fR will be
 resolved using the usual namespace resolution rules used by
 procedures.  If the command does not exist, an error will be thrown.
 .RS
