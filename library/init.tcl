@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.17 1998/10/23 22:22:15 welch Exp $
+# RCS: @(#) $Id: init.tcl,v 1.18 1998/10/30 23:02:02 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -578,7 +578,8 @@ proc auto_reset {} {
     global auto_execs auto_index auto_oldpath
     foreach p [info procs] {
 	if {[info exists auto_index($p)] && ![string match auto_* $p]
-		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup tcl_findLibrary
+		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup
+			tcl_findLibrary pkg_compareExtension
 			tclMacPkgSearch tclPkgUnknown} $p] < 0)} {
 	    rename $p {}
 	}
@@ -1081,23 +1082,16 @@ if {$::tcl_platform(platform) == "windows"} {
 	if {[string compare $ext {}] == 0} {
 	    set ext [info sharedlibextension]
 	}
-	set cmp [string compare \
-		[string tolower [file extension $fileName]] \
-		[string tolower $ext]]
-	if {$cmp} {
-	    return 0
-	}
-	return 1
+	return [expr {[string compare \
+		    [string tolower [file extension $fileName]] \
+		    [string tolower $ext]] == 0}]
     }
 } else {
     proc pkg_compareExtension { fileName {ext {}} } {
 	if {[string compare $ext {}] == 0} {
 	    set ext [info sharedlibextension]
 	}
-	if {[string compare [file extension $fileName] $ext]} {
-	    return 0
-	}
-	return 1
+	return [expr {[string compare [file extension $fileName] $ext] == 0}]
     }
 }
 
@@ -1114,19 +1108,9 @@ if {$::tcl_platform(platform) == "windows"} {
 #			loaded when "package require" is executed, rather
 #			than lazily when the first reference to an exported
 #			procedure in the package is made.
-# -nopkgrequire		(optional) If this flag is present, "package require"
-#			commands are ignored. This flag is useful in some
-#			situations, for example when there is a circularity
-#			in package requires (package a requires package b,
-#			which in turns requires package a).
 # -verbose		(optional) Verbose output; the name of each file that
 #			was successfully rocessed is printed out. Additionally,
-#			if processing of a file failed a message is printed
-#			out; a file failure may not indicate that the indexing
-#			has failed, since pkg_mkIndex stores the list of failed
-#			files and tries again. The second time the processing
-#			may succeed, for example if a required package has been
-#			indexed by a previous pass.
+#			if processing of a file failed a message is printed.
 # dir -			Name of the directory in which to create the index.
 # args -		Any number of additional arguments, each giving
 #			a glob pattern that matches the names of one or
@@ -1135,7 +1119,7 @@ if {$::tcl_platform(platform) == "windows"} {
 
 proc pkg_mkIndex {args} {
     global errorCode errorInfo
-    set usage {"pkg_mkIndex ?-nopkgrequire? ?-direct? ?-verbose? dir ?pattern ...?"};
+    set usage {"pkg_mkIndex ?-direct? ?-verbose? dir ?pattern ...?"};
 
     set argCount [llength $args]
     if {$argCount < 1} {
@@ -1144,7 +1128,6 @@ proc pkg_mkIndex {args} {
 
     set more ""
     set direct 0
-    set noPkgRequire 0
     set doVerbose 0
     for {set idx 0} {$idx < $argCount} {incr idx} {
 	set flag [lindex $args $idx]
@@ -1154,25 +1137,16 @@ proc pkg_mkIndex {args} {
 		incr idx
 		break
 	    }
-
 	    -verbose {
 		set doVerbose 1
 	    }
-
 	    -direct {
 		set direct 1
 		append more " -direct"
 	    }
-
-	    -nopkgrequire {
-		set noPkgRequire 1
-		append more " -nopkgrequire"
-	    }
-
 	    -* {
 		return -code error "unknown flag $flag: should be\n$usage"
 	    }
-
 	    default {
 		# done with the flags
 		break
@@ -1198,329 +1172,192 @@ proc pkg_mkIndex {args} {
     set oldDir [pwd]
     cd $dir
 
-    # In order to support building of index files from scratch, we make
-    # repeated passes on the files to index, until either all have been
-    # indexed, or we can no longer make any headway.
-
-    if {[catch {
-	foreach file [eval glob $patternList] {
-	    set toProcess($file) 1
-	}
-    } err]} {
-	set ei $::errorInfo
-	set ec $::errorCode
+    if {[catch {eval glob $patternList} fileList]} {
+	global errorCode errorInfo
 	cd $oldDir
-	error $err $ei $ec
+	return -code error -errorcode $errorCode -errorinfo $errorInfo $fileList
     }
+    foreach file $fileList {
+	# For each file, figure out what commands and packages it provides.
+	# To do this, create a child interpreter, load the file into the
+	# interpreter, and get a list of the new commands and packages
+	# that are defined.
 
-    while {[array size toProcess] > 0} {
-	set processed 0
-
-	foreach file [array names toProcess] {
-	    # For each file, figure out what commands and packages it provides.
-	    # To do this, create a child interpreter, load the file into the
-	    # interpreter, and get a list of the new commands and packages
-	    # that are defined. The interpeter uses a special version of
-	    # tclPkgSetup to force loading of required packages at require
-	    # time rather than lazily, so that we can keep track of commands
-	    # and packages that are defined indirectly rather than from the
-	    # file itself.
-
-	    set c [interp create]
-
-	    # Load into the child all packages currently loaded in the parent
-	    # interpreter, in case the extension depends on some of them.
-
-	    foreach pkg [info loaded] {
-		if {[lindex $pkg 1] == "Tk"} {
-		    $c eval {set argv {-geometry +0+0}}
-		}
-		load [lindex $pkg 0] [lindex $pkg 1] $c
-	    }
-
-	    # We also call package ifneeded for all packages that have been
-	    # identified so far. This way, each pass will have loaded the
-	    # equivalent of the pkgIndex.tcl file that we are constructing,
-	    # and packages whose processing failed in previous passes may
-	    # be processed successfully now.
-	    # Note that the $dir value is hardwired to ".", because we are
-	    # in the directory with the .tcl files.
-
-	    foreach pkg [array names files] {
-		$c eval "package ifneeded $pkg\
-			\[list tclPkgSetup . \
-			[lrange $pkg 0 0] [lrange $pkg 1 1]\
-			[list $files($pkg)]\]"
-	    }
-	    if {$noPkgRequire == 1} {
-		$c eval {
-		    rename package __package_orig
-		    proc package {what args} {
-			switch -- $what {
-			    require { return ; # ignore transitive requires }
-			    default { eval __package_orig {$what} $args }
-			}
-		    }
-		    proc __dummy args {}
-		    package unknown __dummy
-		}
-	    } else {
-		$c eval {
-		    rename package __package_orig
-		    proc package {what args} {
-			switch -- $what {
-			    require {
-				eval __package_orig require $args
-
-				# a package that was required needs to be
-				# placed in the list of packages to ignore.
-				# tclPkgSetup is unable to do it, so do it
-				# here.
-
-				set ::__ignorePkgs([lindex $args 0]) 1
-			    }
-
-			    provide {
-				# if package provide is called at level 1 and
-				# with two arguments, then this package is
-				# being provided by one of the files we are
-				# indexing, and therefore we need to add it
-				# to the list of packages to write out.
-				# We need to do this check because otherwise
-				# packages that are spread over multiple
-				# files are indexed only by their first file
-				# loaded.
-				# Note that that this cannot detect
-				# packages that are implemented by a
-				# combination of TCL files and DLLs
-
-				if {([info level] == 1) \
-					&& ([llength $args] == 2)} {
-				    lappend ::__providedPkgs [lindex $args 0]
-				}
-
-				eval __package_orig provide $args
-			    }
-
-			    default { eval __package_orig {$what} $args }
-			}
-		    }
-		}
-	    }
-
-	    # make sure that the auto_path in the slave is consistent
-	    # with ours
-	    $c eval [list set auto_path $::auto_path]
-
-	    $c eval [list set __file $file]
-	    $c eval [list set __direct $direct]
-	    if {[catch {
-		$c eval {
-		    set __doingWhat "loading or sourcing"
-
-		    # override the tclPkgSetup procedure (which is called by
-		    # package ifneeded statements from pkgIndex.tcl) to force
-		    # loads of packages, and also keep track of
-		    # packages/namespaces/commands that the load generated
-
-		    proc tclPkgSetup {dir pkg version files} {
-			# remember the current set of packages and commands,
-			# so that we can add any that were defined by the
-			# package files to the list of packages and commands
-			# to ignore
-
-			foreach __p [package names] {
-			    set __localIgnorePkgs($__p) 1
-			}
-			foreach __ns [__pkgGetAllNamespaces] {
-			    set __localIgnoreNs($__ns) 1
-
-			    # if the namespace is already in the __ignoreNs
-			    # array, its commands have already been imported
-
-			    if {[info exists ::__ignoreNs($__ns)] == 0} {
-				namespace import ${__ns}::*
-			    }
-			}
-			foreach __cmd [info commands] {
-			    set __localIgnoreCmds($__cmd) 1
-			}
-			
-			# load the files that make up the package
-
-			package provide $pkg $version
-			foreach __fileInfo $files {
-			    set __f [lindex $__fileInfo 0]
-			    set __type [lindex $__fileInfo 1]
-			    if {$__type == "load"} {
-				load [file join $dir $__f] $pkg
-			    } else {
-				source [file join $dir $__f]
-			    }
-			}
-
-			# packages and commands that were defined by these
-			# files are to be ignored.
-
-			foreach __p [package names] {
-			    if {[info exists __localIgnorePkgs($__p)] == 0} {
-				set ::__ignorePkgs($__p) 1
-			    }
-			}
-			foreach __ns [__pkgGetAllNamespaces] {
-			    if {([info exists __localIgnoreNs($__ns)] == 0) \
-				&& ([info exists ::__ignoreNs($__ns)] == 0)} {
-				namespace import ${__ns}::*
-				set ::__ignoreNs($__ns) 1
-			    }
-			}
-			foreach __cmd [info commands] {
-			    if {[info exists __localIgnoreCmds($__cmd)] == 0} {
-				lappend ::__ignoreCmds $__cmd
-			    }
-			}
-		    }
-
-		    # we need to track command defined by each package even in
-		    # the -direct case, because they are needed internally by
-		    # the "partial pkgIndex.tcl" step above.
-
-		    proc __pkgGetAllNamespaces {{root {}}} {
-			set __list $root
-			foreach __ns [namespace children $root] {
-			    eval lappend __list [__pkgGetAllNamespaces $__ns]
-			}
-			return $__list
-		    }
-
-		    # initialize the list of packages to ignore; these are
-		    # packages that are present before the script/dll is loaded
-
-		    set ::__ignorePkgs(Tcl) 1
-		    set ::__ignorePkgs(Tk) 1
-		    foreach __pkg [package names] {
-			set ::__ignorePkgs($__pkg) 1
-		    }
-
-		    # before marking the original commands, import all the
-		    # namespaces that may have been loaded from the parent;
-		    # these namespaces and their commands are to be ignored
-
-		    foreach __ns [__pkgGetAllNamespaces] {
-			set ::__ignoreNs($__ns) 1
-			namespace import ${__ns}::*
-		    }
-
-		    set ::__ignoreCmds [info commands]
-
-		    set dir ""		;# in case file is pkgIndex.tcl
-
-		    # Try to load the file if it has the shared library
-		    # extension, otherwise source it.  It's important not to
-		    # try to load files that aren't shared libraries, because
-		    # on some systems (like SunOS) the loader will abort the
-		    # whole application when it gets an error.
-
-		    set __pkgs {}
-		    set __providedPkgs {}
-		    if {[pkg_compareExtension $__file [info sharedlibextension]]} {
-			# The "file join ." command below is necessary.
-			# Without it, if the file name has no \'s and we're
-			# on UNIX, the load command will invoke the
-			# LD_LIBRARY_PATH search mechanism, which could cause
-			# the wrong file to be used.
-
-			set __doingWhat loading
-			load [file join . $__file]
-			set __type load
-		    } else {
-			set __doingWhat sourcing
-			source $__file
-			set __type source
-		    }
-
-		    # Using __ variable names to avoid potential namespaces
-		    # clash, even here in post processing because the
-		    # loaded package could have set up traces,...
-
-		    foreach __ns [__pkgGetAllNamespaces] {
-			if {[info exists ::__ignoreNs($__ns)] == 0} {
-			    namespace import ${__ns}::*
-			}
-		    }
-		    foreach __i [info commands] {
-			set __cmds($__i) 1
-		    }
-		    foreach __i $::__ignoreCmds {
-			catch {unset __cmds($__i)}
-		    }
-		    foreach __i [array names __cmds] {
-			# reverse engineer which namespace a command comes from
-			
-			set __absolute [namespace origin $__i]
-
-			# special case so that global names have no leading
-			# ::, this is required by the unknown command
-
-			set __absolute [auto_qualify $__absolute ::]
-
-			if {[string compare $__i $__absolute] != 0} {
-			    set __cmds($__absolute) 1
-			    unset __cmds($__i)
-			}
-
-			# final check, to support packages spread over
-			# multiple files: if the new command is in the
-			# namespace of an ignored package, de-ignore it.
-
-			regsub {^::} [namespace qualifiers $__absolute] {} __qual
-			if {[info exists ::__ignorePkgs($__qual)]} {
-			    unset ::__ignorePkgs($__qual)
-			}
-		    }
-
-		    foreach __i $::__providedPkgs {
-			lappend __pkgs [list $__i [package provide $__i]]
-			set __ignorePkgs($__i) 1
-		    }
-		    foreach __i [package names] {
-			if {([string compare [package provide $__i] ""] != 0) \
-				&& ([info exists ::__ignorePkgs($__i)] == 0)} {
-			    lappend __pkgs [list $__i [package provide $__i]]
-			}
-		    }
-		}
-	    } msg] == 1} {
-		set what [$c eval set __doingWhat]
-		if {$doVerbose} {
-		    tclLog "warning: error while $what $file: $msg\nthis file will be retried in the next pass"
-		}
-	    } else {
-		set type [$c eval set __type]
-		set cmds [lsort [$c eval array names __cmds]]
-		set pkgs [$c eval set __pkgs]
-		if {[llength $pkgs] > 1} {
-		    tclLog "warning: \"$file\" provides more than one package ($pkgs)"
-		}
-		foreach pkg $pkgs {
-		    # cmds is empty/not used in the direct case
-		    lappend files($pkg) [list $file $type $cmds]
-		}
-
-		incr processed
-		unset toProcess($file)
-
-		if {$doVerbose} {
-		    tclLog "processed $file"
-		}
-	    }
-	    interp delete $c
+	if {[string compare $file "pkgIndex.tcl"] == 0} {
+	    continue
 	}
 
-	if {$processed == 0} {
-	    tclLog "this iteration could not process any files: giving up here"
-	    break
+	set c [interp create]
+
+	# Load into the child all packages currently loaded in the parent
+	# interpreter, in case the extension depends on some of them.
+
+	foreach pkg [info loaded] {
+	    if {[lindex $pkg 1] == "Tk"} {
+		$c eval {set argv {-geometry +0+0}}
+	    }
+	    load [lindex $pkg 0] [lindex $pkg 1] $c
 	}
+
+	$c eval {
+	    # Stub out the package command so packages can
+	    # require other packages.
+
+	    rename package __package_orig
+	    proc package {what args} {
+		switch -- $what {
+		    require { return ; # ignore transitive requires }
+		    default { eval __package_orig {$what} $args }
+		}
+	    }
+	    proc tclPkgUnknown args {}
+	    package unknown tclPkgUnknown
+
+	    # Stub out the unknown command so package can call
+	    # into each other during their initialilzation.
+
+	    proc unknown {args} {}
+
+	    # Stub out the auto_import mechanism
+
+	    proc auto_import {args} {}
+
+	    # reserve the ::tcl namespace for support procs
+	    # and temporary variables.  This might make it awkward
+	    # to generate a pkgIndex.tcl file for the ::tcl namespace.
+
+	    namespace eval ::tcl {
+		variable file		;# Current file being processed
+		variable direct		;# -direct flag value
+		variable x		;# Loop variable
+		variable debug		;# For debugging
+		variable type		;# "load" or "source", for -direct
+		variable namespaces	;# Existing namespaces (e.g., ::tcl)
+		variable packages	;# Existing packages (e.g., Tcl)
+		variable origCmds	;# Existing commands
+		variable newCmds	;# Newly created commands
+		variable newPkgs {}	;# Newly created packages
+	    }
+	}
+
+	$c eval [list set ::tcl::file $file]
+	$c eval [list set ::tcl::direct $direct]
+	if {[catch {
+	    $c eval {
+		set ::tcl::debug "loading or sourcing"
+
+		# we need to track command defined by each package even in
+		# the -direct case, because they are needed internally by
+		# the "partial pkgIndex.tcl" step above.
+
+		proc ::tcl::GetAllNamespaces {{root ::}} {
+		    set list $root
+		    foreach ns [namespace children $root] {
+			eval lappend list [::tcl::GetAllNamespaces $ns]
+		    }
+		    return $list
+		}
+
+		# initialize the list of existing namespaces, packages, commands
+
+		foreach ::tcl::x [::tcl::GetAllNamespaces] {
+		    set ::tcl::namespaces($::tcl::x) 1
+		}
+		foreach ::tcl::x [package names] {
+		    set ::tcl::packages($::tcl::x) 1
+		}
+		set ::tcl::origCmds [info commands]
+
+		# Try to load the file if it has the shared library
+		# extension, otherwise source it.  It's important not to
+		# try to load files that aren't shared libraries, because
+		# on some systems (like SunOS) the loader will abort the
+		# whole application when it gets an error.
+
+		if {[pkg_compareExtension $::tcl::file [info sharedlibextension]]} {
+		    # The "file join ." command below is necessary.
+		    # Without it, if the file name has no \'s and we're
+		    # on UNIX, the load command will invoke the
+		    # LD_LIBRARY_PATH search mechanism, which could cause
+		    # the wrong file to be used.
+
+		    set ::tcl::debug loading
+		    load [file join . $::tcl::file]
+		    set ::tcl::type load
+		} else {
+		    set ::tcl::debug sourcing
+		    source $::tcl::file
+		    set ::tcl::type source
+		}
+
+		# See what new namespaces appeared, and import commands
+		# from them.  Only exported commands go into the index.
+
+		foreach ::tcl::x [::tcl::GetAllNamespaces] {
+		    if {! [info exists ::tcl::namespaces($::tcl::x)]} {
+			namespace import ${::tcl::x}::*
+		    }
+		}
+
+		# Figure out what commands appeared
+
+		foreach ::tcl::x [info commands] {
+		    set ::tcl::newCmds($::tcl::x) 1
+		}
+		foreach ::tcl::x $::tcl::origCmds {
+		    catch {unset ::tcl::newCmds($::tcl::x)}
+		}
+		foreach ::tcl::x [array names ::tcl::newCmds] {
+		    # reverse engineer which namespace a command comes from
+		    
+		    set ::tcl::abs [namespace origin $::tcl::x]
+
+		    # special case so that global names have no leading
+		    # ::, this is required by the unknown command
+
+		    set ::tcl::abs [auto_qualify $::tcl::abs ::]
+
+		    if {[string compare $::tcl::x $::tcl::abs] != 0} {
+			# Name changed during qualification
+
+			set ::tcl::newCmds($::tcl::abs) 1
+			unset ::tcl::newCmds($::tcl::x)
+		    }
+		}
+
+		# Look through the packages that appeared, and if there is
+		# a version provided, then record it
+
+		foreach ::tcl::x [package names] {
+		    if {([string compare [package provide $::tcl::x] ""] != 0) \
+			    && ![info exists ::tcl::packages($::tcl::x)]} {
+			lappend ::tcl::newPkgs \
+			    [list $::tcl::x [package provide $::tcl::x]]
+		    }
+		}
+	    }
+	} msg] == 1} {
+	    set what [$c eval set ::tcl::debug]
+	    if {$doVerbose} {
+		tclLog "warning: error while $what $file: $msg"
+	    }
+	} else {
+	    set type [$c eval set ::tcl::type]
+	    set cmds [lsort [$c eval array names ::tcl::newCmds]]
+	    set pkgs [$c eval set ::tcl::newPkgs]
+	    if {[llength $pkgs] > 1} {
+		tclLog "warning: \"$file\" provides more than one package ($pkgs)"
+	    }
+	    foreach pkg $pkgs {
+		# cmds is empty/not used in the direct case
+		lappend files($pkg) [list $file $type $cmds]
+	    }
+
+	    if {$doVerbose} {
+		tclLog "processed $file"
+	    }
+	}
+	interp delete $c
     }
 
     foreach pkg [lsort [array names files]] {

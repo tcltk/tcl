@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.30 1998/10/30 00:38:28 welch Exp $
+RCS: @(#) $Id: changes,v 1.31 1998/10/30 23:01:57 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3660,3 +3660,6 @@ Thanks to Donald Porter and Tom Silva for related patches. (BW)
 of Tcl_RegisterChannel so that 1) unregistered channels do not get
 closed after their first fileevent, and 2) errors that occur during
 close in a fileevent script are actually reflected by the close command. (BW)
+
+10/30/98 (bug fix) Overhaul of pkg_mkIndex to deal with transitive
+package requires and packages split among scripts and binary files. (BW)

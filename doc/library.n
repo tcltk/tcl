@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.4 1998/09/14 18:39:53 stanton Exp $
+'\" RCS: @(#) $Id: library.n,v 1.5 1998/10/30 23:02:02 welch Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -238,17 +238,24 @@ any commands.
 \fBauto_path\fR
 If set, then it must contain a valid Tcl list giving directories to
 search during auto-load operations.
+This variable is initialized during startup to contain, in order:
+the directories listed in the TCLLIBPATH environment variable,
+the directory named by the $tcl_library variable,
+the parent directory of $tcl_library,
+the directories listed in the $tcl_pkgPath variable.
 .TP
 \fBenv(TCL_LIBRARY)\fR
 If set, then it specifies the location of the directory containing
-library scripts (the value of this variable will be returned by
+library scripts (the value of this variable will be
+assigned to the \fBtcl_library\fR variable and therefore returned by
 the command \fBinfo library\fR).  If this variable isn't set then
 a default value is used.
 .TP
 \fBenv(TCLLIBPATH)\fR
 If set, then it must contain a valid Tcl list giving directories to
 search during auto-load operations.
-This variable is only used if \fBauto_path\fR is not defined.
+This variable is only used when
+initializing the \fBauto_path\fR variable.
 .TP
 \fBtcl_nonwordchars\fR
 .VS
