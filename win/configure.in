@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.21 2000/05/03 00:15:10 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.22 2000/05/18 22:19:17 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -134,13 +134,20 @@ AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(LDFLAGS_CONSOLE)
 AC_SUBST(LDFLAGS_WINDOW)
 AC_SUBST(AR)
+AC_SUBST(RANLIB)
 AC_SUBST(RC)
+AC_SUBST(RC_OUT)
+AC_SUBST(RC_TYPE)
+AC_SUBST(RC_INCLUDE)
+AC_SUBST(RES)
 AC_SUBST(DLLSUFFIX)
 AC_SUBST(LIBPREFIX)
 AC_SUBST(LIBSUFFIX)
 AC_SUBST(EXESUFFIX)
 AC_SUBST(LIBRARIES)
 AC_SUBST(MAKE_LIB)
+AC_SUBST(POST_MAKE_LIB)
 AC_SUBST(MAKE_DLL)
+AC_SUBST(MAKE_EXE)
 
 AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)

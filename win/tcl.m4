@@ -171,8 +171,27 @@ AC_DEFUN(SC_ENABLE_GCC, [
     AC_ARG_ENABLE(gcc, [  --enable-gcc            allow use of gcc if available [--disable-gcc]],
 	[ok=$enableval], [ok=no])
     if test "$ok" = "yes"; then
-	CC=gcc
-	AC_PROG_CC
+	# Quick hack to simulate a real cross check
+	# The right way to do this is to use AC_CHECK_TOOL
+	# correctly, but this is the minimal change
+	# we need until the real fix is ready.
+	if test "$host" != "$build" ; then
+	    if test -z "$CC"; then
+		CC=${host}-gcc
+	    fi
+	    AC_PROG_CC
+	    AC_CHECK_PROG(AR, ${host}-ar, ${host}-ar)
+	    AC_CHECK_PROG(RANLIB, ${host}-ranlib, ${host}-ranlib)
+	    AC_CHECK_PROG(RC, ${host}-windres, ${host}-windres)
+	else
+	    if test -z "$CC"; then
+		CC=gcc
+	    fi
+	    AC_PROG_CC
+	    AC_CHECK_PROG(AR, ar, ar)
+	    AC_CHECK_PROG(RANLIB, ranlib, ranlib)
+	    AC_CHECK_PROG(RC, windres, windres)
+    	fi
     else
 	# Allow user to override
 	if test -z "$CC"; then
@@ -364,10 +383,13 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_LD_LIBS=""
 	LIBS=""
 	LIBS_GUI="-lgdi32 -lcomdlg32"
-	AR="${AR-ar}"
-	STLIB_LD="${AR-ar}"
-	RC="${WINDRES-windres}"
-	MAKE_LIB="\${AR} crv \[$]@"
+	STLIB_LD="${AR}"
+	RC_OUT=-o
+	RC_TYPE=
+	RC_INCLUDE=--include
+	RES=res.o
+ 	MAKE_LIB="\${AR} crv \[$]@"
+	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
 
@@ -463,7 +485,12 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	AR="lib -nologo"
 	STLIB_LD="lib -nologo"
 	RC="rc"
+	RC_OUT=-fo
+	RC_TYPE=-r
+	RC_INCLUDE=-i
+	RES=res
 	MAKE_LIB="\${AR} -out:\[$]@"
+	POST_MAKE_LIB=
 	MAKE_EXE="\${CC} -Fe\[$]@"
 	LIBPREFIX=""
 
@@ -501,8 +528,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.
-	LDFLAGS_CONSOLE="-subsystem:console"
-	LDFLAGS_WINDOW="-subsystem:windows"
+	LDFLAGS_CONSOLE="-link -subsystem:console"
+	LDFLAGS_WINDOW="-link -subsystem:windows"
     fi
 ])
 
