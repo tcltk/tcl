@@ -1,3 +1,9 @@
+2003-10-13  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:
+	* tests/regexp.test: fix to [Bug 823524] in regsub; added three
+	new tests.
+
 2003-10-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixTest.c (TestalarmCmd): don't bother checking return
