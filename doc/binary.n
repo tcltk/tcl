@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.18 2004/05/24 23:31:42 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.19 2004/06/15 22:22:37 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -63,7 +63,7 @@ to just after the last byte stored.  The cursor is initially at
 position 0 at the beginning of the data.  The type may be any one of
 the following characters:
 .IP \fBa\fR 5
-Stores a character string of length \fIcount\fR in the output string.
+Stores a byte string of length \fIcount\fR in the output string.
 Every character is taken as modulo 256 (i.e. the low byte of every
 character is used, and the high byte discarded) so when storing
 character strings not wholly expressible using the characters \\u0000-\\u00ff,
@@ -80,7 +80,12 @@ formatted.  For example,
 .CS
 \fBbinary format a7a*a alpha bravo charlie\fR
 .CE
-will return a string equivalent to \fBalpha\\000\\000bravoc\fR.
+will return a string equivalent to \fBalpha\\000\\000bravoc\fR and
+.CS
+\fBbinary format a* [encoding convertto utf-8 \\u20ac]
+.CE
+will return a string equivalent to \fB\\342\\202\\254\fR (which is the
+UTF-8 byte sequence for a Euro-currency character).
 .RE
 .IP \fBA\fR 5
 This form is the same as \fBa\fR except that spaces are used for
@@ -434,11 +439,11 @@ reading bytes from the current position.  The cursor is initially
 at position 0 at the beginning of the data.  The type may be any one of
 the following characters:
 .IP \fBa\fR 5
-The data is a character string of length \fIcount\fR.  If \fIcount\fR
+The data is a byte string of length \fIcount\fR.  If \fIcount\fR
 is \fB*\fR, then all of the remaining bytes in \fIstring\fR will be
 scanned into the variable.  If \fIcount\fR is omitted, then one
-character will be scanned.
-All characters scanned will be interpreted as being in the
+byte will be scanned.
+All bytes scanned will be interpreted as being characters in the
 range \\u0000-\\u00ff so the \fBencoding convertfrom\fR command might be
 needed if the string is not an ISO 8859\-1 string.
 For example,
