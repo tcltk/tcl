@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.16.2.2 2003/11/17 18:12:09 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.16.2.3 2004/11/27 05:44:13 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -995,7 +995,7 @@ test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
     # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
 } {1 2 2 {}}
 
-test reg-32.1 {canmatch functionality -- at end} {
+test reg-32.1 {canmatch functionality -- at end} testregexp {
     set pat {blah}
     set line "asd asd"
     # can match at the final d, if '%' follows
@@ -1003,7 +1003,7 @@ test reg-32.1 {canmatch functionality -- at end} {
     lappend res $resvar
 } {0 7}
 
-test reg-32.2 {canmatch functionality -- at end} {
+test reg-32.2 {canmatch functionality -- at end} testregexp {
     set pat {s%$}
     set line "asd asd"
     # can only match after the end of the string
@@ -1011,7 +1011,7 @@ test reg-32.2 {canmatch functionality -- at end} {
     lappend res $resvar
 } {0 7}
 
-test reg-32.3 {canmatch functionality -- not last char} {
+test reg-32.3 {canmatch functionality -- not last char} testregexp {
     set pat {[^d]%$}
     set line "asd asd"
     # can only match after the end of the string
@@ -1019,7 +1019,7 @@ test reg-32.3 {canmatch functionality -- not last char} {
     lappend res $resvar
 } {0 7}
 
-test reg-32.3.1 {canmatch functionality -- no match} {
+test reg-32.3.1 {canmatch functionality -- no match} testregexp {
     set pat {\Zx}
     set line "asd asd"
     # can match the last char, if followed by x
