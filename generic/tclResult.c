@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.19 2004/10/21 17:07:32 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.20 2004/10/24 22:25:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1410,6 +1410,7 @@ TclGetReturnOptions(interp, result)
 	 * When result was an error, fill in any missing values
 	 * for -errorinfo, -errorcode, and -errorline
 	 */
+        Tcl_AddObjErrorInfo(interp, "", -1);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORCODE], iPtr->errorCode);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
@@ -1505,47 +1506,15 @@ TclTransferResult(sourceInterp, result, targetInterp)
 				 * should be stored.  If source and target
 				 * are the same, nothing is done. */
 {
-    Interp *siPtr = (Interp *) sourceInterp;
-    Interp *tiPtr = (Interp *) targetInterp;
+    Interp *iPtr = (Interp *) targetInterp;
 
     if (sourceInterp == targetInterp) {
 	return;
     }
 
-    if (result == TCL_ERROR) {
-	/*
-	 * An error occurred, so transfer error information from the source
-	 * interpreter to the target interpreter.  Setting the flags tells
-	 * the target interp that it has inherited a partial traceback
-	 * chain, not just a simple error message.
-	 */
-
-        if ((siPtr->flags & ERR_ALREADY_LOGGED) == 0) {
-            Tcl_AddErrorInfo(sourceInterp, "");
-        }
-        siPtr->flags &= ~(ERR_ALREADY_LOGGED);
-        
-        Tcl_ResetResult(targetInterp);
-        
-	if (siPtr->errorInfo) {
-	    tiPtr->errorInfo = siPtr->errorInfo;
-	    Tcl_IncrRefCount(tiPtr->errorInfo);
-	}
-
-	if (siPtr->errorCode) {
-	    Tcl_SetObjErrorCode(targetInterp, siPtr->errorCode);
-	}
-    }
-
-    /* This may need examination for safety */
-    if (tiPtr->returnOpts ) {
-	Tcl_DecrRefCount(tiPtr->returnOpts );
-    }
-    tiPtr->returnOpts = siPtr->returnOpts;
-    if (tiPtr->returnOpts ) {
-	Tcl_IncrRefCount(tiPtr->returnOpts );
-    }
-
+    TclSetReturnOptions(targetInterp,
+	    TclGetReturnOptions(sourceInterp, result));
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED);
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);
 }
