@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.40 2000/09/29 21:43:32 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.41 2000/10/31 01:20:09 davidg Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -419,7 +419,7 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl ${DEPARG} $(CC_OBJNAME)
 
 .rc.$(RES):
-	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" $(DEPARG)
+	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" $(DEPARG)
 
 install: all install-binaries install-libraries install-doc
 
