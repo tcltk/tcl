@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.15 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.16 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ FileCopyRename(interp, objc, objv, copyFlag)
 				 * rename them. */
 {
     int i, result, force;
-    struct stat statBuf; 
+    Tcl_StatBuf statBuf; 
     Tcl_Obj *target;
 
     i = FileForceOption(interp, objc - 2, objv + 2, &force);
@@ -229,7 +229,7 @@ TclFileMakeDirsCmd(interp, objc, objv)
     int result, i, j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
 
     errfile = NULL;
 
@@ -250,9 +250,9 @@ TclFileMakeDirsCmd(interp, objc, objv)
 	    target = Tcl_FSJoinPath(split, j + 1);
 	    Tcl_IncrRefCount(target);
 	    /*
-	     * Call Tcl_Stat() so that if target is a symlink that points
-	     * to a directory we will create subdirectories in that
-	     * directory.
+	     * Call Tcl_FSStat() so that if target is a symlink that
+	     * points to a directory we will create subdirectories in
+	     * that directory.
 	     */
 
 	    if (Tcl_FSStat(target, &statBuf) == 0) {
@@ -333,7 +333,7 @@ TclFileDeleteCmd(interp, objc, objv)
     result = TCL_OK;
 
     for ( ; i < objc; i++) {
-	struct stat statBuf;
+	Tcl_StatBuf statBuf;
 
 	errfile = objv[i];
 	if (Tcl_FSConvertToPathType(interp, objv[i]) != TCL_OK) {
@@ -448,7 +448,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 {
     int result;
     Tcl_Obj *errfile, *errorBuffer;
-    struct stat sourceStatBuf, targetStatBuf;
+    Tcl_StatBuf sourceStatBuf, targetStatBuf;
 
     if (Tcl_FSConvertToPathType(interp, source) != TCL_OK) {
 	return TCL_ERROR;

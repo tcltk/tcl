@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.51 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.52 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -92,8 +92,7 @@ static int		CopyAndTranslateBuffer _ANSI_ARGS_((
 				ChannelState *statePtr, char *result,
 				int space));
 static int		CopyBuffer _ANSI_ARGS_((
-				Channel *chanPtr, char *result,
-				int space));
+				Channel *chanPtr, char *result, int space));
 static int		CopyData _ANSI_ARGS_((CopyState *csPtr, int mask));
 static void		CopyEventProc _ANSI_ARGS_((ClientData clientData,
 				int mask));
@@ -130,8 +129,8 @@ static int		ReadBytes _ANSI_ARGS_((ChannelState *statePtr,
 				Tcl_Obj *objPtr, int charsLeft,
 				int *offsetPtr));
 static int		ReadChars _ANSI_ARGS_((ChannelState *statePtr,
-				Tcl_Obj *objPtr, int charsLeft, int *offsetPtr,
-				int *factorPtr));
+				Tcl_Obj *objPtr, int charsLeft,
+				int *offsetPtr, int *factorPtr));
 static void		RecycleBuffer _ANSI_ARGS_((ChannelState *statePtr,
 				ChannelBuffer *bufPtr, int mustDiscard));
 static int		StackSetBlockMode _ANSI_ARGS_((Channel *chanPtr,
@@ -140,11 +139,11 @@ static int		SetBlockMode _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int mode));
 static void		StopCopy _ANSI_ARGS_((CopyState *csPtr));
 static int		TranslateInputEOL _ANSI_ARGS_((ChannelState *statePtr,
-				char *dst, CONST char *src, int *dstLenPtr,
-				int *srcLenPtr));
+				char *dst, CONST char *src,
+				int *dstLenPtr, int *srcLenPtr));
 static int		TranslateOutputEOL _ANSI_ARGS_((ChannelState *statePtr,
-				char *dst, CONST char *src, int *dstLenPtr,
-				int *srcLenPtr));
+				char *dst, CONST char *src,
+				int *dstLenPtr, int *srcLenPtr));
 static void		UpdateInterest _ANSI_ARGS_((Channel *chanPtr));
 static int		WriteBytes _ANSI_ARGS_((Channel *chanPtr,
 				CONST char *src, int srcLen));
@@ -2954,7 +2953,7 @@ WriteBytes(chanPtr, src, srcLen)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
     char *dst;
-    int dstLen, dstMax, sawLF, savedLF, total, toWrite;
+    int dstMax, sawLF, savedLF, total, dstLen, toWrite;
     
     total = 0;
     sawLF = 0;
@@ -3042,8 +3041,8 @@ WriteChars(chanPtr, src, srcLen)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
     char *dst, *stage;
-    int saved, savedLF, sawLF, total, toWrite, flags;
-    int dstWrote, dstLen, stageLen, stageMax, stageRead;
+    int saved, savedLF, sawLF, total, flags, dstLen, stageMax, dstWrote;
+    int stageLen, toWrite, stageRead;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
     
@@ -3444,11 +3443,10 @@ Tcl_GetsObj(chan, objPtr)
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
-    int inEofChar, skip, copiedTotal;
+    int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
     Tcl_Encoding encoding;
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
-    int oldLength, oldFlags, oldRemoved;
 
     /*
      * This operation should occur at the top of a channel stack.
@@ -3686,8 +3684,9 @@ Tcl_GetsObj(chan, objPtr)
     statePtr->inputEncodingState = gs.state;
     Tcl_ExternalToUtf(NULL, gs.encoding, bufPtr->buf + bufPtr->nextRemoved,
 	    gs.rawRead, statePtr->inputEncodingFlags,
-	    &statePtr->inputEncodingState, dst, eol - dst + skip + TCL_UTF_MAX,
-	    &gs.rawRead, NULL, &gs.charsWrote);
+	    &statePtr->inputEncodingState, dst,
+	    eol - dst + skip + TCL_UTF_MAX, &gs.rawRead, NULL,
+	    &gs.charsWrote);
     bufPtr->nextRemoved += gs.rawRead;
 
     /*
@@ -4131,7 +4130,7 @@ Tcl_Read(chan, dst, bytesToRead)
 int
 Tcl_ReadRaw(chan, bufPtr, bytesToRead)
     Tcl_Channel chan;		/* The channel from which to read. */
-    char *bufPtr;			/* Where to store input read. */
+    char *bufPtr;		/* Where to store input read. */
     int bytesToRead;		/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;		
@@ -4464,7 +4463,7 @@ ReadBytes(statePtr, objPtr, bytesToRead, offsetPtr)
 				 * output, filled with how many bytes are now
 				 * being used. */
 {
-    int toRead, srcLen, srcRead, dstWrote, offset, length;
+    int toRead, srcLen, offset, length, srcRead, dstWrote;
     ChannelBuffer *bufPtr;
     char *src, *dst;
 
@@ -4572,8 +4571,8 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 				 * UTF-8.  On output, contains another guess
 				 * based on the data seen so far. */
 {
-    int toRead, factor, offset, spaceLeft, length;
-    int srcLen, srcRead, dstNeeded, dstRead, dstWrote, numChars;
+    int toRead, factor, offset, spaceLeft, length, srcLen, dstNeeded;
+    int srcRead, dstWrote, numChars, dstRead;
     ChannelBuffer *bufPtr;
     char *src, *dst;
     Tcl_EncodingState oldState;
@@ -4586,7 +4585,7 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
     srcLen = bufPtr->nextAdded - bufPtr->nextRemoved;
 
     toRead = charsToRead;
-    if ((unsigned) toRead > (unsigned) srcLen) {
+    if ((unsigned)toRead > (unsigned)srcLen) {
 	toRead = srcLen;
     }
 
@@ -5291,17 +5290,17 @@ GetInput(chanPtr)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Tcl_Seek(chan, offset, mode)
     Tcl_Channel chan;		/* The channel on which to seek. */
-    int offset;			/* Offset to seek to. */
+    Tcl_WideInt offset;		/* Offset to seek to. */
     int mode;			/* Relative to which location to seek? */
 {
     Channel *chanPtr = (Channel *) chan;	/* The real IO channel. */
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int inputBuffered, outputBuffered;
     int result;			/* Of device driver operations. */
-    int curPos;			/* Position on the device. */
+    Tcl_WideInt curPos;		/* Position on the device. */
     int wasAsync;		/* Was the channel nonblocking before the
                                  * seek operation? If so, must restore to
                                  * nonblocking mode after the seek. */
@@ -5410,7 +5409,7 @@ Tcl_Seek(chan, offset, mode)
          */
 
         curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-                (long) offset, mode, &result);
+		offset, mode, &result);
         if (curPos == -1) {
             Tcl_SetErrno(result);
         }
@@ -5453,7 +5452,7 @@ Tcl_Seek(chan, offset, mode)
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_WideInt
 Tcl_Tell(chan)
     Tcl_Channel chan;			/* The channel to return pos for. */
 {
@@ -5461,7 +5460,7 @@ Tcl_Tell(chan)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int inputBuffered, outputBuffered;
     int result;				/* Of calling device driver. */
-    int curPos;				/* Position on device. */
+    Tcl_WideInt curPos;			/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
 	return -1;
@@ -5513,7 +5512,7 @@ Tcl_Tell(chan)
      */
 
     curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-            (long) 0, SEEK_CUR, &result);
+	    Tcl_LongAsWide(0), SEEK_CUR, &result);
     if (curPos == -1) {
         Tcl_SetErrno(result);
         return -1;
@@ -5522,6 +5521,46 @@ Tcl_Tell(chan)
         return (curPos - inputBuffered);
     }
     return (curPos + outputBuffered);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_SeekOld, Tcl_TellOld --
+ *
+ *	Backward-compatability versions of the seek/tell interface that
+ *	do not support 64-bit offsets.
+ *
+ * Results:
+ *	As for Tcl_Seek and Tcl_Tell respectively.
+ *
+ * Side effects:
+ *	As for Tcl_Seek and Tcl_Tell respectively.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+Tcl_SeekOld(chan, offset, mode)
+    Tcl_Channel chan;		/* The channel on which to seek. */
+    int offset;			/* Offset to seek to. */
+    int mode;			/* Relative to which location to seek? */
+{
+    Tcl_WideInt wOffset, wResult;
+
+    wOffset = Tcl_LongAsWide((long)offset);
+    wResult = Tcl_Seek(chan, wOffset, mode);
+    return (int)Tcl_WideAsLong(wResult);
+}
+
+int
+Tcl_TellOld(chan)
+    Tcl_Channel chan;		/* The channel to return pos for. */
+{
+    Tcl_WideInt wResult;
+
+    wResult = Tcl_Tell(chan);
+    return (int)Tcl_WideAsLong(wResult);
 }
 
 /*
@@ -7378,14 +7417,10 @@ CopyData(csPtr, mask)
     int mask;			/* Current channel event flags. */
 {
     Tcl_Interp *interp;
-    Tcl_Obj *cmdPtr, *errObj = NULL;
+    Tcl_Obj *cmdPtr, *errObj = NULL, *bufObj = NULL;
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
-    int result = TCL_OK;
-    int size;
-    int total;
-    int sizeb;
-    Tcl_Obj* bufObj = NULL;
+    int result = TCL_OK, size, total, sizeb;
     char* buffer;
 
     int inBinary, outBinary, sameEncoding; /* Encoding control */

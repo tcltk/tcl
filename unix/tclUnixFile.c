@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.17 2002/02/12 14:26:05 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.18 2002/02/15 14:28:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -46,8 +46,7 @@ TclpFindExecutable(argv0)
 				 * (native). */
 {
     CONST char *name, *p;
-
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     int length;
     Tcl_DString buffer, nameString;
 
@@ -117,8 +116,8 @@ TclpFindExecutable(argv0)
 	 * strings directly.
 	 */
 
-	if ((access(name, X_OK) == 0)		/* INTL: Native. */
-		&& (stat(name, &statBuf) == 0)	/* INTL: Native. */
+	if ((access(name, X_OK) == 0)			   /* INTL: Native. */
+		&& (Tcl_PlatformStat(name, &statBuf) == 0) /* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
@@ -209,7 +208,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     CONST char *native, *fname, *dirName;
     DIR *d;
     Tcl_DString ds;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     int matchHidden;
     int nativeDirLen;
     int result = TCL_OK;
@@ -261,7 +260,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
     native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
 
-    if ((stat(native, &statBuf) != 0)		/* INTL: UTF-8. */
+    if ((Tcl_PlatformStat(native, &statBuf) != 0)	/* INTL: UTF-8. */
 	    || !S_ISDIR(statBuf.st_mode)) {
 	Tcl_DStringFree(&dsOrig);
 	Tcl_DStringFree(&ds);
@@ -299,9 +298,9 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     while (1) {
         Tcl_DString utfDs;
 	CONST char *utf;
-	struct dirent *entryPtr;
+	Tcl_DirEntry *entryPtr;
 	
-	entryPtr = readdir(d);				/* INTL: Native. */
+	entryPtr = Tcl_PlatformReaddir(d);		/* INTL: Native. */
 	if (entryPtr == NULL) {
 	    break;
 	}
@@ -334,7 +333,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringAppend(&dsOrig, utf, -1);
 	    fname = Tcl_DStringValue(&dsOrig);
 	    if (types != NULL) {
-		struct stat buf;
+		Tcl_StatBuf buf;
 		char *nativeEntry;
 		Tcl_DStringSetLength(&ds, nativeDirLen);
 		nativeEntry = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
@@ -344,7 +343,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		 */
 		
 		if (types->perm != 0) {
-		    if (stat(nativeEntry, &buf) != 0) {
+		    if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
 			/* 
 			 * Either the file has disappeared between the
 			 * 'readdir' call and the 'stat' call, or
@@ -379,7 +378,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		if (typeOk && (types->type != 0)) {
 		    if (types->perm == 0) {
 			/* We haven't yet done a stat on the file */
-			if (stat(nativeEntry, &buf) != 0) {
+			if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
 			    /* Posix error occurred */
 			    typeOk = 0;
 			}
@@ -408,12 +407,10 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			} else {
 			    typeOk = 0;
 #ifdef S_ISLNK
-			    if (types->type & TCL_GLOB_TYPE_LINK) {
-				if (lstat(nativeEntry, &buf) == 0) {
-				    if (S_ISLNK(buf.st_mode)) {
-				        typeOk = 1;
-				    }
-				}
+			    if ((types->type & TCL_GLOB_TYPE_LINK)
+				    && Tcl_PlatformLStat(nativeEntry, &buf)==0
+				    && S_ISLNK(buf.st_mode)) {
+				typeOk = 1;
 			    }
 #endif
 			}
@@ -554,13 +551,13 @@ TclpObjChdir(pathPtr)
 int 
 TclpObjLstat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
     CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
-	return lstat(path, bufPtr);
+	return Tcl_PlatformLStat(path, bufPtr);
     }
 }
 
@@ -690,13 +687,13 @@ TclpReadlink(path, linkPtr)
 int 
 TclpObjStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
     CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
-	return stat(path, bufPtr);
+	return Tcl_PlatformStat(path, bufPtr);
     }
 }
 
@@ -740,6 +737,3 @@ TclpObjLink(pathPtr, toPtr)
 }
 
 #endif
-
-
-

@@ -254,13 +254,17 @@ if test -r CrtObjCmd.3; then
     rm -f Tcl_DeleteCommand.3
     rm -f Tcl_DeleteCommandFromToken.3
     rm -f Tcl_GetCommandInfo.3
+    rm -f Tcl_GetCommandInfoFromToken.3
     rm -f Tcl_SetCommandInfo.3
+    rm -f Tcl_SetCommandInfoFromToken.3
     rm -f Tcl_GetCommandName.3
     ln CrtObjCmd.3 Tcl_CreateObjCommand.3
     ln CrtObjCmd.3 Tcl_DeleteCommand.3
     ln CrtObjCmd.3 Tcl_DeleteCommandFromToken.3
     ln CrtObjCmd.3 Tcl_GetCommandInfo.3
+    ln CrtObjCmd.3 Tcl_GetCommandInfoFromToken.3
     ln CrtObjCmd.3 Tcl_SetCommandInfo.3
+    ln CrtObjCmd.3 Tcl_SetCommandInfoFromToken.3
     ln CrtObjCmd.3 Tcl_GetCommandName.3
 fi
 if test -r CrtSlave.3; then
@@ -297,8 +301,10 @@ if test -r CrtTimerHdlr.3; then
 fi
 if test -r CrtTrace.3; then
     rm -f Tcl_CreateTrace.3
+    rm -f Tcl_CreateObjTrace.3
     rm -f Tcl_DeleteTrace.3
     ln CrtTrace.3 Tcl_CreateTrace.3
+    ln CrtTrace.3 Tcl_CreateObjTrace.3
     ln CrtTrace.3 Tcl_DeleteTrace.3
 fi
 if test -r DString.3; then
@@ -494,6 +500,7 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSNewNativePath.3
     rm -f Tcl_FSGetNativePath.3
     rm -f Tcl_FSFileSystemInfo.3
+    rm -f Tcl_AllocStatBuf.3
     ln FileSystem.3 Tcl_FSRegister.3
     ln FileSystem.3 Tcl_FSUnregister.3
     ln FileSystem.3 Tcl_FSData.3
@@ -534,6 +541,7 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSNewNativePath.3
     ln FileSystem.3 Tcl_FSGetNativePath.3
     ln FileSystem.3 Tcl_FSFileSystemInfo.3
+    ln FileSystem.3 Tcl_AllocStatBuf.3
 fi
 if test -r FindExec.3; then
     rm -f Tcl_FindExecutable.3
@@ -622,16 +630,22 @@ fi
 if test -r IntObj.3; then
     rm -f Tcl_NewIntObj.3
     rm -f Tcl_NewLongObj.3
+    rm -f Tcl_NewWideIntObj.3
     rm -f Tcl_SetIntObj.3
     rm -f Tcl_SetLongObj.3
+    rm -f Tcl_SetWideIntObj.3
     rm -f Tcl_GetIntFromObj.3
     rm -f Tcl_GetLongFromObj.3
+    rm -f Tcl_GetWideIntFromObj.3
     ln IntObj.3 Tcl_NewIntObj.3
     ln IntObj.3 Tcl_NewLongObj.3
+    ln IntObj.3 Tcl_NewWideIntObj.3
     ln IntObj.3 Tcl_SetIntObj.3
     ln IntObj.3 Tcl_SetLongObj.3
+    ln IntObj.3 Tcl_SetWideIntObj.3
     ln IntObj.3 Tcl_GetIntFromObj.3
     ln IntObj.3 Tcl_GetLongFromObj.3
+    ln IntObj.3 Tcl_GetWideIntFromObj.3
 fi
 if test -r Interp.3; then
     rm -f Tcl_Interp.3

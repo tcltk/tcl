@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.12 2002/01/27 11:09:38 das Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.13 2002/02/15 14:28:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -109,8 +109,8 @@ static int		FileInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCode));
 static int		FileOutput _ANSI_ARGS_((ClientData instanceData,
 			    CONST char *buf, int toWrite, int *errorCode));
-static int		FileSeek _ANSI_ARGS_((ClientData instanceData,
-			    long offset, int mode, int *errorCode));
+static Tcl_WideInt	FileSeek _ANSI_ARGS_((ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
 static int		GetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
@@ -125,8 +125,8 @@ static int		StdIOInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCode));
 static int		StdIOOutput _ANSI_ARGS_((ClientData instanceData,
 			    CONST char *buf, int toWrite, int *errorCode));
-static int		StdIOSeek _ANSI_ARGS_((ClientData instanceData,
-			    long offset, int mode, int *errorCode));
+static Tcl_WideInt	StdIOSeek _ANSI_ARGS_((ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode));
 static int		StdReady _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 
@@ -584,13 +584,12 @@ StdIOOutput(
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 StdIOSeek(
-    ClientData instanceData,			/* Unused. */
-    long offset,				/* Offset to seek to. */
-    int mode,					/* Relative to where
-                                                 * should we seek? */
-    int *errorCodePtr)				/* To store error code. */
+    ClientData instanceData,	/* Unused. */
+    Tcl_WideInt offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     int newLoc;
     int fd;
@@ -1126,13 +1125,12 @@ FileOutput(
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_WideInt
 FileSeek(
     ClientData instanceData,	/* Unused. */
-    long offset,				/* Offset to seek to. */
-    int mode,					/* Relative to where
-                                 * should we seek? */
-    int *errorCodePtr)			/* To store error code. */
+    Tcl_WideInt offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     FileState *fileState = (FileState *) instanceData;
     IOParam pb;
