@@ -1,3 +1,8 @@
+1998-12-08    <stanton@GASPODE>
+
+	* library/msgcat1.0/msgcat.tcl: changed mc to invoke mcunknown in
+	the calling context, changed locale lookups to be case insensitive
+
 1998-12-07    <stanton@GASPODE>
 
 	* generic/tclAlloc.c (TclpRealloc): Fixed a memory allocation bug
