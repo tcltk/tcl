@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.115 2004/09/21 22:45:40 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.116 2004/09/24 01:14:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3644,6 +3644,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	}
 	Tcl_LogCommandInfo(interp, script, parse.commandStart, commandLength);
     }
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
     
     for (i = 0; i < objectsUsed; i++) {
 	Tcl_DecrRefCount(objv[i]);

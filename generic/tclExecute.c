@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.152 2004/09/22 15:48:22 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.153 2004/09/24 01:14:42 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -4829,6 +4829,7 @@ TclExecuteByteCode(interp, codePtr)
 		CACHE_STACK_INFO();
 	    }
 	}
+	iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
 	/*
 	 * Clear all expansions that may have started after the last
