@@ -1,0 +1,182 @@
+'\"
+'\" Copyright (c) 1998 Mark Harrison.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" SCCS: @(#) msgcat.n
+'\" 
+.so man.macros
+.TH "msgcat" n 8.1 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+msgcat \- Tcl Message Catalog
+.SH SYNOPSIS
+\fB::msgcat::mc src-string\fR
+.sp
+\fB::msgcat::mclocale \fR?\fInewLocale\fR?
+.sp
+\fB::msgcat::mcpreferences\fR
+.sp
+\fB::msgcat::mcload \fIdirname\fR
+.sp
+\fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
+.sp
+\fB::msgcat::mcunknown \fIlocale src-string\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBmsgcat\fR package provides a set of functions
+that can be used to manage multi-lingual user interfaces.
+Text strings are defined in a ``message catalog'' which
+is independent from the application, and
+which can be edited or localized without modifying
+the application source code.  New languages
+or locales are provided by adding a new file to
+the message catalog.
+.PP
+Use of the message catalog is optional by any application
+or package, but is encouraged if the application or package
+wishes to be enabled for multi-lingual applications.
+.SH COMMANDS
+.TP
+\fB::msgcat::mc src-string\fR
+Returns a translation of \fIsrc-string\fR according to the
+user's current locale.  If no translation string
+exists, \fB::msgcat::mcunknown\fR is called.  The string
+returned from \fB::msgcat::mcunknown\fR is returned.
+.TP
+\fB::msgcat::mclocale \fR?\fInewLocale\fR?
+The locale defaults to the locale specified in the
+user's environment.  This function sets the locale
+to \fInewLocale\fR.  If \fInewLocale\fR is omitted, the
+current locale is returned.
+.TP
+\fB::msgcat::mcpreferences\fR
+Returns an ordered list of the locales preferred by
+the user, based on the user's language specification.
+The list is ordered from most specific to least
+preference.  If the user has specified LANG=en_US_funky,
+this procedure would return {en_US_funky en_US en}.
+.TP
+\fB::msgcat::mcload \fIdirname\fR
+Searches the specified directory for files which match
+the language specifications returned by mcpreferences.
+Each file located is sourced.  The file extension is ``.msg''.
+.TP
+\fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
+Sets the translation for \fIsrc-string\fR to \fItranlate-string\fR
+in the specified \fIlocale\fR.  If \fItranslate-string\fR is not
+specified, \fIsrc-string\fR is used for both.
+.TP
+\fB::msgcat::mcunknown \fIlocale src-string\fR
+This routine is called by \fB::msgcat::mc\fR in the case when
+a translation for \fIsrc-string\fR is not defined in the
+current locale.  The default action is to return
+\fIsrc-string\fR.  This command can be redefined by the
+application.
+.SH "LOCALE AND SUBLOCALE SPECIFICATION"
+.PP
+The locale is specified by a locale string.
+The locale string consists of
+a language code, an optional country code, and an optional
+system-specific code, each separated by ``_''.  The country and language
+codes are specified in standards ISO-639 and ISO-3166.
+For example, the locale ``en'' specifies English and
+ ``en_US'' specifes  U.S. English.
+.PP
+The locale defaults to the value in env(LANG) at the time the
+\fBmsgcat\fR package is loaded.  If env(LANG) is not defined, then the
+locale defaults to ``C''.
+.PP
+When a locale is specified by the user, a ``best match''
+search is performed.  If a user specifies en_UK_Funky, the
+locales ``en_UK_Funky'', ``en_UK'', and ``en'' are searched
+in order.
+.SH "NAMESPACES AND MESSAGE CATALOGS"
+.PP
+Strings stored in the message catalog are stored relative
+to the namespace from which they were added.  This allows
+multiple packages to use the same strings without fear
+of collisions with other packages.  It also allows the
+source string to be shorter and less prone to typographical
+error.
+.PP
+For example, executing the code
+.CS
+mcset EN hello "hello from ::"
+namespace eval foo {mcset EN hello "hello from ::foo"}
+puts [mc hello]
+namespace eval foo {puts [mc hello]}
+.CE
+will print
+.CS
+hello from ::
+hello from ::foo
+.CE
+.SH "LOCATION AND FORMAT OF MESSAGE FILES"
+.PP
+Message files can be located in any directory, subject
+to the following conditions:
+.IP [1]
+All message files for a package are in the same directory.
+.IP [2]
+The message file name is a locale specifier followed
+by ``.msg''.  For example:
+.CS
+es.msg    -- spanish
+en_UK.msg -- UK English
+.CE
+.IP [3]
+The file contains a series of calls to mcset, setting the
+necessary translation strings for the language. For example:
+.CS
+::msgcat::mcset es "Free Beer!" "Cerveza Gracias!"
+.CE
+.SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
+.PP
+If a package is installed into a subdirectory of the
+tcl_pkgPath and loaded via ``package require'', the
+following procedure is recommended.
+.IP [1]
+During package installation, create a subdirectory
+\fBlang\fR under your package directory.
+.IP [2]
+Copy your *.msg files into that directory.
+.IP [3]
+ Add the following command to your package
+initialization script:
+.CS
+# load language files, stored in lang subdirectory
+::msgcat::mcloadmsgs [file join [file dirname [info script]] lang]
+.CE
+.SH "POSTITIONAL CODES FOR FORMAT AND SCAN COMMANDS"
+.PP
+It is possible that a message string used as an argument
+to \fBformat\fR might have positionally dependent parameters which
+might need to be repositioned.  For example, it might be
+syntactically desirable to rearrange the sentence structure
+while translating.
+.CS
+format "We produced %d units in location %s" $num $city
+format "In location %s we produced %d units" $city $num
+.CE
+.PP
+This can be handled by using the positional
+parameters:
+.CS
+format "We produced %1\\\\$d units in location %2\\\\$s" $num $city
+format "In location %2\\\\$s we produced %1\\\\$d units" $num $city
+.CE
+.PP
+Similarly, positional parameters can be used with \fBscan\fR to
+extract values from internationalized strings.
+.SH "SEE ALSO"
+format(n), scan(n), namespace(n), package(n)
+.SH CREDITS
+.PP
+The message catalog code was developed by Mark Harrison.
+.SH KEYWORDS
+internationalization i18n message text translation
