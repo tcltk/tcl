@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: bgerror.n,v 1.2.18.2 2001/08/06 22:24:11 andreas_kupries Exp $
+'\" RCS: @(#) $Id: bgerror.n,v 1.2.18.3 2001/10/09 19:04:01 hobbs Exp $
 '\" 
 .so man.macros
 .TH bgerror n 7.5 Tcl "Tcl Built-In Commands"
@@ -59,7 +59,19 @@ calling \fBbgerror\fR.
 Tcl has no default implementation for \fBbgerror\fR. However, in
 applications using Tk there is a default \fBbgerror\fR procedure which
 posts a dialog box containing the error message and offers the user a
-chance to see a stack trace showing where the error occurred.
+chance to see a stack trace showing where the error occurred.  In
+addition to allowing the user to view the stack trace, the dialog
+provides an additional application configurable button which may be
+used, for example, to save the stack trace to a file.  By default,
+this is the behavior associated with that button.  This behavior can
+be redefined by setting the option database values
+\fB*ErrorDialog.function.text\fR, to specify the caption for the
+function button, and \fB*ErrorDialog.function.command\fR, to specify
+the command to be run.  The text of the stack trace is appended to the
+command when it is evaluated.  If either of these options is set to
+the empty string, then the additional button will not be displayed in
+the dialog.
+
 .SH "SEE ALSO"
 after(n), tclvars(n)
 
