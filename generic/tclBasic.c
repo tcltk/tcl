@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.51 2002/03/22 22:54:35 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.52 2002/03/24 19:05:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3084,18 +3084,23 @@ Tcl_EvalObjv(interp, objc, objv, flags)
     Interp *iPtr = (Interp *)interp;
     Trace *tracePtr;
     Tcl_DString cmdBuf;
-    char *cmdString = "";
-    int cmdLen = 0;
+    char *cmdString = "";	/* A command string is only necessary for
+				 * command traces or error logs; it will be
+				 * generated to replace this default value if
+				 * necessary. */
+    int cmdLen = 0;		/* a non-zero value indicates that a command
+				 * string was generated. */
     int code = TCL_OK;
+    int i;
 
     for (tracePtr = iPtr->tracePtr; tracePtr; tracePtr = tracePtr->nextPtr) {
 	if (iPtr->numLevels <= tracePtr->level) {
-	    int i;
+
 	    /*
-	     * The command will be needed for an execution trace or stack trace
-	     * generate a command string.
+	     * The command may be needed for an execution trace.  Generate a
+	     * command string.
 	     */
-	cmdtraced:
+	    
 	    Tcl_DStringInit(&cmdBuf);
 	    for (i = 0; i < objc; i++) {
 		Tcl_DStringAppendElement(&cmdBuf, Tcl_GetString(objv[i]));
@@ -3106,27 +3111,29 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 	}
     }
 
-    /*
-     * Execute the command if we have not done so already
-     */
-    switch (code) {
-	case TCL_OK:
-	    if (TclInterpReady(interp) == TCL_ERROR) {
-		code = TCL_ERROR;
-	    } else {
-		iPtr->numLevels++;
-		code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen, flags);
-		iPtr->numLevels--;
+    code = TclInterpReady(interp);
+    if (code == TCL_OK) {
+	iPtr->numLevels++;
+	code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen,
+		flags);
+	iPtr->numLevels--;
+    }
+    if (code == TCL_ERROR) {
+
+	/* 
+	 * If there was an error, a command string will be needed for the 
+	 * error log: generate it now if it was not done previously.
+	 */
+
+	if (cmdLen == 0) {
+	    Tcl_DStringInit(&cmdBuf);
+	    for (i = 0; i < objc; i++) {
+		Tcl_DStringAppendElement(&cmdBuf, Tcl_GetString(objv[i]));
 	    }
-	    if (code == TCL_ERROR && cmdLen == 0)
-		goto cmdtraced;
-	    break;
-	case TCL_ERROR:
-	    Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
-	    break;
-	default:
-	    /*NOTREACHED*/
-	    break;
+	    cmdString = Tcl_DStringValue(&cmdBuf);
+	    cmdLen = Tcl_DStringLength(&cmdBuf);
+	}
+	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
     }
 
     if (cmdLen != 0) {
