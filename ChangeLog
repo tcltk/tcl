@@ -1,3 +1,8 @@
+2001-04-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure:
+	* win/tcl.m4 (SHLIB_LD):  added -incremental:no. [Bug #219381]
+
 2001-04-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:
