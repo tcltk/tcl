@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.28 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.29 2004/05/25 18:46:53 kennykb Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -61,20 +61,11 @@ if {[string equal $tcl_platform(platform) "windows"]} {
 # find a CD-ROM so we can test read-only filesystems.
 
 set cdrom {}
-set nodrive x:
-foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
-    set name ${p}:/dummy~~.fil
-    if [catch {set fd [open $name w]}] {
-	set err [lindex $errorCode 1]
-        if {$cdrom == "" && $err == "EACCES"} {
-	    set cdrom ${p}:
-	}
-	if {$err == "ENOENT"} {
-	    set nodrive ${p}:
-	}
-    } else {
-        close $fd
-	file delete $name
+if { [info commands ::testvolumetype] ne {} } {
+    foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
+        if { ! [catch { testvolumetype ${p}: } result] && $result eq {CDFS} } {
+            set cdrom ${p}:
+        }
     }
 }
 
