@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.60 2001/01/31 22:27:53 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.61 2001/08/16 11:01:23 davygrvy Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -529,7 +529,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
     $(cc32) -DBUILD_tcl $(TCL_CFLAGS) -Fo$(TMPDIR)\ $<
 
 {$(WINDIR)}.rc{$(TMPDIR)}.res:
-	$(rc32) -fo $@ -r -i $(GENERICDIR) -i $(WINDIR) -D__WIN32__ \
+	$(rc32) -fo $@ -r -i $(GENERICDIR) $(include32) -D__WIN32__ \
 		$(TCL_DEFINES) \
 !if "$(NODEBUG)" == "0"
 		-d DEBUG \
