@@ -36,13 +36,6 @@ static pthread_mutex_t masterLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
- * allocLock is used to serialize memory allocation.
- */
-
-static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER; 
-TCL_DECLARE_MUTEX(allocMutex)
-
-/*
  * These are for the critical sections inside this file.
  */
 
@@ -52,34 +45,6 @@ TCL_DECLARE_MUTEX(allocMutex)
 #endif /* TCL_THREADS */
 
 
-/*
- *----------------------------------------------------------------------
- *
- * TclpMutexBootstrap --
- *
- *	This procedure gives out a pointer to a pre-allocated mutex.
- *	This is used by memory allocators for their own mutex.
- * 
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Mutex *
-TclpMutexBootstrap()
-{
-#ifdef TCL_THREADS
-    pthread_mutex_init(&allocLock, NULL);
-    allocMutex = (Tcl_Mutex)&allocLock;
-    return &allocMutex;
-#else
-    return NULL;
-#endif
-}
 
 #ifdef TCL_THREADS
 
