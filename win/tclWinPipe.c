@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.5 1998/12/12 01:37:05 lfb Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.6 1999/02/26 02:19:24 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -206,7 +206,6 @@ static void		BuildCommandLine(const char *executable, int argc,
 			    char **argv, Tcl_DString *linePtr);
 static void		CopyChannel(HANDLE dst, HANDLE src);
 static BOOL		HasConsole(void);
-static TclFile		MakeFile(HANDLE handle);
 static char *		MakeTempFile(Tcl_DString *namePtr);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
 static void		PipeCheckProc(ClientData clientData, int flags);
@@ -268,13 +267,21 @@ static void
 PipeInit()
 {
     ThreadSpecificData *tsdPtr;
-    Tcl_MutexLock(&procMutex);
+
+    /*
+     * Check the initialized flag first, then check again in the mutex.
+     * This is a speed enhancement.
+     */
+
     if (!initialized) {
-	initialized = 1;
-	procList = NULL;
-	Tcl_CreateExitHandler(ProcExitHandler, NULL);
+	Tcl_MutexLock(&procMutex);
+	if (!initialized) {
+	    initialized = 1;
+	    procList = NULL;
+	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
+	}
+	Tcl_MutexUnlock(&procMutex);
     }
-    Tcl_MutexUnlock(&procMutex);
 
     tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
     if (tsdPtr == NULL) {
@@ -307,7 +314,6 @@ PipeExitHandler(
     ClientData clientData)	/* Old window proc */
 {
     Tcl_DeleteEventSource(PipeSetupProc, PipeCheckProc, NULL);
-    initialized = 0;
 }
 
 /*
@@ -473,7 +479,7 @@ PipeCheckProc(
 /*
  *----------------------------------------------------------------------
  *
- * MakeFile --
+ * TclWinMakeFile --
  *
  *	This function constructs a new TclFile from a given data and
  *	type value.
@@ -487,8 +493,8 @@ PipeCheckProc(
  *----------------------------------------------------------------------
  */
 
-static TclFile
-MakeFile(
+TclFile
+TclWinMakeFile(
     HANDLE handle)		/* Type-specific data. */
 {
     WinFile *filePtr;
@@ -571,7 +577,7 @@ TclpMakeFile(channel, direction)
 
     if (Tcl_GetChannelHandle(channel, direction, 
 	    (ClientData *) &handle) == TCL_OK) {
-	return MakeFile(handle);
+	return TclWinMakeFile(handle);
     } else {
 	return (TclFile) NULL;
     }
@@ -694,7 +700,7 @@ TclpOpenFile(path, mode)
 	SetFilePointer(handle, 0, NULL, FILE_END);
     }
 
-    return MakeFile(handle);
+    return TclWinMakeFile(handle);
 }
 
 /*
@@ -778,7 +784,7 @@ TclpCreateTempFile(contents)
 	lstrcpyA(tmpFilePtr->name, (char *) name);
 	return (TclFile) tmpFilePtr;
     } else {
-	return MakeFile(handle);
+	return TclWinMakeFile(handle);
     }
 
   error:
@@ -815,8 +821,8 @@ TclpCreatePipe(
     HANDLE readHandle, writeHandle;
 
     if (CreatePipe(&readHandle, &writeHandle, NULL, 0) != 0) {
-	*readPipe = MakeFile(readHandle);
-	*writePipe = MakeFile(writeHandle);
+	*readPipe = TclWinMakeFile(readHandle);
+	*writePipe = TclWinMakeFile(writeHandle);
 	return 1;
     }
 
@@ -1994,9 +2000,11 @@ TclpCreateCommandChannel(
      * For backward compatibility with previous versions of Tcl, we
      * use "file%d" as the base name for pipes even though it would
      * be more natural to use "pipe%d".
+     * Use the pointer to keep the channel names unique, in case
+     * channels share handles (stdin/stdout).
      */
 
-    wsprintfA(channelName, "file%d", channelId);
+    wsprintfA(channelName, "file%lx", infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&pipeChannelType, channelName,
             (ClientData) infoPtr, infoPtr->validMask);
 
@@ -2221,10 +2229,16 @@ PipeClose2Proc(
     } else {
         errChan = NULL;
     }
+
     result = TclCleanupChildren(interp, pipePtr->numPids, pipePtr->pidPtr,
             errChan);
+
     if (pipePtr->numPids > 0) {
         ckfree((char *) pipePtr->pidPtr);
+    }
+
+    if (pipePtr->writeBuf != NULL) {
+	ckfree(pipePtr->writeBuf);
     }
 
     ckfree((char*) pipePtr);
