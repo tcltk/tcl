@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.14 2002/02/15 19:58:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.15 2002/02/16 00:37:54 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -56,21 +56,9 @@ typedef struct {
 
 /*
  * The following macros greatly simplify moving through a table...
- *
- * SunPro CC prohibits address arithmetic on (void *) values, so
- * use (char *) on that platform/build-environment instead.
  */
-#ifdef __sparc
-#   define STRING_AT(table, offset, index) \
+#define STRING_AT(table, offset, index) \
 	(*((CONST char * CONST *)(((char *)(table)) + ((offset) * (index)))))
-
-#elif defined (WIN32)
-#   define STRING_AT(table, offset, index) \
-	(*((CONST char * CONST *)(((char *)(table)) + ((offset) * (index)))))
-#else
-#   define STRING_AT(table, offset, index) \
-	(*((CONST char * CONST *)(((VOID *)(table)) + (ptrdiff_t)((offset) * (index)))))
-#endif
 #define NEXT_ENTRY(table, offset) \
 	(&(STRING_AT(table, offset, 1)))
 #define EXPAND_OF(indexRep) \
