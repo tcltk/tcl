@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.1.2.6 1998/12/09 01:13:52 stanton Exp $
+# RCS: @(#) $Id: parse.test,v 1.1.2.7 1999/02/01 21:30:38 stanton Exp $
 
 if {[info commands testparser] == {}} {
     puts "This application hasn't been compiled with the \"testparser\""
@@ -265,7 +265,7 @@ test parse-8.9 {Tcl_EvalObjv procedure, exceptional return} {
 
 test parse-9.1 {Tcl_LogCommandInfo, line numbers} {
     catch {unset x}
-    list [catch {testeval2 {for {} 1 {} {
+    list [catch {testevalex {for {} 1 {} {
 
 
 	# asdf
@@ -283,76 +283,76 @@ test parse-9.1 {Tcl_LogCommandInfo, line numbers} {
 	set x
     }"
     invoked from within
-"testeval2 {for {} 1 {} {
+"testevalex {for {} 1 {} {
 
 
 	# asdf
 	set x
     }}"}}
 test parse-9.2 {Tcl_LogCommandInfo, truncating long commands} {
-    list [testeval2 {catch {set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd eeeeeeeee fffffffff ggggggggg}}] $errorInfo
+    list [testevalex {catch {set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd eeeeeeeee fffffffff ggggggggg}}] $errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"
     while executing
 "set a b 111111111 222222222 333333333 444444444 555555555 666666666 777777777 888888888 999999999 000000000 aaaaaaaaa bbbbbbbbb ccccccccc ddddddddd ee..."}}
 
 test parse-10.1 {Tcl_EvalTokens, simple text} {
-    testeval2 {concat test}
+    testevalex {concat test}
 } {test}
 test parse-10.2 {Tcl_EvalTokens, backslash sequences} {
-    testeval2 {concat test\063\062test}
+    testevalex {concat test\063\062test}
 } {test32test}
 test parse-10.3 {Tcl_EvalTokens, nested commands} {
-    testeval2 {concat [expr 2 + 6]}
+    testevalex {concat [expr 2 + 6]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} {
     catch {unset a}
-    list [catch {testeval2 {concat xxx[expr $a]}} msg] $msg
+    list [catch {testevalex {concat xxx[expr $a]}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.5 {Tcl_EvalTokens, simple variables} {
     set a hello
-    testeval2 {concat $a}
+    testevalex {concat $a}
 } {hello}
 test parse-10.6 {Tcl_EvalTokens, array variables} {
     catch {unset a}
     set a(12) 46
-    testeval2 {concat $a(12)}
+    testevalex {concat $a(12)}
 } {46}
 test parse-10.7 {Tcl_EvalTokens, array variables} {
     catch {unset a}
     set a(12) 46
-    testeval2 {concat $a(1[expr 3 - 1])}
+    testevalex {concat $a(1[expr 3 - 1])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} {
     catch {unset a}
-    list [catch {testeval2 {concat $x($a)}} msg] $msg
+    list [catch {testevalex {concat $x($a)}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.9 {Tcl_EvalTokens, array variables} {
     catch {unset a}
-    list [catch {testeval2 {concat xyz$a(1)}} msg] $msg
+    list [catch {testevalex {concat xyz$a(1)}} msg] $msg
 } {1 {can't read "a(1)": no such variable}}
 test parse-10.10 {Tcl_EvalTokens, object values} {
     set a 123
-    testeval2 {concat $a}
+    testevalex {concat $a}
 } {123}
 test parse-10.11 {Tcl_EvalTokens, object values} {
     set a 123
-    testeval2 {concat $a$a$a}
+    testevalex {concat $a$a$a}
 } {123123123}
 test parse-10.12 {Tcl_EvalTokens, object values} {
-    testeval2 {concat [expr 2][expr 4][expr 6]}
+    testevalex {concat [expr 2][expr 4][expr 6]}
 } {246}
 test parse-10.13 {Tcl_EvalTokens, string values} {
-    testeval2 {concat {a" b"}}
+    testevalex {concat {a" b"}}
 } {a" b"}
 test parse-10.14 {Tcl_EvalTokens, string values} {
     set a 111
-    testeval2 {concat x$a.$a.$a}
+    testevalex {concat x$a.$a.$a}
 } {x111.111.111}
 
 test parse-11.1 {Tcl_Eval2, TCL_EVAL_GLOBAL flag} {
     proc x {} {
 	set y 777
-	set z [testeval2 "set y" global]
+	set z [testevalex "set y" global]
 	return [list $z $y]
     }
     catch {unset y}
@@ -360,43 +360,43 @@ test parse-11.1 {Tcl_Eval2, TCL_EVAL_GLOBAL flag} {
     x
 } {321 777}
 test parse-11.2 {Tcl_Eval2, error while parsing} {
-    list [catch {testeval2 {concat "abc}} msg] $msg
+    list [catch {testevalex {concat "abc}} msg] $msg
 } {1 {missing "}}
 test parse-11.3 {Tcl_Eval2, error while collecting words} {
     catch {unset a}
-    list [catch {testeval2 {concat xyz $a}} msg] $msg
+    list [catch {testevalex {concat xyz $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-11.4 {Tcl_Eval2, error in Tcl_EvalObjv call} {
     catch {unset a}
-    list [catch {testeval2 {_bogus_ a b c d}} msg] $msg
+    list [catch {testevalex {_bogus_ a b c d}} msg] $msg
 } {1 {invalid command name "_bogus_"}}
 test parse-11.5 {Tcl_Eval2, exceptional return} {
-    list [catch {testeval2 {break}} msg] $msg
+    list [catch {testevalex {break}} msg] $msg
 } {3 {}}
 test parse-11.6 {Tcl_Eval2, freeing memory} {
-    testeval2 {concat a b c d e f g h i j k l m n o p q r s t u v w x y z}
+    testevalex {concat a b c d e f g h i j k l m n o p q r s t u v w x y z}
 } {a b c d e f g h i j k l m n o p q r s t u v w x y z}
 test parse-11.7 {Tcl_Eval2, multiple commands in script} {
-    list [testeval2 {set a b; set c d}] $a $c
+    list [testevalex {set a b; set c d}] $a $c
 } {d b d}
 test parse-11.8 {Tcl_Eval2, multiple commands in script} {
-    list [testeval2 {
+    list [testevalex {
 	set a b
 	set c d
     }] $a $c
 } {d b d}
 test parse-11.9 {Tcl_Eval2, freeing memory after error} {
     catch {unset a}
-    list [catch {testeval2 {concat a b c d e f g h i j k l m n o p q r s t u v w x y z $a}} msg] $msg
+    list [catch {testevalex {concat a b c d e f g h i j k l m n o p q r s t u v w x y z $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-11.10 {Tcl_EvalTokens, empty commands} {
-    testeval2 {concat xyz;   }
+    testevalex {concat xyz;   }
 } {xyz}
 test parse-11.11 {Tcl_EvalTokens, empty commands} {
-    testeval2 "concat abc; ; # this is a comment\n"
+    testevalex "concat abc; ; # this is a comment\n"
 } {abc}
 test parse-11.12 {Tcl_EvalTokens, empty commands} {
-    testeval2 {}
+    testevalex {}
 } {}
 
 test parse-12.1 {Tcl_ParseVarName procedure, initialization} {
