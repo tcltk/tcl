@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.79 2002/02/15 23:42:12 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.80 2002/02/20 12:33:32 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -321,7 +321,7 @@ cdebug = -Z7 -Od -WX
 !endif
 
 # declarations common to all compiler options
-cflags = -c -W3 -nologo -Fp$(TMP_DIR)\ -YX
+cflags = -nologo -c -W3 -YX -QI0f -QIfdiv -Fp$(TMP_DIR)^\
 
 !if $(MSVCRT)
 crt = -MD$(DBGX)
@@ -347,19 +347,13 @@ ldebug	= -release
 # declarations common to all linker options
 lflags	= -nologo -machine:$(MACHINE)
 
-# declarations for use on Intel i386, i486, and Pentium systems
-!IF "$(MACHINE)" == "IX86"
-DLLENTRY = @12
-dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ELSE IF "$(MACHINE)" == "IA64"
-DLLENTRY = @12
-dlllflags = $(lflags) -dll
-!ELSE
-dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ENDIF
+!if $(PROFILE)
+lflags	= $(lflags) -profile
+!endif
 
-conlflags = $(lflags) -subsystem:console -entry:mainCRTStartup
-guilflags = $(lflags) -subsystem:windows -entry:WinMainCRTStartup
+dlllflags = $(lflags) -dll
+conlflags = $(lflags) -subsystem:console
+guilflags = $(lflags) -subsystem:windows
 
 baselibs   = kernel32.lib advapi32.lib user32.lib
 winlibs	   = $(baselibs) gdi32.lib
