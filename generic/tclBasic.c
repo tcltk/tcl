@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.6 1998/07/06 22:13:34 welch Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.7 1998/07/06 22:37:35 welch Exp $ 
  */
 
 #include "tclInt.h"
@@ -3925,7 +3925,7 @@ Tcl_GlobalEvalObj(interp, objPtr)
 
     savedVarFramePtr = iPtr->varFramePtr;
     iPtr->varFramePtr = NULL;
-    result = Tcl_EvalObj(interp, objPtr, 0);
+    result = Tcl_EvalObj(interp, objPtr);
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
