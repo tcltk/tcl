@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.19 1999/12/21 23:58:03 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.20 2000/01/12 11:12:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1420,9 +1420,12 @@ InfoPatchLevelCmd(dummy, interp, objc, objv)
  *
  * InfoProcsCmd --
  *
- *      Called to implement the "info procs" command that returns the
- *      procedures in the current namespace that match an optional pattern.
- *      Handles the following syntax:
+ *	Called to implement the "info procs" command that returns the
+ *	list of procedures in the interpreter that match an optional pattern.
+ *	The pattern, if any, consists of an optional sequence of namespace
+ *	names separated by "::" qualifiers, which is followed by a
+ *	glob-style pattern that restricts which commands are returned.
+ *	Handles the following syntax:
  *
  *          info procs ?pattern?
  *
@@ -1443,50 +1446,126 @@ InfoProcsCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *cmdName, *pattern;
-    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    char *cmdName, *pattern, *simplePattern;
+    Namespace *nsPtr;
+#ifdef INFO_PROCS_SEARCH_GLOBAL_NS
+    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
+#endif
+    Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    Tcl_Obj *listPtr, *elemObjPtr;
+    int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
-    Tcl_Obj *listPtr;
+
+    /*
+     * Get the pattern and find the "effective namespace" in which to
+     * list procs.
+     */
 
     if (objc == 2) {
-        pattern = NULL;
+	simplePattern = NULL;
+	nsPtr = currNsPtr;
+	specificNsInPattern = 0;
     } else if (objc == 3) {
-        pattern = Tcl_GetString(objv[2]);
+	/*
+	 * From the pattern, get the effective namespace and the simple
+	 * pattern (no namespace qualifiers or ::'s) at the end. If an
+	 * error was found while parsing the pattern, return it. Otherwise,
+	 * if the namespace wasn't found, just leave nsPtr NULL: we will
+	 * return an empty list since no commands there can be found.
+	 */
+
+	Namespace *dummy1NsPtr, *dummy2NsPtr;
+
+	pattern = Tcl_GetString(objv[2]);
+	TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL,
+		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
+		&simplePattern);
+
+	if (nsPtr != NULL) {	/* we successfully found the pattern's ns */
+	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
+	}
     } else {
         Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
         return TCL_ERROR;
     }
 
     /*
-     * Scan through the current namespace's command table and return a list
-     * of all procs that match the pattern.
+     * Scan through the effective namespace's command table and create a
+     * list with all procs that match the pattern. If a specific
+     * namespace was requested in the pattern, qualify the command names
+     * with the namespace name.
      */
-    
+
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-    for (entryPtr = Tcl_FirstHashEntry(&currNsPtr->cmdTable, &search);
-            entryPtr != NULL;
-            entryPtr = Tcl_NextHashEntry(&search)) {
-        cmdName = Tcl_GetHashKey(&currNsPtr->cmdTable, entryPtr);
-        cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+    if (nsPtr != NULL) {
+	entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+	while (entryPtr != NULL) {
+	    cmdName = Tcl_GetHashKey(&nsPtr->cmdTable, entryPtr);
+	    if ((simplePattern == NULL)
+	            || Tcl_StringMatch(cmdName, simplePattern)) {
+		cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+
+		if (specificNsInPattern) {
+		    elemObjPtr = Tcl_NewObj();
+		    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr,
+		            elemObjPtr);
+		} else {
+		    elemObjPtr = Tcl_NewStringObj(cmdName, -1);
+		}
+
+		realCmdPtr = (Command *)
+		    TclGetOriginalCommand((Tcl_Command) cmdPtr);
+
+		if (TclIsProc(cmdPtr)
+		        || ((realCmdPtr != NULL) && TclIsProc(realCmdPtr))) {
+		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
+		}
+	    }
+	    entryPtr = Tcl_NextHashEntry(&search);
+	}
 
 	/*
-	 * If the command isn't itself a proc, it still might be an
-	 * imported command that points to a "real" proc in a different
-	 * namespace.
+	 * If the effective namespace isn't the global :: namespace, and a
+	 * specific namespace wasn't requested in the pattern, then add in
+	 * all global :: procs that match the simple pattern. Of course,
+	 * we add in only those procs that aren't hidden by a proc in
+	 * the effective namespace.
 	 */
 
-	realCmdPtr = (Command *) TclGetOriginalCommand(
-	        (Tcl_Command) cmdPtr);
-        if (TclIsProc(cmdPtr)
-	        || ((realCmdPtr != NULL) && TclIsProc(realCmdPtr))) {
-            if ((pattern == NULL) || Tcl_StringMatch(cmdName, pattern)) {
-                Tcl_ListObjAppendElement(interp, listPtr,
-		        Tcl_NewStringObj(cmdName, -1));
-            }
-        }
+#ifdef INFO_PROCS_SEARCH_GLOBAL_NS
+	/*
+	 * If "info procs" worked like "info commands", returning the
+	 * commands also seen in the global namespace, then you would
+	 * include this code.  As this could break backwards compatibilty
+	 * with 8.0-8.2, we decided not to "fix" it in 8.3, leaving the
+	 * behavior slightly different.
+	 */
+	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
+	    entryPtr = Tcl_FirstHashEntry(&globalNsPtr->cmdTable, &search);
+	    while (entryPtr != NULL) {
+		cmdName = Tcl_GetHashKey(&globalNsPtr->cmdTable, entryPtr);
+		if ((simplePattern == NULL)
+	                || Tcl_StringMatch(cmdName, simplePattern)) {
+		    if (Tcl_FindHashEntry(&nsPtr->cmdTable, cmdName) == NULL) {
+			cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+			realCmdPtr = (Command *) TclGetOriginalCommand(
+			        (Tcl_Command) cmdPtr);
+
+			if (TclIsProc(cmdPtr) || ((realCmdPtr != NULL)
+				&& TclIsProc(realCmdPtr))) {
+			    Tcl_ListObjAppendElement(interp, listPtr,
+			            Tcl_NewStringObj(cmdName, -1));
+			}
+		    }
+		}
+		entryPtr = Tcl_NextHashEntry(&search);
+	    }
+	}
+#endif
     }
+
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.13 1999/12/12 02:26:42 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.14 2000/01/12 11:12:53 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1262,6 +1262,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
                         (ClientData) dataPtr, DeleteImportedCmd);
 		dataPtr->realCmdPtr = cmdPtr;
 		dataPtr->selfPtr = (Command *) importedCmd;
+		dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
 
 		/*
 		 * Create an ImportRef structure describing this new import

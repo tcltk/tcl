@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.5 1999/12/21 23:58:04 hobbs Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.6 2000/01/12 11:12:53 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -493,7 +493,7 @@ ThreadErrorProc(interp)
     Tcl_Channel errChannel;
     char *errorInfo, *script;
     char *argv[3];
-    char buf[10];
+    char buf[TCL_DOUBLE_SPACE+1];
     sprintf(buf, "%ld", (long) Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
