@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.13 2002/06/13 13:17:06 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.14 2002/06/21 14:22:29 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2163,36 +2163,37 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} {foundGroup} {
     list [catch {eval file attributes foo.tmp [lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 
-if {[string equal testfilelink [info commands testfilelink]]} {
-    tcltest::testConstraint testfilelink 1
+tcltest::testConstraint hasLinks 1
     
-    if {[string equal $tcl_platform(platform) "windows"]} {
-	if {[string index $tcl_platform(osVersion) 0] >= 5 \
-	  && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
-	    tcltest::testConstraint linkDirectory 1
-	    tcltest::testConstraint linkFile 1
-	} else {
-	    tcltest::testConstraint linkDirectory 0
-	    tcltest::testConstraint linkFile 0
-	}
-    } else {
-	tcltest::testConstraint linkFile 1
+if {[string equal $tcl_platform(platform) "windows"]} {
+    if {[string index $tcl_platform(osVersion) 0] >= 5 \
+      && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
 	tcltest::testConstraint linkDirectory 1
+	tcltest::testConstraint linkFile 1
+    } else {
+	tcltest::testConstraint linkDirectory 0
+	tcltest::testConstraint linkFile 0
     }
-
 } else {
-    tcltest::testConstraint testfilelink 0
-    tcltest::testConstraint linkDirectory 0
-    tcltest::testConstraint linkFile 0
+    tcltest::testConstraint linkFile 1
+    tcltest::testConstraint linkDirectory 1
 }
 
-test fCmd-28.1 {testfilelink} {testfilelink} {
-    list [catch {testfilelink} msg] $msg
-} {1 {wrong # args: should be "testfilelink source ?target?"}}
+test fCmd-28.1 {file link} {hasLinks} {
+    list [catch {file link} msg] $msg
+} {1 {wrong # args: should be "file link ?-linktype? source ?target?"}}
 
-test fCmd-28.2 {testfilelink} {testfilelink} {
-    list [catch {testfilelink a b c d} msg] $msg
-} {1 {wrong # args: should be "testfilelink source ?target?"}}
+test fCmd-28.2 {file link} {hasLinks} {
+    list [catch {file link a b c d} msg] $msg
+} {1 {wrong # args: should be "file link ?-linktype? source ?target?"}}
+
+test fCmd-28.3 {file link} {hasLinks} {
+    list [catch {file link abc b c} msg] $msg
+} {1 {bad switch "abc": must be -symbolic or -hard}}
+
+test fCmd-28.4 {file link} {hasLinks} {
+    list [catch {file link -abc b c} msg] $msg
+} {1 {bad switch "-abc": must be -symbolic or -hard}}
 
 catch {file delete -force abc.dir}
 catch {file delete -force abc2.dir}
@@ -2201,46 +2202,76 @@ makeDirectory abc2.dir
 makeFile contents abc.file
 makeFile contents abc2.file
 
-test fCmd-28.3 {testfilelink} {linkDirectory winOnly} {
-    list [catch {testfilelink abc.dir abc2.dir} msg] $msg
-} {1 {could not create link from "abc.dir" to "abc2.dir": file already exists}}
+test fCmd-28.5 {file link: source already exists} {linkDirectory} {
+    list [catch {file link abc.dir abc2.dir} msg] $msg
+} {1 {could not create new link "abc.dir": that path already exists}}
 
-test fCmd-28.4 {testfilelink} {linkFile winOnly} {
-    list [catch {testfilelink abc.file abc2.file} msg] $msg
-} {1 {could not create link from "abc.file" to "abc2.file": file already exists}}
+test fCmd-28.6 {file link: unsupported operation} {linkDirectory macOrWin} {
+    list [catch {file link -hard abc.link abc.dir} msg] $msg
+} {1 {could not create new link "abc.link" pointing to "abc.dir": illegal operation on a directory}}
 
-test fCmd-28.5 {testfilelink} {linkFile winOnly} {
+test fCmd-28.7 {file link: source already exists} {linkFile} {
+    list [catch {file link abc.file abc2.file} msg] $msg
+} {1 {could not create new link "abc.file": that path already exists}}
+
+test fCmd-28.8 {file link} {linkFile winOnly} {
+    list [catch {file link -symbolic abc.link abc.file} msg] $msg
+} {1 {could not create new link "abc.link" pointing to "abc.file": not a directory}}
+
+test fCmd-28.9 {file link: success with file} {linkFile} {
     file delete -force abc.link
-    list [catch {testfilelink abc.link abc.file} msg] $msg
+    list [catch {file link abc.link abc.file} msg] $msg
 } {0 abc.file}
 
 catch {file delete -force abc.link}
 
-test fCmd-28.6 {testfilelink} {linkDirectory winOnly} {
+test fCmd-28.10 {file link: linking to nonexistent path} {linkDirectory} {
     file delete -force abc.link
-    list [catch {testfilelink abc.link abc2.doesnt} msg] $msg
-} {1 {could not create link from "abc.link" to "abc2.doesnt": no such file or directory}}
+    list [catch {file link abc.link abc2.doesnt} msg] $msg
+} {1 {could not create new link "abc.link" since target "abc2.doesnt" doesn't exist}}
 
-test fCmd-28.7 {testfilelink} {linkDirectory winOnly} {
+test fCmd-28.11 {file link: success with directory} {linkDirectory} {
     file delete -force abc.link
-    list [catch {testfilelink abc.link abc.dir} msg] $msg
+    list [catch {file link abc.link abc.dir} msg] $msg
 } {0 abc.dir}
 
-test fCmd-28.7.1 {testfilelink} {linkDirectory winOnly} {
-    # duplicate link throws error
-    list [catch {testfilelink abc.link abc.dir} msg] $msg
-} {1 {could not create link from "abc.link" to "abc.dir": file already exists}}
+test fCmd-28.12 {file link: cd into a link} {linkDirectory} {
+    file delete -force abc.link
+    file link abc.link abc.dir
+    set orig [pwd]
+    cd abc.link
+    set dir [pwd]
+    cd ..
+    set up [pwd]
+    cd $orig
+    # now '$up' should be either $orig or [file dirname abc.dir],
+    # depending on whether 'cd' actually moves to the destination
+    # of a link, or simply treats the link as a directory.
+    # (on windows the former, on unix the latter, I believe)
+    if {([file normalize $up] != [file normalize $orig]) \
+      && ([file normalize $up] != [file normalize [file dirname abc.dir]])} {
+	set res "wrong directory with 'cd $link ; cd ..'"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
 
-test fCmd-28.8 {testfilelink: deletes link not dir} {linkDirectory winOnly} {
+test fCmd-28.13 {file link} {linkDirectory} {
+    # duplicate link throws error
+    list [catch {file link abc.link abc.dir} msg] $msg
+} {1 {could not create new link "abc.link": that path already exists}}
+
+test fCmd-28.14 {file link: deletes link not dir} {linkDirectory} {
     file delete -force abc.link
     list [file exists abc.link] [file exists abc.dir]
 } {0 1}
 
-test fCmd-28.9 {testfilelink: copies link not dir} {linkDirectory winOnly} {
+test fCmd-28.15 {file link: copies link not dir} {linkDirectory} {
     file delete -force abc.link
-    testfilelink abc.link abc.dir
+    file link abc.link abc.dir
     file copy abc.link abc2.link
-    list [file type abc2.link] [file tail [testfilelink abc2.link]]
+    list [file type abc2.link] [file tail [file link abc2.link]]
 } {link abc.dir}
 
 file delete -force abc.link
@@ -2249,17 +2280,17 @@ file delete -force abc2.link
 file copy abc.file abc.dir
 file copy abc2.file abc.dir
 
-test fCmd-28.10 {testfilelink: glob inside link} {linkDirectory winOnly} {
+test fCmd-28.16 {file link: glob inside link} {linkDirectory} {
     file delete -force abc.link
-    testfilelink abc.link abc.dir
+    file link abc.link abc.dir
     glob -dir abc.link -tails *
 } {abc.file abc2.file}
 
-test fCmd-28.11 {testfilelink: glob -type l} {linkDirectory winOnly} {
+test fCmd-28.17 {file link: glob -type l} {linkDirectory} {
     glob -dir [pwd] -type l -tails abc*
 } {abc.link}
 
-test fCmd-28.12 {testfilelink: glob -type d} {linkDirectory winOnly} {
+test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
     lsort [glob -dir [pwd] -type d -tails abc*]
 } [lsort [list abc.link abc.dir abc2.dir]]
 

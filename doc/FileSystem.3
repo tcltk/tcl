@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.25 2002/06/13 09:39:59 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.26 2002/06/21 14:22:28 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -64,7 +64,7 @@ int
 \fBTcl_FSMatchInDirectory\fR(\fIinterp, result, pathPtr, pattern, types\fR)
 .sp
 Tcl_Obj*
-\fBTcl_FSLink\fR(\fIpathPtr, toPtr, linkType\fR)
+\fBTcl_FSLink\fR(\fIlinkNamePtr, toPtr, linkAction\fR)
 .sp
 int
 \fBTcl_FSLstat\fR(\fIpathPtr, statPtr\fR)
@@ -343,18 +343,22 @@ matched using the logic of 'string match'.  To handle recursion, Tcl
 will call this function frequently asking only for directories to be
 returned.
 .PP
-\fBTcl_FSLink\fR replaces the library version of readlink(), and may
-also be used in the future to allow link creation.
-The appropriate function for the filesystem to which pathPtr
-belongs will be called.
+\fBTcl_FSLink\fR replaces the library version of readlink(), and
+extends it to support the creation of links.  The appropriate function 
+for the filesystem to which linkNamePtr belongs will be called.
 .PP
-If the \fItoPtr\fR is NULL, a readlink action is performed.
-The result is a Tcl_Obj specifying the contents of the symbolic link
-given by \fIpath\fR, or NULL if the symbolic link could not be read.  The
-result is owned by the caller, which should call Tcl_DecrRefCount when
-the result is no longer needed.  If the \fItoPtr\fR is not NULL, Tcl
-should create a link, but this option is not currently supported (it
-and the \fIlinkType\fR field are left available for future expansion).
+If the \fItoPtr\fR is NULL, a readlink action is performed.  The result
+is a Tcl_Obj specifying the contents of the symbolic link given by
+\fIlinkNamePtr\fR, or NULL if the link could not be read.  The result is owned
+by the caller, which should call Tcl_DecrRefCount when the result is no
+longer needed.  If the \fItoPtr\fR is not NULL, Tcl should create a link
+of one of the types passed in in the \fIlinkAction\fR flag.  This flag is
+an or'd combination of TCL_CREATE_SYMBOLIC_LINK and TCL_CREATE_HARD_LINK.
+Where a choice exists (i.e. more than one flag is passed in), the Tcl
+convention is to prefer symbolic links.  When a link is successfully
+created, the return value should be \fItoPtr\fR (which is therefore
+already owned by the caller).  If unsuccessful, NULL should be
+returned.
 .PP
 \fBTcl_FSLstat\fR fills the stat structure \fIstatPtr\fR with information
 about the specified file.  You do not need any access rights to the
@@ -1030,19 +1034,21 @@ only if the filesystem supports links, and may otherwise be NULL.
 .PP
 .CS
 typedef Tcl_Obj* Tcl_FSLinkProc(
-	Tcl_Obj *\fIpathPtr\fR,
+	Tcl_Obj *\fIlinkNamePtr\fR,
 	Tcl_Obj *\fItoPtr\fR,
-	int \fIlinkType\fR);
+	int \fIlinkAction\fR);
 .CE
 .PP
 If \fItoPtr\fR is NULL, the function is being asked to read the
 contents of a link.  The result is a Tcl_Obj specifying the contents of
-the symbolic link given by 'path', or NULL if the symbolic link could
+the link given by \fIlinkNamePtr\fR, or NULL if the link could
 not be read.  The result is owned by the caller, which should call
 Tcl_DecrRefCount when the result is no longer needed.  If \fItoPtr\fR 
 is not NULL, the function should attempt to create a link.  The result
 in this case should be \fItoPtr\fR if the link was successful and NULL
-otherwise.  In this case the result is not owned by the caller.
+otherwise.  In this case the result is not owned by the caller. See
+the documentation for \fBTcl_FSLink\fR for the correct interpretation
+of the \fIlinkAction\fR flags.
 .SH LISTVOLUMESPROC	    
 .PP
 Function to list any filesystem volumes added by this filesystem.

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.49 2002/06/13 09:40:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.50 2002/06/21 14:22:28 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2690,34 +2690,37 @@ FSUnloadTempFile(clientData)
  *      the caller, which should call Tcl_DecrRefCount when the result
  *      is no longer needed.
  *      
- *      If toPtr is non-NULL, then the result is toPtr if the link
+ *      If toPtr is non-NULL, then the result is toPtr if the link action
  *      was successful, or NULL if not.  In this case the result has no
- *      additional reference count, and need not be freed.
+ *      additional reference count, and need not be freed.  The actual
+ *      action to perform is given by the 'linkAction' flags, which is
+ *      an or'd combination of:
+ *      
+ *        TCL_CREATE_SYMBOLIC_LINK
+ *        TCL_CREATE_HARD_LINK
  *      
  *      Note that most filesystems will not support linking across
  *      to different filesystems, so this function will usually
  *      fail unless toPtr is in the same FS as pathPtr.
  *      
- *      Note: currently no Tcl filesystems support the 'link' action,
- *      so we actually always return an error for that call.
- *
  * Side effects:
- *	See readlink() documentation.
+ *	See readlink() documentation.  A new filesystem link 
+ *	object may appear
  *
  *---------------------------------------------------------------------------
  */
 
 Tcl_Obj *
-Tcl_FSLink(pathPtr, toPtr, linkType)
+Tcl_FSLink(pathPtr, toPtr, linkAction)
     Tcl_Obj *pathPtr;		/* Path of file to readlink or link */
     Tcl_Obj *toPtr;		/* NULL or path to be linked to */
-    int linkType;               /* Type of link to create */
+    int linkAction;             /* Action to perform */
 {
     Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
 	Tcl_FSLinkProc *proc = fsPtr->linkProc;
 	if (proc != NULL) {
-	    return (*proc)(pathPtr, toPtr, linkType);
+	    return (*proc)(pathPtr, toPtr, linkAction);
 	}
     }
     /*

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.50 2002/06/13 09:40:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.51 2002/06/21 14:22:28 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -2007,7 +2007,8 @@ TestfilelinkCmd(clientData, interp, objc, objv)
     
     if (objc == 3) {
 	/* Create link from source to target */
-	contents = Tcl_FSLink(objv[1], objv[2], 0);
+	contents = Tcl_FSLink(objv[1], objv[2], 
+			TCL_CREATE_SYMBOLIC_LINK|TCL_CREATE_HARD_LINK);
 	if (contents == NULL) {
 	    Tcl_AppendResult(interp, "could not create link from \"", 
 		    Tcl_GetString(objv[1]), "\" to \"", 
