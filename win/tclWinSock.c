@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37 2003/04/22 23:20:44 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.38 2003/08/27 19:45:18 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -37,7 +37,7 @@ TCL_DECLARE_MUTEX(socketMutex)
 
 
 /*
- * Mingw and Cygwin may not have LPFN_* typedefs.
+ * Mingw, Cygwin and OpenWatcom may not have LPFN_* typedefs.
  */
 
 #ifdef HAVE_NO_LPFN_DECLS
