@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.7 1999/04/16 00:46:53 stanton Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.8 1999/06/30 17:47:29 welch Exp $
  */
 
 #include "tcl.h"
@@ -3261,6 +3261,27 @@ Tcl_ServiceModeHook(mode)
     int mode;
 {
     (tclStubsPtr->tcl_ServiceModeHook)(mode);
+}
+
+/* Slot 345 */
+Tcl_Channel
+Tcl_ReplaceChannel(interp, typePtr, instanceData, mask, prevChan)
+    Tcl_Interp * interp;
+    Tcl_ChannelType * typePtr;
+    ClientData instanceData;
+    int mask;
+    Tcl_Channel prevChan;
+{
+    return (tclStubsPtr->tcl_ReplaceChannel)(interp, typePtr, instanceData, mask, prevChan);
+}
+
+/* Slot 346 */
+void
+Tcl_UndoReplaceChannel(interp, chan)
+    Tcl_Interp * interp;
+    Tcl_Channel chan;
+{
+    (tclStubsPtr->tcl_UndoReplaceChannel)(interp, chan);
 }
 
 

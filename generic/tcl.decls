@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.17 1999/06/17 19:32:14 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.18 1999/06/30 17:47:27 welch Exp $
 
 library tcl
 
@@ -967,11 +967,30 @@ declare 280 generic {
     void Tcl_InitMemory(Tcl_Interp *interp)
 }
 
+# Andreas Kupries <a.kupries@westend.com>, 03/21/1999
+# "Trf-Patch for filtering channels"
+#
+# C-Level API for (un)stacking of channels. This allows the introduction
+# of filtering channels with relatively little changes to the core.
+# This patch was created in cooperation with Jan Nijtmans <nijtmans@wxs.nl>
+# and is therefore part of his plus-patches too.
+#
+# It would have been possible to place the following definitions according
+# to the alphabetical order used elsewhere in this file, but I decided
+# against that to ease the maintenance of the patch across new tcl versions
+# (patch usually has no problems to integrate the patch file for the last
+# version into the new one).
+
+declare 281 generic {
+    Tcl_Channel Tcl_ReplaceChannel(Tcl_Interp *interp, \
+	    Tcl_ChannelType *typePtr, ClientData instanceData, \
+	    int mask, Tcl_Channel prevChan)
+}
+declare 282 generic {
+    void Tcl_UndoReplaceChannel(Tcl_Interp *interp, Tcl_Channel chan)
+}
+
 # Reserved for future use (8.0.x vs. 8.1)
-#  declare 281 generic {
-#  }
-#  declare 282 generic {
-#  }
 #  declare 283 generic {
 #  }
 #  declare 284 generic {

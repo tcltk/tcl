@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.17 1999/06/17 19:32:15 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.18 1999/06/30 17:47:28 welch Exp $
  */
 
 #ifndef _TCLDECLS
@@ -903,8 +903,14 @@ EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor,
 				int * patchLevel, int * type));
 /* 280 */
 EXTERN void		Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp * interp));
-/* Slot 281 is reserved */
-/* Slot 282 is reserved */
+/* 281 */
+EXTERN Tcl_Channel	Tcl_ReplaceChannel _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_ChannelType * typePtr, 
+				ClientData instanceData, int mask, 
+				Tcl_Channel prevChan));
+/* 282 */
+EXTERN void		Tcl_UndoReplaceChannel _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Channel chan));
 /* Slot 283 is reserved */
 /* Slot 284 is reserved */
 /* Slot 285 is reserved */
@@ -1546,8 +1552,8 @@ typedef struct TclStubs {
 #endif /* MAC_TCL */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
     void (*tcl_InitMemory) _ANSI_ARGS_((Tcl_Interp * interp)); /* 280 */
-    void *reserved281;
-    void *reserved282;
+    Tcl_Channel (*tcl_ReplaceChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan)); /* 281 */
+    void (*tcl_UndoReplaceChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 282 */
     void *reserved283;
     void *reserved284;
     void *reserved285;
@@ -2826,8 +2832,14 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_InitMemory \
 	(tclStubsPtr->tcl_InitMemory) /* 280 */
 #endif
-/* Slot 281 is reserved */
-/* Slot 282 is reserved */
+#ifndef Tcl_ReplaceChannel
+#define Tcl_ReplaceChannel \
+	(tclStubsPtr->tcl_ReplaceChannel) /* 281 */
+#endif
+#ifndef Tcl_UndoReplaceChannel
+#define Tcl_UndoReplaceChannel \
+	(tclStubsPtr->tcl_UndoReplaceChannel) /* 282 */
+#endif
 /* Slot 283 is reserved */
 /* Slot 284 is reserved */
 /* Slot 285 is reserved */

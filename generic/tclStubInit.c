@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.19 1999/06/17 19:32:15 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.20 1999/06/30 17:47:28 welch Exp $
  */
 
 #include "tclInt.h"
@@ -661,8 +661,8 @@ TclStubs tclStubs = {
 #endif /* MAC_TCL */
     Tcl_GetVersion, /* 279 */
     Tcl_InitMemory, /* 280 */
-    NULL, /* 281 */
-    NULL, /* 282 */
+    Tcl_ReplaceChannel, /* 281 */
+    Tcl_UndoReplaceChannel, /* 282 */
     NULL, /* 283 */
     NULL, /* 284 */
     NULL, /* 285 */
