@@ -1,4 +1,24 @@
-2000-02-05  Jeff Hobbs  <hobbs@scriptics.com>
+2000-02-08  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* win/configure.in:
+	* win/README:
+	* win/README.binary:
+	* generic/tcl.h (TCL_RELEASE_SERIAL): Moved to 8.3.0 patchlevel
+
+	* doc/library.n:
+	* library/auto.tcl: fixed crufty puts code and docs [Bug: 4122]
+
+	* library/tcltest1.0/tcltest.tcl: correctly protected searchDirectory
+	list to allow dirnames with spaces
+
+	* unix/tcl.m4: changed all -fpic to -fPIC
+
+	* generic/tclDecls.h:
+	* generic/tcl.decls: change Tcl_GetOpenFile to use decl of 'int
+	forWriting' instead of 'int write' to avoid shadowing [Bug: 4121]
 
 	* tests/httpold.test: changed test script to source in the httpd
 	server procs from httpd instead of having its own set.

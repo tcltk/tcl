@@ -1,11 +1,11 @@
 README:  Tcl
-    This is the Tcl 8.3b2 source distribution.
-    You can get this release from:
-	[Tcl/Tk is also available through NetCVS:
-	http://www.scriptics.com/products/tcltk/netcvs.html]
-        # http://www.scriptics.com/registration/<version>.tml
+    This is the Tcl 8.3.0 source distribution.
+    You can get any release of Tcl from:
+        http://www.scriptics.com/registration/<version>.tml
+    Tcl/Tk is also available through NetCVS:
+	http://www.scriptics.com/products/tcltk/netcvs.html
 
-RCS: @(#) $Id: README,v 1.27 2000/01/21 02:24:30 hobbs Exp $
+RCS: @(#) $Id: README,v 1.28 2000/02/08 10:05:09 hobbs Exp $
 
 Contents
 --------
@@ -44,15 +44,15 @@ and selling it either in whole or in part.  See the file
 2. Documentation
 ---------------
 
-Extensive documentation is available at our website.  The
-home page for this release is
+Extensive documentation is available at our website.
+The home page for this release is
 	http://www.scriptics.com/software/8.3.html
 
 Information about new features in 8.3 can be found at
 	http://www.scriptics.com/software/whatsnew83.html
 
 Detailed release notes can be found at
-	http://www.scriptics.com/software/relnotes/tcl8.3b2
+	http://www.scriptics.com/software/relnotes/tcl8.3.0
 
 Information about Tcl itself can be found at
 	http://www.scriptics.com/scripting/
