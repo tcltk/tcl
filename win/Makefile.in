@@ -5,7 +5,9 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.2 1999/06/02 19:29:20 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.3 1999/06/05 00:18:12 stanton Exp $
+
+VERSION = @TCL_VERSION@
 
 #----------------------------------------------------------------
 # Things you can change to personalize the Makefile for your own
@@ -23,20 +25,25 @@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 
+# Directory from which applications will reference the library of Tcl
+# scripts (note: you can set the TCL_LIBRARY environment variable at
+# run-time to override this value):
+TCL_LIBRARY =	$(prefix)/lib/tcl$(VERSION)
+
 # Directory in which to install libtcl.so or libtcl.a:
-LIB_INSTALL_DIR		= $(prefix)/lib
+LIB_INSTALL_DIR		= @libdir@
 
 # Directory in which to install the program tclsh:
-BIN_INSTALL_DIR		= $(exec_prefix)/bin
+BIN_INSTALL_DIR		= @bindir@
 
-# Path name to use when installing library scripts:
-SCRIPT_INSTALL_DIR	= $(prefix)/lib/tcl$(DOTVER)
+# Path name to use when installing script libraries:
+SCRIPT_INSTALL_DIR	= $(prefix)/lib
 
 # Directory in which to install the include file tcl.h:
-INCLUDE_INSTALL_DIR	= $(prefix)/include
+INCLUDE_INSTALL_DIR	= @includedir@
 
 # Top-level directory in which to install manual entries:
-MAN_INSTALL_DIR		= $(prefix)/man
+MAN_INSTALL_DIR		= @mandir@
 
 # Directory in which to install manual entry for tclsh:
 MAN1_INSTALL_DIR	= $(MAN_INSTALL_DIR)/man1
@@ -50,12 +57,24 @@ MAN3_INSTALL_DIR	= $(MAN_INSTALL_DIR)/man3
 MANN_INSTALL_DIR	= $(MAN_INSTALL_DIR)/mann
 
 PATHTYPE	= @PATHTYPE@
-SRC_DIR		= $(shell cygpath $(PATHTYPE) '@srcdir@')
-ROOT_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/..')
-GENERIC_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/../generic')
-WIN_DIR		= $(shell cygpath $(PATHTYPE) '@srcdir@')
-COMPAT_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/../compat')
+
+#SRC_DIR		= $(shell cygpath $(PATHTYPE) '@srcdir@')
+#ROOT_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/..')
+#GENERIC_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/../generic')
+#WIN_DIR		= $(shell cygpath $(PATHTYPE) '@srcdir@')
+#COMPAT_DIR	= $(shell cygpath $(PATHTYPE) '@srcdir@/../compat')
+#TOP_DIR	        = $(shell cygpath $(PATHTYPE) '@srcdir@/..')
+
+SRC_DIR		= @srcdir@
+ROOT_DIR	= @srcdir@/..
+GENERIC_DIR	= @srcdir@/../generic
+WIN_DIR		= @srcdir@
+COMPAT_DIR	= @srcdir@/../compat
 TOP_DIR	        = @srcdir@/..
+
+GENERIC_DIR_NATIVE = $(shell cygpath $(PATHTYPE) '$(GENERIC_DIR)')
+WIN_DIR_NATIVE	= $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
+TOP_DIR_NATIVE	= $(shell cygpath $(PATHTYPE) '$(TOP_DIR)')
 
 DLLSUFFIX	= @DLLSUFFIX@
 LIBSUFFIX	= @LIBSUFFIX@
@@ -68,9 +87,11 @@ DDE_DLL		= tcldde$(VER)${DLLSUFFIX}
 DDE_LIB		= tcldde$(VER)${LIBSUFFIX}
 REG_DLL		= tclreg$(VER)${DLLSUFFIX}
 REG_LIB		= tclreg$(VER)${LIBSUFFIX}
+PIPE_DLL	= tclpip$(VER)${DLLSUFFIX}
+PIPE_LIB	= tclpip$(VER)${LIBSUFFIX}
 
-SHARED_LIBRARIES = $(TCL_DLL) $(DDE_DLL) $(REG_DLL)
-STATIC_LIBRARIES = $(TCL_LIB) $(DDE_LIB) $(REG_LIB)
+SHARED_LIBRARIES = $(TCL_DLL) $(STUB_LIB) $(DDE_DLL) $(REG_DLL) $(PIPE_DLL)
+STATIC_LIBRARIES = $(TCL_LIB)
 
 TCLSH		= tclsh$(VER)${EXESUFFIX}
 TCLTEST		= tcltest${EXEEXT}
@@ -114,13 +135,13 @@ RM		= rm -f
 COPY		= cp
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
--I"${GENERIC_DIR}" -I"${WIN_DIR}" ${AC_FLAGS}
+-I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I"${GENERIC_DIR}" -I"${SRC_DIR}" ${AC_FLAGS}
+-I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS}
 
 TCLTEST_OBJS = \
 	tclTest.$(OBJEXT) \
@@ -212,6 +233,8 @@ WIN_OBJS = \
 COMPAT_OBJS = \
 	strftime.$(OBJEXT)
 
+PIPE_OBJS = stub16.$(OBJEXT)
+
 DDE_OBJS = tclWinDde.$(OBJEXT)
 
 REG_OBJS = tclWinReg.$(OBJEXT)
@@ -224,7 +247,7 @@ TCL_OBJS = ${GENERIC_OBJS} ${WIN_OBJS} ${COMPAT_OBJS}
 
 all: binaries libraries man
 
-binaries: @LIBRARIES@ $(STATIC_LIBRARIES) $(STUB_LIB) $(TCLSH)
+binaries: @LIBRARIES@ $(STATIC_LIBRARIES) $(TCLSH)
 
 libraries:
 
@@ -255,17 +278,13 @@ ${DDE_DLL}: ${DDE_OBJS} ${STUB_LIB}
 	@$(RM) ${DDE_DLL}
 	@MAKE_DLL@ ${DDE_OBJS} ${STUB_LIB}
 
-${DDE_LIB}: ${DDE_OBJS}
-	@$(RM) ${DDE_LIB}
-	@MAKE_LIB@ ${DDE_OBJS}
-
 ${REG_DLL}: ${REG_OBJS} ${STUB_LIB}
 	@$(RM) ${REG_DLL}
 	@MAKE_DLL@ ${REG_OBJS} ${STUB_LIB}
 
-${REG_LIB}: ${REG_OBJS}
-	@$(RM) ${REG_LIB}
-	@MAKE_LIB@ ${REG_OBJS}
+${PIPE_DLL}: ${PIPE_OBJS}
+	@$(RM) ${PIPE_DLL}
+	@MAKE_DLL@ ${PIPE_OBJS}
 
 # Add the object extension to the implicit rules.  By default .obj is not
 # automatically added.
@@ -312,116 +331,97 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 .c.${OBJEXT}:
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl ${DEPARG} $(CC_OBJNAME)
 
-install: install-binaries install-libraries install-man
+install: install-binaries install-libraries
 
 install-binaries: binaries
-	@$(MKDIR) "$(BIN_INSTALL_DIR)"
-	@$(MKDIR) "$(LIB_INSTALL_DIR)"
-	@echo installing $(TCL_DLL)
-	@$(COPY) "$(TCL_DLL)" "$(BIN_INSTALL_DIR)"
-	@$(COPY) "$(TCL_LIB)" "$(LIB_INSTALL_DIR)"
-	@echo installing "$(TCLSH)"
-	@$(COPY) "$(TCLSH)" "$(BIN_INSTALL_DIR)"
-	@echo installing $(STUB_LIB)
-	@$(COPY) "$(STUB_LIB)" "$(LIB_INSTALL_DIR)"
-# 	@echo installing $(TCLPIPEDLLNAME)
-# 	@$(COPY) "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
-
-install-libraries: libraries
-	@$(MKDIR) "$(LIB_INSTALL_DIR)"
-	@$(MKDIR) "$(INCLUDE_INSTALL_DIR)"
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@echo installing http1.0
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/http1.0"
-	@$(COPY) "$(ROOT_DIR)/library/http1.0/http.tcl"     "$(SCRIPT_INSTALL_DIR)/http1.0"
-	@$(COPY) "$(ROOT_DIR)/library/http1.0/pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)/http1.0"
-	@echo installing http2.0
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/http2.0"
-	@$(COPY) "$(ROOT_DIR)/library/http2.0/http.tcl"     "$(SCRIPT_INSTALL_DIR)/http2.0"
-	@$(COPY) "$(ROOT_DIR)/library/http2.0/pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)/http2.0"
-	@echo installing opt0.4
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/opt0.4"
-	@$(COPY) "$(ROOT_DIR)/library/opt0.4/optparse.tcl" "$(SCRIPT_INSTALL_DIR)/opt0.4"
-	@$(COPY) "$(ROOT_DIR)/library/opt0.4/pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)/opt0.4"
-	@echo installing msgcat1.0
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/msgcat1.0"
-	@$(COPY) "$(ROOT_DIR)/library/msgcat1.0/msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)/msgcat1.0"
-	@$(COPY) "$(ROOT_DIR)/library/msgcat1.0/pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)/msgcat1.0"
-	@echo installing $(DDE_DLL)
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/dde1.0"
-	@$(COPY) "$(DDE_DLL)" "$(SCRIPT_INSTALL_DIR)/dde1.0"
-	@$(COPY) "$(ROOT_DIR)/library/dde1.0/pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)/dde1.0"
-	@echo installing $(REG_DLL)
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/reg1.0"
-	@$(COPY) "$(REG_DLL)" "$(SCRIPT_INSTALL_DIR)/reg1.0"
-	@$(COPY) "$(ROOT_DIR)/library/reg1.0/pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)/reg1.0"
-	@echo installing encoding files
-	@$(MKDIR) "$(SCRIPT_INSTALL_DIR)/encoding"
-	@$(COPY) $(TOP_DIR)/library/encoding/*.enc "$(SCRIPT_INSTALL_DIR)/encoding"
-	@echo installing library files
-	@$(COPY) "$(GENERIC_DIR)/tcl.h"         "$(INCLUDE_INSTALL_DIR)"
-	@$(COPY) "$(GENERIC_DIR)/tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/history.tcl" "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/init.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/ldAout.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/parray.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/safe.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/tclIndex"    "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/package.tcl" "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/word.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	@$(COPY) "$(ROOT_DIR)/library/auto.tcl"    "$(SCRIPT_INSTALL_DIR)"
-
-install-man: man
-	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
+	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
+	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
+	@for i in dde1.0 reg1.0; \
 	    do \
-	    if [ ! -d $$i ] ; then \
-		echo "Making directory $$i"; \
-		mkdir -p $$i; \
-		chmod 755 $$i; \
+	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
+		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
+		$(MKDIR) $(LIB_INSTALL_DIR)/$$i; \
 		else true; \
 		fi; \
 	    done;
-	@cd $(TOP_DIR)/doc; for i in *.1; \
+	@for i in $(TCL_DLL) $(TCLSH) $(PIPE_DLL); \
 	    do \
-	    echo "Installing doc/$$i"; \
-	    rm -f $(MAN1_INSTALL_DIR)/$$i; \
-	    sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' \
-		    $$i > $(MAN1_INSTALL_DIR)/$$i; \
-	    chmod 444 $(MAN1_INSTALL_DIR)/$$i; \
-	    done;
-	@cd $(TOP_DIR)/doc; for i in *.3; \
+	    if [ -f $$i ]; then \
+		echo "Installing $$i"; \
+		$(COPY) $$i "$(BIN_INSTALL_DIR)"; \
+	    fi; \
+	    done
+	@for i in $(TCL_LIB) $(STUB_LIB); \
 	    do \
-	    echo "Installing doc/$$i"; \
-	    rm -f $(MAN3_INSTALL_DIR)/$$i; \
-	    sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' \
-		    $$i > $(MAN3_INSTALL_DIR)/$$i; \
-	    chmod 444 $(MAN3_INSTALL_DIR)/$$i; \
-	    done;
-	@cd $(TOP_DIR)/doc; for i in *.n; \
+	    if [ -f $$i ]; then \
+		echo "Installing $$i"; \
+		$(COPY) $$i "$(LIB_INSTALL_DIR)"; \
+	    fi; \
+	    done
+	@if [ -f $(DDE_DLL) ]; then \
+	    echo installing $(DDE_DLL); \
+	    $(COPY) $(DDE_DLL) $(LIB_INSTALL_DIR)/dde1.0; \
+	    $(COPY) $(ROOT_DIR)/library/dde1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/dde1.0; \
+	    fi
+	@if [ -f $(REG_DLL) ]; then \
+	    echo installing $(REG_DLL); \
+	    $(COPY) $(REG_DLL) $(LIB_INSTALL_DIR)/reg1.0; \
+	    $(COPY) $(ROOT_DIR)/library/reg1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
+	    fi
+
+install-libraries: libraries
+	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
+		$(SCRIPT_INSTALL_DIR); \
 	    do \
-	    echo "Installing doc/$$i"; \
-	    rm -f $(MANN_INSTALL_DIR)/$$i; \
-	    sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' \
-		    $$i > $(MANN_INSTALL_DIR)/$$i; \
-	    chmod 444 $(MANN_INSTALL_DIR)/$$i; \
+	    if [ ! -d $$i ] ; then \
+		echo "Making directory $$i"; \
+		$(MKDIR) $$i; \
+		else true; \
+		fi; \
 	    done;
+	@for i in tcl$(VERSION) http1.0 http2.0 opt0.4 encoding msgcat1.0; \
+	    do \
+	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
+		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
+		$(MKDIR) $(SCRIPT_INSTALL_DIR)/$$i; \
+		else true; \
+		fi; \
+	    done;
+	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" ; \
+	    do \
+	    echo "Installing $$i"; \
+	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
+	    done;
+	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex; \
+	    do \
+	    echo "Installing $$i"; \
+	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/tcl$(VERSION)"; \
+	    done;
+	@for i in http2.0 http1.0 opt0.4 msgcat1.0; \
+	    do \
+	    for j in $(TOP_DIR)/library/$$i/*.tcl; \
+		do \
+		echo "Installing $$j"; \
+		$(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/$$i"; \
+		done; \
+	    done;
+	@echo "Installing encodings"
+	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
+		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
+	done;
 
 test: binaries $(TCLTEST)
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
-	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./tcltest @srcdir@/../tests/all.tcl
+	@TCL_LIBRARY="$(TOP_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	    ./tcltest "$(TOP_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
-	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./tcltest
+	@TCL_LIBRARY="$(TOP_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	    ./tcltest
 
 depend:
 
-Makefile: $(SRC_DIR)/Makefile.in
+Makefile: Makefile.in
 	config.status
 
 clean:
