@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.2 1998/09/24 23:59:53 stanton Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.3 1998/12/04 01:19:36 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -990,6 +990,13 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
     }
 
     /*
+     * Win-NT has a misfeature that sockets are inherited in child
+     * processes by default.  Turn off the inherit bit.
+     */
+
+    SetHandleInformation( (HANDLE) sock, HANDLE_FLAG_INHERIT, 0 );
+	
+    /*
      * Set kernel space buffering
      */
 
@@ -1484,6 +1491,13 @@ TcpAccept(infoPtr)
         return;
     }
 
+    /*
+     * Win-NT has a misfeature that sockets are inherited in child
+     * processes by default.  Turn off the inherit bit.
+     */
+
+    SetHandleInformation( (HANDLE) newSocket, HANDLE_FLAG_INHERIT, 0 );
+	
     /*
      * Add this socket to the global list of sockets.
      */
