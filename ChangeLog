@@ -1,5 +1,14 @@
 2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclObj.c: moved Tcl_GetCommandFromObj and all defining
+	code for tclCmdNameType objects to tclObj.c (from tclExecute.c). 
+	This code has nothing to do with bytecodes.
+
+
+2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclBasic.c:
 	* generic/tclCompile.h:
 	* generic/tclExecute.c:
