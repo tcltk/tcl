@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.30 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.31 2002/01/25 04:27:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3538,11 +3538,31 @@ SetFsPathFromAny(interp, objPtr)
 	transPtr = Tcl_NewStringObj(expandedUser, Tcl_DStringLength(&temp));
 
 	if (split != len) {
-	    /* 
-	     * Join up the tilde substitution with the rest
-	     */
-	    Tcl_Obj *rest = Tcl_NewStringObj(name+split+1,-1);
-	    transPtr = Tcl_FSJoinToPath(transPtr, 1, &rest);
+	    /* Join up the tilde substitution with the rest */
+	    if (name[split+1] == separator) {
+
+		/*
+		 * Somewhat tricky case like ~//foo/bar.
+		 * Make use of Split/Join machinery to get it right.
+		 * Assumes all paths beginning with ~ are part of the
+		 * native filesystem.
+		 */
+
+		int objc;
+		Tcl_Obj **objv;
+		Tcl_Obj *parts = TclpNativeSplitPath(objPtr, NULL);
+		Tcl_ListObjGetElements(NULL, parts, &objc, &objv);
+		/* Skip '~'.  It's replaced by its expansion */
+		objc--; objv++;
+		while (objc--) {
+		    TclpNativeJoinPath(transPtr, Tcl_GetString(*objv++));
+		}
+		Tcl_DecrRefCount(parts);
+	    } else {
+		/* Simple case. "rest" is relative path.  Just join it. */
+		Tcl_Obj *rest = Tcl_NewStringObj(name+split+1,-1);
+		transPtr = Tcl_FSJoinToPath(transPtr, 1, &rest);
+	    }
 	}
 	Tcl_DStringFree(&temp);
     } else {
