@@ -1,3 +1,9 @@
+2002-09-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): correct the
+	checking for bad re's that didn't terminate the re string.
+	Resultant compiles were correct, but much slower than necessary.
+
 2002-09-29  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclAppInit.c: Added proper exiting conditions using Win32
