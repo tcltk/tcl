@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.28 2001/04/06 10:50:00 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.29 2001/05/14 08:57:26 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -197,6 +197,9 @@ test string-4.12 {string first, start index} {
 test string-4.13 {string first, start index} {
     string first \u7266 abc\u7266x end-2
 } 3
+test string-4.14 {string first, negative start index} {
+    string first b abc -1
+} 1
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg
