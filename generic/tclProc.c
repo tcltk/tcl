@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.30 2001/10/15 22:15:19 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.31 2001/10/15 22:25:45 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -170,7 +170,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 	procArgs++;
     }
     
-    if ((procArgs[0] == 'a') && (strcmp(procArgs, "args") == 0)) {
+    if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
 	procArgs +=4;
 	while(*procArgs != '\0') {
 	    if (*procArgs != ' ') {
