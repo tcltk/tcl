@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.5 1999/05/06 18:46:25 stanton Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.6 1999/05/20 23:40:34 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -83,10 +83,9 @@ static int UtfCount _ANSI_ARGS_((int ch));
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_UniCharToUtf --
+ * UtfCount --
  *
- *	Store the given Tcl_UniChar as a sequence of UTF-8 bytes in the
- *	Utf character "ch".
+ *	Find the number of bytes in the Utf character "ch".
  *
  * Results:
  *	The return values is the number of bytes in the Utf character "ch".
