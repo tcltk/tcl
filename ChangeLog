@@ -1,3 +1,8 @@
+2004-08-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclScan.c (Tcl_ScanObjCmd, ValidateFormat): Ensure that
+	the %ld conversion works correctly on 64-bit platforms. [Bug 1011860]
+
 2004-08-16  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/SetVar.3:
