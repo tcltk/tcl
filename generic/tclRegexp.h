@@ -14,6 +14,11 @@
 #include "tcl.h"
 #endif
 
+#ifdef BUILD_tcl
+# undef EXPORT
+# define EXPORT DLLEXPORT
+#endif
+
 /*
  * NSUBEXP must be at least 10, and no greater than 117 or the parser
  * will not work properly.
@@ -36,5 +41,8 @@ EXTERN int TclRegExec _ANSI_ARGS_((regexp *prog, char *string, char *start));
 EXTERN void TclRegSub _ANSI_ARGS_((regexp *prog, char *source, char *dest));
 EXTERN void TclRegError _ANSI_ARGS_((char *msg));
 EXTERN char *TclGetRegError _ANSI_ARGS_((void));
+
+#undef EXPORT
+#define EXPORT DLLIMPORT
 
 #endif /* REGEXP */
