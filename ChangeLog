@@ -1,5 +1,9 @@
 2002-07-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclParse.c (typeTable): Made this array static and const.
+	(Tcl_ParseBraces): Simplified error handling case so that scans
+	are only performed when needed, and flags are simpler too.
+
 	* license.terms: Added AS to list of copyright holders; it's only
 	fair for the current gatekeepers to be listed here!
 
