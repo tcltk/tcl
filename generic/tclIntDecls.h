@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.30 2001/10/15 20:26:57 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.31 2001/11/14 23:17:03 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -493,6 +493,10 @@ EXTERN void *		TclGetInstructionTable _ANSI_ARGS_((void));
 EXTERN void		TclExpandCodeArray _ANSI_ARGS_((void * envPtr));
 /* 165 */
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
+/* 166 */
+EXTERN int		TclListObjSetElement _ANSI_ARGS_((Tcl_Interp* interp, 
+				Tcl_Obj* listPtr, int index, 
+				Tcl_Obj* valuePtr));
 
 typedef struct TclIntStubs {
     int magic;
@@ -696,6 +700,7 @@ typedef struct TclIntStubs {
     void * (*tclGetInstructionTable) _ANSI_ARGS_((void)); /* 163 */
     void (*tclExpandCodeArray) _ANSI_ARGS_((void * envPtr)); /* 164 */
     void (*tclpSetInitialEncodings) _ANSI_ARGS_((void)); /* 165 */
+    int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* listPtr, int index, Tcl_Obj* valuePtr)); /* 166 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1299,6 +1304,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpSetInitialEncodings
 #define TclpSetInitialEncodings \
 	(tclIntStubsPtr->tclpSetInitialEncodings) /* 165 */
+#endif
+#ifndef TclListObjSetElement
+#define TclListObjSetElement \
+	(tclIntStubsPtr->tclListObjSetElement) /* 166 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

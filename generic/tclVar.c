@@ -10,11 +10,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.39 2001/11/09 23:06:04 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.40 2001/11/14 23:17:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2936,7 +2937,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 		return result;
 	    }
 	}
-	listRepPtr = (List *) varValuePtr->internalRep.otherValuePtr;
+	listRepPtr = (List *) varValuePtr->internalRep.twoPtrValue.ptr1;
 	elemPtrs = listRepPtr->elements;
 	numElems = listRepPtr->elemCount;
 
