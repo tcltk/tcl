@@ -22,12 +22,12 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 
     if test -d ../../tcl8.3$1/win;  then
 	TCL_BIN_DIR_DEFAULT=../../tcl8.3$1/win
-    else
+    elif test -d ../../tcl8.3/win;  then
 	TCL_BIN_DIR_DEFAULT=../../tcl8.3/win
     else
 	TCL_BIN_DIR_DEFAULT=../../tcl/win
     fi
-    
+
     AC_ARG_WITH(tcl, [  --with-tcl=DIR          use Tcl 8.3 binaries from DIR],
 	    TCL_BIN_DIR=$withval, TCL_BIN_DIR=`cd $TCL_BIN_DIR_DEFAULT; pwd`)
     if test ! -d $TCL_BIN_DIR; then
@@ -62,12 +62,12 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 
     if test -d ../../tk8.3$1/win;  then
 	TK_BIN_DIR_DEFAULT=../../tk8.3$1/win
-    else
+    elif test -d ../../tk8.3/win;  then
 	TK_BIN_DIR_DEFAULT=../../tk8.3/win
     else
 	TK_BIN_DIR_DEFAULT=../../tk/win
     fi
-    
+
     AC_ARG_WITH(tk, [  --with-tk=DIR          use Tk 8.3 binaries from DIR],
 	    TK_BIN_DIR=$withval, TK_BIN_DIR=`cd $TK_BIN_DIR_DEFAULT; pwd`)
     if test ! -d $TK_BIN_DIR; then
