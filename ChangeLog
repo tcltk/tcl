@@ -1,5 +1,8 @@
 2002-07-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* license.terms: Added AS to list of copyright holders; it's only
+	fair for the current gatekeepers to be listed here!
+
 	* tests/cmdMZ.test: Renamed constraint for clarity. [Bug#583427]
 	Added tests for the [time] command, which was previously only
 	indirectly tested!
