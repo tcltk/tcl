@@ -548,6 +548,10 @@ TCL_REG_MINOR_VERSION=0
 TCL_REG_PATCH_LEVEL=""
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
+#------------------------------------------------------------------------
+# Handle the --prefix=... option
+#------------------------------------------------------------------------
+
 if test "${prefix}" = "NONE"; then
     prefix=/usr/local
 fi
@@ -568,7 +572,7 @@ fi
 # Extract the first word of "gcc", so it can be a program name with args.
 set dummy gcc; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:572: checking for $ac_word" >&5
+echo "configure:576: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -598,7 +602,7 @@ if test -z "$CC"; then
   # Extract the first word of "cc", so it can be a program name with args.
 set dummy cc; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:602: checking for $ac_word" >&5
+echo "configure:606: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -649,7 +653,7 @@ fi
       # Extract the first word of "cl", so it can be a program name with args.
 set dummy cl; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:653: checking for $ac_word" >&5
+echo "configure:657: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -681,7 +685,7 @@ fi
 fi
 
 echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works""... $ac_c" 1>&6
-echo "configure:685: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works" >&5
+echo "configure:689: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works" >&5
 
 ac_ext=c
 # CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
@@ -692,12 +696,12 @@ cross_compiling=$ac_cv_prog_cc_cross
 
 cat > conftest.$ac_ext << EOF
 
-#line 696 "configure"
+#line 700 "configure"
 #include "confdefs.h"
 
 main(){return(0);}
 EOF
-if { (eval echo configure:701: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:705: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   ac_cv_prog_cc_works=yes
   # If we can't run a trivial program, we are probably using a cross compiler.
   if (./conftest; exit) 2>/dev/null; then
@@ -723,12 +727,12 @@ if test $ac_cv_prog_cc_works = no; then
   { echo "configure: error: installation or configuration problem: C compiler cannot create executables." 1>&2; exit 1; }
 fi
 echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler""... $ac_c" 1>&6
-echo "configure:727: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler" >&5
+echo "configure:731: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler" >&5
 echo "$ac_t""$ac_cv_prog_cc_cross" 1>&6
 cross_compiling=$ac_cv_prog_cc_cross
 
 echo $ac_n "checking whether we are using GNU C""... $ac_c" 1>&6
-echo "configure:732: checking whether we are using GNU C" >&5
+echo "configure:736: checking whether we are using GNU C" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_gcc'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -737,7 +741,7 @@ else
   yes;
 #endif
 EOF
-if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:741: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
+if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:745: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
   ac_cv_prog_gcc=yes
 else
   ac_cv_prog_gcc=no
@@ -756,7 +760,7 @@ ac_test_CFLAGS="${CFLAGS+set}"
 ac_save_CFLAGS="$CFLAGS"
 CFLAGS=
 echo $ac_n "checking whether ${CC-cc} accepts -g""... $ac_c" 1>&6
-echo "configure:760: checking whether ${CC-cc} accepts -g" >&5
+echo "configure:764: checking whether ${CC-cc} accepts -g" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_cc_g'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -799,7 +803,7 @@ if test "${GCC}" = "yes" ; then
     # Extract the first word of "ar", so it can be a program name with args.
 set dummy ar; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:803: checking for $ac_word" >&5
+echo "configure:807: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_AR'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -828,7 +832,7 @@ fi
     # Extract the first word of "ranlib", so it can be a program name with args.
 set dummy ranlib; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:832: checking for $ac_word" >&5
+echo "configure:836: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_RANLIB'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -857,7 +861,7 @@ fi
     # Extract the first word of "windres", so it can be a program name with args.
 set dummy windres; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:861: checking for $ac_word" >&5
+echo "configure:865: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_RC'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -890,7 +894,7 @@ fi
 #--------------------------------------------------------------------
 
 echo $ac_n "checking whether ${MAKE-make} sets \${MAKE}""... $ac_c" 1>&6
-echo "configure:894: checking whether ${MAKE-make} sets \${MAKE}" >&5
+echo "configure:898: checking whether ${MAKE-make} sets \${MAKE}" >&5
 set dummy ${MAKE-make}; ac_make=`echo "$2" | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_prog_make_${ac_make}_set'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -922,12 +926,12 @@ fi
 #--------------------------------------------------------------------
 
 echo $ac_n "checking for Cygwin environment""... $ac_c" 1>&6
-echo "configure:926: checking for Cygwin environment" >&5
+echo "configure:930: checking for Cygwin environment" >&5
 if eval "test \"`echo '$''{'ac_cv_cygwin'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 931 "configure"
+#line 935 "configure"
 #include "confdefs.h"
 
 int main() {
@@ -938,7 +942,7 @@ int main() {
 return __CYGWIN__;
 ; return 0; }
 EOF
-if { (eval echo configure:942: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:946: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_cygwin=yes
 else
@@ -960,13 +964,13 @@ test "$ac_cv_cygwin" = yes && CYGWIN=yes
 #--------------------------------------------------------------------
 
 echo $ac_n "checking for object suffix""... $ac_c" 1>&6
-echo "configure:964: checking for object suffix" >&5
+echo "configure:968: checking for object suffix" >&5
 if eval "test \"`echo '$''{'ac_cv_objext'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   rm -f conftest*
 echo 'int i = 1;' > conftest.$ac_ext
-if { (eval echo configure:970: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:974: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   for ac_file in conftest.*; do
     case $ac_file in
     *.c) ;;
@@ -984,19 +988,19 @@ OBJEXT=$ac_cv_objext
 ac_objext=$ac_cv_objext
 
 echo $ac_n "checking for mingw32 environment""... $ac_c" 1>&6
-echo "configure:988: checking for mingw32 environment" >&5
+echo "configure:992: checking for mingw32 environment" >&5
 if eval "test \"`echo '$''{'ac_cv_mingw32'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 993 "configure"
+#line 997 "configure"
 #include "confdefs.h"
 
 int main() {
 return __MINGW32__;
 ; return 0; }
 EOF
-if { (eval echo configure:1000: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:1004: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_mingw32=yes
 else
@@ -1015,7 +1019,7 @@ test "$ac_cv_mingw32" = yes && MINGW32=yes
 
 
 echo $ac_n "checking for executable suffix""... $ac_c" 1>&6
-echo "configure:1019: checking for executable suffix" >&5
+echo "configure:1023: checking for executable suffix" >&5
 if eval "test \"`echo '$''{'ac_cv_exeext'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1025,7 +1029,7 @@ else
   rm -f conftest*
   echo 'int main () { return 0; }' > conftest.$ac_ext
   ac_cv_exeext=
-  if { (eval echo configure:1029: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; }; then
+  if { (eval echo configure:1033: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; }; then
     for file in conftest.*; do
       case $file in
       *.c | *.o | *.obj) ;;
@@ -1052,7 +1056,7 @@ ac_exeext=$EXEEXT
 
 
     echo $ac_n "checking for building with threads""... $ac_c" 1>&6
-echo "configure:1056: checking for building with threads" >&5
+echo "configure:1060: checking for building with threads" >&5
     # Check whether --enable-threads or --disable-threads was given.
 if test "${enable_threads+set}" = set; then
   enableval="$enable_threads"
@@ -1083,7 +1087,7 @@ EOF
 
 
     echo $ac_n "checking how to build libraries""... $ac_c" 1>&6
-echo "configure:1087: checking how to build libraries" >&5
+echo "configure:1091: checking how to build libraries" >&5
     # Check whether --enable-shared or --disable-shared was given.
 if test "${enable_shared+set}" = set; then
   enableval="$enable_shared"
@@ -1124,7 +1128,7 @@ EOF
     # Step 0: Enable 64 bit support?
 
     echo $ac_n "checking if 64bit support is requested""... $ac_c" 1>&6
-echo "configure:1128: checking if 64bit support is requested" >&5
+echo "configure:1132: checking if 64bit support is requested" >&5
     # Check whether --enable-64bit or --disable-64bit was given.
 if test "${enable_64bit+set}" = set; then
   enableval="$enable_64bit"
@@ -1141,7 +1145,7 @@ fi
     # Extract the first word of "cygpath", so it can be a program name with args.
 set dummy cygpath; ac_word=$2
 echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
-echo "configure:1145: checking for $ac_word" >&5
+echo "configure:1149: checking for $ac_word" >&5
 if eval "test \"`echo '$''{'ac_cv_prog_CYGPATH'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -1178,7 +1182,7 @@ fi
     # set various compiler flags depending on whether we are using gcc or cl
 
     echo $ac_n "checking compiler flags""... $ac_c" 1>&6
-echo "configure:1182: checking compiler flags" >&5
+echo "configure:1186: checking compiler flags" >&5
     if test "${GCC}" = "yes" ; then
 	if test "$do64bit" = "yes" ; then
 	    echo "configure: warning: "64bit mode not supported with GCC on Windows"" 1>&2
@@ -1353,6 +1357,12 @@ echo "configure:1182: checking compiler flags" >&5
 	LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
     fi
 
+    # DL_LIBS is empty, but then we match the Unix version
+    
+    
+    
+    
+
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols 
@@ -1362,7 +1372,7 @@ echo "configure:1182: checking compiler flags" >&5
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:1366: checking for build with symbols" >&5
+echo "configure:1376: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -1392,7 +1402,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1396: checking how to run the C preprocessor" >&5
+echo "configure:1406: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1407,13 +1417,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1411 "configure"
+#line 1421 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1417: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1427: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1424,13 +1434,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1428 "configure"
+#line 1438 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1434: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1444: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1441,13 +1451,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1445 "configure"
+#line 1455 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1451: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1461: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1473,17 +1483,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1477: checking for errno.h" >&5
+echo "configure:1487: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1482 "configure"
+#line 1492 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1487: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1497: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -1574,6 +1584,31 @@ fi
 
 
 
+ ; # empty on win
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# win/tcl.m4 doesn't set (CFLAGS)
+
+
+
+
+
+
+
+# win/tcl.m4 doesn't set (LDFLAGS)
 
 
 
@@ -1601,6 +1636,7 @@ fi
 
 
 
+# empty on win, but needs sub'ing
 
 
 
@@ -1611,15 +1647,7 @@ fi
 
 
 
-
-
-
-
-
-
-
-
-
+# win only
 
 
 
@@ -1790,47 +1818,35 @@ s%@OBJEXT@%$OBJEXT%g
 s%@EXEEXT@%$EXEEXT%g
 s%@TCL_THREADS@%$TCL_THREADS%g
 s%@CYGPATH@%$CYGPATH%g
+s%@DL_LIBS@%$DL_LIBS%g
+s%@CFLAGS_DEBUG@%$CFLAGS_DEBUG%g
+s%@CFLAGS_OPTIMIZE@%$CFLAGS_OPTIMIZE%g
+s%@CFLAGS_WARNING@%$CFLAGS_WARNING%g
 s%@CPP@%$CPP%g
 s%@MAN2TCLFLAGS@%$MAN2TCLFLAGS%g
 s%@TCL_VERSION@%$TCL_VERSION%g
 s%@TCL_MAJOR_VERSION@%$TCL_MAJOR_VERSION%g
 s%@TCL_MINOR_VERSION@%$TCL_MINOR_VERSION%g
 s%@TCL_PATCH_LEVEL@%$TCL_PATCH_LEVEL%g
-s%@TCL_DDE_VERSION@%$TCL_DDE_VERSION%g
-s%@TCL_DDE_MAJOR_VERSION@%$TCL_DDE_MAJOR_VERSION%g
-s%@TCL_DDE_MINOR_VERSION@%$TCL_DDE_MINOR_VERSION%g
-s%@TCL_DDE_PATCH_LEVEL@%$TCL_DDE_PATCH_LEVEL%g
-s%@TCL_REG_VERSION@%$TCL_REG_VERSION%g
-s%@TCL_REG_MAJOR_VERSION@%$TCL_REG_MAJOR_VERSION%g
-s%@TCL_REG_MINOR_VERSION@%$TCL_REG_MINOR_VERSION%g
-s%@TCL_REG_PATCH_LEVEL@%$TCL_REG_PATCH_LEVEL%g
 s%@TCL_LIB_FILE@%$TCL_LIB_FILE%g
 s%@TCL_LIB_FLAG@%$TCL_LIB_FLAG%g
-s%@TCL_DLL_FILE@%$TCL_DLL_FILE%g
+s%@TCL_LIB_SPEC@%$TCL_LIB_SPEC%g
 s%@TCL_STUB_LIB_FILE@%$TCL_STUB_LIB_FILE%g
 s%@TCL_STUB_LIB_FLAG@%$TCL_STUB_LIB_FLAG%g
-s%@TCL_BUILD_STUB_LIB_SPEC@%$TCL_BUILD_STUB_LIB_SPEC%g
 s%@TCL_STUB_LIB_SPEC@%$TCL_STUB_LIB_SPEC%g
-s%@TCL_BUILD_STUB_LIB_PATH@%$TCL_BUILD_STUB_LIB_PATH%g
 s%@TCL_STUB_LIB_PATH@%$TCL_STUB_LIB_PATH%g
+s%@TCL_BUILD_STUB_LIB_SPEC@%$TCL_BUILD_STUB_LIB_SPEC%g
+s%@TCL_BUILD_STUB_LIB_PATH@%$TCL_BUILD_STUB_LIB_PATH%g
+s%@TCL_DLL_FILE@%$TCL_DLL_FILE%g
 s%@TCL_SRC_DIR@%$TCL_SRC_DIR%g
 s%@TCL_BIN_DIR@%$TCL_BIN_DIR%g
 s%@TCL_DBGX@%$TCL_DBGX%g
 s%@CFG_TCL_SHARED_LIB_SUFFIX@%$CFG_TCL_SHARED_LIB_SUFFIX%g
 s%@CFG_TCL_UNSHARED_LIB_SUFFIX@%$CFG_TCL_UNSHARED_LIB_SUFFIX%g
 s%@CFG_TCL_EXPORT_FILE_SUFFIX@%$CFG_TCL_EXPORT_FILE_SUFFIX%g
-s%@TCL_SHARED_BUILD@%$TCL_SHARED_BUILD%g
-s%@DEPARG@%$DEPARG%g
 s%@CFLAGS_DEFAULT@%$CFLAGS_DEFAULT%g
-s%@CFLAGS_DEBUG@%$CFLAGS_DEBUG%g
-s%@CFLAGS_OPTIMIZE@%$CFLAGS_OPTIMIZE%g
-s%@CFLAGS_WARNING@%$CFLAGS_WARNING%g
 s%@EXTRA_CFLAGS@%$EXTRA_CFLAGS%g
-s%@STLIB_LD@%$STLIB_LD%g
-s%@SHLIB_LD@%$SHLIB_LD%g
-s%@SHLIB_LD_LIBS@%$SHLIB_LD_LIBS%g
-s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%g
-s%@SHLIB_SUFFIX@%$SHLIB_SUFFIX%g
+s%@DEPARG@%$DEPARG%g
 s%@CC_OBJNAME@%$CC_OBJNAME%g
 s%@CC_EXENAME@%$CC_EXENAME%g
 s%@LDFLAGS_DEFAULT@%$LDFLAGS_DEFAULT%g
@@ -1838,12 +1854,12 @@ s%@LDFLAGS_DEBUG@%$LDFLAGS_DEBUG%g
 s%@LDFLAGS_OPTIMIZE@%$LDFLAGS_OPTIMIZE%g
 s%@LDFLAGS_CONSOLE@%$LDFLAGS_CONSOLE%g
 s%@LDFLAGS_WINDOW@%$LDFLAGS_WINDOW%g
-s%@RC_OUT@%$RC_OUT%g
-s%@RC_TYPE@%$RC_TYPE%g
-s%@RC_INCLUDE@%$RC_INCLUDE%g
-s%@RC_DEFINE@%$RC_DEFINE%g
-s%@RC_DEFINES@%$RC_DEFINES%g
-s%@RES@%$RES%g
+s%@STLIB_LD@%$STLIB_LD%g
+s%@SHLIB_LD@%$SHLIB_LD%g
+s%@SHLIB_LD_LIBS@%$SHLIB_LD_LIBS%g
+s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%g
+s%@SHLIB_SUFFIX@%$SHLIB_SUFFIX%g
+s%@TCL_SHARED_BUILD@%$TCL_SHARED_BUILD%g
 s%@LIBS_GUI@%$LIBS_GUI%g
 s%@DLLSUFFIX@%$DLLSUFFIX%g
 s%@LIBPREFIX@%$LIBPREFIX%g
@@ -1854,6 +1870,28 @@ s%@MAKE_LIB@%$MAKE_LIB%g
 s%@POST_MAKE_LIB@%$POST_MAKE_LIB%g
 s%@MAKE_DLL@%$MAKE_DLL%g
 s%@MAKE_EXE@%$MAKE_EXE%g
+s%@TCL_BUILD_LIB_SPEC@%$TCL_BUILD_LIB_SPEC%g
+s%@TCL_LD_SEARCH_FLAGS@%$TCL_LD_SEARCH_FLAGS%g
+s%@TCL_NEEDS_EXP_FILE@%$TCL_NEEDS_EXP_FILE%g
+s%@TCL_BUILD_EXP_FILE@%$TCL_BUILD_EXP_FILE%g
+s%@TCL_EXP_FILE@%$TCL_EXP_FILE%g
+s%@LIBOBJS@%$LIBOBJS%g
+s%@TCL_LIB_VERSIONS_OK@%$TCL_LIB_VERSIONS_OK%g
+s%@TCL_PACKAGE_PATH@%$TCL_PACKAGE_PATH%g
+s%@TCL_DDE_VERSION@%$TCL_DDE_VERSION%g
+s%@TCL_DDE_MAJOR_VERSION@%$TCL_DDE_MAJOR_VERSION%g
+s%@TCL_DDE_MINOR_VERSION@%$TCL_DDE_MINOR_VERSION%g
+s%@TCL_DDE_PATCH_LEVEL@%$TCL_DDE_PATCH_LEVEL%g
+s%@TCL_REG_VERSION@%$TCL_REG_VERSION%g
+s%@TCL_REG_MAJOR_VERSION@%$TCL_REG_MAJOR_VERSION%g
+s%@TCL_REG_MINOR_VERSION@%$TCL_REG_MINOR_VERSION%g
+s%@TCL_REG_PATCH_LEVEL@%$TCL_REG_PATCH_LEVEL%g
+s%@RC_OUT@%$RC_OUT%g
+s%@RC_TYPE@%$RC_TYPE%g
+s%@RC_INCLUDE@%$RC_INCLUDE%g
+s%@RC_DEFINE@%$RC_DEFINE%g
+s%@RC_DEFINES@%$RC_DEFINES%g
+s%@RES@%$RES%g
 
 CEOF
 EOF
