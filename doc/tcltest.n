@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.18 2002/06/06 18:44:43 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.19 2002/06/06 20:54:03 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -89,10 +89,6 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::normalizePath \fIpathVar\fR
 .sp
 \fBtcltest::bytestring \fIstring\fR
-.sp
-\fBtcltest::threadReap\fR
-.sp
-\fBtcltest::mainThread\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -379,21 +375,6 @@ value supplied in \fIstring\fR.  This allows the tester to create
 denormalized or improperly formed strings to pass to C procedures that
 are supposed to accept strings with embedded NULL types and confirm
 that a string result has a certain pattern of bytes.
-.TP
-\fBtcltest::threadReap\fR
-\fBtcltest::threadReap\fR only works if \fItestthread\fR is
-defined, generally by compiling tcltest.  If \fItestthread\fR is
-defined, \fBtcltest::threadReap\fR kills all threads except for the
-main thread.  It gets the ID of the main thread by calling
-\fItestthread names\fR during initialization.  This value is stored in
-\fItcltest::mainThread\fR. \fBtcltest::threadReap\fR returns the
-number of existing threads at completion.
-.TP
-\fBtcltest::mainThread\fR
-Sets or returns the main thread ID.  This defaults to 1.  This is the
-only thread that is not killed by tcltest::threadReap and is set
-according to the return value of \fItestthread names\fR at
-initialization. 
 .SH TESTS
 The \fBtest\fR procedure runs a test script and prints an error
 message if the script's result does not match the expected result.
@@ -401,7 +382,7 @@ Two syntaxes are provided for specifying the attributes of the tests.
 The first uses a separate argument for each of the attributes and
 values.  The second form places all of the attributes and values
 together into a single argument; the argument must have proper list
-structure, with teh elements of the list being the attributes and
+structure, with the elements of the list being the attributes and
 values.  The second form makes it easy to construct multi-line
 scripts, since the braces around the whole list make it unnecessary to
 include a backslash at the end of each line.  In the second form, no
