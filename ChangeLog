@@ -1,3 +1,11 @@
+2001-04-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/expr.test (expr-21.*): Tests to check below fix.
+	* generic/tclParseExpr.c (GetLexeme): Now recognises the
+	non-numeric boolean literals for what they are. It no longer makes
+	sense for anyone to create functions with the same name as one of
+	them, but this was true in 7.* as well [Bug #217777; finally!]
+
 2001-04-07  Miguel Sofer <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: Avoid panic when there are extra items in
