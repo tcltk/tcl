@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.26 2001/11/23 01:28:58 das Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.27 2001/12/28 23:36:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -534,7 +534,7 @@ Tcl_NewObj()
  *	empty string. It is the same as the Tcl_NewObj procedure above
  *	except that it calls Tcl_DbCkalloc directly with the file name and
  *	line number from its caller. This simplifies debugging since then
- *	the checkmem command will report the correct file name and line
+ *	the [memory active] command will report the correct file name and line
  *	number when reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
@@ -936,9 +936,9 @@ Tcl_NewBooleanObj(boolValue)
  *	TCL_MEM_DEBUG is defined. It creates new boolean objects. It is the
  *	same as the Tcl_NewBooleanObj procedure above except that it calls
  *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the checkmem command
- *	will report the correct file name and line number when reporting
- *	objects that haven't been freed.
+ *	caller. This simplifies debugging since then the [memory active]
+ *	command	will report the correct file name and line number when
+ *	reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewBooleanObj.
@@ -1294,9 +1294,9 @@ Tcl_NewDoubleObj(dblValue)
  *	TCL_MEM_DEBUG is defined. It creates new double objects. It is the
  *	same as the Tcl_NewDoubleObj procedure above except that it calls
  *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the checkmem command
- *	will report the correct file name and line number when reporting
- *	objects that haven't been freed.
+ *	caller. This simplifies debugging since then the [memory active]
+ *	command	will report the correct file name and line number when
+ *	reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewDoubleObj.
@@ -1925,8 +1925,8 @@ Tcl_NewLongObj(longValue)
  *	When the core is compiled with TCL_MEM_DEBUG defined,
  *	Tcl_DbNewLongObj calls Tcl_DbCkalloc directly with the file name and
  *	line number from its caller. This simplifies debugging since then
- *	the checkmem command will report the caller's file name and line
- *	number when reporting objects that haven't been freed.
+ *	the [memory active] command will report the caller's file name and
+ *	line number when reporting objects that haven't been freed.
  *
  *	Otherwise, when the core is compiled without TCL_MEM_DEBUG defined,
  *	this procedure just returns the result of calling Tcl_NewLongObj.
