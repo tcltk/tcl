@@ -1,3 +1,8 @@
+2003-04-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclClock.c:	Corrected compiler warnings.
+	* generic/tclTest.c:
+
 2003-04-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/Makefile.in: Don't define TCL_DBGX
