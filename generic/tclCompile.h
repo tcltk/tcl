@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCompile.h,v 1.3 1998/07/01 17:57:17 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclCompile.h,v 1.4 1998/07/06 14:54:36 welch Exp $ 
  */
 
 #ifndef _TCLCOMPILATION
@@ -339,6 +339,14 @@ typedef struct ByteCode {
 				 * ByteCode was compiled. Used to invalidate
 				 * code when, e.g., commands with compile
 				 * procs are redefined. */
+    Namespace *nsPtr;		/* Namespace context in which this code
+				 * was compiled. If the code is executed
+				 * if a different namespace, it must be
+				 * recompiled. */
+    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+				 * ByteCode was compiled. Used to invalidate
+				 * code when new namespace resolution rules
+				 * are put into effect. */
     int refCount;		/* Reference count: set 1 when created
 				 * plus 1 for each execution of the code
 				 * currently active. This structure can be

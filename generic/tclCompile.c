@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCompile.c,v 1.6 1998/07/01 19:12:42 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclCompile.c,v 1.7 1998/07/06 14:54:30 welch Exp $ 
  */
 
 #include "tclInt.h"
@@ -1296,6 +1296,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     unsigned char *nextPtr;
     int srcLen = envPtr->termOffset;
     int numObjects, i;
+    Namespace *namespacePtr;
 #ifdef TCL_COMPILE_STATS
     int srcLenLog2, sizeLog2;
 #endif /*TCL_COMPILE_STATS*/
@@ -1350,11 +1351,19 @@ TclInitByteCodeObj(objPtr, envPtr)
     tclSourceCount[srcLenLog2]++;
     tclByteCodeCount[sizeLog2]++;
 #endif /* TCL_COMPILE_STATS */    
+
+    if (envPtr->iPtr->varFramePtr != NULL) {
+        namespacePtr = envPtr->iPtr->varFramePtr->nsPtr;
+    } else {
+        namespacePtr = envPtr->iPtr->globalNsPtr;
+    }
     
     p = (unsigned char *) ckalloc(size);
     codePtr = (ByteCode *) p;
     codePtr->iPtr = envPtr->iPtr;
     codePtr->compileEpoch = envPtr->iPtr->compileEpoch;
+    codePtr->nsPtr = namespacePtr;
+    codePtr->nsEpoch = namespacePtr->resolverEpoch;
     codePtr->refCount = 1;
     codePtr->flags = 0;
     codePtr->source = envPtr->source;
@@ -6606,6 +6615,15 @@ LookupCompiledLocal(name, nameChars, createIfNew, flagsIfCreated, procPtr)
     register CompiledLocal *localPtr;
     int localIndex = -1;
     register int i;
+    int localCt, result;
+    Interp *iPtr;
+    Namespace *cxtNsPtr;
+    Tcl_ResolvedVarInfo vinfo;
+    ResolverScheme *resPtr;
+
+    vinfo.identity = NULL;
+    vinfo.fetchProc = NULL;
+    vinfo.deleteProc = NULL;
 
     /*
      * If not creating a temporary, does a local variable of the specified
@@ -6613,7 +6631,7 @@ LookupCompiledLocal(name, nameChars, createIfNew, flagsIfCreated, procPtr)
      */
 
     if (name != NULL) {	
-	int localCt = procPtr->numCompiledLocals;
+	localCt = procPtr->numCompiledLocals;
 	localPtr = procPtr->firstLocalPtr;
 	for (i = 0;  i < localCt;  i++) {
 	    if (!localPtr->isTemp) {
@@ -6629,9 +6647,70 @@ LookupCompiledLocal(name, nameChars, createIfNew, flagsIfCreated, procPtr)
     }
 
     /*
+     * If the namespace or the interpreter have special name resolution
+     * rules, give them a chance to resolve the name.
+     *
+     * TRICKY NOTE:  It is important to do this check here, after
+     *   looking for an existing compiled local above.  This lets
+     *   procedures supply compiled locals for arguments, and the
+     *   arguments take precedence over any other name resolution
+     *   rules.
+     */
+    cxtNsPtr = procPtr->cmdPtr->nsPtr;
+    iPtr = (Interp*)cxtNsPtr->interp;
+
+    if (cxtNsPtr->compiledVarResProc != NULL || iPtr->resolverPtr != NULL) {
+        resPtr = iPtr->resolverPtr;
+
+        if (cxtNsPtr->compiledVarResProc) {
+            result = (*cxtNsPtr->compiledVarResProc)(cxtNsPtr->interp,
+                name, nameChars, (Tcl_Namespace *) cxtNsPtr, &vinfo);
+        } else {
+            result = TCL_CONTINUE;
+        }
+
+        while (result == TCL_CONTINUE && resPtr) {
+            if (resPtr->compiledVarResProc) {
+                result = (*resPtr->compiledVarResProc)(cxtNsPtr->interp,
+                    name, nameChars, (Tcl_Namespace *) cxtNsPtr, &vinfo);
+            }
+            resPtr = resPtr->nextPtr;
+        }
+
+        /*
+         * If the resolver returned a valid result, then look for
+         * an existing variable with matching resolution info.
+         * If a matching variable is not found, then create one
+         * if appropriate.
+         */
+        if (result == TCL_OK) {
+            Tcl_ResolvedVarInfo *currInfo;
+
+	    localCt = procPtr->numCompiledLocals;
+	    localPtr = procPtr->firstLocalPtr;
+	    for (i = 0;  i < localCt;  i++) {
+	        if (!localPtr->isTemp) {
+                    currInfo = &localPtr->resolveInfo;
+		    if ( (currInfo->fetchProc == vinfo.fetchProc) &&
+	                 (currInfo->identity == vinfo.identity) ) {
+		        return i;
+		    }
+	        }
+	        localPtr = localPtr->nextPtr;
+	    }
+            goto createCompiledLocal;
+        }
+        else if (result != TCL_CONTINUE) {
+            return -1;
+        }
+    }
+
+    /*
      * Create a new variable if appropriate.
      */
     
+createCompiledLocal:
+
     if (createIfNew || (name == NULL)) {
 	localIndex = procPtr->numCompiledLocals;
 	localPtr = (CompiledLocal *) ckalloc((unsigned) 
@@ -6650,6 +6729,9 @@ LookupCompiledLocal(name, nameChars, createIfNew, flagsIfCreated, procPtr)
 	localPtr->isTemp = (name == NULL);
 	localPtr->flags = flagsIfCreated;
 	localPtr->defValuePtr = NULL;
+	localPtr->resolveInfo.identity = vinfo.identity;
+	localPtr->resolveInfo.fetchProc = vinfo.fetchProc;
+	localPtr->resolveInfo.deleteProc = vinfo.deleteProc;
 	if (name != NULL) {
 	    memcpy((VOID *) localPtr->name, (VOID *) name, (size_t) nameChars);
 	}
