@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exit.n,v 1.3 2000/09/07 14:27:47 poenitz Exp $
+'\" RCS: @(#) $Id: exit.n,v 1.4 2004/05/24 13:00:55 dkf Exp $
 '\" 
 .so man.macros
 .TH exit n "" Tcl "Tcl Built-In Commands"
@@ -23,6 +23,28 @@ Terminate the process, returning \fIreturnCode\fR to the
 system as the exit status.
 If \fIreturnCode\fR isn't specified then it defaults
 to 0.
+.SH EXAMPLE
+Since non-zero exit codes are usually interpreted as error cases by
+the calling process, the \fBexit\fR command is an important part of
+signalling that something fatal has gone wrong.  This code fragment is
+useful in scripts to act as a general problem trap:
+.CS
+proc main {} {
+    # ... put the real main code in here ...
+}
+
+if {[catch {main} msg]} {
+    puts stderr "unexpected script error: $msg"
+    if {[info exist env(DEBUG)]} {
+        puts stderr "---- BEGIN TRACE ----"
+        puts stderr $errorInfo
+        puts stderr "---- END TRACE ----"
+    }
+
+    # Reserve code 1 for "expected" error exits...
+    exit 2
+}
+.CE
 
 .SH "SEE ALSO"
 exec(n), tclvars(n)
