@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6 2003/05/10 04:28:59 mistachkin Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.7 2003/12/16 11:34:45 dkf Exp $
  */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
@@ -117,7 +117,7 @@ typedef struct Cache {
  * to avoid calculating them repeatedly.
  */
 
-struct binfo {
+static struct {
     size_t blocksize;	/* Bucket blocksize. */
     int maxblocks;	/* Max blocks before move to share. */
     int nmove;		/* Num blocks to move to share. */

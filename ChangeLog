@@ -1,3 +1,7 @@
+2003-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclThreadAlloc.c (binfo): Made variable file-local.
+
 2003-12-15  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tcl.rc:
