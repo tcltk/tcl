@@ -1,5 +1,11 @@
 2002-09-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/configure: regen.
+	* unix/tcl.m4: improve AIX-4/5 64bit compilation support.
+
+	* generic/tclProc.c (Tcl_ProcObjCmd): correct overeager
+	optimization of noop proc to handle the precompiled case. (sofer)
+
 	* unix/ldAix (nmopts): add -X32_64 to make it work for 32 or 64bit
 	mode compilation.
 
