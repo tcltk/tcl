@@ -931,6 +931,20 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+
+	    # Check to enable 64-bit flags for compiler/linker
+
+	    if test "$do64bit" = "yes" ; then
+	        if test "$GCC" = "yes" ; then
+	            AC_MSG_WARN([64bit mode not supported by gcc])
+	        else
+	            do64bit_ok=yes
+	            SHLIB_LD="ld -64 -shared -rdata_shared"
+	            EXTRA_CFLAGS="-64"
+	            LDFLAGS="-64"
+	        fi
+	    fi
+
 	    ;;
 	Linux*)
 	    SHLIB_CFLAGS="-fPIC"

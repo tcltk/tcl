@@ -1,5 +1,12 @@
 2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Enable 64 bit compilation
+	when using the native compiler on a 64 bit version of IRIX.
+	[Tcl bug 219220]
+
+2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/Makefile.in: Combine ranlib tests and
 	avoid printing unless ranlib is actually run.
 
