@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.12 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.13 2001/08/02 22:16:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1516,7 +1516,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	}
     } else {
 	Tcl_Obj* cwd;
-	int ret;
+	int ret = -1;
 	if (pathPtr != NULL) {
 	    int len;
 	    Tcl_GetStringFromObj(pathPtr,&len);
@@ -1554,27 +1554,29 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		 * not end in a directory delimiter.
 		 */
 		cwdDir = Tcl_DuplicateObj(cwd);
-		#ifdef MAC_TCL
+#ifdef MAC_TCL
 		Tcl_AppendToObj(cwdDir, ":", 1);
-		#else
+#else
 		Tcl_AppendToObj(cwdDir, "/", 1);
-		#endif
+#endif
 		Tcl_GetStringFromObj(cwdDir, &cwdLen);
 		Tcl_IncrRefCount(cwdDir);
 		ret = (*proc)(interp, tmpResultPtr, cwdDir, pattern, types);
 		Tcl_DecrRefCount(cwdDir);
 		if (ret == TCL_OK) {
 		    int resLength;
+
 		    ret = Tcl_ListObjLength(interp, tmpResultPtr, &resLength);
 		    if (ret == TCL_OK) {
-			int i;
-			for (i =0; i< resLength; i++) {
-			    Tcl_Obj *elt, *cutElt;
-			    char *eltStr;
-			    int eltLen;
+			Tcl_Obj *elt, *cutElt;
+			char *eltStr;
+			int eltLen, i;
+
+			for (i = 0; i < resLength; i++) {
 			    Tcl_ListObjIndex(interp, tmpResultPtr, i, &elt);
 			    eltStr = Tcl_GetStringFromObj(elt,&eltLen);
-			    cutElt = Tcl_NewStringObj(eltStr + cwdLen, eltLen - cwdLen);
+			    cutElt = Tcl_NewStringObj(eltStr + cwdLen,
+				    eltLen - cwdLen);
 			    Tcl_ListObjAppendElement(interp, result, cutElt);
 			}
 		    }
@@ -3813,15 +3815,15 @@ NativeUtime(pathPtr, tval)
     Tcl_Obj *pathPtr;
     struct utimbuf *tval;
 {
-	#ifdef MAC_TCL
-	long gmt_offset=TclpGetGMTOffset();
-	struct utimbuf local_tval;
-	local_tval.actime=tval->actime+gmt_offset;
-	local_tval.modtime=tval->modtime+gmt_offset;
+#ifdef MAC_TCL
+    long gmt_offset=TclpGetGMTOffset();
+    struct utimbuf local_tval;
+    local_tval.actime=tval->actime+gmt_offset;
+    local_tval.modtime=tval->modtime+gmt_offset;
     return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),&local_tval);
-	#else
+#else
     return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),tval);
-    #endif
+#endif
 }
 
 int 
@@ -3835,7 +3837,7 @@ NativeLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     ClientData * clientDataPtr;
 {
     return TclpLoadFile(interp, Tcl_FSGetTranslatedPath(NULL, pathPtr), 
-			sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr);
+	    sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr);
 }
 
 /* Everything from here on is contained in this obsolete ifdef */
@@ -3960,7 +3962,7 @@ TclStatDeleteProc (proc)
  *	could not be allocated.
  *
  * Side effects:
- *      Memory allocataed and modifies the link list for 'TclAccess'
+ *      Memory allocated and modifies the link list for 'TclAccess'
  *	functions.
  *
  *----------------------------------------------------------------------
@@ -4103,7 +4105,7 @@ TclOpenFileChannelInsertProc(proc)
  *
  *	Removed the passed function pointer from the list of
  *	'Tcl_OpenFileChannel' functions.  Ensures that the built-in
- *	open file channel function is not removvable.
+ *	open file channel function is not removable.
  *
  * Results:
  *      TCL_OK if the procedure pointer was successfully removed,
