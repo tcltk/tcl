@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetVar.3,v 1.8 2003/07/18 16:56:41 dgp Exp $
+'\" RCS: @(#) $Id: SetVar.3,v 1.9 2004/08/16 14:11:16 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetVar 3 8.1 Tcl "Tcl Library Procedures"
@@ -221,6 +221,9 @@ A separator space is appended before the new list element unless
 the list element is going to be the first element in a list or
 sublist (i.e. the variable's current value is empty, or contains
 the single character ``{'', or ends in `` }'').
+When appending, the original value of the variable must also be
+a valid list, so that the operation is the appending of a new
+list element onto a list.
 .PP
 \fBTcl_GetVar\fR and \fBTcl_GetVar2\fR
 return the current value of a variable.
