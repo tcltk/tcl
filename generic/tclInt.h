@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64.6.3 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.4 2001/09/27 15:02:14 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -752,7 +752,7 @@ EXTERN void		TclHandleRelease _ANSI_ARGS_((TclHandle handle));
 typedef struct {
     char *command;		/* String containing previously-executed
 				 * command. */
-    Tcl_Length bytesAvl;	/* Total # of bytes available at *event (not
+    int bytesAvl;		/* Total # of bytes available at *event (not
 				 * all are necessarily in use now). */
 } HistoryEvent;
 
@@ -764,11 +764,11 @@ typedef struct {
  */
 
 typedef struct HistoryRev {
-    Tcl_Length firstIndex;	/* Index of the first byte to replace in
+    int firstIndex;		/* Index of the first byte to replace in
 				 * current history event. */
-    Tcl_Length lastIndex;	/* Index of last byte to replace in
+    int lastIndex;		/* Index of last byte to replace in
 				 * current history event. */
-    Tcl_Length newSize;		/* Number of bytes in newBytes. */
+    int newSize;		/* Number of bytes in newBytes. */
     char *newBytes;		/* Replacement for the range given by
 				 * firstIndex and lastIndex (malloced). */
     struct HistoryRev *nextPtr;	/* Next in chain of revisions to apply, or
@@ -1222,9 +1222,9 @@ typedef struct Interp {
     char *appendResult;		/* Storage space for results generated
 				 * by Tcl_AppendResult.	 Malloc-ed.  NULL
 				 * means not yet allocated. */
-    Tcl_Length appendAvl;	/* Total amount of space available at
+    int appendAvl;		/* Total amount of space available at
 				 * partialResult. */
-    Tcl_Length appendUsed;	/* Number of non-null bytes currently
+    int appendUsed;		/* Number of non-null bytes currently
 				 * stored at partialResult. */
 
     /*
@@ -1687,8 +1687,7 @@ EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_Length endValue,
-			    int *indexPtr));
+			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
 			    int localIndex, int flags));
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1772,7 +1771,7 @@ EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_StatBuf *buf));
-EXTERN char *		TclpAlloc _ANSI_ARGS_((Tcl_Length size));
+EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
 EXTERN void		TclpExit _ANSI_ARGS_((int status));
@@ -1819,7 +1818,7 @@ EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix, 
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-							 Tcl_Length *lenPtr));
+							 int *lenPtr));
 EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int 		TclCrossFilesystemCopy _ANSI_ARGS_((Tcl_Interp *interp, 
@@ -1849,8 +1848,7 @@ EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
-EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
-			    Tcl_Length size));
+EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr, unsigned int size));
 EXTERN void		TclpReleaseFile _ANSI_ARGS_((TclFile file));
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));

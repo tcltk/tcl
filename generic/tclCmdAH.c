@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.4 2001/09/27 10:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.5 2001/09/27 15:08:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -93,9 +93,8 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register int i;
-    int body, result;
+    int body, result, caseObjc;
     char *string, *arg;
-    Tcl_Length caseObjc;
     Tcl_Obj *CONST *caseObjv;
     Tcl_Obj *armPtr;
 
@@ -421,8 +420,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int index;
-    Tcl_Length length;
+    int index, length;
     Tcl_Encoding encoding;
     char *string;
     Tcl_DString ds;
@@ -472,7 +470,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		 */
 
 		string = (char *) Tcl_GetByteArrayFromObj(data, &length);
-		Tcl_ExternalToUtfDString(encoding, string, (int)length, &ds);
+		Tcl_ExternalToUtfDString(encoding, string, length, &ds);
 
 		/*
 		 * Note that we cannot use Tcl_DStringResult here because
@@ -480,7 +478,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		 */
 
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			Tcl_DStringValue(&ds), (int)Tcl_DStringLength(&ds));
+			Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
 		Tcl_DStringFree(&ds);
 	    } else {
 		/*
@@ -488,7 +486,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		 */
 
 		string = Tcl_GetStringFromObj(data, &length);
-		Tcl_UtfToExternalDString(encoding, string, (int)length, &ds);
+		Tcl_UtfToExternalDString(encoding, string, length, &ds);
 		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_SetByteArrayObj(resultPtr, 
 			(unsigned char *) Tcl_DStringValue(&ds),
@@ -551,7 +549,7 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
 {
     Interp *iPtr = (Interp *) interp;
     char *info;
-    Tcl_Length infoLen;
+    int infoLen;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "message ?errorInfo? ?errorCode?");
@@ -561,7 +559,7 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     if (objc >= 3) {		/* process the optional info argument */
 	info = Tcl_GetStringFromObj(objv[2], &infoLen);
 	if (*info != 0) {
-	    Tcl_AddObjErrorInfo(interp, info, (int)infoLen);
+	    Tcl_AddObjErrorInfo(interp, info, infoLen);
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
     }
@@ -705,8 +703,7 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
     register Tcl_Obj *objPtr;
     Tcl_Obj *resultPtr;
     register char *bytes;
-    Tcl_Length length;
-    int i, result;
+    int length, i, result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -728,12 +725,12 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
 
     /*** QUESTION: Do we need to copy the slow way? ***/
     bytes = Tcl_GetStringFromObj(objv[1], &length);
-    objPtr = Tcl_NewStringObj(bytes, (int)length);
+    objPtr = Tcl_NewStringObj(bytes, length);
     Tcl_IncrRefCount(objPtr);
     for (i = 2;  i < objc;  i++) {
 	Tcl_AppendToObj(objPtr, " ", 1);
 	bytes = Tcl_GetStringFromObj(objv[i], &length);
-	Tcl_AppendToObj(objPtr, bytes, (int)length);
+	Tcl_AppendToObj(objPtr, bytes, length);
     }
 
     /*
@@ -1029,7 +1026,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    Tcl_SetStringObj(Tcl_GetObjResult(interp), fileName, 
-			     (int)Tcl_DStringLength(&ds));
+			     Tcl_DStringLength(&ds));
 	    Tcl_DStringFree(&ds);
 	    return TCL_OK;
 	}
@@ -1119,7 +1116,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileRenameCmd(interp, objc, objv);
 	}
 	case FILE_ROOTNAME: {
-	    Tcl_Length length;
+	    int length;
 	    char *fileName, *extension;
 	    
 	    if (objc != 3) {
@@ -1215,7 +1212,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     	case FILE_TAIL: {
-	    Tcl_Length splitElements;
+	    int splitElements;
 	    Tcl_Obj *splitPtr;
 
 	    if (objc != 3) {
@@ -1248,8 +1245,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		  || (Tcl_FSGetPathType(objv[2]) == TCL_PATH_RELATIVE)) {
 		    
 		    Tcl_Obj *tail = NULL;
-		    Tcl_ListObjIndex(NULL, splitPtr, (int)splitElements-1,
-			    &tail);
+		    Tcl_ListObjIndex(NULL, splitPtr, splitElements-1, &tail);
 		    Tcl_SetObjResult(interp, tail);
 	    	}
 	    }
@@ -1618,15 +1614,15 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     
 #define STATIC_LIST_SIZE 4
     int indexArray[STATIC_LIST_SIZE];
-    Tcl_Length varcListArray[STATIC_LIST_SIZE];
+    int varcListArray[STATIC_LIST_SIZE];
     Tcl_Obj **varvListArray[STATIC_LIST_SIZE];
-    Tcl_Length argcListArray[STATIC_LIST_SIZE];
+    int argcListArray[STATIC_LIST_SIZE];
     Tcl_Obj **argvListArray[STATIC_LIST_SIZE];
 
     int *index = indexArray;		   /* Array of value list indices */
-    Tcl_Length *varcList = varcListArray;  /* # loop variables per list */
+    int *varcList = varcListArray;	   /* # loop variables per list */
     Tcl_Obj ***varvList = varvListArray;   /* Array of var name lists */
-    Tcl_Length *argcList = argcListArray;  /* Array of value list sizes */
+    int *argcList = argcListArray;	   /* Array of value list sizes */
     Tcl_Obj ***argvList = argvListArray;   /* Array of value lists */
 
     if (objc < 4 || (objc%2 != 0)) {
@@ -1658,9 +1654,9 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     numLists = (objc-2)/2;
     if (numLists > STATIC_LIST_SIZE) {
 	index = (int *) ckalloc(numLists * sizeof(int));
-	varcList = (Tcl_Length *) ckalloc(numLists * sizeof(Tcl_Length));
+	varcList = (int *) ckalloc(numLists * sizeof(int));
 	varvList = (Tcl_Obj ***) ckalloc(numLists * sizeof(Tcl_Obj **));
-	argcList = (Tcl_Length *) ckalloc(numLists * sizeof(Tcl_Length));
+	argcList = (int *) ckalloc(numLists * sizeof(int));
 	argvList = (Tcl_Obj ***) ckalloc(numLists * sizeof(Tcl_Obj **));
     }
     for (i = 0;  i < numLists;  i++) {
@@ -1827,14 +1823,14 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 {
     char *format;		/* Used to read characters from the format
 				 * string. */
-    Tcl_Length formatLen;	/* The length of the format string */
+    int formatLen;		/* The length of the format string */
     char *endPtr;		/* Points to the last char in format array */
     char newFormat[40];		/* A new format specifier is generated here. */
     int width;			/* Field width from field specifier, or 0 if
 				 * no width given. */
     int precision;		/* Field precision from field specifier, or 0
 				 * if no precision given. */
-    Tcl_Length size;		/* Number of bytes needed for result of
+    int size;			/* Number of bytes needed for result of
 				 * conversion, based on type of conversion
 				 * ("e", "s", etc.), width, and precision. */
     long intValue;		/* Used to hold value to pass to sprintf, if
@@ -2099,7 +2095,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 
 		whichValue = STRING_VALUE;
 		ptrValue = Tcl_GetStringFromObj(objv[objIndex], &size);
-		stringLen = Tcl_NumUtfChars(ptrValue, (int)size);
+		stringLen = Tcl_NumUtfChars(ptrValue, size);
 		if (gotPrecision && (precision < stringLen)) {
 		    stringLen = precision;
 		}
@@ -2156,7 +2152,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    size = width;
 	}
 	if (noPercent) {
-	    Tcl_AppendToObj(resultPtr, ptrValue, (int)size);
+	    Tcl_AppendToObj(resultPtr, ptrValue, size);
 	} else {
 	    if (size > dstSize) {
 	        if (dst != staticBuf) {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.58.2.4 2001/09/26 14:23:09 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.58.2.5 2001/09/27 15:00:32 dkf Exp $
 
 library tcl
 
@@ -28,34 +28,33 @@ hooks {tclPlat tclInt tclIntPlat}
 
 declare 0 generic {
     int Tcl_PkgProvideEx( Tcl_Interp* interp, CONST char* name,
-                          CONST char* version, ClientData clientData )
+	    CONST char* version, ClientData clientData )
 }
 declare 1 generic {
     CONST char * Tcl_PkgRequireEx( Tcl_Interp *interp, CONST char *name,
-                                   CONST char *version, int exact,
-				   ClientData *clientDataPtr )
+	    CONST char *version, int exact, ClientData *clientDataPtr )
 }
 declare 2 generic {
     void Tcl_Panic(CONST char *format, ...)
 }
 declare 3 generic {
-    char * Tcl_Alloc(Tcl_Length size)
+    char * Tcl_Alloc(unsigned int size)
 }
 declare 4 generic {
     void Tcl_Free(char *ptr)
 }
 declare 5 generic {
-    char * Tcl_Realloc(char *ptr, Tcl_Length size)
+    char * Tcl_Realloc(char *ptr, unsigned int size)
 }
 declare 6 generic {
-    char * Tcl_DbCkalloc(Tcl_Length size, CONST char *file, int line)
+    char * Tcl_DbCkalloc(unsigned int size, CONST char *file, int line)
 }
 declare 7 generic {
     int Tcl_DbCkfree(char *ptr, CONST char *file, int line)
 }
 declare 8 generic {
-    char * Tcl_DbCkrealloc(char *ptr, Tcl_Length size,
-                           CONST char *file, int line)
+    char * Tcl_DbCkrealloc(char *ptr, unsigned int size,
+	    CONST char *file, int line)
 }
 
 # Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on unix,
@@ -108,17 +107,16 @@ declare 22 generic {
     Tcl_Obj * Tcl_DbNewBooleanObj(int boolValue, CONST char *file, int line)
 }
 declare 23 generic {
-    Tcl_Obj * Tcl_DbNewByteArrayObj(CONST unsigned char *bytes,
-				    Tcl_Length length,
-				    CONST char *file, int line)
+    Tcl_Obj * Tcl_DbNewByteArrayObj(CONST unsigned char *bytes, int length,
+	    CONST char *file, int line)
 }
 declare 24 generic {
     Tcl_Obj * Tcl_DbNewDoubleObj(double doubleValue,
-                                 CONST char *file, int line)
+	    CONST char *file, int line)
 }
 declare 25 generic {
     Tcl_Obj * Tcl_DbNewListObj(int objc, Tcl_Obj *CONST *objv, 
-                               CONST char *file, int line)
+	    CONST char *file, int line)
 }
 declare 26 generic {
     Tcl_Obj * Tcl_DbNewLongObj(long longValue, CONST char *file, int line)
@@ -144,8 +142,7 @@ declare 32 generic {
 	    int *boolPtr)
 }
 declare 33 generic {
-    unsigned char * Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr,
-					    Tcl_Length *lengthPtr)
+    unsigned char * Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 34 generic {
     int Tcl_GetDouble(Tcl_Interp *interp, char *str, double *doublePtr)
@@ -171,7 +168,7 @@ declare 40 generic {
     Tcl_ObjType * Tcl_GetObjType(char *typeName)
 }
 declare 41 generic {
-    char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, Tcl_Length *lengthPtr)
+    char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 42 generic {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -186,7 +183,7 @@ declare 44 generic {
 }
 declare 45 generic {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr,
-	    Tcl_Length *objcPtr, Tcl_Obj ***objvPtr)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 generic {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index,
@@ -194,18 +191,17 @@ declare 46 generic {
 }
 declare 47 generic {
     int Tcl_ListObjLength(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			  Tcl_Length *lengthPtr)
+	    int *lengthPtr)
 }
 declare 48 generic {
     int Tcl_ListObjReplace(Tcl_Interp *interp, Tcl_Obj *listPtr, int first,
 	    int count, int objc, Tcl_Obj *CONST objv[])
 }
 declare 49 generic {
-    Tcl_Obj * Tcl_NewBooleanObj(int boolValue)
+    Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 }
 declare 50 generic {
-    Tcl_Obj * Tcl_NewByteArrayObj( CONST unsigned char* bytes,
-	                           Tcl_Length length )
+    Tcl_Obj *Tcl_NewByteArrayObj(CONST unsigned char* bytes, int length)
 }
 declare 51 generic {
     Tcl_Obj * Tcl_NewDoubleObj(double doubleValue)
@@ -229,11 +225,11 @@ declare 57 generic {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 generic {
-    unsigned char * Tcl_SetByteArrayLength(Tcl_Obj *objPtr, Tcl_Length length)
+    unsigned char * Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
 }
 declare 59 generic {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, CONST unsigned char *bytes,
-                             Tcl_Length length)
+	    int length)
 }
 declare 60 generic {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -248,7 +244,7 @@ declare 63 generic {
     void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
 }
 declare 64 generic {
-    void Tcl_SetObjLength(Tcl_Obj *objPtr, Tcl_Length length)
+    void Tcl_SetObjLength(Tcl_Obj *objPtr, int length)
 }
 declare 65 generic {
     void Tcl_SetStringObj( Tcl_Obj* objPtr, CONST char* bytes, int length )
@@ -289,7 +285,7 @@ declare 76 generic {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
 declare 77 generic {
-    char Tcl_Backslash(CONST char *src, Tcl_Length *readPtr)
+    char Tcl_Backslash(CONST char *src, int *readPtr)
 }
 declare 78 generic {
     int Tcl_BadChannelOption(Tcl_Interp *interp, char *optionName,
@@ -315,12 +311,12 @@ declare 84 generic {
     int Tcl_ConvertElement(CONST char *src, char *dst, int flags)
 }
 declare 85 generic {
-    int Tcl_ConvertCountedElement(CONST char *src, int length,
-				  char *dst, int flags)
+    int Tcl_ConvertCountedElement(CONST char *src, int length, char *dst,
+	    int flags)
 }
 declare 86 generic {
-    int Tcl_CreateAlias(Tcl_Interp *slave, char *slaveCmd,
-	    Tcl_Interp *target, char *targetCmd, int argc, char **argv)
+    int Tcl_CreateAlias(Tcl_Interp *slave, char *slaveCmd, Tcl_Interp *target,
+	    char *targetCmd, int argc, char **argv)
 }
 declare 87 generic {
     int Tcl_CreateAliasObj(Tcl_Interp *slave, char *slaveCmd,
@@ -355,9 +351,8 @@ declare 94 generic {
     Tcl_Interp * Tcl_CreateInterp(void)
 }
 declare 95 generic {
-    void Tcl_CreateMathFunc(Tcl_Interp *interp, CONST char *name,
-                            int numArgs, Tcl_ValueType *argTypes, 
-                            Tcl_MathProc *proc, ClientData clientData)
+    void Tcl_CreateMathFunc(Tcl_Interp *interp, CONST char *name, int numArgs,
+	    Tcl_ValueType *argTypes, Tcl_MathProc *proc, ClientData clientData)
 }
 declare 96 generic {
     Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp, CONST char *cmdName,
@@ -453,7 +448,7 @@ declare 123 generic {
     void Tcl_DStringResult(Tcl_Interp *interp, Tcl_DString *dsPtr)
 }
 declare 124 generic {
-    void Tcl_DStringSetLength(Tcl_DString *dsPtr, Tcl_Length length)
+    void Tcl_DStringSetLength(Tcl_DString *dsPtr, int length)
 }
 declare 125 generic {
     void Tcl_DStringStartSublist(Tcl_DString *dsPtr)
@@ -732,7 +727,7 @@ declare 205 generic {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
 }
 declare 206 generic {
-    int Tcl_Read(Tcl_Channel chan, char *bufPtr, Tcl_Length toRead)
+    int Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead)
 }
 declare 207 {unix win} {
     void Tcl_ReapDetachedProcs(void)
@@ -950,20 +945,19 @@ declare 270 generic {
 }
 declare 271 generic {
     CONST char * Tcl_PkgPresent(Tcl_Interp *interp, CONST char *name,
-                                CONST char *version, int exact)
+	    CONST char *version, int exact)
 }
 declare 272 generic {
     CONST char * Tcl_PkgPresentEx(Tcl_Interp *interp, CONST char *name,
-                                  CONST char *version, int exact,
-                                  ClientData *clientDataPtr)
+	    CONST char *version, int exact, ClientData *clientDataPtr)
 }
 declare 273 generic {
     int Tcl_PkgProvide(Tcl_Interp *interp, CONST char *name, 
-                       CONST char *version)
+	    CONST char *version)
 }
 declare 274 generic {
     CONST char * Tcl_PkgRequire(Tcl_Interp *interp, CONST char *name, 
-                                CONST char *version, int exact)
+	    CONST char *version, int exact)
 }
 declare 275 generic {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
@@ -1052,9 +1046,8 @@ declare 294 generic {
 declare 295 generic {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding,
 	    CONST char *src, int srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, Tcl_Length dstLen,
-	    Tcl_Length *srcReadPtr, Tcl_Length *dstWrotePtr,
-	    Tcl_Length *dstCharsPtr)
+	    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 generic {
     char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, CONST char *src,
@@ -1136,7 +1129,7 @@ declare 319 generic {
 	    Tcl_QueuePosition position)
 }
 declare 320 generic {
-    Tcl_UniChar Tcl_UniCharAtIndex(CONST char *src, Tcl_Length index)
+    Tcl_UniChar Tcl_UniCharAtIndex(CONST char *src, int index)
 }
 declare 321 generic {
     Tcl_UniChar Tcl_UniCharToLower(int ch)
@@ -1154,7 +1147,7 @@ declare 325 generic {
     char * Tcl_UtfAtIndex(CONST char *src, int index)
 }
 declare 326 generic {
-    int Tcl_UtfCharComplete(CONST char *src, Tcl_Length len)
+    int Tcl_UtfCharComplete(CONST char *src, int len)
 }
 declare 327 generic {
     int Tcl_UtfBackslash(CONST char *src, int *readPtr, char *dst)
@@ -1174,9 +1167,8 @@ declare 331 generic {
 declare 332 generic {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
 	    CONST char *src, int srcLen, int flags,
-	    Tcl_EncodingState *statePtr, char *dst, Tcl_Length dstLen,
-	    Tcl_Length *srcReadPtr, Tcl_Length *dstWrotePtr,
-	    Tcl_Length *dstCharsPtr)
+	    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 generic {
     char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, CONST char *src,
@@ -1241,11 +1233,11 @@ declare 352 generic {
 }
 declare 353 generic {
     int Tcl_UniCharNcmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,
-			Tcl_Length n)
+	    unsigned long n)
 }
 declare 354 generic {
-    char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string,
-		Tcl_Length numChars, Tcl_DString *dsPtr)
+    char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, int numChars,
+	    Tcl_DString *dsPtr)
 }
 declare 355 generic {
     Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, int length,
@@ -1302,10 +1294,10 @@ declare 368 generic {
     int Tcl_Stat(CONST char *path, Tcl_StatBuf *bufPtr)
 }
 declare 369 generic {
-    int Tcl_UtfNcmp(CONST char *s1, CONST char *s2, Tcl_Length n)
+    int Tcl_UtfNcmp(CONST char *s1, CONST char *s2, unsigned long n)
 }
 declare 370 generic {
-    int Tcl_UtfNcasecmp(CONST char *s1, CONST char *s2, Tcl_Length n)
+    int Tcl_UtfNcasecmp(CONST char *s1, CONST char *s2, unsigned long n)
 }
 declare 371 generic {
     int Tcl_StringCaseMatch(CONST char *str, CONST char *pattern, int nocase)
@@ -1334,23 +1326,23 @@ declare 378 generic {
 }
 declare 379 generic {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, CONST Tcl_UniChar *unicode,
-	                   int numChars)
+	    int numChars)
 }
 declare 380 generic {
-    Tcl_Length Tcl_GetCharLength (Tcl_Obj *objPtr)
+    int Tcl_GetCharLength (Tcl_Obj *objPtr)
 }
 declare 381 generic {
-    Tcl_UniChar Tcl_GetUniChar (Tcl_Obj *objPtr, Tcl_Length index)
+    Tcl_UniChar Tcl_GetUniChar (Tcl_Obj *objPtr, int index)
 }
 declare 382 generic {
     Tcl_UniChar * Tcl_GetUnicode (Tcl_Obj *objPtr)
 }
 declare 383 generic {
-    Tcl_Obj * Tcl_GetRange(Tcl_Obj *objPtr, Tcl_Length first, Tcl_Length last)
+    Tcl_Obj * Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
 declare 384 generic {
-    void Tcl_AppendUnicodeToObj (Tcl_Obj *objPtr,
-	                         CONST Tcl_UniChar *unicode, int length)
+    void Tcl_AppendUnicodeToObj (Tcl_Obj *objPtr, CONST Tcl_UniChar *unicode,
+	    int length)
 }
 declare 385 generic {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *stringObj,
@@ -1385,7 +1377,7 @@ declare 393 generic {
 
 # Introduced in 8.3.2
 declare 394 generic {
-    int Tcl_ReadRaw (Tcl_Channel chan, char *dst, Tcl_Length bytesToRead)
+    int Tcl_ReadRaw (Tcl_Channel chan, char *dst, int bytesToRead)
 }
 declare 395 generic {
     int Tcl_WriteRaw (Tcl_Channel chan, char *src, int srcLen)
@@ -1469,7 +1461,7 @@ declare 418 generic {
 
 declare 419 generic {
     int Tcl_UniCharNcasecmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,
-	    Tcl_Length n)
+	    unsigned long n)
 }
 declare 420 generic {
     int Tcl_UniCharCaseMatch(CONST Tcl_UniChar *ustr,
@@ -1507,33 +1499,32 @@ declare 427 generic {
 		Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 428 generic {
-    char * Tcl_AttemptAlloc(Tcl_Length size)
+    char * Tcl_AttemptAlloc(unsigned int size)
 }
 declare 429 generic {
-    char * Tcl_AttemptDbCkalloc(Tcl_Length size, char *file, int line)
+    char * Tcl_AttemptDbCkalloc(unsigned int size, CONST char *file, int line)
 }
 declare 430 generic {
-    char * Tcl_AttemptRealloc(char *ptr, Tcl_Length size)
+    char * Tcl_AttemptRealloc(char *ptr, unsigned int size)
 }
 declare 431 generic {
-    char * Tcl_AttemptDbCkrealloc(char *ptr, Tcl_Length size,
-				  char *file, int line)
+    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+	    CONST char *file, int line)
 }
 declare 432 generic {
-    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, Tcl_Length length)
+    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
 }
 declare 433 generic {
     Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
 }
 # introduced in 8.4a3
 declare 434 generic {
-    Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr,
-					 Tcl_Length *lengthPtr)
+    Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 435 generic {
     int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name,
-	int *numArgsPtr, Tcl_ValueType **argTypesPtr,
-	Tcl_MathProc **procPtr, ClientData *clientDataPtr)
+	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 }
 declare 436 generic {
     Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, CONST char *pattern)
@@ -1621,7 +1612,7 @@ declare 460 generic {
     Tcl_Obj* Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
 }
 declare 461 generic {
-    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, Tcl_Length *lenPtr)
+    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, int *lenPtr)
 }
 declare 462 generic {
     int Tcl_FSEqualPaths(Tcl_Obj* firstPtr, Tcl_Obj* secondPtr)
@@ -1693,11 +1684,11 @@ declare 481 generic {
 ### New functions on 64-bit dev branch ###
 declare 482 generic {
     Tcl_Obj * Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
-				  CONST char *file, int line)
+	    CONST char *file, int line)
 }
 declare 483 generic {
     int Tcl_GetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			      Tcl_WideInt *widePtr)
+	    Tcl_WideInt *widePtr)
 }
 declare 484 generic {
     Tcl_Obj * Tcl_NewWideIntObj(Tcl_WideInt wideValue)
