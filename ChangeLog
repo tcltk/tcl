@@ -1,7 +1,36 @@
+2000-01-12  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/file.n:
+	* tests/unixFCmd.test:
+	* unix/tclUnixFCmd.c: added support for symbolic permissions
+	setting in SetPermissionsAttribute (file attr $file -perm ...)
+	[Bug: 3970]
+
+	* generic/tclClock.c: fixed support for 64bit handling of clock
+	values [Bug: 1806]
+
+	* generic/tclThreadTest.c: upped a buffer size to hold double
+
+	* tests/info.test:
+	* generic/tclCmdIL.c: fixed 'info procs ::namesp::*' behavior (Dejong)
+
+	* tests/expr.test:
+	* unix/Makefile.in:
+	* unix/configure.in:
+	* unix/tcl.m4: strtod bug on Tru64 [Bug: 3378]
+	and added tests to prevent unnecessary chmod +x in sources while
+	installing, as well as more intelligent setsockopt/gethostbyname
+	checks [Bug: 3366, 3389]
+
+	* unix/tclUnixThrd.c: added compile time support (through use of
+	the TCL_THREAD_STACK_MIN define) for increasing the default stack
+	size for a thread. [Bug: 3797, 1966]
+
 2000-01-10  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* compat/waitpid.c: use pid_t type instead of int [Bug: 3999]
 
+	* tests/utf.test: fixed test that allowed \8 as octal value
 	* generic/tclUtf.c: changed Tcl_UtfBackslash to not allow
 	non-octal digits (8,9) in \ooo substs. [Bug: 3975]
 
