@@ -8,10 +8,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.17 2003/10/14 21:49:25 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.18 2003/11/10 18:30:41 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -30,12 +30,15 @@ test cmdIL-1.4 {Tcl_LsortObjCmd procedure, -ascii option} {
 test cmdIL-1.5 {Tcl_LsortObjCmd procedure, -command option} {
     list [catch {lsort -command {1 3 2 5}} msg] $msg
 } {1 {"-command" option must be followed by comparison command}}
-test cmdIL-1.6 {Tcl_LsortObjCmd procedure, -command option} {
+test cmdIL-1.6 {Tcl_LsortObjCmd procedure, -command option} -setup {
     proc cmp {a b} {
 	expr {[string match x* $b] - [string match x* $a]}
     }
+} -body {
     lsort -command cmp {x1 abc x2 def x3 x4}
-} {x1 x2 x3 x4 abc def}
+} -result {x1 x2 x3 x4 abc def} -cleanup {
+    rename cmp ""
+}
 test cmdIL-1.7 {Tcl_LsortObjCmd procedure, -decreasing option} {
     lsort -decreasing {d e c b a d35 d300}
 } {e d35 d300 d c b a}
@@ -82,22 +85,24 @@ test cmdIL-1.23 {Tcl_LsortObjCmd procedure, unique sort with index} {
     # lsort -unique should return the last unique item
     lsort -unique -index 0 {{a b} {c b} {a c} {d a}}
 } {{a c} {c b} {d a}}
-test cmdIL-1.24 {Tcl_LsortObjCmd procedure, order of -index and -command} {
+test cmdIL-1.24 {Tcl_LsortObjCmd procedure, order of -index and -command} -setup {
     catch {rename 1 ""}
     proc testcmp {a b} {return [string compare $a $b]}
+} -body {
     set l [list [list a b] [list c d]]
-    set result [list [catch {lsort -command testcmp -index 1 $l} msg] $msg]
+    list [catch {lsort -command testcmp -index 1 $l} msg] $msg
+} -cleanup {
     rename testcmp ""
-    set result
-} [list 0 [list [list a b] [list c d]]]
-test cmdIL-1.25 {Tcl_LsortObjCmd procedure, order of -index and -command} {
+} -result [list 0 [list [list a b] [list c d]]]
+test cmdIL-1.25 {Tcl_LsortObjCmd procedure, order of -index and -command} -setup {
     catch {rename 1 ""}
     proc testcmp {a b} {return [string compare $a $b]}
+} -body {
     set l [list [list a b] [list c d]]
-    set result [list [catch {lsort -index 1 -command testcmp $l} msg] $msg]
+    list [catch {lsort -index 1 -command testcmp $l} msg] $msg
+} -cleanup {
     rename testcmp ""
-    set result
-} [list 0 [list [list a b] [list c d]]]
+} -result [list 0 [list [list a b] [list c d]]]
 # Note that the required order only exists in the end-1'th element;
 # indexing using the end element or any fixed offset from the start
 # will not work...
@@ -108,13 +113,14 @@ test cmdIL-1.26 {Tcl_LsortObjCmd procedure, offset indexing from end} {
 # Can't think of any good tests for the MergeSort and MergeLists
 # procedures, except a bunch of random lists to sort.
 
-test cmdIL-2.1 {MergeSort and MergeLists procedures} {
+test cmdIL-2.1 {MergeSort and MergeLists procedures} -setup {
     set result {}
     set r 1435753299
     proc rand {} {
 	global r
 	set r [expr {(16807 * $r) % (0x7fffffff)}]
     }
+} -body {
     for {set i 0} {$i < 150} {incr i} {
 	set x {}
 	for {set j 0} {$j < $i} {incr j} {
@@ -131,18 +137,23 @@ test cmdIL-2.1 {MergeSort and MergeLists procedures} {
 	}
     }
     set result
-} {}
+} -cleanup {
+    rename rand ""
+} -result {}
 
-test cmdIL-3.1 {SortCompare procedure, skip comparisons after error} {
-    set x 0
+test cmdIL-3.1 {SortCompare procedure, skip comparisons after error} -setup {
     proc cmp {a b} {
 	global x
 	incr x
 	error "error #$x"
     }
+} -body {
+    set x 0
     list [catch {lsort -integer -command cmp {48 6 28 190 16 2 3 6 1}} msg] \
 	    $msg $x
-} {1 {error #1} 1}
+} -cleanup {
+    rename cmp ""
+} -result {1 {error #1} 1}
 test cmdIL-3.2 {SortCompare procedure, -index option} {
     list [catch {lsort -integer -index 2 "\\\{ {30 40 50}"} msg] $msg
 } {1 {unmatched open brace in list}}
@@ -182,12 +193,14 @@ test cmdIL-3.13 {SortCompare procedure, -real option} {
 test cmdIL-3.14 {SortCompare procedure, -real option} {
     lsort -real {24 2.5e01 16.7 85e-1 10.004}
 } {85e-1 10.004 16.7 24 2.5e01}
-test cmdIL-3.15 {SortCompare procedure, -command option} {
+test cmdIL-3.15 {SortCompare procedure, -command option} -body {
     proc cmp {a b} {
 	error "comparison error"
     }
     list [catch {lsort -command cmp {48 6}} msg] $msg $errorInfo
-} {1 {comparison error} {comparison error
+} -cleanup {
+    rename cmp ""
+} -result {1 {comparison error} {comparison error
     while executing
 "error "comparison error""
     (procedure "cmp" line 2)
@@ -196,24 +209,30 @@ test cmdIL-3.15 {SortCompare procedure, -command option} {
     (-compare command)
     invoked from within
 "lsort -command cmp {48 6}"}}
-test cmdIL-3.16 {SortCompare procedure, -command option, long command} {
+test cmdIL-3.16 {SortCompare procedure, -command option, long command} -body {
     proc cmp {dummy a b} {
 	string compare $a $b
     }
     lsort -command {cmp {this argument is very very long in order to make the dstring overflow its statically allocated space}} {{this first element is also long in order to help expand the dstring} {the second element, last but not least, is quite long also, in order to make absolutely sure that space is allocated dynamically for the dstring}}
-} {{the second element, last but not least, is quite long also, in order to make absolutely sure that space is allocated dynamically for the dstring} {this first element is also long in order to help expand the dstring}}
-test cmdIL-3.17 {SortCompare procedure, -command option, non-integer result} {
+} -cleanup {
+    rename cmp ""
+} -result {{the second element, last but not least, is quite long also, in order to make absolutely sure that space is allocated dynamically for the dstring} {this first element is also long in order to help expand the dstring}}
+test cmdIL-3.17 {SortCompare procedure, -command option, non-integer result} -body {
     proc cmp {a b} {
 	return foow
     }
     list [catch {lsort -command cmp {48 6}} msg] $msg
-} {1 {-compare command returned non-integer result}}
-test cmdIL-3.18 {SortCompare procedure, -command option} {
+} -cleanup {
+    rename cmp ""
+} -result {1 {-compare command returned non-integer result}}
+test cmdIL-3.18 {SortCompare procedure, -command option} -body {
     proc cmp {a b} {
 	expr {$b - $a}
     }
     lsort -command cmp {48 6 18 22 21 35 36}
-} {48 36 35 22 21 18 6}
+} -cleanup {
+    rename cmp ""
+} -result {48 36 35 22 21 18 6}
 test cmdIL-3.19 {SortCompare procedure, -decreasing option} {
     lsort -decreasing -integer {35 21 0x20 30 023 100 8}
 } {100 35 0x20 30 21 023 8}
@@ -386,15 +405,17 @@ test cmdIL-5.4 {lsort with list style index} {
 	{dogs {0 1}}
     }
 } {{dogs {0 1}} {the {0 1 2} lazy} {jumps {30 31 2 33} over} {brown {0 1 2 3 4} fox} {the {0 1 2 3 4 5} quick}}
-test cmdIL-5.5 {lsort with list style index and sharing} {
-    proc test {l} {
+test cmdIL-5.5 {lsort with list style index and sharing} -body {
+    proc test_lsort {l} {
 	set n $l
 	foreach e $l {lappend n [list [expr {rand()}] $e]}
 	lindex [lsort -real -index $l $n] 1 1
     }
     expr srand(1)
-    test 0
-} 0
+    test_lsort 0
+} -result 0 -cleanup {
+    rename test_lsort ""
+}
 
 # cleanup
 ::tcltest::cleanupTests
