@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.159 2004/05/13 12:59:22 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.160 2004/05/13 20:31:08 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1351,7 +1351,7 @@ typedef struct Interp {
 				 * to evaluate the limit check. */
 
 	Tcl_Time time;		/* Time limit for execution within the
-				 * interpreter (in seconds from epoch). */
+				 * interpreter. */
 	LimitHandler *timeHandlers; /* Handlers to execute when the limit
 				     * is reached. */
 	int timeGranularity;	/* Mod factor used to determine how often
