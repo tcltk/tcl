@@ -1,3 +1,16 @@
+2000-07-20  Eric Melski  <ericm@ajubasolutions.com>
+
+	* generic/tclStubInit.c: 
+	* generic/tclObj.c: 
+	* generic/tclInt.h: 
+	* generic/tclHash.c: 
+	* generic/tclDecls.h: 
+	* generic/tcl.h: 
+	* generic/tcl.decls: 
+	* doc/Hash.3: Reverted patch from Paul Duffin to extend hash tables
+	to allow custom key types, such as Tcl_Obj *'s, and others; it
+	seems to break Tk.
+
 2000-07-19  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclStubInit.c: 
