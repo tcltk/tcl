@@ -1,3 +1,9 @@
+2002-02-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tcl.h: Added code to guess the correct settings for
+	TCL_WIDE_INT_IS_LONG and TCL_WIDE_INT_TYPE when configure doesn't
+	tell us them, as can happen with extensions.
+
 2002-02-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/format.n: Updated docs to list the specification.
