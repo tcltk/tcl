@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.55 2002/05/29 10:35:45 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.56 2002/05/30 03:26:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2741,12 +2741,12 @@ TclExecuteByteCode(interp, codePtr)
 		    iResult = memcmp(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
 		} else if (((valuePtr->typePtr == &tclStringType)
-			&& (valuePtr->bytes == NULL))
-			|| ((value2Ptr->typePtr == &tclStringType)
-				&& (value2Ptr->bytes == NULL))) {
+			&& (value2Ptr->typePtr == &tclStringType))) {
 		    /*
-		     * Do a unicode-specific comparison if one of the args
-		     * only has the unicode rep.
+		     * Do a unicode-specific comparison if both of the args
+		     * are of String type.  In benchmark testing this proved
+		     * the most efficient check between the unicode and
+		     * string comparison operations.
 		     */
 		    Tcl_UniChar *uni1, *uni2;
 		    uni1 = Tcl_GetUnicodeFromObj(valuePtr, &s1len);
