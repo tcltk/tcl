@@ -1,5 +1,12 @@
 2002-07-31  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclInt.h (USE_THREAD_ALLOC): for unshared objects,
+	TclDecrRefCount now frees the internal rep before the string rep -
+	just like the non-macro Tcl_DecrRefCount/TclFreeObj [Bug 524802]. 
+	For the other allocators the fix was done on 2002-03-06.
+
+2002-07-31  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclInterp.c: signed/unsigned comparison warning fixed
 	(Vince Darley).
 
