@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.5 1999/08/15 04:04:06 jingham Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.6 1999/12/21 23:58:13 hobbs Exp $
  */
 
 #define MAC_TCL
@@ -2695,9 +2695,10 @@ prepareScriptData(
     int i;
     char buffer[7];
     OSErr sysErr = noErr;
-		
+    Tcl_DString encodedText;
+
     Tcl_DStringInit(scrptData);
-	
+
     for (i = 0; i < argc; i++) {
 	Tcl_DStringAppend(scrptData, argv[i], -1);
 	Tcl_DStringAppend(scrptData, " ", 1);
@@ -2707,7 +2708,7 @@ prepareScriptData(
      * First replace the \n's with \r's in the script argument
      * Also replace "\\n" with "  ".
      */
-	 
+
     for (ptr = scrptData->string; *ptr != '\0'; ptr++) {
 	if (*ptr == '\n') {
 	    *ptr = '\r';
@@ -2718,10 +2719,13 @@ prepareScriptData(
 	    }
 	}
     }
- 	
-    sysErr = AECreateDesc(typeChar, Tcl_DStringValue(scrptData),
-	    Tcl_DStringLength(scrptData), scrptDesc);
-						
+
+    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(scrptData),
+	    Tcl_DStringLength(scrptData), &encodedText);
+    sysErr = AECreateDesc(typeChar, Tcl_DStringValue(&encodedText),
+	    Tcl_DStringLength(&encodedText), scrptDesc);
+    Tcl_DStringFree(&encodedText);
+
     if (sysErr != noErr) {
 	sprintf(buffer, "%6d", sysErr);
 	Tcl_DStringFree(scrptData);
@@ -2730,7 +2734,7 @@ prepareScriptData(
 	Tcl_DStringAppend(scrptData, " creating Script Data Descriptor.", 33);
 	return TCL_ERROR;					
     }
-	
+
     return TCL_OK;
 }
 

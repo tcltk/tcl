@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.9 1999/10/05 22:46:13 hobbs Exp $
+RCS: @(#) $Id: README,v 1.10 1999/12/21 23:58:13 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -63,8 +63,8 @@ in the HTML format.  You may also find these pages at:
 In order to compile Macintosh Tcl you must have the 
 following items:
 
-	CodeWarrior Pro 2 or 3
-	Mac Tcl (source)
+	CodeWarrior Pro 3+
+	Mac Tcl (sources)
 	More Files 1.4.3
 
 The included project files should work fine.  However, for
