@@ -9,9 +9,9 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.21 2000/02/01 11:48:31 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.22 2000/03/17 02:15:06 welch Exp $
 
-package provide http 2.2	;# This uses Tcl namespaces
+package provide http 2.3	;# This uses Tcl namespaces
 
 namespace eval http {
     variable http
@@ -172,7 +172,9 @@ proc http::reset { token {why reset} } {
     variable $token
     upvar 0 $token state
     set state(status) $why
+    set state(querydone) $why
     catch {fileevent $state(sock) readable {}}
+    catch {fileevent $state(sock) writable {}}
     Finish $token
     if {[info exists state(error)]} {
 	set errorlist $state(error)
@@ -217,6 +219,7 @@ proc http::geturl { url args } {
 	-headers 	{}
 	-timeout 	0
 	-type           application/x-www-form-urlencoded
+	-queryprogress	{}
 	state		header
 	meta		{}
 	currentsize	0
@@ -226,7 +229,7 @@ proc http::geturl { url args } {
 	status		""
     }
     set options {-blocksize -channel -command -handler -headers \
-		-progress -query -validate -timeout -type}
+		-progress -query -queryprogress -validate -timeout -type}
     set usage [join $options ", "]
     regsub -all -- - $options {} options
     set pat ^-([join $options |])$
@@ -341,7 +344,17 @@ proc http::geturl { url args } {
 	    puts $s "Content-Type: $state(-type)"
 	    puts $s ""
 	    fconfigure $s -translation {auto binary}
-	    puts -nonewline $s $state(-query)
+
+	    # If a timeout is specified or a queryprogress callback is specified
+	    # we do the post in the background
+	    
+	    if {$state(-timeout) > 0 || [string length $state(-queryprogress)]} {
+		fileevent $s writable \
+			[list http::Write $token $state(-query) $state(-queryprogress)]
+		WaitPost $token
+	    } else {
+		puts -nonewline $s $state(-query)
+	    }
 	} else {
 	    puts $s ""
 	}
@@ -426,6 +439,54 @@ proc http::cleanup {token} {
 	set state(status) connect
     }
  }
+
+# http::Write
+#
+#	Write POST query data to the socket
+#
+# Arguments
+#	token	The token for the connection
+#	query	The query data to write to the connection
+#	queryprogress	The callback, if any, to make after each block
+#
+# Side Effects
+#	Write the socket and handle callbacks.
+
+proc http::Write {token query queryprogress} {
+    variable $token
+    upvar 0 $token state
+    set s $state(sock)
+    if {![info exist state(queryoffset)]} {
+	set state(queryoffset) 0
+	set state(querylength) [string length $query]
+    }
+    set chunksize 16384
+
+    # Output a block.  Tcl will buffer this if the socket blocks
+
+    if {$state(querylength) < $chunksize} {
+	set chunksize $state(querylength)
+    }
+    if {[catch {
+	
+	# Catch I/O errors on dead sockets
+
+	puts -nonewline $s [string range $query $state(queryoffset) \
+		[incr state(queryoffset) $chunksize]]
+	
+	if {[string length $queryprogress]} {
+	    eval $queryprogress [list $token $state(queryoffset) $state(querylength)]
+	}
+
+	if {$state(queryoffset) >= $state(querylength)} {
+	    fileevent $s writable {}
+	    set state(querydone) ok
+	}
+    } err]} {
+	set state(querydone) $err
+	fileevent $s writable {}
+    }
+}
 
 # http::Event
 #
@@ -581,6 +642,7 @@ proc http::cleanup {token} {
 #
 # Arguments:
 #	token	Connection token.
+#
 # Results:
 #        The status after the wait.
 
@@ -598,6 +660,30 @@ proc http::wait {token} {
 	eval error $errorlist
     }
     return $state(status)
+}
+
+# http::WaitPost --
+#
+#	Wait for the post data to be written out
+#
+# Arguments:
+#	token	Connection token.
+#
+# Results:
+#        The status after the wait.
+
+proc http::WaitPost {token} {
+    variable $token
+    upvar 0 $token state
+
+    # We must wait on the original variable name, not the upvar alias
+    vwait $token\(querydone)
+    if {[string compare $state(querydone) ok] != 0} {
+	# throw an error to unwind geturl
+	return -code error $state(querydone)
+    } else {
+	return $state(querydone)
+    }
 }
 
 # http::formatQuery --
