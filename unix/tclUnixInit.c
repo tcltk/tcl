@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.3 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.4 2002/06/10 05:33:18 wolfsuit Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -454,8 +454,7 @@ TclpSetInitialEncodings()
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
-	    encoding = Tcl_DStringValue(&ds);
+	    encoding = Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
 
 	    Tcl_UtfToLower(Tcl_DStringValue(&ds));
 #ifdef HAVE_LANGINFO_DEBUG
@@ -553,9 +552,8 @@ TclpSetInitialEncodings()
 		    if (*p != '\0') {
 			Tcl_DString ds;
 			Tcl_DStringInit(&ds);
-			Tcl_DStringAppend(&ds, p, -1);
+			encoding = Tcl_DStringAppend(&ds, p, -1);
 
-			encoding = Tcl_DStringValue(&ds);
 			Tcl_UtfToLower(Tcl_DStringValue(&ds));
 			setSysEncCode = Tcl_SetSystemEncoding(NULL, encoding);
 			if (setSysEncCode != TCL_OK) {
@@ -716,8 +714,11 @@ TclpSetVariables(interp)
 #ifdef HAVE_CFBUNDLE
     }
 #endif /* HAVE_CFBUNDLE */
-
+#ifdef DJGPP
+    Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
+#else
     Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
+#endif
     unameOK = 0;
 #ifndef NO_UNAME
     if (uname(&name) >= 0) {

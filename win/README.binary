@@ -1,11 +1,11 @@
 Tcl/Tk 8.4 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.26 2001/08/08 22:28:24 dgp Exp $ 
+RCS: @(#) $Id: README.binary,v 1.26.8.1 2002/06/10 05:33:19 wolfsuit Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.4a4 for
+This directory contains the binary distribution of Tcl/Tk 8.4a5 for
 Windows.  It was compiled with Microsoft Visual C++ 6.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
@@ -25,23 +25,23 @@ The home of Tcl and Tk sources and bug database on the Web is at:
 	http://tcl.sourceforge.net/
 
 The home page for the Tcl Developer Xchange is at:
-	http://www.purl.org/tcl/home/
+	http://www.tcl.tk/
 
 The home page for the Tcl/Tk 8.4 release is
-	http://www.purl.org/tcl/home/software/tcltk/8.4.html
+	http://www.tcl.tk/software/tcltk/8.4.html
 
 Detailed release notes can be found at the file distributions page
 by clicking on the relevant version.
 	http://sourceforge.net/project/showfiles.php?group_id=10894
 
 Information about Tcl itself can be found at
-	http://www.purl.org/tcl/home/scripting/
+	http://www.tcl.tk/scripting/
 
 There are many Tcl books on the market.  Most are listed at
-	http://www.purl.org/tcl/home/resource/doc/books/
+	http://www.tcl.tk/resource/doc/books/
 
 There are notes about compiling Tcl at
-	http://www.purl.org/tcl/home/doc/howto/compile.html
+	http://www.tcl.tk/doc/howto/compile.html
 
 3. Installation
 ---------------
@@ -118,7 +118,7 @@ that are commonly encountered by TCL newcomers.
 9. Tcl Resource Center
 ----------------------
 
-Visit http://www.purl.org/tcl/home/resource/ to see an annotated index of
+Visit http://www.tcl.tk/resource/ to see an annotated index of
 many Tcl resources available on the World Wide Web.  This includes papers,
 books, and FAQs, as well as extensions, applications, binary releases, and
 patches.  You can contribute patches by using the Tracker at
@@ -140,4 +140,4 @@ to subscribe, visit:
 and go to the Mailing Lists page.  There are also Special Interest Groups
 (SIGs) setup for these topics and more at:
 
-       http://www.purl.org/tcl/home/
+       http://www.tcl.tk/

@@ -61,11 +61,21 @@ if test -r Alloc.3; then
     rm -f Tcl_Realloc.3
     rm -f Tcl_AttemptAlloc.3
     rm -f Tcl_AttemptRealloc.3
+    rm -f ckalloc.3
+    rm -f ckfree.3
+    rm -f ckrealloc.3
+    rm -f attemptckalloc.3
+    rm -f attemptckrealloc.3
     ln Alloc.3 Tcl_Alloc.3
     ln Alloc.3 Tcl_Free.3
     ln Alloc.3 Tcl_Realloc.3
     ln Alloc.3 Tcl_AttemptAlloc.3
     ln Alloc.3 Tcl_AttemptRealloc.3
+    ln Alloc.3 ckalloc.3
+    ln Alloc.3 ckfree.3
+    ln Alloc.3 ckrealloc.3
+    ln Alloc.3 attemptckalloc.3
+    ln Alloc.3 attemptckrealloc.3
 fi
 if test -r AllowExc.3; then
     rm -f Tcl_AllowExceptions.3
@@ -164,6 +174,7 @@ if test -r CrtChannel.3; then
     rm -f Tcl_ChannelInputProc.3
     rm -f Tcl_ChannelOutputProc.3
     rm -f Tcl_ChannelSeekProc.3
+    rm -f Tcl_ChannelWideSeekProc.3
     rm -f Tcl_ChannelSetOptionProc.3
     rm -f Tcl_ChannelGetOptionProc.3
     rm -f Tcl_ChannelWatchProc.3
@@ -196,6 +207,7 @@ if test -r CrtChannel.3; then
     ln CrtChannel.3 Tcl_ChannelInputProc.3
     ln CrtChannel.3 Tcl_ChannelOutputProc.3
     ln CrtChannel.3 Tcl_ChannelSeekProc.3
+    ln CrtChannel.3 Tcl_ChannelWideSeekProc.3
     ln CrtChannel.3 Tcl_ChannelSetOptionProc.3
     ln CrtChannel.3 Tcl_ChannelGetOptionProc.3
     ln CrtChannel.3 Tcl_ChannelWatchProc.3
@@ -254,13 +266,17 @@ if test -r CrtObjCmd.3; then
     rm -f Tcl_DeleteCommand.3
     rm -f Tcl_DeleteCommandFromToken.3
     rm -f Tcl_GetCommandInfo.3
+    rm -f Tcl_GetCommandInfoFromToken.3
     rm -f Tcl_SetCommandInfo.3
+    rm -f Tcl_SetCommandInfoFromToken.3
     rm -f Tcl_GetCommandName.3
     ln CrtObjCmd.3 Tcl_CreateObjCommand.3
     ln CrtObjCmd.3 Tcl_DeleteCommand.3
     ln CrtObjCmd.3 Tcl_DeleteCommandFromToken.3
     ln CrtObjCmd.3 Tcl_GetCommandInfo.3
+    ln CrtObjCmd.3 Tcl_GetCommandInfoFromToken.3
     ln CrtObjCmd.3 Tcl_SetCommandInfo.3
+    ln CrtObjCmd.3 Tcl_SetCommandInfoFromToken.3
     ln CrtObjCmd.3 Tcl_GetCommandName.3
 fi
 if test -r CrtSlave.3; then
@@ -297,8 +313,10 @@ if test -r CrtTimerHdlr.3; then
 fi
 if test -r CrtTrace.3; then
     rm -f Tcl_CreateTrace.3
+    rm -f Tcl_CreateObjTrace.3
     rm -f Tcl_DeleteTrace.3
     ln CrtTrace.3 Tcl_CreateTrace.3
+    ln CrtTrace.3 Tcl_CreateObjTrace.3
     ln CrtTrace.3 Tcl_DeleteTrace.3
 fi
 if test -r DString.3; then
@@ -494,6 +512,7 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSNewNativePath.3
     rm -f Tcl_FSGetNativePath.3
     rm -f Tcl_FSFileSystemInfo.3
+    rm -f Tcl_AllocStatBuf.3
     ln FileSystem.3 Tcl_FSRegister.3
     ln FileSystem.3 Tcl_FSUnregister.3
     ln FileSystem.3 Tcl_FSData.3
@@ -534,6 +553,7 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSNewNativePath.3
     ln FileSystem.3 Tcl_FSGetNativePath.3
     ln FileSystem.3 Tcl_FSFileSystemInfo.3
+    ln FileSystem.3 Tcl_AllocStatBuf.3
 fi
 if test -r FindExec.3; then
     rm -f Tcl_FindExecutable.3
@@ -622,16 +642,22 @@ fi
 if test -r IntObj.3; then
     rm -f Tcl_NewIntObj.3
     rm -f Tcl_NewLongObj.3
+    rm -f Tcl_NewWideIntObj.3
     rm -f Tcl_SetIntObj.3
     rm -f Tcl_SetLongObj.3
+    rm -f Tcl_SetWideIntObj.3
     rm -f Tcl_GetIntFromObj.3
     rm -f Tcl_GetLongFromObj.3
+    rm -f Tcl_GetWideIntFromObj.3
     ln IntObj.3 Tcl_NewIntObj.3
     ln IntObj.3 Tcl_NewLongObj.3
+    ln IntObj.3 Tcl_NewWideIntObj.3
     ln IntObj.3 Tcl_SetIntObj.3
     ln IntObj.3 Tcl_SetLongObj.3
+    ln IntObj.3 Tcl_SetWideIntObj.3
     ln IntObj.3 Tcl_GetIntFromObj.3
     ln IntObj.3 Tcl_GetLongFromObj.3
+    ln IntObj.3 Tcl_GetWideIntFromObj.3
 fi
 if test -r Interp.3; then
     rm -f Tcl_Interp.3
@@ -1014,6 +1040,7 @@ if test -r StringObj.3; then
     rm -f Tcl_SetUnicodeObj.3
     rm -f Tcl_GetStringFromObj.3
     rm -f Tcl_GetString.3
+    rm -f Tcl_GetUnicodeFromObj.3
     rm -f Tcl_GetUnicode.3
     rm -f Tcl_GetUniChar.3
     rm -f Tcl_GetCharLength.3
@@ -1032,6 +1059,7 @@ if test -r StringObj.3; then
     ln StringObj.3 Tcl_SetUnicodeObj.3
     ln StringObj.3 Tcl_GetStringFromObj.3
     ln StringObj.3 Tcl_GetString.3
+    ln StringObj.3 Tcl_GetUnicodeFromObj.3
     ln StringObj.3 Tcl_GetUnicode.3
     ln StringObj.3 Tcl_GetUniChar.3
     ln StringObj.3 Tcl_GetCharLength.3
@@ -1086,6 +1114,14 @@ if test -r ToUpper.3; then
     ln ToUpper.3 Tcl_UtfToUpper.3
     ln ToUpper.3 Tcl_UtfToLower.3
     ln ToUpper.3 Tcl_UtfToTitle.3
+fi
+if test -r TraceCmd.3; then
+    rm -f Tcl_CommandTraceInfo.3
+    rm -f Tcl_TraceCommand.3
+    rm -f Tcl_UntraceCommand.3
+    ln TraceCmd.3 Tcl_CommandTraceInfo.3
+    ln TraceCmd.3 Tcl_TraceCommand.3
+    ln TraceCmd.3 Tcl_UntraceCommand.3
 fi
 if test -r TraceVar.3; then
     rm -f Tcl_TraceVar.3

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.11.12.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.11.12.2 2002/06/10 05:33:19 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -303,7 +303,8 @@ TclpGetDate(time, useGMT)
  *
  * TclpStrftime --
  *
- *	On Unix, we can safely call the native strftime implementation.
+ *	On Unix, we can safely call the native strftime implementation,
+ *	and also ignore the useGMT parameter.
  *
  * Results:
  *	The normal strftime result.
@@ -315,11 +316,12 @@ TclpGetDate(time, useGMT)
  */
 
 size_t
-TclpStrftime(s, maxsize, format, t)
+TclpStrftime(s, maxsize, format, t, useGMT)
     char *s;
     size_t maxsize;
     CONST char *format;
     CONST struct tm *t;
+    int useGMT;
 {
     if (format[0] == '%' && format[1] == 'Q') {
 	/* Format as a stardate */

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.11.12.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.11.12.2 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -933,6 +933,13 @@ test expr-old-36.9 {ExprLooksLikeInt procedure} {
 test expr-old-36.10 {ExprLooksLikeInt procedure} {nonPortable unixOnly} {
     list [catch {expr 78e} msg] $msg
 } {1 {syntax error in expression "78e"}}
+
+# test for [Bug #542588]
+test expr-old-36.11 {ExprLooksLikeInt procedure} {
+    # define a "too large integer"; this one works also for 64bit arith
+    set x 665802003400000000000000
+    list [catch {expr {$x+1}} msg] $msg
+} {1 {can't use integer value too large to represent as operand of "+"}}
 
 if {[info commands testexprlong] == {}} {
     puts "This application hasn't been compiled with the \"testexprlong\""

@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.18 2001/01/12 09:54:16 dkf Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.18.14.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -270,11 +270,11 @@ test pkgMkIndex-2.1 {simple package} {
 
 test pkgMkIndex-2.2 {simple package - use -direct} {
     pkgtest::runIndex -direct $fullPkgPath simple.tcl
-} "0 {{simple:1.0 {source [file join $fullPkgPath simple.tcl]}}}"
+} "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}"
 
 test pkgMkIndex-2.3 {simple package - direct loading is default} {
     pkgtest::runIndex $fullPkgPath simple.tcl
-} "0 {{simple:1.0 {source [file join $fullPkgPath simple.tcl]}}}"
+} "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}"
 
 test pkgMkIndex-3.1 {simple package with global symbols} {
     pkgtest::runIndex -lazy $fullPkgPath global.tcl
@@ -286,8 +286,8 @@ test pkgMkIndex-4.1 {split package} {
 
 test pkgMkIndex-4.2 {split package - direct loading} {
     pkgtest::runIndex -direct $fullPkgPath pkg2_a.tcl pkg2_b.tcl
-} "0 {{pkg2:1.0 {source [file join $fullPkgPath pkg2_a.tcl]
-source [file join $fullPkgPath pkg2_b.tcl]}}}"
+} "0 {{pkg2:1.0 {[list source [file join $fullPkgPath pkg2_a.tcl]]
+[list source [file join $fullPkgPath pkg2_b.tcl]]}}}"
 
 # This will fail, with "direct1" procedures in the list of procedures
 # provided by std.
@@ -305,7 +305,7 @@ test pkgMkIndex-6.1 {pkg1 requires pkg3} {
 
 test pkgMkIndex-6.2 {pkg1 requires pkg3 - use -direct} {
     pkgtest::runIndex -direct $fullPkgPath pkg1.tcl pkg3.tcl
-} "0 {{pkg1:1.0 {source [file join $fullPkgPath pkg1.tcl]}} {pkg3:1.0 {source [file join $fullPkgPath pkg3.tcl]}}}"
+} "0 {{pkg1:1.0 {[list source [file join $fullPkgPath pkg1.tcl]]}} {pkg3:1.0 {[list source [file join $fullPkgPath pkg3.tcl]]}}}"
 
 test pkgMkIndex-7.1 {pkg4 uses pkg3} {
     pkgtest::runIndex -lazy $fullPkgPath pkg4.tcl pkg3.tcl
@@ -313,7 +313,7 @@ test pkgMkIndex-7.1 {pkg4 uses pkg3} {
 
 test pkgMkIndex-7.2 {pkg4 uses pkg3 - use -direct} {
     pkgtest::runIndex -direct $fullPkgPath pkg4.tcl pkg3.tcl
-} "0 {{pkg3:1.0 {source [file join $fullPkgPath pkg3.tcl]}} {pkg4:1.0 {source [file join $fullPkgPath pkg4.tcl]}}}"
+} "0 {{pkg3:1.0 {[list source [file join $fullPkgPath pkg3.tcl]]}} {pkg4:1.0 {[list source [file join $fullPkgPath pkg4.tcl]]}}}"
 
 test pkgMkIndex-8.1 {pkg5 uses pkg2} {
     pkgtest::runIndex -lazy $fullPkgPath pkg5.tcl pkg2_a.tcl pkg2_b.tcl
@@ -321,8 +321,8 @@ test pkgMkIndex-8.1 {pkg5 uses pkg2} {
 
 test pkgMkIndex-8.2 {pkg5 uses pkg2 - use -direct} {
     pkgtest::runIndex -direct $fullPkgPath pkg5.tcl pkg2_a.tcl pkg2_b.tcl
-} "0 {{pkg2:1.0 {source [file join $fullPkgPath pkg2_a.tcl]
-source [file join $fullPkgPath pkg2_b.tcl]}} {pkg5:1.0 {source [file join $fullPkgPath pkg5.tcl]}}}"
+} "0 {{pkg2:1.0 {[list source [file join $fullPkgPath pkg2_a.tcl]]
+[list source [file join $fullPkgPath pkg2_b.tcl]]}} {pkg5:1.0 {[list source [file join $fullPkgPath pkg5.tcl]]}}}"
 
 test pkgMkIndex-9.1 {circular packages} {
     pkgtest::runIndex -lazy $fullPkgPath circ1.tcl circ2.tcl circ3.tcl

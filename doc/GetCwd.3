@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetCwd.3,v 1.2.28.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: GetCwd.3,v 1.2.28.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetCwd 3 8.1 Tcl "Tcl Library Procedures"
@@ -15,7 +15,7 @@ Tcl_GetCwd, Tcl_Chdir \- manipulate the current working directory
 .nf
 \fB#include <tcl.h>\fR
 .sp
-CONST char *
+char *
 \fBTcl_GetCwd\fR(\fIinterp\fR, \fIbufferPtr\fR)
 .sp
 int

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.17.4.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.17.4.2 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -231,7 +231,7 @@ Tcl_UniCharToUtf(ch, str)
  *---------------------------------------------------------------------------
  */
  
-CONST char *
+char *
 Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
     CONST Tcl_UniChar *wString;	/* Unicode string to convert to UTF-8. */
     int numChars;		/* Length of Unicode string in Tcl_UniChars
@@ -309,7 +309,7 @@ Tcl_UtfToUniChar(str, chPtr)
 	 * Also treats \0 and naked trail bytes 0x80 to 0xBF as valid
 	 * characters representing themselves.
 	 */
-	 
+
 	*chPtr = (Tcl_UniChar) byte;
 	return 1;
     } else if (byte < 0xE0) {
@@ -317,7 +317,7 @@ Tcl_UtfToUniChar(str, chPtr)
 	    /*
 	     * Two-byte-character lead-byte followed by a trail-byte.
 	     */
-	     
+
 	    *chPtr = (Tcl_UniChar) (((byte & 0x1F) << 6) | (str[1] & 0x3F));
 	    return 2;
 	}
@@ -325,7 +325,7 @@ Tcl_UtfToUniChar(str, chPtr)
 	 * A two-byte-character lead-byte not followed by trail-byte
 	 * represents itself.
 	 */
-	 
+
 	*chPtr = (Tcl_UniChar) byte;
 	return 1;
     } else if (byte < 0xF0) {
@@ -393,7 +393,7 @@ Tcl_UtfToUniChar(str, chPtr)
  *---------------------------------------------------------------------------
  */
 
-CONST Tcl_UniChar *
+Tcl_UniChar *
 Tcl_UtfToUniCharDString(string, length, dsPtr)
     CONST char *string;		/* UTF-8 string to convert to Unicode. */
     int length;			/* Length of UTF-8 string in bytes, or -1
@@ -671,7 +671,7 @@ Tcl_UtfPrev(str, start)
 	byte = *((unsigned char *) look);
 	if (byte < 0x80) {
 	    break;
-	} 
+	}
 	if (byte >= 0xC0) {
 	    return look;
 	}
@@ -1074,6 +1074,51 @@ Tcl_UtfToTitle(str)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpUtfNcmp2 --
+ *
+ *	Compare at most n bytes of utf-8 strings cs and ct.  Both cs
+ *	and ct are assumed to be at least n bytes long.
+ *
+ * Results:
+ *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpUtfNcmp2(cs, ct, n)
+    CONST char *cs;		/* UTF string to compare to ct. */
+    CONST char *ct;		/* UTF string cs is compared to. */
+    unsigned long n;		/* Number of *bytes* to compare. */
+{
+    /*
+     * We can't simply call 'memcmp(cs, ct, n);' because we need to check
+     * for Tcl's \xC0\x80 non-utf-8 null encoding.
+     * Otherwise utf-8 lexes fine in the strcmp manner.
+     */
+    register int result = 0;
+
+    for ( ; n != 0; n--, cs++, ct++) {
+	if (*cs != *ct) {
+	    result = UCHAR(*cs) - UCHAR(*ct);
+	    break;
+	}
+    }
+    if (n && ((UCHAR(*cs) == 0xC0) || (UCHAR(*ct) == 0xC0))) {
+	unsigned char c1, c2;
+	c1 = ((UCHAR(*cs) == 0xC0) && (UCHAR(cs[1]) == 0x80)) ? 0 : UCHAR(*cs);
+	c2 = ((UCHAR(*ct) == 0xC0) && (UCHAR(ct[1]) == 0x80)) ? 0 : UCHAR(*ct);
+	result = (c1 - c2);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_UtfNcmp --
  *
  *	Compare at most n UTF chars of string cs to string ct.  Both cs
@@ -1096,7 +1141,7 @@ Tcl_UtfNcmp(cs, ct, n)
 {
     Tcl_UniChar ch1, ch2;
     /*
-     * Cannot use memcmp()-based approach as byte representation of
+     * Cannot use 'memcmp(cs, ct, n);' as byte representation of
      * \u0000 (the pair of bytes 0xc0,0x80) is larger than byte
      * representation of \u0001 (the byte 0x01.)
      */
@@ -1306,15 +1351,23 @@ Tcl_UniCharNcmp(cs, ct, n)
     CONST Tcl_UniChar *ct;		/* Unicode string cs is compared to. */
     unsigned long n;			/* Number of unichars to compare. */
 {
-    for ( ; n != 0; n--, cs++, ct++) {
+#ifdef WORDS_BIGENDIAN
+    /*
+     * We are definitely on a big-endian machine; memcmp() is safe
+     */
+    return memcmp(cs, ct, n*sizeof(Tcl_UniChar));
+
+#else /* !WORDS_BIGENDIAN */
+    /*
+     * We can't simply call memcmp() because that is not lexically correct.
+     */
+    for ( ; n != 0; cs++, ct++, n--) {
 	if (*cs != *ct) {
 	    return (*cs - *ct);
 	}
-	if (*cs == '\0') {
-	    break;
-	}
     }
     return 0;
+#endif /* WORDS_BIGENDIAN */
 }
 
 /*
@@ -1345,9 +1398,6 @@ Tcl_UniCharNcasecmp(cs, ct, n)
 	if ((*cs != *ct) &&
 		(Tcl_UniCharToLower(*cs) != Tcl_UniCharToLower(*ct))) {
 	    return (*cs - *ct);
-	}
-	if (*cs == '\0') {
-	    break;
 	}
     }
     return 0;

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.5.14.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.5.14.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH expr n 8.4 Tcl "Tcl Built-In Commands"
@@ -54,6 +54,13 @@ following are valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
 If no numeric interpretation is possible, then an operand is left
 as a string (and only a limited set of operators may be applied to
 it).
+.PP
+.VS 8.4
+On 32-bit systems, integer values MAX_INT (0x7FFFFFFF) and MIN_INT
+(-0x80000000) will be represented as 32-bit values, and integer values
+outside that range will be represented as 64-bit values (if that is
+possible at all.)
+.VE 8.4
 .PP
 Operands may be specified in any of the following ways:
 .IP [1]
@@ -222,7 +229,8 @@ radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
 than \fI0\fR, this is equivalent to \fBatan(\fIy/x\fB)\fR.
 .TP
 \fBceil(\fIarg\fB)\fR
-Returns the smallest integer value not less than \fIarg\fR.
+Returns the smallest integral floating point value (i.e. with a zero
+fractional part) not less than \fIarg\fR.
 .TP
 \fBcos(\fIarg\fB)\fR
 Returns the cosine of \fIarg\fR, measured in radians.
@@ -240,7 +248,8 @@ Returns the exponential of \fIarg\fR, defined as \fIe\fR**\fIarg\fR.
 If the result would cause an overflow, an error is returned.
 .TP
 \fBfloor(\fIarg\fB)\fR
-Returns the largest integral value not greater than \fIarg\fR.
+Returns the largest integral floating point value (i.e. with a zero
+fractional part) not greater than \fIarg\fR.
 .TP
 \fBfmod(\fIx, y\fB)\fR
 Returns the floating-point remainder of the division of \fIx\fR by
@@ -251,8 +260,12 @@ Computes the length of the hypotenuse of a right-angled triangle
 \fBsqrt(\fIx\fR*\fIx\fR+\fIy\fR*\fIy\fB)\fR.
 .TP
 \fBint(\fIarg\fB)\fR
-If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise converts
-\fIarg\fR to integer by truncation and returns the converted value.
+.VS 8.4
+If \fIarg\fR is an integer value, returns \fIarg\fR, otherwise
+converts \fIarg\fR to an integer (of the same size as a machine word,
+i.e. 32-bits on 32-bit systems, and 64-bits on 64-bit systems) by
+truncation and returns the converted value.
+.VE 8.4
 .TP
 \fBlog(\fIarg\fB)\fR
 Returns the natural logarithm of \fIarg\fR.  \fIArg\fR must be a
@@ -296,6 +309,12 @@ Returns the tangent of \fIarg\fR, measured in radians.
 .TP
 \fBtanh(\fIarg\fB)\fR
 Returns the hyperbolic tangent of \fIarg\fR.
+.TP
+\fBwide(\fIarg\fB)\fR
+.VS 8.4
+Converts \fIarg\fR to a value at least 64-bits wide (by sign-extension
+if \fIarg\fR is a 32-bit number.)
+.VE 8.4
 .PP
 In addition to these predefined functions, applications may
 define additional functions using \fBTcl_CreateMathFunc\fR().

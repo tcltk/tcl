@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.7.8.1 2002/02/05 02:22:02 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.7.8.2 2002/06/10 05:33:14 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +25,12 @@
 #include <MoreFiles.h>
 #include <MoreFilesExtras.h>
 
+#ifdef __MSL__
+#include <unix.mac.h>
+#define TCL_FILE_CREATOR (__getcreator(0))
+#else
+#define TCL_FILE_CREATOR 'MPW '
+#endif
 
 /*
  * The following are flags returned by GetOpenMode.  They
@@ -586,11 +592,10 @@ StdIOOutput(
 
 static int
 StdIOSeek(
-    ClientData instanceData,			/* Unused. */
-    long offset,				/* Offset to seek to. */
-    int mode,					/* Relative to where
-                                                 * should we seek? */
-    int *errorCodePtr)				/* To store error code. */
+    ClientData instanceData,	/* Unused. */
+    long offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     int newLoc;
     int fd;
@@ -859,7 +864,7 @@ OpenFileChannel(
     }
 
     if ((err == fnfErr) && (mode & TCL_CREAT)) {
-	err = HCreate(fileSpec.vRefNum, fileSpec.parID, fileSpec.name, 'MPW ', 'TEXT');
+	err = HCreate(fileSpec.vRefNum, fileSpec.parID, fileSpec.name, TCL_FILE_CREATOR, 'TEXT');
 	if (err != noErr) {
 	    *errorCodePtr = errno = TclMacOSErrorToPosixError(err);
 	    Tcl_SetErrno(errno);
@@ -1129,10 +1134,9 @@ FileOutput(
 static int
 FileSeek(
     ClientData instanceData,	/* Unused. */
-    long offset,				/* Offset to seek to. */
-    int mode,					/* Relative to where
-                                 * should we seek? */
-    int *errorCodePtr)			/* To store error code. */
+    long offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     FileState *fileState = (FileState *) instanceData;
     IOParam pb;

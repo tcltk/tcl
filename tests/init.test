@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: init.test,v 1.8 2001/04/06 17:57:32 dgp Exp $
+# RCS: @(#) $Id: init.test,v 1.8.14.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -75,14 +75,14 @@ auto_reset
 catch {rename parray {}}
 
 test init-2.0 {load parray - stage 1} {
-    set ret [catch {namespace eval ::tcltest {parray}} error]
+    set ret [catch {parray} error]
     rename parray {} ; # remove it, for the next test - that should not fail.
     list $ret $error
 } {1 {wrong # args: should be "parray a ?pattern?"}}
 
 
 test init-2.1 {load parray - stage 2} {
-    set ret [catch {namespace eval ::tcltest {parray}} error]
+    set ret [catch {parray} error]
     list $ret $error
 } {1 {wrong # args: should be "parray a ?pattern?"}}
 
@@ -135,7 +135,7 @@ catch {rename ::http::geturl {}}
 
 test init-2.8 {load http::geturl (package)} {
     # 3 ':' on purpose
-    set ret [catch {namespace eval ::tcltest {http:::geturl}} error]
+    set ret [catch {http:::geturl} error]
     # removing it, for the next test. should not fail.
     rename ::http::geturl {} ; 
     list $ret $error

@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc-old.test,v 1.8 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: proc-old.test,v 1.8.8.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -332,7 +332,8 @@ test proc-old-5.14 {error conditions} {
     catch tproc msg
     set errorInfo
 } {invoked "break" outside of a loop
-    while executing
+    (procedure "tproc" line 1)
+    invoked from within
 "tproc"}
 test proc-old-5.15 {error conditions} {
     proc tproc {} {
@@ -343,7 +344,8 @@ test proc-old-5.15 {error conditions} {
     catch tproc msg
     set errorInfo
 } {invoked "continue" outside of a loop
-    while executing
+    (procedure "tproc" line 1)
+    invoked from within
 "tproc"}
 test proc-old-5.16 {error conditions} {
     proc foo args {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13.2.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13.2.2 2002/06/10 05:33:18 wolfsuit Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -97,7 +97,7 @@ static int		GetModeFromPermString _ANSI_ARGS_((
  */
 
 typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
-	Tcl_DString *dstPtr, CONST struct stat *statBufPtr, int type,
+	Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr, int type,
 	Tcl_DString *errorPtr));
 
 /*
@@ -128,9 +128,9 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
  */
 
 static int		CopyFile _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST struct stat *statBufPtr));
+			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		CopyFileAtts _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST struct stat *statBufPtr));
+			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
 static int		DoCopyFile _ANSI_ARGS_((CONST char *srcPtr,
 			    CONST char *dstPtr));
 static int		DoCreateDirectory _ANSI_ARGS_((CONST char *pathPtr));
@@ -140,15 +140,38 @@ static int		DoRemoveDirectory _ANSI_ARGS_((Tcl_DString *pathPtr,
 static int		DoRenameFile _ANSI_ARGS_((CONST char *src,
 			    CONST char *dst));
 static int		TraversalCopy _ANSI_ARGS_((Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, CONST struct stat *statBufPtr,
+			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
 			    int type, Tcl_DString *errorPtr));
 static int		TraversalDelete _ANSI_ARGS_((Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, CONST struct stat *statBufPtr,
+			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
 			    int type, Tcl_DString *errorPtr));
 static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr));
+
+#ifdef PURIFY
+/*
+ * realpath and purify don't mix happily.  It has been noted that realpath
+ * should not be used with purify because of bogus warnings, but just
+ * memset'ing the resolved path will squelch those.  This assumes we are
+ * passing the standard MAXPATHLEN size resolved arg.
+ */
+static char *		Realpath _ANSI_ARGS_((CONST char *path,
+			    char *resolved));
+
+char *
+Realpath(path, resolved)
+    CONST char *path;
+    char *resolved;
+{
+    memset(resolved, 0, MAXPATHLEN);
+    return realpath(path, resolved);
+}
+#else
+#define Realpath realpath
+#endif
+
 
 /*
  *---------------------------------------------------------------------------
@@ -185,13 +208,12 @@ static int		TraverseUnixTree _ANSI_ARGS_((
  *---------------------------------------------------------------------------
  */
 
-
 int 
 TclpObjRenameFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
+    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr), 
 			Tcl_FSGetNativePath(destPathPtr));
 }
 
@@ -230,15 +252,15 @@ DoRenameFile(src, dst)
     if (errno == EINVAL) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
 	DIR *dirPtr;
-	struct dirent *dirEntPtr;
+	Tcl_DirEntry *dirEntPtr;
 
-	if ((realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
-		&& (realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
+	if ((Realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
+		&& (Realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
 		&& (strncmp(srcPath, dstPath, strlen(srcPath)) != 0)) {
 	    dirPtr = opendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
-		    dirEntPtr = readdir(dirPtr);	/* INTL: Native. */
+		    dirEntPtr = Tcl_PlatformReaddir(dirPtr); /* INTL: Native. */
 		    if (dirEntPtr == NULL) {
 			break;
 		    }
@@ -274,7 +296,6 @@ DoRenameFile(src, dst)
 
     return TCL_ERROR;
 }
-
 
 /*
  *---------------------------------------------------------------------------
@@ -308,7 +329,7 @@ TclpObjCopyFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
+    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr), 
 		      Tcl_FSGetNativePath(destPathPtr));
 }
 
@@ -317,13 +338,13 @@ DoCopyFile(src, dst)
     CONST char *src;	/* Pathname of file to be copied (native). */
     CONST char *dst;	/* Pathname of file to copy to (native). */
 {
-    struct stat srcStatBuf, dstStatBuf;
+    Tcl_StatBuf srcStatBuf, dstStatBuf;
 
     /*
      * Have to do a stat() to determine the filetype.
      */
     
-    if (lstat(src, &srcStatBuf) != 0) {			/* INTL: Native. */
+    if (Tcl_PlatformLStat(src, &srcStatBuf) != 0) {	/* INTL: Native. */
 	return TCL_ERROR;
     }
     if (S_ISDIR(srcStatBuf.st_mode)) {
@@ -336,7 +357,7 @@ DoCopyFile(src, dst)
      * exists, so we remove it first
      */
     
-    if (lstat(dst, &dstStatBuf) == 0) {			/* INTL: Native. */
+    if (Tcl_PlatformLStat(dst, &dstStatBuf) == 0) {	/* INTL: Native. */
 	if (S_ISDIR(dstStatBuf.st_mode)) {
 	    errno = EISDIR;
 	    return TCL_ERROR;
@@ -349,6 +370,7 @@ DoCopyFile(src, dst)
     }
 
     switch ((int) (srcStatBuf.st_mode & S_IFMT)) {
+#ifndef DJGPP
         case S_IFLNK: {
 	    char link[MAXPATHLEN];
 	    int length;
@@ -363,6 +385,7 @@ DoCopyFile(src, dst)
 	    }
 	    break;
 	}
+#endif
         case S_IFBLK:
         case S_IFCHR: {
 	    if (mknod(dst, srcStatBuf.st_mode,		/* INTL: Native. */
@@ -406,7 +429,7 @@ CopyFile(src, dst, statBufPtr)
     CONST char *src;		/* Pathname of file to copy (native). */
     CONST char *dst;		/* Pathname of file to create/overwrite
 				 * (native). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Used to determine mode and blocksize. */
 {
     int srcFd;
@@ -415,12 +438,12 @@ CopyFile(src, dst, statBufPtr)
     char *buffer;      /* Data buffer for copy */
     size_t nread;
 
-    if ((srcFd = open(src, O_RDONLY, 0)) < 0) {		/* INTL: Native. */
+    if ((srcFd = Tcl_PlatformOpen(src, O_RDONLY, 0)) < 0) { /* INTL: Native. */
 	return TCL_ERROR;
     }
 
-    dstFd = open(dst, O_CREAT | O_TRUNC | O_WRONLY,	/* INTL: Native. */
-	    statBufPtr->st_mode);
+    dstFd = Tcl_PlatformOpen(dst,			/* INTL: Native. */
+	    O_CREAT | O_TRUNC | O_WRONLY, statBufPtr->st_mode);
     if (dstFd < 0) {
 	close(srcFd); 
 	return TCL_ERROR;
@@ -692,10 +715,10 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
     
     if (recursive != 0) {
 	/* We should try to change permissions so this can be deleted */
-	struct stat statBuf;
+	Tcl_StatBuf statBuf;
 	int newPerm;
 
-	if (stat(path, &statBuf) == 0) {
+	if (Tcl_PlatformStat(path, &statBuf) == 0) {
 	    oldPerm = (mode_t) (statBuf.st_mode & 0x00007FFF);
 	}
 	
@@ -768,11 +791,11 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
 {
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     CONST char *source, *errfile;
     int result, sourceLen;
     int targetLen;
-    struct dirent *dirEntPtr;
+    Tcl_DirEntry *dirEntPtr;
     DIR *dirPtr;
 
     errfile = NULL;
@@ -780,7 +803,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     targetLen = 0;		/* lint. */
 
     source = Tcl_DStringValue(sourcePtr);
-    if (lstat(source, &statBuf) != 0) {			/* INTL: Native. */
+    if (Tcl_PlatformLStat(source, &statBuf) != 0) {	/* INTL: Native. */
 	errfile = source;
 	goto end;
     }
@@ -816,7 +839,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 				  
-    while ((dirEntPtr = readdir(dirPtr)) != NULL) {	/* INTL: Native. */
+    while ((dirEntPtr = Tcl_PlatformReaddir(dirPtr)) != NULL) {	/* INTL: Native. */
 	if ((strcmp(dirEntPtr->d_name, ".") == 0)
 	        || (strcmp(dirEntPtr->d_name, "..") == 0)) {
 	    continue;
@@ -898,7 +921,7 @@ static int
 TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname to copy (native). */
     Tcl_DString *dstPtr;	/* Destination pathname of copy (native). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Stat info for file specified by srcPtr. */
     int type;                   /* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
@@ -963,7 +986,7 @@ static int
 TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname (native). */
     Tcl_DString *ignore;	/* Destination pathname (not used). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Stat info for file specified by srcPtr. */
     int type;                   /* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
@@ -1017,7 +1040,7 @@ static int
 CopyFileAtts(src, dst, statBufPtr) 
     CONST char *src;		/* Path name of source file (native). */
     CONST char *dst;		/* Path name of target file (native). */
-    CONST struct stat *statBufPtr;
+    CONST Tcl_StatBuf *statBufPtr;
 				/* Stat info for source file */
 {
     struct utimbuf tval;
@@ -1076,7 +1099,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj *fileName;  	/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
 {
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     struct group *groupPtr;
     int result;
 
@@ -1128,7 +1151,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj *fileName;  	/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr;	/* A pointer to return the object with. */
 {
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     struct passwd *pwPtr;
     int result;
 
@@ -1180,7 +1203,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj *fileName;  	    /* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr;	    /* A pointer to return the object with. */
 {
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     char returnString[7];
     int result;
 
@@ -1358,7 +1381,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     if (Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
         newMode = (mode_t) (mode & 0x00007FFF);
     } else {
-	struct stat buf;
+	Tcl_StatBuf buf;
 	char *modeStringPtr = Tcl_GetString(attributePtr);
 
 	/*
@@ -1616,17 +1639,17 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
  * TclpObjNormalizePath --
  *
  *	This function scans through a path specification and replaces
- *	it, in place, with a normalized version.  On unix, this simply
- *	ascertains where the valid path ends, and makes no change in
- *	place.
+ *	it, in place, with a normalized version.  A normalized version
+ *	is one in which all symlinks in the path are replaced with
+ *	their expanded form (except a symlink at the very end of the
+ *	path).
  *
  * Results:
  *	The new 'nextCheckpoint' value, giving as far as we could
  *	understand in the path.
  *
  * Side effects:
- *	The pathPtr string, which must contain a valid path, is
- *	not modified (unlike Windows, MacOS versions).
+ *	The pathPtr string, is modified.
  *
  *---------------------------------------------------------------------------
  */
@@ -1638,33 +1661,79 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     int nextCheckpoint;
 {
     char *currentPathEndPosition;
-    char *path = Tcl_GetString(pathPtr);
+    int pathLen;
+    char cur;
+    char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+#ifndef NO_REALPATH
+    char normPath[MAXPATHLEN];
+    Tcl_DString ds;
+    CONST char *nativePath; 
+#endif
 
     currentPathEndPosition = path + nextCheckpoint;
 
     while (1) {
-	char cur = *currentPathEndPosition;
-	if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
+	cur = *currentPathEndPosition;
+	if ((cur == '/') && (path != currentPathEndPosition)) {
 	    /* Reached directory separator, or end of string */
 	    Tcl_DString ds;
 	    CONST char *nativePath;
 	    int accessOk;
 
 	    nativePath = Tcl_UtfToExternalDString(NULL, path, 
-			    currentPathEndPosition - path, &ds);
+		    currentPathEndPosition - path, &ds);
 	    accessOk = access(nativePath, F_OK);
 	    Tcl_DStringFree(&ds);
 	    if (accessOk != 0) {
 		/* File doesn't exist */
 		break;
 	    }
-	    if (cur == 0) {
-		break;
-	    }
+	    /* Update the acceptable point */
+	    nextCheckpoint = currentPathEndPosition - path;
+	} else if (cur == 0) {
+	    break;
 	}
 	currentPathEndPosition++;
     }
-    nextCheckpoint = currentPathEndPosition - path;
-    /* We should really now convert this to a canonical path */
+    /* 
+     * We should really now convert this to a canonical path.  We do
+     * that with 'realpath' if we have it available.  Otherwise we could
+     * step through every single path component, checking whether it is a 
+     * symlink, but that would be a lot of work, and most modern OSes 
+     * have 'realpath'.
+     */
+#ifndef NO_REALPATH
+    nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
+    if (Realpath(nativePath, normPath) != NULL) {
+	/* 
+	 * Free up the native path and put in its place the
+	 * converted, normalized path.
+	 */
+	Tcl_DStringFree(&ds);
+	Tcl_ExternalToUtfDString(NULL, normPath, (int) strlen(normPath), &ds);
+
+	if (path[nextCheckpoint] != '\0') {
+	    /* not at end, append remaining path */
+	    int normLen = Tcl_DStringLength(&ds);
+	    Tcl_DStringAppend(&ds, path + nextCheckpoint,
+		    pathLen - nextCheckpoint);
+	    /* 
+	     * We recognise up to and including the directory
+	     * separator.
+	     */	
+	    nextCheckpoint = normLen + 1;
+	} else {
+	    /* We recognise the whole string */ 
+	    nextCheckpoint = Tcl_DStringLength(&ds);
+	}
+	/* 
+	 * Overwrite with the normalized path.
+	 */
+	Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
+		Tcl_DStringLength(&ds));
+    }
+    Tcl_DStringFree(&ds);
+#endif	/* !NO_REALPATH */
+
     return nextCheckpoint;
 }

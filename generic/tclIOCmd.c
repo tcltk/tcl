@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.10.4.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.10.4.2 2002/06/10 05:33:11 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -250,9 +250,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
         if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
-	    if (objc == 3) {
-		Tcl_DecrRefCount(linePtr);
-	    }
+	    Tcl_DecrRefCount(linePtr);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "error reading \"", name, "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
@@ -418,8 +416,9 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     Tcl_Channel chan;			/* The channel to tell on. */
-    int offset, mode;			/* Where to seek? */
-    int result;				/* Of calling Tcl_Seek. */
+    Tcl_WideInt offset;			/* Where to seek? */
+    int mode;				/* How to seek? */
+    Tcl_WideInt result;			/* Of calling Tcl_Seek. */
     char *chanName;
     int optionIndex;
     static CONST char *originOptions[] = {
@@ -436,7 +435,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetIntFromObj(interp, objv[2], &offset) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
 	return TCL_ERROR;
     }
     mode = SEEK_SET;
@@ -449,7 +448,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     }
 
     result = Tcl_Seek(chan, offset, mode);
-    if (result == -1) {
+    if (result == Tcl_LongAsWide(-1)) {
         Tcl_AppendResult(interp, "error during seek on \"", 
 		chanName, "\": ", Tcl_PosixError(interp), (char *) NULL);
         return TCL_ERROR;
@@ -499,7 +498,7 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), Tcl_Tell(chan));
+    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), Tcl_Tell(chan));
     return TCL_OK;
 }
 

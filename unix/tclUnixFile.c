@@ -9,11 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12.8.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.12.8.2 2002/06/10 05:33:18 wolfsuit Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
 
 
 /*
@@ -46,7 +48,7 @@ TclpFindExecutable(argv0)
 				 * (native). */
 {
     CONST char *name, *p;
-    struct stat statBuf;
+    Tcl_StatBuf statBuf;
     int length;
     Tcl_DString buffer, nameString;
 
@@ -116,8 +118,8 @@ TclpFindExecutable(argv0)
 	 * strings directly.
 	 */
 
-	if ((access(name, X_OK) == 0)		/* INTL: Native. */
-		&& (stat(name, &statBuf) == 0)	/* INTL: Native. */
+	if ((access(name, X_OK) == 0)			   /* INTL: Native. */
+		&& (Tcl_PlatformStat(name, &statBuf) == 0) /* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
@@ -135,8 +137,12 @@ TclpFindExecutable(argv0)
      * If the name starts with "/" then just copy it to tclExecutableName.
      */
 
-    gotName:
+gotName:
+#ifdef DJGPP
+    if (name[1] == ':')  {
+#else
     if (name[0] == '/')  {
+#endif
 	Tcl_ExternalToUtfDString(NULL, name, -1, &nameString);
 	tclNativeExecutableName = (char *)
 		ckalloc((unsigned) (Tcl_DStringLength(&nameString) + 1));
@@ -168,7 +174,7 @@ TclpFindExecutable(argv0)
 	    Tcl_DStringValue(&nameString));
     Tcl_DStringFree(&nameString);
     
-    done:
+done:
     Tcl_DStringFree(&buffer);
     return tclNativeExecutableName;
 }
@@ -201,234 +207,256 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
-    CONST char *native, *fname, *dirName;
-    DIR *d;
-    Tcl_DString ds;
-    struct stat statBuf;
-    int matchHidden;
-    int nativeDirLen;
-    int result = TCL_OK;
-    Tcl_DString dsOrig;
+    CONST char *native;
     Tcl_Obj *fileNamePtr;
-    int baseLength;
 
     fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
     if (fileNamePtr == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_DStringInit(&dsOrig);
-    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
-    baseLength = Tcl_DStringLength(&dsOrig);
     
-    /*
-     * Make sure that the directory part of the name really is a
-     * directory.  If the directory name is "", use the name "."
-     * instead, because some UNIX systems don't treat "" like "."
-     * automatically.  Keep the "" for use in generating file names,
-     * otherwise "glob foo.c" would return "./foo.c".
-     */
-
-    if (baseLength == 0) {
-	dirName = ".";
-    } else {
-	dirName = Tcl_DStringValue(&dsOrig);
-	/* Make sure we have a trailing directory delimiter */
-	if (dirName[baseLength-1] != '/') {
-	    Tcl_DStringAppend(&dsOrig, "/", 1);
-	    dirName = Tcl_DStringValue(&dsOrig);
-	    baseLength++;
+    if (pattern == NULL || (*pattern == '\0')) {
+	/* Match a file directly */
+	CONST char *native = (CONST char*) Tcl_FSGetNativePath(pathPtr);
+	if (NativeMatchType(native, types)) {
+	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
-    }
-
-    /*
-     * Check to see if the pattern needs to compare with hidden files.
-     */
-
-    if ((pattern[0] == '.')
-	    || ((pattern[0] == '\\') && (pattern[1] == '.'))) {
-	matchHidden = 1;
-    } else {
-	matchHidden = 0;
-    }
-
-    /*
-     * Now open the directory for reading and iterate over the contents.
-     */
-
-    native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
-
-    if ((stat(native, &statBuf) != 0)		/* INTL: UTF-8. */
-	    || !S_ISDIR(statBuf.st_mode)) {
-	Tcl_DStringFree(&dsOrig);
-	Tcl_DStringFree(&ds);
 	return TCL_OK;
-    }
-
-    d = opendir(native);				/* INTL: Native. */
-    if (d == NULL) {
-        char savedChar = '\0';
-	Tcl_ResetResult(interp);
-	Tcl_DStringFree(&ds);
-
-	/*
-	 * Strip off a trailing '/' if necessary, before reporting the error.
-	 */
-
-	if (baseLength > 0) {
-	    savedChar = (Tcl_DStringValue(&dsOrig))[baseLength-1];
-	    if (savedChar == '/') {
-		(Tcl_DStringValue(&dsOrig))[baseLength-1] = '\0';
-	    }
-	}
-	Tcl_AppendResult(interp, "couldn't read directory \"",
-		Tcl_DStringValue(&dsOrig), "\": ",
-		Tcl_PosixError(interp), (char *) NULL);
-	if (baseLength > 0) {
-	    (Tcl_DStringValue(&dsOrig))[baseLength-1] = savedChar;
-	}
-	Tcl_DStringFree(&dsOrig);
-	return TCL_ERROR;
-    }
-
-    nativeDirLen = Tcl_DStringLength(&ds);
-
-    while (1) {
-        Tcl_DString utfDs;
-	CONST char *utf;
-	struct dirent *entryPtr;
+    } else {
+	CONST char *fname, *dirName;
+	DIR *d;
+	Tcl_DString ds;
+	Tcl_StatBuf statBuf;
+	int matchHidden;
+	int nativeDirLen;
+	int result = TCL_OK;
+	Tcl_DString dsOrig;
+	int baseLength;
 	
-	entryPtr = readdir(d);				/* INTL: Native. */
-	if (entryPtr == NULL) {
-	    break;
-	}
-	if (types != NULL && (types->perm & TCL_GLOB_PERM_HIDDEN)) {
-	    /* 
-	     * We explicitly asked for hidden files, so turn around
-	     * and ignore any file which isn't hidden.
-	     */
-	    if (*entryPtr->d_name != '.') {
-	        continue;
+	Tcl_DStringInit(&dsOrig);
+	Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
+	baseLength = Tcl_DStringLength(&dsOrig);
+	
+	/*
+	 * Make sure that the directory part of the name really is a
+	 * directory.  If the directory name is "", use the name "."
+	 * instead, because some UNIX systems don't treat "" like "."
+	 * automatically.  Keep the "" for use in generating file names,
+	 * otherwise "glob foo.c" would return "./foo.c".
+	 */
+
+	if (baseLength == 0) {
+	    dirName = ".";
+	} else {
+	    dirName = Tcl_DStringValue(&dsOrig);
+	    /* Make sure we have a trailing directory delimiter */
+	    if (dirName[baseLength-1] != '/') {
+		dirName = Tcl_DStringAppend(&dsOrig, "/", 1);
+		baseLength++;
 	    }
-	} else if (!matchHidden && (*entryPtr->d_name == '.')) {
-	    /*
-	     * Don't match names starting with "." unless the "." is
-	     * present in the pattern.
-	     */
-	    continue;
+	}
+	
+	/*
+	 * Check to see if the pattern needs to compare with hidden files.
+	 */
+
+	if ((pattern[0] == '.')
+		|| ((pattern[0] == '\\') && (pattern[1] == '.'))) {
+	    matchHidden = 1;
+	} else {
+	    matchHidden = 0;
 	}
 
 	/*
-	 * Now check to see if the file matches, according to both type
-	 * and pattern.  If so, add the file to the result.
+	 * Now open the directory for reading and iterate over the contents.
 	 */
 
-	utf = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1, &utfDs);
-	if (Tcl_StringMatch(utf, pattern) != 0) {
-	    int typeOk = 1;
+	native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
 
-	    Tcl_DStringSetLength(&dsOrig, baseLength);
-	    Tcl_DStringAppend(&dsOrig, utf, -1);
-	    fname = Tcl_DStringValue(&dsOrig);
-	    if (types != NULL) {
-		struct stat buf;
-		char *nativeEntry;
-		Tcl_DStringSetLength(&ds, nativeDirLen);
-		Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
-		nativeEntry = Tcl_DStringValue(&ds);
-		/* 
-		 * The native name of the file is in entryPtr->d_name.
-		 * We can use this below.
-		 */
-		
-		if (types->perm != 0) {
-		    if (stat(nativeEntry, &buf) != 0) {
-			/* 
-			 * Either the file has disappeared between the
-			 * 'readdir' call and the 'stat' call, or
-			 * the file is a link to a file which doesn't
-			 * exist (which we could ascertain with
-			 * lstat), or there is some other strange
-			 * problem.  In all these cases, we define this
-			 * to mean the file does not match any defined
-			 * permission, and therefore it is not 
-			 * added to the list of files to return.
-			 */
-			typeOk = 0;
-		    }
-		    
-		    /* 
-		     * readonly means that there are NO write permissions
-		     * (even for user), but execute is OK for anybody
-		     */
-		    if (typeOk && (
-			((types->perm & TCL_GLOB_PERM_RONLY) &&
-				(buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
-			((types->perm & TCL_GLOB_PERM_R) &&
-				(access(nativeEntry, R_OK) != 0)) ||
-			((types->perm & TCL_GLOB_PERM_W) &&
-				(access(nativeEntry, W_OK) != 0)) ||
-			((types->perm & TCL_GLOB_PERM_X) &&
-				(access(nativeEntry, X_OK) != 0))
-			)) {
-			typeOk = 0;
-		    }
-		}
-		if (typeOk && (types->type != 0)) {
-		    if (types->perm == 0) {
-			/* We haven't yet done a stat on the file */
-			if (stat(nativeEntry, &buf) != 0) {
-			    /* Posix error occurred */
-			    typeOk = 0;
-			}
-		    }
-		    if (typeOk) {
-			/*
-			 * In order bcdpfls as in 'find -t'
-			 */
-			if (
-			    ((types->type & TCL_GLOB_TYPE_BLOCK) &&
-				    S_ISBLK(buf.st_mode)) ||
-			    ((types->type & TCL_GLOB_TYPE_CHAR) &&
-				    S_ISCHR(buf.st_mode)) ||
-			    ((types->type & TCL_GLOB_TYPE_DIR) &&
-				    S_ISDIR(buf.st_mode)) ||
-			    ((types->type & TCL_GLOB_TYPE_PIPE) &&
-				    S_ISFIFO(buf.st_mode)) ||
-			    ((types->type & TCL_GLOB_TYPE_FILE) &&
-				    S_ISREG(buf.st_mode))
-#ifdef S_ISSOCK
-			    || ((types->type & TCL_GLOB_TYPE_SOCK) &&
-				    S_ISSOCK(buf.st_mode))
-#endif
-			    ) {
-			    /* Do nothing -- this file is ok */
-			} else {
-			    typeOk = 0;
-#ifdef S_ISLNK
-			    if (types->type & TCL_GLOB_TYPE_LINK) {
-				if (lstat(nativeEntry, &buf) == 0) {
-				    if (S_ISLNK(buf.st_mode)) {
-				        typeOk = 1;
-				    }
-				}
-			    }
-#endif
-			}
-		    }
+	if ((Tcl_PlatformStat(native, &statBuf) != 0)		/* INTL: UTF-8. */
+		|| !S_ISDIR(statBuf.st_mode)) {
+	    Tcl_DStringFree(&dsOrig);
+	    Tcl_DStringFree(&ds);
+	    return TCL_OK;
+	}
+
+	d = opendir(native);				/* INTL: Native. */
+	if (d == NULL) {
+	    char savedChar = '\0';
+	    Tcl_ResetResult(interp);
+	    Tcl_DStringFree(&ds);
+
+	    /*
+	     * Strip off a trailing '/' if necessary, before reporting the error.
+	     */
+
+	    if (baseLength > 0) {
+		savedChar = (Tcl_DStringValue(&dsOrig))[baseLength-1];
+		if (savedChar == '/') {
+		    (Tcl_DStringValue(&dsOrig))[baseLength-1] = '\0';
 		}
 	    }
-	    if (typeOk) {
-		Tcl_ListObjAppendElement(interp, resultPtr, 
-			Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+	    Tcl_AppendResult(interp, "couldn't read directory \"",
+		    Tcl_DStringValue(&dsOrig), "\": ",
+		    Tcl_PosixError(interp), (char *) NULL);
+	    if (baseLength > 0) {
+		(Tcl_DStringValue(&dsOrig))[baseLength-1] = savedChar;
+	    }
+	    Tcl_DStringFree(&dsOrig);
+	    return TCL_ERROR;
+	}
+
+	nativeDirLen = Tcl_DStringLength(&ds);
+
+	while (1) {
+	    Tcl_DString utfDs;
+	    CONST char *utf;
+	    Tcl_DirEntry *entryPtr;
+	    
+	    entryPtr = Tcl_PlatformReaddir(d);		/* INTL: Native. */
+	    if (entryPtr == NULL) {
+		break;
+	    }
+	    if (types != NULL && (types->perm & TCL_GLOB_PERM_HIDDEN)) {
+		/* 
+		 * We explicitly asked for hidden files, so turn around
+		 * and ignore any file which isn't hidden.
+		 */
+		if (*entryPtr->d_name != '.') {
+		    continue;
+		}
+	    } else if (!matchHidden && (*entryPtr->d_name == '.')) {
+		/*
+		 * Don't match names starting with "." unless the "." is
+		 * present in the pattern.
+		 */
+		continue;
+	    }
+
+	    /*
+	     * Now check to see if the file matches, according to both type
+	     * and pattern.  If so, add the file to the result.
+	     */
+
+	    utf = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1, &utfDs);
+	    if (Tcl_StringMatch(utf, pattern) != 0) {
+		int typeOk = 1;
+
+		Tcl_DStringSetLength(&dsOrig, baseLength);
+		Tcl_DStringAppend(&dsOrig, utf, -1);
+		fname = Tcl_DStringValue(&dsOrig);
+		if (types != NULL) {
+		    char *nativeEntry;
+		    Tcl_DStringSetLength(&ds, nativeDirLen);
+		    nativeEntry = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
+		    typeOk = NativeMatchType(nativeEntry, types);
+		}
+		if (typeOk) {
+		    Tcl_ListObjAppendElement(interp, resultPtr, 
+			    Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+		}
+	    }
+	    Tcl_DStringFree(&utfDs);
+	}
+
+	closedir(d);
+	Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&dsOrig);
+	return result;
+    }
+}
+static int 
+NativeMatchType(
+    CONST char* nativeEntry,  /* Native path to check */
+    Tcl_GlobTypeData *types)  /* Type description to match against */
+{
+    Tcl_StatBuf buf;
+    if (types == NULL) {
+	/* 
+	 * Simply check for the file's existence, but do it
+	 * with lstat, in case it is a link to a file which
+	 * doesn't exist (since that case would not show up
+	 * if we used 'access' or 'stat')
+	 */
+	if (Tcl_PlatformLStat(nativeEntry, &buf) != 0) {
+	    return 0;
+	}
+    } else {
+	if (types->perm != 0) {
+	    if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
+		/* 
+		 * Either the file has disappeared between the
+		 * 'readdir' call and the 'stat' call, or
+		 * the file is a link to a file which doesn't
+		 * exist (which we could ascertain with
+		 * lstat), or there is some other strange
+		 * problem.  In all these cases, we define this
+		 * to mean the file does not match any defined
+		 * permission, and therefore it is not 
+		 * added to the list of files to return.
+		 */
+		return 0;
+	    }
+	    
+	    /* 
+	     * readonly means that there are NO write permissions
+	     * (even for user), but execute is OK for anybody
+	     */
+	    if (((types->perm & TCL_GLOB_PERM_RONLY) &&
+			(buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
+		((types->perm & TCL_GLOB_PERM_R) &&
+			(access(nativeEntry, R_OK) != 0)) ||
+		((types->perm & TCL_GLOB_PERM_W) &&
+			(access(nativeEntry, W_OK) != 0)) ||
+		((types->perm & TCL_GLOB_PERM_X) &&
+			(access(nativeEntry, X_OK) != 0))
+		) {
+		return 0;
 	    }
 	}
-	Tcl_DStringFree(&utfDs);
+	if (types->type != 0) {
+	    if (types->perm == 0) {
+		/* We haven't yet done a stat on the file */
+		if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
+		    /* Posix error occurred */
+		    return 0;
+		}
+	    }
+	    /*
+	     * In order bcdpfls as in 'find -t'
+	     */
+	    if (
+		((types->type & TCL_GLOB_TYPE_BLOCK) &&
+			S_ISBLK(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_CHAR) &&
+			S_ISCHR(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_DIR) &&
+			S_ISDIR(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_PIPE) &&
+			S_ISFIFO(buf.st_mode)) ||
+		((types->type & TCL_GLOB_TYPE_FILE) &&
+			S_ISREG(buf.st_mode))
+    #ifdef S_ISSOCK
+		|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
+			S_ISSOCK(buf.st_mode))
+    #endif
+		) {
+		/* Do nothing -- this file is ok */
+	    } else {
+    #ifdef S_ISLNK
+		if (types->type & TCL_GLOB_TYPE_LINK) {
+		    if (Tcl_PlatformLStat(nativeEntry, &buf) == 0) {
+			if (S_ISLNK(buf.st_mode)) {
+			    return 1;
+			}
+		    }
+		}
+    #endif
+		return 0;
+	    }
+	}
     }
-
-    closedir(d);
-    Tcl_DStringFree(&ds);
-    Tcl_DStringFree(&dsOrig);
-    return result;
+    return 1;
 }
 
 /*
@@ -551,14 +579,9 @@ TclpObjChdir(pathPtr)
 int 
 TclpObjLstat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
-    CONST char *path = Tcl_FSGetNativePath(pathPtr);
-    if (path == NULL) {
-	return -1;
-    } else {
-	return lstat(path, bufPtr);
-    }
+    return Tcl_PlatformLStat(Tcl_FSGetNativePath(pathPtr), bufPtr);
 }
 
 /*
@@ -647,6 +670,7 @@ TclpReadlink(path, linkPtr)
     Tcl_DString *linkPtr;	/* Uninitialized or free DString filled
 				 * with contents of link (UTF-8). */
 {
+#ifndef DJGPP
     char link[MAXPATHLEN];
     int length;
     CONST char *native;
@@ -662,6 +686,9 @@ TclpReadlink(path, linkPtr)
 
     Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
     return Tcl_DStringValue(linkPtr);
+#else
+	return NULL;
+#endif
 }
 
 /*
@@ -683,13 +710,13 @@ TclpReadlink(path, linkPtr)
 int 
 TclpObjStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
-    struct stat *bufPtr;	/* Filled with results of stat call. */
+    Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
     CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
-	return stat(path, bufPtr);
+	return Tcl_PlatformStat(path, bufPtr);
     }
 }
 
@@ -734,5 +761,29 @@ TclpObjLink(pathPtr, toPtr)
 
 #endif
 
-
-
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpFilesystemPathType --
+ *
+ *      This function is part of the native filesystem support, and
+ *      returns the path type of the given path.  Right now it simply
+ *      returns NULL.  In the future it could return specific path
+ *      types, like 'nfs', 'samba', 'FAT32', etc.
+ *
+ * Results:
+ *      NULL at present.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj*
+TclpFilesystemPathType(pathObjPtr)
+    Tcl_Obj* pathObjPtr;
+{
+    /* All native paths are of the same type */
+    return NULL;
+}

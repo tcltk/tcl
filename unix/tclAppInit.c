@@ -11,19 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.9 2000/04/18 23:06:39 hobbs Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.9.18.1 2002/06/10 05:33:18 wolfsuit Exp $
  */
 
 #include "tcl.h"
-
-/*
- * The following variable is a special hack that is needed in order for
- * Sun shared libraries to be used for Tcl.
- */
-
-extern int matherr();
-int *tclDummyMathPtr = (int *) matherr;
-
 
 #ifdef TCL_TEST
 
@@ -177,6 +168,10 @@ Tcl_AppInit(interp)
      * then no user-specific startup file will be run under any conditions.
      */
 
+#ifdef DJGPP
+    Tcl_SetVar(interp, "tcl_rcFileName", "~/tclsh.rc", TCL_GLOBAL_ONLY);
+#else
     Tcl_SetVar(interp, "tcl_rcFileName", "~/.tclshrc", TCL_GLOBAL_ONLY);
+#endif
     return TCL_OK;
 }

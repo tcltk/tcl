@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.15.8.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.15.8.2 2002/06/10 05:33:19 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -91,6 +91,8 @@ static int		FileOutputProc _ANSI_ARGS_((ClientData instanceData,
 			    CONST char *buf, int toWrite, int *errorCode));
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
+static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
+			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
 			    int flags));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -103,7 +105,7 @@ static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_3,	/* v3 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
@@ -116,7 +118,13 @@ static Tcl_ChannelType fileChannelType = {
     FileBlockProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    FileWideSeekProc,		/* Wide seek proc. */
 };
+
+#ifdef HAVE_NO_SEH
+static void *ESP;
+static void *EBP;
+#endif /* HAVE_NO_SEH */
 
 
 /*
@@ -433,15 +441,15 @@ FileCloseProc(instanceData, interp)
 
 static int
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;			/* File state. */
-    long offset;				/* Offset to seek to. */
-    int mode;					/* Relative to where
-                                                 * should we seek? */
-    int *errorCodePtr;				/* To store error code. */
+    ClientData instanceData;	/* File state. */
+    long offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? */
+    int *errorCodePtr;		/* To store error code. */
 {
     FileInfo *infoPtr = (FileInfo *) instanceData;
     DWORD moveMethod;
-    DWORD newPos;
+    DWORD newPos, newPosHigh;
+    DWORD oldPos, oldPosHigh;
 
     *errorCodePtr = 0;
     if (mode == SEEK_SET) {
@@ -452,13 +460,94 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
         moveMethod = FILE_END;
     }
 
-    newPos = SetFilePointer(infoPtr->handle, offset, NULL, moveMethod);
-    if (newPos == 0xFFFFFFFF) {
-        TclWinConvertError(GetLastError());
-        *errorCodePtr = errno;
+    /*
+     * Save our current place in case we need to roll-back the seek.
+     */
+    oldPosHigh = (DWORD)0;
+    oldPos = SetFilePointer(infoPtr->handle, (LONG)0, &oldPosHigh,
+	    FILE_CURRENT);
+    if (oldPos == INVALID_SET_FILE_POINTER) {
+	int winError = GetLastError();
+	if (winError != NO_ERROR) {
+	    TclWinConvertError(winError);
+	    *errorCodePtr = errno;
+	    return -1;
+	}
+    }
+
+    newPosHigh = (DWORD)(offset < 0 ? -1 : 0);
+    newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
+			    moveMethod);
+    if (newPos == INVALID_SET_FILE_POINTER) {
+	int winError = GetLastError();
+	if (winError != NO_ERROR) {
+	    TclWinConvertError(winError);
+	    *errorCodePtr = errno;
+	    return -1;
+	}
+    }
+
+    /*
+     * Check for expressability in our return type, and roll-back otherwise.
+     */
+    if (newPosHigh != 0) {
+	*errorCodePtr = EOVERFLOW;
+	SetFilePointer(infoPtr->handle, (LONG)oldPos, &oldPosHigh, FILE_BEGIN);
 	return -1;
     }
-    return newPos;
+    return (int) newPos;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileWideSeekProc --
+ *
+ *	Seeks on a file-based channel. Returns the new position.
+ *
+ * Results:
+ *	-1 if failed, the new position if successful. If failed, it
+ *	also sets *errorCodePtr to the error code.
+ *
+ * Side effects:
+ *	Moves the location at which the channel will be accessed in
+ *	future operations.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_WideInt
+FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
+    ClientData instanceData;	/* File state. */
+    Tcl_WideInt offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? */
+    int *errorCodePtr;		/* To store error code. */
+{
+    FileInfo *infoPtr = (FileInfo *) instanceData;
+    DWORD moveMethod;
+    DWORD newPos, newPosHigh;
+
+    *errorCodePtr = 0;
+    if (mode == SEEK_SET) {
+        moveMethod = FILE_BEGIN;
+    } else if (mode == SEEK_CUR) {
+        moveMethod = FILE_CURRENT;
+    } else {
+        moveMethod = FILE_END;
+    }
+
+    newPosHigh = (DWORD)(offset >> 32);
+    newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
+			    moveMethod);
+    if (newPos == INVALID_SET_FILE_POINTER) {
+	int winError = GetLastError();
+	if (winError != NO_ERROR) {
+	    TclWinConvertError(winError);
+	    *errorCodePtr = errno;
+	    return -1;
+	}
+    }
+    return ((Tcl_WideInt) newPos) | (((Tcl_WideInt) newPosHigh) << 32);
 }
 
 /*
@@ -979,8 +1068,39 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	 * of this duped handle which might throw EXCEPTION_INVALID_HANDLE.
 	 */
 
+#ifdef HAVE_NO_SEH
+        __asm__ __volatile__ (
+                "movl  %esp, _ESP" "\n\t"
+                "movl  %ebp, _EBP");
+
+        __asm__ __volatile__ (
+                "pushl $__except_makefilechannel_handler" "\n\t"
+                "pushl %fs:0" "\n\t"
+                "mov   %esp, %fs:0");
+
+        result = 0;
+#else
 	__try {
+#endif /* HAVE_NO_SEH */
 	    CloseHandle(dupedHandle);
+#ifdef HAVE_NO_SEH
+        __asm__ __volatile__ (
+                "jmp   makefilechannel_pop" "\n"
+                "makefilechannel_reentry:" "\n\t"
+                "movl  _ESP, %esp" "\n\t"
+                "movl  _EBP, %ebp");
+
+        result = 1;  /* True when exception was raised */
+
+        __asm__ __volatile__ (
+                "makefilechannel_pop:" "\n\t"
+                "mov   (%esp), %eax" "\n\t"
+                "mov   %eax, %fs:0" "\n\t"
+                "add   $8, %esp");
+
+        if (result)
+            return NULL;
+#else
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
 	    /*
@@ -990,6 +1110,7 @@ Tcl_MakeFileChannel(rawHandle, mode)
 
 	    return NULL;
 	}
+#endif /* HAVE_NO_SEH */
 
 	/* Fall through, the handle is valid. */
 
@@ -1003,6 +1124,21 @@ Tcl_MakeFileChannel(rawHandle, mode)
 
     return channel;
 }
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_makefilechannel_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp makefilechannel_reentry");
+    return 0; /* Function does not return */
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1159,18 +1295,19 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
 /*
  *----------------------------------------------------------------------
  *
- * TclWinOpenFileChannel --
+ * TclWinFlushDirtyChannels --
  *
- *	Constructs a File channel for the specified standard OS handle.
- *      This is a helper function to break up the construction of 
- *      channels into File, Console, or Serial.
+ *	Flush all dirty channels to disk, so that requesting the
+ *	size of any file returns the correct value.
  *
  * Results:
- *	Returns the new channel, or NULL.
+ *	None.
  *
  * Side effects:
- *	May open the channel and may cause creation of a file on the
- *	file system.
+ *	Information is actually written to disk now, rather than
+ *	later.  Don't call this too often, or there will be a 
+ *	performance hit (i.e. only call when we need to ask for
+ *	the size of a file).
  *
  *----------------------------------------------------------------------
  */

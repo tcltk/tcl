@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.7 2001/04/07 02:08:05 msofer Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.7.14.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.0 Tcl "Tcl Built-In Commands"
@@ -127,16 +127,21 @@ this command returns the namespace's current export list.
 .TP
 \fBnamespace forget \fR?\fIpattern pattern ...\fR?
 Removes previously imported commands from a namespace.
-Each \fIpattern\fR is a qualified name such as
-\fBfoo::x\fR or \fBa::b::p*\fR.
+Each \fIpattern\fR is a simple or qualified name such as
+\fBx\fR, \fBfoo::x\fR or \fBa::b::p*\fR.
 Qualified names contain \fB::\fRs and qualify a name
 with the name of one or more namespaces.
-Each \fIpattern\fR is qualified with the name of an exporting namespace
+Each \fIqualified pattern\fR is qualified with the name of an
+exporting namespace 
 and may have glob-style special characters in the command name
 at the end of the qualified name.
 Glob characters may not appear in a namespace name.
-This command first finds the matching exported commands.
-It then checks whether any of those those commands
+For each \fIsimple pattern\fR this command deletes the matching
+commands of the 
+current namespace that were imported from a different namespace.
+For \fIqualified patterns\fR, this command first finds the matching
+exported commands. 
+It then checks whether any of those commands
 were previously imported by the current namespace.
 If so, this command deletes the corresponding imported commands. 
 In effect, this un-does the action of a \fBnamespace import\fR command.

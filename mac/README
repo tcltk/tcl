@@ -1,19 +1,19 @@
 Tcl 8.4 for Macintosh
 
-RCS: @(#) $Id: README,v 1.16 2001/08/07 02:44:40 hobbs Exp $
+RCS: @(#) $Id: README,v 1.16.8.1 2002/06/10 05:33:14 wolfsuit Exp $
 
 1. Introduction
 ---------------
 
 This is the README file for the Macintosh version of the Tcl
 scripting language.  The home page for the Mac/Tcl info is
-	http://www.purl.org/tcl/home/software/mac/
+	http://www.tcl.tk/software/mac/
 
 A summary of what's new in this release is at
-	http://www.purl.org/tcl/home/software/tcltk/8.4.html
+	http://www.tcl.tk/software/tcltk/8.4.html
 
 A summary of Macintosh-specific features is at
-	http://www.purl.org/tcl/home/software/mac/features.html
+	http://www.tcl.tk/software/mac/features.html
 
 2. The Distribution
 -------------------
@@ -46,7 +46,7 @@ mactcl-source-<version>.sea.hqx
 The "html" subdirectory contains reference documentation in
 in the HTML format.  You may also find these pages at:
 
-	http://www.purl.org/tcl/home/man/
+	http://www.tcl.tk/man/
 
 3. Compiling Tcl
 ----------------
@@ -61,7 +61,7 @@ following items:
 The included project files should work fine.  However, for
 current release notes please check this page:
 
-	http://www.purl.org/tcl/home/doc/howto/compile.html#mac
+	http://www.tcl.tk/doc/howto/compile.html#mac
 
 If you have comments or Bug reports, please use the SourceForge
 Bug tracker to report them:

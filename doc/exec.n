@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.5 2000/09/07 14:27:47 poenitz Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.5.14.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH exec n 7.6 Tcl "Tcl Built-In Commands"
@@ -197,7 +197,8 @@ the program.
 .sp
 Additionally, when calling a 16-bit DOS or Windows 3.X application, all path
 names must use the short, cryptic, path format (e.g., using ``applba~1.def''
-instead of ``applbakery.default'').
+instead of ``applbakery.default''), which can be obtained with the
+\fBfile attributes $fileName -shortname\fR command.
 .sp
 Two or more forward or backward slashes in a row in a path refer to a
 network path.  For example, a simple concatenation of the root directory
@@ -207,13 +208,34 @@ point called \fBsystem\fR on the machine called \fBwindows\fR (and the
 \fBc:/\fR is ignored), and is not equivalent to \fBc:/windows/system\fR,
 which describes a directory on the current computer.  The \fBfile join\fR
 command should be used to concatenate path components.
+.sp
+.RS
+Note that there are two general types of Win32 console applications:
+.RS
+1) CLI -- CommandLine Interface, simple stdio exchange. \fBnetstat.exe\fR for
+example.
+.br
+2) TUI -- Textmode User Interface, any application that accesses the console
+API for doing such things as cursor movement, setting text color, detecting
+key presses and mouse movement, etc...  An example would be \fBtelnet.exe\fR
+from Windows 2000.  These types of applications are not common in a windows
+environment, but do exist.
+.RE
+\fBexec\fR will not work well with TUI applications when a console is not
+present, as is done when launching applications under wish.  It is desirable
+to have console applications hidden and detached.  This is a designed-in
+limitation as \fBexec\fR wants to communicate over pipes.  The Expect
+extension addresses this issue when communication between a TUI application
+is desired.
+.sp
+.RE
 .TP
 \fBWindows NT\fR
 .
-When attempting to execute an application, \fBexec\fR first searches for the
-name as it was specified.  Then, in order, \fB.com\fR, \fB.exe\fR, and \fB.bat\fR 
-are appended to the end of the specified name and it searches for
-the longer name.  If a directory name was not specified as part of the
+When attempting to execute an application, \fBexec\fR first searches for
+the name as it was specified.  Then, in order, \fB.com\fR, \fB.exe\fR, and
+\fB.bat\fR are appended to the end of the specified name and it searches
+for the longer name.  If a directory name was not specified as part of the
 application name, the following directories are automatically searched in
 order when attempting to locate the application:
 .sp
@@ -233,16 +255,16 @@ The directories listed in the path.
 .RE
 .sp
 In order to execute the shell builtin commands like \fBdir\fR and \fBcopy\fR,
-the caller must prepend ``\fBcmd.exe /c\0\fR'' to the desired command.  
+the caller must prepend ``\fBcmd.exe /c\0\fR'' to the desired command.
 .sp
 .RE
 .TP
 \fBWindows 95\fR
 .
-When attempting to execute an application, \fBexec\fR first searches for the
-name as it was specified.  Then, in order, \fB.com\fR, \fB.exe\fR, and \fB.bat\fR
-are appended to the end of the specified name and it searches for
-the longer name.  If a directory name was not specified as part of the
+When attempting to execute an application, \fBexec\fR first searches for
+the name as it was specified.  Then, in order, \fB.com\fR, \fB.exe\fR, and
+\fB.bat\fR are appended to the end of the specified name and it searches
+for the longer name.  If a directory name was not specified as part of the
 application name, the following directories are automatically searched in
 order when attempting to locate the application:
 .sp

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.4 1999/12/06 01:43:15 wart Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.4.18.1 2002/06/10 05:33:17 wolfsuit Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -88,7 +88,7 @@ main(argc, argv)
     char **argv;		/* Values of command-line arguments. */
 {
     FILE *f;
-#define MAX_LINE_SIZE 500
+#define MAX_LINE_SIZE 1000
     char line[MAX_LINE_SIZE];
     char *p;
 
@@ -136,6 +136,12 @@ main(argc, argv)
 		continue;
 	    }
     
+	    if (strlen(line) >= MAX_LINE_SIZE -1) {
+		fprintf(stderr, "Too long line. Max is %d chars.\n",
+			MAX_LINE_SIZE - 1);
+		exit(1);
+	    }
+
 	    if ((line[0] == '.') || (line[0] == '\'')) {
 		/*
 		 * This line is a macro invocation.

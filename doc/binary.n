@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.7 2001/10/04 08:31:52 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.7.2.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -198,6 +198,30 @@ For example,
 .CE
 will return a string equivalent to 
 \fB\\x00\\x00\\x00\\x03\\xff\\xff\\xff\\xfd\\x00\\x01\\x00\\x00\fR
+.RE
+.IP \fBw\fR 5
+.VS 8.4
+This form is the same as \fBw\fR except that it stores one or more
+64-bit integers in little-endian byte order in the output string.  The
+low-order 64-bits of each integer are stored as an eight-byte value at
+the cursor position with the least significant byte stored first.  For
+example,
+.RS
+.CS
+\fBbinary format w 7810179016327718216\fR
+.CE
+will return the string \fBHelloTcl\fR
+.RE
+.IP \fBW\fR 5
+This form is the same as \fBw\fR except that it stores one or more one
+or more 64-bit integers in big-endian byte order in the output string.
+For example,
+.RS
+.CS
+\fBbinary format W 4785469626960341345\fR
+.CE
+will return the string \fBBigEndian\fR
+.VE
 .RE
 .IP \fBf\fR 5
 This form is the same as \fBc\fR except that it stores one or more one
@@ -462,6 +486,34 @@ order.  For example,
 .CE
 will return \fB2\fR with \fB5 7\fR stored in \fBvar1\fR and \fB-16\fR
 stored in \fBvar2\fR.
+.RE
+.IP \fBw\fR 5
+.VS 8.4
+The data is interpreted as \fIcount\fR 64-bit signed integers
+represented in little-endian byte order.  The integers are stored in
+the corresponding variable as a list.  If \fIcount\fR is \fB*\fR, then
+all of the remaining bytes in \fBstring\fR will be scanned.  If
+\fIcount\fR is omitted, then one 64-bit integer will be scanned.  For
+example,
+.RS
+.CS
+\fBbinary scan \\x05\\x00\\x00\\x00\\x07\\x00\\x00\\x00\\xf0\\xff\\xff\\xff wi* var1 var2\fR
+.CE
+will return \fB2\fR with \fB30064771077\fR stored in \fBvar1\fR and
+\fB-16\fR stored in \fBvar2\fR.  Note that the integers returned are
+signed and cannot be represented by Tcl as unsigned values.
+.RE
+.IP \fBW\fR 5
+This form is the same as \fBw\fR except that the data is interpreted
+as \fIcount\fR 64-bit signed integers represented in big-endian byte
+order.  For example,
+.RS
+.CS
+\fBbinary scan \\x00\\x00\\x00\\x05\\x00\\x00\\x00\\x07\\xff\\xff\\xff\\xf0 WI* var1 var2\fR
+.CE
+will return \fB2\fR with \fB21474836487\fR stored in \fBvar1\fR and \fB-16\fR
+stored in \fBvar2\fR.
+.VE
 .RE
 .IP \fBf\fR 5
 The data is interpreted as \fIcount\fR single-precision floating point

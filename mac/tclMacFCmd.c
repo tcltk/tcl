@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.10.8.1 2002/02/05 02:22:02 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.10.8.2 2002/06/10 05:33:14 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -154,7 +154,7 @@ DoRenameFile(
     long srcID, dummy;
     Boolean srcIsDirectory, dstIsDirectory, dstExists, dstLocked;
 
-    err = FSpLocationFromPath(strlen(src), src, &srcFileSpec);
+    err = FSpLLocationFromPath(strlen(src), src, &srcFileSpec);
     if (err == noErr) {
 	FSpGetDirectoryID(&srcFileSpec, &srcID, &srcIsDirectory);
     }
@@ -417,7 +417,7 @@ DoCopyFile(
     FSSpec srcFileSpec, dstFileSpec, dstDirSpec, tmpFileSpec;
     Str31 tmpName;
 	
-    err = FSpLocationFromPath(strlen(src), src, &srcFileSpec);
+    err = FSpLLocationFromPath(strlen(src), src, &srcFileSpec);
     if (err == noErr) {
         err = GetFileSpecs(dst, &dstFileSpec, &dstDirSpec, &dstExists,
         	&dstIsDirectory);
@@ -514,7 +514,7 @@ DoDeleteFile(
     Boolean isDirectory;
     long dirID;
     
-    err = FSpLocationFromPath(strlen(path), path, &fileSpec);
+    err = FSpLLocationFromPath(strlen(path), path, &fileSpec);
     if (err == noErr) {
 	/*
      	 * Since FSpDeleteCompat will delete an empty directory, make sure
@@ -1166,7 +1166,7 @@ GetFileFinderAttributes(
     CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
-    err = FSpLocationFromPath(strlen(native),
+    err = FSpLLocationFromPath(strlen(native),
 	    native, &fileSpec);
 
     if (err == noErr) {
@@ -1244,7 +1244,7 @@ GetFileReadOnly(
     CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
-    err = FSpLocationFromPath(strlen(native),
+    err = FSpLLocationFromPath(strlen(native),
 	    native, &fileSpec);
     
     if (err == noErr) {
@@ -1308,7 +1308,7 @@ SetFileFinderAttributes(
     CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
-    err = FSpLocationFromPath(strlen(native),
+    err = FSpLLocationFromPath(strlen(native),
 	    native, &fileSpec);
     
     if (err == noErr) {
@@ -1400,7 +1400,7 @@ SetFileReadOnly(
     CONST char *native;
 
     native=Tcl_FSGetNativePath(fileName);
-    err = FSpLocationFromPath(strlen(native),
+    err = FSpLLocationFromPath(strlen(native),
 	    native, &fileSpec);
     
     if (err == noErr) {
@@ -1543,8 +1543,8 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     short vRefNum;
     long dirID;
     Boolean isDirectory;
-    Boolean wasAlias;
-    FSSpec fileSpec;
+    Boolean wasAlias=FALSE;
+    FSSpec fileSpec, lastFileSpec;
     
     Tcl_DString nativeds;
 
@@ -1570,14 +1570,19 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		    nextCheckpoint++; cur = path[nextCheckpoint]; 
 		} 
 		Tcl_UtfToExternalDString(NULL,path,nextCheckpoint,&nativeds);
-		err = FSpLocationFromPath(Tcl_DStringLength(&nativeds), 
+		err = FSpLLocationFromPath(Tcl_DStringLength(&nativeds), 
 					  Tcl_DStringValue(&nativeds), 
 					  &fileSpec);
 		Tcl_DStringFree(&nativeds);
 		if (err == noErr) {
+			lastFileSpec=fileSpec;
+			err = ResolveAliasFile(&fileSpec, true, &isDirectory, 
+				       &wasAlias);
+			if (err == noErr) {
 		    err = FSpGetDirectoryID(&fileSpec, &dirID, &isDirectory);
 		    currDirValid = ((err == noErr) && isDirectory);
 		    vRefNum = fileSpec.vRefNum;
+		    }
 		}
 		break;
 	    }
@@ -1651,6 +1656,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     		break; /* arrived at nonexistent file or dir */
 	    } else {
 		/* fileSpec could point to an alias, resolve it */
+		lastFileSpec=fileSpec;
 		err = ResolveAliasFile(&fileSpec, true, &isDirectory, 
 				       &wasAlias);
 		if (err != noErr || !isDirectory) {
@@ -1669,8 +1675,12 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    /* found a new valid subdir in path, continue processing path */
 	    lastCheckpoint=nextCheckpoint+1;
 	}
+	wasAlias=FALSE;
 	nextCheckpoint++;
     }
+    
+    if (wasAlias)
+    	fileSpec=lastFileSpec;
     
     /*
      * fileSpec now points to a possibly nonexisting file or dir

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.9.12.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.9.12.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
@@ -24,10 +24,10 @@ int
 \fBTcl_UtfToUniChar\fR(\fIsrc, chPtr\fR)
 .VS 8.4
 .sp
-CONST char *
+char *
 \fBTcl_UniCharToUtfDString\fR(\fIuniStr, numChars, dstPtr\fR)
 .sp
-CONST Tcl_UniChar *
+Tcl_UniChar *
 \fBTcl_UtfToUniCharDString\fR(\fIsrc, len, dstPtr\fR)
 .VE 8.4
 .sp

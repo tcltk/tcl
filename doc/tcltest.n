@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.11.14.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.11.14.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -16,7 +16,7 @@
 .SH NAME
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
-\fBpackage require tcltest ?2.0?\fR
+\fBpackage require tcltest ?2.1?\fR
 .sp
 \fBtcltest::test \fIname desc ?option value? ?option value? ...\fR
 .br
@@ -28,7 +28,7 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::interpreter \fI?interp?\fR
 .sp
-\fBtcltest::singleProcess \fI?boolean?\fR
+\fBtcltest::singleProcess \fI?value?\fR
 .sp
 \fBtcltest::debug \fI?level?\fR
 .sp
@@ -36,9 +36,11 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::preserveCore \fI?level?\fR
 .sp
+\fBtcltest::customMatch \fImode command\fR
+.sp
 \fBtcltest::testConstraint \fIconstraint ?value?\fR
 .sp
-\fBtcltest::limitConstraints \fI?constraintList?\fR
+\fBtcltest::limitConstraints \fI?value?\fR
 .sp
 \fBtcltest::workingDirectory \fI?dir?\fR
 .sp
@@ -87,12 +89,6 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::normalizePath \fIpathVar\fR
 .sp
 \fBtcltest::bytestring \fIstring\fR
-.sp
-\fBtcltest::saveState\fR
-.sp
-\fBtcltest::restoreState\fR
-.sp
-\fBtcltest::threadReap\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -118,12 +114,11 @@ section \fI"How to Customize the Test Harness"\fR.
 The \fBtcltest::test\fR command runs the value supplied for attribute
 \fIscript\fR and compares its result to possible results.  
 It prints an error message if actual results and expected results do
-not match.  The \fBtcltest::test\fR command returns 0 if it completes
-successfully. Any other return value indicates that an error has
-occurred in the tcltest package.  See the \fI"Tests"\fR section for
-more details on this command.   
+not match, or if an error occurs during evaluation of the \fIscript\fR.
+The \fBtcltest::test\fR command returns an empty string.  See the
+\fI"Tests"\fR section for more details on this command.   
 .TP
-\fBtcltest::cleanupTests\fR \fI?runningMultipleTests?\fR
+\fBtcltest::cleanupTests\fR \fI?calledFromAllFile?\fR
 This command should be called at the end of a test file.  It prints
 statistics about the tests run and removes files that were created by
 \fBtcltest::makeDirectory\fR and \fBtcltest::makeFile\fR.  Names
@@ -131,11 +126,12 @@ of files and directories created outside of
 \fBtcltest::makeFile\fR and \fBtcltest::makeDirectory\fR and
 never deleted are printed to \fBtcltest::outputChannel\fR.  This command
 also restores the original shell environment, as described by the ::env
-array. \fIcalledFromAll\fR should be specified if
+array. \fIcalledFromAllFile\fR should be specified as a true value if
 \fBtcltest::cleanupTests\fR is called explicitly from an "all.tcl"
-file.  Tcl files files are generally used to run multiple tests.  For
+file.  Tcl files are generally used to run multiple tests.  The
+\fBtcltest::cleanupTests\fR command returns an empty string.  For
 more details on how to run multiple tests, please see the section
-\fI"Running test files"\fR.  This proc has no defined return value.
+\fI"Running test files"\fR.  
 .TP
 \fBtcltest::runAllTests\fR
 This command should be used in your 'all.tcl' file.  It is used to
@@ -151,11 +147,11 @@ suite. This is the interpreter used in runAllTests to run test files
 if singleProcess is set to false.  The default value for interpreter
 is the name of the interpreter in which the tests were started.  
 .TP
-\fBtcltest::singleProcess\fR \fI?boolean?\fR
+\fBtcltest::singleProcess\fR \fI?value?\fR
 Sets or returns a boolean indicating whether test files should be sourced
 into the current interpreter by runAllTests or run in their own
-processes. If \fIboolean\fR is true (1), tests are sourced into the
-current interpreter.  If \fIboolean\fR is false (0), tests are run in
+processes. If \fIvalue\fR is true (1), tests are sourced into the
+current interpreter.  If \fIvalue\fR is false (0), tests are run in
 the interpreter specified in tcltest::interpreter.  The default value
 for tcltest::singleProcess is false.
 .TP
@@ -216,15 +212,28 @@ tcltest::cleanupTests is called from all.tcl.  Save any core files
 produced in tcltest::temporaryDirectory.
 .RE
 .TP
+\fBtcltest::customMatch \fImode script\fR
+Registers \fImode\fR as a new legal value of the \fB-match\fR option
+to \fItcltest::test\fR.  When the \fB-match \fImode\fR option is
+passed to \fItcltest::test\fR, the script \fIscript\fR will be evaluted
+to compare the actual result of the test script against the expected result.
+To perform the match, the \fIscript\fR is completed with two additional
+words, the expected result, and the actual result, and the completed script
+is evaluated in the global namespace.
+The completed script is expected to return a boolean value indicating
+whether or not the results match.  The built-in matching modes of
+\fItcltest::test\fR are \fBexact\fR, \fBglob\fR, and \fBregexp\fR.
+.TP
 \fBtcltest::testConstraint \fIconstraint ?value?\fR
 Sets or returns the value associated with the named \fIconstraint\fR.
 See the section \fI"Test constraints"\fR for more information.
 .TP
-\fBtcltest::limitConstraints \fI?constraintList?\fR
+\fBtcltest::limitConstraints \fI?value?\fR
 Sets or returns a boolean indicating whether testing is being limited
-to constraints listed in \fIconstraintList\fR.
-If limitConstraints is not false, only those tests with constraints matching
-values in \fIconstraintList\fR will be run.  
+to the list of constraints specified by the \fB-constraints\fR
+command line option.  If \fIvalue\fR is true, only those tests
+with constraints present in the list specified in the \fB-constraints\fR
+command line option.
 .TP
 \fBtcltest::workingDirectory\fR \fI?directoryName?\fR
 Sets or returns the directory in which the test suite is being run.
@@ -366,33 +375,6 @@ value supplied in \fIstring\fR.  This allows the tester to create
 denormalized or improperly formed strings to pass to C procedures that
 are supposed to accept strings with embedded NULL types and confirm
 that a string result has a certain pattern of bytes.
-.TP
-\fBtcltest::saveState\fR
-Save procedure and global variable names.
-A test file might contain calls to \fBtcltest::saveState\fR and
-\fB::tcltest:restoreState\fR if it creates or deletes global variables
-or procs. 
-.TP
-\fBtcltest::restoreState\fR
-Restore procedure and global variable names.
-A test file might contain calls to \fBtcltest::saveState\fR and
-\fB::tcltest:restoreState\fR if it creates or deletes global variables
-or procs. 
-.TP
-\fBtcltest::threadReap\fR
-\fBtcltest::threadReap\fR only works if \fItestthread\fR is
-defined, generally by compiling tcltest.  If \fItestthread\fR is
-defined, \fBtcltest::threadReap\fR kills all threads except for the
-main thread.  It gets the ID of the main thread by calling
-\fItestthread names\fR during initialization.  This value is stored in
-\fItcltest::mainThread\fR. \fBtcltest::threadReap\fR returns the
-number of existing threads at completion.
-.TP
-\fBtcltest::mainThread\fR
-Sets or returns the main thread ID.  This defaults to 1.  This is the
-only thread that is not killed by tcltest::threadReap and is set
-according to the return value of \fItestthread names\fR at
-initialization. 
 .SH TESTS
 The \fBtest\fR procedure runs a test script and prints an error
 message if the script's result does not match the expected result.
@@ -400,7 +382,7 @@ Two syntaxes are provided for specifying the attributes of the tests.
 The first uses a separate argument for each of the attributes and
 values.  The second form places all of the attributes and values
 together into a single argument; the argument must have proper list
-structure, with teh elements of the list being the attributes and
+structure, with the elements of the list being the attributes and
 values.  The second form makes it easy to construct multi-line
 scripts, since the braces around the whole list make it unnecessary to
 include a backslash at the end of each line.  In the second form, no
@@ -419,7 +401,7 @@ test \fIname\fR \fIdescription\fR
     ?-output \fIexpectedOutput\fR?
     ?-errorOutput \fIexpectedError\fR?
     ?-returnCodes \fIcodeList\fR?
-    ?-match \fIexact|glob|regexp\fR?
+    ?-match \fImode\fR?
 .DE
 .PP
 The second form for the \fBtest\fR command (adds brace grouping):
@@ -433,7 +415,7 @@ test \fIname\fR \fIdescription\fR {
     ?-output\fIexpectedOutput\fR?
     ?-errorOutput \fIexpectedError\fR?
     ?-returnCodes \fIcodeList\fR?
-    ?-match \fIexact|glob|regexp\fR?
+    ?-match \fImode\fR?
 }
 .DE
 The \fIname\fR argument should follow the pattern:
@@ -482,11 +464,12 @@ The optional \fIcleanup\fR attribute indicates a script that will be
 run after the script indicated by the \fIscript\fR attribute.  If
 cleanup fails, the test will fail.  
 .TP
-\fB-match \fIregexp|glob|exact\fR
+\fB-match \fImode\fR
 The \fImatch\fR attribute determines how expected answers supplied in
 \fIresult\fR, \fIoutput\fR, and \fIerrorOutput\fR are compared.  Valid
-options for the value supplied are ``regexp'', ``glob'', and
-``exact''. If \fImatch\fR is not specified, the comparisons will be
+options for the value supplied are ``regexp'', ``glob'', ``exact'',
+and any value registered by a prior call to \fItcltest::customMatch\fR.
+If \fImatch\fR is not specified, the comparisons will be
 done in ``exact'' mode by default.
 .TP
 \fB-result \fIexpectedValue\fR
@@ -502,11 +485,11 @@ run will be compared.  Note that only output printed using
 puts is used for comparison.  If \fIoutput\fR is not specified, output
 sent to stdout and tcltest::outputChannel is not processed for comparison.
 .TP
-\fB-errorOutut \fIexpectedValue\fR
+\fB-errorOutput \fIexpectedValue\fR
 The \fIerrorOutput\fR attribute supplies the comparison value with which
 any output sent to stderr or tcltest::errorChannel during the script
 run will be compared. Note that only output printed using
-puts is used for comparison.  If \fIerrorOutut\fR is not specified, output
+puts is used for comparison.  If \fIerrorOutput\fR is not specified, output
 sent to stderr and tcltest::errorChannel is not processed for comparison.
 .TP
 \fB-returnCodes \fIexpectedCodeList\fR
@@ -933,10 +916,6 @@ tell the test harness about additional flags that you want it to understand.
 process the additional flags that you told the harness about in
 tcltest::processCmdLineArgsFlagHook.
 .TP
-\fBtcltest::initConstraintsHook\fR
-used to add additional built-in constraints to those already defined
-by \fBtcltest\fR.  
-.TP
 \fBtcltest::cleanupTestsHook\fR
 do additional cleanup 
 .PP
@@ -970,19 +949,6 @@ define additional usage information, define your own
 tcltest::PrintUsageInfoHook proc.  Within this proc, you should
 print out additional usage information for any flags that you've
 implemented. 
-.PP
-To add new built-in
-constraints to the test harness, define your own version of
-\fBtcltest::initConstraintsHook\fR. 
-Within your proc, you can add to the \fBtcltest::testConstraints\fR array.
-For example:
-.DS
-proc tcltest::initConstraintsHook {} {
-    set tcltest::testConstraints(win95Or98) \\
-            [expr {$tcltest::testConstraints(95) || \\
-            $tcltest::testConstraints(98)}]
-}
-.DE
 .PP
 Finally, if you want to add additional cleanup code to your harness
 you can define your own \fBtcltest::cleanupTestsHook\fR.  For example:

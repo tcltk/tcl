@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.6 2000/04/10 17:19:06 ericm Exp $
+# RCS: @(#) $Id: winFile.test,v 1.6.18.1 2002/06/10 05:33:17 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -61,6 +61,18 @@ test winFile-2.2 {TclpMatchFiles: case sensitivity} {pcOnly} {
     removeFile globlower
     set result
 } {globlower globlower}
+
+test winFile-3.1 {file system} {pcOnly} {
+    set res "volume types ok"
+    foreach vol [file volumes] {
+	if {![string equal [lindex [file system $vol] 1] [testvolumetype $vol]]} {
+	    set res "For $vol, we found [file system $vol]\
+	      and [testvolumetype $vol] are different"
+	    break
+	}
+    }
+    set res
+} {volume types ok}
 
 # cleanup
 ::tcltest::cleanupTests

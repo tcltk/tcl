@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.18 2001/07/21 20:26:42 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.18.8.1 2002/06/10 05:33:13 wolfsuit Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -380,8 +380,8 @@ proc pkg_mkIndex {args} {
 	    if {$doVerbose} {
 		tclLog "processed $file"
 	    }
-	    interp delete $c
 	}
+	interp delete $c
     }
 
     append index "# Tcl package index file, version 1.1\n"

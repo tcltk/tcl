@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.6.14.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.6.14.2 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -338,6 +338,9 @@ Tcl_ErrnoId()
 #endif
 #if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
 	case EOPNOTSUPP: return "EOPNOTSUPP";
+#endif
+#if defined(EOVERFLOW) && ( !defined(EFBIG) || (EOVERFLOW != EFBIG) ) && ( !defined(EINVAL) || (EOVERFLOW != EINVAL) )
+        case EOVERFLOW: return "EOVERFLOW";
 #endif
 #ifdef EPERM
 	case EPERM: return "EPERM";
@@ -785,6 +788,9 @@ Tcl_ErrnoMsg(err)
 #endif
 #if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
 	case EOPNOTSUPP: return "operation not supported on socket";
+#endif
+#if defined(EOVERFLOW) && ( !defined(EFBIG) || (EOVERFLOW != EFBIG) ) && ( !defined(EINVAL) || (EOVERFLOW != EINVAL) )
+        case EOVERFLOW: return "file too big";
 #endif
 #ifdef EPERM
 	case EPERM: return "not owner";

@@ -1,11 +1,11 @@
 README:  Tcl
-    This is the Tcl 8.4a4 source distribution.
+    This is the Tcl 8.4a5 source distribution.
     Tcl/Tk is also available through NetCVS:
 	http://tcl.sourceforge.net/
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.39 2001/08/08 22:28:23 dgp Exp $
+RCS: @(#) $Id: README,v 1.39.8.1 2002/06/10 05:33:07 wolfsuit Exp $
 
 Contents
 --------
@@ -36,7 +36,7 @@ The home for Tcl/Tk sources and bug/patch database is on SourceForge:
 
 with the Tcl Developer Xchange hosted at:
 
-	http://www.purl.org/tcl/home/
+	http://www.tcl.tk/
 
 Tcl is a freely available open source package.  You can do virtually
 anything you like with it, such as modifying it, redistributing it,
@@ -48,17 +48,17 @@ and selling it either in whole or in part.  See the file
 
 Extensive documentation is available at our website.
 The home page for this release, including new features, is
-	http://www.purl.org/tcl/home/software/tcltk/8.4.html
+	http://www.tcl.tk/software/tcltk/8.4.html
 
 Detailed release notes can be found at the file distributions page
 by clicking on the relevant version.
 	http://sourceforge.net/project/showfiles.php?group_id=10894
 
 Information about Tcl itself can be found at
-	http://www.purl.org/tcl/home/scripting/
+	http://www.tcl.tk/scripting/
 
 There are many Tcl books on the market.  Most are listed at
-	http://www.purl.org/tcl/home/resource/doc/books/
+	http://www.tcl.tk/resource/doc/books/
 
 2a. Unix Documentation
 ----------------------
@@ -96,7 +96,7 @@ There are brief notes in the unix/README, win/README, and mac/README about
 compiling on these different platforms.  There is additional information
 about building Tcl from sources at
 
-	http://www.purl.org/tcl/home/doc/howto/compile.html
+	http://www.tcl.tk/doc/howto/compile.html
 
 4. TclPro Development tools
 ---------------------------
@@ -131,7 +131,7 @@ that are commonly encountered by TCL newcomers.
 7. Tcl Resource Center
 ----------------------
 
-Visit http://www.purl.org/tcl/home/resource/ to see an annotated index of
+Visit http://www.tcl.tk/resource/ to see an annotated index of
 many Tcl resources available on the World Wide Web.  This includes
 papers, books, and FAQs, as well as development tools, extensions,
 applications, binary releases, and patches.  You can also recommend
@@ -176,7 +176,7 @@ questions for which no-one else is likely to know the answer.  In addition,
 see the following Web site for links to other organizations that offer
 Tcl/Tk training:
 
-	http://www.purl.org/tcl/home/resource/community/commercial/training
+	http://www.tcl.tk/resource/community/commercial/training
 
 10. Thank You
 -------------

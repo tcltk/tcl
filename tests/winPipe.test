@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.15 2001/09/19 21:56:58 hobbs Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.15.4.1 2002/06/10 05:33:17 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -106,7 +106,7 @@ test winpipe-1.10 {32 bit comprehensive tests: from file handle} \
 } {little stderr32}
 test winpipe-1.11 {32 bit comprehensive tests: read from application} \
 	{pcOnly stdio cat32} {
-    set f [open "|$cat32 < little" r]
+    set f [open "|[list $cat32] < little" r]
     gets $f line
     catch {close $f} msg
     list $line $msg
@@ -161,7 +161,7 @@ test winpipe-1.20 {32 bit comprehensive tests: write to application} \
 } {foo stderr32}
 test winpipe-1.21 {32 bit comprehensive tests: read/write application} \
 	{pcOnly stdio cat32} {
-    set f [open "|$cat32" r+]
+    set f [open "|[list $cat32]" r+]
     puts $f $big
     puts $f \032
     flush $f
@@ -187,7 +187,7 @@ test winpipe-4.1 {Tcl_WaitPid} {nt stdio cat32} {
 	}
     }
 
-    set f [open "|$cat32 < big 2> stderr" r]
+    set f [open "|[list $cat32] < big 2> stderr" r]
     fconfigure $f  -buffering none -blocking 0
     fileevent $f readable "readResults $f"
     set x 0
@@ -247,7 +247,7 @@ test winpipe-5.4 {TclpCreateTempFile: TEMP specifies non-existent directory} \
 
 test winpipe-6.1 {PipeSetupProc & PipeCheckProc: read threads} \
 	{pcOnly stdio cat32} {
-    set f [open "|$cat32" r+]
+    set f [open "|[list $cat32]" r+]
     fconfigure $f -blocking 0
     fileevent $f writable { set x writable }
     set x {}
@@ -267,7 +267,7 @@ test winpipe-6.1 {PipeSetupProc & PipeCheckProc: read threads} \
 } timeout 1 stderr32}
 test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
 	{pcOnly stdio cat32} {
-    set f [open "|$cat32" r+]
+    set f [open "|[list $cat32]" r+]
     fconfigure $f -blocking 0
     fileevent $f writable { set x writable }
     set x {}

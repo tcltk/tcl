@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.9.4.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.9.4.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -43,7 +43,10 @@ capitalization are converted automatically to upper case.  For instance, the
 PATH variable could be exported by the operating system as ``path'',
 ``Path'', ``PaTh'', etc., causing otherwise simple Tcl code to have to
 support many special cases.  All other environment variables inherited by
-Tcl are left unmodified.
+Tcl are left unmodified.  Setting an env array variable to blank is the
+same as unsetting it as this is the behavior of the underlying Windows OS.
+It should be noted that relying on an existing and empty environment variable
+won't work on windows and is discoraged for cross-platform usage.
 .VE
 .RE
 .RS
@@ -245,10 +248,6 @@ retrieve any relevant information.  In addition, extensions
 and applications may add additional values to the array.  The
 predefined elements are:
 
-
-
-
-
 .RS
 .VS
 .TP
@@ -295,6 +294,12 @@ This identifies the
 current user based on the login information available on the platform.
 This comes from the USER or LOGNAME environment variable on Unix,
 and the value from GetUserName on Windows and Macintosh.
+.TP
+\fBwordSize\fR
+.VS 8.4
+This gives the size of the native-machine word in bytes (strictly, it
+is same as the result of evaluating \fIsizeof(long)\fR in C.)
+.VE 8.4
 .RE
 .TP
 \fBtcl_precision\fR

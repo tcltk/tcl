@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.14 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: string.n,v 1.14.14.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -29,7 +29,8 @@ Returns a decimal string giving the number of bytes used to represent
 represent Unicode characters, the byte length will not be the same as
 the character length in general.  The cases where a script cares about
 the byte length are rare.  In almost all cases, you should use the
-\fBstring length\fR operation.  Refer to the \fBTcl_NumUtfChars\fR
+\fBstring length\fR operation (including determining the length of a
+Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR
 manual entry for more details on the UTF\-8 representation.
 .TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
@@ -182,7 +183,10 @@ will return \fB1\fR.
 \fBstring length \fIstring\fR
 Returns a decimal string giving the number of characters in
 \fIstring\fR.  Note that this is not necessarily the same as the
-number of bytes used to store the string.
+number of bytes used to store the string.  If the object is a
+ByteArray object (such as those returned from reading a binary
+encoded channel), then this will return the actual byte length
+of the object.
 .VS 8.1
 .TP
 \fBstring map\fR ?\fB\-nocase\fR? \fIcharMap string\fR

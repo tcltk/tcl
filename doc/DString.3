@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DString.3,v 1.6.2.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: DString.3,v 1.6.2.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_DString 3 7.4 Tcl "Tcl Library Procedures"
@@ -18,10 +18,10 @@ Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSu
 .sp
 \fBTcl_DStringInit\fR(\fIdsPtr\fR)
 .sp
-CONST char *
+char *
 \fBTcl_DStringAppend\fR(\fIdsPtr, string, length\fR)
 .sp
-CONST char *
+char *
 \fBTcl_DStringAppendElement\fR(\fIdsPtr, string\fR)
 .sp
 \fBTcl_DStringStartSublist\fR(\fIdsPtr\fR)

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 34;
+	objectVersion = 38;
 	objects = {
 		00530A0D0173C8270ACA28DC = {
 			buildActionMask = 2147483647;
@@ -12,9 +12,9 @@
 			generatedFileNames = (
 			);
 			isa = PBXShellScriptBuildPhase;
-			name = "Shell Script";
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "cp \"${OBJROOT}/${PRODUCT_NAME}\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}\"";
 		};
@@ -25,9 +25,9 @@
 			generatedFileNames = (
 			);
 			isa = PBXShellScriptBuildPhase;
-			name = "Shell Script";
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "cp \"${OBJROOT}/tclConfig.sh\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/Headers\"";
 		};
@@ -73,7 +73,7 @@
 			buildRules = (
 			);
 			buildSettings = {
-				CFLAGS = "-O3";
+				CFLAGS = "-Os";
 				COPY_PHASE_STRIP = NO;
 				STRIP_BY_HAND = YES;
 			};
@@ -233,7 +233,7 @@
 				F5F24F86016ECAA401DC9062,
 			);
 			isa = PBXHeadersBuildPhase;
-			name = Headers;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		00E2F854016E922C0ACA28DC = {
 			children = (
@@ -463,21 +463,21 @@
 			files = (
 			);
 			isa = PBXFrameworksBuildPhase;
-			name = "Frameworks & Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F50DC3680170344801DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXResourcesBuildPhase;
-			name = "Bundle Resources";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F50DC36A01703B7301DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXSourcesBuildPhase;
-			name = Sources;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F56570CE0172204201DC9062 = {
 			buildActionMask = 2147483647;
@@ -486,9 +486,9 @@
 			generatedFileNames = (
 			);
 			isa = PBXShellScriptBuildPhase;
-			name = "Shell Script";
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "rm -rf \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/A\"";
 		};
@@ -499,9 +499,9 @@
 			generatedFileNames = (
 			);
 			isa = PBXShellScriptBuildPhase;
-			name = "Shell Script";
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if test \"${STRIP_BY_HAND}\" = \"YES\"; then \n    strip -x \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/${PRODUCT_NAME}\"\nfi";
 		};
@@ -517,9 +517,9 @@
 			generatedFileNames = (
 			);
 			isa = PBXShellScriptBuildPhase;
-			name = "Shell Script";
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "cp \"${OBJROOT}/libtclstub${FRAMEWORK_VERSION}.a\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}\"";
 		};
@@ -1349,24 +1349,28 @@
 			refType = 2;
 		};
 		F5F24FF0016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = dde;
 			path = ../library/dde;
 			refType = 2;
 		};
 		F5F24FF1016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = dde1.0;
 			path = ../library/dde1.0;
 			refType = 2;
 		};
 		F5F24FF2016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = dde1.1;
 			path = ../library/dde1.1;
 			refType = 2;
 		};
 		F5F24FF3016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = encoding;
 			path = ../library/encoding;
@@ -1379,30 +1383,35 @@
 			refType = 2;
 		};
 		F5F24FF5016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = http;
 			path = ../library/http;
 			refType = 2;
 		};
 		F5F24FF6016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = http1.0;
 			path = ../library/http1.0;
 			refType = 2;
 		};
 		F5F24FF7016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = http2.0;
 			path = ../library/http2.0;
 			refType = 2;
 		};
 		F5F24FF8016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = http2.1;
 			path = ../library/http2.1;
 			refType = 2;
 		};
 		F5F24FF9016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = http2.3;
 			path = ../library/http2.3;
@@ -1421,30 +1430,35 @@
 			refType = 2;
 		};
 		F5F24FFC016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = msgcat;
 			path = ../library/msgcat;
 			refType = 2;
 		};
 		F5F24FFD016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = msgcat1.0;
 			path = ../library/msgcat1.0;
 			refType = 2;
 		};
 		F5F24FFE016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = opt;
 			path = ../library/opt;
 			refType = 2;
 		};
 		F5F24FFF016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = opt0.1;
 			path = ../library/opt0.1;
 			refType = 2;
 		};
 		F5F25000016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = opt0.4;
 			path = ../library/opt0.4;
@@ -1463,12 +1477,14 @@
 			refType = 2;
 		};
 		F5F25003016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = reg;
 			path = ../library/reg;
 			refType = 2;
 		};
 		F5F25004016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = reg1.0;
 			path = ../library/reg1.0;
@@ -1481,6 +1497,7 @@
 			refType = 2;
 		};
 		F5F25006016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = struct1.0;
 			path = ../library/struct1.0;
@@ -1493,12 +1510,14 @@
 			refType = 2;
 		};
 		F5F25008016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = tcltest;
 			path = ../library/tcltest;
 			refType = 2;
 		};
 		F5F25009016ED0DF01DC9062 = {
+			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = tcltest1.0;
 			path = ../library/tcltest1.0;
@@ -1533,7 +1552,7 @@
 				F5F2502A016ED0E001DC9062,
 			);
 			isa = PBXCopyFilesBuildPhase;
-			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F5F2500F016ED0E001DC9062 = {
 			fileRef = F5F24FEF016ED0DF01DC9062;

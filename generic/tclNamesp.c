@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.25.8.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.25.8.2 2002/06/10 05:33:12 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -2364,11 +2364,28 @@ GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
 				 * of a namespace. */
     Tcl_Namespace **nsPtrPtr;	/* Result namespace pointer goes here. */
 {
+    Interp *iPtr = (Interp *) interp;
     register ResolvedNsName *resNamePtr;
     register Namespace *nsPtr;
-    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    int result;
+    Namespace *currNsPtr;
+    CallFrame *savedFramePtr;
+    int result = TCL_OK;
+    char *name;
 
+    /*
+     * If the namespace name is fully qualified, do as if the lookup were
+     * done from the global namespace; this helps avoid repeated lookups 
+     * of fully qualified names. 
+     */
+
+    savedFramePtr = iPtr->varFramePtr;
+    name = Tcl_GetString(objPtr);
+    if ((*name++ == ':') && (*name == ':')) {
+	iPtr->varFramePtr = NULL;
+    }
+
+    currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    
     /*
      * Get the internal representation, converting to a namespace type if
      * needed. The internal representation is a ResolvedNsName that points
@@ -2378,7 +2395,7 @@ GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
     if (objPtr->typePtr != &tclNsNameType) {
         result = tclNsNameType.setFromAnyProc(interp, objPtr);
         if (result != TCL_OK) {
-            return TCL_ERROR;
+	    goto done;
         }
     }
     resNamePtr = (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
@@ -2404,7 +2421,7 @@ GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
     if (nsPtr == NULL) {	/* try again */
         result = tclNsNameType.setFromAnyProc(interp, objPtr);
         if (result != TCL_OK) {
-            return TCL_ERROR;
+	    goto done;
         }
         resNamePtr = (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
         if (resNamePtr != NULL) {
@@ -2415,7 +2432,10 @@ GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
         }
     }
     *nsPtrPtr = (Tcl_Namespace *) nsPtr;
-    return TCL_OK;
+
+    done:
+    iPtr->varFramePtr = savedFramePtr;
+    return result;
 }
 
 /*
@@ -2908,7 +2928,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame frame;
+    CallFrame frame;
     Tcl_Obj *objPtr;
     char *name;
     int length, result;
@@ -2946,11 +2966,13 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      * the command(s).
      */
 
-    result = Tcl_PushCallFrame(interp, &frame, namespacePtr,
-	    /*isProcCallFrame*/ 0);
+    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) &frame, 
+            namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
         return TCL_ERROR;
     }
+    frame.objc = objc;
+    frame.objv = objv;  /* ref counts do not need to be incremented here */
 
     if (objc == 4) {
         result = Tcl_EvalObjEx(interp, objv[3], 0);

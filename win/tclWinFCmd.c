@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.14.2.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.14.2.2 2002/06/10 05:33:19 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -72,6 +72,11 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 	{GetWinFileAttributes, SetWinFileAttributes},
 	{GetWinFileShortName, CannotSetAttribute},
 	{GetWinFileAttributes, SetWinFileAttributes}};
+
+#ifdef HAVE_NO_SEH
+static void *ESP;
+static void *EBP;
+#endif /* HAVE_NO_SEH */
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -164,17 +169,60 @@ DoRenameFile(
 				 * (native). */
 {    
     DWORD srcAttr, dstAttr;
+    int retval = -1;
 
     /*
-     * Would throw an exception under NT if one of the arguments is a 
-     * char block device.
+     * The MoveFile API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
      */
 
+    if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
+        nativeDst == NULL || nativeDst[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	return TCL_ERROR;
+    }
+
+    /*
+     * The MoveFile API would throw an exception under NT
+     * if one of the arguments is a char block device.
+     */
+
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "movl  %esp, _ESP" "\n\t"
+            "movl  %ebp, _EBP");
+
+    __asm__ __volatile__ (
+            "pushl $__except_dorenamefile_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "mov   %esp, %fs:0");
+#else
     __try {
+#endif /* HAVE_NO_SEH */
 	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
-	    return TCL_OK;
+	    retval = TCL_OK;
 	}
-    } __except (-1) {}
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "jmp   dorenamefile_pop" "\n"
+            "dorenamefile_reentry:" "\n\t"
+            "movl  _ESP, %esp" "\n\t"
+            "movl  _EBP, %ebp");
+
+    __asm__ __volatile__ (
+            "dorenamefile_pop:" "\n\t"
+            "mov   (%esp), %eax" "\n\t"
+            "mov   %eax, %fs:0" "\n\t"
+            "add   $8, %esp");
+#else
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif /* HAVE_NO_SEH */
+
+    /*
+     * Avoid using control flow statements in the SEH guarded block!
+     */
+    if (retval != -1)
+        return retval;
 
     TclWinConvertError(GetLastError());
 
@@ -390,6 +438,21 @@ DoRenameFile(
     }
     return TCL_ERROR;
 }
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_dorenamefile_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp dorenamefile_reentry");
+    return 0; /* Function does not return */
+}
+#endif /* HAVE_NO_SEH */
 
 /*
  *---------------------------------------------------------------------------
@@ -432,40 +495,60 @@ DoCopyFile(
    CONST TCHAR *nativeSrc,	/* Pathname of file to be copied (native). */
    CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
+    int retval = -1;
+
     /*
-     * Would throw an exception under NT if one of the arguments is a char
-     * block device.
+     * The CopyFile API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
      */
 
-    /* 
-     * If 'nativeDst' is NULL, the following code can lock the process
-     * up, at least under Windows2000.  Therefore we have to bail at
-     * that point.
-     */
-    if (nativeDst == NULL) {
-	Tcl_SetErrno(ENOENT);
-        return TCL_ERROR;
-    }
-    
-    /*
-     * Similarly, if 'nativeSrc' is NULL or empty, the following code
-     * locks up the process on WinNT; bail out.
-     */
-    
-    if (nativeSrc == NULL || nativeSrc[0] == '\0') {
+    if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
+        nativeDst == NULL || nativeDst[0] == '\0') {
 	Tcl_SetErrno(ENOENT);
 	return TCL_ERROR;
     }
     
     /*
-     * OK, now try the copy.
+     * The CopyFile API would throw an exception under NT if one
+     * of the arguments is a char block device.
      */
-    
+
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "movl  %esp, _ESP" "\n\t"
+            "movl  %ebp, _EBP");
+
+    __asm__ __volatile__ (
+            "pushl $__except_docopyfile_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "mov   %esp, %fs:0");
+#else
     __try {
+#endif /* HAVE_NO_SEH */
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
-	    return TCL_OK;
+	    retval = TCL_OK;
 	}
-    } __except (-1) {}
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "jmp   docopyfile_pop" "\n"
+            "docopyfile_reentry:" "\n\t"
+            "movl  _ESP, %esp" "\n\t"
+            "movl  _EBP, %ebp");
+
+    __asm__ __volatile__ (
+            "docopyfile_pop:" "\n\t"
+            "mov   (%esp), %eax" "\n\t"
+            "mov   %eax, %fs:0" "\n\t"
+            "add   $8, %esp");
+#else
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif /* HAVE_NO_SEH */
+
+    /*
+     * Avoid using control flow statements in the SEH guarded block!
+     */
+    if (retval != -1)
+        return retval;
 
     TclWinConvertError(GetLastError());
     if (Tcl_GetErrno() == EBADF) {
@@ -503,6 +586,21 @@ DoCopyFile(
     }
     return TCL_ERROR;
 }
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_docopyfile_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp docopyfile_reentry");
+    return 0; /* Function does not return */
+}
+#endif /* HAVE_NO_SEH */
 
 /*
  *---------------------------------------------------------------------------
@@ -541,33 +639,22 @@ DoDeleteFile(
     CONST TCHAR *nativePath)	/* Pathname of file to be removed (native). */
 {
     DWORD attr;
-    
+
+    /*
+     * The DeleteFile API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
+     */
+
+    if (nativePath == NULL || nativePath[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	return TCL_ERROR;
+    }
+
     if ((*tclWinProcs->deleteFileProc)(nativePath) != FALSE) {
 	return TCL_OK;
     }
     TclWinConvertError(GetLastError());
 
-    /*
-     * Win32s thinks that "" is the same as "." and then reports EISDIR
-     * instead of ENOENT.
-     */
-
-    if (nativePath == NULL) {
-	Tcl_SetErrno(ENOENT);
-	return TCL_ERROR;
-    }
-        
-    if (tclWinProcs->useWide) {
-	if (((WCHAR *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    } else {
-	if (((char *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    }
     if (Tcl_GetErrno() == EACCES) {
         attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
 	if (attr != 0xffffffff) {
@@ -579,13 +666,16 @@ DoDeleteFile(
 
 		Tcl_SetErrno(EISDIR);
 	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
-		(*tclWinProcs->setFileAttributesProc)(nativePath, 
+		int res = (*tclWinProcs->setFileAttributesProc)(nativePath, 
 			attr & ~FILE_ATTRIBUTE_READONLY);
-		if ((*tclWinProcs->deleteFileProc)(nativePath) != FALSE) {
+		if ((res != 0) && ((*tclWinProcs->deleteFileProc)(nativePath)
+			!= FALSE)) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
-		(*tclWinProcs->setFileAttributesProc)(nativePath, attr);
+		if (res != 0) {
+		    (*tclWinProcs->setFileAttributesProc)(nativePath, attr);
+		}
 	    }
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
@@ -785,36 +875,23 @@ DoRemoveJustDirectory(
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
 {
-    DWORD attr;
+    /*
+     * The RemoveDirectory API acts differently under Win95/98 and NT
+     * WRT NULL and "". Avoid passing these values.
+     */
+
+    if (nativePath == NULL || nativePath[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	goto end;
+    }
 
     if ((*tclWinProcs->removeDirectoryProc)(nativePath) != FALSE) {
 	return TCL_OK;
     }
     TclWinConvertError(GetLastError());
 
-    /*
-     * Win32s thinks that "" is the same as "." and then reports EACCES
-     * instead of ENOENT.
-     */
-
-    if (nativePath == NULL) {
-	Tcl_SetErrno(ENOENT);
-	goto end;
-    }
-	
-    if (tclWinProcs->useWide) {
-	if (((WCHAR *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    } else {
-	if (((char *) nativePath)[0] == '\0') {
-	    Tcl_SetErrno(ENOENT);
-	    return TCL_ERROR;
-	}
-    }
     if (Tcl_GetErrno() == EACCES) {
-	attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+	DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
 	if (attr != 0xffffffff) {
 	    if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/* 
@@ -1158,8 +1235,6 @@ TraversalCopy(
     Tcl_DString *errorPtr)	/* If non-NULL, initialized DString filled
 				 * with UTF-8 name of file causing error. */
 {
-    DWORD attr;
-
     switch (type) {
 	case DOTREE_F: {
 	    if (DoCopyFile(nativeSrc, nativeDst) == TCL_OK) {
@@ -1169,7 +1244,7 @@ TraversalCopy(
 	}
 	case DOTREE_PRED: {
 	    if (DoCreateDirectory(nativeDst) == TCL_OK) {
-		attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
+		DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
 		if ((*tclWinProcs->setFileAttributesProc)(nativeDst, attr) != FALSE) {
 		    return TCL_OK;
 		}
@@ -1304,7 +1379,8 @@ GetWinFileAttributes(
 {
     DWORD result;
     CONST TCHAR *nativeName;
-
+    int attr;
+    
     nativeName = Tcl_FSGetNativePath(fileName);
     result = (*tclWinProcs->getFileAttributesProc)(nativeName);
 
@@ -1313,7 +1389,34 @@ GetWinFileAttributes(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj((int) (result & attributeArray[objIndex]));
+    attr = (int)(result & attributeArray[objIndex]);
+    if ((objIndex == WIN_HIDDEN_ATTRIBUTE) && (attr != 0)) {
+	/* 
+	 * It is hidden.  However there is a bug on some Windows
+	 * OSes in which root volumes (drives) formatted as NTFS
+	 * are declared hidden when they are not (and cannot be).
+	 * 
+	 * We test for, and fix that case, here.
+	 */
+	int len;
+	char *str = Tcl_GetStringFromObj(fileName,&len);
+	if (len < 4) {
+	    if (len == 0) {
+		/* 
+		 * Not sure if this is possible, but we pass it on
+		 * anyway 
+		 */
+	    } else if (len == 1 && (str[0] == '/' || str[0] == '\\')) {
+		/* Path is pointing to the root volume */
+		attr = 0;
+	    } else if ((str[1] == ':') 
+		       && (len == 2 || (str[2] == '/' || str[2] == '\\'))) {
+		/* Path is of the form 'x:' or 'x:/' or 'x:\' */
+		attr = 0;
+	    }
+	}
+    }
+    *attributePtrPtr = Tcl_NewBooleanObj(attr);
     return TCL_OK;
 }
 
@@ -1407,9 +1510,8 @@ ConvertFileNameFormat(
 	     */
 	    Tcl_DStringInit(&ds);
 	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
 	    Tcl_DecrRefCount(tempPath);
-	    nativeName = Tcl_DStringValue(&ds);
 	    handle = (*tclWinProcs->findFirstFileProc)(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {
 		/*

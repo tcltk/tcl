@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.8.14.1 2002/02/05 02:22:03 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.8.14.2 2002/06/10 05:33:14 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -1354,13 +1354,14 @@ TcpGetOptionProc(
                                          * value; initialized by caller. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
-    int doPeerName = false, doSockName = false, doAll = false;
+    int doPeerName = false, doSockName = false, doError = false, doAll = false;
     ip_addr tcpAddress;
     char buffer[128];
     OSErr err;
     Tcl_DString dString;
     TCPiopb statusPB;
     int errorCode;
+    size_t len = 0;
 
     /*
      * If an asynchronous connect is in progress, attempt to wait for it
@@ -1388,13 +1389,38 @@ TcpGetOptionProc(
     if (optionName == (CONST char *) NULL || optionName[0] == '\0') {
         doAll = true;
     } else {
-	if (!strcmp(optionName, "-peername")) {
+	len = strlen(optionName);
+	if (!strncmp(optionName, "-peername", len)) {
 	    doPeerName = true;
-	} else if (!strcmp(optionName, "-sockname")) {
+	} else if (!strncmp(optionName, "-sockname", len)) {
 	    doSockName = true;
+	} else if (!strncmp(optionName, "-error", len)) {
+	    /* SF Bug #483575 */
+	    doError = true;
 	} else {
 	    return Tcl_BadChannelOption(interp, optionName, 
-	    		"peername sockname");
+		        "error peername sockname");
+	}
+    }
+
+    /*
+     * SF Bug #483575
+     *
+     * Return error information. Currently we ignore
+     * this option. IOW, we always return the empty
+     * string, signaling 'no error'.
+     *
+     * FIXME: Get a mac/socket expert to write a correct
+     * FIXME: implementation.
+     */
+
+    if (doAll || doError) {
+	if (doAll) {
+	    Tcl_DStringAppendElement(dsPtr, "-error");
+	    Tcl_DStringAppendElement(dsPtr, "");
+	} else {
+	    Tcl_DStringAppend (dsPtr, "", -1);
+	    return TCL_OK;
 	}
     }
 

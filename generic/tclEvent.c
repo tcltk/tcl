@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.15.2.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.15.2.2 2002/06/10 05:33:11 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ static void		BgErrorDeleteProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp));
 static void		HandleBgErrors _ANSI_ARGS_((ClientData clientData));
 static char *		VwaitVarProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, char *name2,
+			    Tcl_Interp *interp, char *name1, CONST char *name2,
 			    int flags));
 
 /*
@@ -836,13 +836,12 @@ Tcl_Finalize()
 
 	TclFinalizeSynchronization();
 
-	/*
-	 * We defer unloading of packages until very late 
-	 * to avoid memory access issues.  Both exit callbacks and
-	 * synchronization variables may be stored in packages.
+	/**
+	 * Finalizing the filesystem must come after anything which
+	 * might conceivably interact with the 'Tcl_FS' API.  This
+	 * will also unload any extensions which have been loaded.
 	 */
-
-	TclFinalizeLoad();
+	TclFinalizeFilesystem();
 
 	/*
 	 * There shouldn't be any malloc'ed memory after this.
@@ -1014,7 +1013,7 @@ VwaitVarProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Pointer to integer to set to 1. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
     char *name1;		/* Name of variable. */
-    char *name2;		/* Second part of variable name. */
+    CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
     int *donePtr = (int *) clientData;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.4.1 2002/02/05 02:21:58 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.4.2 2002/06/10 05:33:10 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -26,10 +26,10 @@ static int		CheckAccess _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int mode));
 static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_FSStatProc *statProc,
-			    struct stat *statPtr));
+			    Tcl_StatBuf *statPtr));
 static char *		GetTypeFromMode _ANSI_ARGS_((int mode));
 static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *varName, struct stat *statPtr));
+			    char *varName, Tcl_StatBuf *statPtr));
 
 /*
  *----------------------------------------------------------------------
@@ -93,9 +93,8 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register int i;
-    int body, result;
+    int body, result, caseObjc;
     char *string, *arg;
-    int caseObjc;
     Tcl_Obj *CONST *caseObjv;
     Tcl_Obj *armPtr;
 
@@ -725,6 +724,7 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
      * Create a new object holding the concatenated argument strings.
      */
 
+    /*** QUESTION: Do we need to copy the slow way? ***/
     bytes = Tcl_GetStringFromObj(objv[1], &length);
     objPtr = Tcl_NewStringObj(bytes, length);
     Tcl_IncrRefCount(objPtr);
@@ -824,7 +824,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 
     switch ((enum options) index) {
     	case FILE_ATIME: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
 	    if ((objc < 3) || (objc > 4)) {
@@ -918,7 +918,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
     	case FILE_ISDIRECTORY: {
 	    int value;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 
 	    if (objc != 3) {
 		goto only3Args;
@@ -932,7 +932,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
     	case FILE_ISFILE: {
 	    int value;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
     	    if (objc != 3) {
     	    	goto only3Args;
@@ -957,7 +957,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
     	case FILE_LSTAT: {
 	    char *varName;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 
     	    if (objc != 4) {
     	    	Tcl_WrongNumArgs(interp, 2, objv, "name varName");
@@ -970,7 +970,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return StoreStatData(interp, varName, &buf);
 	}
 	case FILE_MTIME: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
 	    if ((objc < 3) || (objc > 4)) {
@@ -1045,7 +1045,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FILE_OWNED: {
 	    int value;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (objc != 3) {
 		goto only3Args;
@@ -1158,14 +1158,14 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    Tcl_SetObjResult(interp, separatorObj);
 		} else {
 		    Tcl_SetObjResult(interp, 
-				     Tcl_NewStringObj("Unrecognised path",-1));
+			    Tcl_NewStringObj("Unrecognised path",-1));
 		    return TCL_ERROR;
 		}
 	    }
 	    return TCL_OK;
 	}
 	case FILE_SIZE: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (objc != 3) {
 		goto only3Args;
@@ -1173,7 +1173,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_size);
+	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp),
+		    (Tcl_WideInt) buf.st_size);
 	    return TCL_OK;
 	}
 	case FILE_SPLIT: {
@@ -1185,7 +1186,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FILE_STAT: {
 	    char *varName;
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 	    
 	    if (objc != 4) {
 	    	Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
@@ -1254,7 +1255,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
 	case FILE_TYPE: {
-	    struct stat buf;
+	    Tcl_StatBuf buf;
 
 	    if (objc != 3) {
 	    	goto only3Args;
@@ -1351,7 +1352,7 @@ GetStatBuf(interp, objPtr, statProc, statPtr)
     Tcl_Obj *objPtr;		/* Path name to examine. */
     Tcl_FSStatProc *statProc;	/* Either stat() or lstat() depending on
 				 * desired behavior. */
-    struct stat *statPtr;	/* Filled with info about file obtained by
+    Tcl_StatBuf *statPtr;	/* Filled with info about file obtained by
 				 * calling (*statProc)(). */
 {
     int status;
@@ -1397,66 +1398,52 @@ StoreStatData(interp, varName, statPtr)
     Tcl_Interp *interp;			/* Interpreter for error reports. */
     char *varName;			/* Name of associative array variable
 					 * in which to store stat results. */
-    struct stat *statPtr;		/* Pointer to buffer containing
+    Tcl_StatBuf *statPtr;		/* Pointer to buffer containing
 					 * stat data to store in varName. */
 {
-    char string[TCL_INTEGER_SPACE];
+    Tcl_Obj *var = Tcl_NewStringObj(varName, -1);
+    Tcl_Obj *field = Tcl_NewObj();
+    Tcl_Obj *value;
+    register unsigned short mode;
 
-    TclFormatInt(string, (long) statPtr->st_dev);
-    if (Tcl_SetVar2(interp, varName, "dev", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
+    /*
+     * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
+     */
+#define STORE_ARY(fieldName, object) \
+    Tcl_SetStringObj(field, (fieldName), -1); \
+    value = (object); \
+    if (Tcl_ObjSetVar2(interp,var,field,value,TCL_LEAVE_ERR_MSG) == NULL) { \
+	Tcl_DecrRefCount(var); \
+	Tcl_DecrRefCount(field); \
+	Tcl_DecrRefCount(value); \
+	return TCL_ERROR; \
     }
-    TclFormatInt(string, (long) statPtr->st_ino);
-    if (Tcl_SetVar2(interp, varName, "ino", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (unsigned short) statPtr->st_mode);
-    if (Tcl_SetVar2(interp, varName, "mode", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_nlink);
-    if (Tcl_SetVar2(interp, varName, "nlink", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_uid);
-    if (Tcl_SetVar2(interp, varName, "uid", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_gid);
-    if (Tcl_SetVar2(interp, varName, "gid", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    sprintf(string, "%lu", (unsigned long) statPtr->st_size);
-    if (Tcl_SetVar2(interp, varName, "size", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_atime);
-    if (Tcl_SetVar2(interp, varName, "atime", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_mtime);
-    if (Tcl_SetVar2(interp, varName, "mtime", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    TclFormatInt(string, (long) statPtr->st_ctime);
-    if (Tcl_SetVar2(interp, varName, "ctime", string, TCL_LEAVE_ERR_MSG)
-	    == NULL) {
-	return TCL_ERROR;
-    }
-    if (Tcl_SetVar2(interp, varName, "type",
-	    GetTypeFromMode((unsigned short) statPtr->st_mode), 
-	    TCL_LEAVE_ERR_MSG) == NULL) {
-	return TCL_ERROR;
-    }
+
+    Tcl_IncrRefCount(var);
+    Tcl_IncrRefCount(field);
+    STORE_ARY("dev",   Tcl_NewLongObj((long)statPtr->st_dev));
+    /*
+     * Watch out porters; the inode is meant to be an *unsigned* value,
+     * so the cast might fail when there isn't a real arithmentic 'long
+     * long' type...
+     */
+    STORE_ARY("ino",   Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
+    STORE_ARY("nlink", Tcl_NewLongObj((long)statPtr->st_nlink));
+    STORE_ARY("uid",   Tcl_NewLongObj((long)statPtr->st_uid));
+    STORE_ARY("gid",   Tcl_NewLongObj((long)statPtr->st_gid));
+    STORE_ARY("size",  Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
+#ifdef HAVE_ST_BLOCKS
+    STORE_ARY("blocks",Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+#endif
+    STORE_ARY("atime", Tcl_NewLongObj((long)statPtr->st_atime));
+    STORE_ARY("mtime", Tcl_NewLongObj((long)statPtr->st_mtime));
+    STORE_ARY("ctime", Tcl_NewLongObj((long)statPtr->st_ctime));
+    mode = (unsigned short) statPtr->st_mode;
+    STORE_ARY("mode",  Tcl_NewIntObj(mode));
+    STORE_ARY("type",  Tcl_NewStringObj(GetTypeFromMode(mode), -1));
+#undef STORE_ARY
+    Tcl_DecrRefCount(var);
+    Tcl_DecrRefCount(field);
     return TCL_OK;
 }
 
@@ -1635,17 +1622,17 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     Tcl_Obj **argObjv = argObjStorage;
     
 #define STATIC_LIST_SIZE 4
-    int indexArray[STATIC_LIST_SIZE];	  /* Array of value list indices */
-    int varcListArray[STATIC_LIST_SIZE];  /* # loop variables per list */
-    Tcl_Obj **varvListArray[STATIC_LIST_SIZE]; /* Array of var name lists */
-    int argcListArray[STATIC_LIST_SIZE];  /* Array of value list sizes */
-    Tcl_Obj **argvListArray[STATIC_LIST_SIZE]; /* Array of value lists */
+    int indexArray[STATIC_LIST_SIZE];
+    int varcListArray[STATIC_LIST_SIZE];
+    Tcl_Obj **varvListArray[STATIC_LIST_SIZE];
+    int argcListArray[STATIC_LIST_SIZE];
+    Tcl_Obj **argvListArray[STATIC_LIST_SIZE];
 
-    int *index = indexArray;
-    int *varcList = varcListArray;
-    Tcl_Obj ***varvList = varvListArray;
-    int *argcList = argcListArray;
-    Tcl_Obj ***argvList = argvListArray;
+    int *index = indexArray;		   /* Array of value list indices */
+    int *varcList = varcListArray;	   /* # loop variables per list */
+    Tcl_Obj ***varvList = varvListArray;   /* Array of var name lists */
+    int *argcList = argcListArray;	   /* Array of value list sizes */
+    Tcl_Obj ***argvList = argvListArray;   /* Array of value lists */
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1844,9 +1831,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 {
     char *format;		/* Used to read characters from the format
 				 * string. */
-    int formatLen;              /* The length of the format string */
+    int formatLen;		/* The length of the format string */
     char *endPtr;		/* Points to the last char in format array */
-    char newFormat[40];		/* A new format specifier is generated here. */
+    char newFormat[43];		/* A new format specifier is generated here. */
     int width;			/* Field width from field specifier, or 0 if
 				 * no width given. */
     int precision;		/* Field precision from field specifier, or 0
@@ -1860,6 +1847,10 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * it's a one-word value. */
     double doubleValue;		/* Used to hold value to pass to sprintf if
 				 * it's a double value. */
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_WideInt wideValue;	/* Used to hold value to pass to sprintf if
+				 * it's a 'long long' value. */
+#endif /* TCL_WIDE_INT_IS_LONG */
     int whichValue;		/* Indicates which of intValue, ptrValue,
 				 * or doubleValue has the value to pass to
 				 * sprintf, according to the following
@@ -1869,6 +1860,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define PTR_VALUE 2
 #   define DOUBLE_VALUE 3
 #   define STRING_VALUE 4
+#   define WIDE_VALUE 5
 #   define MAX_FLOAT_SIZE 320
 
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
@@ -1897,6 +1889,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 				 * been set for the current field. */
     int gotZero;		/* Non-zero indicates that a zero flag has
 				 * been seen in the current field. */
+#ifndef TCL_WIDE_INT_IS_LONG
+    int useWide;		/* Value to be printed is Tcl_WideInt. */
+#endif /* TCL_WIDE_INT_IS_LONG */
 
     /*
      * This procedure is a bit nasty.  The goal is to use sprintf to
@@ -1906,7 +1901,8 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
      *    whatever's generated.  This is hard to estimate.
      * 3. there's no way to move the arguments from objv to the call
      *    to sprintf in a reasonable way.  This is particularly nasty
-     *    because some of the arguments may be two-word values (doubles).
+     *    because some of the arguments may be two-word values (doubles
+     *    and wide-ints).
      * So, what happens here is to scan the format string one % group
      * at a time, making many individual calls to sprintf.
      */
@@ -1926,6 +1922,9 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 
 	width = precision = noPercent = useShort = 0;
 	gotZero = gotMinus = gotPrecision = 0;
+#ifndef TCL_WIDE_INT_IS_LONG
+	useWide = 0;
+#endif /* TCL_WIDE_INT_IS_LONG */
 	whichValue = PTR_VALUE;
 
 	/*
@@ -2005,7 +2004,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    newPtr++;
 	    format++;
 	}
-	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) {		/* INTL: Tcl source. */
 	    width = strtoul(format, &end, 10);	/* INTL: Tcl source. */
 	    format = end;
 	} else if (*format == '*') {
@@ -2048,7 +2047,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    format++;
 	    gotPrecision = 1;
 	}
-	if (isdigit(UCHAR(*format))) { /* INTL: Tcl source. */
+	if (isdigit(UCHAR(*format))) {		/* INTL: Tcl source. */
 	    precision = strtoul(format, &end, 10);  /* INTL: "C" locale. */
 	    format = end;
 	} else if (*format == '*') {
@@ -2069,6 +2068,11 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 	if (*format == 'l') {
+#ifndef TCL_WIDE_INT_IS_LONG
+	    useWide = 1;
+	    strcpy(newPtr, TCL_LL_MODIFIER);
+	    newPtr += TCL_LL_MODIFIER_SIZE;
+#endif /* TCL_WIDE_INT_IS_LONG */
 	    format++;
 	} else if (*format == 'h') {
 	    useShort = 1;
@@ -2090,19 +2094,32 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    case 'u':
 	    case 'x':
 	    case 'X':
-		if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
+#ifndef TCL_WIDE_INT_IS_LONG
+		if (useWide) {
+		    if (Tcl_GetWideIntFromObj(interp, /* INTL: Tcl source. */
+			    objv[objIndex], &wideValue) != TCL_OK) {
+			goto fmtError;
+		    }
+		    whichValue = WIDE_VALUE;
+		    size = 40 + precision;
+		    break;
+		}
+#endif /* TCL_WIDE_INT_IS_LONG */
+		if (Tcl_GetLongFromObj(interp,	      /* INTL: Tcl source. */
 			objv[objIndex], &intValue) != TCL_OK) {
 		    goto fmtError;
 		}
-		if ((unsigned long) intValue > UINT_MAX) {
-		    /*
-		     * Add the 'l' for long format type.
-		     */
-		    newPtr++;
-		    *newPtr = 0;
-		    newPtr[-1] = newPtr[-2];
-		    newPtr[-2] = 'l';
-		}
+#if (LONG_MAX > INT_MAX)
+		/*
+		 * Add the 'l' for long format type because we are on
+		 * an LP64 archtecture and we are really going to pass
+		 * a long argument to sprintf.
+		 */
+		newPtr++;
+		*newPtr = 0;
+		newPtr[-1] = newPtr[-2];
+		newPtr[-2] = 'l';
+#endif /* LONG_MAX > INT_MAX */
 		whichValue = INT_VALUE;
 		size = 40 + precision;
 		break;
@@ -2187,6 +2204,12 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		    sprintf(dst, newFormat, doubleValue); /* INTL: user locale. */
 		    break;
 		}
+#ifndef TCL_WIDE_INT_IS_LONG
+		case WIDE_VALUE: {
+		    sprintf(dst, newFormat, wideValue);
+		    break;
+		}
+#endif /* TCL_WIDE_INT_IS_LONG */
 		case INT_VALUE: {
 		    if (useShort) {
 			sprintf(dst, newFormat, (short) intValue);

@@ -503,24 +503,24 @@ test regexp-10.5 {inverse partial newline sensitivity in regsub} {
 
 test regexp-11.1 {regsub errors} {
     evalInProc {
-	list [catch {regsub a b c} msg] $msg
+	list [catch {regsub a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.2 {regsub errors} {
     evalInProc {
-	list [catch {regsub -nocase a b c} msg] $msg
+	list [catch {regsub -nocase a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.3 {regsub errors} {
     evalInProc {
-	list [catch {regsub -nocase -all a b c} msg] $msg
+	list [catch {regsub -nocase -all a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.4 {regsub errors} {
     evalInProc {
 	list [catch {regsub a b c d e f} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.5 {regsub errors} {
     evalInProc {
 	list [catch {regsub -gorp a b c} msg] $msg
@@ -708,25 +708,38 @@ test regexp-18.10 {regexp -all} {
     regexp -all -inline {a*} aba
 } {a {} a}
 test regexp-18.11 {regexp -all} {
-    regexp -all -inline {^a} aaaa
+    evalInProc {
+	regexp -all -inline {^a} aaaa
+    }
 } {a}
 test regexp-18.12 {regexp -all -inline -indices} {
-    regexp -all -inline -indices a(b(c)d|e(f)g)h abcdhaefgh
+    evalInProc {
+	regexp -all -inline -indices a(b(c)d|e(f)g)h abcdhaefgh
+    }
 } {{0 4} {1 3} {2 2} {-1 -1} {5 9} {6 8} {-1 -1} {7 7}}
 
 test regexp-19.1 {regsub null replacement} {
-    regsub -all {@} {@hel@lo@} "\0a\0" result
-    list $result [string length $result]
+    evalInProc {
+	regsub -all {@} {@hel@lo@} "\0a\0" result
+	list $result [string length $result]
+    }
 } "\0a\0hel\0a\0lo\0a\0 14"
 
 test regexp-20.1 {regsub shared object shimmering} {
-    # Bug #461322
-    set a abcdefghijklmnopqurstuvwxyz 
-    set b $a 
-    set c abcdefghijklmnopqurstuvwxyz0123456789 
-    regsub $a $c $b d 
-    list $d [string length $d] [string bytelength $d]
+    evalInProc {
+	# Bug #461322
+	set a abcdefghijklmnopqurstuvwxyz 
+	set b $a 
+	set c abcdefghijklmnopqurstuvwxyz0123456789 
+	regsub $a $c $b d 
+	list $d [string length $d] [string bytelength $d]
+    }
 } [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
+test regexp-20.2 {regsub shared object shimmering with -about} {
+    evalInProc {
+	eval regexp -about abc
+    }
+} {0 {}}
 
 test regexp-21.1 {regexp command compiling tests} {
     evalInProc {
@@ -774,6 +787,16 @@ test regexp-21.9 {regexp command compiling tests} {
 	list [catch {regexp -- -nocase foo dogfod} msg] $msg
     }
 } {0 0}
+test regexp-21.10 {regexp command compiling tests} {
+    evalInProc {
+	list [regsub -all "" foo bar str] $str
+    }
+} {3 barfbarobaro}
+test regexp-21.11 {regexp command compiling tests} {
+    evalInProc {
+	list [regsub -all "" "" bar str] $str
+    }
+} {0 {}}
 
 # cleanup
 ::tcltest::cleanupTests

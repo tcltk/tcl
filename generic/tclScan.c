@@ -8,10 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.8 2001/09/20 01:03:08 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.8.4.1 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
+/*
+ * For strtoll() and strtoull() declarations on some platforms...
+ */
+#include "tclPort.h"
 
 /*
  * Flag values used by Tcl_ScanObjCmd.
@@ -29,6 +33,7 @@
 #define SCAN_PTOK	0x100		  /* Decimal point is allowed. */
 #define SCAN_EXPOK	0x200		  /* An exponent is allowed. */
 
+#define SCAN_LONGER	0x400		  /* Asked for a wide value. */
 
 /*
  * The following structure contains the information associated with
@@ -270,6 +275,7 @@ ValidateFormat(interp, format, numVars, totalSubs)
     int staticAssign[STATIC_LIST_SIZE];
     int *nassign = staticAssign;
     int objIndex, xpgSize, nspace = STATIC_LIST_SIZE;
+    char buf[TCL_UTF_MAX+1];
 
     /*
      * Initialize an array that records the number of times a variable
@@ -359,10 +365,16 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	}
 
 	/*
-	 * Ignore size specifier.
+	 * Handle any size specifier.
 	 */
 
- 	if ((ch == 'l') || (ch == 'L') || (ch == 'h')) {
+	switch (ch) {
+	case 'l':
+	case 'L':
+#ifndef TCL_WIDE_INT_IS_LONG
+	    flags |= SCAN_LONGER;
+#endif
+	case 'h':
 	    format += Tcl_UtfToUniChar(format, &ch);
 	}
 
@@ -375,24 +387,45 @@ ValidateFormat(interp, format, numVars, totalSubs)
 	 */
 
 	switch (ch) {
-	    case 'n':
-	    case 'd':
-	    case 'i':
-	    case 'o':
-	    case 'x':
-	    case 'u':
-	    case 'f':
-	    case 'e':
-	    case 'g':
-	    case 's':
-		break;
 	    case 'c':
                 if (flags & SCAN_WIDTH) {
-		    Tcl_SetResult(interp, "field width may not be specified in %c conversion", TCL_STATIC);
+		    Tcl_SetResult(interp,
+			    "field width may not be specified in %c conversion",
+			    TCL_STATIC);
 		    goto error;
                 }
-		break;
+		/*
+		 * Fall through!
+		 */
+	    case 'n':
+	    case 's':
+		if (flags & SCAN_LONGER) {
+		invalidLonger:
+		    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+			   "'l' modifier may not be specified in %", buf,
+			   " conversion", NULL);
+		    goto error;
+		}
+		/*
+		 * Fall through!
+		 */
+	    case 'd':
+	    case 'e':
+	    case 'f':
+	    case 'g':
+	    case 'i':
+	    case 'o':
+	    case 'u':
+	    case 'x':
+ 		break;
+		/*
+		 * Bracket terms need special checking
+		 */
 	    case '[':
+		if (flags & SCAN_LONGER) {
+		    goto invalidLonger;
+		}
 		if (*format == '\0') {
 		    goto badSet;
 		}
@@ -547,6 +580,10 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     int underflow = 0;
     size_t width;
     long (*fn)() = NULL;
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_WideInt (*lfn)() = NULL;
+    Tcl_WideInt wideValue;
+#endif
     Tcl_UniChar ch, sch;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
@@ -661,10 +698,19 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	}
 
 	/*
-	 * Ignore size specifier.
+	 * Handle any size specifier.
 	 */
 
- 	if ((ch == 'l') || (ch == 'L') || (ch == 'h')) {
+	switch (ch) {
+	case 'l':
+	case 'L':
+#ifndef TCL_WIDE_INT_IS_LONG
+	    flags |= SCAN_LONGER;
+#endif
+	    /*
+	     * Fall through so we skip to the next character.
+	     */
+	case 'h':
 	    format += Tcl_UtfToUniChar(format, &ch);
 	}
 
@@ -686,27 +732,42 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		op = 'i';
 		base = 10;
 		fn = (long (*)())strtol;
+#ifndef TCL_WIDE_INT_IS_LONG
+		lfn = (Tcl_WideInt (*)())strtoll;
+#endif
 		break;
 	    case 'i':
 		op = 'i';
 		base = 0;
 		fn = (long (*)())strtol;
+#ifndef TCL_WIDE_INT_IS_LONG
+		lfn = (Tcl_WideInt (*)())strtoll;
+#endif
 		break;
 	    case 'o':
 		op = 'i';
 		base = 8;
 		fn = (long (*)())strtoul;
+#ifndef TCL_WIDE_INT_IS_LONG
+		lfn = (Tcl_WideInt (*)())strtoull;
+#endif
 		break;
 	    case 'x':
 		op = 'i';
 		base = 16;
 		fn = (long (*)())strtoul;
+#ifndef TCL_WIDE_INT_IS_LONG
+		lfn = (Tcl_WideInt (*)())strtoull;
+#endif
 		break;
 	    case 'u':
 		op = 'i';
 		base = 10;
 		flags |= SCAN_UNSIGNED;
 		fn = (long (*)())strtoul;
+#ifndef TCL_WIDE_INT_IS_LONG
+		lfn = (Tcl_WideInt (*)())strtoull;
+#endif
 		break;
 
 	    case 'f':
@@ -855,10 +916,17 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 			 * a number.  If we are unsure of the base, it
 			 * indicates that we are in base 8 or base 16 (if it is
 			 * followed by an 'x').
+			 *
+			 * 8.1 - 8.3.4 incorrectly handled 0x... base-16
+			 * cases for %x by not reading the 0x as the
+			 * auto-prelude for base-16. [Bug #495213]
 			 */
 			case '0':
 			    if (base == 0) {
 				base = 8;
+				flags |= SCAN_XOK;
+			    }
+			    if (base == 16) {
 				flags |= SCAN_XOK;
 			    }
 			    if (flags & SCAN_NOZERO) {
@@ -955,17 +1023,33 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 
 		if (!(flags & SCAN_SUPPRESS)) {
 		    *end = '\0';
-		    value = (long) (*fn)(buf, NULL, base);
-		    if ((flags & SCAN_UNSIGNED) && (value < 0)) {
-			sprintf(buf, "%lu", value); /* INTL: ISO digit */
-			objPtr = Tcl_NewStringObj(buf, -1);
-		    } else {
-			if ((unsigned long) value > UINT_MAX) {
-			    objPtr = Tcl_NewLongObj(value);
+#ifndef TCL_WIDE_INT_IS_LONG
+		    if (flags & SCAN_LONGER) {
+			wideValue = (Tcl_WideInt) (*lfn)(buf, NULL, base);
+			if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
+			    /* INTL: ISO digit */
+			    sprintf(buf, "%" TCL_LL_MODIFIER "u",
+				    (Tcl_WideUInt)wideValue);
+			    objPtr = Tcl_NewStringObj(buf, -1);
 			} else {
-			    objPtr = Tcl_NewIntObj(value);
+			    objPtr = Tcl_NewWideIntObj(wideValue);
 			}
+		    } else {
+#endif /* !TCL_WIDE_INT_IS_LONG */
+			value = (long) (*fn)(buf, NULL, base);
+			if ((flags & SCAN_UNSIGNED) && (value < 0)) {
+			    sprintf(buf, "%lu", value); /* INTL: ISO digit */
+			    objPtr = Tcl_NewStringObj(buf, -1);
+			} else {
+			    if ((unsigned long) value > UINT_MAX) {
+				objPtr = Tcl_NewLongObj(value);
+			    } else {
+				objPtr = Tcl_NewIntObj(value);
+			    }
+			}
+#ifndef TCL_WIDE_INT_IS_LONG
 		    }
+#endif
 		    Tcl_IncrRefCount(objPtr);
 		    objs[objIndex++] = objPtr;
 		}
@@ -980,6 +1064,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		if ((width == 0) || (width > sizeof(buf) - 1)) {
 		    width = sizeof(buf) - 1;
 		}
+		flags &= ~SCAN_LONGER;
 		flags |= SCAN_SIGNOK | SCAN_NODIGITS | SCAN_PTOK | SCAN_EXPOK;
 		for (end = buf; width > 0; width--) {
 		    switch (*string) {
@@ -1117,7 +1202,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    ckfree((char*) objs);
+    if (objs != NULL) {
+	ckfree((char*) objs);
+    }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {
 	    if (numVars) {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: load.test,v 1.7 2000/04/10 17:19:01 ericm Exp $
+# RCS: @(#) $Id: load.test,v 1.7.18.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -113,7 +113,7 @@ test load-4.1 {reloading package into same interpreter} [list $dll $loaded] {
 } {0 {}}
 test load-4.2 {reloading package into same interpreter} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] pkgb} msg] $msg
-} "1 {file \"[file join $testDir pkga$ext\"] is already loaded for package \"Pkga\"}"
+} [list 1 "file \"[file join $testDir pkga$ext]\" is already loaded for package \"Pkga\""]
 
 test load-5.1 {file name not specified and no static package: pick default} \
 	[list $dll $loaded] {
@@ -124,7 +124,7 @@ test load-5.1 {file name not specified and no static package: pick default} \
     set result [info loaded x]
     interp delete x
     set result
-} "{[file join $testDir pkga$ext] Pkga}"
+} [list [list [file join $testDir pkga$ext] Pkga]]
 
 # On some platforms, like SunOS 4.1.3, these tests can't be run because
 # they cause the process to exit.
@@ -160,21 +160,21 @@ if {[info command teststaticpkg] != ""} {
 	teststaticpkg Double 0 1
 	teststaticpkg Double 0 1
 	info loaded
-    } "{{} Double} {{} More} {{} Another} {{} Test} {[file join $testDir pkge$ext] Pkge} {[file join $testDir pkgb$ext] Pkgb} {[file join $testDir pkga$ext] Pkga} $alreadyTotalLoaded"
+    } [concat [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkge$ext] Pkge] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkga$ext] Pkga]] $alreadyTotalLoaded]
 
     test load-8.1 {TclGetLoadedPackages procedure} [list $dll $loaded] {
 	info loaded
-    } "{{} Double} {{} More} {{} Another} {{} Test} {[file join $testDir pkge$ext] Pkge} {[file join $testDir pkgb$ext] Pkgb} {[file join $testDir pkga$ext] Pkga} $alreadyTotalLoaded"
+    } [concat [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkge$ext] Pkge] [list [file join $testDir pkgb$ext] Pkgb] [list [file join $testDir pkga$ext] Pkga]] $alreadyTotalLoaded]
     test load-8.2 {TclGetLoadedPackages procedure} [list $dll $loaded] {
 	list [catch {info loaded gorp} msg] $msg
     } {1 {could not find interpreter "gorp"}}
     test load-8.3 {TclGetLoadedPackages procedure} [list $dll $loaded] {
 	list [info loaded {}] [info loaded child]
-    } "{{{} Double} {{} More} {{} Another} {{} Test} {[file join $testDir pkga$ext] Pkga} $alreadyLoaded} {{{} Test} {[file join $testDir pkgb$ext] Pkgb}}"
+    } [list [concat [list {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded] [list {{} Test} [list [file join $testDir pkgb$ext] Pkgb]]]
     test load-8.4 {TclGetLoadedPackages procedure} [list $dll $loaded] {
 	load [file join $testDir pkgb$ext] pkgb
 	list [info loaded {}] [lsort [info commands pkgb_*]]
-    } "{{[file join $testDir pkgb$ext] Pkgb} {{} Double} {{} More} {{} Another} {{} Test} {[file join $testDir pkga$ext] Pkga} $alreadyLoaded} {pkgb_sub pkgb_unsafe}"
+    } [list [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded] {pkgb_sub pkgb_unsafe}]
     interp delete child
 }
 

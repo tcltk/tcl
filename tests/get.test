@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: get.test,v 1.5 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: get.test,v 1.5.18.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -45,10 +45,10 @@ test get-1.6 {Tcl_GetInt procedure} {
 # The following tests are non-portable because they depend on
 # word size.
 
-if {0x80000000 > 0} {
+if {wide(0x80000000) > wide(0)} {
     test get-1.7 {Tcl_GetInt procedure} {
 	set x 44
-	list [catch {incr x 18446744073709551616} msg] $msg $errorCode
+	list [catch {eval incr x 18446744073709551616} msg] $msg $errorCode
     } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
     test get-1.8 {Tcl_GetInt procedure} {
 	set x 0
@@ -63,19 +63,19 @@ if {0x80000000 > 0} {
 	list [catch {incr x -18446744073709551614} msg] $msg
     } {0 2}
 } else {
-    test get-1.7 {Tcl_GetInt procedure} {
+    test get-1.11 {Tcl_GetInt procedure} {
 	set x 44
 	list [catch {incr x 4294967296} msg] $msg $errorCode
     } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-    test get-1.8 {Tcl_GetInt procedure} {
+    test get-1.12 {Tcl_GetInt procedure} {
 	set x 0
 	list [catch {incr x 4294967294} msg] $msg
     } {0 -2}
-    test get-1.9 {Tcl_GetInt procedure} {
+    test get-1.13 {Tcl_GetInt procedure} {
 	set x 0
 	list [catch {incr x +4294967294} msg] $msg
     } {0 -2}
-    test get-1.10 {Tcl_GetInt procedure} {
+    test get-1.14 {Tcl_GetInt procedure} {
 	set x 0
 	list [catch {incr x -4294967294} msg] $msg
     } {0 2}

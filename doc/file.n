@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.8.8.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: file.n,v 1.8.8.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -110,17 +110,20 @@ treated as a \fIsource\fR even if it starts with a \fB\-\fR.
 .TP
 \fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIpathname\fR ?\fIpathname\fR ... ?
 .
-Removes the file or directory specified by each \fIpathname\fR argument.
-Non-empty directories will be removed only if the \fB\-force\fR option is
-specified.  Trying to delete a non-existent file is not considered an
-error.  Trying to delete a read-only file will cause the file to be deleted,
-even if the \fB\-force\fR flags is not specified.  If the \fB\-force\fR 
+Removes the file or directory specified by each \fIpathname\fR
+argument.  Non-empty directories will be removed only if the
+\fB\-force\fR option is specified.  When operating on symbolic links,
+the links themselves will be deleted, not the objects they point to.
+Trying to delete a non-existent file is not considered an error.
+Trying to delete a read-only file will cause the file to be deleted,
+even if the \fB\-force\fR flags is not specified.  If the \fB\-force\fR
 option is specified on a directory, Tcl will attempt both to change
 permissions and move the current directory 'pwd' out of the given path
-if that is necessary to allow the deletion to proceed. Arguments are processed
-in the order specified, halting at the first error, if any.  A \fB\-\|\-\fR
-marks the end of switches; the argument following the \fB\-\|\-\fR will be
-treated as a \fIpathname\fR even if it starts with a \fB\-\fR.
+if that is necessary to allow the deletion to proceed.  Arguments are
+processed in the order specified, halting at the first error, if any.
+A \fB\-\|\-\fR marks the end of switches; the argument following the
+\fB\-\|\-\fR will be treated as a \fIpathname\fR even if it starts with
+a \fB\-\fR.
 .TP
 \fBfile dirname \fIname\fR
 Returns a name comprised of all of the path components in \fIname\fR
@@ -223,15 +226,25 @@ under Windows or AppleScript on the Macintosh.
 .TP
 \fBfile normalize \fIname\fR
 .
-Returns a unique normalised path representation for the file, whose
-string value can be used as a unique identifier for the it.  A
-normalized path is one which has all '../', './' removed.  Also it is
-one which is in the ``standard'' format for the native platform.  On
-MacOS, Unix, this means the path must be free of symbolic
-links/aliases, and on Windows it also means means we want the long form
-(when running Win NT/2000/XP) or the short form (when running Win
+Returns a unique normalised path representation for the file-system 
+object (file, directory, link, etc), whose string value can be used as 
+a unique identifier for it.  A normalized path is one which has all '../', './' 
+removed.  Also it is one which is in the ``standard'' format for the native 
+platform.  On MacOS, Unix, this means the segments leading up to the path 
+must be free of symbolic links/aliases (but the very last path component 
+may be a symbolic link), and on Windows it also means means we want the
+long form (when running Win NT/2000/XP) or the short form (when running Win
 95/98) with that form's case-dependence (which gives us a unique,
-case-dependent path).
+case-dependent path).  The one exception concerning the last link in the
+path is necessary, because Tcl or the user may wish to operate on the
+actual symbolic link itself (for example 'file delete', 'file rename', 'file copy'
+are defined to operate on symbolic links, not on the things that they point to).
+.PP
+Note that this means normalized paths are different on old Windows
+operating systems (95/98) and new Windows operating systems
+(NT/2000/XP).  This is necessary because the APIs  
+to produce a long normalized path in older operating systems are 
+unfortunately very slow.
 .TP
 \fBfile owned \fIname\fR 
 .
@@ -267,12 +280,14 @@ support symbolic links this option is undefined.
 The first form takes the file or directory specified by pathname
 \fIsource\fR and renames it to \fItarget\fR, moving the file if the
 pathname \fItarget\fR specifies a name in a different directory.  If
-\fItarget\fR is an existing directory, then the second form is used.  The
-second form moves each \fIsource\fR file or directory into the directory
-\fItargetDir\fR.  Existing files will not be overwritten unless the
-\fB\-force\fR option is specified.  Trying to overwrite a non-empty
-directory, overwrite a directory with a file, or a file with a directory
-will all result in errors.  Arguments are processed in the order specified,
+\fItarget\fR is an existing directory, then the second form is used.
+The second form moves each \fIsource\fR file or directory into the
+directory \fItargetDir\fR. Existing files will not be overwritten
+unless the \fB\-force\fR option is specified.  When operating inside a
+single filesystem, Tcl will rename symbolic links rather than the
+things that they point to.  Trying to overwrite a non-empty directory,
+overwrite a directory with a file, or a file with a directory will all
+result in errors.  Arguments are processed in the order specified,
 halting at the first error, if any.  A \fB\-\|\-\fR marks the end of
 switches; the argument following the \fB\-\|\-\fR will be treated as a
 \fIsource\fR even if it starts with a \fB\-\fR.
@@ -331,15 +346,17 @@ empty string.
 \fBfile system \fIname\fR
 .
 Returns a list of two elements, the first of which is the name of the
-filesystem to use for the file, and the second the type of the file
-within that filesystem.  If a filesystem only supports one type of
-file, the second element may be null.  For example the native files
-have a first element 'native', and a second element which is a
-platform-specific type name for the file (e.g. 'networked'), or
-possibly the empty string.  A generic virtual file system might return
-the list 'vfs ftp' to represent a file on a remote ftp site mounted as
-a virtual filesystem through an extension called 'vfs'.  If the file
-does not belong to any filesystem, an error is generated.
+filesystem to use for the file, and the second an arbitrary string
+representing the filesystem-specific nature or type of the location
+within that filesystem.  If a filesystem only supports one type of file,
+the second element may be null.  For example the native files have a
+first element 'native', and a second element which is a platform-specific
+type name for the file's system (e.g. 'NTFS', 'FAT', etc), or possibly
+the empty string if no further information is available or if this
+is not implemented.  A generic virtual file system might return the
+list 'vfs ftp' to represent a file on a remote ftp site mounted as a
+virtual filesystem through an extension called 'vfs'.  If the file does
+not belong to any filesystem, an error is generated.
 .TP
 \fBfile tail \fIname\fR
 .

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.13.2.2 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.13.2.3 2002/06/10 05:33:12 wolfsuit Exp $
  */
 
 #include "tcl.h"
@@ -18,16 +18,6 @@
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
- * The following code ensures that tclLink.c is linked whenever
- * Tcl is linked.  Without this code there's no reference to the
- * code in that file from anywhere in Tcl, so it may not be
- * linked into the application.
- */
-
-EXTERN int Tcl_LinkVar();
-int (*tclDummyLinkVarPtr)() = Tcl_LinkVar;
 
 /*
  * Declarations for various library procedures and variables (don't want
@@ -46,7 +36,7 @@ static Tcl_Obj *tclStartupScriptPath = NULL;
 static Tcl_MainLoopProc *mainLoopProc = NULL;
 
 /* 
- * Structure defintiion for information used to keep the state of
+ * Structure definition for information used to keep the state of
  * an interactive command processor that reads lines from standard
  * input and writes prompts and results to standard output.
  */
@@ -353,6 +343,11 @@ Tcl_Main(argc, argv, appInitProc)
 	        break;
 	    }
 	}
+	if (Tcl_IsShared(commandPtr)) {
+	    Tcl_DecrRefCount(commandPtr);
+	    commandPtr = Tcl_DuplicateObj(commandPtr);
+	    Tcl_IncrRefCount(commandPtr);
+	}
         length = Tcl_GetsObj(inChannel, commandPtr);
 	if (length < 0) {
 	    if (Tcl_InputBlocked(inChannel)) {
@@ -380,6 +375,11 @@ Tcl_Main(argc, argv, appInitProc)
          * Add the newline removed by Tcl_GetsObj back to the string.
          */
 
+	if (Tcl_IsShared(commandPtr)) {
+	    Tcl_DecrRefCount(commandPtr);
+	    commandPtr = Tcl_DuplicateObj(commandPtr);
+	    Tcl_IncrRefCount(commandPtr);
+	}
 	Tcl_AppendToObj(commandPtr, "\n", 1);
 	if (!TclObjCommandComplete(commandPtr)) {
 	    prompt = PROMPT_CONTINUE;
@@ -401,11 +401,13 @@ Tcl_Main(argc, argv, appInitProc)
 	    }
 	} else if (tty) {
 	    resultPtr = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(resultPtr);
 	    Tcl_GetStringFromObj(resultPtr, &length);
 	    if ((length > 0) && outChannel) {
 		Tcl_WriteObj(outChannel, resultPtr);
 		Tcl_WriteChars(outChannel, "\n", 1);
 	    }
+	    Tcl_DecrRefCount(resultPtr);
 	}
 	if (mainLoopProc != NULL) {
 
@@ -446,6 +448,7 @@ Tcl_Main(argc, argv, appInitProc)
 		Tcl_LinkVar(interp, "tcl_interactive", (char *) &tty,
 			TCL_LINK_BOOLEAN);
 		prompt = isPtr->prompt;
+		commandPtr = isPtr->commandPtr;
 		if (isPtr->input != (Tcl_Channel) NULL) {
 		    Tcl_DeleteChannelHandler(isPtr->input, StdinProc,
 			    (ClientData) isPtr);
@@ -507,6 +510,7 @@ Tcl_Main(argc, argv, appInitProc)
             Tcl_DeleteInterp(interp);
         }
     }
+    TclSetStartupScriptPath(NULL);
 
     /*
      * If we get here, the master interp has been deleted.  Allow
@@ -573,6 +577,11 @@ StdinProc(clientData, mask)
     Tcl_Interp *interp = isPtr->interp;
     int code, length;
 
+    if (Tcl_IsShared(commandPtr)) {
+	Tcl_DecrRefCount(commandPtr);
+	commandPtr = Tcl_DuplicateObj(commandPtr);
+	Tcl_IncrRefCount(commandPtr);
+    }
     length = Tcl_GetsObj(chan, commandPtr);
     if (length < 0) {
 	if (Tcl_InputBlocked(chan)) {
@@ -590,6 +599,11 @@ StdinProc(clientData, mask)
 	return;
     }
 
+    if (Tcl_IsShared(commandPtr)) {
+	Tcl_DecrRefCount(commandPtr);
+	commandPtr = Tcl_DuplicateObj(commandPtr);
+	Tcl_IncrRefCount(commandPtr);
+    }
     Tcl_AppendToObj(commandPtr, "\n", 1);
     if (!TclObjCommandComplete(commandPtr)) {
         isPtr->prompt = PROMPT_CONTINUE;
@@ -624,11 +638,13 @@ StdinProc(clientData, mask)
     } else if (isPtr->tty) {
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	Tcl_Channel outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	Tcl_IncrRefCount(resultPtr);
 	Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length >0) && (outChannel != (Tcl_Channel) NULL)) {
 	    Tcl_WriteObj(outChannel, resultPtr);
 	    Tcl_WriteChars(outChannel, "\n", 1);
 	}
+	Tcl_DecrRefCount(resultPtr);
     }
 
     /*

@@ -10,14 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.8 2000/05/26 08:50:34 hobbs Exp $
+# RCS: @(#) $Id: binary.test,v 1.8.14.1 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-test binary-2.1 {DupByteArrayInternalRep} {
+test binary-0.1 {DupByteArrayInternalRep} {
     set hdr [binary format cc 0 0316]
     set buf hellomatt
     
@@ -1459,6 +1459,32 @@ test binary-42.1 {Tcl_BinaryObjCmd: bad arguments} {} {
     catch {binary ""} result
     set result
 } {bad option "": must be format or scan}
+
+# Wide int (guaranteed at least 64-bit) handling
+test binary-43.1 {Tcl_BinaryObjCmd: format wide int} {} {
+    binary format w 7810179016327718216
+} HelloTcl
+test binary-43.2 {Tcl_BinaryObjCmd: format wide int} {} {
+    binary format W 7810179016327718216
+} lcTolleH
+
+test binary-44.1 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan HelloTcl W x
+    set x
+} 5216694956358656876
+test binary-44.2 {Tcl_BinaryObjCmd: scan wide int} {} {
+    binary scan lcTolleH w x
+    set x
+} 5216694956358656876
+
+test binary-45.1 {Tcl_BinaryObjCmd: combined wide int handling} {
+    binary scan [binary format sws 16450 -1 19521] c* x
+    set x
+} {66 64 -1 -1 -1 -1 -1 -1 -1 -1 65 76}
+test binary-45.2 {Tcl_BinaryObjCmd: combined wide int handling} {
+    binary scan [binary format sWs 16450 0x7fffffff 19521] c* x
+    set x
+} {66 64 0 0 0 0 127 -1 -1 -1 65 76}
 
 # cleanup
 ::tcltest::cleanupTests

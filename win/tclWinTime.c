@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.8.8.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.8.8.2 2002/06/10 05:33:20 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -254,17 +254,28 @@ Tcl_GetTime(timePtr)
 	     *    - unpredictable changes in performance counter frequency
 	     *      on "gearshift" processors such as Transmeta and
 	     *      SpeedStep.
+	     *
 	     * There seems to be no way to test whether the performance
 	     * counter is reliable, but a useful heuristic is that
 	     * if its frequency is 1.193182 MHz or 3.579545 MHz, it's
 	     * derived from a colorburst crystal and is therefore
-	     * the RTC rather than the TSC.  If it's anything else, we
-	     * presume that the performance counter is unreliable.
+	     * the RTC rather than the TSC.
+	     *
+	     * A sloppier but serviceable heuristic is that the RTC crystal
+	     * is normally less than 15 MHz while the TSC crystal is
+	     * virtually assured to be greater than 100 MHz.  Since Win98SE
+	     * appears to fiddle with the definition of the perf counter
+	     * frequency (perhaps in an attempt to calibrate the clock?)
+	     * we use the latter rule rather than an exact match.
 	     */
 
 	    if ( timeInfo.perfCounterAvailable
-		 && timeInfo.curCounterFreq.QuadPart != (LONGLONG) 1193182
-		 && timeInfo.curCounterFreq.QuadPart != (LONGLONG) 3579545 ) {
+		 /* The following lines would do an exact match on
+		  * crystal frequency:
+		  * && timeInfo.curCounterFreq.QuadPart != (LONGLONG) 1193182
+		  * && timeInfo.curCounterFreq.QuadPart != (LONGLONG) 3579545
+		  */
+		 && timeInfo.curCounterFreq.QuadPart > (LONGLONG) 15000000 ) {
 		timeInfo.perfCounterAvailable = FALSE;
 	    }
 

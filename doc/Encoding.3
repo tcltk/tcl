@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.7.18.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.7.18.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -21,24 +21,24 @@ Tcl_Encoding
 void
 \fBTcl_FreeEncoding\fR(\fIencoding\fR)
 .sp
-CONST char *
+char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
 int
 \fBTcl_ExternalToUtf\fR(\fIinterp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, 
 	dstCharsPtr\fR)
 .sp
-CONST char * 
+char * 
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
 int
 \fBTcl_UtfToExternal\fR(\fIinterp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, 
 	dstCharsPtr\fR)
 .sp
-CONST char *
+char *
 \fBTcl_WinTCharToUtf\fR(\fItsrc, srcLen, dstPtr\fR)
 .sp
-CONST TCHAR *
+TCHAR *
 \fBTcl_WinUtfToTChar\fR(\fIsrc, srcLen, dstPtr\fR)
 .sp
 CONST char *

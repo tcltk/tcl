@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83.6.3 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.4 2002/06/10 05:33:17 wolfsuit Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -123,7 +123,7 @@ ENV_FLAGS =
 # the current one does).
 GENERIC_FLAGS =
 #GENERIC_FLAGS = -DTCL_GENERIC_ONLY
-UNIX_OBJS = tclMtherr.o tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
+UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
 	tclUnixTime.o tclUnixInit.o tclUnixThrd.o 
 #UNIX_OBJS =
@@ -284,7 +284,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPipe.o \
 	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
-	tclStubInit.o tclStubLib.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
+	 tclThreadAlloc.o tclThreadJoin.o tclStubInit.o tclStubLib.o \
+	tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -366,6 +367,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
+	$(GENERIC_DIR)/tclThreadAlloc.c \
 	$(GENERIC_DIR)/tclThreadJoin.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
@@ -379,7 +381,6 @@ UNIX_HDRS = \
 
 UNIX_SRCS = \
 	$(UNIX_DIR)/tclAppInit.c \
-	$(UNIX_DIR)/tclMtherr.c \
 	$(UNIX_DIR)/tclUnixChan.c \
 	$(UNIX_DIR)/tclUnixEvent.c \
 	$(UNIX_DIR)/tclUnixFCmd.c \
@@ -893,9 +894,6 @@ tclLoadShl.o: $(UNIX_DIR)/tclLoadShl.c
 tclMain.o: $(GENERIC_DIR)/tclMain.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclMain.c
 
-tclMtherr.o: $(UNIX_DIR)/tclMtherr.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclMtherr.c
-
 tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNamesp.c
 
@@ -967,6 +965,9 @@ tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 
 tclThread.o: $(GENERIC_DIR)/tclThread.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
+
+tclThreadAlloc.o: $(GENERIC_DIR)/tclThreadAlloc.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadAlloc.c
 
 tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
@@ -1057,8 +1058,14 @@ strtod.o: $(COMPAT_DIR)/strtod.c
 strtol.o: $(COMPAT_DIR)/strtol.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
 
+strtoll.o: $(COMPAT_DIR)/strtoll.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoll.c
+
 strtoul.o: $(COMPAT_DIR)/strtoul.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
+
+strtoull.o: $(COMPAT_DIR)/strtoull.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoull.c
 
 tmpnam.o: $(COMPAT_DIR)/tmpnam.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/tmpnam.c
@@ -1192,7 +1199,8 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
 	cp -p $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README* \
-		$(TOP_DIR)/license.terms $(DISTDIR)
+		$(TOP_DIR)/ChangeLog.[12]??? $(TOP_DIR)/license.terms \
+		$(DISTDIR)
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
@@ -1230,8 +1238,15 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/makefile.*
+	cp -p $(TOP_DIR)/win/rules.vc $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/rules.vc
+	cp -p $(TOP_DIR)/win/coffbase.txt $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/coffbase.txt
 	cp -p $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in
+	cp -p $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.ds*
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac

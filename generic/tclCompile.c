@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.25.4.1 2002/02/05 02:21:58 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.25.4.2 2002/06/10 05:33:10 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -704,8 +704,6 @@ TclInitCompileEnv(interp, envPtr, string, numBytes)
     envPtr->maxStackDepth = 0;
     envPtr->currStackDepth = 0;
     TclInitLiteralTable(&(envPtr->localLitTable));
-    envPtr->exprIsJustVarRef = 0;
-    envPtr->exprIsComparison = 0;
 
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
@@ -1239,10 +1237,11 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		    code = TclCompileTokens(interp, tokenPtr+2,
 			    tokenPtr->numComponents-1, envPtr);
 		    if (code != TCL_OK) {
-			sprintf(buffer,
+			char errorBuffer[150];
+			sprintf(errorBuffer,
 			        "\n    (parsing index for array \"%.*s\")",
 				((nameBytes > 100)? 100 : nameBytes), name);
-			Tcl_AddObjErrorInfo(interp, buffer, -1);
+			Tcl_AddObjErrorInfo(interp, errorBuffer, -1);
 			goto error;
 		    }
 		    if (localVar < 0) {
@@ -1398,8 +1397,6 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     Tcl_Token *wordPtr;
     int range, numBytes, i, code;
     char *script;
-    int saveExprIsJustVarRef = envPtr->exprIsJustVarRef;
-    int saveExprIsComparison = envPtr->exprIsComparison;
 
     range = -1;
     code = TCL_OK;
@@ -1451,8 +1448,6 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 	TclEmitOpcode(INST_EXPR_STK, envPtr);
     }
 
-    envPtr->exprIsJustVarRef = saveExprIsJustVarRef;
-    envPtr->exprIsComparison = saveExprIsComparison;
     return code;
 }
 

@@ -10,13 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.11 2001/08/09 01:06:42 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.11.8.1 2002/06/10 05:33:14 wolfsuit Exp $
 
 package require Tcl 8.2
-package provide msgcat 1.2.2
+package provide msgcat 1.2.3
 
 namespace eval msgcat {
-    namespace export mc mcset mcmset mclocale mcpreferences mcunknown mcmax
+    namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
+	    mcunknown
 
     # Records the current locale as passed to mclocale
     variable locale ""
@@ -50,25 +51,28 @@ proc msgcat::mc {src args} {
     # Check for the src in each namespace starting from the local and
     # ending in the global.
 
+    variable msgs
+    variable loclist
+    variable locale
+
     set ns [uplevel 1 [list ::namespace current]]
     
     while {$ns != ""} {
-	foreach loc $::msgcat::loclist {
-	    if {[info exists ::msgcat::msgs($loc,$ns,$src)]} {
+	foreach loc $loclist {
+	    if {[info exists msgs($loc,$ns,$src)]} {
 		if {[llength $args] == 0} {
-		    return $::msgcat::msgs($loc,$ns,$src)
+		    return $msgs($loc,$ns,$src)
 		} else {
-		    return [eval \
-			    [list format $::msgcat::msgs($loc,$ns,$src)] \
-			    $args]
+		    return [uplevel 1 \
+			    [linsert $args 0 ::format $msgs($loc,$ns,$src)]]
 		}
 	    }
 	}
 	set ns [namespace parent $ns]
     }
     # we have not found the translation
-    return [uplevel 1 [list [::namespace origin mcunknown] \
-	    $::msgcat::locale $src] $args]
+    return [uplevel 1 \
+	    [linsert $args 0 [::namespace origin mcunknown] $locale $src]]
 }
 
 # msgcat::mclocale --
@@ -84,23 +88,24 @@ proc msgcat::mc {src args} {
 #	Returns the current locale.
 
 proc msgcat::mclocale {args} {
+    variable loclist
+    variable locale
     set len [llength $args]
 
     if {$len > 1} {
 	error {wrong # args: should be "mclocale ?newLocale?"}
     }
 
-    set args [string tolower $args]
     if {$len == 1} {
-	set ::msgcat::locale $args
-	set ::msgcat::loclist {}
+	set locale [string tolower [lindex $args 0]]
+	set loclist {}
 	set word ""
-	foreach part [split $args _] {
+	foreach part [split $locale _] {
 	    set word [string trimleft "${word}_${part}" _]
-	    set ::msgcat::loclist [linsert $::msgcat::loclist 0 $word]
+	    set loclist [linsert $loclist 0 $word]
 	}
     }
-    return $::msgcat::locale
+    return $locale
 }
 
 # msgcat::mcpreferences --
@@ -115,7 +120,8 @@ proc msgcat::mclocale {args} {
 #	Returns an ordered list of the locales preferred by the user.
 
 proc msgcat::mcpreferences {} {
-    return $::msgcat::loclist
+    variable loclist
+    return $loclist
 }
 
 # msgcat::mcload --
@@ -131,7 +137,7 @@ proc msgcat::mcpreferences {} {
 
 proc msgcat::mcload {langdir} {
     set x 0
-    foreach p [::msgcat::mcpreferences] {
+    foreach p [mcpreferences] {
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
 	    incr x
@@ -158,13 +164,14 @@ proc msgcat::mcload {langdir} {
 #	Returns the new locale.
 
 proc msgcat::mcset {locale src {dest ""}} {
+    variable msgs
     if {[string equal $dest ""]} {
 	set dest $src
     }
 
     set ns [uplevel 1 [list ::namespace current]]
 
-    set ::msgcat::msgs([string tolower $locale],$ns,$src) $dest
+    set msgs([string tolower $locale],$ns,$src) $dest
     return $dest
 }
 
@@ -180,6 +187,7 @@ proc msgcat::mcset {locale src {dest ""}} {
 #	Returns the number of pairs processed
 
 proc msgcat::mcmset {locale pairs } {
+    variable msgs
 
     set length [llength $pairs]
     if {$length % 2} {
@@ -190,7 +198,7 @@ proc msgcat::mcmset {locale pairs } {
     set ns [uplevel 1 [list ::namespace current]]
     
     foreach {src dest} $pairs {
-        set ::msgcat::msgs($locale,$ns,$src) $dest
+        set msgs($locale,$ns,$src) $dest
     }
     
     return $length
@@ -215,7 +223,7 @@ proc msgcat::mcmset {locale pairs } {
 
 proc msgcat::mcunknown {locale src args} {
     if {[llength $args]} {
-	return [eval [list format $src] $args]
+	return [uplevel 1 [linsert $args 0 ::format $src]]
     } else {
 	return $src
     }
@@ -235,7 +243,8 @@ proc msgcat::mcunknown {locale src args} {
 proc msgcat::mcmax {args} {
     set max 0
     foreach string $args {
-        set len [string length [msgcat::mc $string]]
+	set translated [uplevel 1 [list [namespace origin mc] $string]]
+        set len [string length $translated]
         if {$len>$max} {
             set max $len
         }

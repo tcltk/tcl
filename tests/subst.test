@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.9 2001/07/12 13:15:09 dkf Exp $
+# RCS: @(#) $Id: subst.test,v 1.9.8.1 2002/06/10 05:33:17 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -82,6 +82,18 @@ test subst-5.3 {command substitutions} {
 test subst-5.4 {command substitutions} {
     list [catch {subst {$long [set long] [bogus_command]}} msg] $msg
 } {1 {invalid command name "bogus_command"}}
+test subst-5.5 {command substitutions} {
+    set a 0
+    list [catch {subst {[set a 1}} msg] $a $msg 
+} {1 0 {missing close-bracket}}
+test subst-5.6 {command substitutions} {
+    set a 0
+    list [catch {subst {0[set a 1}} msg] $a $msg 
+} {1 0 {missing close-bracket}}
+test subst-5.7 {command substitutions} {
+    set a 0
+    list [catch {subst {0[set a 1; set a 2}} msg] $a $msg 
+} {1 1 {missing close-bracket}}
 
 test subst-6.1 {clear the result after command substitution} {
     catch {unset a}
@@ -138,12 +150,18 @@ test subst-8.7 {return in a subst, parse error} {
 test subst-8.8 {return in a subst, parse error} {
     subst {foo [return {x} ; set bar baz ; set a {}" ; stuff] bar}
 } {foo xset bar baz ; set a {}" ; stuff] bar}
+test subst-8.9 {return in a variable subst} {
+    subst {foo $var([return {x}]) bar}
+} {foo x bar}
 
 test subst-9.1 {error in a subst} {
     list [catch {subst {[error foo; bogus code]bar}} msg] $msg
 } {1 foo}
 test subst-9.2 {error in a subst} {
     list [catch {subst {[if 1 { error foo; bogus code}]bar}} msg] $msg
+} {1 foo}
+test subst-9.3 {error in a variable subst} {
+    list [catch {subst {foo $var([error foo]) bar}} msg] $msg
 } {1 foo}
 
 test subst-10.1 {break in a subst} {
@@ -161,6 +179,9 @@ test subst-10.4 {break in a subst, parse error} {
 test subst-10.5 {break in a subst, parse error} {
     subst {foo [break ;set bar baz ;set a {}{} ; stuff] bar}
 } {foo }
+test subst-10.6 {break in a variable subst} {
+    subst {foo $var([break]) bar}
+} {foo }
 
 test subst-11.1 {continue in a subst} {
     subst {foo [continue; bogus code] bar}
@@ -177,6 +198,9 @@ test subst-11.4 {continue in a subst, parse error} {
 test subst-11.5 {continue in a subst, parse error} {
     subst {foo [continue ;set bar baz ;set a {}{} ; stuff] bar}
 } {foo set bar baz ;set a {}{} ; stuff] bar}
+test subst-11.6 {continue in a variable subst} {
+    subst {foo $var([continue]) bar}
+} {foo  bar}
 
 # cleanup
 ::tcltest::cleanupTests

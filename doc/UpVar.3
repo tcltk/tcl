@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: UpVar.3,v 1.4 2001/09/27 20:32:35 dgp Exp $
+'\" RCS: @(#) $Id: UpVar.3,v 1.4.2.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_UpVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -45,7 +45,7 @@ a global variable;  otherwise it is a local to the current procedure
 .AP char *name1 in
 First part of source variable's name (scalar name, or name of array
 without array index).
-.AP char *name2 in
+.AP "CONST char" *name2 in
 If source variable is an element of an array, gives the index of the element.
 For scalar source variables, is NULL.
 .BE

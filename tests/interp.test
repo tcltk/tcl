@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.12.14.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: interp.test,v 1.12.14.2 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -37,7 +37,7 @@ test interp-1.1 {options for interp command} {
 } {1 {wrong # args: should be "interp cmd ?arg ...?"}}
 test interp-1.2 {options for interp command} {
     list [catch {interp frobox} msg] $msg
-} {1 {bad option "frobox": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, slaves, share, target, or transfer}}
+} {1 {bad option "frobox": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.3 {options for interp command} {
     interp delete
 } ""
@@ -55,16 +55,17 @@ test interp-1.6 {options for interp command} {
 } {1 {wrong # args: should be "interp slaves ?path?"}}
 test interp-1.7 {options for interp command} {
     list [catch {interp hello} msg] $msg
-} {1 {bad option "hello": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, slaves, share, target, or transfer}}
+} {1 {bad option "hello": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.8 {options for interp command} {
     list [catch {interp -froboz} msg] $msg
-} {1 {bad option "-froboz": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, slaves, share, target, or transfer}}
+} {1 {bad option "-froboz": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.9 {options for interp command} {
     list [catch {interp -froboz -safe} msg] $msg
-} {1 {bad option "-froboz": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, slaves, share, target, or transfer}} 
+} {1 {bad option "-froboz": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, marktrusted, recursionlimit, slaves, share, target, or transfer}} 
 test interp-1.10 {options for interp command} {
     list [catch {interp target} msg] $msg
 } {1 {wrong # args: should be "interp target path alias"}}
+
 
 # Part 1: Basic interpreter creation tests:
 test interp-2.1 {basic interpreter creation} {
@@ -448,7 +449,7 @@ test interp-13.3 {testing foo issafe} {
     interp create {a x3 foo}
     a eval x3 eval foo issafe
 } 1
-test interp-7.6 {testing issafe arg checking} {
+test interp-13.4 {testing issafe arg checking} {
     catch {interp create a}
     list [catch {a issafe too many args} msg] $msg
 } {1 {wrong # args: should be "a issafe"}}
@@ -2278,32 +2279,385 @@ test interp-28.1 {getting fooled by slave's namespace ?} {
     set r
 } {}
 
-# Tests of recursionlimit
-# We need testsetrecursionlimit so we need Tcltest package
-if {[catch {package require Tcltest} msg]} {
-    puts "This application hasn't been compiled with Tcltest"
-    puts "skipping remining interp tests that relies on it."
-} else {
-    # 
-test interp-29.1 {recursion limit} {
+# Part 29: recursion limit
+#  29.1.*  Argument checking
+#  29.2.*  Reading and setting the recursion limit
+#  29.3.*  Does the recursion limit work?
+#  29.4.*  Recursion limit inheritance by sub-interpreters
+#  29.5.*  Confirming the recursionlimit command does not affect the parent
+#  29.6.*  Safe interpreter restriction
+
+test interp-29.1.1 {interp recursionlimit argument checking} {
+    list [catch {interp recursionlimit} msg] $msg
+} {1 {wrong # args: should be "interp recursionlimit path ?newlimit?"}}
+
+test interp-29.1.2 {interp recursionlimit argument checking} {
+    list [catch {interp recursionlimit foo bar} msg] $msg
+} {1 {could not find interpreter "foo"}}
+
+test interp-29.1.3 {interp recursionlimit argument checking} {
+    list [catch {interp recursionlimit foo bar baz} msg] $msg
+} {1 {wrong # args: should be "interp recursionlimit path ?newlimit?"}}
+
+test interp-29.1.4 {interp recursionlimit argument checking} {
+    interp create moo
+    set result [catch {interp recursionlimit moo bar} msg]
+    interp delete moo
+    list $result $msg
+} {1 {expected integer but got "bar"}}
+
+test interp-29.1.5 {interp recursionlimit argument checking} {
+    interp create moo
+    set result [catch {interp recursionlimit moo 0} msg]
+    interp delete moo
+    list $result $msg
+} {1 {recursion limit must be > 0}}
+
+test interp-29.1.6 {interp recursionlimit argument checking} {
+    interp create moo
+    set result [catch {interp recursionlimit moo -1} msg]
+    interp delete moo
+    list $result $msg
+} {1 {recursion limit must be > 0}}
+
+test interp-29.1.7 {interp recursionlimit argument checking} {
+    interp create moo
+    set result [catch {interp recursionlimit moo [expr {wide(1)<<32}]} msg]
+    interp delete moo
+    list $result [string range $msg 0 35]
+} {1 {integer value too large to represent}}
+
+test interp-29.1.8 {slave recursionlimit argument checking} {
+    interp create moo
+    set result [catch {moo recursionlimit foo bar} msg]
+    interp delete moo
+    list $result $msg
+} {1 {wrong # args: should be "moo recursionlimit ?newlimit?"}}
+
+test interp-29.1.9 {slave recursionlimit argument checking} {
+    interp create moo
+    set result [catch {moo recursionlimit foo} msg]
+    interp delete moo
+    list $result $msg
+} {1 {expected integer but got "foo"}}
+
+test interp-29.1.10 {slave recursionlimit argument checking} {
+    interp create moo
+    set result [catch {moo recursionlimit 0} msg]
+    interp delete moo
+    list $result $msg
+} {1 {recursion limit must be > 0}}
+
+test interp-29.1.11 {slave recursionlimit argument checking} {
+    interp create moo
+    set result [catch {moo recursionlimit -1} msg]
+    interp delete moo
+    list $result $msg
+} {1 {recursion limit must be > 0}}
+
+test interp-29.1.12 {slave recursionlimit argument checking} {
+    interp create moo
+    set result [catch {moo recursionlimit [expr {wide(1)<<32}]} msg]
+    interp delete moo
+    list $result [string range $msg 0 35]
+} {1 {integer value too large to represent}}
+
+test interp-29.2.1 {query recursion limit} {
+    interp recursionlimit {}
+} 1000
+
+test interp-29.2.2 {query recursion limit} {
     set i [interp create]
-    load {} Tcltest $i
+    set n [interp recursionlimit $i]
+    interp delete $i
+    set n
+} 1000
+
+test interp-29.2.3 {query recursion limit} {
+    set i [interp create]
+    set n [$i recursionlimit]
+    interp delete $i
+    set n
+} 1000
+
+test interp-29.2.4 {query recursion limit} {
+    set i [interp create]
+    set r [$i eval {
+	set n1 [interp recursionlimit {} 42]
+	set n2 [interp recursionlimit {}]
+	list $n1 $n2
+    }]
+    interp delete $i
+    set r
+} {42 42}
+
+test interp-29.2.5 {query recursion limit} {
+    set i [interp create]
+    set n1 [interp recursionlimit $i 42]
+    set n2 [interp recursionlimit $i]
+    interp delete $i
+    list $n1 $n2
+} {42 42}
+
+test interp-29.2.6 {query recursion limit} {
+    set i [interp create]
+    set n1 [interp recursionlimit $i 42]
+    set n2 [$i recursionlimit]
+    interp delete $i
+    list $n1 $n2
+} {42 42}
+
+test interp-29.2.7 {query recursion limit} {
+    set i [interp create]
+    set n1 [$i recursionlimit 42]
+    set n2 [interp recursionlimit $i]
+    interp delete $i
+    list $n1 $n2
+} {42 42}
+
+test interp-29.2.8 {query recursion limit} {
+    set i [interp create]
+    set n1 [$i recursionlimit 42]
+    set n2 [$i recursionlimit]
+    interp delete $i
+    list $n1 $n2
+} {42 42}
+
+test interp-29.3.1 {recursion limit} {
+    set i [interp create]
     set r [interp eval $i {
-	testsetrecursionlimit 50
+	interp recursionlimit {} 50
 	proc p {} {incr ::i; p}
 	set i 0
-	catch p
-	set i
+	list [catch p msg] $msg $i
+    }]
+    interp delete $i
+    set r
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+
+test interp-29.3.2 {recursion limit} {
+    set i [interp create]
+    interp recursionlimit $i 50
+    set r [interp eval $i {
+	proc p {} {incr ::i; p}
+	set i 0
+	list [catch p msg] $msg $i
     }]
    interp delete $i
    set r
-} 49
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
 
-test interp-29.2 {recursion limit inheritance} {
+test interp-29.3.3 {recursion limit} {
     set i [interp create]
-    load {} Tcltest $i
+    $i recursionlimit 50
+    set r [interp eval $i {
+	proc p {} {incr ::i; p}
+	set i 0
+	list [catch p msg] $msg $i
+    }]
+   interp delete $i
+   set r
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+
+test interp-29.3.4 {recursion limit error reporting} {
+    interp create slave
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     interp recursionlimit {} 5
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {falling back due to new recursion limit}}
+
+test interp-29.3.5 {recursion limit error reporting} {
+    interp create slave
+    set r1 [slave eval {
+        catch {			# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    interp recursionlimit {} 4
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {falling back due to new recursion limit}}
+
+test interp-29.3.6 {recursion limit error reporting} {
+    interp create slave
+    set r1 [slave eval {
+        catch {			# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    interp recursionlimit {} 6
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.7 {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 5}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     update
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+
+test interp-29.3.8 {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 4}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     update
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+
+test interp-29.3.9 {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 6}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     update
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.10 {recursion limit error reporting} {
+    interp create slave
+    after 0 {slave recursionlimit 4}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     update
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+
+test interp-29.3.11 {recursion limit error reporting} {
+    interp create slave
+    after 0 {slave recursionlimit 5}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     update
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+
+test interp-29.3.12 {recursion limit error reporting} {
+    interp create slave
+    after 0 {slave recursionlimit 6}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			     update
+			     set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.4.1 {recursion limit inheritance} {
+    set i [interp create]
     set ii [interp eval $i {
-	testsetrecursionlimit 50
+	interp recursionlimit {} 50
 	interp create
     }]
     set r [interp eval [list $i $ii] {
@@ -2315,6 +2669,152 @@ test interp-29.2 {recursion limit inheritance} {
    interp delete $i
    set r
 } 49
+
+test interp-29.4.2 {recursion limit inheritance} {
+    set i [interp create]
+    $i recursionlimit 50
+    set ii [interp eval $i {interp create}]
+    set r [interp eval [list $i $ii] {
+	proc p {} {incr ::i; p}
+	set i 0
+	catch p
+	set i
+    }]
+   interp delete $i
+   set r
+} 49
+
+test interp-29.5.1 {does slave recursion limit affect master?} {
+    set before [interp recursionlimit {}]
+    set i [interp create]
+    interp recursionlimit $i 20000
+    set after [interp recursionlimit {}]
+    set slavelimit [interp recursionlimit $i]
+    interp delete $i
+    list [expr {$before == $after}] $slavelimit
+} {1 20000}
+
+test interp-29.5.2 {does slave recursion limit affect master?} {
+    set before [interp recursionlimit {}]
+    set i [interp create]
+    interp recursionlimit $i 20000
+    set after [interp recursionlimit {}]
+    set slavelimit [$i recursionlimit]
+    interp delete $i
+    list [expr {$before == $after}] $slavelimit
+} {1 20000}
+
+test interp-29.5.3 {does slave recursion limit affect master?} {
+    set before [interp recursionlimit {}]
+    set i [interp create]
+    $i recursionlimit 20000
+    set after [interp recursionlimit {}]
+    set slavelimit [interp recursionlimit $i]
+    interp delete $i
+    list [expr {$before == $after}] $slavelimit
+} {1 20000}
+
+test interp-29.5.4 {does slave recursion limit affect master?} {
+    set before [interp recursionlimit {}]
+    set i [interp create]
+    $i recursionlimit 20000
+    set after [interp recursionlimit {}]
+    set slavelimit [$i recursionlimit]
+    interp delete $i
+    list [expr {$before == $after}] $slavelimit
+} {1 20000}
+
+test interp-29.6.1 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n [interp recursionlimit slave]
+    interp delete slave
+    set n
+} 1000
+
+test interp-29.6.2 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n [slave recursionlimit]
+    interp delete slave
+    set n
+} 1000
+
+test interp-29.6.3 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n1 [interp recursionlimit slave 42]
+    set n2 [interp recursionlimit slave]
+    interp delete slave
+    list $n1 $n2
+} {42 42}
+
+test interp-29.6.4 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n1 [slave recursionlimit 42]
+    set n2 [interp recursionlimit slave]
+    interp delete slave
+    list $n1 $n2
+} {42 42}
+
+test interp-29.6.5 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n1 [interp recursionlimit slave 42]
+    set n2 [slave recursionlimit]
+    interp delete slave
+    list $n1 $n2
+} {42 42}
+
+test interp-29.6.6 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n1 [slave recursionlimit 42]
+    set n2 [slave recursionlimit]
+    interp delete slave
+    list $n1 $n2
+} {42 42}
+
+test interp-29.6.7 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n1 [slave recursionlimit 42]
+    set n2 [slave recursionlimit]
+    interp delete slave
+    list $n1 $n2
+} {42 42}
+
+test interp-29.6.8 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set n [catch {slave eval {interp recursionlimit {} 42}} msg]
+    interp delete slave
+    list $n $msg
+} {1 {permission denied: safe interpreters cannot change recursion limit}}
+
+test interp-29.6.9 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set result [
+	slave eval {
+	    interp create slave2 -safe
+	    set n [catch {
+	        interp recursionlimit slave2 42
+            } msg]
+            list $n $msg
+        }
+    ]
+    interp delete slave
+    set result
+} {1 {permission denied: safe interpreters cannot change recursion limit}}
+
+test interp-29.6.10 {safe interpreter recursion limit} {
+    interp create slave -safe
+    set result [
+        slave eval {
+	    interp create slave2 -safe
+	    set n [catch {
+	        slave2 recursionlimit 42
+            } msg]
+            list $n $msg
+        }
+    ]
+    interp delete slave
+    set result
+} {1 {permission denied: safe interpreters cannot change recursion limit}}
+
 
 #    # Deep recursion (into interps when the regular one fails):
 #    # still crashes...
@@ -2339,7 +2839,6 @@ test interp-29.2 {recursion limit inheritance} {
 #} {}
 
 # End of stack-recursion tests
-}
 
 # This test dumps core in Tcl 8.0.3!
 test interp-30.1 {deletion of aliases inside namespaces} {

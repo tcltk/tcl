@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.20.2.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: socket.test,v 1.20.2.2 2002/06/10 05:33:16 wolfsuit Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -252,7 +252,7 @@ test socket-2.1 {tcp connection} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x timed_out"]
+	set timer [after 10000 "set x timed_out"]
 	set f [socket -server accept 0]
 	proc accept {file addr port} {
 	    global x
@@ -290,7 +290,7 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x done"]
+	set timer [after 10000 "set x timeout"]
         set f [socket -server accept 0]
 	proc accept {file addr port} {
             global x
@@ -390,7 +390,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x done"]
+	set timer [after 10000 "set x timeout"]
         set f [socket -server accept 0]
 	proc accept {file addr port} {
             global x
@@ -433,7 +433,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x done"]
+	set timer [after 10000 "set x timeout"]
 	set f [socket -server accept 0]
 	proc accept {s a p} {
             fileevent $s readable [list echo $s]
@@ -454,7 +454,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
 	vwait x
 	after cancel $timer
 	close $f
-	puts done
+	puts $x
     }
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
@@ -1450,12 +1450,12 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
     removeFile script1
     removeFile script2
 
-    # Script1 is just a 10 second delay.  If the server socket
+    # Script1 is just a 20 second delay.  If the server socket
     # is inherited, it will be held open for 10 seconds
 
     set f [open script1 w]
     puts $f {
-	after 10000 exit
+	after 20000 exit
 	vwait forever
     }
     close $f
@@ -1512,11 +1512,11 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
 	return
     }
 
-    # If the socket doesn't hit end-of-file in 5 seconds, the
+    # If the socket doesn't hit end-of-file in 10 seconds, the
     # script1 process must have inherited the client.
 
     set failed 0
-    after 5000 [list set failed 1]
+    after 10000 [list set failed 1]
 
     # Launch the script2 process
     ### exec $::tcltest::tcltest script2 &

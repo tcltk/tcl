@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.29.10.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: string.test,v 1.29.10.2 2002/06/10 05:33:17 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -130,6 +130,18 @@ test string-2.30 {string compare with NUL character vs. other ASCII} {
     # Be careful here, since UTF-8 rep comparison with memcmp() of
     # these puts chars in the wrong order
     string compare \x00 \x01
+} -1
+test string-2.31 {string compare, high bit} {
+    proc foo {} {string compare "a\x80" "a@"}
+    foo
+} 1
+test string-2.32 {string compare, high bit} {
+    proc foo {} {string compare "a\x00" "a\x01"}
+    foo
+} -1
+test string-2.33 {string compare, high bit} {
+    proc foo {} {string compare "\x00\x00" "\x00\x01"}
+    foo
 } -1
 
 # only need a few tests on equal, since it uses the same code as
@@ -274,7 +286,7 @@ proc largest_int {} {
     # so we can test for overflow properly below on >32 bit systems
     set int 1
     set exp 7; # assume we get at least 8 bits
-    while {$int > 0} { set int [expr {1 << [incr exp]}] }
+    while {$int > 0} { set int [expr {wide(1) << [incr exp]}] }
     return [expr {$int-1}]
 }
 
@@ -701,6 +713,12 @@ test string-10.16 {string map, one pair case} {
 test string-10.17 {string map, one pair case} {
     string map {Ab 4321} aAbCaBaAbAbcAb
 } {a4321CaBa43214321c4321}
+test string-10.18 {string map, empty argument} {
+    string map -nocase {{} abc} foo
+} foo
+test string-10.19 {string map, empty arguments} {
+    string map -nocase {{} abc f bar {} def} foo
+} baroo
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.17 2001/05/30 08:57:06 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.17.10.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -79,11 +79,11 @@ test info-2.4 {info body option} {
         list [info body p] [info body q]
     }
 } {{return "x=$x"} {return "y=$y"}}
+# Prior to 8.3.0 this would cause a crash because [info body]
+# would return the bytecompiled version of foo, which the catch
+# would then try and eval out of the foo context, accessing
+# compiled local indices
 test info-2.5 {info body option, returning bytecompiled bodies} {
-    # Prior to 8.3.0 this would cause a crash because [info body]
-    # would return the bytecompiled version of foo, which the catch
-    # would then try and eval out of the foo context, accessing
-    # compiled local indices
     catch {unset args}
     proc foo {args} {
 	foreach v $args {
@@ -94,6 +94,14 @@ test info-2.5 {info body option, returning bytecompiled bodies} {
     foo a
     list [catch [info body foo] msg] $msg
 } {1 {can't read "args": no such variable}}
+# Fix for problem tested for in info-2.5 caused problems when
+# procedure body had no string rep (i.e. was not yet bytecode)
+# causing an empty string to be returned [Bug #545644]
+test info-2.6 {info body option, returning list bodies} {
+    proc foo args [list subst bar]
+    list [string bytelength [info body foo]] \
+	    [foo; string bytelength [info body foo]]
+} {9 9}
 
 # "info cmdcount" is no longer accurate for compiled commands!
 # The expected result for info-3.1 used to be "3" and is now "1"
@@ -330,6 +338,11 @@ test info-9.9 {info level option} {
     proc t1 {x} {info level $x}
     list [catch {t1 -3} msg] $msg
 } {1 {bad level "-3"}}
+test info-9.10 {info level option, namespaces} {
+    set msg [namespace eval t {info level 0}]
+    namespace delete t
+    set msg
+} {namespace eval t {info level 0}}
 
 set savedLibrary $tcl_library
 test info-10.1 {info library option} {
@@ -593,9 +606,9 @@ test info-19.5 {info vars with temporary variables} {
 
 # Check whether the extra testing functions are defined...
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
-    set functions {abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh}
+    set functions {abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh wide}
 } else {
-    set functions {T1 T2 T3 abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh}
+    set functions {T1 T2 T3 abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh wide}
 }
 test info-20.1 {info functions option} {info functions sin} sin
 test info-20.2 {info functions option} {lsort [info functions]} $functions

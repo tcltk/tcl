@@ -7,12 +7,12 @@
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.68.2.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.68.2.2 2002/06/10 05:33:12 wolfsuit Exp $
  */
 
 #ifndef _TCLINT
@@ -28,11 +28,11 @@
  * needed by stdlib.h in some configurations.
  */
 
-#include <stdio.h>
-
 #ifndef _TCL
 #include "tcl.h"
 #endif
+
+#include <stdio.h>
 
 #include <ctype.h>
 #ifdef NO_LIMITS_H
@@ -646,9 +646,13 @@ typedef struct Proc {
 typedef struct Trace {
     int level;			/* Only trace commands at nesting level
 				 * less than or equal to this. */
-    Tcl_CmdTraceProc *proc;	/* Procedure to call to trace command. */
+    Tcl_CmdObjTraceProc *proc;	/* Procedure to call to trace command. */
     ClientData clientData;	/* Arbitrary value to pass to proc. */
     struct Trace *nextPtr;	/* Next in list of traces for this interp. */
+    int flags;			/* Flags governing the trace - see
+				 * Tcl_CreateObjTrace for details */
+    Tcl_CmdObjTraceDeleteProc* delProc;
+				/* Procedure to call when trace is deleted */
 } Trace;
 
 /*
@@ -1186,7 +1190,7 @@ typedef struct Interp {
 
     /*
      * Information related to procedures and variables. See tclProc.c
-     * and tclvar.c for usage.
+     * and tclVar.c for usage.
      */
 
     int numLevels;		/* Keeps track of how many nested calls to
@@ -1301,6 +1305,10 @@ typedef struct Interp {
     ActiveCommandTrace *activeCmdTracePtr;
 				/* First in list of active command traces for
 				 * interp, or NULL if no active traces. */
+
+    int tracesForbiddingInline; /* Count of traces (in the list headed by
+				 * tracePtr) that forbid inline bytecode
+				 * compilation */
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
@@ -1587,6 +1595,9 @@ extern Tcl_ObjType	tclStringType;
 extern Tcl_ObjType	tclArraySearchType;
 extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
+#ifndef TCL_WIDE_INT_IS_LONG
+extern Tcl_ObjType	tclWideIntType;
+#endif
 
 /*
  * Variables denoting the hash key types defined in the core.
@@ -1618,6 +1629,7 @@ extern long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
  */
 
 extern char *		tclEmptyStringRep;
+extern char		tclEmptyString;
 
 /*
  *----------------------------------------------------------------
@@ -1673,6 +1685,7 @@ EXTERN void		TclFinalizeEncodingSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeEnvironment _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeExecution _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeIOSubsystem _ANSI_ARGS_((void));
+EXTERN void		TclFinalizeFilesystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeLoad _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeMemorySubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
@@ -1765,7 +1778,6 @@ EXTERN Tcl_Obj *	TclLsetFlat _ANSI_ARGS_((Tcl_Interp* interp,
 						 Tcl_Obj *CONST indexArray[],
 						 Tcl_Obj* valuePtr
 						 ));
-EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
 EXTERN int		TclObjInterpProc _ANSI_ARGS_((ClientData clientData,
@@ -1782,7 +1794,7 @@ EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-			    struct stat *buf));
+			    Tcl_StatBuf *buf));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
@@ -1851,7 +1863,7 @@ EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_Obj *toPtr));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp, 
 						    Tcl_Obj*pathPtr));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, CONST char *modeString,
 			    int permissions));
@@ -1859,8 +1871,7 @@ EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
-EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
-			    unsigned int size));
+EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr, unsigned int size));
 EXTERN void		TclpReleaseFile _ANSI_ARGS_((TclFile file));
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));
@@ -1885,7 +1896,7 @@ EXTERN void		TclpThreadDataKeySet _ANSI_ARGS_((
 EXTERN void		TclpThreadExit _ANSI_ARGS_((int status));
 EXTERN void		TclRememberCondition _ANSI_ARGS_((Tcl_Condition *mutex));
 EXTERN void		TclRememberDataKey _ANSI_ARGS_((Tcl_ThreadDataKey *mutex));
-EXTERN void             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
+EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id));
 EXTERN void		TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN int		TclRenameCommand _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *oldName, char *newName)) ;
@@ -1913,6 +1924,8 @@ EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
                             _ANSI_ARGS_((ClientData clientData));
+EXTERN Tcl_Obj*	TclpFilesystemPathType
+					_ANSI_ARGS_((Tcl_Obj* pathObjPtr));
 
 /*
  *----------------------------------------------------------------
@@ -2190,13 +2203,13 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 	if ((objPtr)->refCount < -1) \
 	    panic("Reference count for %lx was negative: %s line %d", \
 		  (objPtr), __FILE__, __LINE__); \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
 	} \
 	ckfree((char *) (objPtr)); \
 	TclIncrObjsFreed(); \
@@ -2221,17 +2234,47 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 
 #  define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
 	} \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
+	} \
 	ckfree((char *) (objPtr)); \
 	TclIncrObjsFreed(); \
     }
+
+#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+
+/*
+ * The TCL_THREADS mode is like the regular mode but allocates Tcl_Obj's
+ * from per-thread caches.
+ */
+
+EXTERN Tcl_Obj *TclThreadAllocObj _ANSI_ARGS_((void));
+EXTERN void TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
+
+#  define TclNewObj(objPtr) \
+       (objPtr) = TclThreadAllocObj(); \
+       (objPtr)->refCount = 0; \
+       (objPtr)->bytes    = tclEmptyStringRep; \
+       (objPtr)->length   = 0; \
+       (objPtr)->typePtr  = NULL
+
+#  define TclDecrRefCount(objPtr) \
+       if (--(objPtr)->refCount <= 0) { \
+           if (((objPtr)->bytes != NULL) \
+                   && ((objPtr)->bytes != tclEmptyStringRep)) { \
+               ckfree((char *) (objPtr)->bytes); \
+           } \
+           if (((objPtr)->typePtr != NULL) \
+                   && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+               (objPtr)->typePtr->freeIntRepProc(objPtr); \
+           } \
+           TclThreadFreeObj((objPtr)); \
+       }
 
 #else /* not TCL_MEM_DEBUG */
 
@@ -2257,13 +2300,13 @@ extern Tcl_Mutex tclObjMutex;
 
 #  define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
 	} \
 	Tcl_MutexLock(&tclObjMutex); \
 	(objPtr)->internalRep.otherValuePtr = (VOID *) tclFreeObjList; \
@@ -2314,6 +2357,23 @@ extern Tcl_Mutex tclObjMutex;
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to compare Unicode strings.  On
+ * big-endian systems we can use the more efficient memcmp, but
+ * this would not be lexically correct on little-endian systems.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * EXTERN int TclUniCharNcmp _ANSI_ARGS_((CONST Tcl_UniChar *cs,
+ *         CONST Tcl_UniChar *ct, unsigned long n));
+ *----------------------------------------------------------------
+ */
+#ifdef WORDS_BIGENDIAN
+#   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
+#else /* !WORDS_BIGENDIAN */
+#   define TclUniCharNcmp Tcl_UniCharNcmp
+#endif /* WORDS_BIGENDIAN */
 
 #include "tclIntDecls.h"
 

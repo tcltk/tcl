@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: LinkVar.3,v 1.3 2000/04/14 23:01:51 hobbs Exp $
+'\" RCS: @(#) $Id: LinkVar.3,v 1.3.18.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_LinkVar 3 7.5 Tcl "Tcl Library Procedures"
@@ -34,6 +34,9 @@ temporary modifications to it while parsing the variable name.
 Address of C variable that is to be linked to \fIvarName\fR.
 .AP int type in
 Type of C variable.  Must be one of TCL_LINK_INT, TCL_LINK_DOUBLE,
+.VS 8.4
+TCL_LINK_WIDE_INT,
+.VE 8.4
 TCL_LINK_BOOLEAN, or TCL_LINK_STRING, optionally OR'ed with
 TCL_LINK_READ_ONLY to make Tcl variable read-only.
 .BE
@@ -58,16 +61,26 @@ TCL_LINK_READ_ONLY:
 \fBTCL_LINK_INT\fR
 The C variable is of type \fBint\fR.
 Any value written into the Tcl variable must have a proper integer
-form acceptable to \fBTcl_GetInt\fR;  attempts to write
+form acceptable to \fBTcl_GetIntFromObj\fR;  attempts to write
 non-integer values into \fIvarName\fR will be rejected with
 Tcl errors.
 .TP
 \fBTCL_LINK_DOUBLE\fR
 The C variable is of type \fBdouble\fR.
 Any value written into the Tcl variable must have a proper real
-form acceptable to \fBTcl_GetDouble\fR;  attempts to write
+form acceptable to \fBTcl_GetDoubleFromObj\fR;  attempts to write
 non-real values into \fIvarName\fR will be rejected with
 Tcl errors.
+.TP
+\fBTCL_LINK_WIDE_INT\fR
+.VS 8.4
+The C variable is of type \fBTcl_WideInt\fR (which is an integer type
+at least 64-bits wide on all platforms that can support it.)
+Any value written into the Tcl variable must have a proper integer
+form acceptable to \fBTcl_GetWideIntFromObj\fR;  attempts to write
+non-integer values into \fIvarName\fR will be rejected with
+Tcl errors.
+.VE 8.4
 .TP
 \fBTCL_LINK_BOOLEAN\fR
 The C variable is of type \fBint\fR.
@@ -76,7 +89,7 @@ otherwise it will read from Tcl as ``1''.
 Whenever \fIvarName\fR is
 modified, the C variable will be set to a 0 or 1 value.
 Any value written into the Tcl variable must have a proper boolean
-form acceptable to \fBTcl_GetBoolean\fR;  attempts to write
+form acceptable to \fBTcl_GetBooleanFromObj\fR;  attempts to write
 non-boolean values into \fIvarName\fR will be rejected with
 Tcl errors.
 .TP
@@ -84,7 +97,7 @@ Tcl errors.
 The C variable is of type \fBchar *\fR.
 .VS
 If its value is not null then it must be a pointer to a string
-allocated with \fBTcl_Alloc\fR.
+allocated with \fBTcl_Alloc\fR or \fBckalloc\fR.
 .VE
 Whenever the Tcl variable is modified the current C string will be
 freed and new memory will be allocated to hold a copy of the variable's

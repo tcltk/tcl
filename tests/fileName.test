@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.14.8.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: fileName.test,v 1.14.8.2 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1227,6 +1227,13 @@ test filename-11.17.4 {Tcl_GlobCmd} {unixOnly notRoot} {
     file delete [file join $globname link]
     set ret
 } [list 0 [list [file join $globname link]]]
+test filename-11.17.5 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -directory $globname -tails *.c]} msg] $msg
+} [list 0 [lsort [list "weird name.c" x,z1.c x1.c y1.c z1.c]]]
+test filename-11.17.6 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -directory $globname -tails *.c *.c]} msg] $msg
+} [list 0 [lsort [concat [list "weird name.c" x,z1.c x1.c y1.c z1.c] \
+  [list "weird name.c" x,z1.c x1.c y1.c z1.c]]]]
 test filename-11.18 {Tcl_GlobCmd} {unixOnly} {
     list [catch {lsort [glob -path $globname/ *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
@@ -1272,6 +1279,11 @@ test filename-11.21 {Tcl_GlobCmd} {
     list [catch {lsort [glob -type d -path $globname *]} msg] $msg
 } [list 0 [lsort [list $globname]]]
 
+# Get rid of file/dir if it exists, since it will have
+# been left behind by a previous failed run.
+if {[file exists $horribleglobname]} {
+    file delete -force $horribleglobname
+}
 file rename globTest $horribleglobname
 set globname $horribleglobname
 
@@ -1420,6 +1432,18 @@ test filename-11.45 {Tcl_GlobCmd on root volume} {
     }
     expr {$res1 == $res2}
 } {1}
+test filename-11.46 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -dir foo *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.47 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -path foo *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.48 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -dir foo -join * *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.49 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde -path foo -join * *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
 
 file rename $horribleglobname globTest
 set globname globTest
@@ -1428,9 +1452,36 @@ unset horribleglobname
 test filename-12.1 {simple globbing} {unixOrPc} {
     list [catch {glob {}} msg] $msg
 } {0 .}
+test filename-12.1.1 {simple globbing} {unixOrPc} {
+    list [catch {glob -types f {}} msg] $msg
+} {1 {no files matched glob pattern ""}}
+test filename-12.1.2 {simple globbing} {unixOrPc} {
+    list [catch {glob -types d {}} msg] $msg
+} {0 .}
+test filename-12.1.3 {simple globbing} {unixOnly} {
+    list [catch {glob -types hidden {}} msg] $msg
+} {0 .}
+test filename-12.1.4 {simple globbing} {pcOnly} {
+    list [catch {glob -types hidden {}} msg] $msg
+} {1 {no files matched glob pattern ""}}
+test filename-12.1.5 {simple globbing} {pcOnly} {
+    list [catch {glob -types hidden c:/} msg] $msg
+} {1 {no files matched glob pattern "c:/"}}
+test filename-12.1.6 {simple globbing} {pcOnly} {
+    list [catch {glob c:/} msg] $msg
+} {0 c:/}
 test filename-12.2 {simple globbing} {macOnly} {
     list [catch {glob {}} msg] $msg
 } {0 :}
+test filename-12.2.1 {simple globbing} {macOnly} {
+    list [catch {glob -types f {}} msg] $msg
+} {1 {no files matched glob pattern ""}}
+test filename-12.2.2 {simple globbing} {macOnly} {
+    list [catch {glob -types d {}} msg] $msg
+} {0 :}
+test filename-12.2.3 {simple globbing} {macOnly} {
+    list [catch {glob -types hidden {}} msg] $msg
+} {1 {no files matched glob pattern ""}}
 test filename-12.3 {simple globbing} {
     list [catch {glob -nocomplain \{a1,a2\}} msg] $msg
 } {0 {}}
@@ -1632,7 +1683,7 @@ test filename-15.2 {unix specific no complain: no errors} {unixOnly nonPortable}
     glob -nocomplain globTest/a1/*
 } {}
 test filename-15.3 {unix specific no complain: no errors, good result} \
-	{unixOnly nonPortable knownBug} {
+	{unixOnly nonPortable} {
     # test fails because if an error occur , the interp's result
     # is reset...
     glob -nocomplain globTest/a2 globTest/a1/* globTest/a3
@@ -1640,12 +1691,18 @@ test filename-15.3 {unix specific no complain: no errors, good result} \
 
 catch {exec chmod 755 globTest/a1}
 test filename-15.4 {unix specific no complain: no errors, good result} \
-	{unixOnly nonPortable knownBug} {
+	{unixOnly nonPortable} {
     # test fails because if an error occurs, the interp's result
     # is reset... or you don't run at scriptics where the
     # outser and welch users exists
     glob -nocomplain ~ouster ~foo ~welch
 } {/home/ouster /home/welch}
+test filename-15.4.1 {no complain: no errors, good result} {
+    # test used to fail because if an error occurs, the interp's result
+    # is reset... 
+    string equal [glob -nocomplain ~wontexist ~blah ~] \
+      [glob -nocomplain ~ ~blah ~wontexist]
+} {1}
 test filename-15.5 {unix specific globbing} {unixOnly nonPortable} {
     glob ~ouster/.csh*
 } "/home/ouster/.cshrc"
@@ -1657,7 +1714,7 @@ test filename-15.6 {unix specific globbing} {unixOnly} {
     set result [list [catch {glob ~} msg] $msg]
     set env(HOME) $temp
     set result
-} [list 0 [list [glob ~]/globTest/odd\\\[\]*?\{\}name]]
+} [list 0 [list [lindex [glob ~] 0]/globTest/odd\\\[\]*?\{\}name]]
 catch {exec rm -f globTest/odd\\\[\]*?\{\}name}
 
 # The following tests are only valid for Windows systems.
@@ -1721,6 +1778,17 @@ test filename-16.13 {windows specific globbing} {pcOnly sharedCdrive} {
     cd //[info hostname]/c
     glob "\\\\\\\\[info hostname]\\\\c\\\\*Test"
 } //[info hostname]/c/globTest
+test filename-16.14 {windows specific globbing} {pcOnly} {
+    cd [lindex [glob -types d -dir C:/ *] 0]
+    expr {[lsearch -exact [glob {{.,*}*}] ".."] != -1}
+} {1}
+test filename-16.15 {windows specific globbing} {pcOnly} {
+    cd [lindex [glob -types d -dir C:/ *] 0]
+    glob ..
+} {..}
+test filename-16.16 {windows specific globbing} {pcOnly} {
+    file tail [lindex [glob "[lindex [glob -types d -dir C:/ *] 0]/.."] 0]
+} {..}
 
 # cleanup
 catch {file delete -force C:/globTest}

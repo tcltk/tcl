@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.9.14.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.9.14.2 2002/06/10 05:33:11 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -814,11 +814,14 @@ AllocArrayEntry(tablePtr, keyPtr)
     register int *iPtr1, *iPtr2;
     Tcl_HashEntry *hPtr;
     int count;
+    unsigned int size;
 
     count = tablePtr->keyType;
     
-    hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)
-	    + (count*sizeof(int)) - sizeof(hPtr->key)));
+    size = sizeof(Tcl_HashEntry) + (count*sizeof(int)) - sizeof(hPtr->key);
+    if (size < sizeof(Tcl_HashEntry))
+	size = sizeof(Tcl_HashEntry);
+    hPtr = (Tcl_HashEntry *) ckalloc(size);
     
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
 	    count > 0; count--, iPtr1++, iPtr2++) {
@@ -923,9 +926,12 @@ AllocStringEntry(tablePtr, keyPtr)
 {
     CONST char *string = (CONST char *) keyPtr;
     Tcl_HashEntry *hPtr;
+    unsigned int size;
 
-    hPtr = (Tcl_HashEntry *) ckalloc((unsigned)
-	    (sizeof(Tcl_HashEntry) + strlen(string) + 1 - sizeof(hPtr->key)));
+    size = sizeof(Tcl_HashEntry) + strlen(string) + 1 - sizeof(hPtr->key);
+    if (size < sizeof(Tcl_HashEntry))
+	size = sizeof(Tcl_HashEntry);
+    hPtr = (Tcl_HashEntry *) ckalloc(size);
     strcpy(hPtr->key.string, string);
 
     return hPtr;

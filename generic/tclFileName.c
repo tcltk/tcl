@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.22.2.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.22.2.2 2002/06/10 05:33:11 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -416,7 +416,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 					    (*(c-1) == ':')) {
 					/* We have an extra colon */
 				        Tcl_SetObjLength(*driveNameRef, 
-						c - Tcl_GetString(*driveNameRef) - 1);
+					  c - Tcl_GetString(*driveNameRef) - 1);
 				    }
 				}
 			    }
@@ -1268,7 +1268,7 @@ TclpNativeJoinPath(prefix, joining)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_JoinPath(argc, argv, resultPtr)
     int argc;
     CONST char * CONST *argv;
@@ -1326,7 +1326,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
 				 * message (if necessary). */
@@ -1339,10 +1339,11 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
 {
     Tcl_Obj *path = Tcl_NewStringObj(name, -1);
     CONST char *result;
-   
+
     Tcl_IncrRefCount(path);
-    result = Tcl_FSGetTranslatedStringPath(interp,path);
+    result = Tcl_FSGetTranslatedStringPath(interp, path);
     if (result == NULL) {
+	Tcl_DecrRefCount(path);
 	return NULL;
     }
     Tcl_DStringInit(bufferPtr);
@@ -1694,6 +1695,10 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	}
     }
     
+    if (pathOrDir != NULL) {
+	Tcl_IncrRefCount(pathOrDir);
+    }
+    
     if (typePtr != NULL) {
 	/* 
 	 * The rest of the possible type arguments (except 'd') are
@@ -1784,27 +1789,30 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		    }
 		}
 		/*
-		 * Error cases
+		 * Error cases.  We re-get the interpreter's result,
+		 * just to be sure it hasn't changed, and we reset
+		 * the 'join' flag to zero, since we haven't yet
+		 * made use of it.
 		 */
 		badTypesArg:
+		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_AppendToObj(resultPtr, "bad argument to \"-types\": ", -1);
 		Tcl_AppendObjToObj(resultPtr, look);
 		result = TCL_ERROR;
+		join = 0;
 		goto endOfGlob;
 		badMacTypesArg:
+		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_AppendToObj(resultPtr,
 		   "only one MacOS type or creator argument"
 		   " to \"-types\" allowed", -1);
 		result = TCL_ERROR;
+		join = 0;
 		goto endOfGlob;
 	    }
 	}
     }
 
-    if (pathOrDir != NULL) {
-        Tcl_IncrRefCount(pathOrDir);
-    }
-    
     /* 
      * Now we perform the actual glob below.  This may involve joining
      * together the pattern arguments, dealing with particular file types
@@ -1917,13 +1925,21 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
  *	This procedure prepares arguments for the TclDoGlob call.
  *	It sets the separator string based on the platform, performs
  *      tilde substitution, and calls TclDoGlob.
+ *      
+ *      The interpreter's result, on entry to this function, must
+ *      be a valid Tcl list (e.g. it could be empty), since we will
+ *      lappend any new results to that list.  If it is not a valid
+ *      list, this function will fail to do anything very meaningful.
  *
  * Results:
  *	The return value is a standard Tcl result indicating whether
  *	an error occurred in globbing.  After a normal return the
  *	result in interp (set by TclDoGlob) holds all of the file names
  *	given by the pattern and unquotedPrefix arguments.  After an 
- *	error the result in interp will hold an error message.
+ *	error the result in interp will hold an error message, unless
+ *	the 'TCL_GLOBMODE_NO_COMPLAIN' flag was given, in which case
+ *	an error results in a TCL_OK return leaving the interpreter's
+ *	result unmodified.
  *
  * Side effects:
  *	The 'pattern' is written to.
@@ -1950,6 +1966,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
     char c;
     int result, prefixLen;
     Tcl_DString buffer;
+    Tcl_Obj *oldResult;
 
     separators = NULL;		/* lint. */
     switch (tclPlatform) {
@@ -2004,19 +2021,18 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	
 	c = *tail;
 	*tail = '\0';
-	head = DoTildeSubst(interp, start+1, &buffer);
+	if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
+	    /* 
+	     * We will ignore any error message here, and we
+	     * don't want to mess up the interpreter's result.
+	     */
+	    head = DoTildeSubst(NULL, start+1, &buffer);
+	} else {
+	    head = DoTildeSubst(interp, start+1, &buffer);
+	}
 	*tail = c;
 	if (head == NULL) {
 	    if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-		/*
-		 * We should in fact pass down the nocomplain flag 
-		 * or save the interp result or use another mechanism
-		 * so the interp result is not mangled on errors in that case.
-		 * but that would a bigger change than reasonable for a patch
-		 * release.
-		 * (see fileName.test 15.2-15.4 for expected behaviour)
-		 */
-		Tcl_ResetResult(interp);
 		return TCL_OK;
 	    } else {
 		return TCL_ERROR;
@@ -2058,16 +2074,27 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	}
     }
 
+    /* 
+     * We need to get the old result, in case it is over-written
+     * below when we still need it.
+     */
+    oldResult = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(oldResult);
+    Tcl_ResetResult(interp);
+    
     result = TclDoGlob(interp, separators, &buffer, tail, types);
-    Tcl_DStringFree(&buffer);
     
     if (result != TCL_OK) {
 	if (globFlags & TCL_GLOBMODE_NO_COMPLAIN) {
-	    Tcl_ResetResult(interp);
-	    return TCL_OK;
+	    /* Put back the old result and reset the return code */
+	    Tcl_SetObjResult(interp, oldResult);
+	    result = TCL_OK;
 	}
     } else {
 	/* 
+	 * Now we must concatenate the 'oldResult' and the current
+	 * result, and then place that into the interpreter.
+	 * 
 	 * If we only want the tails, we must strip off the prefix now.
 	 * It may seem more efficient to pass the tails flag down into
 	 * TclDoGlob, Tcl_FSMatchInDirectory, but those functions are
@@ -2076,33 +2103,58 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	 * complexity to the code.  This way is a little slower (when
 	 * the -tails flag is given), but much simpler to code.
 	 */
-	if (globFlags & TCL_GLOBMODE_TAILS) {
-	    int objc, i;
-	    Tcl_Obj **objv;
-	    Tcl_Obj *tailResult;
-	    Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), 
-				   &objc, &objv);
-	    tailResult = Tcl_NewListObj(0,NULL);
-	    for (i = 0; i< objc; i++) {
+	int objc, i;
+	Tcl_Obj **objv;
+
+	/* Ensure sole ownership */
+	if (Tcl_IsShared(oldResult)) {
+	    Tcl_DecrRefCount(oldResult);
+	    oldResult = Tcl_DuplicateObj(oldResult);
+	    Tcl_IncrRefCount(oldResult);
+	}
+
+	Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), 
+			       &objc, &objv);
+#ifdef MAC_TCL
+	/* adjust prefixLen if TclDoGlob prepended a ':' */
+	if ((prefixLen > 0) && (objc > 0)
+	&& (Tcl_DStringValue(&buffer)[0] != ':')) {
+	    char *str = Tcl_GetStringFromObj(objv[0],NULL);
+	    if (str[0] == ':') {
+		    prefixLen++;
+	    }
+	}
+#endif
+	for (i = 0; i< objc; i++) {
+	    Tcl_Obj* elt;
+	    if (globFlags & TCL_GLOBMODE_TAILS) {
 		int len;
 		char *oldStr = Tcl_GetStringFromObj(objv[i],&len);
-		Tcl_Obj* str;
 		if (len == prefixLen) {
 		    if ((pattern[0] == '\0')
 			|| (strchr(separators, pattern[0]) == NULL)) {
-			str = Tcl_NewStringObj(".",1);
+			elt = Tcl_NewStringObj(".",1);
 		    } else {
-			str = Tcl_NewStringObj("/",1);
+			elt = Tcl_NewStringObj("/",1);
 		    }
 		} else {
-		    str = Tcl_NewStringObj(oldStr + prefixLen, 
+		    elt = Tcl_NewStringObj(oldStr + prefixLen, 
 						len - prefixLen);
 		}
-		Tcl_ListObjAppendElement(interp, tailResult, str);
+	    } else {
+		elt = objv[i];
 	    }
-	    Tcl_SetObjResult(interp, tailResult);
+	    /* Assumption that 'oldResult' is a valid list */
+	    Tcl_ListObjAppendElement(interp, oldResult, elt);
 	}
+	Tcl_SetObjResult(interp, oldResult);
     }
+    /* 
+     * Release our temporary copy.  All code paths above must
+     * end here so we free our reference.
+     */
+    Tcl_DecrRefCount(oldResult);
+    Tcl_DStringFree(&buffer);
     return result;
 }
 
@@ -2453,21 +2505,18 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	return TclDoGlob(interp, separators, headPtr, p, types);
     } else {
 	/*
+	 * This is the code path reached by a command like 'glob foo'.
+	 *
 	 * There are no more wildcards in the pattern and no more
 	 * unprocessed characters in the tail, so now we can construct
-	 * the path and verify the existence of the file.
-	 * 
-	 * We can't use 'Tcl_(FS)Access' to verify existence because
-	 * this fails when the file is a symlink to another file which
-	 * doesn't actually exist.  The problem is that if 'foo' is
-	 * such a broken link, 'glob foo' and 'glob foo*' return
-	 * different results.  So, we use 'Tcl_FSLstat' below so those
-	 * two return the same result.  This fixes [Bug 434876, L.
-	 * Virden]
+	 * the path, and pass it to Tcl_FSMatchInDirectory with an
+	 * empty pattern to verify the existence of the file and check
+	 * it is of the correct type (if a 'types' flag it given -- if
+	 * no such flag was given, we could just use 'Tcl_FSLStat', but
+	 * for simplicity we keep to a common approach).
 	 */
 
 	Tcl_Obj *nameObj;
-	struct stat buf;
 	/* Used to deal with one special case pertinent to MacOS */
 	int macSpecialCase = 0;
 
@@ -2517,16 +2566,8 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	nameObj = Tcl_NewStringObj(name, Tcl_DStringLength(headPtr));
 
 	Tcl_IncrRefCount(nameObj);
-	if (Tcl_FSLstat(nameObj, &buf) == 0) {
-	    if (macSpecialCase && (name[1] != '\0') 
-	      && (strchr(name+1, ':') == NULL)) {
-		Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
-					 Tcl_NewStringObj(name + 1,-1));
-	    } else {
-		Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
-					 nameObj);
-	    }
-	}
+	Tcl_FSMatchInDirectory(interp, Tcl_GetObjResult(interp), nameObj, 
+			       NULL, types);
 	Tcl_DecrRefCount(nameObj);
 	return TCL_OK;
     }
@@ -2596,4 +2637,28 @@ TclFileDirname(interp, pathPtr)
     Tcl_IncrRefCount(splitResultPtr);
     Tcl_DecrRefCount(splitPtr);
     return splitResultPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_AllocStatBuf
+ *
+ *     This procedure allocates a Tcl_StatBuf on the heap.  It exists
+ *     so that extensions may be used unchanged on systems where
+ *     largefile support is optional.
+ *
+ * Results:
+ *     A pointer to a Tcl_StatBuf which may be deallocated by being
+ *     passed to ckfree().
+ *
+ * Side effects:
+ *      None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_StatBuf *
+Tcl_AllocStatBuf() {
+    return (Tcl_StatBuf *) ckalloc(sizeof(Tcl_StatBuf));
 }

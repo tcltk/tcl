@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.29.2.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.29.2.2 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -1283,33 +1283,32 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
+    char msg[100 + TCL_INTEGER_SPACE];
+    char *ellipsis = "";
 
-    if (returnCode == TCL_RETURN) {
-	returnCode = TclUpdateReturnInfo(iPtr);
-    } else if (returnCode == TCL_ERROR) {
-	char msg[100 + TCL_INTEGER_SPACE];
-	char *ellipsis = "";
-	int numChars = nameLen;
-
-	if (numChars > 60) {
-	    numChars = 60;
-	    ellipsis = "...";
-	}
-	sprintf(msg, "\n    (procedure \"%.*s%s\" line %d)",
-		numChars, procName, ellipsis, iPtr->errorLine);
-	Tcl_AddObjErrorInfo(interp, msg, -1);
-    } else if (returnCode == TCL_BREAK) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"invoked \"break\" outside of a loop", -1);
-	returnCode = TCL_ERROR;
-    } else if (returnCode == TCL_CONTINUE) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "invoked \"continue\" outside of a loop", -1);
-	returnCode = TCL_ERROR;
+    if (returnCode == TCL_OK) {
+	return TCL_OK;
     }
-    return returnCode;
+    if (returnCode > TCL_CONTINUE) {
+	return returnCode;
+    }
+    if (returnCode == TCL_RETURN) {
+	return TclUpdateReturnInfo(iPtr);
+    } 
+    if (returnCode != TCL_ERROR) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendToObj(Tcl_GetObjResult(interp), ((returnCode == TCL_BREAK) 
+		? "invoked \"break\" outside of a loop"
+		: "invoked \"continue\" outside of a loop"), -1);
+    }
+    if (nameLen > 60) {
+	nameLen = 60;
+	ellipsis = "...";
+    }
+    sprintf(msg, "\n    (procedure \"%.*s%s\" line %d)", nameLen, procName,
+	    ellipsis, iPtr->errorLine);
+    Tcl_AddObjErrorInfo(interp, msg, -1);
+    return TCL_ERROR;
 }
 
 /*

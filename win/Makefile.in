@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.55.2.1 2002/02/05 02:22:05 wolfsuit Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.55.2.2 2002/06/10 05:33:19 wolfsuit Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -258,6 +258,7 @@ GENERIC_OBJS = \
 	tclStubInit.$(OBJEXT) \
 	tclStubLib.$(OBJEXT) \
 	tclThread.$(OBJEXT) \
+	tclThreadAlloc.$(OBJEXT) \
 	tclThreadJoin.$(OBJEXT) \
 	tclTimer.$(OBJEXT) \
 	tclUtf.$(OBJEXT) \
@@ -282,7 +283,7 @@ WIN_OBJS = \
 	tclWinTime.$(OBJEXT) 
 
 COMPAT_OBJS = \
-	strftime.$(OBJEXT)
+	strftime.$(OBJEXT) strtoll.$(OBJEXT) strtoull.$(OBJEXT)
 
 PIPE_OBJS = stub16.$(OBJEXT)
 
@@ -546,18 +547,18 @@ test: binaries $(TCLTEST)
 	| ./$(CAT32)
 
 # Useful target to launch a built tcltest with the proper path,...
-runtest: $(TCLTEST)
+runtest: binaries $(TCLTEST)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	    ./$(TCLTEST)
+	./$(TCLTEST) $(TESTFLAGS) $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=foo.tcl`
-shell: $(TCLSH)
+shell: binaries
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	    ./$(TCLSH) $(SCRIPT)
+	./$(TCLSH) $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
-gdb: $(TCLSH)
+gdb: binaries
 	@echo "set env TCL_LIBRARY=$(LIBRARY_DIR)" > gdb.run
 	gdb ./tclsh --command=gdb.run
 	rm gdb.run

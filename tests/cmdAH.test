@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.15.6.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.15.6.2 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -60,7 +60,7 @@ test cmdAH-2.3 {Tcl_CdObjCmd} {
     file mkdir foo
     cd foo
     cd ~
-    set result [string match [pwd] $oldpwd]
+    set result [string equal [pwd] $oldpwd]
     file delete foo
     set env(HOME) $temp
     set result
@@ -74,7 +74,7 @@ test cmdAH-2.4 {Tcl_CdObjCmd} {
     file mkdir foo
     cd foo
     cd
-    set result [string match [pwd] $oldpwd]
+    set result [string equal [pwd] $oldpwd]
     file delete foo
     set env(HOME) $temp
     set result
@@ -1496,14 +1496,18 @@ catch {unset stat}
 
 # type
 
-file delete link.file
-
 test cmdAH-29.1 {Tcl_FileObjCmd: type} {
     list [catch {file size a b} msg] $msg
 } {1 {wrong # args: should be "file size name"}}
 test cmdAH-29.2 {Tcl_FileObjCmd: type} {
     file type dir.file
 } directory
+test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {unixOnly nonPortable} {
+    set exists [list [file exists link.file] [file exists gorp.file]]
+    file delete link.file
+    set exists2	[list [file exists link.file] [file exists gorp.file]]
+    list $exists $exists2
+} {{1 1} {0 1}}
 test cmdAH-29.3 {Tcl_FileObjCmd: type} {
     file type gorp.file
 } file

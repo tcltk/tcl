@@ -10,31 +10,29 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.2.14.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: iogt.test,v 1.2.14.2 2002/06/10 05:33:16 wolfsuit Exp $
 
-
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
-
-if {[info commands testchannel] == ""} {
-    puts "Skipping io tests. This application does not seem to have the"
-    puts "testchannel command that is needed to run these tests."
+if {[catch {package require tcltest 2}]} {
+    puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
+namespace eval ::tcl::test::iogt {
 
-::tcltest::saveState
+    namespace import ::tcltest::cleanupTests
+    namespace import ::tcltest::makeFile
+    namespace import ::tcltest::removeFile
+    namespace import ::tcltest::test
+    namespace import ::tcltest::testConstraint
 
-#::tcltest::makeFile contents name
+    testConstraint testchannel [llength [info commands testchannel]]
 
-::tcltest::makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=} dummy
+makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=} dummy
 
 # " capture coloring of quotes
 
-::tcltest::makeFile {} dummyout
+makeFile {} dummyout
 
-::tcltest::makeFile {
+makeFile {
 #!/usr/local/bin/tclsh
 # -*- tcl -*-
 # echo server
@@ -51,12 +49,14 @@ set bsizes [lrange $argv 3 end]
 set c      0
 
 proc newconn {sock rhost rport} {
-    global c fdelay
+    variable fdelay
+    variable c
     incr   c
+    variable c$c
 
     #puts stdout "C $sock $rhost $rport / $fdelay" ; flush stdout
 
-    upvar #0 c$c conn
+    upvar 0 c$c conn
     set conn(after) {}
     set conn(state) 0
     set conn(size)  0
@@ -68,8 +68,9 @@ proc newconn {sock rhost rport} {
 }
 
 proc echoGet {c sock} {
-    global fdelay
-    upvar #0 c$c conn
+    variable fdelay
+    variable c$c
+    upvar 0 c$c conn
 
     if {[eof $sock]} {
 	# one-shot echo
@@ -86,8 +87,11 @@ proc echoGet {c sock} {
 }
 
 proc echoPut {c sock} {
-    global idelay fdelay bsizes
-    upvar #0 c$c conn
+    variable idelay
+    variable fdelay
+    variable bsizes
+    variable c$c
+    upvar 0 c$c conn
 
     if {[string length $conn(data)] == 0} {
 	#puts stdout "C $c $sock" ; flush stdout
@@ -189,7 +193,8 @@ proc id {op data} {
 }
 
 proc id_optrail {var op data} {
-    upvar #0 $var trail
+    variable $var
+    upvar 0 $var trail
 
     lappend trail $op
 
@@ -215,7 +220,8 @@ proc id_optrail {var op data} {
 
 
 proc id_fulltrail {var op data} {
-    upvar #0 $var trail
+    variable $var
+    upvar 0 $var trail
 
     #puts stdout ">> $var $op $data" ; flush stdout
 
@@ -243,7 +249,8 @@ proc id_fulltrail {var op data} {
 }
 
 proc counter {var op data} {
-    upvar #0 $var n
+    variable $var
+    upvar 0 $var n
 
     switch -- $op {
 	create/write -	create/read  -
@@ -270,7 +277,9 @@ proc counter {var op data} {
 
 
 proc counter_audit {var vtrail op data} {
-    upvar #0 $var n $vtrail trail
+    variable $var
+    variable $vtrail
+    upvar 0 $var n $vtrail trail
 
     switch -- $op {
 	create/write -	create/read  -
@@ -304,7 +313,9 @@ proc counter_audit {var vtrail op data} {
 
 
 proc rblocks {var vtrail n op data} {
-    upvar #0 $var buf $vtrail trail
+    variable $var
+    variable $vtrail
+    upvar 0 $var buf $vtrail trail
 
     set res {}
 
@@ -348,31 +359,33 @@ proc rblocks {var vtrail n op data} {
 # ... and convenience procedures to stack them
 
 proc identity {-attach channel} {
-    testchannel transform $channel -command id
+    testchannel transform $channel -command [namespace code id]
 }
 
 proc audit_ops {var -attach channel} {
-    testchannel transform $channel -command [list id_optrail $var]
+    testchannel transform $channel -command [namespace code [list id_optrail $var]]
 }
 
 proc audit_flow {var -attach channel} {
-    testchannel transform $channel -command [list id_fulltrail $var]
+    testchannel transform $channel -command [namespace code [list id_fulltrail $var]]
 }
 
 proc stopafter {var n -attach channel} {
-    upvar #0 $var vn
+    variable $var
+    upvar 0 $var vn
     set vn $n
-    testchannel transform $channel -command [list counter $var]
+    testchannel transform $channel -command [namespace code [list counter $var]]
 }
 
 proc stopafter_audit {var trail n -attach channel} {
-    upvar #0 $var vn
+    variable $var
+    upvar 0 $var vn
     set vn $n
-    testchannel transform $channel -command [list counter_audit $var $trail]
+    testchannel transform $channel -command [namespace code [list counter_audit $var $trail]]
 }
 
 proc rblocks_t {var trail n -attach channel} {
-    testchannel transform $channel -command [list rblocks $var $trail $n]
+    testchannel transform $channel -command [namespace code [list rblocks $var $trail $n]]
 }
 
 # --------------------------------------------------------------
@@ -398,20 +411,20 @@ proc asort {alist} {
 ########################################################################
 
 
-test iogt-1.1 {stack/unstack} {
+test iogt-1.1 {stack/unstack} testchannel {
     set fh [open dummy r]
     identity -attach $fh
     testchannel unstack $fh
     close   $fh
 } {}
 
-test iogt-1.2 {stack/close} {
+test iogt-1.2 {stack/close} testchannel {
     set fh [open dummy r]
     identity -attach $fh
     close   $fh
 } {}
 
-test iogt-1.3 {stack/unstack, configuration, options} {
+test iogt-1.3 {stack/unstack, configuration, options} testchannel {
     set fh [open dummy r]
     set ca [asort [fconfigure $fh]]
     identity -attach $fh
@@ -429,7 +442,7 @@ test iogt-1.3 {stack/unstack, configuration, options} {
     list [string equal $ca $cb] [string equal $cb $cc] [string equal $ca $cc]
 } {1 1 1}
 
-test iogt-1.4 {stack/unstack, configuration} {
+test iogt-1.4 {stack/unstack, configuration} testchannel {
     set fh [open dummy r]
     set ca [asort [fconfigure $fh]]
     identity -attach $fh
@@ -451,7 +464,7 @@ test iogt-1.4 {stack/unstack, configuration} {
     set res
 } {0 line cr shiftjis}
 
-test iogt-2.0 {basic I/O going through transform} {
+test iogt-2.0 {basic I/O going through transform} testchannel {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -476,7 +489,7 @@ test iogt-2.0 {basic I/O going through transform} {
 } {1 71 71}
 
 
-test iogt-2.1 {basic I/O, operation trail} {unixOnly} {
+test iogt-2.1 {basic I/O, operation trail} {testchannel unixOnly} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -526,7 +539,7 @@ write
 flush/write
 delete/write}
 
-test iogt-2.2 {basic I/O, data trail} {unixOnly} {
+test iogt-2.2 {basic I/O, data trail} {testchannel unixOnly} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -581,7 +594,7 @@ flush/write {} {}
 delete/write {} *ignored*}
 
 
-test iogt-2.3 {basic I/O, mixed trail} {unixOnly} {
+test iogt-2.3 {basic I/O, mixed trail} {testchannel unixOnly} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -628,7 +641,7 @@ delete/write {} *ignored*}
 
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
-	{unknownFailure} {
+	{testchannel unknownFailure} {
     # This test to check the validity of aquired Tcl_Channel references is
     # not possible because even a backgrounded fcopy will immediately start
     # to copy data, without waiting for the event loop. This is done only in
@@ -639,7 +652,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
     # delay, causing the fcopy to underflow immediately.
 
     proc DoneCopy {n {err {}}} {
-	global copy ; set copy 1
+	variable copy ; set copy 1
     }
 
     set fin  [open dummy    r]
@@ -653,7 +666,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 	# But the 1 second delay should be enough to
 	# initialize everything else here.
 
-	fcopy $sock $fout -command DoneCopy
+	fcopy $sock $fout -command [namespace code DoneCopy]
 
 	# transform after fcopy got its handles !
 	# They should be still valid for fcopy.
@@ -661,7 +674,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 	set trail [list]
 	audit_ops trail -attach $fout
 
-	vwait copy
+	vwait [namespace which -variable copy]
     } [read $fin] ; # {}
 
     close $fout
@@ -682,7 +695,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 } {1 {create/write create/read write flush/write flush/read delete/write delete/read}}
 
 
-test iogt-4.0 {fileevent readable, after transform} {unknownFailure} {
+test iogt-4.0 {fileevent readable, after transform} {testchannel unknownFailure} {
     set fin  [open dummy    r]
     set data [read $fin]
     close $fin
@@ -691,12 +704,13 @@ test iogt-4.0 {fileevent readable, after transform} {unknownFailure} {
     set got   [list]
 
     proc Done {args} {
-	global stop
+	variable stop
 	set    stop 1
     }
 
     proc Get {sock} {
-	global trail got
+	variable trail
+	variable got
 	if {[eof $sock]} {
 	    Done
 	    lappend trail "xxxxxxxxxxxxx"
@@ -720,7 +734,7 @@ test iogt-4.0 {fileevent readable, after transform} {unknownFailure} {
 	# But the 1 second delay should be enough to
 	# initialize everything else here.
 
-	vwait stop
+	vwait [namespace which -variable stop]
     } $data
 
 
@@ -812,7 +826,7 @@ delete/write {} *ignored*
 delete/read {} *ignored*}  ; # catch unescaped quote "
 
 
-test iogt-5.0 {EOF simulation} {unknownFailure} {
+test iogt-5.0 {EOF simulation} {testchannel unknownFailure} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -888,10 +902,10 @@ proc constX {op data} {
 }
 
 proc constx {-attach channel} {
-    testchannel transform $channel -command constX
+    testchannel transform $channel -command [namespace code constX]
 }
 
-test iogt-6.0 {Push back} {
+test iogt-6.0 {Push back} testchannel {
     set f [open dummy r]
 
     # contents of dummy = "abcdefghi..."
@@ -912,7 +926,7 @@ test iogt-6.0 {Push back} {
     set res
 } {xxx}
 
-test iogt-6.1 {Push back and up} {knownBug} {
+test iogt-6.1 {Push back and up} {testchannel knownBug} {
     set f [open dummy r]
 
     # contents of dummy = "abcdefghi..."
@@ -930,8 +944,9 @@ test iogt-6.1 {Push back and up} {knownBug} {
 
 # cleanup
 foreach file [list dummy dummyout __echo_srv__.tcl] {
-    ::tcltest::removeFile $file
+    removeFile $file
 }
-::tcltest::restoreState
-::tcltest::cleanupTests
+cleanupTests
+}
+namespace delete ::tcl::test::iogt
 return

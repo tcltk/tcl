@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.13.8.1 2002/02/05 02:22:02 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.13.8.2 2002/06/10 05:33:14 wolfsuit Exp $
  */
 
 
@@ -29,6 +29,15 @@
  */
 
 #include "tclErrno.h"
+
+#ifndef EOVERFLOW
+#   ifdef EFBIG
+#      define EOVERFLOW	EFBIG	/* The object couldn't fit in the datatype */
+#   else /* !EFBIG */
+#      define EOVERFLOW	EINVAL	/* Better than nothing! */
+#   endif /* EFBIG */
+#endif /* !EOVERFLOW */
+
 #include <float.h>
 
 #ifdef THINK_C

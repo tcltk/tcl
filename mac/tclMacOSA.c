@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.6.18.1 2002/02/05 02:22:02 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.6.18.2 2002/06/10 05:33:14 wolfsuit Exp $
  */
 
 #define MAC_TCL
@@ -2067,7 +2067,7 @@ tclOSAStore(
     short saveRef, fileRef = -1;
     char idStr[16 + TCL_INTEGER_SPACE];
     FSSpec fileSpec;
-    Tcl_DString buffer;
+    Tcl_DString ds, buffer;
     CONST char *nativeName;
     OSErr myErr = noErr;
     OSAID scriptID;
@@ -2105,13 +2105,14 @@ tclOSAStore(
     if (fileName != NULL) {
 	OSErr err;
 		
-	Tcl_DStringInit(&buffer);	
-	nativeName = Tcl_TranslateFileName(interp, fileName, &buffer);
-	if (nativeName == NULL) {
+	if (Tcl_TranslateFileName(interp, fileName, &buffer) == NULL) {
 	    return TCL_ERROR;
 	}
+	nativeName = Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&buffer), 
+    	    Tcl_DStringLength(&buffer), &ds);
 	err = FSpLocationFromPath(strlen(nativeName), nativeName, &fileSpec);
 		
+	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&buffer);
 	if ((err != noErr) && (err != fnfErr)) {
 	    Tcl_AppendResult(interp,
@@ -2286,7 +2287,7 @@ tclOSALoad(
     short saveRef, fileRef = -1;
     char idStr[16 + TCL_INTEGER_SPACE];
     FSSpec fileSpec;
-    Tcl_DString buffer;
+    Tcl_DString ds, buffer;
     CONST char *nativeName;
 
     saveRef = CurResFile();
@@ -2294,12 +2295,13 @@ tclOSALoad(
     if (fileName != NULL) {
 	OSErr err;
 		
-	Tcl_DStringInit(&buffer);	
-	nativeName = Tcl_TranslateFileName(interp, fileName, &buffer);
-	if (nativeName == NULL) {
+	if (Tcl_TranslateFileName(interp, fileName, &buffer) == NULL) {
 	    return TCL_ERROR;
 	}
+	nativeName = Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&buffer), 
+    	    Tcl_DStringLength(&buffer), &ds);
 	err = FSpLocationFromPath(strlen(nativeName), nativeName, &fileSpec);
+	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&buffer);
 	if (err != noErr) {
 	    Tcl_AppendResult(interp, "Error finding the file: \"", 

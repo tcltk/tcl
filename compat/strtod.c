@@ -9,18 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtod.c,v 1.3.8.1 2002/02/05 02:21:57 wolfsuit Exp $
+ * RCS: @(#) $Id: strtod.c,v 1.3.8.2 2002/06/10 05:33:08 wolfsuit Exp $
  */
 
-#include "tcl.h"
+#include "tclInt.h"
 #include "tclPort.h"
-#ifdef NO_STDLIB_H
-#   include "../compat/stdlib.h"
-#else
-#   include <stdlib.h>
-#endif
 #include <ctype.h>
-#include "tclPort.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -110,7 +104,7 @@ strtod(string, endPtr)
      */
 
     p = string;
-    while (isspace(*p)) {
+    while (isspace(UCHAR(*p))) {
 	p += 1;
     }
     if (*p == '-') {
@@ -208,11 +202,11 @@ strtod(string, endPtr)
 	    }
 	    expSign = FALSE;
 	}
-	if (!isdigit(*p)) {
+	if (!isdigit(UCHAR(*p))) {
 	    p = pExp;
 	    goto done;
 	}
-	while (isdigit(*p)) {
+	while (isdigit(UCHAR(*p))) {
 	    exp = exp * 10 + (*p - '0');
 	    p += 1;
 	}

@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2002 ActiveState Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.14.4.1 2002/02/05 02:21:58 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.14.4.2 2002/06/10 05:33:10 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -491,7 +492,6 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
  *
  *----------------------------------------------------------------------
  */
-
 int
 TclCompileForCmd(interp, parsePtr, envPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -500,10 +500,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpFalseFixup;
-    int jumpBackDist, jumpBackOffset, testCodeOffset, jumpDist;
+    JumpFixup jumpEvalCondFixup;
+    int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange, code;
-    unsigned char *jumpPc;
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
 
@@ -565,33 +564,30 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	goto done;
     }
     TclEmitOpcode(INST_POP, envPtr);
-    
+   
     /*
-     * Compile the test then emit the conditional jump that exits the for.
+     * Jump to the evaluation of the condition. This code uses the "loop
+     * rotation" optimisation (which eliminates one branch from the loop).
+     * "for start cond next body" produces then:
+     *       start
+     *       goto A
+     *    B: body                : bodyCodeOffset
+     *       next                : nextCodeOffset, continueOffset
+     *    A: cond -> result      : testCodeOffset
+     *       if (result) goto B
      */
 
-    envPtr->currStackDepth = savedStackDepth;
-    testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-    code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
-    if (code != TCL_OK) {
-	if (code == TCL_ERROR) {
-            Tcl_AddObjErrorInfo(interp,
-		    "\n    (\"for\" test expression)", -1);
-        }
-	goto done;
-    }
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
+    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
 
     /*
      * Compile the loop body.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
-    envPtr->exceptArrayPtr[bodyRange].codeOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
+    bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     if (code != TCL_OK) {
 	if (code == TCL_ERROR) {
 	    sprintf(buffer, "\n    (\"for\" body line %d)",
@@ -601,19 +597,17 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	goto done;
     }
     envPtr->exceptArrayPtr[bodyRange].numCodeBytes =
-	    (envPtr->codeNext - envPtr->codeStart)
-	    - envPtr->exceptArrayPtr[bodyRange].codeOffset;
+	    (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
+
 
     /*
      * Compile the "next" subcommand.
      */
 
+    nextCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+
     envPtr->currStackDepth = savedStackDepth;
-    envPtr->exceptArrayPtr[bodyRange].continueOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
-    envPtr->exceptArrayPtr[nextRange].codeOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -626,59 +620,50 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     }
     envPtr->exceptArrayPtr[nextRange].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart)
-	    - envPtr->exceptArrayPtr[nextRange].codeOffset;
+	    - nextCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
     envPtr->currStackDepth = savedStackDepth;
-	
+
     /*
-     * Jump back to the test at the top of the loop. Generate a 4 byte jump
-     * if the distance to the test is > 120 bytes. This is conservative and
-     * ensures that we won't have to replace this jump if we later need to
-     * replace the ifFalse jump with a 4 byte jump.
+     * Compile the test expression then emit the conditional jump that
+     * terminates the for.
      */
 
-    jumpBackOffset = (envPtr->codeNext - envPtr->codeStart);
-    jumpBackDist = (jumpBackOffset - testCodeOffset);
-    if (jumpBackDist > 120) {
-	TclEmitInstInt4(INST_JUMP4, -jumpBackDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP1, -jumpBackDist, envPtr);
+    testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+
+    jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
+    if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
+	bodyCodeOffset += 3;
+	nextCodeOffset += 3;
+	testCodeOffset += 3;
     }
-
-    /*
-     * Fix the target of the jumpFalse after the test.
-     */
-
-    jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	    - jumpFalseFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpFalseFixup, jumpDist, 127)) {
-	/*
-	 * Update the loop body and "next" command ExceptionRanges since
-	 * they moved down.
-	 */
-
-	envPtr->exceptArrayPtr[bodyRange].codeOffset += 3;
-	envPtr->exceptArrayPtr[bodyRange].continueOffset += 3;
-	envPtr->exceptArrayPtr[nextRange].codeOffset += 3;
-
-	/*
-	 * Update the jump back to the test at the top of the loop since it
-	 * also moved down 3 bytes.
-	 */
-
-	jumpBackOffset += 3;
-	jumpPc = (envPtr->codeStart + jumpBackOffset);
-	jumpBackDist += 3;
-	if (jumpBackDist > 120) {
-	    TclUpdateInstInt4AtPc(INST_JUMP4, -jumpBackDist, jumpPc);
-	} else {
-	    TclUpdateInstInt1AtPc(INST_JUMP1, -jumpBackDist, jumpPc);
+    
+    envPtr->currStackDepth = savedStackDepth;
+    code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+    if (code != TCL_OK) {
+	if (code == TCL_ERROR) {
+	    Tcl_AddObjErrorInfo(interp,
+				"\n    (\"for\" test expression)", -1);
 	}
+	goto done;
+    }
+    envPtr->currStackDepth = savedStackDepth + 1;
+    
+    jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
+    if (jumpDist > 127) {
+	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
+    } else {
+	TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
     }
     
     /*
-     * Set the loop's break target.
+     * Set the loop's offsets and break target.
      */
+
+    envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
+    envPtr->exceptArrayPtr[bodyRange].continueOffset = nextCodeOffset;
+
+    envPtr->exceptArrayPtr[nextRange].codeOffset = nextCodeOffset;
 
     envPtr->exceptArrayPtr[bodyRange].breakOffset =
             envPtr->exceptArrayPtr[nextRange].breakOffset =
@@ -688,6 +673,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * The for command's result is an empty string.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
     code = TCL_OK;
 
@@ -1150,7 +1136,6 @@ FreeForeachInfo(clientData)
  *
  *----------------------------------------------------------------------
  */
-
 int
 TclCompileIfCmd(interp, parsePtr, envPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -1166,7 +1151,8 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 				 * body to the end of the "if" when that PC
 				 * is determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpDist, jumpFalseDist, jumpIndex;
+    int jumpDist, jumpFalseDist;
+    int jumpIndex = 0;          /* avoid compiler warning. */
     int numWords, wordIdx, numBytes, j, code;
     char *word;
     char buffer[100];
@@ -1174,6 +1160,10 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
                                 /* Saved stack depth at the start of the first
 				 * test; the envPtr current depth is restored
 				 * to this value at the start of each test. */
+    char *condStart, *savedPos, savedChar;
+    int realCond = 1;           /* set to 0 for static conditions: "if 0 {..}" */
+    int boolVal;                /* value of static condition */
+    int compileScripts = 1;            
 
     /*
      * Only compile the "if" command if all arguments are simple
@@ -1208,9 +1198,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * Stop looping if the token isn't "if" or "elseif".
 	 */
 
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    break;
-	}
 	word = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
 	if ((tokenPtr == parsePtr->tokenPtr)
@@ -1232,28 +1219,63 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 
 	/*
 	 * Compile the test expression then emit the conditional jump
-	 * around the "then" part. If the expression word isn't simple,
-	 * we back off and compile the if command out-of-line.
+	 * around the "then" part. 
 	 */
 	
 	envPtr->currStackDepth = savedStackDepth;
 	testTokenPtr = tokenPtr;
-	code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	if (code != TCL_OK) {
-	    if (code == TCL_ERROR) {
-		Tcl_AddObjErrorInfo(interp,
-		        "\n    (\"if\" test expression)", -1);
-	    }
-	    goto done;
-	}
-	if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
-	    TclExpandJumpFixupArray(&jumpFalseFixupArray);
-	}
-	jumpIndex = jumpFalseFixupArray.next;
-	jumpFalseFixupArray.next++;
-	TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-		&(jumpFalseFixupArray.fixup[jumpIndex]));
+
+
+	if (realCond) {
+	    /*
+	     * Find out if the condition is a constant. 
+	     */
 	
+	    condStart = testTokenPtr[1].start;
+	    savedPos = condStart + testTokenPtr[1].size - 1;
+	    
+	    while (*condStart == ' ') {
+		condStart++;
+	    }
+	    while (*savedPos == ' ') {
+		savedPos--;
+	    }
+	    savedPos++;
+	    
+	    savedChar = *savedPos;
+	    *savedPos = '\0';
+	    
+	    if (Tcl_GetBoolean(interp, condStart, &boolVal) != TCL_ERROR) { 
+		/*
+		 * A static condition
+		 */
+		*savedPos = savedChar;
+		realCond = 0;
+		if (!boolVal) {
+		    compileScripts = 0;
+		}
+	    } else {
+		*savedPos = savedChar;
+		Tcl_ResetResult(interp);
+		code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+		if (code != TCL_OK) {
+		    if (code == TCL_ERROR) {
+			Tcl_AddObjErrorInfo(interp,
+			        "\n    (\"if\" test expression)", -1);
+		    }
+		    goto done;
+		}
+		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
+		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
+		}
+		jumpIndex = jumpFalseFixupArray.next;
+		jumpFalseFixupArray.next++;
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+			       &(jumpFalseFixupArray.fixup[jumpIndex]));	    
+	    }
+	}
+
+
 	/*
 	 * Skip over the optional "then" before the then clause.
 	 */
@@ -1287,49 +1309,68 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * Compile the "then" command body.
 	 */
 
-	envPtr->currStackDepth = savedStackDepth;
-	code = TclCompileCmdWord(interp, tokenPtr+1,
-		tokenPtr->numComponents, envPtr);
-	if (code != TCL_OK) {
-	    if (code == TCL_ERROR) {
-		sprintf(buffer, "\n    (\"if\" then script line %d)",
-		        interp->errorLine);
-		Tcl_AddObjErrorInfo(interp, buffer, -1);
-	    }
-	    goto done;
+	if (compileScripts) {
+	    envPtr->currStackDepth = savedStackDepth;
+	    code = TclCompileCmdWord(interp, tokenPtr+1,
+	            tokenPtr->numComponents, envPtr);
+	    if (code != TCL_OK) {
+		if (code == TCL_ERROR) {
+		    sprintf(buffer, "\n    (\"if\" then script line %d)",
+		            interp->errorLine);
+		    Tcl_AddObjErrorInfo(interp, buffer, -1);
+		}
+		goto done;
+	    }	
 	}
 
-	/*
-	 * Jump to the end of the "if" command. Both jumpFalseFixupArray and
-	 * jumpEndFixupArray are indexed by "jumpIndex".
-	 */
-
-	if (jumpEndFixupArray.next >= jumpEndFixupArray.end) {
-	    TclExpandJumpFixupArray(&jumpEndFixupArray);
-	}
-	jumpEndFixupArray.next++;
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		&(jumpEndFixupArray.fixup[jumpIndex]));
-
- 	/*
-	 * Fix the target of the jumpFalse after the test. Generate a 4 byte
-	 * jump if the distance is > 120 bytes. This is conservative, and
-	 * ensures that we won't have to replace this jump if we later also
-	 * need to replace the proceeding jump to the end of the "if" with a
-	 * 4 byte jump.
-	 */
-
-	jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	        - jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
-	if (TclFixupForwardJump(envPtr,
-	        &(jumpFalseFixupArray.fixup[jumpIndex]), jumpDist, 120)) {
+	if (realCond) {
 	    /*
-	     * Adjust the code offset for the proceeding jump to the end
-	     * of the "if" command.
+	     * Jump to the end of the "if" command. Both jumpFalseFixupArray and
+	     * jumpEndFixupArray are indexed by "jumpIndex".
+	     */
+	    
+	    if (jumpEndFixupArray.next >= jumpEndFixupArray.end) {
+		TclExpandJumpFixupArray(&jumpEndFixupArray);
+	    }
+	    jumpEndFixupArray.next++;
+	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+	            &(jumpEndFixupArray.fixup[jumpIndex]));
+	    
+	    /*
+	     * Fix the target of the jumpFalse after the test. Generate a 4 byte
+	     * jump if the distance is > 120 bytes. This is conservative, and
+	     * ensures that we won't have to replace this jump if we later also
+	     * need to replace the proceeding jump to the end of the "if" with a
+	     * 4 byte jump.
 	     */
 
-	    jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
-	}
+	    jumpDist = (envPtr->codeNext - envPtr->codeStart)
+	            - jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
+	    if (TclFixupForwardJump(envPtr,
+	            &(jumpFalseFixupArray.fixup[jumpIndex]), jumpDist, 120)) {
+		/*
+		 * Adjust the code offset for the proceeding jump to the end
+		 * of the "if" command.
+		 */
+		
+		jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
+	    }
+	} else if (boolVal) {
+	    /* 
+	     *We were processing an "if 1 {...}"; stop compiling
+	     * scripts
+	     */
+
+	    compileScripts = 0;
+	} else {
+	    /* 
+	     *We were processing an "if 0 {...}"; reset so that
+	     * the rest (elseif, else) is compiled correctly
+	     */
+
+	    realCond = 1;
+	    compileScripts = 1;
+	} 
 
 	tokenPtr += (tokenPtr->numComponents + 1);
 	wordIdx++;
@@ -1343,7 +1384,8 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
     envPtr->currStackDepth = savedStackDepth;
 
     /*
-     * Check for the optional else clause.
+     * Check for the optional else clause. Do not compile
+     * anything if this was an "if 1 {...}" case.
      */
 
     if ((wordIdx < numWords)
@@ -1366,19 +1408,21 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    }
 	}
 
-	/*
-	 * Compile the else command body.
-	 */
-	
-	code = TclCompileCmdWord(interp, tokenPtr+1,
-		tokenPtr->numComponents, envPtr);
-	if (code != TCL_OK) {
-	    if (code == TCL_ERROR) {
-		sprintf(buffer, "\n    (\"if\" else script line %d)",
-			interp->errorLine);
-		Tcl_AddObjErrorInfo(interp, buffer, -1);
+	if (compileScripts) {
+	    /*
+	     * Compile the else command body.
+	     */
+	    
+	    code = TclCompileCmdWord(interp, tokenPtr+1,
+		    tokenPtr->numComponents, envPtr);
+	    if (code != TCL_OK) {
+		if (code == TCL_ERROR) {
+		    sprintf(buffer, "\n    (\"if\" else script line %d)",
+			    interp->errorLine);
+		    Tcl_AddObjErrorInfo(interp, buffer, -1);
+		}
+		goto done;
 	    }
-	    goto done;
 	}
 
 	/*
@@ -1398,7 +1442,9 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * No else clause: the "if" command's result is an empty string.
 	 */
 
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0,/*onHeap*/ 0), envPtr);
+	if (compileScripts) {
+	    TclEmitPush(TclRegisterLiteral(envPtr, "", 0,/*onHeap*/ 0), envPtr);
+	}
     }
 
     /*
@@ -2227,12 +2273,19 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * If it has a '-', it could be an incorrectly formed regexp command.
      */
     varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
-	    || (*(varTokenPtr[1].start) == '-')) {
-	return TCL_OUT_LINE_COMPILE;
-    }
     str = varTokenPtr[1].start;
     len = varTokenPtr[1].size;
+    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (*str == '-')) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    if (len == 0) {
+	/*
+	 * The semantics of regexp are always match on re == "".
+	 */
+	TclEmitPush(TclRegisterLiteral(envPtr, "1", 1, 0), envPtr);
+	return TCL_OK;
+    }
 
     /*
      * On the first (pattern) arg, check to see if any RE special characters
@@ -2241,7 +2294,24 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * range.  If -nocase was specified, we can't do this because INST_STR_EQ
      * has no support for nocase.
      */
-    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')) {
+    
+    if (Tcl_RegExpCompile(NULL, str) == NULL) {
+	/*
+	 * This is a bad RE.  Let it complain at runtime.
+	 */
+	return TCL_OUT_LINE_COMPILE;	
+    }
+#if 0
+    if ((len > 2) && (*str == '.') && (str[1] == '*')) {
+	str += 2; len -= 2;
+    }
+    if ((len > 2) && (str[len-3] != '\\')
+	    && (str[len-2] == '.') && (str[len-1] == '*')) {
+	len -= 2;
+    }
+#endif
+    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')
+	    && (str[len-2] != '\\')) {
 	/*
 	 * It appears and exact search was requested (ie ^foo$), so strip
 	 * off the special chars and signal exactMatch.
@@ -2723,12 +2793,6 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 			strncmp(str, "-nocase", (size_t) length) == 0) {
 		    nocase = 1;
 		} else {
-		    c = str[length];
-		    str[length] = '\0';
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "bad option \"", str, "\": must be -nocase",
-			    (char *) NULL);
-		    str[length] = c;
 		    /* Fail at run time, not in compilation */
 		    return TCL_OUT_LINE_COMPILE;
 		}
@@ -2809,12 +2873,16 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpFalseFixup;
-    unsigned char *jumpPc;
-    int testCodeOffset, jumpDist, jumpBackDist, jumpBackOffset;
+    JumpFixup jumpEvalCondFixup;
+    int testCodeOffset, bodyCodeOffset, jumpDist;
     int range, code;
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
+    int loopMayEnd = 1;         /* This is set to 0 if it is recognized as
+				 * an infinite loop. */
+    int boolVal;
+    char *condStart;
+    char savedChar, *savedPos;
 
     if (parsePtr->numWords != 3) {
 	Tcl_ResetResult(interp);
@@ -2841,6 +2909,45 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     }
 
     /*
+     * Find out if the condition is a constant. 
+     */
+
+    condStart = testTokenPtr[1].start;
+    savedPos = condStart + testTokenPtr[1].size - 1;
+
+    while (*condStart == ' ') {
+	condStart++;
+    }
+    while (*savedPos == ' ') {
+	savedPos--;
+    }
+    savedPos++;
+
+    savedChar = *savedPos;
+    *savedPos = '\0';
+    
+    if (Tcl_GetBoolean(interp, condStart, &boolVal) != TCL_ERROR) { 
+	if (boolVal) {
+	    /*
+	     * it is an infinite loop 
+	     */
+
+	    loopMayEnd = 0;  
+	} else {
+	    /*
+	     * This is an empty loop: "while 0 {...}" or such.
+	     * Compile no bytecodes.
+	     */
+
+	    *savedPos = savedChar;
+	    goto pushResult;
+	}
+    } else {
+	Tcl_ResetResult(interp);	
+    }
+    *savedPos = savedChar;
+	
+    /* 
      * Create a ExceptionRange record for the loop body. This is used to
      * implement break and continue.
      */
@@ -2849,34 +2956,34 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     envPtr->maxExceptDepth =
 	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
     range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-    envPtr->exceptArrayPtr[range].continueOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
 
     /*
-     * Compile the test expression then emit the conditional jump that
-     * terminates the while. We already know it's a simple word.
+     * Jump to the evaluation of the condition. This code uses the "loop
+     * rotation" optimisation (which eliminates one branch from the loop).
+     * "while cond body" produces then:
+     *       goto A
+     *    B: body                : bodyCodeOffset
+     *    A: cond -> result      : testCodeOffset, continueOffset
+     *       if (result) goto B
+     *
+     * The infinite loop "while 1 body" produces:
+     *    B: body                : all three offsets here
+     *       goto B
      */
 
-    testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-    envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
-    code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-    if (code != TCL_OK) {
-	if (code == TCL_ERROR) {
-            Tcl_AddObjErrorInfo(interp,
-		    "\n    (\"while\" test expression)", -1);
-        }
-	goto error;
+    if (loopMayEnd) {
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
+	testCodeOffset = 0; /* avoid compiler warning */
+    } else {
+	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     }
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
     
+
     /*
      * Compile the loop body.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
-    bodyTokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
-    envPtr->exceptArrayPtr[range].codeOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
+    bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -2889,57 +2996,54 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 	goto error;
     }
     envPtr->exceptArrayPtr[range].numCodeBytes =
-	    (envPtr->codeNext - envPtr->codeStart)
-	    - envPtr->exceptArrayPtr[range].codeOffset;
+	    (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
-	
-    /*
-     * Jump back to the test at the top of the loop. Generate a 4 byte jump
-     * if the distance to the test is > 120 bytes. This is conservative and
-     * ensures that we won't have to replace this jump if we later need to
-     * replace the ifFalse jump with a 4 byte jump.
-     */
-
-    jumpBackOffset = (envPtr->codeNext - envPtr->codeStart);
-    jumpBackDist = (jumpBackOffset - testCodeOffset);
-    if (jumpBackDist > 120) {
-	TclEmitInstInt4(INST_JUMP4, -jumpBackDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP1, -jumpBackDist, envPtr);
-    }
 
     /*
-     * Fix the target of the jumpFalse after the test. 
+     * Compile the test expression then emit the conditional jump that
+     * terminates the while. We already know it's a simple word.
      */
 
-    jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	    - jumpFalseFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpFalseFixup, jumpDist, 127)) {
-	/*
-	 * Update the loop body's starting PC offset since it moved down.
-	 */
-
-	envPtr->exceptArrayPtr[range].codeOffset += 3;
-
-	/*
-	 * Update the jump back to the test at the top of the loop since it
-	 * also moved down 3 bytes.
-	 */
-
-	jumpBackOffset += 3;
-	jumpPc = (envPtr->codeStart + jumpBackOffset);
-	jumpBackDist += 3;
-	if (jumpBackDist > 120) {
-	    TclUpdateInstInt4AtPc(INST_JUMP4, -jumpBackDist, jumpPc);
-	} else {
-	    TclUpdateInstInt1AtPc(INST_JUMP1, -jumpBackDist, jumpPc);
+    if (loopMayEnd) {
+	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+	jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
+	if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
+	    bodyCodeOffset += 3;
+	    testCodeOffset += 3;
 	}
+	envPtr->currStackDepth = savedStackDepth;
+	code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+	if (code != TCL_OK) {
+	    if (code == TCL_ERROR) {
+		Tcl_AddObjErrorInfo(interp,
+				    "\n    (\"while\" test expression)", -1);
+	    }
+	    goto error;
+	}
+	envPtr->currStackDepth = savedStackDepth + 1;
+    
+	jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
+	if (jumpDist > 127) {
+	    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
+	} else {
+	    TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
+	}
+    } else {
+	jumpDist = (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
+	if (jumpDist > 127) {
+	    TclEmitInstInt4(INST_JUMP4, -jumpDist, envPtr);
+	} else {
+	    TclEmitInstInt1(INST_JUMP1, -jumpDist, envPtr);
+	}	
     }
 
+
     /*
-     * Set the loop's break target.
+     * Set the loop's body, continue and break offsets.
      */
 
+    envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
+    envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     envPtr->exceptArrayPtr[range].breakOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     
@@ -2947,6 +3051,7 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * The while command's result is an empty string.
      */
 
+    pushResult:
     envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
     envPtr->exceptDepth--;

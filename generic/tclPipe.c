@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.3.28.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.3.28.2 2002/06/10 05:33:12 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -372,7 +372,7 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
 	    int count;
 	    Tcl_Obj *objPtr;
 	    
-	    Tcl_Seek(errorChan, 0L, SEEK_SET);
+	    Tcl_Seek(errorChan, (Tcl_WideInt)0, SEEK_SET);
 	    objPtr = Tcl_NewObj();
 	    count = Tcl_ReadChars(errorChan, objPtr, -1, 0);
 	    if (count < 0) {

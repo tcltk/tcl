@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.9 2001/08/23 13:57:08 dkf Exp $
+# RCS: @(#) $Id: format.test,v 1.9.8.1 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -481,11 +481,26 @@ for {set i 0} {$i < 290} {incr i} {
     append b $a
 }
 for {set i 290} {$i < 400} {incr i} {
-    test format-15.[expr $i -290] {testing MAX_FLOAT_SIZE} {
+    test format-16.[expr $i -289] {testing MAX_FLOAT_SIZE} {
         format {%s} $b    
     } $b
     append b "x"
 }
+
+set ::tcltest::testConstraints(64bitInts) \
+	[expr {0x80000000 > 0}]
+set ::tcltest::testConstraints(wideIntExpressions) \
+	[expr {wide(0x80000000) != int(0x80000000)}]
+
+test format-17.1 {testing %d with wide} {64bitInts wideIntExpressions} {
+    list [catch {format %d 7810179016327718216} msg] $msg
+} {1 {integer value too large to represent}}
+test format-17.2 {testing %ld with wide} {64bitInts} {
+    format %ld 7810179016327718216
+} 7810179016327718216
+test format-17.3 {testing %ld with non-wide} {64bitInts} {
+    format %ld 42
+} 42
 
 # cleanup
 catch {unset a}

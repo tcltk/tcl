@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.4 2001/07/12 13:15:09 dkf Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.4.8.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -32,17 +32,33 @@ again by the \fIsubst\fR command.
 If any of the \fB\-nobackslashes\fR, \fB\-nocommands\fR, or
 \fB\-novariables\fR are specified, then the corresponding substitutions
 are not performed.
-For example, if \fB\-nocommands\fR is specified, no command substitution
-is performed:  open and close brackets are treated as ordinary characters
+For example, if \fB\-nocommands\fR is specified, command substitution
+is not performed:  open and close brackets are treated as ordinary characters
 with no special interpretation.
 .PP
 .VS 8.4
-If a break exception occurs during the evaluation of a command
-substitution, the result of the substitution will be the string (as
-substituted) up to the start of the command substitution.  If a
-continue exception occurs during the evaluation of a command
-substitution, an empty string will be substituted for that entire
-command substitution (as long as it is well-formed Tcl.)
+Note that the substitution of one kind can include substitution of 
+other kinds.  For example, even when the \fB-novariables\fR option
+is specified, command substitution is performed without restriction.
+This means that any variable substitution necessary to complete the
+command substitution will still take place.  Likewise, any command
+substitution necessary to complete a variable substitution will
+take place, even when \fB-nocommands\fR is specified.  See the
+EXAMPLES below.
+.PP
+If an error occurs during substitution, then \fBsubst\fR will return
+that error.  If a break exception occurs during command or variable
+substitution, the result of the whole substitution will be the
+string (as substituted) up to the start of the substitution that
+raised the exception.  If a continue exception occurs during the
+evaluation of a command or variable substitution, an empty string
+will be substituted for that entire command or variable substitution
+(as long as it is well-formed Tcl.)  If a return exception occurs,
+or any other return code is returned during command or variable
+substitution, then the returned value is substituted for that
+substitution.  See the EXAMPLES below.  In this way, all exceptional
+return codes are ``caught'' by \fBsubst\fR.  The \fBsubst\fR command
+itself will either return an error, or will complete successfully.
 .VE
 .SH EXAMPLES
 .PP
@@ -62,6 +78,22 @@ subst {xyz {$a}}\fR
 .CE
 return ``\fBxyz {p} q {r}\fR'', not ``\fBxyz {p\\} q \\{r}\fR''.
 .PP
+When command substitution is performed, it includes any variable
+substitution necessary to evaluate the script.  
+.CS
+\fBset a 44
+subst -novariables {$a [format $a]}\fR
+.CE
+returns ``\fB$a 44\fR'', not ``\fB$a $a\fR''.  Similarly, when
+variable substitution is performed, it includes any command
+substitution necessary to retrieve the value of the variable.
+.CS
+\fBproc b {} {return c}
+array set a {c c [b] tricky}
+subst -nocommands {[b] $a([b])}\fR
+.CE
+returns ``\fB[b] c\fR'', not ``\fB[b] tricky\fR''.
+.PP
 The continue and break exceptions allow command substitutions to
 prevent substitution of the rest of the command substitution and the
 rest of \fIstring\fR respectively, giving script authors more options
@@ -74,6 +106,16 @@ returns ``\fBabc,\fR'', not ``\fBabc,,def\fR'' and the script
 \fBsubst {abc,[continue;expr 1+2],def}\fR
 .CE
 returns ``\fBabc,,def\fR'', not ``\fBabc,3,def\fR''.
+.PP
+Other exceptional return codes substitute the returned value
+.CS
+\fBsubst {abc,[return foo;expr 1+2],def}\fR
+.CE
+returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR'' and
+.CS
+\fBsubst {abc,[return -code 10 foo;expr 1+2],def}\fR
+.CE
+also returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR''.
 .VE
 
 .SH "SEE ALSO"

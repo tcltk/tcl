@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.12.6.2 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.12.6.3 2002/06/10 05:33:12 wolfsuit Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -198,6 +198,9 @@ EXTERN FILE *		TclMacFOpenHack _ANSI_ARGS_((CONST char * path,
 EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 /* 25 */
 EXTERN int		TclMacChmod _ANSI_ARGS_((CONST char * path, int mode));
+/* 26 */
+EXTERN int		FSpLLocationFromPath _ANSI_ARGS_((int length, 
+				CONST char * path, FSSpecPtr theSpec));
 #endif /* MAC_TCL */
 
 typedef struct TclIntPlatStubs {
@@ -273,6 +276,7 @@ typedef struct TclIntPlatStubs {
     FILE * (*tclMacFOpenHack) _ANSI_ARGS_((CONST char * path, CONST char * mode)); /* 23 */
     char * (*tclpGetTZName) _ANSI_ARGS_((int isdst)); /* 24 */
     int (*tclMacChmod) _ANSI_ARGS_((CONST char * path, int mode)); /* 25 */
+    int (*fSpLLocationFromPath) _ANSI_ARGS_((int length, CONST char * path, FSSpecPtr theSpec)); /* 26 */
 #endif /* MAC_TCL */
 } TclIntPlatStubs;
 
@@ -532,6 +536,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclMacChmod
 #define TclMacChmod \
 	(tclIntPlatStubsPtr->tclMacChmod) /* 25 */
+#endif
+#ifndef FSpLLocationFromPath
+#define FSpLLocationFromPath \
+	(tclIntPlatStubsPtr->fSpLLocationFromPath) /* 26 */
 #endif
 #endif /* MAC_TCL */
 

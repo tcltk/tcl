@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.7 2000/11/24 13:56:40 dkf Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.7.14.1 2002/06/10 05:33:13 wolfsuit Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -695,24 +695,14 @@ proc ::safe::setLogCmd {args} {
 	}
     }
 
-    
+
     # file name control (limit access to files/ressources that should be
     # a valid tcl source file)
     proc CheckFileName {slave file} {
-	# limit what can be sourced to .tcl
-	# and forbid files with more than 1 dot and
-	# longer than 14 chars
-	set ftail [file tail $file]
-	if {[string length $ftail]>14} {
-	    error "$ftail: filename too long"
-	}
-	if {[regexp {\..*\.} $ftail]} {
-	    error "$ftail: more than one dot is forbidden"
-	}
-	if {[string compare $ftail "tclIndex"] && \
-		[string compare -nocase [file extension $ftail]	".tcl"]} {
-	    error "$ftail: must be a *.tcl or tclIndex"
-	}
+	# This used to limit what can be sourced to ".tcl" and forbid files
+	# with more than 1 dot and longer than 14 chars, but I changed that
+	# for 8.4 as a safe interp has enough internal protection already
+	# to allow sourcing anything. - hobbs
 
 	if {![file exists $file]} {
 	    # don't tell the file path

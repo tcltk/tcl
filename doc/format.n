@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.5 2000/09/07 14:27:48 poenitz Exp $
+'\" RCS: @(#) $Id: format.n,v 1.5.14.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -131,7 +131,12 @@ which must be \fBh\fR or \fBl\fR.
 If it is \fBh\fR it specifies that the numeric value should be
 truncated to a 16-bit value before converting.
 This option is rarely useful.
-The \fBl\fR modifier is ignored.
+.VS 8.4
+If it is \fBl\fR it specifies that the numeric value should be (at
+least) a 64-bit value.  If neither \fBh\fR or \fBl\fR are present,
+numeric values are interpreted as being values of the width of the
+native machine word, as described by \fBtcl_platform(wordSize)\fR.
+.VE
 .PP
 The last thing in a conversion specifier is an alphabetic character
 that determines what kind of conversion to perform.
@@ -203,12 +208,16 @@ differences:
 For \fB%c\fR conversions the argument must be a decimal string,
 which will then be converted to the corresponding character value.
 .IP [3]
-The \fBl\fR modifier is ignored;  integer values are always converted
-as if there were no modifier present and real values are always
-converted as if the \fBl\fR modifier were present (i.e. type
-\fBdouble\fR is used for the internal representation).
+The \fBl\fR modifier
+.VS 8.4
+is ignored for real values and on 64-bit platforms, which are always
+converted as if the \fBl\fR modifier were present (i.e. the types
+\fBdouble\fR and \fBlong\fR are used for the internal representation
+of real and integer values, respectively).
+.VE 8.4
 If the \fBh\fR modifier is specified then integer values are truncated
-to \fBshort\fR before conversion.
+to \fBshort\fR before conversion.  Both \fBh\fR and \fBl\fR modifiers
+are ignored on all other conversions.
 
 .SH "SEE ALSO"
 sprintf(3), string(n)

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.5.18.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: obj.test,v 1.5.18.2 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -197,6 +197,18 @@ test obj-11.4 {Tcl_GetBooleanFromObj, error converting from "empty string"} {
     lappend result [catch {testbooleanobj not 1} msg]
     lappend result $msg
 } {{} 1 {expected boolean value but got ""}}
+test obj-11.5 {Tcl_GetBooleanFromObj, convert hex to boolean} {
+    set result ""
+    lappend result [teststringobj set 1 0xac]
+    lappend result [testbooleanobj not 1]
+    lappend result [testobj type 1]
+} {0xac 0 boolean}
+test obj-11.6 {Tcl_GetBooleanFromObj, convert float to boolean} {
+    set result ""
+    lappend result [teststringobj set 1 5.42]
+    lappend result [testbooleanobj not 1]
+    lappend result [testobj type 1]
+} {5.42 0 boolean}
 
 test obj-12.1 {DupBooleanInternalRep} {
     set result ""

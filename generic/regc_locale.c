@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.6.10.1 2002/02/05 02:21:58 wolfsuit Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.6.10.2 2002/06/10 05:33:08 wolfsuit Exp $
  */
 
 /* ASCII character-name table */
@@ -965,12 +965,8 @@ CONST chr *x;
 CONST chr *y;
 size_t len;			/* exact length of comparison */
 {
-	size_t i;
-	CONST chr *xp;
-	CONST chr *yp;
-
-	for (xp = x, yp = y, i = len; i > 0; i--)
-		if (Tcl_UniCharToLower(*xp++) != Tcl_UniCharToLower(*yp++))
-			return 1;
-	return 0;
+    for ( ; len > 0; len--, x++, y++)
+	if ((*x != *y) && (Tcl_UniCharToLower(*x) != Tcl_UniCharToLower(*y)))
+	    return 1;
+    return 0;
 }

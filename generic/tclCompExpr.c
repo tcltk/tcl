@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.6.14.1 2002/02/05 02:21:58 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.6.14.2 2002/06/10 05:33:10 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -59,18 +59,6 @@ typedef struct ExprInfo {
 				 * compiling an expr, a tryCvtToNumeric
 				 * instruction is emitted to convert the
 				 * primary to a number if possible. */
-    int exprIsJustVarRef;	/* Set 1 if the expr consists of just a
-				 * variable reference as in the expression
-				 * of "if $b then...". Otherwise 0. If 1 the
-				 * expr is compiled out-of-line in order to
-				 * implement expr's 2 level substitution
-				 * semantics properly. */
-    int exprIsComparison;	/* Set 1 if the top-level operator in the
-				 * expr is a comparison. Otherwise 0. If 1,
-				 * because the operands might be strings,
-				 * the expr is compiled out-of-line in order
-				 * to implement expr's 2 level substitution
-				 * semantics properly. */
 } ExprInfo;
 
 /*
@@ -206,16 +194,6 @@ static void		LogSyntaxError _ANSI_ARGS_((ExprInfo *infoPtr));
  *	on failure. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
  *
- *	envPtr->exprIsJustVarRef is set 1 if the expression consisted of
- *	a single variable reference as in the expression of "if $b then...".
- *	Otherwise it is set 0. This is used to implement Tcl's two level
- *	expression substitution semantics properly.
- *
- *	envPtr->exprIsComparison is set 1 if the top-level operator in the
- *	expr is a comparison. Otherwise it is set 0. If 1, because the
- *	operands might be strings, the expr is compiled out-of-line in order
- *	to implement expr's 2 level substitution semantics properly.
- *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
  *
@@ -270,8 +248,6 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     info.expr = script;
     info.lastChar = (script + numBytes); 
     info.hasOperators = 0;
-    info.exprIsJustVarRef = 1;	/* will be set 0 if anything else is seen */
-    info.exprIsComparison = 0;
 
     /*
      * Parse the expression then compile it.
@@ -301,8 +277,6 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     Tcl_FreeParse(&parse);
 
     done:
-    envPtr->exprIsJustVarRef = info.exprIsJustVarRef;
-    envPtr->exprIsComparison = info.exprIsComparison;
     return code;
 }
 
@@ -351,16 +325,6 @@ TclFinalizeCompilation()
  *	on failure. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
  *
- *	envPtr->exprIsJustVarRef is set 1 if the subexpression consisted of
- *	a single variable reference as in the expression of "if $b then...".
- *	Otherwise it is set 0. This is used to implement Tcl's two level
- *	expression substitution semantics properly.
- *
- *	envPtr->exprIsComparison is set 1 if the top-level operator in the
- *	subexpression is a comparison. Otherwise it is set 0. If 1, because
- *	the operands might be strings, the expr is compiled out-of-line in
- *	order to implement expr's 2 level substitution semantics properly.
- *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the subexpression.
  *
@@ -407,7 +371,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		goto done;
 	    }
 	    tokenPtr += (tokenPtr->numComponents + 1);
-	    infoPtr->exprIsJustVarRef = 0;
 	    break;
 	    
         case TCL_TOKEN_TEXT:
@@ -419,7 +382,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    }
 	    TclEmitPush(objIndex, envPtr);
 	    tokenPtr += 1;
-	    infoPtr->exprIsJustVarRef = 0;
 	    break;
 	    
         case TCL_TOKEN_BS:
@@ -433,7 +395,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    }
 	    TclEmitPush(objIndex, envPtr);
 	    tokenPtr += 1;
-	    infoPtr->exprIsJustVarRef = 0;
 	    break;
 	    
         case TCL_TOKEN_COMMAND:
@@ -443,7 +404,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		goto done;
 	    }
 	    tokenPtr += 1;
-	    infoPtr->exprIsJustVarRef = 0;
 	    break;
 	    
         case TCL_TOKEN_VARIABLE:
@@ -455,7 +415,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    break;
 	    
         case TCL_TOKEN_SUB_EXPR:
-	    infoPtr->exprIsComparison = 0;
 	    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
 	    if (code != TCL_OK) {
 		goto done;
@@ -489,8 +448,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    goto done;
 		}
 		tokenPtr = endPtr;
-		infoPtr->exprIsJustVarRef = 0;
-		infoPtr->exprIsComparison = 0;
 		break;
 	    }
 	    operator[tokenPtr->size] = (char) savedChar;
@@ -519,10 +476,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		}
 		TclEmitOpcode(opDescPtr->instruction, envPtr);
 		infoPtr->hasOperators = 1;
-		infoPtr->exprIsJustVarRef = 0;
-		infoPtr->exprIsComparison =
-		    (((opIndex >= OP_LESS) && (opIndex <= OP_NEQ))
-			    || ((opIndex >= OP_STREQ) && (opIndex <= OP_STRNEQ)));
 		break;
 	    }
 	    
@@ -591,8 +544,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		        opIndex);
 	    } /* end switch on operator requiring special treatment */
 	    infoPtr->hasOperators = 1;
-	    infoPtr->exprIsJustVarRef = 0;
-	    infoPtr->exprIsComparison = 0;
 	    break;
 
         default:
@@ -938,7 +889,6 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
 		code = TCL_ERROR;
 		goto done;
 	    }
-	    infoPtr->exprIsComparison = 0;
 	    code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
 	    if (code != TCL_OK) {
 		goto done;

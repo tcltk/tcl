@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.29.2.3 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.29.2.4 2002/06/10 05:33:12 wolfsuit Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -209,7 +209,7 @@ EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command * cmdPtr));
 /* Slot 57 is reserved */
 /* 58 */
 EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * part1, char * part2, int flags, 
+				char * part1, CONST char * part2, int flags, 
 				char * msg, int createPart1, int createPart2, 
 				Var ** arrayPtrPtr));
 /* Slot 59 is reserved */
@@ -267,7 +267,7 @@ EXTERN char *		TclpRealloc _ANSI_ARGS_((char * ptr,
 /* 88 */
 EXTERN char *		TclPrecTraceProc _ANSI_ARGS_((ClientData clientData, 
 				Tcl_Interp * interp, char * name1, 
-				char * name2, int flags));
+				CONST char * name2, int flags));
 /* 89 */
 EXTERN int		TclPreventAliasLoop _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Interp * cmdInterp, Tcl_Command cmd));
@@ -420,7 +420,8 @@ EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
 EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((TclpTime_t time, int useGMT));
 /* 134 */
 EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize, 
-				CONST char * format, CONST struct tm * t));
+				CONST char * format, CONST struct tm * t, 
+				int useGMT));
 /* 135 */
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 /* Slot 136 is reserved */
@@ -494,14 +495,17 @@ EXTERN void		TclExpandCodeArray _ANSI_ARGS_((void * envPtr));
 /* 165 */
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 /* 166 */
-EXTERN int		TclListObjSetElement _ANSI_ARGS_((Tcl_Interp* interp, 
-				Tcl_Obj* listPtr, int index, 
-				Tcl_Obj* valuePtr));
+EXTERN int		TclListObjSetElement _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * listPtr, 
+				int index, Tcl_Obj * valuePtr));
 /* 167 */
 EXTERN void		TclSetStartupScriptPath _ANSI_ARGS_((
 				Tcl_Obj * pathPtr));
 /* 168 */
 EXTERN Tcl_Obj *	TclGetStartupScriptPath _ANSI_ARGS_((void));
+/* 169 */
+EXTERN int		TclpUtfNcmp2 _ANSI_ARGS_((CONST char * s1, 
+				CONST char * s2, unsigned long n));
 
 typedef struct TclIntStubs {
     int magic;
@@ -581,7 +585,7 @@ typedef struct TclIntStubs {
     Proc * (*tclIsProc) _ANSI_ARGS_((Command * cmdPtr)); /* 55 */
     void *reserved56;
     void *reserved57;
-    Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
+    Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
     void *reserved59;
     int (*tclNeedSpace) _ANSI_ARGS_((CONST char * start, CONST char * end)); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) _ANSI_ARGS_((Proc * procPtr)); /* 61 */
@@ -611,7 +615,7 @@ typedef struct TclIntStubs {
     void *reserved85;
     void *reserved86;
     void *reserved87;
-    char * (*tclPrecTraceProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, char * name1, char * name2, int flags)); /* 88 */
+    char * (*tclPrecTraceProc) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, char * name1, CONST char * name2, int flags)); /* 88 */
     int (*tclPreventAliasLoop) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Interp * cmdInterp, Tcl_Command cmd)); /* 89 */
     void *reserved90;
     void (*tclProcCleanupProc) _ANSI_ARGS_((Proc * procPtr)); /* 91 */
@@ -673,7 +677,7 @@ typedef struct TclIntStubs {
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
     struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
-    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t)); /* 134 */
+    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t, int useGMT)); /* 134 */
     int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
     void *reserved136;
     void *reserved137;
@@ -705,9 +709,10 @@ typedef struct TclIntStubs {
     void * (*tclGetInstructionTable) _ANSI_ARGS_((void)); /* 163 */
     void (*tclExpandCodeArray) _ANSI_ARGS_((void * envPtr)); /* 164 */
     void (*tclpSetInitialEncodings) _ANSI_ARGS_((void)); /* 165 */
-    int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* listPtr, int index, Tcl_Obj* valuePtr)); /* 166 */
+    int (*tclListObjSetElement) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj * valuePtr)); /* 166 */
     void (*tclSetStartupScriptPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 167 */
     Tcl_Obj * (*tclGetStartupScriptPath) _ANSI_ARGS_((void)); /* 168 */
+    int (*tclpUtfNcmp2) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 169 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1323,6 +1328,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclGetStartupScriptPath
 #define TclGetStartupScriptPath \
 	(tclIntStubsPtr->tclGetStartupScriptPath) /* 168 */
+#endif
+#ifndef TclpUtfNcmp2
+#define TclpUtfNcmp2 \
+	(tclIntStubsPtr->tclpUtfNcmp2) /* 169 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

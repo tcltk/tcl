@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.17 2001/09/19 18:09:02 hobbs Exp $
+# RCS: @(#) $Id: regexp.test,v 1.17.4.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -84,6 +84,16 @@ test regexp-2.8 {getting substrings back from regexp} {
     set match {}
     list [regexp {^a*b} aaaab match] $match
 } {1 aaaab}
+test regexp-2.9 {getting substrings back from regexp} {
+    set foo {}
+    set f2 {}
+    list [regexp f\352te(b*)c f\352tebbbbc foo f2] $foo $f2
+} [list 1 f\352tebbbbc bbbb]
+test regexp-2.10 {getting substrings back from regexp} {
+    set foo {}
+    set f2 {}
+    list [regexp f\352te(b*)c eff\352tebbbbc foo f2] $foo $f2
+} [list 1 f\352tebbbbc bbbb]
 
 test regexp-3.1 {-indices option to regexp} {
     set foo {}
@@ -343,17 +353,17 @@ test regexp-10.5 {inverse partial newline sensitivity in regsub} {
 } "1 {da\nb123\nxb}"
 
 test regexp-11.1 {regsub errors} {
-    list [catch {regsub a b c} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+    list [catch {regsub a b} msg] $msg
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.2 {regsub errors} {
-    list [catch {regsub -nocase a b c} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+    list [catch {regsub -nocase a b} msg] $msg
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.3 {regsub errors} {
-    list [catch {regsub -nocase -all a b c} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+    list [catch {regsub -nocase -all a b} msg] $msg
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.4 {regsub errors} {
     list [catch {regsub a b c d e f} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.5 {regsub errors} {
     list [catch {regsub -gorp a b c} msg] $msg
 } {1 {bad switch "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
@@ -368,6 +378,18 @@ test regexp-11.7 {regsub errors} {
 test regexp-11.8 {regsub errors, -start bad int check} {
     list [catch {regsub -start bogus pattern string rep var} msg] $msg
 } {1 {expected integer but got "bogus"}}
+test regexp-11.9 {regsub without final variable name returns value} {
+    regsub b abaca X
+} {aXaca}
+test regexp-11.10 {regsub without final variable name returns value} {
+    regsub -all a abaca X
+} {XbXcX}
+test regexp-11.11 {regsub without final variable name returns value} {
+    regsub b(.*?)d abcdeabcfde {,&,\1,}
+} {a,bcd,c,eabcfde}
+test regexp-11.12 {regsub without final variable name returns value} {
+    regsub -all b(.*?)d abcdeabcfde {,&,\1,}
+} {a,bcd,c,ea,bcfd,cf,e}
 
 # This test crashes on the Mac unless you increase the Stack Space to about 1
 # Meg.  This is probably bigger than most users want... 
@@ -546,6 +568,9 @@ test regexp-20.1 {regsub shared object shimmering} {
     regsub $a $c $b d 
     list $d [string length $d] [string bytelength $d]
 } [list abcdefghijklmnopqurstuvwxyz0123456789 37 37]
+test regexp-20.2 {regsub shared object shimmering with -about} {
+    eval regexp -about abc
+} {0 {}}
 
 # cleanup
 ::tcltest::cleanupTests

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacUtil.c,v 1.4.18.1 2002/02/05 02:22:03 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacUtil.c,v 1.4.18.2 2002/06/10 05:33:15 wolfsuit Exp $
  */
 
 #include "tcl.h"
@@ -178,6 +178,10 @@ FSpFindFolder(
     err = FSMakeFSSpecCompat(foundVRefNum, foundDirID, "\p", spec);
     return err;
 }
+
+static int
+FSpLocationFromPathAlias _ANSI_ARGS_((int length, CONST char *path,
+	FSSpecPtr fileSpecPtr, Boolean resolveLink));
 
 /*
  *----------------------------------------------------------------------
@@ -204,13 +208,52 @@ FSpLocationFromPath(
     CONST char *path,		/* The path to convert. */
     FSSpecPtr fileSpecPtr)	/* On return the spec for the path. */
 {
+	return FSpLocationFromPathAlias(length, path, fileSpecPtr, TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FSpLLocationFromPath --
+ *
+ *	This function obtains an FSSpec for a given macintosh path.
+ *	Unlike the More Files function FSpLocationFromFullPath, this
+ *	function will also accept partial paths and resolve any aliases
+ *	along the path expect for the last path component.
+ *
+ * Results:
+ *	OSErr code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+FSpLLocationFromPath(
+    int length,			/* Length of path. */
+    CONST char *path,		/* The path to convert. */
+    FSSpecPtr fileSpecPtr)	/* On return the spec for the path. */
+{
+	return FSpLocationFromPathAlias(length, path, fileSpecPtr, FALSE);
+}
+
+static int
+FSpLocationFromPathAlias(
+    int length,			/* Length of path. */
+    CONST char *path,		/* The path to convert. */
+    FSSpecPtr fileSpecPtr,	/* On return the spec for the path. */
+    Boolean resolveLink)	/* Resolve the last path component? */
+{
     Str255 fileName;
     OSErr err;
     short vRefNum;
     long dirID;
     int pos, cur;
     Boolean isDirectory;
-    Boolean wasAlias;
+    Boolean wasAlias=FALSE;
+    FSSpec lastFileSpec;
 
     /*
      * Check to see if this is a full path.  If partial
@@ -277,6 +320,7 @@ FSpLocationFromPath(
 	}
 	err = FSMakeFSSpecCompat(vRefNum, dirID, fileName, fileSpecPtr);
 	if (err != noErr) return err;
+	lastFileSpec=*fileSpecPtr;
 	err = ResolveAliasFile(fileSpecPtr, true, &isDirectory, &wasAlias);
 	if (err != noErr) return err;
 	FSpGetDirectoryID(fileSpecPtr, &dirID, &isDirectory);
@@ -286,6 +330,9 @@ FSpLocationFromPath(
 	    cur++;
 	}
     }
+    
+    if(!resolveLink && wasAlias)
+    	*fileSpecPtr=lastFileSpec;
     
     return noErr;
 }

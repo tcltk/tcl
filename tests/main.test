@@ -1,13 +1,13 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.4.2.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: main.test,v 1.4.2.2 2002/06/10 05:33:16 wolfsuit Exp $
 
-if {[catch {package require tcltest 2}]} {
-    puts stderr "Skipping tests in [info script]. tcltest v2 needed."
+if {[catch {package require tcltest 2.0.2}]} {
+    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
     return
 }
 
-namespace eval ::tcl::main::test {
+namespace eval ::tcl::test::main {
 
     namespace import ::tcltest::test
     namespace import ::tcltest::testConstraint
@@ -44,9 +44,11 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-1.1 {
 	Tcl_Main: startup script - normal
-    } -constraints [list exec] -setup {
+    } -constraints {
+	stdio
+    } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[interpreter] script" r]}
+	catch {set f [open "|[list [interpreter] script]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -56,9 +58,11 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-1.2 {
 	Tcl_Main: startup script - can't begin with '-'
-    } -constraints [list exec] -setup {
+    } -constraints {
+	stdio
+    } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} -script
-	catch {set f [open "|[interpreter] -script" w+]}
+	catch {set f [open "|[list [interpreter] -script]" w+]}
     } -body {
 	puts $f {puts [list $argv0 $argv $tcl_interactive]; exit}
 	flush $f
@@ -71,9 +75,11 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-1.3 {
 	Tcl_Main: encoding of arguments: done by system encoding
 	Note the shortcoming explained in Tcl Patch 491789
-    } -constraints [list exec] -setup {
+    } -constraints {
+	stdio
+    } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[interpreter] script \u00c0" r]}
+	catch {set f [open "|[list [interpreter] script \u00c0]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -85,9 +91,11 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-1.4 {
 	Tcl_Main: encoding of arguments: done by system encoding
 	Note the shortcoming explained in Tcl Patch 491789
-    } -constraints [list exec] -setup {
+    } -constraints {
+	stdio
+    } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
-	catch {set f [open "|[interpreter] script \u20ac" r]}
+	catch {set f [open "|[list [interpreter] script \u20ac]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -99,9 +107,11 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-1.5 {
 	Tcl_Main: encoding of script name: system encoding loss
 	Note the shortcoming explained in Tcl Patch 491789
-    } -constraints [list exec] -setup {
+    } -constraints {
+	stdio
+    } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u00c0
-	catch {set f [open "|[interpreter] \u00c0" r]}
+	catch {set f [open "|[list [interpreter] \u00c0]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -113,9 +123,11 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-1.6 {
 	Tcl_Main: encoding of script name: system encoding loss
 	Note the shortcoming explained in Tcl Patch 491789
-    } -constraints [list exec] -setup {
+    } -constraints {
+	stdio	
+    } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u20ac
-	catch {set f [open "|[interpreter] \u20ac" r]}
+	catch {set f [open "|[list [interpreter] \u20ac]" r]}
     } -body {
 	read $f
     } -cleanup {
@@ -128,7 +140,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-2.1 {
 	Tcl_Main: appInitProc returns error
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	makeFile {puts "In script"} script
     } -body {
 	exec [interpreter] script -appinitprocerror >& result
@@ -142,7 +156,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-2.2 {
 	Tcl_Main: appInitProc returns error
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {puts "In script"} -appinitprocerror >& result
 	set f [open result]
 	read $f
@@ -153,7 +169,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-2.3 {
 	Tcl_Main: appInitProc deletes interp
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	makeFile {puts "In script"} script
     } -body {
 	exec [interpreter] script -appinitprocdeleteinterp >& result
@@ -167,7 +185,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-2.4 {
 	Tcl_Main: appInitProc deletes interp
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {puts "In script"} \
 		-appinitprocdeleteinterp >& result
 	set f [open result]
@@ -179,7 +199,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-2.5 {
 	Tcl_Main: appInitProc closes stderr
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {puts "In script"} \
 		-appinitprocclosestderr >& result
 	set f [open result]
@@ -193,7 +215,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.1 {
 	Tcl_Main: startup script does not exist
-    } -constraints [list exec] -setup {
+    } -constraints {
+	exec
+    } -setup {
 	catch {removeFile no-such-file}
     } -body {
 	set code [catch {exec [interpreter] no-such-file >& result} result]
@@ -207,7 +231,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.2 {
 	Tcl_Main: startup script raises error
-    } -constraints [list exec] -setup {
+    } -constraints {
+	exec
+    } -setup {
 	makeFile {error ERROR} script
     } -body {
 	set code [catch {exec [interpreter] script >& result} result]
@@ -222,7 +248,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.3 {
 	Tcl_Main: startup script closes stderr
-    } -constraints [list exec] -setup {
+    } -constraints {
+	exec
+    } -setup {
 	makeFile {close stderr; error ERROR} script
     } -body {
 	set code [catch {exec [interpreter] script >& result} result]
@@ -236,7 +264,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.4 {
 	Tcl_Main: startup script holds incomplete script
-    } -constraints [list exec] -setup {
+    } -constraints {
+	exec
+    } -setup {
 	makeFile "if 1 \{" script
     } -body {
 	set code [catch {exec [interpreter] script >& result} result]
@@ -251,7 +281,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.5 {
 	Tcl_Main: startup script sets main loop
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	makeFile {
 		rename exit _exit
 		proc exit {code} {
@@ -277,7 +309,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.6 {
 	Tcl_Main: startup script sets main loop and closes stdin
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	makeFile {
 		close stdin
 		testsetmainloop
@@ -304,7 +338,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.7 {
 	Tcl_Main: startup script deletes interp
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	makeFile {
 		rename exit _exit
 		proc exit {code} {
@@ -326,7 +362,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.8 {
 	Tcl_Main: startup script deletes interp and sets mainloop
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	makeFile {
 		testsetmainloop
 		rename exit _exit
@@ -350,7 +388,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-3.9 {
 	Tcl_Main: startup script can set tcl_interactive without limit
-    } -constraints [list exec] -setup {
+    } -constraints {
+	exec
+    } -setup {
 	makeFile {set tcl_interactive foo} script
     } -body {
 	exec [interpreter] script >& result
@@ -366,7 +406,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-4.1 {
 	Tcl_Main: rcFile evaluation deletes interp
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	set rc [makeFile {testinterpdelete {}} rc]
     } -body {
 	exec [interpreter] << {puts "In script"} \
@@ -381,7 +423,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-4.2 {
 	Tcl_Main: rcFile evaluation closes stdin
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	set rc [makeFile {close stdin} rc]
     } -body {
 	exec [interpreter] << {puts "In script"} \
@@ -396,7 +440,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-4.3 {
 	Tcl_Main: rcFile evaluation closes stdin and sets main loop
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	set rc [makeFile {
 		close stdin
 		testsetmainloop
@@ -422,7 +468,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-4.4 {
 	Tcl_Main: rcFile evaluation sets main loop
-    } -constraints [list exec Tcltest] -setup {
+    } -constraints {
+	exec Tcltest
+    } -setup {
 	set rc [makeFile {
 		testsetmainloop
 		after 0 testexitmainloop
@@ -449,7 +497,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.1 {
 	Tcl_Main: tcl_interactive must be boolean
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {set tcl_interactive foo} >& result
 	set f [open result]
 	read $f
@@ -461,8 +511,10 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.2 {
 	Tcl_Main able to handle non-blocking stdin
-    } -constraints [list exec] -setup {
-	catch {set f [open "|[interpreter]" w+]}
+    } -constraints {
+	exec
+    } -setup {
+	catch {set f [open "|[list [interpreter]]" w+]}
     } -body {
 	type $f {
 	    fconfigure stdin -blocking 0
@@ -475,8 +527,10 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.3 {
 	Tcl_Main handles stdin EOF in mid-command
-    } -constraints [list exec] -setup {
-	catch {set f [open "|[interpreter]" w+]}
+    } -constraints {
+	exec
+    } -setup {
+	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {fconfigure $f -blocking 0}
     } -body {
 	type $f "fconfigure stdin -eofchar \\032
@@ -484,8 +538,9 @@ namespace eval ::tcl::main::test {
 	variable wait
 	fileevent $f readable \
 		[list set [namespace which -variable wait] "child exit"]
-	after 2000 [list set [namespace which -variable wait] timeout]
+	set id [after 2000 [list set [namespace which -variable wait] timeout]]
 	vwait [namespace which -variable wait]
+	after cancel $id
 	set wait
     } -cleanup {
 	if {[string equal timeout $wait]
@@ -497,16 +552,19 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.4 {
 	Tcl_Main handles stdin EOF in mid-command
-    } -constraints [list exec] -setup {
+    } -constraints {
+	exec
+    } -setup {
 	set cmd {makeFile "if 1 \{" script}
-	catch {set f [open "|[interpreter] < [eval $cmd]" r]}
+	catch {set f [open "|[list [interpreter]] < [list [eval $cmd]]" r]}
 	catch {fconfigure $f -blocking 0}
     } -body {
 	variable wait
 	fileevent $f readable \
 		[list set [namespace which -variable wait] "child exit"]
-	after 2000 [list set [namespace which -variable wait] timeout]
+	set id [after 2000 [list set [namespace which -variable wait] timeout]]
 	vwait [namespace which -variable wait]
+	after cancel $id
 	set wait
     } -cleanup {
 	if {[string equal timeout $wait]
@@ -519,7 +577,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.5 {
 	Tcl_Main: error raised in interactive mode
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {error foo} >& result
 	set f [open result]
 	read $f
@@ -530,7 +590,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.6 {
 	Tcl_Main: interactive mode: errors don't stop command loop
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		error foo
 		puts bar
@@ -544,7 +606,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.7 {
 	Tcl_Main: interactive mode: closed stderr
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		close stderr
 		error foo
@@ -560,7 +624,9 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-5.8 {
 	Tcl_Main: interactive mode: close stdin
 		-> main loop & [exit] & exit handlers
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		rename exit _exit
 		proc exit code {
@@ -582,7 +648,9 @@ namespace eval ::tcl::main::test {
     test Tcl_Main-5.9 {
 	Tcl_Main: interactive mode: delete interp 
 		-> main loop & exit handlers, but no [exit]
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		rename exit _exit
 		proc exit code {
@@ -603,8 +671,10 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.10 {
 	Tcl_Main: exit main loop in mid-interactive command
-    } -constraints [list exec Tcltest] -setup {
-	catch {set f [open "|[interpreter]" w+]}
+    } -constraints {
+	exec Tcltest
+    } -setup {
+	catch {set f [open "|[list [interpreter]]" w+]}
 	catch {fconfigure $f -blocking 0}
     } -body {
 	type $f "testsetmainloop
@@ -622,7 +692,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.11 {
 	Tcl_Main: EOF in interactive main loop
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		rename exit _exit
 		proc exit code {
@@ -642,7 +714,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-5.12 {
 	Tcl_Main: close stdin in interactive main loop
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		rename exit _exit
 		proc exit code {
@@ -666,7 +740,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-6.1 {
 	Tcl_Main: enable prompts with tcl_interactive
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {set tcl_interactive 1} >& result
 	set f [open result]
 	read $f
@@ -677,7 +753,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-6.2 {
 	Tcl_Main: prompt deletes interp
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		set tcl_prompt1 {testinterpdelete {}}
 		set tcl_interactive 1
@@ -692,7 +770,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-6.3 {
 	Tcl_Main: prompt closes stdin
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_prompt1 {close stdin}
 		set tcl_interactive 1
@@ -707,7 +787,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-6.4 {
 	Tcl_Main: interactive output, closed stdout
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_interactive 1
 		close stdout
@@ -723,7 +805,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-6.5 {
 	Tcl_Main: interactive entry to main loop
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		set tcl_interactive 1
 		testsetmainloop
@@ -737,7 +821,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-6.6 {
 	Tcl_Main: number of prompts during stdin close exit
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_interactive 1
 		close stdin} >& result
@@ -752,7 +838,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-7.1 {
 	Tcl_Main: [exit] defined as no-op -> still have exithandlers
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		proc exit args {}
 		testexithandler create 0
@@ -766,7 +854,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-7.2 {
 	Tcl_Main: [exit] defined as no-op -> still have exithandlers
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		proc exit args {}
 		testexithandler create 0
@@ -784,7 +874,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.1 {
 	StdinProc: handles non-blocking stdin
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		fconfigure stdin -blocking 0
@@ -799,7 +891,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.2 {
 	StdinProc: handles stdin EOF
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		testexithandler create 0
@@ -819,7 +913,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.3 {
 	StdinProc: handles interactive stdin EOF
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		testexithandler create 0
@@ -838,7 +934,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.4 {
 	StdinProc: handles stdin close
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		rename exit _exit
@@ -859,7 +957,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.5 {
 	StdinProc: handles interactive stdin close
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		set tcl_interactive 1
@@ -881,7 +981,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.6 {
 	StdinProc: handles event loop re-entry
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		after 100 {puts 1; set delay 1}
@@ -898,7 +1000,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.7 {
 	StdinProc: handling of errors
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		error foo
@@ -913,7 +1017,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.8 {
 	StdinProc: handling of errors, closed stderr
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		close stderr
@@ -929,7 +1035,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.9 {
 	StdinProc: interactive output
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		set tcl_interactive 1
@@ -943,7 +1051,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.10 {
 	StdinProc: interactive output, closed stdout
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		close stdout
@@ -959,7 +1069,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.11 {
 	StdinProc: prompt deletes interp
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		set tcl_prompt1 {testinterpdelete {}}
@@ -973,7 +1085,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-8.12 {
 	StdinProc: prompt closes stdin
-    } -constraints [list exec Tcltest] -body {
+    } -constraints {
+	exec Tcltest
+    } -body {
 	exec [interpreter] << {
 		testsetmainloop
 		set tcl_prompt1 {close stdin}
@@ -992,7 +1106,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-9.1 {
 	Prompt: custom prompt variables
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_prompt1 {puts -nonewline stdout "one "}
 		set tcl_prompt2 {puts -nonewline stdout "two "}
@@ -1008,7 +1124,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-9.2 {
 	Prompt: error in custom prompt variables
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_prompt1 {error foo}
 		set tcl_interactive 1
@@ -1023,7 +1141,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-9.3 {
 	Prompt: error in custom prompt variables, closed stderr
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_prompt1 {close stderr; error foo}
 		set tcl_interactive 1} >& result
@@ -1036,7 +1156,9 @@ namespace eval ::tcl::main::test {
 
     test Tcl_Main-9.4 {
 	Prompt: error in custom prompt variables, closed stdout
-    } -constraints [list exec] -body {
+    } -constraints {
+	exec
+    } -body {
 	exec [interpreter] << {
 		set tcl_prompt1 {close stdout; error foo}
 		set tcl_interactive 1} >& result
@@ -1050,5 +1172,5 @@ namespace eval ::tcl::main::test {
     cleanupTests
 }
 
-namespace delete ::tcl::main::test
-
+namespace delete ::tcl::test::main
+return

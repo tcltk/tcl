@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringComp.test,v 1.3.8.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: stringComp.test,v 1.3.8.2 2002/06/10 05:33:17 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -170,6 +170,18 @@ test string-2.30 {string compare with NUL character vs. other ASCII} {
     # Be careful here, since UTF-8 rep comparison with memcmp() of
     # these puts chars in the wrong order
     proc foo {} {string compare \x00 \x01}
+    foo
+} -1
+test string-2.31 {string compare, high bit} {
+    proc foo {} {string compare "a\x80" "a@"}
+    foo
+} 1
+test string-2.32 {string compare, high bit} {
+    proc foo {} {string compare "a\x00" "a\x01"}
+    foo
+} -1
+test string-2.33 {string compare, high bit} {
+    proc foo {} {string compare "\x00\x00" "\x00\x01"}
     foo
 } -1
 

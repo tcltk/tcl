@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.13.2.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: compile.test,v 1.13.2.2 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -98,6 +98,15 @@ test compile-3.3 {TclCompileCatchCmd: overagressive compiling [bug 219184]} {
     catch {catch-test error} ::foo
     set ::foo
 } {GOOD}
+test compile-3.4 {TclCompileCatchCmd: bcc'ed [return] is caught} {
+    proc foo {} {
+	set fail [catch {
+	    return 1
+	}] ; # {}	
+	return 2
+    }
+    foo
+} {2}
 
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
@@ -285,6 +294,13 @@ test compile-12.2 {testing error on literal deletion} {memDebug execCommandExist
     catch {::tcltest::removeFile source.file}
     set res
 } 0
+# Test to catch buffer overrun in TclCompileTokens from buf 530320
+test compile-12.3 {check for a buffer overrun} {
+    proc crash {} {
+	puts $array([expr {a+2}])
+    }
+    list [catch crash msg] $msg
+} {1 {syntax error in expression "a+2": variable references require preceding $}}
 
 # Special test for underestimating the maxStackSize required for a
 # compiled command. A failure will cause a segfault in the child 

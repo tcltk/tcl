@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.16.4.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.16.4.2 2002/06/10 05:33:10 wolfsuit Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -223,18 +223,6 @@ typedef struct CompileEnv {
 				 * compiled code. Indexed by the string
 				 * representations of the literals. Used to
 				 * avoid creating duplicate objects. */
-    int exprIsJustVarRef;	/* Set 1 if the expression last compiled by
-				 * TclCompileExpr consisted of just a
-				 * variable reference as in the expression
-				 * of "if $b then...". Otherwise 0. Used
-				 * to implement expr's 2 level substitution
-				 * semantics properly. */
-    int exprIsComparison;	/* Set 1 if the top-level operator in the
-				 * expression last compiled is a comparison.
-				 * Otherwise 0. If 1, since the operands
-				 * might be strings, the expr is compiled
-				 * out-of-line to implement expr's 2 level
-				 * substitution semantics properly. */
     unsigned char *codeStart;	/* Points to the first byte of the code. */
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated
@@ -513,6 +501,7 @@ typedef struct ByteCode {
 #define INST_LIST_INDEX			80
 #define INST_LIST_LENGTH		81
 
+/* Opcodes 82 to 87 */
 #define INST_APPEND_SCALAR1		82
 #define INST_APPEND_SCALAR4		83
 #define INST_APPEND_ARRAY1		84
@@ -520,6 +509,7 @@ typedef struct ByteCode {
 #define INST_APPEND_ARRAY_STK		86
 #define INST_APPEND_STK			87
 
+/* Opcodes 88 to 93 */
 #define INST_LAPPEND_SCALAR1		88
 #define INST_LAPPEND_SCALAR4		89
 #define INST_LAPPEND_ARRAY1		90
@@ -611,8 +601,9 @@ extern InstructionDesc instructionTable[];
 #define BUILTIN_FUNC_RAND		22
 #define BUILTIN_FUNC_ROUND		23
 #define BUILTIN_FUNC_SRAND		24
+#define BUILTIN_FUNC_WIDE		25
 
-#define LAST_BUILTIN_FUNC        	24
+#define LAST_BUILTIN_FUNC        	25
 
 /*
  * Table describing the built-in math functions. Entries in this table are
@@ -745,7 +736,7 @@ EXTERN int              TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
  */
 
 EXTERN int		TclCompEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int engineCall));
+			    Tcl_Obj *objPtr));
 
 /*
  *----------------------------------------------------------------

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.39.8.1 2002/02/05 02:22:01 wolfsuit Exp $
+# RCS: @(#) $Id: http.tcl,v 1.39.8.2 2002/06/10 05:33:13 wolfsuit Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -24,7 +24,7 @@
 
 package require Tcl 8.2
 # keep this in sync with pkgIndex.tcl
-package provide http 2.4.1
+package provide http 2.4.2
 
 namespace eval http {
     variable http
@@ -198,7 +198,7 @@ proc http::reset { token {why reset} } {
     if {[info exists state(error)]} {
 	set errorlist $state(error)
 	unset state
-	eval error $errorlist
+	eval ::error $errorlist
     }
 }
 

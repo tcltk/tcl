@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lindex.test,v 1.8.10.1 2002/02/05 02:22:04 wolfsuit Exp $
+# RCS: @(#) $Id: lindex.test,v 1.8.10.2 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -82,6 +82,11 @@ test lindex-3.6 {bad octal} {
     set x -09
     list [catch { eval [list $lindex {a b c} $x] } result] $result
 } "1 {bad index \"-09\": must be integer or end?-integer? (looks like invalid octal number)}"
+
+test lindex-3.7 {indexes don't shimmer wide ints} {
+    set x [expr {(wide(1)<<31) - 2}]
+    list $x [lindex {1 2 3} $x] [incr x] [incr x]
+} {2147483646 {} 2147483647 2147483648}
 
 # Indices relative to end
 

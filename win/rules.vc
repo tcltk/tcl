@@ -7,10 +7,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# Copyright (c) 2001 Tomasoft Engineering.
+# Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.4.4.1 2002/02/05 02:22:05 wolfsuit Exp $
+# RCS: @(#) $Id: rules.vc,v 1.4.4.2 2002/06/10 05:33:19 wolfsuit Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -29,53 +29,120 @@ INSTALLDIR	= C:\Progra~1\Tcl
 MACHINE		= IX86
 !endif
 
+!message ===============================================================================
+
+#----------------------------------------------------------
+# build the helper app we need to overcome nmake's limiting
+# environment.
+#----------------------------------------------------------
+
+!if !exist(nmakehlp.exe)
+!if [$(cc32) -nologo -ML nmakehlp.c -link -subsystem:console > nul]
+!endif
+!endif
+
+#----------------------------------------------------------
+# Test for compiler features
+#----------------------------------------------------------
+
+### test for optimizations
+!if [nmakehlp -c -Ox]
+!message *** Compiler has 'Optimizations'
+OPTIMIZING	= 1
+!else
+!message *** Compiler doesn't have 'Optimizations'
+OPTIMIZING	= 0
+!endif
+
+!if "$(MACHINE)" == "IX86"
+### test for pentium errata
+!if [nmakehlp -c -QI0f]
+!message *** Compiler has 'Pentium 0x0f fix'
+PENT_0F_ERRATA	= 1
+!else
+!message *** Compiler doesn't have 'Pentium 0x0f fix'
+PENT_0F_ERRATA	= 0
+!endif
+### test for -align:4096, when align:512 will do.
+!if [nmakehlp -l -opt:nowin98]
+!message *** Linker has 'Win98 alignment problem'
+ALIGN98_HACK	= 1
+!else
+!message *** Linker doesn't have 'Win98 alignment problem'
+ALIGN98_HACK	= 0
+!endif
+!else
+PENT_0F_ERRATA	= 0
+ALIGN98_HACK	= 0
+!endif
+
+!if "$(MACHINE)" == "IA64"
+### test for Itanium errata
+!if [nmakehlp -c -QIA64_Bx]
+!message *** Compiler has 'B-stepping errata workarounds'
+ITAN_B_ERRATA	= 1
+!else
+!message *** Compiler doesn't have 'B-stepping errata workarounds'
+ITAN_B_ERRATA	= 0
+!endif
+!else
+ITAN_B_ERRATA	= 0
+!endif
 
 #----------------------------------------------------------
 # Decode the options requested.
 #----------------------------------------------------------
-!if "$(OPTS)" == "" || ![echo $(OPTS) | find /i "none" > nul]
+
+!if "$(OPTS)" == "" || [nmakehlp -f "$(OPTS)" "none"]
 STATIC_BUILD	= 0
 TCL_THREADS	= 0
 DEBUG		= 0
 PROFILE		= 0
 MSVCRT		= 0
+LOIMPACT	= 0
 TCL_LINKWITHEXTENSIONS	= 0
 !else
-!if ![echo $(OPTS) | find /i "static" > nul]
+!if [nmakehlp -f $(OPTS) "static"]
 !message *** Doing static
 STATIC_BUILD	= 1
 !else
 STATIC_BUILD	= 0
 !endif
-!if ![echo $(OPTS) | find /i "msvcrt" > nul]
+!if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 MSVCRT		= 1
 !else
 MSVCRT		= 0
 !endif
-!if ![echo $(OPTS) | find /i "linkexten" > nul]
+!if [nmakehlp -f $(OPTS) "linkexten"]
 !message *** Doing linkexten
 TCL_LINKWITHEXTENSIONS	= 1
 !else
 TCL_LINKWITHEXTENSIONS	= 0
 !endif
-!if ![echo $(OPTS) | find /i "threads" > nul]
+!if [nmakehlp -f $(OPTS) "threads"]
 !message *** Doing threads
 TCL_THREADS	= 1
 !else
 TCL_THREADS	= 0
 !endif
-!if ![echo $(OPTS) | find /i "symbols" > nul]
+!if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
 DEBUG		= 1
 !else
 DEBUG		= 0
 !endif
-!if ![echo $(OPTS) | find /i "profile" > nul]
+!if [nmakehlp -f $(OPTS) "profile"]
 !message *** Doing profile
 PROFILE		= 1
 !else
 PROFILE		= 0
+!endif
+!if [nmakehlp -f $(OPTS) "loimpact"]
+!message *** Doing loimpact
+LOIMPACT	= 1
+!else
+LOIMPACT	= 0
 !endif
 !endif
 
@@ -83,7 +150,7 @@ PROFILE		= 0
 !if !$(STATIC_BUILD)
 # Make sure we don't build overly fat DLLs.
 MSVCRT		= 1
-# Shouldn't statically put the extensions inside the shell when dynamic.
+# We shouldn't statically put the extensions inside the shell when dynamic.
 TCL_LINKWITHEXTENSIONS = 0
 !endif
 
@@ -140,31 +207,33 @@ OUT_DIR	    = $(TMP_DIR)
 !endif
 !endif
 
-!message *** Intermediate directory will be '$(TMP_DIR)'
-!message *** Output directory will be '$(OUT_DIR)'
-!message *** Suffix for binaries will be '$(SUFX)'
-
 
 #----------------------------------------------------------
 # Decode the statistics requested.
 #----------------------------------------------------------
-!if "$(STATS)" == "" || ![echo $(STATS) | find /i "none" > nul]
+
+!if "$(STATS)" == "" || [nmakehlp -f "$(STATS)" "none"]
 TCL_MEM_DEBUG	    = 0
 TCL_COMPILE_DEBUG   = 0
 !else
-!if ![echo $(STATS) | find /i "memdbg" > nul]
+!if [nmakehlp -f $(STATS) "memdbg"]
 !message *** Doing memdbg
 TCL_MEM_DEBUG	    = 1
 !else
 TCL_MEM_DEBUG	    = 0
 !endif
-!if ![echo $(STATS) | find /i "compdbg" > nul]
+!if [nmakehlp -f $(STATS) "compdbg"]
 !message *** Doing compdbg
 TCL_COMPILE_DEBUG   = 1
 !else
 TCL_COMPILE_DEBUG   = 0
 !endif
 !endif
+
+
+#----------------------------------------------------------
+# Set our defines armed with our options.
+#----------------------------------------------------------
 
 OPTDEFINES	=
 !if $(TCL_MEM_DEBUG)
@@ -180,6 +249,14 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 !endif
 
+
+#----------------------------------------------------------
+# Display stats being used.
+#----------------------------------------------------------
+
+!message *** Intermediate directory will be '$(TMP_DIR)'
+!message *** Output directory will be '$(OUT_DIR)'
+!message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
 
 !endif

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.24.2.1 2002/02/05 02:22:00 wolfsuit Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.24.2.2 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -67,9 +67,9 @@ TCL_DECLARE_MUTEX(precisionMutex)
  * Prototypes for procedures defined later in this file.
  */
 
-static void UpdateStringOfEndOffset _ANSI_ARGS_(( Tcl_Obj* objPtr ));
-static int SetEndOffsetFromAny _ANSI_ARGS_(( Tcl_Interp* interp,
-					     Tcl_Obj* objPtr ));
+static void UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
+static int SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
+					    Tcl_Obj* objPtr));
 
 /*
  * The following is the Tcl object type definition for an object
@@ -1411,7 +1411,7 @@ Tcl_DStringInit(dsPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_DStringAppend(dsPtr, string, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     CONST char *string;		/* String to append.  If length is -1 then
@@ -1482,7 +1482,7 @@ Tcl_DStringAppend(dsPtr, string, length)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_DStringAppendElement(dsPtr, string)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     CONST char *string;		/* String to append.  Must be
@@ -1879,7 +1879,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
     char *name1;		/* Name of variable. */
-    char *name2;		/* Second part of variable name. */
+    CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
     CONST char *value;
@@ -2179,7 +2179,7 @@ TclLooksLikeInt(bytes, length)
  *
  * Side effects:
  *	The object referenced by "objPtr" might be converted to an
- *	integer object.
+ *	integer, wide integer, or end-based-index object.
  *
  *----------------------------------------------------------------------
  */
@@ -2198,44 +2198,82 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 {
     char *bytes;
     int length, offset;
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_WideInt wideOffset;
+#endif
 
-    /* If the object is already an integer, use it. */
+    /*
+     * If the object is already an integer, use it.
+     */
 
     if (objPtr->typePtr == &tclIntType) {
 	*indexPtr = (int)objPtr->internalRep.longValue;
 	return TCL_OK;
     }
 
-    if ( SetEndOffsetFromAny( NULL, objPtr ) == TCL_OK ) {
+    /*
+     * If the object is already a wide-int, and it is not out of range
+     * for an integer, use it. [Bug #526717]
+     */
+#ifndef TCL_WIDE_INT_IS_LONG
+    if (objPtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wideOffset = objPtr->internalRep.wideValue;
+	if (wideOffset >= Tcl_LongAsWide(INT_MIN)
+	    && wideOffset <= Tcl_LongAsWide(INT_MAX)) {
+	    *indexPtr = (int) Tcl_WideAsLong(wideOffset);
+	    return TCL_OK;
+	}
+    }
+#endif /* TCL_WIDE_INT_IS_LONG */
 
+    if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
 	/*
-	 * If the object is already an offset from the end of the list, or
-	 * can be converted to one, use it.
+	 * If the object is already an offset from the end of the
+	 * list, or can be converted to one, use it.
 	 */
 
 	*indexPtr = endValue + objPtr->internalRep.longValue;
 
-    } else if ( Tcl_GetIntFromObj( NULL, objPtr, &offset ) == TCL_OK ) {
-
+#ifdef TCL_WIDE_INT_IS_LONG
+    } else if (Tcl_GetIntFromObj(NULL, objPtr, &offset) == TCL_OK) {
 	/*
 	 * If the object can be converted to an integer, use that.
 	 */
 
 	*indexPtr = offset;
 
-    } else {
+#else /* !TCL_WIDE_INT_IS_LONG */
+    } else if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideOffset) == TCL_OK) {
+	/*
+	 * If the object can be converted to a wide integer, use
+	 * that. [Bug #526717]
+	 */
 
+	offset = (int) Tcl_WideAsLong(wideOffset);
+	if (Tcl_LongAsWide(offset) == wideOffset) {
+	    /*
+	     * But it is representable as a narrow integer, so we
+	     * prefer that (so preserving old behaviour in the
+	     * majority of cases.)
+	     */
+	    objPtr->typePtr = &tclIntType;
+	    objPtr->internalRep.longValue = offset;
+	}
+	*indexPtr = offset;
+
+#endif /* TCL_WIDE_INT_IS_LONG */
+    } else {
 	/*
 	 * Report a parse error.
 	 */
 
 	if ((Interp *)interp != NULL) {
-	    bytes = Tcl_GetStringFromObj( objPtr, &length );
-	    Tcl_AppendStringsToObj( Tcl_GetObjResult(interp),
-				    "bad index \"", bytes,
-				    "\": must be integer or end?-integer?",
-				    (char *) NULL);
-	    if ( !strncmp ( bytes, "end-", 3 ) ) {
+	    bytes = Tcl_GetStringFromObj(objPtr, &length);
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+				   "bad index \"", bytes,
+				   "\": must be integer or end?-integer?",
+				   (char *) NULL);
+	    if (!strncmp(bytes, "end-", 3)) {
 		bytes += 3;
 	    }
 	    TclCheckBadOctal(interp, bytes);
@@ -2245,7 +2283,6 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
     }
 	    
     return TCL_OK;
-
 }
 
 /*
@@ -2270,21 +2307,20 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
  */
 
 static void
-UpdateStringOfEndOffset( objPtr )
+UpdateStringOfEndOffset(objPtr)
     register Tcl_Obj* objPtr;
 {
-    char buffer[ TCL_INTEGER_SPACE + sizeof("end") + 1 ];
+    char buffer[TCL_INTEGER_SPACE + sizeof("end") + 1];
     register int len;
 
-    strcpy( buffer, "end" );
-    len = sizeof( "end" ) - 1;
-    if ( objPtr->internalRep.longValue != 0 ) {
+    strcpy(buffer, "end");
+    len = sizeof("end") - 1;
+    if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
-	len += TclFormatInt( buffer + len,
-			     -( objPtr->internalRep.longValue ) );
+	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
     }
-    objPtr->bytes = ckalloc( (unsigned) ( len + 1 ) );
-    strcpy( objPtr->bytes, buffer );
+    objPtr->bytes = ckalloc((unsigned) (len+1));
+    strcpy(objPtr->bytes, buffer);
     objPtr->length = len;
 }
 
@@ -2307,10 +2343,9 @@ UpdateStringOfEndOffset( objPtr )
  */
 
 static int
-SetEndOffsetFromAny( Tcl_Interp* interp,
-				/* Tcl interpreter or NULL */
-		     Tcl_Obj* objPtr )
-				/* Pointer to the object to parse */
+SetEndOffsetFromAny(interp, objPtr)
+     Tcl_Interp* interp;	/* Tcl interpreter or NULL */
+     Tcl_Obj* objPtr;		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
     Tcl_ObjType* oldTypePtr = objPtr->typePtr;
@@ -2320,7 +2355,7 @@ SetEndOffsetFromAny( Tcl_Interp* interp,
 
     /* If it's already the right type, we're fine. */
 
-    if ( objPtr->typePtr == &tclEndOffsetType ) {
+    if (objPtr->typePtr == &tclEndOffsetType) {
 	return TCL_OK;
     }
 
@@ -2329,11 +2364,11 @@ SetEndOffsetFromAny( Tcl_Interp* interp,
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
-	if ( interp != NULL ) {
-	    Tcl_AppendStringsToObj( Tcl_GetObjResult( interp ),
-				    "bad index \"", bytes,
-				    "\": must be end?-integer?",
-				    (char*) NULL );
+	if (interp != NULL) {
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+				   "bad index \"", bytes,
+				   "\": must be end?-integer?",
+				   (char*) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2343,7 +2378,6 @@ SetEndOffsetFromAny( Tcl_Interp* interp,
     if (length <= 3) {
 	offset = 0;
     } else if (bytes[3] == '-') {
-
 	/*
 	 * This is our limited string expression evaluator
 	 */
@@ -2352,18 +2386,16 @@ SetEndOffsetFromAny( Tcl_Interp* interp,
 	}
 
     } else {
-
-	/* Conversion failed.  Report the error. */
-
-
-	if ( interp != NULL ) {
+	/*
+	 * Conversion failed.  Report the error.
+	 */
+	if (interp != NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be integer or end?-integer?",
 				   (char *) NULL);
 	}
 	return TCL_ERROR;
-
     }
 
     /*
@@ -2465,7 +2497,7 @@ TclCheckBadOctal(interp, value)
 CONST char *
 Tcl_GetNameOfExecutable()
 {
-    return (tclExecutableName);
+    return tclExecutableName;
 }
 
 /*
@@ -2488,8 +2520,8 @@ Tcl_GetNameOfExecutable()
  */
 
 void
-TclpGetTime( timePtr )
+TclpGetTime(timePtr)
     Tcl_Time* timePtr;
 {
-    Tcl_GetTime( timePtr );
+    Tcl_GetTime(timePtr);
 }

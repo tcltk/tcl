@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.8 2000/04/10 17:18:58 ericm Exp $
+# RCS: @(#) $Id: encoding.test,v 1.8.18.1 2002/06/10 05:33:15 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -28,6 +28,8 @@ proc fromutf {args} {
 
 set ::tcltest::testConstraints(testencoding) \
 	[expr {[info commands testencoding] != {}}]
+set ::tcltest::testConstraints(exec) \
+	[llength [info commands exec]]
 
 
 # TclInitEncodingSubsystem is tested by the rest of this file
@@ -196,6 +198,18 @@ test encoding-10.1 {Tcl_UtfToExternal} {
     set x
 } "ab\x8c\xc1g"
 
+proc viewable {str} {
+    set res ""
+    foreach c [split $str {}] {
+	if {[string is print $c] && [string is ascii $c]} {
+	    append res $c
+	} else {
+	    append res "\\u[format %4.4x [scan $c %c]]"
+	}
+    }
+    return "$str ($res)"
+}
+
 test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
@@ -216,8 +230,11 @@ test encoding-11.4 {LoadEncodingFile: multi-byte} {
     encoding convertfrom shiftjis \x8c\xc1
 } "\u4e4e"
 test encoding-11.5 {LoadEncodingFile: escape file} {
-    encoding convertto iso2022 \u4e4e
-} "\x1b(B\x1b$@8C"
+    viewable [encoding convertto iso2022 \u4e4e]
+} [viewable "\x1b\$B8C\x1b(B"]
+test encoding-11.5.1 {LoadEncodingFile: escape file} {
+    viewable [encoding convertto iso2022-jp \u4e4e]
+} [viewable "\x1b\$B8C\x1b(B"]
 test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
@@ -262,8 +279,8 @@ test encoding-12.5 {LoadTableEncoding: symbol encoding} {
 } "\x67\x67\u3b3"
 
 test encoding-13.1 {LoadEscapeTable} {
-    set x [encoding convertto iso2022 ab\u4e4e\u68d9g]
-} "\x1b(Bab\x1b$@8C\x1b$\(DD%\x1b(Bg"
+    viewable [set x [encoding convertto iso2022 ab\u4e4e\u68d9g]]
+} [viewable "ab\x1b\$B8C\x1b\$\(DD%\x1b(Bg"]
 
 test encoding-14.1 {BinaryProc} {
     encoding convertto identity \x12\x34\x56\xff\x69
@@ -295,23 +312,104 @@ test encoding-21.1 {EscapeToUtfProc} {
 test encoding-22.1 {EscapeFromUtfProc} {
 } {}
 
+set ::iso2022encData "\u001b\$B;d\$I\$b\$G\$O!\"%A%C%W\$49XF~;~\$K\$4EPO?\$\$\$?\$@\$\$\$?\$4=;=j\$r%-%c%C%7%e%\"%&%H\$N:]\$N\u001b(B
+\u001b\$B>.@Z<jAwIU@h\$H\$7\$F;HMQ\$7\$F\$*\$j\$^\$9!#62\$lF~\$j\$^\$9\$,!\"@5\$7\$\$=;=j\$r\$4EPO?\$7\$J\$*\u001b(B
+\u001b\$B\$*4j\$\$\$\$\$?\$7\$^\$9!#\$^\$?!\"BgJQ62=L\$G\$9\$,!\"=;=jJQ99\$N\$\"\$H!\"F|K\\8l%5!<%S%9It!J\u001b(B
+casino_japanese@___.com \u001b\$B!K\$^\$G\$4=;=jJQ99:Q\$NO\"Mm\$r\$\$\$?\$@\$1\$J\$\$\$G\u001b(B
+\u001b\$B\$7\$g\$&\$+!)\u001b(B"
+
+set ::iso2022uniData [encoding convertfrom iso2022-jp $::iso2022encData]
+set ::iso2022uniData2 "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3054\u8cfc\u5165\u6642\u306b\u3054\u767b\u9332\u3044\u305f\u3060\u3044\u305f\u3054\u4f4f\u6240\u3092\u30ad\u30e3\u30c3\u30b7\u30e5\u30a2\u30a6\u30c8\u306e\u969b\u306e
+\u5c0f\u5207\u624b\u9001\u4ed8\u5148\u3068\u3057\u3066\u4f7f\u7528\u3057\u3066\u304a\u308a\u307e\u3059\u3002\u6050\u308c\u5165\u308a\u307e\u3059\u304c\u3001\u6b63\u3057\u3044\u4f4f\u6240\u3092\u3054\u767b\u9332\u3057\u306a\u304a
+\u304a\u9858\u3044\u3044\u305f\u3057\u307e\u3059\u3002\u307e\u305f\u3001\u5927\u5909\u6050\u7e2e\u3067\u3059\u304c\u3001\u4f4f\u6240\u5909\u66f4\u306e\u3042\u3068\u3001\u65e5\u672c\u8a9e\u30b5\u30fc\u30d3\u30b9\u90e8\uff08
+\u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
+\u3057\u3087\u3046\u304b\uff1f"
+
+set fid [open iso2022.txt w]
+fconfigure $fid -encoding binary
+puts -nonewline $fid $::iso2022encData
+close $fid
+
+test encoding-23.2 {iso2022-jp escape encoding test} {
+    string equal $::iso2022uniData $::iso2022uniData2
+} 1
+test encoding-23.2 {iso2022-jp escape encoding test} {
+    # This checks that 'gets' isn't resetting the encoding inappropriately.
+    # [Bug #523988]
+    set fid [open iso2022.txt r]
+    fconfigure $fid -encoding iso2022-jp
+    set out ""
+    set count 0
+    while {[set num [gets $fid line]] >= 0} {
+	if {$count} {
+	    incr count 1 ; # account for newline
+	    append out \n
+	}
+	append out $line
+	incr count $num
+    }
+    close $fid
+    if {[string compare $::iso2022uniData $out]} {
+	return -code error "iso2022-jp read in doesn't match original"
+    }
+    list $count $out
+} [list [string length $::iso2022uniData] $::iso2022uniData]
+test encoding-23.3 {iso2022-jp escape encoding test} {
+    # read $fis <size> reads size in chars, not raw bytes.
+    set fid [open iso2022.txt r]
+    fconfigure $fid -encoding iso2022-jp
+    set data [read $fid 50]
+    close $fid
+    set data
+} [string range $::iso2022uniData 0 49] ; # 0 .. 49 inclusive == 50
+
+test encoding-24.1 {EscapeFreeProc on open channels} {exec} {
+    # Bug #524674 input
+    set f [open iso2022.tcl w]
+    puts $f {
+	set f [open iso2022.txt]
+	fconfigure $f -encoding iso2022-jp
+	gets $f
+    }
+    close $f
+    exec $::tcltest::tcltest iso2022.tcl
+} {}
+
+test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
+    # Bug #524674 output
+    set f [open iso2022.tcl w]
+    puts $f {
+	fconfigure stdout -encoding iso2022-jp
+	puts ab\u4e4e\u68d9g
+	exit
+    }
+    close $f
+    viewable [exec $::tcltest::tcltest iso2022.tcl]
+} "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
+
+test encoding-24.3 {EscapeFreeProc on open channels} {exec} {
+    # Bug #219314 - if we don't free escape encodings correctly on
+    # channel closure, we go boom
+    set f [open iso2022.tcl w]
+    puts $f {
+	encoding system iso2022-jp
+	set a "\u4e4e\u4e5e\u4e5f"; # 3 Japanese Kanji letters
+	puts $a
+    }
+    close $f
+    set f [open "|[list $::tcltest::tcltest iso2022.tcl]"]
+    fconfigure $f -encoding iso2022-jp
+    set count [gets $f line]
+    close $f
+    list $count [viewable $line]
+} [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
+
+::tcltest::removeFile iso2022.txt
+::tcltest::removeFile iso2022.tcl
+
 # EscapeFreeProc, GetTableEncoding, unilen
 # are fully tested by the rest of this file
 
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,120 +2,397 @@
 {
 	00E2F845016E82EB0ACA28DC = {
 		activeBuildStyle = 00E2F847016E82EB0ACA28DC;
-		activeTarget = 00E2F84E016E92110ACA28DC;
+		activeTarget = F50DC359017027D801DC9062;
 		addToTargets = (
 			00E2F84C016E8B780ACA28DC,
 		);
 		breakpoints = (
 		);
-		intermediatesDirectory = /Volumes/CodeBits/jingham/Tcl/Build;
 		perUserDictionary = {
-			PBXWorkspaceConfiguration = {
-				ContentSize = "{876, 673}";
-				LeftSlideOut = {
-					ActiveTab = 0;
-					Frame = "{{0, 23}, {876, 650}}";
-					Split0 = {
-						ActiveTab = 3;
-						Frame = "{{243, 0}, {633, 650}}";
+			PBXPerProjectTemplateStateSaveDate = 45284653;
+			PBXWorkspaceContents = (
+				{
+					LeftSlideOut = {
 						Split0 = {
-							Frame = "{{0, 319}, {633, 331}}";
+							Split0 = {
+								NavContent0 = {
+									bookmark = F5A8CC2B02B2FBA001DC9062;
+									history = (
+										F55BC4B702B2E09001DC9062,
+									);
+								};
+								NavCount = 1;
+								NavGeometry0 = {
+									Frame = "{{0, 0}, {571, 548}}";
+									NavBarVisible = YES;
+								};
+							};
+							SplitCount = 1;
+							Tab0 = {
+								Debugger = {
+									Split0 = {
+										SplitCount = 2;
+									};
+									SplitCount = 1;
+									TabCount = 2;
+								};
+								LauncherConfigVersion = 7;
+							};
+							Tab1 = {
+								LauncherConfigVersion = 3;
+								Runner = {
+								};
+							};
+							TabCount = 4;
+						};
+						SplitCount = 1;
+						Tab1 = {
+							OptionsSetName = "Default Options";
+						};
+						TabCount = 5;
+					};
+				},
+				{
+					LeftSlideOut = {
+						Split0 = {
+							Split0 = {
+								NavCount = 1;
+								NavGeometry0 = {
+									Frame = "{{0, 0}, {685, 190}}";
+									NavBarVisible = YES;
+								};
+							};
+							SplitCount = 1;
+							Tab0 = {
+								Debugger = {
+									Split0 = {
+										SplitCount = 2;
+									};
+									SplitCount = 1;
+									TabCount = 2;
+								};
+								LauncherConfigVersion = 7;
+							};
+							Tab1 = {
+								LauncherConfigVersion = 3;
+								Runner = {
+								};
+							};
+							TabCount = 4;
+						};
+						SplitCount = 1;
+						Tab1 = {
+							OptionsSetName = "Default Options";
+						};
+						TabCount = 5;
+					};
+				},
+			);
+			PBXWorkspaceGeometries = (
+				{
+					ContentSize = "{855, 571}";
+					LeftSlideOut = {
+						ActiveTab = 0;
+						Collapsed = NO;
+						Frame = "{{0, 23}, {855, 548}}";
+						Split0 = {
+							Collapsed = NO;
+							Frame = "{{284, 0}, {571, 548}}";
+							Split0 = {
+								Frame = "{{0, 0}, {571, 548}}";
+							};
+							SplitCount = 1;
+							Tab0 = {
+								Debugger = {
+									Collapsed = NO;
+									Frame = "{{0, 0}, {681, 289}}";
+									Split0 = {
+										Frame = "{{0, 24}, {681, 265}}";
+										Split0 = {
+											Frame = "{{0, 0}, {333, 265}}";
+										};
+										Split1 = {
+											DebugVariablesTableConfiguration = (
+												Name,
+												82.80298,
+												Value,
+												104.074,
+												Summary,
+												126.123,
+											);
+											Frame = "{{342, 0}, {339, 265}}";
+										};
+										SplitCount = 2;
+									};
+									SplitCount = 1;
+									Tab0 = {
+										Frame = "{{0, 0}, {100, 50}}";
+									};
+									Tab1 = {
+										Frame = "{{0, 0}, {100, 50}}";
+									};
+									TabCount = 2;
+									TabsVisible = YES;
+								};
+								Frame = "{{0, 0}, {681, 289}}";
+								LauncherConfigVersion = 7;
+							};
+							Tab1 = {
+								Frame = "{{0, 0}, {681, 120}}";
+								LauncherConfigVersion = 3;
+								Runner = {
+									Frame = "{{0, 0}, {681, 120}}";
+								};
+							};
+							Tab2 = {
+								BuildMessageFrame = "{{0, 0}, {683, 127}}";
+								BuildTranscriptFrame = "{{0, 136}, {683, 100}}";
+								Frame = "{{0, 0}, {681, 234}}";
+							};
+							Tab3 = {
+								Frame = "{{0, 0}, {681, 238}}";
+							};
+							TabCount = 4;
+							TabsVisible = NO;
 						};
 						SplitCount = 1;
 						Tab0 = {
-							Debugger = {
-								Frame = "{{0, 0}, {484, 208}}";
-								Split0 = {
-									Frame = "{{0, 25}, {484, 183}}";
-									Split0 = {
-										Frame = "{{0, 0}, {236, 183}}";
-									};
-									Split1 = {
-										Frame = "{{245, 0}, {239, 183}}";
-									};
-									SplitCount = 2;
-								};
-								SplitCount = 1;
-								Tab0 = {
-									Frame = "{{0, 0}, {100, 50}}";
-								};
-								Tab1 = {
-									Frame = "{{0, 0}, {100, 50}}";
-								};
-								TabCount = 2;
-							};
-							Frame = "{{0, 0}, {484, 208}}";
-							LauncherConfigVersion = 4;
+							Frame = "{{0, 0}, {260, 548}}";
+							GroupTreeTableConfiguration = (
+								SCMStatusColumn,
+								22,
+								TargetStatusColumn,
+								18,
+								MainColumn,
+								205,
+							);
 						};
 						Tab1 = {
-							Frame = "{{0, 0}, {484, 208}}";
-							LauncherConfigVersion = 3;
-							Runner = {
-								Frame = "{{0, 0}, {484, 208}}";
-							};
+							ClassesFrame = "{{0, 0}, {250, 333}}";
+							ClassesTreeTableConfiguration = (
+								PBXBookColumnIdentifier,
+								20,
+								PBXClassColumnIdentifier,
+								207,
+							);
+							Frame = "{{0, 0}, {248, 554}}";
+							MembersFrame = "{{0, 342}, {250, 212}}";
+							MembersTreeTableConfiguration = (
+								PBXBookColumnIdentifier,
+								20,
+								PBXMethodColumnIdentifier,
+								206,
+							);
 						};
 						Tab2 = {
-							BuildMessageFrame = "{{0, 0}, {635, 0}}";
-							BuildTranscriptFrame = "{{0, 9}, {635, 260}}";
-							Frame = "{{0, 0}, {633, 267}}";
+							Frame = "{{0, 0}, {217, 554}}";
 						};
 						Tab3 = {
-							Frame = "{{0, 0}, {633, 295}}";
+							Frame = "{{0, 0}, {239, 548}}";
+							TargetTableConfiguration = (
+								ActiveObject,
+								16,
+								ObjectNames,
+								206,
+							);
 						};
-						TabCount = 4;
+						Tab4 = {
+							BreakpointsTreeTableConfiguration = (
+								breakpointColumn,
+								197,
+								enabledColumn,
+								31,
+							);
+							Frame = "{{0, 0}, {250, 554}}";
+						};
+						TabCount = 5;
+						TabsVisible = YES;
 					};
-					SplitCount = 1;
-					Tab0 = {
-						Frame = "{{0, 0}, {219, 650}}";
-					};
-					Tab1 = {
-						ClassesFrame = "{{0, 0}, {202, 56}}";
-						Frame = "{{0, 0}, {200, 100}}";
-						MembersFrame = "{{0, 65}, {202, 35}}";
-						OptionsSetName = "Default Options";
-					};
-					Tab2 = {
-						Frame = "{{0, 0}, {200, 100}}";
-					};
-					Tab3 = {
-						Frame = "{{0, 0}, {200, 650}}";
+					StatusViewVisible = YES;
+					Template = 64ABBB4501FA494900185B06;
+					ToolbarVisible = YES;
+					WindowLocation = "{134, 113}";
+				},
+				{
+					ContentSize = "{685, 434}";
+					LeftSlideOut = {
+						Collapsed = NO;
+						Frame = "{{0, 23}, {685, 411}}";
 						Split0 = {
-							Frame = "{{0, 0}, {200, 313}}";
+							ActiveTab = 2;
+							Collapsed = NO;
+							Frame = "{{0, 0}, {685, 411}}";
+							Split0 = {
+								Frame = "{{0, 221}, {685, 190}}";
+							};
+							SplitCount = 1;
+							Tab0 = {
+								Debugger = {
+									Collapsed = NO;
+									Frame = "{{0, 0}, {952, 321}}";
+									Split0 = {
+										Frame = "{{0, 24}, {952, 297}}";
+										Split0 = {
+											Frame = "{{0, 0}, {468, 297}}";
+										};
+										Split1 = {
+											DebugVariablesTableConfiguration = (
+												Name,
+												126.803,
+												Value,
+												150.074,
+												Summary,
+												172.123,
+											);
+											Frame = "{{477, 0}, {475, 297}}";
+										};
+										SplitCount = 2;
+									};
+									SplitCount = 1;
+									Tab0 = {
+										Frame = "{{0, 0}, {100, 50}}";
+									};
+									Tab1 = {
+										Frame = "{{0, 0}, {100, 50}}";
+									};
+									TabCount = 2;
+									TabsVisible = YES;
+								};
+								Frame = "{{0, 0}, {952, 321}}";
+								LauncherConfigVersion = 7;
+							};
+							Tab1 = {
+								Frame = "{{0, 0}, {781, 452}}";
+								LauncherConfigVersion = 3;
+								Runner = {
+									Frame = "{{0, 0}, {781, 452}}";
+								};
+							};
+							Tab2 = {
+								BuildMessageFrame = "{{0, 0}, {687, 29}}";
+								BuildTranscriptFrame = "{{0, 38}, {687, 179}}";
+								Frame = "{{0, 0}, {685, 215}}";
+							};
+							Tab3 = {
+								Frame = "{{0, 0}, {612, 295}}";
+							};
+							TabCount = 4;
+							TabsVisible = NO;
 						};
-						Split1 = {
-							Frame = "{{0, 322}, {200, 328}}";
+						SplitCount = 1;
+						Tab0 = {
+							Frame = "{{0, 0}, {300, 533}}";
+							GroupTreeTableConfiguration = (
+								SCMStatusColumn,
+								22,
+								TargetStatusColumn,
+								18,
+								MainColumn,
+								245,
+							);
 						};
-						SplitCount = 2;
+						Tab1 = {
+							ClassesFrame = "{{0, 0}, {280, 398}}";
+							ClassesTreeTableConfiguration = (
+								PBXBookColumnIdentifier,
+								20,
+								PBXClassColumnIdentifier,
+								237,
+							);
+							Frame = "{{0, 0}, {278, 659}}";
+							MembersFrame = "{{0, 407}, {280, 252}}";
+							MembersTreeTableConfiguration = (
+								PBXBookColumnIdentifier,
+								20,
+								PBXMethodColumnIdentifier,
+								236,
+							);
+						};
+						Tab2 = {
+							Frame = "{{0, 0}, {200, 100}}";
+						};
+						Tab3 = {
+							Frame = "{{0, 0}, {200, 100}}";
+							TargetTableConfiguration = (
+								ActiveObject,
+								16,
+								ObjectNames,
+								202.296,
+							);
+						};
+						Tab4 = {
+							BreakpointsTreeTableConfiguration = (
+								breakpointColumn,
+								197,
+								enabledColumn,
+								31,
+							);
+							Frame = "{{0, 0}, {250, 100}}";
+						};
+						TabCount = 5;
+						TabsVisible = NO;
 					};
-					Tab4 = {
-						Frame = "{{0, 0}, {250, 650}}";
-					};
-					TabCount = 5;
-				};
-			};
+					StatusViewVisible = YES;
+					Template = F5314676015831810DCA290F;
+					ToolbarVisible = YES;
+					WindowLocation = "{7, 250}";
+				},
+			);
+			PBXWorkspaceStateSaveDate = 45284653;
 		};
-		productDirectory = /Volumes/CodeBits/jingham/Tcl/Products;
+		perUserProjectItems = {
+			F55BC4B702B2E09001DC9062 = F55BC4B702B2E09001DC9062;
+			F5A8CC2B02B2FBA001DC9062 = F5A8CC2B02B2FBA001DC9062;
+		};
+		projectwideBuildSettings = {
+			OBJROOT = "/Volumes/CodeBits/jingham/Tcl/Merge-Build";
+			SYMROOT = "/Volumes/CodeBits/jingham/Tcl/Merge-Products";
+		};
 		wantsIndex = 1;
 		wantsSCM = 1;
 	};
 	00E2F84B016E8A830ACA28DC = {
 		activeExec = 0;
-		customExecs = {
-		};
 	};
 	00E2F84C016E8B780ACA28DC = {
 		activeExec = 0;
-		customExecs = {
-		};
 	};
 	00E2F84E016E92110ACA28DC = {
 		activeExec = 0;
-		customExecs = {
-		};
 	};
 	F50DC359017027D801DC9062 = {
 		activeExec = 0;
-		customExecs = {
-		};
+	};
+	F55BC4B702B2E09001DC9062 = {
+		fRef = F55BC4B802B2E09101DC9062;
+		isa = PBXTextBookmark;
+		name = "tkWinInit.c: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 809;
+		vrLoc = 0;
+	};
+	F55BC4B802B2E09101DC9062 = {
+		isa = PBXFileReference;
+		name = tkWinInit.c;
+		path = "/Volumes/CodeBits/jingham/Tcl/Source-merge/tk/win/tkWinInit.c";
+		refType = 0;
+	};
+	F5A8CC2B02B2FBA001DC9062 = {
+		fRef = F5A8CC2C02B2FBA001DC9062;
+		isa = PBXTextBookmark;
+		name = "tkWinInit.c: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 809;
+		vrLoc = 0;
+	};
+	F5A8CC2C02B2FBA001DC9062 = {
+		isa = PBXFileReference;
+		name = tkWinInit.c;
+		path = "/Volumes/CodeBits/jingham/Tcl/Source-merge/tk/win/tkWinInit.c";
+		refType = 0;
 	};
 }

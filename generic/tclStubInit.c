@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.3 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.4 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -248,6 +248,7 @@ TclIntStubs tclIntStubs = {
     TclListObjSetElement, /* 166 */
     TclSetStartupScriptPath, /* 167 */
     TclGetStartupScriptPath, /* 168 */
+    TclpUtfNcmp2, /* 169 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -322,6 +323,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclMacFOpenHack, /* 23 */
     TclpGetTZName, /* 24 */
     TclMacChmod, /* 25 */
+    FSpLLocationFromPath, /* 26 */
 #endif /* MAC_TCL */
 };
 
@@ -626,7 +628,7 @@ TclStubs tclStubs = {
     Tcl_ResetResult, /* 217 */
     Tcl_ScanElement, /* 218 */
     Tcl_ScanCountedElement, /* 219 */
-    Tcl_Seek, /* 220 */
+    Tcl_SeekOld, /* 220 */
     Tcl_ServiceAll, /* 221 */
     Tcl_ServiceEvent, /* 222 */
     Tcl_SetAssocData, /* 223 */
@@ -652,7 +654,7 @@ TclStubs tclStubs = {
     Tcl_SplitPath, /* 243 */
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
-    Tcl_Tell, /* 246 */
+    Tcl_TellOld, /* 246 */
     Tcl_TraceVar, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
@@ -889,6 +891,17 @@ TclStubs tclStubs = {
     Tcl_FSMountsChanged, /* 480 */
     Tcl_EvalTokensStandard, /* 481 */
     Tcl_GetTime, /* 482 */
+    Tcl_CreateObjTrace, /* 483 */
+    Tcl_GetCommandInfoFromToken, /* 484 */
+    Tcl_SetCommandInfoFromToken, /* 485 */
+    Tcl_DbNewWideIntObj, /* 486 */
+    Tcl_GetWideIntFromObj, /* 487 */
+    Tcl_NewWideIntObj, /* 488 */
+    Tcl_SetWideIntObj, /* 489 */
+    Tcl_AllocStatBuf, /* 490 */
+    Tcl_Seek, /* 491 */
+    Tcl_Tell, /* 492 */
+    Tcl_ChannelWideSeekProc, /* 493 */
 };
 
 /* !END!: Do not edit above this line. */

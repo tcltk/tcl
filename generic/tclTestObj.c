@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.7.14.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.7.14.2 2002/06/10 05:33:13 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -406,6 +406,15 @@ TestindexobjCmd(clientData, interp, objc, objv)
     int allowAbbrev, index, index2, setError, i, result;
     CONST char **argv;
     static CONST char *tablePtr[] = {"a", "b", "check", (char *) NULL};
+    /*
+     * Keep this structure declaration in sync with tclIndexObj.c
+     */
+    struct IndexRep {
+	VOID *tablePtr;			/* Pointer to the table of strings */
+	int offset;			/* Offset between table entries */
+	int index;			/* Selected index into table. */
+    };
+    struct IndexRep *indexRep;
 
     if ((objc == 3) && (strcmp(Tcl_GetString(objv[1]),
 	    "check") == 0)) {
@@ -415,13 +424,14 @@ TestindexobjCmd(clientData, interp, objc, objv)
 	 * returned on subsequent lookups.
 	 */
 
-	Tcl_GetIndexFromObj((Tcl_Interp *) NULL, objv[1], tablePtr,
-		"token", 0, &index);
 	if (Tcl_GetIntFromObj(interp, objv[2], &index2) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	objv[1]->internalRep.twoPtrValue.ptr2 =
-		(VOID *) (index2 * sizeof(char *));
+
+	Tcl_GetIndexFromObj((Tcl_Interp *) NULL, objv[1], tablePtr,
+		"token", 0, &index);
+	indexRep = (struct IndexRep *) objv[1]->internalRep.otherValuePtr;
+	indexRep->index = index2;
 	result = Tcl_GetIndexFromObj((Tcl_Interp *) NULL, objv[1],
 		tablePtr, "token", 0, &index);
 	if (result == TCL_OK) {
@@ -455,9 +465,13 @@ TestindexobjCmd(clientData, interp, objc, objv)
      * the index object, clear out the object's cached state.
      */
 
-    if ((objv[3]->typePtr == Tcl_GetObjType("index"))
-	    && (objv[3]->internalRep.twoPtrValue.ptr1 == (VOID *) argv)) {
-	objv[3]->typePtr = NULL;
+    if ( objv[3]->typePtr != NULL
+	 && !strcmp( "index", objv[3]->typePtr->name ) ) {
+	indexRep = (struct IndexRep *) objv[3]->internalRep.otherValuePtr;
+	if (indexRep->tablePtr == (VOID *) argv) {
+	    objv[3]->typePtr->freeIntRepProc(objv[3]);
+	    objv[3]->typePtr = NULL;
+	}
     }
 
     result = Tcl_GetIndexFromObj((setError? interp : NULL), objv[3],

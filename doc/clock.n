@@ -2,6 +2,7 @@
 '\" Copyright (c) 1992-1995 Karl Lehenbauer and Mark Diekhans.
 '\" Copyright (c) 1995-1997 Sun Microsystems, Inc.
 '\" Copyright (c) 1998-1999 Scriptics Corporation
+'\" Copyright (c) 2002 ActiveState Corporation
 '\"
 '\" This documentation is derived from the time and date facilities of
 '\" TclX, by Mark Diekhans and Karl Lehenbauer.
@@ -9,10 +10,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.10 2001/02/18 19:05:24 kennykb Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.10.14.1 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
-.TH clock n 8.3 Tcl "Tcl Built-In Commands"
+.TH clock n 8.4 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -63,7 +64,9 @@ Full month name.
 .VS 8.4
 .IP \fB%c\fR
 Locale specific date and time.  The format for date and time
-in the default "C" locale is "%a %b %d %H:%M:%S %Y".
+in the default "C" locale on Unix/Mac is "%a %b %d %H:%M:%S %Y".
+On Windows, this value is the locale specific long date and time, as
+specified in the Regional Options control panel settings.
 .IP \fB%C\fR
 First two digits of the four-digit year (19 or 20).
 .VE 8.4
@@ -136,10 +139,14 @@ Week of year (00 - 52), Monday is the first day of the week.
 .VS 8.4
 .IP \fB%x\fR
 Locale specific date format.  The format for a date in the default "C"
-locale is "%m/%d/%y".
+locale for Unix/Mac is "%m/%d/%y".
+On Windows, this value is the locale specific short date format, as
+specified in the Regional Options control panel settings.
 .IP \fB%X\fR
 Locale specific 24-hour time format.  The format for a 
-24-hour time in the default "C" locale is "%H:%M:%S".
+24-hour time in the default "C" locale for Unix/Mac is "%H:%M:%S".
+On Windows, this value is the locale specific time format, as
+specified in the Regional Options control panel settings.
 .VE 8.4
 .IP \fB%y\fR
 Year without century (00 - 99).
@@ -177,7 +184,7 @@ Time zone name.
 .VE 8.4
 .RS
 If the \fB\-format\fR argument is not specified, the format string 
-"\fB%a %b %d %H:%M:%S %Z %Y\fR" is used.  If the \fB\-gmt\fR argument
+\fB"%a %b %d %H:%M:%S %Z %Y"\fR is used.  If the \fB\-gmt\fR argument
 is present the next argument must be a boolean which if true specifies
 that the time will be formatted as Greenwich Mean Time. If false
 then the local timezone will be used as defined by the operating

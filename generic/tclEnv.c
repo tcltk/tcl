@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.9.14.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.9.14.2 2002/06/10 05:33:11 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ char **environ = NULL;
  */
 
 static char *		EnvTraceProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, char *name2,
+			    Tcl_Interp *interp, char *name1, CONST char *name2,
 			    int flags));
 static void		ReplaceString _ANSI_ARGS_((CONST char *oldStr,
 			    char *newStr));
@@ -84,8 +84,7 @@ TclSetupEnv(interp)
 				 * managed. */
 {
     Tcl_DString envString;
-    CONST char *p1;
-    char *p2;
+    char *p1, *p2;
     int i;
 
     /*
@@ -134,8 +133,7 @@ TclSetupEnv(interp)
 	    }
 	    p2++;
 	    p2[-1] = '\0';
-	    Tcl_SetVar2(interp, "env", Tcl_DStringValue(&envString), p2,
-		   TCL_GLOBAL_ONLY);	
+	    Tcl_SetVar2(interp, "env", p1, p2, TCL_GLOBAL_ONLY);	
 	    Tcl_DStringFree(&envString);
 	}
 	Tcl_MutexUnlock(&envMutex);
@@ -202,6 +200,12 @@ TclSetEnv(name, value)
 	    }
 	    environ = newEnviron;
 	    environSize = length + 5;
+#if defined(__APPLE__) && defined(__DYNAMIC__)
+	    {
+	    char ***e = _NSGetEnviron();
+	    *e = environ;
+	    }
+#endif
 	}
 	index = length;
 	environ[index + 1] = NULL;
@@ -274,6 +278,15 @@ TclSetEnv(name, value)
     }
 
     Tcl_MutexUnlock(&envMutex);
+    
+    if (!strcmp(name, "HOME")) {
+	/* 
+	 * If the user's home directory has changed, we must invalidate
+	 * the filesystem cache, because '~' expansions will now be
+	 * incorrect.
+	 */
+        Tcl_FSMountsChanged(NULL);
+    }
 }
 
 /*
@@ -508,7 +521,7 @@ EnvTraceProc(clientData, interp, name1, name2, flags)
     Tcl_Interp *interp;		/* Interpreter whose "env" variable is
 				 * being modified. */
     char *name1;		/* Better be "env". */
-    char *name2;		/* Name of variable being modified, or NULL
+    CONST char *name2;		/* Name of variable being modified, or NULL
 				 * if whole array is being deleted (UTF-8). */
     int flags;			/* Indicates what's happening. */
 {

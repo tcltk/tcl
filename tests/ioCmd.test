@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.11 2001/10/12 19:45:24 hobbs Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.11.2.1 2002/06/10 05:33:16 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -266,32 +266,39 @@ removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096
+
 proc iocmdSSETUP {} {
-  uplevel {
-	set srv [socket -server iocmdSRV 0];
-	set port [lindex [fconfigure $srv -sockname] 2];
+    uplevel {
+	set srv [socket -server iocmdSRV 0]
+	set port [lindex [fconfigure $srv -sockname] 2]
 	proc iocmdSRV {sock ip port} {close $sock}
-	set cli [socket 127.0.0.1 $port];
-  }
+	set cli [socket 127.0.0.1 $port]
+    }
 }
 proc iocmdSSHTDWN {} {
-  uplevel {
-	close $cli;
-	close $srv;
+    uplevel {
+	close $cli
+	close $srv
 	unset cli srv port
 	rename iocmdSRV {}
-  }
+    }
 }
 
-test iocmd-8.15 {fconfigure command / tcp channel} {socket} {
+test iocmd-8.15.0 {fconfigure command / tcp channel} {socket macOnly} {
 	iocmdSSETUP
-	set r [list [catch {fconfigure $cli -blah} msg] $msg];
+	set r [list [catch {fconfigure $cli -blah} msg] $msg]
 	iocmdSSHTDWN
-	set r;
+	set r
+} {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -error, -peername, or -sockname}}
+test iocmd-8.15.1 {fconfigure command / tcp channel} {socket unixOrPc} {
+	iocmdSSETUP
+	set r [list [catch {fconfigure $cli -blah} msg] $msg]
+	iocmdSSHTDWN
+	set r
 } {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}}
 test iocmd-8.16 {fconfigure command / tcp channel} {socket} {
 	iocmdSSETUP
-	set r [expr [lindex [fconfigure $cli -peername] 2]==$port];
+	set r [expr [lindex [fconfigure $cli -peername] 2]==$port]
 	iocmdSSHTDWN
 	set r
 } 1

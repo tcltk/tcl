@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.18 2001/09/07 18:57:20 mdejong Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.18.8.1 2002/06/10 05:33:20 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -367,7 +367,12 @@ Tcl_Mutex *
 Tcl_GetAllocMutex()
 {
 #ifdef TCL_THREADS
-    InitializeCriticalSection(&allocLock);
+    static int once = 0;
+
+    if (!once) {
+	InitializeCriticalSection(&allocLock);
+	once = 1;
+    }
     return &allocLockPtr;
 #else
     return NULL;
@@ -628,6 +633,14 @@ TclpFinalizeThreadData(keyPtr)
 {
     VOID *result;
     DWORD *indexPtr;
+#ifdef USE_THREAD_ALLOC
+    static int once = 0;
+
+    if (!once) {
+	once = 1;
+	TclWinFreeAllocCache();
+    }
+#endif
 
     if (*keyPtr != NULL) {
 	indexPtr = *(DWORD **)keyPtr;
@@ -970,4 +983,65 @@ TclpFinalizeCondition(condPtr)
 	*condPtr = NULL;
     }
 }
+
+/*
+ * Additions by AOL for specialized thread memory allocator.
+ */
+#ifdef USE_THREAD_ALLOC
+static DWORD key;
+
+Tcl_Mutex *
+TclpNewAllocMutex(void)
+{
+    struct lock {
+        Tcl_Mutex        tlock;
+        CRITICAL_SECTION wlock;
+    } *lockPtr;
+
+    lockPtr = malloc(sizeof(struct lock));
+    if (lockPtr == NULL) {
+	panic("could not allocate lock");
+    }
+    lockPtr->tlock = (Tcl_Mutex) &lockPtr->wlock;
+    InitializeCriticalSection(&lockPtr->wlock);
+    return &lockPtr->tlock;
+}
+
+void *
+TclpGetAllocCache(void)
+{
+    static int once = 0;
+
+    if (!once) {
+	/*
+	 * We need to make sure that TclWinFreeAllocCache is called
+	 * on each thread that calls this, but only on threads that
+	 * call this.
+	 */
+    	key = TlsAlloc();
+	once = 1;
+	if (key == TLS_OUT_OF_INDEXES) {
+	    panic("could not allocate thread local storage");
+	}
+    }
+    return TlsGetValue(key);
+}
+
+void
+TclpSetAllocCache(void *ptr)
+{
+    TlsSetValue(key, ptr);
+}
+
+void
+TclWinFreeAllocCache(void)
+{
+    void *ptr;
+
+    ptr = TlsGetValue(key);
+    TlsSetValue(key, NULL);
+    TclFreeAllocCache(ptr);
+}
+
+#endif /* USE_THREAD_ALLOC */
 #endif /* TCL_THREADS */

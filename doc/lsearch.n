@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.7.6.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.7.6.2 2002/06/10 05:33:08 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.4 Tcl "Tcl Built-In Commands"
@@ -22,10 +22,19 @@ lsearch \- See if a list contains a particular element
 .PP
 This command searches the elements of \fIlist\fR to see if one
 of them matches \fIpattern\fR.  If so, the command returns the index
-of the first matching element.  If not, the command returns \fB\-1\fR.
-The \fIoption\fR arguments indicates how the elements of the list are to
-be matched against \fIpattern\fR and it must have one of the following
-values:
+of the first matching element
+.VS 8.4
+(unless the options \fB\-all\fR or \fB\-inline\fR are specified.)
+.VE 8.4
+If not, the command returns \fB\-1\fR.  The \fIoption\fR arguments
+indicates how the elements of the list are to be matched against
+\fIpattern\fR and it must have one of the following values:
+.TP
+\fB\-all\fR
+.VS 8.4
+Changes the result to be the list of all matching indices (or all
+matching values if \fB\-inline\fR is specified as well.)
+.VE 8.4
 .TP
 \fB\-ascii\fR
 The list elements are to be examined as ASCII strings.  This option is only
@@ -43,17 +52,30 @@ comparisons.  This option is only meaningful when used with
 \fB\-exact\fR
 The list element must contain exactly the same string as \fIpattern\fR.
 .TP
+\fB\-glob\fR
+\fIPattern\fR is a glob-style pattern which is matched against each list
+element using the same rules as the \fBstring match\fR command.
+.TP
 \fB\-increasing\fR
 The list elements are sorted in increasing order.  This option is only
 meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-inline\fR
+.VS 8.4
+The matching value is returned instead of its index (or an empty
+string if no value matches.)  If \fB\-all\fR is also specified, then
+the result of the command is the list of all values that matched.
+.VE 8.4
 .TP
 \fB\-integer\fR
 The list elements are to be compared as integers.  This option is only
 meaningful when used with \fB\-exact\fR or \fB\-sorted\fR.
 .TP
-\fB\-glob\fR
-\fIPattern\fR is a glob-style pattern which is matched against each list
-element using the same rules as the \fBstring match\fR command.
+\fB\-not\fR
+.VS 8.4
+This negates the sense of the match, returning the index of the first
+non-matching value in the list.
+.VE 8.4
 .TP
 \fB\-real\fR
 The list elements are to be compared as floating-point values.  This
@@ -69,7 +91,16 @@ The list elements are in sorted order.  If this option is specified,
 \fBlsearch\fR will use a more efficient searching algorithm to search
 \fIlist\fR.  If no other options are specified, \fIlist\fR is assumed
 to be sorted in increasing order, and to contain ASCII strings.  This
-option cannot be used with \fB\-glob\fR or \fB\-regexp\fR.
+option cannot be used with \fB\-all\fR, \fB\-glob\fR, \fB\-not\fR or
+\fB\-regexp\fR.
+.TP
+\fB\-start\fR \fIindex\fR
+.VS 8.4
+The list is searched starting at position \fIindex\fR.  If \fIindex\fR
+has the value \fBend\fR, it refers to the last element in the list,
+and \fBend\-\fIinteger\fR refers to the last element in the list minus
+the specified integer offset.
+.VE 8.4
 .PP
 If \fIoption\fR is omitted then it defaults to \fB\-glob\fR.  If more
 than one of \fB\-exact\fR, \fB\-glob\fR, \fB\-regexp\fR, and
@@ -77,11 +108,25 @@ than one of \fB\-exact\fR, \fB\-glob\fR, \fB\-regexp\fR, and
 precendence.  If more than one of \fB\-ascii\fR, \fB\-dictionary\fR,
 \fB\-integer\fR and \fB\-real\fR is specified, the option specified
 last takes precendence.  If more than one of \fB\-increasing\fR and
-\fB\-decreasing\fR is specified, the option specified last takes precedence.
+\fB\-decreasing\fR is specified, the option specified last takes
+precedence.
+
+.SH EXAMPLES
+.VS 8.4
+.CS
+lsearch {a b c d e} c => 2
+lsearch -all {a b c a b c} c => 2 5
+lsearch -data {a20 b35 c47} b* => b35
+lsearch -data -not {a20 b35 c47} b* => a20
+lsearch -all -data -not {a20 b35 c47} b* => a20 c47
+lsearch -all -not {a20 b35 c47} b* => 0 2
+lsearch -start 3 {a b c a b c} c => 5
+.CE
+.VE 8.4
 
 .SH "SEE ALSO"
 .VS 8.4
-list(n), lappend(n), lindex(n), linsert(n), llength(n), 
+foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n), 
 lset(n), lsort(n), lrange(n), lreplace(n)
 .VE
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.8.2.1 2002/02/05 02:21:59 wolfsuit Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.8.2.2 2002/06/10 05:33:11 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -310,18 +310,16 @@ TclFinalizeEncodingSubsystem()
 {
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    Encoding *encodingPtr;
 
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized  = 0;
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
-	encodingPtr = (Encoding *) Tcl_GetHashValue(hPtr);
-	if (encodingPtr->freeProc != NULL) {
-	    (*encodingPtr->freeProc)(encodingPtr->clientData);
-	}
-	ckfree((char *) encodingPtr->name);
-	ckfree((char *) encodingPtr);
+	/*
+	 * Call FreeEncoding instead of doing it directly to handle refcounts
+	 * like escape encodings use.  [Bug #524674]
+	 */
+	FreeEncoding((Tcl_Encoding) Tcl_GetHashValue(hPtr));
 	hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&encodingTable);
@@ -781,7 +779,7 @@ Tcl_CreateEncoding(typePtr)
  *-------------------------------------------------------------------------
  */
 
-CONST char * 
+char * 
 Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
     Tcl_Encoding encoding;	/* The encoding for the source string, or
 				 * NULL for the default system encoding. */
@@ -837,7 +835,7 @@ Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
  *
  * Tcl_ExternalToUtf --
  *
- *	Convert a source buffer from the specified encoding into UTF-8,
+ *	Convert a source buffer from the specified encoding into UTF-8.
  *
  * Results:
  *	The return value is one of TCL_OK, TCL_CONVERT_MULTIBYTE,
@@ -944,7 +942,7 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
  *-------------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_UtfToExternalDString(encoding, src, srcLen, dstPtr)
     Tcl_Encoding encoding;	/* The encoding for the converted string,
 				 * or NULL for the default system encoding. */
@@ -2206,6 +2204,10 @@ TableFreeProc(clientData)
 {
     TableEncodingData *dataPtr;
 
+    /*
+     * Make sure we aren't freeing twice on shutdown.  [Bug #219314]
+     */
+
     dataPtr = (TableEncodingData *) clientData;
     ckfree((char *) dataPtr->toUnicode);
     ckfree((char *) dataPtr->fromUnicode);
@@ -2491,12 +2493,14 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     dstStart = dst;
     dstEnd = dst + dstLen - 1;
 
+    /*
+     * RFC1468 states that the text starts in ASCII, and switches to Japanese
+     * characters, and that the text must end in ASCII. [Patch #474358]
+     */
+
     if (flags & TCL_ENCODING_START) {
-	unsigned int len;
-	
 	state = 0;
-	len = dataPtr->subTables[0].sequenceLen;
-	if (dst + dataPtr->initLen + len > dstEnd) {
+	if (dst + dataPtr->initLen > dstEnd) {
 	    *srcReadPtr = 0;
 	    *dstWrotePtr = 0;
 	    return TCL_CONVERT_NOSPACE;
@@ -2504,9 +2508,6 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	memcpy((VOID *) dst, (VOID *) dataPtr->init,
 		(size_t) dataPtr->initLen);
 	dst += dataPtr->initLen;
-	memcpy((VOID *) dst, (VOID *) dataPtr->subTables[0].sequence,
-		(size_t) len);
-	dst += len;
     } else {
         state = (int) *statePtr;
     }
@@ -2561,14 +2562,28 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    tablePrefixBytes = tableDataPtr->prefixBytes;
 	    tableFromUnicode = tableDataPtr->fromUnicode;
 
-	    subTablePtr = &dataPtr->subTables[state];
-	    if (dst + subTablePtr->sequenceLen > dstEnd) {
-		result = TCL_CONVERT_NOSPACE;
-		break;
+	    /*
+	     * The state variable has the value of oldState when word is 0.
+	     * In this case, the escape sequense should not be copied to dst 
+	     * because the current character set is not changed.
+	     */
+	    if (state != oldState) {
+		subTablePtr = &dataPtr->subTables[state];
+		if ((dst + subTablePtr->sequenceLen) > dstEnd) {
+		    /*
+		     * If there is no space to write the escape sequence, the
+		     * state variable must be changed to the value of oldState
+		     * variable because this escape sequence must be written
+		     * in the next conversion.
+		     */
+		    state = oldState;
+		    result = TCL_CONVERT_NOSPACE;
+		    break;
+		}
+		memcpy((VOID *) dst, (VOID *) subTablePtr->sequence,
+			(size_t) subTablePtr->sequenceLen);
+		dst += subTablePtr->sequenceLen;
 	    }
-	    memcpy((VOID *) dst, (VOID *) subTablePtr->sequence,
-		    (size_t) subTablePtr->sequenceLen);
-	    dst += subTablePtr->sequenceLen;
 	}
 
 	if (tablePrefixBytes[(word >> 8)] != 0) {
@@ -2591,9 +2606,15 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     }
 
     if ((result == TCL_OK) && (flags & TCL_ENCODING_END)) {
-	if (dst + dataPtr->finalLen > dstEnd) {
+	unsigned int len = dataPtr->subTables[0].sequenceLen;
+	if (dst + dataPtr->finalLen + (state?len:0) > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
+	    if (state) {
+		memcpy((VOID *) dst, (VOID *) dataPtr->subTables[0].sequence,
+			(size_t) len);
+		dst += len;
+	    }
 	    memcpy((VOID *) dst, (VOID *) dataPtr->final,
 		    (size_t) dataPtr->finalLen);
 	    dst += dataPtr->finalLen;
