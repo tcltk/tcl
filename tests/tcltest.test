@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.49 2005/02/24 18:05:42 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.50 2005/02/24 21:02:58 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -747,16 +747,18 @@ test tcltest-9.4 {skipFiles} {
 }
 
 test tcltest-9.5 {GetMatchingFiles: Bug 1119798} -setup {
-    file copy [file join [file dirname [info script]] all.tcl] [temporaryDirectory] 
-    makeDirectory foo
-    makeFile {} fee
+    set d [makeDirectory tmp]
+    makeDirectory foo $d
+    makeFile {} fee $d
+    file copy [file join [file dirname [info script]] all.tcl] $d
 } -body {
     slave msg [file join [temporaryDirectory] all.tcl] -file f*
     regexp {exiting with errors:} $msg
 } -cleanup {
-    removeFile fee
-    removeDirectory foo
-    file delete [file join [temporaryDirectory] all.tcl]
+    file delete [file join $d all.tcl]
+    removeFile fee $d
+    removeDirectory foo $d
+    removeDirectory tmp
 } -result 0
 
 # -preservecore, [preserveCore]
