@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.41 2002/02/05 17:08:04 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.42 2002/08/20 15:33:32 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -24,6 +24,7 @@
 
 package require Tcl 8.2
 # keep this in sync with pkgIndex.tcl
+# and with the install directories in Makefiles
 package provide http 2.4.2
 
 namespace eval http {
