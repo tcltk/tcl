@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.32 2004/06/23 15:36:59 dkf Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.33 2004/06/23 21:32:03 patthoyts Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1014,14 +1014,17 @@ if {$d eq "C"} { set dd "D" } else { set dd "C" }
 test winFCmd-16.10 {Windows file normalization} {win} {
     file norm ${dd}:foo
 } "${dd}:/foo"
-test winFCmd-16.11 {Windows file normalization} {win cdrom} {
+test winFCmd-16.11 {Windows file normalization} -constraints {win cdrom} \
+-body {
     cd ${d}:
     cd $cdrom
     cd ${d}:
     cd $cdrom
     # Must not crash
     set result "no crash"
-} {no crash}
+} -cleanup {
+    cd ${d}:
+} -result {no crash}
 test winFCmd-16.12 {Windows file normalization} -constraints win -setup {
     set oldwd [pwd]
     set oldhome ""
