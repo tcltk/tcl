@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.13 2000/01/26 03:38:00 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.14 2000/03/27 18:34:32 ericm Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -502,7 +502,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     FileState *fsPtr = (FileState *) instanceData;
     int newLoc;
 
-    newLoc = lseek(fsPtr->fd, offset, mode);
+    newLoc = lseek(fsPtr->fd, (off_t) offset, mode);
 
     *errorCodePtr = (newLoc == -1) ? errno : 0;
     return newLoc;

@@ -1,3 +1,12 @@
+2000-03-27  Eric Melski  <ericm@scriptics.com>
+
+	* unix/tclUnixChan.c: Added (off_t) type casts in lseek() call
+	[Bug: 4409].
+
+	* unix/tclLoadAout.c: 
+	* unix/tclUnixPipe.c: Added (off_t) type casts in lseek() calls
+	[Bug: 4410].
+
 2000-03-22  Sandeep Tamhankar <sandeep@scriptics.com>
 
         * library/http2.1/http.tcl: Fixed a bug where string query data
