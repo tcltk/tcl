@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.44 2002/01/25 21:36:09 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.45 2002/01/29 02:40:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -139,7 +139,7 @@ static CmdInfo builtInCmds[] = {
     {"proc",		(Tcl_CmdProc *) NULL,	Tcl_ProcObjCmd,	
         (CompileProc *) NULL,		1},
     {"regexp",		(Tcl_CmdProc *) NULL,	Tcl_RegexpObjCmd,
-        (CompileProc *) NULL,		1},
+        TclCompileRegexpCmd,		1},
     {"regsub",		(Tcl_CmdProc *) NULL,	Tcl_RegsubObjCmd,
         (CompileProc *) NULL,		1},
     {"rename",		(Tcl_CmdProc *) NULL,	Tcl_RenameObjCmd,
