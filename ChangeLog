@@ -1,3 +1,10 @@
+2001-11-12  David Gravereaux <davygrvy@pobox.com>
+
+	* win/buildall.vc.bat(new):
+	* win/makefile.vc:  Small fix with deriving the "OriginalFilename"
+	string in the .rc scripts.  Added a quick batchfile for building
+	the entire thing.
+
 2001-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/FileSystem.3:
