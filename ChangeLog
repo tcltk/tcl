@@ -1,3 +1,9 @@
+2000-10-26  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* win/tclWinFile.c (TclpMatchFilesTypes): NULL was being set to
+	"attr" which was a DWORD.  Changed NULL to zero because a 'void *'
+	can't be set to a DWORD to avoid the compiler warning.
+
 2000-10-24  Jennifer Hom  <jenn@ajubasolutions.com>
 
 	* tests/all.tcl: Removed support for tcltest 1.0.
