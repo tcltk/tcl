@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.1.2.3 1998/09/30 20:50:31 stanton Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.1.2.4 1999/03/09 01:31:30 lfb Exp $
  */
 
 #include "tclWinInt.h"
@@ -396,7 +396,7 @@ TclWinGetPlatformId()
  *	backslashes to slashes for use in Tcl.
  *
  * Results:
- *	All backslashes in given string are changes to slashes.
+ *	All backslashes in given string are changed to slashes.
  *
  * Side effects:
  *	None.
