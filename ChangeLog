@@ -1,3 +1,12 @@
+2003-11-18  David Gravereaux <davygrvy@pobox.com>
+
+	* contrib/djgpp/Makefile:		Changes from Victor Wagner
+	* contrib/djgpp/langinfo.c (new):	<vitus@45.free.net> for better
+	* contrib/djgpp/langinfo.h (new):	DJGPP support.
+	* unix/tclUnixInit.c:			.
+	* unix/tclUnixChan.c:			.
+	* unix/tclUnixFCmd.c:			.
+
 2003-11-17  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/reg.test:  Added tests for [Bugs 230589, 504785, 505048, 840258]
