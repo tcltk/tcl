@@ -1,3 +1,9 @@
+2000-04-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclAlloc.c: wrapped caddr_t define to not be done on Unix
+	* unix/tclUnixPort.h: added Tclp*Alloc defines to allow the use of
+	USE_TCLALLOC on Unix. [Bug: 4731]
+
 2000-04-19  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* library/dde1.1/pkgIndex.tcl:
@@ -6,7 +12,7 @@
 	* win/tclWinThrd.c: converted CRLF to LF the */tcl.hpj.in files
 	were not converted, as it confuses hcw locally. [Bug: 5096]
 
-	* win/Makefile.in: expanded cleanup or help files
+	* win/Makefile.in: expanded cleanup target for help files
 
 	* doc/Thread.3: minor macro cleanup
 

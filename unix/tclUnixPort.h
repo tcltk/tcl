@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.14 2000/04/19 08:32:46 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.15 2000/04/21 04:04:12 hobbs Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -460,6 +460,17 @@ extern double strtod();
 #define TclpAsyncMark(async)
 #define TclpGetPid(pid)		((unsigned long) (pid))
 #define TclpReleaseFile(file)	/* Nothing. */
+
+/*
+ * The following defines wrap the system memory allocation routines for
+ * use by tclAlloc.c.  By default off unused on Unix.
+ */
+
+#if USE_TCLALLOC
+#   define TclpSysAlloc(size, isBin)	malloc((size_t)size)
+#   define TclpSysFree(ptr)		free((char*)ptr)
+#   define TclpSysRealloc(ptr, size)	realloc((char*)ptr, (size_t)size)
+#endif
 
 /*
  * The following macros and declaration wrap the C runtime library

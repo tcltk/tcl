@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.8 1999/08/10 17:35:18 redman Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.9 2000/04/21 04:04:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -29,7 +29,12 @@
 #   define RCHECK
 #endif
 
+/*
+ * On Unix this will already be defined
+ */
+#if defined(WIN32) || defined(MAC_TCL)
 typedef unsigned long caddr_t;
+#endif
 
 /*
  * The overhead on a block is at least 8 bytes.  When free, this space
