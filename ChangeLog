@@ -1,3 +1,7 @@
+2002-02-19  Don Porter <dgp@users.sourceforge.net>
+
+	* changes: First draft of updated changes for 8.4a4 release.
+
 2002-02-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixPort.h: add strtoll/strtoull declarations for
@@ -3120,7 +3124,7 @@
 	* win/tclWinPipe.c (BuildCommandLine): Fixed tcl Bug
 	  [432499]. Part of the code used the non-absolute path to the
 	  executable to determine quoting. This failed if the absolute
-	  path cotained spaces, but the application name itselfl not. This
+	  path contained spaces, but the application name itself not. This
 	  bug caused no trouble on Win NT 5, but does for other variants
 	  in the Win* family. Report and fix due to Ken Poole
 	  <kenpoole@users.sourceforge.net>.
@@ -3243,7 +3247,7 @@
 
 	* library/tcltest/tcltest.tcl: fixed stdio constraint test.
 	[Patch #454050] (stanton)
-	Simplified unixExecs constriant test. 
+	Simplified unixExecs constraint test. 
 	
 2001-08-22  Don Porter <dgp@users.sourceforge.net>
 
