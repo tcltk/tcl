@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.8 2004/10/04 13:06:34 dkf Exp $
+'\" RCS: @(#) $Id: dict.n,v 1.9 2004/10/08 21:39:15 dkf Exp $
 '\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
@@ -174,6 +174,22 @@ through nested dictionaries to the mapping to remove. At least one key
 must be specified, but the last key on the key-path need not exist.
 All other components on the path must exist.
 .TP
+\fBdict update \fIdictionaryVariable key varName \fR?\fIkey varName ...\fR? \fIbody\fR
+Execute the Tcl script in \fIbody\fR with the value for each \fIkey\fR
+(as found by reading the dictionary value in \fIdictionaryVariable\fR)
+mapped to the variable \fIvarName\fR. There may be multiple
+\fIkey\fR/\fIvarName\fR pairs. If a \fIkey\fR does not have a mapping,
+that corresponds to an unset \fIvarName\fR. When \fIbody\fR
+terminates, any changes made to the \fIvarName\fRs is reflected back
+to the dictionary within \fIdictionaryVariable\fR (unless
+\fIdictionaryVariable\fR itself becomes unreadable, when all updates
+are silently discarded), even if the result of \fIbody\fR is an error
+or some other kind of exceptional exit. The result of \fBdict
+update\fR is (unless some kind of error occurs) the result of the
+evaluation of \fIbody\fR. Note that the mapping of values to variables
+does not use traces; changes to the \fIdictionaryVariable\fR's
+contents only happen when \fIbody\fR terminates.
+.TP
 \fBdict values \fIdictionaryValue \fR?\fIglobPattern\fR?
 Return a list of all values in the given dictionary value. If a
 pattern is supplied, only those values that match it (according to the
@@ -182,6 +198,22 @@ will be in an arbitrary implementation-specific order, though where no
 pattern is supplied the i'th key returned by \fBdict keys\fR will be
 the key for the i'th value returned by \fBdict values\fR applied to
 the same dictionary value.
+.TP
+\fBdict with \fIdictionaryVariable \fR?\fIkey ...\fR? \fIbody\fR
+Execute the Tcl script in \fIbody\fR with the value for each key in
+\fIdictionaryVariable\fR mapped (in a manner similarly to \fBdict
+update\fR) to a variable with the same name. Where one or more
+\fIkey\fRs are available, these indicate a chain of nested
+dictionaries, with the innermost dictionary being the one opened out
+for the execution of \fIbody\fR. As with \fBdict update\fR, making
+\fIdictionaryVariable\fR unreadable will make the updates to the
+dictionary be discarded, and this also happens if the contents of
+\fIdictionaryVariable\fR are adjusted so that the chain of
+dictionaries no longer exists. The result of \fBdict update\fR is
+(unless some kind of error occurs) the result of the evaluation of
+\fIbody\fR. Note that the mapping of values to variables does not use
+traces; changes to the \fIdictionaryVariable\fR's contents only happen
+when \fIbody\fR terminates.
 .SH "DICTIONARY VALUES"
 Dictionaries are values that contain an efficient (but \fInot\fR
 order-preserving) mapping from arbitrary keys to arbitrary values.
@@ -214,11 +246,11 @@ set i 0
 puts "There are [\fBdict size\fR $employeeInfo] employees"
 \fBdict for\fR {id info} $employeeInfo {
    puts "Employee #[incr i]: $id"
-   puts "   Name: [\fBdict get\fR $info forenames]\\
-         [\fBdict get\fR $info surname]"
-   puts "   Address: [\fBdict get\fR $info street],\\
-         [\fBdict get\fR $info city]"
-   puts "   Telephone: [\fBdict get\fR $info phone]"
+   \fBdict with\fR info {
+      puts "   Name: $forenames $surname"
+      puts "   Address: $street, $city"
+      puts "   Telephone: $phone"
+   }
 }
 # Another way to iterate and pick out names...
 foreach id [\fBdict keys\fR $employeeInfo] {
