@@ -1,3 +1,11 @@
+2004-06-11  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclAppInit.c: Restored the 'setargv' procedure when
+	compiling with mingw.  Apparently, the command line parsing in
+	mingw doesn't work as well as that in vc++, and the result was
+	(1) that winPipe-8.19 failed, and (2) that 'make test' would
+	work at all only with TESTFLAGS='-singleproc 1'. [Bug 967195]
+	
 2004-06-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* generic/tclIOUtil.c: removed forceful setting of the
