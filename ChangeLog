@@ -1,3 +1,16 @@
+2002-06-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/msgcat.n:
+	* library/msgcat/msgcat.tcl:
+	* library/msgcat/pkgIndex.tcl:
+	* tests/msgcat.test:  Revised locale initialization to interpret
+	environment variable locale values according to XPG4, and to
+	recognize the LC_ALL and LC_MESSAGES values over that of LANG.
+	Also added many Windows Registry locale values to those 
+	recognized by msgcat.  Revised tests and docs.  Bumped to
+	version 1.3.  Thanks to Bruno Haible for the report and
+	assistance crafting the solution.  [Bug 525522, 525525]
+
 2002-06-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompile.c (TclCompileTokens): a better algorithm for
