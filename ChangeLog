@@ -1,3 +1,8 @@
+2005-01-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Convert to other form of emacs mode control
+	comment to prevent problems with old versions of man. [Bug 1085127]
+
 2004-12-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tcl.m4, win/configure: update MSVC CFLAGS_OPT to -O2, remove
