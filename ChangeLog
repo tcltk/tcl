@@ -1,3 +1,9 @@
+1999-03-25    <stanton@scriptics.com>
+
+	* doc/Thread.3: Updated documentation of Tcl_MutexLock to indicate
+	that the recursive locking behavior is undefined.  On Windows, it
+	does not block, on Unix it deadlocks. [Bug: 1275]
+
 1999-03-24    <stanton@scriptics.com>
 
 	* tests/execute.test: 
