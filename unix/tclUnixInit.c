@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.5 1999/02/10 23:31:27 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.5.2.1 1999/03/08 20:14:17 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -578,4 +578,31 @@ Tcl_SourceRCFile(interp)
 	}
         Tcl_DStringFree(&temp);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCheckStackSpace --
+ *
+ *	Detect if we are about to blow the stack.  Called before an 
+ *	evaluation can happen when nesting depth is checked.
+ *
+ * Results:
+ *	1 if there is enough stack space to continue; 0 if not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpCheckStackSpace()
+{
+    /*
+     * This function is unimplemented on Unix platforms.
+     */
+
+    return 1;
 }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.1.2.6 1998/12/11 00:12:07 stanton Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.1.2.6.2.1 1999/03/08 20:14:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -33,19 +33,6 @@ typedef struct {
 static SyncObjRecord keyRecord;
 static SyncObjRecord mutexRecord;
 static SyncObjRecord condRecord;
-#ifdef notdef
-static int numKeys = 0;
-static int maxKeys = 0;
-static Tcl_ThreadDataKey *keyList[] = NULL;
-
-static int numMutexes = 0;
-static int maxMutexes = 0;
-static Tcl_Mutex *mutexList[] = NULL;
-
-static int numConds = 0;
-static int maxConds = 0;
-static Tcl_Condition *condList[] = NULL;
-#endif
 
 /*
  * Prototypes of functions used only in this file
@@ -56,32 +43,6 @@ static void		RememberSyncObject _ANSI_ARGS_((char *objPtr,
 static void		ForgetSyncObject _ANSI_ARGS_((char *objPtr,
 			    SyncObjRecord *recPtr));
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ConditionWait --
- * Tcl_ConditionNotify --
- *	Temporary wrappers.
- *
- *----------------------------------------------------------------------
- */
-#ifdef TCL_THREADS
-void
-Tcl_ConditionNotify(condPtr)
-    Tcl_Condition *condPtr;
-{
-    TclpConditionNotify(condPtr);
-}
-void
-Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
-    Tcl_Condition *condPtr;
-    Tcl_Mutex *mutexPtr;
-    Tcl_Time *timePtr;		/* Timeout on waiting period */
-{
-    TclpConditionWait(condPtr, mutexPtr, timePtr);
-}
-#endif /* TCL_THREADS */
 
 /*
  *----------------------------------------------------------------------
@@ -549,4 +510,54 @@ Tcl_ExitThread(status)
 #endif
 }
 
+#ifndef TCL_THREADS
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ConditionWait, et al. --
+ *
+ *	These noop procedures are provided so the stub table does
+ *	not have to be conditionalized for threads.  The real
+ *	implementations of these functions live in the platform
+ *	specific files.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+#undef Tcl_ConditionWait
+void
+Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
+    Tcl_Condition *condPtr;	/* Really (pthread_cond_t **) */
+    Tcl_Mutex *mutexPtr;	/* Really (pthread_mutex_t **) */
+    Tcl_Time *timePtr;		/* Timeout on waiting period */
+{
+}
+
+#undef Tcl_ConditionNotify
+void
+Tcl_ConditionNotify(condPtr)
+    Tcl_Condition *condPtr;
+{
+}
+
+#undef Tcl_MutexLock
+void
+Tcl_MutexLock(mutexPtr)
+    Tcl_Mutex *mutexPtr;
+{
+}
+
+#undef Tcl_MutexUnlock
+void
+Tcl_MutexUnlock(mutexPtr)
+    Tcl_Mutex *mutexPtr;
+{
+}
+#endif

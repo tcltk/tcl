@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.1.2.5 1999/02/26 02:19:24 redman Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.1.2.5.2.1 1999/03/08 20:14:18 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -373,16 +373,6 @@ typedef float *TCHAR;
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
 /*
- * The following declarations belong in tclInt.h, but depend on platform
- * specific types (e.g. struct tm).
- */
-
-EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((const time_t *tp,
-			    int useGMT));
-EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
-			    const char *format, const struct tm *t));
-
-/*
  * The following defines map from standard socket names to our internal
  * wrappers that redirect through the winSock function table (see the
  * file tclWinSock.c).
@@ -392,16 +382,6 @@ EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
 #define getsockopt	TclWinGetSockOpt
 #define ntohs		TclWinNToHS
 #define setsockopt	TclWinSetSockOpt
-
-/*
- * The following declarations belong in tclInt.h, but depend on platform
- * specific types (e.g. struct tm).
- */
-
-EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((const time_t *tp,
-			    int useGMT));
-EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
-			    const char *format, const struct tm *t));
 
 /*
  * The following macros have trivial definitions, allowing generic code to 
@@ -418,27 +398,9 @@ EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
 #define TclpExit		exit
 #define TclpLstat		TclpStat
 
-EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
-			    struct stat *buf));
-EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *path, 
-			    int mode));
-
 /*
  * Declarations for Windows-only functions.
  */
-
-EXTERN void		TclWinConvertError _ANSI_ARGS_((DWORD errCode));
-EXTERN void		TclWinConvertWSAError _ANSI_ARGS_((DWORD errCode));
-EXTERN struct servent * PASCAL FAR
-			TclWinGetServByName _ANSI_ARGS_((const char FAR *nm,
-		            const char FAR *proto));
-EXTERN int PASCAL FAR	TclWinGetSockOpt _ANSI_ARGS_((SOCKET s, int level,
-		            int optname, char FAR * optval, int FAR *optlen));
-EXTERN HINSTANCE	TclWinGetTclInstance _ANSI_ARGS_((void));
-EXTERN u_short PASCAL FAR
-			TclWinNToHS _ANSI_ARGS_((u_short ns));
-EXTERN int PASCAL FAR	TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
-		            int optname, const char FAR * optval, int optlen));
 
 EXTERN Tcl_Channel  TclWinOpenSerialChannel _ANSI_ARGS_((HANDLE handle,
                         char *channelName, int permissions));
@@ -469,6 +431,9 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+#include "tclPlatDecls.h"
+#include "tclIntPlatDecls.h"
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

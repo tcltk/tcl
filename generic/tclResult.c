@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.1.2.3 1999/02/10 23:31:19 stanton Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.1.2.3.2.1 1999/03/08 20:14:11 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -430,6 +430,90 @@ Tcl_GetObjResult(interp)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_AppendResultVA --
+ *
+ *	Append a variable number of strings onto the interpreter's string
+ *	result.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The result of the interpreter given by the first argument is
+ *	extended by the strings in the va_list (up to a terminating NULL
+ *	argument).
+ *
+ *	If the string result is empty, the object result is moved to the
+ *	string result, then the object result is reset.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_AppendResultVA (interp, argList)
+    Tcl_Interp *interp;		/* Interpreter with which to associate the
+				 * return value. */
+    va_list argList;		/* Variable argument list. */
+{
+    Interp *iPtr = (Interp *) interp;
+    va_list tmpArgList;
+    char *string;
+    int newSpace;
+
+    /*
+     * If the string result is empty, move the object result to the
+     * string result, then reset the object result.
+     */
+
+    if (*(iPtr->result) == 0) {
+	Tcl_SetResult((Tcl_Interp *) iPtr,
+	        TclGetString(Tcl_GetObjResult((Tcl_Interp *) iPtr)),
+	        TCL_VOLATILE);
+    }
+    
+    /*
+     * Scan through all the arguments to see how much space is needed.
+     */
+
+    tmpArgList = argList;
+    newSpace = 0;
+    while (1) {
+	string = va_arg(tmpArgList, char *);
+	if (string == NULL) {
+	    break;
+	}
+	newSpace += strlen(string);
+    }
+
+    /*
+     * If the append buffer isn't already setup and large enough to hold
+     * the new data, set it up.
+     */
+
+    if ((iPtr->result != iPtr->appendResult)
+	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
+	    || ((newSpace + iPtr->appendUsed) >= iPtr->appendAvl)) {
+       SetupAppendBuffer(iPtr, newSpace);
+    }
+
+    /*
+     * Now go through all the argument strings again, copying them into the
+     * buffer.
+     */
+
+    while (1) {
+	string = va_arg(argList, char *);
+	if (string == NULL) {
+	    break;
+	}
+	strcpy(iPtr->appendResult + iPtr->appendUsed, string);
+	iPtr->appendUsed += strlen(string);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_AppendResult --
  *
  *	Append a variable number of strings onto the interpreter's string
@@ -452,62 +536,11 @@ Tcl_GetObjResult(interp)
 void
 Tcl_AppendResult TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 {
+    Tcl_Interp *interp;
     va_list argList;
-    Interp *iPtr;
-    char *string;
-    int newSpace;
 
-    /*
-     * If the string result is empty, move the object result to the
-     * string result, then reset the object result.
-     */
-
-    iPtr = (Interp *) TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult((Tcl_Interp *) iPtr,
-	        TclGetString(Tcl_GetObjResult((Tcl_Interp *) iPtr)),
-	        TCL_VOLATILE);
-    }
-    
-    /*
-     * Scan through all the arguments to see how much space is needed.
-     */
-
-    newSpace = 0;
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	newSpace += strlen(string);
-    }
-    va_end(argList);
-
-    /*
-     * If the append buffer isn't already setup and large enough to hold
-     * the new data, set it up.
-     */
-
-    if ((iPtr->result != iPtr->appendResult)
-	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
-	    || ((newSpace + iPtr->appendUsed) >= iPtr->appendAvl)) {
-       SetupAppendBuffer(iPtr, newSpace);
-    }
-
-    /*
-     * Now go through all the argument strings again, copying them into the
-     * buffer.
-     */
-
-    TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	strcpy(iPtr->appendResult + iPtr->appendUsed, string);
-	iPtr->appendUsed += strlen(string);
-    }
+    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    Tcl_AppendResultVA(interp, argList);
     va_end(argList);
 }
 
@@ -792,6 +825,55 @@ ResetObjResult(iPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SetErrorCodeVA --
+ *
+ *	This procedure is called to record machine-readable information
+ *	about an error that is about to be returned.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The errorCode global variable is modified to hold all of the
+ *	arguments to this procedure, in a list form with each argument
+ *	becoming one element of the list.  A flag is set internally
+ *	to remember that errorCode has been set, so the variable doesn't
+ *	get set automatically when the error is returned.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetErrorCodeVA (interp, argList)
+    Tcl_Interp *interp;		/* Interpreter in which to access the errorCode
+				 * variable. */
+    va_list argList;		/* Variable argument list. */
+{
+    char *string;
+    int flags;
+    Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Scan through the arguments one at a time, appending them to
+     * $errorCode as list elements.
+     */
+
+    flags = TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT;
+    while (1) {
+	string = va_arg(argList, char *);
+	if (string == NULL) {
+	    break;
+	}
+	(void) Tcl_SetVar2((Tcl_Interp *) iPtr, "errorCode",
+		(char *) NULL, string, flags);
+	flags |= TCL_APPEND_VALUE;
+    }
+    iPtr->flags |= ERROR_CODE_SET;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_SetErrorCode --
  *
  *	This procedure is called to record machine-readable information
@@ -813,29 +895,17 @@ ResetObjResult(iPtr)
 void
 Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 {
+    Tcl_Interp *interp;
     va_list argList;
-    char *string;
-    int flags;
-    Interp *iPtr;
 
     /*
      * Scan through the arguments one at a time, appending them to
      * $errorCode as list elements.
      */
 
-    iPtr = (Interp *) TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
-    flags = TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT;
-    while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
-	(void) Tcl_SetVar2((Tcl_Interp *) iPtr, "errorCode",
-		(char *) NULL, string, flags);
-	flags |= TCL_APPEND_VALUE;
-    }
+    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    Tcl_SetErrorCodeVA(interp, argList);
     va_end(argList);
-    iPtr->flags |= ERROR_CODE_SET;
 }
 
 /*

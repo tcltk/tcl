@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.1.2.4 1998/12/10 21:21:58 stanton Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.1.2.4.2.1 1999/03/08 20:14:17 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -238,4 +238,62 @@ TclpGetTime(timePtr)
     (void) gettimeofday(&tv, &tz);
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetDate --
+ *
+ *	This function converts between seconds and struct tm.  If
+ *	useGMT is true, then the returned date will be in Greenwich
+ *	Mean Time (GMT).  Otherwise, it will be in the local time zone.
+ *
+ * Results:
+ *	Returns a static tm structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct tm *
+TclpGetDate(time, useGMT)
+    TclpTime_t time;
+    int useGMT;
+{
+    const time_t *tp = (const time_t *)time;
+
+    if (useGMT) {
+	return gmtime(tp);
+    } else {
+	return localtime(tp);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpStrftime --
+ *
+ *	On Unix, we can safely call the native strftime implementation.
+ *
+ * Results:
+ *	The normal strftime result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+TclpStrftime(s, maxsize, format, t)
+    char *s;
+    size_t maxsize;
+    const char *format;
+    const struct tm *t;
+{
+    return strftime(s, maxsize, format, t);
 }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.1.2.6 1998/12/12 01:37:01 lfb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.1.2.6.2.1 1999/03/08 20:14:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -130,6 +130,7 @@ TclInitObjSubsystem()
     Tcl_MutexUnlock(&tableMutex);
 
     Tcl_RegisterObjType(&tclBooleanType);
+    Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclIntType);
     Tcl_RegisterObjType(&tclStringType);

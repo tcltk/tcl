@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.9 1999/02/10 23:31:18 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.9.2.1 1999/03/08 20:14:10 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1493,6 +1493,41 @@ Tcl_Eval(interp, string)
     Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
 	    TCL_VOLATILE);
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EvalObj, Tcl_GlobalEvalObj --
+ *
+ *	These functions are deprecated but we keep them around for backwards
+ *	compatibility reasons.
+ *
+ * Results:
+ *	See the functions they call.
+ *
+ * Side effects:
+ *	See the functions they call.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_EvalObj
+int
+Tcl_EvalObj(interp, objPtr)
+    Tcl_Interp * interp;
+    Tcl_Obj * objPtr;
+{
+    return Tcl_EvalObjEx(interp, objPtr, 0);
+}
+
+#undef Tcl_GlobalEvalObj
+int
+Tcl_GlobalEvalObj(interp, objPtr)
+    Tcl_Interp * interp;
+    Tcl_Obj * objPtr;
+{
+    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
 
 /*

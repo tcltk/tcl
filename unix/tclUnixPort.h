@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.4 1998/09/30 23:01:20 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.4.2.1 1999/03/08 20:14:17 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -450,21 +450,11 @@ extern double strtod();
 #define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_LF
 
 /*
- * The following macros define time related functions in terms of
- * standard Unix routines.
- */
-
-#define TclpGetDate(t,u)	((u) ? gmtime((t)) : localtime((t)))
-#define TclStrftime(s,m,f,t)	(strftime((s),(m),(f),(t)))
-
-/*
  * The following macros have trivial definitions, allowing generic code to 
  * address platform-specific issues.
  */
 
-#define TclpCheckStackSpace()	(1)
 #define TclpGetPid(pid)		((unsigned long) (pid))
-#define TclpHasSockets(interp)	(TCL_OK)
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*
@@ -479,12 +469,7 @@ EXTERN int		TclpLstat _ANSI_ARGS_((CONST char *path,
 EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
 			    struct stat *buf));
 
-/*
- * The following routine is only exported for testing purposes.
- */
-
-EXTERN int	TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
-		    int timeout));
+#include "tclIntPlatDecls.h"
 
 /*
  * Platform specific mutex definition used by memory allocators.

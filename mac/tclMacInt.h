@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInt.h,v 1.1.2.2 1998/09/24 23:59:12 stanton Exp $
+ * RCS: @(#) $Id: tclMacInt.h,v 1.1.2.2.2.1 1999/03/08 20:14:14 stanton Exp $
  */
 
 #ifndef _TCLMACINT
@@ -47,36 +47,14 @@
 typedef pascal void (*ExitToShellProcPtr)(void);
 
 /*
- * Prototypes for functions found in the tclMacUtil.c compatability library.
- */
-
-EXTERN int 	FSpGetDefaultDir _ANSI_ARGS_((FSSpecPtr theSpec));
-EXTERN int 	FSpSetDefaultDir _ANSI_ARGS_((FSSpecPtr theSpec));
-EXTERN OSErr 	FSpFindFolder _ANSI_ARGS_((short vRefNum, OSType folderType,
-		    Boolean createFolder, FSSpec *spec));
-EXTERN void	GetGlobalMouse _ANSI_ARGS_((Point *mouse));
-
-/*
  * Prototypes of Mac only internal functions.
  */
 
-EXTERN void	TclCreateMacEventSource _ANSI_ARGS_((void));
-EXTERN int	TclMacConsoleInit _ANSI_ARGS_((void));
-EXTERN void	TclMacExitHandler _ANSI_ARGS_((void));
 EXTERN char *	TclMacGetFontEncoding _ANSI_ARGS_((int fontId));
 EXTERN int	TclMacHaveThreads(void);
-EXTERN void	TclMacInitExitToShell _ANSI_ARGS_((int usePatch));
-EXTERN OSErr	TclMacInstallExitToShellPatch _ANSI_ARGS_((
-		    ExitToShellProcPtr newProc));
-EXTERN int	TclMacOSErrorToPosixError _ANSI_ARGS_((int error));
-EXTERN void	TclMacRemoveTimer _ANSI_ARGS_((void *timerToken));
-EXTERN void *	TclMacStartTimer _ANSI_ARGS_((long ms));
-EXTERN int	TclMacTimerExpired _ANSI_ARGS_((void *timerToken));
-EXTERN int	TclMacRegisterResourceFork _ANSI_ARGS_((short fileRef, Tcl_Obj *tokenPtr,
-                    int insert));	
-EXTERN short	TclMacUnRegisterResourceFork _ANSI_ARGS_((char *tokenPtr,
-	            Tcl_Obj *resultPtr));	
-		    
+
+#include "tclIntPlatDecls.h"
+    
 #pragma export reset
 
 #endif /* _TCLMACINT */
