@@ -1,3 +1,15 @@
+2004-12-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix and new tests for [Bug 1074671] to
+	* tests/fileSystem.test:   ensure tilde paths are not returned
+	specially by 'glob'.
+
+2004-12-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/Makefile.in: Added a 'sed' in the setting of ROOT_DIR_NATIVE
+	to compensate for a bug in cygpath (at least version 1.36) that
+	leaves a trailing backslash on the end of the converted path.
+	
 2004-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c (Alias,Target,Master): Rewrote these so that

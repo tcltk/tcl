@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.84 2004/11/29 22:41:58 andreas_kupries Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84.2.1 2004/12/02 19:24:14 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -110,7 +110,7 @@ CYGPATH			= @CYGPATH@
 
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
-ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's/\\*$$//' )
 
 LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
 
