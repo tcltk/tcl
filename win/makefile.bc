@@ -254,6 +254,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclThread.obj \
 	$(TMPDIR)\tclThreadJoin.obj \
 	$(TMPDIR)\tclTimer.obj \
+	$(TMPDIR)\tclTrace.obj \
 	$(TMPDIR)\tclUtf.obj \
 	$(TMPDIR)\tclUtil.obj \
 	$(TMPDIR)\tclVar.obj \
