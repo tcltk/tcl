@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.199 2004/11/15 21:47:22 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.200 2004/11/17 17:53:01 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -30,6 +30,9 @@
 
 #ifndef _TCL
 #include "tcl.h"
+#endif
+#ifdef HAVE_TCL_CONFIG_H
+#include "tclConfig.h"
 #endif
 
 #include <stdio.h>

@@ -1,3 +1,18 @@
+2004-11-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	The change below reveals that the public
+	data type Tcl_StatBuf relies on config information.  For now,
+	disabled the use of the tclConfig.h file until its full impact
+	on Tcl's interface can be assessed.
+
+	* unix/configure:	autoconf-2.57
+
+	* generic/tcl.h:	Moved the #include "tclConfig.h" out of
+	* generic/tclInt.h:	tcl.h.  The config settings are not part of
+	* generic/tclPort.:	the public interface, and having it there
+	breaks compiled against uninstalled Tcl and extensions using
+	autoconf-2.5*.
+
 2004-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixChan.c (TtySetOptionProc): fixed crash configuring
