@@ -1,3 +1,13 @@
+2001-10-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure: regen'ed
+	* win/tcl.m4:
+	* win/makefile.vc: added Win64 SDK RC1 compilation support
+	* win/Makefile.in: added $(LDFLAGS_CONSOLE) to TCLSH, TCLTEST and
+	PIPE_DLL_FILE targets to get the link flags
+
+	* win/tclWinInit.c: minor 64bit casts
+
 2001-09-30  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCmdIL.c:
