@@ -1,3 +1,22 @@
+1999-12-09  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* win/aclocal.m4: made it just include tcl.m4
+
+	* doc/exec.n:
+	* doc/open.n:
+	* win/tclWin32Dll.c:
+	* win/tclWinChan.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinInit.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSock.c: removed all code that supported Win32s.  It
+	was no longer officially supported, and likely didn't work anyway.
+	* win/makefile.vc: removed 16 bit stuff, cleaned up.
+	* win/tcl16.rc:
+	* win/tclWin16.c:
+	* win/winDumpExts.c: these files have been removed from the
+	source tree (no longer necessary to build)
+
 1999-12-07  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/io.test: removed 'knownBug' tests that were for
