@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.142 2005/03/18 15:50:59 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.143 2005/04/02 02:08:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3754,26 +3754,31 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	 */
 	if ((objPtr->typePtr == &tclListType) && /* is a list... */
 		(objPtr->bytes == NULL) /* ...without a string rep */) {	    
-	    List *listRepPtr =
-		(List *) objPtr->internalRep.twoPtrValue.ptr1;
-	    int i, objc = listRepPtr->elemCount;
-	    Tcl_Obj **objv;
+	    List *listRepPtr;
 
 	    /*
-	     * Copy the list elements here, to avoid a segfault if objPtr
-	     * loses its List internal rep [Bug 1119369]
+	     * Increase the reference count of the List structure, to avoid a
+	     * segfault if objPtr loses its List internal rep [Bug 1119369]
 	     */
 	    
-	    objv = (Tcl_Obj **) TclStackAlloc(interp, objc*sizeof(Tcl_Obj *));
-	    for (i=0; i < objc; i++) {
-		objv[i] = listRepPtr->elements[i];
-		Tcl_IncrRefCount(objv[i]);
+	    listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
+	    listRepPtr->refCount++;
+
+	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
+		    &listRepPtr->elements, flags);
+
+	    /*
+	     * If we are the last users of listRepPtr, free it.
+	     */
+
+	    if (--listRepPtr->refCount <= 0) {
+		int i, elemCount = listRepPtr->elemCount;
+		Tcl_Obj **elements = &listRepPtr->elements;
+		for (i=0; i<elemCount; i++) {
+		    Tcl_DecrRefCount(elements[i]);
+		}
+		ckfree((char *) listRepPtr);
 	    }
-	    result = Tcl_EvalObjv(interp, objc, objv, flags);
-	    for (i=0; i < objc; i++) {
-		TclDecrRefCount(objv[i]);
-	    }
-	    TclStackFree(interp);
 	} else {
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
