@@ -3,7 +3,7 @@
 # Simple makefile for building on Mac OS X with the
 # Project Builder command line tool 'pbxbuild'
 #
-# RCS: @(#) $Id: Makefile,v 1.4 2002/09/26 17:06:14 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5 2003/02/19 16:43:29 das Exp $
 #
 ################################################################################
 
@@ -25,7 +25,7 @@ DEPBUILD	= ${BUILD} -buildstyle "${DEPBUILDSTYLE}"
 
 INSTALLOPTS	= INSTALL_ROOT="${INSTALL_ROOT}"
 
-EMBEDDEDOPTS	= DYLIB_INSTALL_PATH="@executable_path/../Frameworks"
+EMBEDDEDOPTS	= EMBEDDED_BUILD=1
 
 ################################################################################
 
@@ -53,10 +53,10 @@ install-develop:
 install-deploy:
 	${DEPBUILD} install ${INSTALLOPTS}
 
-embedded-develop: forceRelink
+embedded-develop:
 	${DEVBUILD} ${EMBEDDEDOPTS}
 
-embedded-deploy: forceRelink
+embedded-deploy:
 	${DEPBUILD} ${EMBEDDEDOPTS}
 
 install-embedded-develop: 

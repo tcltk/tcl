@@ -1,3 +1,23 @@
+2003-02-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclStringObj.c: restored Tcl_SetObjLength() side-effect
+	of always invalidating unicode rep (if the obj has a string rep).
+	Added hasUnicode flag to String struct, allows decoupling of
+	validity of unicode rep from buffer size allocated to it (improves 
+	memory allocation efficiency). [Bugs #686782, #671138, #635200]
+
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* macosx/Makefile: reworked embedded build to no longer require
+	relinking but to use install_name_tool instead to change the
+	install_names for embedded frameworks.
+
+	* macosx/Tcl.pbproj/project.pbxproj: preserve mod dates when
+	running 'make install' to build framework (avoids bogus rebuilds
+	of dependent frameworks because tcl headers appear changed).
+
+	* tests/ioCmd.test (iocmd-1.8): fix failure when system encoding
+	is utf-8: use iso8859-1 encoding explicitly.
+
 2003-02-18  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileExprWords): remove unused
