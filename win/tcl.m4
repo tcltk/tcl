@@ -738,6 +738,87 @@ AC_DEFUN(SC_PROG_TCLSH, [
 ])
 
 #--------------------------------------------------------------------
+# SC_TCL_64BIT_FLAGS
+#
+#	Check for what is defined in the way of 64-bit features.
+#
+# Arguments:
+#	None
+#	
+# Results:
+#
+#	Might define the following vars:
+#		HAVE_STRUCT_DIRENT64
+#		HAVE_STRUCT_STAT64
+#		HAVE_STRUCT__STATI64
+#		HAVE_TYPE_OFF64_T
+#		SIZEOF_LONG_LONG
+#		SIZEOF_LONG
+#		SIZEOF___INT64
+#		SIZEOF_INT
+#		SIZEOF_SHORT
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_64BIT_FLAGS, [
+    AC_CHECK_SIZEOF(long long)
+    AC_CHECK_SIZEOF(__int64)
+    AC_CHECK_SIZEOF(long)
+    AC_CHECK_SIZEOF(int)
+    AC_CHECK_SIZEOF(short)
+
+
+    # Now check for auxiliary declarations
+    AC_MSG_CHECKING([for struct dirent64])
+    AC_CACHE_VAL(tcl_cv_struct_dirent64,[
+	AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/dirent.h>],[struct dirent64 p;],
+	    tcl_cv_struct_dirent64=yes,tcl_cv_struct_dirent64=no)])
+    if test "x${tcl_cv_struct_dirent64}" = "xyes" ; then
+	AC_DEFINE(HAVE_STRUCT_DIRENT64, 1, [Is 'struct dirent64' in <sys/types.h>?])
+    fi
+    AC_MSG_RESULT(${tcl_cv_struct_dirent64})
+
+    AC_MSG_CHECKING([for struct stat64])
+    AC_CACHE_VAL(tcl_cv_struct_stat64,[
+	AC_TRY_COMPILE([#include <sys/stat.h>],[struct stat64 p;
+],
+	    tcl_cv_struct_stat64=yes,tcl_cv_struct_stat64=no)])
+    if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
+	AC_DEFINE(HAVE_STRUCT_STAT64, 1, [Is 'struct stat64' in <sys/stat.h>?])
+    fi
+    AC_MSG_RESULT(${tcl_cv_struct_stat64})
+
+    AC_MSG_CHECKING([for struct _stati64])
+    AC_CACHE_VAL(tcl_cv_struct__stati64,[
+	AC_TRY_COMPILE([#include <sys/stat.h>],[struct _stati64 p;
+],
+	    tcl_cv_struct__stati64=yes,tcl_cv_struct__stati64=no)
+    ])
+    if test "x${tcl_cv_struct__stati64}" = "xyes" ; then
+	AC_DEFINE(HAVE_STRUCT__STATI64, 1, [Is 'struct _stati64' in <sys/stat.h>?])
+    fi
+    AC_MSG_RESULT(${tcl_cv_struct__stati64})
+
+    AC_CHECK_FUNCS(open64 lseek64)
+    AC_MSG_CHECKING([for off64_t])
+    AC_CACHE_VAL(tcl_cv_type_off64_t,[
+	AC_TRY_COMPILE([#include <sys/types.h>],[off64_t offset;
+],
+	    tcl_cv_type_off64_t=yes,tcl_cv_type_off64_t=no)])
+    dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
+    dnl functions lseek64 and open64 are defined.
+    if test "x${tcl_cv_type_off64_t}" = "xyes" && \
+       test "x${ac_cv_func_lseek64}" = "xyes" && \
+       test "x${ac_cv_func_open64}" = "xyes" ; then
+	AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
+	AC_MSG_RESULT(yes)
+    else
+	AC_MSG_RESULT(no)
+    fi
+])
+
+#--------------------------------------------------------------------
 # SC_TCL_CFG_ENCODING	TIP #59
 #
 #	Declare the encoding to use for embedded configuration information.

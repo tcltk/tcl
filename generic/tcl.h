@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.191 2004/11/17 17:53:01 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.191.2.1 2004/12/08 20:25:27 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -332,83 +332,75 @@ typedef long LONG;
  * complex formats sometimes needed (e.g. in the format(n) command.)
  */
 
-#if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__GNUC__)
-#      define TCL_WIDE_INT_TYPE long long
-#      if defined(__WIN32__) && !defined(__CYGWIN__)
-#         define TCL_LL_MODIFIER        "I64"
-#         define TCL_LL_MODIFIER_SIZE   3
-#      else
-#         define TCL_LL_MODIFIER	"L"
-#         define TCL_LL_MODIFIER_SIZE	1
-#      endif
-typedef struct stat	Tcl_StatBuf;
-#   elif defined(__WIN32__)
-#      define TCL_WIDE_INT_TYPE __int64
-#      ifdef __BORLANDC__
-typedef struct stati64 Tcl_StatBuf;
-#         define TCL_LL_MODIFIER	"L"
-#         define TCL_LL_MODIFIER_SIZE	1
-#      else /* __BORLANDC__ */
-typedef struct _stati64	Tcl_StatBuf;
-#         define TCL_LL_MODIFIER	"I64"
-#         define TCL_LL_MODIFIER_SIZE	3
-#      endif /* __BORLANDC__ */
-#   else /* __WIN32__ */
-/*
- * Don't know what platform it is and configure hasn't discovered what
- * is going on for us.  Try to guess...
- */
-#      ifdef NO_LIMITS_H
-#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
-#      else /* !NO_LIMITS_H */
-#	  include <limits.h>
-#	  if (INT_MAX < LONG_MAX)
-#	     define TCL_WIDE_INT_IS_LONG	1
-#	  else
-#	     define TCL_WIDE_INT_TYPE long long
-#         endif
-#      endif /* NO_LIMITS_H */
-#   endif /* __WIN32__ */
-#endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
-#ifdef TCL_WIDE_INT_IS_LONG
-#   undef TCL_WIDE_INT_TYPE
-#   define TCL_WIDE_INT_TYPE	long
-#endif /* TCL_WIDE_INT_IS_LONG */
+#if ( SIZEOF_LONG_LONG >= 8 ) && ( SIZEOF_LONG_LONG > SIZEOF_LONG )
+#  define TCL_WIDE_INT_TYPE long long
+#elif ( SIZEOF___INT64 >= 8 ) && ( SIZEOF___INT64 > SIZEOF_LONG )
+#  define TCL_WIDE_INT_TYPE __int64
+#elif ( SIZEOF_LONG >= 8 )
+#  define TCL_WIDE_INT_IS_LONG 1
+#  define TCL_WIDE_INT_TYPE long
+#else
+/* Can't find a 64-bit integer */
+#  define TCL_WIDE_INT_IS_LONG 1
+#  define TCL_WIDE_INT_IS_4_BYTES 1
+#  define TCL_WIDE_INT_TYPE long
+#endif
 
-typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
-typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
+typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
+typedef unsigned TCL_WIDE_INT_TYPE Tcl_WideUInt;
 
-#ifdef TCL_WIDE_INT_IS_LONG
-typedef struct stat	Tcl_StatBuf;
-#   define Tcl_WideAsLong(val)		((long)(val))
-#   define Tcl_LongAsWide(val)		((long)(val))
-#   define Tcl_WideAsDouble(val)	((double)((long)(val)))
-#   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
-#   ifndef TCL_LL_MODIFIER
-#      define TCL_LL_MODIFIER		"l"
-#      define TCL_LL_MODIFIER_SIZE	1
-#   endif /* !TCL_LL_MODIFIER */
-#else /* TCL_WIDE_INT_IS_LONG */
-/*
- * The next short section of defines are only done when not running on
- * Windows or some other strange platform.
- */
-#   ifndef TCL_LL_MODIFIER
-#      ifdef HAVE_STRUCT_STAT64
-typedef struct stat64	Tcl_StatBuf;
-#      else
-typedef struct stat	Tcl_StatBuf;
-#      endif /* HAVE_STRUCT_STAT64 */
+#define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
+#define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
+#define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
+#define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
+
+#if defined(__WIN32__)
+#  if defined(__GNUC__) 
+#    if defined(__CYGWIN__)
+       /* cygwin */
 #      define TCL_LL_MODIFIER		"ll"
 #      define TCL_LL_MODIFIER_SIZE	2
-#   endif /* !TCL_LL_MODIFIER */
-#   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
-#   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
-#   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
-#   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
-#endif /* TCL_WIDE_INT_IS_LONG */
+#    else
+       /* mingw */
+#      define TCL_LL_MODIFIER		"I64"
+#      define TCL_LL_MODIFIER_SIZE      3
+#    endif
+#  elif defined(__BORLANDC__)
+     /* borland */
+#    define TCL_LL_MODIFIER		"L"
+#    define TCL_LL_MODIFIER_SIZE        1
+#  elif defined(_MSC_VER)
+     /* MSVC */
+#    define TCL_LL_MODIFIER		"I64"
+#    define TCL_LL_MODIFIER_SIZE        3
+#  else
+     /* some other compiler and library - icc ? */
+#    define TCL_LL_MODIFIER		"I64"
+#    define TCL_LL_MODIFIER_SIZE        3
+#  endif
+#else
+   /* not windows */
+#  ifdef TCL_WIDE_INT_IS_LONG
+#    define TCL_LL_MODIFIER             "l"
+#    define TCL_LL_MODIFIER_SIZE        1
+#  else
+#    define TCL_LL_MODIFIER		"ll"
+#    define TCL_LL_MODIFIER_SIZE        2
+#  endif
+#endif
 
+/*
+ * Define a Tcl_StatBuf that's 'struct stat64' if it's available, and
+ * 'struct stat' otherwise.
+ */
+
+#if HAVE_STRUCT__STATI64
+typedef struct _stati64 Tcl_StatBuf;
+#elif HAVE_STRUCT_STAT64
+typedef struct stat64 Tcl_StatBuf;
+#else
+typedef struct stat Tcl_StatBuf;
+#endif
 
 /*
  * This flag controls whether binary compatability is maintained with
@@ -418,7 +410,6 @@ typedef struct stat	Tcl_StatBuf;
 #ifndef TCL_PRESERVE_BINARY_COMPATABILITY
 #   define TCL_PRESERVE_BINARY_COMPATABILITY 1
 #endif
-
 
 /*
  * Data structures defined opaquely in this module. The definitions below

@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.19 2004/06/24 01:29:07 mistachkin Exp $
+# RCS: @(#) $Id: rules.vc,v 1.19.2.1 2004/12/08 20:25:32 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -350,8 +350,14 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
 !endif
 !if "$(MACHINE)" == "IA64"
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
+OPTDEFINES      = $(OPTDEFINES) -DSIZEOF_LONG=8
+!else
+OPTDEFINES      = $(OPTDEFINES) -DSIZEOF_LONG=4
 !endif
-
+OPTDEFINES      = $(OPTDEFINES) -DSIZEOF_LONG_LONG=0 -DSIZEOF___INT64=8
+OPTDEFINES      = $(OPTDEFINES) -DSIZEOF_INT=4
+OPTDEFINES      = $(OPTDEFINES) -DSIZEOF_SHORT=2
+OPTDEFINES      = $(OPTDEFINES) -DHAVE_STRUCT__STATI64=1
 
 #----------------------------------------------------------
 # Get common info used when building extensions.
