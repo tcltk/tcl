@@ -1,8 +1,12 @@
 2001-09-04  David Gravereaux <davygrvy@pobox.com>
 
-	* tclWinThrd.c:  Revisited _beginthreadex() stuff.  Instead of assuming
-	a c-runtime implimentation of _beginethreadex normal, I reversed the logic
-	to not assume, and use when is.
+	* win/tclWinThrd.c:  Revisited _beginthreadex() stuff.  Instead
+	of assuming a c-runtime implimentation of _beginthreadex normal,
+	I reversed the logic to not assume, and use when is by explicitly
+	needing to add runtimes that support it such as Borland.
+
+	* generic/tcl.h:  Borland compatibility change so ClientData was
+	properly typed as a void*
 
 2001-09-04  Don Porter  <dgp@users.sourceforge.net>
 
