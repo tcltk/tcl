@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtol.c,v 1.3 2002/02/25 10:36:32 dkf Exp $
+ * RCS: @(#) $Id: strtol.c,v 1.4 2002/02/25 16:23:26 dgp Exp $
  */
 
 #include <ctype.h>
@@ -54,7 +54,7 @@ strtol(string, endPtr, base)
 				 */
 {
     register CONST char *p;
-    int result;
+    long result;
 
     /*
      * Skip any leading blanks.
