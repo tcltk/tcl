@@ -1,5 +1,6 @@
 2002-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* changes: Note TclInExit TclInThreadExit changes.
 	* generic/tclEvent.c (TclInExit, TclInThreadExit):
 	Split out functionality of TclInExit to make it
 	clear which one should be called in each situation.
