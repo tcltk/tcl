@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.21 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.22 2001/09/29 11:09:35 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2449,6 +2449,13 @@ Tcl_FSLink(pathPtr, toPtr)
  *	that have been "inserted" into the filesystem will be called in
  *	succession; each may return a list of volumes, all of which are
  *	added to the result until all mounted file systems are listed.
+ *	
+ *	Notice that we assume the lists returned by each filesystem
+ *	(if non NULL) have been given a refCount for us already.
+ *	However, we are NOT allowed to hang on to the list itself
+ *	(it belongs to the filesystem we called).  Therefore we
+ *	quite naturally add its contents to the result we are
+ *	building, and then decrement the refCount.
  *
  * Results:
  *	The list of volumes, in an object which has refCount 0.
