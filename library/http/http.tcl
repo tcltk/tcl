@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.32 2000/04/22 07:07:59 sandeep Exp $
+# RCS: @(#) $Id: http.tcl,v 1.33 2000/06/02 23:14:46 hobbs Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -280,7 +280,7 @@ proc http::geturl { url args } {
     if {![regexp -nocase {^(([^:]*)://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
 	    x prefix proto host y port srvurl]} {
 	unset $token
-	error "Unsupported URL: $url"
+	return -code error "Unsupported URL: $url"
     }
     if {[string length $proto] == 0} {
 	set proto http
@@ -288,7 +288,7 @@ proc http::geturl { url args } {
     }
     if {![info exists urlTypes($proto)]} {
 	unset $token
-	return -code error "unsupported url type \"$proto\""
+	return -code error "Unsupported URL type \"$proto\""
     }
     set defport [lindex $urlTypes($proto) 0]
     set defcmd [lindex $urlTypes($proto) 1]
@@ -345,12 +345,17 @@ proc http::geturl { url args } {
     if {$state(-timeout) > 0} {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
-	if {$state(status) != "connect"} {
-	    
-	    # Likely to be connection timeout.  If there was a connection
-	    # error, (e.g., bad port), then http::wait will have 
-	    # raised an error already
 
+	if {[string equal $state(status) "error"]} {
+	    # something went wrong while trying to establish the connection
+	    # Clean up after events and such, but DON'T call the command
+	    # callback (if available) because we're going to throw an 
+	    # exception from here instead.
+	    set err [lindex $state(error) 0]
+	    cleanup $token
+	    return -code error $err
+	} elseif {![string equal $state(status) "connect"]} {
+	    # Likely to be connection timeout
 	    return $token
 	}
 	set state(status) ""
@@ -449,6 +454,11 @@ proc http::geturl { url args } {
 	    # calls it synchronously, we just do a wait here.
 
 	    wait $token
+	    if {[string equal $state(status) "error"]} {
+		# Something went wrong, so throw the exception, and the
+		# enclosing catch will do cleanup.
+		return -code error [lindex $state(error) 0]
+	    }		
 	}
     } err]} {
 	# The socket probably was never connected,
@@ -457,8 +467,12 @@ proc http::geturl { url args } {
 	# Clean up after events and such, but DON'T call the command callback
 	# (if available) because we're going to throw an exception from here
 	# instead.
-
-	Finish $token $err 1
+	
+	# if state(status) is error, it means someone's already called Finish
+	# to do the above-described clean up.
+	if {[string equal $state(status) "error"]} {
+	    Finish $token $err 1
+	}
 	cleanup $token
 	return -code error $err
     }
@@ -502,6 +516,15 @@ proc http::size {token} {
     return $state(currentsize)
 }
 
+proc http::error {token} {
+    variable $token
+    upvar 0 $token state
+    if {[info exists state(error)]} {
+	return $state(error)
+    }
+    return ""
+}
+
 # http::cleanup
 #
 #	Garbage collect the state associated with a transaction
@@ -531,21 +554,19 @@ proc http::cleanup {token} {
 #	Sets the status of the connection, which unblocks
 # 	the waiting geturl call
 
- proc http::Connect {token} {
+proc http::Connect {token} {
     variable $token
     upvar 0 $token state
     global errorInfo errorCode
     if {[eof $state(sock)] ||
-	    [string length [fconfigure $state(sock) -error]]} {
-	set state(status) error
-	set state(error) [list \
-		"connect failed [fconfigure $state(sock) -error]" \
-		$errorInfo $errorCode]
+	[string length [fconfigure $state(sock) -error]]} {
+	    Finish $token "connect failed [fconfigure $state(sock) -error]" 1
     } else {
 	set state(status) connect
+	fileevent $state(sock) writable {}
     }
-    fileevent $state(sock) writable {}
- }
+    return
+}
 
 # http::Write
 #
@@ -780,11 +801,7 @@ proc http::wait {token} {
 	# We must wait on the original variable name, not the upvar alias
 	vwait $token\(status)
     }
-    if {[info exists state(error)]} {
-	set errorlist $state(error)
-	unset state
-	eval error $errorlist
-    }
+
     return $state(status)
 }
 

@@ -1,3 +1,18 @@
+2000-05-29  Sandeep Tamhankar <sandeep@scriptics.com>
+
+	* tests/http.test
+	* doc/http.n
+	* library/http2.3/http.tcl: Fixed bug 5741, where unsuccessful
+	geturl calls sometimes leaked memory and resources (sockets).  
+	Also, switched around some of the logic so that http::wait never 
+	throws an exception.  This is because in an asynchronous geturl, 
+	the command callback will probably end up doing all the error 
+	handling anyway, and in an asynchronous situation, the user
+	expects to check the state when the transaction completes, as
+	opposed to being thrown an exception.	For the http package, this
+	menas the user can check http::status for "error" and http::error
+	for the error message after doing the http::wait.
+
 2000-05-31  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/set-old.test:
