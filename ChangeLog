@@ -1,3 +1,38 @@
+2003-04-15  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c (Tcl_CloneInterp): Added code to propagate
+	  error messages generated when cloning fails from the clone to
+	  the master, for perusal by the code which activated the cloning
+	  process. This is especially important to track syntax errors in
+	  procedures to clone down. The code was provided by Greg Thompson
+	  <gst@cisco.com>.
+
+2003-04-04  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c (CloneNamespace): Fixed potential memory leak
+	  due to a missing call of "Tcl_DStringFree". Reported by Greg
+	  Thompson <gst@cisco.com>.
+
+2003-03-24  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c (CloneCommand): Moved code adding the clone
+	  to its command table to the end of the command. This makes
+	  cleanup in case of a failure easier, there is less to roll
+	  back. Added code to release the command strcuture if cloning the
+	  procedure structures fails. changed from void to int, returning
+	  a TCL_ result code.
+
+	  (CloneNamespace): Changed from void to int, returning a TCL_
+	  result code. Now reacting to the result of CloneCommand (and
+	  itself), aborts operation in case of a failure.
+
+	  (Tcl_CloneInterp): Now reacting to a failure reported by
+	  'CloneNamespace'. Frees the fixup information accumulated so far
+	  (via new CloneFixupFree), then deletes the partially created
+	  interpreter via the standard 'Tcl_DeleteInterp'.
+
+	  (CloneFixupFree): New function, freeing the fixup information.
+
 2002-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompile.c (TclCleanupByteCode): when using

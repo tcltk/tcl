@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27.6.7 2002/11/26 22:15:58 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.8 2003/04/15 18:25:15 andreas_kupries Exp $
  */
 #include <assert.h>
 #include "tclInt.h"
@@ -3914,7 +3914,7 @@ static void CloneMathFunctions _ANSI_ARGS_((Interp* iPtr, Interp* srcIPtr));
 static void ListMathFunctions _ANSI_ARGS_ ((Interp* iPtr, CONST char* mark));
 #endif
 
-static void CloneNamespace _ANSI_ARGS_((Interp* interp, Namespace* ns,
+static int CloneNamespace _ANSI_ARGS_((Interp* interp, Namespace* ns,
 					Namespace* srcNs, IRFixup* fixup));
 	    
 static void CloneVariable _ANSI_ARGS_ ((Interp* interp, Namespace* ns,
@@ -3924,12 +3924,13 @@ static void CloneVariable _ANSI_ARGS_ ((Interp* interp, Namespace* ns,
 static Tcl_HashTable* CloneArrayVariable _ANSI_ARGS_ ((Interp* interp,
 						       Var* varSrcPtr));
 
-static void CloneCommand _ANSI_ARGS_ ((Interp* interp, Namespace* ns,
+static int CloneCommand _ANSI_ARGS_ ((Interp* interp, Namespace* ns,
 				       Command* cmdSrcPtr, CONST char* cmdName,
 				       IRFixup* fixup));
 
 static void CloneFixupImports _ANSI_ARGS_ ((IRFixup* fixup));
 static void CloneFixupVars    _ANSI_ARGS_ ((IRFixup* fixup));
+static void CloneFixupFree    _ANSI_ARGS_ ((IRFixup* fixup));
 
 
 #define GetHashKeyString(hPtr) Tcl_GetHashKey ((hPtr->tablePtr),(hPtr))
@@ -3942,6 +3943,7 @@ Tcl_CloneInterp(srcInterp)
     Interp *srcIPtr = (Interp*) srcInterp;
     Interp *iPtr;
     Tcl_Interp *interp;
+    int res;
     IRFixup fixup;
 
 #ifndef TCL_THREAD_LITERALS
@@ -4067,7 +4069,23 @@ Tcl_CloneInterp(srcInterp)
      * sharing bytecode information between interpreters.
      */
 
-    CloneNamespace    (iPtr, iPtr->globalNsPtr, srcIPtr->globalNsPtr, &fixup);
+    res = CloneNamespace (iPtr, iPtr->globalNsPtr, srcIPtr->globalNsPtr, &fixup);
+    if (res != TCL_OK) {
+        /*
+	 * Something went wrong when cloning the namespace
+	 * structure. Free up the no longer needed fixup information
+	 * and then kill the partially initialized interpreter.
+	 */
+
+        /* Pass the clone failure result to the source interpreter */
+        Tcl_AppendObjToObj(Tcl_GetObjResult(srcInterp),
+                           Tcl_GetObjResult(interp));
+
+        CloneFixupFree (&fixup);
+	Tcl_DeleteInterp (interp);
+	return (Tcl_Interp*) NULL;
+    }
+
     CloneFixupImports (&fixup);
     CloneFixupVars    (&fixup);
 
@@ -4188,7 +4206,7 @@ CloneMathFunctions (iPtr, srcIPtr)
 }
 
 
-static void
+static int
 CloneNamespace (interp, ns, srcNs, fixup)
      Interp* interp;
      Namespace* ns;
@@ -4213,6 +4231,7 @@ CloneNamespace (interp, ns, srcNs, fixup)
 
     Tcl_HashSearch commands;
     Command*       cmdSrcPtr;
+    int            res;
 
     /*
      * Phase I. Clone variables and their contents.
@@ -4241,9 +4260,16 @@ CloneNamespace (interp, ns, srcNs, fixup)
 
         cmdSrcPtr = (Command *) Tcl_GetHashValue (hPtr);
 
-	CloneCommand (interp, ns, cmdSrcPtr,
-		      GetHashKeyString (hPtr),
-		      fixup);
+	res = CloneCommand (interp, ns, cmdSrcPtr,
+			    GetHashKeyString (hPtr),
+			    fixup);
+	if (res != TCL_OK) {
+	    /*
+	     * Cloning of the command failed. Bail out immediately,
+	     * there is no sense in trying to clone more.
+	     */
+	    return res;
+	}
     }
 
     /*
@@ -4269,8 +4295,18 @@ CloneNamespace (interp, ns, srcNs, fixup)
 			Tcl_DStringValue (&childName),
 			(ClientData) childSrcPtr->clientData,
 			(Tcl_NamespaceDeleteProc *) childSrcPtr->deleteProc);
-	CloneNamespace (interp, childPtr, childSrcPtr, fixup);
+	Tcl_DStringFree (&childName);
+	res = CloneNamespace (interp, childPtr, childSrcPtr, fixup);
+	if (res != TCL_OK) {
+	    /*
+	     * Cloning of the namespace failed (most likely in some command).
+	     * Bail out immediately, there is no sense in trying to clone more.
+	     */
+	    return res;
+	}
     }
+
+    return TCL_OK;
 }
 
 
@@ -4409,7 +4445,7 @@ CloneArrayVariable (interp, varSrcPtr)
 }
 
 
-static void
+static int
 CloneCommand (interp, ns, cmdSrcPtr, cmdName, fixup)
      Interp* interp;
      Namespace* ns;
@@ -4419,9 +4455,6 @@ CloneCommand (interp, ns, cmdSrcPtr, cmdName, fixup)
 {
     int new;
     Command* cmdNew = (Command *) ckalloc (sizeof (Command));
-
-    cmdNew->hPtr          = Tcl_CreateHashEntry(&ns->cmdTable, cmdName, &new);
-    Tcl_SetHashValue (cmdNew->hPtr, cmdNew);
 
     cmdNew->nsPtr         = ns;
     cmdNew->cmdEpoch      = cmdSrcPtr->cmdEpoch;
@@ -4489,6 +4522,20 @@ CloneCommand (interp, ns, cmdSrcPtr, cmdName, fixup)
         Proc *procPtr = TclCloneProc (interp, ns,
 				      (Proc *) cmdSrcPtr->objClientData);
 
+	if (procPtr == (Proc*) NULL) {
+	    /*
+	     * Some failure occured when cloning the
+	     * procedure. Rolling back to a consistent state (freeing
+	     * allocated command structure). There is no need to
+	     * modify the fixup structure, it will be deallocated when
+	     * the error reaches the main clone function. And moving
+	     * the code which adds the clone to the command hastable
+	     * to the end means that here and now the hashtable is
+	     * still consistent too.
+	     */
+	    ckfree ((char*) cmdNew);
+	    return TCL_ERROR;
+	}
 	/*assert (strcmp (cmdName, "foo") != 0);*/
 
 	cmdNew->objClientData = procPtr;
@@ -4502,6 +4549,9 @@ CloneCommand (interp, ns, cmdSrcPtr, cmdName, fixup)
      * during execution ...
      */
     cmdNew->refCount  = 1;
+    cmdNew->hPtr      = Tcl_CreateHashEntry(&ns->cmdTable, cmdName, &new);
+    Tcl_SetHashValue (cmdNew->hPtr, cmdNew);
+    return TCL_OK;
 }
 
 
@@ -4613,6 +4663,47 @@ CloneFixupVars  (fixup)
 	   ckfree ((char*) irfa),
 	   irfa = fixup->varExported) {
     }
+}
+
+static void
+CloneFixupFree  (fixup)
+     IRFixup* fixup;
+{
+    IRFixupImported* irfi;
+    IRFixupCmdAssoc* irfa;
+
+    IRFixupVar*      irfiv;
+    IRFixupVarAssoc* irfav;
+
+    /* Free transient data */
+
+    for (irfi = fixup->imported;
+	 irfi;
+	 fixup->imported = irfi->nextPtr,
+	   ckfree ((char*) irfi),
+	   irfi = fixup->imported)
+      ;
+    for (irfa = fixup->exported;
+	 irfa;
+	 fixup->exported = irfa->nextPtr,
+	   ckfree ((char*) irfa),
+	   irfa = fixup->exported)
+      ;
+
+    /* Free transient data */
+
+    for (irfiv = fixup->varImported;
+	 irfiv;
+	 fixup->varImported = irfiv->nextPtr,
+	   ckfree ((char*) irfiv),
+	   irfiv = fixup->varImported)
+      ;
+    for (irfav = fixup->varExported;
+	 irfav;
+	 fixup->varExported = irfav->nextPtr,
+	   ckfree ((char*) irfav),
+	   irfav = fixup->varExported)
+      ;
 }
 
 #if 0
