@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.7 1999/03/27 00:39:31 redman Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.8 1999/04/14 00:34:01 surles Exp $
  */
 
 #include "tclWinInt.h"
@@ -600,7 +600,7 @@ FileWatchProc(instanceData, mask)
  *
  * FileGetHandleProc --
  *
- *	Called from Tcl_GetChannelFile to retrieve OS handles from
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from
  *	a file based channel.
  *
  * Results:

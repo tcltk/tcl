@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.10 1999/04/05 21:58:16 stanton Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.11 1999/04/14 00:34:02 surles Exp $
  */
 
 #include "tclWinInt.h"
@@ -931,7 +931,7 @@ TclpCloseFile(
 	    break;
 
 	default:
-	    panic("Tcl_CloseFile: unexpected file type");
+	    panic("TclpCloseFile: unexpected file type");
     }
 
     ckfree((char *) filePtr);

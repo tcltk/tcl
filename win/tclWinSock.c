@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.9 1999/04/13 18:24:00 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.10 1999/04/14 00:34:03 surles Exp $
  */
 
 #include "tclWinInt.h"
@@ -2011,7 +2011,7 @@ TcpWatchProc(instanceData, mask)
  *
  * TcpGetProc --
  *
- *	Called from Tcl_GetChannelFile to retrieve an OS handle from inside
+ *	Called from Tcl_GetChannelHandle to retrieve an OS handle from inside
  *	a TCP socket based channel.
  *
  * Results:

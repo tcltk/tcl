@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.1.2.3 1999/03/10 06:49:24 stanton Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.1.2.4 1999/04/14 00:34:52 surles Exp $
  */
 
 #include "tclInt.h"
@@ -462,7 +462,7 @@ StdIOClose(
  *
  * CommonGetHandle --
  *
- *	Called from Tcl_GetChannelFile to retrieve OS handles from inside
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from inside
  *	a file based channel.
  *
  * Results:

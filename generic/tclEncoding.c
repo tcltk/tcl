@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.11 1999/04/06 04:27:02 rjohnson Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.12 1999/04/14 00:33:21 surles Exp $
  */
 
 #include "tclInt.h"
@@ -423,7 +423,7 @@ Tcl_GetEncoding(interp, name)
  * Tcl_FreeEncoding --
  *
  *	This procedure is called to release an encoding allocated by
- *	Tcl_CreateEncodingType() or Tcl_GetEncoding().
+ *	Tcl_CreateEncoding() or Tcl_GetEncoding().
  *
  * Results:
  *	None.

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.1.2.6 1999/02/01 21:29:52 stanton Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.1.2.7 1999/04/14 00:33:23 surles Exp $
  */
 
 #include "tclInt.h"
@@ -5881,7 +5881,8 @@ Tcl_DeleteChannelHandler(chan, proc, clientData)
 
     /*
      * Recompute the interest list for the channel, so that infinite loops
-     * will not result if Tcl_DeleteChanelHandler is called inside an event.
+     * will not result if Tcl_DeleteChannelHandler is called inside an
+     * event.
      */
 
     chanPtr->interestMask = 0;

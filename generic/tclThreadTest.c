@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.8 1999/04/03 01:35:19 welch Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.9 1999/04/14 00:33:28 surles Exp $
  */
 
 #include "tclInt.h"
@@ -53,7 +53,7 @@ static struct ThreadSpecificData *threadList;
 /*
  * An instance of the following structure contains all information that is
  * passed into a new thread when the thread is created using either the
- * "thread create" Tcl command or the Tcl_ThreadCreate() C function.
+ * "thread create" Tcl command or the TclCreateThread() C function.
  */
 
 typedef struct ThreadCtrl {

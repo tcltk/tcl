@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.1.2.2 1998/09/24 23:59:18 stanton Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.1.2.3 1999/04/14 00:34:53 surles Exp $
  */
 
 #include "tclInt.h"
@@ -1125,7 +1125,7 @@ TcpInput(
  *
  * TcpGetHandle --
  *
- *	Called from Tcl_GetChannelFile to retrieve handles from inside
+ *	Called from Tcl_GetChannelHandle to retrieve handles from inside
  *	a file based channel.
  *
  * Results:

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.4 1999/02/10 23:31:26 stanton Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.1.2.5 1999/04/14 00:34:34 surles Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -555,7 +555,7 @@ FileWatchProc(instanceData, mask)
  *
  * FileGetHandleProc --
  *
- *	Called from Tcl_GetChannelFile to retrieve OS handles from
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from
  *	a file based channel.
  *
  * Results:
@@ -1892,7 +1892,7 @@ TcpWatchProc(instanceData, mask)
  *
  * TcpGetHandleProc --
  *
- *	Called from Tcl_GetChannelFile to retrieve OS handles from inside
+ *	Called from Tcl_GetChannelHandle to retrieve OS handles from inside
  *	a TCP socket based channel.
  *
  * Results:

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.15 1999/04/06 00:43:16 redman Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.16 1999/04/14 00:33:20 surles Exp $
  */
 
 #include "tclInt.h"
@@ -1537,7 +1537,7 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
  *
  * Results:
  *	The return value is a token for the command, which can
- *	be used in future calls to Tcl_NameOfCommand.
+ *	be used in future calls to Tcl_GetCommandName.
  *
  * Side effects:
  *	If no command named "cmdName" already exists for interp, one is

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.1.2.5 1999/04/03 01:35:19 welch Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.1.2.6 1999/04/14 00:33:24 surles Exp $
  */
 
 #include "tclInt.h"
@@ -17,7 +17,7 @@
 /*
  * The following structure describes a package that has been loaded
  * either dynamically (with the "load" command) or statically (as
- * indicated by a call to Tcl_PackageLoaded).  All such packages
+ * indicated by a call to TclGetLoadedPackages).  All such packages
  * are linked together into a single list for the process.  Packages
  * are never unloaded, so these structures are never freed.
  */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.1.2.4 1999/03/11 06:16:47 welch Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.1.2.5 1999/04/14 00:34:52 surles Exp $
  */
 
 #include <AppleEvents.h>
@@ -68,7 +68,7 @@ rename sourcePath {}";
 
 /*
  * The following structures are used to map the script/language codes of a 
- * font to the name that should be passed to Tcl_GetTextEncoding() to obtain
+ * font to the name that should be passed to Tcl_GetEncoding() to obtain
  * the encoding for that font.  The set of numeric constants is fixed and 
  * defined by Apple.
  */
@@ -224,7 +224,7 @@ GetFinderFont(int *finderID)
  *
  * Results:
  *	The return value is a string that specifies the font's encoding
- *	and that can be passed to Tcl_GetTextEncoding() to construct the
+ *	and that can be passed to Tcl_GetEncoding() to construct the
  *	encoding.  If the font's encoding could not be identified, NULL
  *	is returned.
  *

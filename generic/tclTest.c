@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.15 1999/04/05 22:20:31 rjohnson Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.16 1999/04/14 00:33:27 surles Exp $
  */
 
 #define TCL_TEST
@@ -2124,8 +2124,8 @@ TestMathFunc2(clientData, interp, args, resultPtr)
     ClientData clientData;		/* Integer value to return. */
     Tcl_Interp *interp;			/* Used to report errors. */
     Tcl_Value *args;			/* Points to an array of two
-					 * Tcl_Values for the two
-					 * arguments. */
+					 * Tcl_Value structs for the 
+					 * two arguments. */
     Tcl_Value *resultPtr;		/* Where to store the result. */
 {
     int result = TCL_OK;

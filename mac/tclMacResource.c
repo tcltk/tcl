@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.1.2.3 1998/11/11 04:08:27 stanton Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.1.2.4 1999/04/14 00:34:52 surles Exp $
  */
 
 #include <Errors.h>
@@ -909,7 +909,7 @@ resourceRef? resourceType");
 
 	    return result;
 	default:
-	    panic("Tcl_GetIndexFromObject returned unrecognized option");
+	    panic("Tcl_GetIndexFromObj returned unrecognized option");
 	    return TCL_ERROR;	/* Should never be reached. */
     }
 }

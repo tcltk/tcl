@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.8 1999/04/05 22:20:30 rjohnson Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.9 1999/04/14 00:33:26 surles Exp $
  */
 
 #include "tclInt.h"
@@ -311,7 +311,7 @@ TclRegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
     Tcl_RegExp re;		/* Compiled regular expression; returned by
 				 * a previous call to Tcl_GetRegExpFromObj */
     CONST Tcl_UniChar *wString;	/* String against which to match re. */
-    int numChars;		/* Length of string in Tcl_UniChars (must
+    int numChars;		/* Length of Tcl_UniChar string (must
 				 * be >= 0). */
     int nmatches;		/* How many subexpression matches (counting
 				 * the whole match as subexpression 0) are

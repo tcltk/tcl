@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.22 1999/04/06 03:13:13 redman Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.23 1999/04/14 00:33:19 surles Exp $
  */
 
 #ifndef _TCL
@@ -560,7 +560,7 @@ EXTERN int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 /*
  * Macros and definitions that help to debug the use of Tcl objects.
- * When TCL_MEM_DEBUG is defined, the Tcl_New* declarations are 
+ * When TCL_MEM_DEBUG is defined, the Tcl_New declarations are 
  * overridden to call debugging versions of the object creation procedures.
  */
 

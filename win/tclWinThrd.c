@@ -340,7 +340,7 @@ TclpMutexUnlock(mPtr)
  *
  *	This procedure is invoked to lock a mutex.  This is a self 
  *	initializing mutex that is automatically finalized during
- *	Tcl_Finalization.
+ *	Tcl_Finalize.
  *
  * Results:
  *	None.

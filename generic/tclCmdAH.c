@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.11 1999/04/06 04:27:01 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.12 1999/04/14 00:33:21 surles Exp $
  */
 
 #include "tclInt.h"
@@ -1236,7 +1236,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  *
  * SplitPath --
  *
- *	Utility procedure used by Tcl_FileObjCommand() to split a path.
+ *	Utility procedure used by Tcl_FileObjCmd() to split a path.
  *	Differs from standard Tcl_SplitPath in its handling of home
  *	directories; Tcl_SplitPath preserves the "~" while this
  *	procedure computes the actual full path name.

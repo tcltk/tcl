@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.1.2.7 1999/03/10 06:49:20 stanton Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.1.2.8 1999/04/14 00:33:25 surles Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,7 @@ static int typeTableInitialized = 0;    /* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(tableMutex)
 
 /*
- * Head of the list of free Tcl_Objs we maintain.
+ * Head of the list of free Tcl_Obj structs we maintain.
  */
 
 Tcl_Obj *tclFreeObjList = NULL;
@@ -237,7 +237,7 @@ Tcl_RegisterObjType(typePtr)
  *	This procedure appends onto the argument object the name of each
  *	object type as a list element. This includes the builtin object
  *	types (e.g. int, list) as well as those added using
- *	Tcl_CreateObjType. These names can be used, for example, with
+ *	Tcl_NewObj. These names can be used, for example, with
  *	Tcl_GetObjType to get pointers to the corresponding Tcl_ObjType
  *	structures.
  *
@@ -403,7 +403,8 @@ Tcl_NewObj()
     register Tcl_Obj *objPtr;
 
     /*
-     * Allocate the object using the list of free Tcl_Objs we maintain.
+     * Allocate the object using the list of free Tcl_Obj structs
+     * we maintain.
      */
 
     Tcl_MutexLock(&tclObjMutex);
@@ -465,7 +466,8 @@ Tcl_DbNewObj(file, line)
 
     /*
      * If debugging Tcl's memory usage, allocate the object using ckalloc.
-     * Otherwise, allocate it using the list of free Tcl_Objs we maintain.
+     * Otherwise, allocate it using the list of free Tcl_Obj structs we
+     * maintain.
      */
 
     objPtr = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), file, line);
@@ -587,7 +589,7 @@ TclFreeObj(objPtr)
     /*
      * If debugging Tcl's memory usage, deallocate the object using ckfree.
      * Otherwise, deallocate it by adding it onto the list of free
-     * Tcl_Objs we maintain.
+     * Tcl_Obj structs we maintain.
      */
 
     Tcl_MutexLock(&tclObjMutex);
