@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.22 2005/01/25 16:39:56 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.23 2005/01/25 17:04:20 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -22,14 +22,20 @@
 # None.
 
 proc auto_reset {} {
-    foreach cmdName [array names ::auto_index] {
-	set fqcn [namespace which $cmdName]
-	if {$fqcn eq ""} {continue}
-	rename $fqcn {}
+    if {[array exists ::auto_index]} {
+	foreach cmdName [array names ::auto_index] {
+	    set fqcn [namespace which $cmdName]
+	    if {$fqcn eq ""} {continue}
+	    rename $fqcn {}
+	}
     }
     unset -nocomplain ::auto_execs ::auto_index ::tcl::auto_oldpath
-    if {[info library] ni $::auto_path} {
-	lappend ::auto_path [info library]
+    if {[catch {llength $::auto_path}]} {
+	set ::auto_path [list [info library]]
+    } else {
+	if {[info library] ni $::auto_path} {
+	    lappend ::auto_path [info library]
+	}
     }
 }
 
