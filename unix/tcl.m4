@@ -458,6 +458,8 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	DBGX=""
 	AC_MSG_RESULT([no])
     fi
+    AC_SUBST(CFLAGS_DEFAULT)
+    AC_SUBST(LDFLAGS_DEFAULT)
 ])
 
 #------------------------------------------------------------------------
@@ -558,7 +560,7 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #
 # Results:
 #
-#	Defines the following vars:
+#	Defines and substitutes the following vars:
 #
 #       DL_OBJS -       Name of the object file that implements dynamic
 #                       loading for Tcl on this system.
@@ -571,9 +573,14 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #                       that tell the run-time dynamic linker where to look
 #                       for shared libraries such as libtcl.so.  Depends on
 #                       the variable LIB_RUNTIME_DIR in the Makefile.
-#       MAKE_LIB -      Command to execute to build the Tcl library;
-#                       differs depending on whether or not Tcl is being
-#                       compiled as a shared library.
+#       MAKE_LIB -      Command to execute to build the a library;
+#                       differs when building shared or static.
+#       MAKE_STUB_LIB -
+#                       Command to execute to build a stub library.
+#       INSTALL_LIB -   Command to execute to install a library;
+#                       differs when building shared or static.
+#       INSTALL_STUB_LIB -
+#                       Command to execute to install a stub library.
 #       STLIB_LD -      Base command to use for combining object files
 #                       into a static library.
 #       SHLIB_CFLAGS -  Flags to pass to cc when compiling the components
@@ -581,6 +588,9 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #                       code, among other things).
 #       SHLIB_LD -      Base command to use for combining object files
 #                       into a shared library.
+#       SHLIB_LD_FLAGS -Flags to pass when building a shared library. This
+#                       differes from the SHLIB_CFLAGS as it is not used
+#                       when building object files or executables.
 #       SHLIB_LD_LIBS - Dependent libraries for the linker to scan when
 #                       creating shared libraries.  This symbol typically
 #                       goes at the end of the "ld" commands that build
@@ -595,15 +605,13 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #       SHLIB_SUFFIX -  Suffix to use for the names of dynamically loadable
 #                       extensions.  An empty string means we don't know how
 #                       to use shared libraries on this platform.
-#       TCL_LIB_FILE -  Name of the file that contains the Tcl library, such
-#                       as libtcl7.8.so or libtcl7.8.a.
-#       TCL_LIB_SUFFIX -Specifies everything that comes after the "libtcl"
-#                       in the shared library name, using the $VERSION variable
+#       LIB_SUFFIX -    Specifies everything that comes after the "libfoo"
+#                       in a static or shared library name, using the $VERSION variable
 #                       to put the version in the right place.  This is used
 #                       by platforms that need non-standard library names.
 #                       Examples:  ${VERSION}.so.1.1 on NetBSD, since it needs
 #                       to have a version after the .so, and ${VERSION}.a
-#                       on AIX, since the Tcl shared library needs to have
+#                       on AIX, since a shared library needs to have
 #                       a .a extension whereas shared objects for loadable
 #                       extensions have a .so extension.  Defaults to
 #                       ${VERSION}${SHLIB_SUFFIX}.
@@ -623,10 +631,6 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #			Flags used when running the compiler in optimize mode
 #	EXTRA_CFLAGS
 #
-#	Subst's the following vars:
-#		DL_LIBS
-#		CFLAGS_DEBUG
-#		CFLAGS_OPTIMIZE
 #--------------------------------------------------------------------
 
 AC_DEFUN(SC_CONFIG_CFLAGS, [
@@ -1096,7 +1100,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	Rhapsody-*|Darwin-*)
 	    SHLIB_CFLAGS="-fno-common"
 	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
-	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr a000000"
+	    SHLIB_LD_FLAGS="-compatibility_version \${MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${LIB_FILE} -prebind -seg1addr a000000"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
@@ -1499,10 +1503,73 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	UNSHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
     fi
 
+    AC_REQUIRE([AC_PROG_RANLIB])
+
+    if test "${SHARED_BUILD}" = "1" && test "${SHLIB_SUFFIX}" != "" ; then
+        LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+        MAKE_LIB='${SHLIB_LD} -o [$]@ ${SHLIB_LD_FLAGS} ${OBJS} ${SHLIB_LD_LIBS} ${LD_SEARCH_FLAGS}'
+        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
+    else
+        LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
+
+        if test "$RANLIB" = "" ; then
+            MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE)'
+        else
+            MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) $(LIB_INSTALL_DIR)/$(LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(LIB_FILE))'
+        fi
+
+dnl        Not at all clear what this was doing in Tcl's configure.in
+dnl        or why it was needed was needed. In any event, this sort of
+dnl        things needs to be done in the big loop above.
+dnl        REMOVE THIS BLOCK LATER! (mdejong)
+dnl        case $system in
+dnl            BSD/OS*)
+dnl                ;;
+dnl            AIX-[[1-4]].*)
+dnl                ;;
+dnl            *)
+dnl                SHLIB_LD_LIBS=""
+dnl                ;;
+dnl        esac
+    fi
+
+
+    # Stub lib does not depend on shared/static configuration
+    if test "$RANLIB" = "" ; then
+        MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
+        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) $(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)'
+    else
+        MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
+        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) $(LIB_INSTALL_DIR)/$(STUB_LIB_FILE) ; (cd $(LIB_INSTALL_DIR) ; $(RANLIB) $(STUB_LIB_FILE))'
+    fi
+
+
     AC_SUBST(DL_LIBS)
+
+    AC_SUBST(CFLAGS)
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
     AC_SUBST(CFLAGS_WARNING)
+    AC_SUBST(EXTRA_CFLAGS)
+
+    AC_SUBST(LDFLAGS)
+    AC_SUBST(LDFLAGS_DEBUG)
+    AC_SUBST(LDFLAGS_OPTIMIZE)
+
+    AC_SUBST(STLIB_LD)
+    AC_SUBST(SHLIB_LD)
+    AC_SUBST(SHLIB_LD_FLAGS)
+    AC_SUBST(SHLIB_LD_LIBS)
+    AC_SUBST(SHLIB_CFLAGS)
+    AC_SUBST(SHLIB_SUFFIX)
+
+    AC_SUBST(MAKE_LIB)
+    AC_SUBST(MAKE_STUB_LIB)
+    AC_SUBST(INSTALL_LIB)
+    AC_SUBST(INSTALL_STUB_LIB)
+    AC_SUBST(RANLIB)
 ])
 
 #--------------------------------------------------------------------
