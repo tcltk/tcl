@@ -1,3 +1,8 @@
+2002-07-19  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* unix/Makefile.in: fix to build on MacOS X [Bug 529801], bug
+	report and fix from jcw.
+
 2002-07-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* win/tclWinSerial.c (no_timeout): Made this variable static.
