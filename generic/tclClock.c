@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.30 2004/08/18 21:29:12 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.31 2004/09/08 15:38:33 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -239,7 +239,7 @@ TclClockMktimeObjCmd(  ClientData clientData,
     if ( Tcl_GetIntFromObj( interp, objv[2], &i ) != TCL_OK ) {
 	return TCL_ERROR;
     }
-    toConvert.tm_mon = i;
+    toConvert.tm_mon = i - 1;
     if ( Tcl_GetIntFromObj( interp, objv[3], &i ) != TCL_OK ) {
 	return TCL_ERROR;
     }
