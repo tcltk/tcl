@@ -7,6 +7,7 @@
 	since no longer used in tclWinFile.c
 	* mac/tclMacFile.c: completed TclpObjLink implementation which
 	was previously lacking.
+	* generic/tclIOUtil.c: comment cleanup and code speedup.
 	
 2002-07-14  Don Porter  <dgp@users.sourceforge.net>
 
