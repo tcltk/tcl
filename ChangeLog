@@ -1,3 +1,11 @@
+2002-02-15  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* tclExecute.c:
+	* tclIOGT.c:
+	* tclIndexObj.c: Touchups to the TIP 72 patch to make it
+	  compileable under Windows again. The changes are not complete,
+	  there is one nasty regarding _stati64
+
 2002-02-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	+----------------------+

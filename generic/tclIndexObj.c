@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.13 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.14 2002/02/15 19:58:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -61,6 +61,10 @@ typedef struct {
  * use (char *) on that platform/build-environment instead.
  */
 #ifdef __sparc
+#   define STRING_AT(table, offset, index) \
+	(*((CONST char * CONST *)(((char *)(table)) + ((offset) * (index)))))
+
+#elif defined (WIN32)
 #   define STRING_AT(table, offset, index) \
 	(*((CONST char * CONST *)(((char *)(table)) + ((offset) * (index)))))
 #else
@@ -266,7 +270,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
  	objPtr->internalRep.otherValuePtr = (VOID *) indexRep;
  	objPtr->typePtr = &tclIndexType;
     }
-    indexRep->tablePtr = tablePtr;
+    indexRep->tablePtr = (VOID*) tablePtr;
     indexRep->offset = offset;
     indexRep->index = index;
 
