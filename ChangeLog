@@ -6,6 +6,10 @@
 	
 2003-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/lsearch.test:
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): protect against the case
+	that lsearch -regepx list and pattern objects are equal.
+
 	* tests/stringObj.test:
 	* generic/tclStringObj.c (Tcl_GetCharLength): correct ascii char
 	opt of 2002-11-11 to not stop early on \x00. [Bug #684699]
