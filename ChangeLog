@@ -1,3 +1,34 @@
+2003-04-22  Andreas Kupries  <andreask@activestate.com>
+
+	* The changes below fix SF bugs [593810], and [718045].
+
+	* generic/tclIO.c (Tcl_CutChannel, Tcl_SpliceChannel):
+	  Invoke TclpCutSockChannel and TclpSpliceSockChannel.
+
+	* generic/tclInt.h: Declare TclpCutSockChannel and
+	  TclpSpliceSockChannel.
+
+	* unix/tclUnixSock.c (TclpCutSockChannel, TclpSpliceSockChannel):
+	  Dummy functions, on unix the sockets are _not_ handled
+	  specially.
+
+	* mac/tclMacSock.c (TclpCutSockChannel, TclpSpliceSockChannel):
+	* win/tclWinSock.c (TclpCutSockChannel, TclpSpliceSockChannel):
+	  New functions to handle socket specific cut/splice operations:
+	  auto-initi of socket system for thread on splice, management of
+	  the module internal per-thread list of sockets, management of
+	  association of sockets with HWNDs for event notification.
+
+	* win/tclWinSock.c (NewSocketInfo): Extended initialization
+	  assignments to cover all items of the structure. During
+	  debugging of the new code mentioned above I found that two
+	  fileds could contain bogus data.
+
+	* win/tclWinFile.c: Added #undef HAVE_NO_FINDEX_ENUMS before
+	  definition because when compiling in debug mode the compiler
+	  complains about a redefinition, and this warning is also treated
+	  as an error.
+
 2003-04-21  Don Porter  <dgp@users.sourceforge.net>
 
         * library/tcltest/tcltest.tcl:  When the return code of a test does
