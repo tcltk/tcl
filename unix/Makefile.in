@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.33 1999/06/22 18:51:00 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.34 1999/06/22 18:57:23 wart Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -32,7 +32,7 @@ exec_prefix		= @exec_prefix@
 # when installing files.
 INSTALL_ROOT		=
 
-TCL_LIBRARY	= tcl$(VERSION)
+TCL_LIBRARY =		$(prefix)/lib/tcl$(VERSION)
 
 # Path to use at runtime to refer to LIB_INSTALL_DIR:
 LIB_RUNTIME_DIR = $(exec_prefix)/lib
@@ -43,7 +43,8 @@ BIN_INSTALL_DIR = $(INSTALL_ROOT)$(exec_prefix)/bin
 # Directory in which to install libtcl.so or libtcl.a:
 LIB_INSTALL_DIR = $(INSTALL_ROOT)$(exec_prefix)/lib
 
-# Path name to use when installing library scripts:
+# Path name to use when installing library scripts.  Don't
+# include $(prefix) here since it's already part of $(TCL_LIBRARY)
 SCRIPT_INSTALL_DIR = $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Directory in which to install the include file tcl.h:
