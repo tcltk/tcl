@@ -1,3 +1,10 @@
+2003-05-09  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript):
+	* tests/compile.test (compile-3.5): corrected wrong test and
+	behaviour in the earlier fix for [Bug 705406]; Don Porter reported
+	this as [Bug 735055], and provided the solution.
+
 2003-05-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_ReturnObjCmd): The array of strings
