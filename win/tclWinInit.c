@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.40 2003/02/27 03:47:09 chengyemao Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41 2003/04/18 20:17:42 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -68,9 +68,9 @@ typedef struct {
  */
 
 
-#define NUMPLATFORMS 3
+#define NUMPLATFORMS 4
 static char* platforms[NUMPLATFORMS] = {
-    "Win32s", "Windows 95", "Windows NT"
+    "Win32s", "Windows 95", "Windows NT", "Windows CE"
 };
 
 #define NUMPROCESSORS 9
