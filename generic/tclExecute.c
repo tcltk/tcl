@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.138 2004/05/21 21:51:12 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.139 2004/05/21 22:03:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4675,27 +4675,33 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_Obj *valuePtr;
 	char *bytes;
 	int length;
-	
-	
+#if TCL_COMPILE_DEBUG
+	int opnd;
+#endif
+
         /*
 	 * An external evaluation (INST_INVOKE or INST_EVAL) returned 
 	 * something different from TCL_OK, or else INST_BREAK or 
 	 * INST_CONTINUE were called.
 	 */
-	
+
 	processExceptionReturn:
 #if TCL_COMPILE_DEBUG    
 	switch (*pc) {
 	    case INST_INVOKE_STK1:
+		opnd = TclGetUInt1AtPtr(pc+1);
+		TRACE(("%u => ... after \"%.20s\": ", opnd, cmdNameBuf));
+		break;
 	    case INST_INVOKE_STK4:
+		opnd = TclGetUInt4AtPtr(pc+1);
 		TRACE(("%u => ... after \"%.20s\": ", opnd, cmdNameBuf));
 		break;
 	    case INST_EVAL_STK:
-	    /*
-	     * Note that the object at stacktop has to be used
-	     * before doing the cleanup.
-	     */
-		
+		/*
+		 * Note that the object at stacktop has to be used
+		 * before doing the cleanup.
+		 */
+
 		TRACE(("\"%.30s\" => ", O2S(*tosPtr)));
 		break;
 	    default:
