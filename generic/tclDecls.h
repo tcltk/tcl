@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.7 1999/04/16 00:46:45 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.7.2.1 1999/04/21 01:57:23 rjohnson Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1118,6 +1118,11 @@ EXTERN char *		Tcl_GetCwd _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_DString * cwdPtr));
 /* 366 */
 EXTERN int		Tcl_Chdir _ANSI_ARGS_((CONST char * dirName));
+/* 367 */
+EXTERN int		Tcl_Access _ANSI_ARGS_((CONST char * path, int mode));
+/* 368 */
+EXTERN int		Tcl_Stat _ANSI_ARGS_((CONST char * path, 
+				struct stat * bufPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1520,6 +1525,8 @@ typedef struct TclStubs {
     int (*tcl_ParseVarName) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append)); /* 364 */
     char * (*tcl_GetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 365 */
     int (*tcl_Chdir) _ANSI_ARGS_((CONST char * dirName)); /* 366 */
+    int (*tcl_Access) _ANSI_ARGS_((CONST char * path, int mode)); /* 367 */
+    int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2985,6 +2992,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_Chdir
 #define Tcl_Chdir \
 	(tclStubsPtr->tcl_Chdir) /* 366 */
+#endif
+#ifndef Tcl_Access
+#define Tcl_Access \
+	(tclStubsPtr->tcl_Access) /* 367 */
+#endif
+#ifndef Tcl_Stat
+#define Tcl_Stat \
+	(tclStubsPtr->tcl_Stat) /* 368 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

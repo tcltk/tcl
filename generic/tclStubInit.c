@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.7 1999/04/16 00:46:53 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.7.2.1 1999/04/21 01:57:27 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -436,6 +436,8 @@ TclStubs tclStubs = {
     Tcl_ParseVarName, /* 364 */
     Tcl_GetCwd, /* 365 */
     Tcl_Chdir, /* 366 */
+    Tcl_Access, /* 367 */
+    Tcl_Stat, /* 368 */
 };
 
 TclIntStubs tclIntStubs = {
@@ -542,7 +544,7 @@ TclIntStubs tclIntStubs = {
     TclServiceIdle, /* 98 */
     TclSetElementOfIndexedArray, /* 99 */
     TclSetIndexedScalar, /* 100 */
-    NULL, /* 101 */
+    TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
     TclSockMinimumBuffers, /* 104 */
