@@ -1,3 +1,10 @@
+2002-05-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl: Corrected [uplevel] quoting when
+	[source]-ing test script in subdirectories.
+	* tests/tcltest.test: Fixes to test suite when there's a space
+	in the working path.  Thanks to Kevin Kenny.
+
 2002-05-07  David Gravereaux <davygrvy@pobox.com>
 
 	-- Changes from Peter Spjuth <peter.spjuth@space.se>
