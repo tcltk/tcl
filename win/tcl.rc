@@ -1,12 +1,30 @@
-// RCS: @(#) $Id: tcl.rc,v 1.5 2000/04/18 23:26:45 redman Exp $
+// RCS: @(#) $Id: tcl.rc,v 1.6 2000/10/31 01:20:09 davidg Exp $
 //
-// Version
+// Version Resource Script
 //
 
-#define VS_VERSION_INFO 1
+#include <winver.h>
 
 #define RESOURCE_INCLUDED
 #include <tcl.h>
+
+//
+// build-up the name suffix that defines the type of build this is.
+//
+#ifdef TCL_THREADS
+#define SUFFIX_THREADS	    "t"
+#else
+#define SUFFIX_THREADS	    ""
+#endif
+
+#ifdef DEBUG
+#define SUFFIX_DEBUG	    "d"
+#else
+#define SUFFIX_DEBUG	    ""
+#endif
+
+#define SUFFIX		    SUFFIX_THREADS SUFFIX_DEBUG
+
 
 LANGUAGE 0x9, 0x1	/* LANG_ENGLISH, SUBLANG_DEFAULT */
 
@@ -14,9 +32,13 @@ VS_VERSION_INFO VERSIONINFO
  FILEVERSION 	TCL_MAJOR_VERSION,TCL_MINOR_VERSION,TCL_RELEASE_LEVEL,TCL_RELEASE_SERIAL
  PRODUCTVERSION TCL_MAJOR_VERSION,TCL_MINOR_VERSION,TCL_RELEASE_LEVEL,TCL_RELEASE_SERIAL
  FILEFLAGSMASK 	0x3fL
+#ifdef DEBUG
+ FILEFLAGS 	VS_FF_DEBUG
+#else
  FILEFLAGS 	0x0L
- FILEOS 	0x4	/* VOS__WINDOWS32 */
- FILETYPE 	0x2	/* VFT_DLL */
+#endif
+ FILEOS 	VOS__WINDOWS32
+ FILETYPE 	VFT_DLL
  FILESUBTYPE 	0x0L
 BEGIN
     BLOCK "StringFileInfo"
@@ -24,10 +46,10 @@ BEGIN
         BLOCK "040904b0" /* LANG_ENGLISH/SUBLANG_ENGLISH_US, Unicode CP */
         BEGIN
             VALUE "FileDescription", "Tcl DLL\0"
-            VALUE "OriginalFilename", "tcl" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) ".dll\0"
-            VALUE "CompanyName", "Scriptics Corporation\0"
+            VALUE "OriginalFilename", "tcl" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) SUFFIX ".dll\0"
+            VALUE "CompanyName", "Ajuba Solutions\0"
             VALUE "FileVersion", TCL_PATCH_LEVEL
-            VALUE "LegalCopyright", "Copyright (c) 2000 by Scriptics Corporation\0"
+            VALUE "LegalCopyright", "Copyright (c) 2000 by Ajuba Solutions\0"
             VALUE "ProductName", "Tcl " TCL_VERSION " for Windows\0"
             VALUE "ProductVersion", TCL_PATCH_LEVEL
         END		    
@@ -37,10 +59,3 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
-
-
-
-
-
-
-
