@@ -8,10 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.8.2.5 2001/10/15 10:55:15 dkf Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.8.2.6 2001/10/18 12:47:21 dkf Exp $
  */
 
 #include "tclInt.h"
+/*
+ * For strtoll() and strtoull() declarations on some platforms...
+ */
+#include "tclPort.h"
 
 /*
  * Flag values used by Tcl_ScanObjCmd.

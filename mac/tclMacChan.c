@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.7.6.1 2001/10/18 09:03:59 dkf Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.7.6.2 2001/10/18 12:47:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -586,11 +586,10 @@ StdIOOutput(
 
 static Tcl_WideInt
 StdIOSeek(
-    ClientData instanceData,			/* Unused. */
-    long offset,				/* Offset to seek to. */
-    int mode,					/* Relative to where
-                                                 * should we seek? */
-    int *errorCodePtr)				/* To store error code. */
+    ClientData instanceData,	/* Unused. */
+    Tcl_WideInt offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     int newLoc;
     int fd;
@@ -1129,10 +1128,9 @@ FileOutput(
 static Tcl_WideInt
 FileSeek(
     ClientData instanceData,	/* Unused. */
-    long offset,				/* Offset to seek to. */
-    int mode,					/* Relative to where
-                                 * should we seek? */
-    int *errorCodePtr)			/* To store error code. */
+    Tcl_WideInt offset,		/* Offset to seek to. */
+    int mode,			/* Relative to where should we seek? */
+    int *errorCodePtr)		/* To store error code. */
 {
     FileState *fileState = (FileState *) instanceData;
     IOParam pb;
