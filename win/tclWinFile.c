@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.30 2002/06/12 19:16:01 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.31 2002/06/13 09:40:02 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -22,14 +22,14 @@
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
 
-extern  int		ConvertFileNameFormat(Tcl_Interp *interp, 
-			    int objIndex, Tcl_Obj *fileName, int longShort,
-			    Tcl_Obj **attributePtrPtr);
+extern  int  ConvertFileNameFormat(Tcl_Interp *interp, 
+    int objIndex, Tcl_Obj *fileName, int longShort, 
+    Tcl_Obj **attributePtrPtr);
 
 /*
- * Declarations for 'link' related information (which may or may
- * not be in the windows headers, and some of which is not very
- * well documented).
+ * Declarations for 'link' related information.  This information
+ * should come with VC++ 6.0, but is not in some older SDKs.
+ * In any case it is not well documented.
  */
 #ifndef IO_REPARSE_TAG_RESERVED_ONE
 #  define IO_REPARSE_TAG_RESERVED_ONE 0x000000001
@@ -90,6 +90,13 @@ extern  int		ConvertFileNameFormat(Tcl_Interp *interp,
 /*
  * Undocumented REPARSE_MOUNTPOINT_HEADER_SIZE structure definition.
  * This is found in winnt.h.
+ * 
+ * IMPORTANT: caution when using this structure, since the actual
+ * structures used will want to store a full path in the 'PathBuffer'
+ * field, but there isn't room (there's only a single WCHAR!).  Therefore
+ * one must artificially create a larger space of memory and then cast it
+ * to this type.  We use the 'DUMMY_REPARSE_BUFFER' struct just below to
+ * deal with this problem.
  */
 
 #define REPARSE_MOUNTPOINT_HEADER_SIZE   8
@@ -120,6 +127,11 @@ typedef struct _REPARSE_DATA_BUFFER {
 } REPARSE_DATA_BUFFER;
 #endif
 
+typedef struct {
+    REPARSE_DATA_BUFFER dummy;
+    WCHAR  dummyBuf[MAX_PATH*3];
+} DUMMY_REPARSE_BUFFER;
+
 /* Other typedefs required by this code */
 
 static time_t		ToCTime(FILETIME fileTime);
@@ -149,8 +161,82 @@ static int NativeMatchType(CONST char *name, int nameLen,
 static int WinIsDrive(CONST char *name, int nameLen);
 static Tcl_Obj* WinReadLink(CONST TCHAR* LinkSource);
 static Tcl_Obj* WinReadLinkDirectory(CONST TCHAR* LinkDirectory);
+static int WinLink(CONST TCHAR* LinkSource, CONST TCHAR* LinkTarget, 
+		   int linkType);
+static int WinSymLinkDirectory(CONST TCHAR* LinkDirectory, 
+			       CONST TCHAR* LinkTarget);
 extern Tcl_Filesystem nativeFilesystem;
 
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * WinLink
+ *
+ * Make a link from source to target. 
+ *--------------------------------------------------------------------
+ */
+static int 
+WinLink(LinkSource, LinkTarget, linkType)
+    CONST TCHAR* LinkSource;
+    CONST TCHAR* LinkTarget;
+    int linkType;
+{
+    WCHAR	tempFileName[MAX_PATH];
+    TCHAR*	tempFilePart;
+    int         attr;
+    
+    /* Get the full path referenced by the target */
+    if (!(*tclWinProcs->getFullPathNameProc)(LinkTarget, 
+			  MAX_PATH, tempFileName, &tempFilePart)) {
+	/* Invalid file */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+
+    /* Make sure source file doesn't exist */
+    attr = (*tclWinProcs->getFileAttributesProc)(LinkSource);
+    if (attr != 0xffffffff) {
+	Tcl_SetErrno(EEXIST);
+	return -1;
+    }
+
+    /* Get the full path referenced by the directory */
+    if (!(*tclWinProcs->getFullPathNameProc)(LinkSource, 
+			  MAX_PATH, tempFileName, &tempFilePart)) {
+	/* Invalid file */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+    /* Check the target */
+    attr = (*tclWinProcs->getFileAttributesProc)(LinkTarget);
+    if (attr == 0xffffffff) {
+	/* The target doesn't exist */
+	TclWinConvertError(GetLastError());
+	return -1;
+    } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	/* It is a file */
+	if (tclWinProcs->createHardLinkProc == NULL) {
+	    Tcl_SetErrno(ENOTDIR);
+	    return -1;
+	}
+	if (linkType == 1) {
+	    /* Can't symlink files */
+	    return -1;
+	}
+	if (!(*tclWinProcs->createHardLinkProc)(LinkSource, LinkTarget, NULL)) {
+	    TclWinConvertError(GetLastError());
+	    return -1;
+	}
+	return 0;
+    } else {
+	if (linkType == 2) {
+	    /* Can't hard link directories */
+	    return -1;
+	}
+	return WinSymLinkDirectory(LinkSource, LinkTarget);
+    }
+}
 
 /*
  *--------------------------------------------------------------------
@@ -195,6 +281,67 @@ WinReadLink(LinkSource)
 /*
  *--------------------------------------------------------------------
  *
+ * WinSymLinkDirectory
+ *
+ * This routine creates a NTFS junction, using the undocumented
+ * FSCTL_SET_REPARSE_POINT structure Win2K uses for mount points
+ * and junctions.
+ *
+ * Assumption that LinkTarget is a valid, existing directory.
+ * 
+ * Returns zero on success.
+ *--------------------------------------------------------------------
+ */
+static int 
+WinSymLinkDirectory(LinkDirectory, LinkTarget)
+    CONST TCHAR* LinkDirectory;
+    CONST TCHAR* LinkTarget;
+{
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
+    int         len;
+    WCHAR       nativeTarget[MAX_PATH];
+    WCHAR       *loop;
+    
+    /* Make the native target name */
+    memcpy((VOID*)nativeTarget, (VOID*)L"\\??\\", 4*sizeof(WCHAR));
+    memcpy((VOID*)(nativeTarget + 4), (VOID*)LinkTarget, 
+	   sizeof(WCHAR)*(1+wcslen((WCHAR*)LinkTarget)));
+    len = wcslen(nativeTarget);
+    /* 
+     * We must have backslashes only.  This is VERY IMPORTANT.
+     * If we have any forward slashes everything appears to work,
+     * but the resulting symlink is useless!
+     */
+    for (loop = nativeTarget; *loop != 0; loop++) {
+	if (*loop == L'/') *loop = L'\\';
+    }
+    if ((nativeTarget[len-1] == L'\\') && (nativeTarget[len-2] != L':')) {
+	nativeTarget[len-1] = 0;
+    }
+    
+    /* Build the reparse info */
+    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
+    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength = 
+      wcslen(nativeTarget) * sizeof(WCHAR);
+    reparseBuffer->Reserved = 0;
+    reparseBuffer->SymbolicLinkReparseBuffer.PrintNameLength = 0;
+    reparseBuffer->SymbolicLinkReparseBuffer.PrintNameOffset = 
+      reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength 
+      + sizeof(WCHAR);
+    memcpy(reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, nativeTarget, 
+      sizeof(WCHAR) 
+      + reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength);
+    reparseBuffer->ReparseDataLength = 
+      reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength + 12;
+	
+    return NativeWriteReparse(LinkDirectory, reparseBuffer);
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
  * TclWinSymLinkCopyDirectory
  *
  * Copy a Windows NTFS junction.  This function assumes that
@@ -209,12 +356,13 @@ TclWinSymLinkCopyDirectory(LinkOriginal, LinkCopy)
     CONST TCHAR* LinkOriginal;  /* Existing junction - reparse point */
     CONST TCHAR* LinkCopy;      /* Will become a duplicate junction */
 {
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
     
-    REPARSE_DATA_BUFFER reparseBuffer;
-    if (NativeReadReparse(LinkOriginal, &reparseBuffer)) {
+    if (NativeReadReparse(LinkOriginal, reparseBuffer)) {
 	return -1;
     }
-    return NativeWriteReparse(LinkCopy, &reparseBuffer);
+    return NativeWriteReparse(LinkCopy, reparseBuffer);
 }
 
 /*
@@ -237,16 +385,17 @@ TclWinSymLinkDelete(LinkOriginal, linkOnly)
     int linkOnly;
 {
     /* It is a symbolic link -- remove it */
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
     HANDLE hFile;
-    REPARSE_DATA_BUFFER buffer;
     int returnedLength;
-    memset(&buffer, 0, sizeof( buffer ));
-    buffer.ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
+    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     hFile = (*tclWinProcs->createFileProc)(LinkOriginal, GENERIC_WRITE, 0,
 	NULL, OPEN_EXISTING, 
 	FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (hFile != INVALID_HANDLE_VALUE) {
-	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, &buffer, 
+	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, reparseBuffer, 
 			     REPARSE_MOUNTPOINT_HEADER_SIZE,
 			     NULL, 0, &returnedLength, NULL)) {	
 	    /* Error setting junction */
@@ -282,18 +431,19 @@ WinReadLinkDirectory(LinkDirectory)
     CONST TCHAR* LinkDirectory;
 {
     int attr;
-    REPARSE_DATA_BUFFER reparseBuffer;
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
     
     attr = (*tclWinProcs->getFileAttributesProc)(LinkDirectory);
     if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
 	Tcl_SetErrno(EINVAL);
 	return NULL;
     }
-    if (NativeReadReparse(LinkDirectory, &reparseBuffer)) {
+    if (NativeReadReparse(LinkDirectory, reparseBuffer)) {
         return NULL;
     }
     
-    switch (reparseBuffer.ReparseTag) {
+    switch (reparseBuffer->ReparseTag) {
 	case 0x80000000|IO_REPARSE_TAG_SYMBOLIC_LINK: 
 	case IO_REPARSE_TAG_SYMBOLIC_LINK: 
 	case IO_REPARSE_TAG_MOUNT_POINT: {
@@ -301,12 +451,12 @@ WinReadLinkDirectory(LinkDirectory)
 	    ClientData clientData;
 	    Tcl_Obj *retVal;
 	    
-	    len = reparseBuffer.SymbolicLinkReparseBuffer.SubstituteNameLength
+	    len = reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength
 		+ sizeof(WCHAR);
 	    clientData = (ClientData)ckalloc(len);
 	    memcpy((VOID*)clientData,
-		    (VOID*)reparseBuffer.SymbolicLinkReparseBuffer.PathBuffer,
-		    len);
+		   (VOID*)reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer,
+		   len);
 	    
 	    retVal = Tcl_FSNewNativePath(&nativeFilesystem, clientData);
 	    Tcl_IncrRefCount(retVal);
@@ -347,8 +497,8 @@ NativeReadReparse(LinkDirectory, buffer)
     }
     /* Get the link */
     if (!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 
-			 0, buffer,
-			 sizeof(REPARSE_DATA_BUFFER), &returnedLength, NULL)) {	
+			 0, buffer, sizeof(DUMMY_REPARSE_BUFFER), 
+			 &returnedLength, NULL)) {	
 	/* Error setting junction */
 	TclWinConvertError(GetLastError());
 	CloseHandle(hFile);
@@ -1705,12 +1855,26 @@ TclpObjLstat(pathPtr, statPtr)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr)
+TclpObjLink(pathPtr, toPtr, linkType)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
+    int linkType;
 {
     if (toPtr != NULL) {
-	return NULL;
+	int res;
+	TCHAR* LinkTarget = (TCHAR*)Tcl_FSGetNativePath(toPtr);
+	TCHAR* LinkSource = (TCHAR*)Tcl_FSGetNativePath(pathPtr);
+	if (LinkSource == NULL || LinkTarget == NULL) {
+	    return NULL;
+	}
+	/* We don't recognise these codes */
+	if (linkType < 0 || linkType > 2) return NULL;
+	res = WinLink(LinkSource, LinkTarget, linkType);
+	if (res == 0) {
+	    return toPtr;
+	} else {
+	    return NULL;
+	}
     } else {
 	TCHAR* LinkSource = (TCHAR*)Tcl_FSGetNativePath(pathPtr);
 	if (LinkSource == NULL) {

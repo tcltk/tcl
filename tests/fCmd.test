@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.11 2001/09/04 18:06:34 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.12 2002/06/13 09:40:00 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2162,6 +2162,108 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} {foundGroup} {
     set attrs [file attributes foo.tmp]
     list [catch {eval file attributes foo.tmp [lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
+
+if {[string equal testfilelink [info commands testfilelink]]} {
+    tcltest::testConstraint testfilelink 1
+    
+    if {[string equal $tcl_platform(platform) "windows"]} {
+	if {[string index $tcl_platform(osVersion) 0] >= 5 \
+	  && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
+	    tcltest::testConstraint linkDirectory 1
+	    tcltest::testConstraint linkFile 1
+	} else {
+	    tcltest::testConstraint linkDirectory 0
+	    tcltest::testConstraint linkFile 0
+	}
+    } else {
+	tcltest::testConstraint linkFile 1
+	tcltest::testConstraint linkDirectory 1
+    }
+
+} else {
+    tcltest::testConstraint testfilelink 0
+    tcltest::testConstraint linkDirectory 0
+    tcltest::testConstraint linkFile 0
+}
+
+test fCmd-28.1 {testfilelink} {testfilelink} {
+    list [catch {testfilelink} msg] $msg
+} {1 {wrong # args: should be "testfilelink source ?target?"}}
+
+test fCmd-28.2 {testfilelink} {testfilelink} {
+    list [catch {testfilelink a b c d} msg] $msg
+} {1 {wrong # args: should be "testfilelink source ?target?"}}
+
+catch {file delete -force abc.dir}
+catch {file delete -force abc2.dir}
+makeDirectory abc.dir
+makeDirectory abc2.dir
+makeFile contents abc.file
+makeFile contents abc2.file
+
+test fCmd-28.3 {testfilelink} {linkDirectory} {
+    list [catch {testfilelink abc.dir abc2.dir} msg] $msg
+} {1 {could not create link from "abc.dir" to "abc2.dir": file already exists}}
+
+test fCmd-28.4 {testfilelink} {linkFile} {
+    list [catch {testfilelink abc.file abc2.file} msg] $msg
+} {1 {could not create link from "abc.file" to "abc2.file": file already exists}}
+
+test fCmd-28.5 {testfilelink} {linkFile} {
+    file delete -force abc.link
+    list [catch {testfilelink abc.link abc.file} msg] $msg
+} {0 abc.file}
+
+catch {file delete -force abc.link}
+
+test fCmd-28.6 {testfilelink} {linkDirectory} {
+    file delete -force abc.link
+    list [catch {testfilelink abc.link abc2.doesnt} msg] $msg
+} {1 {could not create link from "abc.link" to "abc2.doesnt": no such file or directory}}
+
+test fCmd-28.7 {testfilelink} {linkDirectory} {
+    file delete -force abc.link
+    list [catch {testfilelink abc.link abc.dir} msg] $msg
+} {0 abc.dir}
+
+test fCmd-28.7.1 {testfilelink} {linkDirectory} {
+    # duplicate link throws error
+    list [catch {testfilelink abc.link abc.dir} msg] $msg
+} {1 {could not create link from "abc.link" to "abc.dir": file already exists}}
+
+test fCmd-28.8 {testfilelink: deletes link not dir} {linkDirectory} {
+    file delete -force abc.link
+    list [file exists abc.link] [file exists abc.dir]
+} {0 1}
+
+test fCmd-28.9 {testfilelink: copies link not dir} {linkDirectory} {
+    file delete -force abc.link
+    testfilelink abc.link abc.dir
+    file copy abc.link abc2.link
+    list [file type abc2.link] [file tail [testfilelink abc2.link]]
+} {link abc.dir}
+
+file delete -force abc.link
+file delete -force abc2.link
+
+file copy abc.file abc.dir
+file copy abc2.file abc.dir
+
+test fCmd-28.10 {testfilelink: glob inside link} {linkDirectory} {
+    file delete -force abc.link
+    testfilelink abc.link abc.dir
+    glob -dir abc.link -tails *
+} {abc.file abc2.file}
+
+test fCmd-28.11 {testfilelink: glob -type l} {linkDirectory} {
+    glob -dir [pwd] -type l -tails abc*
+} {abc.link}
+
+test fCmd-28.12 {testfilelink: glob -type d} {linkDirectory} {
+    lsort [glob -dir [pwd] -type d -tails abc*]
+} [lsort [list abc.link abc.dir abc2.dir]]
+
+file delete -force abc.link
 
 # cleanup
 cleanup

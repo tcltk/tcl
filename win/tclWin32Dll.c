@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.15 2002/03/15 01:10:19 mdejong Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.16 2002/06/13 09:40:01 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -84,6 +84,7 @@ static TclWinProcs asciiProcs = {
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryA,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesA,
     NULL,
+    NULL,
 };
 
 static TclWinProcs unicodeProcs = {
@@ -121,6 +122,7 @@ static TclWinProcs unicodeProcs = {
 	    WCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesW,
+    NULL,
     NULL,
 };
 
@@ -467,6 +469,10 @@ TclWinSetInterfaces(
 	        tclWinProcs->getFileAttributesExProc = 
 		  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
 		  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExW");
+		tclWinProcs->createHardLinkProc = 
+		  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
+		  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
+		  "CreateHardLinkW");
 		FreeLibrary(hInstance);
 	    }
 	}
@@ -479,6 +485,10 @@ TclWinSetInterfaces(
 		tclWinProcs->getFileAttributesExProc = 
 		  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
 		  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExA");
+		tclWinProcs->createHardLinkProc = 
+		  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
+		  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
+		  "CreateHardLinkA");
 		FreeLibrary(hInstance);
 	    }
 	}

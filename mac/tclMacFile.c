@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.21 2002/05/02 20:15:20 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.22 2002/06/13 09:40:00 vincentdarley Exp $
  */
 
 /*
@@ -1145,9 +1145,10 @@ TclpTempFileName()
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr)
+TclpObjLink(pathPtr, toPtr, linkType)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
+    int linkType;
 {
     Tcl_Obj* link = NULL;
 

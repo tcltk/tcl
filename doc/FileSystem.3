@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.24 2002/06/12 09:28:58 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.25 2002/06/13 09:39:59 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -64,7 +64,7 @@ int
 \fBTcl_FSMatchInDirectory\fR(\fIinterp, result, pathPtr, pattern, types\fR)
 .sp
 Tcl_Obj*
-\fBTcl_FSLink\fR(\fIpathPtr, toPtr\fR)
+\fBTcl_FSLink\fR(\fIpathPtr, toPtr, linkType\fR)
 .sp
 int
 \fBTcl_FSLstat\fR(\fIpathPtr, statPtr\fR)
@@ -354,7 +354,7 @@ given by \fIpath\fR, or NULL if the symbolic link could not be read.  The
 result is owned by the caller, which should call Tcl_DecrRefCount when
 the result is no longer needed.  If the \fItoPtr\fR is not NULL, Tcl
 should create a link, but this option is not currently supported (it
-is left available for future expansion).
+and the \fIlinkType\fR field are left available for future expansion).
 .PP
 \fBTcl_FSLstat\fR fills the stat structure \fIstatPtr\fR with information
 about the specified file.  You do not need any access rights to the
@@ -1031,7 +1031,8 @@ only if the filesystem supports links, and may otherwise be NULL.
 .CS
 typedef Tcl_Obj* Tcl_FSLinkProc(
 	Tcl_Obj *\fIpathPtr\fR,
-	Tcl_Obj *\fItoPtr\fR);
+	Tcl_Obj *\fItoPtr\fR,
+	int \fIlinkType\fR);
 .CE
 .PP
 If \fItoPtr\fR is NULL, the function is being asked to read the
