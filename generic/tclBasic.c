@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.35.6.3 2001/09/27 13:38:33 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.35.6.4 2001/12/02 22:06:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -522,6 +522,9 @@ Tcl_CreateInterp()
     Tcl_SetVar2(interp, "tcl_platform", "byteOrder",
 	    ((order.c[0] == 1) ? "littleEndian" : "bigEndian"),
 	    TCL_GLOBAL_ONLY);
+
+    Tcl_SetVar2Ex(interp, "tcl_platform", "wordSize",
+	    Tcl_NewLongObj((long) sizeof(long)), TCL_GLOBAL_ONLY);
 
     /*
      * Set up other variables such as tcl_version and tcl_library

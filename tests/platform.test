@@ -23,19 +23,8 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
-} {byteOrder machine os osVersion platform user}
+} {byteOrder machine os osVersion platform user wordSize}
 
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-

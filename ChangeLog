@@ -1,3 +1,15 @@
+2001-12-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/platform.test (platform-1.1): 
+	* tests/safe.test (safe-6.3): These two tests are trivially
+	affected.
+	* doc/tclvars.n: Doc'd change.
+	* generic/tclBasic.c (Tcl_CreateInterp): Added an entry "wordSize"
+	to the tcl_platform array to describe the size of the machine word
+	(in units of whatever size_t returns.)  Suggested by Arjen Markus,
+	and this may be useful in all sorts of scripts where the word size
+	is not guaranteed.
+
 2001-11-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclTest.c (PretendTclpStat): Fixed so that it will
