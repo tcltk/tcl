@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.4 1999/03/10 23:19:09 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.5 1999/03/10 23:45:50 redman Exp $
 
 library tcl
 
@@ -961,23 +961,18 @@ declare 279 generic {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, \
 	    Tcl_ReleaseType *type)
 }
+# Reserved for future use (8.0.x vs. 8.1)
 declare 280 generic {
-    # Reserved for future use (8.0.x vs. 8.1)
 }
 declare 281 generic {
-    # Reserved for future use (8.0.x vs. 8.1)
 }
 declare 282 generic {
-    # Reserved for future use (8.0.x vs. 8.1)
 }
 declare 283 generic {
-    # Reserved for future use (8.0.x vs. 8.1)
 }
 declare 284 generic {
-    # Reserved for future use (8.0.x vs. 8.1)
 }
 declare 285 generic {
-    # Reserved for future use (8.0.x vs. 8.1)
 }
 
 ##############################################################################
