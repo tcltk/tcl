@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.3 1998/09/14 18:40:15 stanton Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.4 1999/12/21 23:59:29 hobbs Exp $
 # 
 
 # Global variables used by these scripts:
@@ -82,7 +82,7 @@ proc beginFont {font} {
     global file state
 
     textSetup
-    if {$state(curFont) == $font} {
+    if {[string equal $state(curFont) $font]} {
 	return
     }
     endFont
@@ -101,7 +101,7 @@ proc beginFont {font} {
 proc endFont {} {
     global state file
 
-    if {$state(curFont) != ""} {
+    if {[string compare $state(curFont) ""]} {
 	puts -nonewline $file $state(end$state(curFont))
 	set state(curFont) ""
     }
@@ -144,14 +144,18 @@ proc text {string} {
     global file state chars
 
     textSetup
-    regsub -all "(\[\\\\\{\}\])" $string {\\\1}  string
-    regsub -all {	} $string {\\tab } string
-    regsub -all '' $string \"  string
-    regsub -all `` $string \"  string
+    set string [string map [list \
+	    "\\"	"\\\\" \
+	    "\{"	"\\\{" \
+	    "\}"	"\}" \
+	    "\t"	{\tab } \
+	    ''		\" \
+	    ``		\" \
+	    ] $string]
 
-# Check if this is the beginning of an international character string.
-# If so, look up the sequence in the chars table and substitute the
-# appropriate hex value.
+    # Check if this is the beginning of an international character string.
+    # If so, look up the sequence in the chars table and substitute the
+    # appropriate hex value.
 
     if {$state(intl)} {
 	if {[regexp {^'([^']*)'} $string dummy ch]} {
@@ -173,10 +177,10 @@ proc text {string} {
 	SEE { 
 	    global topics curPkg curSect
 	    foreach i [split $string] {
-		if ![regexp -nocase {^[a-z_0-9]+} [string trim $i] i ] {
+		if {![regexp -nocase {^[a-z_0-9]+} [string trim $i] i ]} {
 		    continue
 		}
-		if ![catch {set ref $topics($curPkg,$curSect,$i)} ] {
+		if {![catch {set ref $topics($curPkg,$curSect,$i)} ]} {
 		    regsub $i $string [link $i $ref] string
 		}
 	    }
@@ -204,7 +208,7 @@ proc insertRef {string} {
     set path {}
     set string [string trim $string]
     set ref {}
-    if [info exists topics($curPkg,$curSect,$string)] {
+    if {[info exists topics($curPkg,$curSect,$string)]} {
 	set ref $topics($curPkg,$curSect,$string)
     } else {
 	set sites [array names topics "$curPkg,*,$string"]
@@ -220,7 +224,7 @@ proc insertRef {string} {
 	}
     }
 
-    if {([string compare $ref {}] != 0) && ($ref != $curID)} {
+    if {([string equal $ref {}]) && ($ref != $curID)} {
 	set string [link $string $ref]
     }
     return $string
@@ -476,37 +480,36 @@ proc formattedText {text} {
 	    text $text
 	    return
 	}
-	text [string range $text 0 [expr $index-1]]
-	set c [string index $text [expr $index+1]]
+	text [string range $text 0 [expr {$index-1}]]
+	set c [string index $text [expr {$index+1}]]
 	switch -- $c {
 	    f {
-		font [string index $text [expr $index+2]]
-		set text [string range $text [expr $index+3] end]
+		font [string index $text [expr {$index+2}]]
+		set text [string range $text [expr {$index+3}] end]
 	    }
 	    e {
-		text \\
-		set text [string range $text [expr $index+2] end]
+		text "\\"
+		set text [string range $text [expr {$index+2}] end]
 	    }
 	    - {
 		dash
-		set text [string range $text [expr $index+2] end]
+		set text [string range $text [expr {$index+2}] end]
 	    }
 	    | {
-		set text [string range $text [expr $index+2] end]
+		set text [string range $text [expr {$index+2}] end]
 	    }
 	    o {
-		text \\'
+		text "\\'"
 		regexp "'([^']*)'(.*)" $text all ch text
 		text $chars($ch)
 	    }
 	    default {
 		puts stderr "Unknown sequence: \\$c"
-		set text [string range $text [expr $index+2] end]
+		set text [string range $text [expr {$index+2}] end]
 	    }
 	}
     }
 }
-
 
 
 # dash --
@@ -519,7 +522,7 @@ proc formattedText {text} {
 
 proc dash {} {
     global state
-    if {$state(textState) == "NAME"} {
+    if {[string equal $state(textState) "NAME"]} {
     	set state(textState) 0
     }
     text "-"
@@ -554,10 +557,9 @@ proc setTabs {tabList} {
     global file state
 
     foreach arg $tabList {
-	set distance [expr $state(leftMargin) \
-			  + $state(offset) * $state(nestingLevel) \
-			  + [getTwips $arg]]
-    	puts $file [format "\\tx%.0f" [expr round($distance)]]
+	set distance [expr {$state(leftMargin) \
+		+ ($state(offset) * $state(nestingLevel)) + [getTwips $arg]}]
+    	puts $file [format "\\tx%.0f" [expr {round($distance)}]]
     }
 }
 
@@ -590,10 +592,10 @@ proc lineBreak {} {
 proc newline {} {
     global state
 
-    if $state(inTP) {
+    if {$state(inTP)} {
     	set state(inTP) 0
 	lineBreak
-    } elseif $state(noFill) {
+    } elseif {$state(noFill)} {
 	lineBreak
     } else {
 	text " "
@@ -792,7 +794,7 @@ proc TPmacro {argList} {
     if {$length == 0} {
 	set val 0.5i
     } else {
-	set val [expr ([lindex $argList 0] * 100.0)/1440]i
+	set val [expr {([lindex $argList 0] * 100.0)/1440}]i
     }
     newPara $val -$val
     setTabs $val
@@ -887,9 +889,8 @@ proc newPara {leftIndent {firstIndent 0i}} {
     if $state(paragraph) {
 	puts -nonewline $file "\\line\n"
     }
-    set state(leftIndent) [expr $state(leftMargin) \
-			       + $state(offset) * $state(nestingLevel) \
-			       + [getTwips $leftIndent]]
+    set state(leftIndent) [expr {$state(leftMargin) \
+	    + ($state(offset) * $state(nestingLevel)) +[getTwips $leftIndent]}]
     set state(firstIndent) [getTwips $firstIndent]
     set state(paragraphPending) 1
 }
@@ -911,10 +912,10 @@ proc getTwips {arg} {
     }
     switch -- $units {
 	c	{
-	    set distance [expr $distance * 567]
+	    set distance [expr {$distance * 567}]
 	}
 	i	{
-	    set distance [expr $distance * 1440]
+	    set distance [expr {$distance * 1440}]
 	}
 	default {
 	    puts stderr "bad units in distance \"$arg\""

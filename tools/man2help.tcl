@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.4 1999/02/19 02:14:56 stanton Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.5 1999/12/21 23:59:28 hobbs Exp $
 # 
 
 #
@@ -17,7 +17,6 @@ proc generateContents {basename version files} {
     global curID topics
     set curID 0
     foreach f $files {
-	regsub -all -- {-} [file tail $f] {} curFile
 	puts "Pass 1 -- $f"
 	flush stdout
 	doFile $f
@@ -30,7 +29,7 @@ proc generateContents {basename version files} {
 	    puts $fd "1 $section"
 	    set lastTopic {}
 	    foreach topic [getTopics $package $section] {
-		if {[string compare $lastTopic $topic] != 0} {
+		if {[string equal $lastTopic $topic]} {
 		    set id $topics($package,$section,$topic) 
 		    puts $fd "2 $topic=$id"
 		    set lastTopic $topic
@@ -55,12 +54,11 @@ proc generateHelp {basename files} {
 	    lappend id_keywords($id) $key
 	}
     }
-	    
+
     set file [open "$basename.rtf" w]
     fconfigure $file -translation crlf
     puts $file "\{\\rtf1\\ansi \\deff0\\deflang1033\{\\fonttbl\{\\f0\\froman\\fcharset0\\fprq2 Times New Roman\;\}\}"
     foreach f $files {
-	regsub -all -- {-} [file tail $f] {} curFile
 	puts "Pass 2 -- $f"
 	flush stdout
 	initGlobals
@@ -117,11 +115,11 @@ set version [lindex $argv 1]
 set files {}
 foreach i [lrange $argv 2 end] {
     set i [file join $i]
-    if [file isdir $i] {
+    if {[file isdir $i]} {
 	foreach f [lsort [glob [file join $i *.\[13n\]]]] {
 	    lappend files $f
 	}
-    } elseif [file exists $i] {
+    } elseif {[file exists $i]} {
 	lappend files $i
     }
 }
