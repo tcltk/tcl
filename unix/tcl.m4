@@ -572,6 +572,11 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 #       LD_SEARCH_FLAGS-Flags to pass to ld, such as "-R /usr/local/tcl/lib",
 #                       that tell the run-time dynamic linker where to look
 #                       for shared libraries such as libtcl.so.  Depends on
+#                       the variable LIB_RUNTIME_DIR in the Makefile. Could
+#                       be the same as CC_SEARCH_FLAGS if ${CC} is used to link.
+#       CC_SEARCH_FLAGS-Flags to pass to ${CC}, such as "-Wl,-rpath,/usr/local/tcl/lib",
+#                       that tell the run-time dynamic linker where to look
+#                       for shared libraries such as libtcl.so.  Depends on
 #                       the variable LIB_RUNTIME_DIR in the Makefile.
 #       MAKE_LIB -      Command to execute to build the a library;
 #                       differs when building shared or static.
@@ -738,11 +743,13 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # AIX-5 has dl* in libc.so
 	    DL_LIBS=""
 	    LDFLAGS=""
+
 	    if test "$GCC" = "yes" ; then
-		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+	        CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    else
-		LD_SEARCH_FLAGS='-R${LIB_RUNTIME_DIR}'
+	        CC_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 	    fi
+	    LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 
 	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
@@ -771,7 +778,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
-	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
 
@@ -818,6 +826,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	BSD/OS-4.*)
@@ -828,6 +837,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="-export-dynamic"
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	dgux*)
@@ -838,6 +848,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	HP-UX-*.11.*)
@@ -853,7 +864,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		DL_OBJS="tclLoadShl.o"
 		DL_LIBS="-ldld"
 		LDFLAGS="-Wl,-E"
-		LD_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
+		CC_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
+		LD_SEARCH_FLAGS='+s +b ${LIB_RUNTIME_DIR}:.'
 	    fi
 
 	    # Check to enable 64-bit flags for compiler/linker
@@ -877,7 +889,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		DL_OBJS="tclLoadShl.o"
 		DL_LIBS="-ldld"
 		LDFLAGS="-Wl,-E"
-		LD_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
+		CC_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
+		LD_SEARCH_FLAGS='+s +b ${LIB_RUNTIME_DIR}:.'
 	    fi
 	    ;;
 	IRIX-4.*)
@@ -888,7 +901,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
 	    LDFLAGS="-Wl,-D,08000000"
-	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	    ;;
 	IRIX-5.*)
@@ -898,7 +912,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 	    EXTRA_CFLAGS=""
 	    LDFLAGS=""
 	    ;;
@@ -909,7 +924,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 	    if test "$GCC" = "yes" ; then
 		EXTRA_CFLAGS="-mabi=n32"
 		LDFLAGS="-mabi=n32"
@@ -934,7 +950,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
-	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 
 	    # Check to enable 64-bit flags for compiler/linker
 
@@ -966,13 +983,15 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS="-ldl"
 		LDFLAGS="-rdynamic"
-		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    else
 		AC_CHECK_HEADER(dld.h, [
 		    SHLIB_LD="ld -shared"
 		    DL_OBJS="tclLoadDld.o"
 		    DL_LIBS="-ldld"
 		    LDFLAGS=""
+		    CC_SEARCH_FLAGS=""
 		    LD_SEARCH_FLAGS=""])
 	    fi
 	    if test "`uname -m`" = "alpha" ; then
@@ -1001,6 +1020,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		DL_OBJS=""
 		DL_LIBS="-ldl"
 		LDFLAGS="-rdynamic"
+		CC_SEARCH_FLAGS=""
 		LD_SEARCH_FLAGS=""
 	    else
 		AC_CHECK_HEADER(dld.h, [
@@ -1008,6 +1028,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		    DL_OBJS=""
 		    DL_LIBS="-ldld"
 		    LDFLAGS=""
+		    CC_SEARCH_FLAGS=""
 		    LD_SEARCH_FLAGS=""])
 	    fi
 	    if test "`uname -m`" = "alpha" ; then
@@ -1022,6 +1043,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	MP-RAS-*)
@@ -1032,6 +1054,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS="-Wl,-Bexport"
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	NetBSD-*|FreeBSD-[[1-2]].*|OpenBSD-*)
@@ -1045,7 +1068,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
 		LDFLAGS=""
-		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 		AC_MSG_CHECKING(for ELF)
 		AC_EGREP_CPP(yes, [
 #ifdef __ELF__
@@ -1065,7 +1089,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		DL_OBJS="tclLoadAout.o"
 		DL_LIBS=""
 		LDFLAGS=""
-		LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+		CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	    ])
 
@@ -1083,7 +1108,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS="-export-dynamic"
-	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 	    if test "${TCL_THREADS}" = "1" ; then
 		EXTRA_CFLAGS="-pthread"
 	    	LDFLAGS="$LDFLAGS -pthread"
@@ -1106,6 +1132,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
 	    LDFLAGS="-prebind"
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-O2"
 	    EXTRA_CFLAGS='-DTCL_DEFAULT_ENCODING=\"utf-8\"'
@@ -1118,6 +1145,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadNext.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OS/390-*)
@@ -1134,6 +1162,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadOSF.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OSF1-1.*)
@@ -1149,6 +1178,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OSF1-V*)
@@ -1164,7 +1194,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
-	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 	    if test "$GCC" != "yes" ; then
 		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
 	    fi
@@ -1193,6 +1224,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # dlopen is in -lc on QNX
 	    DL_LIBS=""
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	RISCos-*)
@@ -1203,7 +1235,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
 	    LDFLAGS="-Wl,-D,08000000"
-	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    ;;
 	SCO_SV-3.2*)
 	    # Note, dlopen is available only on SCO 3.2.5 and greater. However,
@@ -1221,6 +1254,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	SINIX*5.4*)
@@ -1231,6 +1265,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	SunOS-4*)
@@ -1241,7 +1276,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
-	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 
 	    # SunOS can't handle version numbers with dots in them in library
 	    # specs, like -ltcl7.5, so use -ltcl75 instead.  Also, it
@@ -1271,11 +1307,13 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
 	    if test "$GCC" = "yes" ; then
-		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		SHLIB_LD="$CC -shared"
+		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    else
-		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 		SHLIB_LD="/usr/ccs/bin/ld -G -z text"
+		CC_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    fi
 	    ;;
 	SunOS-5*)
@@ -1318,11 +1356,13 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    if test "$GCC" = "yes" ; then
-		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		SHLIB_LD="$CC -shared"
+		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    else
-		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 		SHLIB_LD="/usr/ccs/bin/ld -G -z text"
+		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 	    fi
 	    ;;
 	ULTRIX-4.*)
@@ -1333,7 +1373,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
 	    LDFLAGS="-Wl,-D,08000000"
-	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    CC_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    if test "$GCC" != "yes" ; then
 		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
 	    fi
@@ -1358,6 +1399,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    else
 	    LDFLAGS=""
 	    fi
+	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
     esac
@@ -1462,6 +1504,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	DL_OBJS="tclLoadNone.o"
 	DL_LIBS=""
 	LDFLAGS=""
+	CC_SEARCH_FLAGS=""
 	LD_SEARCH_FLAGS=""
 	BUILD_DLTEST=""
     fi
@@ -1557,6 +1600,8 @@ dnl        esac
     AC_SUBST(LDFLAGS)
     AC_SUBST(LDFLAGS_DEBUG)
     AC_SUBST(LDFLAGS_OPTIMIZE)
+    AC_SUBST(CC_SEARCH_FLAGS)
+    AC_SUBST(LD_SEARCH_FLAGS)
 
     AC_SUBST(STLIB_LD)
     AC_SUBST(SHLIB_LD)

@@ -1,3 +1,14 @@
+2002-07-29  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in: Use CC_SEARCH_FLAGS instead of
+	LD_SEARCH_FLAGS when linking with ${CC}.
+	* unix/configure: Regen.
+	* unix/configure.in: Don't subst CC_SEARCH_FLAGS or
+	LD_SEARCH_FLAGS since this is now done in tcl.m4.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Document and
+	set CC_SEARCH_FLAGS whenever LD_SEARCH_FLAGS is set.
+	[Tcl patch 588290]
+
 2002-07-29  Reinhard Max  <max@suse.de>
 
 	* unix/tcl.m4 (SC_SERIAL_PORT): Fixed detection for cases when
