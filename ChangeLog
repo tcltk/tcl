@@ -1,3 +1,12 @@
+2004-01-15  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinReg.c:  Placed the requirement for advapi.lib into
+	the object file itself with #paragma comment (lib, ...) when
+	built with VC++.  This will simplify linking for users of the
+	static library.
+
+	* win/makefile.vc:  Removed 'advapi.lib' from $(baselibs).
+
 2004-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclDictObj.c (TraceDictPath, DictExistsCmd): Adjusted
