@@ -533,12 +533,12 @@ else
 fi
 
 
-# RCS: @(#) $Id: configure.in,v 1.70 2001/07/11 00:59:31 mdejong Exp $
+# RCS: @(#) $Id: configure,v 1.16 2001/08/07 00:48:22 hobbs Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=4
-TCL_PATCH_LEVEL="a3"
+TCL_PATCH_LEVEL="a4"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
