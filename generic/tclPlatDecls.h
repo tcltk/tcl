@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.13 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.14 2002/01/25 21:36:09 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -34,10 +34,10 @@
 
 #ifdef __WIN32__
 /* 0 */
-EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
+EXTERN CONST TCHAR *	Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
 				int len, Tcl_DString * dsPtr));
 /* 1 */
-EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
+EXTERN CONST char *	Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
 				int len, Tcl_DString * dsPtr));
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
@@ -78,8 +78,8 @@ typedef struct TclPlatStubs {
     struct TclPlatStubHooks *hooks;
 
 #ifdef __WIN32__
-    TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * str, int len, Tcl_DString * dsPtr)); /* 0 */
-    char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * str, int len, Tcl_DString * dsPtr)); /* 1 */
+    CONST TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * str, int len, Tcl_DString * dsPtr)); /* 0 */
+    CONST char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * str, int len, Tcl_DString * dsPtr)); /* 1 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     void (*tcl_MacSetEventProc) _ANSI_ARGS_((Tcl_MacConvertEventPtr procPtr)); /* 0 */
