@@ -1,3 +1,8 @@
+2003-02-21  Daniel Steffen  <das@users.sourceforge.net>
+
+	* mac/tclMacChan.c (TclpCutFileChannel, TclpSpliceFileChannel):
+	Implemented missing cut and splice procs for file channels.
+
 2003-02-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/package.tcl (tclPkgUnknown):  Minor performance tweaks
