@@ -248,10 +248,10 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_LOAD_TKCONFIG, [
-    AC_MSG_CHECKING([for existence of $TCLCONFIG])
+    AC_MSG_CHECKING([for existence of $TK_BIN_DIR/tkConfig.sh])
 
     if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
-        AC_MSG_CHECKING([loading $TK_BIN_DIR/tkConfig.sh])
+        AC_MSG_RESULT([loading])
 	. $TK_BIN_DIR/tkConfig.sh
     else
         AC_MSG_RESULT([could not find $TK_BIN_DIR/tkConfig.sh])
