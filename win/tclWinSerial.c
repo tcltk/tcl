@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.6 1999/07/22 00:06:10 redman Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.7 1999/08/12 17:38:49 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -961,54 +961,55 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
     Tcl_Interp *interp;         /* For error reporting - can be NULL. */
     char *optionName;           /* Which option to set? */
     char *value;                /* New value for option. */
-    {
-        SerialInfo *infoPtr;
-        DCB dcb;
-        int len;
-        BOOL result;
-        Tcl_DString ds;
-        TCHAR *native;
-
-        infoPtr = (SerialInfo *) instanceData;
-
-        len = strlen(optionName);
-        if ((len > 1) && (strncmp(optionName, "-mode", len) == 0)) {
-            if (GetCommState(infoPtr->handle, &dcb)) {
-                native = Tcl_WinUtfToTChar(value, -1, &ds);
-                result = (*tclWinProcs->buildCommDCBProc)(native, &dcb);
-                Tcl_DStringFree(&ds);
-
-                if ((result == FALSE) ||
+{
+    SerialInfo *infoPtr;
+    DCB dcb;
+    int len;
+    BOOL result;
+    Tcl_DString ds;
+    TCHAR *native;
+    
+    infoPtr = (SerialInfo *) instanceData;
+    
+    len = strlen(optionName);
+    if ((len > 1) && (strncmp(optionName, "-mode", len) == 0)) {
+	if (GetCommState(infoPtr->handle, &dcb)) {
+	    native = Tcl_WinUtfToTChar(value, -1, &ds);
+	    result = (*tclWinProcs->buildCommDCBProc)(native, &dcb);
+	    Tcl_DStringFree(&ds);
+	    
+	    if ((result == FALSE) ||
                     (SetCommState(infoPtr->handle, &dcb) == FALSE)) {
-                    /*
-                     * one should separate the 2 errors...
-                     */
-
-                    if (interp) {
-                        Tcl_AppendResult(interp,
-                "bad value for -mode: should be ",
-                "baud,parity,data,stop", NULL);
-                    }
-                    return TCL_ERROR;
-                } else {
-                    return TCL_OK;
-                }
-            } else {
-                if (interp) {
-                    Tcl_AppendResult(interp, "can't get comm state", NULL);
-                }
-                return TCL_ERROR;
-            }
-        } else if ((len > 1) &&
-		(strncmp(optionName, "-pollinterval", len) == 0)) {
-            if ( Tcl_GetInt(interp, value, &(infoPtr->blockTime)) != TCL_OK ) {
-                return TCL_ERROR;
-            }
-        } else {
-            return Tcl_BadChannelOption(interp, optionName,
-		    "mode pollinterval");
-        }
+		/*
+		 * one should separate the 2 errors...
+		 */
+		
+		if (interp) {
+		    Tcl_AppendResult(interp,
+			    "bad value for -mode: should be ",
+			    "baud,parity,data,stop", NULL);
+		}
+		return TCL_ERROR;
+	    } else {
+		return TCL_OK;
+	    }
+	} else {
+	    if (interp) {
+		Tcl_AppendResult(interp, "can't get comm state", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    } else if ((len > 1) &&
+	    (strncmp(optionName, "-pollinterval", len) == 0)) {
+	if ( Tcl_GetInt(interp, value, &(infoPtr->blockTime)) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+    } else {
+	return Tcl_BadChannelOption(interp, optionName,
+		"mode pollinterval");
     }
+    return TCL_ERROR;
+}
 
 /*
  *----------------------------------------------------------------------

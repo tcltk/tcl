@@ -1,3 +1,8 @@
+1999-08-12  Scott Redman  <redman@scriptics.com>
+
+	* win/tclWinSerial.c: Applied patch from Petteri Kettunen to
+	remove compiler warning.
+
 1999-08-10  Scott Redman  <redman@scriptics.com>
 
 	* generic/tclAlloc.c:
