@@ -1,3 +1,18 @@
+2002-05-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): 
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Use the macro version.
+	* generic/tclInt.h (TclUniCharNcmp): Optimised still further with
+	a macro for use in sensitive places like tclExecute.c
+
+	* generic/tclUtf.c (Tcl_UniCharNcmp): Use new flag to figure out
+	when we can use an optimal comparison scheme, and default to the
+	old scheme in other cases which is at least safe.
+	* unix/configure.in (TCL_OPTIMIZE_UNICODE_COMPARE): New optional
+	flag that indicates when we can use memcmp() to compare Unicode
+	strings (i.e. when the high-byte of a Tcl_UniChar precedes the
+	low-byte.)
+
 2002-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.decls:
