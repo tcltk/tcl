@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.31 2003/04/16 23:33:43 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.32 2003/05/05 20:54:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -234,10 +234,12 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Obj *varNamePtr = NULL;
+    Tcl_Obj *optionVarNamePtr = NULL;
     int result;
 
-    if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "command ?varName?");
+    if ((objc < 2) || (objc > 4)) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"script ?resultVarName? ?optionVarName?");
 	return TCL_ERROR;
     }
 
@@ -247,18 +249,71 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
      * stack rendering objv invalid.
      */
     
-    if (objc == 3) {
+    if (objc >= 3) {
 	varNamePtr = objv[2];
+    }
+    if (objc == 4) {
+	optionVarNamePtr = objv[3];
     }
 
     result = Tcl_EvalObjEx(interp, objv[1], 0);
     
-    if (objc == 3) {
-	if (Tcl_ObjSetVar2(interp, varNamePtr, NULL,
-		Tcl_GetObjResult(interp), 0) == NULL) {
+    if (objc >= 3) {
+	if (NULL == Tcl_ObjSetVar2(interp, varNamePtr, NULL,
+		Tcl_GetObjResult(interp), 0)) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
 	            "couldn't save command result in variable", -1);
+	    return TCL_ERROR;
+	}
+    }
+    if (objc == 4) {
+	Interp  *iPtr = (Interp *) interp;
+	Tcl_Obj *options = Tcl_DuplicateObj(iPtr->returnOpts);
+	Tcl_Obj *value = NULL;
+
+	if (result != TCL_RETURN) {
+	    Tcl_DictObjPut(NULL, options,
+		    iPtr->returnCodeKey, Tcl_NewIntObj(result));
+	    Tcl_DictObjPut(NULL, options,
+		    iPtr->returnLevelKey, Tcl_NewIntObj(0));
+	}
+
+	if (iPtr->flags & ERR_IN_PROGRESS) {
+	    value = NULL;
+	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorinfoKey, &value);
+	    if (NULL == value) {
+		Tcl_DictObjPut(NULL, options, iPtr->returnErrorinfoKey,
+			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorInfo,
+			NULL, TCL_GLOBAL_ONLY));
+	    }
+	}
+
+	if (iPtr->flags & ERROR_CODE_SET) {
+	    value = NULL;
+	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorcodeKey, &value);
+	    if (NULL == value) {
+		Tcl_DictObjPut(NULL, options, iPtr->returnErrorcodeKey,
+			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorCode,
+			NULL, TCL_GLOBAL_ONLY));
+	    }
+	}
+
+	if (result == TCL_ERROR) {
+	    value = NULL;
+	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorlineKey, &value);
+	    if (NULL == value) {
+		Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
+			Tcl_NewIntObj(iPtr->errorLine));
+	    }
+	}
+
+	if (NULL ==
+		Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL, options, 0)) {
+	    Tcl_DecrRefCount(options);
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
+	            "couldn't save return options in variable", -1);
 	    return TCL_ERROR;
 	}
     }

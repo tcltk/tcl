@@ -11,13 +11,20 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.13 2002/07/19 08:52:27 dkf Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.14 2003/05/05 20:54:50 dgp Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
+if {[catch {package require tcltest 2.0.2}]} {
+    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
+    return
 }
-set tcltest::testConstraints(nonLinuxOnly) \
+
+namespace eval ::tcl::test::cmdMZ {
+    namespace import ::tcltest::cleanupTests
+    namespace import ::tcltest::makeFile
+    namespace import ::tcltest::removeFile
+    namespace import ::tcltest::test
+
+set ::tcltest::testConstraints(nonLinuxOnly) \
 	[expr {![string equal Linux $tcl_platform(os)]}]
 
 # Tcl_PwdObjCmd
@@ -69,7 +76,113 @@ test cmdMZ-2.4 {Tcl_RenameObjCmd: success} {
     list [catch {r1} msg] $msg
 } {1 {invalid command name "r1"}}
 
-# The tests for Tcl_ReturnObjCmd are in proc-old.test
+# Some tests for Tcl_ReturnObjCmd are in proc-old.test
+
+test cmdMZ-return-1.0 {return checks for bad option values} -body {
+    return -options foo
+} -returnCodes error -match glob -result {bad -options value:*}
+test cmdMZ-return-1.1 {return checks for bad option values} -body {
+    return -code foo
+} -returnCodes error -match glob -result {bad completion code*}
+test cmdMZ-return-1.2 {return checks for bad option values} -body {
+    return -code 0x100000000
+} -returnCodes error -match glob -result {bad completion code*}
+test cmdMZ-return-1.3 {return checks for bad option values} -body {
+    return -level foo
+} -returnCodes error -match glob -result {bad -level value:*}
+test cmdMZ-return-1.4 {return checks for bad option values} -body {
+    return -level -1
+} -returnCodes error -match glob -result {bad -level value:*}
+test cmdMZ-return-1.5 {return checks for bad option values} -body {
+    return -level 3.1415926
+} -returnCodes error -match glob -result {bad -level value:*}
+
+proc dictSort {d} {
+    foreach k [lsort [dict keys $d]] {
+	lappend result $k [dict get $d $k]
+    }
+    return $result
+}
+
+test cmdMZ-return-2.0 {return option handling} {
+    list [catch return -> foo] [dictSort $foo]
+} {2 {-code 0 -level 1}}
+test cmdMZ-return-2.1 {return option handling} {
+    list [catch {return -bar soom} -> foo] [dictSort $foo]
+} {2 {-bar soom -code 0 -level 1}}
+test cmdMZ-return-2.2 {return option handling} {
+    list [catch {return -code return} -> foo] [dictSort $foo]
+} {2 {-code 0 -level 2}}
+test cmdMZ-return-2.3 {return option handling} {
+    list [catch {return -code return -level 10} -> foo] [dictSort $foo]
+} {2 {-code 0 -level 11}}
+test cmdMZ-return-2.4 {return option handling} -body {
+    return -level 0 -code error
+} -returnCodes error -result {}
+test cmdMZ-return-2.5 {return option handling} -body {
+    return -level 0 -code return
+} -returnCodes return -result {}
+test cmdMZ-return-2.6 {return option handling} -body {
+    return -level 0 -code break
+} -returnCodes break -result {}
+test cmdMZ-return-2.7 {return option handling} -body {
+    return -level 0 -code continue
+} -returnCodes continue -result {}
+test cmdMZ-return-2.8 {return option handling} -body {
+    return -level 0 -code -1
+} -returnCodes -1 -result {}
+test cmdMZ-return-2.9 {return option handling} -body {
+    return -level 0 -code 10
+} -returnCodes 10 -result {}
+test cmdMZ-return-2.10 {return option handling} {
+    list [catch {return -level 0 -code error} -> foo] [dictSort $foo]
+} {1 {-code 1 -errorinfo {
+    while executing
+"return -level 0 -code error"} -errorline 1 -level 0}}
+test cmdMZ-return-2.11 {return option handling} {
+    list [catch {return -level 0 -code break} -> foo] [dictSort $foo]
+} {3 {-code 3 -level 0}}
+test cmdMZ-return-2.12 {return option handling} -body {
+    return -level 0 -code error -options {-code ok}
+} -returnCodes ok -result {}
+test cmdMZ-return-2.13 {return option handling} -body {
+    return -level 0 -code error -options {-code foo}
+} -returnCodes error -match glob -result {bad completion code*}
+test cmdMZ-return-2.14 {return option handling} -body {
+    return -level 0 -code error -options {-code foo -options {-code break}}
+} -returnCodes break -result {}
+
+# Check that the result of a [return -options $opts $result] is
+# indistinguishable from that of the originally caught script, no
+# matter what the script is/does.  (TIP 90)
+set i 0
+foreach script {
+	{}
+	{format x}
+	{set}
+	{set a 1}
+	{error}
+	{error foo}
+	{error foo bar}
+	{error foo bar baz}
+	{return -level 0}
+	{return -code error}
+	{return -code error -errorinfo foo}
+	{return -code error -errorinfo foo -errorcode bar}
+	{return -code error -errorinfo foo -errorcode bar -errorline 10}
+	{return -options {x y z 2}}
+	{return -level 3 -code break sdf}
+} {
+    test cmdMZ-return-3.$i "check that return after a catch is same:\n$script" {
+	set one [list [catch $script foo bar] $foo [dictSort $bar] \
+		$::errorCode $::errorInfo]
+	set two [list [catch {return -options $bar $foo} foo2 bar2] \
+		$foo2 [dictSort $bar2] $::errorCode $::errorInfo]
+	string equal $one $two
+    } 1
+    incr i
+}
+
 # The tests for Tcl_ScanObjCmd are in scan.test
 
 # Tcl_SourceObjCmd
@@ -127,7 +240,7 @@ test cmdMZ-4.5 {Tcl_SplitObjCmd: basic split commands} {
 } {1 2 3 4 5}
 test cmdMZ-4.6 {Tcl_SplitObjCmd: basic split commands} {
     split "a\}b\[c\{\]\$"
-} "a\\}b\\\[c\\{\\\]\\\$"
+} "a\\\}b\\\[c\\\{\\\]\\\$"
 test cmdMZ-4.7 {Tcl_SplitObjCmd: basic split commands} {
     split {} {}
 } {}
@@ -197,5 +310,7 @@ test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
 # The tests for Tcl_WhileObjCmd are in while.test
 
 # cleanup
-::tcltest::cleanupTests
+cleanupTests
+}
+namespace delete ::tcl::test::cmdMZ
 return
