@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18 2003/05/19 17:25:37 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.19 2004/03/18 18:55:55 rmax Exp $
  */
 
 #include "tclInt.h"
@@ -287,15 +287,13 @@ Tcl_GetTime(timePtr)
 
 struct tm *
 TclpGetDate(time, useGMT)
-    TclpTime_t time;
+    CONST time_t *time;
     int useGMT;
 {
-    CONST time_t *tp = (CONST time_t *)time;
-
     if (useGMT) {
-	return ThreadSafeGMTime(tp);
+	return ThreadSafeGMTime(time);
     } else {
-	return ThreadSafeLocalTime(tp);
+	return ThreadSafeLocalTime(time);
     }
 }
 
