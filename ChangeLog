@@ -6,14 +6,14 @@
 	1) Cleans-up the winsock typedefs by using the typedefs
 	provided by winsock2.h.  This has no effect on how winsock
 	is initialized; just makes the source code easier to read.
-	[Patch 561305]
+	[Patch 561305 561301]
 
-	2) Revamps how the socket message handler thread is brough up
-	and down to allows for cleaner exits without the use of
+	2) Revamps how the socket message handler thread is brought
+	up and down to allows for cleaner exits without the use of
 	TerminateThread().  TerminateThread is evil.  No attempt has
 	been made to resolve [Bug 593810] which may need a new
 	channel driver version for adding a registering function
-	whithin the transfered thread to init the handler thread.
+	within the transfered thread to init the handler thread.
 	IOW, initialization of the TSD structure is getting bypassed
 	through the thread extension's [thread::transfer] command.
 
