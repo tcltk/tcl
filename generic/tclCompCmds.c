@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.7 2005/03/19 18:26:38 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.8 2005/03/20 05:26:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1324,8 +1324,8 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
      * Generate code to assign values from the list to variables
      */
     for (idx=0 ; idx<numWords-2 ; idx++) {
-	tokenPtr += tokenPtr->numComponents + 1;
 	int flags = (TCL_LEAVE_ERR_MSG|VM_VAR_OMIT_PUSH);
+	tokenPtr += tokenPtr->numComponents + 1;
 	/*
 	 * Generate the next variable name
 	 */
