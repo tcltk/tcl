@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.3 2002/08/23 21:07:04 msofer Exp $ */
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4 2002/08/26 13:05:56 msofer Exp $ */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
@@ -42,6 +42,7 @@ extern void TclpSetAllocCache(void *);
  * The following define the number of Tcl_Obj's to allocate/move
  * at a time and the high water mark to prune a per-thread cache.
  * On a 32 bit system, sizeof(Tcl_Obj) = 24 so 800 * 24 = ~16k.
+ *
  */
  
 #define NOBJALLOC	 800
@@ -302,10 +303,14 @@ TclFreeAllocCache(void *arg)
 char *
 TclpAlloc(unsigned int reqsize)
 {
-    Cache         *cachePtr = GetCache();
+    Cache         *cachePtr = TclpGetAllocCache();
     Block         *blockPtr;
     register int   bucket;
     size_t  	   size;
+
+    if (cachePtr == NULL) {
+	cachePtr = GetCache();
+    }
     
     /*
      * Increment the requested size to include room for 
@@ -366,9 +371,13 @@ void
 TclpFree(char *ptr)
 {
     if (ptr != NULL) {
-	Cache  *cachePtr = GetCache();
+	Cache  *cachePtr = TclpGetAllocCache();
 	Block *blockPtr;
 	int bucket;
+
+	if (cachePtr == NULL) {
+	    cachePtr = GetCache();
+	}
  
 	/*
 	 * Get the block back from the user pointer and
@@ -417,7 +426,7 @@ TclpFree(char *ptr)
 char *
 TclpRealloc(char *ptr, unsigned int reqsize)
 {
-    Cache *cachePtr = GetCache();
+    Cache *cachePtr = TclpGetAllocCache();
     Block *blockPtr;
     void *new;
     size_t size, min;
@@ -425,6 +434,10 @@ TclpRealloc(char *ptr, unsigned int reqsize)
 
     if (ptr == NULL) {
 	return TclpAlloc(reqsize);
+    }
+
+    if (cachePtr == NULL) {
+	cachePtr = GetCache();
     }
 
     /*
@@ -497,10 +510,14 @@ TclpRealloc(char *ptr, unsigned int reqsize)
 Tcl_Obj *
 TclThreadAllocObj(void)
 {
-    register Cache *cachePtr = GetCache();
+    register Cache *cachePtr = TclpGetAllocCache();
     register int nmove;
     register Tcl_Obj *objPtr;
     Tcl_Obj *newObjsPtr;
+
+    if (cachePtr == NULL) {
+	cachePtr = GetCache();
+    }
 
     /*
      * Get this thread's obj list structure and move
@@ -562,7 +579,11 @@ TclThreadAllocObj(void)
 void
 TclThreadFreeObj(Tcl_Obj *objPtr)
 {
-    Cache *cachePtr = GetCache();
+    Cache *cachePtr = TclpGetAllocCache();
+
+    if (cachePtr == NULL) {
+	cachePtr = GetCache();
+    }
 
     /*
      * Get this thread's list and push on the free Tcl_Obj.
