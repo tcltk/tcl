@@ -11,37 +11,16 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.49 2004/11/30 19:34:50 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.50 2004/12/01 23:18:54 dgp Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * The following variables hold the full path name of the binary
- * from which this application was executed, or NULL if it isn't
- * know.  The values are set by the procedure Tcl_FindExecutable.
- * Only the first call to Tcl_FindExecutable sets the value.  That
- * call also sets the "searchDone" flag, so that subsequent calls
- * are no-ops.  With that logic in place, no mutex protection is
- * required.  The storage space is dynamically allocated.  The value
- * is kept in the system encoding.
+ * The absolute pathname of the executable in which this Tcl library
+ * is running.
  */
-
-char *tclNativeExecutableName = NULL;
-int tclFindExecutableSearchDone = 0;
-
-/*
- * A copy of the executable path name, converted to Tcl's internal
- * encoding, UTF-8.  Also keep a copy of what the system encoding
- * was believed to be when the conversion was done, just in case
- * it's changed on us.  Because Tcl_GetNameOfExecutable() is in
- * the public API, it might be called from any thread, so we need
- * mutex protection here.
- */
-
-TCL_DECLARE_MUTEX(executableNameMutex)
-static char *executableName = NULL;
-static Tcl_Encoding conversionEncoding = NULL;
+static ProcessGlobalValue executableName = {0, 0, NULL, NULL, NULL, NULL, NULL};
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement
@@ -90,7 +69,6 @@ TCL_DECLARE_MUTEX(precisionMutex)
  */
 
 static void		ClearHash _ANSI_ARGS_((Tcl_HashTable *tablePtr));
-static void		FreeExecutableName _ANSI_ARGS_((ClientData));
 static void		FreeProcessGlobalValue _ANSI_ARGS_((
 			    ClientData clientData));
 static void		FreeThreadHash _ANSI_ARGS_ ((ClientData clientData));
@@ -98,7 +76,6 @@ static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_ ((Tcl_ThreadDataKey *keyPtr));
 static int		SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
 					    Tcl_Obj* objPtr));
 static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
-static Tcl_Obj *	Tcl_GetObjNameOfExecutable();
 
 /*
  * The following is the Tcl object type definition for an object
@@ -2700,9 +2677,10 @@ FreeProcessGlobalValue(clientData)
  *----------------------------------------------------------------------
  */
 void
-TclSetProcessGlobalValue(pgvPtr, newValue)
+TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
     ProcessGlobalValue *pgvPtr;
     Tcl_Obj *newValue;
+    Tcl_Encoding encoding;
 {
     CONST char *bytes;
     Tcl_HashTable *cacheMap;
@@ -2722,8 +2700,8 @@ TclSetProcessGlobalValue(pgvPtr, newValue)
     strcpy(pgvPtr->value, bytes);
     if (pgvPtr->encoding) {
 	Tcl_FreeEncoding(pgvPtr->encoding);
-	pgvPtr->encoding = NULL;
     }
+    pgvPtr->encoding = encoding;
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj
@@ -2820,87 +2798,90 @@ TclGetProcessGlobalValue(pgvPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * TclSetObjNameOfExecutable --
+ *
+ *	This procedure stores the absolute pathname of
+ *	the executable file (normally as computed by
+ *	TclpFindExecutable).
+ *
+ * Results:
+ * 	None.
+ *
+ * Side effects:
+ *	Stores the executable name.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclSetObjNameOfExecutable(name, encoding)
+    Tcl_Obj *name;
+    Tcl_Encoding encoding;
+{
+    TclSetProcessGlobalValue(&executableName, name, encoding);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetObjNameOfExecutable --
+ *
+ *	This procedure retrieves the absolute pathname of the
+ *	application in which the Tcl library is running, usually
+ *	as previously stored by TclpFindExecutable().
+ *	This procedure call is the C API equivalent to the
+ *	"info nameofexecutable" command.
+ *
+ * Results:
+ *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if
+ *	the pathname of the application is unknown.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetObjNameOfExecutable()
+{
+    return TclGetProcessGlobalValue(&executableName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetNameOfExecutable --
  *
- *	This procedure simply returns a pointer to the internal full
- *	path name of the executable file as computed by
- *	Tcl_FindExecutable.  This procedure call is the C API
- *	equivalent to the "info nameofexecutable" command.
+ *	This procedure retrieves the absolute pathname of the
+ *	application in which the Tcl library is running, and
+ *	returns it in string form.
  *
- *	TODO: Rework these routines to use a ProcessGlobalValue.
+ * 	The returned string belongs to Tcl and should be copied
+ * 	if the caller plans to keep it, to guard against it
+ * 	becoming invalid.
  *
  * Results:
  *	A pointer to the internal string or NULL if the internal full
  *	path name has not been computed or unknown.
  *
  * Side effects:
- *	The object referenced by "objPtr" might be converted to an
- *	integer object.
+ * 	None.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-FreeExecutableName(clientData)
-    ClientData clientData;
-{
-    Tcl_FreeEncoding(conversionEncoding);
-    conversionEncoding = NULL;
-    if (NULL != executableName) {
-	ckfree(executableName);
-    }
-    executableName = NULL;
-}
-
-static Tcl_Obj *
-Tcl_GetObjNameOfExecutable()
-{
-    Tcl_Obj *result;
-
-    Tcl_MutexLock(&executableNameMutex);
-    if (NULL == conversionEncoding) {
-	/* First call (after free) */
-	conversionEncoding = Tcl_GetEncoding(NULL, NULL);
-	Tcl_CreateExitHandler(FreeExecutableName, NULL);
-    } else {
-	/* Later call... */
-	Tcl_Encoding systemEncoding = Tcl_GetEncoding(NULL, NULL);
-	if (systemEncoding != conversionEncoding) {
-	    /* ...with system encoding changed */
-	    FreeExecutableName(NULL);
-	    conversionEncoding = systemEncoding;
-	} else {
-	    Tcl_FreeEncoding(systemEncoding);
-	}
-    }
-    if (NULL == tclNativeExecutableName) {
-	FreeExecutableName(NULL);
-    } else if (NULL == executableName) {
-	Tcl_DString ds;
-	Tcl_ExternalToUtfDString(conversionEncoding,
-		tclNativeExecutableName, -1, &ds);
-	executableName = (char *)
-		ckalloc ((unsigned) Tcl_DStringLength(&ds) + 1);
-	strcpy(executableName, Tcl_DStringValue(&ds));
-	Tcl_DStringFree(&ds);
-    }
-
-    if (NULL == executableName) {
-	result = Tcl_NewObj();
-    } else {
-	result = Tcl_NewStringObj(executableName, -1);
-    }
-    Tcl_MutexUnlock(&executableNameMutex);
-    return result;
-}
-
 CONST char *
 Tcl_GetNameOfExecutable()
 {
-    Tcl_DecrRefCount(Tcl_GetObjNameOfExecutable());
-    return executableName;
+    int numBytes;
+    CONST char * bytes =
+	    Tcl_GetStringFromObj(TclGetObjNameOfExecutable(), &numBytes);
+    if (numBytes == 0) {
+	return NULL;
+    }
+    return bytes;
 }
-
 
 /*
  *----------------------------------------------------------------------

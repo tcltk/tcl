@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.28 2004/12/01 21:58:59 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.29 2004/12/01 23:18:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -301,7 +301,7 @@ TclSetEncodingSearchPath(searchPath)
     if (TCL_ERROR == Tcl_ListObjLength(NULL, searchPath, &dummy)) {
 	return TCL_ERROR;
     }
-    TclSetProcessGlobalValue(&encodingSearchPath, searchPath);
+    TclSetProcessGlobalValue(&encodingSearchPath, searchPath, NULL);
     FillEncodingFileMap();
     return TCL_OK;
 }
@@ -349,7 +349,7 @@ TclSetLibraryPath(path)
     if (TCL_ERROR == Tcl_ListObjLength(NULL, path, &dummy)) {
 	return;
     }
-    TclSetProcessGlobalValue(&libraryPath, path);
+    TclSetProcessGlobalValue(&libraryPath, path, NULL);
 }
 
 /*
@@ -446,7 +446,7 @@ void
 FillEncodingFileMap()
 {
     Tcl_Obj *map = MakeFileMap();
-    TclSetProcessGlobalValue(&encodingFileMap, map);
+    TclSetProcessGlobalValue(&encodingFileMap, map, NULL);
     Tcl_DecrRefCount(map);
 }
 
@@ -1291,9 +1291,8 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst,
  *	None.
  *
  * Side effects:
- *	The variable tclNativeExecutableName gets filled in with the file
- *	name for the application, if we figured it out.  If we couldn't
- *	figure it out, tclNativeExecutableName is set to NULL.
+ *	The absolute pathname for the application is computed and stored
+ *	to be returned later be [info nameofexecutable].
  *
  *---------------------------------------------------------------------------
  */
