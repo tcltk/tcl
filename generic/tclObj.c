@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.31 2002/02/27 06:39:27 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.32 2002/02/27 07:08:28 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -30,8 +30,15 @@ TCL_DECLARE_MUTEX(tableMutex)
  * Head of the list of free Tcl_Obj structs we maintain.
  */
 
-#ifndef TCL_THREADS
 Tcl_Obj *tclFreeObjList = NULL;
+
+/*
+ * The object allocator is single threaded.  This mutex is referenced
+ * by the TclNewObj macro, however, so must be visible.
+ */
+
+#ifdef TCL_THREADS
+Tcl_Mutex tclObjMutex;
 #endif
 
 /*
@@ -239,6 +246,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclCmdNameType);
 
 #ifdef TCL_COMPILE_STATS
+    Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced = 0;
     tclObjsFreed = 0;
     {
@@ -247,6 +255,7 @@ TclInitObjSubsystem()
 	    tclObjsShared[i] = 0;
 	}
     }
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif
 }
 
@@ -277,9 +286,9 @@ TclFinalizeCompExecEnv()
         typeTableInitialized = 0;
     }
     Tcl_MutexUnlock(&tableMutex);
-#ifndef TCL_THREADS
+    Tcl_MutexLock(&tclObjMutex);
     tclFreeObjList = NULL;
-#endif
+    Tcl_MutexUnlock(&tclObjMutex);
 
     TclFinalizeCompilation();
     TclFinalizeExecution();
@@ -511,10 +520,9 @@ Tcl_NewObj()
      * we maintain.
      */
 
+    Tcl_MutexLock(&tclObjMutex);
 #ifdef PURIFY
     objPtr = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj));
-#elif defined(TCL_THREADS)
-    objPtr = TclThreadAllocObj();
 #else
     if (tclFreeObjList == NULL) {
 	TclAllocateFreeObjects();
@@ -529,6 +537,7 @@ Tcl_NewObj()
 #ifdef TCL_COMPILE_STATS
     tclObjsAlloced++;
 #endif /* TCL_COMPILE_STATS */
+    Tcl_MutexUnlock(&tclObjMutex);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -583,7 +592,9 @@ Tcl_DbNewObj(file, line)
     objPtr->length   = 0;
     objPtr->typePtr  = NULL;
 #ifdef TCL_COMPILE_STATS
+    Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced++;
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_COMPILE_STATS */
     return objPtr;
 }
@@ -627,7 +638,6 @@ Tcl_DbNewObj(file, line)
 void
 TclAllocateFreeObjects()
 {
-#ifndef TCL_THREADS
     size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
     char *basePtr;
     register Tcl_Obj *prevPtr, *objPtr;
@@ -651,7 +661,6 @@ TclAllocateFreeObjects()
 	objPtr++;
     }
     tclFreeObjList = prevPtr;
-#endif
 }
 #undef OBJS_TO_ALLOC_EACH_TIME
 
@@ -703,10 +712,9 @@ TclFreeObj(objPtr)
      * Tcl_Obj structs we maintain.
      */
 
+    Tcl_MutexLock(&tclObjMutex);
 #if defined(TCL_MEM_DEBUG) || defined(PURIFY)
     ckfree((char *) objPtr);
-#elif defined(TCL_THREADS)
-    TclThreadFreeObj(objPtr);
 #else
     objPtr->internalRep.otherValuePtr = (VOID *) tclFreeObjList;
     tclFreeObjList = objPtr;
@@ -715,6 +723,7 @@ TclFreeObj(objPtr)
 #ifdef TCL_COMPILE_STATS
     tclObjsFreed++;
 #endif /* TCL_COMPILE_STATS */
+    Tcl_MutexUnlock(&tclObjMutex);
 }
 
 /*
@@ -2577,6 +2586,7 @@ Tcl_DbIsShared(objPtr, file, line)
     }
 #endif
 #ifdef TCL_COMPILE_STATS
+    Tcl_MutexLock(&tclObjMutex);
     if ((objPtr)->refCount <= 1) {
 	tclObjsShared[1]++;
     } else if ((objPtr)->refCount < TCL_MAX_SHARED_OBJ_STATS) {
@@ -2584,6 +2594,7 @@ Tcl_DbIsShared(objPtr, file, line)
     } else {
 	tclObjsShared[0]++;
     }
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif
     return ((objPtr)->refCount > 1);
 }
