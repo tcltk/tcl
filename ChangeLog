@@ -1,3 +1,8 @@
+2001-08-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIndexObj.c: fixed some casting problems that upset
+	Crays. [Bug #419528] (andreasen)
+
 2001-08-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h: Silence warning from Sun compiler. [Bug 454374]
