@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.21 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.22 2001/10/25 15:50:49 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -92,6 +92,8 @@ typedef struct FileState {
 typedef struct TtyState {
     FileState fs;		/* Per-instance state of the file
 				 * descriptor.  Must be the first field. */
+    int stateUpdated;		/* Flag to say if the state has been
+				 * modified and needs resetting. */
     IOSTATE savedState;		/* Initial state of device.  Used to reset
 				 * state when device closed. */
 } TtyState;
@@ -632,7 +634,9 @@ TtyCloseProc(instanceData, interp)
     TtyState *ttyPtr;
 
     ttyPtr = (TtyState *) instanceData;
-    SETIOSTATE(ttyPtr->fs.fd, &ttyPtr->savedState);
+    if (ttyPtr->stateUpdated) {
+	SETIOSTATE(ttyPtr->fs.fd, &ttyPtr->savedState);
+    }
     return FileCloseProc(instanceData, interp);
 }
 
@@ -676,6 +680,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 	 */
 
 	TtySetAttributes(fsPtr->fd, &tty);
+	((TtyState *) fsPtr)->stateUpdated = 1;
 	return TCL_OK;
     } else {
 	return Tcl_BadChannelOption(interp, optionName, "mode");
@@ -1227,34 +1232,43 @@ TtyInit(fd, initialize)
 
     ttyPtr = (TtyState *) ckalloc((unsigned) sizeof(TtyState));
     GETIOSTATE(fd, &ttyPtr->savedState);
-
+    ttyPtr->stateUpdated = 0;
     if (initialize) {
 	IOSTATE iostate = ttyPtr->savedState;
 
-#ifdef USE_TERMIOS
+#if defined(USE_TERMIOS) || defined(USE_TERMIO)
+	if (iostate.c_iflag != IGNBRK ||
+	    iostate.c_oflag != 0 ||
+	    iostate.c_lflag != 0 ||
+	    iostate.c_cflag & CREAD ||
+	    iostate.c_cc[VMIN] != 1 ||
+	    iostate.c_cc[VTIME] != 0) {
+	    ttyPtr->stateUpdated = 1;
+	}
 	iostate.c_iflag = IGNBRK;
 	iostate.c_oflag = 0;
 	iostate.c_lflag = 0;
 	iostate.c_cflag |= CREAD;
 	iostate.c_cc[VMIN] = 1;
 	iostate.c_cc[VTIME] = 0;
-#endif	/* USE_TERMIOS */
-
-#ifdef USE_TERMIO
-	iostate.c_iflag = IGNBRK;
-	iostate.c_oflag = 0;
-	iostate.c_lflag = 0;
-	iostate.c_cflag |= CREAD;
-	iostate.c_cc[VMIN] = 1;
-	iostate.c_cc[VTIME] = 0;
-#endif	/* USE_TERMIO */
+#endif	/* USE_TERMIOS|USE_TERMIO */
 
 #ifdef USE_SGTTY
+	if ((iostate.sg_flags & (EVENP | ODDP)) ||
+	    !(iostate.sg_flags & RAW)) {
+	    ttyPtr->stateUpdated = 1;
+	}
 	iostate.sg_flags &= (EVENP | ODDP);
 	iostate.sg_flags |= RAW;
 #endif	/* USE_SGTTY */
 
-	SETIOSTATE(fd, &iostate);
+	/*
+	 * Only update if we're changing anything to avoid possible
+	 * blocking.
+	 */
+	if (ttyPtr->stateUpdated) {
+	    SETIOSTATE(fd, &iostate);
+	}
     }
 
     return &ttyPtr->fs;
