@@ -37,7 +37,7 @@ catch {
     unset __dir
 }
 
-# Windows specific end of initialization
+# Windows specific initialization to handle case isses with envars
 
 if {(![interp issafe]) && ($tcl_platform(platform) == "windows")} {
     namespace eval tcl {
@@ -76,7 +76,6 @@ if {(![interp issafe]) && ($tcl_platform(platform) == "windows")} {
 	}
     }
 }
-
 
 # Setup the unknown package handler
 
@@ -561,7 +560,7 @@ proc auto_reset {} {
     global auto_execs auto_index auto_oldpath
     foreach p [info procs] {
 	if {[info exists auto_index($p)] && ![string match auto_* $p]
-		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup
+		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup tcl_findLibrary
 			tclMacPkgSearch tclPkgUnknown} $p] < 0)} {
 	    rename $p {}
 	}
@@ -570,6 +569,88 @@ proc auto_reset {} {
     catch {unset auto_index}
     catch {unset auto_oldpath}
 }
+
+# tcl_findLibrary
+#	This is a utility for extensions that searches for a library directory
+#	using a canonical searching algorithm. A side effect is to source
+#	the initialization script and set a global library variable.
+# Arguments:
+# 	basename	Prefix of the directory name, (e.g., "tk")
+#	version		Version number of the package, (e.g., "8.0")
+#	patch		Patchlevel of the package, (e.g., "8.0.3")
+#	initScript	Initialization script to source (e.g., tk.tcl)
+#	enVarName	environment variable to honor (e.g., TK_LIBRARY)
+#	varName		Global variable to set when done (e.g., tk_library)
+
+proc tcl_findLibrary {basename version patch initScript enVarName varName} {
+    upvar #0 $varName the_library
+    global env
+
+    set dirs {}
+    set errors {}
+
+    # The C application may have hardwired a path, which we honor
+    
+    if {[info exist the_library]} {
+	lappend dirs $the_library
+    } else {
+
+	# Do the canonical search
+
+	# 1. From an environment variable, if it exists
+
+        if {[info exists env($enVarName)]} {
+            lappend dirs $env($enVarName)
+        }
+
+	# 2. Relative to the Tcl library
+
+        lappend dirs [file join [file dirname [info library]] $basename$version]
+
+	# 3. Various locations relative to the executable
+	# ../lib/foo1.0		(From bin directory in install hierarchy)
+	# ../../lib/foo1.0	(From bin/arch directory in install hierarchy)
+	# ../library		(From unix directory in build hierarchy)
+	# ../../library		(From unix/arch directory in build hierarchy)
+	# ../../foo1.0b1/library (From unix directory in parallel build hierarchy)
+	# ../../../foo1.0b1/library (From unix/arch directory in parallel build hierarchy)
+
+        set parentDir [file dirname [file dirname [info nameofexecutable]]]
+        set grandParentDir [file dirname $parentDir]
+        lappend dirs [file join $parentDir lib $basename$version]
+        lappend dirs [file join $grandParentDir lib $basename$version]
+        lappend dirs [file join $parentDir library]
+        lappend dirs [file join $grandParentDir library]
+        if [string match {*[ab]*} $patch] {
+            set ver $patch
+        } else {
+            set ver $version
+        }
+        lappend dirs [file join $grandParentDir] $basename$ver/library]
+        lappend dirs [file join [file dirname $grandParentDir] $basename$ver/library]
+    }
+    foreach i $dirs {
+        set the_library $i
+        set file [file join $i $initScript]
+
+	# source everything when in a safe interpreter because
+	# we have a source command, but no file exists command
+
+        if {[interp issafe] || [file exists $file]} {
+            if {![catch {uplevel #0 [list source $file]} msg]} {
+                return
+            } else {
+                append errors "$file: $msg\n$errorInfo\n"
+            }
+        }
+    }
+    set msg "Can't find a usable $initScript in the following directories: \n"
+    append msg "    $dirs\n\n"
+    append msg "$errors\n\n"
+    append msg "This probably means that $basename wasn't installed properly.\n"
+    error $msg
+}
+
 
 # OPTIONAL SUPPORT PROCEDURES
 # In Tcl 8.1 all the code below here has been moved to other files to
