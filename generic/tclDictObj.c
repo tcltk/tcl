@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.5 2003/04/07 12:39:08 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.6 2003/04/07 13:52:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2450,6 +2450,7 @@ DictFilterCmd(interp, objc, objv)
     }
     panic("unexpected fallthrough");
     /* Control never reaches this point. */
+    return TCL_ERROR;
 
   abnormalResult:
     Tcl_DictObjDone(&search);
