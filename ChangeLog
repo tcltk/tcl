@@ -1,3 +1,10 @@
+2002-01-12  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: Removed -GD compiler option.  It was intended
+	for future use, but MS is again changing the future at their whim.
+	The D4002 warning was harmless though, but someone using VC .NET
+	logged it as a concern.  [Bug #501565]
+
 2002-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in: Burn Tcl build directory
