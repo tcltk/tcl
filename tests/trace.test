@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.8 2000/08/25 02:04:29 ericm Exp $
+# RCS: @(#) $Id: trace.test,v 1.9 2000/08/25 20:39:32 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -285,39 +285,58 @@ test trace-4.9 {trace unsets on whole arrays} {
 # Array tracing on variables
 test trace-5.1 {array traces fire on accesses via [array]} {
     catch {unset x}
+    set x(b) 2
     trace add variable x array traceArray2
     set ::info {}
     array set x {a 1}
-    set info
+    set ::info
 } {x {} array}
 test trace-5.2 {array traces do not fire on normal accesses} {
     catch {unset x}
+    set x(b) 2
     trace add variable x array traceArray2
     set ::info {}
     set x(a) 1
     set x(b) $x(a)
-    set info
+    set ::info
 } {}
-test trace-5.3 {array traces outlive variable} {
+test trace-5.3 {array traces do not outlive variable} {
     catch {unset x}
     trace add variable x array traceArray2
     set ::info {}
     set x(a) 1
     unset x
     array set x {a 1}
-    set info
+    set ::info
 } {}
 test trace-5.4 {array traces properly listed in trace information} {
     catch {unset x}
     trace add variable x array traceArray2
-    trace list variable x
+    set result [trace list variable x]
+    set result
 } [list [list array traceArray2]]
 test trace-5.5 {array traces properly listed in trace information} {
     catch {unset x}
     trace variable x a traceArray2
-    trace vinfo x
+    set result [trace vinfo x]
+    set result
 } [list [list a traceArray2]]
-
+test trace-5.6 {array traces don't fire on scalar variables} {
+    catch {unset x}
+    set x foo
+    trace add variable x array traceArray2
+    set ::info {}
+    catch {array set x {a 1}}
+    set ::info
+} {}
+test trace-5.7 {array traces fire for undefined variables} {
+    catch {unset x}
+    trace add variable x array traceArray2
+    set ::info {}
+    array set x {a 1}
+    set ::info
+} {x {} array}
+    
 # Trace multiple trace types at once.
 
 test trace-5.1 {multiple ops traced at once} {
