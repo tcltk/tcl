@@ -1,3 +1,8 @@
+2002-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/cmdAH.test: [file attr -perm] is Unix-only, so add [catch]
+	when not inside a suitably-protected test.
+
 2002-07-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/unixFCmd.test, tests/fileName.test: 
