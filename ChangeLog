@@ -1,3 +1,13 @@
+2004-03-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript):
+	* tests/compile.test (compile-3.5): corrected wrong test and
+	behaviour in the earlier fix for [Bug 705406]; Don Porter reported
+	this as [Bug 735055], and provided the solution.
+	Fixed in HEAD on 2003-05-09, but backport to 8-4-branch was
+	wrongly omitted; re-reported as [Bug 916795] by Roy Terry,
+	diagnosed by dgp.
+
 2004-03-08  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c:  Fix to 'glob -path' near the root
