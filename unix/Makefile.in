@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.116 2002/09/10 09:57:42 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.117 2002/09/26 19:06:11 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1204,7 +1204,7 @@ mklinks:
 
 DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
-ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}.zip
+ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
 	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
@@ -1285,6 +1285,12 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
+	mkdir $(DISTDIR)/macosx
+	cp -p $(TOP_DIR)/macosx/Makefile \
+		$(TOP_DIR)/macosx/*.c \
+		$(DISTDIR)/macosx
+	mkdir $(DISTDIR)/macosx/Tcl.pbproj
+	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README \
@@ -1305,12 +1311,9 @@ dist: $(UNIX_DIR)/configure mklinks
 #
 
 alldist: dist
-	rm -f $(DISTROOT)/$(DISTNAME).tar.Z \
-		$(DISTROOT)/$(DISTNAME).tar.gz \
-		$(DISTROOT)/$(ZIPNAME)
-	cd $(DISTROOT); tar cf $(DISTNAME).tar $(DISTNAME); \
-		gzip -9 -c $(DISTNAME).tar > $(DISTNAME).tar.gz; \
-		compress $(DISTNAME).tar; zip -qr8 $(ZIPNAME) $(DISTNAME)
+	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
+	cd $(DISTROOT); tar cf $(DISTNAME)-src.tar $(DISTNAME); \
+		gzip -9 $(DISTNAME)-src.tar; zip -qr8 $(ZIPNAME) $(DISTNAME)
 
 #
 # The target below is similar to "alldist" except it works for patch
@@ -1321,14 +1324,11 @@ alldist: dist
 #
 
 allpatch: dist
-	rm -f $(DISTROOT)/$(DISTNAME).tar.Z \
-		$(DISTROOT)/$(DISTNAME).tar.gz \
-		$(DISTROOT)/$(ZIPNAME)
+	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
 	mv $(DISTROOT)/tcl${VERSION} $(DISTROOT)/old
 	mv $(DISTROOT)/$(DISTNAME) $(DISTROOT)/tcl${VERSION}
-	cd $(DISTROOT); tar cf $(DISTNAME).tar tcl${VERSION}; \
-		gzip -9 -c $(DISTNAME).tar > $(DISTNAME).tar.gz; \
-		compress $(DISTNAME).tar; zip -r8 $(ZIPNAME) tcl${VERSION}
+	cd $(DISTROOT); tar cf $(DISTNAME)-src.tar tcl${VERSION}; \
+		gzip -9 $(DISTNAME)-src.tar; zip -r8 $(ZIPNAME) tcl${VERSION}
 	mv $(DISTROOT)/tcl${VERSION} $(DISTROOT)/$(DISTNAME)
 	mv $(DISTROOT)/old $(DISTROOT)/tcl${VERSION}
 
