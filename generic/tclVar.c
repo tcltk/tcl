@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.99 2004/11/12 19:16:53 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.99.2.1 2004/12/13 22:03:24 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2954,6 +2954,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		namePtr = Tcl_NewStringObj(name, -1);
 		result = Tcl_ListObjAppendElement(interp, resultPtr, namePtr);
 		if (result != TCL_OK) {
+		    Tcl_DecrRefCount(resultPtr); 
 		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
 		    return result;
 		}

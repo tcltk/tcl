@@ -11,7 +11,58 @@
 
 	(these changes on the kennykb-numerics-branch)
 	
+2004-12-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Clarify that the [clock scan] command does not
+	accept the full range of ISO8601 point-in-time formats
+	[Bug 1075433].
 	
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclArrayObjCmd - ARRAY_NAMES): leaking an
+	object [Bug 1084111] - thanks to Rolf Ade.
+
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclObj.c (TclSetCmdNameObj): special handling for fully
+	qualified command names (as in fix [Patch 456668]).
+
+2004-12-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c: converting the static function
+	GetNamespaceFromObj() to MODULE_SCOPE TclGetNamespaceFromObj().  
+
+2004-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/tcl.wse.in, unix/tcl.spec, win/README.binary, README: 
+	* win/configure.in, unix/configure.in, generic/tcl.h: 
+	Bumped version number to 8.5a3 to distinguish HEAD of CVS
+	development from the recent 8.5a2 release.
+
+2004-12-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclInitCompiledLocals):
+	* generic/tclCompile.h:
+	* generic/tclInt.h:
+	* generic/tclProc.c (TclObjInterpProc, TclCreateProc): optimised
+	loops that initialise a proc's arguments and compiled local
+	variables, removing tests from inner loops.
+
+2004-12-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h: Move ensemble API decls here from tclNamesp.c
+
+2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (TclMakeEnsembleCmd, TclSetEnsemble*)
+	(TclSetEnsemble*, TclFindEnsemble): Build an internal API for
+	creating and manipulating ensembles; they can be deleted using the
+	normal command-deletion API.
+
+	* doc/Async.3: Reword for better grammar, better nroff and get the
+	flag name right. (Reported by David Welton.)
+
 2004-12-08  Kevin Kenny  <kennykb@acm.org>
 	
 	* compat/strtoll.c (strtoll):   Removed redundant conditional 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.7 2004/11/20 00:17:31 dgp Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.7.2.1 2004/12/13 22:03:09 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -62,11 +62,11 @@ to a clean state, such as after the current Tcl command completes.
 .PP
 \fBTcl_AsyncCreate\fR, \fBTcl_AsyncDelete\fR, and \fBTcl_AsyncReady\fR
 are thread sensitive.  They access and/or set a thread-specific data
-structure in the event of an --enable-thread built core.  The token
-created by Tcl_AsyncCreate contains the needed thread information it
-was called from so that calling Tcl_AsyncMark(token) will only yield
-the origin thread into the AsyncProc.
-.PP 
+structure in the event of a core built with \fI\-\-enable\-threads\fR.  The token
+created by \fBTcl_AsyncCreate\fR contains the needed thread information it
+was called from so that calling \fBTcl_AsyncMark\fR(\fItoken\fR) will only yield
+the origin thread into the asynchronous handler.
+.PP
 \fBTcl_AsyncCreate\fR creates an asynchronous handler and returns
 a token for it.
 The asynchronous handler must be created before

@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.66 2004/12/02 10:48:30 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.1 2004/12/13 22:03:14 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -196,9 +196,6 @@ static char *		EstablishErrorInfoTraces _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    CONST char *name1, CONST char *name2, int flags));
 static void		FreeNsNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		GetNamespaceFromObj _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Namespace **nsPtrPtr));
 static int		InvokeImportedCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -254,8 +251,6 @@ static int		NamespaceWhichCmd _ANSI_ARGS_((
 static int		SetNsNameFromAny _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr));
 static void		UpdateStringOfNsName _ANSI_ARGS_((Tcl_Obj *objPtr));
-static EnsembleConfig *	FindEnsemble _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *cmdNameObj, int flags));
 static int		NsEnsembleImplementationCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -2594,7 +2589,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
 /*
  *----------------------------------------------------------------------
  *
- * GetNamespaceFromObj --
+ * TclGetNamespaceFromObj --
  *
  *	Gets the namespace specified by the name in a Tcl_Obj.
  *
@@ -2616,8 +2611,8 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
  *----------------------------------------------------------------------
  */
 
-static int
-GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
+int
+TclGetNamespaceFromObj(interp, objPtr, nsPtrPtr)
     Tcl_Interp *interp;		/* The current interpreter. */
     Tcl_Obj *objPtr;		/* The object to be resolved as the name
 				 * of a namespace. */
@@ -2870,7 +2865,7 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
     if (objc == 2) {
 	nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     } else if ((objc == 3) || (objc == 4)) {
-	if (GetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
+	if (TclGetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (namespacePtr == NULL) {
@@ -3202,7 +3197,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      * namespace object along the way.
      */
 
-    result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
+    result = TclGetNamespaceFromObj(interp, objv[2], &namespacePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3308,7 +3303,7 @@ NamespaceExistsCmd(dummy, interp, objc, objv)
      * Check whether the given namespace exists
      */
 
-    if (GetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
+    if (TclGetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3613,7 +3608,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      * Resolve the namespace reference.
      */
 
-    result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
+    result = TclGetNamespaceFromObj(interp, objv[2], &namespacePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3785,7 +3780,7 @@ NamespaceParentCmd(dummy, interp, objc, objv)
     if (objc == 2) {
 	nsPtr = Tcl_GetCurrentNamespace(interp);
     } else if (objc == 3) {
-	result = GetNamespaceFromObj(interp, objv[2], &nsPtr);
+	result = TclGetNamespaceFromObj(interp, objv[2], &nsPtr);
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -4274,7 +4269,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];
 {
     Namespace *nsPtr;
-    EnsembleConfig *ensemblePtr;
+    Tcl_Command token;
     static CONST char *subcommands[] = {
 	"configure", "create", "exists", NULL
     };
@@ -4317,7 +4312,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
     case ENS_CREATE: {
 	char *name;
 	Tcl_DictSearch search;
-	Tcl_Obj *listObj, *nameObj = NULL;
+	Tcl_Obj *listObj;
 	int done, len, allocatedMapFlag = 0;
 	/*
 	 * Defaults
@@ -4459,22 +4454,6 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	}
 
 	/*
-	 * Make the name of the ensemble into a fully qualified name.
-	 * This might allocate an object.
-	 */
-
-	if (!(name[0] == ':' && name[1] == ':')) {
-	    nameObj = Tcl_NewStringObj(nsPtr->fullName, -1);
-	    if (nsPtr->parentPtr == NULL) {
-		Tcl_AppendStringsToObj(nameObj, name, NULL);
-	    } else {
-		Tcl_AppendStringsToObj(nameObj, "::", name, NULL);
-	    }
-	    Tcl_IncrRefCount(nameObj);
-	    name = TclGetString(nameObj);
-	}
-
-	/*
 	 * Create the ensemble.  Note that this might delete another
 	 * ensemble linked to the same namespace, so we must be
 	 * careful.  However, we should be OK because we only link the
@@ -4482,40 +4461,16 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	 * any deletions have occurred.)
 	 */
 
-	ensemblePtr = (EnsembleConfig *) ckalloc(sizeof(EnsembleConfig));
-	ensemblePtr->nsPtr = nsPtr;
-	ensemblePtr->epoch = 0;
-	Tcl_InitHashTable(&ensemblePtr->subcommandTable, TCL_STRING_KEYS);
-	ensemblePtr->subcommandArrayPtr = NULL;
-	ensemblePtr->subcmdList = subcmdObj;
-	if (subcmdObj != NULL) {
-	    Tcl_IncrRefCount(subcmdObj);
-	}
-	ensemblePtr->subcommandDict = mapObj;
-	if (mapObj != NULL) {
-	    Tcl_IncrRefCount(mapObj);
-	}
-	ensemblePtr->flags = (permitPrefix ? ENS_PREFIX : 0);
-	ensemblePtr->unknownHandler = unknownObj;
-	if (unknownObj != NULL) {
-	    Tcl_IncrRefCount(unknownObj);
-	}
-	ensemblePtr->token = Tcl_CreateObjCommand(interp, name,
-		NsEnsembleImplementationCmd, (ClientData)ensemblePtr,
-		DeleteEnsembleConfig);
-	ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
-	nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr;
+	token = TclMakeEnsembleCmd(interp, name, NULL,
+		(permitPrefix ? ENS_PREFIX : 0));
+	TclSetEnsembleSubcommandList(interp, token, subcmdObj);
+	TclSetEnsembleMappingDict(interp, token, mapObj);
+	TclSetEnsembleUnknownHandler(interp, token, unknownObj);
+
 	/*
-	 * Trigger an eventual recomputation of the ensemble command
-	 * set.  Note that this is slightly tricky, as it means that
-	 * we are not actually counting the number of namespace export
-	 * actions, but it is the simplest way to go!
+	 * Tricky! Rely on the object result not being shared!
 	 */
-	nsPtr->exportLookupEpoch++;
-	Tcl_SetResult(interp, name, TCL_VOLATILE);
-	if (nameObj != NULL) {
-	    Tcl_DecrRefCount(nameObj);
-	}
+	Tcl_GetCommandFullName(interp, token, Tcl_GetObjResult(interp));
 	return TCL_OK;
     }
 
@@ -4525,7 +4480,7 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		FindEnsemble(interp, objv[3], 0) != NULL));
+		TclFindEnsemble(interp, objv[3], 0) != NULL));
 	return TCL_OK;
 
     case ENS_CONFIG:
@@ -4533,38 +4488,51 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?opt? ?value? ...");
 	    return TCL_ERROR;
 	}
-	ensemblePtr = FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
-	if (ensemblePtr == NULL) {
+	token = TclFindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
+	if (token == NULL) {
 	    return TCL_ERROR;
 	}
 
 	if (objc == 5) {
+	    Tcl_Obj *resultObj;
+
 	    if (Tcl_GetIndexFromObj(interp, objv[4], configOptions, "option",
 		    0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum EnsConfigOpts) index) {
 	    case CONF_SUBCMDS:
-		if (ensemblePtr->subcmdList != NULL) {
-		    Tcl_SetObjResult(interp, ensemblePtr->subcmdList);
+		TclGetEnsembleSubcommandList(NULL, token, &resultObj);
+		if (resultObj != NULL) {
+		    Tcl_SetObjResult(interp, resultObj);
 		}
 		break;
 	    case CONF_MAP:
-		if (ensemblePtr->subcommandDict != NULL) {
-		    Tcl_SetObjResult(interp, ensemblePtr->subcommandDict);
+		TclGetEnsembleMappingDict(NULL, token, &resultObj);
+		if (resultObj != NULL) {
+		    Tcl_SetObjResult(interp, resultObj);
 		}
 		break;
-	    case CONF_NAMESPACE:
-		Tcl_SetResult(interp, ensemblePtr->nsPtr->fullName,
+	    case CONF_NAMESPACE: {
+		Tcl_Namespace *namespacePtr;
+
+		TclGetEnsembleNamespace(NULL, token, &namespacePtr);
+		Tcl_SetResult(interp, ((Namespace *)namespacePtr)->fullName,
 			TCL_VOLATILE);
 		break;
-	    case CONF_PREFIX:
+	    }
+	    case CONF_PREFIX: {
+		int flags;
+
+		TclGetEnsembleFlags(NULL, token, &flags);
 		Tcl_SetObjResult(interp,
-			Tcl_NewBooleanObj(ensemblePtr->flags & ENS_PREFIX));
+			Tcl_NewBooleanObj(flags & ENS_PREFIX));
 		break;
+	    }
 	    case CONF_UNKNOWN:
-		if (ensemblePtr->unknownHandler != NULL) {
-		    Tcl_SetObjResult(interp, ensemblePtr->unknownHandler);
+		TclGetEnsembleUnknownHandler(NULL, token, &resultObj);
+		if (resultObj != NULL) {
+		    Tcl_SetObjResult(interp, resultObj);
 		}
 		break;
 	    }
@@ -4575,38 +4543,48 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	     * Produce list of all information.
 	     */
 
-	    Tcl_Obj *resultObj;
+	    Tcl_Obj *resultObj, *tmpObj;
+	    Tcl_Namespace *namespacePtr;
+	    int flags;
 
 	    TclNewObj(resultObj);
+	    /* -map option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_MAP], -1));
-	    if (ensemblePtr->subcommandDict != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj,
-			ensemblePtr->subcommandDict);
+	    TclGetEnsembleMappingDict(NULL, token, &tmpObj);
+	    if (tmpObj != NULL) {
+		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
 	    } else {
 		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
 	    }
+	    /* -namespace option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_NAMESPACE], -1));
+	    TclGetEnsembleNamespace(NULL, token, &namespacePtr);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewStringObj(ensemblePtr->nsPtr->fullName, -1));
+		    Tcl_NewStringObj(((Namespace *)namespacePtr)->fullName,
+		    -1));
+	    /* -prefix option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_PREFIX], -1));
+	    TclGetEnsembleFlags(NULL, token, &flags);
 	    Tcl_ListObjAppendElement(NULL, resultObj,
-		    Tcl_NewBooleanObj(ensemblePtr->flags & ENS_PREFIX));
+		    Tcl_NewBooleanObj(flags & ENS_PREFIX));
+	    /* -subcommands option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_SUBCMDS], -1));
-	    if (ensemblePtr->subcmdList != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj,
-			ensemblePtr->subcmdList);
+	    TclGetEnsembleSubcommandList(NULL, token, &tmpObj);
+	    if (tmpObj != NULL) {
+		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
 	    } else {
 		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
 	    }
+	    /* -unknown option */
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(configOptions[CONF_UNKNOWN], -1));
-	    if (ensemblePtr->unknownHandler != NULL) {
-		Tcl_ListObjAppendElement(NULL, resultObj,
-			ensemblePtr->unknownHandler);
+	    TclGetEnsembleUnknownHandler(NULL, token, &tmpObj);
+	    if (tmpObj != NULL) {
+		Tcl_ListObjAppendElement(NULL, resultObj, tmpObj);
 	    } else {
 		Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewObj());
 	    }
@@ -4620,10 +4598,14 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    /*
 	     * Defaults
 	     */
-	    Tcl_Obj *subcmdObj = ensemblePtr->subcmdList;
-	    Tcl_Obj *mapObj = ensemblePtr->subcommandDict;
-	    Tcl_Obj *unknownObj = ensemblePtr->unknownHandler;
-	    int permitPrefix = ensemblePtr->flags & ENS_PREFIX;
+	    Tcl_Obj *subcmdObj, *mapObj, *unknownObj;
+	    int permitPrefix, flags;
+
+	    TclGetEnsembleSubcommandList(NULL, token, &subcmdObj);
+	    TclGetEnsembleMappingDict(NULL, token, &mapObj);
+	    TclGetEnsembleUnknownHandler(NULL, token, &unknownObj);
+	    TclGetEnsembleFlags(NULL, token, &flags);
+	    permitPrefix = (flags & ENS_PREFIX) != 0;
 
 	    objv += 4;
 	    objc -= 4;
@@ -4757,49 +4739,11 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	     * parsing stage.
 	     */
 
-	    if (ensemblePtr->subcmdList != subcmdObj) {
-		if (ensemblePtr->subcmdList != NULL) {
-		    Tcl_DecrRefCount(ensemblePtr->subcmdList);
-		}
-		ensemblePtr->subcmdList = subcmdObj;
-		if (subcmdObj != NULL) {
-		    Tcl_IncrRefCount(subcmdObj);
-		}
-	    }
-	    if (ensemblePtr->subcommandDict != mapObj) {
-		if (ensemblePtr->subcommandDict != NULL) {
-		    Tcl_DecrRefCount(ensemblePtr->subcommandDict);
-		}
-		ensemblePtr->subcommandDict = mapObj;
-		if (mapObj != NULL) {
-		    Tcl_IncrRefCount(mapObj);
-		}
-	    }
-	    if (ensemblePtr->unknownHandler != unknownObj) {
-		if (ensemblePtr->unknownHandler != NULL) {
-		    Tcl_DecrRefCount(ensemblePtr->unknownHandler);
-		}
-		ensemblePtr->unknownHandler = unknownObj;
-		if (unknownObj != NULL) {
-		    Tcl_IncrRefCount(unknownObj);
-		}
-	    }
-	    if (permitPrefix) {
-		ensemblePtr->flags |= ENS_PREFIX;
-	    } else {
-		ensemblePtr->flags &= ~ENS_PREFIX;
-	    }
-	    /*
-	     * Trigger an eventual recomputation of the ensemble
-	     * command set.  Note that this is slightly tricky, as it
-	     * means that we are not actually counting the number of
-	     * namespace export actions, but it is the simplest way to
-	     * go!  Also note that this nsPtr and ensemblePtr->nsPtr
-	     * are quite possibly not the same namespace; we want to
-	     * bump the epoch for the ensemble's namespace, not the
-	     * current namespace.
-	     */
-	    ensemblePtr->nsPtr->exportLookupEpoch++;
+	    flags = (permitPrefix ? flags|ENS_PREFIX : flags&~ENS_PREFIX);
+	    TclSetEnsembleSubcommandList(NULL, token, subcmdObj);
+	    TclSetEnsembleMappingDict(NULL, token, mapObj);
+	    TclSetEnsembleUnknownHandler(NULL, token, unknownObj);
+	    TclSetEnsembleFlags(NULL, token, flags);
 	    return TCL_OK;
 	}
 
@@ -4812,14 +4756,335 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * FindEnsemble --
+ * TclMakeEnsembleCmd --
  *
- *	Given a command name, get the ensemble configuration structure
- *	for it, allowing for [namespace import]s. [Bug 1017022]
+ *	Create a simple ensemble attached to the given namespace.
  *
  * Results:
- *	A pointer to the config struct, or NULL if the command either
- *	does not exist or is not an ensemble.
+ *	The token for the command created.
+ *
+ * Side effects:
+ *	The ensemble is created and marked for compilation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclMakeEnsembleCmd(interp, name, namespacePtr, flags)
+    Tcl_Interp *interp;
+    CONST char *name;
+    Tcl_Namespace *namespacePtr;
+    int flags;
+{
+    Namespace *nsPtr = (Namespace *) namespacePtr;
+    EnsembleConfig *ensemblePtr =
+	    (EnsembleConfig *) ckalloc(sizeof(EnsembleConfig));
+    Tcl_Obj *nameObj = NULL;
+
+    if (nsPtr == NULL) {
+	nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    }
+
+    /*
+     * Make the name of the ensemble into a fully qualified name.
+     * This might allocate a temporary object.
+     */
+
+    if (!(name[0] == ':' && name[1] == ':')) {
+	nameObj = Tcl_NewStringObj(nsPtr->fullName, -1);
+	if (nsPtr->parentPtr == NULL) {
+	    Tcl_AppendStringsToObj(nameObj, name, NULL);
+	} else {
+	    Tcl_AppendStringsToObj(nameObj, "::", name, NULL);
+	}
+	Tcl_IncrRefCount(nameObj);
+	name = TclGetString(nameObj);
+    }
+
+    ensemblePtr->nsPtr = nsPtr;
+    ensemblePtr->epoch = 0;
+    Tcl_InitHashTable(&ensemblePtr->subcommandTable, TCL_STRING_KEYS);
+    ensemblePtr->subcommandArrayPtr = NULL;
+    ensemblePtr->subcmdList = NULL;
+    ensemblePtr->subcommandDict = NULL;
+    ensemblePtr->flags = flags;
+    ensemblePtr->unknownHandler = NULL;
+    ensemblePtr->token = Tcl_CreateObjCommand(interp, name,
+	    NsEnsembleImplementationCmd, (ClientData)ensemblePtr,
+	    DeleteEnsembleConfig);
+    ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
+    nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr;
+    /*
+     * Trigger an eventual recomputation of the ensemble command
+     * set.  Note that this is slightly tricky, as it means that
+     * we are not actually counting the number of namespace export
+     * actions, but it is the simplest way to go!
+     */
+    nsPtr->exportLookupEpoch++;
+
+    if (nameObj != NULL) {
+	TclDecrRefCount(nameObj);
+    }
+    return ensemblePtr->token;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetEnsembleSubcommandList --
+ *
+ *	Set the subcommand list for a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble or the subcommand list - if non-NULL - is not a list).
+ *
+ * Side effects:
+ *	The ensemble is updated and marked for recompilation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclSetEnsembleSubcommandList(interp, token, subcmdList)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Obj *subcmdList;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+    Tcl_Obj *oldList;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+    if (subcmdList != NULL) {
+	int length;
+	if (Tcl_ListObjLength(interp, subcmdList, &length) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (length < 1) {
+	    subcmdList = NULL;
+	}
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    oldList = ensemblePtr->subcmdList;
+    ensemblePtr->subcmdList = subcmdList;
+    if (subcmdList != NULL) {
+	Tcl_IncrRefCount(subcmdList);
+    }
+    if (oldList != NULL) {
+	TclDecrRefCount(oldList);
+    }
+
+    /*
+     * Trigger an eventual recomputation of the ensemble command
+     * set.  Note that this is slightly tricky, as it means that
+     * we are not actually counting the number of namespace export
+     * actions, but it is the simplest way to go!
+     */
+    ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetEnsembleMappingDict --
+ *
+ *	Set the mapping dictionary for a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble or the mapping - if non-NULL - is not a dict).
+ *
+ * Side effects:
+ *	The ensemble is updated and marked for recompilation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclSetEnsembleMappingDict(interp, token, mapDict)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Obj *mapDict;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+    Tcl_Obj *oldDict;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+    if (mapDict != NULL) {
+	int size;
+	if (Tcl_DictObjSize(interp, mapDict, &size) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (size < 1) {
+	    mapDict = NULL;
+	}
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    oldDict = ensemblePtr->subcommandDict;
+    ensemblePtr->subcommandDict = mapDict;
+    if (mapDict != NULL) {
+	Tcl_IncrRefCount(mapDict);
+    }
+    if (oldDict != NULL) {
+	TclDecrRefCount(oldDict);
+    }
+
+    /*
+     * Trigger an eventual recomputation of the ensemble command
+     * set.  Note that this is slightly tricky, as it means that
+     * we are not actually counting the number of namespace export
+     * actions, but it is the simplest way to go!
+     */
+    ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetEnsembleUnknownHandler --
+ *
+ *	Set the unknown handler for a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble or the unknown handler - if non-NULL - is not a list).
+ *
+ * Side effects:
+ *	The ensemble is updated and marked for recompilation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclSetEnsembleUnknownHandler(interp, token, unknownList)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Obj *unknownList;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+    Tcl_Obj *oldList;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+    if (unknownList != NULL) {
+	int length;
+
+	if (Tcl_ListObjLength(interp, unknownList, &length) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (length < 1) {
+	    unknownList = NULL;
+	}
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    oldList = ensemblePtr->unknownHandler;
+    ensemblePtr->unknownHandler = unknownList;
+    if (unknownList != NULL) {
+	Tcl_IncrRefCount(unknownList);
+    }
+    if (oldList != NULL) {
+	TclDecrRefCount(oldList);
+    }
+
+    /*
+     * Trigger an eventual recomputation of the ensemble command
+     * set.  Note that this is slightly tricky, as it means that
+     * we are not actually counting the number of namespace export
+     * actions, but it is the simplest way to go!
+     */
+    ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetEnsembleFlags --
+ *
+ *	Set the flags for a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble).
+ *
+ * Side effects:
+ *	The ensemble is updated and marked for recompilation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclSetEnsembleFlags(interp, token, flags)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    int flags;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    /*
+     * This API refuses to set the ENS_DEAD flag...
+     */
+    ensemblePtr->flags &= ENS_DEAD;
+    ensemblePtr->flags |= flags & ~ENS_DEAD;
+
+    /*
+     * Trigger an eventual recomputation of the ensemble command
+     * set.  Note that this is slightly tricky, as it means that
+     * we are not actually counting the number of namespace export
+     * actions, but it is the simplest way to go!
+     */
+    ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEnsembleSubcommandList --
+ *
+ *	Get the list of subcommands associated with a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble). The list of subcommands is returned by updating the
+ *	variable pointed to by the last parameter (NULL if this is to
+ *	be derived from the mapping dictionary or the associated
+ *	namespace's exported commands).
  *
  * Side effects:
  *	None
@@ -4827,8 +5092,208 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-static EnsembleConfig *
-FindEnsemble(interp, cmdNameObj, flags)
+int
+TclGetEnsembleSubcommandList(interp, token, subcmdListPtr)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Obj **subcmdListPtr;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    *subcmdListPtr = ensemblePtr->subcmdList;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEnsembleMappingDict --
+ *
+ *	Get the command mapping dictionary associated with a
+ *	particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble). The mapping dict is returned by updating the
+ *	variable pointed to by the last parameter (NULL if none is
+ *	installed).
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetEnsembleMappingDict(interp, token, mapDictPtr)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Obj **mapDictPtr;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    *mapDictPtr = ensemblePtr->subcommandDict;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEnsembleUnknownHandler --
+ *
+ *	Get the unknown handler associated with a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble). The unknown handler is returned by updating the
+ *	variable pointed to by the last parameter (NULL if no handler
+ *	is installed).
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetEnsembleUnknownHandler(interp, token, unknownListPtr)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Obj **unknownListPtr;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    *unknownListPtr = ensemblePtr->unknownHandler;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEnsembleFlags --
+ *
+ *	Get the flags for a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble). The flags are returned by updating the variable
+ *	pointed to by the last parameter.
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetEnsembleFlags(interp, token, flagsPtr)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    int *flagsPtr;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    *flagsPtr = ensemblePtr->flags;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetEnsembleNamespace --
+ *
+ *	Get the namespace associated with a particular ensemble.
+ *
+ * Results:
+ *	Tcl result code (error if command token does not indicate an
+ *	ensemble). Namespace is returned by updating the variable
+ *	pointed to by the last parameter.
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclGetEnsembleNamespace(interp, token, namespacePtrPtr)
+    Tcl_Interp *interp;
+    Tcl_Command token;
+    Tcl_Namespace **namespacePtrPtr;
+{
+    Command *cmdPtr = (Command *) token;
+    EnsembleConfig *ensemblePtr;
+
+    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    *namespacePtrPtr = (Tcl_Namespace *) ensemblePtr->nsPtr;
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFindEnsemble --
+ *
+ *	Given a command name, get the ensemble token for it, allowing
+ *	for [namespace import]s. [Bug 1017022]
+ *
+ * Results:
+ *	The token for the ensemble command with the given name, or
+ *	NULL if the command either does not exist or is not an
+ *	ensemble (when an error message will be written into the
+ *	interp if thats non-NULL).
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclFindEnsemble(interp, cmdNameObj, flags)
     Tcl_Interp *interp;			/* Where to do the lookup, and where
 					 * to write the errors if
 					 * TCL_LEAVE_ERR_MSG is set in the
@@ -4859,7 +5324,7 @@ FindEnsemble(interp, cmdNameObj, flags)
 	    return NULL;
 	}
     }
-    return (EnsembleConfig *) cmdPtr->objClientData;
+    return (Tcl_Command) cmdPtr;
 }
 
 /*

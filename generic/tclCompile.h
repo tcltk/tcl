@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.51 2004/11/03 21:20:30 davygrvy Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.51.2.1 2004/12/13 22:03:12 kennykb Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -272,6 +272,14 @@ typedef struct CompileEnv {
  * image rather than implicitly compiled from source
  */
 #define TCL_BYTECODE_PRECOMPILED		0x0001
+
+
+/*
+ * When a bytecode is compiled, interp or namespace resolvers have not been
+ * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
+ */
+
+#define TCL_BYTECODE_RESOLVE_VARS               0x0002
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the

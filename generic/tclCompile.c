@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.78 2004/10/08 15:39:52 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.78.2.1 2004/12/13 22:03:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1666,7 +1666,11 @@ TclInitByteCodeObj(objPtr, envPtr)
     codePtr->nsPtr = namespacePtr;
     codePtr->nsEpoch = namespacePtr->resolverEpoch;
     codePtr->refCount = 1;
-    codePtr->flags = 0;
+    if (namespacePtr->compiledVarResProc || iPtr->resolverPtr) {
+	codePtr->flags = TCL_BYTECODE_RESOLVE_VARS;
+    } else {
+	codePtr->flags = 0;
+    }
     codePtr->source = envPtr->source;
     codePtr->procPtr = envPtr->procPtr;
 
@@ -1867,11 +1871,63 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
 {
     register CompiledLocal *localPtr;
     Interp *iPtr = (Interp*) interp;
-    Tcl_ResolvedVarInfo *vinfo, *resVarInfo;
+    Tcl_ResolvedVarInfo *resVarInfo;
     Var *varPtr = framePtr->compiledLocals;
-    Var *resolvedVarPtr;
-    ResolverScheme *resPtr;
-    int result;
+    int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
+    ByteCode *codePtr = (ByteCode *)
+	    framePtr->procPtr->bodyPtr->internalRep.otherValuePtr;
+
+    if (codePtr->flags & TCL_BYTECODE_RESOLVE_VARS) {
+	    
+	/*
+	 * This is the first run after a recompile, or else the resolver epoch
+	 * has changed: update the resolver cache.
+	 */
+
+	codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
+	
+	for (localPtr = framePtr->procPtr->firstLocalPtr; localPtr != NULL;
+		localPtr = localPtr->nextPtr) {
+
+	    if (localPtr->resolveInfo) {
+		if (localPtr->resolveInfo->deleteProc) {
+		    localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
+		} else {
+		    ckfree((char*)localPtr->resolveInfo);
+		}
+		localPtr->resolveInfo = NULL;
+	    }
+	    localPtr->flags &= ~VAR_RESOLVED;
+	    
+	    if (haveResolvers &&
+		    !(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
+		ResolverScheme *resPtr = iPtr->resolverPtr;
+		Tcl_ResolvedVarInfo *vinfo;
+		int result;
+		
+		if (nsPtr->compiledVarResProc) {
+		    result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
+			    localPtr->name, localPtr->nameLength,
+			    (Tcl_Namespace *) nsPtr, &vinfo);
+		} else {
+		    result = TCL_CONTINUE;
+		}
+		
+		while ((result == TCL_CONTINUE) && resPtr) {
+		    if (resPtr->compiledVarResProc) {
+			result = (*resPtr->compiledVarResProc)(nsPtr->interp,
+				localPtr->name, localPtr->nameLength,
+				(Tcl_Namespace *) nsPtr, &vinfo);
+		    }
+		    resPtr = resPtr->nextPtr;
+		}
+		if (result == TCL_OK) {
+		    localPtr->resolveInfo = vinfo;
+		    localPtr->flags |= VAR_RESOLVED;
+		}		    
+	    }	    
+	}
+    }
 
     /*
      * Initialize the array of local variables stored in the call frame.
@@ -1880,67 +1936,10 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
      * and we make the compiled local a link to the real variable.
      */
 
-    for (localPtr = framePtr->procPtr->firstLocalPtr;
-	 localPtr != NULL;
-	 localPtr = localPtr->nextPtr) {
-
-	/*
-	 * Check to see if this local is affected by namespace or
-	 * interp resolvers.  The resolver to use is cached for the
-	 * next invocation of the procedure.
-	 */
-
-	if (!(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY|VAR_RESOLVED))
-		&& (nsPtr->compiledVarResProc || iPtr->resolverPtr)) {
-	    resPtr = iPtr->resolverPtr;
-
-	    if (nsPtr->compiledVarResProc) {
-		result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
-			localPtr->name, localPtr->nameLength,
-			(Tcl_Namespace *) nsPtr, &vinfo);
-	    } else {
-		result = TCL_CONTINUE;
-	    }
-
-	    while ((result == TCL_CONTINUE) && resPtr) {
-		if (resPtr->compiledVarResProc) {
-		    result = (*resPtr->compiledVarResProc)(nsPtr->interp,
-			    localPtr->name, localPtr->nameLength,
-			    (Tcl_Namespace *) nsPtr, &vinfo);
-		}
-		resPtr = resPtr->nextPtr;
-	    }
-	    if (result == TCL_OK) {
-		localPtr->resolveInfo = vinfo;
-		localPtr->flags |= VAR_RESOLVED;
-	    }
-	}
-
-	/*
-	 * Now invoke the resolvers to determine the exact variables that
-	 * should be used.
-	 */
-
-        resVarInfo = localPtr->resolveInfo;
-        resolvedVarPtr = NULL;
-
-        if (resVarInfo && resVarInfo->fetchProc) {
-            resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
-		    resVarInfo);
-        }
-
-        if (resolvedVarPtr) {
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = 0;
-            TclSetVarLink(varPtr);
-            varPtr->value.linkPtr = resolvedVarPtr;
-            resolvedVarPtr->refCount++;
-        } else {
+    if (haveResolvers) {
+	for (localPtr = framePtr->procPtr->firstLocalPtr;
+	        localPtr != NULL;
+	        localPtr = localPtr->nextPtr) {
 	    varPtr->value.objPtr = NULL;
 	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
 	    varPtr->nsPtr = NULL;
@@ -1949,8 +1948,38 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
 	    varPtr->tracePtr = NULL;
 	    varPtr->searchPtr = NULL;
 	    varPtr->flags = localPtr->flags;
-        }
-	varPtr++;
+    
+	    /*
+	     * Now invoke the resolvers to determine the exact variables that
+	     * should be used.
+	     */
+	    
+	    resVarInfo = localPtr->resolveInfo;
+	    if (resVarInfo && resVarInfo->fetchProc) {
+		Var *resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
+			resVarInfo);
+		if (resolvedVarPtr) {
+		    resolvedVarPtr->refCount++;
+		    varPtr->value.linkPtr = resolvedVarPtr;
+		    varPtr->flags = VAR_LINK;
+		}
+	    }
+	    varPtr++;
+	}
+    } else {
+	for (localPtr = framePtr->procPtr->firstLocalPtr;
+	        localPtr != NULL;
+	        localPtr = localPtr->nextPtr) {
+	    varPtr->value.objPtr = NULL;
+	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+	    varPtr->nsPtr = NULL;
+	    varPtr->hPtr = NULL;
+	    varPtr->refCount = 0;
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
+	    varPtr->flags = localPtr->flags;
+	    varPtr++;
+	}
     }
 }
 
