@@ -1,5 +1,9 @@
 2001-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	************************
+	****  8.3.4 TAGGED  ****
+	************************
+
 	* unix/configure: regend
 	* unix/tcl.m4 (SC_ENABLE_GCC): enabled better recognition of gcc.
 
