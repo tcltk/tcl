@@ -386,6 +386,20 @@ test filesystem-1.38 {file normalisation with volume relative} \
     set res
 } "[lindex $drives 0]foo"
 
+test filesystem-1.39 {file normalisation with volume relative} {winOnly} {
+    set drv [lindex [file volumes] 0]
+    set dir [lindex [glob -type d -dir $drv *] 0]
+    set old [pwd]
+    cd $dir
+    set res [file norm [string range $drv 0 1]]
+    cd $old
+    if {[string index $res end] eq "/"} {
+        set res "Bad normalized path: $res"
+    } else {
+        set res "ok"
+    }
+} {ok}
+
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
        catch {file readlink $f}
