@@ -1,3 +1,10 @@
+2002-04-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tcl.m4: Enabled COFF as well as CV style debug info with
+	--enable-symbols to allow Dr. Watson users to see function info.
+	More info on debugging levels can be obtained at:
+	http://msdn.microsoft.com/library/en-us/dnvc60/html/gendepdebug.asp
+
 2002-04-08  Daniel Steffen  <das@users.sourceforge.net>
 
 	* mac/tclMacOSA.c:
