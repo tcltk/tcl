@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.44 2003/03/20 10:03:42 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.45 2003/04/03 16:46:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2371,14 +2371,6 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr;
     int code;
-
-    /*
-     * If we're not in a procedure, don't compile.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_OUT_LINE_COMPILE;
-    }
 
     switch (parsePtr->numWords) {
 	case 1: {
