@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.76 2001/12/03 08:56:18 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.77 2002/01/11 20:07:23 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -311,16 +311,12 @@ TCL_DEFINES	= $(OPTDEFINES)
 
 !if !$(DEBUG)
 # This cranks the optimization level to maximize speed
-!IF "$(MACHINE)" == "IA64"
 cdebug = -O2 -Gs
-!ELSE
-cdebug = -O2 -Gs -GD
-!ENDIF
-!ELSE IF "$(MACHINE)" == "IA64"
+!else if "$(MACHINE)" == "IA64"
 cdebug = -Od -Zi
-!ELSE
+!else
 cdebug = -Z7 -Od -WX
-!ENDIF
+!endif
 
 # declarations common to all compiler options
 cflags = -c -W3 -nologo -Fp$(TMP_DIR)\ -YX
