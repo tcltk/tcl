@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.12 2002/10/28 16:34:25 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.13 2003/03/19 21:57:40 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -337,8 +337,8 @@ proc auto_mkindex_parser::mkindex {file} {
     # in case there were any $ in the proc name.  This will cause a problem
     # if somebody actually tries to have a \0 in their proc name.  Too bad
     # for them.
-    regsub -all {\$} $contents "\0" contents
-    
+    set contents [string map [list \$ \0] $contents]
+
     set index ""
     set contextStack ""
     set imports ""
@@ -418,8 +418,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
     if {[string equal $ns ""]} {
         set fakeName "[namespace current]::_%@fake_$tail"
     } else {
-        set fakeName "_%@fake_$name"
-        regsub -all {::} $fakeName "_" fakeName
+	set fakeName [string map {:: _} "_%@fake_$name"]
         set fakeName "[namespace current]::$fakeName"
     }
     proc $fakeName $arglist $body
@@ -429,7 +428,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
     # we have to build procs with the fully qualified names, and
     # have the procs point to the aliases.
 
-    if {[regexp {::} $name]} {
+    if {[string match "*::*" $name]} {
         set exportCmd [list _%@namespace export [namespace tail $name]]
         $parser eval [list _%@namespace eval $ns $exportCmd]
  
@@ -484,11 +483,10 @@ proc auto_mkindex_parser::fullname {name} {
     } elseif {![string match ::* $name]} {
         set name "::$name"
     }
-    
+
     # Earlier, mkindex replaced all $'s with \0.  Now, we have to reverse
     # that replacement.
-    regsub -all "\0" $name "\$" name
-    return $name
+    return [string map [list \0 \$] $name]
 }
 
 # Register all of the procedures for the auto_mkindex parser that

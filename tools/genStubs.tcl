@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.13 2002/10/04 08:25:14 dkf Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.14 2003/03/19 21:58:01 dgp Exp $
 
 package require Tcl 8
 
@@ -184,7 +184,7 @@ proc genStubs::rewriteFile {file text} {
 
     while {![eof $in]} {
 	set line [gets $in]
-	if {[regexp {!BEGIN!} $line]} {
+	if {[string match "*!BEGIN!*" $line]} {
 	    break
 	}
 	puts $out $line
@@ -193,7 +193,7 @@ proc genStubs::rewriteFile {file text} {
     puts $out $text
     while {![eof $in]} {
 	set line [gets $in]
-	if {[regexp {!END!} $line]} {
+	if {[string match "*!END!*" $line]} {
 	    break
 	}
     }

@@ -8,12 +8,12 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.8 2002/11/23 01:41:35 hobbs Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.9 2003/03/19 21:57:52 dgp Exp $
 
-package require Tcl 8
+package require Tcl 8.2
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.4
+package provide opt 0.4.5
 
 namespace eval ::tcl {
 
@@ -811,15 +811,15 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
         }
     }
 
-    # Auto magic lasy type determination
+    # Auto magic lazy type determination
     proc OptGuessType {arg} {
-        if {[regexp -nocase {^(true|false)$} $arg]} {
+ 	 if { $arg == "true" || $arg == "false" } {
             return boolean
         }
-        if {[regexp {^(-+)?[0-9]+$} $arg]} {
+        if {[string is integer $arg]} {
             return int
         }
-        if {![catch {expr {double($arg)}}]} {
+        if {[string is double $arg]} {
             return float
         }
         return string

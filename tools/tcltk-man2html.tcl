@@ -1572,7 +1572,7 @@ proc make-man-pages {html args} {
 	}
 	puts $afp "</H2><HR><DL>"
 	foreach k $keys {
-	    if {[regexp -nocase -- "^keyword-$a" $k]} {
+	    if {[string match -nocase "keyword-${a}*" $k]} {
 		set k [string range $k 8 end]
 		puts $afp "<DT><A NAME=\"$k\">$k</A><DD>"
 		set refs {}

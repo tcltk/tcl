@@ -18,7 +18,7 @@
 #	its .o file placed before all others in the command; then
 #	"ld" is executed to bind the objects together.
 #
-# RCS: @(#) $Id: ldAout.tcl,v 1.5 2001/09/28 01:21:53 dgp Exp $
+# RCS: @(#) $Id: ldAout.tcl,v 1.6 2003/03/19 21:57:42 dgp Exp $
 #
 # Copyright (c) 1995, by General Electric Company. All rights reserved.
 #
@@ -88,9 +88,9 @@ proc tclLdAout {{cc {}} {shlib_suffix {}} {shlib_cflags none}} {
 	} elseif {![string compare $a -o]} {
 	    set minusO 1
 	}
-	if {[regexp {^-[lL]} $a]} {
+	if {[string match -nocase "-l*" $a]} {
 	    lappend libraries $a
-	    if {[regexp {^-L} $a]} {
+	    if {[string match "-L*" $a]} {
 		lappend libdirs [string range $a 2 end]
 	    }
 	} elseif {$seenDotO} {
@@ -106,7 +106,7 @@ proc tclLdAout {{cc {}} {shlib_suffix {}} {shlib_cflags none}} {
 
     set libs {}
     foreach lib $libraries {
-	if {[regexp {^-l} $lib]} {
+	if {[string match "-l*" $lib]} {
 	    set lname [string range $lib 2 end]
 	    foreach dir $libdirs {
 		if {[file exists [file join $dir lib${lname}_G0.a]]} {
@@ -138,7 +138,7 @@ proc tclLdAout {{cc {}} {shlib_suffix {}} {shlib_cflags none}} {
 	error "Output file does not appear to have a suffix"
     }
     set modName [string tolower $m 0 [expr {$l-1}]]
-    if {[regexp {^lib} $modName]} {
+    if {[string match "lib*" $modName]} {
 	set modName [string range $modName 3 end]
     }
     if {[regexp {[0-9\.]*(_g0)?$} $modName match]} {
