@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.20 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.21 2001/09/27 00:19:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -272,7 +272,7 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 
 Tcl_PathType
 Tcl_GetPathType(path)
-    char *path;
+    CONST char *path;
 {
     Tcl_PathType type;
     Tcl_Obj *tempObj = Tcl_NewStringObj(path,-1);

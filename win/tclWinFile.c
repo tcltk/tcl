@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.15 2001/09/10 17:17:41 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.16 2001/09/27 00:19:57 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -121,7 +121,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 {
     char drivePat[] = "?:\\";
     const char *message;
-    char *dir, *root;
+    CONST char *dir;
+    char *root;
     int dirLength;
     Tcl_DString dirString;
     DWORD attr, volFlags;
@@ -887,7 +888,7 @@ NativeStat(nativePath, statPtr)
     DWORD attr;
     WCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
-    char *fullPath;
+    CONST char *fullPath;
     int dev, mode;
 
     handle = (*tclWinProcs->findFirstFileProc)(nativePath, &data);
