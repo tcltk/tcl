@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.6 1999/12/01 00:08:36 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.7 1999/12/12 02:27:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -353,7 +353,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
     }
 
     /*
-     * We need to allocate and convert this before the (v)fork
+     * We need to allocate and convert this before the fork
      * so it is properly deallocated later
      */
     dsArray = (Tcl_DString *) ckalloc(argc * sizeof(Tcl_DString));
@@ -364,7 +364,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
     }
 
     joinThisError = (errorFile == outputFile);
-    pid = vfork();
+    pid = fork();
     if (pid == 0) {
 	fd = GetFd(errPipeOut);
 

@@ -1445,68 +1445,6 @@ AC_DEFUN(SC_BLOCKING_STYLE, [
 ])
 
 #--------------------------------------------------------------------
-# SC_HAVE_VFORK
-#
-#	Check to see whether the system provides a vfork kernel call.
-#	If not, then use fork instead.  Also, check for a problem with
-#	vforks and signals that can cause core dumps if a vforked child
-#	resets a signal handler.  If the problem exists, then use fork
-#	instead of vfork.
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Defines some of the following vars:
-#		vfork (=fork)
-#
-#--------------------------------------------------------------------
-
-AC_DEFUN(SC_HAVE_VFORK, [
-    AC_TYPE_SIGNAL()
-    AC_CHECK_FUNC(vfork, tcl_ok=1, tcl_ok=0)
-    if test "$tcl_ok" = 1; then
-	AC_MSG_CHECKING([vfork/signal bug]);
-	AC_TRY_RUN([
-#include <stdio.h>
-#include <signal.h>
-#include <sys/wait.h>
-int gotSignal = 0;
-sigProc(sig)
-    int sig;
-{
-    gotSignal = 1;
-}
-main()
-{
-    int pid, sts;
-    (void) signal(SIGCHLD, sigProc);
-    pid = vfork();
-    if (pid <  0) {
-	exit(1);
-    } else if (pid == 0) {
-	(void) signal(SIGCHLD, SIG_DFL);
-	_exit(0);
-    } else {
-	(void) wait(&sts);
-    }
-    exit((gotSignal) ? 0 : 1);
-}], tcl_ok=1, tcl_ok=0, tcl_ok=0)
-
-	if test "$tcl_ok" = 1; then
-	    AC_MSG_RESULT(ok)
-	else
-	    AC_MSG_RESULT([buggy, using fork instead])
-	fi
-    fi
-    rm -f core
-    if test "$tcl_ok" = 0; then
-	AC_DEFINE(vfork, fork)
-    fi
-])
-
-#--------------------------------------------------------------------
 # SC_TIME_HANLDER
 #
 #	Checks how the system deals with time.h, what time structures

@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.50 1999/10/05 22:46:40 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.51 1999/12/12 02:27:19 hobbs Exp $
 
 TCL_VERSION=8.3
 TCL_MAJOR_VERSION=8
@@ -332,16 +332,6 @@ AC_MSG_RESULT($tcl_ok)
 if test $tcl_ok = yes; then
     AC_DEFINE(NEED_MATHERR)
 fi
-
-#--------------------------------------------------------------------
-# Check to see whether the system provides a vfork kernel call.
-# If not, then use fork instead.  Also, check for a problem with
-# vforks and signals that can cause core dumps if a vforked child
-# resets a signal handler.  If the problem exists, then use fork
-# instead of vfork.
-#--------------------------------------------------------------------
-
-SC_HAVE_VFORK
 
 #--------------------------------------------------------------------
 #	Check whether there is an strncasecmp function on this system.
