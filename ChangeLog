@@ -11,6 +11,12 @@
 	* library/tm.tcl: New file, the v2 reference implementation for
 	  TIP #189, Tcl Modules.
 
+	* doc/tm.n: New file, documentation for Tcl Modules, based on the
+	  TIP.
+
+	* unix/mkLinks: Regenerated.
+	* win/makefile.vc: Added tm.tcl to list of files to install.
+
 2004-08-18  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/httpd (httpdRespond): Corrected an abuse of the [clock]
