@@ -141,12 +141,12 @@ FileCopyRename(interp, argc, argv, copyFlag)
     result = TCL_OK;
 
     /*
-     * Call stat() so that if target is a symlink that points to a directory
-     * we will put the sources in that directory instead of overwriting the
-     * symlink.
+     * Call TclStat() so that if target is a symlink that points to a
+     * directory we will put the sources in that directory instead of
+     * overwriting the symlink.
      */
 
-    if ((stat(target, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
+    if ((TclStat(target, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
 	if ((argc - i) > 2) {
 	    errno = ENOTDIR;
 	    Tcl_PosixError(interp);
@@ -253,11 +253,12 @@ TclFileMakeDirsCmd(interp, argc, argv)
 	    char *target = Tcl_JoinPath(j + 1, pargv, &targetBuffer);
 
 	    /*
-	     * Call stat() so that if target is a symlink that points to a
-	     * directory we will create subdirectories in that directory.
+	     * Call TclStat() so that if target is a symlink that points
+	     * to a directory we will create subdirectories in that
+	     * directory.
 	     */
 
-	    if (stat(target, &statBuf) == 0) {
+	    if (TclStat(target, &statBuf) == 0) {
 		if (!S_ISDIR(statBuf.st_mode)) {
 		    errno = EEXIST;
 		    errfile = target;
