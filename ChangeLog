@@ -1,3 +1,7 @@
+2000-09-07  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/trace.n: minor doc cleanup
+
 2000-09-06  André Pönitz <poenitz@htwm.de>
 
 	* doc/*.n: added or changed "SEE ALSO:" section
