@@ -1,3 +1,20 @@
+2001-07-12  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/subst.test (subst-10.*): Updated tests to check new
+	behaviour for 'break' in command substitutions.
+	(subst-1.2,subst-7.1): Error messages changed.
+	* doc/SubstObj.3: New file, to document Tcl_SubstObj.
+	* doc/subst.n: Improved and updated documentation for 'subst' to
+	help support the changed behaviour.
+	* generic/tcl.decls (generic-437): Declaration for Tcl_SubstObj
+	* generic/tcl.h (TCL_SUBST_*): Added flags for Tcl_SubstObj.
+	* generic/tclCmdMZ.c (Tcl_SubstObj,Tcl_SubstObjCmd): Divided into
+	two parts to allow people to access the innards of 'subst' and
+	changed the behaviour when command substitutions do a 'break' to
+	be different from 'continue'.  Also now works with objects, which
+	allows for some nifty optimisations with variable substitutions
+	and a slight improvement with command substitutions.  [TIP#36]
+
 2001-07-10  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/Makefile.in: Add AR variable for use in STLIB_LD.
