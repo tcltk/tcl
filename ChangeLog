@@ -15,7 +15,7 @@
 
 	* generic/tclDate.c:    Revised tclGetDate.y to use bison instead
 	* generic/tclGetDate.y: of yacc to build the parser, eliminating
-        * generic/tclInt.h:     all the complicated hackery involving
+	* generic/tclInt.h:     all the complicated hackery involving
 	* unix/Makefile.in:     'sed' postprocessing.  Rebuilt the parser.
 	
 2004-09-14  Kevin B. Kenny  <kennykb@acm.org>
