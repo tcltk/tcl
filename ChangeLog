@@ -1,3 +1,29 @@
+2000-04-03  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclCmdIL.c (InfoVarsCmd): checked for non-NULL procPtr
+	to prevent itcl info override crash [Bug: 4064]
+
+	* tests/foreach.test:
+	* tests/namespace.test:
+	* tests/var.test: Added lsorts to avoid random sorted return
+	problems. [Bug: 2682]
+
+	* tests/fileName.test: fixed 14.1 test fragility [Bug: 1482]
+
+	* tools/man2help2.tcl: fixed winhelp cross-linking error [Bug: 4156]
+	improved translation to winhelp [Bug: 3679]
+
+	* unix/Makefile.in (MAN_INSTALL_DIR): patch to accept --mandir
+	correctly [Bug: 4085]
+
+	* unix/dltest/pkg[a-e].c: Cleaned up test packages [Bug: 2293]
+
+2000-04-03  Eric Melski  <ericm@scriptics.com>
+
+	* unix/tclUnixFCmd.c (SetGroupAttribute): 
+	* unix/tclUnixFCmd.c (SetOwnerAttribute): Added (uid_t) and (gid_t) 
+	casts to avoid compiler warnings.
+
 2000-03-31  Eric Melski  <ericm@scriptics.com>
 
 	* generic/tclGet.c (Tcl_GetDouble): Added additional conditions to
