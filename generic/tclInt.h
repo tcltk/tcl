@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.29 1999/05/13 01:50:32 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.30 1999/06/08 02:59:24 hershey Exp $
  */
 
 #ifndef _TCLINT
@@ -1509,6 +1509,7 @@ extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
 extern Tcl_ObjType	tclProcBodyType;
 extern Tcl_ObjType	tclStringType;
+extern Tcl_ObjType	tclUnicodeType;
 
 /*
  * The head of the list of free Tcl objects, and the total number of Tcl
@@ -1542,6 +1543,9 @@ EXTERN int		TclAccess _ANSI_ARGS_((CONST char *path,
 EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN int		TclAccessInsertProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
+EXTERN Tcl_Obj *	TclAppendObjToUnicodeObj _ANSI_ARGS_((
+	    		    register Tcl_Obj *targetObjPtr,
+	    		    register Tcl_Obj *srcObjPtr));
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1634,6 +1638,12 @@ EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int *seekFlagPtr));
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 			    Tcl_Command command));
+EXTERN Tcl_Obj*         TclGetRangeFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+			    int first, int last));
+EXTERN Tcl_UniChar      TclGetUniCharFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+			    int index));
+EXTERN int		TclGetUnicodeLengthFromObj _ANSI_ARGS_((
+			    Tcl_Obj *objPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, int noComplain));
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp *interp,

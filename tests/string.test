@@ -11,11 +11,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.11 1999/06/03 18:43:30 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.12 1999/06/08 02:59:28 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
+
+# Some tests require the testobj command
+
+set ::tcltest::testConfig(testobj) \
+	[expr {[info commands testobj] != {}}]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
@@ -226,6 +231,18 @@ test string-5.11 {string index, unicode} {
 test string-5.12 {string index, unicode over char length, under byte length} {
     string index \334\374\334\374 6
 } {}
+test string-5.13 {string index, bytearray object} {
+    string index [binary format a5 fuz] 0
+} f
+test string-5.14 {string index, bytearray object} {
+    string index [binary format I* {0x50515253 0x52}] 3
+} S
+test string-5.15 {string index, bytearray object} {
+    set b [binary format I* {0x50515253 0x52}]
+    set i1 [string index $b end-6]
+    set i2 [string index $b 1]
+    string compare $i1 $i2
+} 0
 
 test string-6.1 {string is, too few args} {
     list [catch {string is} msg] $msg
@@ -585,6 +602,12 @@ test string-9.4 {string length} {
 test string-9.5 {string length, unicode} {
     string le "abcd\u7266"
 } 5
+test string-9.6 {string length, bytearray object} {
+    string length [binary format a5 foo]
+} 5
+test string-9.7 {string length, bytearray object} {
+    string length [binary format I* {0x50515253 0x52}]
+} 8
 
 test string-10.1 {string map, too few args} {
     list [catch {string map} msg] $msg
@@ -798,6 +821,12 @@ test string-12.17 {string range, unicode} {
 test string-12.18 {string range, unicode} {
     string range ab\u7266cdefghijklmnop 2 3
 } \u7266c
+test string-12.19 {string range, bytearray object} {
+    set b [binary format I* {0x50515253 0x52}]
+    set r1 [string range $b 1 end-1]
+    set r2 [string range $b 1 6]
+    string compare $r1 $r2
+} 0
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg

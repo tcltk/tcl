@@ -10,11 +10,12 @@
  *	representation are called "expandable string objects".
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.6 1999/05/07 20:07:35 stanton Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.7 1999/06/08 02:59:25 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -382,11 +383,7 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
     Tcl_Obj *objPtr;		/* Points to the object to append to. */
     Tcl_Obj *appendObjPtr;	/* Object to append. */
 {
-    int length;
-    char *stringRep;
-
-    stringRep = Tcl_GetStringFromObj(appendObjPtr, &length);
-    Tcl_AppendToObj(objPtr, stringRep, length);
+    TclAppendObjToUnicodeObj(objPtr, appendObjPtr);
 }
 
 /*

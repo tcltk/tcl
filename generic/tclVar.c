@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.8 1999/04/16 00:46:55 stanton Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.9 1999/06/08 02:59:27 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -1291,7 +1291,7 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 		    oldValuePtr = varPtr->value.objPtr;
 		    Tcl_IncrRefCount(oldValuePtr); /* since var is ref */
 		}
-		Tcl_AppendToObj(oldValuePtr, bytes, length);
+		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
 	    }
 	}
     } else {

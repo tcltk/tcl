@@ -7,11 +7,12 @@
  *	applications; they're only used for testing.
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
+ * Copyright (c) 1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.3 1999/04/16 00:46:54 stanton Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.4 1999/06/08 02:59:26 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -774,6 +775,23 @@ TestobjCmd(clientData, interp, objc, objv)
         }
         SetVarToObj(varIndex, Tcl_NewObj());
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
+    } else if (strcmp(subCmd, "objtype") == 0) {
+	char *typeName;
+
+	/*
+	 * return an object containing the name of the argument's type
+	 * of internal rep.  If none exists, return "none".
+	 */
+	
+        if (objc != 3) {
+            goto wrongNumArgs;
+        }
+	if (objv[2]->typePtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("none", -1));
+	} else {
+	    typeName = objv[2]->typePtr->name;
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
+	}
     } else if (strcmp(subCmd, "refcount") == 0) {
 	char buf[TCL_INTEGER_SPACE];
 
@@ -810,7 +828,8 @@ TestobjCmd(clientData, interp, objc, objv)
         if (objc != 2) {
             goto wrongNumArgs;
         }
-	if (Tcl_AppendAllObjTypes(interp, Tcl_GetObjResult(interp)) != TCL_OK) {
+	if (Tcl_AppendAllObjTypes(interp,
+		Tcl_GetObjResult(interp)) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     } else {
@@ -818,7 +837,7 @@ TestobjCmd(clientData, interp, objc, objv)
 		"bad option \"",
 		Tcl_GetString(objv[1]),
 		"\": must be assign, convert, duplicate, freeallvars, ",
-		"newobj, objcount, refcount, type, or types",
+		"newobj, objcount, objtype, refcount, type, or types",
 		(char *) NULL);
 	return TCL_ERROR;
     }

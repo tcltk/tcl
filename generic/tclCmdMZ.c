@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.12 1999/06/03 18:43:30 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.13 1999/06/08 02:59:23 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -1009,32 +1009,47 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	}
 	case STR_INDEX: {
 	    int index;
+	    char buf[TCL_UTF_MAX];
+	    Tcl_UniChar unichar;
 
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "string charIndex");
 		return TCL_ERROR;
 	    }
-	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    /*
-	     * establish what 'end' really means
-	     */
-	    length2 = Tcl_NumUtfChars(string1, length1);
-	    if (TclGetIntForIndex(interp, objv[3], length2 - 1,
-				  &index) != TCL_OK) {
-	      return TCL_ERROR;
-	    }
-	    /*
-	     * index must be between 0 and the UTF length to be valid
-	     */
-	    if ((index >= 0) && (index < length2)) {
-		if (length1 == length2) {
-		    /* no unicode chars */
-		    Tcl_SetStringObj(resultPtr, string1+index, 1);
-		} else {
-		    char buf[TCL_UTF_MAX];
 
-		    length2 = Tcl_UniCharToUtf(Tcl_UniCharAtIndex(string1,
-								  index), buf);
+	    /*
+	     * If we have a ByteArray object, avoid indexing in the
+	     * Utf string since the byte array contains one byte per
+	     * character.  Otherwise, use the Unicode string rep to
+	     * get the index'th char.
+	     */
+
+	    if (objv[2]->typePtr == &tclByteArrayType) {
+
+		string1 = Tcl_GetByteArrayFromObj(objv[2], &length1);
+
+		if (TclGetIntForIndex(interp, objv[3], length1 - 1,
+			&index) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		Tcl_SetStringObj(resultPtr, &string1[index], 1);
+	    } else {
+		string1 = Tcl_GetStringFromObj(objv[2], &length1);
+		
+		/*
+		 * convert to Unicode internal rep to calulate what
+		 * 'end' really means.
+		 */
+
+		length2 = TclGetUnicodeLengthFromObj(objv[2]);
+    
+		if (TclGetIntForIndex(interp, objv[3], length2 - 1,
+			&index) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if ((index >= 0) && (index < length2)) {
+		    unichar = TclGetUniCharFromObj(objv[2], index);
+		    length2 = Tcl_UniCharToUtf((int)unichar, buf);
 		    Tcl_SetStringObj(resultPtr, buf, length2);
 		}
 	    }
@@ -1400,16 +1415,16 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		/*
 		 * If we have a ByteArray object, avoid recomputing the
 		 * string since the byte array contains one byte per
-		 * character. 
+		 * character.  Otherwise, use the Unicode string rep to
+		 * calculate the length.
 		 */
 
 		if (objv[2]->typePtr == &tclByteArrayType) {
 		    (void) Tcl_GetByteArrayFromObj(objv[2], &length1);
 		    Tcl_SetIntObj(resultPtr, length1);
 		} else {
-		    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-		    Tcl_SetIntObj(resultPtr, Tcl_NumUtfChars(string1,
-			    length1));
+		    Tcl_SetIntObj(resultPtr,
+			    TclGetUnicodeLengthFromObj(objv[2]));
 		}
 	    }
 	    break;
@@ -1550,28 +1565,64 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	    if (TclGetIntForIndex(interp, objv[3], length1,
-		    &first) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (TclGetIntForIndex(interp, objv[4], length1,
-		    &last) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (first < 0) {
-		first = 0;
-	    }
-	    if (last >= length1) {
-		last = length1;
-	    }
-	    if (last >= first) {
-		char *start, *end;
+	    /*
+	     * If we have a ByteArray object, avoid indexing in the
+	     * Utf string since the byte array contains one byte per
+	     * character.  Otherwise, use the Unicode string rep to
+	     * get the range.
+	     */
 
-		start = Tcl_UtfAtIndex(string1, first);
-		end = Tcl_UtfAtIndex(start, last - first + 1);
-	        Tcl_SetStringObj(resultPtr, start, end - start);
+	    if (objv[2]->typePtr == &tclByteArrayType) {
+
+		string1 = Tcl_GetByteArrayFromObj(objv[2], &length1);
+
+		if (TclGetIntForIndex(interp, objv[3], length1 - 1,
+			&first) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (TclGetIntForIndex(interp, objv[4], length1 - 1,
+			&last) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (first < 0) {
+		    first = 0;
+		}
+		if (last >= length1 - 1) {
+		    last = length1 - 1;
+		}
+		if (last >= first) {
+		    int numBytes = last - first + 1;
+		    resultPtr = Tcl_NewByteArrayObj(&string1[first], numBytes);
+		    Tcl_SetObjResult(interp, resultPtr);
+		}
+	    } else {
+		string1 = Tcl_GetStringFromObj(objv[2], &length1);
+		
+		/*
+		 * Convert to Unicode internal rep to calulate length and
+		 * create a result object.
+		 */
+
+		length2 = TclGetUnicodeLengthFromObj(objv[2]) - 1;
+    
+		if (TclGetIntForIndex(interp, objv[3], length2,
+			&first) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (TclGetIntForIndex(interp, objv[4], length2,
+			&last) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (first < 0) {
+		    first = 0;
+		}
+		if (last >= length1 - 1) {
+		    last = length1 - 1;
+		}
+		if (last >= first) {
+		    resultPtr = TclGetRangeFromObj(objv[2], first, last);
+		    Tcl_SetObjResult(interp, resultPtr);
+		}
 	    }
 	    break;
 	}

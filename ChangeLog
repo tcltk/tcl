@@ -1,3 +1,27 @@
+1999-06-07  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tests/string.test: 
+	* generic/tclVar.c (Tcl_SetVar2Ex):
+	* generic/tclStringObj.c (Tcl_AppendObjToObj):
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): optimized the string
+	index, string length, string range, and append command in cases
+	where the object's internal rep is a bytearray.  Objects with
+	other internal reps are converted to have the new unicode internal
+	rep.  
+
+	* unix/Makefile.in: 
+	* win/Makefile.in: 
+	* win/Makefile.vc: 
+	* tests/unicode.test: 
+	* generic/tclInt.h:
+	* generic/tclObj.c:
+	* generic/tclUnicodeObj.c: added a new object type to store the
+	unicode representation of a string.
+
+	* generic/tclTestObj.c: added the objtype option to the testobj
+	command.  This option returns the name of the type of internal rep
+	an object has.
+
 1999-06-04    <stanton@scriptics.com>
 
 	* win/configure.in: 

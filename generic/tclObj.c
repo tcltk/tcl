@@ -5,11 +5,12 @@
  * 	many Tcl commands.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.7 1999/05/28 23:02:33 stanton Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.8 1999/06/08 02:59:25 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -137,6 +138,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclProcBodyType);
+    Tcl_RegisterObjType(&tclUnicodeType);
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.27 1999/06/02 22:05:55 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.28 1999/06/08 02:59:30 hershey Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -270,7 +270,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPipe.o \
 	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
-	tclStubInit.o tclStubLib.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
+	tclStubInit.o tclStubLib.o tclTimer.o tclUnicodeObj.o tclUtf.o \
+	tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -351,6 +352,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
 	$(GENERIC_DIR)/tclTimer.c \
+	$(GENERIC_DIR)/tclUnicodeObj.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c
 
@@ -888,6 +890,9 @@ tclThread.o: $(GENERIC_DIR)/tclThread.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
+
+tclUnicodeObj.o: $(GENERIC_DIR)/tclUnicodeObj.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUnicodeObj.c
 
 tclUnixChan.o: $(UNIX_DIR)/tclUnixChan.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
