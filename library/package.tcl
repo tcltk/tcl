@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.29 2004/07/28 18:00:10 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.30 2004/07/29 15:55:04 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -753,11 +753,4 @@ proc ::tcl::Pkg::Create {args} {
     return $cmdline
 }
 
-# Change this to
-#	 interp alias {} ::pkg::create {} ::tcl::Pkg::Create 
-# as soon as safe-2.1 accepts it.
-namespace eval pkg {
-    proc create args {
-	uplevel 1 ::tcl::Pkg::Create $args
-    }
-}
+interp alias {} ::pkg::create {} ::tcl::Pkg::Create 
