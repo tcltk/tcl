@@ -1,3 +1,16 @@
+2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclParse.c:
+	* generic/tclProc.c:
+	* tests/stack.test: consolidation of duplicated code (in
+	TclExecuteByteCode and EvalObjv); renaming of EvalObjv to
+	TclEvalObjv i as itisnot static anymore; restored consistency of
+	level counts between compiled and directly evaled code.
+	[Bug 480896]
+
 2001-11-12  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc:
