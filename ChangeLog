@@ -1,3 +1,8 @@
+2001-03-12  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/string.test: Fixed some test numberings and added a test.
+	[Patch #403229]
+
 2001-03-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclVar.c (Tcl_UnsetObjCmd): Rewrote argument parser to
