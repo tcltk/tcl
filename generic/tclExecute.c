@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.115 2003/11/16 00:49:20 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.116 2003/11/16 01:15:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1098,7 +1098,8 @@ TclExecuteByteCode(interp, codePtr)
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
-    int instructionCount = 0;
+    int instructionCount = 0;	/* Counter that is used to work out
+				 * when to call Tcl_AsyncReady() */
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -1525,7 +1526,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * TclEvalObjvInternal.
 	     */
 
-	    instructionCount = 0;
+	    instructionCount = 1;
 
 	    /*
 	     * Finally, let TclEvalObjvInternal handle the command. 
