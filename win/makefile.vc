@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.51 2000/05/02 22:02:37 kupries Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.52 2000/05/03 00:15:11 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -65,8 +65,8 @@ NODEBUG = 1
 
 NAMEPREFIX = tcl
 STUBPREFIX = $(NAMEPREFIX)stub
-DOTVERSION = 8.3
-VERSION = 83
+DOTVERSION = 8.4
+VERSION = 84
 
 BINROOT		= .
 !IF "$(NODEBUG)" == "1"

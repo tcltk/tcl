@@ -1,4 +1,4 @@
-Tcl 8.3 for Macintosh
+Tcl 8.4 for Macintosh
 
 by Ray Johnson
 Scriptics Corporation
@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.12 2000/04/26 17:31:20 hobbs Exp $
+RCS: @(#) $Id: README,v 1.13 2000/05/03 00:15:08 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -18,7 +18,7 @@ scripting language.  The home page for the Macintosh releases is
 	http://dev.scriptics.com/software/mac/
 
 A summary of what's new in this release is at
-	http://dev.scriptics.com/software/tcltk/8.3.html
+	http://dev.scriptics.com/software/tcltk/8.4.html
 
 A summary of Macintosh-specific features is at
 	http://dev.scriptics.com/software/mac/features.html

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70 2000/04/19 08:32:44 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.71 2000/05/03 00:15:06 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -43,26 +43,26 @@ extern "C" {
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.vc	(not patchlevel) 2 LOC
- * win/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
+ * library/reg1.0/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/README		(not patchlevel) (part (h))
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
- * tests/basic.test	(not patchlevel) (version checks)
+ * library/tcltest1.0/tcltest.tcl	(1 LOC M/M, 1 LOC patch)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
  * tools/tclSplash.bmp	(not patchlevel)
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   3
-#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
+#define TCL_MINOR_VERSION   4
+#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
 #define TCL_RELEASE_SERIAL  1
 
-#define TCL_VERSION	    "8.3"
-#define TCL_PATCH_LEVEL	    "8.3.1"
+#define TCL_VERSION	    "8.4"
+#define TCL_PATCH_LEVEL	    "8.4a1"
 
 /*
  * The following definitions set up the proper options for Windows

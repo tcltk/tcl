@@ -1,3 +1,33 @@
+2000-05-02  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* generic/tcl.h:
+	* library/init.tcl:
+	* library/reg1.0/pkgIndex.tcl:
+	* library/tcltest1.0/tcltest.tcl:
+	* mac/README:
+	* tools/tcl.hpj.in:
+	* tools/tcl.wse.in:
+	* unix/README:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README:
+	* win/README.binary:
+	* win/configure.in:
+	* win/makefile.vc:
+	* win/tcl.m4: updated patchlevel to 8.4a1
+
+	* tests/compile.test:
+	* tests/init.test:
+	* tests/proc.test:
+	* tests/proc-old.test:
+	* tests/rename.test:
+	* generic/tclProc.c: reworked error return for procedures with
+	incorrect args to be like the C Tcl_WrongNumArgs, where a "wrong #
+	args: ..." message is printed out with the args list.
+
+	* unix/Makefile.in: add tclsh.ico and tcl.spec to dist target
+
 2000-05-02  Andreas Kupries <a.kupries@westend.com>
 
 	* Overall changes:

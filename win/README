@@ -1,10 +1,10 @@
-Tcl 8.3 for Windows
+Tcl 8.4 for Windows
 
 by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.16 2000/04/26 17:31:22 hobbs Exp $
+RCS: @(#) $Id: README,v 1.17 2000/05/03 00:15:10 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -21,7 +21,7 @@ The information in this file is maintained on the web at:
 
 In order to compile Tcl for Windows, you need the following items:
 
-	Tcl 8.3 Source Distribution (plus any patches)
+	Tcl 8.4 Source Distribution (plus any patches)
 
 	Visual C++ 2.x/4.x/5.x
 
@@ -39,18 +39,18 @@ find them.  Tcl looks in one of following places for the library files:
 
 	1) The path specified in the environment variable "TCL_LIBRARY".
 
-	2) In the lib\tcl8.3 directory under the installation directory
+	2) In the lib\tcl8.4 directory under the installation directory
 	   as specified in the registry:
 
-		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.3
+		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.4
 
 	3) Relative to the directory containing the current .exe.
-	    Tcl will look for a directory "..\lib\tcl8.3" relative to the
+	    Tcl will look for a directory "..\lib\tcl8.4" relative to the
 	    directory containing the currently running .exe.
 
-Note that in order to run tclsh83.exe, you must ensure that tcl83.dll
-and tclpip83.dll are on your path, in the system directory, or in the 
-directory containing tclsh83.exe.
+Note that in order to run tclsh84.exe, you must ensure that tcl84.dll
+and tclpip84.dll are on your path, in the system directory, or in the 
+directory containing tclsh84.exe.
 
 Note: Tcl no longer provides support for Win32s.
 

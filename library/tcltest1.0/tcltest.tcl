@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.24 2000/04/11 01:04:19 welch Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.25 2000/05/03 00:15:07 hobbs Exp $
 
 package provide tcltest 1.0
 
@@ -267,10 +267,10 @@ namespace eval tcltest {
 
     # Tcl version numbers
     if {![info exists version]} {
-	variable version 8.3
+	variable version 8.4
     }
     if {![info exists patchLevel]} {
-	variable patchLevel 8.3.0
+	variable patchLevel 8.4a1
     }
 }   
 
