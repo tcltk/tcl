@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.7 2002/05/08 23:48:13 davygrvy Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.7.2.1 2003/12/09 15:32:20 dkf Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -32,7 +32,14 @@ static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
  * Imported things that aren't defined in header files:
  */
 
+/*
+ * Some <errno.h> define errno to be something complex and
+ * thread-aware; in that case we definitely do not want to declare
+ * errno ourselves!
+ */
+#ifndef errno
 extern int errno;
+#endif
 
 /*
  * Current line number, used for error messages.
