@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.1 2003/11/05 20:52:39 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.2 2003/11/06 21:47:33 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2801,7 +2801,6 @@ unilen(src)
     }
     return (char *) p - src;
 }
-
 
 /*
  *-------------------------------------------------------------------------
@@ -2827,9 +2826,6 @@ TclFindEncodings(argv0)
     CONST char *argv0;		/* Name of executable from argv[0] to main()
 				 * in native multi-byte encoding. */
 {
-    Tcl_Obj *pathPtr, *normPtr;
-    Tcl_DString libPath, buffer;
-
     if (encodingsInitialized == 0) {
 	/* 
 	 * Double check inside the mutex.  There may be calls
@@ -2838,6 +2834,10 @@ TclFindEncodings(argv0)
 
 	TclpInitLock();
 	if (encodingsInitialized == 0) {
+	    char *native;
+	    Tcl_Obj *pathPtr;
+	    Tcl_DString libPath, buffer;
+
 	    /*
 	     * Have to set this bit here to avoid deadlock with the
 	     * routines below us that call into TclInitSubsystems.
@@ -2845,13 +2845,8 @@ TclFindEncodings(argv0)
 
 	    encodingsInitialized = 1;
 
-	    pathPtr = Tcl_NewStringObj(TclpFindExecutable(argv0), -1);
-	    Tcl_IncrRefCount(pathPtr);
-	    normPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-	    Tcl_IncrRefCount(normPtr);
-	    Tcl_DecrRefCount(pathPtr);
-	    TclpInitLibraryPath(Tcl_GetString(normPtr));
-	    Tcl_DecrRefCount(normPtr);
+	    native = TclpFindExecutable(argv0);
+	    TclpInitLibraryPath(native);
 
 	    /*
 	     * The library path was set in the TclpInitLibraryPath routine.
@@ -2885,4 +2880,3 @@ TclFindEncodings(argv0)
 	TclpInitUnlock();
     }
 }
-	

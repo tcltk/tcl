@@ -1,3 +1,10 @@
+2003-11-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/unixInit.test (unixInit-2.10): mark as knownBug
+	* generic/tclEncoding.c (TclFindEncodings): revert patch from
+	2003-11-05.  It wasn't valid in the sensitive startup init phase
+	and broke Windows from working at all.
+
 2003-11-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: optimized builds define NDEBUG to turn off
