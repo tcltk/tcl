@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21 2001/04/07 03:15:38 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.22 2001/05/07 22:15:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4083,7 +4083,13 @@ ExprRandFunc(interp, eePtr, clientData)
 
     if (!(iPtr->flags & RAND_SEED_INITIALIZED)) {
 	iPtr->flags |= RAND_SEED_INITIALIZED;
-	iPtr->randSeed = TclpGetClicks();
+        
+        /* 
+	 * Take into consideration the thread this interp is running in order
+	 * to insure different seeds in different threads (bug #416643)
+	 */
+
+	iPtr->randSeed = TclpGetClicks() + ((long) Tcl_GetCurrentThread() << 12);
 
 	/*
 	 * Make sure 1 <= randSeed <= (2^31) - 2.  See below.
