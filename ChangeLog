@@ -1,3 +1,20 @@
+2005-01-18  Kevin Kenny  <kennykb@acm.org>
+
+        * library/tzdata/GMT+0:
+	* library/tzdata/GMT-0:
+	* library/tzdata/GMT0:
+	* library/tzdata/Greenwich:
+	* library/tzdata/Navajo:
+	* library/tzdata/Universal:
+	* library/tzdata/Zulu:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/America/Rosario:
+	* library/tzdata/Asia/Jerusalem:
+	* library/tzdata/Brazil/Acre:
+	Routine update per Olson's tzdata2005c.  Removed links to links
+	(Greenwich in several aliases; Navajo; Acre). Updated Paraguayan
+	DST rules and "best guess" at this year's Israeli rules.
+	
 2005-01-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: fix for glob failure on Windows shares
