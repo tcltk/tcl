@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.122 2003/03/21 03:23:24 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.123 2003/04/05 01:41:23 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1555,6 +1555,7 @@ extern Tcl_ObjType	tclDoubleType;
 extern Tcl_ObjType	tclEndOffsetType;
 extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
+extern Tcl_ObjType	tclDictType;
 extern Tcl_ObjType	tclProcBodyType;
 extern Tcl_ObjType	tclStringType;
 extern Tcl_ObjType	tclArraySearchType;
@@ -1816,6 +1817,8 @@ EXTERN int	Tcl_CloseObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_ConcatObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_ContinueObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	Tcl_DictObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_EncodingObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
