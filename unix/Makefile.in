@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.151 2004/11/12 18:13:32 rmax Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.152 2004/11/12 19:03:23 rmax Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -239,12 +239,12 @@ AC_FLAGS		= @DEFS@
 AR			= @AR@
 RANLIB			= @RANLIB@
 SRC_DIR			= @srcdir@
-TOP_DIR			= @srcdir@/..
+TOP_DIR			= $(SRC_DIR)/..
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
-UNIX_DIR		= $(TOP_DIR)/unix
+UNIX_DIR		= $(SRC_DIR)
 MAC_OSX_DIR		= $(TOP_DIR)/macosx
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
@@ -275,7 +275,7 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${UNIX_DIR} -I${SRC_DIR} -I${BUILD_DIR} \
+-I${GENERIC_DIR} -I${SRC_DIR} -I${BUILD_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
 ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
