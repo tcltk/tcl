@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ListObj.3,v 1.7 2004/10/07 15:15:38 dkf Exp $
+'\" RCS: @(#) $Id: ListObj.3,v 1.8 2004/10/07 16:05:14 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_ListObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -73,13 +73,11 @@ will insert into a new list object,
 and \fBTcl_ListObjReplace\fR will insert into \fIlistPtr\fR.
 For \fBTcl_SetListObj\fR,
 the number of Tcl objects to insert into \fIobjPtr\fR.
-.VS
 .AP "Tcl_Obj *const" objv[] in
 An array of pointers to objects.
 \fBTcl_NewListObj\fR will insert these objects into a new list object
 and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
 Each object will become a separate list element.  
-.VE
 .AP int *intPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.
