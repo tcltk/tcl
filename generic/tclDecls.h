@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.72 2002/01/16 06:02:34 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.73 2002/01/17 02:43:19 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -877,7 +877,7 @@ EXTERN void		Tcl_AppendStringsToObjVA _ANSI_ARGS_((
 /* 269 */
 EXTERN char *		Tcl_HashStats _ANSI_ARGS_((Tcl_HashTable * tablePtr));
 /* 270 */
-EXTERN char *		Tcl_ParseVar _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN CONST char *	Tcl_ParseVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * str, char ** termPtr));
 /* 271 */
 EXTERN CONST char *	Tcl_PkgPresent _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -1842,7 +1842,7 @@ typedef struct TclStubs {
     void (*tcl_AppendResultVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 267 */
     void (*tcl_AppendStringsToObjVA) _ANSI_ARGS_((Tcl_Obj * objPtr, va_list argList)); /* 268 */
     char * (*tcl_HashStats) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 269 */
-    char * (*tcl_ParseVar) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char ** termPtr)); /* 270 */
+    CONST char * (*tcl_ParseVar) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char ** termPtr)); /* 270 */
     CONST char * (*tcl_PkgPresent) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact)); /* 271 */
     CONST char * (*tcl_PkgPresentEx) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr)); /* 272 */
     int (*tcl_PkgProvide) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version)); /* 273 */
