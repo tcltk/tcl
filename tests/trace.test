@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.17 2002/03/29 22:47:22 hobbs Exp $
+# RCS: @(#) $Id: trace.test,v 1.18 2002/06/14 13:17:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -352,7 +352,7 @@ test trace-5.3 {array traces do not outlive variable} {
 test trace-5.4 {array traces properly listed in trace information} {
     catch {unset x}
     trace add variable x array traceArray2
-    set result [trace list variable x]
+    set result [trace info variable x]
     set result
 } [list [list array traceArray2]]
 test trace-5.5 {array traces properly listed in trace information} {
@@ -564,7 +564,7 @@ test trace-9.3 {be sure traces are cleared before unset trace called} {
     catch {unset x}
     set x 33
     set info {}
-    trace add variable x unset {traceCheck {uplevel trace list variable x}}
+    trace add variable x unset {traceCheck {uplevel trace info variable x}}
     unset x
     set info
 } {0 {}}
@@ -574,7 +574,7 @@ test trace-9.4 {set new trace during unset trace} {
     set info {}
     trace add variable x unset {traceCheck {global x; trace add variable x unset traceProc}}
     unset x
-    concat $info [trace list variable x]
+    concat $info [trace info variable x]
 } {0 {} {unset traceProc}}
 
 test trace-10.1 {make sure array elements are unset before traces are called} {
@@ -597,7 +597,7 @@ test trace-10.3 {array elements are unset before traces are called} {
     catch {unset x}
     set x(0) 33
     set info {}
-    trace add variable x(0) unset {traceCheck {global x; trace list variable x(0)}}
+    trace add variable x(0) unset {traceCheck {global x; trace info variable x(0)}}
     unset x(0)
     set info
 } {0 {}}
@@ -607,7 +607,7 @@ test trace-10.4 {set new array element trace during unset trace} {
     set info {}
     trace add variable x(0) unset {traceCheck {uplevel {trace add variable x(0) read {}}}}
     catch {unset x(0)}
-    concat $info [trace list variable x(0)]
+    concat $info [trace info variable x(0)]
 } {0 {} {read {}}}
 
 test trace-11.1 {make sure arrays are unset before traces are called} {
@@ -638,7 +638,7 @@ test trace-11.4 {make sure arrays are unset before traces are called} {
     catch {unset x}
     set x(y) 33
     set info {}
-    set cmd {traceCheck {uplevel {trace list variable x}}}
+    set cmd {traceCheck {uplevel {trace info variable x}}}
     trace add variable x unset $cmd
     unset x
     set info
@@ -649,7 +649,7 @@ test trace-11.5 {set new array trace during unset trace} {
     set info {}
     trace add variable x unset {traceCheck {global x; trace add variable x read {}}}
     unset x
-    concat $info [trace list variable x]
+    concat $info [trace info variable x]
 } {0 {} {read {}}}
 test trace-11.6 {create scalar during array unset trace} {
     catch {unset x}
@@ -762,11 +762,11 @@ foreach type {variable command} {
 	} [list 1 "$start should be \"trace $op $type name opList command\""]
     }
     test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	list [catch {trace list $type foo bar} msg] $msg
-    } [list 1 "$start should be \"trace list $type name\""]
+	list [catch {trace info $type foo bar} msg] $msg
+    } [list 1 "$start should be \"trace info $type name\""]
     test trace-14.0.[incr i] "trace command, wrong # args errors" {
-	list [catch {trace list $type} msg] $msg
-    } [list 1 "$start should be \"trace list $type name\""]
+	list [catch {trace info $type} msg] $msg
+    } [list 1 "$start should be \"trace info $type name\""]
 }
 
 test trace-14.1 "trace command, wrong # args errors" {
@@ -779,12 +779,12 @@ test trace-14.3 "trace command, wrong # args errors" {
     list [catch {trace remove} msg] $msg
 } [list 1 "wrong # args: should be \"trace remove type ?arg arg ...?\""]
 test trace-14.4 "trace command, wrong # args errors" {
-    list [catch {trace list} msg] $msg
-} [list 1 "wrong # args: should be \"trace list type ?arg arg ...?\""]
+    list [catch {trace info} msg] $msg
+} [list 1 "wrong # args: should be \"trace info type ?arg arg ...?\""]
 
 test trace-14.5 {trace command, invalid option} {
     list [catch {trace gorp} msg] $msg
-} [list 1 "bad option \"gorp\": must be add, list, remove, variable, vdelete, or vinfo"]
+} [list 1 "bad option \"gorp\": must be add, info, remove, variable, vdelete, or vinfo"]
 
 # Again, [trace ... command] and [trace ... variable] share syntax and
 # error message styles for their opList options; these loops test those 
@@ -868,26 +868,26 @@ test trace-14.15 {trace command ("list variable" option)} {
     trace add variable x write {traceTag 1}
     trace add variable x write traceProc
     trace add variable x write {traceTag 2}
-    trace list variable x
+    trace info variable x
 } {{write {traceTag 2}} {write traceProc} {write {traceTag 1}}}
 test trace-14.16 {trace command ("list variable" option)} {
     catch {unset x}
-    trace list variable x
+    trace info variable x
 } {}
 test trace-14.17 {trace command ("list variable" option)} {
     catch {unset x}
-    trace list variable x(0)
+    trace info variable x(0)
 } {}
 test trace-14.18 {trace command ("list variable" option)} {
     catch {unset x}
     set x 44
-    trace list variable x(0)
+    trace info variable x(0)
 } {}
 test trace-14.19 {trace command ("list variable" option)} {
     catch {unset x}
     set x 44
     trace add variable x write {traceTag 1}
-    proc check {} {global x; trace list variable x}
+    proc check {} {global x; trace info variable x}
     check
 } {{write {traceTag 1}}}
 
@@ -1124,7 +1124,7 @@ test trace-17.2 {traced variables must survive procedure exits} {
     catch {unset x}
     proc p1 {} {global x; trace add variable x write traceProc}
     p1
-    trace list variable x
+    trace info variable x
 } {{write traceProc}}
 test trace-17.3 {traced variables must survive procedure exits} {
     catch {unset x}
@@ -1191,7 +1191,7 @@ test trace-19.2 {traces stick with renamed commands} {
 test trace-19.2.1 {trace add command rename trace exists} {
     proc foo {} {}
     trace add command foo rename traceCommand
-    trace list command foo
+    trace info command foo
 } {{rename traceCommand}}
 test trace-19.3 {command rename traces don't fire on command deletion} {
     proc foo {} {}
@@ -1212,7 +1212,7 @@ test trace-19.5 {trace add command deleted removes traces} {
     proc foo {} {}
     trace add command foo rename traceCommand
     proc foo {} {}
-    trace list command foo
+    trace info command foo
 } {}
 
 namespace eval tc {}
@@ -1262,7 +1262,7 @@ test trace-20.2 {trace add command delete doesn't trace recreated commands} {
 test trace-20.2.1 {trace add command delete trace info} {
     proc foo {} {}
     trace add command foo delete traceCommand
-    trace list command foo
+    trace info command foo
 } {{delete traceCommand}}
 test trace-20.3 {trace add command implicit delete} {
     proc foo {} {}
@@ -1272,7 +1272,7 @@ test trace-20.3 {trace add command implicit delete} {
 } {foo {} delete}
 test trace-20.3.1 {trace add command delete trace info} {
     proc foo {} {}
-    trace list command foo
+    trace info command foo
 } {}
 test trace-20.4 {trace add command rename followed by delete} {
     set infotemp {}
@@ -1337,7 +1337,7 @@ test trace-20.7 {trace add command delete in subinterp while being deleted} {
 } {}
 
 proc traceDelete {cmd old new op} {
-    eval trace remove command $cmd [lindex [trace list command $cmd] 0]
+    eval trace remove command $cmd [lindex [trace info command $cmd] 0]
     global info
     set info [list $old $new $op]
 }
@@ -1353,7 +1353,7 @@ test trace-20.8 {trace delete while trace is active} {
     catch {rename bar {}}
     trace add command foo {rename delete} [list traceDelete foo]
     rename foo bar
-    list [set info] [trace list command bar]
+    list [set info] [trace info command bar]
 } {{foo bar rename} {}}
 
 test trace-20.9 {rename trace deletes command} {

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.70 2002/05/30 03:26:41 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.71 2002/06/14 13:17:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2813,7 +2813,7 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
  *	
  *	Standard syntax as of Tcl 8.4 is
  *	
- *	 trace {add|remove|list} {command|variable} name ops cmd
+ *	 trace {add|info|remove} {command|variable} name ops cmd
  *
  *
  * Results:
@@ -2837,7 +2837,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     size_t length;
     /* Main sub commands to 'trace' */
     static CONST char *traceOptions[] = {
-	"add", "list", "remove", 
+	"add", "info", "remove", 
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	"variable", "vdelete", "vinfo", 
 #endif
@@ -2845,7 +2845,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     };
     /* 'OLD' options are pre-Tcl-8.4 style */
     enum traceOptions {
-	TRACE_ADD, TRACE_LIST, TRACE_REMOVE, 
+	TRACE_ADD, TRACE_INFO, TRACE_REMOVE, 
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	TRACE_OLD_VARIABLE, TRACE_OLD_VDELETE, TRACE_OLD_VINFO
 #endif
@@ -2863,7 +2863,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     switch ((enum traceOptions) optionIndex) {
 	case TRACE_ADD: 
 	case TRACE_REMOVE:
-	case TRACE_LIST: {
+	case TRACE_INFO: {
 	    /* 
 	     * All sub commands of trace add/remove must take at least
 	     * one more argument.  Beyond that we let the subcommand itself
@@ -3052,14 +3052,14 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
  * TclTraceCommandObjCmd --
  *
  *	Helper function for Tcl_TraceObjCmd; implements the
- *	[trace {add|remove|list} command ...] subcommands.
+ *	[trace {add|info|remove} command ...] subcommands.
  *	See the user documentation for details on what these do.
  *
  * Results:
  *	Standard Tcl result.
  *
  * Side effects:
- *	Depends on the operation (add, remove, or list) being performed;
+ *	Depends on the operation (add, remove, or info) being performed;
  *	may add or remove command traces on a command.
  *
  *----------------------------------------------------------------------
@@ -3068,14 +3068,14 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 int
 TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
     Tcl_Interp *interp;			/* Current interpreter. */
-    int optionIndex;			/* Add, list or remove */
+    int optionIndex;			/* Add, info or remove */
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     int commandLength, index;
     char *name, *command;
     size_t length;
-    enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
+    enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static CONST char *opStrings[] = { "delete", "rename", (char *) NULL };
     enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME };
     
@@ -3163,7 +3163,7 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 	    }
 	    break;
 	}
-	case TRACE_LIST: {
+	case TRACE_INFO: {
 	    ClientData clientData;
 	    Tcl_Obj *resultListPtr, *eachTraceObjPtr, *elemObjPtr;
 	    if (objc != 4) {
@@ -3218,14 +3218,14 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
  * TclTraceVariableObjCmd --
  *
  *	Helper function for Tcl_TraceObjCmd; implements the
- *	[trace {add|remove|list} variable ...] subcommands.
+ *	[trace {add|info|remove} variable ...] subcommands.
  *	See the user documentation for details on what these do.
  *
  * Results:
  *	Standard Tcl result.
  *
  * Side effects:
- *	Depends on the operation (add, remove, or list) being performed;
+ *	Depends on the operation (add, remove, or info) being performed;
  *	may add or remove variable traces on a variable.
  *
  *----------------------------------------------------------------------
@@ -3234,14 +3234,14 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 int
 TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
     Tcl_Interp *interp;			/* Current interpreter. */
-    int optionIndex;			/* Add, list or remove */
+    int optionIndex;			/* Add, info or remove */
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     int commandLength, index;
     char *name, *command;
     size_t length;
-    enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
+    enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static CONST char *opStrings[] = { "array", "read", "unset", "write",
 				     (char *) NULL };
     enum operations { TRACE_VAR_ARRAY, TRACE_VAR_READ, TRACE_VAR_UNSET,
@@ -3337,7 +3337,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 	    }
 	    break;
 	}
-	case TRACE_LIST: {
+	case TRACE_INFO: {
 	    ClientData clientData;
 	    Tcl_Obj *resultListPtr, *eachTraceObjPtr, *elemObjPtr;
 	    if (objc != 4) {
