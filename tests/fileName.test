@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.1.2.8 1999/04/06 20:21:25 stanton Exp $
+# RCS: @(#) $Id: fileName.test,v 1.1.2.9 1999/04/06 22:01:43 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -1379,7 +1379,15 @@ test filename-16.11 {windows specific globbing} {pcOnly} {
     lsort [glob c:\\\\globTest\\\\*.bat]
 } {c:/globTest/x1.BAT c:/globTest/y1.Bat c:/globTest/z1.bat}
 
-test filename-16.12 {windows specific globbing} {pcOnly} {
+# some tests require a shared C drive
+
+if {[catch {cd //[info hostname]/c}]} {
+    set ::tcltest::testConfig(sharedCdrive) 0
+} else {
+    set ::tcltest::testConfig(sharedCdrive) 1
+}
+
+test filename-16.12 {windows specific globbing} {pcOnly sharedCdrive} {
     cd //[info hostname]/c
     removeDirectory globTest
     makeDirectory globTest
@@ -1388,7 +1396,7 @@ test filename-16.12 {windows specific globbing} {pcOnly} {
     close [open globTest/z1.bat w]
     glob //[info hostname]/c/*Test
 } //[info hostname]/c/globTest
-test filename-16.13 {windows specific globbing} {pcOnly} {
+test filename-16.13 {windows specific globbing} {pcOnly sharedCdrive} {
     cd //[info hostname]/c
     removeDirectory globTest
     makeDirectory globTest
