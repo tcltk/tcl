@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.35 2001/09/06 09:35:39 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.36 2001/09/27 02:12:19 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4149,17 +4149,23 @@ Tcl_ReadRaw(chan, bufPtr, bytesToRead)
                 statePtr->flags &= (~(CHANNEL_BLOCKED));
             }
 
-	    /*
-	     * Now go to the driver to get as much as is possible to
-	     * fill the remaining request. Do all the error handling
-	     * by ourselves.  The code was stolen from 'GetInput' and
-	     * slightly adapted (different return value here).
-	     *
-	     * The case of 'bytesToRead == 0' at this point cannot happen.
-	     */
+	    if ((statePtr->flags & CHANNEL_TIMER_FEV) &&
+		(statePtr->flags & CHANNEL_NONBLOCKING)) {
+	        nread  = -1;
+	        result = EWOULDBLOCK;
+	    } else {
+	      /*
+	       * Now go to the driver to get as much as is possible to
+	       * fill the remaining request. Do all the error handling
+	       * by ourselves.  The code was stolen from 'GetInput' and
+	       * slightly adapted (different return value here).
+	       *
+	       * The case of 'bytesToRead == 0' at this point cannot happen.
+	       */
 
-	    nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
+	      nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
 			  bufPtr + copied, bytesToRead - copied, &result);
+	    }
 	    if (nread > 0) {
 	        /*
 		 * If we get a short read, signal up that we may be
@@ -5185,7 +5191,7 @@ GetInput(chanPtr)
         }
         statePtr->inQueueTail = bufPtr;
     }
-      
+
     /*
      * If EOF is set, we should avoid calling the driver because on some
      * platforms it is impossible to read from a device after EOF.
@@ -5195,8 +5201,14 @@ GetInput(chanPtr)
 	return 0;
     }
 
-    nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
-	    bufPtr->buf + bufPtr->nextAdded, toRead, &result);
+    if ((statePtr->flags & CHANNEL_TIMER_FEV) &&
+	(statePtr->flags & CHANNEL_NONBLOCKING)) {
+        nread = -1;
+        result = EWOULDBLOCK;
+    } else {
+        nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
+		    bufPtr->buf + bufPtr->nextAdded, toRead, &result);
+    }
 
     if (nread > 0) {
 	bufPtr->nextAdded += nread;
@@ -5221,7 +5233,7 @@ GetInput(chanPtr)
 	}
 	Tcl_SetErrno(result);
 	return result;
-    } 
+    }
     return 0;
 }
 
@@ -6711,8 +6723,22 @@ ChannelTimerProc(clientData)
 
 	statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,
 		(ClientData) chanPtr);
+
+	/* Set the TIMER flag to notify the higher levels that the
+	 * driver might have no data for us. We do this only if we are
+	 * in non-blocking mode and the driver has no BlockModeProc
+	 * because only then we really don't know if the driver will
+	 * block or not. A similar test is done in "PeekAhead".
+	 */
+
+	if ((statePtr->flags & CHANNEL_NONBLOCKING) &&
+	    (Tcl_ChannelBlockModeProc(chanPtr->typePtr) == NULL)) {
+	    statePtr->flags |= CHANNEL_TIMER_FEV;
+	}
+
 	Tcl_NotifyChannel((Tcl_Channel)chanPtr, TCL_READABLE);
- 
+
+	statePtr->flags &= ~CHANNEL_TIMER_FEV; 
     } else {
 	statePtr->timer = NULL;
 	UpdateInterest(chanPtr);
