@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.22.2.2 2003/10/07 04:48:07 dgp Exp $
+# RCS: @(#) $Id: regexp.test,v 1.22.2.3 2003/10/14 18:22:10 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -615,6 +615,18 @@ test regexp-21.9 {regexp works with empty string offset} {
 test regexp-21.10 {multiple matches handle newlines} {
     regsub -all -lineanchor -- {^#[^\n]*\n} "#one\n#two\n#three\n" foo\n
 } "foo\nfoo\nfoo\n"
+
+test regexp-21.11 {multiple matches handle newlines} {
+    regsub -all -line -- ^ "a\nb\nc" \#
+} "\#a\n\#b\n\#c"
+
+test regexp-21.12 {multiple matches handle newlines} {
+    regsub -all -line -- ^ "\n\n" \#
+} "\#\n\#\n\#"
+
+test regexp-21.13 {multiple matches handle newlines} {
+    regexp -all -inline -indices -line -- ^ "a\nb\nc"
+} {{0 -1} {2 1} {4 3}}
 
 # cleanup
 ::tcltest::cleanupTests
