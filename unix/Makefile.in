@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.6 2005/02/02 16:58:57 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.7 2005/03/02 21:25:26 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -186,7 +186,6 @@ TCL_EXE			= tclsh
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
-SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
 
@@ -318,7 +317,8 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
         bn_mp_cmp.o bn_mp_cmp_mag.o bn_mp_copy.o bn_mp_count_bits.o \
         bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o \
         bn_mp_exch.o bn_mp_grow.o bn_mp_init.o bn_mp_init_copy.o \
-        bn_mp_init_multi.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
+        bn_mp_init_multi.o bn_mp_init_set.o \
+	bn_mp_init_size.o bn_mp_karatsuba_mul.o \
 	bn_mp_karatsuba_sqr.o \
         bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
         bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_radix_size.o bn_mp_radix_smap.o \
@@ -450,6 +450,7 @@ TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bn_mp_init.c \
 	$(TOMMATH_DIR)/bn_mp_init_copy.c \
 	$(TOMMATH_DIR)/bn_mp_init_multi.c \
+	$(TOMMATH_DIR)/bn_mp_init_set.c \
 	$(TOMMATH_DIR)/bn_mp_init_size.c \
 	$(TOMMATH_DIR)/bn_mp_karatsuba_mul.c \
 	$(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c \
@@ -1230,6 +1231,9 @@ bn_mp_init_copy.o: $(TOMMATH_DIR)/bn_mp_init_copy.c
 
 bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
+
+bn_mp_init_set.o: $(TOMMATH_DIR)/bn_mp_init_set.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set.c
 
 bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c

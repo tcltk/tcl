@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.24.2.1 2005/02/02 15:53:12 kennykb Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.24.2.2 2005/03/02 21:25:12 kennykb Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -803,7 +803,7 @@ a pointer to the function.
 .VS 8.4
 .SS "THREADACTIONPROC"
 .PP
-The \fthreadActionProc\fR field contains the address of the function
+The \fIthreadActionProc\fR field contains the address of the function
 called by the generic layer when a channel is created, closed, or
 going to move to a different thread, i.e. whenever thread-specific
 driver state might have to initialized or updated. It can be NULL.
@@ -837,7 +837,7 @@ an invalid Set/Get option is requested. Its purpose is to concatenate
 the generic options list to the specific ones and factorize
 the generic options error message string.
 .PP
-It always return \fBTCL_ERROR\fR
+It always returns \fBTCL_ERROR\fR
 .PP
 An error message is generated in \fIinterp\fR's result object to
 indicate that a command was invoked with a bad option.

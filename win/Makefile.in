@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.84.2.5 2005/02/02 15:54:02 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84.2.6 2005/03/02 21:25:50 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -305,6 +305,7 @@ TOMMATH_OBJS = \
 	bn_mp_init.${OBJEXT} \
 	bn_mp_init_copy.${OBJEXT} \
 	bn_mp_init_multi.${OBJEXT} \
+	bn_mp_init_set.${OBJEXT} \
 	bn_mp_init_size.${OBJEXT} \
 	bn_mp_karatsuba_mul.${OBJEXT} \
 	bn_mp_karatsuba_sqr.$(OBJEXT) \

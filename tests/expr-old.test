@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.22.2.1 2005/02/02 15:53:30 kennykb Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.22.2.2 2005/03/02 21:25:25 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -91,7 +91,7 @@ test expr-old-1.53 {integer operators} {
 # automatic conversion to integers where needed.
 
 test expr-old-2.1 {floating-point operators} {expr -4.2} -4.2
-test expr-old-2.2 {floating-point operators} {expr -(1.1+4.2)} -5.3
+test expr-old-2.2 {floating-point operators} {expr -(1.125+4.25)} -5.375
 test expr-old-2.3 {floating-point operators} {expr +5.7} 5.7
 test expr-old-2.4 {floating-point operators} {expr +--+-62.0} -62.0
 test expr-old-2.5 {floating-point operators} {expr !2.1} 0
@@ -428,7 +428,7 @@ test expr-old-25.15 {type conversions} {expr {24.1 > "24.1a"}} 0
 test expr-old-25.16 {type conversions} {expr 2+2.5} 4.5
 test expr-old-25.17 {type conversions} {expr 2+2.5} 4.5
 test expr-old-25.18 {type conversions} {expr 2.0e2} 200.0
-test expr-old-25.19 {type conversions} {eformat} {expr 2.0e15} 2e+15
+test expr-old-25.19 {type conversions} {expr 2.0e15} 2000000000000000.0
 test expr-old-25.20 {type conversions} {expr 10.0} 10.0
 
 # Various error conditions.

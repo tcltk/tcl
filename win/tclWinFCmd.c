@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.43 2004/10/06 16:37:18 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.43.2.1 2005/03/02 21:25:51 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -1331,7 +1331,7 @@ TraverseWinTree(
 		}
 	    }
 	    nativeName = (TCHAR *) data.w.cFileName;
-	    len = Tcl_UniCharLen(data.w.cFileName) * sizeof(WCHAR);
+	    len = wcslen(data.w.cFileName) * sizeof(WCHAR);
 	} else {
 	    if ((strcmp(data.a.cFileName, ".") == 0) 
 		    || (strcmp(data.a.cFileName, "..") == 0)) {
@@ -1396,7 +1396,7 @@ TraverseWinTree(
 	}
 	result = TCL_ERROR;
     }
-	    
+
     return result;
 }
 

@@ -11,10 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.2 2004/12/29 22:47:04 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.3 2005/03/02 21:25:25 kennykb Exp $
  */
 
 #include "tclInt.h"
+#include <float.h>
+#include <math.h>
 
 /*
  * The absolute pathname of the executable in which this Tcl library
@@ -56,12 +58,9 @@ static ProcessGlobalValue executableName = {0, 0, NULL, NULL, NULL, NULL, NULL};
  * TclPrecTraceProc.
  */
 
-static char precisionString[10] = "12";
-				/* The string value of all the tcl_precision
-				 * variables. */
-static char precisionFormat[10] = "%.12g";
-				/* The format string actually used in calls
-				 * to sprintf. */
+static int precision = 0;	/* Precision of floating point conversions,
+				 * in the range 0-17 inclusive. */
+
 TCL_DECLARE_MUTEX(precisionMutex)
 
 /*
@@ -1916,33 +1915,130 @@ Tcl_PrintDouble(interp, value, dst)
 					 * characters. */
 {
     char *p, c;
+    int prec;
+    int exp;
+    char buffer[TCL_DOUBLE_SPACE];
     Tcl_UniChar ch;
 
     Tcl_MutexLock(&precisionMutex);
-    sprintf(dst, precisionFormat, value);
+    prec = precision;
     Tcl_MutexUnlock(&precisionMutex);
 
     /*
-     * If the ASCII result looks like an integer, add ".0" so that it
-     * doesn't look like an integer anymore.  This prevents floating-point
-     * values from being converted to integers unintentionally.
-     * Check for ASCII specifically to speed up the function.
+     * If prec == 0, then use TclDoubleDigits to develop a decimal
+     * significand and exponent, then format it in E or F format as
+     * appropriate.  If prec != 0, use the native sprintf and then
+     * add a trailing ".0" if there is no decimal point in the rep.
      */
 
-    for (p = dst; *p != 0; ) {
-	if (UCHAR(*p) < 0x80) {
-	    c = *p++;
-	} else {
-	    p += Tcl_UtfToUniChar(p, &ch);
-	    c = UCHAR(ch);
-	}
-	if ((c == '.') || isalpha(UCHAR(c))) {	/* INTL: ISO only. */
+    if ( prec == 0 ) {
+
+	/* Handle NaN */
+
+	if ( _isnan( value ) ) {
+	    strcpy( dst, "NaN" );
 	    return;
 	}
+
+	/* Handle -0.0 if the machine does it. */
+
+#ifdef _FPCLASS_NZ
+	if ( _fpclass( value ) == _FPCLASS_NZ ) {
+	    strcpy( dst, "-0.0" );
+	    return;
+	}
+#endif
+
+	/* Handle negative values */
+
+	if ( value < 0 ) {
+	    *dst++ = '-';
+	    value = -value;
+	}
+
+	/* Handle infinities */
+
+	if ( ! _finite( value ) ) {
+	    strcpy( dst, "Inf" );
+	    return;
+	}
+
+	/* Ordinary (normal and denormal) values */
+
+	exp = TclDoubleDigits( buffer, value );
+	prec = strlen( buffer );
+	p = buffer;
+	if ( exp < -3 || exp > 17 ) {
+
+	    /* E format for numbers < 1e-3 or >= 1e17 */
+
+	    *dst++ = *p++;
+	    c = *p;
+	    if ( c != '\0' ) {
+		*dst++ = '.';
+		while ( c != '\0' ) {
+		    *dst++ = c;
+		    c = *++p;
+		}
+	    }
+	    sprintf( dst, "e%+d", exp-1 );
+	} else {
+
+	    /* F format for others */
+
+	    if ( exp <= 0 ) {
+		*dst++ = '0';
+	    }
+	    c = *p;
+	    while ( exp-- > 0 ) {
+		if ( c != '\0' ) {
+		    *dst++ = c;
+		    c = *++p;
+		} else {
+		    *dst++ = '0';
+		}
+	    }
+	    *dst++ = '.';
+	    if ( c == '\0' ) {
+		*dst++ = '0';
+	    } else {
+		while ( c != '\0' ) {
+		    *dst++ = c;
+		    c = *++p;
+		}
+	    }
+	    *dst++ = '\0';
+	}
+
+    } else {
+
+	/* tcl_precision is supplied, pass it to the native sprintf */
+
+	sprintf( dst, "%.*g", prec, value );
+	
+	/*
+	 * If the ASCII result looks like an integer, add ".0" so that it
+	 * doesn't look like an integer anymore.  This prevents floating-point
+	 * values from being converted to integers unintentionally.
+	 * Check for ASCII specifically to speed up the function.
+	 */
+	
+	for (p = dst; *p != 0; ) {
+	    if (UCHAR(*p) < 0x80) {
+		c = *p++;
+	    } else {
+		p += Tcl_UtfToUniChar(p, &ch);
+		c = UCHAR(ch);
+	    }
+	    if ((c == '.') || isalpha(UCHAR(c))) {	/* INTL: ISO only. */
+		return;
+	    }
+	}
+	p[0] = '.';
+	p[1] = '0';
+	p[2] = 0;
+
     }
-    p[0] = '.';
-    p[1] = '0';
-    p[2] = 0;
 }
 
 /*
@@ -1974,8 +2070,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
-    CONST char *value;
-    char *end;
+    Tcl_Obj* value;
     int prec;
 
     /*
@@ -1998,11 +2093,11 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
      * out of date.
      */
 
-    Tcl_MutexLock(&precisionMutex);
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2(interp, name1, name2, precisionString,
-		flags & TCL_GLOBAL_ONLY);
+	Tcl_MutexLock(&precisionMutex);
+	Tcl_SetVar2Ex( interp, name1, name2, Tcl_NewIntObj( precision ),
+		       flags & TCL_GLOBAL_ONLY );
 	Tcl_MutexUnlock(&precisionMutex);
 	return (char *) NULL;
     }
@@ -2015,25 +2110,21 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
      */
 
     if (Tcl_IsSafe(interp)) {
-	Tcl_SetVar2(interp, name1, name2, precisionString,
-		flags & TCL_GLOBAL_ONLY);
+	Tcl_MutexLock(&precisionMutex);
+	Tcl_SetVar2Ex( interp, name1, name2, Tcl_NewIntObj( precision ),
+		       flags & TCL_GLOBAL_ONLY );
 	Tcl_MutexUnlock(&precisionMutex);
 	return "can't modify precision from a safe interpreter";
     }
-    value = Tcl_GetVar2(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
-    if (value == NULL) {
-	value = "";
-    }
-    prec = strtoul(value, &end, 10);
-    if ((prec <= 0) || (prec > TCL_MAX_PREC) || (prec > 100) ||
-	    (end == value) || (*end != 0)) {
-	Tcl_SetVar2(interp, name1, name2, precisionString,
-		flags & TCL_GLOBAL_ONLY);
-	Tcl_MutexUnlock(&precisionMutex);
+    value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
+    if ( value == NULL
+	 || Tcl_GetIntFromObj( (Tcl_Interp*) NULL, value, &prec ) != TCL_OK
+	 || prec < 0
+	 || prec > TCL_MAX_PREC	) {
 	return "improper value for precision";
     }
-    TclFormatInt(precisionString, prec);
-    sprintf(precisionFormat, "%%.%dg", prec);
+    Tcl_MutexLock( &precisionMutex );
+    precision = prec;
     Tcl_MutexUnlock(&precisionMutex);
     return (char *) NULL;
 }

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.20.2.1 2004/12/08 18:24:35 kennykb Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.20.2.2 2005/03/02 21:25:19 kennykb Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -96,8 +96,8 @@ caller can determine the size of the stack given to the new thread and
 modify the behaviour through the supplied \fIflags\fR. The value
 \fBTCL_THREAD_STACK_DEFAULT\fR for the \fIstackSize\fR indicates that
 the default size as specified by the operating system is to be used
-for the new thread. As for the flags, currently are only the values
-\fBTCL_THREAD_NOFLAGS\fR and \fBTCL_THREAD_JOINABLE\fR defined. The
+for the new thread. As for the flags, currently only the values
+\fBTCL_THREAD_NOFLAGS\fR and \fBTCL_THREAD_JOINABLE\fR are defined. The
 first of them invokes the default behaviour with no
 specialties. Using the second value marks the new thread as
 \fIjoinable\fR. This means that another thread can wait for the such
@@ -109,7 +109,7 @@ specified value for the stack size is ignored on these systems.
 Windows currently does not support joinable threads. This
 flag value is therefore ignored on this platform.
 .PP
-Tcl does provide \fBTcl_ExitThread\fR and \fBTcl_FinalizeThread\fR
+Tcl provides the \fBTcl_ExitThread\fR and \fBTcl_FinalizeThread\fR functions
 for terminating threads and invoking optional per-thread exit
 handlers.  See the \fBTcl_Exit\fR page for more information on these
 procedures.

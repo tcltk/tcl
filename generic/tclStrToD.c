@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.5 2005/02/22 21:16:11 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.6 2005/03/02 21:25:24 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -526,83 +526,6 @@ TclStrToD( CONST char* s,
 /*
  *----------------------------------------------------------------------
  *
- * InitializeConstants --
- *
- *	Initializes constants that are needed for string-to-double
- *      conversion.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The log base 2 of the floating point radix, the number of
- *	bits in a double mantissa, and a table of the powers of five
- *	and ten are computed and stored.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-InitializeConstants( void )
-{
-    int i;
-    double d;
-    if ( !constantsInitialized ) {
-	Tcl_MutexLock( &initMutex );
-	if ( !constantsInitialized ) {
-	    frexp( (double) FLT_RADIX, &log2FLT_RADIX );
-	    --log2FLT_RADIX;
-	    mantBits = DBL_MANT_DIG * log2FLT_RADIX;
-	    d = 1.0;
-	    for ( i = 0; i <= MAXPOW; ++i ) {
-		pow10[i] = d;
-		d *= 10.0;
-	    }
-	    for ( i = 0; i < 9; ++i ) {
-		mp_init( pow5 + i );
-	    }
-	    mp_set( pow5, 5 );
-	    for ( i = 0; i < 8; ++i ) {
-		mp_sqr( pow5+i, pow5+i+1 );
-	    }
-	    Tcl_CreateExitHandler( FreeConstants, (ClientData) NULL );
-	}
-	constantsInitialized = 1;
-	Tcl_MutexUnlock( &initMutex );
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FreeConstants --
- *
- *	Cleans up this file on exit.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	Memory allocated by InitializeConstants is freed.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FreeConstants( ClientData unused )
-{
-    int i;
-    Tcl_MutexLock( &initMutex );
-    constantsInitialized = 0;
-    for ( i = 0; i < 9; ++i ) {
-	mp_clear( pow5 + i );
-    }
-    Tcl_MutexUnlock( &initMutex );
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * RefineResult --
  *
  *	Given a poor approximation to a floating point number, returns
@@ -780,76 +703,6 @@ RefineResult( double approxResult,
 /*
  *----------------------------------------------------------------------
  *
- * BignumToDouble --
- *
- *	Convert an arbitrary-precision integer to a native floating 
- *	point number.
- *
- * Results:
- *	Returns the converted number.  Sets errno to ERANGE if the
- *	number is too large to convert.
- *
- *----------------------------------------------------------------------
- */
-
-static double
-BignumToDouble( mp_int* a )
-				/* Integer to convert */
-{
-    mp_int b;
-    int bits;
-    int shift;
-    int i;
-    double r;
-
-    /* Determine how many bits we need, and extract that many from 
-     * the input. Round to nearest unit in the last place. */
-
-    bits = mp_count_bits( a );
-    shift = mantBits + 1 - bits;
-    mp_init( &b );
-    if ( shift > 0 ) {
-	mp_mul_2d( a, shift, &b );
-    } else if ( shift < 0 ) {
-	mp_div_2d( a, -shift, &b, NULL );
-    } else {
-	mp_copy( a, &b );
-    }
-    mp_add_d( &b, 1, &b );
-    mp_div_2d( &b, 1, &b, NULL );
-
-    /* Accumulate the result, one mp_digit at a time */
-
-    r = 0.0;
-    for ( i = b.used-1; i >= 0; --i ) {
-	r = ldexp( r, DIGIT_BIT ) + b.dp[i];
-    }
-    mp_clear( &b );
-
-    /* 
-     * Test for overflow, and scale the result to the correct number 
-     * of bits. 
-     */
-
-    if ( bits / log2FLT_RADIX > DBL_MAX_EXP ) {
-	errno = ERANGE;
-	r = HUGE_VAL;
-    } else {
-	r = ldexp( r, bits - mantBits );
-    }
-
-    /* Return the result with the appropriate sign. */
-
-    if ( a->sign == MP_ZPOS ) {
-	return r;
-    } else {
-	return -r;
-    }
-}		
-
-/*
- *----------------------------------------------------------------------
- *
  * ParseNaN --
  *
  *	Parses a "not a number" from an input string, and returns the
@@ -930,6 +783,467 @@ ParseNaN( int signum,		/* Flag == 1 if minus sign has been
     *endPtr = p;
     return theNaN.dv;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDoubleDigits --
+ *
+ *	Converts a double to a string of digits.
+ *
+ * Results:
+ *	Returns the position of the character in the string
+ *	after which the decimal	point should appear.  Since
+ *	the string contains only significant digits, the
+ *	position may be less than zero or greater than the
+ *	length of the string.
+ *
+ * Side effects:
+ *	Stores the digits in the given Tcl_Obj
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclDoubleDigits( char * strPtr,	/* Buffer in which to store the result,
+				 * must have at least 18 chars */
+		 double v )	/* Number to convert. Must be positive,
+				 * finite, and not NaN */
+{
+
+    double f;			/* Significand of v */
+
+    int e;			/* Power of FLT_RADIX that satisfies
+				 * v = f * FLT_RADIX**e */
+
+
+    int low_ok;
+    int high_ok;
+
+    mp_int r;			/* Scaled significand */
+    mp_int s;			/* Divisor such that v = r / s */
+    mp_int mplus;		/* Scaled epsilon: (r + 2* mplus) ==
+				 * v(+) where v(+) is the floating point
+				 * successor of v. */
+    mp_int mminus;		/* Scaled epsilon: (r - 2*mminus ) ==
+				 * v(-) where v(-) is the floating point
+				 * predecessor of v. */
+    mp_int temp;
+
+    int rfac2 = 0;		/* Powers of 2 and 5 by which large */
+    int rfac5 = 0;		/* integers should be scaled        */
+    int sfac2 = 0;
+    int sfac5 = 0;
+    int mplusfac2 = 0;
+    int mminusfac2 = 0;
+    
+    double a;
+    char c;
+    int i, k, n;
+
+    /* Handle zero specially */
+
+    if ( v == 0.0 ) {
+	*strPtr++ = '0';
+	*strPtr++ = '\0';
+	return 1;
+    }
+
+    /* 
+     * Develop f and e such that v = f * FLT_RADIX**e, with
+     * 1.0/FLT_RADIX <= f < 1.
+     */
+
+    f = frexp( v, &e );
+    n = e % log2FLT_RADIX;
+    if ( n > 0 ) {
+	n -= log2FLT_RADIX;
+	e += 1;
+    }
+    f *= ldexp( 1.0, n );
+    e = ( e - n ) / log2FLT_RADIX;
+    if ( f == 1.0 ) {
+	f = 1.0 / FLT_RADIX;
+	e += 1;
+    }
+
+    /*
+     * If the original number was denormalized, adjust e and f to be
+     * denormal as well.
+     */
+
+    if ( e < DBL_MIN_EXP ) {
+	n = mantBits + ( e - DBL_MIN_EXP ) * log2FLT_RADIX;
+	f = ldexp( f, ( e - DBL_MIN_EXP ) * log2FLT_RADIX );
+	e = DBL_MIN_EXP;
+	n = ( n + DIGIT_BIT - 1 ) / DIGIT_BIT;
+    } else {
+	n = ( mantBits + DIGIT_BIT - 1 ) / DIGIT_BIT;
+    }
+
+    /*
+     * Now extract the base-2**DIGIT_BIT digits of f into a multi-precision
+     * integer r.  Preserve the invariant v = r * 2**rfac2 * FLT_RADIX**e
+     * by adjusting e.
+     */
+    
+    a = f;
+    n = ( mantBits + DIGIT_BIT - 1 ) / DIGIT_BIT;
+    mp_init_size( &r, n );
+    r.used = n;
+    r.sign = MP_ZPOS;
+    i = ( mantBits % DIGIT_BIT );
+    if ( i == 0 ) {
+	i = DIGIT_BIT;
+    }
+    while ( n > 0 ) {
+	a *= ldexp( 1.0, i );
+	i = DIGIT_BIT;
+	r.dp[--n] = (mp_digit) a;
+	a -= (mp_digit) a;
+    }
+    e -= DBL_MANT_DIG;
+
+    low_ok = high_ok = ( mp_iseven( &r ) );
+
+    /* 
+     * We are going to want to develop integers r, s, mplus, and mminus
+     * such that v = r / s, v(+)-v / 2 = mplus / s; v-v(-) / 2 = mminus / s
+     * and then scale either s or r, mplus, mminus by an appropriate
+     * power of ten.
+     *
+     * We actually do this by keeping track of the powers of 2 and 5
+     * by which f is multiplied to yield v and by which 1 is multiplied
+     * to yield s, mplus, and mminus.
+     */
+
+    if ( e >= 0 ) {
+
+	int bits = e * log2FLT_RADIX;
+
+	if ( f != 1.0 / FLT_RADIX ) {
+
+	    /* Normal case, m+ and m- are both FLT_RADIX**e */
+
+	    rfac2 += bits + 1;
+	    sfac2 = 1;
+	    mplusfac2 = bits;
+	    mminusfac2 = bits;
+
+	} else {
+
+	    /* 
+	     * If f is equal to the smallest significand, then we need another
+	     * factor of FLT_RADIX in s to cope with stepping to
+	     * the next smaller exponent when going to e's predecessor.
+	     */
+
+	    rfac2 += bits + log2FLT_RADIX - 1;
+	    sfac2 = 1 + log2FLT_RADIX;
+	    mplusfac2 = bits + log2FLT_RADIX;
+	    mminusfac2 = bits;
+
+	}
+
+    } else {
+
+	/* v has digits after the binary point */
+
+	if ( e <= DBL_MIN_EXP - DBL_MANT_DIG
+	     || f != 1.0 / FLT_RADIX ) {
+
+	    /* 
+	     * Either f isn't the smallest significand or e is
+	     * the smallest exponent.  mplus and mminus will both be 1.
+	     */
+
+	    rfac2 += 1;
+	    sfac2 = 1 - e * log2FLT_RADIX;
+	    mplusfac2 = 0;
+	    mminusfac2 = 0;
+
+	} else {
+
+	    /* 
+	     * f is the smallest significand, but e is not the smallest
+	     * exponent.  We need to scale by FLT_RADIX again to cope
+	     * with the fact that v's predecessor has a smaller exponent.
+	     */
+
+	    rfac2 += 1 + log2FLT_RADIX;
+	    sfac2 = 1 + log2FLT_RADIX * ( 1 - e );
+	    mplusfac2 = FLT_RADIX;
+	    mminusfac2 = 0;
+
+	}
+    }
+
+    /* 
+     * Estimate the highest power of ten that will be
+     * needed to hold the result.
+     */
+
+    k = (int) ceil( log( v ) / log( 10. ) );
+    if ( k >= 0 ) {
+	sfac2 += k;
+	sfac5 = k;
+    } else {
+	rfac2 -= k;
+	mplusfac2 -= k;
+	mminusfac2 -= k;
+	rfac5 = -k;
+    }
+
+    /*
+     * Scale r, s, mplus, mminus by the appropriate powers of 2 and 5.
+     */
+
+    mp_init_set( &mplus, 1 );
+    for ( i = 0; i <= 8; ++i ) {
+	if ( rfac5 & ( 1 << i ) ) {
+	    mp_mul( &mplus, pow5+i, &mplus );
+	}
+    }
+    mp_mul( &r, &mplus, &r );
+    mp_mul_2d( &r, rfac2, &r );
+    mp_init_copy( &mminus, &mplus );
+    mp_mul_2d( &mplus, mplusfac2, &mplus );
+    mp_mul_2d( &mminus, mminusfac2, &mminus );
+    mp_init_set( &s, 1 );
+    for ( i = 0; i <= 8; ++i ) {
+	if ( sfac5 & ( 1 << i ) ) {
+	    mp_mul( &s, pow5+i, &s );
+	}
+    }
+    mp_mul_2d( &s, sfac2, &s );
+
+    /*
+     * It is possible for k to be off by one because we used an
+     * inexact logarithm.
+     */
+
+    mp_init( &temp );
+    mp_add( &r, &mplus, &temp );
+    i = mp_cmp_mag( &temp, &s );
+    if ( i > 0 || ( high_ok && i == 0 ) ) {
+	mp_mul_d( &s, 10, &s );
+	++k;
+    } else {
+	mp_mul_d( &temp, 10, &temp );
+	i = mp_cmp_mag( &temp, &s );
+	if ( i < 0 || ( high_ok && i == 0 ) ) {
+	    mp_mul_d( &r, 10, &r );
+	    mp_mul_d( &mplus, 10, &mplus );
+	    mp_mul_d( &mminus, 10, &mminus );
+	    --k;
+	}
+    }
+
+    /*
+     * At this point, k contains the power of ten by which we're
+     * scaling the result.  r/s is at least 1/10 and strictly less
+     * than ten, and v = r/s * 10**k.  mplus and mminus give the
+     * rounding limits.
+     */
+
+    for ( ; ; ) {
+	int tc1, tc2;
+	mp_mul_d( &r, 10, &r );
+	mp_div( &r, &s, &temp, &r ); /* temp = 10r / s; r = 10r mod s */
+	i = temp.dp[0];
+	mp_mul_d( &mplus, 10, &mplus );
+	mp_mul_d( &mminus, 10, &mminus );
+	tc1 = mp_cmp_mag( &r, &mminus );
+	if ( low_ok ) {
+	    tc1 = ( tc1 <= 0 );
+	} else {
+	    tc1 = ( tc1 < 0 );
+	}
+	mp_add( &r, &mplus, &temp );
+	tc2 = mp_cmp_mag( &temp, &s );
+	if ( high_ok ) {
+	    tc2 = ( tc2 >= 0 );
+	} else {
+	    tc2= ( tc2 > 0 );
+	}
+	if ( ! tc1 ) {
+	    if ( !tc2 ) {
+		*strPtr++ = '0' + i;
+	    } else {
+		c = (char) (i + '1');
+		break;
+	    }
+	} else {
+	    if ( !tc2 ) {
+		c = (char) (i + '0');
+	    } else {
+		mp_mul_2d( &r, 1, &r );
+		n = mp_cmp_mag( &r, &s );
+		if ( n < 0 ) {
+		    c = (char) (i + '0');
+		} else {
+		    c = (char) (i + '1');
+		}
+	    }
+	    break;
+	}
+    };
+    *strPtr++ = c;
+    *strPtr++ = '\0';
+
+    /* Free memory */
+
+    mp_clear_multi( &r, &s, &mplus, &mminus, &temp, NULL );
+    return k;
+	    
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitializeConstants --
+ *
+ *	Initializes constants that are needed for string-to-double
+ *      conversion.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The log base 2 of the floating point radix, the number of
+ *	bits in a double mantissa, and a table of the powers of five
+ *	and ten are computed and stored.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitializeConstants( void )
+{
+    int i;
+    double d;
+    if ( !constantsInitialized ) {
+	Tcl_MutexLock( &initMutex );
+	if ( !constantsInitialized ) {
+	    frexp( (double) FLT_RADIX, &log2FLT_RADIX );
+	    --log2FLT_RADIX;
+	    mantBits = DBL_MANT_DIG * log2FLT_RADIX;
+	    d = 1.0;
+	    for ( i = 0; i <= MAXPOW; ++i ) {
+		pow10[i] = d;
+		d *= 10.0;
+	    }
+	    for ( i = 0; i < 9; ++i ) {
+		mp_init( pow5 + i );
+	    }
+	    mp_set( pow5, 5 );
+	    for ( i = 0; i < 8; ++i ) {
+		mp_sqr( pow5+i, pow5+i+1 );
+	    }
+	    Tcl_CreateExitHandler( FreeConstants, (ClientData) NULL );
+	}
+	constantsInitialized = 1;
+	Tcl_MutexUnlock( &initMutex );
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeConstants --
+ *
+ *	Cleans up this file on exit.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Memory allocated by InitializeConstants is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeConstants( ClientData unused )
+{
+    int i;
+    Tcl_MutexLock( &initMutex );
+    constantsInitialized = 0;
+    for ( i = 0; i < 9; ++i ) {
+	mp_clear( pow5 + i );
+    }
+    Tcl_MutexUnlock( &initMutex );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BignumToDouble --
+ *
+ *	Convert an arbitrary-precision integer to a native floating 
+ *	point number.
+ *
+ * Results:
+ *	Returns the converted number.  Sets errno to ERANGE if the
+ *	number is too large to convert.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static double
+BignumToDouble( mp_int* a )
+				/* Integer to convert */
+{
+    mp_int b;
+    int bits;
+    int shift;
+    int i;
+    double r;
+
+    /* Determine how many bits we need, and extract that many from 
+     * the input. Round to nearest unit in the last place. */
+
+    bits = mp_count_bits( a );
+    shift = mantBits + 1 - bits;
+    mp_init( &b );
+    if ( shift > 0 ) {
+	mp_mul_2d( a, shift, &b );
+    } else if ( shift < 0 ) {
+	mp_div_2d( a, -shift, &b, NULL );
+    } else {
+	mp_copy( a, &b );
+    }
+    mp_add_d( &b, 1, &b );
+    mp_div_2d( &b, 1, &b, NULL );
+
+    /* Accumulate the result, one mp_digit at a time */
+
+    r = 0.0;
+    for ( i = b.used-1; i >= 0; --i ) {
+	r = ldexp( r, DIGIT_BIT ) + b.dp[i];
+    }
+    mp_clear( &b );
+
+    /* 
+     * Test for overflow, and scale the result to the correct number 
+     * of bits. 
+     */
+
+    if ( bits / log2FLT_RADIX > DBL_MAX_EXP ) {
+	errno = ERANGE;
+	r = HUGE_VAL;
+    } else {
+	r = ldexp( r, bits - mantBits );
+    }
+
+    /* Return the result with the appropriate sign. */
+
+    if ( a->sign == MP_ZPOS ) {
+	return r;
+    } else {
+	return -r;
+    }
+}		
 
 /*
  *----------------------------------------------------------------------

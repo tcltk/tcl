@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.50.2.1 2005/02/02 15:53:12 kennykb Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.50.2.2 2005/03/02 21:25:12 kennykb Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -618,7 +618,7 @@ which must store it or call \fBckfree\fR to ensure it is freed.  Again,
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_GetNativePath\fR are usually
 better functions to use for most purposes.
 .PP
-\fBTcl_FSNewNativePath\fR performs something like that reverse of the
+\fBTcl_FSNewNativePath\fR performs something like the reverse of the
 usual obj->path->nativerep conversions.  If some code retrieves a path
 in native form (from, e.g. \fBreadlink\fR or a native dialog), and that path
 is to be used at the Tcl level, then calling this function is an

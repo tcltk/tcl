@@ -12,12 +12,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.4 2005/02/02 15:53:26 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.5 2005/03/02 21:25:23 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
 #include "tclCompile.h"
+#include <float.h>
 
 /*
  * Table of all object types.
@@ -1667,15 +1668,24 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
 
     if (objPtr->typePtr == &tclDoubleType) {
 	*dblPtr = objPtr->internalRep.doubleValue;
-	return TCL_OK;
+	result = TCL_OK;
     } else if (objPtr->typePtr == &tclIntType) {
 	*dblPtr = objPtr->internalRep.longValue;
-	return TCL_OK;
+	result = TCL_OK;
+    } else {
+	result = SetDoubleFromAny(interp, objPtr);
+	if (result == TCL_OK) {
+	    *dblPtr = objPtr->internalRep.doubleValue;
+	}
     }
-
-    result = SetDoubleFromAny(interp, objPtr);
-    if (result == TCL_OK) {
-	*dblPtr = objPtr->internalRep.doubleValue;
+    if ( result == TCL_OK && _isnan( *dblPtr ) ) {
+	if ( interp != NULL ) {
+	    Tcl_SetObjResult
+		( interp,
+		  Tcl_NewStringObj( "floating point value is Not a Number",
+				    -1 ) );
+	}
+	result = TCL_ERROR;
     }
     return result;
 }

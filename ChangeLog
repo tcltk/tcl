@@ -1,5 +1,89 @@
+2005-03-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch] Merged with HEAD as of 2005-02-23.
+	
+	* generic/tclInt.h:		  
+	* generic/tclStrToD.c (Tcl_DoubleDigits):
+	* generic/tclUtil.c (Tcl_PrintDouble, TclPrecTraceProc):
+		Added Tcl_DoubleDigits to format 'double' numbers
+	        with the minimum number of significant digits to
+	        yield correct rounding.  Modified tcl_precision to
+	        accept 0 as a precision (meaning "minimum digits"), and
+	        made 0 the default.  [TIP #132]
+	* generic/tclObj.c:
+		Made NaN's throw an error in Tcl_GetDoubleFromObj.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
+		Added libtommath/bn_mp_init_set.c to the build.
+	* libtommath/tommath.h (mp_iseven): 
+		Fixed a bug that caused zero to test 'odd'.
+	* generic/tommath.h: 
+		Regenerated.
+	* tests/binary.test: 
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/scan.test:
+		Corrected a number of tests that depended on
+		tcl_precision, and removed the {eformat} condition
+		from tests that no longer require it.
+	* tests/util.test: 
+		Corrected a number of tests that depended on
+		tcl_precision, and removed the {eformat} condition
+		from tests that no longer require it.  Added a series
+		of tests for correct rounding in Tcl_PrintDouble. [TIP
+		#132].
+	
+2005-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/CrtChannel.3 (THREADACTIONPROC): Formatting fix. [Bug 1149605]
+
+2005-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFCmd.c (TraverseWinTree): use wcslen on wchar, not
+	Tcl_UniCharLen.
+
+2005-02-16  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/variable.n: fix for [Bug 1124160], variables are detected
+	by [info vars] but not by [info locals].
+	
+2005-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in: remove SHLIB_LD_FLAGS (only for AIX, inlined
+	* unix/tcl.m4:      into SHLIB_LD).  Combine AIX-* and AIX-5
+	* unix/configure:   branches in SC_CONFIG_CFLAGS.
+	Correct gcc builds for AIX-4+ and HP-UX-11.  autoconf-2.59 gen'd.
+
+2005-02-11  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/basic.test (basic-26.3): new test
+
+2005-02-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_EvalObjEx):
+	* tests/basic.test (basic-26.2): preserve the arguments passed to
+	TEOV in the pure-list branch, in case the list shimmers away. Fix
+	for [Bug 1119369], reported by Peter MacDonald.
+
+2005-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix for test failures introduced 
+	on 2005-01-17 [Bug 1119092]
+
+2005-02-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/binary.n: Made the documentation of sign bit masking and
+	[binary scan] consistent. [Bug 1117017]
+
+2005-02-08  David N. Welton  <davidw@dedasys.com>
+
+	* doc/CrtChannel.3: Typo: return->returns.
+
 2005-02-06  Kevin B. Kenny  <kennykb@acm.org>
 
+	[kennykb-numerics-branch]
+	
 	* generic/tclStrToD.c (TclStrToD, SafeLdExp):
 	    Added code to manage the FPU precision on gcc+x86.
 	    Enabled fast conversion of floats with small exponents
@@ -7,8 +91,24 @@
 	* tests/expr.test: Corrected test for the smallest representible
 	    value to the right IEEE values.
 	
+2005-02-06  David N. Welton  <davidw@dedasys.com>
+
+	* doc/Thread.3: One-word grammar fix.
+
+2005-02-05  David N. Welton  <davidw@dedasys.com>
+
+	* doc/Thread.3: Fixed sentence describing flags for
+	Tcl_CreateThread.
+
+	* doc/FileSystem.3: Cleaned up typo in Tcl_FSNewNativePath
+	documentation.
+
+	* generic/tclPathObj.c: Cleaned up typo in comment.
+
 2005-02-03  Kevin B. Kenny  <kennykb@acm.org>
 
+	[kennykb-numerics-branch]
+	
 	* generic/tclStrToD.c (TclStrToD, RefineResult, SafeLdExp):
 	    Added code to ensure that 'ldexp' is never called with
 	    a value that will underflow.
@@ -17,6 +117,17 @@
 	    current behaviour; plan is to change the specification of
 	    Tcl so that input conversion of doubles underflows silently.)
 	
+2005-02-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclProc.c (TclInitCompiledLocals):
+	Add check for type of the framePtr->procPtr->bodyPtr
+	passed to TclInitCompiledLocals and panic if
+	it is not the correct type. If the body of the proc
+	is not of the compiled byte code type then the
+	code will crash. This was discovered while tracking
+	down a crash in Itcl, that crash is fixed by
+	Itcl patch 1115085.
+
 2005-02-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]  Merged with HEAD as of today.
@@ -48,8 +159,8 @@
 	
 2005-02-01  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclExecute.c (TclCompEvalObj): Removed stray statement
-        left behind in prior code reorganization.
+	* generic/tclExecute.c (TclCompEvalObj): Removed stray statement
+	left behind in prior code reorganization.
 
 2005-01-31  Don Porter  <dgp@users.sourceforge.net>
 
