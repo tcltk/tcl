@@ -1,5 +1,8 @@
 2003-04-07  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompCmds.c (TclCompileIfCmd):  Corrected string limits of
+	arguments interpolated in error messages. [Bug 711371]
+
 	* generic/tclCmdMZ.c (TraceExecutionProc):  Added missing
 	Tcl_DiscardResult() call to avoid memory leak.
 
