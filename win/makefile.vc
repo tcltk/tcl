@@ -33,7 +33,6 @@
 #
 
 ROOT		= ..
-TMPDIR		= .
 TOOLS32		= c:\progra~1\devstudio\vc
 TOOLS32_rc	= c:\progra~1\devstudio\sharedide
 TOOLS16		= c:\msvc
@@ -41,8 +40,8 @@ TOOLS16		= c:\msvc
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE	= IX86
 
-# Comment the following line to compile with symbols
-NODEBUG=1
+# Set NODEBUG to 0 to compile with symbols
+NODEBUG = 1
 
 # uncomment one of the following lines to compile with TCL_MEM_DEBUG, 
 # TCL_MEM_DEBUG, or TCL_COMPILE_DEBUG
@@ -57,17 +56,25 @@ NODEBUG=1
 
 VERSION = 80
 
-TCLLIB		= tcl$(VERSION).lib
-TCLDLL		= tcl$(VERSION).dll
-TCLPLUGINLIB	= tcl$(VERSION)p.lib
-TCLPLUGINDLL	= tcl$(VERSION)p.dll
-TCL16DLL	= tcl16$(VERSION).dll
-TCLSH		= tclsh$(VERSION).exe
-TCLSHP		= tclshp$(VERSION).exe
+!IF "$(NODEBUG)" == "1"
+TMPDIR		= .\Release
+DBGX		=
+!ELSE
+TMPDIR		= .\Debug
+DBGX		= d
+!ENDIF
+
+TCLLIB		= tcl$(VERSION)$(DBGX).lib
+TCLDLL		= tcl$(VERSION)$(DBGX).dll
+TCLPLUGINLIB	= tcl$(VERSION)p$(DBGX).lib
+TCLPLUGINDLL	= tcl$(VERSION)p$(DBGX).dll
+TCL16DLL	= tcl16$(VERSION)$(DBGX).dll
+TCLSH		= tclsh$(VERSION)$(DBGX).exe
+TCLSHP		= tclshp$(VERSION)$(DBGX).exe
+TCLPIPEDLL	= tclpip$(VERSION)$(DBGX).dll
+TCLREGDLL	= tclreg$(VERSION)$(DBGX).dll
 TCLTEST		= tcltest.exe
 DUMPEXTS	= $(TMPDIR)\dumpexts.exe
-TCLPIPEDLL	= tclpip$(VERSION).dll
-TCLREGDLL	= tclreg$(VERSION).dll
 CAT16		= cat16.exe
 CAT32		= cat32.exe
 
@@ -166,7 +173,7 @@ DLL16_CFLAGS	= $(cdebug) $(cflags) $(include16) -ALw
 # Link flags
 ######################################################################
 
-!IFDEF NODEBUG
+!IF "$(NODEBUG)" == "1"
 ldebug = /RELEASE
 !ELSE
 ldebug = -debug:full -debugtype:cv
@@ -207,7 +214,7 @@ conlibsdll = $(libcdll) $(baselibs)
 # Compile flags
 ######################################################################
 
-!IFDEF NODEBUG
+!IF "$(NODEBUG)" == "1"
 cdebug = -Oti -Gs -GD
 !ELSE
 cdebug = -Z7 -Od -WX
@@ -240,16 +247,19 @@ cvarsdll   = $(cvarsmt) -D_DLL
 # Project specific targets
 ######################################################################
 
-release:    $(TCLSH) dlls
-dlls:	    $(TCL16DLL) $(TCLPIPEDLL) $(TCLREGDLL)
-all:	    $(TCLSH) dlls $(CAT16) $(CAT32) 
-tcltest:    $(TCLTEST) dlls $(CAT16) $(CAT32)
-plugin:	    $(TCLPLUGINDLL) $(TCLSHP)
-test:	    $(TCLTEST) dlls $(CAT16) $(CAT32) 
+release:    setup $(TCLSH) dlls
+dlls:	    setup $(TCL16DLL) $(TCLPIPEDLL) $(TCLREGDLL)
+all:	    setup $(TCLSH) dlls $(CAT16) $(CAT32) 
+tcltest:    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
+plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
+test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32) 
 	$(TCLTEST) <<
 		cd ../tests
 		source all
 <<
+
+setup:
+	md $(TMPDIR)
 
 $(DUMPEXTS): $(WINDIR)\winDumpExts.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
@@ -378,3 +388,4 @@ clean:
         -@del $(TMPDIR)\*.obj
         -@del $(TMPDIR)\*.res
         -@del $(TMPDIR)\*.def
+        -@del $(TMPDIR)\*.exe
