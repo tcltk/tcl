@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.5 1999/07/09 00:01:02 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.6 1999/07/12 21:03:48 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -137,7 +137,7 @@ namespace eval tcltest {
     # ::tcltest::testsDirectory.
 
     set oDir [pwd]
-    cd [file join [file dirname [info library]] tests]
+    catch {cd [file join [file dirname [info script]] .. .. tests]}
     variable testsDirectory [pwd]
     cd $oDir
 
