@@ -1,3 +1,20 @@
+2001-10-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/encoding/ebcdic.enc:
+	* tools/encoding/ebcdic.txt: EBCDIC charset mapping.
+	[Patch #219323] (nijtmans)
+
+	* library/encoding/tis-620.enc:
+	* tools/encoding/tis-620.txt: TIS-620 charset mapping.
+	[Patch #467423] (poonlap)
+
+	* tests/http.test: added removeFile for outdata
+
+	* tests/ioCmd.test: added catch around file removal, as Windows
+	file locking throws errors.
+
+	* tests/socket.test (socket-7.2): corrected to work on Win2K.
+
 2001-10-12  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* tests/compile.test: new tests for [Bug 467523]; they are only
@@ -5,23 +22,23 @@
 
 2001-10-11  Miguel Sofer  <msofer@users.sourceforge.net>
 	
-	* generic/tclLiteral.c: (TclReleaseLiteral) insured that
+	* generic/tclLiteral.c (TclReleaseLiteral): insured that
 	self-referential bytecodes are properly cleaned up on interpreter
 	deletion [Bug 467523] (Ronnie Brunner)
 
 2001-10-10  David Gravereaux  <davygrvy@pobox.com>
 
-        * win/tclWinPort.h:  #include <winsock2.h> needed to get moved
+	* win/tclWinPort.h:  #include <winsock2.h> needed to get moved
 	to after #include <windows.h> or wierd misunderstandings took
 	place when -D_WIN32_WINNT=0x0400 is set for outside code that
 	requires knowledge of Tcl innards.  General header macro magic
 	applied liberally...
 
-2001-10-10  Don Porter  <dgp@users.sourceforge.net>
+2001-10-10  Don Porter	<dgp@users.sourceforge.net>
 
-        * tests/unixInit.test:  Corrected restore of ::env(LANG).
+	* tests/unixInit.test:	Corrected restore of ::env(LANG).
 
-2001-10-09  Jeff Hobbs  <jeffh@ActiveState.com>
+2001-10-09  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* generic/tclFileName.c (Tcl_SplitPath): corrected mem leak
 	intro'd with VFS code where the result obj from Tcl_FSSplitPath
