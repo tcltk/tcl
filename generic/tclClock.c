@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.18 2003/01/14 17:51:16 hobbs Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.19 2003/02/01 19:48:23 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -293,9 +293,12 @@ FormatClock(interp, clockVal, useGMT, format)
     /*
      * This is a kludge for systems not having the timezone string in
      * struct tm.  No matter what was specified, they use the local
-     * timezone string.
+     * timezone string.  Since this kludge requires fiddling with the
+     * TZ environment variable, it will mess up if done on multiple
+     * threads at once.  Protect it with a the clock mutex.
      */
 
+    Tcl_MutexLock( &clockMutex );
     if (useGMT) {
         CONST char *varValue;
 
@@ -332,10 +335,16 @@ FormatClock(interp, clockVal, useGMT, format)
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer, bufSize);
 
+    /* If we haven't locked the clock mutex up above, lock it now. */
+
+#if defined(HAVE_TM_ZONE) || defined(WIN32)
     Tcl_MutexLock(&clockMutex);
+#endif
     result = TclpStrftime(buffer.string, (unsigned int) bufSize,
 	    Tcl_DStringValue(&uniBuffer), timeDataPtr, useGMT);
+#if defined(HAVE_TM_ZONE) || defined(WIN32)
     Tcl_MutexUnlock(&clockMutex);
+#endif
     Tcl_DStringFree(&uniBuffer);
 
 #if !defined(HAVE_TM_ZONE) && !defined(WIN32)
@@ -349,6 +358,7 @@ FormatClock(interp, clockVal, useGMT, format)
         timezone = savedTimeZone;
         tzset();
     }
+    Tcl_MutexUnlock( &clockMutex );
 #endif
 
     if (result == 0) {
