@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.86 2002/03/20 22:47:36 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.87 2002/05/24 21:19:05 dkf Exp $
 
 library tcl
 
@@ -28,12 +28,12 @@ hooks {tclPlat tclInt tclIntPlat}
 # to preserve backwards compatibility.
 
 declare 0 generic {
-    int Tcl_PkgProvideEx( Tcl_Interp* interp, CONST char* name,
-	    CONST char* version, ClientData clientData )
+    int Tcl_PkgProvideEx(Tcl_Interp* interp, CONST char* name,
+	    CONST char* version, ClientData clientData)
 }
 declare 1 generic {
-    CONST char * Tcl_PkgRequireEx( Tcl_Interp *interp, CONST char *name,
-	    CONST char *version, int exact, ClientData *clientDataPtr )
+    CONST char * Tcl_PkgRequireEx(Tcl_Interp *interp, CONST char *name,
+	    CONST char *version, int exact, ClientData *clientDataPtr)
 }
 declare 2 generic {
     void Tcl_Panic(CONST char *format, ...)
@@ -86,7 +86,7 @@ declare 15 generic {
     void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 }
 declare 16 generic {
-    void Tcl_AppendToObj( Tcl_Obj* objPtr, CONST char* bytes, int length )
+    void Tcl_AppendToObj(Tcl_Obj* objPtr, CONST char* bytes, int length)
 }
 declare 17 generic {
     Tcl_Obj * Tcl_ConcatObj(int objc, Tcl_Obj *CONST objv[])
@@ -248,7 +248,7 @@ declare 64 generic {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, int length)
 }
 declare 65 generic {
-    void Tcl_SetStringObj( Tcl_Obj* objPtr, CONST char* bytes, int length )
+    void Tcl_SetStringObj(Tcl_Obj* objPtr, CONST char* bytes, int length)
 }
 declare 66 generic {
     void Tcl_AddErrorInfo(Tcl_Interp *interp, CONST char *message)
@@ -936,10 +936,10 @@ declare 264 generic {
 	    Tcl_Obj *CONST objv[], CONST char *message)
 }
 declare 265 generic {
-    int Tcl_DumpActiveMemory( CONST char *fileName )
+    int Tcl_DumpActiveMemory(CONST char *fileName)
 }
 declare 266 generic {
-    void Tcl_ValidateAllMemory( CONST char *file, int line )
+    void Tcl_ValidateAllMemory(CONST char *file, int line)
 }
 
 declare 267 generic {
@@ -1698,26 +1698,22 @@ declare 481 generic {
 
 # New export due to TIP#73 
 declare 482 generic {
-    void Tcl_GetTime( Tcl_Time* timeBuf )
+    void Tcl_GetTime(Tcl_Time* timeBuf)
 }
 
 # New exports due to TIP#32
 
 declare 483 generic {
-    Tcl_Trace Tcl_CreateObjTrace( Tcl_Interp* interp,
-             	                  int level,
-	                          int flags,
-                                  Tcl_CmdObjTraceProc* objProc,
-                                  ClientData clientData,
-			          Tcl_CmdObjTraceDeleteProc* delProc )
+    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp* interp, int level, int flags,
+	    Tcl_CmdObjTraceProc* objProc, ClientData clientData,
+	    Tcl_CmdObjTraceDeleteProc* delProc)
 }
 declare 484 generic {
-    int Tcl_GetCommandInfoFromToken( Tcl_Command token,
-	                             Tcl_CmdInfo* infoPtr )
+    int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo* infoPtr)
 }
 declare 485 generic {
-    int Tcl_SetCommandInfoFromToken( Tcl_Command token,
-	                             CONST Tcl_CmdInfo* infoPtr )
+    int Tcl_SetCommandInfoFromToken(Tcl_Command token,
+	    CONST Tcl_CmdInfo* infoPtr)
 }
 
 ### New functions on 64-bit dev branch ###
@@ -1743,6 +1739,12 @@ declare 491 generic {
 }
 declare 492 generic {
     Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+}
+
+# New export due to TIP#91
+declare 493 generic {
+    Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc(
+	    Tcl_ChannelType *chanTypePtr)
 }
 
 ##############################################################################

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.123 2002/04/08 09:02:38 das Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.124 2002/05/24 21:19:05 dkf Exp $
  */
 
 #ifndef _TCL
@@ -1419,7 +1419,7 @@ typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
  */
 #define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
 #define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
-
+#define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
 
 /*
  * Typedefs for the various operations in a channel type:
@@ -1434,8 +1434,8 @@ typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, int toRead, int *errorCodePtr));
 typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
 		    CONST84 char *buf, int toWrite, int *errorCodePtr));
-typedef Tcl_WideInt (Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
-		    Tcl_WideInt offset, int mode, int *errorCodePtr));
+typedef int	(Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
+		    long offset, int mode, int *errorCodePtr));
 typedef int	(Tcl_DriverSetOptionProc) _ANSI_ARGS_((
 		    ClientData instanceData, Tcl_Interp *interp,
 	            CONST char *optionName, CONST char *value));
@@ -1451,6 +1451,9 @@ typedef int	(Tcl_DriverFlushProc) _ANSI_ARGS_((
 		    ClientData instanceData));
 typedef int	(Tcl_DriverHandlerProc) _ANSI_ARGS_((
 		    ClientData instanceData, int interestMask));
+typedef Tcl_WideInt (Tcl_DriverWideSeekProc) _ANSI_ARGS_((
+		    ClientData instanceData, Tcl_WideInt offset,
+		    int mode, int *errorCodePtr));
 
 
 /*
@@ -1526,13 +1529,22 @@ typedef struct Tcl_ChannelType {
 					/* Set blocking mode for the
 					 * raw channel. May be NULL. */
     /*
-     * Only valid in TCL_CHANNEL_VERSION_2 channels
+     * Only valid in TCL_CHANNEL_VERSION_2 channels or later
      */
     Tcl_DriverFlushProc *flushProc;	/* Procedure to call to flush a
 					 * channel. May be NULL. */
     Tcl_DriverHandlerProc *handlerProc;	/* Procedure to call to handle a
 					 * channel event.  This will be passed
 					 * up the stacked channel chain. */
+    /*
+     * Only valid in TCL_CHANNEL_VERSION_3 channels or later
+     */
+    Tcl_DriverWideSeekProc *wideSeekProc;
+					/* Procedure to call to seek
+					 * on the channel which can
+					 * handle 64-bit offsets. May be
+					 * NULL, and must be NULL if
+					 * seekProc is NULL. */
 } Tcl_ChannelType;
 
 /*
