@@ -1,3 +1,12 @@
+2000-05-27  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/info.test:
+	* doc/info.n:
+	* generic/tclIOUtil.c (Tcl_EvalFile):
+	* generic/tclCmdIL.c (InfoScriptCmd): added ability to set the
+	info script return value [info script ?newFileName?].  This will
+	be beneficial for virtual file system programs. [Bug: 4225]
+
 2000-05-26  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): reworked to operate in
