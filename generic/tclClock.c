@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.36 2004/10/29 15:39:05 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.37 2004/10/30 18:04:00 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -21,7 +21,7 @@
  * Windows has mktime.  The configurators do not check.
  */
 
-#ifdef WIN32
+#ifdef __WIN32__
 #define HAVE_MKTIME 1
 #endif
 

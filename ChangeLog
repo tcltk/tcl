@@ -1,3 +1,8 @@
+2004-10-30  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/clock.c: Replaced WIN32 macro with __WIN32__.
+	[Bug 1054357].  Thanks to David Gravereaux for the patch.
+	
 2004-10-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Correct reaction to errors in the
