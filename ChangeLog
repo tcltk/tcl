@@ -1,3 +1,20 @@
+2003-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/Makefile.in: Don't define TCL_DBGX
+	symbol for every compile. Instead, define
+	TCL_PIPE_DLL only when compiling tclWinPipe.c.
+	This will break other build systems, so
+	they will need to remove the TCL_DBGX define
+	and replace it with a define for TCL_PIPE_DLL.
+	* win/makefile.vc: Ditto.
+	* win/tclWinPipe.c (TclpCreateProcess):
+	Remove PREFIX_IDENT and DEBUG_IDENT from
+	top of file. Use TCL_PIPE_DLL passed in
+	from build env instead of trying to construct
+	the dll name from already defined symbols.
+	This approach is more flexible and better
+	in the long run.
+
 2003-07-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c (Tcl_GlobObjCmd):	[Bug 771840]
