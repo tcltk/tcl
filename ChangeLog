@@ -1,3 +1,8 @@
+1999-08-19  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c: changed Tcl_GetChannelNames* to use K&R
+	style headers (style guide, also pleases HP cc)
+
 1999-08-18  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/Eval.3: fixed doc on input args [Bug: 2114]
@@ -14,6 +19,7 @@
 	* generic/tclCompile.c: add TCL_TOKEN_VARIABLE to the part types
 	that cause differed compilation for exprs, to correct the expr
 	double-evaluation problem for vars.  Added test cases.
+	Related to [Bug: 732]
 
 	* unix/Makefile.in: changed the dependency structure so that
 	install-* is dependent on * (ie - install-binaries is dependent
