@@ -1,3 +1,7 @@
+2003-02-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/file.n: subcommand is 'file volumes' not 'file volume'
+
 2003-02-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c (MakeFsPathFromRelative): removed dead code
