@@ -1,5 +1,9 @@
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Updates for Tcl 8.4.8 release.
+
+2004-11-02  Don Porter  <dgp@users.sourceforge.net>
+
         * library/tcltest/tcltest.tcl:          Corrected some misleading
         * tests/tcltest.test (tcltest-26.1,2):  displays of ::errorInfo and
         ::errorCode information when the -setup, -body, and/or -cleanup scripts
