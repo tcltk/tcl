@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.11 1999/08/27 18:12:26 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.12 1999/08/31 21:43:46 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -353,8 +353,6 @@ proc ::tcltest::initConstraintsHook {} {}
 
 proc ::tcltest::initConstraints {} {
     global tcl_platform tcl_interactive tk_version
-
-    catch {unset ::tcltest::testConstraints}
 
     # The following trace procedure makes it so that we can safely refer to
     # non-existent members of the ::tcltest::testConstraints array without

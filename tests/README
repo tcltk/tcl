@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.6 1999/06/26 03:54:09 jenn Exp $
+RCS: @(#) $Id: README,v 1.7 1999/08/31 21:43:48 jenn Exp $
 
 Contents:
 ---------
@@ -25,9 +25,12 @@ You can run the tests in three ways:
     (b) type "tcltest <testFile> ?<option> <value>?
 	Command line options include:
 
+	-help                display usage information
+
 	-verbose <level>     set the level of verbosity to a substring
 			     of "bps".  See the "Test output" section
-			     for an explanation of this option.
+			     of the tcltest man page for an
+			     explanation of this option. 
 
 	-match <matchList>   only run tests that match one or more of
 			     the glob patterns in <matchList>
@@ -35,22 +38,55 @@ You can run the tests in three ways:
 	-skip <skipList>     do not run tests that match one or more
 			     of the glob patterns in <skipList>
 
-	-file <globPattern>  only source test files that match
-			     <globPattern> (relative to the "tests"
-			     directory).  This option only applies
-			     when you run the test suite with the
-			     "all.tcl" file.
+	-file <globPatternList>  
+		             only source test files that match one or
+		             more of the glob patterns in
+		             <globPatternList> (relative to the
+		             "tests" directory).  This option only
+		             applies when you run the test suite with
+		             the "all.tcl" file.
+
+	-notfile <globPatternList>  
+	                     do not source test files that match one
+	                     or more of the patterns in
+	                     <globPatternList> (relative to the
+	                     "tests" directory).  This option only
+	                     applies when you run the test suite with
+	                     the "all.tcl" file.
 
 	-constraints <list>  tests with any constraints in <list> will
 			     not be skipped.  Not that elements of
 			     <list> must exactly match the existing
 			     constraints.
 
+        -limitconstraints <bool>
+                             If 1, limit test runs to those tests that
+                             match the constraints listed using the
+                             -constraints flag.  Use of this flag
+                             requires use of the -constraints flag.
+                             The default value is 0.
+
+        -tmpdir <dirname>    put temporary files created by
+                             ::tcltest::makeFile and
+                             ::tcltest::makeDirectory in the named
+                             directory.  The default location is
+                             ::tcltest::workingDirectory.
+
+        -preservecore <level>
+                             check for core files.  If level is 0,
+                             check for core files only when
+                             cleanupTests is called from an all.tcl
+                             file.  If 1, also check at the end of
+                             every test command.  If 2, also save core
+                             files in ::tcltest::temporaryDirectory.
+                             The default level is 0.
+ 
     (c) start up tcltest in this directory, then "source" the test
         file (for example, type "source parse.test").  To run all
 	of the tests, type "source all.tcl".  To use the options in
 	interactive mode, you can set their corresponding tcltest
-	namespace variables after sourcing the defs.tcl file.
+	namespace variables after loading the tcltest package.
+	For example, some of the tcltest variables are:
 		  ::tcltest::match
 		  ::tcltest::skip
 		  ::tcltest::testConfig(nonPortable)
@@ -89,10 +125,6 @@ the constraints mechanism to skip those tests.
    VERBOSE    ::tcltest::verbose
    TESTS      ::tcltest::match
    testConfig ::tcltest::testConfig
-
-   The introduction of the "tcltest" namespace is a precursor to using
-   a "tcltest" package.  This next step will be part of a future Tcl
-   version.
 
 2) VERBOSE values are no longer numeric.  Please see the section above
    on "Test output" for the new usage of the ::tcltest::verbose variable.

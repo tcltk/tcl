@@ -1,3 +1,11 @@
+1999-08-31  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/tcltest.tcl:
+	* doc/tcltest.n:
+	* tests/README: Modified testConstraints variable so that it isn't
+	unset every time ::tcltest::initConstraints is called and cleaned up
+	documentation in the README file and the man page.
+
 1999-08-27  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl:  Modified tcltest so that
