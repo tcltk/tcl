@@ -9,7 +9,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.9 2000/09/07 14:27:46 poenitz Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.10 2001/02/18 19:05:24 kennykb Exp $
 '\" 
 .so man.macros
 .TH clock n 8.3 Tcl "Tcl Built-In Commands"
@@ -60,34 +60,87 @@ Full weekday name (Monday, Tuesday, etc.).
 Abbreviated month name (Jan, Feb, etc.).
 .IP \fB%B\fR
 Full month name.
+.VS 8.4
 .IP \fB%c\fR
-Locale specific date and time.
+Locale specific date and time.  The format for date and time
+in the default "C" locale is "%a %b %d %H:%M:%S %Y".
+.IP \fB%C\fR
+First two digits of the four-digit year (19 or 20).
+.VE 8.4
 .IP \fB%d\fR
 Day of month (01 - 31).
+.VS 8.4
+'\" Since the inclusion of compat/strftime.c, %D, %e, %h should work on all
+'\" platforms.
+.IP \fB%D\fR
+Date as %m/%d/%y.
+.IP \fB%e\fR
+Day of month (1 - 31), no leading zeros.
+.IP \fB%h\fR
+Abbreviated month name.
+.VE 8.4
 .IP \fB%H\fR
 Hour in 24-hour format (00 - 23).
+.VS 8.4
 .IP \fB%I\fR
-Hour in 12-hour format (00 - 12).
+Hour in 12-hour format (01 - 12).
+.VE 8.4
 .IP \fB%j\fR
 Day of year (001 - 366).
+.VS 8.4
+.IP \fB%k\fR
+Hour in 24-hour format, without leading zeros (0 - 23).
+.IP \fB%l\fR
+Hour in 12-hour format, without leading zeros (1 - 12).
+.VE 8.4
 .IP \fB%m\fR
 Month number (01 - 12).
 .IP \fB%M\fR
 Minute (00 - 59).
+.VS 8.4
+.IP \fB%n\fR
+Insert a newline.
+.VE 8.4
 .IP \fB%p\fR
 AM/PM indicator.
+.VS 8.4
+.IP \fB%r\fR
+Time in a locale-specific "meridian" format.  The "meridian"
+format in the default "C" locale is "%I:%M:%S %p".
+.IP \fB%R\fR
+Time as %H:%M.
+.IP \fB%s\fR
+Count of seconds since the epoch, expressed as a decimal integer.
+.VE 8.4
 .IP \fB%S\fR
 Seconds (00 - 59).
+.VS 8.4
+.IP \fB%t\fR
+Insert a tab.
+.IP \fB%T\fR
+Time as %H:%M:%S.
+.IP \fB%u\fR
+Weekday number (Monday = 1, Sunday = 7).
+.VE 8.4
 .IP \fB%U\fR
 Week of year (00 - 52), Sunday is the first day of the week.
+.VS 8.4
+.IP \fB%V\fR
+Week of year according to ISO-8601 rules.  Week 1 of a given
+year is the week containing 4 January.
 .IP \fB%w\fR
-Weekday number (Sunday = 0).
+Weekday number (Sunday = 0, Saturday = 6).
+.VE 8.4
 .IP \fB%W\fR
 Week of year (00 - 52), Monday is the first day of the week.
+.VS 8.4
 .IP \fB%x\fR
-Locale specific date format.
+Locale specific date format.  The format for a date in the default "C"
+locale is "%m/%d/%y".
 .IP \fB%X\fR
-Locale specific time format.
+Locale specific 24-hour time format.  The format for a 
+24-hour time in the default "C" locale is "%H:%M:%S".
+.VE 8.4
 .IP \fB%y\fR
 Year without century (00 - 99).
 .IP \fB%Y\fR
@@ -95,28 +148,33 @@ Year with century (e.g. 1990)
 .IP \fB%Z\fR
 Time zone name.
 .RE
+.VS 8.4
 .sp
-.RS
-In addition, the following field descriptors may be supported on some
-systems (e.g. Unix but not Windows):
-.IP \fB%D\fR
-Date as %m/%d/%y.
-.IP \fB%e\fR
-Day of month (1 - 31), no leading zeros.
-.IP \fB%h\fR
-Abbreviated month name.
-.IP \fB%n\fR
-Insert a newline.
-.IP \fB%r\fR
-Time as %I:%M:%S %p.
-.IP \fB%R\fR
-Time as %H:%M.
-.IP \fB%t\fR
-Insert a tab.
-.IP \fB%T\fR
-Time as %H:%M:%S.
-.RE
-.sp
+'\" All the field descriptors should be portable now that
+'\" compat/strftime.c is in place, with the possible exception
+'\" of the time zone name.
+'\".RS
+'\"In addition, the following field descriptors may be supported on some
+'\"systems (e.g. Unix but not Windows):
+'\".IP \fB%D\fR
+'\"Date as %m/%d/%y.
+'\".IP \fB%e\fR
+'\"Day of month (1 - 31), no leading zeros.
+'\".IP \fB%h\fR
+'\"Abbreviated month name.
+'\".IP \fB%n\fR
+'\"Insert a newline.
+'\".IP \fB%r\fR
+'\"Time as %I:%M:%S %p.
+'\".IP \fB%R\fR
+'\"Time as %H:%M.
+'\".IP \fB%t\fR
+'\"Insert a tab.
+'\".IP \fB%T\fR
+'\"Time as %H:%M:%S.
+'\".RE
+'\".sp
+.VE 8.4
 .RS
 If the \fB\-format\fR argument is not specified, the format string 
 "\fB%a %b %d %H:%M:%S %Z %Y\fR" is used.  If the \fB\-gmt\fR argument
