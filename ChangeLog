@@ -1,3 +1,10 @@
+2002-04-18  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c:
+	* tests/expr-old.test: fix for [Bug #542588] (Phil Ehrens), where
+	"too large integers" were reported as "floating-point value" in
+	[expr] error messages.
+
 2002-04-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tcl.m4: Enabled COFF as well as CV style debug info with
