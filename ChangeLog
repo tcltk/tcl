@@ -1,3 +1,8 @@
+2005-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4, win/configure: do not require cygpath in macros to
+	allow msys alone as an alternative.
+
 2005-03-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.h:	Move the TclInterpReady() declaration from
@@ -11,9 +16,9 @@
 
 2005-03-18  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclCompCmds.c (TclCompileIncrCmd):    Corrected checks
-        for immediate operand usage to permit leading space and sign
-        characters.  Restores more efficient bytecode for [incr x -1]
+	* generic/tclCompCmds.c (TclCompileIncrCmd):	Corrected checks
+	for immediate operand usage to permit leading space and sign
+	characters.  Restores more efficient bytecode for [incr x -1]
 	that got lost in the CONST string reforms of Tcl 8.4.  [Bug 1165671]
 
 	* generic/tclBasic.c (Tcl_EvalEx):	Restored recursion limit
@@ -51,9 +56,9 @@
 	
 2005-03-10  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/tclTrace.c (TclCheckInterpTraces):    Corrected mistaken
-        cast of ClientData to (TraceCommandInfo *) when not warranted.
-        Thanks to Yuri Victorovich for the report.  [Bug 1153871]
+	* generic/tclTrace.c (TclCheckInterpTraces):	Corrected mistaken
+	cast of ClientData to (TraceCommandInfo *) when not warranted.
+	Thanks to Yuri Victorovich for the report.  [Bug 1153871]
 	* generic/tcl.h:	Moved flag values TCL_TRACE_ENTER_EXEC and
 	* generic/tclInt.h:	TCL_TRACE_LEAVE_EXEC from public interface
 	into private.  Should be used only by internal workings of
