@@ -1,3 +1,12 @@
+1999-05-26    <redman@scriptic.com>
+
+	* generic/tclThreadTest.c: Fixed race condition in testthread
+	code that showed up in the WinNT test suite intermittently.
+
+	* win/tclWinSock.c: Fixed a hang in the WinNT socket driver, wake
+	up the socket thread every 100ms to check for events on the
+	sockets that did not wake up the thread (race condition).
+
 1999-05-24    <stanton@scriptics.com>
 
 	* tools/genStubs.tcl: Changed to allow a list of platforms instead
