@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkga.c,v 1.4.24.1 2003/07/15 23:54:53 dgp Exp $
+ * RCS: @(#) $Id: pkga.c,v 1.4.24.2 2003/07/16 02:16:14 mdejong Exp $
  */
 #include "tcl.h"
 
@@ -48,7 +48,7 @@ Pkga_EqObjCmd(dummy, interp, objc, objv)
     Tcl_Obj * CONST objv[];	/* Argument objects. */
 {
     int result;
-    CONST char *str1, str2;
+    CONST char *str1, *str2;
     int len1, len2, n;
 
     if (objc != 3) {
