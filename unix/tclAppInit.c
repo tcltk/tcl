@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.8 1999/12/02 02:03:32 redman Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.9 2000/04/18 23:06:39 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -72,33 +72,20 @@ main(argc, argv)
      * of rewriting this entire file.  The #if checks for that
      * #define and uses Tcl_AppInit if it doesn't exist.
      */
-    
+
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit    
 #endif
     extern int TCL_LOCAL_APPINIT _ANSI_ARGS_((Tcl_Interp *interp));
-    
+
     /*
      * The following #if block allows you to change how Tcl finds the startup
      * script, prime the library or encoding paths, fiddle with the argv,
      * etc., without needing to rewrite Tcl_Main()
      */
-    
+
 #ifdef TCL_LOCAL_MAIN_HOOK
     extern int TCL_LOCAL_MAIN_HOOK _ANSI_ARGS_((int *argc, char ***argv));
-#endif
-
-#ifdef TCL_TEST
-    /*
-     * Pass the build time location of the tcl library (to find init.tcl)
-     *
-     * This causes a 2400b "potential" mem leak, according to purify
-     * (the obj allocation that never seems to gets deallocated)
-     */
-    Tcl_Obj *path;
-    path = Tcl_NewStringObj(TCL_BUILDTIME_LIBRARY, -1);
-    TclSetLibraryPath(Tcl_NewListObj(1,&path));
-
 #endif
 
 #ifdef TCL_XT_TEST
@@ -110,7 +97,7 @@ main(argc, argv)
 #endif
 
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
-    
+
     return 0;			/* Needed only to prevent compiler warning. */
 }
 
