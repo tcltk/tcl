@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.99 2003/01/10 15:03:54 vincentdarley Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.100 2003/03/03 18:14:39 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -341,9 +341,17 @@ cflags = $(cflags) -QIA64_Bx
 !endif
 
 !if $(MSVCRT)
-crt = -MD$(DBGX)
+!if "$(DBGX)" == ""
+crt = -MD
 !else
-crt = -MT$(DBGX)
+crt = -MDd
+!endif
+!else
+!if "$(DBGX)" == ""
+crt = -MT
+!else
+crt = -MTd
+!endif
 !endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
