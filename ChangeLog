@@ -1,5 +1,7 @@
 2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* doc/socket.n: 
+
 	* library/encoding/gb2312-raw.enc (new): This is the original
 	gb2312.enc renamed to allow for it to still be used.  This is
 	needed by Tk (unix) because X fonts with gb2312* charsets really
