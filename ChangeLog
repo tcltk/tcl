@@ -1,4 +1,4 @@
-2003-10-06  Don Porter  <dgp@users.sourceforge.net>
+2003-10-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/io.test:	Corrected several tests that failed when paths
 	* tests/ioCmd.test:	included regexp-special chars. [Bug 775394]
