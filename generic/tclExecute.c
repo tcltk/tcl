@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.11 2005/03/20 13:28:12 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.12 2005/03/22 23:13:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -890,6 +890,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 
 	TclEmitInst0(INST_DONE, &compEnv);
 	TclInitByteCodeObj(objPtr, &compEnv);
+	TclOptimiseByteCode (interp, objPtr);
 	TclFreeCompileEnv(&compEnv);
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 #ifdef TCL_COMPILE_DEBUG
@@ -2190,6 +2191,11 @@ TclExecuteByteCode(interp, codePtr)
     case INST_JUMP:
 	TRACE(("%d => new pc %u\n", (int) opnd,
 		      (unsigned int)(pc + opnd - codePtr->codeStart)));
+	if (TclInstIsNoop(*pc)) {
+	    /* TESTING CODE - remove //// */
+	    fprintf(stderr, "%p: NOOP\n", codePtr);
+	    Tcl_Panic("");
+	}
 	pc += opnd;
 	goto jumpToInst;
 
@@ -4261,7 +4267,10 @@ TclExecuteByteCode(interp, codePtr)
 	     * Jump to the test at INST_FOREACH_STEP
 	     */
 
-	    pc += infoPtr->restartOffset + 1;
+	    infoPtr->restartPc = codePtr->codeStart +
+		codePtr->exceptArrayPtr[infoPtr->rangeIndex].codeOffset;
+	    pc = codePtr->codeStart +
+		codePtr->exceptArrayPtr[infoPtr->rangeIndex].continueOffset;
 	    goto jumpToInst;
 	}
 
@@ -4402,7 +4411,7 @@ TclExecuteByteCode(interp, codePtr)
 		   (continueLoop? "continue" : "exit")));
 
 	    if (continueLoop) {
-		pc -= infoPtr->restartOffset;
+		pc = infoPtr->restartPc;
 		goto jumpToInst;
 	    } else {
 #if ENABLE_PEEPHOLE
@@ -5079,7 +5088,7 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
 	    codeDeltaNext++;
 	}
 	codeOffset += delta;
-
+	
 	if ((unsigned int) (*codeLengthNext) == (unsigned int) 0xFF) {
 	    codeLengthNext++;
 	    codeLen = TclGetInt4AtPtr(codeLengthNext);
@@ -5120,7 +5129,10 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
 	    }
 	}
     }
-
+    codeDeltaNext = codePtr->codeDeltaStart;
+    srcDeltaNext  = codePtr->srcDeltaStart;
+    srcLengthNext = codePtr->srcLengthStart;
+    
     if (bestDist == INT_MAX) {
 	return NULL;
     }

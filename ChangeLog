@@ -1,3 +1,17 @@
+2005-03-22 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	First (very timid) post-compile optimisations - testing the basic
+	infrastructure. The only real optimisation at this time is that
+	loop exceptions are replaced with jumps were possible, and that
+	noops (jumps of width 1, inserted arbitrarily for testing
+	purposes) are effectively removed.
+	Slight change in the [foreach] compilation.
+	Fixed the bytecode debugger.
+
 2005-03-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.h (HP_STASH):	Corrections for LP64

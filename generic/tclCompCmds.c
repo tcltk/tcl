@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.9 2005/03/21 19:22:05 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.10 2005/03/22 23:12:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -694,6 +694,8 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      */
 
     range = TclBeginExceptRange(envPtr);
+    infoPtr->rangeIndex = range;
+    
     bodyOffset = (envPtr->codeNext - envPtr->codeStart);
 
     TclCompileCmdWord(interp, bodyTokenPtr+1,
@@ -709,8 +711,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
     envPtr->exceptArrayPtr[range].continueOffset
 	    = (envPtr->codeNext - envPtr->codeStart);
-    infoPtr->restartOffset = (envPtr->codeNext - envPtr->codeStart)
-	    - bodyOffset;    
     TclEmitInst1(INST_FOREACH_STEP, infoIndex, envPtr);
 
     /*
@@ -777,7 +777,8 @@ DupForeachInfo(clientData)
     dupPtr->numLists = numLists;
     dupPtr->firstValueTemp = srcPtr->firstValueTemp;
     dupPtr->loopCtTemp = srcPtr->loopCtTemp;
-
+    dupPtr->rangeIndex = srcPtr->rangeIndex;
+    
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
 	numVars = srcListPtr->numVars;
@@ -1308,7 +1309,7 @@ TclCompileLassignCmd(interp, parsePtr, envPtr)
     if (numWords > HPUINT_MAX) {
 	return TCL_OUT_LINE_COMPILE;
     }
-    
+
     /*
      * Generate code to push list being taken apart by [lassign].
      */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.18 2005/03/21 19:22:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.19 2005/03/22 23:12:58 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -461,7 +461,7 @@ typedef struct CompileEnv {
  * A PRECOMPILED bytecode struct is one that was generated from a compiled
  * image rather than implicitly compiled from source
  */
-#define TCL_BYTECODE_PRECOMPILED		0x0001
+#define TCL_BYTECODE_PRECOMPILED		0x01
 
 
 /*
@@ -469,7 +469,14 @@ typedef struct CompileEnv {
  * applied yet: this is indicated by the TCL_BYTECODE_RESOLVE_VARS flag.
  */
 
-#define TCL_BYTECODE_RESOLVE_VARS               0x0002
+#define TCL_BYTECODE_RESOLVE_VARS               0x02
+
+/*
+ * Flags indicating f the bytecode has been optimised
+ */
+
+#define TCL_BYTECODE_OPTIMISED                  0x04
+
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -650,7 +657,7 @@ typedef struct ByteCode {
 
 #define INST_JUMP_TRUE			24
 #define INST_JUMP_FALSE		        25
-#define TclIsJump(op) ((op<=25) && (op>=23))
+#define TclInstIsJump(op) ((op<=25) && (op>=23))
 
 #define FIRST_OPERATOR_INST             26
 
@@ -727,10 +734,12 @@ typedef struct ByteCode {
 
 typedef enum InstOperandType {
     OPERAND_NONE,
-    OPERAND_INT,		/* Four byte signed integer. */
-    OPERAND_UINT,		/* Four byte unsigned integer. */
-    OPERAND_IDX		        /* Four byte signed index (actually an
-				 * integer, but displayed differently.) */
+    OPERAND_INT,		/* Signed integer. */
+    OPERAND_UINT,		/* Unsigned integer. */
+    OPERAND_IDX,	        /* Signed index (actually an integer, but
+				 * displayed differently.) */ 
+    OPERAND_REL_OFFSET,         /* Offset from current pc. */
+    OPERAND_ABS_OFFSET          /* Offset from bytecode's codeStart */
 } InstOperandType;
 
 /*
@@ -896,8 +905,10 @@ typedef struct ForeachInfo {
 				 * holding the loop's iteration count. Used
 				 * to determine next value list element to
 				 * assign each loop var. */
-    int restartOffset;          /* Offset of the loop body, immediately after
-				 * the INST_FOREACH_START instruction. */
+    int rangeIndex;             /* Index of the bytecode's exception range
+				 * that stores this loop's data */
+    TclVMWord *restartPc;       /* Filled at run time, caches the range's
+				 * target pc for 'code'. */
     ForeachVarList *varLists[1];/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large
@@ -1005,6 +1016,8 @@ MODULE_SCOPE void	TclPrintObject _ANSI_ARGS_((FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars));
 MODULE_SCOPE void	TclPrintSource _ANSI_ARGS_((FILE *outFile,
 			    CONST char *string, int maxChars));
+MODULE_SCOPE void       TclOptimiseByteCode _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
 MODULE_SCOPE void	TclRegisterAuxDataType _ANSI_ARGS_((AuxDataType *typePtr));
 MODULE_SCOPE int	TclRegisterLiteral _ANSI_ARGS_((CompileEnv *envPtr,
 			    char *bytes, int length, int flags));
@@ -1029,6 +1042,8 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
+
+#define VM_ENABLE_OPTIMISER 1
 
 #define LITERAL_ON_HEAP    0x01
 #define LITERAL_NS_SCOPE   0x02
@@ -1094,7 +1109,25 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
         }\
     }
 
-	
+/*
+ * Macros for the optimiser (temp)
+ * What is a noop? 'INST_JUMP 1' - precise def depends on the engine model.
+ */
+
+#ifdef VM_USE_PACKED
+#define TclInstIsNoop(op) \
+    ((op) == ((((TclPSizedInt) INST_JUMP) << P_SHIFT) | 1))
+#define TclNegateInstAtPtr(p) *(p)^=1
+#else
+#define TclNegateInstAtPtr(p) (*(p)).inst^=1
+#define TclInstIsNoop(op) \
+    (((op).inst == INST_JUMP) && ((op).opnd.i == 1))
+#endif
+
+#define TclStoreNoopAtPtr(p) \
+    TclVMStoreInstAtPtr(INST_JUMP, (p));\
+    TclVMStoreOpndAtPtr(1, (p))
+
 /*
  * Macros to emit an instruction with integer operands.
  */
@@ -1151,7 +1184,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 
 #define TclEmitForwardJump(envPtr, inst, fixOffset) \
    (fixOffset) = (envPtr->codeNext - envPtr->codeStart);\
-   TclEmitInst0((inst), (envPtr))
+   TclEmitInst1((inst), 1, (envPtr)) /* a NOOP */
 
 #ifdef VM_USE_PACKED
 #define TclSetJumpTarget(envPtr, fixOffset) \

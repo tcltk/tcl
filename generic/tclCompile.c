@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.10 2005/03/20 13:28:10 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.11 2005/03/22 23:12:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -89,15 +89,15 @@ InstructionDesc tclInstructionTable[] = {
          /* Expand the list at stacktop: push its elements on the stack */
     {"invokeExpanded", 0, A, A, 0,   {OPERAND_NONE}},
          /* Invoke the command marked by the last 'expandStart' */
-    {"startCmd",     0, V, V, 1,   {OPERAND_UINT}},
+    {"startCmd",     0, V, V, 1,   {OPERAND_REL_OFFSET}},
         /* Start of bytecoded command: op is the length of the cmd's code */ 
 
 /* Opcodes for variable access. */
-    {"load",	    +1, A, A, 2,   {OPERAND_UINT, OPERAND_INT}},
+    {"load",	    +1, A, A, 2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Load variable according to the operands*/ 
-    {"store",        0, A, A, 1,   {OPERAND_UINT}},
+    {"store",        0, A, A, 2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Store at variable according to the operands */
-    {"incr",	     1, I, I, 2,   {OPERAND_UINT, OPERAND_INT}},
+    {"incr",	     1, I, I, 2,   {OPERAND_INT, OPERAND_UINT}},
 	/* Incr variable according to the operands */
     
 /* Opcodes for flow control and conditional branching (comparisons jump if
@@ -108,48 +108,48 @@ InstructionDesc tclInstructionTable[] = {
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
 
-    {"break",	   0, V, V, 0,   {OPERAND_NONE}},
+    {"break",	   0, V, V, 1,   {OPERAND_INT}},
 	/* Abort closest enclosing loop; if none, return TCL_BREAK code. */
-    {"continue",   0, V, V, 0,   {OPERAND_NONE}},
+    {"continue",   0, V, V, 1,   {OPERAND_INT}},
 	/* Skip to next iteration of closest enclosing loop; if none,
 	 * return TCL_CONTINUE code. */
-    {"foreach_start", 0, V, V, 1,   {OPERAND_UINT}},
+    {"foreach_start", 0, V, V, 1,   {OPERAND_INT}},
 	/* Initialize execution of a foreach loop. Operand is aux data index
 	 * of the ForeachInfo structure for the foreach command. */
-    {"foreach_step", +1, V, A, 1,   {OPERAND_UINT}},
+    {"foreach_step", +1, V, A, 1,   {OPERAND_INT}},
 	/* "Step" or begin next iteration of foreach loop. Push 0 if to
 	 *  terminate loop, else push 1. */
-    {"beginCatch",    0, V, V, 1,   {OPERAND_UINT}},
+    {"beginCatch",    0, V, V, 1,   {OPERAND_REL_OFFSET}},
 	/* Record start of catch with the operand's exception index.
 	 * Push the current stack depth onto a special catch stack. */
     {"endCatch",      0, V, I, 1,   {OPERAND_INT}},
 	/* End of last catch. Pop the bytecode interpreter's catch stack. */
 
-    {"jump",	      0, V, V, 1,   {OPERAND_INT}},
+    {"jump",	      0, V, V, 1,   {OPERAND_REL_OFFSET}},
 	/* Jump relative to (pc + op4) */
-    {"jumpTrue",     -1, B, V, 1,   {OPERAND_INT}},
+    {"jumpTrue",     -1, B, V, 1,   {OPERAND_REL_OFFSET}},
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    {"jumpFalse",    -1, B, V, 1,   {OPERAND_INT}},
+    {"jumpFalse",    -1, B, V, 1,   {OPERAND_REL_OFFSET}},
 	/* Jump relative to (pc + op4) if stktop expr object is false */
-    {"eq",	     -1, N, B, 0,   {OPERAND_NONE}},
+    {"eq",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Equal:	push (stknext == stktop) */
-    {"neq",	     -1, N, B, 0,   {OPERAND_NONE}},
+    {"neq",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Not equal:	push (stknext != stktop) */
-    {"lt",	     -1, N, B, 0,   {OPERAND_NONE}},
+    {"lt",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Less:	push (stknext < stktop) */
-    {"ge",	     -1, N, B, 0,   {OPERAND_NONE}},
+    {"ge",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Logical or:	push (stknext || stktop) */
-    {"gt",	     -1, N, B, 0,   {OPERAND_NONE}},
+    {"gt",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Greater:	push (stknext || stktop) */
-    {"le",	     -1, N, B, 0,   {OPERAND_NONE}},
+    {"le",	     -1, N, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Logical or:	push (stknext || stktop) */
-    {"streq",	     -1, A, B, 0,   {OPERAND_NONE}},
+    {"streq",	     -1, A, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Str Equal:	push (stknext eq stktop) */
-    {"strneq",	     -1, A, B, 0,   {OPERAND_NONE}},
+    {"strneq",	     -1, A, B, 1,   {OPERAND_REL_OFFSET}},
 	/* Str !Equal:	push (stknext neq stktop) */
-    {"listIn",	     -1, A, B, 0,   {OPERAND_NONE}},
+    {"listIn",	     -1, A, B, 1,   {OPERAND_REL_OFFSET}},
 	/* List containment: push [lsearch stktop stknext]>=0) */
-    {"listNotIn",    -1, A, B, 0,   {OPERAND_NONE}},
+    {"listNotIn",    -1, A, B, 1,   {OPERAND_REL_OFFSET}},
 	/* List negated containment: push [lsearch stktop stknext]<0) */
 
 /* Opcodes for the remaining operators */
@@ -255,6 +255,7 @@ static void		RecordByteCodeStats _ANSI_ARGS_((
 static int		SetByteCodeFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 
+
 /*
  * The structure below defines the bytecode Tcl object type by
  * means of procedures that can be invoked by generic object code.
@@ -334,6 +335,7 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
 
     TclEmitInst0(INST_DONE, &compEnv);
 
+    
     /*
      * Invoke the compilation hook procedure if one exists.
      */
@@ -357,7 +359,32 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
         TclPrintByteCodeObj(interp, objPtr);
     }
 #endif /* TCL_COMPILE_DEBUG */
-	
+
+#if VM_ENABLE_OPTIMISER
+    /*
+     * Invoke the bytecode optimiser.
+     *
+     * NOTES:
+     *   - should this be invoked before, after or instead of the optional hook?
+     *   - for now this is enabled at compile time; may be better to control
+     *     it at the script level - either with a global variable or a new
+     *     command. 
+     */
+
+    TclOptimiseByteCode(interp, objPtr);
+
+#ifdef TCL_COMPILE_DEBUG
+    /*
+     * Print the optimised bytecodes too
+     */
+    
+    if (tclTraceCompile >= 2) {
+        TclPrintByteCodeObj(interp, objPtr);
+	fprintf(stdout, " --- Optimised Bytecode ---\n");
+    }
+#endif /* TCL_COMPILE_DEBUG */
+#endif 
+
     if (result != TCL_OK) {
 	/*
 	 * Handle any error from the hookProc
@@ -1038,7 +1065,9 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			     */
 
 			    if (savedCodeNext != 0) {
-				TclEmitInst1(INST_START_CMD, 0, envPtr);				
+				TclEmitInst1(INST_START_CMD, 0, envPtr);
+				/* TESTING CODE: remove //// */
+				TclEmitInst1(INST_JUMP, 1,envPtr);
 			    }
 			    
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
@@ -2893,34 +2922,49 @@ TclPrintInstruction(codePtr, pc)
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
 
     if (instDesc->numOperands == 2) {
-	HP_EXTRACT(opnd, opnds[1], opnds[0]);
+	HP_EXTRACT(opnd, opnds[0], opnds[1]);
     } else {
 	opnds[0] = opnd;
     }
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	opnd = opnds[i];
 	switch (instDesc->opTypes[i]) {
+        case OPERAND_REL_OFFSET:
+	    fprintf(stdout, "%d  	# pc %u", (int) opnd,
+		    (unsigned)(pcOffset + opnd));
+	    break;	    
         case OPERAND_INT:
-	    if ((i == 0) && ((opCode == INST_JUMP)
-			     || (opCode == INST_JUMP_TRUE)
-		             || (opCode == INST_JUMP_FALSE))) {
-		fprintf(stdout, "%d  	# pc %u", (int) opnd,
-			(unsigned)(pcOffset + opnd));
-	    } else {
-		fprintf(stdout, "%d ", (int) opnd);
-	    }
+		if ((opCode == INST_STORE) || (opCode == INST_LOAD)) {
+		    fprintf(stdout, "0x%x ", (int) opnd);
+		    if (opnd & TCL_LIST_ELEMENT) {
+			fprintf(stdout, "(lappend) ");
+		    } else if (opnd & TCL_APPEND_VALUE) {
+			fprintf(stdout, "(append) ");
+		    } else {
+			fprintf(stdout, "(set) ");
+		    }
+		} else {
+		    fprintf(stdout, "%d ", (int) opnd);
+		}
 	    break;
 	case OPERAND_UINT:
 	    if (opCode == INST_PUSH) {
 		fprintf(stdout, "%u  	# ", (unsigned) opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
-	    } else if ((i == 0) && (opCode == INST_LOAD) && procPtr) {
-		int localCt = procPtr->numCompiledLocals;
-		CompiledLocal *localPtr = procPtr->firstLocalPtr;
-		if (opnds[i] == HPUINT_MAX) {
+	    } else if ((opCode >= INST_LOAD) && (opCode <= INST_INCR)) {
+		int localCt;
+		CompiledLocal *localPtr;
+		if ((unsigned int) opnd == (unsigned int) HPUINT_MAX) {
+		    fprintf(stdout, "%u #stack var ", (unsigned int) opnd);
 		    break;
 		}
-		if (opnds[i] >= localCt) {
+		if (!procPtr) {
+		    Tcl_Panic("TclPrintInstruction: local var index %u (%u locals) outside of a proc.\n",
+			     (unsigned int) opnd, localCt);
+		}
+		localCt = procPtr->numCompiledLocals;
+		localPtr = procPtr->firstLocalPtr;
+		if (opnd >= localCt) {
 		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
 		}
@@ -3100,3 +3144,414 @@ RecordByteCodeStats(codePtr)
     statsPtr->currentCmdMapBytes += (double) codePtr->numCmdLocBytes;
 }
 #endif /* TCL_COMPILE_STATS */
+
+
+#if VM_ENABLE_OPTIMISER
+/****************************************************************************
+ *  This section devoted to the bytecode optimiser. It does not conform fully
+ *  to Tcl's engineering standards while it is evolving.
+ *
+ * NOTICE: this code is very suboptimal, the optimiser itself can use some
+ * optimisation. Actually, it probably needs a redesign using better data
+ * structures to represent the call graph. As it is, the optimiser performs
+ * way too many passes over the bytecode.
+ *
+ * IMPLEMENTATION NOTES AND OPTIONS
+ *
+ *   * It is an open question if it is better to optimise the ByteCode (as here)
+ *     or rather the CompileEnv. Pro/con of doing it on the bytecode as opposed
+ *     to the compileEnv:
+ *       + can do it also on precompiled code
+ *       + can call it right before execution by TEBC (if the bytecode flag is
+ *         not set) - ie, rebrand it as part of the engine and not the
+ *         compiler. May be interesting to have different engines share a
+ *         compiler. 
+ *       + can replace relative with absolute jumps, as the definitive in-mem
+ *         address of the targets is known
+ *       + can replace instruction numbers with jump-target pointers (eg using
+ *         gcc's 'labels as values')
+ *       - resizing the structure is more expensive: need to realloc, instead
+ *         of just creating it at the right size.
+ *     The main difference (apart from almost trivial interface changes) is in
+ *     how the command location data is stored - and hence adapted.
+ *
+ *   * Note that INST_START_CMD is a pain - it blocks inter-command
+ *     optimisations. One alternative would be to add a 'command-start' flag
+ *     to the instructions to replace it. Such flags can be fitted for all
+ *     models (as long as the instruction count is <128, or else by shrinking 
+ *     somewhat the max opnd size). What is the cost of checking/clearing the
+ *     flag bit at every instruction? See also patch at [Bug 926164]
+ *
+ * ////
+ ****************************************************************************/
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclOptimiseByteCode --
+ *
+ *	Rewrites the bytecode performing various optimisations that cannot be 
+ *	done easily by the individual command compilers. 
+ *
+ * Results:
+ *	Optimised ByteCode struct..
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+static ByteCode * OptimiseByteCodeTmp _ANSI_ARGS_((ByteCode *codePtr));
+
+void
+TclOptimiseByteCode (interp, objPtr)
+    Tcl_Interp*interp;
+    Tcl_Obj *objPtr;
+{
+    ByteCode *codePtr;		/* The bytecode sequence to interpret. */
+
+    if (objPtr->typePtr != &tclByteCodeType) {
+	return;
+    }
+    codePtr = OptimiseByteCodeTmp((ByteCode *)
+	    objPtr->internalRep.otherValuePtr);
+    
+    /*
+     * Should we realloc the Bytecode struct if it shrunk noticeably? Or copy
+     * to a newly malloced one?
+     * Test later on - note that it needs reaccomodating the internal pointers
+     * too, as for the time being we just leave the empty space in the struct
+     * and do not move everything forward. Note that the interface is already
+     * prepared for this.
+     */
+     
+    codePtr->flags &= TCL_BYTECODE_OPTIMISED;
+    objPtr->internalRep.otherValuePtr = (VOID *) codePtr;
+    return;
+}
+
+
+static ByteCode *OptCleanupByteCode _ANSI_ARGS_((ByteCode *codePtr, int *auxCount));
+static void      OptInitCounts _ANSI_ARGS_((ByteCode *codePtr, int *auxCount));
+
+static ByteCode *
+OptimiseByteCodeTmp(codePtr)
+    ByteCode *codePtr;
+#if 0
+{
+    return codePtr;
+}
+#else
+{
+    int *auxCount;  /* Aux array: holds the count predecessors for each
+		     * instruction - 0 means single predecessor, negative
+		     * values indicate unreachable code. */
+
+    int i, pos;
+    TclVMWord *pc, *target;
+    TclVMWord *codeStart = codePtr->codeStart;
+    TclPSizedInt opnd;
+    int inst;
+    
+    if (!codePtr->numCodeWords) {
+	return codePtr;
+    }
+    
+    /*
+     * Alloc the auxCount array and init to 0; we allocate one more than
+     * necessary to simplify the algorithm.
+     */
+    
+    auxCount = (int *) ckalloc((codePtr->numCodeWords+1) * sizeof(int));
+    memset((char *) auxCount, '\0',
+	    codePtr->numCodeWords * sizeof(int));
+
+    /*
+     * Perform a first pass to initialise the auxCount array, rewriting loop
+     * exceptions to jumps where possible.
+     */
+    
+    OptInitCounts(codePtr, auxCount);
+    
+    /*
+     * Finally remove all unreachable code and noops.
+     */
+
+    codePtr = OptCleanupByteCode(codePtr, auxCount);
+    ckfree((char *) auxCount);
+    return codePtr;
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OptInitCounts --
+ *
+ *      Initialise the auxCount array to contain the number of predecessors of
+ *      each word in the bytecode stream (0-based counting). Exception range
+ *      targets (break, continue, start and end words for 'foreach' and
+ *      'catch' ranges) are protected by overcounting.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Loop exceptions (break, continue) are replaced with jumps wherever
+ *      possible.
+ * Remarks:
+ *      A good part (if not all) of this job could have been done at compile
+ *      time, saving one pass here.
+ */
+
+static void
+OptInitCounts(codePtr, auxCount)
+    ByteCode *codePtr;
+    int *auxCount;
+{
+    int i, pos;
+    TclVMWord *pc;
+    TclVMWord *codeStart = codePtr->codeStart;
+    TclPSizedInt opnd;
+    int inst;
+
+    /*
+     * Insure that words that may *seem* unreachable but are not are
+     * processed correctly. These are the different targets for loop ranges,
+     * INST_END_CATCH (as long as the corresponding INST_BEGIN_CATCH is
+     * reachable), INST_FOREACH_STEP (as long as INST_FOREACH_START is
+     * reachable, but this is kept alive as the 'continue' target for the loop
+     * range).
+     *
+     * First handle loop exception ranges.
+     */
+
+    for (i = 0; i < codePtr->numExceptRanges; i++) {
+	pos = codePtr->exceptArrayPtr[i].breakOffset;
+	if (pos!= -1) {
+	    auxCount[pos]++;
+	}
+	pos = codePtr->exceptArrayPtr[i].continueOffset;
+	if (pos!= -1) {
+	    auxCount[pos]++;
+	}
+	pos = codePtr->exceptArrayPtr[i].codeOffset;
+	auxCount[pos]++;
+    }
+
+    /*
+     * Do a first pass to correct the predecessor count stored in auxCount.
+     * In this pass we also insure reachability od INST_END_CATCH, and rewrite
+     * loop exceptions to jumps wherever possible. 
+     */
+    
+    pc = codeStart;
+    for (pos = 0; pos < codePtr->numCodeWords; pos++, pc++) {
+	pc = codeStart + pos;
+	TclVMGetInstAndOpAtPtr(pc, inst, opnd);
+	switch (inst) {
+	    case INST_JUMP:
+		auxCount[pos+1]--;
+		auxCount[pos+opnd]++;
+		break;
+	    case INST_JUMP_TRUE:
+	    case INST_JUMP_FALSE:
+		auxCount[pos+opnd]++;
+		break;
+	    case INST_BREAK:
+		auxCount[pos+1]--;
+		if (opnd > 0) {
+		    opnd = codePtr->exceptArrayPtr[opnd].breakOffset;
+		    auxCount[opnd]++;
+		    TclVMStoreWordAtPtr(INST_JUMP, (opnd-pos), pc);
+		}
+		break;
+	    case INST_CONTINUE:
+		auxCount[pos+1]--;
+		if ((opnd > 0)
+			&& (codePtr->exceptArrayPtr[opnd].continueOffset != -1)) {
+		    opnd = codePtr->exceptArrayPtr[opnd].continueOffset;
+		    auxCount[opnd]++;
+		    TclVMStoreWordAtPtr(INST_JUMP, (opnd-pos), pc);
+		}
+		break;		
+	    case INST_DONE:
+		auxCount[pos+1]--;
+		break;
+	    case INST_BEGIN_CATCH:
+		auxCount[pos]++;
+		auxCount[pos+opnd]++;
+		break;
+	    case INST_FOREACH_START:
+		auxCount[pos]++;
+		{
+		    ForeachInfo *infoPtr = (ForeachInfo *)
+			codePtr->auxDataArrayPtr[opnd].clientData;
+		    int stepPos = 
+			codePtr->exceptArrayPtr[infoPtr->rangeIndex].continueOffset;
+
+		    auxCount[stepPos]++;
+		}
+		break;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OptCleanupByteCode --
+ *
+ *      Removes all NOOPs (ie 1-jumps): eliminates the instructions, updates
+ *      jump targets and exception ranges, fixes the codeDelta and codeLength
+ *      data.
+ *      The code assumes 
+ *
+ * Results:
+ *      Shortened ByteCode stream, without noops.
+ *
+ * Side effects:
+ *      Workspace array auxCount[] is overwritten.
+ */
+
+static ByteCode *
+OptCleanupByteCode(codePtr, auxCount)
+    ByteCode *codePtr;
+    int *auxCount;      /* array containing the predecessorcount for each
+			 * word - negative means 'unreachable'. Will be
+			 * rewritten. */
+			 
+{
+    TclVMWord *pc;
+    int i, j, noops, opCode, opnd;
+    unsigned char *pr, *pw, *qr, *qw;
+    int oldstart;
+	
+    /*
+     * Compute the shifts after the NOOPs and unreachable codes 
+     * are removed. This loop can not be done simultaneously with the 
+     * updating of the code: all new positions have to be computed
+     * before updating jump targets.
+     *
+     * Store the number of noops previous to pos in auxCount[pos]; this
+     * indicates how many positions that code will be shifted back.
+     *
+     * Note: it is conceivable that an intruction becomes inaccessible later
+     * when updating the exception ranges - ie, one that only kept alive by
+     * the refCount corresponding to the range, and where the target moved. We
+     * will just leave that noop in the code, the only harm it does is that it
+     * takes some place.
+     */
+
+    noops = 0;
+    pc = codePtr->codeStart;
+    for (i = 0; i < codePtr->numCodeWords; pc++, i++) {
+	if (auxCount[i]<0) {
+	    /* unreachable code */
+	    TclStoreNoopAtPtr(pc);
+	}
+	auxCount[i] = -noops;
+	if (TclInstIsNoop(*pc)) {
+	    noops++;
+	}
+    }
+
+    if (!noops) {
+	return codePtr;
+    }
+
+    /*
+     * Update all exception ranges. We assume that all jumps have already been
+     * followed before us being called.
+     */
+
+    for (i = 0; i < codePtr->numExceptRanges; i++) {
+	ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
+
+	rangePtr->numCodeWords += - auxCount[rangePtr->codeOffset] +
+	        auxCount[rangePtr->codeOffset + rangePtr->numCodeWords];
+	rangePtr->codeOffset += auxCount[rangePtr->codeOffset];
+	if (rangePtr->breakOffset >= 0) {
+	    rangePtr->breakOffset += auxCount[rangePtr->breakOffset];
+	}
+	if (rangePtr->continueOffset >= 0) {
+	    rangePtr->continueOffset += auxCount[rangePtr->continueOffset];
+	}
+    }
+
+    /*
+     * Move up all code, update jump targets. Note that an in-place update is
+     * possible as the code is guaranteed not to become longer.
+     */
+
+    pc = codePtr->codeStart;
+    for (i = 0; i < codePtr->numCodeWords; pc++, i++) {
+	TclVMGetInstAndOpAtPtr(pc, opCode, opnd);
+
+	if (TclInstIsNoop(*pc)) {
+	    continue;
+	} else if (TclInstIsJump(opCode)
+		|| (opCode == INST_BEGIN_CATCH)
+		|| (opCode == INST_START_CMD)) {
+	    if (opnd != 1) {
+		opnd += (auxCount[(i+opnd)] - auxCount[i]);
+	    }
+	}
+	TclVMStoreWordAtPtr(opCode, opnd, (pc + auxCount[i]));
+    }
+    codePtr->numCodeWords -= noops;
+
+    /*
+     * Regen codeDelta/codeLen
+     */
+
+    pr = pw = codePtr->codeDeltaStart;
+    qr = qw = codePtr->codeLengthStart;
+
+    oldstart = 0;
+    for (j = 0; j < codePtr->numCommands; j++) {
+	unsigned int delta, len, newstart; 
+
+	delta = TclGetUInt1AtPtr(pr++);
+	if (delta == (unsigned int) 0xFF) {
+	    delta = TclGetInt4AtPtr(pr);
+	    pr += 4;
+	}
+	newstart = oldstart + delta;
+	delta += auxCount[newstart] - auxCount[oldstart];
+	if (delta <= 127) {
+	    TclStoreInt1AtPtr(delta, pw++);
+	} else {
+	    TclStoreInt1AtPtr(0xFF, pw++);
+	    TclStoreInt4AtPtr(delta, pw);
+	    pw += 4;
+	}
+
+	len = TclGetUInt1AtPtr(qr++);
+	if (len == (unsigned int) 0xFF) {
+	    len = TclGetInt4AtPtr(qr);
+	    qr += 4;	    
+	}
+	len += auxCount[newstart + len] - auxCount[newstart];
+	if (len <= 127) {
+	    TclStoreInt1AtPtr(len, qw++);
+	} else {
+	    TclStoreInt1AtPtr(0xFF, qw++);
+	    TclStoreInt4AtPtr(len, qw);
+	    qw += 4;
+	}
+	oldstart = newstart;
+    }    
+
+    /*
+     * Should we move all unused space to the back, and realloc? If the
+     * optimisation-shrinkage is important, could be interesting.
+     */
+
+    return codePtr;
+}
+    
+
+
+#endif /* VM_ENABLE_OPTIMISER */
+    
