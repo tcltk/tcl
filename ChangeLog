@@ -1,5 +1,8 @@
 2002-11-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* library/init.tcl:         code cleanup to reduce use of
+	* library/opt/optparse.tcl: string compare
+
 	* tests/interp.test: interp-14.4
 	* generic/tclInterp.c (TclPreventAliasLoop): prevent seg fault
 	when creating an alias command over the interp name. [Bug #641195]
