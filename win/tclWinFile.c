@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.57 2003/12/12 17:09:27 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.58 2003/12/16 02:55:38 davygrvy Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2505,12 +2505,20 @@ TclpUtime(pathPtr, tval)
     struct utimbuf *tval;  /* New modification date structure */
 {
     int res;
+#ifndef __BORLANDC__
     /* 
      * Windows uses a slightly different structure name and, possibly,
      * contents, so we have to copy the information over
      */
     struct _utimbuf buf;
-    
+#else
+    /*
+     * Borland's compiler does not, but we still copy the content into a
+     * local variable using the 'generic' name
+     */
+    struct utimbuf buf;
+#endif
+
     buf.actime = tval->actime;
     buf.modtime = tval->modtime;
     

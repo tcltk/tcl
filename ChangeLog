@@ -1,8 +1,16 @@
 2003-12-15  David Gravereaux <davygrvy@pobox.com>
 
-	* wintclsh.rc: Slight modification to the STRINGIFY macro to
-	support Borland's rc tool.  From Helmut Giese
-	<hgiese@ratiosoft.com>.
+	* win/tcl.rc:
+	* win/tclsh.rc: Slight modification to the STRINGIFY macro to
+	support Borland's rc tool.
+
+	* win/tclWinFile.c (TclpUtime) : utimbuf struct not a problem 
+	with Borland.
+
+	* win/tclWinTime.c (TclpGetDate) : Borland's localtime() has
+	a slight behavioral difference.
+
+	From Helmut Giese <hgiese@ratiosoft.com> [Patch 758097].
 
 2003-12-14  David Gravereaux <davygrvy@pobox.com>
 
