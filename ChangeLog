@@ -1,5 +1,8 @@
 2003-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* library/safe.tcl (FileInAccessPath): normalize paths before
+	comparison. [Bug 759607] (myers)
+
 	* unix/tclUnixNotfy.c (NotifierThreadProc): correct size of found
 	and word vars from int to long. [Bug 767578] (hgo)
 
