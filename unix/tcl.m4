@@ -2079,27 +2079,28 @@ AC_DEFUN(SC_BUGGY_STRTOD, [
     AC_CHECK_FUNC(strtod, tcl_strtod=1, tcl_strtod=0)
     if test "$tcl_strtod" = 1; then
 	AC_MSG_CHECKING([for Solaris2.4/Tru64 strtod bugs])
-	AC_TRY_RUN([
-	    extern double strtod();
-	    int main() {
-		char *infString="Inf", *nanString="NaN", *spaceString=" ";
-		char *term;
-		double value;
-		value = strtod(infString, &term);
-		if ((term != infString) && (term[-1] == 0)) {
-		    exit(1);
-		}
-		value = strtod(nanString, &term);
-		if ((term != nanString) && (term[-1] == 0)) {
-		    exit(1);
-		}
-		value = strtod(spaceString, &term);
-		if (term == (spaceString+1)) {
-		    exit(1);
-		}
-		exit(0);
-	    }], tcl_ok=1, tcl_ok=0, tcl_ok=0)
-	if test "$tcl_ok" = 1; then
+	AC_CACHE_VAL(tcl_cv_strtod_buggy,[
+	    AC_TRY_RUN([
+		extern double strtod();
+		int main() {
+		    char *infString="Inf", *nanString="NaN", *spaceString=" ";
+		    char *term;
+		    double value;
+		    value = strtod(infString, &term);
+		    if ((term != infString) && (term[-1] == 0)) {
+			exit(1);
+		    }
+		    value = strtod(nanString, &term);
+		    if ((term != nanString) && (term[-1] == 0)) {
+			exit(1);
+		    }
+		    value = strtod(spaceString, &term);
+		    if (term == (spaceString+1)) {
+			exit(1);
+		    }
+		    exit(0);
+		}], tcl_cv_strtod_buggy=1, tcl_cv_strtod_buggy=0, tcl_cv_strtod_buggy=0)])
+	if test "$tcl_cv_strtod_buggy" = 1; then
 	    AC_MSG_RESULT(ok)
 	else
 	    AC_MSG_RESULT(buggy)
