@@ -1,11 +1,11 @@
 2003-11-21  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.4.5 TAGGED FOR RELEASE ***
+
 	* tests/windFCmd.test (winFCmd-16.10):  Corrected failure to
 	initialize variable $dd that caused test suite failure.
 
 2003-11-20  Miguel Sofer <msofer@users.sf.net>
-
-	*** 8.4.5 TAGGED FOR RELEASE ***
 
 	* generic/tclVar.c: fix flag bit collision between
 	LOOKUP_FOR_UPVAR and TCL_PARSE_PART1 (deprecated) [Bug 835020] 
