@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.24 2002/01/26 01:10:08 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.25 2002/11/12 02:26:15 hobbs Exp $ */
 
 #include "tclInt.h"
 
@@ -373,8 +373,22 @@ Tcl_GetCharLength(objPtr)
      */
     
     if (stringPtr->numChars == -1) {
+	register int i = 0;
+	register unsigned char *str = (unsigned char *) objPtr->bytes;
 
-	stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	/*
+	 * This is a speed sensitive function, so run specially over the
+	 * string to count continuous ascii characters before resorting
+	 * to the Tcl_NumUtfChars call.  This is a long form of:
+	 stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	*/
+
+	while (*str && *str < 0xC0) { i++; str++; }
+	stringPtr->numChars = i;
+	if (*str) {
+	    stringPtr->numChars += Tcl_NumUtfChars(objPtr->bytes + i,
+		    objPtr->length - i);
+	}
 
  	if (stringPtr->numChars == objPtr->length) {
 
@@ -459,8 +473,8 @@ Tcl_GetUniChar(objPtr, index)
 	 * so we don't store the unicode char.  We get the Utf string
 	 * and convert the index'th byte to a Unicode character.
 	 */
-	
-	Tcl_UtfToUniChar(&objPtr->bytes[index], &unichar);	
+
+	unichar = (Tcl_UniChar) objPtr->bytes[index];
     } else {
 	unichar = stringPtr->unicode[index];
     }
@@ -1588,7 +1602,7 @@ FillUnicodeRep(objPtr)
     
     srcEnd = src + objPtr->length;
     for (dst = stringPtr->unicode; src < srcEnd; dst++) {
-	src += Tcl_UtfToUniChar(src, dst);
+	src += TclUtfToUniChar(src, dst);
     }
     *dst = 0;
     
